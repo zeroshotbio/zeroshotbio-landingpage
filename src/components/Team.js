@@ -2,7 +2,7 @@ import Image from "next/image";
 
 const teamData = [
   {
-    name: "Steven Ten Holder",
+    name: "Steven ten Holder",
     role: "Founder | CEO",
     description: "Steven is a biologist with years of experience...",
     image: "/images/S.jpg",
