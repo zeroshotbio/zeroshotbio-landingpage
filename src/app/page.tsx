@@ -20,27 +20,27 @@ export default function Home() {
       </div>
       <div className="textboxmain w-3/4 mt-10">
         <p className="text-lg text-my-gray leading-relaxed mb-4 text-center">
-          There's a certain excitement around the recent achievements and growth
-          of computation. No other new field of science has produced an
+          There&apos;s a certain excitement around the recent achievements and
+          growth of computation. No other new field of science has produced an
           engineering platform as productivity-boosting and lifestyle-enhancing
-          as it. We're confident it will continue to improve and generate new
-          phenomena, including the exciting possibility of artificial general
-          intelligence.
+          as it. We&apos;re confident it will continue to improve and generate
+          new phenomena, including the exciting possibility of artificial
+          general intelligence.
           <br />
           <br />
           Biology quietly reminds us to appreciate how powerful that operating
           system can be. Every cell in our body, from the neurons firing in our
           brains to the white blood cells fighting off infections, operates
           through a complex network of biochemical reactions, regulated by our
-          DNA – nature's programming language.
+          DNA &ndash; nature&apos;s programming language.
           <br />
           <br />
-          AI-driven genomic designs are emerging and we’re excited to explore
-          how this space will unfold.
+          AI-driven genomic designs are emerging and we&apos;re excited to
+          explore how this space will unfold.
           <br />
           <br />
-          We're starting with simple bioengineering workflow tasks and moving up
-          the stack toward our North Star: zero-shot genomics.
+          We&apos;re starting with simple bioengineering workflow tasks and
+          moving up the stack toward our North Star: zero-shot genomics.
         </p>
       </div>
       <div className="flex justify-center items-center w-full h-[appropriate-height]">
