@@ -3,14 +3,13 @@ import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 
 // This import is part of the hypothetical scenario.
-import { Roboto } from "next/font/google";
+import { Roboto_Slab } from "next/font/google";
 
 // Here, we're adjusting the code to specify font weights individually.
 // This matches the error message's demand for "explicitly written literals."
-const roboto_font = Roboto({
-  weight: ["100", "300", "400", "500", "700", "900"],
+const robotoSlab = Roboto_Slab({
+  weight: ["400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
-  display: "swap",
 });
 
 export const metadata = {
@@ -24,7 +23,7 @@ interface RootLayoutProps {
 
 const RootLayout: FC<RootLayoutProps> = ({ children }) => {
   return (
-    <html lang="en" className={roboto_font.className}>
+    <html lang="en" className={robotoSlab.className}>
       <head>
         <link rel="icon" href="/favicon.png" />
         <title>{metadata.title}</title>
