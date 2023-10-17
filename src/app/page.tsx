@@ -7,7 +7,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-between p-24">
       <div className="relative flex flex-col items-center justify-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-gray-200 after:via-gray-200 after:blur-2xl after:content-['']  before:lg:h-[360px] z-[-1]">
         <div>
-          <h1 className="mb-3 text-6xl text-my-teal font-semibold">zeroshotBio</h1>
+          <h1 className="mb-3 text-6xl text-my-teal font-semibold">ZeroshotBio</h1>
         </div>
         <Image
           className="relative"
