@@ -38,31 +38,38 @@ const teamData = [
   },
 ];
 
-
 function Team() {
   return (
     <section className="text-gray-600 body-font">
       <div className="container px-5 py-12 mx-auto">
         <div className="flex flex-wrap justify-center items-center">
           {teamData.map((member, index) => (
-            <div 
-              key={index} 
-              className={`p-2 ${index < 2 ? 'md:w-1/4' : 'md:w-1/5'} text-center`}
+            <div
+              key={index}
+              className={`p-2 ${
+                index < 2 ? "md:w-1/4" : "md:w-1/5"
+              } text-center`}
             >
               <a href={member.link} target="_blank" rel="noopener noreferrer">
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={index < 2 ? 200 : 320}  // Making Darien, Patrick, and Sam's images slightly smaller
+                  width={index < 2 ? 200 : 320} // Making Darien, Patrick, and Sam's images slightly smaller
                   height={index < 2 ? 150 : 240} // Making Darien, Patrick, and Sam's images slightly smaller
                   className="object-cover object-center mx-auto"
                 />
-                <h2 
-                  className={`title-font font-medium ${index < 2 ? 'text-base' : 'text-sm'} ${index >= 2 ? 'text-gray-700' : 'text-gray-900'} mt-2`}
+                <h2
+                  className={`title-font font-medium ${
+                    index < 2 ? "text-base" : "text-sm"
+                  } ${index >= 2 ? "text-gray-700" : "text-gray-900"} mt-2`}
                 >
                   {member.name}
                 </h2>
-                <h3 className={`text-xs ${index >= 2 ? 'text-gray-400' : 'text-gray-500'} mb-1`}>
+                <h3
+                  className={`text-xs ${
+                    index >= 2 ? "text-gray-400" : "text-gray-500"
+                  } mb-1`}
+                >
                   {member.role}
                 </h3>
               </a>
@@ -75,6 +82,3 @@ function Team() {
 }
 
 export default Team;
-
-
-
