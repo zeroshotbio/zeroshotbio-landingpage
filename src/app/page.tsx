@@ -19,7 +19,7 @@ export default function Home() {
         />
       </div>
       <div className="textboxmain w-3/4 mt-10">
-        <p className="text-lg text-my-teal leading-relaxed mb-4 text-center">
+        <p className="text-m text-my-teal leading-relaxed mb-4 text-center">
           There&apos;s a certain excitement around the recent achievements and
           growth of computation. No other new field of science has produced an
           engineering platform as productivity-boosting and lifestyle-enhancing
