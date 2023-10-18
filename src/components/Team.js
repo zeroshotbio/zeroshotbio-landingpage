@@ -3,7 +3,7 @@ import Image from "next/image";
 const teamData1 = [
   {
     name: "Steven ten Holder",
-    role: "BioEng/Vision/Strategy",
+    role: "Bio/Vision/Strategy",
     description: "Steven is a biologist with years of experience...",
     image: "/images/S.png",
     link: "https://www.linkedin.com/in/steventen/",
@@ -20,7 +20,7 @@ const teamData1 = [
 const teamData2 = [
   {
     name: "Darien Schettler",
-    role: "Advisor, Generative AI",
+    role: "Advisor, Generative AI and ML",
     description: "Darien has expertise in generative AI...",
     image: "/images/D.png",
     link: "https://www.linkedin.com/in/darien-schettler-bb0a5086/",
@@ -34,7 +34,7 @@ const teamData2 = [
   },
   {
     name: "Dr. Sam Scanga",
-    role: "Advisor, Genetics and Embryology",
+    role: "Advisor, Bioengineering",
     description: "Dr. Sam is a renowned expert in genetics and embryologys...",
     image: "/images/SS.png",
     link: "https://www.linkedin.com/in/sam-scanga-phd-10481442/",
@@ -47,22 +47,21 @@ function Team() {
   return (
     <section className="text-gray-600 body-font">
       <div className="container px-4 py-9 mx-auto">
-
-        <div className="flex flex-wrap justify-center items-center">
+        <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-8 mb-6 sm:mb-8">
           {teamData1.map((member, index) => (
-            <div key={index} className="p-2 md:w-3/16 text-center">
+            <div key={index} className="w-36 sm:w-52 p-2 text-center inline-block"> {/* Moderately increased width */}
               <a href={member.link} target="_blank" rel="noopener noreferrer">
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={150}
-                  height={150}
-                  className="object-cover object-center mx-6"
+                  width={80}
+                  height={80}
+                  className="object-cover object-center rounded-full inline-block"
                 />
-                <h2 className="title-font font-medium text-s text-gray-800 mt-1 mx-3">
+                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-800 mt-1 mx-1">
                   {member.name}
                 </h2>
-                <h3 className="text-xs text-gray-400 mb-10">
+                <h3 className="text-xs text-gray-400 text-center inline-block w-full px-1">
                   {member.role}
                 </h3>
               </a>
@@ -70,31 +69,31 @@ function Team() {
           ))}
         </div>
 
-        <div className="flex flex-wrap justify-center items-center">
+        <div className="flex flex-wrap justify-center items-center gap-4 sm:gap-6">
           {teamData2.map((member, index) => (
-            <div key={index} className="p-2 md:w-3/16 text-center">
+            <div key={index} className="w-36 sm:w-52 p-2 text-center inline-block"> {/* Moderately increased width here too */}
               <a href={member.link} target="_blank" rel="noopener noreferrer">
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={125}
-                  height={125}
-                  className="object-cover object-center mx-6"
+                  width={80}
+                  height={80}
+                  className="object-cover object-center rounded-full inline-block"
                 />
-                <h2 className="title-font font-medium text-s text-gray-800 mt-1 mx-3">
+                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-800 mt-1 mx-1">
                   {member.name}
                 </h2>
-                <h3 className="text-xs text-gray-400 mb-10">
+                <h3 className="text-xs text-gray-400 text-center inline-block w-full">
                   {member.role}
                 </h3>
               </a>
             </div>
           ))}
         </div>
-
       </div>
     </section>
   );
 }
+
 
 export default Team;
