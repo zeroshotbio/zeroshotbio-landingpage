@@ -22,10 +22,10 @@ export default function Home() {
           From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world. 
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          It's very early, but we're excited to search the maze for emergent capability as this new intersection unfolds.
+          It&apos;s very early, but we&apos;re excited to search the maze for emergent capability as this new intersection unfolds.
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          We're starting by empowering fundamental bioengineering workflow as we move up the stack toward our north star, zero-shot biology.
+          We&apos;re starting by empowering fundamental bioengineering workflow as we move up the stack toward our north star, zero-shot biology.
         </p>
       </div>
       <div className="flex justify-center items-center w-full">
