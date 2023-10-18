@@ -3,14 +3,14 @@ import Image from "next/image";
 const teamData1 = [
   {
     name: "Steven ten Holder",
-    role: "BioEng, Vision, Strategy",
+    role: "BioEng/Vision/Strategy",
     description: "Steven is a biologist with years of experience...",
     image: "/images/S.png",
     link: "https://www.linkedin.com/in/steventen/",
   },
   {
     name: "Graham Fleming",
-    role: "Software, Architecture",
+    role: "Software/Architecture",
     description: "Graham is an engineer with years of experience...",
     image: "/images/G.png",
     link: "https://grahamfleming.com/",
@@ -35,17 +35,12 @@ const teamData2 = [
   {
     name: "Dr. Sam Scanga",
     role: "Advisor, Genetics and Embryology",
-    description: "Dr. Sam is a renowned expert in genetics and embryology...",
+    description: "Dr. Sam is a renowned expert in genetics and embryologys...",
     image: "/images/SS.png",
-    link: "https://www.linkedin.com/in/steventen/",
+    link: "https://www.linkedin.com/in/sam-scanga-phd-10481442/",
   },
 ];
 
-// Calculated new dimensions
-const newWidth1 = Math.floor(150 * 0.75);
-const newHeight1 = Math.floor(112.5 * 0.75);
-const newWidth2 = Math.floor(240 * 0.75);
-const newHeight2 = Math.floor(180 * 0.75);
 
 
 function Team() {
@@ -60,16 +55,14 @@ function Team() {
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={newWidth1}
-                  height={newHeight1}
-                  className="object-cover object-center mx-auto"
+                  width={150}
+                  height={150}
+                  className="object-cover object-center mx-6"
                 />
-                <h2 className="title-font font-medium text-2xs text-gray-900 mt-2"
-                  style={member.name === 'Patrick Pumputis' ? { whiteSpace: 'nowrap' } : {}}
-                >
+                <h2 className="title-font font-medium text-s text-gray-800 mt-1 mx-3">
                   {member.name}
                 </h2>
-                <h3 className="text-3xs text-gray-500 mb-1">
+                <h3 className="text-xs text-gray-400 mb-10">
                   {member.role}
                 </h3>
               </a>
@@ -79,21 +72,19 @@ function Team() {
 
         <div className="flex flex-wrap justify-center items-center">
           {teamData2.map((member, index) => (
-            <div key={index} className="p-2 md:w-3/20 lg:w-1/5 text-center">
+            <div key={index} className="p-2 md:w-3/16 text-center">
               <a href={member.link} target="_blank" rel="noopener noreferrer">
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={newWidth2}
-                  height={newHeight2}
-                  className="object-cover object-center mx-auto"
+                  width={125}
+                  height={125}
+                  className="object-cover object-center mx-6"
                 />
-                <h2 className="title-font font-medium text-2xs text-gray-900 mt-2"
-                  style={member.name === 'Patrick Pumputis' ? { whiteSpace: 'nowrap' } : {}}
-                >
+                <h2 className="title-font font-medium text-s text-gray-800 mt-1 mx-3">
                   {member.name}
                 </h2>
-                <h3 className="text-3xs text-gray-500 mb-1">
+                <h3 className="text-xs text-gray-400 mb-10">
                   {member.role}
                 </h3>
               </a>
