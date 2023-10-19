@@ -54,11 +54,11 @@ function Team() {
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={80}
-                  height={80}
+                  width={120}
+                  height={120}
                   className="object-cover object-center rounded-full inline-block"
                 />
-                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-800 mt-1 mx-1">
+                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-600 mt-1 mx-1">
                   {member.name}
                 </h2>
                 <h3 className="text-xs text-gray-400 text-center inline-block w-full px-1">
@@ -76,11 +76,11 @@ function Team() {
                 <Image
                   src={member.image}
                   alt={member.name}
-                  width={80}
-                  height={80}
+                  width={120}
+                  height={120}
                   className="object-cover object-center rounded-full inline-block"
                 />
-                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-800 mt-1 mx-1">
+                <h2 className="title-font font-medium text-xs sm:text-lg text-gray-600 mt-1 mx-1">
                   {member.name}
                 </h2>
                 <h3 className="text-xs text-gray-400 text-center inline-block w-full">
