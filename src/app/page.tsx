@@ -27,9 +27,6 @@ export default function Home() {
           We&apos;re starting with a focus on generated DNA for bioengineering workflows as we move up the stack toward our north star, zero-shot biology.
         </p>
       </div>
-      <div className="flex justify-center items-center w-full">
-        <Team />
-      </div>
     </main>
   );
 }
