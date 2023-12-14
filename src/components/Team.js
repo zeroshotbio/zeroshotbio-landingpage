@@ -1,4 +1,6 @@
 import Image from "next/image";
+
+{/* 
 const teamData = [
   {
     name: "Steven ten Holder",
@@ -40,7 +42,7 @@ function Team() {
                     <h3 className="text-gray-500 mb-3 text-center">
                       {member.role}
                     </h3>
-                    {/* <p className="leading-relaxed mb-3">{member.description}</p> */}
+                   <p className="leading-relaxed mb-3">{member.description}</p> 
                   </div>
                 </div>
               </a>
@@ -53,3 +55,5 @@ function Team() {
 }
 
 export default Team;
+
+*/}
