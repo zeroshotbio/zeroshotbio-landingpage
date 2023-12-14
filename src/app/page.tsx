@@ -1,5 +1,4 @@
 import Image from "next/image";
-import Team from "../components/Team";
 
 export default function Home() {
   return (
@@ -34,7 +33,6 @@ export default function Home() {
     </main>
   );
 }
-
 
 // The term "zero-shot biology," especially in the context you've provided, seems to imply a future state of bioengineering where systems or models can predict, design, or understand biological outcomes without having been explicitly trained on those specific outcomes. 
 // This concept is akin to zero-shot learning in AI, where an AI system can accurately make predictions about data it was not directly trained on.
