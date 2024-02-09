@@ -15,16 +15,16 @@ export default function Home() {
       </div>
       <div className="textboxmain w-full mt-10 mx-auto text-center sm:max-w-xl md:max-w-md text-gray-800">
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          We believe AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
+          AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
           From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          It&apos;s very early, but we&apos;re excited to search the maze for emergent capability as this new intersection unfolds.
+          It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          We&apos;re starting with a focus on generated DNA for bioengineering workflows as we move up the stack toward our north star, zero-shot biology.
+          That search begins with basic generated DNA for bioengineering workflows up the stack toward truly zero-shot biology.
         </p>
       </div>
     </main>
