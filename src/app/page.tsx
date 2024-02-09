@@ -2,8 +2,8 @@ import Image from "next/image";
 
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-between p-4 sm:p-8 md:p-24 md:flex-col md:items-center md:justify-between md:min-h-screen">
-      <div className="relative flex flex-col items-center justify-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-gray-200 after:via-gray-200 after:blur-2xl after:content-[''] before:lg:h-[360px] z-[-1]">
+    <main className="flex flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
+      <div>
         <Image
           className="relative"
           src="/images/headerpic.png"
@@ -13,7 +13,7 @@ export default function Home() {
           priority
         />
       </div>
-      <div className="textboxmain w-full mt-10 mx-auto text-center sm:max-w-xl md:max-w-md text-gray-800">
+      <div className="textboxmain w-full px-20 text-center mt-10 sm:mt-6 md:mt-2 lg:mt-8 sm:max-w-md md:max-w-md lg:max-w-md text-gray-800">
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
           AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
         </p>
@@ -24,12 +24,13 @@ export default function Home() {
           It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
         </p>
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          That search begins with basic generated DNA for bioengineering workflows up the stack toward truly zero-shot biology.
+          First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
         </p>
       </div>
     </main>
   );
 }
+
 
 // The term "zero-shot biology," especially in the context you've provided, seems to imply a future state of bioengineering where systems or models can predict, design, or understand biological outcomes without having been explicitly trained on those specific outcomes. 
 // This concept is akin to zero-shot learning in AI, where an AI system can accurately make predictions about data it was not directly trained on.
