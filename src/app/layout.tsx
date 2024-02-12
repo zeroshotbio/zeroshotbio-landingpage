@@ -1,6 +1,7 @@
 import React, { FC, ReactNode } from "react";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 // This import is part of the hypothetical scenario.
 import { Roboto } from "next/font/google";

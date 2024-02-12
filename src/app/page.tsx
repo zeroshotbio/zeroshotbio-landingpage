@@ -13,7 +13,7 @@ export default function Home() {
           priority
         />
       </div>
-      <div className="textboxmain w-full px-20 text-center mt-10 sm:mt-6 md:mt-2 lg:mt-8 sm:max-w-md md:max-w-md lg:max-w-md text-gray-800">
+      <div className="textboxmain w-full px-20 text-center mt-10 sm:mt-6 md:mt-4 lg:mt-8 sm:max-w-md md:max-w-md lg:max-w-md text-gray-800">
         <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
           AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
         </p>
