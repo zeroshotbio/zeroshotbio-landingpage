@@ -1,3 +1,12 @@
+/* Optionally, if you prefer not to import via globals.css, remove the following @import 
+   and instead add these link tags to the <head> of your HTML:
+   
+   <link rel="preconnect" href="https://fonts.googleapis.com">
+   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+   <link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+*/
+@import url('https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@100;200;300;400;500;600;700;800;900&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -15,7 +24,133 @@ body {
 
 body {
   color: rgb(var(--foreground-rgb));
-  background: linear-gradient(to bottom,
+  background: linear-gradient(
+      to bottom,
       transparent,
-      rgb(var(--background-end-rgb))) rgb(var(--background-start-rgb));
+      rgb(var(--background-end-rgb))
+    ) rgb(var(--background-start-rgb));
+}
+
+/* Roboto Slab Font Options */
+
+/* Thin 100 - Whereas recognition of the inherent dignity */
+.roboto-slab-thin {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 100;
+  font-style: normal;
+}
+
+/* ExtraLight 200 - Whereas recognition of the inherent dignity */
+.roboto-slab-extralight {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 200;
+  font-style: normal;
+}
+
+/* Light 300 - Whereas recognition of the inherent dignity */
+.roboto-slab-light {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 300;
+  font-style: normal;
+}
+
+/* Regular 400 - Whereas recognition of the inherent dignity */
+.roboto-slab-regular {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Medium 500 - Whereas recognition of the inherent dignity */
+.roboto-slab-medium {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-style: normal;
+}
+
+/* SemiBold 600 - Whereas recognition of the inherent dignity */
+.roboto-slab-semibold {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 600;
+  font-style: normal;
+}
+
+/* Bold 700 - Whereas recognition of the inherent dignity */
+.roboto-slab-bold {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 700;
+  font-style: normal;
+}
+
+/* ExtraBold 800 - Whereas recognition of the inherent dignity */
+.roboto-slab-extrabold {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 800;
+  font-style: normal;
+}
+
+/* Black 900 - Whereas recognition of the inherent dignity */
+.roboto-slab-black {
+  font-family: "Roboto Slab", serif;
+  font-optical-sizing: auto;
+  font-weight: 900;
+  font-style: normal;
+}
+
+/* Line height utilities */
+.leading-none {
+  line-height: 1;
+}
+
+.leading-tight {
+  line-height: 1.25;
+}
+
+.leading-snug {
+  line-height: 1.375;
+}
+
+.leading-normal {
+  line-height: 1.5;
+}
+
+.leading-relaxed {
+  line-height: 1.625;
+}
+
+.leading-loose {
+  line-height: 2;
+}
+
+/* Custom text color classes for shades of grey */
+.text-gray-verylight {
+  color: #f2f2f2;
+}
+
+.text-gray-light {
+  color: #cccccc;
+}
+
+.text-gray-medium {
+  color: #999999;
+}
+
+.text-gray-semidark {
+  color: #777777;
+}
+
+.text-gray-dark {
+  color: #555555;
+}
+
+.text-gray-verydark {
+  color: #333333;
 }

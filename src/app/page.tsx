@@ -1,35 +1,104 @@
 import Image from "next/image";
 
+const DesktopContent = () => (
+  <main className="hidden sm:flex flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
+    <div>
+      <Image
+        className="relative mx-auto"
+        src="/images/zeroshot_bio_gritty.png"
+        alt="zeroshotBio Logo"
+        width={300}
+        height={500}
+        priority
+      />
+
+      {/* Text between images */}
+      <p className="roboto-slab-medium text-lg text-gray-medium text-center mt-2 mb-4">
+        Biology foundation models for therapeutic confidence.
+      </p>
+
+      <Image
+        className="relative"
+        src="/images/zeroshot_workflow_transparent.png"
+        alt="zeroshotBio Logo"
+        width={700}
+        height={500}
+        priority
+      />
+    </div>
+      
+    <div className="textboxmain w-full px-20 text-center mt-16 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-tight mb-4 sm:whitespace-normal">
+        AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
+      </p>
+    </div>
+  </main>
+);
+
+const MobileContent = () => (
+  <main className="flex sm:hidden flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
+    <div>
+      <Image
+        className="relative mx-auto"
+        src="/images/zeroshot_bio_gritty.png"
+        alt="zeroshotBio Logo"
+        width={300}
+        height={500}
+        priority
+      />
+
+      {/* Text between images */}
+      <p className="roboto-slab-medium text-lg text-gray-medium text-center mt-2 mb-4">
+        Biology foundation models for therapeutic confidence.
+      </p>
+
+      <Image
+        className="relative"
+        src="/images/zeroshot_workflow_transparent.png"
+        alt="zeroshotBio Logo"
+        width={700}
+        height={500}
+        priority
+      />
+    </div>
+      
+    <div className="textboxmain w-full px-20 text-center mt-16 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-tight mb-4 sm:whitespace-normal">
+        AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
+      </p>
+      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
+        First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
+      </p>
+    </div>
+  </main>
+);
+
 export default function Home() {
   return (
-    <main className="flex flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
-      <div>
-        <Image
-          className="relative"
-          src="/images/headerpic.png"
-          alt="zeroshotBio Logo"
-          width={500}
-          height={500}
-          priority
-        />
-      </div>
-      <div className="textboxmain w-full px-20 text-center mt-10 sm:mt-6 md:mt-4 lg:mt-8 sm:max-w-md md:max-w-md lg:max-w-md text-gray-800">
-        <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
-        </p>
-        <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
-        </p>
-        <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
-        </p>
-        <p className="text-sm sm:text-base md:text-m text-my-teal leading-relaxed mb-4 sm:whitespace-normal">
-          First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
-        </p>
-      </div>
-    </main>
+    <>
+      <DesktopContent />
+      <MobileContent />
+    </>
   );
 }
+
+
+
 
 
 // The term "zero-shot biology," especially in the context you've provided, seems to imply a future state of bioengineering where systems or models can predict, design, or understand biological outcomes without having been explicitly trained on those specific outcomes. 
