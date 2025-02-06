@@ -45,7 +45,7 @@ const DesktopContent = () => (
 );
 
 const MobileContent = () => (
-  <main className="flex sm:hidden flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
+  <main className="flex sm:hidden flex-col items-center justify-between md:p-24 md:flex-col md:items-center pb-20">
     <div className="pt-20">
       <Image
         className="block relative mx-auto"
@@ -57,7 +57,7 @@ const MobileContent = () => (
       />
 
       {/* Text between images */}
-      <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mt-4">
+      <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mt-4+">
         Biology foundation models for
       </p>
       <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mb-8">
