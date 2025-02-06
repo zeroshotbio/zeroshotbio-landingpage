@@ -1,7 +1,7 @@
 import Image from "next/image";
 
 const DesktopContent = () => (
-  <main className="hidden sm:flex flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
+  <main className="hidden sm:flex flex-col items-center justify-between sm:p-32 md:p-32 md:flex-col md:items-center">
     <div>
       <Image
         className="relative mx-auto"
@@ -27,7 +27,7 @@ const DesktopContent = () => (
       />
     </div>
       
-    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
         AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
       </p>
@@ -37,9 +37,16 @@ const DesktopContent = () => (
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-20 sm:whitespace-normal">
         At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train 
-        biology foundation models that deliver next-generation confidence to our therapeutics development customers.  </p>
+        biology foundation models that deliver next-generation confidence to our therapeutics development customers.  
+      </p>
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-semidark leading-snug sm:whitespace-normal">
+        Email <span className="roboto-slab-extrabold text-gray-dark">steven@zeroshot.bio</span> 
+      </p>
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        if you&#39;d like to get in touch. 
+      </p>
     </div>
   </main>
 );
@@ -84,9 +91,15 @@ const MobileContent = () => (
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
         At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train 
         biology foundation models that deliver next-generation confidence to our therapeutics development customers.  
+      </p>
+      <p className="roboto-slab-regular text-xxsm sm:text-base md:text-m text-gray-semidark leading-snug sm:whitespace-normal">
+        Email <span className="roboto-slab-extrabold text-gray-dark">steven@zeroshot.bio</span> 
+      </p>
+      <p className="roboto-slab-regular text-xxsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        if you&#39;d like to get in touch. 
       </p>
     </div>
   </main>
