@@ -27,18 +27,18 @@ const DesktopContent = () => (
       />
     </div>
       
-    <div className="textboxmain w-full px-20 text-center mt-16 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
+    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
+        AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        From cancer to cardiovascular disease, a fundamentally new way of understanding the transcriptomic effects of complex drugs is emerging.
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
       </p>
     </div>
   </main>
@@ -46,47 +46,51 @@ const DesktopContent = () => (
 
 const MobileContent = () => (
   <main className="flex sm:hidden flex-col items-center justify-between md:p-24 md:flex-col md:items-center">
-    <div>
+    <div className="pt-20">
       <Image
-        className="relative mx-auto"
+        className="block relative mx-auto"
         src="/images/zeroshot_bio_gritty.png"
         alt="zeroshotBio Logo"
-        width={300}
+        width={275}
         height={500}
         priority
       />
 
       {/* Text between images */}
-      <p className="roboto-slab-medium text-lg text-gray-medium text-center mt-2 mb-4">
-        Biology foundation models for therapeutic confidence.
+      <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mt-4">
+        Biology foundation models for
+      </p>
+      <p className="leading-tight roboto-slab-semibold text-base text-gray-medium text-center mb-8">
+        therapeutic confidence.
       </p>
 
       <Image
-        className="relative"
-        src="/images/zeroshot_workflow_transparent.png"
+        className="block relative mx-auto"
+        src="/images/fundamental_flow_for_mobile_subtle_colors.png"
         alt="zeroshotBio Logo"
-        width={700}
+        width={350}
         height={500}
         priority
       />
     </div>
       
-    <div className="textboxmain w-full px-20 text-center mt-16 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven genomic design will deliver exciting new categories of capability for bioengineers.
+    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
+        AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        From agriculture to biomaterials, from human longevity to environmental remediation, engineered sequences could help improve the world.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        From cancer to cardiovascular disease, a fundamentally new way of understanding the transcriptomic effects of complex drugs is emerging.
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        It&apos;s very early, but the search for emergent capabilities at this new intersection has begun.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
-      <p className="roboto-slab-regular text-sm sm:text-base md:text-m text-gray-dark leading-snug mb-4 sm:whitespace-normal">
-        First, simple short-sequence generated DNA. Next, bioengineering workflow redesign. Finally, zero-shot biology.
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
       </p>
     </div>
   </main>
 );
+
 
 export default function Home() {
   return (
