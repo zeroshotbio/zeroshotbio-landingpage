@@ -32,14 +32,14 @@ const DesktopContent = () => (
         AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        From cancer to cardiovascular disease, a fundamentally new way of understanding the transcriptomic effects of complex drugs is emerging.
+        From cancer to cardiovascular disease, a fundamentally new way of understanding drugs with polygenic effects is emerging.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
-      </p>
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train 
+        biology foundation models that deliver next-generation confidence to our therapeutics development customers.  </p>
     </div>
   </main>
 );
@@ -79,13 +79,14 @@ const MobileContent = () => (
         AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        From cancer to cardiovascular disease, a fundamentally new way of understanding the transcriptomic effects of complex drugs is emerging.
+        From cancer to cardiovascular disease, a fundamentally new way of understanding drugs with polygenic effects is emerging.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train 
+        biology foundation models that deliver next-generation confidence to our therapeutics development customers.  
       </p>
     </div>
   </main>
