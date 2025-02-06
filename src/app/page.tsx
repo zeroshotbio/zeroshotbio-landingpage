@@ -38,7 +38,7 @@ const DesktopContent = () => (
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we're creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
       </p>
     </div>
   </main>
@@ -85,7 +85,7 @@ const MobileContent = () => (
         It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we're creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
+        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train biology foundation models that deliver next-generation therapeutic confidence to our customers.  
       </p>
     </div>
   </main>
