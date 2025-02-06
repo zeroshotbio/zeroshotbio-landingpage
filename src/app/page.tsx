@@ -49,7 +49,7 @@ const MobileContent = () => (
     <div className="pt-20">
       <Image
         className="block relative mx-auto"
-        src="/images/zeroshot_bio_gritty.png"
+        src="/images/zeroshot_bio_gritty_blue.png"
         alt="zeroshotBio Logo"
         width={275}
         height={500}
