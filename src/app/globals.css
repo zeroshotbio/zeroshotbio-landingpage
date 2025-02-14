@@ -131,6 +131,12 @@ body {
 }
 
 /* Custom text size utilities */
+
+.text-xxxsm {
+  font-size: 0.65rem; /* 12px */
+}
+
+
 .text-xxsm {
   font-size: 0.75rem; /* 12px */
 }
