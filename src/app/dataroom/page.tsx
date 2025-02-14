@@ -15,6 +15,8 @@ import CompetitiveLandscape from './docs/Competitive_Landscape/competitiveLandsc
 import Customers from './docs/Customers/customers';
 import MarketOpportunity from './docs/Market_Opportunity/marketOpportunity';
 import TeamAdvisors from './docs/Team_and_Advisors/teamAdvisors';
+import ProblemOverview from './docs/Problem/problemOverview';
+import DetailedProblem from './docs/Problem/detailedProblem';
 
 // AI Bio Strategy sub-sections
 import AiBioIntroCrisis from './docs/aiBio/introduction';
@@ -62,6 +64,23 @@ const categories: Category[] = [
         id: 'executive-summary',
         title: 'Executive Summary & Pitch Deck',
         component: ExecutiveSummary,
+      },
+    ],
+  },
+  {
+    id: 'problem',
+    title: 'Problem',
+    description: 'An analysis of the key challenges in drug development.',
+    subSections: [
+      {
+        id: 'problem-overview',
+        title: 'Problem Overview',
+        component: ProblemOverview,
+      },
+      {
+        id: 'detailed-problem',
+        title: 'Detailed Problem Analysis',
+        component: DetailedProblem,
       },
     ],
   },
