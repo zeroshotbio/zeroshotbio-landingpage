@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 
-const ProblemOverview: React.FC = () => {
+const Zebrafish: React.FC = () => {
   return (
     <div>
       <h2 className="roboto-slab-semibold text-xl text-gray-800 mb-4">
@@ -15,4 +15,4 @@ const ProblemOverview: React.FC = () => {
   );
 };
 
-export default ProblemOverview;
+export default Zebrafish;

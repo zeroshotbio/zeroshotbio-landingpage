@@ -1,7 +1,7 @@
 'use client';
 import React from 'react';
 
-const DetailedProblem: React.FC = () => {
+const CaseStudyMylotarg: React.FC = () => {
   return (
     <div>
       <h2 className="roboto-slab-semibold text-xl text-gray-800 mb-4">
@@ -15,4 +15,4 @@ const DetailedProblem: React.FC = () => {
   );
 };
 
-export default DetailedProblem;
+export default CaseStudyMylotarg;

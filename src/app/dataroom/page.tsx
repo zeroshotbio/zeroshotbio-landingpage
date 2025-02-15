@@ -10,22 +10,36 @@ import Image from 'next/image';
 // Top-level documentation sections
 import Introduction from './docs/Overview/introduction';
 import ExecutiveSummary from './docs/Overview/executiveSummary';
-import BusinessModel from './docs/Business_Model/businessModel';
-import CompetitiveLandscape from './docs/Competitive_Landscape/competitiveLandscape';
-import Customers from './docs/Customers/customers';
-import MarketOpportunity from './docs/Market_Opportunity/marketOpportunity';
-import TeamAdvisors from './docs/Team_and_Advisors/teamAdvisors';
-import ProblemOverview from './docs/Problem/problemOverview';
-import DetailedProblem from './docs/Problem/detailedProblem';
 
-// AI Bio Strategy sub-sections
-import AiBioIntroCrisis from './docs/aiBio/introduction';
-import BioFoundationModelVision from './docs/aiBio/bioFoundationModelVision';
-import AnimalModelsZebrafish from './docs/aiBio/animalModelsZebrafish';
-import IntroducingTsGPT from './docs/aiBio/introducingTsGPT';
-import BioFoundationModelsImpacts from './docs/aiBio/bioFoundationModelsImpacts';
-import StrategicTechnologyPathForward from './docs/aiBio/strategicTechnologyPathForward';
-import VisionGlimpseBiggerPicture from './docs/aiBio/visionGlimpseBiggerPicture';
+// Problem
+import DrugDevelopmentPipeline from './docs/Problem/drugDevelopmentPipeline';
+import TherapeuticComplexity from './docs/Problem/therapeuticComplexity';
+import CaseStudyMylotarg from './docs/Problem/caseStudyMylotarg';
+
+// Vision
+import VisionOverview from './docs/Vision/visionOverview';
+import FirstPrinciples from './docs/Vision/firstPrinciples';
+import Zebrafish from './docs/Vision/zebrafish';
+import ScRNA from './docs/Vision/scRNA';
+import FuturePotential from './docs/Vision/futurePotential';
+
+// Technology
+import BioFoundationModels from './docs/Technology/bioFoundationModels';
+import DataSources from './docs/Technology/dataSources';
+import BiologistPersepctive from './docs/Technology/biologistPerspective';
+
+// Business Model
+import BusinessModel from './docs/Business_Model/businessModel';
+
+//Market Opportunity
+import MarketOpportunity from './docs/Market_Opportunity/marketOpportunity';
+import Customers from './docs/Market_Opportunity/customers';
+
+// Competitive Landscape 
+import CompetitiveLandscape from './docs/Competitive_Landscape/competitiveLandscape';
+
+// Team & Advisors
+import TeamAdvisors from './docs/Team_and_Advisors/teamAdvisors';
 
 /* -----------------------------------------------
    Interfaces for your category structure
@@ -34,14 +48,14 @@ import VisionGlimpseBiggerPicture from './docs/aiBio/visionGlimpseBiggerPicture'
 interface SubSection {
   id: string;
   title: string;
-  component: React.FC;
+  component: React.ComponentType;
 }
 
 interface Category {
   id: string;
   title: string;
   description: string;
-  component?: React.FC;
+  component?: React.ComponentType;
   subSections?: SubSection[];
 }
 
@@ -73,56 +87,73 @@ const categories: Category[] = [
     description: 'An analysis of the key challenges in drug development.',
     subSections: [
       {
-        id: 'problem-overview',
-        title: 'Problem Overview',
-        component: ProblemOverview,
+        id: 'drug-development-pipeline',
+        title: 'Drug Development Pipeline',
+        component: DrugDevelopmentPipeline,
       },
       {
-        id: 'detailed-problem',
-        title: 'Detailed Problem Analysis',
-        component: DetailedProblem,
+        id: 'therapeutic-complexity',
+        title: 'Therapeutic Complexity',
+        component: TherapeuticComplexity,
+      },
+      {
+        id: 'case-study-mylotarg',
+        title: 'Case Study: Mylotarg',
+        component: CaseStudyMylotarg,
       },
     ],
   },
   {
-    id: 'ai-bio-strategy',
-    title: 'AI Bio Strategy',
-    description: 'Our approach to AI-driven bioengineering.',
+    id: 'vision',
+    title: 'Vision',
+    description: 'Our vision for the future of biological foundation models.',
     subSections: [
       {
-        id: 'introduction-crisis-of-confidence',
-        title: 'Introduction – A Crisis of Confidence',
-        component: AiBioIntroCrisis,
+        id: 'vision-overview',
+        title: 'Vision Overview',
+        component: VisionOverview,
       },
       {
-        id: 'bio-foundation-model-vision',
-        title: 'Bio Foundation Model Vision',
-        component: BioFoundationModelVision,
+        id: 'first-principles',
+        title: 'First Principles',
+        component: FirstPrinciples,
       },
       {
-        id: 'animal-models-zebrafish',
-        title: 'Animal Models & Zebrafish',
-        component: AnimalModelsZebrafish,
+        id: 'zebrafish',
+        title: 'Zebrafish',
+        component: Zebrafish,
       },
       {
-        id: 'introducing-tsgpt-engine',
-        title: 'Introducing the tsGPT Engine',
-        component: IntroducingTsGPT,
+        id: 'scrna',
+        title: 'scRNA',
+        component: ScRNA,
       },
       {
-        id: 'bio-foundation-models-impacts',
-        title: 'Bio Foundation Models & Their Impacts',
-        component: BioFoundationModelsImpacts,
+        id: 'future-potential',
+        title: 'Future Potential',
+        component: FuturePotential,
+      },
+    ],
+  },
+  {
+    id: 'technology',
+    title: 'Technology',
+    description: 'The technology behind our platform.',
+    subSections: [
+      {
+        id: 'bio-foundation-models',
+        title: 'Bio Foundation Models',
+        component: BioFoundationModels,
       },
       {
-        id: 'strategic-technology-path-forward',
-        title: 'Strategic Technology Path Forward',
-        component: StrategicTechnologyPathForward,
+        id: 'data-sources',
+        title: 'Data Sources',
+        component: DataSources,
       },
       {
-        id: 'vision-glimpse-of-the-bigger-picture',
-        title: 'Vision: A Glimpse at the Bigger Picture',
-        component: VisionGlimpseBiggerPicture,
+        id: 'biologist-perspective',
+        title: 'Biologist Perspective',
+        component: BiologistPersepctive,
       },
     ],
   },
@@ -133,22 +164,27 @@ const categories: Category[] = [
     component: BusinessModel,
   },
   {
+    id: 'market-opportunity',
+    title: 'Market Opportunity',
+    description: 'Explore the market potential and growth projections.',
+    subSections: [
+      {
+        id: 'market-opportunity',
+        title: 'Market Opportunity',
+        component: MarketOpportunity,
+      },
+      {
+        id: 'customers',
+        title: 'Customers',
+        component: Customers,
+      },
+    ],
+  },
+  {
     id: 'competitive-landscape',
     title: 'Competitive Landscape',
     description: 'Understand our unique position in the AI biotech market.',
     component: CompetitiveLandscape,
-  },
-  {
-    id: 'customers',
-    title: 'Customers',
-    description: 'Learn about our ideal partners and engagement process.',
-    component: Customers,
-  },
-  {
-    id: 'market-opportunity',
-    title: 'Market Opportunity',
-    description: 'Explore the market potential and growth projections.',
-    component: MarketOpportunity,
   },
   {
     id: 'team-advisors',
@@ -229,8 +265,14 @@ const DataRoomDocumentation: React.FC = () => {
     if (selectedSubSectionId) {
       const sub = subSections.find(s => s.id === selectedSubSectionId);
       if (!sub) return <div className="text-gray-500">Sub-section not found.</div>;
-      const SubComponent = sub.component;
-      return <SubComponent />;
+
+      try {
+        const SubComponent = sub.component;
+        return <SubComponent />;
+      } catch (error) {
+        console.error('Error rendering component:', error);
+        return <div className="text-red-500">Error loading component</div>;
+      }
     }
 
     return (
@@ -247,7 +289,7 @@ const DataRoomDocumentation: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-white relative">
-      {/* Mobile-Only View: Show a simple message that the data room is desktop only */}
+      {/* Mobile-Only View */}
       <div className="block sm:hidden w-full h-screen bg-white flex flex-col items-center justify-center">
         <Image
           src="/images/zeroshot_bio_gritty.png"
@@ -256,19 +298,16 @@ const DataRoomDocumentation: React.FC = () => {
           height={250}
           className="object-contain mb-4"
         />
-            <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
-            The data room is formatted for viewing on desktop computers.
-            </h3>
-            <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
-            You <strong>can</strong> rotate your screen horizontally to preview it from here.
-            </h3>
+        <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
+          The data room is formatted for viewing on desktop computers.
+        </h3>
+        <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
+          You <strong>can</strong> rotate your screen horizontally to preview it from here.
+        </h3>
       </div>
 
-      {/* Desktop/Larger Screens Layout: 
-          hidden on mobile, displayed from sm: and up
-      */}
+      {/* Desktop Layout */}
       <div className="hidden sm:flex justify-center w-full">
-        {/* Outer container with max width */}
         <div
           className={`w-full max-w-[1600px] flex transition-filter duration-300 ${
             accessGranted ? 'blur-0' : 'blur-sm'
@@ -297,7 +336,7 @@ const DataRoomDocumentation: React.FC = () => {
                   <div key={cat.id} className="border-b border-gray-200 pb-2">
                     <button
                       onClick={() => handleToggleCategory(cat.id)}
-                      className={`flex items-center w-full text-left transition-colors duration-200 px-3 py-2 rounded-sm ${
+                      className={`flex items-center w-full text-left transition-colors duration-200 px-0 py-3 rounded-sm ${
                         isSelected ? 'bg-gray-100 text-gray-800' : 'text-gray-700 hover:bg-gray-100'
                       }`}
                     >
@@ -311,8 +350,8 @@ const DataRoomDocumentation: React.FC = () => {
                       <span className="flex-1 text-sm roboto-slab-medium">{cat.title}</span>
                     </button>
                     {isExpanded && (
-                      <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-[400px] mt-2">
-                        <div className="flex flex-col space-y-2 pl-5 pr-3 py-2">
+                      <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-[600px] mt-2">
+                        <div className="flex flex-col space-y-2 pl-1 pr-1 py-2">
                           {subSections.map(sub => {
                             const subSelected = selectedSubSectionId === sub.id;
                             return (
@@ -351,23 +390,21 @@ const DataRoomDocumentation: React.FC = () => {
               </h2>
             </div>
 
-            {/* Main content */}
-            <div className="px-4 sm:px-8 pt-4 sm:pt-8 sm:ml-[50px]">
-              <div className="max-w-3xl">
-                {renderContent()}
-                {nextSubSection && (
-                  <div className="flex justify-end mt-4">
-                    <button
-                      onClick={() =>
-                        handleSelectSubSection(selectedCategoryId, nextSubSection!.id)
-                      }
-                      className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded shadow transition-colors"
-                    >
-                      Next: {nextSubSection.title}
-                    </button>
-                  </div>
-                )}
-              </div>
+            {/* Main content (Remove narrower max-width, keep the same left margin) */}
+            <div className="px-4 sm:px-0 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-none">
+              {/* No "max-w-2xl" or "max-w-3xl" here, letting content expand fully */}
+              {renderContent()}
+
+              {nextSubSection && (
+                <div className="flex justify-left mt-4">
+                  <button
+                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection.id)}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded shadow transition-colors"
+                  >
+                    Next: {nextSubSection.title}
+                  </button>
+                </div>
+              )}
             </div>
           </main>
         </div>
