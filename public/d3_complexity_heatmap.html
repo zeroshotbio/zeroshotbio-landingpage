@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>D3 Treemap with Per-Category Label Adjustments & Padding Controls (Including "Other")</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: sans-serif;
+      position: relative;
+    }
+    .tooltip {
+      position: absolute;
+      background: rgba(0, 0, 0, 0.8);
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.1s ease;
+    }
+    .node rect {
+      stroke: #fff;
+      stroke-width: 1px;
+      cursor: pointer;
+    }
+    .category-label {
+      fill: #000;
+      font-weight: 500;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+<div class="tooltip" id="tooltip"></div>
+<script>
+  // ----------------------------------------------------
+  // Adjustable Variables
+  // ----------------------------------------------------
+
+  // A) The major categories you want distinct; everything else → "Other".
+  //    Note: "Other" is now explicitly added.
+  const majorCategoriesSet = new Set([
+    "Pain/Inflammation",
+    "Cancer",
+    "Cardiovascular",
+    "Diabetes",
+    "Autoimmune",
+    "Infectious",
+    "Neurological/Psych",
+    "Gene Therapy",
+    "Respiratory",
+    "Transplant",
+    "Other"
+  ]);
+
+  // B) Per-category label adjustments (scale & yOffset).
+  //    'scale' multiplies the dynamic label size for that category;
+  //    'yOffset' is added (in pixels) after the dynamic placement.
+  const categoryLabelOptions = {
+    "Pain/Inflammation": { scale: 1.2, yOffset: 12 },
+    "Cancer":            { scale: 1.2, yOffset: -11 },
+    "Cardiovascular":    { scale: 1.3, yOffset: -1 },
+    "Diabetes":          { scale: 1.3, yOffset: -1 },
+    "Autoimmune":        { scale: 1.2, yOffset: 1 },
+    "Infectious":        { scale: 1.2, yOffset: 3 },
+    "Neurological/Psych":{ scale: 1.2, yOffset:4 },
+    "Gene Therapy":      { scale: 1.4, yOffset: 10 },
+    "Respiratory":       { scale: 1.5, yOffset: 9 },
+    "Transplant":        { scale: 1.5, yOffset: 10 },
+    "Other":             { scale: 1.3, yOffset: 6 }  // New: options for "Other"
+  };
+
+  // C) Variables controlling text sizes for category labels & leaf text.
+  const majorTitleBaseSize = 40;       // max category label size
+  const majorTitleShrinkFactor = 0.05; // min fraction of that size
+  const boxTextBaseSize = 20;         // max leaf text size
+  const boxTextShrinkFactor = 0.15;   // min fraction of that size
+
+  // D) Treemap layout spacing & other layout parameters.
+  const treemapOuterPadding = 2;       // outer padding around entire treemap & each major category
+  const treemapInnerPadding = 1;       // spacing between individual leaf rectangles
+  const categoryTitleYOffsetFactor = 1.0; // multiplier for dynamic vertical placement of category labels
+  const treemapTopPadding = 30;          // extra top margin for entire treemap
+  const legendSpacingFromTreemap = 40;   // vertical space between treemap bottom & legend
+  const legendWidth = 600;              // width of the color legend
+  const legendFontSize = 14;            // font size for legend tick labels
+  const baseCategoryTitleOffset = 6;    // small horizontal offset for category labels
+  const leafTextTopOffset = 2;          // top offset for leaf text
+
+  // ----------------------------------------------------
+  // Overall Layout
+  // ----------------------------------------------------
+  const totalWidth = 900;
+  const totalHeight = 900;
+  // Subtract space for legend area plus additional spacing.
+  const treemapHeight = totalHeight - (legendSpacingFromTreemap + 80);
+
+  // Create the main SVG container.
+  const svg = d3.select("body")
+    .append("svg")
+    .attr("width", totalWidth)
+    .attr("height", totalHeight);
+
+  // A group for the treemap.
+  const treemapGroup = svg.append("g");
+
+  // Tooltip for mouseover.
+  const tooltip = d3.select("#tooltip");
+
+  // ----------------------------------------------------
+  // Color Scale for Complexity
+  //   Domain [100..1]: left = most complex, right = least complex
+  // ----------------------------------------------------
+  const colorScale = d3.scaleLinear()
+    .domain([100, 75, 25, 1])
+    .range([
+      "#d89d6b", // complexity=100
+      "#633d2b",
+      "#3f7693",
+      "#78bcd5"  // complexity=1
+    ]);
+
+  // Create a gradient for the color legend.
+  const defs = svg.append("defs");
+  const linearGradient = defs.append("linearGradient")
+    .attr("id", "legendGradient")
+    .attr("x1", "0%").attr("y1", "0%")
+    .attr("x2", "100%").attr("y2", "0%");
+
+  linearGradient.append("stop")
+    .attr("offset", "0%")
+    .attr("stop-color", "#d89d6b");
+  linearGradient.append("stop")
+    .attr("offset", "25%")
+    .attr("stop-color", "#633d2b");
+  linearGradient.append("stop")
+    .attr("offset", "75%")
+    .attr("stop-color", "#3f7693");
+  linearGradient.append("stop")
+    .attr("offset", "100%")
+    .attr("stop-color", "#78bcd5");
+
+  // ----------------------------------------------------
+  // Treemap Layout
+  // ----------------------------------------------------
+  // We use the new outer & inner padding values and enable rounding.
+  const treemapLayout = d3.treemap()
+    .size([totalWidth, treemapHeight])
+    .round(true)
+    .paddingOuter(treemapOuterPadding)
+    .paddingInner(treemapInnerPadding)
+    .paddingTop(treemapTopPadding);
+
+  // ----------------------------------------------------
+  // Helper Functions
+  // ----------------------------------------------------
+  function mapToMajorCategory(cat) {
+    return majorCategoriesSet.has(cat) ? cat : "Other";
+  }
+
+  // Compute dynamic category label size based on the box's minimum dimension.
+  function categoryFontSize(boxMin) {
+    const maxBoxSize = 600;
+    const t = Math.max(0, Math.min(boxMin / maxBoxSize, 1));
+    const minFont = majorTitleBaseSize * majorTitleShrinkFactor;
+    const maxFont = majorTitleBaseSize;
+    return minFont + (maxFont - minFont) * t;
+  }
+
+  // Compute dynamic leaf (drug) text size similarly.
+  function leafFontSize(boxMin) {
+    const maxBoxSize = 300;
+    const t = Math.max(0, Math.min(boxMin / maxBoxSize, 1));
+    const minFont = boxTextBaseSize * boxTextShrinkFactor;
+    const maxFont = boxTextBaseSize;
+    return minFont + (maxFont - minFont) * t;
+  }
+
+  // Wrap text into up to maxLines lines, adding new tspans as needed.
+  function wrapText(textSelection, fullText, boxWidth, maxLines) {
+    const words = fullText.split(/\s+/);
+    let line = [];
+    let lineNumber = 0;
+    const lineHeightEm = 1.1;
+    const x = textSelection.attr("x");
+
+    let tspan = textSelection.append("tspan")
+      .attr("x", x)
+      .attr("dy", "0em");
+
+    for (let i = 0; i < words.length; i++) {
+      line.push(words[i]);
+      tspan.text(line.join(" "));
+      if (tspan.node().getComputedTextLength() > boxWidth) {
+        line.pop();
+        tspan.text(line.join(" "));
+        line = [words[i]];
+        lineNumber++;
+        if (lineNumber < maxLines) {
+          tspan = textSelection.append("tspan")
+            .attr("x", x)
+            .attr("dy", lineHeightEm + "em")
+            .text(words[i]);
+        } else {
+          break;
+        }
+      }
+    }
+  }
+
+  // ----------------------------------------------------
+  // Load & Process Data
+  // ----------------------------------------------------
+  d3.csv("d3_complexity_heatmap.csv").then(rawData => {
+    rawData.forEach(d => {
+      d.ComplexityScore = +d.ComplexityScore;
+      d.MonetaryImpact = +d.MonetaryImpact;
+      // Remap category to our major list or "Other"
+      d.MappedCategory = mapToMajorCategory(d.Category);
+    });
+
+    // 1) Group items by MappedCategory.
+    const catGroups = d3.rollups(
+      rawData,
+      arr => arr.map(d => ({
+        name: d.Therapeutic,
+        complexity: d.ComplexityScore,
+        monetary: d.MonetaryImpact,
+        text: d.TextDescription
+      })),
+      d => d.MappedCategory
+    );
+
+    // 2) Sort leaves within each category by descending complexity.
+    catGroups.forEach(([cat, leaves]) => {
+      leaves.sort((a, b) => b.complexity - a.complexity);
+    });
+
+    // 3) Sort categories by total monetary impact (largest first).
+    catGroups.sort((a, b) => {
+      const sumA = d3.sum(a[1], d => d.monetary);
+      const sumB = d3.sum(b[1], d => d.monetary);
+      return sumB - sumA;
+    });
+
+    // 4) Build the data tree.
+    const children = catGroups.map(([cat, leaves]) => ({
+      name: cat,
+      children: leaves
+    }));
+    const rootData = { name: "Therapeutics", children };
+
+    // 5) Create a hierarchy, summing by monetary impact.
+    const root = d3.hierarchy(rootData)
+      .sum(d => d.monetary);
+
+    // 6) Compute the treemap.
+    treemapLayout(root);
+
+    // ----------------------------------------------------
+    // Draw the Leaves (Individual Drugs)
+    // ----------------------------------------------------
+    const leaves = treemapGroup.selectAll(".node")
+      .data(root.leaves())
+      .join("g")
+      .attr("class", "node")
+      .attr("transform", d => `translate(${d.x0},${d.y0})`);
+
+    leaves.append("rect")
+      .attr("width", d => d.x1 - d.x0)
+      .attr("height", d => d.y1 - d.y0)
+      .attr("fill", d => colorScale(d.data.complexity))
+      .on("mouseover", (event, d) => {
+        tooltip.style("opacity", 1)
+          .html(`
+            <strong>${d.data.name}</strong><br>
+            Complexity: ${d.data.complexity}<br>
+            Market: $${d.data.monetary.toLocaleString()}M<br>
+            <em>${d.data.text}</em>
+          `);
+      })
+      .on("mousemove", (event) => {
+        tooltip.style("left", (event.pageX + 10) + "px")
+          .style("top", (event.pageY + 10) + "px");
+      })
+      .on("mouseleave", () => {
+        tooltip.style("opacity", 0);
+      });
+
+    // Leaf (drug) labels
+    leaves.append("text")
+      .each(function(d) {
+        const node = d3.select(this);
+        const w = d.x1 - d.x0;
+        const h = d.y1 - d.y0;
+        const boxMin = Math.min(w, h);
+        const fSize = leafFontSize(boxMin);
+
+        node.attr("x", 4)
+          .attr("y", fSize + leafTextTopOffset)
+          .attr("font-size", fSize + "px")
+          .attr("fill", "#fff")
+          .style("pointer-events", "none");
+
+        wrapText(node, d.data.name, w - 8, 2);
+      });
+
+    // ----------------------------------------------------
+    // Draw the Major Category Labels
+    // ----------------------------------------------------
+    treemapGroup.selectAll(".category-label")
+      .data(root.children)
+      .join("text")
+      .attr("class", "category-label")
+      .each(function(d) {
+        const catW = d.x1 - d.x0;
+        const catH = d.y1 - d.y0;
+        const boxMin = Math.min(catW, catH);
+
+        // Compute the dynamic base label size.
+        const dynamicSize = categoryFontSize(boxMin);
+
+        // Look up custom options for this category (or default if not found).
+        const catName = d.data.name;
+        const opts = categoryLabelOptions[catName] || { scale: 1.0, yOffset: 0 };
+        const finalLabelSize = dynamicSize * opts.scale;
+
+        // Compute the dynamic vertical anchor.
+        const dynamicY = d.y0 + finalLabelSize * categoryTitleYOffsetFactor;
+        const finalY = dynamicY + opts.yOffset;
+
+        d3.select(this)
+          .attr("x", d.x0 + baseCategoryTitleOffset)
+          .attr("y", finalY)
+          .attr("font-size", finalLabelSize + "px")
+          .text(catName);
+      });
+
+    // ----------------------------------------------------
+    // Draw the Legend
+    // ----------------------------------------------------
+    const legendX = (totalWidth - legendWidth) / 2;
+    const legendY = treemapHeight + legendSpacingFromTreemap;
+
+    const legendScale = d3.scaleLinear()
+      .domain([100, 1])
+      .range([0, legendWidth]);
+
+    const legendGroup = svg.append("g")
+      .attr("transform", `translate(${legendX},${legendY})`);
+
+    legendGroup.append("rect")
+      .attr("width", legendWidth)
+      .attr("height", 20)
+      .style("fill", "url(#legendGradient)");
+
+    const legendAxis = d3.axisBottom(legendScale)
+      .tickValues([100, 75, 25, 1])
+      .tickFormat(d => d);
+
+    legendGroup.append("g")
+      .attr("transform", "translate(0,20)")
+      .call(legendAxis)
+      .selectAll("text")
+      .attr("font-size", legendFontSize + "px");
+
+    legendGroup.select(".domain").remove();
+
+    legendGroup.append("text")
+      .attr("x", 0)
+      .attr("y", -5)
+      .attr("fill", "#000")
+      .attr("font-size", legendFontSize + "px")
+      .text("Most Complex");
+
+    legendGroup.append("text")
+      .attr("x", legendWidth)
+      .attr("y", -5)
+      .attr("fill", "#000")
+      .attr("text-anchor", "end")
+      .attr("font-size", legendFontSize + "px")
+      .text("Most Simple");
+  })
+  .catch(err => {
+    console.error("Error loading CSV:", err);
+  });
+</script>
+</body>
+</html>

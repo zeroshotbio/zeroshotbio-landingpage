@@ -1,0 +1,301 @@
+Therapeutic,ComplexityScore,Category,TextDescription,MonetaryImpact
+Ivacaftor (Kalydeco),1,Respiratory,"A CFTR modulator for a specific cystic fibrosis mutation. Primarily targets a single protein to improve chloride ion flow in epithelial cells, leading to better respiratory function.",1100
+Penicillin,2,Infectious,"A classic β-lactam antibiotic that disrupts bacterial cell wall synthesis, showing minimal gene regulatory network (GRN) changes in the host.",700
+Warfarin,3,Cardiovascular,"A vitamin K antagonist anticoagulant that inhibits vitamin K epoxide reductase. Has limited interplay with broader host gene networks.",800
+Omeprazole,3,Gastrointestinal,"A proton pump inhibitor that lowers gastric acid production. Shows minimal off-target gene regulatory effects in the host.",3000
+Levothyroxine,4,Endocrine,"A synthetic T4 thyroid hormone replacement. Primarily replaces a single endogenous hormone with modest downstream gene regulation.",3200
+Metformin,5,Diabetes,"A first-line anti-hyperglycemic that reduces hepatic glucose output. Influences metabolic gene networks but remains relatively moderate in scope.",8000
+Acetaminophen (Paracetamol),5,Pain/Inflammation,"An analgesic/antipyretic with a relatively straightforward biochemical pathway. Minimal broader gene-regulatory involvement.",4500
+Aspirin,5,Cardiovascular,"A classic NSAID that irreversibly inhibits COX enzymes. It has limited direct gene regulation but is widely used for its antiplatelet effects.",2300
+Ibuprofen,6,Pain/Inflammation,"An NSAID similar to aspirin, though slightly broader in its modulation of inflammatory signaling. Still relatively modest in gene-level changes.",3700
+Albuterol (Salbutamol),6,Respiratory,"A β2-adrenergic agonist used for asthma/COPD. Primarily works via receptor signaling with mild downstream gene expression changes.",2200
+Insulin (Human Recombinant),7,Diabetes,"Replaces or supplements endogenous insulin to regulate glucose uptake. Can trigger moderate metabolic gene transcription pathways.",26000
+Atorvastatin,7,Cardiovascular,"An HMG-CoA reductase inhibitor that lowers cholesterol. Modulates lipid metabolism genes, leading to moderate gene expression changes.",9400
+Losartan,7,Cardiovascular,"An angiotensin II receptor blocker that helps control blood pressure. Involves mild shifts in renin–angiotensin system gene expression.",5000
+Doxycycline,8,Infectious,"A tetracycline antibiotic that blocks bacterial protein synthesis. Has minimal impact on the host’s gene regulatory networks.",200
+Furosemide,8,Cardiovascular,"A loop diuretic acting on the Na+/K+/2Cl− transporter in the kidney. Some downstream gene effects but primarily acts at transport channels.",1000
+Acyclovir,9,Infectious,"An antiviral drug (mainly against HSV) that inhibits viral DNA polymerase. Has only minor interplay with host gene regulation.",700
+Sildenafil,9,Cardiovascular,"A PDE5 inhibitor used for erectile dysfunction and pulmonary hypertension. Works through the cGMP pathway with minimal broad gene impact.",4800
+Amoxicillin,10,Infectious,"A broad-spectrum β-lactam antibiotic that inhibits bacterial cell wall synthesis. Limited gene regulation in the human host.",3200
+Ranitidine (historical),10,Gastrointestinal,"An H2 receptor antagonist for reducing stomach acid. Shows minimal direct gene involvement; discontinued in many markets.",800
+Vancomycin,11,Infectious,"A glycopeptide antibiotic that inhibits bacterial cell wall synthesis. Complex mechanism for bacteria, but limited host GRN effects.",1500
+Prednisone,12,Autoimmune,"A corticosteroid that exerts broader gene expression changes in inflammation and immune pathways.",650
+Tamoxifen,12,Cancer,"A selective estrogen receptor modulator (SERM). Moderate gene-regulatory impact in hormone-responsive tissues.",900
+Methotrexate,13,Autoimmune,"An antimetabolite impacting folate metabolism, used in cancer and autoimmune conditions. Triggers some gene expression changes.",2700
+Heparin,13,Cardiovascular,"An anticoagulant working mainly at the enzymatic/protein-binding level (antithrombin III). Limited direct gene-level modulation.",800
+Clopidogrel,14,Cardiovascular,"An antiplatelet agent modifying platelet activation through the P2Y12 receptor. Mild genomic interplay.",2300
+Cyclobenzaprine,14,Neurological/Psych,"A muscle relaxant acting centrally with limited direct gene regulation. Primarily alters neuromuscular modulation.",500
+Azithromycin,14,Infectious,"A macrolide antibiotic interfering with bacterial protein synthesis. Little to no substantial host gene effects.",3800
+Loratadine,15,Allergy/Respiratory,"A peripheral H1-receptor antagonist for allergies. Causes minimal gene expression changes in human cells.",2400
+Aripiprazole,16,Neurological/Psych,"An atypical antipsychotic with partial dopamine/serotonin agonism. Moderately affects neuronal signaling and some gene expression.",4400
+Fluoxetine,16,Neurological/Psych,"An SSRI antidepressant modulating serotonin reuptake. Leads to modest downstream changes in mood-regulating gene networks.",4500
+Lidocaine,17,Pain/Inflammation,"A local anesthetic that blocks voltage-gated sodium channels. Has minimal gene-level regulatory effects.",800
+Naloxone,17,Neurological/Psych,"An opioid receptor antagonist used for overdose reversal. Primarily blocks opioid signaling with minimal direct gene effects.",1200
+Allopurinol,18,Other (Gout),"A xanthine oxidase inhibitor for gout. Mild upstream gene involvement in purine metabolism, but not extensive.",700
+Baclofen,18,Neurological/Psych,"A GABA_B receptor agonist used for muscle spasticity. Some synaptic plasticity gene regulation, though not extensive.",250
+Ciprofloxacin,19,Infectious,"A fluoroquinolone antibiotic inhibiting bacterial DNA gyrase. Has minimal direct host gene involvement.",1100
+Minoxidil,20,Cardiovascular,"A vasodilator used for hypertension and hair growth stimulation. Moderately affects gene expression in hair follicles.",950
+Lamivudine,20,Infectious,"An NRTI active against HIV/HBV reverse transcriptase. Limited interplay with host gene regulation.",1000
+Montelukast,21,Respiratory,"A leukotriene receptor antagonist used for asthma/allergies. Modestly changes inflammatory gene expression.",2800
+Bupropion,21,Neurological/Psych,"An antidepressant and smoking-cessation aid. Moderate influence on dopaminergic/noradrenergic gene networks.",1100
+Citalopram,22,Neurological/Psych,"An SSRI antidepressant primarily affecting serotonin reuptake. Leads to modest neurotrophic gene changes over time.",3100
+Dexamethasone,22,Autoimmune,"A potent corticosteroid that modulates a wide array of inflammatory genes.",2200
+Rapamycin (Sirolimus),23,Transplant,"An mTOR inhibitor with broader downstream effects on cell cycle and immune regulation genes.",900
+Tranexamic Acid,23,Hematology,"An antifibrinolytic that inhibits plasminogen activation. Limited direct gene regulatory involvement in humans.",650
+Carbamazepine,24,Neurological/Psych,"An anticonvulsant that modifies neuronal excitability. May show moderate gene expression changes over time.",850
+Selegiline,24,Neurological/Psych,"A selective MAO-B inhibitor for Parkinson’s disease. Mild influence on dopaminergic gene expression.",640
+Propranolol,25,Cardiovascular,"A nonselective β-blocker with broad receptor blockade. Only mild indirect gene modulation in certain tissues.",1400
+Neomycin,25,Infectious,"An aminoglycoside antibiotic interfering with bacterial protein synthesis. Minimal host gene impact.",200
+Ketoconazole,26,Infectious,"An antifungal that inhibits ergosterol synthesis. Can affect human steroidogenesis if used systemically.",300
+Topiramate,27,Neurological/Psych,"A broad-spectrum antiepileptic that influences multiple channels. Moderate neuronal gene expression changes.",520
+Disulfiram,27,Neurological/Psych,"Blocks acetaldehyde dehydrogenase for alcohol dependence. Minimal direct gene-level changes.",120
+Palbociclib,28,Cancer,"A CDK4/6 inhibitor for hormone receptor–positive breast cancer. Moderately impacts cell cycle gene networks.",4700
+Epoetin Alfa (Erythropoietin),28,Hematology,"Stimulates RBC production by interacting with erythroid progenitors. Triggers moderate gene regulation in hematopoiesis.",3200
+Pravastatin,29,Cardiovascular,"A statin (HMG-CoA reductase inhibitor) that lowers LDL. Moderate effects on hepatic lipid-regulating genes.",2000
+Ganciclovir,29,Infectious,"An antiviral against CMV that inhibits viral DNA polymerase. Limited host gene regulation effects.",1700
+Clonidine,30,Cardiovascular,"An α2-adrenergic agonist that lowers blood pressure via central mechanisms. Mild gene expression changes in CNS.",600
+Letrozole,30,Cancer,"An aromatase inhibitor reducing estrogen levels. Causes moderate hormone-regulated gene changes in breast tissue.",950
+Levodopa/Carbidopa,31,Neurological/Psych,"A cornerstone Parkinson’s therapy that replenishes dopamine, leading to moderate changes in dopaminergic neuron gene expression.",1500
+Haloperidol,31,Neurological/Psych,"A typical antipsychotic that strongly blocks dopamine receptors. Induces moderate changes in neuronal gene pathways.",950
+Spironolactone,32,Cardiovascular,"An aldosterone antagonist that affects sodium retention. Influences renal gene expression involved in ion transport.",1850
+Raloxifene,32,Cancer,"A SERM modulating estrogen in bone/breast tissue. Leads to moderate gene-level impact on hormone response.",650
+Paroxetine,33,Neurological/Psych,"An SSRI that influences serotonin reuptake. Affects neurotrophic gene pathways modestly.",2800
+Etanercept,34,Autoimmune,"A TNF-α inhibitor that intercepts cytokine signaling. Moderately or significantly shifts inflammatory gene networks.",3200
+Ritonavir,35,Infectious,"An HIV protease inhibitor that can affect both viral and host metabolism (e.g., CYP450).",4200
+Glatiramer Acetate,35,Autoimmune,"An MS therapy that modulates T-cell responses. Shifts immune gene expression modestly in some patients.",3100
+Indomethacin,36,Pain/Inflammation,"A potent NSAID with COX inhibition. Can have slightly broader inflammatory gene expression effects.",350
+Rosiglitazone,36,Diabetes,"A thiazolidinedione that activates PPARγ. Influences a spectrum of metabolic genes involved in glucose/lipid metabolism.",600
+Donepezil,37,Neurological/Psych,"An acetylcholinesterase inhibitor used in Alzheimer’s disease. Can moderately affect neuronal gene regulation.",4200
+Interferon-alpha,38,Autoimmune,"A cytokine with antiviral/antitumor properties. Activates a broad set of immune response genes.",550
+Interferon-beta,38,Autoimmune,"Used in MS for immunomodulation, triggering multiple downstream immune gene pathways.",700
+Methadone,39,Neurological/Psych,"An opioid analgesic with a long half-life. Chronic use may lead to mild epigenetic or gene expression changes.",550
+Zileuton,39,Respiratory,"A 5-lipoxygenase inhibitor for asthma. Moderately impacts inflammatory gene networks.",200
+Gemcitabine,40,Cancer,"An antimetabolite chemotherapy. Triggers cell cycle checkpoint genes and can induce apoptosis-related pathways.",1200
+Cladribine,40,Cancer,"A purine analog used in cancer and MS. Affects immunologic cells’ DNA, with moderate gene network effects.",500
+Imiquimod,41,Autoimmune,"An immune response modifier for skin lesions. Induces cytokine production and associated gene expression.",330
+Mirtazapine,41,Neurological/Psych,"An antidepressant (alpha-2 antagonist) that may upregulate certain neurotrophic factors.",450
+Vincristine,42,Cancer,"A vinca alkaloid disrupting microtubules, often used in leukemia. Triggers moderate cell cycle gene changes.",900
+Fingolimod,42,Autoimmune,"An MS therapy modulating sphingosine-1-phosphate receptors. Affects immune cell egress and some gene expression.",2800
+Sorafenib,43,Cancer,"A multikinase inhibitor targeting tumor cell proliferation and angiogenesis, altering multiple signaling gene pathways.",3100
+Bosentan,43,Cardiovascular,"An endothelin receptor antagonist for pulmonary hypertension. Moderate gene changes in vascular remodeling.",500
+Paclitaxel,44,Cancer,"A microtubule-stabilizing chemotherapy that activates apoptotic gene cascades. Used in various solid tumors.",2300
+Fluticasone,44,Respiratory,"A corticosteroid for asthma/allergy with strong local anti-inflammatory effects and mild gene-level changes.",3800
+Trastuzumab (Herceptin),45,Cancer,"A monoclonal antibody against HER2+ breast cancer. Inhibits growth signaling with moderate downstream network changes.",6800
+Bevacizumab (Avastin),45,Cancer,"An anti-VEGF monoclonal antibody that suppresses angiogenesis. Significantly alters blood vessel growth gene networks.",6800
+Formoterol,46,Respiratory,"A long-acting β2-agonist for asthma/COPD. Mild interplay with various gene networks in lung tissue.",1300
+Adalimumab (Humira),46,Autoimmune,"A TNF-α inhibitor that leads to notable changes in inflammatory and immune-related genes.",20000
+Bosutinib,47,Cancer,"A tyrosine kinase inhibitor for certain leukemias (BCR-ABL). Moderately shifts signaling gene networks.",750
+Felodipine,47,Cardiovascular,"A calcium channel blocker for hypertension. Has minimal direct gene involvement aside from mild vascular remodeling.",600
+Tolcapone,48,Neurological/Psych,"A COMT inhibitor for Parkinson’s disease. Moderately affects dopaminergic gene regulation pathways.",150
+Ezetimibe,48,Cardiovascular,"Inhibits intestinal cholesterol absorption. Moderately impacts hepatic lipid and LDL receptor gene regulation.",1100
+Capecitabine,49,Cancer,"A prodrug of 5-FU targeting thymidylate synthase. Moderately affects tumor cell cycle gene networks.",1350
+Infliximab,49,Autoimmune,"A chimeric monoclonal antibody against TNF-α. Broad impact on inflammatory gene pathways in autoimmune diseases.",2400
+Echinocandin (Caspofungin),50,Infectious,"An antifungal that disrupts fungal cell wall synthesis (β-glucan). Minimal impact on host gene expression.",400
+Abacavir,50,Infectious,"An NRTI for HIV. Primarily interferes with viral replication, but can also have some host immunologic gene interplay.",750
+Mepolizumab,51,Autoimmune,"An anti–IL-5 antibody lowering eosinophil levels. Moderately changes inflammatory gene expression in asthma.",1800
+Rufinamide,51,Neurological/Psych,"An anticonvulsant used in epilepsy. May lead to mild neuronal gene expression changes over chronic use.",350
+Leflunomide,52,Autoimmune,"A pyrimidine synthesis inhibitor used in rheumatoid arthritis. Moderately affects T-cell gene networks.",650
+Octreotide,52,Endocrine,"A somatostatin analog that reduces various hormone secretions. Mild endocrine gene network changes.",920
+Erlotinib,53,Cancer,"An EGFR tyrosine kinase inhibitor used mainly in NSCLC. Moderately disrupts growth signaling gene cascades.",2200
+Etomidate,53,Anesthesia/Sedation,"An IV anesthetic with minimal direct gene changes, though it can suppress cortisol synthesis short-term.",100
+Amphotericin B,54,Infectious,"A broad-spectrum antifungal forming pores in fungal membranes. Can cause modest inflammatory gene changes in the host.",700
+Linezolid,54,Infectious,"An oxazolidinone antibiotic targeting bacterial ribosomes. Minimal host gene shifts, but may affect mitochondria in rare cases.",550
+Conjugated Estrogens,55,Hormonal,"Hormone replacement therapy with moderate effect on gene expression in estrogen-responsive tissues.",900
+SiRNA-based Therapy (general),55,Gene Therapy,"Short interfering RNA that silences specific mRNA. Potential for moderate off-target or network-level gene influences.",400
+Canagliflozin,56,Diabetes,"An SGLT2 inhibitor promoting glucose excretion in urine. Mild impact on renal glucose-handling gene regulation.",2200
+Sunitinib,57,Cancer,"A multi-target tyrosine kinase inhibitor that blocks tumor angiogenesis and growth pathways. Broad effect on tumor gene networks.",4200
+Natalizumab,57,Autoimmune,"A monoclonal antibody for MS that inhibits leukocyte migration. Significant immune trafficking gene involvement.",3600
+Dapagliflozin,58,Diabetes,"Similar to canagliflozin, an SGLT2 inhibitor for glycemic control. Has modest metabolic gene interplay.",2000
+Abatacept,58,Autoimmune,"A T-cell costimulation blocker used in RA. Moderately alters T-cell activation gene networks.",1700
+Anakinra,59,Autoimmune,"An IL-1 receptor antagonist that curbs inflammatory signals. Moderate effect on cytokine gene cascades.",900
+Oseltamivir,59,Infectious,"A neuraminidase inhibitor for influenza. Primarily blocks viral replication with limited host gene involvement.",800
+Belimumab,60,Autoimmune,"An anti–B lymphocyte stimulator for lupus. Influences B-cell gene networks and autoantibody production.",1200
+Darunavir,60,Infectious,"A protease inhibitor for HIV. Moderately affects viral assembly and can influence host immunologic pathways.",1700
+Abemaciclib,61,Cancer,"A CDK4/6 inhibitor for HR+ breast cancer. Impacts cell cycle gene regulation in tumor cells.",1200
+Peginterferon alfa-2a,61,Autoimmune,"A long-acting interferon with broad immune gene activation, often used in hepatitis or some cancers.",700
+Ticagrelor,62,Cardiovascular,"An antiplatelet that blocks P2Y12 with moderate downstream signaling gene changes in platelets.",2100
+Tofacitinib,62,Autoimmune,"A JAK inhibitor for RA that suppresses multiple cytokine-signaling gene networks.",1600
+Everolimus,63,Transplant,"Another mTOR inhibitor that affects cell proliferation and immune pathways at the gene level.",1400
+Ivabradine,63,Cardiovascular,"Selectively inhibits the cardiac ‘funny’ current (HCN channels) in the SA node. Limited gene regulation.",900
+Atezolizumab,64,Cancer,"An anti–PD-L1 immunotherapy enabling T-cells to attack tumors. Broad T-cell activation gene changes.",3500
+Alirocumab,64,Cardiovascular,"A PCSK9 inhibitor improving LDL receptor recycling. Moderately influences lipid and cholesterol gene regulation.",2200
+Ruxolitinib,65,Autoimmune,"A JAK1/2 inhibitor for myelofibrosis. Broadly affects hematopoietic and inflammatory gene networks.",1100
+Ustekinumab,65,Autoimmune,"Targets IL-12/IL-23 pathways in psoriasis/Crohn’s. Moderately to significantly shifts T-cell gene regulation.",2600
+Belatacept,66,Transplant,"Blocks CD80/86 binding to CD28, reducing T-cell activation. Moderate immune-related gene expression changes.",550
+Sofosbuvir,66,Infectious,"An HCV RNA-dependent RNA polymerase inhibitor with limited host GRN effects. Primarily viral replication blockade.",3200
+Daclizumab (withdrawn),67,Autoimmune,"An anti–IL-2 receptor mAb affecting T-cells. Showed moderate changes in immune gene networks but withdrawn from market.",300
+Tacrolimus (FK506),67,Transplant,"A calcineurin inhibitor that broadly impacts T-cell gene transcription, reducing IL-2 and other cytokines.",2300
+Dolutegravir,68,Infectious,"An HIV integrase inhibitor preventing viral DNA integration. Significant effect on viral replication, limited host effect.",1800
+Nivolumab,68,Cancer,"An anti–PD-1 immunotherapy enabling T-cells to target tumors. Causes extensive T-cell gene activation changes.",5400
+Apremilast,69,Autoimmune,"A PDE4 inhibitor for psoriasis/psoriatic arthritis. Moderately alters inflammatory and immune gene expression.",1900
+Certolizumab Pegol,69,Autoimmune,"A pegylated anti–TNF-α fragment. Downregulates inflammatory gene pathways in rheumatoid arthritis and Crohn’s.",1000
+Ixekizumab,70,Autoimmune,"An anti–IL-17A monoclonal antibody with significant effects on Th17 gene networks in psoriasis.",1500
+Crizotinib,70,Cancer,"An ALK inhibitor for NSCLC. Moderately broad oncogenic signaling disruption at the gene level.",2600
+Golimumab,71,Autoimmune,"Another anti–TNF-α monoclonal that reduces inflammation. Broad changes in cytokine gene expression.",1300
+Denosumab,71,Autoimmune (bone),"A RANKL inhibitor used for osteoporosis. Affects osteoclast differentiation gene pathways.",1700
+Pembrolizumab,72,Cancer,"An anti–PD-1 checkpoint inhibitor. Enables T-cell mediated tumor destruction with extensive gene activation.",6500
+Durvalumab,72,Cancer,"An anti–PD-L1 immunotherapy. Broad reprogramming of immune gene networks in tumor microenvironments.",4100
+Eculizumab,73,Autoimmune,"A complement inhibitor blocking C5. Alters gene expression involved in complement-driven inflammation.",4200
+Alemtuzumab,73,Autoimmune,"An anti-CD52 mAb causing lymphocyte depletion. Triggers profound immune reconstitution gene changes.",700
+Omalizumab,74,Allergy/Respiratory,"An anti-IgE monoclonal for severe asthma/allergies. Moderates allergic inflammatory gene pathways.",1100
+Siponimod,74,Autoimmune,"An S1P receptor modulator for MS, affecting immune cell trafficking and associated gene expression.",900
+Venetoclax,75,Cancer,"A BCL-2 inhibitor used in CLL. Triggers apoptosis by altering cell death gene networks.",1500
+Blinatumomab,75,Cancer,"A BiTE immunotherapy that redirects T-cells to tumor. Broadly activates T-cell gene regulatory networks.",450
+Bortezomib,76,Cancer,"A proteasome inhibitor causing protein accumulation in tumor cells. Leads to wide stress-response gene activation.",1000
+Ixazomib,76,Cancer,"An oral proteasome inhibitor with similar stress/apoptosis gene modulation as bortezomib.",1200
+Panobinostat,77,Cancer,"An HDAC inhibitor causing significant epigenetic changes. Affects multiple gene pathways in tumor cells.",450
+Vorinostat (SAHA),77,Cancer,"Another HDAC inhibitor altering acetylation patterns. Can broadly shift cancer cell gene expression.",470
+Pembrolizumab/Ipilimumab Combo,78,Cancer,"Dual checkpoint blockade targeting PD-1 and CTLA-4. Induces extensive T-cell activation and gene reprogramming.",7200
+CAR T-Cell Therapy (general),78,Cancer,"Engineered T-cells that specifically attack tumors. Involves major T-cell gene expression rewiring.",2000
+Lenvatinib,79,Cancer,"A multikinase inhibitor with anti-angiogenic and anti-proliferative actions. Broad effect on tumor signaling genes.",1400
+Lenalidomide,79,Cancer,"An immunomodulatory drug (IMiD) that affects cytokine production and cell cycle genes.",8300
+Olaparib,80,Cancer,"A PARP inhibitor affecting DNA repair pathways. Induces synthetic lethality in BRCA-mutated tumor cells.",2300
+Talazoparib,80,Cancer,"Another PARP inhibitor leading to extensive DNA damage response gene activation in cancer cells.",700
+Daclatasvir,81,Infectious,"An NS5A inhibitor for HCV. Moderately alters viral replication genes with limited host gene effect.",1300
+Clofarabine,81,Cancer,"A purine nucleoside antimetabolite that disrupts DNA synthesis. Triggers apoptosis gene pathways in leukemia cells.",600
+Avelumab,82,Cancer,"An anti–PD-L1 immunotherapy that can reinvigorate T-cells. Broad T-cell gene reactivation in tumor sites.",3000
+Lenacapavir,82,Infectious,"An HIV capsid inhibitor. Moderate synergy with host antiviral pathways, though mainly targets viral assembly.",900
+Tisagenlecleucel,83,Cancer,"A CAR T-cell therapy for leukemia. Involves extensive T-cell gene engineering and reprogramming.",1500
+Axicabtagene Ciloleucel,83,Cancer,"Another CAR T therapy with broad immune gene activation. Used mainly for certain B-cell lymphomas.",1300
+Vandetanib,84,Cancer,"A multi-kinase inhibitor (RET, EGFR, VEGFR) that disrupts multiple oncogenic signaling gene cascades.",1000
+Upadacitinib,84,Autoimmune,"A JAK1-selective inhibitor for RA. Broadly suppresses cytokine-signaling gene networks.",2700
+Alpelisib,85,Cancer,"A PI3Kα inhibitor for certain breast cancers. Widely impacts metabolic and proliferation-related genes.",3800
+Duvelisib,85,Cancer,"A PI3K-δ/γ inhibitor for hematologic malignancies. Alters B/T-cell receptor gene pathways.",600
+Polatuzumab Vedotin,86,Cancer,"An anti-CD79b ADC for lymphoma delivering cytotoxic drugs. Induces tumor cell stress and apoptosis gene responses.",420
+Brentuximab Vedotin,86,Cancer,"An anti-CD30 ADC triggering significant cytotoxic/apoptotic gene cascades in Hodgkin’s lymphoma cells.",760
+Zanubrutinib,87,Cancer,"A BTK inhibitor in B-cell malignancies. Broadly disrupts B-cell receptor signaling gene networks.",980
+Sotrovimab,87,Infectious,"A monoclonal antibody for COVID-19. Primarily neutralizes the virus with limited host gene modulation.",1100
+Lutetium Lu 177 Dotatate,88,Cancer,"A radioligand therapy for neuroendocrine tumors. Targets somatostatin receptors, causing DNA damage gene activation in cancer cells.",1350
+Mepolizumab/Benralizumab Combo,88,Autoimmune,"Dual blockade of IL-5 and its receptor. Broadly suppresses eosinophil-driven gene pathways in severe asthma.",1200
+Tafasitamab,89,Cancer,"An anti-CD19 mAb used in lymphoma, working with immune effectors. Moderately reprograms B-cell gene expression.",900
+Emicizumab,89,Hematology,"A bispecific antibody bridging factors IXa and X in hemophilia A. Limited direct gene changes but complex protein-level intervention.",1500
+Avapritinib,90,Cancer,"A KIT/PDGFRA inhibitor for GIST. Broadly blocks oncogenic signaling gene pathways in tumor cells.",650
+Selpercatinib,90,Cancer,"A RET inhibitor for thyroid/lung cancers. Disrupts multiple downstream proliferation and survival gene networks.",800
+Brexucabtagene Autoleucel,91,Cancer,"A CAR T-cell therapy for mantle cell lymphoma. Profound T-cell gene reprogramming and anti-tumor immune effects.",2300
+Onasemnogene Abeparvovec (Zolgensma),91,Gene Therapy,"A gene replacement therapy for SMA, delivering a functional SMN1 gene. Can have broad developmental gene impacts in motor neurons.",2000
+Aducanumab,92,Neurological/Psych,"A monoclonal antibody targeting β-amyloid in Alzheimer’s disease. Neuroinflammatory gene changes are still an area of ongoing research.",1400
+Teprotumumab,92,Autoimmune,"An IGF-1R inhibitor for thyroid eye disease. Can reshape fibroblast and immune gene networks in orbital tissue.",500
+Cas9-based Gene Editing Therapy,93,Gene Therapy,"Utilizes CRISPR-Cas9 to edit specific genomic sites. Highly targeted but can have wide-ranging network effects if multiple genes are involved.",3100
+Exa-cel (Exagamglogene Autotemcel),93,Gene Therapy,"A CRISPR-based therapy for beta thalassemia/SCD. Broad hematopoietic gene implications when editing hemoglobin genes.",1800
+Liso-cel (Lisocabtagene Maraleucel),94,Cancer,"A defined-composition CAR T-cell product. Induces extensive T-cell gene expression changes directed at tumor cells.",1400
+Patisiran,94,Gene Therapy,"An siRNA therapy for hereditary ATTR amyloidosis. Well-targeted but can lead to hepatic gene regulation off-target effects.",1200
+AAV-based Retinal Gene Therapy (generic),95,Gene Therapy,"Delivers a functional gene to retinal cells. Potential for broad local gene expression shifts in photoreceptor maintenance.",300
+Eteplirsen,95,Gene Therapy,"An exon-skipping therapy for Duchenne muscular dystrophy. Modifies splicing and moderately impacts muscular gene expression.",500
+Tocilizumab,96,Autoimmune,"An IL-6 receptor antibody used in RA. Broadly suppresses inflammatory gene pathways.",3400
+Leronlimab,96,Infectious,"A CCR5 antagonist that can block HIV entry and modulate certain immune cell migration genes.",310
+Luxturna (Voretigene Neparvovec),97,Gene Therapy,"A gene replacement therapy for RPE65-related blindness. Primarily local retinal changes with potential broad impact on visual cycle genes.",1400
+T-DXd (Fam-Trastuzumab Deruxtecan),97,Cancer,"A HER2-targeted antibody–drug conjugate. Highly potent and triggers DNA damage response gene networks in tumor cells.",2800
+Avelumab/Bintrafusp Alfa Combo,98,Cancer,"A dual immunotherapy combining PD-L1 blockade and TGF-β trap. Broadly reprograms immune and stromal gene networks in tumors.",1200
+Muromonab-CD3 (historical),98,Transplant,"A monoclonal antibody targeting CD3 on T-cells. Historically caused profound immune gene activation/depletion phases.",300
+Hematopoietic Stem Cell Transplant,99,Transplant,"Replaces the entire immune/hematopoietic system. Involves massive gene regulatory reprogramming upon engraftment.",3000
+CAR-NK Cell Therapy (general),99,Cancer,"Engineered NK cells that target tumor antigens. Induces complex immune gene networks for anti-tumor activity.",2200
+HSCT + Gene Editing Combo,100,Gene Therapy,"Full bone marrow replacement combined with ex vivo gene modification. Extremely broad and durable GRN changes.",3600
+Multi-Target HIV ART Cocktail,100,Infectious,"A combination therapy blocking HIV at multiple life-cycle steps. Large host immune/inflammatory GRN shifts with sustained use.",6700
+Acarbose,6,Diabetes,"An α-glucosidase inhibitor that slows carbohydrate absorption. Relatively direct enzymatic action, minimal gene-level interplay.",370
+Aceclofenac,6,Pain/Inflammation,"An NSAID with COX-inhibiting properties. Generally has limited systemic gene regulation changes.",180
+Benazepril,7,Cardiovascular,"An ACE inhibitor reducing angiotensin II levels. Mild shifts in renin-angiotensin gene expression.",600
+Pioglitazone,36,Diabetes,"A thiazolidinedione similar to rosiglitazone; activates PPARγ to modulate metabolic gene networks.",600
+Famotidine,10,Gastrointestinal,"An H2 receptor antagonist that reduces gastric acid production. Minimal direct gene regulatory involvement.",420
+Ceftriaxone,14,Infectious,"A broad-spectrum β-lactam antibiotic interfering with bacterial cell wall synthesis. Little host gene impact.",1000
+Lopinavir,35,Infectious,"A protease inhibitor often used in combination therapy for HIV. Moderate synergy with host immune function genes.",850
+Tetracycline,8,Infectious,"Blocks bacterial ribosomal sites to inhibit protein synthesis. Minimal direct host gene effect.",120
+Levetiracetam,24,Neurological/Psych,"An anticonvulsant acting on SV2A proteins. May exhibit mild gene expression shifts during long-term use.",210
+Buspirone,16,Neurological/Psych,"An anxiolytic modulating serotonin receptors. Usually mild downstream gene changes in neuronal pathways.",140
+Hydroxychloroquine,18,Autoimmune,"An antimalarial also used in autoimmune conditions (e.g., lupus). Moderately alters inflammatory gene expression.",720
+Salmeterol,20,Respiratory,"A long-acting β2-agonist for asthma/COPD. Mild gene expression changes in airway smooth muscle cells.",1250
+Secukinumab,70,Autoimmune,"Targets IL-17A, reducing inflammation in psoriasis. Significant T-cell/inflammatory gene modulation.",1600
+Insulin Glargine,7,Diabetes,"A long-acting insulin analog with a similar metabolic gene impact as regular insulin.",4200
+Torsemide,8,Cardiovascular,"A loop diuretic similar to furosemide, acts on NKCC2 in the kidney. Limited direct gene involvement.",140
+Aprepitant,22,Other (Antiemetic),"A neurokinin-1 receptor antagonist reducing nausea/vomiting. Mild gene involvement in the vomiting reflex pathways.",480
+Atenolol,25,Cardiovascular,"A β1-selective blocker lowering heart rate/BP. Mild changes in cardiac gene expression over time.",1100
+Calcitonin (Salmon),15,Endocrine,"A synthetic calcitonin for hypercalcemia/osteoporosis. Minimal direct gene involvement in bone remodeling.",550
+Desmopressin,19,Endocrine,"A synthetic ADH analog. Mild changes in renal water reabsorption genes, mainly action at V2 receptors.",280
+Fluphenazine,31,Neurological/Psych,"A typical antipsychotic that blocks dopamine receptors. Moderate shifts in neuronal gene expression with long-term use.",150
+Glibenclamide (Glyburide),17,Diabetes,"A sulfonylurea stimulating insulin release in pancreatic β-cells. Has modest gene involvement in insulin secretion pathways.",620
+Hydrochlorothiazide,8,Cardiovascular,"A thiazide diuretic acting on the distal tubule. Mild transporter gene expression changes in kidneys over time.",300
+Isotretinoin,28,Dermatology,"A retinoid for severe acne. Influences gene expression in sebaceous glands and skin differentiation.",900
+Ketorolac,6,Pain/Inflammation,"A potent NSAID mostly used for short-term pain relief. Minimal direct gene regulation changes.",110
+Lactulose,5,Gastrointestinal,"An osmotic laxative for constipation or hepatic encephalopathy. Minimal gene-level mechanism.",210
+Meclizine,5,Neurological/Psych,"An antihistamine for motion sickness/vertigo. Minimal direct gene regulation.",180
+Methyldopa,20,Cardiovascular,"A centrally acting α2-agonist lowering BP. Mild changes in CNS gene expression over chronic therapy.",160
+Nitrofurantoin,15,Infectious,"An antibiotic mainly for UTIs. Minimal systemic gene-level impact.",250
+Phenytoin,26,Neurological/Psych,"An anticonvulsant that modulates sodium channels. Moderate neuronal gene expression effects over prolonged use.",360
+Procainamide,16,Cardiovascular,"A Class IA antiarrhythmic blocking sodium channels. Little direct gene regulation beyond conduction changes.",450
+Ribavirin,33,Infectious,"A broad-spectrum antiviral that can boost interferon-stimulated genes. Moderate host gene involvement.",860
+Sitagliptin,12,Diabetes,"A DPP-4 inhibitor that raises incretin levels. Mild gene-level changes in insulin secretion pathways.",1600
+Sulfasalazine,30,Autoimmune,"Used for IBD/RA. Moderately suppresses inflammatory gene expression in gut or joints.",600
+Terbinafine,9,Infectious,"An antifungal inhibiting squalene epoxidase. Minimal broader host gene involvement.",320
+Theophylline,26,Respiratory,"A methylxanthine that increases cAMP. Modest gene expression changes in airway smooth muscle/inflammatory cells.",700
+Timolol,24,Cardiovascular,"A nonselective β-blocker, often used in glaucoma. Mild gene changes in ocular or cardiac tissues.",320
+Valacyclovir,9,Infectious,"Prodrug of acyclovir. Inhibits viral DNA polymerase with minimal host gene involvement.",780
+Zidovudine (AZT),35,Infectious,"An NRTI for HIV. Moderate interplay with host immune cell gene expression over long-term therapy.",650
+Zolpidem,10,Neurological/Psych,"A non-benzodiazepine hypnotic acting on GABA receptors. Minimal direct gene regulation, primarily receptor-level.",1900
+Clozapine,40,Neurological/Psych,"An atypical antipsychotic with strong receptor cross-talk. Can cause some immune system shifts and gene expression changes.",1200
+Alefacept (withdrawn),50,Autoimmune,"An immunosuppressive fusion protein that targeted T-cells, causing moderate gene expression changes in immune pathways.",220
+Iloprost,18,Cardiovascular,"A prostacyclin analog for PAH. Mildly affects vascular remodeling gene expression.",280
+Milrinone,8,Cardiovascular,"A PDE3 inhibitor improving cardiac contractility. Modest cAMP-related gene changes in heart failure.",110
+Norethindrone,9,Hormonal,"A synthetic progestin in contraceptive formulations. Mild hormone-responsive gene regulation.",400
+Tolterodine,12,Neurological/Psych (Urinary antimuscarinic),"Antimuscarinic for overactive bladder. Minimal direct gene effects but changes bladder smooth muscle signaling.",600
+Travoprost,15,Eye (Glaucoma),"A prostaglandin analog reducing intraocular pressure. Mild ocular gene expression changes.",350
+Ursodeoxycholic Acid,10,Gastrointestinal,"A bile acid therapy for certain cholestatic diseases. Minimal direct gene regulation mechanism.",290
+Sevelamer,5,Renal,"A phosphate binder in CKD. Minimal direct gene involvement.",700
+Nalmefene,17,Neurological/Psych,"An opioid receptor modulator for alcohol dependence. Minimal direct gene-level effect.",230
+Moclobemide,20,Neurological/Psych,"A reversible MAO-A inhibitor for depression. Moderate neurotransmitter-related gene expression changes.",280
+Midazolam,8,Anesthesia/Sedation,"A short-acting benzodiazepine. Primarily modulates GABA receptors, minimal direct gene regulation.",180
+Moxifloxacin,19,Infectious,"A fluoroquinolone antibiotic blocking bacterial DNA gyrase. Minimal host gene involvement.",500
+Orlistat,6,Metabolic (Weight loss),"A pancreatic lipase inhibitor for obesity management. Limited gene-level action, mostly enzymatic blockade.",700
+Phenelzine,25,Neurological/Psych,"A nonselective MAO inhibitor affecting monoamine catabolism. Moderate neural gene changes over time.",180
+Rasagiline,24,Neurological/Psych,"A selective MAO-B inhibitor in Parkinson’s disease. Mild dopaminergic gene expression changes.",300
+Succinylcholine,5,Anesthesia/Sedation,"A depolarizing neuromuscular blocker used during intubation. Minimal gene involvement, rapid receptor-based action.",130
+Varenicline,22,Neurological/Psych,"A partial nicotine agonist for smoking cessation. Modestly impacts dopaminergic gene networks in addiction pathways.",540
+Pregabalin,27,Neurological/Psych,"An anticonvulsant/neuropathic pain agent binding α2δ subunit of calcium channels. Mild gene expression changes.",1600
+Ranolazine,28,Cardiovascular,"An antianginal inhibiting the late Na+ current. Moderately affects cardiac metabolic gene pathways.",1300
+Anastrozole,30,Cancer,"An aromatase inhibitor lowering estrogen levels. Moderate hormonal gene regulation in breast tissue.",1700
+Bicalutamide,33,Cancer,"A nonsteroidal anti-androgen. Alters transcription of androgen-responsive genes in prostate tissue.",2200
+Carbidopa/Entacapone/Levodopa,34,Neurological/Psych,"A Parkinson’s combination therapy. Affects dopaminergic signaling with some synergy in gene expression shifts.",900
+Elbasvir/Grazoprevir,40,Infectious,"An HCV combination that inhibits viral replication. Limited host GRN changes, mostly antiviral effect.",120
+Flucytosine,16,Infectious,"An antifungal that interferes with fungal DNA synthesis. Minimal direct human gene involvement.",125
+Guselkumab,60,Autoimmune,"An anti–IL-23 mAb for psoriasis. Broadly modifies T-cell and inflammatory gene pathways.",2400
+Liraglutide,35,Diabetes,"A GLP-1 agonist for glycemic control. Has modest metabolic gene regulation effects, especially in β-cells.",3600
+Macitentan,33,Cardiovascular,"An endothelin receptor antagonist for PAH. Moderate changes in genes related to vascular remodeling.",800
+Mifepristone,37,Hormonal,"A progesterone receptor antagonist used in various indications. Moderately affects hormone-responsive gene expression.",850
+Mycophenolate Mofetil,45,Transplant,"Inhibits inosine monophosphate dehydrogenase in T/B-cells. Broad immune gene suppression.",1500
+Pirfenidone,45,Pulmonary/Fibrosis,"An antifibrotic agent that modulates TGF-β and other fibrotic gene pathways in the lung.",1100
+Proguanil,25,Infectious (Antimalarial),"Disrupts folate pathways in parasites. Minimal direct host gene involvement.",150
+Quetiapine,32,Neurological/Psych,"An atypical antipsychotic with broad receptor binding. Mild to moderate gene expression changes in neurons.",2800
+Ribociclib,50,Cancer,"A CDK4/6 inhibitor for HR+ breast cancer. Moderately affects cell cycle gene expression in tumor cells.",2500
+Rifaximin,5,Infectious,"A non-absorbable antibiotic for GI conditions. Minimal host gene effect, mainly reduces gut bacteria.",700
+Risedronate,9,Bone/Metabolic,"A bisphosphonate for osteoporosis. Minimal direct gene regulation, mostly affects osteoclast function.",480
+Rocuronium,5,Anesthesia/Sedation,"A non-depolarizing neuromuscular blocker acting at nicotinic receptors. Minimal gene-level action.",190
+Sacubitril/Valsartan,35,Cardiovascular,"An ARNI that inhibits neprilysin and blocks angiotensin II. Moderately affects natriuretic peptide system genes.",4600
+Sucralfate,5,Gastrointestinal,"Forms a protective barrier on ulcers. Essentially no direct gene-level mechanism.",220
+Tamsulosin,8,Urologic,"An α1A-adrenergic antagonist for BPH. Minimal direct gene involvement aside from smooth muscle relaxation.",550
+Trabectedin,55,Cancer,"An antitumor agent from marine sources binding the DNA minor groove. Moderate gene stress responses in tumor cells.",850
+Triamcinolone,22,Autoimmune,"A corticosteroid used in multiple inflammatory conditions. Moderate anti-inflammatory gene regulation changes.",900
+Zafirlukast,20,Respiratory,"A leukotriene receptor antagonist reducing inflammation in asthma. Mild gene expression changes.",370
+Alprostadil,10,Cardiovascular (Vasodilator),"A synthetic PGE1 used for ED or ductus arteriosus maintenance. Limited direct gene regulation in short-term use.",360
+Lomustine,42,Cancer,"An alkylating agent for brain tumors. Induces DNA damage and cell cycle gene responses.",300
+Ifosfamide,43,Cancer,"An alkylating agent causing DNA cross-links and cell death. Significant DNA damage gene activation in tumor cells.",550
+Prochlorperazine,28,Neurological/Psych (Antiemetic),"Blocks dopamine receptors. Mild gene expression changes in chemoreceptor trigger zone over time.",530
+Fosaprepitant,22,Other (Antiemetic),"A neurokinin-1 receptor antagonist prodrug. Mild gene involvement in antiemetic pathways.",210
+Tigecycline,15,Infectious,"A glycylcycline antibiotic binding the 30S ribosome. Minimal human gene effects.",115
+Busulfan,44,Cancer,"An alkylating agent for leukemia/BMT conditioning. Broad DNA damage gene activation.",640
+Cladribine (for MS),40,Autoimmune,"An antimetabolite that selectively reduces lymphocytes. Triggers apoptosis gene networks in immune cells.",1150
+Alemtuzumab + Immunosuppressants Combo,74,Autoimmune,"Combines alemtuzumab’s T/B-cell depletion with other immunosuppressants. Leads to wide immune reconstitution gene changes.",600
+Basiliximab,35,Transplant,"An IL-2 receptor α–blocking antibody. Moderates T-cell activation gene networks.",420
+Edaravone,10,Neurological/Psych (ALS),"A free radical scavenger shown to slow ALS progression. Minimal direct gene regulation.",120
+Fostemsavir,50,Infectious (HIV),"An HIV attachment inhibitor preventing viral entry. Moderately affects viral entry gene processes, limited host effect.",910
+Remdesivir,45,Infectious,"An antiviral for RNA viruses (e.g., SARS-CoV-2). Can induce moderate interferon-stimulated gene activation in host.",3300
+Teicoplanin,14,Infectious,"A glycopeptide antibiotic like vancomycin. Minimal host gene changes, targets bacterial cell wall synthesis.",200
+Upamostat (WX-671),55,Cancer,"A serine protease inhibitor under investigation for tumors. May alter tumor microenvironment gene pathways.",110
+Asparaginase,38,Cancer,"Depletes asparagine to starve tumor cells, inducing moderate stress response genes in leukemic cells.",600
+Degarelix,25,Hormonal (Cancer),"A GnRH receptor antagonist used in advanced prostate cancer. Modest hormone-regulated gene changes.",520
+Elotuzumab,50,Cancer,"A monoclonal antibody targeting SLAMF7 in multiple myeloma. Affects immune cell–tumor cell interaction gene networks.",840
+Ibrexafungerp,16,Infectious,"A “fungerp” antifungal disrupting fungal cell wall. Minimal host gene involvement.",160
+Olokizumab,60,Autoimmune,"An anti–IL-6 immunotherapy. Broad suppression of inflammatory gene networks.",1400
+Pomalidomide,76,Cancer,"An immunomodulatory agent (IMiD) affecting E3 ubiquitin ligase. Wide-ranging gene regulatory effects in tumor and immune cells.",310
+Rilonacept,55,Autoimmune,"An IL-1 trap that reduces inflammatory signals. Moderately alters downstream cytokine gene expression.",600
+Satralizumab,65,Autoimmune,"An IL-6 receptor inhibitor for NMOSD. Moderate immune gene involvement, limiting inflammation in CNS.",500
+Viltolarsen,40,Gene Therapy (DMD),"An exon-skipping therapy for Duchenne muscular dystrophy. Modest shifts in muscular gene expression to restore dystrophin.",200
+Ziconotide,20,Pain/Inflammation,"A synthetic peptide blocking N-type Ca²⁺ channels. Minimal direct gene regulatory effects, though it alters neurotransmission.",130
+Multi-Target Oncolytic Virus Therapy,100,Cancer,"Engineered viruses that selectively replicate in tumors, activating broad immune gene responses and tumor lysis.",270
