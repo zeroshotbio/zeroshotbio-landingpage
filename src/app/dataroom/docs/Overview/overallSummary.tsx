@@ -1,11 +1,11 @@
 'use client';
 import React from 'react';
 
-const ExecutiveSummary: React.FC = () => {
+const OverallSummary: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-semibold text-xl text-gray-800 mb-4">
-        Executive Summary
+        Overall Summary
       </h2>
 
       <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
@@ -116,4 +116,4 @@ const ExecutiveSummary: React.FC = () => {
   );
 };
 
-export default ExecutiveSummary;
+export default OverallSummary;

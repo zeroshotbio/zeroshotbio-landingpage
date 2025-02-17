@@ -9,7 +9,7 @@ import Image from 'next/image';
 
 // Top-level documentation sections
 import Introduction from './docs/Overview/introduction';
-import ExecutiveSummary from './docs/Overview/executiveSummary';
+import OverallSummary from './docs/Overview/overallSummary';
 
 // Problem
 import DrugDevelopmentPipeline from './docs/Problem/drugDevelopmentPipeline';
@@ -31,7 +31,7 @@ import BiologistPersepctive from './docs/Technology/biologistPerspective';
 // Business Model
 import BusinessModel from './docs/Business_Model/businessModel';
 
-//Market Opportunity
+// Market Opportunity
 import MarketOpportunity from './docs/Market_Opportunity/marketOpportunity';
 import Customers from './docs/Market_Opportunity/customers';
 
@@ -75,9 +75,9 @@ const categories: Category[] = [
         component: Introduction,
       },
       {
-        id: 'executive-summary',
-        title: 'Executive Summary & Pitch Deck',
-        component: ExecutiveSummary,
+        id: 'ovearll-summary',
+        title: 'Overall Summary',
+        component: OverallSummary,
       },
     ],
   },
@@ -222,7 +222,7 @@ const DataRoomDocumentation: React.FC = () => {
   }, [selectedCategoryId]);
 
   const handleUnlock = () => {
-    const CORRECT_PASSWORD = 'zebrafish';
+    const CORRECT_PASSWORD = 'z';
     if (typedPassword === CORRECT_PASSWORD) {
       setAccessGranted(true);
     } else {
@@ -390,9 +390,8 @@ const DataRoomDocumentation: React.FC = () => {
               </h2>
             </div>
 
-            {/* Main content (Remove narrower max-width, keep the same left margin) */}
-            <div className="px-4 sm:px-0 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-none">
-              {/* No "max-w-2xl" or "max-w-3xl" here, letting content expand fully */}
+            {/* Main content with text limited to 80% width */}
+            <div className="px-4 sm:px-0 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[80%] mx-auto">
               {renderContent()}
 
               {nextSubSection && (

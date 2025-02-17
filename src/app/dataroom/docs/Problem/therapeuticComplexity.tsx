@@ -25,7 +25,7 @@ const TherapeuticComplexity: React.FC = () => {
         <div>
           <iframe
             src="/d3_complexity_heatmap.html"
-            className="w-full h-[600px] border border-gray-300"
+            className="w-full h-[910px] border border-gray-300"
             title="D3 Treemap"
           ></iframe>
         </div>
