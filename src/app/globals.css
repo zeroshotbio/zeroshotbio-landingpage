@@ -130,6 +130,10 @@ body {
   color: #333333;
 }
 
+.text-gray-black {
+  color: #111111;
+}
+
 /* Custom text size utilities */
 
 .text-xxxsm {

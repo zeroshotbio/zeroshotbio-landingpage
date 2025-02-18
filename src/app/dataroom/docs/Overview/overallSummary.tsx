@@ -1,116 +1,75 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 const OverallSummary: React.FC = () => {
   return (
     <>
-      <h2 className="roboto-slab-semibold text-xl text-gray-800 mb-4">
-        Overall Summary
+      <h2 className="roboto-slab-semibold text-xl text-black mb-8">
+        Bird’s-Eye View
       </h2>
 
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        <strong>Zeroshot Bio</strong> is at the forefront of a paradigm shift in drug development, focused on building 
-        <em> advanced biological foundation models</em> that bring unprecedented clarity to the preclinical development 
-        of complex therapeutic candidates. Our approach leverages the unique strengths of zebrafish as a scalable, 
-        high-fidelity model system, in combination with cutting-edge single-cell transcriptomics and state-of-the-art 
-        AI techniques. The result is an integrated platform that delivers deep insights into gene-network interactions, 
-        enabling pharmaceutical companies to detect potential toxicities and efficacy signals early in the drug 
-        development process—an area where traditional animal models and classical screening methods have 
-        consistently fallen short.
+
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        <strong>The Problem</strong> is straightforward: early-stage trials fail too often, and the repercussions 
+        ripple throughout the entire drug development pipeline. Many promising therapies never see the light of day 
+        because we lack the solid preclinical data needed to steer critical go/no-go decisions. As a result, R&amp;D 
+        budgets balloon, timelines stretch, and potential life-saving treatments never make it to market.
       </p>
 
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        Our pitch deck, included in this data room, provides a concise overview of the problems we address. 
-        It details the alarming decline in Phase I success rates over the past two decades, underscoring how 
-        the complexity of modern therapeutics creates a bottleneck in conventional pipelines. Many high-impact, 
-        network-driven therapies never reach clinical testing due to insufficient early-stage confidence—an issue 
-        that costs the industry billions in wasted investment and missed opportunities. 
-        <strong> Zeroshot Bio’s</strong> innovative approach overcomes these challenges by generating massive, 
-        AI-ready datasets from zebrafish experiments, training advanced transformer-based models (our 
-        <strong> tsGPT engine</strong>), and delivering actionable, translatable insights for human therapeutic outcomes.
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        <strong>Our Vision</strong> is to revolutionize how drugs are vetted by using 
+        <em> scalable zebrafish assays integrated with advanced single-cell analytics</em>. We aim to deliver 
+        actionable insights before a molecule ever reaches a patient, allowing scientists to zero in on the most 
+        promising leads while cutting the staggering costs tied to late-stage failures. This proactive approach 
+        builds confidence and efficiency at every step of the pipeline.
       </p>
 
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        We have a targeted <strong>market opportunity</strong> that focuses on mid-tier biotechs and CROs needing 
-        external expertise to bridge the translational gap between in vivo models and human clinical outcomes. Our early 
-        traction strategy involves robust pilot programs and initial customer engagements, laying the groundwork 
-        for deeper partnerships with large pharmaceutical companies. The ultimate goal is clear: provide a new level 
-        of preclinical confidence that accelerates development timelines, reduces late-stage failures, and opens up 
-        previously unexplored therapeutic avenues.
+      <div className="w-full mb-8">
+        <Image
+          src="/images/dataroom_images/overall_fundamental_flow.png"
+          alt="Overall Flow Graphic"
+          width={1000}
+          height={600}
+          className="object-contain"
+        />
+      </div>
+
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        <strong>Bio Foundation Models</strong> power this transformation. We’ve developed advanced 
+        transformer-based architectures, trained on extensive single-cell datasets, to detect subtle gene-level 
+        risks and opportunities that conventional screens tend to overlook. By merging computational muscle with 
+        rigorous biological data, we deliver precise, nuanced predictions that drive smarter, faster decisions.
       </p>
 
-      <h3 className="roboto-slab-semibold text-lg text-gray-800 mt-6 mb-2">
-        Business Overview – An Integrated Approach
-      </h3>
-
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        By uniting market opportunity, business model, and competitive landscape, Zeroshot Bio reveals a coherent 
-        ecosystem centered around a fundamental notion: <em>massive, high-quality single-cell data in a scalable 
-        vertebrate model</em>, continuously feeding into a sophisticated AI foundation model. We begin by generating 
-        robust zebrafish data in a dedicated wet lab, ensuring each new experiment not only benefits our clients 
-        but also enriches the underlying <strong>scGPT</strong> architecture. Over time, we accumulate a unique 
-        repository of in vivo single-cell states—healthy, diseased, and drug-perturbed across multiple life stages. 
-        This consistency and scale far surpass typical public datasets, and forms the critical training resource 
-        powering our next-generation AI.
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        <strong>Biologist Perspective</strong> ensures our AI is far more than a black box. We connect mechanistic 
+        insights to real-world experiments, illuminating why certain candidates might fail or excel. This loop 
+        between lab validation and AI outputs builds trust in our results, enabling development teams to act with 
+        greater conviction and clarity.
       </p>
 
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        <strong>Monetization</strong> follows multiple streams: direct payment for custom experiments, subscriptions 
-        to an inference platform, enterprise or pay-per-query APIs, and milestone-based collaborations with major 
-        pharma players. From quick-turn toxicity screening to multi-year pipeline support, each engagement deepens 
-        the model’s capabilities and broadens our data advantage. Unlike most zebrafish CROs, we don’t simply 
-        deliver morphological readouts—we combine them with comprehensive single-cell transcriptomics, creating a 
-        self-improving data asset at the core of our business.
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        Our <strong>Business Model</strong> blends high-value experimental services, data subscriptions, and 
+        milestone-based collaborations with pharma. By offering rapid zebrafish screens paired with single-cell 
+        readouts, we cater to diverse R&amp;D objectives—from small biotech startups to established enterprises. 
+        Modular pricing and pay-for-performance structures make it easy for clients to scale with us as their 
+        pipelines grow.
       </p>
 
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        Our strategy also differentiates us from standard single-cell analytics firms: we maintain full control 
-        of the lab pipeline ourselves, closing the loop between experiment and AI training. A bridging approach 
-        to human scRNA data further addresses the largest translational question: ensuring that signals found in 
-        zebrafish extend meaningfully to human biology.
+      <p className="roboto-slab-regular text-base text-verydark mb-4 leading-relaxed">
+        The <strong>Market Opportunity</strong> is clear: as sequencing costs plummet and the race for better 
+        preclinical screening heats up, mid-tier biotechs, CROs, and larger pharma companies need a more 
+        cost-effective way to decide which candidates to back. By delivering granular single-cell data early in 
+        development, we help them eliminate weak leads fast and focus resources on winners, providing a decisive 
+        edge in a competitive market.
       </p>
 
-      <h3 className="roboto-slab-semibold text-lg text-gray-800 mt-6 mb-2">
-        Key Advantages and Challenges
-      </h3>
-
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        We recognize that <strong>challenges</strong> remain—securing sufficient funding, establishing robust 
-        quality-assurance processes, and working with regulatory bodies to accept zebrafish-based findings. Yet 
-        the underlying momentum is strong: as the market seeks to mitigate the soaring cost of late-stage drug 
-        failures, an approach that systematically reduces risk via highly granular gene-network analysis is 
-        primed for success. By harnessing advanced single-cell technology, a well-chosen model organism, and an 
-        iterative AI feedback loop, we speak directly to the industry’s move toward “fail-fast” mentalities, 
-        pruning questionable leads early while advancing promising ones with far greater confidence.
-      </p>
-
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        Timing is on our side. Single-cell sequencing is more routine and affordable than ever, zebrafish labs can 
-        be scaled more easily than rodent-based facilities, and the pharma sector is increasingly open to external 
-        AI collaborations. The next evolutionary step—incorporating advanced foundation models specifically trained 
-        on single-cell data—positions Zeroshot Bio at the leading edge of this wave. Each new dataset boosts the 
-        <strong> tsGPT engine</strong> (or future <em>scGPT</em>) in predictive power and coverage, creating a network 
-        effect that few competitors can match with disjointed or publicly available datasets alone.
-      </p>
-
-      <h3 className="roboto-slab-semibold text-lg text-gray-800 mt-6 mb-2">
-        Strategic Outlook
-      </h3>
-
-      <p className="roboto-slab-regular text-base text-gray-700 mb-4 leading-relaxed">
-        As more network-driven therapeutics—like CRISPR gene editing, CAR-T, or next-generation ADCs—enter 
-        development, the demand for multi-gene, multi-pathway insights will escalate. Zebrafish-based single-cell 
-        foundation models offer exactly that: a whole-organism perspective at scale, with a capacity for 
-        cost-effective experiments unattainable in rodents. By aligning well with emerging regulatory 
-        conversations and incorporating partial human data for translational assurance, we provide a compelling 
-        solution for modern drug discovery.
-      </p>
-
-      <p className="roboto-slab-regular text-base text-gray-700 leading-relaxed">
-        Ultimately, <strong>Zeroshot Bio</strong> aims to become an indispensable part of the pharmaceutical R&amp;D 
-        toolbox—capable of validating (or invalidating) drug candidates far earlier and with far greater resolution. 
-        This is the future of preclinical confidence: a tightly integrated loop between lab, AI, and biology, 
-        designed to accelerate the path to safer, more effective therapies.
+      <p className="roboto-slab-regular text-base text-verydark leading-relaxed">
+        In a crowded <strong>Competitive Landscape</strong>, we stand out by maintaining end-to-end control—
+        <em>from zebrafish to AI</em>—so every experiment enriches our core platform. This virtuous cycle of data 
+        and insight is tough to replicate, and it’s why we believe Zeroshot Bio is the future of preclinical 
+        confidence.
       </p>
     </>
   );

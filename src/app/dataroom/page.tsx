@@ -257,14 +257,14 @@ const DataRoomDocumentation: React.FC = () => {
   // Render the main content on the right side
   function renderContent() {
     if (!currentCategory) {
-      return <div className="text-gray-500">Category not found.</div>;
+      return <div className="text-black">Category not found.</div>;
     }
     const subSections =
       currentCategory.subSections || [{ id: currentCategory.id, title: currentCategory.title, component: currentCategory.component! }];
 
     if (selectedSubSectionId) {
       const sub = subSections.find(s => s.id === selectedSubSectionId);
-      if (!sub) return <div className="text-gray-500">Sub-section not found.</div>;
+      if (!sub) return <div className="text-black">Sub-section not found.</div>;
 
       try {
         const SubComponent = sub.component;
@@ -277,10 +277,10 @@ const DataRoomDocumentation: React.FC = () => {
 
     return (
       <>
-        <h2 className="roboto-slab-bold text-lg sm:text-2xl text-gray-900 mb-2 leading-tight">
+        <h2 className="roboto-slab-bold text-lg sm:text-2xl text-black mb-2 leading-tight">
           {currentCategory.title}
         </h2>
-        <p className="roboto-slab-regular text-sm sm:text-base text-gray-600 mb-8 leading-snug">
+        <p className="roboto-slab-regular text-sm sm:text-base text-black mb-8 leading-snug">
           {currentCategory.description}
         </p>
       </>
@@ -298,10 +298,10 @@ const DataRoomDocumentation: React.FC = () => {
           height={250}
           className="object-contain mb-4"
         />
-        <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text--black pt-8 px-16">
           The data room is formatted for viewing on desktop computers.
         </h3>
-        <h3 className="text-base text-center roboto-slab-light text-gray-verydark pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text-gray-black pt-8 px-16">
           You <strong>can</strong> rotate your screen horizontally to preview it from here.
         </h3>
       </div>
@@ -309,83 +309,92 @@ const DataRoomDocumentation: React.FC = () => {
       {/* Desktop Layout */}
       <div className="hidden sm:flex justify-center w-full">
         <div
-          className={`w-full max-w-[1600px] flex transition-filter duration-300 ${
+          className={`w-full max-w-[1600px] flex transition-filter duration-200 ${
             accessGranted ? 'blur-0' : 'blur-sm'
           }`}
           style={{ minWidth: '640px' }}
         >
-          {/* Left Sidebar */}
-          <aside className="flex flex-col border-r border-gray-200 px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 overflow-y-auto">
+        {/* Left Sidebar */}
+        <aside className="flex flex-col border-r border-semidark px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 overflow-y-auto">
             <div className="flex items-center h-16 sm:h-20 mb-4 sm:mb-6">
-              <Image
+                <Image
                 src="/images/zeroshot_bio_gritty.png"
                 alt="zeroshot logo"
                 width={170}
                 height={170}
                 className="object-contain"
-              />
+                />
             </div>
+
             <div className="w-full border-t border-gray-200 mt-2 sm:mt-[5px] mb-2 sm:mb-4"></div>
+
             <nav className="space-y-3">
-              {categories.map(cat => {
+                {categories.map(cat => {
                 const isExpanded = expandedCategoryId === cat.id;
                 const isSelected = selectedCategoryId === cat.id;
-                const subSections = cat.subSections || [{ id: cat.id, title: cat.title, component: cat.component! }];
+                const subSections = cat.subSections || [
+                    { id: cat.id, title: cat.title, component: cat.component! },
+                ];
 
                 return (
-                  <div key={cat.id} className="border-b border-gray-200 pb-2">
-                    <button
-                      onClick={() => handleToggleCategory(cat.id)}
-                      className={`flex items-center w-full text-left transition-colors duration-200 px-0 py-3 rounded-sm ${
-                        isSelected ? 'bg-gray-100 text-gray-800' : 'text-gray-700 hover:bg-gray-100'
-                      }`}
+                    <div
+                    key={cat.id}
+                    className="my-2 border border-gray-200 rounded-lg overflow-hidden"
                     >
-                      <span
-                        className={`inline-block transform transition-transform duration-300 ease-in-out mr-2 text-sm ${
-                          isExpanded ? 'rotate-90' : ''
+                    <button
+                        onClick={() => handleToggleCategory(cat.id)}
+                        className={`flex items-center w-full px-3 py-2 focus:outline-none transition-colors duration-100 text-left ${
+                        isSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
                         }`}
-                      >
+                    >
+                        <span
+                        className={`inline-block transform transition-transform duration-500 ease-in-out mr-2 text-sm ${
+                            isExpanded ? 'rotate-90' : ''
+                        }`}
+                        >
                         &gt;
-                      </span>
-                      <span className="flex-1 text-sm roboto-slab-medium">{cat.title}</span>
+                        </span>
+                        <span className="flex-1 text-sm roboto-slab-medium">
+                        {cat.title}
+                        </span>
                     </button>
-                    {isExpanded && (
-                      <div className="overflow-hidden transition-all duration-300 ease-in-out max-h-[600px] mt-2">
-                        <div className="flex flex-col space-y-2 pl-1 pr-1 py-2">
-                          {subSections.map(sub => {
-                            const subSelected = selectedSubSectionId === sub.id;
-                            return (
-                              <button
-                                key={sub.id}
-                                onClick={() => handleSelectSubSection(cat.id, sub.id)}
-                                className={`w-full px-3 py-2 rounded border border-gray-100 text-xs text-gray-500 text-left transition-colors duration-200 ${
-                                  subSelected ? 'bg-gray-200 text-gray-900' : 'bg-white hover:bg-gray-100'
-                                }`}
-                              >
-                                {sub.title}
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
+                    <div
+                        className={`pl-2 pr-2 bg-gray-50 transition-all duration-500 ease-in-out ${
+                        isExpanded ? 'max-h-[500px] py-2' : 'max-h-0 py-0'
+                        } overflow-hidden`}
+                    >
+                        {subSections.map(sub => {
+                        const subSelected = selectedSubSectionId === sub.id;
+                        return (
+                            <button
+                            key={sub.id}
+                            onClick={() => handleSelectSubSection(cat.id, sub.id)}
+                            className={`w-full mb-2 px-3 py-2 rounded text-left transition-colors duration-100 text-xs ${
+                                subSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
+                            }`}
+                            >
+                            {sub.title}
+                            </button>
+                        );
+                        })}
+                    </div>
+                    </div>
                 );
-              })}
+                })}
             </nav>
-          </aside>
+        </aside>
 
           {/* Right Content Area */}
           <main className="flex-1 overflow-y-auto relative">
             {/* Top Header Bar */}
             <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 z-10">
-              <h1 className="roboto-slab-semibold text-base sm:text-xl text-gray-900">
+              <h1 className="roboto-slab-semibold text-base sm:text-xl text-black">
                 Investor Data Room
               </h1>
             </div>
             {/* Second Header Bar */}
-            <div className="sticky top-[40px] sm:top-16 bg-white border-b border-gray-200 px-4 sm:px-6 py-2 z-10 transition-all duration-300">
-              <h2 className="roboto-slab-medium text-sm sm:text-lg text-gray-800">
+            <div className="sticky top-[40px] sm:top-16 bg-white border-b border-gray-200 px-4 sm:px-6 py-2 z-10 transition-all duration-100">
+              <h2 className="roboto-slab-medium text-sm sm:text-lg text-black">
                 {currentCategory?.title}
               </h2>
             </div>
@@ -398,7 +407,7 @@ const DataRoomDocumentation: React.FC = () => {
                 <div className="flex justify-left mt-4">
                   <button
                     onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection.id)}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-4 py-2 rounded shadow transition-colors"
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
                   >
                     Next: {nextSubSection.title}
                   </button>
@@ -413,7 +422,7 @@ const DataRoomDocumentation: React.FC = () => {
       {!accessGranted && (
         <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
           <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
-            <h2 className="roboto-slab-semibold text-gray-800 text-xl mb-4">
+            <h2 className="roboto-slab-semibold text-black text-xl mb-4">
               Enter Password
             </h2>
             <input
