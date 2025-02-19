@@ -7,23 +7,23 @@ const Introduction: React.FC = () => {
       <h2 className="roboto-slab-medium text-xl text-gray-black mb-4 mt-4">
         Zeroshot Biolabs Data Room
       </h2>
-      <p className="roboto-slab-regular text-base text-gray-black leading-relaxed mt-12 mb-4">
+      <p className="roboto-slab-regular text-base text-grey-black leading-relaxed mt-12 mb-4">
         Welcome.
       </p>
       <p className="roboto-slab-regular text-base text-gray-black leading-relaxed mb-8">
         Here you&apos;ll find documentation outlining our company&apos;s strategic outlook.
       </p>
       <ul className="list-disc ml-6 mb-4">
-        <li className="roboto-slab-regular text-base text-gray-dark leading-relaxed">
+        <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
           How do we think about the problem of biology?
         </li>
-        <li className="roboto-slab-regular text-base text-gray-dark leading-relaxed">
+        <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
           What aspects of AI do we believe will most successfully map to biology?
         </li>
-        <li className="roboto-slab-regular text-base text-gray-dark leading-relaxed">
+        <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
           How do we think about customers and our business model?
         </li>
-        <li className="roboto-slab-regular text-base text-gray-dark leading-relaxed">
+        <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
           Why do we believe polygenic AI-driven drug development will dominate the near future?
         </li>
       </ul>

@@ -105,33 +105,33 @@ body {
   font-style: normal;
 }
 
-/* Custom text color classes for shades of grey */
+/* Custom text color classes for shades of gray */
 .text-gray-verylight {
-  color: #f2f2f2;
+  color: #c2c2c2;
 }
 
 .text-gray-light {
-  color: #cccccc;
+  color: #888888;
 }
 
 .text-gray-medium {
-  color: #999999;
+  color: #626262;
 }
 
 .text-gray-semidark {
-  color: #777777;
+  color: #494949;
 }
 
 .text-gray-dark {
-  color: #555555;
+  color: #272727;
 }
 
 .text-gray-verydark {
-  color: #333333;
+  color: #1a1a1a;
 }
 
 .text-gray-black {
-  color: #111111;
+  color: #0a0a0a;
 }
 
 /* Custom text size utilities */
