@@ -58,7 +58,7 @@ const OverallSummary: React.FC = () => {
         biological foundation models (pictured below). Each turn of the cycle involves growing up zebrafish,
         creating healthy, disease models, and perturbation varieties based on conditions-of-interest,
         sequencing them transcriptmically (scRNA-seq), training, fine-tuning, re-training,
-        learning from the results, then designing new batches of experiments to fill gaps and enhance capabilities.  
+        learning from the results, and designing new batches of experiments to fill gaps that enhance capabilities.  
       </p>
 
       <div className="w-full mb-8">
@@ -72,12 +72,7 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Bio Foundation Models</strong> are
-        transformer-based LLMs.
-      </p>
-
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Biologist Perspective</strong>
+       <strong>From the perspective of a drug developer, </strong>our company provides the following input-output service:
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
