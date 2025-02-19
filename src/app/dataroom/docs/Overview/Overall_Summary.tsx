@@ -27,32 +27,37 @@ const OverallSummary: React.FC = () => {
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
         <strong>Our Vision</strong> is that biological foundation models will enable a never-before-possible
         understanding of the toxicity and efficacy of therapeutics on entire organisms. 
-        Not just higher quality readings, but entirely new categories of visibility.
+        Not just higher quality readings, but entirely new categories of visibility that will open up new drug 
+        development approaches. 
 
       <p className="mt-4">
-        In this first chapter, you can think of Zeroshot Biolab as an AI-bio <i>interrogability</i> company.
-      </p> 
-      <p className="mt-4">
+        In this first chapter, you can think of Zeroshot Biolab as an <strong> AI-bio interrogability company. </strong>
         That is, our first mission is to make the chaos of biology more <i>capable of being deeply understood </i>
-        and we're starting with the 'action' layer of biology -- transcriptomics. 
+        through the lens of drug developers.
+        We're starting with the 'action' layer of biology -- transcriptomics. 
       </p>
+
+      
 
 
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
         <strong>Tactically speaking, </strong> 
-        we know AI&#39;s core competency is in understanding the complexity of high-dimensional networks
+        AI&#39;s core competency is in understanding the complexity of high-dimensional networks
         when large amounts of diverse training datum are available. 
 
       <p className="mt-4"></p>
-        That's why we've chosen <i>Danio rario</i> (zebrafish) as our first model organism: 
+        That's why we've chosen <strong><i>Danio rario</i> (zebrafish)</strong> as our first model organism: 
         zebrafish are uniquely positioned for scale, experimental diversity, and measurability.
+      
+        Over time we'll incorporate other model organisms toward effective
+        prediction of perturbation outcomes in human biology.
       </p>
 
       <p className="mt-8"></p>
-        We will run <strong>the data cycle </strong> continuously over the life of the company to keep our
-        biological foundation models at the bleeding edge  (pictured below). Each turn of the cycle involves growing up zebrafish,
+        We will run <strong>The Data Cycle </strong> continuously over the life of the company to keep improvng our
+        biological foundation models (pictured below). Each turn of the cycle involves growing up zebrafish,
         creating healthy, disease models, and perturbation varieties based on conditions-of-interest,
-        sequencing them transcriptmically (scRNA-seq), training, fine-tuning, and re-training,
+        sequencing them transcriptmically (scRNA-seq), training, fine-tuning, re-training,
         learning from the results, then designing new batches of experiments to fill gaps and enhance capabilities.  
       </p>
 
