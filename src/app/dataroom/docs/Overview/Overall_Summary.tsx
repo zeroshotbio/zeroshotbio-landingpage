@@ -31,9 +31,9 @@ const OverallSummary: React.FC = () => {
         development approaches. 
 
       <p className="mt-4">
-        In this first chapter, you can think of Zeroshot Biolab as an <strong> AI-bio interrogability company. </strong>
-        That is, our first mission is to make the chaos of biology more <i>capable of being deeply understood </i>
-        through the lens of drug developers.
+        In this first chapter, you can think of <strong>  Zeroshot Biolabs as an AI-bio interrogability company. </strong>
+        That is, our first focus is to use AI as a lens to make the chaos of biology more capable of being deeply understood,
+        especially in the context of drug development.
         We're starting with the 'action' layer of biology -- transcriptomics. 
       </p>
 
@@ -55,8 +55,8 @@ const OverallSummary: React.FC = () => {
 
       <p className="mt-8"></p>
         We will run <strong>The Data Cycle </strong> continuously over the life of the company to keep improvng our
-        biological foundation models (pictured below). Each turn of the cycle involves growing up zebrafish,
-        creating healthy, disease models, and perturbation varieties based on conditions-of-interest,
+        biological foundation models (pictured below). Each turn of the cycle involves growing up the animal model,
+        creating healthy, disease, and perturbation varieties based on conditions-of-interest,
         sequencing them transcriptmically (scRNA-seq), training, fine-tuning, re-training,
         learning from the results, and designing new batches of experiments to fill gaps that enhance capabilities.  
       </p>
@@ -72,8 +72,25 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       <strong>From the perspective of a drug developer, </strong>our company provides the following input-output service:
+       <strong>Drug developers interacting with our models </strong>will use an input-output framework.
       </p>
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+       1. Given a disease-profile and a healthy-profile, what series of transcriptomic transformations could bridge the gap?
+      </p>
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+       2. Given a disease-profile and the expected effects of a drug, is a h
+      </p>
+
+
+      <div className="w-full mb-8">
+        <Image
+          src="/images/dataroom_images/input-output.png"
+          alt="IO-healthy-disease"
+          width={1000}
+          height={600}
+          className="object-contain"
+        />
+      </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         Our <strong>Business Model</strong> blends high-value experimental services, data subscriptions, and 
