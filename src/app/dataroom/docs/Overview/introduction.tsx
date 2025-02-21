@@ -15,10 +15,10 @@ const Introduction: React.FC = () => {
       </p>
       <ul className="list-disc ml-6 mb-4">
         <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
-          How do we think about the problem of biology?
+          How do we think about the complexity of biology?
         </li>
         <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
-          What aspects of AI do we believe will most successfully map to biology?
+          What aspects of AI do we believe will most successfully improve our understanding of biology?
         </li>
         <li className="roboto-slab-regular text-base text-gray-semidark leading-relaxed">
           How do we think about customers and our business model?
@@ -28,7 +28,7 @@ const Introduction: React.FC = () => {
         </li>
       </ul>
       <p className="roboto-slab-regular text-base text-gray-black leading-relaxed mb-8 mt-8">
-        Whether you are a potential investor, industry partner, customer, or community connector,
+        Whether you are an investor, industry partner, customer or community connector,
         we&apos;re excited to share our vision of the future of AI-driven biology with you.
       </p>
       <p className="roboto-slab-regular text-base text-gray-black leading-relaxed">

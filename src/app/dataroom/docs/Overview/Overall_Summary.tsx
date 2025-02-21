@@ -10,21 +10,16 @@ const OverallSummary: React.FC = () => {
       </h2>
 
 
-      <p className="roboto-slab-light text-base mb-8 mt-12 leading-relaxed">
-        <strong>The Problem</strong> is straightforward: pre-clinical experiments too often 
-        fail to effectively predict clinical trial results.
-
-        Many promising therapies never see the light of day 
-        because developers lack the preclinical confidence needed to
-        steer critical go/no-go decisions.
-        
-        As a result, R&amp;D 
-        budgets balloon, timelines stretch, and potential
-        life-saving treatments never make it to market.
+      <p className="roboto-slab-light text-base mb-12 mt-12 leading-relaxed">
+        <strong>The Problem</strong> is straightforward: our iniability to understand biology has limited
+         therapeutic development. 
+        Most drug candidates tested in pre-clinical conditions
+        fail in human clinical trials.
+        Potentiall life-saving opportunities never make it to market.
       </p>
       
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark leading-relaxed">
         <strong>Our Vision</strong> is that biological foundation models will enable a never-before-possible
         understanding of the toxicity and efficacy of therapeutics on entire organisms. 
         Not just higher quality readings, but entirely new categories of visibility that will open up new drug 
@@ -40,12 +35,10 @@ const OverallSummary: React.FC = () => {
       
 
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
         <strong>Tactically speaking, </strong> 
         AI&#39;s core competency is in understanding the complexity of high-dimensional networks
         when large amounts of diverse training datum are available. 
-
-      <p className="mt-4"></p>
         That's why we've chosen <strong><i>Danio rario</i> (zebrafish)</strong> as our first model organism: 
         zebrafish are uniquely positioned for scale, experimental diversity, and measurability.
       
@@ -53,15 +46,16 @@ const OverallSummary: React.FC = () => {
         prediction of perturbation outcomes in human biology.
       </p>
 
-      <p className="mt-8"></p>
-        We will run <strong>The Data Cycle </strong> continuously over the life of the company to keep improvng our
-        biological foundation models (pictured below). Each turn of the cycle involves growing up the animal model,
-        creating healthy, disease, and perturbation varieties based on conditions-of-interest,
-        sequencing them transcriptmically (scRNA-seq), training, fine-tuning, re-training,
-        learning from the results, and designing new batches of experiments to fill gaps that enhance capabilities.  
+      <p className="mt-12"></p>
+        <strong> We run the data cycle continuously </strong> over the life of the company to keep improvng our
+        biological foundation models. Each turn of the cycle involves growing zebrafish,
+        creating healthy, disease, and perturbation varieties,
+        performing scRNA sequencing, using the results to train and fine-tune our model,
+        learn from the inference results, and design the next generation of
+        experiments to intelligently fill data gaps and enhance capabilities.  
       </p>
 
-      <div className="w-full mb-12">
+      <div className="w-full mb-20">
         <Image
           src="/images/dataroom_images/overall_fundamental_flow.png"
           alt="Overall Flow Graphic"
@@ -72,51 +66,49 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       <strong> Our biology foundation models </strong>predict
-       transcriptomic changes between states. Fundmanetally, it is the collection of transcriptomic changes
-       between states that the model predicts. 
+       <strong> Our biology foundation model </strong>predicts
+       the gene expression patterns of cells
+       under different disease and drug conditions.
+        Most therapeutics are either toxic or effective because of their impact on an organism's gene expression patterns.
+        A drug's ability to reliably improve gene expression patterns is what ultimatlye determines its success. 
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       For example, the model knows the series of transcriptomic changes that happen from day one and day two post-fertilization. 
-       A user can 'freeze' the expression level of a given transcription factor at the day-one-stage and the model predicts the series of transcriptomic 
-       abnormalities that would result.
+        Not only does our model predict a drug's impact on transcriptomic state changes, 
+        it also captures contextual gene-gene relationships and long-range dependencies across 
+        cell types delivers fundamentally more important insights.
       </p>
 
-      <div className="w-full mb-8">
+      <div className="w-full mb-20">
         <Image
           src="/images/dataroom_images/input-output.png"
           alt="IO-healthy-disease"
-          width={1000}
-          height={600}
+          width={500}
+          height={400}
           className="object-contain"
         />
 
       </div>
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       1. Given a disease-profile and a healthy-profile, what series of transcriptomic transformations could bridge the gap?
-      </p>
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       2. Given a disease-profile and the expected effects of a drug, is a h
-      </p>
 
 
-
-
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        Our <strong>Business Model</strong> blends high-value experimental services, data subscriptions, and 
-        milestone-based collaborations with pharma. 
+      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+        <strong>The Business Model</strong> we persue is something we're still considering. We can either sell access to our model
+        to drug developers or begin to develop drugs ourselves. We're having conversations with advisors, successful founders,
+        investors, and potential customers to help us make the right decision.
+        
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        The <strong>Market Opportunity</strong> 
+      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+        <strong>The Market Opportunity</strong> depends on our business model direction. If we persue the classic Saas model, 
+        the pre-clinical development market is our target. IF we develop our own drug candidates, ideally we'd follow the private
+        Schrondinger persued by selling phase-I-ready drug candidates to larger pharma developers.          
       </p>
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>Competitive Landscape</strong>, we stand out by maintaining end-to-end control—
-        <em>from zebrafish to AI</em>—so every experiment enriches our core platform. This virtuous cycle of data 
-        and insight is tough to replicate, and it’s why we believe Zeroshot Bio is the future of preclinical 
-        confidence.
+        <strong>Our thinking on the competitive landscape</strong> is that specialized models that serve specialized functions will 
+        thrive -- especially in biolgoy. Zeroshot Biolabs is hyper-focused on creating our own data from multiple animal models 
+        and our own specialized architectures that translate that data to human-drug-responsese results that will deliver the strongest 
+        predictions for drug development of indications where cures depend most on gene regulatory network control. 
       </p>
     </>
   );

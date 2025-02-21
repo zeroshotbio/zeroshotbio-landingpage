@@ -399,8 +399,8 @@ const DataRoomDocumentation: React.FC = () => {
               </h2>
             </div>
 
-            {/* Main content with text limited to 80% width */}
-            <div className="px-4 sm:px-0 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[60%] mx-auto">
+            {/* Main content with text limited to 60% width */}
+            <div className="sm:pr-8 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[800px] mx-auto">
               {renderContent()}
 
               {nextSubSection && (
