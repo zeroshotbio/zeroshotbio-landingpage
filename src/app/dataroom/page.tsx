@@ -221,8 +221,9 @@ const DataRoomDocumentation: React.FC = () => {
     }
   }, [selectedCategoryId]);
 
+  // Attempt password unlock
   const handleUnlock = () => {
-    const CORRECT_PASSWORD = 'z';
+    const CORRECT_PASSWORD = 'z'; // Example
     if (typedPassword === CORRECT_PASSWORD) {
       setAccessGranted(true);
     } else {
@@ -230,6 +231,7 @@ const DataRoomDocumentation: React.FC = () => {
     }
   };
 
+  // Toggle expand/collapse for the left nav categories
   const handleToggleCategory = (catId: string) => {
     if (expandedCategoryId === catId) {
       setExpandedCategoryId(null);
@@ -239,29 +241,67 @@ const DataRoomDocumentation: React.FC = () => {
     setSelectedCategoryId(catId);
   };
 
+  // Select a sub-section
   const handleSelectSubSection = (catId: string, subId: string) => {
     setSelectedCategoryId(catId);
     setSelectedSubSectionId(subId);
   };
 
+  // Identify the current category
+  const currentCategoryIndex = categories.findIndex(c => c.id === selectedCategoryId);
+  const currentCategory = currentCategoryIndex !== -1 ? categories[currentCategoryIndex] : null;
+
   // Next sub-section logic
-  const currentCategory = categories.find(c => c.id === selectedCategoryId);
   let nextSubSection = null;
   if (currentCategory?.subSections && selectedSubSectionId) {
     const idx = currentCategory.subSections.findIndex(s => s.id === selectedSubSectionId);
     if (idx !== -1 && idx < currentCategory.subSections.length - 1) {
+      // We are not at the last subSection -> next subSection is the next in array
       nextSubSection = currentCategory.subSections[idx + 1];
     }
   }
 
-  // Render the main content on the right side
+  // Check if we are at the final sub-section of a category
+  let atLastSubSectionOfCategory = false;
+  if (currentCategory?.subSections && selectedSubSectionId) {
+    const idx = currentCategory.subSections.findIndex(s => s.id === selectedSubSectionId);
+    if (idx === currentCategory.subSections.length - 1) {
+      atLastSubSectionOfCategory = true;
+    }
+  }
+
+  // Figure out the next major category, if any
+  let nextCategory = null;
+  if (currentCategoryIndex !== -1 && currentCategoryIndex < categories.length - 1) {
+    nextCategory = categories[currentCategoryIndex + 1];
+  }
+
+  // Helper function to jump to the first sub-section of the next category
+  const handleGoToNextCategory = () => {
+    if (!nextCategory) return;
+    setSelectedCategoryId(nextCategory.id);
+    setExpandedCategoryId(nextCategory.id);
+
+    // If next category has subSections, pick the first one, else pick none
+    if (nextCategory.subSections && nextCategory.subSections.length > 0) {
+      setSelectedSubSectionId(nextCategory.subSections[0].id);
+    } else {
+      setSelectedSubSectionId(null);
+    }
+  };
+
+  // Renders the main content on the right side
   function renderContent() {
     if (!currentCategory) {
       return <div className="text-black">Category not found.</div>;
     }
-    const subSections =
-      currentCategory.subSections || [{ id: currentCategory.id, title: currentCategory.title, component: currentCategory.component! }];
 
+    // If there's an array of subSections, use that; else treat the category itself as a single page
+    const subSections =
+      currentCategory.subSections ||
+      [{ id: currentCategory.id, title: currentCategory.title, component: currentCategory.component! }];
+
+    // If a sub-section is selected, render it
     if (selectedSubSectionId) {
       const sub = subSections.find(s => s.id === selectedSubSectionId);
       if (!sub) return <div className="text-black">Sub-section not found.</div>;
@@ -275,6 +315,7 @@ const DataRoomDocumentation: React.FC = () => {
       }
     }
 
+    // Otherwise, render the top-level category page
     return (
       <>
         <h2 className="roboto-slab-bold text-lg sm:text-2xl text-black mb-2 leading-tight">
@@ -298,10 +339,10 @@ const DataRoomDocumentation: React.FC = () => {
           height={250}
           className="object-contain mb-4"
         />
-        <h3 className="text-base text-center roboto-slab-light text--black pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text-black pt-8 px-16">
           The data room is formatted for viewing on desktop computers.
         </h3>
-        <h3 className="text-base text-center roboto-slab-light text-gray-black pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text-black pt-8 px-16">
           You <strong>can</strong> rotate your screen horizontally to preview it from here.
         </h3>
       </div>
@@ -314,75 +355,73 @@ const DataRoomDocumentation: React.FC = () => {
           }`}
           style={{ minWidth: '640px' }}
         >
-        {/* Left Sidebar */}
-        <aside className="flex flex-col border-r border-semidark px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 overflow-y-auto">
+          {/* Left Sidebar */}
+          <aside className="flex flex-col border-r border-gray-200 px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 overflow-y-auto">
             <div className="flex items-center h-16 sm:h-20 mb-4 sm:mb-6">
-                <Image
+              <Image
                 src="/images/zeroshot_bio_gritty.png"
                 alt="zeroshot logo"
                 width={170}
                 height={170}
                 className="object-contain"
-                />
+              />
             </div>
-
             <div className="w-full border-t border-gray-200 mt-2 sm:mt-[5px] mb-2 sm:mb-4"></div>
-
             <nav className="space-y-3">
-                {categories.map(cat => {
+              {categories.map(cat => {
                 const isExpanded = expandedCategoryId === cat.id;
                 const isSelected = selectedCategoryId === cat.id;
                 const subSections = cat.subSections || [
-                    { id: cat.id, title: cat.title, component: cat.component! },
+                  { id: cat.id, title: cat.title, component: cat.component! },
                 ];
 
                 return (
-                    <div
+                  <div
                     key={cat.id}
                     className="my-2 border border-gray-200 rounded-lg overflow-hidden"
-                    >
+                  >
                     <button
-                        onClick={() => handleToggleCategory(cat.id)}
-                        className={`flex items-center w-full px-3 py-2 focus:outline-none transition-colors duration-100 text-left ${
+                      onClick={() => handleToggleCategory(cat.id)}
+                      className={`flex items-center w-full px-3 py-2 focus:outline-none transition-colors duration-100 text-left ${
                         isSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
-                        }`}
+                      }`}
                     >
-                        <span
+                      <span
                         className={`inline-block transform transition-transform duration-500 ease-in-out mr-2 text-sm ${
-                            isExpanded ? 'rotate-90' : ''
+                          isExpanded ? 'rotate-90' : ''
                         }`}
-                        >
+                      >
                         &gt;
-                        </span>
-                        <span className="flex-1 text-sm roboto-slab-medium">
+                      </span>
+                      <span className="flex-1 text-sm roboto-slab-medium">
                         {cat.title}
-                        </span>
+                      </span>
                     </button>
                     <div
-                        className={`pl-2 pr-2 bg-gray-50 transition-all duration-500 ease-in-out ${
+                      className={`pl-2 pr-2 bg-gray-50 transition-all duration-500 ease-in-out ${
                         isExpanded ? 'max-h-[500px] py-2' : 'max-h-0 py-0'
-                        } overflow-hidden`}
+                      } overflow-hidden`}
                     >
-                        {subSections.map(sub => {
+                      {subSections.map(sub => {
                         const subSelected = selectedSubSectionId === sub.id;
                         return (
-                            <button
+                          <button
                             key={sub.id}
                             onClick={() => handleSelectSubSection(cat.id, sub.id)}
                             className={`w-full mb-2 px-3 py-2 rounded text-left transition-colors duration-100 text-xs ${
-                                subSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
+                              subSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
                             }`}
-                            >
+                          >
                             {sub.title}
-                            </button>
+                          </button>
                         );
-                        })}
+                      })}
                     </div>
-                    </div>
+                  </div>
                 );
-                })}
+              })}
             </nav>
-        </aside>
+          </aside>
 
           {/* Right Content Area */}
           <main className="flex-1 overflow-y-auto relative">
@@ -399,10 +438,11 @@ const DataRoomDocumentation: React.FC = () => {
               </h2>
             </div>
 
-            {/* Main content with text limited to 60% width */}
+            {/* Main content area */}
             <div className="sm:pr-8 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[800px] mx-auto">
               {renderContent()}
 
+              {/* Next Sub-Section Button */}
               {nextSubSection && (
                 <div className="flex justify-left mt-4">
                   <button
@@ -410,6 +450,18 @@ const DataRoomDocumentation: React.FC = () => {
                     className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
                   >
                     Next: {nextSubSection.title}
+                  </button>
+                </div>
+              )}
+
+              {/* If we're at the last sub-section of the category, check for next category */}
+              {atLastSubSectionOfCategory && nextCategory && (
+                <div className="flex justify-left mt-4">
+                  <button
+                    onClick={handleGoToNextCategory}
+                    className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
+                  >
+                    Next: {nextCategory.title}
                   </button>
                 </div>
               )}

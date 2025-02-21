@@ -11,75 +11,77 @@ const OverallSummary: React.FC = () => {
 
 
       <p className="roboto-slab-light text-base mb-12 mt-12 leading-relaxed">
-        <strong>The Problem</strong> is straightforward: our iniability to understand biology has limited
-         therapeutic development. 
-        Most drug candidates tested in pre-clinical conditions
-        fail in human clinical trials.
-        Potentiall life-saving opportunities never make it to market.
+        <strong>The problem</strong>:
+        most of biology is too complicated for humans to understand and engineer directly. 
+        While drug development may be inspired by science, it only succeeds through trial and error. 
+        The failure rate of modern clinical trials is the 
+        most painfully clear inidication of our primitive approach.
       </p>
       
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>Our Vision</strong> is that biological foundation models will enable a never-before-possible
-        understanding of the toxicity and efficacy of therapeutics on entire organisms. 
-        Not just higher quality readings, but entirely new categories of visibility that will open up new drug 
-        development approaches. 
-
-      <p className="mt-4">
-        In this first chapter, you can think of <strong>  Zeroshot Biolabs as an AI-bio interrogability company. </strong>
-        That is, our first focus is to use AI as a lens to make the chaos of biology more capable of being deeply understood,
-        especially in the context of drug development.
-        We're starting with the 'action' layer of biology -- transcriptomics. 
+        <strong>Our vision</strong> is that biological foundation models will be the key that 
+        enables an understanding of the effects of therapeutics beyond what humans alone have been capable of. 
+        Not just higher quality readouts of the classic kinds, but entirely new categories of visibility 
+        that will revolutionize drug development confidence. 
+      </p>
+      
+      <p className="mt-2 roboto-slab-light text-base text-verydark leading-relaxed">
+        <strong> In this first chapter,</strong> you can think of Zeroshot Biolabs as an AI-bio 
+        interrogability company. 
+        That is, our first focus is to use AI as the primpary lens through which the chaos of biology 
+        can become understood, especially in the context of drug development. 
       </p>
 
       
-
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
+        <strong>Tactically speaking, </strong> we're starting with the 'action' 
+        layer of biology -- transcriptomics. It's one of the most fundamental, diverse, 
+        and scalable signatures of activity within and between cells.
+        AI&#39;s core competency is in understanding the complexity of high-dimensional networks, 
+        especially when large pools of diverse training data are available. 
+        That's why we've chosen to start with <strong><i>Danio rario</i> (zebrafish)</strong> as 
+        our first model organism. With zebrafish, we're able to sequence the transcriptomes 
+        of thousands of cells from thousands of zebrafish under dozens of conditions 
+        at the right intersection of scale and cost for AI training. 
+      
+        After we've demonstrated predictive capability within zebrafish biology by testing
+        our model against real-world outcomes, we'll incorporate other model 
+        organism data toward our ultimate end-goal: the prediction of outcomes 
+        in human biology.
+      </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
-        <strong>Tactically speaking, </strong> 
-        AI&#39;s core competency is in understanding the complexity of high-dimensional networks
-        when large amounts of diverse training datum are available. 
-        That's why we've chosen <strong><i>Danio rario</i> (zebrafish)</strong> as our first model organism: 
-        zebrafish are uniquely positioned for scale, experimental diversity, and measurability.
-      
-        Over time we'll incorporate other model organisms toward effective
-        prediction of perturbation outcomes in human biology.
-      </p>
-
-      <p className="mt-12"></p>
-        <strong> We run the data cycle continuously </strong> over the life of the company to keep improvng our
-        biological foundation models. Each turn of the cycle involves growing zebrafish,
+        <strong> We will run the data cycle continuously </strong> over the life of the 
+        company to keep improvng our biological foundation models. 
+        Each turn of the cycle involves growing zebrafish,
         creating healthy, disease, and perturbation varieties,
-        performing scRNA sequencing, using the results to train and fine-tune our model,
+        performing scRNA sequencing, using the results to train and fine-tune our models,
         learn from the inference results, and design the next generation of
-        experiments to intelligently fill data gaps and enhance capabilities.  
+        experiments to intelligently fill data gaps and further enhance biological understanding. 
+        The data we generate becomes part of our company's moat.  
       </p>
 
       <div className="w-full mb-20">
         <Image
           src="/images/dataroom_images/overall_fundamental_flow.png"
-          alt="Overall Flow Graphic"
-          width={1000}
-          height={600}
+          alt="IO-healthy-disease"
+          width={700}
+          height={500}
           className="object-contain"
         />
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       <strong> Our biology foundation model </strong>predicts
-       the gene expression patterns of cells
-       under different disease and drug conditions.
-        Most therapeutics are either toxic or effective because of their impact on an organism's gene expression patterns.
-        A drug's ability to reliably improve gene expression patterns is what ultimatlye determines its success. 
+       <strong> The first iteration of our biology foundation model </strong>predicts
+       the gene expression patterns of cells under different disease and drug conditions.
+        Most therapeutics are either toxic or effective because of their impact on an 
+        organism's gene expression patterns.
+        A drug's ability to reliably improve these patterns is ultimately what 
+        determines its success. 
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        Not only does our model predict a drug's impact on transcriptomic state changes, 
-        it also captures contextual gene-gene relationships and long-range dependencies across 
-        cell types delivers fundamentally more important insights.
-      </p>
-
-      <div className="w-full mb-20">
+      <div className="w-full mb-4">
         <Image
           src="/images/dataroom_images/input-output.png"
           alt="IO-healthy-disease"
@@ -87,28 +89,67 @@ const OverallSummary: React.FC = () => {
           height={400}
           className="object-contain"
         />
-
       </div>
+
+      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+        <strong>The our model's strongest first application </strong> is on
+        drug candidates that target multiple gene pathways.
+        The self-attention transformer architecture is especially capable of capturing
+        context-dependent, long-range interactions like those found in the hyper-connected 
+        gene regulatory networks on which these drugs exert their effects. 
+        Fine-tuning the downstream effect of a polygenic drug's impact
+        actually becomes possible to model confidently.
+      </p>
 
 
       <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
-        <strong>The Business Model</strong> we persue is something we're still considering. We can either sell access to our model
-        to drug developers or begin to develop drugs ourselves. We're having conversations with advisors, successful founders,
-        investors, and potential customers to help us make the right decision.
+        <strong>We can monetize in two major ways.</strong> Either we persue a SaaS-style 
+        business model selling access to inference or we use our system to develop our own 
+        novel drug candidates. The former would allow us to generate revenue within a year, 
+        but the latter would (potentially) allow us to capture generate far more value 
+        in the long term. It may be that we persue a hybrid of these two models 
+        given their mutual synergy.
+        We're having conversations with advisors, founders, investors, and 
+        potential customers to help us make the right strategic decision here.
         
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
-        <strong>The Market Opportunity</strong> depends on our business model direction. If we persue the classic Saas model, 
-        the pre-clinical development market is our target. IF we develop our own drug candidates, ideally we'd follow the private
-        Schrondinger persued by selling phase-I-ready drug candidates to larger pharma developers.          
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong>The market opportunity </strong> for the SaaS version of our business model
+        is substantial and growing. Industry reports suggest AI in drug discovery was hit
+        ~$500m in 2020 with a CAGR of 40%, reaching $3-5b by the late 2020s. The appeal for these 
+        customers is clear -- a tool that saves hundres of millions by catching failures early 
+        and enabling fine-tuning that substantially improves efficacy confidence will command 
+        preimum subscription fees. 
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>Our thinking on the competitive landscape</strong> is that specialized models that serve specialized functions will 
-        thrive -- especially in biolgoy. Zeroshot Biolabs is hyper-focused on creating our own data from multiple animal models 
-        and our own specialized architectures that translate that data to human-drug-responsese results that will deliver the strongest 
-        predictions for drug development of indications where cures depend most on gene regulatory network control. 
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong>If we develop our own drug candidates </strong> the market opportunity
+        is more difficult to predict. If we follow the path Schrondinger persued, we 
+        could take select compounds through proof-of-concept, then license or sell them
+        outright to larger pharma for further clinical development. That means Zeroshot Biolabs
+        woulc make money in '$100m batches' plus milestone fees and royalties. The advantage of
+        this strategy is that Zeroshot can remain focused on its core competency (AI-driven 
+        pre-clinical confidence) while participating in the upside of successful drug development.
+      </p>
+
+      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+        <strong>Finally, we're also exploring drug repurposing: </strong> Our 
+        biology foundation model is uniquely positioned to predict which existing
+        clinically-validated drug candidates would be efficatious for entierly new disease areas. 
+        Repurposed therapies can deliver significant clinical value within 3-5 years instead of 
+        7-10, especially if the original pharmacokinetics and safety data remain applicable in
+        the repurposed context. We can design our model to rank hundreds of potential disease 
+        contexts simultaenously, effectively doing an "all-vs-all" match of drug-gene interactions.
+      </p>
+
+      <p className="roboto-slab-light text-base text-verydark mb-20 leading-relaxed">
+        <strong>Our thinking on the competitive landscape</strong> is that a zoology 
+        of specialized biology foundation models will thrive in what is an emerging landscape of niches.
+        Zeroshot Biolabs aims to become the leader in multi-animal transcriptomics toward 
+        human drug response prediction. Likely, Zeroshot will work synergistically with 
+        other AI-bio companies at different levels of the biology 'stack' as part of a chain 
+        of players creating value along the drug-development pipeline. 
       </p>
     </>
   );
