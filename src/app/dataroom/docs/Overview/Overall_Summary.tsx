@@ -61,7 +61,7 @@ const OverallSummary: React.FC = () => {
         learning from the results, and designing new batches of experiments to fill gaps that enhance capabilities.  
       </p>
 
-      <div className="w-full mb-8">
+      <div className="w-full mb-12">
         <Image
           src="/images/dataroom_images/overall_fundamental_flow.png"
           alt="Overall Flow Graphic"
@@ -72,15 +72,16 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       <strong>Drug developers interacting with our models </strong>will use an input-output framework.
-      </p>
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       1. Given a disease-profile and a healthy-profile, what series of transcriptomic transformations could bridge the gap?
-      </p>
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       2. Given a disease-profile and the expected effects of a drug, is a h
+       <strong> Our biology foundation models </strong>predict
+       transcriptomic changes between states. Fundmanetally, it is the collection of transcriptomic changes
+       between states that the model predicts. 
       </p>
 
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+       For example, the model knows the series of transcriptomic changes that happen from day one and day two post-fertilization. 
+       A user can 'freeze' the expression level of a given transcription factor at the day-one-stage and the model predicts the series of transcriptomic 
+       abnormalities that would result.
+      </p>
 
       <div className="w-full mb-8">
         <Image
@@ -90,7 +91,17 @@ const OverallSummary: React.FC = () => {
           height={600}
           className="object-contain"
         />
+
       </div>
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+       1. Given a disease-profile and a healthy-profile, what series of transcriptomic transformations could bridge the gap?
+      </p>
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+       2. Given a disease-profile and the expected effects of a drug, is a h
+      </p>
+
+
+
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         Our <strong>Business Model</strong> blends high-value experimental services, data subscriptions, and 
