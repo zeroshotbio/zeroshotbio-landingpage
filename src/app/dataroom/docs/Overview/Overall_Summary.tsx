@@ -6,7 +6,7 @@ const OverallSummary: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Bird’s-Eye View
+        Bird&#39;s-Eye View
       </h2>
 
 
@@ -35,18 +35,18 @@ const OverallSummary: React.FC = () => {
 
       
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
-        <strong>Tactically speaking, </strong> we're starting with the 'action' 
-        layer of biology -- transcriptomics. It's one of the most fundamental, diverse, 
+        <strong>Tactically speaking, </strong> we&#39;re starting with the &#39;action&#39; 
+        layer of biology -- transcriptomics. It&#39;s one of the most fundamental, diverse, 
         and scalable signatures of activity within and between cells.
         AI&#39;s core competency is in understanding the complexity of high-dimensional networks, 
         especially when large pools of diverse training data are available. 
-        That's why we've chosen to start with <strong><i>Danio rario</i> (zebrafish)</strong> as 
-        our first model organism. With zebrafish, we're able to sequence the transcriptomes 
+        That&#39;s why we&#39;ve chosen to start with <strong><i>Danio rario</i> (zebrafish)</strong> as 
+        our first model organism. With zebrafish, we&#39;re able to sequence the transcriptomes 
         of thousands of cells from thousands of zebrafish under dozens of conditions 
         at the right intersection of scale and cost for AI training. 
       
-        After we've demonstrated predictive capability within zebrafish biology by testing
-        our model against real-world outcomes, we'll incorporate other model 
+        After we&#39;ve demonstrated predictive capability within zebrafish biology by testing
+        our model against real-world outcomes, we&#39;ll incorporate other model 
         organism data toward our ultimate end-goal: the prediction of outcomes 
         in human biology.
       </p>
@@ -59,7 +59,7 @@ const OverallSummary: React.FC = () => {
         performing scRNA sequencing, using the results to train and fine-tune our models,
         learn from the inference results, and design the next generation of
         experiments to intelligently fill data gaps and further enhance biological understanding. 
-        The data we generate becomes part of our company's moat.  
+        The data we generate becomes part of our company&#39;s moat.  
       </p>
 
       <div className="w-full mb-20">
@@ -76,8 +76,8 @@ const OverallSummary: React.FC = () => {
        <strong> The first iteration of our biology foundation model </strong>predicts
        the gene expression patterns of cells under different disease and drug conditions.
         Most therapeutics are either toxic or effective because of their impact on an 
-        organism's gene expression patterns.
-        A drug's ability to reliably improve these patterns is ultimately what 
+        organism&#39;s gene expression patterns.
+        A drug&#39;s ability to reliably improve these patterns is ultimately what 
         determines its success. 
       </p>
 
@@ -92,12 +92,12 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
-        <strong>The our model's strongest first application </strong> is on
+        <strong>The our model&#39;s strongest first application </strong> is on
         drug candidates that target multiple gene pathways.
         The self-attention transformer architecture is especially capable of capturing
         context-dependent, long-range interactions like those found in the hyper-connected 
         gene regulatory networks on which these drugs exert their effects. 
-        Fine-tuning the downstream effect of a polygenic drug's impact
+        Fine-tuning the downstream effect of a polygenic drug&#39;s impact
         actually becomes possible to model confidently.
       </p>
 
@@ -109,7 +109,7 @@ const OverallSummary: React.FC = () => {
         but the latter would (potentially) allow us to capture generate far more value 
         in the long term. It may be that we persue a hybrid of these two models 
         given their mutual synergy.
-        We're having conversations with advisors, founders, investors, and 
+        We&#39;re having conversations with advisors, founders, investors, and 
         potential customers to help us make the right strategic decision here.
         
       </p>
@@ -128,19 +128,19 @@ const OverallSummary: React.FC = () => {
         is more difficult to predict. If we follow the path Schrondinger persued, we 
         could take select compounds through proof-of-concept, then license or sell them
         outright to larger pharma for further clinical development. That means Zeroshot Biolabs
-        woulc make money in '$100m batches' plus milestone fees and royalties. The advantage of
+        woulc make money in &#39;$100m batches&#39; plus milestone fees and royalties. The advantage of
         this strategy is that Zeroshot can remain focused on its core competency (AI-driven 
         pre-clinical confidence) while participating in the upside of successful drug development.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
-        <strong>Finally, we're also exploring drug repurposing: </strong> Our 
+        <strong>Finally, we&#39;re also exploring drug repurposing: </strong> Our 
         biology foundation model is uniquely positioned to predict which existing
         clinically-validated drug candidates would be efficatious for entierly new disease areas. 
         Repurposed therapies can deliver significant clinical value within 3-5 years instead of 
         7-10, especially if the original pharmacokinetics and safety data remain applicable in
         the repurposed context. We can design our model to rank hundreds of potential disease 
-        contexts simultaenously, effectively doing an "all-vs-all" match of drug-gene interactions.
+        contexts simultaenously, effectively doing an &#39;all-vs-all&#39; match of drug-gene interactions.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-20 leading-relaxed">
@@ -148,7 +148,7 @@ const OverallSummary: React.FC = () => {
         of specialized biology foundation models will thrive in what is an emerging landscape of niches.
         Zeroshot Biolabs aims to become the leader in multi-animal transcriptomics toward 
         human drug response prediction. Likely, Zeroshot will work synergistically with 
-        other AI-bio companies at different levels of the biology 'stack' as part of a chain 
+        other AI-bio companies at different levels of the biology &#39;stack&#39; as part of a chain 
         of players creating value along the drug-development pipeline. 
       </p>
     </>

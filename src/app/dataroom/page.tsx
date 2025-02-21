@@ -252,7 +252,7 @@ const DataRoomDocumentation: React.FC = () => {
   const currentCategory = currentCategoryIndex !== -1 ? categories[currentCategoryIndex] : null;
 
   // Next sub-section logic
-  let nextSubSection = null;
+  let nextSubSection: SubSection | null = null;
   if (currentCategory?.subSections && selectedSubSectionId) {
     const idx = currentCategory.subSections.findIndex(s => s.id === selectedSubSectionId);
     if (idx !== -1 && idx < currentCategory.subSections.length - 1) {
@@ -271,7 +271,7 @@ const DataRoomDocumentation: React.FC = () => {
   }
 
   // Figure out the next major category, if any
-  let nextCategory = null;
+  let nextCategory: Category | null = null;
   if (currentCategoryIndex !== -1 && currentCategoryIndex < categories.length - 1) {
     nextCategory = categories[currentCategoryIndex + 1];
   }
@@ -446,10 +446,10 @@ const DataRoomDocumentation: React.FC = () => {
               {nextSubSection && (
                 <div className="flex justify-left mt-4">
                   <button
-                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection.id)}
+                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
                     className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
                   >
-                    Next: {nextSubSection.title}
+                    Next: {nextSubSection!.title}
                   </button>
                 </div>
               )}
