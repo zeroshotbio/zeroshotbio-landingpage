@@ -439,7 +439,7 @@ const DataRoomDocumentation: React.FC = () => {
             </div>
 
             {/* Main content area */}
-            <div className="sm:pr-8 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[800px] mx-auto">
+            <div className="sm:pr-8 pt-6 pb-32 sm:pt-12 sm:ml-[28px] max-w-[700px] mx-auto">
               {renderContent()}
 
               {/* Next Sub-Section Button */}

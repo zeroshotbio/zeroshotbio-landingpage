@@ -12,53 +12,52 @@ const OverallSummary: React.FC = () => {
 
       <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
         Most of biology is too complicated for humans to understand and engineer directly. 
-        While drug development may be inspired by science, it mostly succeeds through trial and error. 
-        The failure rate of modern clinical trials is the 
-        most painfully clear inidication of the primitiveness of our approach.
+        While drug development may be inspired by science, historically it has mostly succeeded through trial and error. 
+        The failure rate of modern clinical trials is a 
+        painfully clear reminder of the primitiveness of our approach.
       </p>
       
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>The Zeroshot Biolabs vision</strong> is that biological foundation models will be the key that 
+        <strong>Our vision</strong> is that biological foundation models will be the key that 
         enable an understanding of the effects of therapeutics beyond what humans alone have been capable of. 
         Not just higher quality readouts of the classic kinds, but entirely new categories of visibility 
         that will revolutionize drug development confidence. 
       </p>
       
-      <p className="mt-2 roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong> In this first chapter,</strong> you can think of Zeroshot Biolabs as an AI-bio 
-        interrogability company. 
+      <p className="mt-4 roboto-slab-light text-base text-verydark leading-relaxed">
+        <strong> In this first chapter, Zeroshot Biolabs is an AI-bio 
+        interrogability company. </strong>
         That is, our first focus is to use AI as the primpary lens through which the chaos of biology 
-        can become understood, especially in the context of drug development. 
+        can become understood -- especially in the context of drug development. 
       </p>
 
       
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
-        <strong>Tactically speaking, </strong> we&#39;re starting with the &#39;action&#39; 
-        layer of biology -- transcriptomics. It&#39;s one of the most fundamental, diverse, 
-        and scalable signatures of activity within and between cells.
+        <strong>Tactically speaking, </strong> we&#39;re starting by training our models on the &#39;action&#39; 
+        layer of biology -- the transcriptome. It&#39;s one of the most fundamental, diverse, 
+        and data-scalable signatures of activity within and between cells.
         AI&#39;s core competency is in understanding the complexity of high-dimensional networks, 
         especially when large pools of diverse training data are available. 
         That&#39;s why we&#39;ve chosen to start with <strong><i>Danio rario</i> (zebrafish)</strong> as 
         our first model organism. With zebrafish, we&#39;re able to sequence the transcriptomes 
-        of thousands of cells from thousands of zebrafish under dozens of conditions 
-        at the right intersection of scale and cost for AI training. 
+        of thousands of cells from hundreds of individuals under dozens of conditions. 
       
         After we&#39;ve demonstrated predictive capability within zebrafish biology by testing
-        our model against real-world outcomes, we&#39;ll incorporate other model 
-        organism data toward our ultimate end-goal: the prediction of outcomes 
+        our model against real-world outcomes, we&#39;ll expand to include other model 
+        organisms in our training data toward our first milestone goal: the prediction of outcomes 
         in human biology.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
         <strong> We will run the data cycle continuously </strong> over the life of the 
         company to keep improvng our biological foundation models. 
-        Each turn of the cycle involves growing zebrafish,
+        In its first incarnation, each turn of the cycle involves growing zebrafish,
         creating healthy, disease, and perturbation varieties,
         performing scRNA sequencing, using the results to train and fine-tune our models,
-        learn from the inference results, and design the next generation of
-        experiments to intelligently fill data gaps and further enhance biological understanding. 
-        The data we generate becomes part of our company&#39;s moat.  
+        learning from the inference results, and finally designing the next generation of
+        experiments. By intelligently filling data gaps and fine-tuninig our model architecture 
+        over many generations, we expect to become the gold-standard for transcriptomic effect prediction.
       </p>
 
       <div className="w-full mb-16">
@@ -72,7 +71,7 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-       <strong> The first iteration of our biology foundation model </strong>predicts
+       <strong> The first iteration of our biological foundation model </strong>predicts
        the gene expression patterns of cells under different disease and drug conditions.
         Most therapeutics are either toxic or effective because of their impact on an 
         organism&#39;s gene expression patterns.
@@ -91,13 +90,15 @@ const OverallSummary: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
-        <strong>The our model&#39;s strongest first application </strong> is on
-        drug candidates that target multiple gene pathways.
-        The self-attention transformer architecture is especially capable of capturing
-        context-dependent, long-range interactions like those found in the hyper-connected 
-        gene regulatory networks on which these drugs exert their effects. 
-        Fine-tuning the downstream effect of a polygenic drug&#39;s impact
-        actually becomes possible to model confidently.
+        <strong>Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
+        are some of the most promising but difficult to harness. The chain of events
+        that follow often have deep gene regulatory effects that either result in unexpected
+        toxicity or inconsistent efficacy across species. 
+
+        The self-attention transformer architecture is especially well suited for capturing
+        context-dependent, long-range interactions just like these. 
+        <strong> Fine-tuning a drug&#39;s impact on complex gene network effects
+        actually becomes possible to model confidently. </strong>
       </p>
 
 
