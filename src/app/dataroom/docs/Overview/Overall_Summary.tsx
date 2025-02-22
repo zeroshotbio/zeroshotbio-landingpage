@@ -6,22 +6,21 @@ const OverallSummary: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Bird&#39;s-Eye View
+        From a Bird&#39;s-Eye View:
       </h2>
 
 
-      <p className="roboto-slab-light text-base mb-12 mt-12 leading-relaxed">
-        <strong>The problem</strong>:
-        most of biology is too complicated for humans to understand and engineer directly. 
-        While drug development may be inspired by science, it only succeeds through trial and error. 
+      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
+        Most of biology is too complicated for humans to understand and engineer directly. 
+        While drug development may be inspired by science, it mostly succeeds through trial and error. 
         The failure rate of modern clinical trials is the 
-        most painfully clear inidication of our primitive approach.
+        most painfully clear inidication of the primitiveness of our approach.
       </p>
       
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>Our vision</strong> is that biological foundation models will be the key that 
-        enables an understanding of the effects of therapeutics beyond what humans alone have been capable of. 
+        <strong>The Zeroshot Biolabs vision</strong> is that biological foundation models will be the key that 
+        enable an understanding of the effects of therapeutics beyond what humans alone have been capable of. 
         Not just higher quality readouts of the classic kinds, but entirely new categories of visibility 
         that will revolutionize drug development confidence. 
       </p>
@@ -34,7 +33,7 @@ const OverallSummary: React.FC = () => {
       </p>
 
       
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
         <strong>Tactically speaking, </strong> we&#39;re starting with the &#39;action&#39; 
         layer of biology -- transcriptomics. It&#39;s one of the most fundamental, diverse, 
         and scalable signatures of activity within and between cells.
@@ -51,7 +50,7 @@ const OverallSummary: React.FC = () => {
         in human biology.
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-12 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
         <strong> We will run the data cycle continuously </strong> over the life of the 
         company to keep improvng our biological foundation models. 
         Each turn of the cycle involves growing zebrafish,
@@ -62,7 +61,7 @@ const OverallSummary: React.FC = () => {
         The data we generate becomes part of our company&#39;s moat.  
       </p>
 
-      <div className="w-full mb-20">
+      <div className="w-full mb-16">
         <Image
           src="/images/dataroom_images/overall_fundamental_flow.png"
           alt="IO-healthy-disease"
@@ -91,7 +90,7 @@ const OverallSummary: React.FC = () => {
         />
       </div>
 
-      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>The our model&#39;s strongest first application </strong> is on
         drug candidates that target multiple gene pathways.
         The self-attention transformer architecture is especially capable of capturing
@@ -102,7 +101,7 @@ const OverallSummary: React.FC = () => {
       </p>
 
 
-      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>We can monetize in two major ways.</strong> Either we persue a SaaS-style 
         business model selling access to inference or we use our system to develop our own 
         novel drug candidates. The former would allow us to generate revenue within a year, 
@@ -114,16 +113,16 @@ const OverallSummary: React.FC = () => {
         
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>The market opportunity </strong> for the SaaS version of our business model
-        is substantial and growing. Industry reports suggest AI in drug discovery was hit
+      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
+        <strong>The SaaS market opportunity </strong> is substantial and growing. 
+        Industry reports suggest AI in drug discovery was hit
         ~$500m in 2020 with a CAGR of 40%, reaching $3-5b by the late 2020s. The appeal for these 
         customers is clear -- a tool that saves hundres of millions by catching failures early 
         and enabling fine-tuning that substantially improves efficacy confidence will command 
         preimum subscription fees. 
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>If we develop our own drug candidates </strong> the market opportunity
         is more difficult to predict. If we follow the path Schrondinger persued, we 
         could take select compounds through proof-of-concept, then license or sell them
@@ -133,7 +132,7 @@ const OverallSummary: React.FC = () => {
         pre-clinical confidence) while participating in the upside of successful drug development.
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-12 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>Finally, we&#39;re also exploring drug repurposing: </strong> Our 
         biology foundation model is uniquely positioned to predict which existing
         clinically-validated drug candidates would be efficatious for entierly new disease areas. 
