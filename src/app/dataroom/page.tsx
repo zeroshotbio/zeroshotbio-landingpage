@@ -12,9 +12,9 @@ import Introduction from './docs/Overview/Introduction';
 import OverallSummary from './docs/Overview/Overall_Summary';
 
 // Problem
-import DrugDevelopmentPipeline from './docs/Problem/drugDevelopmentPipeline';
-import TherapeuticComplexity from './docs/Problem/therapeuticComplexity';
-import CaseStudyMylotarg from './docs/Problem/caseStudyMylotarg';
+import A_BiologyIsComplex from './docs/Problem/A_BIologyIsComplex';
+import TherapeuticComplexity from './docs/Problem/2_DrugDevelopment';
+import CaseStudyMylotarg from './docs/Problem/3_CaseStudyMylotarg';
 
 // Vision
 import VisionOverview from './docs/Vision/visionOverview';
@@ -87,9 +87,9 @@ const categories: Category[] = [
     description: 'An analysis of the key challenges in drug development.',
     subSections: [
       {
-        id: 'drug-development-pipeline',
-        title: 'Drug Development Pipeline',
-        component: DrugDevelopmentPipeline,
+        id: 'A_biology_is_complex',
+        title: 'Biology is Complex',
+        component: A_BiologyIsComplex,
       },
       {
         id: 'therapeutic-complexity',
