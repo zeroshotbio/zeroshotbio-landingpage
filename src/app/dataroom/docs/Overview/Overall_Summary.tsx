@@ -49,7 +49,7 @@ const OverallSummary: React.FC = () => {
         in human biology.
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
         <strong> We will run the data cycle continuously </strong> over the life of the 
         company to keep improvng our biological foundation models. 
         In its first incarnation, each turn of the cycle involves growing zebrafish,
@@ -79,17 +79,17 @@ const OverallSummary: React.FC = () => {
         determines its success. 
       </p>
 
-      <div className="w-full mb-4">
+      <div className="w-full mb-16">
         <Image
           src="/images/dataroom_images/input-output.png"
           alt="IO-healthy-disease"
-          width={500}
+          width={450}
           height={400}
           className="object-contain"
         />
       </div>
 
-      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
         are some of the most promising but difficult to harness. The chain of events
         that follow often have deep gene regulatory effects that either result in unexpected
@@ -97,9 +97,19 @@ const OverallSummary: React.FC = () => {
 
         The self-attention transformer architecture is especially well suited for capturing
         context-dependent, long-range interactions just like these. 
-        <strong> Fine-tuning a drug&#39;s impact on complex gene network effects
-        actually becomes possible to model confidently. </strong>
+        Fine-tuning a drug&#39;s impact on complex gene network effects
+        actually becomes possible to model confidently.
       </p>
+
+      <div className="w-full mb-20">
+        <Image
+          src="/images/dataroom_images/simple_v_complex_drugs.png"
+          alt="IO-healthy-disease"
+          width={500}
+          height={400}
+          className="object-contain"
+        />
+      </div>
 
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
