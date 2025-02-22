@@ -28,7 +28,7 @@ const OverallSummary: React.FC = () => {
       <p className="mt-4 roboto-slab-light text-base text-verydark leading-relaxed">
         <strong> In this first chapter, Zeroshot Biolabs is an AI-bio 
         interrogability company. </strong>
-        That is, our first focus is to use AI as the primpary lens through which the chaos of biology 
+        That is, our first focus is to use AI as the primary lens through which the chaos of biology 
         can become understood -- especially in the context of drug development. 
       </p>
 
@@ -39,7 +39,7 @@ const OverallSummary: React.FC = () => {
         and data-scalable signatures of activity within and between cells.
         AI&#39;s core competency is in understanding the complexity of high-dimensional networks, 
         especially when large pools of diverse training data are available. 
-        That&#39;s why we&#39;ve chosen to start with <strong><i>Danio rario</i> (zebrafish)</strong> as 
+        That&#39;s why we&#39;ve chosen to start with <strong><i>Danio rerio</i> (zebrafish)</strong> as 
         our first model organism. With zebrafish, we&#39;re able to sequence the transcriptomes 
         of thousands of cells from hundreds of individuals under dozens of conditions. 
       
@@ -51,12 +51,12 @@ const OverallSummary: React.FC = () => {
 
       <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
         <strong> We will run the data cycle continuously </strong> over the life of the 
-        company to keep improvng our biological foundation models. 
+        company to keep improving our biological foundation models. 
         In its first incarnation, each turn of the cycle involves growing zebrafish,
         creating healthy, disease, and perturbation varieties,
         performing scRNA sequencing, using the results to train and fine-tune our models,
         learning from the inference results, and finally designing the next generation of
-        experiments. By intelligently filling data gaps and fine-tuninig our model architecture 
+        experiments. By intelligently filling data gaps and fine-tuning our model architecture 
         over many generations, we expect to become the gold-standard for transcriptomic effect prediction.
       </p>
 
@@ -113,11 +113,11 @@ const OverallSummary: React.FC = () => {
 
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>We can monetize in two major ways.</strong> Either we persue a SaaS-style 
+        <strong>We can monetize in two major ways.</strong> Either we pursue a SaaS-style 
         business model selling access to inference or we use our system to develop our own 
         novel drug candidates. The former would allow us to generate revenue within a year, 
-        but the latter would (potentially) allow us to capture generate far more value 
-        in the long term. It may be that we persue a hybrid of these two models 
+        but the latter would (potentially) allow us to capture far more value 
+        in the long term. It may be that we pursue a hybrid of these two models 
         given their mutual synergy.
         We&#39;re having conversations with advisors, founders, investors, and 
         potential customers to help us make the right strategic decision here.
@@ -126,19 +126,19 @@ const OverallSummary: React.FC = () => {
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>1. The SaaS market opportunity </strong> is substantial and growing. 
-        Industry reports suggest AI in drug discovery was hit
+        Industry reports suggest AI in drug discovery reached
         ~$500m in 2020 with a CAGR of 40%, reaching $3-5b by the late 2020s. The appeal for these 
-        customers is clear -- a tool that saves hundres of millions by catching failures early 
+        customers is clear -- a tool that saves hundreds of millions by catching failures early 
         and enabling fine-tuning that substantially improves efficacy confidence will command 
-        preimum subscription fees. 
+        premium subscription fees. 
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>2. If we develop our own drug candidates </strong> the market opportunity
-        is more difficult to predict. If we follow the path Schrondinger persued, we 
+        is more difficult to predict. If we follow the path Schrödinger pursued, we 
         could take select compounds through proof-of-concept, then license or sell them
         outright to larger pharma for further clinical development. That means Zeroshot Biolabs
-        woulc make money in &#39;$100m batches&#39; plus milestone fees and royalties. The advantage of
+        would make money in &#39;$100m batches&#39; plus milestone fees and royalties. The advantage of
         this strategy is that Zeroshot can remain focused on its core competency (AI-driven 
         pre-clinical confidence) while participating in the upside of successful drug development.
       </p>
@@ -146,11 +146,11 @@ const OverallSummary: React.FC = () => {
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>We&#39;re also exploring drug repurposing. </strong> The capabilities of our 
         biological foundation model are uniquely positioned to predict which existing
-        clinically-validated drug candidates would be efficatious for entierly new disease areas. 
+        clinically-validated drug candidates would be efficacious for entirely new disease areas. 
         Repurposed therapies can deliver significant clinical value within 3-5 years instead of 
         7-10, especially if the original pharmacokinetics and safety data remain applicable in
         the repurposed context. We can design our model to rank hundreds of potential disease 
-        contexts simultaenously, effectively doing an &#39;all-vs-all&#39; match of drug-gene interactions.
+        contexts simultaneously, effectively doing an &#39;all-vs-all&#39; match of drug-gene interactions.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-20 leading-relaxed">
