@@ -112,7 +112,7 @@ const OverallSummary: React.FC = () => {
       </div>
 
 
-      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>We can monetize in two major ways.</strong> Either we persue a SaaS-style 
         business model selling access to inference or we use our system to develop our own 
         novel drug candidates. The former would allow us to generate revenue within a year, 
@@ -124,8 +124,8 @@ const OverallSummary: React.FC = () => {
         
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
-        <strong>The SaaS market opportunity </strong> is substantial and growing. 
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong>1. The SaaS market opportunity </strong> is substantial and growing. 
         Industry reports suggest AI in drug discovery was hit
         ~$500m in 2020 with a CAGR of 40%, reaching $3-5b by the late 2020s. The appeal for these 
         customers is clear -- a tool that saves hundres of millions by catching failures early 
@@ -134,7 +134,7 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
-        <strong>If we develop our own drug candidates </strong> the market opportunity
+        <strong>2. If we develop our own drug candidates </strong> the market opportunity
         is more difficult to predict. If we follow the path Schrondinger persued, we 
         could take select compounds through proof-of-concept, then license or sell them
         outright to larger pharma for further clinical development. That means Zeroshot Biolabs
@@ -144,8 +144,8 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
-        <strong>Finally, we&#39;re also exploring drug repurposing: </strong> Our 
-        biology foundation model is uniquely positioned to predict which existing
+        <strong>We&#39;re also exploring drug repurposing. </strong> The capabilities of our 
+        biological foundation model are uniquely positioned to predict which existing
         clinically-validated drug candidates would be efficatious for entierly new disease areas. 
         Repurposed therapies can deliver significant clinical value within 3-5 years instead of 
         7-10, especially if the original pharmacokinetics and safety data remain applicable in
@@ -154,12 +154,12 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-20 leading-relaxed">
-        <strong>Our thinking on the competitive landscape</strong> is that a zoology 
-        of specialized biology foundation models will thrive in what is an emerging landscape of niches.
-        Zeroshot Biolabs aims to become the leader in multi-animal transcriptomics toward 
+        <strong>Our thinking on the emerging competitive landscape</strong> is that a diversity 
+        of specialized foundation models will each thrive in a growing landscape of niches.
+        Zeroshot Biolabs aims to become the leader in transcriptomic effect modeling toward 
         human drug response prediction. Likely, Zeroshot will work synergistically with 
         other AI-bio companies at different levels of the biology &#39;stack&#39; as part of a chain 
-        of players creating value along the drug-development pipeline. 
+        of players creating value along the entire drug-development pipeline. 
       </p>
     </>
   );
