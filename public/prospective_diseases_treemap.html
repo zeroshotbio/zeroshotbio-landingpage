@@ -39,7 +39,7 @@
   // ----------------------------------------------------
   // Updated Canvas Dimensions & Proportional Factors
   // ----------------------------------------------------
-  const totalWidth = 650;
+  const totalWidth = 700;
   const totalHeight = 950;
   const scaleFactor = 550 / 1000;
 
@@ -68,17 +68,17 @@
   ]);
 
   const categoryLabelOptions = {
-    "Pain/Inflammation": { scale: 2.8, yOffset: 9 },
-    "Cancer":            { scale: 1.9, yOffset: -4 },
-    "Cardiovascular":    { scale: 2.8, yOffset: 4 },
-    "Diabetes":          { scale: 2.5, yOffset: 4 },
-    "Autoimmune":        { scale: 2.2, yOffset: -1 },
+    "Pain/Inflammation": { scale: 2.8, yOffset: 4 },
+    "Cancer":            { scale: 2.9, yOffset: -4 },
+    "Cardiovascular":    { scale: 2.8, yOffset: 2 },
+    "Diabetes":          { scale: 3.7, yOffset: 4 },
+    "Autoimmune":        { scale: 2.2, yOffset: 3 },
     "Infectious":        { scale: 2.5, yOffset: 5 },
     "Neurological/Psych":{ scale: 2.5, yOffset: 5 },
-    "Gene Therapy":      { scale: 3.2, yOffset: 6 },
+    "Gene Therapy":      { scale: 3.0, yOffset: 8 },
     "Respiratory":       { scale: 3.5, yOffset: 6 },
-    "Transplant":        { scale: 3.4, yOffset: 6 },
-    "Other":             { scale: 2.7, yOffset: 7 }
+    "Transplant":        { scale: 5.2, yOffset: 9 },
+    "Other":             { scale: 2.9, yOffset: 0 }
   };
 
   // ----------------------------------------------------
@@ -89,15 +89,15 @@
   const boxTextBaseSize = 35 * scaleFactor;
   const boxTextShrinkFactor = 0.11;
 
-  const treemapOuterPadding = 1.0 * scaleFactor;
-  const treemapInnerPadding = 0.2 * scaleFactor;
+  const treemapOuterPadding = 0.3 * scaleFactor;
+  const treemapInnerPadding = 0.1 * scaleFactor;
   const categoryTitleYOffsetFactor = 1.0;
   const treemapTopPadding = 45 * scaleFactor;
   // Legend-related variables removed.
-  const baseCategoryTitleOffset = 2 * scaleFactor;
-  const leafTextTopOffset = 1 * scaleFactor;
+  const baseCategoryTitleOffset = 9 * scaleFactor;
+  const leafTextTopOffset = 3 * scaleFactor;
 
-  // We calculate the treemap's internal height without subtracting extra legend space.
+  // We calculate the treemap's internal height by subtracting the extra legend area.
   const treemapHeight = totalHeight
 
   // Main SVG container
@@ -119,8 +119,8 @@
     .domain([100, 75, 25, 1])
     .range(["#d89d6b", "#633d2b", "#3f7693", "#78bcd5"]);
 
-  // Remove Gradient for Legend
-
+  // Gradient for Legend removed.
+  const defs = svg.append("defs");
   // ----------------------------------------------------
   // Treemap Layout
   // ----------------------------------------------------
@@ -191,10 +191,11 @@
   // ----------------------------------------------------
   // Load & Process Data
   // ----------------------------------------------------
-  d3.csv("d3_complexity_heatmap.csv").then(rawData => {
+  // Note: Adjust the CSV filename and field names to match your new data.
+  d3.csv("prospective_diseases_treemap.csv").then(rawData => {
     rawData.forEach(d => {
       d.ComplexityScore = +d.ComplexityScore;
-      d.MonetaryImpact = +d.MonetaryImpact;
+      d.ProjectedMonetaryValue = +d.ProjectedMonetaryValue;
       d.MappedCategory = mapToMajorCategory(d.Category);
     });
 
@@ -202,9 +203,9 @@
     const catGroups = d3.rollups(
       rawData,
       arr => arr.map(d => ({
-        name: d.Therapeutic,
+        name: d.Indication,
         complexity: d.ComplexityScore,
-        monetary: d.MonetaryImpact,
+        monetary: d.ProjectedMonetaryValue,
         text: d.TextDescription
       })),
       d => d.MappedCategory
@@ -227,7 +228,7 @@
       name: cat,
       children: leaves
     }));
-    const rootData = { name: "Therapeutics", children };
+    const rootData = { name: "Disease Indications", children };
 
     // Scale each leaf's area using leafAreaScaleFactor
     const root = d3.hierarchy(rootData)
@@ -236,7 +237,7 @@
     treemapLayout(root);
 
     // --------------------------------------------------
-    // Draw Leaves (Individual Drugs)
+    // Draw Leaves (Individual Indications)
     // --------------------------------------------------
     const leaves = treemapGroup.selectAll(".node")
       .data(root.leaves())
@@ -253,7 +254,7 @@
           .html(
             `<strong>${d.data.name}</strong><br>
             Complexity: ${d.data.complexity}<br>
-            Market: $${d.data.monetary.toLocaleString()}M<br>
+            Market (B$): ${d.data.monetary}<br>
             <em>${d.data.text}</em>`
           );
       })

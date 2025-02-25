@@ -22,18 +22,27 @@ const TherapeuticComplexity: React.FC = () => {
         disease category, complexity, and monetary impact. You can mouse over each square to get more info.
       </p>
 
-      <div className="w-full mb-2">
-        <figure className="text-left">
+      <div className="w-full">
+        <figure className="text-left m-0">
           <iframe
             src="/d3_complexity_heatmap.html"
-            className="w-full h-[975px]"
+            className="w-full h-[970px] block"
             title="D3 Treemap"
           ></iframe>
+          <Image
+            src="/images/dataroom_images/tree_map_legend.png"
+            alt="IO-healthy-disease"
+            width={630}
+            height={100}
+            className="object-contain mt-0"
+          />
         </figure>
       </div>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
+
+      <p className="roboto-slab-light text-base mt-10 mb-10 leading-relaxed">
         As you can see a large portion of approved therapeutics we care about involve complex gene networks.
+
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
@@ -41,13 +50,20 @@ const TherapeuticComplexity: React.FC = () => {
         top ~300 indications of interest.
       </p>
 
-      <div className="w-full mb-2">
-        <figure className="text-left">
+      <div className="w-full">
+        <figure className="text-left m-0">
           <iframe
-            src="/d3_complexity_heatmap.html"
-            className="w-full h-[975px]"
+            src="/prospective_diseases_treemap.html"
+            className="w-full h-[970px] block"
             title="D3 Treemap"
           ></iframe>
+          <Image
+            src="/images/dataroom_images/tree_map_legend.png"
+            alt="IO-healthy-disease"
+            width={630}
+            height={100}
+            className="object-contain mt-0"
+          />
         </figure>
       </div>
 
