@@ -24,8 +24,8 @@ const A_BiologyIsComplex: React.FC = () => {
           <Image
             src="/images/dataroom_images/zebrafish_radial.png"
             alt="IO-healthy-disease"
-            width={500}
-            height={400}
+            width={600}
+            height={500}
             className="object-contain"
           />
           <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
@@ -39,11 +39,11 @@ const A_BiologyIsComplex: React.FC = () => {
         <strong> The history of bioengineering is checkered with cycles of discovery
          and false confidence. </strong> 
           A century of attempts at using classical engineering approaches toward
-          reliable health improvements has produced mixed results. 
+          reliable bioengineering has produced mixed clinical results. 
           For the number of research directions biologists have explored, few have 
           resulted in reliable therapeutics. Vaccines, antibiotics, 
-          and small-molecules are the most successful examples, arguably the results 
-          of trial and error, directional luck, and low-hanging fruit more than 
+          and small-molecules are the most successful examples. Arguably, their success
+          is the result of trial and error, directional luck, and low-hanging fruit more than 
           bioengineering confidence and strategic intelligence.
       </p>
 

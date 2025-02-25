@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>D3 Treemap with Per-Category Label Adjustments & Padding Controls (Including "Other")</title>
+  <title>D3 Treemap for Narrow Layout (600 × 950)</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <style>
     body {
@@ -37,11 +37,22 @@
 <div class="tooltip" id="tooltip"></div>
 <script>
   // ----------------------------------------------------
-  // Adjustable Variables
+  // Updated Canvas Dimensions & Proportional Factors
   // ----------------------------------------------------
+  const totalWidth = 600;
+  const totalHeight = 950;
+  const scaleFactor = 550 / 1000;
 
-  // A) The major categories you want distinct; everything else → "Other".
-  //    Note: "Other" is now explicitly added.
+  // NEW: Additional adjustable variables
+  // 1) Horizontal padding (like treemapTopPadding but for the left/right edges)
+  const treemapSidePadding = 8 * scaleFactor;
+
+  // 2) Leaf area scale factor (multiplies each leaf's data value so you can tune leaf box sizes)
+  const leafAreaScaleFactor = 2;
+
+  // ----------------------------------------------------
+  // Major Categories and Category-Specific Label Tweaks
+  // ----------------------------------------------------
   const majorCategoriesSet = new Set([
     "Pain/Inflammation",
     "Cancer",
@@ -56,74 +67,61 @@
     "Other"
   ]);
 
-  // B) Per-category label adjustments (scale & yOffset).
-  //    'scale' multiplies the dynamic label size for that category;
-  //    'yOffset' is added (in pixels) after the dynamic placement.
   const categoryLabelOptions = {
-    "Pain/Inflammation": { scale: 1.2, yOffset: 12 },
-    "Cancer":            { scale: 1.2, yOffset: -11 },
-    "Cardiovascular":    { scale: 1.3, yOffset: -1 },
-    "Diabetes":          { scale: 1.3, yOffset: -1 },
-    "Autoimmune":        { scale: 1.2, yOffset: 1 },
-    "Infectious":        { scale: 1.2, yOffset: 3 },
-    "Neurological/Psych":{ scale: 1.2, yOffset:4 },
-    "Gene Therapy":      { scale: 1.4, yOffset: 10 },
-    "Respiratory":       { scale: 1.5, yOffset: 9 },
-    "Transplant":        { scale: 1.5, yOffset: 10 },
-    "Other":             { scale: 1.3, yOffset: 6 }  // New: options for "Other"
+    "Pain/Inflammation": { scale: 2.8, yOffset: 9 },
+    "Cancer":            { scale: 1.9, yOffset: -4 },
+    "Cardiovascular":    { scale: 2.8, yOffset: 4 },
+    "Diabetes":          { scale: 2.5, yOffset: 4 },
+    "Autoimmune":        { scale: 2.2, yOffset: -1 },
+    "Infectious":        { scale: 2.5, yOffset: 5 },
+    "Neurological/Psych":{ scale: 2.5, yOffset: 5 },
+    "Gene Therapy":      { scale: 3.2, yOffset: 6 },
+    "Respiratory":       { scale: 3.5, yOffset: 6 },
+    "Transplant":        { scale: 3.4, yOffset: 6 },
+    "Other":             { scale: 2.7, yOffset: 7 }
   };
 
-  // C) Variables controlling text sizes for category labels & leaf text.
-  const majorTitleBaseSize = 40;       // max category label size
-  const majorTitleShrinkFactor = 0.05; // min fraction of that size
-  const boxTextBaseSize = 20;         // max leaf text size
-  const boxTextShrinkFactor = 0.15;   // min fraction of that size
-
-  // D) Treemap layout spacing & other layout parameters.
-  const treemapOuterPadding = 2;       // outer padding around entire treemap & each major category
-  const treemapInnerPadding = 1;       // spacing between individual leaf rectangles
-  const categoryTitleYOffsetFactor = 1.0; // multiplier for dynamic vertical placement of category labels
-  const treemapTopPadding = 30;          // extra top margin for entire treemap
-  const legendSpacingFromTreemap = 40;   // vertical space between treemap bottom & legend
-  const legendWidth = 600;              // width of the color legend
-  const legendFontSize = 14;            // font size for legend tick labels
-  const baseCategoryTitleOffset = 6;    // small horizontal offset for category labels
-  const leafTextTopOffset = 2;          // top offset for leaf text
-
   // ----------------------------------------------------
-  // Overall Layout
+  // Adjusted Font & Layout Variables (Scaled)
   // ----------------------------------------------------
-  const totalWidth = 900;
-  const totalHeight = 900;
-  // Subtract space for legend area plus additional spacing.
+  const majorTitleBaseSize = 35 * scaleFactor;
+  const majorTitleShrinkFactor = 0.07;
+  const boxTextBaseSize = 35 * scaleFactor;
+  const boxTextShrinkFactor = 0.11;
+
+  const treemapOuterPadding = 1.0 * scaleFactor;
+  const treemapInnerPadding = 0.2 * scaleFactor;
+  const categoryTitleYOffsetFactor = 1.0;
+  const treemapTopPadding = 45 * scaleFactor;
+  const legendSpacingFromTreemap = 50 * scaleFactor;
+  const legendWidth = 800 * scaleFactor;
+  const legendFontSize = 30 * scaleFactor;
+  const baseCategoryTitleOffset = 2 * scaleFactor;
+  const leafTextTopOffset = 1 * scaleFactor;
+
+  // We calculate the treemap's internal height by subtracting the extra legend area.
   const treemapHeight = totalHeight - (legendSpacingFromTreemap + 80);
 
-  // Create the main SVG container.
+  // Main SVG container
   const svg = d3.select("body")
     .append("svg")
     .attr("width", totalWidth)
     .attr("height", totalHeight);
 
-  // A group for the treemap.
+  // A group for the treemap
   const treemapGroup = svg.append("g");
 
-  // Tooltip for mouseover.
+  // Tooltip
   const tooltip = d3.select("#tooltip");
 
   // ----------------------------------------------------
-  // Color Scale for Complexity
-  //   Domain [100..1]: left = most complex, right = least complex
+  // Color Scale (Unchanged)
   // ----------------------------------------------------
   const colorScale = d3.scaleLinear()
     .domain([100, 75, 25, 1])
-    .range([
-      "#d89d6b", // complexity=100
-      "#633d2b",
-      "#3f7693",
-      "#78bcd5"  // complexity=1
-    ]);
+    .range(["#d89d6b", "#633d2b", "#3f7693", "#78bcd5"]);
 
-  // Create a gradient for the color legend.
+  // Gradient for Legend
   const defs = svg.append("defs");
   const linearGradient = defs.append("linearGradient")
     .attr("id", "legendGradient")
@@ -146,13 +144,15 @@
   // ----------------------------------------------------
   // Treemap Layout
   // ----------------------------------------------------
-  // We use the new outer & inner padding values and enable rounding.
+  // We add the new side padding to the layout with .paddingLeft/.paddingRight
   const treemapLayout = d3.treemap()
     .size([totalWidth, treemapHeight])
     .round(true)
     .paddingOuter(treemapOuterPadding)
     .paddingInner(treemapInnerPadding)
-    .paddingTop(treemapTopPadding);
+    .paddingTop(treemapTopPadding)
+    .paddingLeft(treemapSidePadding)
+    .paddingRight(treemapSidePadding);
 
   // ----------------------------------------------------
   // Helper Functions
@@ -161,7 +161,6 @@
     return majorCategoriesSet.has(cat) ? cat : "Other";
   }
 
-  // Compute dynamic category label size based on the box's minimum dimension.
   function categoryFontSize(boxMin) {
     const maxBoxSize = 600;
     const t = Math.max(0, Math.min(boxMin / maxBoxSize, 1));
@@ -170,7 +169,6 @@
     return minFont + (maxFont - minFont) * t;
   }
 
-  // Compute dynamic leaf (drug) text size similarly.
   function leafFontSize(boxMin) {
     const maxBoxSize = 300;
     const t = Math.max(0, Math.min(boxMin / maxBoxSize, 1));
@@ -179,7 +177,6 @@
     return minFont + (maxFont - minFont) * t;
   }
 
-  // Wrap text into up to maxLines lines, adding new tspans as needed.
   function wrapText(textSelection, fullText, boxWidth, maxLines) {
     const words = fullText.split(/\s+/);
     let line = [];
@@ -218,11 +215,10 @@
     rawData.forEach(d => {
       d.ComplexityScore = +d.ComplexityScore;
       d.MonetaryImpact = +d.MonetaryImpact;
-      // Remap category to our major list or "Other"
       d.MappedCategory = mapToMajorCategory(d.Category);
     });
 
-    // 1) Group items by MappedCategory.
+    // Group by mapped category
     const catGroups = d3.rollups(
       rawData,
       arr => arr.map(d => ({
@@ -234,35 +230,34 @@
       d => d.MappedCategory
     );
 
-    // 2) Sort leaves within each category by descending complexity.
+    // Sort leaves by descending complexity
     catGroups.forEach(([cat, leaves]) => {
       leaves.sort((a, b) => b.complexity - a.complexity);
     });
 
-    // 3) Sort categories by total monetary impact (largest first).
+    // Sort categories by total monetary impact
     catGroups.sort((a, b) => {
       const sumA = d3.sum(a[1], d => d.monetary);
       const sumB = d3.sum(b[1], d => d.monetary);
       return sumB - sumA;
     });
 
-    // 4) Build the data tree.
+    // Build hierarchy
     const children = catGroups.map(([cat, leaves]) => ({
       name: cat,
       children: leaves
     }));
     const rootData = { name: "Therapeutics", children };
 
-    // 5) Create a hierarchy, summing by monetary impact.
+    // Use the new leafAreaScaleFactor to scale each leaf's area
     const root = d3.hierarchy(rootData)
-      .sum(d => d.monetary);
+      .sum(d => d.monetary * leafAreaScaleFactor);
 
-    // 6) Compute the treemap.
     treemapLayout(root);
 
-    // ----------------------------------------------------
-    // Draw the Leaves (Individual Drugs)
-    // ----------------------------------------------------
+    // --------------------------------------------------
+    // Draw Leaves (Individual Drugs)
+    // --------------------------------------------------
     const leaves = treemapGroup.selectAll(".node")
       .data(root.leaves())
       .join("g")
@@ -275,12 +270,12 @@
       .attr("fill", d => colorScale(d.data.complexity))
       .on("mouseover", (event, d) => {
         tooltip.style("opacity", 1)
-          .html(`
-            <strong>${d.data.name}</strong><br>
+          .html(
+            `<strong>${d.data.name}</strong><br>
             Complexity: ${d.data.complexity}<br>
             Market: $${d.data.monetary.toLocaleString()}M<br>
-            <em>${d.data.text}</em>
-          `);
+            <em>${d.data.text}</em>`
+          );
       })
       .on("mousemove", (event) => {
         tooltip.style("left", (event.pageX + 10) + "px")
@@ -290,7 +285,6 @@
         tooltip.style("opacity", 0);
       });
 
-    // Leaf (drug) labels
     leaves.append("text")
       .each(function(d) {
         const node = d3.select(this);
@@ -299,18 +293,19 @@
         const boxMin = Math.min(w, h);
         const fSize = leafFontSize(boxMin);
 
-        node.attr("x", 4)
+        node
+          .attr("x", 4 * scaleFactor)
           .attr("y", fSize + leafTextTopOffset)
           .attr("font-size", fSize + "px")
           .attr("fill", "#fff")
           .style("pointer-events", "none");
 
-        wrapText(node, d.data.name, w - 8, 2);
+        wrapText(node, d.data.name, w - (8 * scaleFactor), 2);
       });
 
-    // ----------------------------------------------------
-    // Draw the Major Category Labels
-    // ----------------------------------------------------
+    // --------------------------------------------------
+    // Draw Major Category Labels
+    // --------------------------------------------------
     treemapGroup.selectAll(".category-label")
       .data(root.children)
       .join("text")
@@ -319,16 +314,12 @@
         const catW = d.x1 - d.x0;
         const catH = d.y1 - d.y0;
         const boxMin = Math.min(catW, catH);
-
-        // Compute the dynamic base label size.
         const dynamicSize = categoryFontSize(boxMin);
 
-        // Look up custom options for this category (or default if not found).
         const catName = d.data.name;
         const opts = categoryLabelOptions[catName] || { scale: 1.0, yOffset: 0 };
         const finalLabelSize = dynamicSize * opts.scale;
 
-        // Compute the dynamic vertical anchor.
         const dynamicY = d.y0 + finalLabelSize * categoryTitleYOffsetFactor;
         const finalY = dynamicY + opts.yOffset;
 
@@ -339,9 +330,9 @@
           .text(catName);
       });
 
-    // ----------------------------------------------------
-    // Draw the Legend
-    // ----------------------------------------------------
+    // --------------------------------------------------
+    // Draw Legend
+    // --------------------------------------------------
     const legendX = (totalWidth - legendWidth) / 2;
     const legendY = treemapHeight + legendSpacingFromTreemap;
 
@@ -354,7 +345,7 @@
 
     legendGroup.append("rect")
       .attr("width", legendWidth)
-      .attr("height", 20)
+      .attr("height", 20 * scaleFactor)
       .style("fill", "url(#legendGradient)");
 
     const legendAxis = d3.axisBottom(legendScale)
@@ -362,7 +353,7 @@
       .tickFormat(d => d);
 
     legendGroup.append("g")
-      .attr("transform", "translate(0,20)")
+      .attr("transform", `translate(0,${20 * scaleFactor})`)
       .call(legendAxis)
       .selectAll("text")
       .attr("font-size", legendFontSize + "px");
@@ -371,14 +362,14 @@
 
     legendGroup.append("text")
       .attr("x", 0)
-      .attr("y", -5)
+      .attr("y", -5 * scaleFactor)
       .attr("fill", "#000")
       .attr("font-size", legendFontSize + "px")
       .text("Most Complex");
 
     legendGroup.append("text")
       .attr("x", legendWidth)
-      .attr("y", -5)
+      .attr("y", -5 * scaleFactor)
       .attr("fill", "#000")
       .attr("text-anchor", "end")
       .attr("font-size", legendFontSize + "px")

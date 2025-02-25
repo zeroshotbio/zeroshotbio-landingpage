@@ -13,8 +13,8 @@ import OverallSummary from './docs/Overview/Overall_Summary';
 
 // Problem
 import A_BiologyIsComplex from './docs/Problem/A_BIologyIsComplex';
-import TherapeuticComplexity from './docs/Problem/2_DrugDevelopment';
-import CaseStudyMylotarg from './docs/Problem/3_CaseStudyMylotarg';
+import B_DrugDevelopment from './docs/Problem/B_DrugDevelopment';
+import C_CaseStudyMylotarg from './docs/Problem/C_CaseStudyMylotarg';
 
 // Vision
 import VisionOverview from './docs/Vision/visionOverview';
@@ -92,14 +92,14 @@ const categories: Category[] = [
         component: A_BiologyIsComplex,
       },
       {
-        id: 'therapeutic-complexity',
-        title: 'Therapeutic Complexity',
-        component: TherapeuticComplexity,
+        id: 'B_drug_development',
+        title: 'Drug Development Ladscape',
+        component: B_DrugDevelopment,
       },
       {
-        id: 'case-study-mylotarg',
+        id: 'C_case_study_mylotarg',
         title: 'Case Study: Mylotarg',
-        component: CaseStudyMylotarg,
+        component: C_CaseStudyMylotarg,
       },
     ],
   },
