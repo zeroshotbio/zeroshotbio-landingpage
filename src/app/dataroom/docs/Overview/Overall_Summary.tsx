@@ -133,6 +133,16 @@ const OverallSummary: React.FC = () => {
         premium subscription fees. 
       </p>
 
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong>Patrick: </strong> 
+        Steven make sure to clarify that we're not going to become a chemical structure design co. 
+        We're a disease pathways understanding and discovery company. 
+        We may be able to directly discover proteins as therapeutics. 
+        Or recapitulate existing drugs into pathways we discove.
+        But our core competency is NOT chemistry. 
+      </p>
+
+
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>2. If we develop our own drug candidates </strong> the market opportunity
         is more difficult to predict. If we follow the path Schrödinger pursued, we 
