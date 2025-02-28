@@ -60,7 +60,7 @@ const OverallSummary: React.FC = () => {
         over many generations, we expect to become the gold-standard for transcriptomic effect prediction.
       </p>
 
-      <div className="w-full mb-16">
+      <div className="w-full mb-4">
         <Image
           src="/images/dataroom_images/overall_fundamental_flow.png"
           alt="IO-healthy-disease"
@@ -69,6 +69,11 @@ const OverallSummary: React.FC = () => {
           className="object-contain"
         />
       </div>
+      <p className="roboto-slab-extralight text-xxsm mb-20 mt-0 leading-relaxed">
+        The data cycle represents our fundamental development loop. As Zeroshot Biolabs begins exploring
+        specialization into different specific disease pathways, crucial new data will be generated 
+        through experiments on real animal model organisms. 
+      </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
        <strong> The first iteration of our biological foundation model </strong>predicts
@@ -79,7 +84,7 @@ const OverallSummary: React.FC = () => {
         determines its success. 
       </p>
 
-      <div className="w-full mb-16">
+      <div className="w-full mt-0 mb-4">
         <Image
           src="/images/dataroom_images/input-output.png"
           alt="IO-healthy-disease"
@@ -88,6 +93,12 @@ const OverallSummary: React.FC = () => {
           className="object-contain"
         />
       </div>
+
+      <p className="roboto-slab-extralight text-xxsm mb-20 mt-0 leading-relaxed">
+        A visualization of the fundamental operation of the first iteration of our transformer model,
+        tsGPT 1.4. Inputs and outputs are structed as gene expression profiles, which are then interpreted
+        back into biologically relevant phenotypic realities.
+      </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
@@ -101,7 +112,7 @@ const OverallSummary: React.FC = () => {
         actually becomes possible to model confidently.
       </p>
 
-      <div className="w-full mb-20">
+      <div className="w-full">
         <Image
           src="/images/dataroom_images/simple_v_complex_drugs.png"
           alt="IO-healthy-disease"
@@ -110,6 +121,11 @@ const OverallSummary: React.FC = () => {
           className="object-contain"
         />
       </div>
+      <p className="roboto-slab-extralight text-xxsm mb-20 mt-4 leading-relaxed">
+        The data cycle represents our fundamental development loop. As Zeroshot Biolabs begins exploring
+        specialization into different specific disease pathways, crucial new data will be generated 
+        through experiments on real animal model organisms. 
+      </p>
 
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">

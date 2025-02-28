@@ -43,8 +43,8 @@ const A_BiologyIsComplex: React.FC = () => {
           For the number of research directions biologists have explored, few have 
           resulted in reliable therapeutics. Vaccines, antibiotics, 
           and small-molecules are the most successful examples. Arguably, their success
-          is the result of trial and error, directional luck, and low-hanging fruit more than 
-          bioengineering confidence and strategic intelligence.
+          is largely the result of trial and error, directional luck, and low-hanging fruit 
+          more than bioengineering confidence and strategic intelligence.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
