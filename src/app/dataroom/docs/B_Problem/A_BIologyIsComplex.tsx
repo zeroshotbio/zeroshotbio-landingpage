@@ -34,6 +34,17 @@ const A_BiologyIsComplex: React.FC = () => {
         </figure>
       </div>
 
+      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
+         <strong> Cancer is one quintessential example </strong> of the centrality of transcriptomic complexity
+         in therapeutic development. 
+         When one signaling route is inhibited, cancer cells evolve
+         alternative, redundant gene expression pathways, rerouting survival
+         signals by taking advantage of the chaos of transcriptomic interactions. 
+         This ability to exploit multiple, overlapping gene regulatory circuits not only ensures their 
+         persistence in the face of targeted therapies but also underscores the need for system-wide, 
+         AI-driven strategies that can anticipate and counteract such adaptive maneuvers.
+      </p>
+
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong> The history of bioengineering is checkered with cycles of discovery
