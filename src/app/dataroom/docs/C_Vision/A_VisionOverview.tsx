@@ -5,15 +5,38 @@ const C_Vision: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Our Vision for a Transcriptomic Revolution
+        Our Vision for Biological Foundation Models
       </h2>
 
       <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>Innovating Drug Development.</strong> Imagine a world where the intricate details of gene expression are not just a mystery but a well-charted roadmap for therapeutic innovation. At Zeroshot Biolabs, we see a future where a mature tsGPT engine deciphers vast transcriptomic datasets to pinpoint novel drug targets with extraordinary precision. This breakthrough will empower us to design next-generation drugs that strike at the very heart of disease mechanisms.
+        <strong> Fundamentally,</strong> we're interested in biological foundation models and the application
+        of their predictive and generative powers toward a fundamentally new paradigm in drug development. 
+        We belive entirely new categories of therapeutic strategies will be unlocked in the next decade;
+        treatments for diseases previously insurmountable will become possible. 
+      </p>
+
+      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
+        <strong> There are a few pathways for Zeroshot Biolabs</strong> as a company to grow from where
+        we are today into a major player in the emerging AI-first drug development space. Below are the 
+        strategic directions we believe are an incredibly promising bridge to that future. 
+      </p>
+
+
+
+      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
+        <strong>Innovating Drug Development.</strong> Imagine a world where the intricate details of gene
+         expression are not just a mystery but a well-charted roadmap for therapeutic innovation. 
+         At Zeroshot Biolabs, we see a future where a mature tsGPT engine deciphers vast transcriptomic 
+         datasets to pinpoint novel drug targets with extraordinary precision. This breakthrough will 
+         empower us to design next-generation drugs that strike at the very heart of disease mechanisms.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Reimagining Drug Repurposing.</strong> Our vision extends to rethinking existing treatments. With advanced transcriptomic insights, our tsGPT engine will sift through the complex molecular signatures of diverse diseases to uncover unexpected therapeutic potentials in drugs already approved for other indications. This not only accelerates the discovery process but also reduces the cost and risk associated with bringing new therapies to market.
+        <strong>Reimagining Drug Repurposing.</strong> Our vision extends to rethinking existing treatments.
+         With advanced transcriptomic insights, our tsGPT engine will sift through the complex molecular 
+         signatures of diverse diseases to uncover unexpected therapeutic potentials in drugs already 
+         approved for other indications. This not only accelerates the discovery process but also
+          reduces the cost and risk associated with bringing new therapies to market.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
