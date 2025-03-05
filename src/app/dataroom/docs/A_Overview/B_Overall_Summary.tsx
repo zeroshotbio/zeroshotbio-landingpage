@@ -151,8 +151,8 @@ const OverallSummary: React.FC = () => {
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>Patrick: </strong> 
-        Steven make sure to clarify that we're not going to become a chemical structure design co. 
-        We're a disease pathways understanding and discovery company. 
+        Steven make sure to clarify that we&#39;re not going to become a chemical structure design co. 
+        We&#39;re a disease pathways understanding and discovery company. 
         We may be able to directly discover proteins as therapeutics. 
         Or recapitulate existing drugs into pathways we discove.
         But our core competency is NOT chemistry. 

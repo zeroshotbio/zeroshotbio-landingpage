@@ -64,7 +64,7 @@ const C_FoundationModelTsGPT: React.FC = () => {
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>One of tsGPT’s most transformative capabilities is its cross‐species toxicity forecasting.</strong> 
         In classical drug development, a compound might appear safe in certain animal models while eliciting 
-        unexpected toxicity in another. The truism "animal models lie, but multiple models together are predictive" 
+        unexpected toxicity in another. The truism &#34animal models lie, but multiple models together are predictive&#34 
         underscores the reason we embraced multi‐species data from the start. By identifying shared gene regulatory 
         signatures that correlate with organ damage or pathological stress, tsGPT generates insights about 
         whether a drug’s toxic liabilities might appear in rodents, fish, or humans—long before a full battery 
@@ -76,7 +76,7 @@ const C_FoundationModelTsGPT: React.FC = () => {
         such as immune‐oncology, rare disease, or specific organ toxicities. The adjacency structure can incorporate 
         curated pathways for, say, cardiotoxicity or neurotoxicity. The time tokens and species embeddings 
         allow it to handle scenarios ranging from acute doses in zebrafish larvae to chronic dosing in rodent 
-        models. This flexibility means that researchers can “fine‐tune” tsGPT on a small, domain‐specific dataset 
+        models. This flexibility means that researchers can &#34fine‐tune&#34 tsGPT on a small, domain‐specific dataset 
         while still leveraging the vast cross‐species knowledge it gained from its initial pretraining.
       </p>
 
@@ -99,7 +99,7 @@ const C_FoundationModelTsGPT: React.FC = () => {
             className="object-contain"
           />
           <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            tsGPT's adjacency‐aware attention integrates knowledge of gene regulatory networks 
+            tsGPT&#39;s adjacency‐aware attention integrates knowledge of gene regulatory networks 
             across multiple species.
           </figcaption>
         </figure>
@@ -107,8 +107,8 @@ const C_FoundationModelTsGPT: React.FC = () => {
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>The vision for tsGPT extends far beyond incremental improvements.</strong> By modeling 
-        gene expression and regulatory circuits as a universal “language” of biology, tsGPT opens the door 
-        to entirely new ways of exploring therapeutic interventions. Researchers can run “what‐if” 
+        gene expression and regulatory circuits as a universal &#34language&#34 of biology, tsGPT opens the door 
+        to entirely new ways of exploring therapeutic interventions. Researchers can run &#34what‐if&#34 
         inferences—testing how gene expression might shift in disease or how various drug combinations 
         might synergize across different organisms. This approach promises to reduce guesswork and to unify 
         data across models in a single, comprehensive AI architecture.

@@ -9,7 +9,7 @@ const C_MarketOpportunity: React.FC = () => {
       </h2>
 
       <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>A Transformative Moment in Drug Discovery.</strong> The AI-driven drug discovery market is surging, with industry estimates placing its value at approximately $500 million in 2020 and projecting a compound annual growth rate of around 40%. By the late 2020s, this market could expand to between $3 and $5 billion. For companies that can reduce costly failures and optimize therapeutic efficacy, the premium subscription fees commanded by these tools promise a substantial return on investment.
+        <strong>A Transformative Moment in Drug Discovery.</strong> The AI-driven drug discovery market is surging, with industry estimates placing its value at approximately &#34;500 million in 2020 and projecting a compound annual growth rate of around 40%. By the late 2020s, this market could expand to between &#34;3 and &#34;5 billion. For companies that can reduce costly failures and optimize therapeutic efficacy, the premium subscription fees commanded by these tools promise a substantial return on investment.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
@@ -21,11 +21,11 @@ const C_MarketOpportunity: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Drug Candidate Development and Licensing.</strong> Following a model reminiscent of the Schrödinger Nimbus Takeda story, we envision developing select drug candidates to a compelling proof-of-concept stage, then licensing or selling these assets to major pharmaceutical companies. This approach allows us to concentrate on our core competency—AI-driven preclinical confidence—while benefiting from lucrative deals in the "$100 million batch" range, along with milestone payments and royalties. This pathway offers a highly attractive revenue stream without requiring us to engage directly in chemical design.
+        <strong>Drug Candidate Development and Licensing.</strong> Following a model reminiscent of the Schrödinger Nimbus Takeda story, we envision developing select drug candidates to a compelling proof-of-concept stage, then licensing or selling these assets to major pharmaceutical companies. This approach allows us to concentrate on our core competency—AI-driven preclinical confidence—while benefiting from lucrative deals in the &#34;100 million batch&#34; range, along with milestone payments and royalties. This pathway offers a highly attractive revenue stream without requiring us to engage directly in chemical design.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Unlocking the Power of Drug Repurposing.</strong> Our advanced transcriptomic models can conduct an 'all-versus-all' match of drug-gene interactions across hundreds of disease contexts. This unique capability positions us to identify promising candidates for drug repurposing—leveraging existing safety and pharmacokinetic data to accelerate clinical timelines from the typical 7–10 years down to 3–5 years. By quickly pinpointing new therapeutic opportunities, we not only enhance clinical value but also significantly mitigate development risk.
+        <strong>Unlocking the Power of Drug Repurposing.</strong> Our advanced transcriptomic models can conduct an &#39;all-versus-all&#39; match of drug-gene interactions across hundreds of disease contexts. This unique capability positions us to identify promising candidates for drug repurposing—leveraging existing safety and pharmacokinetic data to accelerate clinical timelines from the typical 7–10 years down to 3–5 years. By quickly pinpointing new therapeutic opportunities, we not only enhance clinical value but also significantly mitigate development risk.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">

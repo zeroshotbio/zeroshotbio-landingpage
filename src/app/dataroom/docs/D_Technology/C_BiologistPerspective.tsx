@@ -152,7 +152,7 @@ const C_BiologistPerspective: React.FC = () => {
         it elucidates which genes or pathways are implicated. 
         This rationale supports more directed medicinal chemistry or targeted 
         experiments—vital in a drug discovery culture that values both speed and rigorous 
-        validation.
+        validation.&#39;&#39;
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mt-12 mb-12 leading-relaxed">

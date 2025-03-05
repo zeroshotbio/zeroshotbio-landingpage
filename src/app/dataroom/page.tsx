@@ -35,7 +35,7 @@ import BusinessModel from './docs/E_Business_Model/A_BusinessModel';
 import MarketOpportunity from './docs/F_Market_Opportunity/A_MarketOpportunity';
 import Customers from './docs/F_Market_Opportunity/B_Customers';
 
-// Competitive Landscape 
+// Competitive Landscape
 import CompetitiveLandscape from './docs/G_Competitive_Landscape/A_CompetitiveLandscape';
 
 // Team & Advisors
@@ -464,10 +464,10 @@ const DataRoomDocumentation: React.FC = () => {
               {nextSubSection && (
                 <div className="flex justify-left mt-4">
                   <button
-                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection.id)}
+                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
                     className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
                   >
-                    Next: {nextSubSection.title}
+                    Next: {nextSubSection!.title}
                   </button>
                 </div>
               )}

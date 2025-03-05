@@ -12,7 +12,7 @@ const TherapeuticComplexity: React.FC = () => {
       <p className="roboto-slab-light text-base mb-6 mt-12 leading-relaxed">
         <strong> Disease categories </strong> that require the most transcriptomically-complex interventions 
         are also where drug developers using classical methods struggle the most. 
-        Biological foundation models thrive on complexity; it's where they have the most potential
+        Biological foundation models thrive on complexity; it&apos;s where they have the most potential
         to help drug developers significantly move the needle.
       </p>
 
@@ -56,7 +56,7 @@ const TherapeuticComplexity: React.FC = () => {
       </div>
 
       <p className="roboto-slab-extralight text-xxsm mb-0 mt-2 leading-relaxed">
-        The data in the map above was organized by ChatGPT's Deep Research. We double checked many 
+        The data in the map above was organized by ChatGPT&apos;s Deep Research. We double checked many 
         individual data points and are confident that the overall picture is quite accurate.
         The transcriptomic complexity score was estimated by considering how many genes and pathways 
         are known to be involved in the underlying pathology, how intricate the gene regulatory networks are, 
@@ -72,10 +72,10 @@ const TherapeuticComplexity: React.FC = () => {
       <p className="roboto-slab-light text-base mt-6 mb-2 leading-relaxed">
         <strong> Remember, this map is essentially a snapshot of the past. </strong> It represents the successes
         of drug development from classical methods over the past century. Our thesis and strong opinion is that 
-        most of these successes represent mother nature's 'low-hanging-fruit'; as different researchers working on 
+        most of these successes represent mother nature&apos;s &apos;low-hanging-fruit&apos;; as different researchers working on 
         different diseases over the past century began to more deeply understand the underlying biology of their 
         focus area, some happened to have simpler underlying causes that were easier to develop drugs for.
-        Many of the blue areas in the map above represent these 'low-hanging-fruit' success stories.
+        Many of the blue areas in the map above represent these &apos;low-hanging-fruit&apos; success stories.
       </p>
 
       <p className="roboto-slab-light text-base mt-6 mb-8 leading-relaxed">
@@ -121,7 +121,7 @@ const TherapeuticComplexity: React.FC = () => {
       </div>
 
       <p className="roboto-slab-extralight text-xxsm mb-12 mt-2 leading-relaxed">
-        The data in the map above was organized by ChatGPT's Deep Research. We double checked many 
+        The data in the map above was organized by ChatGPT&#39;s Deep Research. We double checked many 
         individual data points and are confident that the overall picture is quite accurate.
         The transcriptomic complexity score was estimated by considering how many genes and pathways 
         are known to be involved in the underlying pathology, how intricate the gene regulatory networks are, 
