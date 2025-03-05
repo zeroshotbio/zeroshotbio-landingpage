@@ -8,38 +8,38 @@ import Image from 'next/image';
    --------------------------- */
 
 // Top-level documentation sections
-import Introduction from './docs/Overview/Introduction';
-import OverallSummary from './docs/Overview/Overall_Summary';
+import A_Introduction from './docs/A_Overview/A_Introduction';
+import B_OverallSummary from './docs/A_Overview/B_Overall_Summary';
 
 // Problem
-import A_BiologyIsComplex from './docs/Problem/A_BIologyIsComplex';
-import B_DrugDevelopment from './docs/Problem/B_DrugDevelopment';
-import C_CaseStudyMylotarg from './docs/Problem/C_CaseStudyMylotarg';
+import A_BiologyIsComplex from './docs/B_Problem/A_BiologyIsComplex';
+import B_DrugDevelopment from './docs/B_Problem/B_DrugDevelopment';
+import C_CaseStudyBCRABL1 from './docs/B_Problem/C_CaseStudyBCRABL1';
 
 // Vision
-import VisionOverview from './docs/Vision/visionOverview';
-import FirstPrinciples from './docs/Vision/firstPrinciples';
-import Zebrafish from './docs/Vision/zebrafish';
-import ScRNA from './docs/Vision/scRNA';
-import FuturePotential from './docs/Vision/futurePotential';
+import VisionOverview from './docs/C_Vision/A_VisionOverview';
+import FirstPrinciples from './docs/C_Vision/B_FirstPrinciples';
+import Zebrafish from './docs/C_Vision/C_Zebrafish';
+import ScRNA from './docs/C_Vision/D_scRNA';
+import FuturePotential from './docs/C_Vision/E_FuturePotential';
 
 // Technology
-import BioFoundationModels from './docs/Technology/bioFoundationModels';
-import DataSources from './docs/Technology/dataSources';
-import BiologistPersepctive from './docs/Technology/biologistPerspective';
+import BioFoundationModels from './docs/D_Technology/A_BioFoundationModels';
+import DataSources from './docs/D_Technology/B_DataSources';
+import BiologistPerspective from './docs/D_Technology/C_BiologistPerspective';
 
 // Business Model
-import BusinessModel from './docs/Business_Model/businessModel';
+import BusinessModel from './docs/E_Business_Model/A_BusinessModel';
 
 // Market Opportunity
-import MarketOpportunity from './docs/Market_Opportunity/marketOpportunity';
-import Customers from './docs/Market_Opportunity/customers';
+import MarketOpportunity from './docs/F_Market_Opportunity/A_MarketOpportunity';
+import Customers from './docs/F_Market_Opportunity/B_Customers';
 
 // Competitive Landscape 
-import CompetitiveLandscape from './docs/Competitive_Landscape/competitiveLandscape';
+import CompetitiveLandscape from './docs/G_Competitive_Landscape/A_CompetitiveLandscape';
 
 // Team & Advisors
-import TeamAdvisors from './docs/Team_and_Advisors/teamAdvisors';
+import TeamAdvisors from './docs/H_Team_and_Advisors/A_TeamAdvisors';
 
 /* -----------------------------------------------
    Interfaces for your category structure
@@ -72,12 +72,12 @@ const categories: Category[] = [
       {
         id: 'introduction',
         title: 'Introduction',
-        component: Introduction,
+        component: A_Introduction,
       },
       {
-        id: 'ovearll-summary',
+        id: 'overall-summary',
         title: 'Overall Summary',
-        component: OverallSummary,
+        component: B_OverallSummary,
       },
     ],
   },
@@ -87,19 +87,19 @@ const categories: Category[] = [
     description: 'An analysis of the key challenges in drug development.',
     subSections: [
       {
-        id: 'A_biology_is_complex',
+        id: 'biology-is-complex',
         title: 'Biology is Complex',
         component: A_BiologyIsComplex,
       },
       {
-        id: 'B_drug_development',
-        title: 'Drug Development Ladscape',
+        id: 'drug-development-landscape',
+        title: 'Drug Development Landscape',
         component: B_DrugDevelopment,
       },
       {
-        id: 'C_case_study_mylotarg',
-        title: 'Case Study: Mylotarg',
-        component: C_CaseStudyMylotarg,
+        id: 'case-study-BCRABL1',
+        title: 'Case Study: BCR-ABL1',
+        component: C_CaseStudyBCRABL1,
       },
     ],
   },
@@ -153,7 +153,7 @@ const categories: Category[] = [
       {
         id: 'biologist-perspective',
         title: 'Biologist Perspective',
-        component: BiologistPersepctive,
+        component: BiologistPerspective,
       },
     ],
   },
@@ -161,7 +161,13 @@ const categories: Category[] = [
     id: 'business-model',
     title: 'Business Model',
     description: 'Discover our revenue streams and scalability potential.',
-    component: BusinessModel,
+    subSections: [
+      {
+        id: 'business-model',
+        title: 'Business Model',
+        component: BusinessModel,
+      },
+    ],
   },
   {
     id: 'market-opportunity',
@@ -184,13 +190,25 @@ const categories: Category[] = [
     id: 'competitive-landscape',
     title: 'Competitive Landscape',
     description: 'Understand our unique position in the AI biotech market.',
-    component: CompetitiveLandscape,
+    subSections: [
+      {
+        id: 'competitive-landscape',
+        title: 'Competitive Landscape',
+        component: CompetitiveLandscape,
+      },
+    ],
   },
   {
     id: 'team-advisors',
     title: 'Team & Advisors',
     description: 'Meet our expert team and advisory board.',
-    component: TeamAdvisors,
+    subSections: [
+      {
+        id: 'team-advisors',
+        title: 'Team & Advisors',
+        component: TeamAdvisors,
+      },
+    ],
   },
 ];
 
@@ -248,15 +266,14 @@ const DataRoomDocumentation: React.FC = () => {
   };
 
   // Identify the current category
-  const currentCategoryIndex = categories.findIndex(c => c.id === selectedCategoryId);
+  const currentCategoryIndex = categories.findIndex((c) => c.id === selectedCategoryId);
   const currentCategory = currentCategoryIndex !== -1 ? categories[currentCategoryIndex] : null;
 
   // Next sub-section logic
   let nextSubSection: SubSection | null = null;
   if (currentCategory?.subSections && selectedSubSectionId) {
-    const idx = currentCategory.subSections.findIndex(s => s.id === selectedSubSectionId);
+    const idx = currentCategory.subSections.findIndex((s) => s.id === selectedSubSectionId);
     if (idx !== -1 && idx < currentCategory.subSections.length - 1) {
-      // We are not at the last subSection -> next subSection is the next in array
       nextSubSection = currentCategory.subSections[idx + 1];
     }
   }
@@ -264,7 +281,7 @@ const DataRoomDocumentation: React.FC = () => {
   // Check if we are at the final sub-section of a category
   let atLastSubSectionOfCategory = false;
   if (currentCategory?.subSections && selectedSubSectionId) {
-    const idx = currentCategory.subSections.findIndex(s => s.id === selectedSubSectionId);
+    const idx = currentCategory.subSections.findIndex((s) => s.id === selectedSubSectionId);
     if (idx === currentCategory.subSections.length - 1) {
       atLastSubSectionOfCategory = true;
     }
@@ -282,7 +299,6 @@ const DataRoomDocumentation: React.FC = () => {
     setSelectedCategoryId(nextCategory.id);
     setExpandedCategoryId(nextCategory.id);
 
-    // If next category has subSections, pick the first one, else pick none
     if (nextCategory.subSections && nextCategory.subSections.length > 0) {
       setSelectedSubSectionId(nextCategory.subSections[0].id);
     } else {
@@ -303,8 +319,10 @@ const DataRoomDocumentation: React.FC = () => {
 
     // If a sub-section is selected, render it
     if (selectedSubSectionId) {
-      const sub = subSections.find(s => s.id === selectedSubSectionId);
-      if (!sub) return <div className="text-black">Sub-section not found.</div>;
+      const sub = subSections.find((s) => s.id === selectedSubSectionId);
+      if (!sub) {
+        return <div className="text-black">Sub-section not found.</div>;
+      }
 
       try {
         const SubComponent = sub.component;
@@ -368,7 +386,7 @@ const DataRoomDocumentation: React.FC = () => {
             </div>
             <div className="w-full border-t border-gray-200 mt-2 sm:mt-[5px] mb-2 sm:mb-4"></div>
             <nav className="space-y-3">
-              {categories.map(cat => {
+              {categories.map((cat) => {
                 const isExpanded = expandedCategoryId === cat.id;
                 const isSelected = selectedCategoryId === cat.id;
                 const subSections = cat.subSections || [
@@ -402,7 +420,7 @@ const DataRoomDocumentation: React.FC = () => {
                         isExpanded ? 'max-h-[500px] py-2' : 'max-h-0 py-0'
                       } overflow-hidden`}
                     >
-                      {subSections.map(sub => {
+                      {subSections.map((sub) => {
                         const subSelected = selectedSubSectionId === sub.id;
                         return (
                           <button
@@ -446,10 +464,10 @@ const DataRoomDocumentation: React.FC = () => {
               {nextSubSection && (
                 <div className="flex justify-left mt-4">
                   <button
-                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
+                    onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection.id)}
                     className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
                   >
-                    Next: {nextSubSection!.title}
+                    Next: {nextSubSection.title}
                   </button>
                 </div>
               )}
