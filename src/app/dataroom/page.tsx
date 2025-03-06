@@ -217,6 +217,9 @@ const categories: Category[] = [
 ----------------------------------------------- */
 
 const DataRoomDocumentation: React.FC = () => {
+  // Dark mode state
+  const [darkMode, setDarkMode] = useState(false);
+  
   // Password gating
   const [accessGranted, setAccessGranted] = useState(false);
   const [typedPassword, setTypedPassword] = useState('');
@@ -226,6 +229,25 @@ const DataRoomDocumentation: React.FC = () => {
   const [selectedSubSectionId, setSelectedSubSectionId] = useState<string | null>(null);
   // Keep track of which category is expanded (only one at a time)
   const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(categories[0].id);
+
+  // Initialize dark mode from localStorage on component mount
+  useEffect(() => {
+    const storedTheme = localStorage.getItem('theme');
+    if (storedTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      setDarkMode(true);
+    }
+  }, []);
+
+  // Toggle dark mode
+  const toggleDarkMode = () => {
+    setDarkMode(prev => {
+      const newMode = !prev;
+      localStorage.setItem('theme', newMode ? 'dark' : 'light');
+      document.documentElement.classList.toggle('dark', newMode);
+      return newMode;
+    });
+  };
 
   // Automatically select the first sub-section when a category changes
   useEffect(() => {
@@ -309,7 +331,7 @@ const DataRoomDocumentation: React.FC = () => {
   // Renders the main content on the right side
   function renderContent() {
     if (!currentCategory) {
-      return <div className="text-black">Category not found.</div>;
+      return <div className="text-black dark:text-white">Category not found.</div>;
     }
 
     // If there's an array of subSections, use that; else treat the category itself as a single page
@@ -321,7 +343,7 @@ const DataRoomDocumentation: React.FC = () => {
     if (selectedSubSectionId) {
       const sub = subSections.find((s) => s.id === selectedSubSectionId);
       if (!sub) {
-        return <div className="text-black">Sub-section not found.</div>;
+        return <div className="text-black dark:text-white">Sub-section not found.</div>;
       }
 
       try {
@@ -336,10 +358,10 @@ const DataRoomDocumentation: React.FC = () => {
     // Otherwise, render the top-level category page
     return (
       <>
-        <h2 className="roboto-slab-bold text-lg sm:text-2xl text-black mb-2 leading-tight">
+        <h2 className="roboto-slab-bold text-lg sm:text-2xl text-black dark:text-white mb-2 leading-tight">
           {currentCategory.title}
         </h2>
-        <p className="roboto-slab-regular text-sm sm:text-base text-black mb-8 leading-snug">
+        <p className="roboto-slab-regular text-sm sm:text-base text-black dark:text-white mb-8 leading-snug">
           {currentCategory.description}
         </p>
       </>
@@ -347,9 +369,9 @@ const DataRoomDocumentation: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white relative">
+    <div className="min-h-screen bg-white dark:bg-gray-900 relative">
       {/* Mobile-Only View */}
-      <div className="block sm:hidden w-full h-screen bg-white flex flex-col items-center justify-center">
+      <div className="block sm:hidden w-full h-screen bg-white dark:bg-gray-900 flex flex-col items-center justify-center">
         <Image
           src="/images/zeroshot_bio_gritty.png"
           alt="zeroshot logo"
@@ -357,10 +379,10 @@ const DataRoomDocumentation: React.FC = () => {
           height={250}
           className="object-contain mb-4"
         />
-        <h3 className="text-base text-center roboto-slab-light text-black pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text-black dark:text-white pt-8 px-16">
           The data room is formatted for viewing on desktop computers.
         </h3>
-        <h3 className="text-base text-center roboto-slab-light text-black pt-8 px-16">
+        <h3 className="text-base text-center roboto-slab-light text-black dark:text-white pt-8 px-16">
           You <strong>can</strong> rotate your screen horizontally to preview it from here.
         </h3>
       </div>
@@ -374,7 +396,7 @@ const DataRoomDocumentation: React.FC = () => {
           style={{ minWidth: '640px' }}
         >
           {/* Left Sidebar */}
-          <aside className="flex flex-col border-r border-gray-200 px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 overflow-y-auto">
+          <aside className="flex flex-col border-r border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 dark:bg-gray-800 overflow-y-auto">
             <div className="flex items-center h-16 sm:h-20 mb-4 sm:mb-6">
               <Image
                 src="/images/zeroshot_bio_gritty.png"
@@ -384,7 +406,7 @@ const DataRoomDocumentation: React.FC = () => {
                 className="object-contain"
               />
             </div>
-            <div className="w-full border-t border-gray-200 mt-2 sm:mt-[5px] mb-2 sm:mb-4"></div>
+            <div className="w-full border-t border-gray-200 dark:border-gray-700 mt-2 sm:mt-[5px] mb-2 sm:mb-4"></div>
             <nav className="space-y-3">
               {categories.map((cat) => {
                 const isExpanded = expandedCategoryId === cat.id;
@@ -396,12 +418,14 @@ const DataRoomDocumentation: React.FC = () => {
                 return (
                   <div
                     key={cat.id}
-                    className="my-2 border border-gray-200 rounded-lg overflow-hidden"
+                    className="my-2 border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden"
                   >
                     <button
                       onClick={() => handleToggleCategory(cat.id)}
                       className={`flex items-center w-full px-3 py-2 focus:outline-none transition-colors duration-100 text-left ${
-                        isSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
+                        isSelected 
+                          ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white' 
+                          : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
                       }`}
                     >
                       <span
@@ -411,12 +435,12 @@ const DataRoomDocumentation: React.FC = () => {
                       >
                         &gt;
                       </span>
-                      <span className="flex-1 text-sm roboto-slab-medium">
+                      <span className="flex-1 text-sm roboto-slab-medium text-black dark:text-white">
                         {cat.title}
                       </span>
                     </button>
                     <div
-                      className={`pl-2 pr-2 bg-gray-50 transition-all duration-500 ease-in-out ${
+                      className={`pl-2 pr-2 bg-gray-50 dark:bg-gray-800 transition-all duration-500 ease-in-out ${
                         isExpanded ? 'max-h-[500px] py-2' : 'max-h-0 py-0'
                       } overflow-hidden`}
                     >
@@ -427,7 +451,9 @@ const DataRoomDocumentation: React.FC = () => {
                             key={sub.id}
                             onClick={() => handleSelectSubSection(cat.id, sub.id)}
                             className={`w-full mb-2 px-3 py-2 rounded text-left transition-colors duration-100 text-xs ${
-                              subSelected ? 'bg-gray-200 text-black' : 'bg-white hover:bg-gray-100'
+                              subSelected 
+                                ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white' 
+                                : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white'
                             }`}
                           >
                             {sub.title}
@@ -444,14 +470,16 @@ const DataRoomDocumentation: React.FC = () => {
           {/* Right Content Area */}
           <main className="flex-1 overflow-y-auto relative">
             {/* Top Header Bar */}
-            <div className="sticky top-0 bg-white border-b border-gray-200 px-4 sm:px-6 py-3 sm:py-4 z-10">
-              <h1 className="roboto-slab-semibold text-base sm:text-xl text-black">
+            <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 z-10 flex justify-between items-center">
+              <h1 className="roboto-slab-semibold text-base sm:text-xl text-black dark:text-white">
                 Investor Data Room
               </h1>
+              
             </div>
+            
             {/* Second Header Bar */}
-            <div className="sticky top-[40px] sm:top-16 bg-white border-b border-gray-200 px-4 sm:px-6 py-2 z-10 transition-all duration-100">
-              <h2 className="roboto-slab-medium text-sm sm:text-lg text-black">
+            <div className="sticky top-[40px] sm:top-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-2 z-10 transition-all duration-100">
+              <h2 className="roboto-slab-medium text-sm sm:text-lg text-black dark:text-white">
                 {currentCategory?.title}
               </h2>
             </div>
@@ -465,7 +493,7 @@ const DataRoomDocumentation: React.FC = () => {
                 <div className="flex justify-left mt-4">
                   <button
                     onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
+                    className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
                   >
                     Next: {nextSubSection!.title}
                   </button>
@@ -477,7 +505,7 @@ const DataRoomDocumentation: React.FC = () => {
                 <div className="flex justify-left mt-4">
                   <button
                     onClick={handleGoToNextCategory}
-                    className="text-xs bg-gray-100 hover:bg-gray-200 text-black px-4 py-2 rounded shadow transition-colors"
+                    className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
                   >
                     Next: {nextCategory.title}
                   </button>
@@ -490,9 +518,9 @@ const DataRoomDocumentation: React.FC = () => {
 
       {/* Password Overlay */}
       {!accessGranted && (
-        <div className="absolute inset-0 flex items-center justify-center bg-white/20 backdrop-blur-sm">
-          <div className="bg-white border border-gray-300 rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
-            <h2 className="roboto-slab-semibold text-black text-xl mb-4">
+        <div className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20 backdrop-blur-sm">
+          <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
+            <h2 className="roboto-slab-semibold text-black dark:text-white text-xl mb-4">
               Enter Password
             </h2>
             <input
@@ -503,11 +531,11 @@ const DataRoomDocumentation: React.FC = () => {
               onKeyDown={(e) => {
                 if (e.key === 'Enter') handleUnlock();
               }}
-              className="w-full border border-gray-300 rounded px-3 py-2 mb-4 focus:outline-none"
+              className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-3 py-2 mb-4 focus:outline-none"
             />
             <button
               onClick={handleUnlock}
-              className="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded w-full roboto-slab-medium transition-colors"
+              className="bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500 text-white px-4 py-2 rounded w-full roboto-slab-medium transition-colors"
             >
               Unlock
             </button>

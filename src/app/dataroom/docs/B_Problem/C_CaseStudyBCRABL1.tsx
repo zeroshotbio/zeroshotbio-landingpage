@@ -44,8 +44,8 @@ const C_CaseStudyBCRABL1: React.FC = () => {
           <Image
             src="/images/dataroom_images/bcr-abl1.png"
             alt="BCR-ABL1-cartoon"
-            width={200}
-            height={100}
+            width={300}
+            height={200}
             className="object-contain"
           />
           <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
@@ -92,7 +92,7 @@ const C_CaseStudyBCRABL1: React.FC = () => {
           <Image
             src="/images/dataroom_images/bcr-abl1_pathways.png"
             alt="BCR-ABL1-network"
-            width={450}
+            width={800}
             height={300}
             className="object-contain"
           />

@@ -11,10 +11,18 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Root variables for light theme */
 :root {
   --foreground-rgb: 0, 0, 0;
   --background-start-rgb: 246, 244, 242;
   --background-end-rgb: 246, 244, 242;
+}
+
+/* Dark theme overrides - pure black and gray shades */
+.dark {
+  --foreground-rgb: 255, 255, 255;
+  --background-start-rgb: 10, 10, 10; /* Near-black */
+  --background-end-rgb: 10, 10, 10;
 }
 
 html,
@@ -29,6 +37,11 @@ body {
       transparent,
       rgb(var(--background-end-rgb))
     ) rgb(var(--background-start-rgb));
+}
+
+/* Dark mode text color override */
+.dark body {
+  color: rgb(var(--foreground-rgb));
 }
 
 /* Roboto Slab Font Options */
@@ -137,9 +150,8 @@ body {
 /* Custom text size utilities */
 
 .text-xxxsm {
-  font-size: 0.65rem; /* 12px */
+  font-size: 0.65rem; /* 10.4px */
 }
-
 
 .text-xxsm {
   font-size: 0.75rem; /* 12px */
@@ -154,7 +166,7 @@ body {
 }
 
 .text-base {
-  font-size: 0.95rem; /* 16px */
+  font-size: 0.95rem; /* 15.2px */
 }
 
 .text-lg {
@@ -185,7 +197,6 @@ body {
   font-size: 3.75rem; /* 60px */
 }
 
-
 /* Line height utilities */
 .leading-none {
   line-height: 1;
@@ -209,4 +220,201 @@ body {
 
 .leading-loose {
   line-height: 2;
+}
+
+/* === Dark mode text utilities === */
+
+/* Dark-mode-specific text colors for easy readability */
+.dark .text-gray-verylight {
+  color: #494949;
+}
+
+.dark .text-gray-light {
+  color: #626262;
+}
+
+.dark .text-gray-medium {
+  color: #888888;
+}
+
+.dark .text-gray-semidark {
+  color: #c2c2c2;
+}
+
+.dark .text-gray-dark {
+  color: #e0e0e0;
+}
+
+.dark .text-gray-verydark {
+  color: #f0f0f0;
+}
+
+.dark .text-gray-black {
+  color: #ffffff;
+}
+
+/* === Dark mode background overrides - pure black/gray shades === */
+
+/* Main background colors */
+.dark .bg-white {
+  background-color: #0a0a0a; /* Near black */
+}
+
+.dark .bg-gray-50 {
+  background-color: #151515; /* Very dark gray */
+}
+
+.dark .bg-gray-100 {
+  background-color: #202020; /* Dark gray */
+}
+
+.dark .bg-gray-200 {
+  background-color: #2a2a2a; /* Medium-dark gray */
+}
+
+.dark .bg-gray-300 {
+  background-color: #353535; /* Medium gray */
+}
+
+.dark .bg-gray-400 {
+  background-color: #404040; /* Medium gray */
+}
+
+.dark .bg-gray-500 {
+  background-color: #505050; /* Medium gray */
+}
+
+/* Additional UI element background colors */
+.dark .bg-gray-600 {
+  background-color: #606060; /* Medium-light gray */
+}
+
+.dark .bg-gray-700 {
+  background-color: #707070; /* Light gray */
+}
+
+.dark .bg-gray-800 {
+  background-color: #121212; /* Material dark theme standard */
+}
+
+.dark .bg-gray-900 {
+  background-color: #0a0a0a; /* Near black */
+}
+
+/* === Dark mode border color overrides === */
+.dark .border-gray-200 {
+  border-color: #2a2a2a; /* Dark gray */
+}
+
+.dark .border-gray-300 {
+  border-color: #353535; /* Medium-dark gray */
+}
+
+.dark .border-gray-700 {
+  border-color: #2a2a2a; /* Dark gray */
+}
+
+/* === Scrollbar color (optional improvement for dark mode) === */
+.dark ::-webkit-scrollbar-track {
+  background-color: #151515; /* Very dark gray */
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #404040; /* Medium gray */
+  border-radius: 10px;
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #505050; /* Medium-light gray */
+}
+
+
+/* Base transition for all elements */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+  transition-timing-function: ease;
+}
+
+/* Staggered transition timing for different element types */
+
+/* Level 1: Background elements (fastest) */
+html, body {
+  transition-duration: 100ms;
+}
+
+/* Level 2: Layout containers */
+main, header, footer, nav, aside, section {
+  transition-duration: 150ms;
+  transition-delay: 20ms;
+}
+
+/* Level 3: Content containers */
+article, div, form {
+  transition-duration: 200ms;
+  transition-delay: 40ms;
+}
+
+/* Level 4: Interactive elements */
+button, a, input, select, textarea {
+  transition-duration: 250ms;
+  transition-delay: 60ms;
+}
+
+/* Level 5: Text elements */
+h1, h2, h3, h4, h5, h6, p, span, li {
+  transition-duration: 300ms;
+  transition-delay: 80ms;
+}
+
+/* Special elements with custom transitions */
+.card, .panel, .sidebar {
+  transition-duration: 250ms;
+  transition-delay: 50ms;
+}
+
+/* For more dramatic effect, add transform transitions to certain elements */
+.card, .panel {
+  transition-property: color, background-color, border-color, transform, box-shadow;
+}
+
+/* Ensure focus states aren't affected by slower transitions */
+:focus {
+  transition-duration: 0ms !important;
+  transition-delay: 0ms !important;
+}
+
+/* Target the exact arrow span in your navigation */
+span.inline-block.transform.transition-transform,
+button span[class*="transform"],
+button span[class*="rotate"],
+button span.inline-block,
+[class*="sidebar"] span.inline-block {
+  /* Make arrows transition instantly */
+  transition-duration: 50ms !important;
+  transition-delay: 0ms !important;
+  transition-property: transform, color !important;
+}
+
+/* Make sure we target any span that contains the ">" character */
+span:contains(">"),
+span:contains("&gt;") {
+  transition-duration: 50ms !important;
+  transition-delay: 0ms !important;
+}
+
+/* Additional specificity for direct targeting */
+nav span.inline-block.transform {
+  transition-duration: 50ms !important;
+  transition-delay: 0ms !important;
+}
+
+/* If those selectors don't work, this more aggressive approach will */
+.inline-block.transform.transition-transform.duration-500 {
+  transition-duration: 50ms !important;
+}
+
+/* Override any transition timing specifically for rotation transforms */
+.rotate-90, 
+*[class*="rotate-"] {
+  transition-duration: 50ms !important;
 }

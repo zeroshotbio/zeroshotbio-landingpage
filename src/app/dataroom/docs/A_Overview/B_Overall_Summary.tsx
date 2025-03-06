@@ -9,20 +9,19 @@ const OverallSummary: React.FC = () => {
         From a Bird&#39;s-Eye View:
       </h2>
 
-
       <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        Most of biology is too complicated for humans to understand and engineer directly. 
-        While drug development may be inspired by science, historically it has mostly succeeded through trial and error. 
-        The failure rate of modern clinical trials is a 
-        painfully clear reminder of the primitiveness of our approach.
+        <strong> Most of biology is too complicated </strong> for humans to understand and engineer predictably. 
+        While drug development strategies may be derived from good science, most success stories 
+        are the result of painful trial and error. The failure rate of modern clinical trials is a 
+        clear reminder of the limitations of our current strategic approaches.
       </p>
-      
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
         <strong>Our vision</strong> is that biological foundation models will be the key that 
-        enable an understanding of the effects of therapeutics beyond what humans alone have been capable of. 
+        enable an understanding of disease pathways and the effects of drug interventions beyond 
+        what humans alone have been capable of. 
         Not just higher quality readouts of the classic kinds, but entirely new categories of visibility 
-        that will revolutionize drug development confidence. 
+        that will revolutionize drug development strategies and preclinical confidence. 
       </p>
       
       <p className="mt-4 roboto-slab-light text-base text-verydark leading-relaxed">

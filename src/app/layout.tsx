@@ -1,13 +1,10 @@
-import React, { FC, ReactNode } from "react";
+// src/app/layout.tsx (Server Component)
+import { Roboto } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
+import DarkMode from "./DarkModeButton";
+import { ReactNode } from "react";
 
-
-// This import is part of the hypothetical scenario.
-import { Roboto } from "next/font/google";
-
-// Here, we're adjusting the code to specify font weights individually.
-// This matches the error message's demand for "explicitly written literals."
 const roboto_font = Roboto({
   weight: ["100", "300", "400", "500", "700", "900"],
   subsets: ["latin"],
@@ -23,20 +20,16 @@ interface RootLayoutProps {
   children: ReactNode;
 }
 
-const RootLayout: FC<RootLayoutProps> = ({ children }) => {
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" className={roboto_font.className}>
       <head>
         <link rel="icon" href="/favicon.png" />
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
       </head>
       <body>
-        {children}
+        <DarkMode>{children}</DarkMode>
         <Analytics />
       </body>
     </html>
   );
-};
-
-export default RootLayout;
+}
