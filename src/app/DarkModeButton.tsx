@@ -6,11 +6,14 @@ import React, { ReactNode, useEffect, useState } from "react";
 // 🔍 CONFIGURATION SECTION
 // ========================
 
+// Define a type for theme options
+type ThemeOption = 'light' | 'dark';
+
 // 🔍 TO ENABLE THE DARK MODE TOGGLE: Set this to 'true'
 const SHOW_DARK_MODE_TOGGLE = true;
 
 // Set the default theme ('light' or 'dark')
-const DEFAULT_THEME = 'light';
+const DEFAULT_THEME: ThemeOption = 'light';
 
 // Should user preference override the default? (set to false to force DEFAULT_THEME)
 const RESPECT_USER_PREFERENCE = true;
@@ -30,7 +33,7 @@ export default function DarkMode({ children }: DarkModeProps) {
     // Initialize theme based on configuration settings
     if (RESPECT_USER_PREFERENCE) {
       // Check localStorage for user preference
-      const storedTheme = localStorage.getItem("theme");
+      const storedTheme = localStorage.getItem("theme") as ThemeOption | null;
       
       if (storedTheme === "dark") {
         document.documentElement.classList.add("dark");
@@ -63,7 +66,8 @@ export default function DarkMode({ children }: DarkModeProps) {
     
     setDarkMode((prev) => {
       const newDarkMode = !prev;
-      localStorage.setItem("theme", newDarkMode ? "dark" : "light");
+      const newTheme: ThemeOption = newDarkMode ? "dark" : "light";
+      localStorage.setItem("theme", newTheme);
       
       if (ENABLE_STAGGERED_ANIMATION) {
         // For staggered effect, apply classes to different elements with varying delays
@@ -85,7 +89,7 @@ export default function DarkMode({ children }: DarkModeProps) {
         setTimeout(() => {
           document.documentElement.classList.remove("theme-transition");
           setIsTransitioning(false);
-        }, 400); // Set to just slightly longer than our longest transition (300ms)
+        }, 400); // Slightly longer than our longest transition (300ms)
       } else {
         // Simple toggle without staggered effect
         if (newDarkMode) {

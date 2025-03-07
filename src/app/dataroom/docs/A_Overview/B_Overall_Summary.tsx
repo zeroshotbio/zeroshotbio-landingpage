@@ -17,11 +17,10 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark leading-relaxed">
-        <strong>Our vision</strong> is that biological foundation models will be the key that 
-        enable an understanding of disease pathways and the effects of drug interventions beyond 
-        what humans alone have been capable of. 
-        Not just higher quality readouts of the classic kinds, but entirely new categories of visibility 
-        that will revolutionize drug development strategies and preclinical confidence. 
+        <strong>Our vision</strong> is that biological foundation models will enable such a robust, deep understanding
+        of disease pathways that brand new drug development strategies will become possible.
+        This will be a difference in kind, not just quantity. Entirely new categories of pathway visibility will enable
+        fresh therapeutic approaches that we believe will revolutionze the precilincal development landscape.
       </p>
       
       <p className="mt-4 roboto-slab-light text-base text-verydark leading-relaxed">
