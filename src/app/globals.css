@@ -333,7 +333,7 @@ body {
 
 /* Transition timing for various element types—with delays removed */
 html, body {
-  transition-duration: 150ms;
+  transition-duration: 20ms;
   transition-delay: 0ms;
 }
 
@@ -348,12 +348,12 @@ article, div, form {
 }
 
 button, a, input, select, textarea {
-  transition-duration: 550ms;
+  transition-duration: 50ms;
   transition-delay: 0ms;
 }
 
 h1, h2, h3, h4, h5, h6, p, span, li {
-  transition-duration: 20ms;
+  transition-duration: 10ms;
   transition-delay: 0ms;
 }
 
