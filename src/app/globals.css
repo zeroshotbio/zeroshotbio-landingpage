@@ -46,7 +46,7 @@ body {
 
 /* Roboto Slab Font Options */
 
-/* Thin 100 - Whereas recognition of the inherent dignity */
+/* Thin 100 */
 .roboto-slab-thin {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -54,7 +54,7 @@ body {
   font-style: normal;
 }
 
-/* ExtraLight 200 - Whereas recognition of the inherent dignity */
+/* ExtraLight 200 */
 .roboto-slab-extralight {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -62,7 +62,7 @@ body {
   font-style: normal;
 }
 
-/* Light 300 - Whereas recognition of the inherent dignity */
+/* Light 300 */
 .roboto-slab-light {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -70,7 +70,7 @@ body {
   font-style: normal;
 }
 
-/* Regular 400 - Whereas recognition of the inherent dignity */
+/* Regular 400 */
 .roboto-slab-regular {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -78,7 +78,7 @@ body {
   font-style: normal;
 }
 
-/* Medium 500 - Whereas recognition of the inherent dignity */
+/* Medium 500 */
 .roboto-slab-medium {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -86,7 +86,7 @@ body {
   font-style: normal;
 }
 
-/* SemiBold 600 - Whereas recognition of the inherent dignity */
+/* SemiBold 600 */
 .roboto-slab-semibold {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -94,7 +94,7 @@ body {
   font-style: normal;
 }
 
-/* Bold 700 - Whereas recognition of the inherent dignity */
+/* Bold 700 */
 .roboto-slab-bold {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -102,7 +102,7 @@ body {
   font-style: normal;
 }
 
-/* ExtraBold 800 - Whereas recognition of the inherent dignity */
+/* ExtraBold 800 */
 .roboto-slab-extrabold {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -110,7 +110,7 @@ body {
   font-style: normal;
 }
 
-/* Black 900 - Whereas recognition of the inherent dignity */
+/* Black 900 */
 .roboto-slab-black {
   font-family: "Roboto Slab", serif;
   font-optical-sizing: auto;
@@ -148,7 +148,6 @@ body {
 }
 
 /* Custom text size utilities */
-
 .text-xxxsm {
   font-size: 0.65rem; /* 10.4px */
 }
@@ -223,8 +222,6 @@ body {
 }
 
 /* === Dark mode text utilities === */
-
-/* Dark-mode-specific text colors for easy readability */
 .dark .text-gray-verylight {
   color: #494949;
 }
@@ -253,153 +250,139 @@ body {
   color: #ffffff;
 }
 
-/* === Dark mode background overrides - pure black/gray shades === */
-
-/* Main background colors */
+/* === Dark mode background overrides === */
 .dark .bg-white {
-  background-color: #0a0a0a; /* Near black */
+  background-color: #0a0a0a;
 }
 
 .dark .bg-gray-50 {
-  background-color: #151515; /* Very dark gray */
+  background-color: #151515;
 }
 
 .dark .bg-gray-100 {
-  background-color: #202020; /* Dark gray */
+  background-color: #202020;
 }
 
 .dark .bg-gray-200 {
-  background-color: #2a2a2a; /* Medium-dark gray */
+  background-color: #2a2a2a;
 }
 
 .dark .bg-gray-300 {
-  background-color: #353535; /* Medium gray */
+  background-color: #353535;
 }
 
 .dark .bg-gray-400 {
-  background-color: #404040; /* Medium gray */
+  background-color: #404040;
 }
 
 .dark .bg-gray-500 {
-  background-color: #505050; /* Medium gray */
+  background-color: #505050;
 }
 
-/* Additional UI element background colors */
 .dark .bg-gray-600 {
-  background-color: #606060; /* Medium-light gray */
+  background-color: #606060;
 }
 
 .dark .bg-gray-700 {
-  background-color: #707070; /* Light gray */
+  background-color: #707070;
 }
 
 .dark .bg-gray-800 {
-  background-color: #121212; /* Material dark theme standard */
+  background-color: #121212;
 }
 
 .dark .bg-gray-900 {
-  background-color: #0a0a0a; /* Near black */
+  background-color: #0a0a0a;
 }
 
 /* === Dark mode border color overrides === */
 .dark .border-gray-200 {
-  border-color: #2a2a2a; /* Dark gray */
+  border-color: #2a2a2a;
 }
 
 .dark .border-gray-300 {
-  border-color: #353535; /* Medium-dark gray */
+  border-color: #353535;
 }
 
 .dark .border-gray-700 {
-  border-color: #2a2a2a; /* Dark gray */
+  border-color: #2a2a2a;
 }
 
-/* === Scrollbar color (optional improvement for dark mode) === */
+/* === Scrollbar color for dark mode === */
 .dark ::-webkit-scrollbar-track {
-  background-color: #151515; /* Very dark gray */
+  background-color: #151515;
 }
 
 .dark ::-webkit-scrollbar-thumb {
-  background-color: #404040; /* Medium gray */
+  background-color: #404040;
   border-radius: 10px;
 }
 
 .dark ::-webkit-scrollbar-thumb:hover {
-  background-color: #505050; /* Medium-light gray */
+  background-color: #505050;
 }
 
-
-/* Base transition for all elements */
+/* 
+   Base transition for all elements 
+   All transitions are now controlled here with no extra "transition-all" in components.
+*/
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
   transition-timing-function: ease;
 }
 
-/* Staggered transition timing for different element types */
-
-/* Level 1: Background elements (fastest) */
+/* Transition timing for various element types—with delays removed */
 html, body {
-  transition-duration: 100ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
-/* Level 2: Layout containers */
 main, header, footer, nav, aside, section {
-  transition-duration: 150ms;
-  transition-delay: 20ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
-/* Level 3: Content containers */
 article, div, form {
-  transition-duration: 200ms;
-  transition-delay: 40ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
-/* Level 4: Interactive elements */
 button, a, input, select, textarea {
-  transition-duration: 250ms;
-  transition-delay: 60ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
-/* Level 5: Text elements */
 h1, h2, h3, h4, h5, h6, p, span, li {
-  transition-duration: 300ms;
-  transition-delay: 80ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
 /* Special elements with custom transitions */
 .card, .panel, .sidebar {
-  transition-duration: 250ms;
-  transition-delay: 50ms;
+  transition-duration: 50ms;
+  transition-delay: 0ms;
 }
 
-/* For more dramatic effect, add transform transitions to certain elements */
+/* For dramatic effect, add transform transitions to certain elements */
 .card, .panel {
   transition-property: color, background-color, border-color, transform, box-shadow;
 }
 
-/* Ensure focus states aren't affected by slower transitions */
+/* Ensure focus states have no delay */
 :focus {
   transition-duration: 0ms !important;
   transition-delay: 0ms !important;
 }
 
-/* Target the exact arrow span in your navigation */
+/* Target arrow spans in navigation to transition instantly */
 span.inline-block.transform.transition-transform,
 button span[class*="transform"],
 button span[class*="rotate"],
 button span.inline-block,
 [class*="sidebar"] span.inline-block {
-  /* Make arrows transition instantly */
   transition-duration: 50ms !important;
   transition-delay: 0ms !important;
   transition-property: transform, color !important;
-}
-
-/* Make sure we target any span that contains the ">" character */
-span:contains(">"),
-span:contains("&gt;") {
-  transition-duration: 50ms !important;
-  transition-delay: 0ms !important;
 }
 
 /* Additional specificity for direct targeting */
@@ -408,7 +391,7 @@ nav span.inline-block.transform {
   transition-delay: 0ms !important;
 }
 
-/* If those selectors don't work, this more aggressive approach will */
+/* Aggressive fallback */
 .inline-block.transform.transition-transform.duration-500 {
   transition-duration: 50ms !important;
 }
