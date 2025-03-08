@@ -333,33 +333,33 @@ body {
 
 /* Transition timing for various element types—with delays removed */
 html, body {
-  transition-duration: 50ms;
+  transition-duration: 150ms;
   transition-delay: 0ms;
 }
 
 main, header, footer, nav, aside, section {
-  transition-duration: 50ms;
+  transition-duration: 750ms;
   transition-delay: 0ms;
 }
 
 article, div, form {
-  transition-duration: 50ms;
+  transition-duration: 20ms;
   transition-delay: 0ms;
 }
 
 button, a, input, select, textarea {
-  transition-duration: 50ms;
+  transition-duration: 550ms;
   transition-delay: 0ms;
 }
 
 h1, h2, h3, h4, h5, h6, p, span, li {
-  transition-duration: 50ms;
+  transition-duration: 20ms;
   transition-delay: 0ms;
 }
 
 /* Special elements with custom transitions */
 .card, .panel, .sidebar {
-  transition-duration: 50ms;
+  transition-duration: 950ms;
   transition-delay: 0ms;
 }
 
