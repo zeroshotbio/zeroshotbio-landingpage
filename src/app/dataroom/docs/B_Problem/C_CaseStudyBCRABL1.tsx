@@ -27,7 +27,7 @@ const LeukemiaCaseStudies: React.FC = () => {
       <section>
         <h2 className="roboto-slab-medium text-xl text-indigo-600 mb-4">2. BCR-ABL1 and Imatinib (Gleevec): Overcoming Resistance</h2>
         <p className="roboto-slab-light mb-6 leading-relaxed">
-          The discovery of the BCR-ABL1 fusion kinase and the subsequent creation of imatinib revolutionized treatment for chronic myeloid leukemia (CML). Initially highly effective, imatinib specifically inhibits the aberrant kinase activity responsible for uncontrolled leukemic growth. However, resistance eventually emerged through point mutations in the kinase domain (such as T315I), alternative signaling pathways, and leukemic stem cell persistence. Here, scGPT's greatest strength would be its ability to predict subclonal evolution at the gene expression level, anticipating resistance mutations before clinical emergence. By leveraging comprehensive single-cell transcriptomic data, scGPT could suggest multi-target combination therapies or novel drug combinations targeting compensatory pathways, significantly extending the durability of clinical responses.
+          The discovery of the BCR-ABL1 fusion kinase and the subsequent creation of imatinib revolutionized treatment for chronic myeloid leukemia (CML). Initially highly effective, imatinib specifically inhibits the aberrant kinase activity responsible for uncontrolled leukemic growth. However, resistance eventually emerged through point mutations in the kinase domain (such as T315I), alternative signaling pathways, and leukemic stem cell persistence. Here, scGPT&apos;s greatest strength would be its ability to predict subclonal evolution at the gene expression level, anticipating resistance mutations before clinical emergence. By leveraging comprehensive single-cell transcriptomic data, scGPT could suggest multi-target combination therapies or novel drug combinations targeting compensatory pathways, significantly extending the durability of clinical responses.
         </p>
       </section>
 
@@ -42,7 +42,7 @@ const LeukemiaCaseStudies: React.FC = () => {
 
       <section className="mt-12">
         <h2 className="roboto-slab-medium text-xl text-gray-dark mb-4">
-          Comparative Summary: scGPT’s Optimal Roles Across Leukemia Contexts
+          Comparative Summary: scGPT&apos;s Optimal Roles Across Leukemia Contexts
         </h2>
 
         <p className="roboto-slab-light mb-6 leading-relaxed">
@@ -83,7 +83,7 @@ const LeukemiaCaseStudies: React.FC = () => {
         </p>
 
         <p className="roboto-slab-light mb-6 leading-relaxed">
-          Here, scGPT's superior predictive capacity could fundamentally alter therapeutic approaches by precisely modeling gene expression responses across different cell types and tissues at single-cell granularity. By characterizing the transcriptional response of leukemic cells versus normal cells within patients, scGPT could accurately define safe therapeutic windows—dosages and schedules that maximize anti-leukemic effects while minimizing damage to healthy tissues.
+          Here, scGPT&apos;s superior predictive capacity could fundamentally alter therapeutic approaches by precisely modeling gene expression responses across different cell types and tissues at single-cell granularity. By characterizing the transcriptional response of leukemic cells versus normal cells within patients, scGPT could accurately define safe therapeutic windows—dosages and schedules that maximize anti-leukemic effects while minimizing damage to healthy tissues.
         </p>
 
         <p className="roboto-slab-light mb-6 leading-relaxed">
