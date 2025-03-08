@@ -1,12 +1,12 @@
 // src/app/layout.tsx (Server Component)
-import { Roboto } from "next/font/google";
+import { Roboto_Slab } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";
 import "./globals.css";
 import DarkMode from "./DarkModeButton";
 import { ReactNode } from "react";
 
-const roboto_font = Roboto({
-  weight: ["100", "300", "400", "500", "700", "900"],
+const robotoSlab_font = Roboto_Slab({
+  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
   subsets: ["latin"],
   display: "swap",
 });
@@ -22,7 +22,7 @@ interface RootLayoutProps {
 
 export default function RootLayout({ children }: RootLayoutProps) {
   return (
-    <html lang="en" className={roboto_font.className}>
+    <html lang="en" className={robotoSlab_font.className}>
       <head>
         <link rel="icon" href="/favicon.png" />
       </head>

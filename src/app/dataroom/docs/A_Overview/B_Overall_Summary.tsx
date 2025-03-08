@@ -114,15 +114,17 @@ const OverallSummary: React.FC = () => {
         <Image
           src="/images/dataroom_images/simple_v_complex_drugs.png"
           alt="IO-healthy-disease"
-          width={500}
+          width={800}
           height={400}
           className="object-contain"
         />
       </div>
       <p className="roboto-slab-extralight text-xxsm mb-20 mt-4 leading-relaxed">
-        The data cycle represents our fundamental development loop. As Zeroshot Biolabs begins exploring
-        specialization into different specific disease pathways, crucial new data will be generated 
-        through experiments on real animal model organisms. 
+        The difference in complexity between drugs that target transcriptomically simple versus complex disease pathways
+        becomes clear in this side-by-side comparison. On the left, drugs like Insulin and Aspirin have relatively simple
+        positive and negative pathway effects, while on the right the cascade of events relevant to the success of a drug 
+        like Mylotarg are difficult to capture even in a complex visual like this. Most diseases we don&amp;t yet have 
+        treatments for have transcriptomically complex efficacy and toxicity effects, more like Mylotarg and insulin. 
       </p>
 
 
