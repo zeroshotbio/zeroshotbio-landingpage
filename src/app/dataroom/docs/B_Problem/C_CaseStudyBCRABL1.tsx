@@ -17,28 +17,149 @@ const LeukemiaCaseStudies: React.FC = () => {
         </p>
       </section>
 
+      <div className="w-full mb-12">
+        <figure className="text-left">
+          <Image
+            src="/images/dataroom_images/bone_anatomy.png"
+            alt="IO-healthy-disease"
+            width={600}
+            height={500}
+            className="object-contain"
+          />
+          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+            An approximate representation of the major gene expression pathway cascades of zebrafish. 
+          </figcaption>
+        </figure>
+      </div>
+
+      <div className="w-full mb-12">
+        <figure className="text-left">
+          <Image
+            src="/images/dataroom_images/aml_lineages.png"
+            alt="IO-healthy-disease"
+            width={600}
+            height={500}
+            className="object-contain"
+          />
+          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+            An approximate representation of the major gene expression pathway cascades of zebrafish. 
+          </figcaption>
+        </figure>
+      </div>
+
       <section>
         <h2 className="roboto-slab-medium text-xl text-green-600 mb-4">1. Mylotarg (Gemtuzumab Ozogamicin): Addressing Off-Target Toxicity</h2>
+        <div className="w-full mb-12">
+        <figure className="text-left">
+          <Image
+            src="/images/dataroom_images/mylotarg_cartoon.png"
+            alt="IO-healthy-disease"
+            width={200}
+            height={500}
+            className="object-contain"
+          />
+          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+            An approximate representation of the major gene expression pathway cascades of zebrafish. 
+          </figcaption>
+        </figure>
+      </div>
         <p className="roboto-slab-light mb-6 leading-relaxed">
           Mylotarg was developed to target CD33-positive acute myeloid leukemia (AML) cells. Although initially promising, the drug encountered significant setbacks due to severe off-target toxicities, notably hepatic veno-occlusive disease (VOD). These toxicities occurred because CD33 expression was not limited to leukemia cells, leading to inadvertent damage to normal tissues. An scGPT model could have significantly improved the outcome by predicting the harmful gene expression responses resulting from CD33 engagement in healthy cells, enabling researchers to select safer target epitopes, optimize payload-linker designs, or suggest adjunctive treatments to reduce these toxic effects. Thus, scGPT’s main value here lies in predicting off-target gene-regulatory cascades that manifest as clinical toxicities, allowing developers to proactively avoid such harmful outcomes.
         </p>
       </section>
 
+            <div className="w-full mb-12">
+              <figure className="text-left">
+                <Image
+                  src="/images/dataroom_images/mylotarg_network.png"
+                  alt="IO-healthy-disease"
+                  width={600}
+                  height={500}
+                  className="object-contain"
+                />
+                <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+                  An approximate representation of the major gene expression pathway cascades of zebrafish. 
+                </figcaption>
+              </figure>
+            </div>
+
       <section>
         <h2 className="roboto-slab-medium text-xl text-indigo-600 mb-4">2. BCR-ABL1 and Imatinib (Gleevec): Overcoming Resistance</h2>
+
+        <div className="w-full mb-12">
+        <figure className="text-left">
+          <Image
+            src="/images/dataroom_images/BCR-ABL1.png"
+            alt="IO-healthy-disease"
+            width={200}
+            height={500}
+            className="object-contain"
+          />
+          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+            An approximate representation of the major gene expression pathway cascades of zebrafish. 
+          </figcaption>
+        </figure>
+      </div>
+
         <p className="roboto-slab-light mb-6 leading-relaxed">
           The discovery of the BCR-ABL1 fusion kinase and the subsequent creation of imatinib revolutionized treatment for chronic myeloid leukemia (CML). Initially highly effective, imatinib specifically inhibits the aberrant kinase activity responsible for uncontrolled leukemic growth. However, resistance eventually emerged through point mutations in the kinase domain (such as T315I), alternative signaling pathways, and leukemic stem cell persistence. Here, scGPT&apos;s greatest strength would be its ability to predict subclonal evolution at the gene expression level, anticipating resistance mutations before clinical emergence. By leveraging comprehensive single-cell transcriptomic data, scGPT could suggest multi-target combination therapies or novel drug combinations targeting compensatory pathways, significantly extending the durability of clinical responses.
         </p>
       </section>
 
+            <div className="w-full mb-12">
+              <figure className="text-left">
+                <Image
+                  src="/images/dataroom_images/imatinib_network.png"
+                  alt="IO-healthy-disease"
+                  width={600}
+                  height={500}
+                  className="object-contain"
+                />
+                <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+                  An approximate representation of the major gene expression pathway cascades of zebrafish. 
+                </figcaption>
+              </figure>
+            </div>
+
       <section>
         <h2 className="roboto-slab-medium text-xl text-red-600 mb-4">
           3. Acute Lymphoblastic Leukemia (ALL) and Notch Inhibitors: Balancing Efficacy and Safety
         </h2>
+
+        <div className="w-full mb-12">
+        <figure className="text-left">
+          <Image
+            src="/images/dataroom_images/mk0752.png"
+            alt="IO-healthy-disease"
+            width={200}
+            height={500}
+            className="object-contain"
+          />
+          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+            An approximate representation of the major gene expression pathway cascades of zebrafish. 
+          </figcaption>
+        </figure>
+      </div>
+
         <p className="roboto-slab-light mb-6 leading-relaxed">
           Notch signaling plays a crucial role in a subset of acute lymphoblastic leukemias (ALL). Clinical trials with Notch inhibitors revealed therapeutic challenges, primarily inconsistent efficacy and severe gastrointestinal side effects due to widespread Notch pathway involvement in healthy tissues, especially the gut. scGPT modeling could have provided early predictions of these differential tissue sensitivities by elucidating the distinct gene-expression signatures induced by Notch inhibition in various cell types. Additionally, scGPT could identify patient-specific biomarkers to predict responsiveness or toxicity, facilitating personalized dosing strategies or suggesting combination therapies to manage toxicities. The ability of scGPT to predict tissue-specific therapeutic windows and identify compensatory molecular pathways is therefore particularly valuable here.
         </p>
       </section>
+
+            <div className="w-full mb-12">
+              <figure className="text-left">
+                <Image
+                  src="/images/dataroom_images/mk0752_network.png"
+                  alt="IO-healthy-disease"
+                  width={600}
+                  height={500}
+                  className="object-contain"
+                />
+                <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
+                  An approximate representation of the major gene expression pathway cascades of zebrafish. 
+                </figcaption>
+              </figure>
+            </div>
 
       <section className="mt-12">
         <h2 className="roboto-slab-medium text-xl text-gray-dark mb-4">
