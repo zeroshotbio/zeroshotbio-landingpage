@@ -1,5 +1,6 @@
 'use client';
 import React from 'react';
+import Image from 'next/image';
 
 const C_MarketOpportunity: React.FC = () => {
   return (
@@ -11,6 +12,38 @@ const C_MarketOpportunity: React.FC = () => {
       <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
         <strong>A Transformative Moment in Drug Discovery.</strong> The AI-driven drug discovery market is surging, with industry estimates placing its value at approximately &#34;500 million in 2020 and projecting a compound annual growth rate of around 40%. By the late 2020s, this market could expand to between &#34;3 and &#34;5 billion. For companies that can reduce costly failures and optimize therapeutic efficacy, the premium subscription fees commanded by these tools promise a substantial return on investment.
       </p>
+
+      <div className="w-full mb-8">
+          <figure className="text-left">
+            <Image
+              src="/images/dataroom_images/pharma_ai_adoption.png"
+              alt="tsGPT architecture"
+              width={500}
+              height={300}
+              className="object-contain"
+            />
+            <figcaption className="roboto-slab-extralight text-xxsm text-gray-dark mt-4">
+              A schematic of the tsGPT pipeline, from multi‐species single‐cell data integration 
+              and gene regulatory network inference, through adjacency‐aware transformers.
+            </figcaption>
+          </figure>
+      </div>
+
+      <div className="w-full mb-8">
+          <figure className="text-left">
+            <Image
+              src="/images/dataroom_images/beachead_ai_adoption.png"
+              alt="tsGPT architecture"
+              width={500}
+              height={300}
+              className="object-contain"
+            />
+            <figcaption className="roboto-slab-extralight text-xxsm text-gray-dark mt-4">
+              A schematic of the tsGPT pipeline, from multi‐species single‐cell data integration 
+              and gene regulatory network inference, through adjacency‐aware transformers.
+            </figcaption>
+          </figure>
+      </div>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
         <strong>Focusing on Disease Pathways, Not Chemistry.</strong> At Zeroshot Biolabs, our core competency lies in deciphering complex transcriptomic landscapes to understand disease mechanisms and predict therapeutic responses. We are not a chemical structure design company. Instead, our strength is in identifying key disease pathways—enabling us to discover protein targets or even repurpose existing drugs based on deep biological insights. This fundamental focus positions us uniquely in the market, ensuring that every insight we generate is grounded in robust, systems-level biology.

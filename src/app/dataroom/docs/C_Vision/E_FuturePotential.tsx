@@ -11,10 +11,10 @@ const C_FutureIdeas: React.FC = () => {
       {/* 1. Embracing Polypharmaco-Development (unchanged) */}
       <p className="roboto-slab-light text-base mb-6 leading-relaxed">
         <strong>Embracing Polypharmaco-Development.</strong> The complexity of biology often renders single-target
-        drugs insufficient, particularly in diseases driven by intricate gene-regulatory networks. Leveraging tsGPT's
-        ability to elucidate complex transcriptomic interactions, we're exploring multi-target approaches as drug
+        drugs insufficient, particularly in diseases driven by intricate gene-regulatory networks. Leveraging tsGPT&apos;s
+        ability to elucidate complex transcriptomic interactions, we&apos;re exploring multi-target approaches as drug
         development strategies in ways that have never been considered before. By designing strategic combinations —
-        or “cocktails” — of drugs targeting complementary nodes within regulatory networks, there's the potential to
+        or “cocktails” — of drugs targeting complementary nodes within regulatory networks, there&apos;s the potential to
         fine-tune the knobs and dials of many different points along a gene regulatory pathway cascade. This
         polypharmacological strategy enhances treatment effectiveness, minimizes the likelihood of resistance, and
         offers tailored solutions that align closely with the evolving biology of complex diseases.
@@ -22,13 +22,13 @@ const C_FutureIdeas: React.FC = () => {
 
       {/* 2. Mapping Cancer Evolution and Resistance (unchanged) */}
       <p className="roboto-slab-light text-base mb-6 leading-relaxed">
-        <strong>Mapping Cancer Evolution and Resistance.</strong> Cancer's ability to adapt presents a continuous
+        <strong>Mapping Cancer Evolution and Resistance.</strong> Cancer&apos;s ability to adapt presents a continuous
         challenge in oncology. Our vision is to leverage tsGPT to reveal how tumors evolve over time at the
         transcriptomic level, illuminating hidden pathways of resistance as they emerge. By predicting these
         evolutionary trajectories, tsGPT can proactively guide the selection of targeted treatments, helping
         scientists anticipate—and ideally circumvent—drug resistance before it occurs. This approach turns
         transcriptomic complexity into actionable insights, empowering drug developers to design therapies one step
-        ahead of cancer's evolution.
+        ahead of cancer&apos;s evolution.
       </p>
 
 
