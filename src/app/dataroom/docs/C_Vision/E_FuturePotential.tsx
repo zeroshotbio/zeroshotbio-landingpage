@@ -1,42 +1,48 @@
 'use client';
 import React from 'react';
 
-const C_FuturePotential: React.FC = () => {
+const C_FutureIdeas: React.FC = () => {
   return (
-    <>
+    <div className="future-ideas-page">
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Charting the Future: Unleashing the Full Potential of Transcriptomic Intelligence
+        A Few Specific Ambitious Ideas for the Near Future
       </h2>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>Revolutionizing Therapeutic Discovery.</strong> Imagine a future where every drug candidate is evaluated not only on its chemical structure but also on its impact across an entire organism’s gene regulatory network. By harnessing deep single-cell transcriptomic data, our advanced tsGPT engine will reveal hidden layers of biological regulation—paving the way for drugs that precisely target the molecular drivers of disease.
+      {/* 1. Embracing Polypharmaco-Development (unchanged) */}
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Embracing Polypharmaco-Development.</strong> The complexity of biology often renders single-target
+        drugs insufficient, particularly in diseases driven by intricate gene-regulatory networks. Leveraging tsGPT's
+        ability to elucidate complex transcriptomic interactions, we're exploring multi-target approaches as drug
+        development strategies in ways that have never been considered before. By designing strategic combinations —
+        or “cocktails” — of drugs targeting complementary nodes within regulatory networks, there's the potential to
+        fine-tune the knobs and dials of many different points along a gene regulatory pathway cascade. This
+        polypharmacological strategy enhances treatment effectiveness, minimizes the likelihood of resistance, and
+        offers tailored solutions that align closely with the evolving biology of complex diseases.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Next-Generation Drug Repurposing.</strong> As our platform matures, tsGPT will rapidly reassess clinically validated compounds for new therapeutic applications. By analyzing complex gene expression signatures across multiple diseases and conditions, we will pinpoint unexpected opportunities for drug repurposing, drastically reducing development timelines and risk while unlocking new clinical value.
+      {/* 2. Mapping Cancer Evolution and Resistance (unchanged) */}
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Mapping Cancer Evolution and Resistance.</strong> Cancer's ability to adapt presents a continuous
+        challenge in oncology. Our vision is to leverage tsGPT to reveal how tumors evolve over time at the
+        transcriptomic level, illuminating hidden pathways of resistance as they emerge. By predicting these
+        evolutionary trajectories, tsGPT can proactively guide the selection of targeted treatments, helping
+        scientists anticipate—and ideally circumvent—drug resistance before it occurs. This approach turns
+        transcriptomic complexity into actionable insights, empowering drug developers to design therapies one step
+        ahead of cancer's evolution.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Embracing Polypharmaco-Development.</strong> The future of medicine lies in combination therapies that tackle diseases on multiple fronts. Our models will simulate the synergistic effects of drug cocktails, allowing us to design regimens that precisely modulate several critical nodes in a disease’s regulatory network. This multi-target strategy promises to overcome the limitations of single-agent treatments, ensuring a more robust and adaptive therapeutic response.
+
+      {/* 4. Next-Generation Drug Repurposing */}
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Next-Generation Drug Repurposing.</strong> As tsGPT matures, it will rapidly analyze established
+        compounds against diverse gene-expression profiles. By matching existing drug signatures to disease states
+        far beyond their original indications, we can drastically shorten development cycles. This approach not
+        only reduces cost and risk but also unlocks therapeutic potential in overlooked or shelved compounds—reviving
+        them for new clinical purposes.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Decoding Cancer Evolution and Resistance.</strong> One of the greatest challenges in oncology is cancer’s ability to evolve and develop resistance. With our transcriptomic insights, tsGPT will continuously map the dynamic changes in tumor gene expression, identifying emerging resistance pathways before they become clinically significant. This proactive approach empowers us to develop preemptive strategies that outsmart cancer’s adaptability.
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Empowering Precision Medicine.</strong> By integrating patient-specific single-cell profiles with our comprehensive transcriptomic data, we aim to tailor therapies to the unique molecular landscapes of individual patients. This personalized approach will revolutionize treatment paradigms, ensuring that every intervention is as effective and safe as possible.
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Fostering a Collaborative Ecosystem.</strong> Our vision extends beyond our own R&D efforts. We plan to offer our mature tsGPT engine as a SaaS platform, democratizing access to advanced transcriptomic analysis tools for academic institutions, biotech startups, and pharmaceutical companies. This collaborative framework will accelerate innovation across the biomedical field and drive breakthroughs in drug discovery.
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>The Future is Limitless.</strong> With every new dataset and refined model iteration, we move closer to a world where the language of gene expression is fully deciphered. Our bold vision is to transform drug development—making it faster, safer, and profoundly more effective by harnessing the deep, transcriptomic intelligence that underpins all of biology.
-      </p>
-    </>
+    </div>
   );
 };
 
-export default C_FuturePotential;
+export default C_FutureIdeas;

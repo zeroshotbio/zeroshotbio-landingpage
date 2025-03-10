@@ -14,8 +14,7 @@ const C_Vision: React.FC = () => {
         complexity is central to therapeutic success, traditional drug development strategies still largely rely 
         on trial and error to a disheartening extent. We believe the rise of biological foundation models will fundamentally 
         change the game. Instead of nudging therapeutic development forward in incremental steps, 
-        an entirely new paradigm in which deep, AI-driven system-wide insights enable 
-        drug designs is here.
+        AI-driven system-wide insights will enable enhanced and novel drug designs .
       </p>
 
       <p className="roboto-slab-light text-base mb-2 mt-6 leading-relaxed">
