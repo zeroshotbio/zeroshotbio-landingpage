@@ -23,21 +23,6 @@ const C_DataSources: React.FC = () => {
         keeps tsGPT universally relevant and highly customizable.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/data_sourcing.png"
-            alt="multi-dataset"
-            width={500}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-extralight text-xxsm text-gray-dark mt-4">
-            Our data sourcing encompasses large-scale public repositories, private partnerships, 
-            and internally curated pathway-specific libraries.
-          </figcaption>
-        </figure>
-      </div>
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         1. Publicly Available Single‐Cell Repositories
@@ -78,21 +63,6 @@ const C_DataSources: React.FC = () => {
         while maintaining its broader multi‐species perspective.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/customer_specific_pathways.png"
-            alt="Pathway specialization"
-            width={450}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            Targeted perturbations reveal how critical pathways respond to disease or drug treatments, 
-            further refining tsGPT’s predictive power.
-          </figcaption>
-        </figure>
-      </div>
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         4. Proprietary Drug‐Indication Libraries
@@ -106,21 +76,6 @@ const C_DataSources: React.FC = () => {
         underpins more confident predictions for future external collaborations and licensing opportunities.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/data_integration_pipeline.png"
-            alt="Integration pipeline"
-            width={500}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            Our data ingestion pipeline standardizes diverse input formats, merges orthologous gene sets across species, 
-            and synchronizes metadata for consistent model training.
-          </figcaption>
-        </figure>
-      </div>
 
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
         <strong>By coupling publicly curated data and proprietary datasets,</strong> we maintain tsGPT’s 

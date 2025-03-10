@@ -20,22 +20,7 @@ const LeukemiaCaseStudies: React.FC = () => {
       <div className="w-full mb-12">
         <figure className="text-left">
           <Image
-            src="/images/dataroom_images/bone_anatomy.png"
-            alt="IO-healthy-disease"
-            width={600}
-            height={500}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            An approximate representation of the major gene expression pathway cascades of zebrafish. 
-          </figcaption>
-        </figure>
-      </div>
-
-      <div className="w-full mb-12">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/aml_lineages.png"
+            src="/images/dataroom_images/leukemia_primer.png"
             alt="IO-healthy-disease"
             width={600}
             height={500}
@@ -48,7 +33,7 @@ const LeukemiaCaseStudies: React.FC = () => {
       </div>
 
       <section>
-        <h2 className="roboto-slab-medium text-xl text-green-600 mb-4">1. Mylotarg (Gemtuzumab Ozogamicin): Addressing Off-Target Toxicity</h2>
+        <h2 className="roboto-slab-medium text-xl mb-4">1. Mylotarg (Gemtuzumab Ozogamicin): Addressing Off-Target Toxicity</h2>
         <div className="w-full mb-12">
         <figure className="text-left">
           <Image
@@ -84,7 +69,7 @@ const LeukemiaCaseStudies: React.FC = () => {
             </div>
 
       <section>
-        <h2 className="roboto-slab-medium text-xl text-indigo-600 mb-4">2. BCR-ABL1 and Imatinib (Gleevec): Overcoming Resistance</h2>
+        <h2 className="roboto-slab-medium text-xl mb-4">2. BCR-ABL1 and Imatinib (Gleevec): Overcoming Resistance</h2>
 
         <div className="w-full mb-12">
         <figure className="text-left">
@@ -122,7 +107,7 @@ const LeukemiaCaseStudies: React.FC = () => {
             </div>
 
       <section>
-        <h2 className="roboto-slab-medium text-xl text-red-600 mb-4">
+        <h2 className="roboto-slab-medium text-xl mb-4">
           3. Acute Lymphoblastic Leukemia (ALL) and Notch Inhibitors: Balancing Efficacy and Safety
         </h2>
 
@@ -170,8 +155,8 @@ const LeukemiaCaseStudies: React.FC = () => {
           Single-cell GPT (scGPT) modeling represents a new frontier in leukemia research and treatment, enabling clinicians and scientists to anticipate, understand, and address complex biological challenges with unprecedented precision. While existing therapies have made significant strides, each leukemia subtype presents distinct biological hurdles—whether due to resistance, subclonal evolution, off-target effects, or balancing efficacy with toxicity. In each of these scenarios, scGPT holds unique promise, providing tailored solutions rooted in advanced predictive capabilities derived from single-cell transcriptomics.
         </p>
 
-        <h3 className="roboto-slab-medium text-lg text-green-600 mb-3">
-          Mylotarg (AML): Predictive Safety Through Detailed Off-Target Profiling
+        <h3 className="roboto-slab-medium text-lg mb-3">
+          1. Mylotarg (AML): Predictive Safety Through Detailed Off-Target Profiling
         </h3>
         <p className="roboto-slab-light mb-6 leading-relaxed">
           <strong>Mylotarg</strong>, an antibody-drug conjugate (ADC) targeting CD33-positive AML cells, demonstrated promising initial outcomes but was hampered by significant adverse events—most notably severe hepatic veno-occlusive disease. These toxicities were largely attributable to unintended interactions with normal tissues expressing CD33 at lower but still clinically significant levels. Here, scGPT could have dramatically altered the narrative by modeling the gene expression impacts of CD33 targeting at single-cell resolution prior to clinical trials. 
@@ -181,8 +166,8 @@ const LeukemiaCaseStudies: React.FC = () => {
           Through advanced predictive modeling, scGPT could identify early biomarkers signaling susceptibility to off-target damage. This preclinical risk stratification would empower researchers to refine antigen selection, opting for targets with minimal normal-tissue expression or developing ADC payloads with controlled toxicity profiles. Additionally, scGPT could pinpoint supportive therapies to mitigate predicted toxicities, offering personalized adjunctive strategies that prevent severe clinical outcomes, enhance tolerability, and maintain therapeutic efficacy. Ultimately, scGPT would transform the development pathway for ADCs by providing a robust, predictive safety framework, significantly reducing clinical trial failures and improving patient outcomes.
         </p>
 
-        <h3 className="roboto-slab-medium text-lg text-indigo-600 mb-3">
-          BCR-ABL1 (CML): Strategic Anticipation of Resistance and Subclonal Evolution
+        <h3 className="roboto-slab-medium text-lg mb-3">
+          2. BCR-ABL1 (CML): Strategic Anticipation of Resistance and Subclonal Evolution
         </h3>
         <p className="roboto-slab-light mb-6 leading-relaxed">
           Chronic myeloid leukemia (CML) exemplifies the therapeutic potential and the inherent limitations of targeted therapies, notably exemplified by imatinib’s dramatic yet eventually incomplete success in combating the <strong>BCR-ABL1</strong> fusion kinase. Resistance, whether from kinase-domain mutations such as the T315I mutation or through bypass signaling pathways, has remained a persistent clinical challenge. Furthermore, leukemia stem cells, which are relatively insensitive to kinase inhibition, present additional hurdles to achieving deep, sustained remission or cure.
@@ -196,8 +181,8 @@ const LeukemiaCaseStudies: React.FC = () => {
           Additionally, scGPT could revolutionize stem cell eradication strategies by identifying unique transcriptional signatures and vulnerabilities within leukemic stem cell populations. Such predictive capabilities could enable the design of novel combination therapies aimed specifically at eradicating these resilient populations, thereby addressing a fundamental limitation of current CML treatment paradigms.
         </p>
 
-        <h3 className="roboto-slab-medium text-lg text-red-600 mb-3">
-          Notch Inhibitors (ALL): Precision Therapeutic Windows for Enhanced Safety and Efficacy
+        <h3 className="roboto-slab-medium text-lg mb-3">
+          3. Notch Inhibitors (ALL): Precision Therapeutic Windows for Enhanced Safety and Efficacy
         </h3>
         <p className="roboto-slab-light mb-6 leading-relaxed">
           Acute lymphoblastic leukemia (ALL) treatments targeting the Notch signaling pathway have faced significant challenges due to inconsistent patient responses and severe gastrointestinal side effects. These toxicities arise from the essential roles that Notch signaling plays in normal tissue homeostasis, particularly within gastrointestinal tissues. The clinical variability and unpredictable toxicities underscore the critical need for more sophisticated prediction tools.

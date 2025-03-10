@@ -6,68 +6,97 @@ const C_FoundationModelTsGPT: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Introducing the tsGPT Biological Foundation Model
+        Introducing the tsGPT Engine
       </h2>
 
       <p className="roboto-slab-light text-base mb-4 mt-12 leading-relaxed">
-        <strong>tsGPT is our multi‐species foundation model designed to predict drug efficacy 
-        and toxicity across diverse biological systems.</strong> It unifies single‐cell data from zebrafish, 
-        mouse, rat, drosophila, and human into a common representation that captures gene regulatory circuits, 
-        time evolution, and disease states. By incorporating cutting‐edge Transformer architectures and 
-        adjacency‐aware attention mechanisms, tsGPT provides a powerful and genuinely new paradigm for 
-        drug discovery and biological research.
+        <strong> Our foundation models </strong> are fundamentally engineered to capture  
+        transcriptomic patterns that underlie cellular behavior, focusing on critical signals such 
+        as toxicity markers, efficacy predictors, and phenotype-response dynamics. At the heart of this 
+        approach is our <strong> tsGPT engine (transcriptomics-GPT)</strong>: a multi-layered transformer 
+        architecture adapted for single-cell RNA (scRNA) expression data. 
+      </p>
+      <p className="roboto-slab-light text-base leading-relaxed">
+        tsGPT not only recognizes subtle variations in gene expression across complex regulatory networks, 
+        it also models the beneficial and adverse outcomes of perturbations away from the &apos;healthy norm&apos;. 
+        We&apos;re curating our training dataset and designing our model architecture specifically to model 
+        the perturbation effects of drug interventions. For instance, in zebrafish models of T-cell acute 
+        lymphoblastic leukemia -- where dysregulated 
+        oncogenic signals disrupt normal hematopoiesis -- tsGPT can predict how targeted drug treatments 
+        could restore healthy gene expression patterns and flag potential off-target toxicities.
       </p>
 
-      <p className="roboto-slab-light text-base mb-8 mt-2 leading-relaxed">
-        At its core, tsGPT recognizes that many preclinical drug failures stem from incomplete or oversimplified 
-        models of biological complexity—particularly when trying to map results from one species onto another. 
-        By training on multi‐organism single‐cell data sets, tsGPT inherently learns cross‐species 
-        patterns of toxicity and efficacy. This allows researchers to simulate how a therapeutic candidate 
-        might behave in zebrafish or drosophila, and more confidently extrapolate those findings to mammals 
-        and ultimately to humans.
+      <p className="roboto-slab-light text-base mb-4 mt-4 leading-relaxed">
+       <strong>While zebrafish is the model organism were starting with to generate new custom data
+        for future generations of tsGPT, the model&apos;s core training is multi‐species.
+        </strong> It unifies single‐cell sequencing data from zebrafish, human, mouse, fruit fly, chicken, 
+        pig, chimpanzee, rabbit, roundworm and others 
+        into a common representation that captures gene regulatory circuits, 
+        time evolution, and disease states. The reason for this diversity is clear: results from 
+        single organism experiments don&apos;t consistently translate to human, but far more often
+        results from multi-organism experiments do. By training on multi‐organism single‐cell data sets, 
+        tsGPT inherently learns patterns that hold true across across vertebrates (and invertebrates).
+        More on this in the next section on Data.
+      </p>
+
+      <p className="roboto-slab-light text-base mb-16 mt-2 leading-relaxed">
+        tsGPT harnesses a transformer-based architecture that
+        leverages self-attention to contextualize gene expression values in a high-dimensional latent 
+        space. Each cell is treated as a sequence of tokens, where each token is a gene with a corresponding 
+        expression measurement value, enabling the model to capture intricate dependencies among genes. 
+        The architecture incorporates specialized attention masks designed to selectively focus on known gene signals 
+        while iteratively predicting the values of unknown genes. This mechanism not only reconstructs 
+        complete transcriptomic profiles with high fidelity but also reveals underlying regulatory 
+        networks. By effectively mapping the complex interplay between gene expressions, tsGPT becomes 
+        capable of discerning subtle differences across cellular states, thereby modeling both static 
+        and dynamic aspects of gene regulation.
       </p>
 
       <div className="w-full mb-8">
         <figure className="text-left">
           <Image
-            src="/images/dataroom_images/tsgpt_schema.png"
+            src="/images/dataroom_images/full_model_architecture.png"
             alt="tsGPT architecture"
-            width={500}
+            width={700}
             height={300}
             className="object-contain"
           />
           <figcaption className="roboto-slab-extralight text-xxsm text-gray-dark mt-4">
             A schematic of the tsGPT pipeline, from multi‐species single‐cell data integration 
-            and gene regulatory network inference, through adjacency‐aware Transformers.
+            and gene regulatory network inference, through adjacency‐aware transformers.
           </figcaption>
         </figure>
       </div>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>tsGPT is built on the recognition that biology is intrinsically complex and interlinked.</strong> 
-        Traditional reductionist approaches—such as focusing on a single pathway in a single organism—often fail 
-        to account for the broad network effects of a drug. tsGPT, in contrast, encodes knowledge about gene–gene 
-        interactions through adjacency matrices and layer indices, letting it attend to transcription factors and 
-        target genes in a biologically informed way. This is crucial for distinguishing benign off‐target effects 
-        from truly toxic outcomes.
+
+
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed"> 
+        <strong>During its training, tsGPT encounters millions of single‐cell profiles</strong> across numerous 
+        species, developmental stages, and experimental conditions—from healthy baseline states to complex 
+        disease scenarios following compound interventions. Through a self‐supervised masking strategy, tsGPT 
+        learns to accurately predict hidden gene expression values by recognizing informative patterns across 
+        diverse biological contexts. Simultaneously, it aligns these predictions with known gene regulatory 
+        networks, enabling cross-species hypothesis generation and insight transfer regarding drug responses. 
+        </p> 
+      
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed"> To ensure biological 
+        authenticity and technical robustness, tsGPT incorporates domain‐adversarial methods during training, 
+        effectively reducing batch and experimental noise. This technique allows the model to construct 
+        a stable transcriptomic feature space that captures genuine biological signals, spanning detailed 
+        gene‐gene interactions to broader cellular phenotypes. Such a robust, domain-invariant foundation 
+        primes tsGPT for precise fine-tuning toward specialized applications, including cell‐type annotation, 
+        batch correction, and accurate predictions of cellular perturbation responses, transforming 
+        complex high-dimensional datasets into actionable biological insights. 
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>During its training, tsGPT encounters millions of single‐cell profiles</strong> spanning a range 
-        of species, developmental stages, and conditions—from healthy tissues to disease states treated with 
-        various compounds. In doing so, the model learns to predict masked gene expressions (a self‐supervised 
-        strategy) and simultaneously aligns these predictions with the underlying gene regulatory networks. 
-        This multi‐objective approach helps tsGPT generalize across complex biology, enabling it to generate 
-        novel hypotheses about drug efficacy in one species, based on knowledge gained from others.
-      </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>One of tsGPT’s most transformative capabilities is its cross‐species toxicity forecasting.</strong> 
+        <strong>One of tsGPT’s most important capabilities is cross‐species toxicity forecasting. </strong> 
         In classical drug development, a compound might appear safe in certain animal models while eliciting 
-        unexpected toxicity in another. The truism &#34animal models lie, but multiple models together are predictive&#34 
+        unexpected toxicity in another. The truism &apos;animal models lie, but multiple models together are predictive&apos;
         underscores the reason we embraced multi‐species data from the start. By identifying shared gene regulatory 
         signatures that correlate with organ damage or pathological stress, tsGPT generates insights about 
-        whether a drug’s toxic liabilities might appear in rodents, fish, or humans—long before a full battery 
+        whether a drug’s toxic liabilities might appear in rodents, fish, or humans long before a full battery 
         of in vivo tests are done.
       </p>
 
@@ -76,50 +105,25 @@ const C_FoundationModelTsGPT: React.FC = () => {
         such as immune‐oncology, rare disease, or specific organ toxicities. The adjacency structure can incorporate 
         curated pathways for, say, cardiotoxicity or neurotoxicity. The time tokens and species embeddings 
         allow it to handle scenarios ranging from acute doses in zebrafish larvae to chronic dosing in rodent 
-        models. This flexibility means that researchers can &#34fine‐tune&#34 tsGPT on a small, domain‐specific dataset 
+        models. This flexibility means that researchers can &apos;fine‐tune&apos; tsGPT on a small, domain‐specific dataset 
         while still leveraging the vast cross‐species knowledge it gained from its initial pretraining.
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Ultimately, tsGPT aims to mitigate late‐stage drug development failures</strong> by 
-        providing a more rigorous in silico screening layer that incorporates multi‐species data at the earliest 
-        stages possible. Rather than discovering a safety problem deep into Phase II or III—when both time and 
+        <strong>Ultimately, tsGPT will provide predictability that limits late‐stage drug development failures</strong> 
+        by providing a rigorous in silico screening layer that incorporates multi‐species data at the earliest strategic
+        stages. Rather than discovering a safety problem deep into Phase II or III—when both time and 
         cost investments are enormous—companies can adopt tsGPT’s screening predictions to triage candidate 
         molecules. This approach significantly increases the likelihood of carrying forward compounds 
         with genuinely translatable safety and efficacy profiles.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/tsgpt_network.png"
-            alt="tsGPT network"
-            width={450}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            tsGPT&#39;s adjacency‐aware attention integrates knowledge of gene regulatory networks 
-            across multiple species.
-          </figcaption>
-        </figure>
-      </div>
-
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>The vision for tsGPT extends far beyond incremental improvements.</strong> By modeling 
-        gene expression and regulatory circuits as a universal &#34language&#34 of biology, tsGPT opens the door 
-        to entirely new ways of exploring therapeutic interventions. Researchers can run &#34what‐if&#34 
-        inferences—testing how gene expression might shift in disease or how various drug combinations 
-        might synergize across different organisms. This approach promises to reduce guesswork and to unify 
-        data across models in a single, comprehensive AI architecture.
-      </p>
-
-      <p className="roboto-slab-light text-base text-verydark mt-12 mb-12 leading-relaxed">
-        <strong>The bottom line?</strong> tsGPT represents a quantum leap in how we unify 
-        multi‐species single‐cell data, bridging in vivo and in vitro gaps through an adjacency‐aware 
-        Transformer backbone. By preserving network biology and integrating cross‐species signals, 
-        tsGPT enables an unprecedented level of predictive power when it comes to drug toxicity, 
-        efficacy, and beyond—paving the way for the next generation of safer, more effective medicines.
+        gene expression and regulatory circuits as a universal &apos;language&apos; of biology, tsGPT opens the door 
+        to entirely new ways of exploring therapeutic interventions. Researchers can run &apos;what‐if&apos; 
+        inferences, testing how gene expression patterns will shift in disease states or how drug combinations 
+        might synergize across tissues.
       </p>
     </>
   );
