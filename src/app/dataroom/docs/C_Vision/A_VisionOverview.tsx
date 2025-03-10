@@ -8,80 +8,91 @@ const C_Vision: React.FC = () => {
         Our Vision for Biological Foundation Models
       </h2>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong> Fundamentally,</strong> we&#39;re interested in biological foundation models and the application
-        of their predictive and generative powers toward a fundamentally new paradigm in drug development. 
-        We belive entirely new categories of therapeutic strategies will be unlocked in the next decade;
-        treatments for diseases previously insurmountable will become possible. 
+      <p className="roboto-slab-light text-base mb-2 mt-12 leading-relaxed">
+        <strong>Biology defies the intutions of conventional human understanding and engineering, </strong>especially at 
+        the level of gene expression networks. When transcriptomic 
+        complexity is central to therapeutic success, traditional drug development strategies still largely rely 
+        on trial and error to a disheartening extent. We believe the rise of biological foundation models will fundamentally 
+        change the game. Instead of nudging therapeutic development forward in incremental steps, 
+        an entirely new paradigm in which deep, AI-driven system-wide insights enable 
+        drug designs is here.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong> There are a few pathways for Zeroshot Biolabs</strong> as a company to grow from where
-        we are today into a major player in the emerging AI-first drug development space. Below are the 
-        strategic directions we believe are an incredibly promising bridge to that future. 
+      <p className="roboto-slab-light text-base mb-2 mt-6 leading-relaxed">
+        <strong>Zeroshot Biolabs serves as a lens through which the chaos of gene expression networks 
+        become interpretable. </strong> Our growing expertise has led us 
+        to develop tsGPT, a transformer-based model designed to understand comlex gene expression networks. 
+        Fundamentally, it&apos;s fine-tuned to predict of the efficacy and toxicity effects of potential drugs on healthy
+        and disease-state organisms -- especially human.<strong> While tsGPT is trained on multispecies scRNA data </strong>to best 
+        enbale generalization and produce the highest-confidence results, human and zebrafish data make up a disproportionate sum.
+      </p>
+        
+      <p className="roboto-slab-light text-base mb-10 mt-6 leading-relaxed">
+        <strong>Why zebrafish?</strong> It&apos;s is a very popular vertabrate model organism increasingly used in pre-clinical
+        drug development studies. Its similarity to human genetics, growing body of success stories translating pre-clinical 
+        to clinical human results, and low-cost high-throughput characteristics make it the ideal model organism to generate
+        the volumes of diverse training data we believe will be necessary to get the best results from future iterations of tsGPT. 
+        More on this in the zebrafish section. 
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>Strategic Directions.</strong> As we look ahead, Zeroshot Biolabs is committed to exploring 
-        several key strategic directions. These include leveraging our tsGPT engine to enhance drug discovery, 
-        repurposing, and development processes. By focusing on these areas, we aim to unlock new therapeutic 
-        possibilities and drive innovation in the field of AI-first drug development.
+      <p className="roboto-slab-light text-large mb-2 mt-12 leading-relaxed">
+        <strong>
+        From these fundamentals, three major strategic business directions have emerged:
+        </strong>
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>Innovating Drug Development.</strong> Imagine a world where the intricate details of gene
-         expression are not just a mystery but a well-charted roadmap for therapeutic innovation. 
-         At Zeroshot Biolabs, we see a future where a mature tsGPT engine deciphers vast transcriptomic 
-         datasets to pinpoint novel drug targets with extraordinary precision. This breakthrough will 
-         empower us to design next-generation drugs that strike at the very heart of disease mechanisms.
+      <p className="roboto-slab-light text-base mb-4 mt-4 leading-relaxed">
+        <strong>1. tsGPT as a Software Platform:</strong> Offering immediate commercial impact, the tsGPT 
+        engine can be provided directly to the research community as a powerful, intuitive platform. 
+        Researchers can utilize our software to rapidly interpret transcriptomic data, design precise experiments, 
+        and accelerate biological discovery.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Reimagining Drug Repurposing.</strong> Our vision extends to rethinking existing treatments.
-         With advanced transcriptomic insights, our tsGPT engine will sift through the complex molecular 
-         signatures of diverse diseases to uncover unexpected therapeutic potentials in drugs already 
-         approved for other indications. This not only accelerates the discovery process but also
-          reduces the cost and risk associated with bringing new therapies to market.
+      <p className="roboto-slab-light text-base mb-4 leading-relaxed">
+        <strong>2. Predictive In-house Drug Development:</strong> Leveraging tsGPT’s predictive capabilities, 
+        Zeroshot Biolabs can internally identify novel therapeutic candidates by modeling the complex transcriptomic 
+        landscapes of diseases. This enables us to efficiently select and prioritize drug candidates that precisely
+        modulate gene regulatory networks.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Embracing Polypharmaco-Development.</strong> The future of medicine lies in tackling
-         diseases on multiple fronts. By leveraging tsGPT, we aim to develop cocktail therapeutics that 
-         target several key nodes within a disease’s regulatory network. This multi-target approach—fine-tuning 
-         different parts of a pathway—promises to overcome the limitations of single-target therapies, offering
-          a more robust defense against diseases that evolve over time.
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>3. AI-Driven Drug Repurposing:</strong> tsGPT uniquely supports rapid identification of 
+        existing compounds for new disease indications. By matching drugs to transcriptomic signatures 
+        across diverse biological contexts, we drastically accelerate discovery, significantly reduce R&D costs, 
+        and lower the risks associated with traditional drug development pipelines.
+      </p>
+      <p className="roboto-slab-light text-base mb-10 mt-2 leading-relaxed">
+        While persuing three revenue streams simultaneously may not often be advisable for new startups, we 
+        believe there is such a strong synergy of reinforced confidence between all three that we&apos;re currently
+        committed to seriously exploring and hiring for all three. 
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Mapping Cancer Evolution and Resistance.</strong> In the realm of oncology, understanding how 
-        cancers adapt is paramount. Our vision includes using the tsGPT engine to map the evolving transcriptomic 
-        landscapes of tumors. By tracking resistance pathways and evolutionary trajectories, we can preemptively
-         design therapeutic strategies that outsmart cancer’s ability to evade treatment.
+
+      <p className="roboto-slab-light text-large mb-4 mt-12 leading-relaxed">
+        <strong>
+          Finally, a couple of specific ambious ideas we can share a bit about here: 
+        </strong>
+      </p>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Embracing Polypharmaco-Development.</strong> The complexity of biology often renders single-target 
+        drugs insufficient, particularly in diseases driven by intricate gene-regulatory networks. Leveraging tsGPT&apos;s 
+        ability to elucidate complex transcriptomic interactions, we&apos;re exploring multi-target approaches 
+        as drug development strategies in ways that have never been considered before. By designing strategic combinations
+        -- or &apos;cocktails&apos; -- of drugs targeting complementary nodes within regulatory networks, there&apos;s the potential 
+        to fine-tune the knobs and dials of many different points along a gene regulatory pathway cascade. 
+        This polypharmacological strategy enhances treatment effectiveness, minimizes the likelihood of resistance, 
+        and offers tailored solutions that align closely with the evolving biology of complex diseases.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Empowering the Scientific Community.</strong> Beyond our own drug development, Zeroshot Biolabs 
-        plans to offer our mature tsGPT engine as a Software-as-a-Service (SaaS) platform. This initiative will 
-        provide companies and academic institutions with powerful tools for transcriptomic analysis, target 
-        validation, and multi-target therapeutic design. In doing so, we hope to foster a collaborative ecosystem
-        that accelerates biomedical breakthroughs across the board.
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Mapping Cancer Evolution and Resistance.</strong> Cancer&apos;s ability to adapt presents a continuous 
+        challenge in oncology. Our vision is to leverage tsGPT to reveal how tumors evolve over time at the transcriptomic 
+        level, illuminating hidden pathways of resistance as they emerge. By predicting these evolutionary trajectories, 
+        tsGPT can proactively guide the selection of targeted treatments, helping scientists anticipate—and ideally 
+        circumvent—drug resistance before it occurs. This approach turns transcriptomic complexity into actionable 
+        insights, empowering drug developers to design therapies one step ahead of cancer&apos;s evolution.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Discovering Novel Therapeutic Paradigms.</strong> Looking further into the future, the 
-        capabilities of a highly mature tsGPT engine could unveil entirely new ways of approaching drug development. 
-        By deeply understanding transcriptomic patterns, we may discover unconventional strategies, such as 
-        designing treatments based on a mixture of mRNA packets tailored to elicit precise cellular responses.
-         This paradigm shift could open doors to therapies that dynamically adjust to the body’s molecular signals in real time.
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>A Transformative Future.</strong> At Zeroshot Biolabs, our vision is bold and multifaceted.
-         With our mature tsGPT engine, we aspire to redefine how drugs are discovered, repurposed, and
-          optimized—creating therapies that are not only more effective but also more adaptable to the
-           ever-changing landscape of disease. Together, we can chart a course toward a future where medicine 
-           is driven by deep, transcriptomic intelligence, ultimately revolutionizing healthcare for all.
-      </p>
     </>
   );
 };
