@@ -5,7 +5,7 @@ import React, { ReactNode, useEffect, useState } from "react";
 // Define a type for theme options
 type ThemeOption = 'light' | 'dark';
 
-const SHOW_DARK_MODE_TOGGLE = true;
+const SHOW_DARK_MODE_TOGGLE = false;
 const DEFAULT_THEME: ThemeOption = 'light';
 const RESPECT_USER_PREFERENCE = true;
 

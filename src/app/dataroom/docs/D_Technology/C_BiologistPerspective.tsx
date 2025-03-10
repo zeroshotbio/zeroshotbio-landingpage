@@ -6,19 +6,17 @@ const C_BiologistPerspective: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        A Biologist’s Workflow with tsGPT
+        A Drug Developer&apos;s Workflow with tsGPT
       </h2>
 
       <p className="roboto-slab-light text-base mb-4 mt-12 leading-relaxed">
-        <strong>Many pharmaceutical researchers are accustomed to hands‐on experimentation, 
-        pharmacokinetic assays, and incremental adjustments to compound chemistry.</strong> 
-        For these scientists, tsGPT offers a genuinely new dimension to their workflow—one 
-        where data‐driven predictions and mechanistic insights can streamline decision‐making 
-        and reduce costly trial‐and‐error in the lab.
+        Many pharmaceutical researchers rely heavily on hands-on experimentation, pharmacokinetic assays, 
+        and incremental adjustments to chemical structures. <strong> tsGPT introduces a 
+        powerful new dimension: confident transcriptomic modeling.</strong>
       </p>
 
       <p className="roboto-slab-light text-base mb-8 mt-2 leading-relaxed">
-        Below, we walk through how a typical small‐molecule drug development program might 
+        Below, we walk through how a typical drug development program might 
         incorporate tsGPT to accelerate lead optimization, clarify toxicity risks, and 
         prioritize candidates for further in vivo testing.
       </p>

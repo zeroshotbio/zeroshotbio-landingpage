@@ -65,7 +65,7 @@ interface Category {
 
 type ThemeOption = 'light' | 'dark';
 
-const SHOW_DARK_MODE_TOGGLE = true;
+const SHOW_DARK_MODE_TOGGLE = false;
 const DEFAULT_THEME: ThemeOption = 'light';
 const RESPECT_USER_PREFERENCE = true;
 
@@ -544,7 +544,7 @@ const DataRoomDocumentation: React.FC = () => {
                   <div className="flex justify-left mt-4">
                     <button
                       onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
-                      className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
+                      className="text-xs bg-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
                     >
                       Next: {nextSubSection!.title}
                     </button>
@@ -556,7 +556,7 @@ const DataRoomDocumentation: React.FC = () => {
                   <div className="flex justify-left mt-4">
                     <button
                       onClick={handleGoToNextCategory}
-                      className="text-xs bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
+                      className="text-xs bg-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
                     >
                       Next: {nextCategory.title}
                     </button>
