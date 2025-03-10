@@ -26,7 +26,7 @@ const C_BiologistPerspective: React.FC = () => {
       <div className="w-full mb-8">
         <figure className="text-left">
           <Image
-            src="/images/dataroom_images/biologist_workflow.png"
+            src="/images/dataroom_images/input-output.png"
             alt="Biologist workflow"
             width={500}
             height={300}
@@ -78,21 +78,6 @@ const C_BiologistPerspective: React.FC = () => {
         reduce toxicity liabilities.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/toxicity_prediction.png"
-            alt="Toxicity predictions"
-            width={450}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            tsGPT flags early signals of toxicity by detecting gene expression anomalies 
-            associated with known adverse pathways across species.
-          </figcaption>
-        </figure>
-      </div>
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         4. Refining Compound Design & Dose Strategy
@@ -116,24 +101,6 @@ const C_BiologistPerspective: React.FC = () => {
         challenges in rat models. This helps refine the selection of which rodent studies 
         to run, or which biomarkers to monitor in upcoming preclinical trials.
       </p>
-
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/biologist_cycle.png"
-            alt="Biologist iterative cycle"
-            width={450}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            An iterative feedback loop: 
-            tsGPT predictions inform experimental setups, 
-            which generate new single‐cell data, 
-            further refining the model’s accuracy.
-          </figcaption>
-        </figure>
-      </div>
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         6. Streamlining Timelines & Budgets

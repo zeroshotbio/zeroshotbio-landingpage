@@ -23,22 +23,6 @@ const C_ScRNADataPlatform: React.FC = () => {
         comprehensive atlas of gene regulatory networks that informs every prediction.
       </p>
 
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/scRNA_platform.png"
-            alt="scRNA data integration schematic"
-            width={500}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-extralight text-xxsm text-gray-dark mt-4">
-            Our scRNA integration pipeline captures individual cellular responses, creating a detailed map of gene regulation 
-            across species and conditions.
-          </figcaption>
-        </figure>
-      </div>
-
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>At its core, our platform harnesses scRNA data to capture the true complexity of living systems.</strong> 
         This single-cell approach not only illuminates the underlying mechanisms driving cellular behavior but also 
@@ -61,21 +45,6 @@ const C_ScRNADataPlatform: React.FC = () => {
         This robust dataset ensures that our predictions—whether for toxicity screening, efficacy forecasting, or drug repurposing—are 
         rooted in the true biological complexity of each cell.
       </p>
-
-      <div className="w-full mb-8">
-        <figure className="text-left">
-          <Image
-            src="/images/dataroom_images/scRNA_network.png"
-            alt="scRNA data network"
-            width={450}
-            height={300}
-            className="object-contain"
-          />
-          <figcaption className="roboto-slab-light text-xsm text-gray-dark mt-4">
-            scRNA data enables a detailed network view of cellular regulation—vital for predicting outcomes in drug development.
-          </figcaption>
-        </figure>
-      </div>
 
       <p className="roboto-slab-light text-base text-verydark mt-12 mb-12 leading-relaxed">
         <strong>The bottom line?</strong> Our reliance on scRNA as a core technology transforms how we understand and model 
