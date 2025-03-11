@@ -8,6 +8,14 @@ const TeamAdvisors: React.FC = () => {
         The Zeroshot Biolabs Founding Team
       </h2>
 
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        As a brief introduction to the team, Steven ten Holder and Patrick Pumputis previously co-founded and exited from 
+        Acorn Biolabs, a YC-backed biology startup still growing today (Acorn just finished Series A; Steven & Patrick&apos;s 
+        exit was via secondary). Darien Schettler is a Staff II (L6) generative AI architect and 2x Kaggle Grandmaster 
+        who previously worked with Steven and Patrick at Acorn. Last but not least, Harsha Murthy is an expert zebrafish 
+        wrangler and scientist.
+      </p>
+
       {/* Co-Founders Section */}
       <div className="team-category mb-8">
         <h3 className="roboto-slab-medium text-lg text-gray-dark mb-2">
@@ -16,7 +24,7 @@ const TeamAdvisors: React.FC = () => {
         <ul className="list-disc ml-8">
           <li className="mb-6">
             CEO – Steven ten Holder -- 40%
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
               Steven is a bioengineer and entrepreneur from the University of Waterloo. He co-founded 
               Acorn Biolabs—a biotech startup focused on non-invasive cell collection and cryopreservation—accelerated 
               by Y Combinator and backed by over $11M in investments. Credited as an inventor on key patents, it was his
@@ -28,7 +36,7 @@ const TeamAdvisors: React.FC = () => {
           </li>
           <li className="mb-6">
             CTO – Darien Schettler -- 25%
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
               Darien is an accomplished machine learning engineer at VMware, specializing in advanced generative 
               AI systems. With a strong interdisciplinary background in biological sciences and systems 
               engineering, he bridges the gap between computational innovation and real-world biological 
@@ -41,7 +49,7 @@ const TeamAdvisors: React.FC = () => {
           </li>
           <li className="mb-4">
             CSO – Patrick Pumputis -- 25%
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
               Patrick is an exited biotech founder and cell biology researcher currently finishing his PhD in Molecular Genetics 
               at the University of Toronto. He also has a Master&apos;s in Cellular Biology and a Bachelor&apos;s in Biological 
               and Biomedical Sciences from the University of Waterloo. Patrick previously co-founded Acorn Biolabs with Steven 
@@ -63,7 +71,7 @@ const TeamAdvisors: React.FC = () => {
         <ul className="list-disc ml-8">
           <li className="mb-4">
             Head of Research - Harsha Murthy -- 4%
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
               Harsha is a seasoned zebrafish wrangler and expert laboratory technician with a Master’s in 
               Basic Medical Sciences from Wayne State University and a strong foundation in research from 
               the University of Waterloo. His extensive experience in managing zebrafish colonies and conducting 
@@ -82,9 +90,8 @@ const TeamAdvisors: React.FC = () => {
         </h3>
         <ul className="list-disc ml-8">
           <li className="mb-4">
-            Dr. Brian Ciruna
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
-              Dr. Brian Ciruna is a distinguished Senior Scientist and Head of the Developmental, Stem Cell & Cancer 
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+              <strong>Dr. Brian Ciruna</strong> is a Senior Scientist and Head of the Developmental, Stem Cell & Cancer 
               Biology program at The Hospital for Sick Children (SickKids) in Toronto, as well as a Professor in the 
               Department of Molecular Genetics at the University of Toronto. He earned his Ph.D. in Genetics from 
               the University of Toronto and completed postdoctoral training in zebrafish developmental genetics at 
@@ -98,9 +105,8 @@ const TeamAdvisors: React.FC = () => {
         </ul>
         <ul className="list-disc ml-8">
           <li className="mb-4">
-            Dr. Sam Scanga
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
-              ​Dr. Sam Scanga is a distinguished researcher and leader in the field of genetics, currently serving 
+            <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+              ​<strong>Dr. Sam Scanga</strong> is a researcher and leader in the field of genetics, currently serving 
               as the Director of Research at NeuroTheryX. He earned his Ph.D. in Genetics from the University of 
               Toronto in 1998, following a Master of Science in Genetics and Developmental Biology from the same 
               institution. Dr. Scanga&apos;s extensive expertise in genetic research has been instrumental in advancing 
