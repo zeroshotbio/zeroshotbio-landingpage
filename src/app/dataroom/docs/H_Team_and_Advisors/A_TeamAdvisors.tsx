@@ -30,22 +30,26 @@ const TeamAdvisors: React.FC = () => {
             CTO – Darien Schettler -- 25%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Darien is an accomplished machine learning engineer at VMware, specializing in advanced generative 
-              AI systems. With a strong interdisciplinary background in Biological Sciences and Systems 
-              Engineering, he bridges the gap between computational innovation and real-world biological 
+              AI systems. With a strong interdisciplinary background in biological sciences and systems 
+              engineering, he bridges the gap between computational innovation and real-world biological 
               challenges. His work in developing baseline models for histopathologic cancer detection, 
-              along with his expertise in deep learning and large-scale model deployment, positions him 
+              along with his expertise in deep learning and large-scale model deployment positions him 
               as a key leader in tackling data-intensive biotech problems.
+              Notably, Darien has achieved the rank of Discussions Grandmaster on Kaggle, reflecting his significant 
+              contributions to the machine learning community.
             </p>
           </li>
           <li className="mb-4">
             CSO – Patrick Pumputis -- 25%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
-              Patrick is a dedicated scientist and cell biology researcher pursuing a PhD in Molecular Genetics 
-              at the University of Toronto. With a Master&apos;s in Cellular Biology and a Bachelor&apos;s in Biological 
-              and Biomedical Sciences from the University of Waterloo, he co-founded Acorn Biolabs. As Science 
-              Ambassador, he has driven core technology development and study design. His research, exemplified 
-              by his recent preprint on oxidative stress and ECM remodeling, highlights his commitment to 
-              innovative biological discovery. 
+              Patrick is an exited biotech founder and cell biology researcher currently finishing his PhD in Molecular Genetics 
+              at the University of Toronto. He also has a Master&apos;s in Cellular Biology and a Bachelor&apos;s in Biological 
+              and Biomedical Sciences from the University of Waterloo. Patrick previously co-founded Acorn Biolabs with Steven 
+              ten Holder where he laid down the foundational scientific groundwork for Acorn and led the execution
+              of the bioengineering workflows necessary to launch the Acorn cell cryopreservation service itself. 
+              His PhD research leverages zebrafish models to uncover the molecular drivers 
+              behind adolescent idiopathic scoliosis, highlighting groundbreaking links between oxidative stress, 
+              spinal stiffness, and skeletal deformities.
             </p>
           </li>
         </ul>
@@ -78,20 +82,6 @@ const TeamAdvisors: React.FC = () => {
         </h3>
         <ul className="list-disc ml-8">
           <li className="mb-4">
-            Dr. Sam Scanga
-            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
-              ​Dr. Sam Scanga is a distinguished researcher and leader in the field of genetics, currently serving 
-              as the Director of Research at NeuroTheryX. He earned his Ph.D. in Genetics from the University of 
-              Toronto in 1998, following a Master of Science in Genetics and Developmental Biology from the same 
-              institution. Dr. Scanga&apos;s extensive expertise in genetic research has been instrumental in advancing 
-              NeuroTheryX&apos;s mission to develop innovative therapies for neurological disorders. His leadership and 
-              scientific acumen have positioned him as a key figure in the biotechnology sector, contributing 
-              significantly to the understanding and treatment of complex genetic conditions.
-            </p>
-          </li>
-        </ul>
-        <ul className="list-disc ml-8">
-          <li className="mb-4">
             Dr. Brian Ciruna
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Dr. Brian Ciruna is a distinguished Senior Scientist and Head of the Developmental, Stem Cell & Cancer 
@@ -106,6 +96,21 @@ const TeamAdvisors: React.FC = () => {
             </p>
           </li>
         </ul>
+        <ul className="list-disc ml-8">
+          <li className="mb-4">
+            Dr. Sam Scanga
+            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+              ​Dr. Sam Scanga is a distinguished researcher and leader in the field of genetics, currently serving 
+              as the Director of Research at NeuroTheryX. He earned his Ph.D. in Genetics from the University of 
+              Toronto in 1998, following a Master of Science in Genetics and Developmental Biology from the same 
+              institution. Dr. Scanga&apos;s extensive expertise in genetic research has been instrumental in advancing 
+              NeuroTheryX&apos;s mission to develop innovative therapies for neurological disorders. His leadership and 
+              scientific acumen have positioned him as a key figure in the biotechnology sector, contributing 
+              significantly to the understanding and treatment of complex genetic conditions.
+            </p>
+          </li>
+        </ul>
+
       </div>
 
     </div>

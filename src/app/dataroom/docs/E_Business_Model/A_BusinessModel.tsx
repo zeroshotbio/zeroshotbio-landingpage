@@ -56,6 +56,7 @@ const C_BusinessModel: React.FC = () => {
         that our expertise is in bioinformatics and advanced AI.
       </p>
 
+
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         2. Select Internal Development: Following a Schrödinger‐Type Model
       </h3>
@@ -83,83 +84,95 @@ const C_BusinessModel: React.FC = () => {
           candidates while remaining lean and efficient.
         </li>
       </ul>
-      <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        This approach enables us to participate in the successes of our best leads while avoiding 
-        operational overextension into domains like high‐volume medicinal chemistry or large 
-        clinical trial management—capabilities better suited to big pharma. It&apos;s a model proven 
-        successful in the computational biology space.
-      </p>
+
+      <div className="mb-6">
+        <h4 className="roboto-slab-medium text-md text-gray-dark mb-3">Recent Pre-Clinical Success Stories:</h4>
+        <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark leading-relaxed">
+          <li>
+            <strong>Merck & Modifi Biosciences (2024):</strong> $30M upfront and up to $1.3B total for pre-clinical oncology assets.
+          </li>
+          <li>
+            <strong>Bristol Myers Squibb & IFM Therapeutics (2017):</strong> $300M upfront with potential milestones exceeding $1B for immune-oncology assets.
+          </li>
+          <li>
+            <strong>AstraZeneca & Dogma Therapeutics (2020):</strong> Acquisition of pre-clinical oral PCSK9 inhibitor program aimed at cardiovascular disease.
+          </li>
+          <li>
+            <strong>Gilead & Galapagos NV (2019):</strong> $3.95B upfront deal, significant value placed on pre-clinical and discovery-stage assets.
+          </li>
+        </ul>
+      </div>
+
+        <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
+          This approach enables us to participate in the successes of our best leads while avoiding 
+          operational overextension into domains like high‐volume medicinal chemistry or large 
+          clinical trial management—capabilities better suited to big pharma. It&apos;s a model proven 
+          successful in the computational biology space.
+        </p>
+
+
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         3. Drug Repurposing as a Quick‐Win Pipeline
       </h3>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        <strong>Many diseases lack effective therapies, yet thousands of clinically validated compounds 
-        remain on the shelf.</strong> With tsGPT, we can efficiently screen these compounds for 
-        viability in new indications, leveraging our “all‐vs‐all” computational approach where 
-        multi‐species gene signatures are compared across hundreds of disease contexts and existing drugs. 
-        Successful computational repurposing stories underscore this opportunity:
+        <strong>Many diseases lack effective therapies, yet thousands of clinically validated compounds remain on the shelf.</strong> With tsGPT, we can efficiently screen these compounds for viability in new indications, leveraging our “all‐vs‐all” computational approach where multi‐species gene signatures are compared across hundreds of disease contexts and existing drugs. Successful computational repurposing stories underscore this opportunity:
       </p>
       <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
         <li>
-          <strong>Rapid Timelines: </strong>Repurposed therapies can sometimes move into Phase II 
-          proof‐of‐concept within 3–5 years, significantly faster than the 7–10 year horizon for de 
-          novo drug development. For example, the Exscalate4Cov consortium rapidly identified 
-          raloxifene—an osteoporosis medication—as a promising COVID-19 treatment candidate within 
-          months using computational screening.
+          <strong>Rapid Timelines: </strong>Repurposed therapies can sometimes move into Phase II proof‐of‐concept within 3–5 years, significantly faster than the 7–10 year horizon for de novo drug development. For example, the Exscalate4Cov consortium rapidly identified raloxifene—an osteoporosis medication—as a promising COVID-19 treatment candidate within months using computational screening.
         </li>
         <li>
-          <strong>Value Proposition: </strong>The safety profile of these compounds is typically 
-          established, drastically lowering clinical development risks. Companies like Biovista and 
-          SOM Biotech have successfully demonstrated efficacy in repurposed drugs for neurological 
-          and rare diseases, leveraging established safety profiles to accelerate clinical progress.
+          <strong>Value Proposition: </strong>The safety profile of these compounds is typically established, drastically lowering clinical development risks. Companies like Biovista and SOM Biotech have successfully demonstrated efficacy in repurposed drugs for neurological and rare diseases, leveraging established safety profiles to accelerate clinical progress.
         </li>
         <li>
-          <strong>Revenue Potential: </strong>We may structure these repurposing collaborations 
-          similarly, offering resulting intellectual property or exclusive licenses to pharma 
-          partners for clinical advancement. This approach can rapidly generate revenue streams 
-          through milestone payments and licensing agreements.
+          <strong>Revenue Potential: </strong>We may structure these repurposing collaborations similarly, offering resulting intellectual property or exclusive licenses to pharma partners for clinical advancement. This approach can rapidly generate revenue streams through milestone payments and licensing agreements.
         </li>
       </ul>
+      <div className="mb-6">
+        <h4 className="roboto-slab-medium text-md text-gray-dark mb-3">
+          Recent Pre-Clinical Success Stories:
+        </h4>
+        <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark leading-relaxed">
+          <li>
+            <strong>Exscalate4Cov Consortium (2020):</strong> Repurposed raloxifene as a COVID-19 candidate, expediting clinical evaluation within months.
+          </li>
+          <li>
+            <strong>Biovista Inc. (since 2005):</strong> Secured strategic partnerships with upfront deals in the tens-of-millions for repurposing compounds in CNS and rare diseases.
+          </li>
+          <li>
+            <strong>SOM Biotech (est. 2009):</strong> Repositioned SOM3355 for Huntington’s chorea, achieving milestone deals reportedly exceeding $50M.
+          </li>
+          <li>
+            <strong>Insilico Medicine (founded 2014):</strong> Leveraged the PandaOmics platform to drive multi-million dollar licensing agreements for repurposed drug candidates.
+          </li>
+          <li>
+            <strong>COVID Moonshot Initiative (2020):</strong> Crowdsourced over 10,000 compound designs, advancing select candidates into preclinical testing within 6 months.
+          </li>
+        </ul>
+      </div>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        This complements our core SaaS and early‐stage development efforts, delivering near‐to‐mid‐term 
-        gains when a repurposed candidate quickly demonstrates efficacy in a new indication, 
-        mirroring successes seen with modern computational biology platforms like Insilico Medicine 
-        and the COVID Moonshot initiative.
+        This complements our core SaaS and early‐stage development efforts, delivering near‐to‐mid‐term gains when a repurposed candidate quickly demonstrates efficacy in a new indication, mirroring successes seen with modern computational biology platforms like Insilico Medicine and the COVID Moonshot initiative.
       </p>
+
+
+
 
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         4. Our Core Competency: AI and Biological Network Mastery
       </h3>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        <strong>Our business model is intentionally designed</strong> to keep us focused 
-        on the fundamental biology and AI aspects of drug discovery. We are not aiming 
-        to build a complex chemistry operation or compete with contract research 
-        organizations on large‐scale compound synthesis. Instead, 
-        we strive to excel at:
+        <strong> We want to stay focused </strong> 
+        on an understanding of biology from the gene networks perspective. We are not aiming 
+        to build a complex chemistry operation nor run human clinical trials. Instead, 
+        we strive to master pre-clinical predictions of the effects of drugs on 
+        disease pathways.
       </p>
-      <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        <li>
-          <strong>Data Integration & Knowledge Graph Building: </strong>Mastering 
-          multi‐species single‐cell data, gene regulatory relationships, 
-          and advanced embeddings of disease pathways.
-        </li>
-        <li>
-          <strong>Computational Insights: </strong>Continuously refining our adjacency‐aware 
-          Transformer (tsGPT) to understand toxicity, efficacy, and cross‐species 
-          predictions.
-        </li>
-        <li>
-          <strong>Intelligent Partnerships: </strong>Teaming with pharma and biotech 
-          who have the deep domain expertise in medicinal chemistry, scale‐up, 
-          and clinical trial execution.
-        </li>
-      </ul>
 
       <p className="roboto-slab-light text-base text-verydark mt-12 mb-12 leading-relaxed">
-        <strong>In short, our financial engine</strong> will combine stable recurring 
-        SaaS revenues from enterprise customers, alongside larger milestone‐based cash 
+        <strong>In short, our revenue strategy</strong> combines stable recurring 
+        SaaS revenues from enterprise customers alongside larger milestone‐based cash 
         inflows from selectively developed drug assets or repurposed therapy partnerships. 
         This balanced model supports ongoing platform innovation, fuels our data‐driven 
         growth, and allows Zeroshot Biolabs to stay at the frontier of 
