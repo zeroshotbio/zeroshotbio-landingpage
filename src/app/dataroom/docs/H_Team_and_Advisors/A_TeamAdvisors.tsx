@@ -39,7 +39,7 @@ const TeamAdvisors: React.FC = () => {
             <strong>CSO – Patrick Pumputis -- 25%</strong>
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Patrick is a dedicated scientist and cell biology researcher pursuing a PhD in Molecular Genetics 
-              at the University of Toronto. With a Master’s in Cellular Biology and a Bachelor’s in Biological 
+              at the University of Toronto. With a Master&apos;s in Cellular Biology and a Bachelor&apos;s in Biological 
               and Biomedical Sciences from the University of Waterloo, he co-founded Acorn Biolabs. As Science 
               Ambassador, he has driven core technology development and study design. His research, exemplified 
               by his recent preprint on oxidative stress and ECM remodeling, highlights his commitment to 
@@ -62,7 +62,7 @@ const TeamAdvisors: React.FC = () => {
               Basic Medical Sciences from Wayne State University and a strong foundation in research from 
               the University of Waterloo. His extensive experience in managing zebrafish colonies and conducting 
               precise lab operations—honed at The Hospital for Sick Children—ensures high standards in 
-              experimental execution and data collection. Harsha’s hands-on expertise is critical for 
+              experimental execution and data collection. Harsha&apos;s hands-on expertise is critical for 
               maintaining our cutting-edge animal model systems.
             </p>
           </li>
@@ -81,8 +81,8 @@ const TeamAdvisors: React.FC = () => {
               ​Dr. Sam Scanga is a distinguished researcher and leader in the field of genetics, currently serving 
               as the Director of Research at NeuroTheryX. He earned his Ph.D. in Genetics from the University of 
               Toronto in 1998, following a Master of Science in Genetics and Developmental Biology from the same 
-              institution. Dr. Scanga's extensive expertise in genetic research has been instrumental in advancing 
-              NeuroTheryX's mission to develop innovative therapies for neurological disorders. His leadership and 
+              institution. Dr. Scanga&apos;s extensive expertise in genetic research has been instrumental in advancing 
+              NeuroTheryX&apos;s mission to develop innovative therapies for neurological disorders. His leadership and 
               scientific acumen have positioned him as a key figure in the biotechnology sector, contributing 
               significantly to the understanding and treatment of complex genetic conditions.
             </p>
