@@ -67,24 +67,27 @@ const C_BusinessModel: React.FC = () => {
       </p>
       <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
         <li>
-          <strong>Out‐License or Sell Drug Programs: </strong>Just as Schrödinger did, 
-          we would monetize these assets by licensing them to pharma partners for 
-          later‐stage clinical development. The terms might include upfront payments 
-          in the tens‐of‐millions or even $100M+ range, plus downstream milestones 
-          and royalties.
+          <strong>Out‐License or Sell Drug Programs: </strong>Just as Schrödinger packaged its 
+          computationally developed candidate into a subsidiary and sold it to Takeda for $4 
+          billion after Phase II validation, we would similarly monetize these assets by licensing 
+          or selling them to pharma partners for later‐stage clinical development. Recent industry 
+          precedents include Merck acquiring Modifi Biosciences&apos; pre‐clinical oncology assets for 
+          up to $1.3 billion and Bristol Myers Squibb&apos;s $300 million upfront payment to IFM 
+          Therapeutics for pre‐clinical immune-oncology programs.
         </li>
         <li>
-          <strong>Retain Our Core Focus: </strong>Because the heavy lift of conducting 
-          Phase II and III trials remains with partners, we preserve our R&D resources 
-          for what we do best—building and refining advanced AI capabilities for 
-          multi‐species drug discovery. 
+          <strong>Retain Our Core Focus: </strong>Because the heavy lift of conducting Phase II 
+          and III trials remains with partners, we preserve our R&D resources for what we do 
+          best—building and refining advanced AI capabilities for multi‐species drug discovery. 
+          This strategic focus allows us to rapidly iterate, generating multiple promising 
+          candidates while remaining lean and efficient.
         </li>
       </ul>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        This approach enables us to participate in the successes of our best 
-        leads while avoiding operational overextension into domains like high‐volume 
-        medicinal chemistry or large clinical trial management—capabilities better 
-        suited to big pharma.
+        This approach enables us to participate in the successes of our best leads while avoiding 
+        operational overextension into domains like high‐volume medicinal chemistry or large 
+        clinical trial management—capabilities better suited to big pharma. It&apos;s a model proven 
+        successful in the computational biology space.
       </p>
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
@@ -92,33 +95,39 @@ const C_BusinessModel: React.FC = () => {
       </h3>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
         <strong>Many diseases lack effective therapies, yet thousands of clinically validated compounds 
-        remain on the shelf.</strong> With tsGPT, we can efficiently screen these compounds 
-        for viability in new indications, leveraging our “all‐vs‐all” computational approach 
-        where multi‐species gene signatures are compared across hundreds of disease contexts 
-        and existing drugs:
+        remain on the shelf.</strong> With tsGPT, we can efficiently screen these compounds for 
+        viability in new indications, leveraging our “all‐vs‐all” computational approach where 
+        multi‐species gene signatures are compared across hundreds of disease contexts and existing drugs. 
+        Successful computational repurposing stories underscore this opportunity:
       </p>
       <ul className="list-disc pl-8 roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
         <li>
-          <strong>Rapid Timelines: </strong>Repurposed therapies can sometimes move into 
-          Phase II proof‐of‐concept within 3–5 years, compared to a 7–10 year horizon 
-          for de novo drug development.
+          <strong>Rapid Timelines: </strong>Repurposed therapies can sometimes move into Phase II 
+          proof‐of‐concept within 3–5 years, significantly faster than the 7–10 year horizon for de 
+          novo drug development. For example, the Exscalate4Cov consortium rapidly identified 
+          raloxifene—an osteoporosis medication—as a promising COVID-19 treatment candidate within 
+          months using computational screening.
         </li>
         <li>
-          <strong>Value Proposition: </strong>The safety profile of these compounds is 
-          typically established. Our value lies in matching them to new disease pathways 
-          identified by tsGPT, accelerating development and lowering risk.
+          <strong>Value Proposition: </strong>The safety profile of these compounds is typically 
+          established, drastically lowering clinical development risks. Companies like Biovista and 
+          SOM Biotech have successfully demonstrated efficacy in repurposed drugs for neurological 
+          and rare diseases, leveraging established safety profiles to accelerate clinical progress.
         </li>
         <li>
-          <strong>Revenue Potential: </strong>We may structure these repurposing 
-          collaborations similarly, offering the resulting intellectual property or 
-          exclusive licenses to partners for further clinical work. 
+          <strong>Revenue Potential: </strong>We may structure these repurposing collaborations 
+          similarly, offering resulting intellectual property or exclusive licenses to pharma 
+          partners for clinical advancement. This approach can rapidly generate revenue streams 
+          through milestone payments and licensing agreements.
         </li>
       </ul>
       <p className="roboto-slab-light text-base text-verydark mb-6 leading-relaxed">
-        This complements our core SaaS and early‐stage development efforts, 
-        delivering near‐to‐mid‐term gains if a repurposed candidate quickly 
-        demonstrates efficacy in a new indication.
+        This complements our core SaaS and early‐stage development efforts, delivering near‐to‐mid‐term 
+        gains when a repurposed candidate quickly demonstrates efficacy in a new indication, 
+        mirroring successes seen with modern computational biology platforms like Insilico Medicine 
+        and the COVID Moonshot initiative.
       </p>
+
 
       <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
         4. Our Core Competency: AI and Biological Network Mastery
