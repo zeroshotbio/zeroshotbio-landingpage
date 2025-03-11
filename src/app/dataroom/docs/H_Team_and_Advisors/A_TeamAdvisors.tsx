@@ -74,7 +74,7 @@ const TeamAdvisors: React.FC = () => {
       {/* Advisory Team Section */}
       <div className="team-category mb-8">
         <h3 className="roboto-slab-medium text-lg text-gray-dark mb-2">
-          Adviser
+          Advisers
         </h3>
         <ul className="list-disc ml-8">
           <li className="mb-4">
@@ -87,6 +87,22 @@ const TeamAdvisors: React.FC = () => {
               NeuroTheryX&apos;s mission to develop innovative therapies for neurological disorders. His leadership and 
               scientific acumen have positioned him as a key figure in the biotechnology sector, contributing 
               significantly to the understanding and treatment of complex genetic conditions.
+            </p>
+          </li>
+        </ul>
+        <ul className="list-disc ml-8">
+          <li className="mb-4">
+            Dr. Brian Ciruna
+            <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
+              Dr. Brian Ciruna is a distinguished Senior Scientist and Head of the Developmental, Stem Cell & Cancer 
+              Biology program at The Hospital for Sick Children (SickKids) in Toronto, as well as a Professor in the 
+              Department of Molecular Genetics at the University of Toronto. He earned his Ph.D. in Genetics from 
+              the University of Toronto and completed postdoctoral training in zebrafish developmental genetics at 
+              the NYU School of Medicine. Dr. Ciruna&apos;s research focuses on understanding the molecular and genetic 
+              mechanisms that govern embryonic development, particularly the formation of the brain and spinal cord, 
+              and how disruptions in these processes can lead to birth defects and pediatric diseases. Utilizing 
+              zebrafish as a model organism, his lab combines experimental embryology with advanced genetic and live 
+              imaging technologies to study these developmental processes.
             </p>
           </li>
         </ul>
