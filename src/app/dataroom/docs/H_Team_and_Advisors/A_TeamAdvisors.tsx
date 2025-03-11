@@ -4,8 +4,8 @@ import React from 'react';
 const TeamAdvisors: React.FC = () => {
   return (
     <div className="team-advisors-page">
-      <h2 className="roboto-slab-bold text-xl text-gray-verydark mb-6">
-        Core Team
+      <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
+        The Zeroshot Biolabs Founding Team
       </h2>
 
       {/* Co-Founders Section */}
@@ -14,18 +14,20 @@ const TeamAdvisors: React.FC = () => {
           Co-Founders
         </h3>
         <ul className="list-disc ml-8">
-          <li className="mb-4">
-            <strong>CEO – Steven ten Holder -- 40%</strong>
+          <li className="mb-6">
+            CEO – Steven ten Holder -- 40%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Steven is a bioengineer and entrepreneur from the University of Waterloo. He co-founded 
               Acorn Biolabs—a biotech startup focused on non-invasive cell collection and cryopreservation—accelerated 
-              by Y Combinator and backed by over $11M in investments. Credited as an inventor on key patents, he 
-              also developed a CRISPR anti-viral system for Arabidopsis, earning recognition from iGEM. Steven brings his
-              leadership, strategic, and technical capabilities to Zeroshot Biolabs as its CEO.
+              by Y Combinator and backed by over $11M in investments. Credited as an inventor on key patents, it was his
+              original vision, organization, leadership and execution that enabled Acorn Biolabs to get off the ground.
+              He also previously developed a CRISPR anti-viral system for Arabidopsis, and worked with mathematical modelers
+              from Waterloo&apos;s applied math department to recreate genetic engineered biology systems to study plasmid
+              incompatibility. Steven brings leadership, strategic, and technical capabilities to Zeroshot Biolabs as its CEO.
             </p>
           </li>
-          <li className="mb-4">
-            <strong>CTO – Darien Schettler -- 25%</strong>
+          <li className="mb-6">
+            CTO – Darien Schettler -- 25%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Darien is an accomplished machine learning engineer at VMware, specializing in advanced generative 
               AI systems. With a strong interdisciplinary background in Biological Sciences and Systems 
@@ -36,7 +38,7 @@ const TeamAdvisors: React.FC = () => {
             </p>
           </li>
           <li className="mb-4">
-            <strong>CSO – Patrick Pumputis -- 25%</strong>
+            CSO – Patrick Pumputis -- 25%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Patrick is a dedicated scientist and cell biology researcher pursuing a PhD in Molecular Genetics 
               at the University of Toronto. With a Master&apos;s in Cellular Biology and a Bachelor&apos;s in Biological 
@@ -56,7 +58,7 @@ const TeamAdvisors: React.FC = () => {
         </h3>
         <ul className="list-disc ml-8">
           <li className="mb-4">
-            <strong>Head of Research - Harsha Murthy -- 4%</strong>
+            Head of Research - Harsha Murthy -- 4%
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               Harsha is a seasoned zebrafish wrangler and expert laboratory technician with a Master’s in 
               Basic Medical Sciences from Wayne State University and a strong foundation in research from 
@@ -72,11 +74,11 @@ const TeamAdvisors: React.FC = () => {
       {/* Advisory Team Section */}
       <div className="team-category mb-8">
         <h3 className="roboto-slab-medium text-lg text-gray-dark mb-2">
-          Advisers
+          Adviser
         </h3>
         <ul className="list-disc ml-8">
           <li className="mb-4">
-            <strong> Dr. Sam Scanga </strong>
+            Dr. Sam Scanga
             <p className="roboto-slab-regular text-base text-gray-semidark ml-4 mt-1 leading-relaxed">
               ​Dr. Sam Scanga is a distinguished researcher and leader in the field of genetics, currently serving 
               as the Director of Research at NeuroTheryX. He earned his Ph.D. in Genetics from the University of 

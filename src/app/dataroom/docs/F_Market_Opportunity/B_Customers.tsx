@@ -1,26 +1,52 @@
 'use client';
 import React from 'react';
 
-const C_Customers: React.FC = () => {
+const C_CustomerStrategyOverview: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Customer Strategy Overview
+        Customer Segments Overview
       </h2>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
-        <strong>SaaS Platform Customers.</strong> For our Software-as-a-Service offering, the customer base is broad and dynamic. Our primary clients will include biotechnology companies, pharmaceutical research organizations, academic research institutions, and contract research organizations. These customers rely on high-resolution, transcriptomic insights to make critical decisions early in drug discovery. Our platform will offer them robust pathway mapping, target validation, resistance mechanism prediction, and multi-target therapeutic modeling—all delivered through an intuitive, subscription-based interface. By catching potential failures early and streamlining the discovery process, our clients will save significant time and capital. The service model is designed to integrate seamlessly with existing R&D workflows, providing actionable intelligence that reinforces confidence in preclinical outcomes without venturing into the realm of chemical structure design.
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        Zeroshot Biolabs strategically targets three distinct customer segments, each characterized by unique profiles, priorities, and operational contexts. Understanding these customers enables us to tailor our solutions to meet their specific needs effectively.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Big Pharma and Drug Candidate Licensing.</strong> In parallel, we envision a customer strategy inspired by the Schrödinger Nimbus Takeda model. Here, our target customers are major pharmaceutical companies like Takeda and others, looking for high-value, preclinically validated drug candidates. This approach involves developing select compounds through rigorous transcriptomic analysis to achieve proof-of-concept before handing them off to big pharma. Our expertise in disease pathway understanding will allow us to pinpoint candidates with strong translational potential, making them attractive for licensing or outright acquisition. These transactions are expected to be in the range of $100 million batches, supplemented with milestone payments and royalties. In this scenario, our customers are not just purchasing a drug candidate—they are investing in our AI-driven preclinical confidence that de-risks the path to clinical trials.
+      <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
+        1. SaaS Platform Customers: Biotechs, CROs, and Academia
+      </h3>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        Our SaaS customers primarily include biotechnology firms, Contract Research Organizations (CROs), and academic research groups engaged in early-stage therapeutic discovery. Biotech customers are typically agile teams focused on specialized therapeutic areas, where speed, precision, and resource efficiency are paramount. They seek user-friendly, reliable tools that integrate easily into their current workflows, allowing rapid iteration without extensive in-house bioinformatics infrastructure.
+      </p>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        CRO customers require scalable, standardized solutions to consistently deliver high-quality results to their own pharmaceutical clients. They value accuracy, ease-of-use, and reproducibility in transcriptomic modeling. Academic institutions, on the other hand, prioritize affordability and flexibility, using tsGPT to enhance their research outcomes, publish groundbreaking results, and secure funding through innovative transcriptomic insights.
       </p>
 
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Dual Approach, Unified Vision.</strong> Whether through a SaaS model or direct drug candidate licensing, our customer strategy is built on the foundation of deep biological insight. For SaaS clients, our tools provide a continuous stream of predictive analytics to inform decision-making. For big pharma partners, our candidate generation leverages the same advanced transcriptomic models to produce assets that are ready to transition into clinical trials. This dual strategy allows Zeroshot Biolabs to capture a substantial share of the market by addressing both early-stage discovery and later-stage asset development. By focusing on disease pathway understanding rather than chemical synthesis, we remain true to our core competency, ensuring that our offerings are both unique and highly valuable in the competitive landscape of drug discovery.
+      <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
+        2. Big Pharma Licensing Customers: Established Pharmaceutical Corporations
+      </h3>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        Licensing customers encompass large, well-established pharmaceutical companies seeking high-value, de-risked therapeutic candidates. These corporations often have significant financial resources but face internal pressures to streamline their R&D processes, reduce attrition rates, and accelerate clinical timelines. Their interest in Zeroshot Biolabs stems from our ability to provide thoroughly validated, transcriptomically optimized drug candidates, particularly in high-stakes therapeutic areas such as oncology, immunology, and rare diseases.
+      </p>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        These customers are inherently risk-averse and therefore strongly value preclinical confidence. Our ability to demonstrate transcriptomic clarity around target safety, efficacy, and potential off-target effects significantly enhances our offerings&apos; attractiveness. Consequently, these pharmaceutical partners seek deep, collaborative relationships that align with their long-term strategic pipelines and clinical ambitions.
+      </p>
+
+      <h3 className="roboto-slab-medium text-lg text-gray-dark mb-4">
+        3. Drug Repurposing and Combination Therapy Customers: Specialty Pharma and Clinical Innovators
+      </h3>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        Our third customer segment comprises specialty pharmaceutical companies and clinical-stage innovators looking to rapidly advance treatments through intelligent drug repurposing and multi-target therapeutic strategies. These customers are often entrepreneurial and market-responsive, operating under tight timelines to bring effective treatments to patients in underserved therapeutic areas. They recognize the value of leveraging existing, clinically validated compounds or biologics, seeking to extend their therapeutic potential efficiently.
+      </p>
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        These customers highly value our capability to identify novel therapeutic combinations or repurposing opportunities quickly. They seek to leverage Zeroshot Biolabs’ expertise in transcriptomic modeling to uncover overlooked therapeutic possibilities, shorten development timelines, reduce clinical trial risk, and ultimately accelerate regulatory approval and market entry.
+      </p>
+
+      <p className="roboto-slab-light text-base mb-6 leading-relaxed">
+        <strong>Unified Customer Vision:</strong> Across all three segments, our customers share a common need: accurate, actionable, transcriptomic insights that streamline drug development and reduce the risk of costly clinical failures. By deeply understanding each customer segment’s unique characteristics and strategic imperatives, Zeroshot Biolabs positions itself as an essential partner in the evolving landscape of AI-driven drug discovery.
       </p>
     </>
   );
 };
 
-export default C_Customers;
+export default C_CustomerStrategyOverview;

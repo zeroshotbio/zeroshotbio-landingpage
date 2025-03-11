@@ -110,7 +110,7 @@ const C_FoundationModelTsGPT: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Ultimately, tsGPT will provide predictability that limits late‐stage drug development failures</strong> 
+        <strong>Ultimately, tsGPT will provide predictability that limits late‐stage drug development failures </strong> 
         by providing a rigorous in silico screening layer that incorporates multi‐species data at the earliest strategic
         stages. Rather than discovering a safety problem deep into Phase II or III—when both time and 
         cost investments are enormous—companies can adopt tsGPT’s screening predictions to triage candidate 
