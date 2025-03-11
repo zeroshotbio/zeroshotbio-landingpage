@@ -6,7 +6,7 @@ const C_CompetitiveLandscape: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Our Competitive Landscape: Strategic Positioning in a Growing Niche Ecosystem
+        The Competitive Landscape: Strategic Positioning in a Growing Niche Ecosystem
       </h2>
 
       <p className="roboto-slab-light text-base mb-6 leading-relaxed">
