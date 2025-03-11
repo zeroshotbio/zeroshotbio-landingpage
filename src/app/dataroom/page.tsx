@@ -1,45 +1,45 @@
 'use client';
 
 import React, { ReactNode, useEffect, useState } from "react";
-import Image from 'next/image';
+import Image from "next/image";
 
 /* ---------------------------
    Import your doc components
    --------------------------- */
 
 // Top-level documentation sections
-import A_Introduction from './docs/A_Overview/A_Introduction';
-import B_OverallSummary from './docs/A_Overview/B_Overall_Summary';
+import A_Introduction from "./docs/A_Overview/A_Introduction";
+import B_OverallSummary from "./docs/A_Overview/B_Overall_Summary";
 
 // Problem
-import A_BiologyIsComplex from './docs/B_Problem/A_BiologyIsComplex';
-import B_DrugDevelopment from './docs/B_Problem/B_DrugDevelopment';
-import C_CaseStudyBCRABL1 from './docs/B_Problem/C_CaseStudyBCRABL1';
+import A_BiologyIsComplex from "./docs/B_Problem/A_BiologyIsComplex";
+import B_DrugDevelopment from "./docs/B_Problem/B_DrugDevelopment";
+import C_CaseStudyBCRABL1 from "./docs/B_Problem/C_CaseStudyBCRABL1";
 
 // Vision
-import VisionOverview from './docs/C_Vision/A_VisionOverview';
-import FirstPrinciples from './docs/C_Vision/B_FirstPrinciples';
-import Zebrafish from './docs/C_Vision/C_Zebrafish';
-import ScRNA from './docs/C_Vision/D_scRNA';
-import FuturePotential from './docs/C_Vision/E_FuturePotential';
+import VisionOverview from "./docs/C_Vision/A_VisionOverview";
+import FirstPrinciples from "./docs/C_Vision/B_FirstPrinciples";
+import Zebrafish from "./docs/C_Vision/C_Zebrafish";
+import ScRNA from "./docs/C_Vision/D_scRNA";
+import FuturePotential from "./docs/C_Vision/E_FuturePotential";
 
 // Technology
-import BioFoundationModels from './docs/D_Technology/A_BioFoundationModels';
-import DataSources from './docs/D_Technology/B_DataSources';
-import BiologistPerspective from './docs/D_Technology/C_BiologistPerspective';
+import BioFoundationModels from "./docs/D_Technology/A_BioFoundationModels";
+import DataSources from "./docs/D_Technology/B_DataSources";
+import BiologistPerspective from "./docs/D_Technology/C_BiologistPerspective";
 
 // Business Model
-import BusinessModel from './docs/E_Business_Model/A_BusinessModel';
+import BusinessModel from "./docs/E_Business_Model/A_BusinessModel";
 
 // Market Opportunity
-import MarketOpportunity from './docs/F_Market_Opportunity/A_MarketOpportunity';
-import Customers from './docs/F_Market_Opportunity/B_Customers';
+import MarketOpportunity from "./docs/F_Market_Opportunity/A_MarketOpportunity";
+import Customers from "./docs/F_Market_Opportunity/B_Customers";
 
 // Competitive Landscape
-import CompetitiveLandscape from './docs/G_Competitive_Landscape/A_CompetitiveLandscape';
+import CompetitiveLandscape from "./docs/G_Competitive_Landscape/A_CompetitiveLandscape";
 
 // Team & Advisors
-import TeamAdvisors from './docs/H_Team_and_Advisors/A_TeamAdvisors';
+import TeamAdvisors from "./docs/H_Team_and_Advisors/A_TeamAdvisors";
 
 /* -----------------------------------------------
    Interfaces for your category structure
@@ -63,10 +63,10 @@ interface Category {
    DarkMode Component (internal only)
 ----------------------------------------------- */
 
-type ThemeOption = 'light' | 'dark';
+type ThemeOption = "light" | "dark";
 
 const SHOW_DARK_MODE_TOGGLE = false;
-const DEFAULT_THEME: ThemeOption = 'light';
+const DEFAULT_THEME: ThemeOption = "light";
 const RESPECT_USER_PREFERENCE = true;
 
 function DarkMode({ children }: { children: ReactNode }) {
@@ -85,7 +85,7 @@ function DarkMode({ children }: { children: ReactNode }) {
         }
       }
     } else {
-      if (DEFAULT_THEME === 'dark') {
+      if (DEFAULT_THEME === "dark") {
         document.documentElement.classList.add("dark");
         setDarkMode(true);
       } else {
@@ -97,7 +97,7 @@ function DarkMode({ children }: { children: ReactNode }) {
   }, []);
 
   const toggleDarkMode = () => {
-    setDarkMode(prev => {
+    setDarkMode((prev) => {
       const newMode = !prev;
       localStorage.setItem("theme", newMode ? "dark" : "light");
       document.documentElement.classList.toggle("dark", newMode);
@@ -109,24 +109,21 @@ function DarkMode({ children }: { children: ReactNode }) {
     <>
       {SHOW_DARK_MODE_TOGGLE && (
         <div className="fixed top-4 right-4 z-50">
-          <button 
+          <button
             onClick={toggleDarkMode}
-            className={`
-              relative inline-flex h-6 w-11 items-center rounded-full focus:outline-none cursor-pointer
-            `}
+            className={`relative inline-flex h-6 w-11 items-center rounded-full focus:outline-none cursor-pointer`}
             role="switch"
             aria-checked={darkMode}
           >
-            <span className={`
-              absolute inset-0 rounded-full transition duration-200 ease-in-out
-              ${darkMode ? 'bg-gray-700' : 'bg-gray-300'}
-            `}></span>
-            <span 
-              className={`
-                absolute h-5 w-5 transform rounded-full bg-white shadow-md
-                transition-transform duration-200 ease-in-out
-                ${darkMode ? 'translate-x-5' : 'translate-x-1'}
-              `}
+            <span
+              className={`absolute inset-0 rounded-full transition duration-200 ease-in-out ${
+                darkMode ? "bg-gray-700" : "bg-gray-300"
+              }`}
+            ></span>
+            <span
+              className={`absolute h-5 w-5 transform rounded-full bg-white shadow-md transition-transform duration-200 ease-in-out ${
+                darkMode ? "translate-x-5" : "translate-x-1"
+              }`}
             ></span>
           </button>
         </div>
@@ -142,147 +139,147 @@ function DarkMode({ children }: { children: ReactNode }) {
 
 const categories: Category[] = [
   {
-    id: 'overview',
-    title: 'Overview',
-    description: 'An overall look at our data room wiki.',
+    id: "overview",
+    title: "Overview",
+    description: "An overall look at our data room wiki.",
     subSections: [
       {
-        id: 'introduction',
-        title: 'Introduction',
+        id: "introduction",
+        title: "Introduction",
         component: A_Introduction,
       },
       {
-        id: 'overall-summary',
-        title: 'Overall Summary',
+        id: "overall-summary",
+        title: "Overall Summary",
         component: B_OverallSummary,
       },
     ],
   },
   {
-    id: 'problem',
-    title: 'Problem',
-    description: 'An analysis of the key challenges in drug development.',
+    id: "problem",
+    title: "Problem",
+    description: "An analysis of the key challenges in drug development.",
     subSections: [
       {
-        id: 'biology-is-complex',
-        title: 'Biology is Complex',
+        id: "biology-is-complex",
+        title: "Biology is Complex",
         component: A_BiologyIsComplex,
       },
       {
-        id: 'drug-development-landscape',
-        title: 'Drug Development Landscape',
+        id: "drug-development-landscape",
+        title: "Drug Development Landscape",
         component: B_DrugDevelopment,
       },
       {
-        id: 'case-study-BCRABL1',
-        title: 'Case Study: BCR-ABL1',
+        id: "case-study-BCRABL1",
+        title: "Case Study: BCR-ABL1",
         component: C_CaseStudyBCRABL1,
       },
     ],
   },
   {
-    id: 'vision',
-    title: 'Vision',
-    description: 'Our vision for the future of biological foundation models.',
+    id: "vision",
+    title: "Vision",
+    description: "Our vision for the future of biological foundation models.",
     subSections: [
       {
-        id: 'vision-overview',
-        title: 'Vision Overview',
+        id: "vision-overview",
+        title: "Vision Overview",
         component: VisionOverview,
       },
       {
-        id: 'first-principles',
-        title: 'First Principles',
+        id: "first-principles",
+        title: "First Principles",
         component: FirstPrinciples,
       },
       {
-        id: 'zebrafish',
-        title: 'Zebrafish',
+        id: "zebrafish",
+        title: "Zebrafish",
         component: Zebrafish,
       },
       {
-        id: 'scrna',
-        title: 'scRNA',
+        id: "scrna",
+        title: "scRNA",
         component: ScRNA,
       },
       {
-        id: 'future-potential',
-        title: 'Future Potential',
+        id: "future-potential",
+        title: "Future Potential",
         component: FuturePotential,
       },
     ],
   },
   {
-    id: 'technology',
-    title: 'Technology',
-    description: 'The technology behind our platform.',
+    id: "technology",
+    title: "Technology",
+    description: "The technology behind our platform.",
     subSections: [
       {
-        id: 'bio-foundation-models',
-        title: 'Bio Foundation Models',
+        id: "bio-foundation-models",
+        title: "Bio Foundation Models",
         component: BioFoundationModels,
       },
       {
-        id: 'data-sources',
-        title: 'Data Sources',
+        id: "data-sources",
+        title: "Data Sources",
         component: DataSources,
       },
       {
-        id: 'biologist-perspective',
-        title: 'Biologist Perspective',
+        id: "biologist-perspective",
+        title: "Biologist Perspective",
         component: BiologistPerspective,
       },
     ],
   },
   {
-    id: 'business-model',
-    title: 'Business Model',
-    description: 'Discover our revenue streams and scalability potential.',
+    id: "business-model",
+    title: "Business Model",
+    description: "Discover our revenue streams and scalability potential.",
     subSections: [
       {
-        id: 'business-model',
-        title: 'Business Model',
+        id: "business-model",
+        title: "Business Model",
         component: BusinessModel,
       },
     ],
   },
   {
-    id: 'market-opportunity',
-    title: 'Market Opportunity',
-    description: 'Explore the market potential and growth projections.',
+    id: "market-opportunity",
+    title: "Market Opportunity",
+    description: "Explore the market potential and growth projections.",
     subSections: [
       {
-        id: 'market-opportunity',
-        title: 'Market Opportunity',
+        id: "market-opportunity",
+        title: "Market Opportunity",
         component: MarketOpportunity,
       },
       {
-        id: 'customers',
-        title: 'Customers',
+        id: "customers",
+        title: "Customers",
         component: Customers,
       },
     ],
   },
   {
-    id: 'competitive-landscape',
-    title: 'Competitive Landscape',
-    description: 'Understand our unique position in the AI biotech market.',
+    id: "competitive-landscape",
+    title: "Competitive Landscape",
+    description: "Understand our unique position in the AI biotech market.",
     subSections: [
       {
-        id: 'competitive-landscape',
-        title: 'Competitive Landscape',
+        id: "competitive-landscape",
+        title: "Competitive Landscape",
         component: CompetitiveLandscape,
       },
     ],
   },
   {
-    id: 'team-advisors',
-    title: 'Team & Advisors',
-    description: 'Meet our expert team and advisory board.',
+    id: "team-advisors",
+    title: "Team & Advisors",
+    description: "Meet our expert team and advisory board.",
     subSections: [
       {
-        id: 'team-advisors',
-        title: 'Team & Advisors',
+        id: "team-advisors",
+        title: "Team & Advisors",
         component: TeamAdvisors,
       },
     ],
@@ -297,18 +294,25 @@ const DataRoomDocumentation: React.FC = () => {
   // Dark mode state and password gating
   const [darkMode, setDarkMode] = useState(false);
   const [accessGranted, setAccessGranted] = useState(false);
-  const [typedPassword, setTypedPassword] = useState('');
+  const [typedPassword, setTypedPassword] = useState("");
+
+  // Visitor tracking state
+  const [visitorId, setVisitorId] = useState<string | null>(null);
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
 
   // Category/sub-section selection
   const [selectedCategoryId, setSelectedCategoryId] = useState(categories[0].id);
   const [selectedSubSectionId, setSelectedSubSectionId] = useState<string | null>(null);
-  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(categories[0].id);
+  const [expandedCategoryId, setExpandedCategoryId] = useState<string | null>(
+    categories[0].id
+  );
 
   // Initialize dark mode from localStorage
   useEffect(() => {
-    const storedTheme = localStorage.getItem('theme');
-    if (storedTheme === 'dark') {
-      document.documentElement.classList.add('dark');
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme === "dark") {
+      document.documentElement.classList.add("dark");
       setDarkMode(true);
     }
   }, []);
@@ -325,13 +329,30 @@ const DataRoomDocumentation: React.FC = () => {
     }
   }, [selectedCategoryId]);
 
-  // Attempt password unlock
-  const handleUnlock = () => {
-    const CORRECT_PASSWORD = 'z'; // Example
+  // Attempt password unlock and log visitor info
+  const handleUnlock = async () => {
+    const CORRECT_PASSWORD = "z"; // Example
     if (typedPassword === CORRECT_PASSWORD) {
       setAccessGranted(true);
+      try {
+        const res = await fetch("/api/visitors", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            firstName,
+            lastName,
+            password: typedPassword,
+          }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          setVisitorId(data.id);
+        }
+      } catch (err) {
+        console.error("Error logging visitor:", err);
+      }
     } else {
-      alert('Incorrect password. Please try again.');
+      alert("Incorrect password. Please try again.");
     }
   };
 
@@ -348,13 +369,18 @@ const DataRoomDocumentation: React.FC = () => {
   };
 
   // Identify the current category
-  const currentCategoryIndex = categories.findIndex((c) => c.id === selectedCategoryId);
-  const currentCategory = currentCategoryIndex !== -1 ? categories[currentCategoryIndex] : null;
+  const currentCategoryIndex = categories.findIndex(
+    (c) => c.id === selectedCategoryId
+  );
+  const currentCategory =
+    currentCategoryIndex !== -1 ? categories[currentCategoryIndex] : null;
 
   // Next sub-section logic
   let nextSubSection: SubSection | null = null;
   if (currentCategory?.subSections && selectedSubSectionId) {
-    const idx = currentCategory.subSections.findIndex((s) => s.id === selectedSubSectionId);
+    const idx = currentCategory.subSections.findIndex(
+      (s) => s.id === selectedSubSectionId
+    );
     if (idx !== -1 && idx < currentCategory.subSections.length - 1) {
       nextSubSection = currentCategory.subSections[idx + 1];
     }
@@ -363,7 +389,9 @@ const DataRoomDocumentation: React.FC = () => {
   // Check if we are at the final sub-section of a category
   let atLastSubSectionOfCategory = false;
   if (currentCategory?.subSections && selectedSubSectionId) {
-    const idx = currentCategory.subSections.findIndex((s) => s.id === selectedSubSectionId);
+    const idx = currentCategory.subSections.findIndex(
+      (s) => s.id === selectedSubSectionId
+    );
     if (idx === currentCategory.subSections.length - 1) {
       atLastSubSectionOfCategory = true;
     }
@@ -371,7 +399,10 @@ const DataRoomDocumentation: React.FC = () => {
 
   // Figure out the next major category, if any
   let nextCategory: Category | null = null;
-  if (currentCategoryIndex !== -1 && currentCategoryIndex < categories.length - 1) {
+  if (
+    currentCategoryIndex !== -1 &&
+    currentCategoryIndex < categories.length - 1
+  ) {
     nextCategory = categories[currentCategoryIndex + 1];
   }
 
@@ -387,25 +418,59 @@ const DataRoomDocumentation: React.FC = () => {
     }
   };
 
+  // Log visitor exit time when the user leaves the page
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (visitorId) {
+        fetch("/api/visitors", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: visitorId }),
+        }).catch((err) =>
+          console.error("Error logging exit time:", err)
+        );
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [visitorId]);
+
   // Render the main content on the right side
   function renderContent() {
     if (!currentCategory) {
-      return <div className="text-black dark:text-white">Category not found.</div>;
+      return (
+        <div className="text-black dark:text-white">Category not found.</div>
+      );
     }
     const subSections =
       currentCategory.subSections ||
-      [{ id: currentCategory.id, title: currentCategory.title, component: currentCategory.component! }];
+      [
+        {
+          id: currentCategory.id,
+          title: currentCategory.title,
+          component: currentCategory.component!,
+        },
+      ];
     if (selectedSubSectionId) {
       const sub = subSections.find((s) => s.id === selectedSubSectionId);
       if (!sub) {
-        return <div className="text-black dark:text-white">Sub-section not found.</div>;
+        return (
+          <div className="text-black dark:text-white">
+            Sub-section not found.
+          </div>
+        );
       }
       try {
         const SubComponent = sub.component;
         return <SubComponent />;
       } catch (error) {
-        console.error('Error rendering component:', error);
-        return <div className="text-red-500">Error loading component</div>;
+        console.error("Error rendering component:", error);
+        return (
+          <div className="text-red-500">Error loading component</div>
+        );
       }
     }
     return (
@@ -444,9 +509,9 @@ const DataRoomDocumentation: React.FC = () => {
         <div className="hidden sm:flex justify-center w-full">
           <div
             className={`w-full max-w-[1600px] flex ${
-              accessGranted ? 'blur-0' : 'blur-sm'
+              accessGranted ? "blur-0" : "blur-sm"
             }`}
-            style={{ minWidth: '640px' }}
+            style={{ minWidth: "640px" }}
           >
             {/* Left Sidebar */}
             <aside className="flex flex-col border-r border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-6 sm:py-8 w-[23%] max-w-[320px] sticky top-0 bg-gray-50 dark:bg-gray-800 overflow-y-auto">
@@ -475,14 +540,14 @@ const DataRoomDocumentation: React.FC = () => {
                       <button
                         onClick={() => handleToggleCategory(cat.id)}
                         className={`flex items-center w-full px-3 py-2 focus:outline-none transition-colors duration-50 text-left ${
-                          isSelected 
-                            ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white' 
-                            : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700'
+                          isSelected
+                            ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+                            : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700"
                         }`}
                       >
                         <span
                           className={`inline-block transform transition-transform duration-50 ease-in-out mr-2 text-sm ${
-                            isExpanded ? 'rotate-90' : ''
+                            isExpanded ? "rotate-90" : ""
                           }`}
                         >
                           &gt;
@@ -493,7 +558,7 @@ const DataRoomDocumentation: React.FC = () => {
                       </button>
                       <div
                         className={`pl-2 pr-2 bg-gray-50 dark:bg-gray-800 transition-all duration-50 ease-in-out ${
-                          isExpanded ? 'max-h-[500px] py-2' : 'max-h-0 py-0'
+                          isExpanded ? "max-h-[500px] py-2" : "max-h-0 py-0"
                         } overflow-hidden`}
                       >
                         {subSections.map((sub) => {
@@ -503,9 +568,9 @@ const DataRoomDocumentation: React.FC = () => {
                               key={sub.id}
                               onClick={() => handleSelectSubSection(cat.id, sub.id)}
                               className={`w-full mb-2 px-3 py-2 rounded text-left transition-colors duration-100 text-xs ${
-                                subSelected 
-                                  ? 'bg-gray-200 dark:bg-gray-700 text-black dark:text-white' 
-                                  : 'bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white'
+                                subSelected
+                                  ? "bg-gray-200 dark:bg-gray-700 text-black dark:text-white"
+                                  : "bg-white dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 text-black dark:text-white"
                               }`}
                             >
                               {sub.title}
@@ -527,7 +592,7 @@ const DataRoomDocumentation: React.FC = () => {
                   Investor Data Room
                 </h1>
               </div>
-              
+
               {/* Second Header Bar */}
               <div className="sticky top-[40px] sm:top-16 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-2 z-10 transition-all duration-100">
                 <h2 className="roboto-slab-medium text-sm sm:text-lg text-black dark:text-white">
@@ -543,7 +608,12 @@ const DataRoomDocumentation: React.FC = () => {
                 {nextSubSection && (
                   <div className="flex justify-left mt-4">
                     <button
-                      onClick={() => handleSelectSubSection(selectedCategoryId, nextSubSection!.id)}
+                      onClick={() =>
+                        handleSelectSubSection(
+                          selectedCategoryId,
+                          nextSubSection!.id
+                        )
+                      }
                       className="text-xs bg-gray-300 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-black dark:text-white px-4 py-2 rounded shadow transition-colors"
                     >
                       Next: {nextSubSection!.title}
@@ -572,15 +642,29 @@ const DataRoomDocumentation: React.FC = () => {
           <div className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
               <h2 className="roboto-slab-semibold text-black dark:text-white text-xl mb-4">
-                Enter Password
+                Enter Your Info
               </h2>
+              <input
+                type="text"
+                placeholder="First Name"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-3 py-2 mb-2 focus:outline-none"
+              />
+              <input
+                type="text"
+                placeholder="Last Name"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-3 py-2 mb-4 focus:outline-none"
+              />
               <input
                 type="password"
                 placeholder="Password"
                 value={typedPassword}
                 onChange={(e) => setTypedPassword(e.target.value)}
                 onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleUnlock();
+                  if (e.key === "Enter") handleUnlock();
                 }}
                 className="w-full border border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:text-white rounded px-3 py-2 mb-4 focus:outline-none"
               />
