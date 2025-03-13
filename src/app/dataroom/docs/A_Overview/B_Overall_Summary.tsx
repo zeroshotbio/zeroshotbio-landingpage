@@ -154,12 +154,9 @@ const OverallSummary: React.FC = () => {
         premium subscription fees. 
       </p>
 
-
-
-
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
         <strong>2. If we develop our own drug candidates </strong> the market opportunity
-        is more difficult to predict. If we follow the path Schrödinger pursued, we 
+        is more difficult to predict. Following the path Schrödinger pursued, we 
         could take select compounds through proof-of-concept, then license or sell them
         outright to larger pharma for further clinical development. That means Zeroshot Biolabs
         would make money in &#39;$100m batches&#39; plus milestone fees and royalties. The advantage of
