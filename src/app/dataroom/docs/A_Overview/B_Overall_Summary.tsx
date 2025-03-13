@@ -99,15 +99,17 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
+        <strong>What categories of therapeutics should we develop core competency for? </strong>
+      </p>
+
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong> Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
         are some of the most promising but difficult to harness. The chain of events
         that follow often have deep gene regulatory effects that either result in unexpected
         toxicity or inconsistent efficacy across species. 
-
         The self-attention transformer architecture is especially well suited for capturing
-        context-dependent, long-range interactions just like these. 
-        Fine-tuning a drug&#39;s impact on complex gene network effects
-        actually becomes possible to model confidently.
+        context-dependent, long-range interaction effects in transcriptomically complex diseases like these. 
+        
       </p>
 
       <div className="w-full">
@@ -120,18 +122,21 @@ const OverallSummary: React.FC = () => {
         />
       </div>
       <p className="roboto-slab-extralight text-xxsm mb-20 mt-4 leading-relaxed">
-        The difference in complexity between drugs that target transcriptomically simple versus complex disease pathways
-        becomes clear in this side-by-side comparison. On the left, drugs like Insulin and Aspirin have relatively simple
-        positive and negative pathway effects, while on the right the cascade of events relevant to the success of a drug 
-        like Mylotarg are difficult to capture even in a complex visual like this. Most diseases we don&amp;t yet have 
-        treatments for have transcriptomically complex efficacy and toxicity effects, more like Mylotarg and insulin. 
+        Transcriptomically simple versus transcriptomically complex disease pathways are visualized in this side-by-side comparison.
+        On the left, drugs like Insulin and Aspirin have relatively simple
+        positive and negative pathway effects. On the right, a drug like Mylotarg involves a complex cascade of events 
+        relevant to its efficacy (blue) and toxicity (red). Most diseases have transcriptomically complex efficacy and toxicity
+         effects, more like Mylotarg than insulin. 
       </p>
 
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>We can monetize in two major ways.</strong> Either we pursue a SaaS-style 
-        business model selling access to inference or we use our system to develop our own 
-        novel drug candidates. The former would allow us to generate revenue within a year, 
+        <strong>How do we make money? </strong>
+      </p>
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        <strong>There are two major pathways avaialble to us.</strong> Either we pursue a SaaS-style 
+        business model selling access to inference or we use our system to develop 
+        novel drug candidates of our own. The former would allow us to generate revenue within a year, 
         but the latter would (potentially) allow us to capture far more value 
         in the long term. It may be that we pursue a hybrid of these two models 
         given their mutual synergy.
@@ -149,14 +154,7 @@ const OverallSummary: React.FC = () => {
         premium subscription fees. 
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>Patrick: </strong> 
-        Steven make sure to clarify that we&#39;re not going to become a chemical structure design co. 
-        We&#39;re a disease pathways understanding and discovery company. 
-        We may be able to directly discover proteins as therapeutics. 
-        Or recapitulate existing drugs into pathways we discove.
-        But our core competency is NOT chemistry. 
-      </p>
+
 
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
