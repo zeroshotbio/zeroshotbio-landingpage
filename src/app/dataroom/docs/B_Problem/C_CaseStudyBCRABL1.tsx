@@ -225,38 +225,44 @@ const LeukemiaCaseStudies: React.FC = () => {
 
       <section className="mt-12">
         <h2 className="roboto-slab-medium text-xl text-gray-dark mb-4">
-          Comparative Summary: tsGPT&apos;s Optimal Roles Across Leukemia Contexts
+          So, how would tsGPT have played into each story?
         </h2>
-
-        <p className="roboto-slab-light mb-6 leading-relaxed">
-          tsGPT modeling represents a new frontier in leukemia research and treatment, enabling clinicians and scientists to anticipate, understand, and address complex biological challenges with unprecedented precision. While existing therapies have made significant strides, each leukemia subtype presents distinct biological hurdles—whether due to resistance, subclonal evolution, off-target effects, or balancing efficacy with toxicity. In each of these scenarios, tsGPT holds unique promise, providing tailored solutions rooted in advanced predictive capabilities derived from single-cell transcriptomics.
-        </p>
 
         <h3 className="roboto-slab-medium text-lg mb-3">
           1. Mylotarg (AML): Predictive Safety Through Detailed Off-Target Profiling
         </h3>
         <p className="roboto-slab-light mb-6 leading-relaxed">
-          <strong>Mylotarg</strong>, an antibody-drug conjugate (ADC) targeting CD33-positive AML cells, demonstrated promising initial outcomes but was hampered by significant adverse events—most notably severe hepatic veno-occlusive disease. These toxicities were largely attributable to unintended interactions with normal tissues expressing CD33 at lower but still clinically significant levels. Here, tsGPT could have dramatically altered the narrative by modeling the gene expression impacts of CD33 targeting at single-cell resolution prior to clinical trials. 
+          A mature transcriptomic modeling approach like scGPT could have significantly reshaped the story of Mylotarg by anticipating and mitigating its key clinical pitfalls, particularly the unexpected hepatotoxicity arising from CD33 expression on liver-resident Kupffer cells. Leveraging extensive single-cell RNA sequencing data from healthy human tissues alongside AML samples, scGPT would have quickly identified the problematic off-tumor expression profile of CD33 in liver macrophages. This early identification would have clearly signaled the heightened risk of hepatic veno-occlusive disease (VOD), alerting researchers before clinical trials.
         </p>
-
         <p className="roboto-slab-light mb-6 leading-relaxed">
-          Through advanced predictive modeling, tsGPT could identify early biomarkers signaling susceptibility to off-target damage. This preclinical risk stratification would empower researchers to refine antigen selection, opting for targets with minimal normal-tissue expression or developing ADC payloads with controlled toxicity profiles. Additionally, tsGPT could pinpoint supportive therapies to mitigate predicted toxicities, offering personalized adjunctive strategies that prevent severe clinical outcomes, enhance tolerability, and maintain therapeutic efficacy. Ultimately, tsGPT would transform the development pathway for ADCs by providing a robust, predictive safety framework, significantly reducing clinical trial failures and improving patient outcomes.
+          Furthermore, by computationally simulating cellular outcomes following calicheamicin-induced apoptosis in Kupffer cells, scGPT could have predicted not only the likelihood of liver toxicity but also clarified the biological mechanisms underlying such effects—disruption of hepatic endothelial integrity and inflammatory cascades. With such foresight, drug developers could have proactively adjusted strategies, either by modifying dosing regimens to reduce peak exposure or by revisiting the antibody-drug conjugate’s linker-payload design to limit uptake in non-target cells.
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+          Perhaps the most transformative application of scGPT, however, would have been its ability to identify alternative therapeutic targets. By systematically screening comprehensive single-cell transcriptomic profiles, the platform could reveal candidate antigens like CLL-1 (CLEC12A), CD123, TIM-3, or FLT3, whose selective AML blast expression coupled with minimal presence on vital healthy tissues presented safer yet equally effective targeting options. Thus, rather than relying solely on CD33, which posed clear transcriptomic red flags, scGPT's predictive analytics could have driven researchers towards safer, polygenic targeting strategies, fundamentally shifting the clinical trajectory for Mylotarg. 
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+            In essence, scGPT would have transformed Mylotarg’s development journey from a reactive process responding to unexpected toxicities into a proactive, transcriptome-guided approach, optimizing therapeutic efficacy and patient safety well before clinical complications emerged.
         </p>
 
         <h3 className="roboto-slab-medium text-lg mb-3">
           2. BCR-ABL1 (CML): Strategic Anticipation of Resistance and Subclonal Evolution
         </h3>
         <p className="roboto-slab-light mb-6 leading-relaxed">
-          Chronic myeloid leukemia (CML) exemplifies the therapeutic potential and the inherent limitations of targeted therapies, notably exemplified by imatinib’s dramatic yet eventually incomplete success in combating the <strong>BCR-ABL1</strong> fusion kinase. Resistance, whether from kinase-domain mutations such as the T315I mutation or through bypass signaling pathways, has remained a persistent clinical challenge. Furthermore, leukemia stem cells, which are relatively insensitive to kinase inhibition, present additional hurdles to achieving deep, sustained remission or cure.
+            A transformer-based model tailored to transcriptomic data, such as tsGPT, could have significantly impacted the development and therapeutic optimization of imatinib for chronic myeloid leukemia (CML). By capturing detailed patterns in single-cell RNA sequencing (scRNA-seq) data, tsGPT would have accelerated the identification of molecular mechanisms underlying imatinib efficacy and resistance, providing earlier and more precise insights into the biology of leukemic cells and their adaptive responses to treatment.
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+            One key advantage of tsGPT would have been its ability to predict resistance mechanisms before they emerged clinically. By training on extensive scRNA-seq datasets from patients treated with imatinib, tsGPT could identify transcriptional signatures indicative of early drug resistance—such as kinase domain mutations, altered drug transporter expression, or activation of alternative signaling pathways like JAK/STAT or PI3K/Akt. This predictive capacity would have allowed clinicians to tailor therapeutic strategies preemptively, switching patients to second-generation TKIs or initiating targeted combination therapies before overt resistance developed, thus improving patient outcomes.
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+          Additionally, tsGPT’s capacity for zero-shot generalization could have facilitated rapid identification of novel therapeutic targets and drug combinations. By transferring learned representations from large transcriptomic databases—including related leukemias and solid tumors—tsGPT could uncover hidden relationships between signaling pathways, cellular states, and treatment responses. This might have led to earlier recognition of the role of leukemia stem cell quiescence and niche signaling pathways (such as Wnt/β-catenin or Sonic Hedgehog) in treatment resistance, highlighting opportunities for combinatorial treatments aimed at these resilient cell populations.
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+          Beyond resistance, tsGPT would also have improved patient stratification by analyzing transcriptomic profiles at diagnosis, predicting individual responses to imatinib with greater accuracy. This personalized medicine approach could have better distinguished patients likely to achieve deep molecular remission from those requiring intensified or alternative treatment regimens, streamlining clinical decision-making and maximizing therapeutic benefit.
+        </p>
+        <p className="roboto-slab-light mb-6 leading-relaxed">
+          Overall, the integration of a sophisticated transformer-based transcriptomic model like tsGPT would have accelerated understanding of CML biology, predicted and addressed resistance earlier, and enhanced personalization of imatinib therapy. This computational advance would have contributed to even greater clinical efficacy, deeper remissions, and higher rates of sustained treatment-free remission—ultimately bringing us closer to the goal of curing CML.
         </p>
 
-        <p className="roboto-slab-light mb-6 leading-relaxed">
-          In this context, tsGPT could offer groundbreaking insights into resistance development long before clinical manifestation. By continuously monitoring single-cell transcriptional changes, tsGPT could identify subtle shifts indicative of emerging resistance, allowing for earlier intervention. More importantly, tsGPT could predict specific gene regulatory networks that underpin resistance pathways, providing clinicians with actionable intelligence for preemptively initiating combination therapies targeting multiple oncogenic and compensatory pathways simultaneously. This comprehensive, strategic approach would effectively close off potential routes of escape, significantly extending patient remission durations and enhancing long-term survival outcomes. 
-        </p>
-
-        <p className="roboto-slab-light mb-6 leading-relaxed">
-          Additionally, tsGPT could revolutionize stem cell eradication strategies by identifying unique transcriptional signatures and vulnerabilities within leukemic stem cell populations. Such predictive capabilities could enable the design of novel combination therapies aimed specifically at eradicating these resilient populations, thereby addressing a fundamental limitation of current CML treatment paradigms.
-        </p>
 
         <h3 className="roboto-slab-medium text-lg mb-3">
           3. Notch Inhibitors (ALL): Precision Therapeutic Windows for Enhanced Safety and Efficacy
