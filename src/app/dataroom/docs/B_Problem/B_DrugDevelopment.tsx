@@ -23,7 +23,8 @@ const TherapeuticComplexity: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base mb-2 mt-4 leading-relaxed">
-        So, we started by creating a map of the top ~300 successfully approved, in-market drugs 
+        So, we started our own decision-making process by creating a map of the top 
+        ~300 successfully approved, in-market drugs 
         and organized it by: 
       </p>
       <ul className="text-gray-dark roboto-slab-regular text-xm mt-4 mb-6">

@@ -20,7 +20,7 @@ const OverallSummary: React.FC = () => {
         <strong>Our vision</strong> is that biological foundation models will enable such a robust, deep understanding
         of disease pathways that brand new drug development strategies will become possible.
         This will be a difference in kind, not just quantity. Entirely new categories of pathway visibility will enable
-        fresh therapeutic approaches that we believe will revolutionze the precilincal development landscape.
+        fresh therapeutic approaches that we believe will revolutionize the preclinical development landscape.
       </p>
       
       <p className="mt-4 roboto-slab-light text-base text-verydark leading-relaxed">
@@ -31,22 +31,29 @@ const OverallSummary: React.FC = () => {
       </p>
 
       
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
         <strong>Tactically speaking, </strong> we&#39;re starting by training our models on the &#39;action&#39; 
         layer of biology -- the transcriptome. It&#39;s one of the most fundamental, diverse, 
         and data-scalable signatures of activity within and between cells.
-        AI&#39;s core competency is in understanding the complexity of high-dimensional networks, 
-        especially when large pools of diverse training data are available. 
-        That&#39;s why we&#39;ve chosen to start with <strong><i>Danio rerio</i> (zebrafish)</strong> as 
-        our first model organism. With zebrafish, we&#39;re able to sequence the transcriptomes 
-        of thousands of cells from hundreds of individuals under dozens of conditions. 
-      
-        After we&#39;ve demonstrated predictive capability within zebrafish biology by testing
-        our model against real-world outcomes, we&#39;ll expand to include other model 
-        organisms in our training data toward our first milestone goal: the prediction of outcomes 
-        in human biology.
+        AI&apos;s core competency is in understanding high-dimensional networks, 
+        especially when large pools of diverse training data are available.
       </p>
 
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-2 leading-relaxed">
+        <strong>We&apos;re beginning by </strong> harvesting publicly available multi-species scRNA (single cell RNA) 
+        datasets with a bias toward human and
+        <strong><i> Danio rerio</i> (zebrafish)</strong> as the foundation. 
+      </p>
+        
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-2 leading-relaxed">
+        <strong>Why the bias toward zebrafish? </strong>
+        We&apos;re confident custom data will be necessary to strengthen our models as we specialize them
+        toward state-of-the-art performance on a drug-by-drug basis.
+        We&apos;ve selected zebrafish as the optimal model organism for custom data generation because
+        it is the most human-like model organism that is low-cost, high-scale, and increasingly popular
+        in FDA-approved pre-clinical settings. 
+      </p>
+      
       <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
         <strong> We will run the data cycle continuously </strong> over the life of the 
         company to keep improving our biological foundation models. 
@@ -55,7 +62,8 @@ const OverallSummary: React.FC = () => {
         performing scRNA sequencing, using the results to train and fine-tune our models,
         learning from the inference results, and finally designing the next generation of
         experiments. By intelligently filling data gaps and fine-tuning our model architecture 
-        over many generations, we expect to become the gold-standard for transcriptomic effect prediction.
+        over many generations, we expect to become the gold-standard for transcriptomic effect prediction
+        for the drug categories we choose to specialize in.
       </p>
 
       <div className="w-full mb-4">
@@ -94,7 +102,7 @@ const OverallSummary: React.FC = () => {
 
       <p className="roboto-slab-extralight text-xxsm mb-20 mt-0 leading-relaxed">
         A visualization of the fundamental operation of the first iteration of our transformer model,
-        tsGPT 1.4. Inputs and outputs are structed as gene expression profiles, which are then interpreted
+        tsGPT 1.4. Inputs and outputs are structured as gene expression profiles, which are then interpreted
         back into biologically relevant phenotypic realities.
       </p>
 
@@ -134,7 +142,7 @@ const OverallSummary: React.FC = () => {
         <strong>How do we make money? </strong>
       </p>
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>There are two major pathways avaialble to us.</strong> Either we pursue a SaaS-style 
+        <strong>There are two major pathways available to us.</strong> Either we pursue a SaaS-style 
         business model selling access to inference or we use our system to develop 
         novel drug candidates of our own. The former would allow us to generate revenue within a year, 
         but the latter would (potentially) allow us to capture far more value 
