@@ -6,7 +6,7 @@ const A_BiologyIsComplex: React.FC = () => {
   return (
     <>
       <h2 className="roboto-slab-medium text-xl text-gray-dark mb-8 mt-4">
-        Biology is Complex
+        Biology is Complex. AI can <i>more than</i> help.
       </h2>
 
 
@@ -35,7 +35,24 @@ const A_BiologyIsComplex: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         <strong> Cancer is one quintessential example </strong> of the centrality of transcriptomic complexity
+         In AI research circles, <strong> a problem space that appears chaotic and complex yet possess 
+         underlying patterns with sufficient structure for AI to effectively analyize is commonly refered to as a 
+         &apos;low-dimensional manifold&apos;. </strong>
+         The transcriptomic layer of biology is one such problem space and -- at this moment in the year 
+         2025 -- sits in an underutilized drug development sweet-spot. Transcriptomic data contains enough information 
+         to predict, develop, and validate drug candidates across the entire disease spectrum. Until now that data has 
+         been too complex to decypher and utilize to its full poptential.
+      </p>
+
+      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
+         With sufficiently generalized models trained on enough transcriptomic data, any major &apos;state&apos; 
+         an organism can be in is identifyable and understandable to AI as a &apos;transcriptomic signature&apos;. 
+         It is the perfect language intermediary to translate the state of the biology of an entire organism from the real-world 
+         into data understandable and queriable to AI. 
+      </p>
+
+      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
+         <strong> Cancer is the quintessential example </strong> of transcriptomic complexity
          in therapeutic development. 
          When one signaling route is inhibited, cancer cells evolve
          alternative, redundant gene expression pathways, rerouting survival
