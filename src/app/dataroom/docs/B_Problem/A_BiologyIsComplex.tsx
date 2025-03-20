@@ -35,31 +35,38 @@ const A_BiologyIsComplex: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         In AI research circles, <strong> a problem space that appears chaotic and complex yet possess 
-         underlying patterns with sufficient structure for AI to effectively analyize is commonly refered to as a 
+         In AI research circles, <strong> a problem space that appears chaotic and complex yet possesses 
+         sufficient underlying structure for AI to effectively analyze is commonly refered to as a 
          &apos;low-dimensional manifold&apos;. </strong>
-         The transcriptomic layer of biology is one such problem space and -- at this moment in the year 
-         2025 -- sits in an underutilized drug development sweet-spot. Transcriptomic data contains enough information 
-         to predict, develop, and validate drug candidates across the entire disease spectrum. Until now that data has 
-         been too complex to decypher and utilize to its full poptential.
+         The transcriptomic layer of biology is one such space -- its patterns are incredibly chaotic and 
+         complex, yet structured enough to be AI-tractable.
+         Scientists have had access to far more valuable information than they&apos;ve previously been able 
+         to understand and harness.
+         The introduction of AI as a tool to decypher pathways and design interventions is creating a
+         brand new drug development paradigm.
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         With sufficiently generalized models trained on enough transcriptomic data, any major &apos;state&apos; 
-         an organism can be in is identifyable and understandable to AI as a &apos;transcriptomic signature&apos;. 
-         It is the perfect language intermediary to translate the state of the biology of an entire organism from the real-world 
-         into data understandable and queriable to AI. 
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         <strong> Cancer is the quintessential example </strong> of transcriptomic complexity
-         in therapeutic development. 
-         When one signaling route is inhibited, cancer cells evolve
+         <strong> Cancer is the quintessential example </strong> of the potential
+         for AI-driven therapeutic development strategies to work <i>with </i>
+         transcriptomic complexity instead of against it.
+         When one signaling route is inhibited by a targeted therapeutic, cancer cells very often evolve
          alternative, redundant gene expression pathways, rerouting survival
          signals by taking advantage of the chaos of transcriptomic interactions. 
-         This ability to exploit multiple, overlapping gene regulatory circuits not only ensures their 
-         persistence in the face of targeted therapies but also underscores the need for system-wide, 
-         AI-driven strategies that can anticipate and counteract such adaptive maneuvers.
+         This ability to exploit multiple, overlapping gene regulatory circuits enables 
+         persistence and clinical trial failures.
+         AI-driven strategies that can predict these adaptive maneuvers before they become
+         clinic-halting problems will become invaluable in the design of next-generation drugs. 
+      </p>
+
+      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
+        <strong>Cancer is the quintessential example</strong> of the potential for AI-driven therapeutic 
+        development strategies to work <i>with</i> transcriptomic complexity instead of against it. Rather 
+        than being weakened by targeted disruptions, cancer thrives precisely because of its ability to leverage 
+        transcriptomic chaos—quickly rerouting survival signals through multiple, overlapping gene regulatory 
+        pathways. Confronting such relentless adaptability demands an equally sophisticated, AI-powered 
+        approach: therapies that embrace complexity, anticipate adaptive responses, and strategically intervene 
+        across entire networks of gene expression, transforming biological complexity from an obstacle into an opportunity.
       </p>
 
 
