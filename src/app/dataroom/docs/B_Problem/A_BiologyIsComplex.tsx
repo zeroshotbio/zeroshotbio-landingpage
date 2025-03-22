@@ -56,17 +56,7 @@ const A_BiologyIsComplex: React.FC = () => {
          This ability to exploit multiple, overlapping gene regulatory circuits enables 
          persistence and clinical trial failures.
          AI-driven strategies that can predict these adaptive maneuvers before they become
-         clinic-halting problems will become invaluable in the design of next-generation drugs. 
-      </p>
-
-      <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        <strong>Cancer is the quintessential example</strong> of the potential for AI-driven therapeutic 
-        development strategies to work <i>with</i> transcriptomic complexity instead of against it. Rather 
-        than being weakened by targeted disruptions, cancer thrives precisely because of its ability to leverage 
-        transcriptomic chaos—quickly rerouting survival signals through multiple, overlapping gene regulatory 
-        pathways. Confronting such relentless adaptability demands an equally sophisticated, AI-powered 
-        approach: therapies that embrace complexity, anticipate adaptive responses, and strategically intervene 
-        across entire networks of gene expression, transforming biological complexity from an obstacle into an opportunity.
+         clinic-halting problems will become invaluable in the design of next-generation cancer drugs. 
       </p>
 
 
