@@ -26,6 +26,10 @@ const LeukemiaCaseStudies: React.FC = () => {
            how tsGPT would have been practically able to completely change the outcomes.
         </p>
 
+        <h2 className="roboto-slab-medium text-lg mb-4">
+         Leukemia Background
+        </h2>
+
         <p className="roboto-slab-light mb-8 leading-relaxed">
           Leukemias arise from genetic abnormalities that deregulate normal blood cell development. Despite therapeutic advances, 
           complexities such as drug resistance, subclonal evolution, and off-target toxicity remain significant clinical challenges. 

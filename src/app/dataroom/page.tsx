@@ -14,7 +14,7 @@ import B_OverallSummary from "./docs/A_Overview/B_Overall_Summary";
 // Problem
 import A_BiologyIsComplex from "./docs/B_Problem/A_BiologyIsComplex";
 import B_DrugDevelopment from "./docs/B_Problem/B_DrugDevelopment";
-import C_CaseStudyBCRABL1 from "./docs/B_Problem/C_CaseStudyBCRABL1";
+import C_CaseStudyLeukemia from "./docs/B_Problem/C_CaseStudyLeukemia";
 
 // Vision
 import VisionOverview from "./docs/C_Vision/A_VisionOverview";
@@ -171,9 +171,9 @@ const categories: Category[] = [
         component: B_DrugDevelopment,
       },
       {
-        id: "case-study-BCRABL1",
-        title: "Case Study: BCR-ABL1",
-        component: C_CaseStudyBCRABL1,
+        id: "case-study-Leukemia",
+        title: "Case Study: Leukemia",
+        component: C_CaseStudyLeukemia,
       },
     ],
   },
