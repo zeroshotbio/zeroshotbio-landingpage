@@ -14,8 +14,8 @@ const A_BiologyIsComplex: React.FC = () => {
         <strong>Biology is a chaotic, complex system. </strong> 
         Intricate networks of interaction among thousands of genes, proteins and signaling molecules 
         underlie every biological process.
-        This inherent chaos explains why despite our best efforts
-        scientists struggle to reliably turn fundamental discoveries into therapeutics.
+        This inherent chaos explains why scientists have struggled to reliably turn fundamental biological discoveries 
+        into effective therapeutics.
       </p>
       
 
@@ -35,68 +35,43 @@ const A_BiologyIsComplex: React.FC = () => {
       </div>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         In AI research circles, <strong> the manifold hypothesis </strong>  posits that complex, seemigly chaotic data 
+         <strong>In AI research circles, the manifold hypothesis posits </strong> that complex, seemigly chaotic data 
          encountered in nature exists on a spectrum. At one extreme, data can be entirely random and 
          high-dimensional, rendering it computationally intractable and practically opaque to current AI 
-         techniques. At the other end, the data is excessively structured and simple, providing little 
-         informational novelty or challenge. Between these two extremes lies a &apos;Goldilocks zone&apos; of complexity—where 
-         data sets embody sufficient 
-         complexity and dimensionality to yield meaningful insights, yet remain embedded within 
-         lower-dimensional manifolds accessible enough for advanced AI systems to discern structure, 
-         recognize meaningful patterns, and generalize effectively. 
+         techniques. At the other end, data can be excessively structured and simple, providing little 
+         informational novelty. Between these two extremes lies a &apos;Goldilocks zone&apos; of complexity: 
+         chaotic data spaces with substantial informational content <i> and </i> enough structure for
+         modern AI systems to recognize meaningful patterns and generalize effectively. 
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-        The transcriptomic layer of biology is one such space, recently capable of exploration.
-        Single-cell RNA sequencing, for instance, generates enormous quantities of high-dimensional data,
-        reflecting subtle, intricate cellular states and trajectories. Yet beneath this apparent complexity,
-        cellular transcriptional states often cluster along well-defined manifolds corresponding to biological
+        <strong>The transcriptomic layer of biology is a chaotic data space that has recently become AI-tractable. </strong> 
+        Single-cell RNA sequencing generates enormous quantities of high-dimensional data
+        containing intricate cellular states and trajectories that correspond to biological
         processes such as differentiation, disease progression, and developmental trajectories. Leveraging
-        advanced AI architectures—particularly transformer-based models—researchers can now identify,
-        visualize, and understand these manifold structures with remarkable clarity and predictive power.
-        Consequently, the once opaque complexities of biological systems are becoming increasingly transparent,
-        enabling discoveries that promise to revolutionize medicine, biology, and bioengineering.
+        advanced AI architectures -- particularly transformer-based models -- we&apos;re now able to
+        identify, visualize, and understand transcriptomic patterns with remarkable clarity and predictive power.
+        As a result, the previously opaque complexities of biological systems are becoming increasingly transparent.
+        <strong> At Zeroshot Biolabs, we&apos; specifically focused on translating these insights into tangible advancements 
+        in drug development.</strong>
       </p>
 
       <p className="roboto-slab-light text-base mb-10 leading-relaxed">
-         <strong> Cancer is the quintessential example </strong> of the potential
-         for AI-driven therapeutic development strategies to work <i>with </i>
-         transcriptomic complexity instead of against it.
-         When one signaling route is inhibited by a targeted therapeutic, cancer cells very often evolve
-         alternative, redundant gene expression pathways, rerouting survival
-         signals by taking advantage of the chaos of transcriptomic interactions. 
-         This ability to exploit multiple, overlapping gene regulatory circuits enables 
-         persistence and clinical trial failures.
-         AI-driven strategies that can predict these adaptive maneuvers before they become
-         clinic-halting problems will become invaluable in the design of next-generation cancer drugs. 
+         <strong>To illustrate concretely, consider cancer&apos;s notoriously adaptive resistance to targeted therapeutics. </strong> 
+         Frequently, when one signaling pathway is blocked by a targeted drug, cancer cells quickly evolve alternative 
+         gene expression routes, re-channeling their survival mechanisms through redundant and overlapping 
+         transcriptomic networks. This capacity to exploit manifold transcriptomic interactions -- essentially 
+         harnessing biological complexity -- enables cancer cells to consistently evade drug effects, resulting 
+         in persistent therapeutic resistance and, ultimately, clinical trial failures. However by anticipating and modeling 
+         these intricate adaptive pathways before they arise clinically, we can preemptively identify and 
+         counteract mechanisms of resistance. This deeper, predictive understanding not only improves our 
+         capacity to design single targeted agents but also opens exciting avenues for innovative therapeutic 
+         approaches like intelligently engineered drug combinations (AKA cocktail therapeutics) that 
+         simultaneously block multiple escape routes, effectively closing off cancer&apos;s options for resistance.
+        In the next section, we explore this paradigm in detail through the lens of Notch pathway inhibitors 
+        in acute lymphoblastic leukemia, illustrating precisely how these insights are reshaping modern cancer 
+        drug development strategies.
       </p>
-
-
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong> The history of bioengineering is checkered with cycles of discovery
-         and false confidence. </strong> 
-          A century of attempts at using classical engineering approaches toward
-          reliable bioengineering has produced mixed clinical results. 
-          For the number of research directions biologists have explored, few have 
-          resulted in reliable therapeutics. Vaccines, antibiotics, 
-          and small-molecules are the most successful examples. Arguably, their success
-          is largely the result of trial and error, directional luck, and low-hanging fruit 
-          more than bioengineering confidence and strategic intelligence.
-      </p>
-
-      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-         We believe AI-based approaches represent a genuinely new paradigm of progress for bioengineers. 
-         No longer just a linear understanding of biological cause and effect; instead, a fundamentally 
-         nonlinear set of approaches capable of capturing and modeling system-wide variables of connection. 
-         By transcending traditional methods that rely heavily on reductionist perspectives, 
-         AI-driven techniques embrace complexity, turning previously overwhelming biological intricacies
-        into manageable, insightful models. This paradigm shift offers the potential not just to better 
-        understand biology but to proactively engineer it, revolutionizing therapeutic development, 
-        personalized medicine, and biotechnological innovation. Ultimately, the intersection of manifold
-        complexity and artificial intelligence represents a fertile ground for transformative advancements 
-        in healthcare and beyond.
-
-      </p> 
 
       <p className="roboto-slab-light text-base text-verydark mb-10 leading-relaxed">
 
