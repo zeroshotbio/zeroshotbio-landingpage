@@ -39,7 +39,7 @@ const A_BiologyIsComplex: React.FC = () => {
          encountered in nature exists on a spectrum. At one extreme, data can be entirely random and 
          high-dimensional, rendering it computationally intractable and practically opaque to current AI 
          techniques. At the other end, the data is excessively structured and simple, providing little 
-         informational novelty or challenge. Between these two extremes lies a "Goldilocks zone" of complexity—where 
+         informational novelty or challenge. Between these two extremes lies a &apos;Goldilocks zone&apos; of complexity—where 
          data sets embody sufficient 
          complexity and dimensionality to yield meaningful insights, yet remain embedded within 
          lower-dimensional manifolds accessible enough for advanced AI systems to discern structure, 

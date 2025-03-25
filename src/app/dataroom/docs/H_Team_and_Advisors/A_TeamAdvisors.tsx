@@ -13,7 +13,7 @@ const TeamAdvisors: React.FC = () => {
         Acorn Biolabs, a YC-backed biology startup still growing today (Acorn just finished Series A; Steven & Patrick&apos;s 
         exit was via secondary). Darien Schettler is a Staff II (L6) generative AI architect and 2x Kaggle Grandmaster 
         who previously worked with Steven and Patrick at Acorn. Last but not least, Harsha Murthy is an expert zebrafish 
-        wrangler and scientist.
+        wrangler and scientist.k
       </p>
 
       {/* Co-Founders Section */}
