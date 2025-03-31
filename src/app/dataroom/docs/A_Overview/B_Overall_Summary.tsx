@@ -9,7 +9,7 @@ const OverallSummary: React.FC = () => {
         From a Bird&#39;s-Eye View:
       </h2>
 
-      <p className="roboto-slab-light text-base mb-10 mt-12 leading-relaxed">
+      <p className="roboto-slab-light text-base mb-4 mt-12 leading-relaxed">
         <strong> Most of biology is too complicated </strong> for humans to understand and engineer predictably. 
         While drug development strategies may be derived from good science, most success stories 
         are the result of painful trial and error. The failure rate of modern clinical trials is a 
@@ -31,7 +31,7 @@ const OverallSummary: React.FC = () => {
       </p>
 
       
-      <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mt-16 leading-relaxed">
         <strong>Tactically speaking, </strong> we&#39;re starting by training our models on the &#39;action&#39; 
         layer of biology -- the transcriptome. It&#39;s one of the most fundamental, diverse, 
         and data-scalable signatures of activity within and between cells.
@@ -39,28 +39,31 @@ const OverallSummary: React.FC = () => {
         especially when large pools of diverse training data are available.
       </p>
 
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-2 leading-relaxed">
-        <strong>We&apos;re beginning by </strong> harvesting publicly available multi-species scRNA (single cell RNA) 
-        datasets with a bias toward human and
-        <strong><i> Danio rerio</i> (zebrafish)</strong> as the foundation. 
+      <p className="roboto-slab-light text-base text-verydark mt-6 leading-relaxed">
+        Fortunately there are a lot of publicly available multi-species scRNA (single cell RNA) 
+        datasets. We&apos;re harvesting across vertebrate and invertebrate species with a bias toward human and
+        <strong><i> Danio rerio</i> (zebrafish)</strong> for our early MVPs. As we 
+        grow and learn about the gaps we&apos;ll generate custom datasets to fill them.
       </p>
         
-      <p className="roboto-slab-light text-base text-verydark mb-4 mt-2 leading-relaxed">
+      <p className="roboto-slab-light text-base text-verydark mb-4 mt-6 leading-relaxed">
         <strong>Why the bias toward zebrafish? </strong>
         We&apos;re confident custom data will be necessary to strengthen our models as we specialize them
         toward state-of-the-art performance on a drug-by-drug basis.
         We&apos;ve selected zebrafish as the optimal model organism for custom data generation because
-        it is the most human-like model organism that is low-cost, high-scale, and increasingly popular
-        in FDA-approved pre-clinical settings. 
+        it is the most human-like model organism that is also low-cost, high-scale, and increasingly popular
+        in FDA-approved pre-clinical settings. Technically speaking, it&apos;s also possible to do scRNA
+        sequencing on whole-organism zebrafish, which means crucial cross-organ relationships are capturable,
+        a feature not possible at reasonable prices with mice.  
       </p>
       
       <p className="roboto-slab-light text-base text-verydark mb-2 mt-10 leading-relaxed">
-        <strong> We will run the data cycle continuously </strong> over the life of the 
-        company to keep improving our biological foundation models. 
+        <strong> We will run our data cycle continuously </strong> over the life of the 
+        company to keep improving our biological foundation models for each new drug development project. 
         In its first incarnation, each turn of the cycle involves growing zebrafish,
         creating healthy, disease, and perturbation varieties,
         performing scRNA sequencing, using the results to train and fine-tune our models,
-        learning from the inference results, and finally designing the next generation of
+        learning from the inference results, and -- finally -- designing the next generation of
         experiments. By intelligently filling data gaps and fine-tuning our model architecture 
         over many generations, we expect to become the gold-standard for transcriptomic effect prediction
         for the drug categories we choose to specialize in.
@@ -76,9 +79,9 @@ const OverallSummary: React.FC = () => {
         />
       </div>
       <p className="roboto-slab-extralight text-xxsm mb-20 mt-0 leading-relaxed">
-        The data cycle represents our fundamental development loop. As Zeroshot Biolabs begins exploring
-        specialization into different specific disease pathways, crucial new data will be generated 
-        through experiments on real animal model organisms. 
+        The Data Cycle represents our model development process. For each disease pathway we study,
+        drug perturbation experiments on healthy and disease-model zebrafish will generate fresh scRNA sequencing data
+        to train and fine-tune our biological foundation model to achieve state-of-the-art performance. 
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
@@ -107,18 +110,24 @@ const OverallSummary: React.FC = () => {
       </p>
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>What categories of therapeutics should we develop core competency for? </strong>
-      </p>
+        <strong>Given our vision and capabilities, </strong>we now have the liberty to decide which therapeutic categories 
+        to target first. Our intuition is that it will be the diseases most fundamentally driven by gene
+        regulatory network abnormalities that stand to benefit the most from the transcriptomic biological foundation 
+        models we&apos;re building. 
+      </p>      
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong> Drug candidates </strong> that target powerful but sensitive &#39;master regulator&#39; sites
-        are some of the most promising but difficult to harness. The chain of events
-        that follow often have deep gene regulatory effects that either result in unexpected
-        toxicity or inconsistent efficacy across species. 
-        The self-attention transformer architecture is especially well suited for capturing
-        context-dependent, long-range interaction effects in transcriptomically complex diseases like these. 
-        
-      </p>
+        That&apos;s why we&apos;ve chosen to analyze the landscape disease targets through the lens of transcriptomic complexity.
+        Diseases within chaotic, hard-to-model gene regulatory networks are the most difficult for scientists
+        to confidently develop effective, non-toxic drugs for. These networks are often very sensitive to perturbation,
+        meaning that small changes in the expression of one gene can have large downstream effects on other cells, tissues,
+        and even entire organ systems. 
+      </p>     
+
+      <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
+        It&apos;s exactly in this kind of environment that our biological foundation models will thrive.
+      </p>     
+
 
       <div className="w-full">
         <Image
@@ -130,16 +139,18 @@ const OverallSummary: React.FC = () => {
         />
       </div>
       <p className="roboto-slab-extralight text-xxsm mb-20 mt-4 leading-relaxed">
-        Transcriptomically simple versus transcriptomically complex disease pathways are visualized in this side-by-side comparison.
+        Transcriptomically simple versus transcriptomically complex disease pathways are visualized 
+        in this side-by-side comparison.
         On the left, drugs like Insulin and Aspirin have relatively simple
-        positive and negative pathway effects. On the right, a drug like Mylotarg involves a complex cascade of events 
-        relevant to its efficacy (blue) and toxicity (red). Most diseases have transcriptomically complex efficacy and toxicity
-         effects, more like Mylotarg than insulin. 
+        positive and negative pathway effects. On the right, a modern leukemia drug like MK-0752 invokes a 
+        complex, sensitive cascade of events crucial to its efficacy (blue) and toxicity (red). 
+        Most diseases we&apos;d like to develop treatments for have transcriptomically complex efficacy and toxicity
+        effects, more like MK-0752 than insulin. 
       </p>
 
 
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
-        <strong>How do we make money? </strong>
+        <strong>So, how do we make money? </strong>
       </p>
       <p className="roboto-slab-light text-base text-verydark mb-4 leading-relaxed">
         <strong>There are two major pathways available to us.</strong> Either we pursue a SaaS-style 
