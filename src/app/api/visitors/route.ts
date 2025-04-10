@@ -9,10 +9,7 @@ import {
 import { marshall } from "@aws-sdk/util-dynamodb";
 
 // Debug: Log the environment variables (avoid logging secrets in production)
-console.log(
-  "AWS_REGION:",
-  process.env.AWS_REGION
-);
+console.log("AWS_REGION:", process.env.AWS_REGION);
 console.log(
   "DYNAMODB_TABLE_NAME:",
   process.env.AWS_DYNAMODB_TABLE_NAME || "zeroshot_dataroom_visitor_tracking"
@@ -79,7 +76,12 @@ export async function PUT(request: NextRequest) {
     // Read the raw text from the request
     const text = await request.text();
     if (!text) {
-      throw new Error("Empty request body");
+      console.warn("PUT /api/visitors: Empty request body received.");
+      // Instead of throwing an error, respond with a benign message
+      return NextResponse.json(
+        { success: true, message: "Empty request body" },
+        { status: 200 }
+      );
     }
     const body = JSON.parse(text);
     console.log("Received PUT body:", body);
