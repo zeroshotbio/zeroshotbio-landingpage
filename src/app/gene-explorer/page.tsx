@@ -1,72 +1,197 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
-// We can install 'vis-network' by running: npm install vis-network
-// Then import from 'vis-network' or from 'vis-network/standalone'
-// Importing directly from "vis-network" as there are no official @types for it
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { DataSet, Network } from "vis-network/standalone";
 
-// We'll define a small type for the JSON we get back from /api/analyze
+// Define the fixed context options
+const TIMEPOINT_OPTIONS = ["2dpf", "3dpf", "5dpf", "10dpf", "24hpf"];
+const DEVELOPMENTAL_STAGE_OPTIONS = [
+  "0 somites",
+  "05 somites",
+  "10 somites",
+  "15 somites",
+  "20 somites",
+  "30 somites",
+  "larval-2dpf",
+  "larval-3dpf",
+  "larval-5dpf",
+  "larval-10dpf",
+];
+const ANATOMY_OPTIONS = [
+  "neural_crest",
+  "central_nervous_system",
+  "paraxial_mesoderm",
+  "lateral_mesoderm",
+  "mesenchyme",
+  "intermediate_mesoderm",
+  "hematopoietic_system",
+  "periderm",
+  "notochord",
+  "endoderm",
+];
+
+interface NodeData {
+  id: string;
+  label: string;
+  title: string;
+  depth: number;
+  degree: number;
+  is_source: boolean;
+}
+
+interface EdgeData {
+  from: string;
+  to: string;
+  title: string;
+  value: number;
+  depth: number;
+}
+
 interface VisData {
-  nodes: {
-    id: string;
-    label: string;
-    title: string;
-    depth: number;
-    degree: number;
-    is_source: boolean;
-  }[];
-  edges: {
-    from: string;
-    to: string;
-    score: number;
-    depth: number;
-    value: number;
-    title: string;
-  }[];
+  nodes: NodeData[];
+  edges: EdgeData[];
   summary: {
     num_nodes: number;
     num_edges: number;
     max_depth: number;
   };
   target_id: string;
+  target_gene?: string;
 }
 
-interface MyNode {
-    id: string;
-    label: string;
-    title: string;
-    // optionally include other fields such as depth, degree, etc.
-  }
-  
-  interface MyEdge {
-    id: string; // add id property
-    from: string;
-    to: string;
-    title: string;
-    value: number;
-  }
 export default function GeneExplorerPage() {
-  // References to the DOM container for the Vis.js network
   const networkRef = useRef<HTMLDivElement | null>(null);
   const [networkInstance, setNetworkInstance] = useState<Network | null>(null);
 
   // Form states
   const [geneName, setGeneName] = useState("klf3");
   const [timepoint, setTimepoint] = useState("2dpf");
-  const [devStage, setDevStage] = useState("larval-2dpf");
-  const [anatomy, setAnatomy] = useState("central_nervous_system");
-  const [maxDepth, setMaxDepth] = useState(2);
-  const [topGenes, setTopGenes] = useState(15);
+  const [devStage, setDevStage] = useState("larval-5dpf");
+  const [anatomy, setAnatomy] = useState("hematopoietic_system");
+  const [maxDepth, setMaxDepth] = useState(3);
+  const [topGenes, setTopGenes] = useState(13);
 
-  // We'll store the fetched network data here
+  // Dropdown options for gene names – fetched from gene_names.json in public folder.
+  const [geneOptions, setGeneOptions] = useState<string[]>([]);
+
+  // Data & additional UI state
   const [visData, setVisData] = useState<VisData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-
-  // We'll also store an error message if something goes wrong
   const [errorMessage, setErrorMessage] = useState("");
+  const [directConnections, setDirectConnections] = useState<any[]>([]);
 
-  // On first render, initialize the Vis network with empty datasets
+  // Physics & appearance settings
+  const [physicsEnabled, setPhysicsEnabled] = useState(true);
+  const [gravity, setGravity] = useState(-10000);
+  const [springLength, setSpringLength] = useState(290);
+  const [springConstant, setSpringConstant] = useState(0.01);
+  const [centralGravity, setCentralGravity] = useState(0);
+  const [damping, setDamping] = useState(0.16);
+  const [nodeScale, setNodeScale] = useState(1.0);
+  const [edgeOpacity, setEdgeOpacity] = useState(0.6);
+  const [fontSize, setFontSize] = useState(16);
+
+  // Presets for demonstration
+  const presets = {
+    default: {
+      physics: {
+        gravity: -5000,
+        springLength: 150,
+        springConstant: 0.02,
+        centralGravity: 0.1,
+        damping: 0.09,
+      },
+      appearance: {
+        nodeScale: 1.0,
+        edgeOpacity: 0.6,
+        fontSize: 14,
+      },
+    },
+    spread: {
+      physics: {
+        gravity: -8000,
+        springLength: 250,
+        springConstant: 0.01,
+        centralGravity: 0.05,
+        damping: 0.09,
+      },
+      appearance: {
+        nodeScale: 1.2,
+        edgeOpacity: 0.4,
+        fontSize: 16,
+      },
+    },
+    "network-centric": {
+      physics: {
+        gravity: -20000,
+        springLength: 500,
+        springConstant: 0.01,
+        centralGravity: 0,
+        damping: 0.08,
+      },
+      appearance: {
+        nodeScale: 1.0,
+        edgeOpacity: 0.6,
+        fontSize: 14,
+      },
+    },
+    hierarchical: {
+      physics: {
+        gravity: -2000,
+        springLength: 200,
+        springConstant: 0.05,
+        centralGravity: 0.1,
+        damping: 0.09,
+      },
+      appearance: {
+        nodeScale: 1.0,
+        edgeOpacity: 0.7,
+        fontSize: 14,
+      },
+      layout: {
+        hierarchical: {
+          enabled: true,
+          direction: "UD",
+          sortMethod: "directed",
+          nodeSpacing: 120,
+          treeSpacing: 200,
+          levelSeparation: 150,
+        },
+      },
+    },
+    minimal: {
+      physics: {
+        gravity: -4000,
+        springLength: 150,
+        springConstant: 0.02,
+        centralGravity: 0.1,
+        damping: 0.09,
+      },
+      appearance: {
+        nodeScale: 0.7,
+        edgeOpacity: 0.4,
+        fontSize: 12,
+      },
+    },
+  };
+
+  // Fetch gene names from public/gene_names.json
+  useEffect(() => {
+    async function fetchGeneNames() {
+      try {
+        const res = await fetch("/gene_names.json");
+        const data = await res.json();
+        if (data?.gene_names) {
+          setGeneOptions(data.gene_names);
+        }
+      } catch (err) {
+        console.error("Error fetching gene names:", err);
+      }
+    }
+    fetchGeneNames();
+  }, []);
+
+  // Initialize Vis network on mount
   useEffect(() => {
     if (networkRef.current && !networkInstance) {
       const nodes = new DataSet([]);
@@ -74,180 +199,587 @@ export default function GeneExplorerPage() {
       const container = networkRef.current;
 
       const options = {
-        // your initial Vis.js config
         physics: {
-          enabled: true,
+          enabled: physicsEnabled,
           barnesHut: {
-            gravitationalConstant: -5000,
-            springLength: 150,
-            springConstant: 0.02,
-            damping: 0.09,
+            gravitationalConstant: gravity,
+            springLength: springLength,
+            springConstant: springConstant,
+            damping: damping,
+            avoidOverlap: 0.5,
+            centralGravity: centralGravity,
           },
         },
         interaction: {
           hover: true,
           navigationButtons: true,
+          tooltipDelay: 200,
         },
         nodes: {
           shape: "dot",
         },
+        edges: {
+          smooth: {
+            enabled: true,
+            type: "continuous",
+            roundness: 0.5,
+          },
+          width: 1,
+        },
+        layout: {
+          hierarchical: {
+            enabled: false,
+          },
+        },
       };
 
       const network = new Network(container, { nodes, edges }, options);
+
+      // Double-click to recenter on a node
+      network.on("doubleClick", (params) => {
+        if (params.nodes.length > 0 && visData) {
+          const nodeId = params.nodes[0];
+          const node = visData.nodes.find((n) => n.id === nodeId);
+          if (node) {
+            setGeneName(node.label);
+            analyzeGeneNetwork(node.label);
+          }
+        }
+      });
+
       setNetworkInstance(network);
     }
-  }, [networkRef, networkInstance]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
-  // Function to fetch the data from the Flask back-end
-  async function analyzeGeneNetwork() {
-    if (!geneName) {
-      alert("Please select a gene name first.");
-      return;
-    }
-    setIsLoading(true);
-    setErrorMessage("");
-    setVisData(null);
+  const analyzeGeneNetwork = useCallback(
+    async (geneOverride?: string) => {
+      const finalGene = geneOverride || geneName;
+      if (!finalGene) {
+        alert("Please select a gene name first.");
+        return;
+      }
+      setIsLoading(true);
+      setErrorMessage("");
 
-    try {
-      // Replace this with your actual server address + /api/analyze
-      // For example, if your Flask is on: http://1.2.3.4:5000
-        const FLASK_ENDPOINT = process.env.NEXT_PUBLIC_FLASK_ENDPOINT || "http://localhost:5000";
-
+      try {
+        const FLASK_ENDPOINT =
+          process.env.NEXT_PUBLIC_FLASK_ENDPOINT || "http://localhost:5000";
         const response = await fetch(`${FLASK_ENDPOINT}/api/analyze`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-            gene_name: geneName,
-            timepoint: timepoint,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            gene_name: finalGene,
+            timepoint,
             dev_stage: devStage,
-            anatomy: anatomy,
+            anatomy,
             max_depth: maxDepth,
             top_genes: topGenes,
-        }),
+          }),
         });
-      if (!response.ok) {
-        const errorBody = await response.json();
-        throw new Error(errorBody.error || "Network request failed");
-      }
-      const data: VisData = await response.json();
-      setVisData(data);
-    } catch (err: any) {
-      setErrorMessage(err.message || "Something went wrong");
-    } finally {
-      setIsLoading(false);
-    }
-  }
+        if (!response.ok) {
+          const errorBody = await response.json();
+          throw new Error(errorBody.error || "Network request failed");
+        }
+        const data: VisData = await response.json();
+        setVisData(data);
+        setErrorMessage("");
 
-  // Whenever visData changes, draw the network
+        // Derive direct connections for display
+        const directEdges = data.edges.filter(
+          (e) => e.from === data.target_id || e.to === data.target_id
+        );
+        directEdges.sort((a, b) => b.value - a.value);
+        setDirectConnections(directEdges.slice(0, 10));
+      } catch (err: any) {
+        setErrorMessage(err.message || "Something went wrong");
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [geneName, timepoint, devStage, anatomy, maxDepth, topGenes]
+  );
+
+  // Update network whenever visData or appearance changes
   useEffect(() => {
     if (visData && networkInstance) {
-      const nodes = new DataSet<MyNode>(
-        visData.nodes.map((n) => ({
-          id: n.id,
-          label: n.label,
-          title: n.title,
-          // You can add other properties here if needed.
-        }))
+      const nodesDS = new DataSet(
+        visData.nodes.map((n) => {
+          const baseSize = n.is_source ? 25 : Math.max(8, Math.min(20, 10 + n.degree));
+          const nodeSize = baseSize * nodeScale;
+          let backgroundColor = "#D4BE92";
+          if (n.depth === 1) backgroundColor = "#8BADA3";
+          if (n.depth === 2) backgroundColor = "#7E9CB0";
+          if (n.is_source) backgroundColor = "#D1818F";
+          return {
+            id: n.id,
+            label: n.label,
+            title: n.title,
+            size: nodeSize,
+            font: { size: n.is_source ? fontSize + 4 : fontSize },
+            color: {
+              background: backgroundColor,
+              highlight: backgroundColor,
+              hover: backgroundColor,
+              border: "#333",
+            },
+            borderWidth: n.is_source ? 3 : 2,
+          };
+        })
       );
-      const edges = new DataSet<MyEdge>(
-        visData.edges.map((e, index) => ({
-          id: `edge-${index}`, // unique id for each edge
-          from: e.from,
-          to: e.to,
-          title: e.title,
-          value: e.value,
-        }))
+
+      const edgesDS = new DataSet(
+        visData.edges.map((e, index) => {
+          const baseWidth = Math.max(0.5, Math.min(3, e.value * 0.3));
+          let color = "#D4BE92";
+          if (e.depth === 1) color = "#8BADA3";
+          if (e.depth === 2) color = "#7E9CB0";
+          return {
+            id: `edge-${index}`,
+            from: e.from,
+            to: e.to,
+            title: e.title,
+            value: e.value,
+            width: baseWidth,
+            color: {
+              color: `rgba(${hexToRgb(color)}, ${edgeOpacity})`,
+              highlight: color,
+              hover: color,
+            },
+          };
+        })
       );
-      
-      networkInstance.setData({ nodes, edges });
+
+      networkInstance.setData({ nodes: nodesDS, edges: edgesDS });
       networkInstance.fit({ animation: true });
     }
-  }, [visData, networkInstance]);
-  
+  }, [visData, networkInstance, nodeScale, edgeOpacity, fontSize]);
+
+  useEffect(() => {
+    if (networkInstance) {
+      networkInstance.setOptions({
+        physics: {
+          enabled: physicsEnabled,
+          barnesHut: {
+            gravitationalConstant: gravity,
+            springLength: springLength,
+            springConstant: springConstant,
+            damping: damping,
+            avoidOverlap: 0.5,
+            centralGravity: centralGravity,
+          },
+        },
+      });
+    }
+  }, [physicsEnabled, gravity, springLength, springConstant, damping, centralGravity, networkInstance]);
+
+  function hexToRgb(hex: string) {
+    const h = hex.replace("#", "");
+    const r = parseInt(h.substring(0, 2), 16);
+    const g = parseInt(h.substring(2, 4), 16);
+    const b = parseInt(h.substring(4, 6), 16);
+    return `${r}, ${g}, ${b}`;
+  }
+
+  function applyPreset(preset: keyof typeof presets) {
+    const config = presets[preset];
+    setGravity(config.physics.gravity);
+    setSpringLength(config.physics.springLength);
+    setSpringConstant(config.physics.springConstant);
+    setCentralGravity(config.physics.centralGravity);
+    setDamping(config.physics.damping);
+    setNodeScale(config.appearance.nodeScale ?? 1);
+    setEdgeOpacity(config.appearance.edgeOpacity ?? 0.6);
+    setFontSize(config.appearance.fontSize ?? 14);
+  }
+
+  function resetControls() {
+    setPhysicsEnabled(true);
+    setGravity(-10000);
+    setSpringLength(290);
+    setSpringConstant(0.01);
+    setCentralGravity(0);
+    setDamping(0.16);
+    setNodeScale(1.0);
+    setEdgeOpacity(0.6);
+    setFontSize(16);
+  }
 
   return (
-    <div className="p-4">
+    <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Gene Network Explorer</h1>
+      <p className="mb-4">
+        This interactive visualization displays gene regulatory networks derived
+        from a foundation model trained on developmental genomic data. Every
+        connection you see represents meaningful gene relationships extracted
+        through attention mechanisms in the model.
+      </p>
 
-      {/* Controls */}
-      <div className="mb-4">
-        <label className="block mb-1">Gene Name</label>
-        <input
-          type="text"
-          value={geneName}
-          onChange={(e) => setGeneName(e.target.value)}
-          className="border p-1 w-full mb-2"
-        />
+      <div className="flex flex-wrap">
+        <div className="w-full md:w-8/12 mb-4 pr-4">
+          <div
+            className="border rounded mb-4"
+            style={{ height: 700, position: "relative" }}
+          >
+            {isLoading && (
+              <div
+                style={{
+                  position: "absolute",
+                  zIndex: 10,
+                  backgroundColor: "rgba(255,255,255,0.9)",
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <div className="spinner-border text-primary" role="status" />
+                <div className="mt-2 text-gray-500">
+                  Building gene network...
+                </div>
+              </div>
+            )}
+            <div ref={networkRef} style={{ width: "100%", height: "100%" }} />
+          </div>
 
-        <label className="block mb-1">Timepoint</label>
-        <input
-          type="text"
-          value={timepoint}
-          onChange={(e) => setTimepoint(e.target.value)}
-          className="border p-1 w-full mb-2"
-        />
+          {/* Legend */}
+          <div className="border rounded p-2 mb-4">
+            <h2 className="font-bold mb-2">Legend</h2>
+            <div className="flex items-center mb-1">
+              <div
+                className="w-4 h-4 rounded-full mr-2"
+                style={{ backgroundColor: "#D1818F" }}
+              />
+              <span>Source Gene</span>
+            </div>
+            <div className="flex items-center mb-1">
+              <div
+                className="w-4 h-4 rounded-full mr-2"
+                style={{ backgroundColor: "#8BADA3" }}
+              />
+              <span>Primary Connection</span>
+            </div>
+            <div className="flex items-center mb-1">
+              <div
+                className="w-4 h-4 rounded-full mr-2"
+                style={{ backgroundColor: "#7E9CB0" }}
+              />
+              <span>Secondary Connection</span>
+            </div>
+            <div className="flex items-center mb-1">
+              <div
+                className="w-4 h-4 rounded-full mr-2"
+                style={{ backgroundColor: "#D4BE92" }}
+              />
+              <span>Tertiary Connection</span>
+            </div>
+          </div>
 
-        <label className="block mb-1">Developmental Stage</label>
-        <input
-          type="text"
-          value={devStage}
-          onChange={(e) => setDevStage(e.target.value)}
-          className="border p-1 w-full mb-2"
-        />
+          {/* Network Info */}
+          {visData && (
+            <div className="border rounded p-2 mb-4">
+              <h2 className="font-bold">Network Information</h2>
+              <p>
+                Target Gene:{" "}
+                <strong>{visData.target_gene || visData.target_id}</strong>
+              </p>
+              <p>Total Nodes: {visData.summary.num_nodes}</p>
+              <p>Total Edges: {visData.summary.num_edges}</p>
+              <p>Max Depth: {visData.summary.max_depth}</p>
+              <div className="mt-2">
+                <h3 className="font-medium">Direct Connections</h3>
+                {directConnections.length > 0 ? (
+                  <ul className="list-disc list-inside">
+                    {directConnections.map((edge, idx) => {
+                      const other =
+                        edge.from === visData.target_id ? edge.to : edge.from;
+                      const otherNode = visData.nodes.find(
+                        (n) => n.id === other
+                      );
+                      return (
+                        <li key={idx} className="mb-1">
+                          {otherNode?.label || other}{" "}
+                          <span className="text-blue-500 float-right">
+                            {(edge.value / 5).toFixed(4)}
+                          </span>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                ) : (
+                  <p>No direct connections found</p>
+                )}
+              </div>
+            </div>
+          )}
 
-        <label className="block mb-1">Anatomy</label>
-        <input
-          type="text"
-          value={anatomy}
-          onChange={(e) => setAnatomy(e.target.value)}
-          className="border p-1 w-full mb-2"
-        />
-
-        <label className="block mb-1">Max Depth</label>
-        <input
-          type="number"
-          value={maxDepth}
-          onChange={(e) => setMaxDepth(parseInt(e.target.value))}
-          className="border p-1 w-full mb-2"
-        />
-
-        <label className="block mb-1">Top Genes per Level</label>
-        <input
-          type="number"
-          value={topGenes}
-          onChange={(e) => setTopGenes(parseInt(e.target.value))}
-          className="border p-1 w-full mb-2"
-        />
-
-        <button
-          onClick={analyzeGeneNetwork}
-          className="bg-blue-600 text-white px-3 py-2 rounded"
-        >
-          {isLoading ? "Analyzing..." : "Analyze Gene Network"}
-        </button>
-      </div>
-
-      {/* Error or status messages */}
-      {errorMessage && (
-        <div className="text-red-500 mb-2">Error: {errorMessage}</div>
-      )}
-
-      {/* The network container */}
-      <div
-        ref={networkRef}
-        style={{ height: "600px", border: "1px solid #ccc" }}
-      />
-
-      {/* Summaries or detail about the network */}
-      {visData && (
-        <div className="mt-4 p-2 border">
-          <h2 className="font-bold">Network Summary</h2>
-          <p>Target ID: {visData.target_id}</p>
-          <p>Number of Nodes: {visData.summary.num_nodes}</p>
-          <p>Number of Edges: {visData.summary.num_edges}</p>
-          <p>Max Depth: {visData.summary.max_depth}</p>
+          {errorMessage && (
+            <div className="text-red-500 mb-2">Error: {errorMessage}</div>
+          )}
         </div>
-      )}
+
+        {/* Right Column: Controls */}
+        <div className="w-full md:w-4/12">
+          <div className="border rounded p-4 mb-4">
+            <h2 className="font-bold mb-2">Gene & Context Selection</h2>
+            <label className="block text-sm font-medium mt-2">Gene Name</label>
+            <select
+              className="border p-1 w-full"
+              value={geneName}
+              onChange={(e) => setGeneName(e.target.value)}
+            >
+              <option value="" disabled>
+                Select a gene...
+              </option>
+              {/* Map over fetched gene options */}
+              {geneOptions.map((gene) => (
+                <option key={gene} value={gene}>
+                  {gene}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-medium mt-2">
+              Timepoint
+            </label>
+            <select
+              className="border p-1 w-full"
+              value={timepoint}
+              onChange={(e) => setTimepoint(e.target.value)}
+            >
+              <option value="" disabled>
+                Select timepoint...
+              </option>
+              {TIMEPOINT_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-medium mt-2">
+              Developmental Stage
+            </label>
+            <select
+              className="border p-1 w-full"
+              value={devStage}
+              onChange={(e) => setDevStage(e.target.value)}
+            >
+              <option value="" disabled>
+                Select developmental stage...
+              </option>
+              {DEVELOPMENTAL_STAGE_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-medium mt-2">Anatomy</label>
+            <select
+              className="border p-1 w-full"
+              value={anatomy}
+              onChange={(e) => setAnatomy(e.target.value)}
+            >
+              <option value="" disabled>
+                Select anatomy...
+              </option>
+              {ANATOMY_OPTIONS.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+
+            <label className="block text-sm font-medium mt-2">
+              Max Depth
+            </label>
+            <input
+              type="number"
+              className="border p-1 w-full"
+              value={maxDepth}
+              onChange={(e) => setMaxDepth(parseInt(e.target.value))}
+            />
+
+            <label className="block text-sm font-medium mt-2">
+              Top Genes per Level
+            </label>
+            <input
+              type="number"
+              className="border p-1 w-full"
+              value={topGenes}
+              onChange={(e) => setTopGenes(parseInt(e.target.value))}
+            />
+
+            <button
+              onClick={() => analyzeGeneNetwork()}
+              className="mt-3 w-full bg-blue-600 text-white p-2 rounded"
+            >
+              {isLoading ? "Analyzing..." : "Analyze Gene Network"}
+            </button>
+          </div>
+
+          <div className="border rounded p-4 mb-4">
+            <h2 className="font-bold mb-2">Visualization Controls</h2>
+            <label className="block text-sm font-medium mt-2">
+              Visual Presets
+            </label>
+            <select
+              onChange={(e) => applyPreset(e.target.value as keyof typeof presets)}
+              className="border p-1 w-full"
+              defaultValue=""
+            >
+              <option value="" disabled>
+                Select a preset
+              </option>
+              <option value="default">Default</option>
+              <option value="spread">Spread Out</option>
+              <option value="network-centric">Network-Centric</option>
+              <option value="hierarchical">Hierarchical</option>
+              <option value="minimal">Minimal</option>
+            </select>
+
+            <div className="mt-2 flex items-center">
+              <input
+                type="checkbox"
+                id="physicsToggle"
+                checked={physicsEnabled}
+                onChange={(e) => setPhysicsEnabled(e.target.checked)}
+                className="mr-2"
+              />
+              <label htmlFor="physicsToggle">Physics Simulation</label>
+            </div>
+
+            <div className="my-2">
+              <label className="block">
+                Gravity (Repulsion): {gravity}
+                <input
+                  type="range"
+                  min={-18000}
+                  max={-500}
+                  step={100}
+                  value={gravity}
+                  onChange={(e) => setGravity(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Spring Length: {springLength}
+                <input
+                  type="range"
+                  min={30}
+                  max={540}
+                  step={10}
+                  value={springLength}
+                  onChange={(e) => setSpringLength(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Spring Constant: {springConstant}
+                <input
+                  type="range"
+                  min={0.002}
+                  max={0.18}
+                  step={0.002}
+                  value={springConstant}
+                  onChange={(e) =>
+                    setSpringConstant(parseFloat(e.target.value))
+                  }
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Central Gravity: {centralGravity}
+                <input
+                  type="range"
+                  min={0}
+                  max={1.8}
+                  step={0.05}
+                  value={centralGravity}
+                  onChange={(e) =>
+                    setCentralGravity(parseFloat(e.target.value))
+                  }
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Damping: {damping}
+                <input
+                  type="range"
+                  min={0}
+                  max={1.8}
+                  step={0.01}
+                  value={damping}
+                  onChange={(e) => setDamping(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+
+            <hr className="my-4" />
+            <div className="my-2">
+              <label className="block">
+                Node Size Scale: {nodeScale}
+                <input
+                  type="range"
+                  min={0.1}
+                  max={3.6}
+                  step={0.1}
+                  value={nodeScale}
+                  onChange={(e) => setNodeScale(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Edge Opacity: {edgeOpacity}
+                <input
+                  type="range"
+                  min={0.02}
+                  max={1.8}
+                  step={0.02}
+                  value={edgeOpacity}
+                  onChange={(e) => setEdgeOpacity(parseFloat(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+            <div className="my-2">
+              <label className="block">
+                Label Size: {fontSize}
+                <input
+                  type="range"
+                  min={4}
+                  max={36}
+                  step={1}
+                  value={fontSize}
+                  onChange={(e) => setFontSize(parseInt(e.target.value))}
+                  className="w-full"
+                />
+              </label>
+            </div>
+
+            <button
+              onClick={resetControls}
+              className="mt-3 w-full border border-gray-500 text-gray-700 p-2 rounded"
+            >
+              Reset Controls
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
