@@ -63,13 +63,13 @@ export default function GeneExplorerPage() {
   const networkRef = useRef<HTMLDivElement | null>(null);
   const [networkInstance, setNetworkInstance] = useState<Network | null>(null);
 
-  // Form states
+  // Updated defaults to run automatically on page load
   const [geneName, setGeneName] = useState("klf3");
   const [timepoint, setTimepoint] = useState("2dpf");
-  const [devStage, setDevStage] = useState("larval-5dpf");
-  const [anatomy, setAnatomy] = useState("hematopoietic_system");
+  const [devStage, setDevStage] = useState("0 somites");
+  const [anatomy, setAnatomy] = useState("neural_crest");
   const [maxDepth, setMaxDepth] = useState(3);
-  const [topGenes, setTopGenes] = useState(13);
+  const [topGenes, setTopGenes] = useState(10);
 
   // Dropdown options for gene names – fetched from gene_names.json in public folder.
   const [geneOptions, setGeneOptions] = useState<string[]>([]);
@@ -252,6 +252,13 @@ export default function GeneExplorerPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Automatically run the analysis when the page first mounts and the network is available
+  useEffect(() => {
+    if (networkInstance && !visData) {
+      analyzeGeneNetwork();
+    }
+  }, [networkInstance, visData]);
+
   const analyzeGeneNetwork = useCallback(
     async (geneOverride?: string) => {
       const finalGene = geneOverride || geneName;
@@ -305,7 +312,9 @@ export default function GeneExplorerPage() {
     if (visData && networkInstance) {
       const nodesDS = new DataSet(
         visData.nodes.map((n) => {
-          const baseSize = n.is_source ? 25 : Math.max(8, Math.min(20, 10 + n.degree));
+          const baseSize = n.is_source
+            ? 25
+            : Math.max(8, Math.min(20, 10 + n.degree));
           const nodeSize = baseSize * nodeScale;
           let backgroundColor = "#D4BE92";
           if (n.depth === 1) backgroundColor = "#8BADA3";
@@ -355,6 +364,7 @@ export default function GeneExplorerPage() {
     }
   }, [visData, networkInstance, nodeScale, edgeOpacity, fontSize]);
 
+  // Update physics in real time
   useEffect(() => {
     if (networkInstance) {
       networkInstance.setOptions({
@@ -371,7 +381,15 @@ export default function GeneExplorerPage() {
         },
       });
     }
-  }, [physicsEnabled, gravity, springLength, springConstant, damping, centralGravity, networkInstance]);
+  }, [
+    physicsEnabled,
+    gravity,
+    springLength,
+    springConstant,
+    damping,
+    centralGravity,
+    networkInstance,
+  ]);
 
   function hexToRgb(hex: string) {
     const h = hex.replace("#", "");
@@ -410,9 +428,9 @@ export default function GeneExplorerPage() {
       <h1 className="text-2xl font-bold mb-4">Gene Network Explorer</h1>
       <p className="mb-4">
         This interactive visualization of gene regulatory networks is powered
-        by our biological foundation model tsGPT 2.0.7 trained on developmental genomic data. 
-        Every connection you see represents meaningful gene relationship as learned by the training
-        and recreated here through real-time-inference running forward passes through attention mechanisms in the model.
+        by our biological foundation model tsGPT 2.0.7 trained on developmental genomic data.
+        Every connection you see represents meaningful gene relationship as learned by
+        the training and recreated here through real-time-inference.
       </p>
 
       <div className="flex flex-wrap">
@@ -422,25 +440,118 @@ export default function GeneExplorerPage() {
             style={{ height: 700, position: "relative" }}
           >
             {isLoading && (
-              <div
+            <div
                 style={{
-                  position: "absolute",
-                  zIndex: 10,
-                  backgroundColor: "rgba(255,255,255,0.9)",
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column",
-                  alignItems: "center",
-                  justifyContent: "center",
+                position: "absolute",
+                zIndex: 10,
+                backgroundColor: "rgba(255,255,255,0.9)",
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
                 }}
-              >
-                <div className="spinner-border text-primary" role="status" />
-                <div className="mt-2 text-gray-500">
-                  Building gene network...
+            >
+                {/* DNA nucleotide letter animation container */}
+                <div className="relative w-64 h-16 mb-2 overflow-hidden">
+                  <style jsx>{`
+                    @keyframes fadeInUp {
+                      0% { 
+                        transform: translateY(100%); 
+                        opacity: 0; 
+                      }
+                      20% { 
+                        transform: translateY(0); 
+                        opacity: 1; 
+                      }
+                      70% { 
+                        transform: translateY(0); 
+                        opacity: 1; 
+                      }
+                      100% { 
+                        transform: translateY(-100%); 
+                        opacity: 0; 
+                      }
+                    }
+                    
+                    .letter-container {
+                      position: relative;
+                      width: 100%;
+                      height: 100%;
+                      display: flex;
+                      justify-content: space-between;
+                    }
+                    
+                    .letter-column {
+                      position: relative;
+                      width: 25%;
+                      height: 100%;
+                    }
+                    
+                    .dna-letter {
+                      position: absolute;
+                      top: 0;
+                      left: 0;
+                      width: 100%;
+                      height: 100%;
+                      display: flex;
+                      align-items: center;
+                      justify-content: center;
+                      font-size: 2.5rem;
+                      font-weight: bold;
+                      font-family: monospace;
+                      opacity: 0;
+                      animation-duration: 2s;
+                      animation-name: fadeInUp;
+                      animation-timing-function: ease-in-out;
+                      animation-iteration-count: infinite;
+                    }
+                    
+                    .letter-a {
+                      color: #3B82F6;
+                      animation-delay: 0s;
+                    }
+                    
+                    .letter-t {
+                      color: #EF4444;
+                      animation-delay: 0.5s;
+                    }
+                    
+                    .letter-c {
+                      color: #10B981;
+                      animation-delay: 1s;
+                    }
+                    
+                    .letter-g {
+                      color: #F59E0B;
+                      animation-delay: 1.5s;
+                    }
+                  `}</style>
+                  
+                  <div className="letter-container">
+                    <div className="letter-column">
+                      <div className="dna-letter letter-a">A</div>
+                    </div>
+                    <div className="letter-column">
+                      <div className="dna-letter letter-t">T</div>
+                    </div>
+                    <div className="letter-column">
+                      <div className="dna-letter letter-c">C</div>
+                    </div>
+                    <div className="letter-column">
+                      <div className="dna-letter letter-g">G</div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+
+                {/* Loading text */}
+                <div className="mt-2 text-gray-600 font-semibold text-lg">
+                  Running Inference... (this can take up to 60 seconds)
+                </div>
+            </div>
             )}
+
             <div ref={networkRef} style={{ width: "100%", height: "100%" }} />
           </div>
 
@@ -533,7 +644,6 @@ export default function GeneExplorerPage() {
               <option value="" disabled>
                 Select a gene...
               </option>
-              {/* Map over fetched gene options */}
               {geneOptions.map((gene) => (
                 <option key={gene} value={gene}>
                   {gene}
