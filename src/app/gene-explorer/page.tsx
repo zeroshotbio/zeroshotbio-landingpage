@@ -409,10 +409,10 @@ export default function GeneExplorerPage() {
     <div className="container mx-auto p-4">
       <h1 className="text-2xl font-bold mb-4">Gene Network Explorer</h1>
       <p className="mb-4">
-        This interactive visualization displays gene regulatory networks derived
-        from a foundation model trained on developmental genomic data. Every
-        connection you see represents meaningful gene relationships extracted
-        through attention mechanisms in the model.
+        This interactive visualization of gene regulatory networks is powered
+        by our biological foundation model tsGPT 2.0.7 trained on developmental genomic data. 
+        Every connection you see represents meaningful gene relationship as learned by the training
+        and recreated here through real-time-inference running forward passes through attention mechanisms in the model.
       </p>
 
       <div className="flex flex-wrap">
