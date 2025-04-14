@@ -1,6 +1,8 @@
 'use client';
 
 import React, { ReactNode, useEffect, useState } from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import Image from "next/image";
 
 /* ---------------------------
@@ -28,7 +30,7 @@ import BioFoundationModels from "./docs/D_Technology/A_BioFoundationModels";
 import DataSources from "./docs/D_Technology/B_DataSources";
 import BiologistPerspective from "./docs/D_Technology/C_BiologistPerspective";
 
-// Business Model
+// Business Modelf
 import BusinessModel from "./docs/E_Business_Model/A_BusinessModel";
 
 // Market Opportunity
@@ -308,6 +310,9 @@ const DataRoomDocumentation: React.FC = () => {
     categories[0].id
   );
 
+  // Track the current route to highlight active tab
+  const pathname = usePathname();
+
   // Initialize dark mode from localStorage
   useEffect(() => {
     const storedTheme = localStorage.getItem("theme");
@@ -586,11 +591,32 @@ const DataRoomDocumentation: React.FC = () => {
 
             {/* Right Content Area */}
             <main className="flex-1 overflow-y-auto relative">
-              {/* Top Header Bar */}
-              <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 z-10 flex justify-between items-center">
-                <h1 className="roboto-slab-semibold text-base sm:text-xl text-black dark:text-white">
-                  Investor Data Room
-                </h1>
+              {/* Top Header Bar with tabs */}
+              <div className="sticky top-0 bg-white dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700 px-4 sm:px-6 py-3 sm:py-4 z-10">
+                <div className="flex items-center space-x-8">
+                  <Link
+                    href="/dataroom"
+                    className={`roboto-slab-semibold text-base sm:text-xl px-1 pb-1
+                      ${
+                        pathname === "/dataroom"
+                          ? "text-black dark:text-white border-b-2 border-black dark:border-white"
+                          : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-b-2 hover:border-gray-500 transition-all"
+                      }`}
+                  >
+                    Investor Data Room
+                  </Link>
+                  <Link
+                    href="/gene-explorer"
+                    className={`roboto-slab-semibold text-base sm:text-xl px-1 pb-1
+                      ${
+                        pathname === "/gene-explorer"
+                          ? "text-black dark:text-white border-b-2 border-black dark:border-white"
+                          : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-b-2 hover:border-gray-500 transition-all"
+                      }`}
+                  >
+                    Gene-Explorer 1.0
+                  </Link>
+                </div>
               </div>
 
               {/* Second Header Bar */}
