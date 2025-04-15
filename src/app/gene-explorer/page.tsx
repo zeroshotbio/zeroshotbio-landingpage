@@ -826,7 +826,7 @@ export default function GeneExplorerPage() {
                 <p className="mb-4">
                   We&apos;re building future versions with more robust
                   datasets, larger parameter counts, and built-in perturbation 
-                  prediction that models the effects of drug influences.
+                  prediction that model basic drug effects.
                 </p>
 
                 <div
