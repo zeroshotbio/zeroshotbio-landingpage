@@ -84,7 +84,6 @@ function DarkMode({ children }: { children: ReactNode }) {
    Gene Explorer Constants & Types
 ----------------------------------------------- */
 
-const TIMEPOINT_OPTIONS = ["2dpf", "3dpf", "5dpf", "10dpf", "24hpf"];
 const DEVELOPMENTAL_STAGE_OPTIONS = [
   "0 somites",
   "05 somites",
@@ -234,9 +233,7 @@ export default function GeneExplorerPage() {
   const networkRef = useRef<HTMLDivElement | null>(null);
   const [networkInstance, setNetworkInstance] = useState<Network | null>(null);
 
-  // Basic state from original code
   const [geneName, setGeneName] = useState("klf3");
-  const [timepoint, setTimepoint] = useState("2dpf");
   const [devStage, setDevStage] = useState("0 somites");
   const [anatomy, setAnatomy] = useState("neural_crest");
   const [maxDepth, setMaxDepth] = useState(3);
@@ -322,7 +319,7 @@ export default function GeneExplorerPage() {
 
       const network = new Network(container, { nodes, edges }, options);
 
-      // Double-click on a node to recenter on that node's gene
+      // MINIMAL CHANGE: Double-click on a node to run inference for that node’s gene
       network.on("doubleClick", (params) => {
         if (params.nodes.length > 0 && visData) {
           const nodeId = params.nodes[0];
@@ -364,7 +361,6 @@ export default function GeneExplorerPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             gene_name: finalGene,
-            timepoint,
             dev_stage: devStage,
             anatomy,
             max_depth: maxDepth,
@@ -390,7 +386,7 @@ export default function GeneExplorerPage() {
         setIsLoading(false);
       }
     },
-    [geneName, timepoint, devStage, anatomy, maxDepth, topGenes]
+    [geneName, devStage, anatomy, maxDepth, topGenes]
   );
 
   // Update the network data whenever visData or appearance changes
@@ -429,7 +425,6 @@ export default function GeneExplorerPage() {
           let color = "#D4BE92";
           if (e.depth === 1) color = "#8BADA3";
           if (e.depth === 2) color = "#7E9CB0";
-
           return {
             id: `edge-${index}`,
             from: e.from,
@@ -549,10 +544,10 @@ export default function GeneExplorerPage() {
 
               {/* Gene & Context Selection */}
               <div className="mb-6">
-                <h2 className="font-bold mb-2">Gene & Context</h2>
-                <label className="block text-sm font-medium mt-2">Gene Name</label>
+                <h2 className="mb-8 mt-8">Gene & Context</h2>
+                <label className="block text-sm mt-2">Gene Name</label>
                 <select
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm"
                   value={geneName}
                   onChange={(e) => setGeneName(e.target.value)}
                 >
@@ -566,27 +561,9 @@ export default function GeneExplorerPage() {
                   ))}
                 </select>
 
-                <label className="block text-sm font-medium mt-2">Timepoint</label>
+                <label className="block text-sm mt-2">Developmental Stage</label>
                 <select
-                  className="border p-1 w-full"
-                  value={timepoint}
-                  onChange={(e) => setTimepoint(e.target.value)}
-                >
-                  <option value="" disabled>
-                    Select timepoint...
-                  </option>
-                  {TIMEPOINT_OPTIONS.map((option) => (
-                    <option key={option} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
-
-                <label className="block text-sm font-medium mt-2">
-                  Developmental Stage
-                </label>
-                <select
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm"
                   value={devStage}
                   onChange={(e) => setDevStage(e.target.value)}
                 >
@@ -600,9 +577,9 @@ export default function GeneExplorerPage() {
                   ))}
                 </select>
 
-                <label className="block text-sm font-medium mt-2">Anatomy</label>
+                <label className="block text-sm mt-2">Anatomy</label>
                 <select
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm"
                   value={anatomy}
                   onChange={(e) => setAnatomy(e.target.value)}
                 >
@@ -616,20 +593,18 @@ export default function GeneExplorerPage() {
                   ))}
                 </select>
 
-                <label className="block text-sm font-medium mt-2">Max Depth</label>
+                <label className="block text-sm mt-2">Max Depth</label>
                 <input
                   type="number"
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm"
                   value={maxDepth}
                   onChange={(e) => setMaxDepth(parseInt(e.target.value))}
                 />
 
-                <label className="block text-sm font-medium mt-2">
-                  Top Genes per Level
-                </label>
+                <label className="block text-sm mt-2">Top Genes per Level</label>
                 <input
                   type="number"
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm"
                   value={topGenes}
                   onChange={(e) => setTopGenes(parseInt(e.target.value))}
                 />
@@ -638,17 +613,29 @@ export default function GeneExplorerPage() {
                   onClick={() => analyzeGeneNetwork()}
                   className="mt-3 w-full bg-blue-600 text-white p-2 rounded"
                 >
-                  {isLoading ? "Analyzing..." : "Analyze Gene Network"}
+                  {isLoading ? "Analyzing..." : "Run Inference"}
                 </button>
               </div>
 
-              {/* Visualization Controls */}
-              <div className="border rounded p-4">
-                <h2 className="font-bold mb-2">Physics Controls</h2>
-                <label className="block text-sm font-medium mt-2">Presets</label>
+              {/* Physics Controls */}
+              <div className="mb-4">
+                <h2 className="mb-6 mt-8">Physics Controls</h2>
+
+                <div className="mt-2 mb-2 flex items-center text-gray-light text-xxsm mb-6">
+                  <input
+                    type="checkbox"
+                    id="physicsToggle"
+                    checked={physicsEnabled}
+                    onChange={(e) => setPhysicsEnabled(e.target.checked)}
+                    className="mr-2"
+                  />
+                  <label htmlFor="physicsToggle">Physics</label>
+                </div>
+
+                <label className="block text-sm mt-2">Presets</label>
                 <select
                   onChange={(e) => applyPreset(e.target.value as keyof typeof presets)}
-                  className="border p-1 w-full"
+                  className="border p-1 w-full text-gray-light text-xxsm mb-6"
                   defaultValue=""
                 >
                   <option value="" disabled>
@@ -661,19 +648,8 @@ export default function GeneExplorerPage() {
                   <option value="minimal">Minimal</option>
                 </select>
 
-                <div className="mt-2 flex items-center">
-                  <input
-                    type="checkbox"
-                    id="physicsToggle"
-                    checked={physicsEnabled}
-                    onChange={(e) => setPhysicsEnabled(e.target.checked)}
-                    className="mr-2"
-                  />
-                  <label htmlFor="physicsToggle">Physics</label>
-                </div>
-
                 <div className="my-2">
-                  <label className="block">
+                  <label className="block text-gray-light text-xxsm mb-6">
                     Gravity: {gravity}
                     <input
                       type="range"
@@ -686,7 +662,7 @@ export default function GeneExplorerPage() {
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Springiness: {springLength}
                     <input
@@ -700,7 +676,7 @@ export default function GeneExplorerPage() {
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Tightness: {springConstant}
                     <input
@@ -709,14 +685,12 @@ export default function GeneExplorerPage() {
                       max={0.18}
                       step={0.002}
                       value={springConstant}
-                      onChange={(e) =>
-                        setSpringConstant(parseFloat(e.target.value))
-                      }
+                      onChange={(e) => setSpringConstant(parseFloat(e.target.value))}
                       className="w-full"
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Central Gravity: {centralGravity}
                     <input
@@ -725,14 +699,12 @@ export default function GeneExplorerPage() {
                       max={1.8}
                       step={0.05}
                       value={centralGravity}
-                      onChange={(e) =>
-                        setCentralGravity(parseFloat(e.target.value))
-                      }
+                      onChange={(e) => setCentralGravity(parseFloat(e.target.value))}
                       className="w-full"
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Damping: {damping}
                     <input
@@ -747,8 +719,11 @@ export default function GeneExplorerPage() {
                   </label>
                 </div>
 
-                <hr className="my-4" />
-                <div className="my-2">
+                <div className="mb-6">
+                  <h2 className="mb-6 mt-12">Aesthetic Controls</h2>
+                </div>
+
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Node Size Scale: {nodeScale}
                     <input
@@ -762,7 +737,7 @@ export default function GeneExplorerPage() {
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Edge Opacity: {edgeOpacity}
                     <input
@@ -776,7 +751,7 @@ export default function GeneExplorerPage() {
                     />
                   </label>
                 </div>
-                <div className="my-2">
+                <div className="text-gray-light text-xxsm mb-6">
                   <label className="block">
                     Label Size: {fontSize}
                     <input
@@ -834,10 +809,24 @@ export default function GeneExplorerPage() {
               <div className="pt-6 pb-32 px-4 sm:px-8 max-w-[1200px] mx-auto">
                 <h1 className="text-2xl font-bold mb-4">Gene Network Explorer</h1>
                 <p className="mb-4">
-                  This interactive visualization of gene regulatory networks is powered
-                  by our biological foundation model <em>tsGPT 2.0.7</em>, trained on
-                  developmental genomic data. Every connection you see represents a
-                  meaningful gene relationship as inferred by the model.
+                  This interactive visualization of gene regulatory networks is powered 
+                  by tsGPT 2.0.7, a small biological foundation model we created to demonstrate 
+                  our end-to-end training, inference, and visualization capabilities. This particular instance 
+                  was trained on publicly available zebrafish embryology data from the Chan Zuckerberg Initiative (CZI). 
+                  It contains gene expression data from over <strong>120,000 cells</strong> with rich metadata annotation 
+                  across zebrafish developmental stages and anatomical regions.
+                </p>
+                <p className="mb-4"> 
+                  <strong>When you press the &apos;Run Inference&apos; button,</strong> the pipeline begins by creating an
+                  input tensor with the target gene&apos;s token ID positioned at the center. The biological context you select is added as 
+                  a metadata embedding vector. In plain English, you’re effectively
+                  asking the model, “Given this central gene and its biological context, what are the relationships with surrounding genes?”
+                  The forward pass computes attention scores across all genes, and these relationships are mapped into the visualization below.
+                </p>
+                <p className="mb-4">
+                  We&apos;re building future versions with more robust
+                  datasets, larger parameter counts, and built-in perturbation 
+                  prediction that models the effects of drug influences.
                 </p>
 
                 <div
