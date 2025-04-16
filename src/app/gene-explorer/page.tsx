@@ -829,6 +829,7 @@ export default function GeneExplorerPage() {
                   prediction that model basic drug effects.
                 </p>
 
+
                 <div
                   className="border rounded mb-4 relative"
                   style={{ height: 700 }}
@@ -938,6 +939,11 @@ export default function GeneExplorerPage() {
                     </div>
                   )}
                   <div ref={networkRef} style={{ width: "100%", height: "100%" }} />
+                </div>
+
+                {/* Visualization Sub-Text */}
+                <div className="flex flex-col md:flex-row gap-4 mb-8">
+                    Feel free to click and drag the nodes around! You can also highlight over edges for predicted relatedness scores. 
                 </div>
 
                 {/* Legend & Network Info side-by-side */}
