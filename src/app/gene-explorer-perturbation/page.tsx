@@ -355,7 +355,8 @@ export default function GeneExplorerPage() {
 
       try {
         const FLASK_ENDPOINT =
-          process.env.NEXT_PUBLIC_FLASK_ENDPOINT || "http://localhost:5000";
+          process.env.NEXT_PUBLIC_FLASK_ENDPOINT_PERT ||   
+          "http://localhost:5001";      
         const response = await fetch(`${FLASK_ENDPOINT}/api/analyze`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -818,7 +819,7 @@ export default function GeneExplorerPage() {
 
               {/* Main content area */}
               <div className="pt-6 pb-32 px-4 sm:px-8 max-w-[1200px] mx-auto">
-                <h1 className="text-2xl font-bold mb-4">Gene Network Explorer</h1>
+                <h1 className="text-2xl font-bold mb-4">Gene Perturbation Explorer</h1>
                 <p className="mb-4">
                   This interactive visualization of gene regulatory networks is powered 
                   by tsGPT 2.0.7, a small biological foundation model we created to demonstrate 

@@ -295,7 +295,7 @@ const categories: Category[] = [
 const DataRoomDocumentation: React.FC = () => {
   // Dark mode state and password gating
   const [darkMode, setDarkMode] = useState(false);
-  const [accessGranted, setAccessGranted] = useState(false);
+  const [accessGranted, setAccessGranted] = useState(true);
   const [typedPassword, setTypedPassword] = useState("");
 
   // Visitor tracking state
@@ -616,6 +616,17 @@ const DataRoomDocumentation: React.FC = () => {
                   >
                     Gene-Explorer 1.0
                   </Link>
+                  <Link
+                    href="/gene-explorer-perturbation"
+                    className={`roboto-slab-semibold text-base sm:text-xl px-1 pb-1
+                      ${
+                        pathname === "/gene-explorer-perturbation"
+                          ? "text-black dark:text-white border-b-2 border-black dark:border-white"
+                          : "text-gray-700 dark:text-gray-300 hover:text-black dark:hover:text-white hover:border-b-2 hover:border-gray-500 transition-all"
+                      }`}
+                  >
+                    Gene Perturbation Explorer
+                  </Link>
                 </div>
               </div>
 
@@ -663,7 +674,7 @@ const DataRoomDocumentation: React.FC = () => {
           </div>
         </div>
 
-        {/* Password Overlay */}
+        {/* Password Overlay
         {!accessGranted && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/20 dark:bg-black/20 backdrop-blur-sm">
             <div className="bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg p-6 shadow-lg max-w-sm w-full mx-4">
@@ -703,6 +714,7 @@ const DataRoomDocumentation: React.FC = () => {
             </div>
           </div>
         )}
+        */}
       </div>
     </DarkMode>
   );
