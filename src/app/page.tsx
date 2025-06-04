@@ -73,7 +73,7 @@ const MobileContent = () => (
 
       <Image
         className="block relative mx-auto"
-        src="/images/fundamental_flow_for_mobile_subtle_colors.png"
+        src="/images/fundamental_flow_for_mobile.png"
         alt="zeroshotBio Logo"
         width={350}
         height={500}
