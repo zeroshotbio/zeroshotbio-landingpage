@@ -1,84 +1,143 @@
-# ZeroshotBio Landing Page
+# Zeroshot Bio ― Full-Stack Demo Suite
 
-This repository contains the marketing and demonstration website for **Zeroshot Bio**. The project is built with Next.js and TypeScript and showcases two major features:
+*Next JS 14 · Tailwind CSS · Flask · TensorFlow · AWS EC2 · Vercel*
 
-- **Investor Data Room** – a collection of pages outlining the company vision, technology and market opportunity.
-- **Gene Explorer** – an interactive network visualization powered by a back‑end model.
+---
 
-The site uses Tailwind CSS for styling and is configured to deploy to Vercel.
+## ✨  What lives in this repo?
 
-## Getting Started
+| Feature                                             | Folder                               | Stack                                    |
+| --------------------------------------------------- | ------------------------------------ | ---------------------------------------- |
+| **Marketing + Investor Data Room**                  | `src/app/dataroom`                   | Next JS client components & D3           |
+| **Gene-Explorer 1.0** (baseline model)              | `src/app/gene-explorer`              | Next JS (front) → Flask on **port 5000** |
+| **Gene-Explorer Perturbation** (experimental model) | `src/app/gene-explorer-perturbation` | Next JS (front) → Flask on **port 5001** |
+| **Back-end inference service**                      | `backend/gene_explorer_api`          | Flask + TensorFlow 2.15                  |
 
-Install dependencies and start the development server:
+Everything is styled with Tailwind and deployed to Vercel; the Flask micro-service runs on a GPU EC2 instance behind **[https://perturb.zeroshot.bio](https://perturb.zeroshot.bio)**.
+
+---
+
+## 🚀  Quick start
 
 ```bash
-npm install    # only required on first run
-npm run dev
+# clone & front-end
+git clone https://github.com/zeroshotbio/landingpage.git
+cd landingpage
+cp .env.local.example .env.local   # set FLASK endpoints
+npm install
+npm run dev          # http://localhost:3000
 ```
 
-Navigate to [http://localhost:3000](http://localhost:3000) to view the site.
+<details>
+<summary><strong>Back-end (optional, local CPU)</strong></summary>
 
-### Project Structure
-
-```
-src/app
-├─ page.tsx               – landing page
-├─ layout.tsx             – global layout and fonts
-├─ globals.css            – Tailwind configuration
-├─ DarkModeButton.tsx     – helper component
-├─ api/
-│   └─ visitors/route.ts  – DynamoDB logging endpoint
-├─ dataroom/
-│   ├─ page.tsx           – investor portal wrapper
-│   ├─ components/
-│   │   └─ ClientOnlyD3Treemap.tsx
-│   └─ docs/
-│       ├─ A_Overview/
-│       │   ├─ A_Introduction.tsx
-│       │   └─ B_Overall_Summary.tsx
-│       ├─ B_Problem/
-│       │   ├─ A_BiologyIsComplex.tsx
-│       │   ├─ B_DrugDevelopment.tsx
-│       │   └─ C_CaseStudyLeukemia.tsx
-│       ├─ C_Vision/
-│       │   ├─ A_VisionOverview.tsx
-│       │   ├─ B_FirstPrinciples.tsx
-│       │   ├─ C_Zebrafish.tsx
-│       │   ├─ D_scRNA.tsx
-│       │   └─ E_FuturePotential.tsx
-│       ├─ D_Technology/
-│       │   ├─ A_BioFoundationModels.tsx
-│       │   ├─ B_DataSources.tsx
-│       │   └─ C_BiologistPerspective.tsx
-│       ├─ E_Business_Model/
-│       │   └─ A_BusinessModel.tsx
-│       ├─ F_Market_Opportunity/
-│       │   ├─ A_MarketOpportunity.tsx
-│       │   └─ B_Customers.tsx
-│       ├─ G_Competitive_Landscape/
-│       │   └─ A_CompetitiveLandscape.tsx
-│       └─ H_Team_and_Advisors/
-│           └─ A_TeamAdvisors.tsx
-├─ gene-explorer/
-│   └─ page.tsx           – interactive network demo
-└─ favicon.ico
+```bash
+cd backend/gene_explorer_api
+python3 -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python app.py \
+  --weights_file final_model.h5 \
+  --mapping_json combined_processed_207_gene2idx.json \
+  --port 5001
 ```
 
-Static assets such as images and CSV files live in the `public/` directory. A list of gene names used by the Gene Explorer is served from `public/gene_names.json`.
+Curl test:
 
-## Architecture Overview
+```bash
+curl -X POST http://localhost:5001/api/analyze \
+     -H 'Content-Type: application/json' \
+     -d '{"gene_name":"klf3","dev_stage":"larval-5dpf","anatomy":"neural_crest"}'
+```
 
-The application uses the [App Router](https://nextjs.org/docs/app/building-your-application/routing) introduced in Next.js 13. Each folder under `src/app` becomes a route. Server and client components are mixed as needed. The Data Room pages are client components so they can leverage dynamic D3 visualizations, while layout and API routes run on the server.
+</details>
 
-### API
+---
 
-The `api/visitors/route.ts` endpoint logs page visits to AWS DynamoDB using the AWS SDK. It exposes simple `POST` and `PUT` handlers that store the visitor start and end times.
+## 🗂️  Key folder map
 
-### Gene Explorer
+```text
+zeroshotbio-landingpage/
+├─ backend/
+│  └─ gene_explorer_api/                 Flask + model
+│     ├─ app.py                          REST API & tsGPT v2
+│     ├─ gene_names.json                 2 000-gene vocabulary
+│     ├─ combined_processed_207_gene2idx.json
+│     ├─ requirements.txt
+│     └─ README.md                       back-end details
+├─ public/
+│  └─ images/ …                          logos & assets
+├─ src/
+│  └─ app/
+│     ├─ page.tsx                        marketing landing
+│     ├─ layout.tsx
+│     ├─ api/
+│     │  └─ visitors/route.ts            DynamoDB visit logger
+│     ├─ dataroom/                       investor wiki
+│     ├─ gene-explorer/
+│     │  └─ page.tsx                     front-end v1
+│     └─ gene-explorer-perturbation/
+│        └─ page.tsx                     front-end v2 (port 5001)
+├─ tailwind.config.ts
+└─ README.md  ← you are here
+```
 
-The Gene Explorer page loads a vis-network canvas in the browser and issues inference requests to a separate Flask service. A detailed explanation of its internals can be found in [README_gene_explorer.md](README_gene_explorer.md).
+---
 
-## Deployment
+## 🏗️  Architecture
 
-The project is ready to deploy to Vercel. Running `npm run build` will create an optimized production build (requires all dependencies to be installed). Environment variables such as `NEXT_PUBLIC_FLASK_ENDPOINT` and AWS credentials for DynamoDB should be provided at deploy time.
+### Front-end
 
+* **Next JS 14 App Router.** Each folder under `src/app` becomes a route (client components for D3 / vis-network; server components for layout & API).
+* **Vis-network** renders graphs entirely in the browser; physics & aesthetic sliders manipulate the underlying network options in real time.
+* Two environment variables pick the target back-end:
+
+  ```bash
+  NEXT_PUBLIC_FLASK_ENDPOINT=http://localhost:5000        # Gene-Explorer 1.0
+  NEXT_PUBLIC_FLASK_ENDPOINT_PERT=http://localhost:5001   # Perturbation page
+  ```
+
+### Back-end
+
+* **Flask 3.1** with CORS, mounted on `/api/analyze` and `/health`.
+* **tsGPT v2.0.7 With Attention** (≈12 M parameters) encodes a synthetic 250-token sequence whose centre token is the target gene; multi-head attention maps are distilled into a small node/edge graph.
+* Model weights (`final_model.h5`) are downloaded on first run (not tracked in Git).
+
+### Infra
+
+* **Production front-end** runs on Vercel; pushes to `main` trigger a build.
+* **GPU EC2** (g5) hosts the Flask service(s) behind Nginx + Let’s Encrypt:
+
+  * `http://localhost:5000` → **gene\_explorer\_api** (baseline)
+  * `https://perturb.zeroshot.bio` → reverse-proxied to port 5001
+* Nginx config and SSL renewal handled via **certbot** (see back-end README).
+
+---
+
+## 📝  Docs worth reading
+
+| File                                  | What you’ll learn                                           |
+| ------------------------------------- | ----------------------------------------------------------- |
+| `backend/gene_explorer_api/README.md` | How to run / test / extend the Flask service                |
+| `README_gene_explorer.md`             | Deep dive into the front-end TypeScript component           |
+| `src/app/dataroom/docs/…`             | All investor-facing copy, chunked into MDX-like React files |
+
+---
+
+## 🛫  Deploying
+
+```bash
+# front-end
+npm run build       # Vercel does this automatically on push
+
+# back-end (GPU EC2)
+git pull
+systemctl restart gene-explorer@perturb.service   # example unit
+```
+
+Provide the following secrets in Vercel or your shell:
+
+* `NEXT_PUBLIC_FLASK_ENDPOINT` & `NEXT_PUBLIC_FLASK_ENDPOINT_PERT`
+* `AWS_REGION`, `AWS_ACCESS_KEY_ID`, `AWS_SECRET_ACCESS_KEY`
+* `AWS_S3_BUCKET_NAME` (optional visitor logging)
+
+---

@@ -1,73 +1,157 @@
-# Gene Explorer Architecture
+# Gene-Explorer System Architecture
 
-This document describes how the **Gene Explorer** page works from a technical perspective. It is aimed at back-end and infrastructure developers who need to understand the data flow and component setup.
+This document explains—at source-code level—how the Gene-Explorer front-end pages and the accompanying Flask back-end service fit together. It is intended for back-end, infra, and full-stack contributors who need to read or extend the code.
 
-## Overview
+---
 
-The Gene Explorer is implemented as a Next.js client component located at `src/app/gene-explorer/page.tsx`. It renders an interactive network visualization that displays gene relationships predicted by a small biological foundation model. The visualization is powered by the [vis-network](https://visjs.org/) library running entirely in the browser.
-
-The page communicates with a separate Flask API (not included in this repository) that performs model inference. The endpoint address is configured through the `NEXT_PUBLIC_FLASK_ENDPOINT` environment variable.
-
-## Data Flow
-
-1. **Gene Metadata** – A list of available gene names is served from `public/gene_names.json`. When the component mounts it loads this file with `fetch` and populates a drop-down menu.
-2. **User Parameters** – The user selects a gene name along with contextual metadata (developmental stage, anatomical region, maximum depth of the network and the number of top genes to include per level). These values are stored in React state.
-3. **Inference Request** – Pressing “Run Inference” triggers an asynchronous POST request to `${NEXT_PUBLIC_FLASK_ENDPOINT}/api/analyze`. The request body contains the selected parameters.
-4. **Inference Response** – The Flask service returns a JSON payload describing nodes and edges of the gene network. The response shape is captured in the local `VisData`, `NodeData`, and `EdgeData` TypeScript interfaces.
-5. **Visualization** – The returned nodes and edges are loaded into a vis-network `DataSet`. Network physics options are mapped to UI controls so that users can experiment with gravity, spring length, damping, etc. The network is automatically fitted to the canvas and updated whenever options change.
-6. **Double‑click Interaction** – Users can double‑click a node in the graph to re-run inference using that node’s gene label as the new target. This is handled by a vis-network `doubleClick` event handler which calls the same `analyzeGeneNetwork` function with an overridden gene name.
-
-## Component Structure
+## 1 Repository layout
 
 ```
-src/app/gene-explorer/page.tsx
+zeroshotbio-landingpage/
+├─ backend/                      # NEW – self-contained Flask micro-service
+│  └─ gene_explorer_api/
+│     ├─ app.py                 # model + HTTP API
+│     ├─ combined_processed_207_gene2idx.json
+│     ├─ gene_names.json
+│     ├─ requirements.txt
+│     └─ README.md              # back-end-specific details
+├─ src/app/
+│  ├─ gene-explorer/            # “Gene-Explorer 1.0”             (calls port 5000)
+│  └─ gene-explorer-perturbation/  # “Gene-Explorer Perturbation” (calls port 5001)
+└─ …
+```
+
+*The only artefact **not** checked into Git is **`final_model.h5`** (≈ 200 MB).
+It is pulled at run-time from S3 or Git LFS; see `backend/gene_explorer_api/README.md`.*
+
+---
+
+## 2 High-level data flow
+
+1. **Front-end page loads** (`/gene-explorer` or `/gene-explorer-perturbation`).
+   The React component fetches `public/gene_names.json` to populate the gene dropdown.
+
+2. **User picks context** (gene, developmental stage, anatomy, max depth, top-N per level).
+   The values live in React state.
+
+3. **POST /api/analyze** – The page sends a JSON request to the appropriate Flask base URL:
+
+   | Page                       | Environment variable              | Default (dev)           |
+   | -------------------------- | --------------------------------- | ----------------------- |
+   | Gene-Explorer 1.0          | `NEXT_PUBLIC_FLASK_ENDPOINT`      | `http://localhost:5000` |
+   | Gene-Explorer Perturbation | `NEXT_PUBLIC_FLASK_ENDPOINT_PERT` | `http://localhost:5001` |
+
+4. **Flask micro-service** (`backend/gene_explorer_api/app.py`) converts that JSON into a synthetic input tensor, performs a forward pass through **tsGPT v2.0.7 With Attention**, extracts attention scores and converts them into a small gene interaction graph.
+
+5. **JSON response** (see Section 4) returns to the browser.
+
+6. **vis-network render** – The component loads the nodes/edges into a `DataSet`.
+   Physics and styling sliders update the network in real time.
+
+7. **Double-click** on any node triggers another `/api/analyze`, using the clicked gene as the new centre.
+
+---
+
+## 3 Front-end component structure
+
+```
+src/app/gene-explorer(-perturbation)/page.tsx
 ├─ DarkMode wrapper
 ├─ Sidebar
-│  ├─ Gene & Context form
-│  ├─ Physics controls
-│  └─ Aesthetic controls
-└─ Main Content
-   ├─ Top header navigation
-   ├─ Introductory text
-   └─ Network canvas (vis-network)
+│  ├─ Gene & Context controls
+│  ├─ Physics sliders (gravity, spring, damping…)
+│  └─ Aesthetic sliders (node scale, edge opacity, label size)
+└─ Main content
+   ├─ Twin nav-bars (site-wide tabs + category header)
+   ├─ Explanatory text
+   └─ <div ref={networkRef}> — Vis-Network canvas
 ```
 
-The component is written entirely with React hooks and runs on the client (`"use client";` at the top of the file). All DOM manipulation for the network occurs in `useEffect` hooks to ensure objects are created after the page has mounted.
+The two pages share 100 % of their code; the only functional difference is the base URL they read from `process.env`.
 
-## API Contract
+---
 
-The expected response from the Flask API looks like:
+## 4 Back-end API contract
 
-```json
+```jsonc
 {
   "nodes": [
-    {"id": "ENSG...", "label": "geneA", "title": "", "depth": 0, "degree": 3, "is_source": true},
-    {"id": "ENSG...", "label": "geneB", "title": "", "depth": 1, "degree": 1, "is_source": false}
+    {
+      "id":   "193",          // token id as string
+      "label":"klf3",         // human gene symbol
+      "title":"",             // free-form tooltip (optional)
+      "depth":0,              // 0=source, 1=primary, …
+      "degree":7,             // number of incident edges
+      "is_source":true
+    }
   ],
   "edges": [
-    {"from": "id1", "to": "id2", "title": "score", "value": 12, "depth": 1}
+    {
+      "from":"193",           // source id
+      "to":"875",
+      "title":"klf3 → sox9  Score: 0.8421",
+      "value":12.6,           // width weight (any float)
+      "depth":1               // same notion as node.depth
+    }
   ],
   "summary": {
-    "num_nodes": 25,
-    "num_edges": 24,
-    "max_depth": 3
+    "num_nodes":68,
+    "num_edges":67,
+    "max_depth":3
   },
-  "target_id": "id1",
-  "target_gene": "geneA"
+  "target_id":"193",
+  "target_gene":"klf3"
 }
 ```
 
-Any field names added by the API should match the interfaces defined in the component. The visualization logic assumes numerical `value` fields for edge weights and uses `depth` to color nodes and edges.
+Front-end assumptions:
 
-## Environment Variables
+* `nodes[*].id` and `edges[*].from/to` are unique strings.
+* `edge.value` is a linear weight that maps to line width.
+* `depth ∈ {0,1,2,3}` colours nodes and edges.
 
-- `NEXT_PUBLIC_FLASK_ENDPOINT` – Base URL of the Flask inference service. Defaults to `http://localhost:5000` when not provided.
+---
 
-## Styling and Assets
+## 5 Configuration
 
-The page uses Tailwind CSS for styling. Additional images such as the company logo are served from the `public/images` directory.
+| Variable                          | Used by                    | Purpose                                                        |
+| --------------------------------- | -------------------------- | -------------------------------------------------------------- |
+| `NEXT_PUBLIC_FLASK_ENDPOINT`      | gene-explorer              | URL to the v1 model (default `http://localhost:5000`)          |
+| `NEXT_PUBLIC_FLASK_ENDPOINT_PERT` | gene-explorer-perturbation | URL to the perturbation model (`https://perturb.zeroshot.bio`) |
+| `AWS_*` vars                      | `/api/visitors` route      | Optional visitor-logging to DynamoDB                           |
 
-## Extending the Explorer
+---
 
-Back-end developers who modify the Flask service or the response shape should update the TypeScript interfaces and the mapping logic in `page.tsx`. The front-end assumes that node identifiers are unique strings and that edge definitions refer to these identifiers.
+## 6 Local development checklist
 
+```bash
+# Front-end
+cp .env.local.example .env.local
+# edit to point to whichever Flask port(s) you run
+
+npm install
+npm run dev  # http://localhost:3000
+
+# Back-end
+cd backend/gene_explorer_api
+python -m venv .venv && source .venv/bin/activate
+pip install -r requirements.txt
+python app.py --weights_file final_model.h5 \
+              --mapping_json combined_processed_207_gene2idx.json \
+              --port 5001
+```
+
+The page at [http://localhost:3000/gene-explorer-perturbation](http://localhost:3000/gene-explorer-perturbation) now calls `http://localhost:5001/api/analyze`.
+
+---
+
+## 7 Extending the system
+
+* **Changing the model or response shape**
+  Adjust `VisData`, `NodeData`, `EdgeData` interfaces in each `page.tsx`.
+  Update colour/size logic if you introduce new node attributes.
+
+* **Adding new exploration modes**
+  Duplicate `src/app/gene-explorer` into another folder, set a new env var, and wire a new tab in the header.  The shared architecture handles multiple base URLs seamlessly.
+
+With the back-end code now under `backend/` every contributor can view, lint, or debug the exact inference logic running in production without leaving the repository.
