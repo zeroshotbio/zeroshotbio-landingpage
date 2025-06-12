@@ -29,23 +29,21 @@ const DesktopContent = () => (
       
     <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven understanding of gene expression patterns are delivering powerful new capabilities for therapeutics developers.
+        AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>, we create customized gene expression foundation models that deliver drug discovery confidence.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        We specialize in cross-species fine-tuning that enables translation between large-scale animal-model drug-exposure experiments
-        and human-relevant insights.
+        We specialize in fine-tuning foundation models that translate zebrafish drug-exposure experiments
+        into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
-        Our first animal-model-of-choice?
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
-        <strong>Zebrafish.</strong>
+        <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        Whole-organism vertebrate physiology at scale.
+        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology with unit-economics 
+        ideally suited to the scale of data necessary for AI training.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-20 sm:whitespace-normal">
         Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
@@ -104,23 +102,21 @@ const MobileContent = () => (
       
     <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven understanding of gene expression patterns are delivering powerful new capabilities for therapeutics developers.
+        AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>, we create customized gene expression foundation models that deliver drug discovery confidence.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        We specialize in cross-species fine-tuning that enables translation between large-scale animal-model drug-exposure experiments
-        and human-relevant insights.
+        We specialize in fine-tuning foundation models that translate zebrafish drug-exposure experiments
+        into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
-        Our first animal-model-of-choice?
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
-        <strong>Zebrafish.</strong>
+        <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        Whole-organism vertebrate physiology at scale.
+        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology with unit-economics 
+        ideally suited to the scale of data necessary for AI training.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-20 sm:whitespace-normal">
         Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
