@@ -29,27 +29,46 @@ const DesktopContent = () => (
       
     <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven understanding of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
+        AI-driven understanding of gene expression patterns are delivering powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        Self-attention transformers represent a new approach, pushing AI-generated biological hypotheses beyond previous limits. 
+        At <strong>zeroshot bio</strong>, we create customized gene expression foundation models that deliver drug discovery confidence.
       </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <strong>zeroshot bio</strong>, we train large single-cell foundation models that bring disease networks and drug perturbations 
-        into shared embeddings. 
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
+        We specialize in cross-species fine-tuning that enables translation between large-scale animal-model drug-exposure experiments
+        and human-relevant insights.
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
+        Our first animal-model-of-choice?
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
+        <strong>Zebrafish.</strong>
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
+        Whole-organism vertebrate physiology at scale.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-20 sm:whitespace-normal">
-        Our models are refined by curated zebrafish data. By incorporating whole-organism vertebrate physiology and high-throughput 
-        scRNA screening, our team is able to create optimized compound rankings that accelerate hit-ot-lead decisions for therapeutics customers.
+        Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
+        hit-to-lead decisions for therapeutics customers.
       </p>
       
-      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-semidark leading-snug sm:whitespace-normal">
-        Email <span className="roboto-slab-extrabold text-gray-dark">steven@zeroshot.bio</span> 
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
+        Email <span className="text-gray-dark">steven@zeroshot.bio</span> 
       </p>
-      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug mb-4 sm:whitespace-normal">
         if you&#39;d like to get in touch. 
       </p>
+      <dl className="w-1/2 mx-auto italic roboto-slab-regular text-xxxsm sm:text-xxsm md:text-xxsm text-gray-verylight leading-snug mb-4 mt-12 sm:whitespace-normal">
+        <dt>
+          zeroshot&nbsp;<span className="lowercase">/ˈziː.roʊ ˌʃɒt/</span>
+        </dt>
+        <dd className="mt-1">
+          A model’s ability to generate accurate predictions for contexts it was never explicitly trained on.
+        </dd>
+      </dl>
     </div>
+
+
   </main>
 );
 
@@ -83,27 +102,49 @@ const MobileContent = () => (
       />
     </div>
       
-    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-4 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
+    <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
-        AI-driven interpretation of genomic complexity will deliver exciting new categories of capability for therapeutics developers.
+        AI-driven understanding of gene expression patterns are delivering powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        From cancer to cardiovascular disease, a fundamentally new way of understanding drugs with polygenic effects is emerging.
+        At <strong>zeroshot bio</strong>, we create customized gene expression foundation models that deliver drug discovery confidence.
       </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        It&apos;s early, but the self-attention transformer architecture has proven it can generalize very well on RNA sequencing data.  
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
+        We specialize in cross-species fine-tuning that enables translation between large-scale animal-model drug-exposure experiments
+        and human-relevant insights.
       </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        At <span className="roboto-slab-extrabold text-gray-dark">zeroshot bio</span>, we&#39;re creating massive zebrafish datasets to train 
-        biology foundation models that deliver next-generation confidence to our therapeutics development customers.  
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
+        Our first animal-model-of-choice?
       </p>
-      <p className="roboto-slab-regular text-xxsm sm:text-base md:text-m text-gray-semidark leading-snug sm:whitespace-normal">
-        Email <span className="roboto-slab-extrabold text-gray-dark">steven@zeroshot.bio</span> 
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
+        <strong>Zebrafish.</strong>
       </p>
-      <p className="roboto-slab-regular text-xxsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
+        Whole-organism vertebrate physiology at scale.
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-20 sm:whitespace-normal">
+        Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
+        hit-to-lead decisions for therapeutics customers.
+      </p>
+      
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
+        Email <span className="text-gray-dark">steven@zeroshot.bio</span> 
+      </p>
+      <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug mb-4 sm:whitespace-normal">
         if you&#39;d like to get in touch. 
       </p>
+      <dl className="w-1/2 mx-auto italic roboto-slab-regular text-xxxsm sm:text-xxsm md:text-xxsm text-gray-verylight leading-snug mb-4 mt-12 sm:whitespace-normal">
+        <dt>
+          zeroshot&nbsp;<span className="lowercase">/ˈziː.roʊ ˌʃɒt/</span>
+        </dt>
+        <dd className="mt-1">
+          A model’s ability to generate accurate predictions for contexts it was never explicitly trained on.
+        </dd>
+      </dl>
     </div>
+
+
+
   </main>
 );
 
