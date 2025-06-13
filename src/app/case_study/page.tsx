@@ -1050,7 +1050,7 @@ const DesktopContent = () => (
     {/* Description */}
     <div className="max-w-2xl text-center">
       <p className="roboto-slab-regular text-sm text-gray-medium leading-relaxed">
-        Hover over the embedding space to explore cellular states and disease vectors. Click "Rank Drug Candidates" 
+        Hover over the embedding space to explore cellular states and disease vectors. Click &quot;Rank Drug Candidates&quot; 
         to watch AI-driven therapeutic discovery in action, as potential drug vectors are evaluated and ranked 
         based on their ability to guide diseased cells back toward healthy transcriptional states.
       </p>
@@ -1136,7 +1136,7 @@ const MobileContent = () => (
     {/* Description */}
     <div className="text-center">
       <p className="roboto-slab-regular text-xs text-gray-medium leading-relaxed">
-        Tap to explore cellular states. Use "Rank Drug Candidates" to see AI-driven 
+        Tap to explore cellular states. Use &quot;Rank Drug Candidates&quot; to see AI-driven 
         therapeutic discovery as potential drugs are evaluated for their ability to guide 
         diseased cells toward healthy states.
       </p>
