@@ -32,15 +32,15 @@ const DesktopContent = () => (
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
-        we create fine-tuning pipelines that translate zebrafish drug-exposure experiments
+        we create custom fine-tuning pipelines that translate zebrafish drug-exposure experiments
         into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
         <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology with unit-economics 
-        ideally suited to the scale of data necessary for AI training.
+        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics 
+        for AI-scale training, and rapid turnaround time.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
         Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
@@ -107,15 +107,15 @@ const MobileContent = () => (
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
-        we create fine-tuning pipelines that translate zebrafish drug-exposure experiments
+        we create custom fine-tuning pipelines that translate zebrafish drug-exposure experiments
         into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
         <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology with unit-economics 
-        ideally suited to the scale of data necessary for AI training.
+        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics 
+        for AI-scale training, and rapid turnaround time.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
         Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
