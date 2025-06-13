@@ -31,10 +31,8 @@ const DesktopContent = () => (
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <strong>zeroshot bio</strong>, we create custom gene expression foundation models that deliver drug discovery confidence.
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        We specialize in the creation of fine-tuning pipelines that translate zebrafish drug-exposure experiments
+        At <strong>zeroshot bio</strong>,
+        we create fine-tuning pipelines that translate zebrafish drug-exposure experiments
         into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
@@ -45,14 +43,14 @@ const DesktopContent = () => (
         ideally suited to the scale of data necessary for AI training.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
+        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
         hit-to-lead decisions for therapeutics customers.
       </p>
       
       {/* Case Study Button */}
       <Link href="/case_study">
         <button className="group relative mb-16 px-8 py-3 border border-gray-400 text-gray-semidark roboto-slab-regular text-sm hover:border-gray-600 transition-all duration-300 ease-in-out transform hover:scale-105">
-          <span className="relative z-10">View Embedding Space</span>
+          <span className="relative z-10"> Demo: Embedding Space Visualization </span>
           <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out origin-left"></div>
         </button>
       </Link>
@@ -108,10 +106,8 @@ const MobileContent = () => (
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
-        At <strong>zeroshot bio</strong>, we create customized gene expression foundation models that deliver drug discovery confidence.
-      </p>
-      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        We specialize in the creation of fine-tuning pipelines that translate zebrafish drug-exposure experiments
+        At <strong>zeroshot bio</strong>,
+        we create fine-tuning pipelines that translate zebrafish drug-exposure experiments
         into human pre-clincal insights.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-2 sm:whitespace-normal">
@@ -122,14 +118,14 @@ const MobileContent = () => (
         ideally suited to the scale of data necessary for AI training.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        Combined with high-throughput scRNA screening, our team is able to create optimized compound rankings that accelerate 
+        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
         hit-to-lead decisions for therapeutics customers.
       </p>
       
       {/* Case Study Button - Mobile */}
       <Link href="/case_study">
         <button className="group relative mb-16 px-6 py-3 border border-gray-400 text-gray-semidark roboto-slab-regular text-sm hover:border-gray-600 transition-all duration-300 ease-in-out transform hover:scale-105">
-          <span className="relative z-10"> Embedding Space Visualization Demo</span>
+          <span className="relative z-10"> Demo: Embedding Space Visualization </span>
           <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out origin-left"></div>
         </button>
       </Link>
