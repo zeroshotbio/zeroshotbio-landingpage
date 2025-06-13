@@ -70,16 +70,14 @@ const ARROW_CONFIG = {
   },
   // Drug arrows (therapeutic vectors)
   drug: {
-    glowLineWidth: 4,
-    mainLineWidth: 2,
-    headLength: 10, // Larger arrowheads
-    headAngle: Math.PI / 4, // Wider angle for better visibility
+    glowLineWidth: 3,
+    mainLineWidth: 1.5,
+    headLength: 8,
+    headAngle: Math.PI / 4,
     lineCap: 'round' as const,
     glowColor: '#fbbf24',
     mainColor: '#f59e0b',
-    pulseSpeed: 0.003,
-    pulseAmplitude: 0.2,
-    pulseOffset: 0.8
+    baseOpacity: 0.7
   }
 };
 
@@ -121,19 +119,23 @@ const FLASHLIGHT_CONFIG = {
   intensityBoost: 0.5
 };
 
-// DRUG ANIMATION TIMING
+// DRUG ANIMATION TIMING - Smooth raindrop effect
 const DRUG_ANIMATION_CONFIG = {
-  totalDuration: 10000,
-  candidateCount: 150,
-  spawnVariation: 2000,
-  eliminationPhases: {
-    fast: { progress: 0.3, keepPercent: 0.3 },
-    slowing: { progress: 0.7, keepPercent: 0.15 },
-    final: { progress: 1.0, keepCount: 10 }
-  },
-  fadeInDuration: 800,
-  fadeOutDuration: 1000,
-  pulseVariation: Math.PI * 2
+  totalDuration: 8000,
+  candidateCount: 120,
+  spawnInterval: 30, // Spawn new candidates every 30ms initially
+  spawnAcceleration: 1.15, // Exponentially increase spawn interval
+  maxSpawnInterval: 300, // Maximum time between spawns
+  fadeInDuration: 400,
+  fadeOutDuration: 600,
+  eliminationWaves: [
+    { time: 2000, keepTop: 50 },
+    { time: 3500, keepTop: 25 },
+    { time: 5000, keepTop: 15 },
+    { time: 6500, keepTop: 10 }
+  ],
+  motionDamping: 0.95, // Smooth motion
+  illuminationGrowthRate: 0.02
 };
 
 // UMAP POINT CLOUD GENERATION
@@ -193,11 +195,13 @@ interface DrugCandidate {
   therapeuticScore: number;
   spawnTime: number;
   opacity: number;
+  targetOpacity: number;
   scale: number;
   glowIntensity: number;
   illuminationRadius: number;
-  pulsePhase: number;
+  targetIlluminationRadius: number;
   eliminated: boolean;
+  eliminatedTime?: number;
 }
 
 interface DrugAnimationState {
@@ -205,7 +209,9 @@ interface DrugAnimationState {
   startTime: number;
   duration: number;
   drugCandidates: DrugCandidate[];
-  currentPhase: 'fast' | 'slowing' | 'final';
+  nextSpawnIndex: number;
+  currentSpawnInterval: number;
+  lastSpawnTime: number;
 }
 
 interface ZebrafishEmbeddingVisualizationProps {
@@ -214,7 +220,7 @@ interface ZebrafishEmbeddingVisualizationProps {
 }
 
 // ============================================================================
-// DISEASE MODEL DEFINITIONS
+// DISEASE MODEL DEFINITIONS - Based on actual GSE datasets
 // ============================================================================
 
 // Define the healthy region and multiple disease lobes
@@ -231,11 +237,12 @@ const DISEASE_LOBES = [
     center: [1.4, -0.6],
     baseRadius: 0.9,
     elongation: { angle: Math.PI * 0.3, ratio: 1.6 },
-    label: 'Metastatic',
+    label: 'ZMEL1-INV',
     color: '#dc2626',
-    description: 'ZMEL1-PRO → ZMEL1-INV metastasis progression model',
-    shortDesc: 'Invasive tumor progression and metastatic spread',
-    id: 'metastatic'
+    description: 'ZMEL1 invasive metastatic progression (GSE152998)',
+    shortDesc: 'Metastatic invasion & progression model',
+    gseId: 'GSE152998',
+    id: 'zmel1_inv'
   },
   {
     center: [0.8, 1.2],
@@ -243,8 +250,9 @@ const DISEASE_LOBES = [
     elongation: { angle: Math.PI * 1.1, ratio: 1.4 },
     label: 'MITF-low',
     color: '#b91c1c',
-    description: 'Therapy-resistant MITF-low cells',
-    shortDesc: 'Treatment-resistant melanoma cell states',
+    description: 'MITF-low resistance model (GSE136900)',
+    shortDesc: 'MAPK inhibitor resistance states',
+    gseId: 'GSE136900',
     id: 'mitf_low'
   },
   {
@@ -253,50 +261,33 @@ const DISEASE_LOBES = [
     elongation: { angle: Math.PI * 0.8, ratio: 1.3 },
     label: 'Mucosal',
     color: '#ef4444',
-    description: 'Mucosal melanoma atlas',
-    shortDesc: 'Non-MAPK pathway mucosal melanomas',
+    description: 'CCND1/PTEN/TP53 mucosal melanoma (GSE270464)',
+    shortDesc: 'Non-MAPK mucosal melanomas',
+    gseId: 'GSE270464',
     id: 'mucosal'
   },
   {
     center: [0.3, -1.5],
     baseRadius: 0.5,
     elongation: { angle: Math.PI * 1.7, ratio: 1.2 },
-    label: 'Spatial',
+    label: 'Spatial TME',
     color: '#f87171',
-    description: 'Spatial transcriptomics architecture',
-    shortDesc: 'Tumor microenvironment spatial organization',
-    id: 'spatial'
+    description: 'BRAFV600E spatial transcriptomics (GSE159709)',
+    shortDesc: 'Tumor-host interface mapping',
+    gseId: 'GSE159709',
+    id: 'spatial_tme'
   },
   {
     center: [1.8, 1.8],
     baseRadius: 0.4,
     elongation: { angle: Math.PI * 0.1, ratio: 1.1 },
-    label: 'Stress',
+    label: 'ZMEL1-PRO',
     color: '#fca5a5',
-    description: 'Oxidative stress plasticity',
-    shortDesc: 'Stress-induced cellular state changes',
-    id: 'stress'
+    description: 'ZMEL1 proliferative state (GSE152998)',
+    shortDesc: 'Highly proliferative phenotype',
+    gseId: 'GSE152998',
+    id: 'zmel1_pro'
   },
-  {
-    center: [-0.2, 1.9],
-    baseRadius: 0.45,
-    elongation: { angle: Math.PI * 1.4, ratio: 1.25 },
-    label: 'Neural-crest',
-    color: '#fecaca',
-    description: 'Sox10 neural-crest re-emergence',
-    shortDesc: 'Dedifferentiation to neural crest origins',
-    id: 'neural_crest'
-  },
-  {
-    center: [2.2, -1.1],
-    baseRadius: 0.35,
-    elongation: { angle: Math.PI * 0.6, ratio: 1.15 },
-    label: 'Uveal',
-    color: '#fed7d7',
-    description: 'GNAQ-driven uveal precursor',
-    shortDesc: 'G-protein signaling uveal melanoma model',
-    id: 'uveal'
-  }
 ];
 
 // ============================================================================
@@ -432,7 +423,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     startTime: 0,
     duration: DRUG_ANIMATION_CONFIG.totalDuration,
     drugCandidates: [] as DrugCandidate[],
-    currentPhase: 'fast' as const
+    nextSpawnIndex: 0,
+    currentSpawnInterval: DRUG_ANIMATION_CONFIG.spawnInterval,
+    lastSpawnTime: 0
   } as DrugAnimationState);
 
   useEffect(() => {
@@ -482,21 +475,24 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
       
       const finalScore = therapeuticScore + regionBonus + Math.random() * 0.1;
       
-      // Generate drug names and mechanisms
+      // Generate drug names and mechanisms - more realistic for melanoma
       const drugNames = [
         'Trametinib', 'Dabrafenib', 'Vemurafenib', 'Cobimetinib', 'Binimetinib',
         'Selumetinib', 'Encorafenib', 'Atezolizumab', 'Pembrolizumab', 'Nivolumab',
         'Ipilimumab', 'Talimogene', 'Imatinib', 'Nilotinib', 'Dasatinib',
         'Tebentafusp', 'Imiquimod', 'Aldesleukin', 'Interferon-α', 'Temozolomide',
         'Dacarbazine', 'Carmustine', 'Fotemustine', 'Cisplatin', 'Carboplatin',
-        'Paclitaxel', 'Docetaxel', 'Vincristine', 'Vinblastine', 'Melphalan'
+        'Paclitaxel', 'Docetaxel', 'Vincristine', 'Vinblastine', 'Melphalan',
+        'Relatlimab', 'Toripalimab', 'Cemiplimab', 'Avelumab', 'Durvalumab',
+        'Tremelimumab', 'Dostarlimab', 'Retifanlimab', 'Prolgolimab', 'Sintilimab'
       ];
       
       const mechanisms = [
-        'MEK inhibition', 'BRAF inhibition', 'PI3K/AKT pathway', 'mTOR signaling',
+        'MEK inhibition', 'BRAF V600E inhibition', 'PI3K/AKT pathway', 'mTOR signaling',
         'PD-1 checkpoint', 'PD-L1 blockade', 'CTLA-4 inhibition', 'Oncolytic therapy',
-        'Tyrosine kinase', 'Immune activation', 'DNA alkylation', 'Microtubule disruption',
-        'Apoptosis induction', 'Angiogenesis inhibition', 'Cell cycle arrest'
+        'c-KIT inhibition', 'Immune activation', 'DNA alkylation', 'Microtubule disruption',
+        'Apoptosis induction', 'Angiogenesis inhibition', 'Cell cycle arrest',
+        'LAG-3 blockade', 'TIM-3 inhibition', 'TIGIT blockade', 'NK cell activation'
       ];
       
       const drugName = drugNames[i % drugNames.length];
@@ -508,12 +504,13 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
         mechanism,
         startScreenX, startScreenY, endScreenX, endScreenY,
         therapeuticScore: finalScore,
-        spawnTime: Math.random() * DRUG_ANIMATION_CONFIG.spawnVariation,
+        spawnTime: 0, // Will be set dynamically during animation
         opacity: 0,
+        targetOpacity: 0,
         scale: 0.6 + Math.random() * 0.4,
         glowIntensity: 0.5 + Math.random() * 0.5,
-        illuminationRadius: 60 + Math.random() * 30,
-        pulsePhase: Math.random() * DRUG_ANIMATION_CONFIG.pulseVariation,
+        illuminationRadius: 0,
+        targetIlluminationRadius: 60 + Math.random() * 30,
         eliminated: false
       });
     }
@@ -521,61 +518,99 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     return candidates.sort((a, b) => b.therapeuticScore - a.therapeuticScore);
   }, [width, height]);
 
-  // Drug animation effect
+  // Drug animation effect - smooth raindrop style
   useEffect(() => {
     if (!drugAnimation.isRunning) return;
 
     const updateDrugAnimation = () => {
-      const elapsed = Date.now() - drugAnimation.startTime;
+      const currentTime = Date.now();
+      const elapsed = currentTime - drugAnimation.startTime;
       const progress = Math.min(1, elapsed / drugAnimation.duration);
       
-      const updatedCandidates = drugAnimation.drugCandidates.map((candidate: DrugCandidate) => {
-        const age = elapsed - candidate.spawnTime;
+      // Update spawn interval (gets slower over time)
+      let currentSpawnInterval = drugAnimation.currentSpawnInterval;
+      if (elapsed > 1000) {
+        currentSpawnInterval = Math.min(
+          DRUG_ANIMATION_CONFIG.maxSpawnInterval,
+          DRUG_ANIMATION_CONFIG.spawnInterval * Math.pow(DRUG_ANIMATION_CONFIG.spawnAcceleration, elapsed / 1000)
+        );
+      }
+      
+      // Spawn new candidates
+      let nextSpawnIndex = drugAnimation.nextSpawnIndex;
+      let lastSpawnTime = drugAnimation.lastSpawnTime;
+      const updatedCandidates = [...drugAnimation.drugCandidates];
+      
+      if (nextSpawnIndex < DRUG_ANIMATION_CONFIG.candidateCount && 
+          currentTime - lastSpawnTime > currentSpawnInterval) {
+        const candidate = updatedCandidates[nextSpawnIndex];
+        candidate.spawnTime = currentTime;
+        candidate.targetOpacity = ARROW_CONFIG.drug.baseOpacity;
+        nextSpawnIndex++;
+        lastSpawnTime = currentTime;
+      }
+      
+      // Check elimination waves
+      const activeNonEliminated = updatedCandidates.filter(c => !c.eliminated && c.spawnTime > 0);
+      DRUG_ANIMATION_CONFIG.eliminationWaves.forEach(wave => {
+        if (elapsed > wave.time && activeNonEliminated.length > wave.keepTop) {
+          const toEliminate = activeNonEliminated.slice(wave.keepTop);
+          toEliminate.forEach(candidate => {
+            if (!candidate.eliminated) {
+              candidate.eliminated = true;
+              candidate.eliminatedTime = currentTime;
+              candidate.targetOpacity = 0;
+              candidate.targetIlluminationRadius = 0;
+            }
+          });
+        }
+      });
+      
+      // Update individual candidates with smooth transitions
+      const finalCandidates = updatedCandidates.map((candidate: DrugCandidate) => {
+        if (candidate.spawnTime === 0) return candidate;
         
-        let opacity = 0;
-        if (age > 0) {
-          const spawnProgress = Math.min(1, age / DRUG_ANIMATION_CONFIG.fadeInDuration);
-          opacity = Math.sin(spawnProgress * Math.PI * 0.5) * 0.9;
+        const age = currentTime - candidate.spawnTime;
+        
+        // Smooth opacity transitions
+        const opacityDiff = candidate.targetOpacity - candidate.opacity;
+        candidate.opacity += opacityDiff * 0.1;
+        
+        // Smooth illumination radius growth
+        if (!candidate.eliminated && candidate.illuminationRadius < candidate.targetIlluminationRadius) {
+          candidate.illuminationRadius = Math.min(
+            candidate.targetIlluminationRadius,
+            candidate.illuminationRadius + (candidate.targetIlluminationRadius * DRUG_ANIMATION_CONFIG.illuminationGrowthRate)
+          );
+        } else if (candidate.eliminated) {
+          const radiusDiff = candidate.targetIlluminationRadius - candidate.illuminationRadius;
+          candidate.illuminationRadius += radiusDiff * 0.1;
         }
         
-        const scoreRank = drugAnimation.drugCandidates.findIndex((c: DrugCandidate) => c.id === candidate.id);
-        let shouldEliminate = false;
-        
-        if (progress < DRUG_ANIMATION_CONFIG.eliminationPhases.fast.progress) {
-          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * DRUG_ANIMATION_CONFIG.eliminationPhases.fast.keepPercent;
-        } else if (progress < DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.progress) {
-          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.keepPercent;
-        } else {
-          shouldEliminate = scoreRank > DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount;
-        }
-        
-        if (shouldEliminate && !candidate.eliminated) {
-          const eliminationDelay = Math.random() * 1000;
-          if (elapsed > candidate.spawnTime + eliminationDelay) {
-            opacity *= Math.max(0, 1 - (elapsed - candidate.spawnTime - eliminationDelay) / DRUG_ANIMATION_CONFIG.fadeOutDuration);
-          }
-        }
-        
-        return {
-          ...candidate,
-          opacity: Math.max(0, opacity),
-          eliminated: shouldEliminate && opacity <= 0.1
-        };
+        return candidate;
       });
       
       setDrugAnimation(prev => ({
         ...prev,
-        drugCandidates: updatedCandidates,
-        currentPhase: progress < DRUG_ANIMATION_CONFIG.eliminationPhases.fast.progress ? 'fast' as const : 
-                     progress < DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.progress ? 'slowing' as const : 'final' as const
+        drugCandidates: finalCandidates,
+        nextSpawnIndex,
+        currentSpawnInterval,
+        lastSpawnTime
       }));
       
-      if (progress < 1) {
+      if (progress < 1 || finalCandidates.some(c => Math.abs(c.opacity - c.targetOpacity) > 0.01)) {
         drugAnimationRef.current = requestAnimationFrame(updateDrugAnimation);
       } else {
-        const survivors: DrugCandidate[] = updatedCandidates
-          .filter((_: DrugCandidate, index: number) => index < DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount)
-          .map((c: DrugCandidate) => ({ ...c, opacity: 0.8, eliminated: false }));
+        // Animation complete - keep only top candidates
+        const survivors: DrugCandidate[] = finalCandidates
+          .filter((c: DrugCandidate) => !c.eliminated)
+          .slice(0, DRUG_ANIMATION_CONFIG.eliminationWaves[DRUG_ANIMATION_CONFIG.eliminationWaves.length - 1].keepTop)
+          .map((c: DrugCandidate) => ({ 
+            ...c, 
+            opacity: ARROW_CONFIG.drug.baseOpacity, 
+            targetOpacity: ARROW_CONFIG.drug.baseOpacity,
+            eliminated: false 
+          }));
         
         setDrugAnimation(prev => ({
           ...prev,
@@ -592,7 +627,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
         cancelAnimationFrame(drugAnimationRef.current);
       }
     };
-  }, [drugAnimation.isRunning, drugAnimation.startTime, drugAnimation.drugCandidates, drugAnimation.duration]);
+  }, [drugAnimation]);
 
   const startDrugRanking = useCallback(() => {
     const candidates: DrugCandidate[] = generateDrugCandidates(DRUG_ANIMATION_CONFIG.candidateCount);
@@ -602,7 +637,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
       startTime: Date.now(),
       duration: DRUG_ANIMATION_CONFIG.totalDuration,
       drugCandidates: candidates,
-      currentPhase: 'fast' as const
+      nextSpawnIndex: 0,
+      currentSpawnInterval: DRUG_ANIMATION_CONFIG.spawnInterval,
+      lastSpawnTime: 0
     });
   }, [generateDrugCandidates]);
   
@@ -617,14 +654,10 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     
     // Calculate drug illumination
     const drugIllumination = new Map<number, number>();
-    const activeCandidates = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0);
-    const finalDrugs = !drugAnimation.isRunning ? activeCandidates : [];
+    const visibleCandidates = drugAnimation.drugCandidates.filter((c: DrugCandidate) => c.opacity > 0.01);
 
-    
-    activeCandidates.forEach((candidate: DrugCandidate) => {
-      const currentTime = Date.now();
-      const pulseValue = Math.sin(currentTime * ARROW_CONFIG.drug.pulseSpeed + candidate.pulsePhase) * ARROW_CONFIG.drug.pulseAmplitude + ARROW_CONFIG.drug.pulseOffset;
-      const effectiveRadius = candidate.illuminationRadius * pulseValue;
+    visibleCandidates.forEach((candidate: DrugCandidate) => {
+      if (candidate.illuminationRadius <= 0) return;
       
       for (let t = 0; t <= 1; t += 0.1) {
         const illuminationX = candidate.startScreenX + t * (candidate.endScreenX - candidate.startScreenX);
@@ -636,8 +669,8 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
             (point.screenY - illuminationY) ** 2
           );
           
-          if (distToIllumination < effectiveRadius) {
-            const illuminationIntensity = Math.max(0, 1 - (distToIllumination / effectiveRadius));
+          if (distToIllumination < candidate.illuminationRadius) {
+            const illuminationIntensity = Math.max(0, 1 - (distToIllumination / candidate.illuminationRadius));
             const smoothIntensity = Math.pow(illuminationIntensity, 0.6) * candidate.opacity * candidate.glowIntensity;
             
             const currentIllumination = drugIllumination.get(index) || 0;
@@ -806,26 +839,23 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     });
     
     // Draw drug candidate arrows
-    activeCandidates.forEach((candidate: DrugCandidate) => {
-      if (candidate.opacity <= 0) return;
-      
-      const currentTime = Date.now();
-      const pulseValue = Math.sin(currentTime * ARROW_CONFIG.drug.pulseSpeed + candidate.pulsePhase) * ARROW_CONFIG.drug.pulseAmplitude + ARROW_CONFIG.drug.pulseOffset;
-      const finalOpacity = candidate.opacity * pulseValue;
+    visibleCandidates.forEach((candidate: DrugCandidate) => {
+      const alpha = Math.floor(candidate.opacity * 255).toString(16).padStart(2, '0');
       
       // Glow effect
-      const glowAlpha = Math.floor(finalOpacity * 40).toString(16).padStart(2, '0');
-      ctx.strokeStyle = ARROW_CONFIG.drug.glowColor + glowAlpha;
-      ctx.lineWidth = ARROW_CONFIG.drug.glowLineWidth * candidate.scale;
-      ctx.lineCap = ARROW_CONFIG.drug.lineCap;
-      
-      ctx.beginPath();
-      ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
-      ctx.lineTo(candidate.endScreenX, candidate.endScreenY);
-      ctx.stroke();
+      if (candidate.opacity > 0.3) {
+        const glowAlpha = Math.floor(candidate.opacity * 40).toString(16).padStart(2, '0');
+        ctx.strokeStyle = ARROW_CONFIG.drug.glowColor + glowAlpha;
+        ctx.lineWidth = ARROW_CONFIG.drug.glowLineWidth * candidate.scale;
+        ctx.lineCap = ARROW_CONFIG.drug.lineCap;
+        
+        ctx.beginPath();
+        ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
+        ctx.lineTo(candidate.endScreenX, candidate.endScreenY);
+        ctx.stroke();
+      }
       
       // Main arrow
-      const alpha = Math.floor(finalOpacity * 255).toString(16).padStart(2, '0');
       ctx.strokeStyle = ARROW_CONFIG.drug.mainColor + alpha;
       ctx.fillStyle = ARROW_CONFIG.drug.mainColor + alpha;
       ctx.lineWidth = ARROW_CONFIG.drug.mainLineWidth * candidate.scale;
@@ -861,6 +891,10 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     });
     
     // Draw drug labels LAST (highest z-index priority)
+    const finalDrugs = drugAnimation.drugCandidates.filter(
+      (c: DrugCandidate) => !c.eliminated && c.opacity > 0.7 && !drugAnimation.isRunning
+    );
+    
     if (DRUG_LABEL_CONFIG.zIndexPriority && finalDrugs.length > 0) {
       ctx.font = `${DRUG_LABEL_CONFIG.fontWeight} ${DRUG_LABEL_CONFIG.fontSize}px ${DRUG_LABEL_CONFIG.fontFamily}`;
       ctx.textAlign = DRUG_LABEL_CONFIG.textAlign;
@@ -930,7 +964,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
 
     // Check for drug hover (only for final surviving drugs)
     const finalDrugs = drugAnimation.drugCandidates.filter(
-      (c: DrugCandidate) => !c.eliminated && c.opacity > 0 && !drugAnimation.isRunning
+      (c: DrugCandidate) => !c.eliminated && c.opacity > 0.7 && !drugAnimation.isRunning
     );
 
     let newHoveredDrug: DrugCandidate | null = null;
@@ -968,7 +1002,11 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
   }, [drugAnimation.drugCandidates, drugAnimation.isRunning]);
 
   
-  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0).length;
+  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0.01).length;
+  const lastWave = DRUG_ANIMATION_CONFIG.eliminationWaves[DRUG_ANIMATION_CONFIG.eliminationWaves.length - 1];
+  const currentWave = DRUG_ANIMATION_CONFIG.eliminationWaves.find(w => 
+    Date.now() - drugAnimation.startTime < w.time
+  ) || lastWave;
   
   return (
     <div className="relative">
@@ -1022,17 +1060,15 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
             <div className="flex items-center space-x-1">
               <div className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse"></div>
               <span>
-                {drugAnimation.currentPhase === 'fast' && 'Screening...'}
-                {drugAnimation.currentPhase === 'slowing' && 'Filtering...'}
-                {drugAnimation.currentPhase === 'final' && 'Final selection...'}
+                Evaluating {activeDrugCount} candidates...
               </span>
             </div>
           </div>
         )}
         
-        {drugAnimation.currentPhase === 'final' && activeDrugCount === DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount && !drugAnimation.isRunning && (
+        {!drugAnimation.isRunning && activeDrugCount === lastWave.keepTop && drugAnimation.drugCandidates.length > 0 && (
           <div className="text-xs text-yellow-600 mt-1 font-medium bg-white/90 rounded px-2 py-1">
-            ✨ Top {DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount} identified
+            ✨ Top {lastWave.keepTop} identified
           </div>
         )}
       </div>
@@ -1048,10 +1084,10 @@ const DesktopContent = () => (
         ← Back to Home
       </Link>
       <h1 className="roboto-slab-medium text-2xl text-gray-dark mb-4">
-        Zebrafish Disease Model Embedding Space
+        Zebrafish Melanoma Model Embedding Space
       </h1>
       <p className="roboto-slab-regular text-base text-gray-semidark max-w-2xl mx-auto leading-relaxed">
-        Interactive visualization of learned representations from zebrafish disease models. 
+        Interactive visualization of learned representations from zebrafish melanoma models. 
         Each point represents cellular transcriptional states, clustered by disease phenotype and therapeutic response patterns.
       </p>
     </div>
@@ -1066,7 +1102,7 @@ const DesktopContent = () => (
       {/* Legend */}
       <div className="w-80">
         <div className="bg-gray-50 border border-gray-200 rounded px-4 py-3">
-          <h3 className="roboto-slab-medium text-base text-gray-dark mb-3">Disease Models</h3>
+          <h3 className="roboto-slab-medium text-base text-gray-dark mb-3">Melanoma Models</h3>
           <div className="space-y-3">
             <div className="flex items-start gap-3">
               <div 
@@ -1095,6 +1131,9 @@ const DesktopContent = () => (
                   <div className="roboto-slab-regular text-xs text-gray-medium leading-relaxed">
                     {lobe.shortDesc}
                   </div>
+                  <div className="roboto-slab-regular text-xs text-gray-400 mt-0.5">
+                    {lobe.gseId}
+                  </div>
                 </div>
               </div>
             ))}
@@ -1106,7 +1145,7 @@ const DesktopContent = () => (
                     Drug Vectors
                   </div>
                   <div className="roboto-slab-regular text-xs text-gray-medium leading-relaxed">
-                    AI-discovered therapeutic pathways toward health
+                    AI-discovered therapeutic pathways toward healthy melanocyte states
                   </div>
                 </div>
               </div>
@@ -1121,7 +1160,7 @@ const DesktopContent = () => (
       <p className="roboto-slab-regular text-sm text-gray-medium leading-relaxed">
         Hover over the embedding space to explore cellular states and disease vectors. Click &quot;Rank Drug Candidates&quot; 
         to watch AI-driven therapeutic discovery in action, as potential drug vectors are evaluated and ranked 
-        based on their ability to guide diseased cells back toward healthy transcriptional states.
+        based on their ability to guide diseased melanoma cells back toward healthy transcriptional states.
       </p>
     </div>
   </main>
@@ -1135,10 +1174,10 @@ const MobileContent = () => (
         ← Back to Home
       </Link>
       <h1 className="roboto-slab-medium text-xl text-gray-dark mb-3">
-        Zebrafish Disease Model Embedding
+        Zebrafish Melanoma Model Embedding
       </h1>
       <p className="roboto-slab-regular text-sm text-gray-semidark leading-relaxed">
-        Interactive visualization of cellular transcriptional states from zebrafish disease models.
+        Interactive visualization of cellular transcriptional states from zebrafish melanoma models.
       </p>
     </div>
     
@@ -1150,7 +1189,7 @@ const MobileContent = () => (
     {/* Legend */}
     <div className="w-full max-w-sm mb-6">
       <div className="bg-gray-50 border border-gray-200 rounded px-3 py-3">
-        <h3 className="roboto-slab-medium text-sm text-gray-dark mb-2">Disease Models</h3>
+        <h3 className="roboto-slab-medium text-sm text-gray-dark mb-2">Melanoma Models</h3>
         <div className="space-y-2">
           <div className="flex items-start gap-2">
             <div 
@@ -1179,11 +1218,14 @@ const MobileContent = () => (
                 <div className="roboto-slab-regular text-xs text-gray-medium leading-tight">
                   {lobe.shortDesc}
                 </div>
+                <div className="roboto-slab-regular text-xs text-gray-400 mt-0.5">
+                  {lobe.gseId}
+                </div>
               </div>
             </div>
           ))}
           <div className="text-xs text-gray-400 pl-4">
-            +{DISEASE_LOBES.length - 4} more disease models
+            +{DISEASE_LOBES.length - 4} more melanoma models
           </div>
           <div className="border-t border-gray-300 pt-2 mt-2">
             <div className="flex items-start gap-2">
@@ -1207,7 +1249,7 @@ const MobileContent = () => (
       <p className="roboto-slab-regular text-xs text-gray-medium leading-relaxed">
         Tap to explore cellular states. Use &quot;Rank Drug Candidates&quot; to see AI-driven 
         therapeutic discovery as potential drugs are evaluated for their ability to guide 
-        diseased cells toward healthy states.
+        diseased melanoma cells toward healthy states.
       </p>
     </div>
   </main>
