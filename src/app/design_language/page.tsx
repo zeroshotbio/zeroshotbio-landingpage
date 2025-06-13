@@ -3,10 +3,25 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 
+// Define the data point interface
+interface DataPoint {
+  x: number;
+  y: number;
+  id: string;
+  cluster: string;
+  color: string;
+}
+
+interface ClusterConfig {
+  center: [number, number];
+  color: string;
+  label: string;
+}
+
 // Generate sample embedding data
-const generateEmbeddingData = () => {
-  const data = [];
-  const clusters = [
+const generateEmbeddingData = (): DataPoint[] => {
+  const data: DataPoint[] = []; // ✅ Explicit typing fixes the error
+  const clusters: ClusterConfig[] = [
     { center: [-2, -1.5], color: '#333333', label: 'Control' },
     { center: [1.5, 2], color: '#666666', label: 'Treatment A' },
     { center: [-1, 2.5], color: '#999999', label: 'Treatment B' },
@@ -35,9 +50,9 @@ const generateEmbeddingData = () => {
 
 const EmbeddingVisualization = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [hoveredPoint, setHoveredPoint] = useState<any>(null);
+  const [hoveredPoint, setHoveredPoint] = useState<DataPoint | null>(null); // ✅ Fixed type
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  const [data] = useState(generateEmbeddingData());
+  const [data] = useState<DataPoint[]>(generateEmbeddingData()); // ✅ Explicit typing
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -126,7 +141,7 @@ const EmbeddingVisualization = () => {
     const scale = 80;
     
     // Find closest point
-    let closestPoint = null;
+    let closestPoint: DataPoint | null = null;
     let minDistance = Infinity;
     
     data.forEach(point => {
@@ -177,6 +192,7 @@ const EmbeddingVisualization = () => {
   );
 };
 
+// ... rest of the component remains the same
 const DesktopContent = () => (
   <main className="hidden sm:flex flex-col items-center justify-center min-h-screen p-8">
     {/* Header */}

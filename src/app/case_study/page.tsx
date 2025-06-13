@@ -2,6 +2,220 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
+import type { MouseEvent } from 'react';
+
+// ============================================================================
+// AESTHETIC AND GEOMETRIC CONFIGURATION - Tweak these values for visual adjustments
+// ============================================================================
+
+// MAJOR REGION LABEL STYLING
+const REGION_LABEL_CONFIG = {
+  fontSize: {
+    desktop: 13,
+    mobile: 11
+  },
+  fontFamily: 'ui-serif, Georgia, serif', // Match roboto-slab style
+  fontWeight: '400',
+  textColor: 'rgba(100, 100, 100, 0.7)', // Desaturated gray text
+  strokeColor: 'rgba(255, 255, 255, 0.8)', // Subtle white outline
+  strokeWidth: 1.5
+};
+
+// DOT COLORS AND INTENSITY
+const DOT_CONFIG = {
+  baseIntensity: 0.25, // Higher base intensity for better edge visibility
+  regionIntensityBoost: {
+    healthy: 1.0, // Don't darken healthy region
+    disease: 0.85 // Darken disease regions for better contrast
+  },
+  flashlightRegionBoost: {
+    withRegion: 1.6,
+    withoutRegion: 1.2
+  },
+  drugIlluminationBoost: {
+    withRegion: 1.8,
+    withoutRegion: 1.3
+  },
+  saturationMultiplier: 1.6, // Higher saturation + darker dots
+  backgroundBlend: {
+    r: 240, // Darker background blend
+    g: 240,
+    b: 240
+  },
+  dotRadius: 0.8,
+  globalNoiseIntensity: 0.08,
+  edgeFadeIntensity: 0.01,
+  edgeFadePower: 2.5
+};
+
+// DRUG ILLUMINATION GOLDEN TINT
+const DRUG_ILLUMINATION_CONFIG = {
+  goldTintIntensity: 0.4,
+  goldR: 200,
+  goldG: 180,
+  goldBReduction: 0.3
+};
+
+// ARROW STYLING
+const ARROW_CONFIG = {
+  // Region arrows (disease progression/homeostasis)
+  region: {
+    baseOpacity: 0.4, // Always visible base opacity
+    flashlightBoost: 0.6, // Additional opacity from flashlight
+    minVisibilityBoost: 0.3, // Ensure minimum visibility
+    lineWidth: 1.2,
+    headLength: 5,
+    headAngle: Math.PI / 5,
+    arrowLength: 15
+  },
+  // Drug arrows (therapeutic vectors)
+  drug: {
+    glowLineWidth: 4,
+    mainLineWidth: 2,
+    headLength: 10, // Larger arrowheads
+    headAngle: Math.PI / 4, // Wider angle for better visibility
+    lineCap: 'round' as const,
+    glowColor: '#fbbf24',
+    mainColor: '#f59e0b',
+    pulseSpeed: 0.003,
+    pulseAmplitude: 0.2,
+    pulseOffset: 0.8
+  }
+};
+
+// DRUG LABEL STYLING
+const DRUG_LABEL_CONFIG = {
+  fontSize: 9,
+  fontFamily: 'ui-serif, Georgia, serif',
+  fontWeight: '400',
+  textAlign: 'center' as const,
+  textBaseline: 'middle' as const,
+  backgroundColor: 'rgba(255, 248, 220, 0.9)', // Yellow background
+  borderColor: 'rgba(245, 158, 11, 0.3)', // Yellow border
+  textColor: '#92400e', // Dark yellow/brown text
+  borderWidth: 1,
+  padding: {
+    horizontal: 6,
+    vertical: 12
+  },
+  characterWidth: 4.5, // For calculating label width
+  offsetDistance: 15, // Distance from arrow
+  zIndexPriority: true // Draw last for top z-index
+};
+
+// DRUG TOOLTIP STYLING
+const DRUG_TOOLTIP_CONFIG = {
+  backgroundColor: 'bg-yellow-50/95',
+  backdropBlur: 'backdrop-blur-sm',
+  borderColor: 'border-yellow-200',
+  titleColor: 'text-yellow-800',
+  mechanismColor: 'text-yellow-700',
+  scoreColor: 'text-yellow-600',
+  offset: { x: 15, y: -10 }
+};
+
+// FLASHLIGHT EFFECT
+const FLASHLIGHT_CONFIG = {
+  radius: 120,
+  intensityPower: 0.7,
+  intensityBoost: 0.5
+};
+
+// DRUG ANIMATION TIMING
+const DRUG_ANIMATION_CONFIG = {
+  totalDuration: 10000,
+  candidateCount: 150,
+  spawnVariation: 2000,
+  eliminationPhases: {
+    fast: { progress: 0.3, keepPercent: 0.3 },
+    slowing: { progress: 0.7, keepPercent: 0.15 },
+    final: { progress: 1.0, keepCount: 10 }
+  },
+  fadeInDuration: 800,
+  fadeOutDuration: 1000,
+  pulseVariation: Math.PI * 2
+};
+
+// UMAP POINT CLOUD GENERATION
+const POINT_CLOUD_CONFIG = {
+  spacing: 8, // Denser for smaller canvas
+  worldScale: 4, // World coordinate scaling
+  organicNoise: {
+    healthy: {
+      x: { freq1: 4, amp1: 0.15, freq2: 3.2, amp2: 0.12 },
+      y: { freq1: 3.8, amp1: 0.13, freq2: 4.1, amp2: 0.11 }
+    },
+    disease: {
+      x: { freq1: 5, amp1: 0.08, freq2: 4.5, amp2: 0.06 },
+      y: { freq1: 4.2, amp1: 0.07, freq2: 5.3, amp2: 0.09 }
+    }
+  },
+  heterogeneity: {
+    intensity: 0.12,
+    frequencies: { x: 6, y: 5.5, combined: 3.2 }
+  },
+  falloffPower: {
+    healthy: 1.0,
+    disease: 0.6
+  },
+  intensityBoost: {
+    healthy: 0.95,
+    disease: 0.75
+  },
+  internalNoise: {
+    healthy: { intensity: 0.08, freqX: 8, freqY: 7 },
+    disease: { minIntensity: 0.01, maxIntensity: 1.0 }
+  }
+};
+
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface Point {
+  screenX: number;
+  screenY: number;
+  worldX: number;
+  worldY: number;
+  baseIntensity: number;
+  region: string | null;
+  centerDistance: number;
+}
+
+interface DrugCandidate {
+  id: number;
+  drugName: string;
+  mechanism: string;
+  startScreenX: number;
+  startScreenY: number;
+  endScreenX: number;
+  endScreenY: number;
+  therapeuticScore: number;
+  spawnTime: number;
+  opacity: number;
+  scale: number;
+  glowIntensity: number;
+  illuminationRadius: number;
+  pulsePhase: number;
+  eliminated: boolean;
+}
+
+interface DrugAnimationState {
+  isRunning: boolean;
+  startTime: number;
+  duration: number;
+  drugCandidates: DrugCandidate[];
+  currentPhase: 'fast' | 'slowing' | 'final';
+}
+
+interface ZebrafishEmbeddingVisualizationProps {
+  width?: number;
+  height?: number;
+}
+
+// ============================================================================
+// DISEASE MODEL DEFINITIONS
+// ============================================================================
 
 // Define the healthy region and multiple disease lobes
 const HEALTHY_REGION = {
@@ -85,27 +299,33 @@ const DISEASE_LOBES = [
   }
 ];
 
+// ============================================================================
+// MAIN VISUALIZATION COMPONENT
+// ============================================================================
+
 // Generate organic, UMAP-like point distributions
-const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
-  const points = [];
-  const spacing = 8; // Denser for smaller canvas
-  const cols = Math.ceil(viewportWidth / spacing);
-  const rows = Math.ceil(viewportHeight / spacing);
+const generateUMAPStylePointCloud = (
+  viewportWidth: number,
+  viewportHeight: number
+): Point[] => {
+  const points = [] as Point[];
+  const cols = Math.ceil(viewportWidth / POINT_CLOUD_CONFIG.spacing);
+  const rows = Math.ceil(viewportHeight / POINT_CLOUD_CONFIG.spacing);
   
   for (let row = 0; row < rows; row++) {
     for (let col = 0; col < cols; col++) {
-      const screenX = col * spacing;
-      const screenY = row * spacing;
+      const screenX = col * POINT_CLOUD_CONFIG.spacing;
+      const screenY = row * POINT_CLOUD_CONFIG.spacing;
       
       // Convert to world coordinates
-      const worldX = ((screenX - viewportWidth / 2) / Math.min(viewportWidth, viewportHeight)) * 4;
-      const worldY = ((screenY - viewportHeight / 2) / Math.min(viewportWidth, viewportHeight)) * 4;
+      const worldX = ((screenX - viewportWidth / 2) / Math.min(viewportWidth, viewportHeight)) * POINT_CLOUD_CONFIG.worldScale;
+      const worldY = ((screenY - viewportHeight / 2) / Math.min(viewportWidth, viewportHeight)) * POINT_CLOUD_CONFIG.worldScale;
       
       // Edge fading
       const centerDistance = Math.sqrt(worldX * worldX + worldY * worldY);
-      const edgeFade = Math.max(0.01, Math.min(1, 1 - Math.pow(centerDistance / 3, 2.5)));
+      const edgeFade = Math.max(DOT_CONFIG.edgeFadeIntensity, Math.min(1, 1 - Math.pow(centerDistance / 3, DOT_CONFIG.edgeFadePower)));
       
-      let maxIntensity = 0.25; // Higher base intensity for better edge visibility
+      let maxIntensity = DOT_CONFIG.baseIntensity;
       let assignedRegion = null;
       
       // Check healthy region with organic shape
@@ -115,8 +335,10 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
       );
       
       if (healthyDist < HEALTHY_REGION.baseRadius * 1.3) {
-        const noiseX = Math.sin(worldX * 4) * 0.15 + Math.cos(worldY * 3.2) * 0.12;
-        const noiseY = Math.cos(worldX * 3.8) * 0.13 + Math.sin(worldY * 4.1) * 0.11;
+        const noiseX = Math.sin(worldX * POINT_CLOUD_CONFIG.organicNoise.healthy.x.freq1) * POINT_CLOUD_CONFIG.organicNoise.healthy.x.amp1 + 
+                      Math.cos(worldY * POINT_CLOUD_CONFIG.organicNoise.healthy.x.freq2) * POINT_CLOUD_CONFIG.organicNoise.healthy.x.amp2;
+        const noiseY = Math.cos(worldX * POINT_CLOUD_CONFIG.organicNoise.healthy.y.freq1) * POINT_CLOUD_CONFIG.organicNoise.healthy.y.amp1 + 
+                      Math.sin(worldY * POINT_CLOUD_CONFIG.organicNoise.healthy.y.freq2) * POINT_CLOUD_CONFIG.organicNoise.healthy.y.amp2;
         const organicDist = Math.sqrt(
           (worldX - HEALTHY_REGION.center[0] + noiseX) ** 2 + 
           (worldY - HEALTHY_REGION.center[1] + noiseY) ** 2
@@ -124,8 +346,10 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
         
         if (organicDist < HEALTHY_REGION.baseRadius) {
           const falloff = Math.max(0, 1 - (organicDist / HEALTHY_REGION.baseRadius));
-          const intensity = 0.95 * Math.pow(falloff, 1.0); // Higher base intensity, less steep falloff
-          const internalNoise = 0.08 * (Math.sin(worldX * 8) + Math.cos(worldY * 7));
+          const intensity = POINT_CLOUD_CONFIG.intensityBoost.healthy * Math.pow(falloff, POINT_CLOUD_CONFIG.falloffPower.healthy);
+          const internalNoise = POINT_CLOUD_CONFIG.internalNoise.healthy.intensity * 
+                               (Math.sin(worldX * POINT_CLOUD_CONFIG.internalNoise.healthy.freqX) + 
+                                Math.cos(worldY * POINT_CLOUD_CONFIG.internalNoise.healthy.freqY));
           const finalIntensity = intensity + internalNoise;
           
           if (finalIntensity > maxIntensity) {
@@ -145,8 +369,10 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
         const rotated_x = dx * cos_theta + dy * sin_theta;
         const rotated_y = -dx * sin_theta + dy * cos_theta;
         
-        const organicNoiseX = Math.sin(worldX * 5 + lobe.center[0]) * 0.08 + Math.cos(worldY * 4.5) * 0.06;
-        const organicNoiseY = Math.cos(worldX * 4.2) * 0.07 + Math.sin(worldY * 5.3 + lobe.center[1]) * 0.09;
+        const organicNoiseX = Math.sin(worldX * POINT_CLOUD_CONFIG.organicNoise.disease.x.freq1 + lobe.center[0]) * POINT_CLOUD_CONFIG.organicNoise.disease.x.amp1 + 
+                             Math.cos(worldY * POINT_CLOUD_CONFIG.organicNoise.disease.x.freq2) * POINT_CLOUD_CONFIG.organicNoise.disease.x.amp2;
+        const organicNoiseY = Math.cos(worldX * POINT_CLOUD_CONFIG.organicNoise.disease.y.freq1) * POINT_CLOUD_CONFIG.organicNoise.disease.y.amp1 + 
+                             Math.sin(worldY * POINT_CLOUD_CONFIG.organicNoise.disease.y.freq2 + lobe.center[1]) * POINT_CLOUD_CONFIG.organicNoise.disease.y.amp2;
         
         const ellipse_dist = Math.sqrt(
           Math.pow((rotated_x + organicNoiseX) / lobe.baseRadius, 2) + 
@@ -155,14 +381,14 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
         
         if (ellipse_dist < 1.1) {
           const falloff = Math.max(0, 1 - ellipse_dist);
-          const heterogeneity = 0.12 * (
-            Math.sin(worldX * 6 + lobe.center[0] * 10) + 
-            Math.cos(worldY * 5.5 + lobe.center[1] * 8) +
-            Math.sin((worldX + worldY) * 3.2)
+          const heterogeneity = POINT_CLOUD_CONFIG.heterogeneity.intensity * (
+            Math.sin(worldX * POINT_CLOUD_CONFIG.heterogeneity.frequencies.x + lobe.center[0] * 10) + 
+            Math.cos(worldY * POINT_CLOUD_CONFIG.heterogeneity.frequencies.y + lobe.center[1] * 8) +
+            Math.sin((worldX + worldY) * POINT_CLOUD_CONFIG.heterogeneity.frequencies.combined)
           );
           
-          const baseIntensity = 0.75 + heterogeneity; // Higher base intensity for better visibility
-          const intensity = baseIntensity * Math.pow(falloff, 0.6); // Less steep falloff
+          const baseIntensity = POINT_CLOUD_CONFIG.intensityBoost.disease + heterogeneity;
+          const intensity = baseIntensity * Math.pow(falloff, POINT_CLOUD_CONFIG.falloffPower.disease);
           
           if (intensity > maxIntensity) {
             maxIntensity = intensity;
@@ -171,8 +397,9 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
         }
       });
       
-      const globalNoise = (Math.random() - 0.5) * 0.08;
-      const finalIntensity = Math.max(0.01, Math.min(1, maxIntensity + globalNoise)) * edgeFade;
+      const globalNoise = (Math.random() - 0.5) * DOT_CONFIG.globalNoiseIntensity;
+      const finalIntensity = Math.max(POINT_CLOUD_CONFIG.internalNoise.disease.minIntensity, 
+                                     Math.min(POINT_CLOUD_CONFIG.internalNoise.disease.maxIntensity, maxIntensity + globalNoise)) * edgeFade;
       
       points.push({
         screenX,
@@ -189,34 +416,37 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
   return points;
 };
 
-const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-  const animationRef = useRef();
-  const drugAnimationRef = useRef();
-  const [points, setPoints] = useState([]);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [hoveredDrug, setHoveredDrug] = useState(null);
-  const [flashlightRadius] = useState(120);
+const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: ZebrafishEmbeddingVisualizationProps) => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
+  const drugAnimationRef = useRef<number | null>(null);
+  
+  // Explicit typing for all state variables with type assertions
+  const [points, setPoints] = useState([] as Point[]);
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 } as {x: number; y: number});
+  const [hoveredDrug, setHoveredDrug] = useState(null as DrugCandidate | null);
+  const [flashlightRadius] = useState(FLASHLIGHT_CONFIG.radius as number);
   const [drugAnimation, setDrugAnimation] = useState({
     isRunning: false,
     startTime: 0,
-    duration: 10000,
-    drugCandidates: [],
-    currentPhase: 'fast'
-  });
+    duration: DRUG_ANIMATION_CONFIG.totalDuration,
+    drugCandidates: [] as DrugCandidate[],
+    currentPhase: 'fast' as const
+  } as DrugAnimationState);
 
   useEffect(() => {
-    setPoints(generateUMAPStylePointCloud(width, height));
+    const newPoints = generateUMAPStylePointCloud(width, height) as Point[];
+    setPoints(newPoints);
   }, [width, height]);
 
   // Generate drug candidate vectors
-  const generateDrugCandidates = useCallback((count) => {
-    const candidates = [];
+  const generateDrugCandidates = useCallback((count: number): DrugCandidate[] => {
+    const candidates: DrugCandidate[] = [];
     
     for (let i = 0; i < count; i++) {
-      const startWorldX = (Math.random() - 0.5) * 4;
-      const startWorldY = (Math.random() - 0.5) * 4;
+      const startWorldX = (Math.random() - 0.5) * POINT_CLOUD_CONFIG.worldScale;
+      const startWorldY = (Math.random() - 0.5) * POINT_CLOUD_CONFIG.worldScale;
       
       const angle = Math.random() * Math.PI * 2;
       const length = 0.3 + Math.random() * 0.4;
@@ -224,10 +454,10 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       const endWorldX = startWorldX + Math.cos(angle) * length;
       const endWorldY = startWorldY + Math.sin(angle) * length;
       
-      const startScreenX = width / 2 + startWorldX * Math.min(width, height) / 4;
-      const startScreenY = height / 2 + startWorldY * Math.min(width, height) / 4;
-      const endScreenX = width / 2 + endWorldX * Math.min(width, height) / 4;
-      const endScreenY = height / 2 + endWorldY * Math.min(width, height) / 4;
+      const startScreenX = width / 2 + startWorldX * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
+      const startScreenY = height / 2 + startWorldY * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
+      const endScreenX = width / 2 + endWorldX * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
+      const endScreenY = height / 2 + endWorldY * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
       
       const vectorX = endWorldX - startWorldX;
       const vectorY = endWorldY - startWorldY;
@@ -241,7 +471,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
         (vectorX * toHealthyX + vectorY * toHealthyY) / (vectorLength * toHealthyLength) : 0;
       
       let regionBonus = 0;
-      DISEASE_LOBES.forEach(lobe => {
+      DISEASE_LOBES.forEach((lobe) => {
         const distToLobe = Math.sqrt(
           (startWorldX - lobe.center[0]) ** 2 + (startWorldY - lobe.center[1]) ** 2
         );
@@ -278,12 +508,12 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
         mechanism,
         startScreenX, startScreenY, endScreenX, endScreenY,
         therapeuticScore: finalScore,
-        spawnTime: Math.random() * 2000,
+        spawnTime: Math.random() * DRUG_ANIMATION_CONFIG.spawnVariation,
         opacity: 0,
         scale: 0.6 + Math.random() * 0.4,
         glowIntensity: 0.5 + Math.random() * 0.5,
         illuminationRadius: 60 + Math.random() * 30,
-        pulsePhase: Math.random() * Math.PI * 2,
+        pulsePhase: Math.random() * DRUG_ANIMATION_CONFIG.pulseVariation,
         eliminated: false
       });
     }
@@ -299,30 +529,30 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       const elapsed = Date.now() - drugAnimation.startTime;
       const progress = Math.min(1, elapsed / drugAnimation.duration);
       
-      const updatedCandidates = drugAnimation.drugCandidates.map(candidate => {
+      const updatedCandidates = drugAnimation.drugCandidates.map((candidate: DrugCandidate) => {
         const age = elapsed - candidate.spawnTime;
         
         let opacity = 0;
         if (age > 0) {
-          const spawnProgress = Math.min(1, age / 800);
+          const spawnProgress = Math.min(1, age / DRUG_ANIMATION_CONFIG.fadeInDuration);
           opacity = Math.sin(spawnProgress * Math.PI * 0.5) * 0.9;
         }
         
-        const scoreRank = drugAnimation.drugCandidates.findIndex(c => c.id === candidate.id);
+        const scoreRank = drugAnimation.drugCandidates.findIndex((c: DrugCandidate) => c.id === candidate.id);
         let shouldEliminate = false;
         
-        if (progress < 0.3) {
-          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * 0.3;
-        } else if (progress < 0.7) {
-          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * 0.15;
+        if (progress < DRUG_ANIMATION_CONFIG.eliminationPhases.fast.progress) {
+          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * DRUG_ANIMATION_CONFIG.eliminationPhases.fast.keepPercent;
+        } else if (progress < DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.progress) {
+          shouldEliminate = scoreRank > drugAnimation.drugCandidates.length * DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.keepPercent;
         } else {
-          shouldEliminate = scoreRank > 10;
+          shouldEliminate = scoreRank > DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount;
         }
         
         if (shouldEliminate && !candidate.eliminated) {
           const eliminationDelay = Math.random() * 1000;
           if (elapsed > candidate.spawnTime + eliminationDelay) {
-            opacity *= Math.max(0, 1 - (elapsed - candidate.spawnTime - eliminationDelay) / 1000);
+            opacity *= Math.max(0, 1 - (elapsed - candidate.spawnTime - eliminationDelay) / DRUG_ANIMATION_CONFIG.fadeOutDuration);
           }
         }
         
@@ -336,15 +566,16 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       setDrugAnimation(prev => ({
         ...prev,
         drugCandidates: updatedCandidates,
-        currentPhase: progress < 0.3 ? 'fast' : progress < 0.7 ? 'slowing' : 'final'
+        currentPhase: progress < DRUG_ANIMATION_CONFIG.eliminationPhases.fast.progress ? 'fast' as const : 
+                     progress < DRUG_ANIMATION_CONFIG.eliminationPhases.slowing.progress ? 'slowing' as const : 'final' as const
       }));
       
       if (progress < 1) {
         drugAnimationRef.current = requestAnimationFrame(updateDrugAnimation);
       } else {
-        const survivors = updatedCandidates
-          .filter((_, index) => index < 10)
-          .map(c => ({ ...c, opacity: 0.8, eliminated: false }));
+        const survivors: DrugCandidate[] = updatedCandidates
+          .filter((_: DrugCandidate, index: number) => index < DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount)
+          .map((c: DrugCandidate) => ({ ...c, opacity: 0.8, eliminated: false }));
         
         setDrugAnimation(prev => ({
           ...prev,
@@ -361,17 +592,17 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
         cancelAnimationFrame(drugAnimationRef.current);
       }
     };
-  }, [drugAnimation.isRunning, drugAnimation.startTime]);
+  }, [drugAnimation.isRunning, drugAnimation.startTime, drugAnimation.drugCandidates, drugAnimation.duration]);
 
   const startDrugRanking = useCallback(() => {
-    const candidates = generateDrugCandidates(150);
+    const candidates: DrugCandidate[] = generateDrugCandidates(DRUG_ANIMATION_CONFIG.candidateCount);
     
     setDrugAnimation({
       isRunning: true,
       startTime: Date.now(),
-      duration: 10000,
+      duration: DRUG_ANIMATION_CONFIG.totalDuration,
       drugCandidates: candidates,
-      currentPhase: 'fast'
+      currentPhase: 'fast' as const
     });
   }, [generateDrugCandidates]);
   
@@ -385,22 +616,21 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Calculate drug illumination
-    const drugIllumination = new Map();
-    const activeCandidates = drugAnimation.drugCandidates.filter(c => !c.eliminated && c.opacity > 0);
-
+    const drugIllumination = new Map<number, number>();
+    const activeCandidates = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0);
     const finalDrugs = !drugAnimation.isRunning ? activeCandidates : [];
 
     
-    activeCandidates.forEach(candidate => {
+    activeCandidates.forEach((candidate: DrugCandidate) => {
       const currentTime = Date.now();
-      const pulseValue = Math.sin(currentTime * 0.005 + candidate.pulsePhase) * 0.3 + 0.7;
+      const pulseValue = Math.sin(currentTime * ARROW_CONFIG.drug.pulseSpeed + candidate.pulsePhase) * ARROW_CONFIG.drug.pulseAmplitude + ARROW_CONFIG.drug.pulseOffset;
       const effectiveRadius = candidate.illuminationRadius * pulseValue;
       
       for (let t = 0; t <= 1; t += 0.1) {
         const illuminationX = candidate.startScreenX + t * (candidate.endScreenX - candidate.startScreenX);
         const illuminationY = candidate.startScreenY + t * (candidate.endScreenY - candidate.startScreenY);
         
-        points.forEach((point, index) => {
+        points.forEach((point: Point, index: number) => {
           const distToIllumination = Math.sqrt(
             (point.screenX - illuminationX) ** 2 + 
             (point.screenY - illuminationY) ** 2
@@ -418,25 +648,25 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
     });
     
     // Draw points
-    points.forEach((point, index) => {
+    points.forEach((point: Point, index: number) => {
       const distanceToMouse = Math.sqrt(
         (point.screenX - mousePosition.x) ** 2 + 
         (point.screenY - mousePosition.y) ** 2
       );
       
       const flashlightIntensity = Math.max(0, 1 - (distanceToMouse / flashlightRadius));
-      const smoothFlashlight = Math.pow(flashlightIntensity, 0.7);
+      const smoothFlashlight = Math.pow(flashlightIntensity, FLASHLIGHT_CONFIG.intensityPower);
       const drugIlluminationIntensity = drugIllumination.get(index) || 0;
       
       let intensity = point.baseIntensity;
       
       if (smoothFlashlight > 0) {
-        const regionBoost = point.region ? 1.6 : 1.2;
-        intensity = Math.min(1, intensity + (smoothFlashlight * 0.5 * regionBoost));
+        const regionBoost = point.region ? DOT_CONFIG.flashlightRegionBoost.withRegion : DOT_CONFIG.flashlightRegionBoost.withoutRegion;
+        intensity = Math.min(1, intensity + (smoothFlashlight * FLASHLIGHT_CONFIG.intensityBoost * regionBoost));
       }
       
       if (drugIlluminationIntensity > 0) {
-        const drugBoost = point.region ? 1.8 : 1.3;
+        const drugBoost = point.region ? DOT_CONFIG.drugIlluminationBoost.withRegion : DOT_CONFIG.drugIlluminationBoost.withoutRegion;
         intensity = Math.min(1, intensity + (drugIlluminationIntensity * 0.6 * drugBoost));
       }
       
@@ -455,43 +685,41 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       let g = parseInt(hex.substr(2, 2), 16);
       let b = parseInt(hex.substr(4, 2), 16);
       
-      // Make region colors more saturated/darker for better dot visibility
+      // Apply region intensity boosts
       if (point.region) {
         if (point.region === 'healthy') {
-          // Keep healthy region green and vibrant
-          r = Math.floor(r * 1.0); // Don't darken healthy
-          g = Math.floor(g * 1.0);
-          b = Math.floor(b * 1.0);
+          r = Math.floor(r * DOT_CONFIG.regionIntensityBoost.healthy);
+          g = Math.floor(g * DOT_CONFIG.regionIntensityBoost.healthy);
+          b = Math.floor(b * DOT_CONFIG.regionIntensityBoost.healthy);
         } else {
-          // Darken disease regions for better contrast
-          r = Math.floor(r * 0.85);
-          g = Math.floor(g * 0.85);
-          b = Math.floor(b * 0.85);
+          r = Math.floor(r * DOT_CONFIG.regionIntensityBoost.disease);
+          g = Math.floor(g * DOT_CONFIG.regionIntensityBoost.disease);
+          b = Math.floor(b * DOT_CONFIG.regionIntensityBoost.disease);
         }
       }
       
       // Add golden tint for drug illumination
       let finalR = r, finalG = g, finalB = b;
       if (drugIlluminationIntensity > 0) {
-        const goldTint = drugIlluminationIntensity * 0.4;
-        finalR = Math.min(255, r + goldTint * 200);
-        finalG = Math.min(255, g + goldTint * 180);
-        finalB = Math.max(0, b * (1 - goldTint * 0.3));
+        const goldTint = drugIlluminationIntensity * DRUG_ILLUMINATION_CONFIG.goldTintIntensity;
+        finalR = Math.min(255, r + goldTint * DRUG_ILLUMINATION_CONFIG.goldR);
+        finalG = Math.min(255, g + goldTint * DRUG_ILLUMINATION_CONFIG.goldG);
+        finalB = Math.max(0, b * (1 - goldTint * DRUG_ILLUMINATION_CONFIG.goldBReduction));
       }
       
-      const blendFactor = intensity * 1.6; // Higher saturation + darker dots
-      const blendedR = Math.floor(finalR * blendFactor + 240 * (1 - blendFactor)); // Darker background blend
-      const blendedG = Math.floor(finalG * blendFactor + 240 * (1 - blendFactor));
-      const blendedB = Math.floor(finalB * blendFactor + 240 * (1 - blendFactor));
+      const blendFactor = intensity * DOT_CONFIG.saturationMultiplier;
+      const blendedR = Math.floor(finalR * blendFactor + DOT_CONFIG.backgroundBlend.r * (1 - blendFactor));
+      const blendedG = Math.floor(finalG * blendFactor + DOT_CONFIG.backgroundBlend.g * (1 - blendFactor));
+      const blendedB = Math.floor(finalB * blendFactor + DOT_CONFIG.backgroundBlend.b * (1 - blendFactor));
       
       ctx.fillStyle = `rgb(${blendedR}, ${blendedG}, ${blendedB})`;
       ctx.beginPath();
-      ctx.arc(point.screenX, point.screenY, 0.8, 0, 2 * Math.PI);
+      ctx.arc(point.screenX, point.screenY, DOT_CONFIG.dotRadius, 0, 2 * Math.PI);
       ctx.fill();
     });
     
     // Draw region arrows first (so they appear under drug arrows)
-    points.forEach(point => {
+    points.forEach((point: Point) => {
       if (!point.region) return;
       
       const distanceToMouse = Math.sqrt(
@@ -500,9 +728,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       );
       
       const flashlightIntensity = Math.max(0, 1 - (distanceToMouse / flashlightRadius));
-      const baseOpacity = 0.4; // Always visible base opacity
-      const flashlightBoost = flashlightIntensity * 0.6; // Additional opacity from flashlight
-      const arrowOpacity = Math.min(1, baseOpacity + flashlightBoost);
+      const arrowOpacity = Math.min(1, ARROW_CONFIG.region.baseOpacity + flashlightIntensity * ARROW_CONFIG.region.flashlightBoost);
       
       if (arrowOpacity > 0.1) {
         let dx, dy, arrowColor;
@@ -514,88 +740,84 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
           arrowColor = HEALTHY_REGION.color;
         } else {
           // Disease arrows point away from healthy center (disease progression)
-          dx = point.worldX - HEALTHY_REGION.center[0]; // Reversed direction
-          dy = point.worldY - HEALTHY_REGION.center[1]; // Reversed direction
+          dx = point.worldX - HEALTHY_REGION.center[0];
+          dy = point.worldY - HEALTHY_REGION.center[1];
           const lobe = DISEASE_LOBES.find(l => l.id === point.region);
           if (!lobe) return;
           arrowColor = lobe.color;
         }
         
         const angle = Math.atan2(dy, dx);
-        const arrowLength = 15 * Math.min(1, arrowOpacity + 0.3); // Ensure minimum visibility
+        const arrowLength = ARROW_CONFIG.region.arrowLength * Math.min(1, arrowOpacity + ARROW_CONFIG.region.minVisibilityBoost);
         const arrowEndX = point.screenX + Math.cos(angle) * arrowLength;
         const arrowEndY = point.screenY + Math.sin(angle) * arrowLength;
         
         const alpha = Math.floor(arrowOpacity * 255).toString(16).padStart(2, '0');
         ctx.strokeStyle = arrowColor + alpha;
         ctx.fillStyle = arrowColor + alpha;
-        ctx.lineWidth = 1.2;
+        ctx.lineWidth = ARROW_CONFIG.region.lineWidth;
         
         ctx.beginPath();
         ctx.moveTo(point.screenX, point.screenY);
         ctx.lineTo(arrowEndX, arrowEndY);
         ctx.stroke();
         
-        const headLength = 5; // Larger arrowheads for region arrows too
-        const headAngle = Math.PI / 5;
-        
         ctx.beginPath();
         ctx.moveTo(arrowEndX, arrowEndY);
         ctx.lineTo(
-          arrowEndX - headLength * Math.cos(angle - headAngle),
-          arrowEndY - headLength * Math.sin(angle - headAngle)
+          arrowEndX - ARROW_CONFIG.region.headLength * Math.cos(angle - ARROW_CONFIG.region.headAngle),
+          arrowEndY - ARROW_CONFIG.region.headLength * Math.sin(angle - ARROW_CONFIG.region.headAngle)
         );
         ctx.moveTo(arrowEndX, arrowEndY);
         ctx.lineTo(
-          arrowEndX - headLength * Math.cos(angle + headAngle),
-          arrowEndY - headLength * Math.sin(angle + headAngle)
+          arrowEndX - ARROW_CONFIG.region.headLength * Math.cos(angle + ARROW_CONFIG.region.headAngle),
+          arrowEndY - ARROW_CONFIG.region.headLength * Math.sin(angle + ARROW_CONFIG.region.headAngle)
         );
         ctx.stroke();
       }
     });
     
     // Draw permanent region labels (under drug arrows)
-    const fontSize = width < 400 ? 11 : 13;
-    ctx.font = `${fontSize}px ui-serif, Georgia, serif`; // Match roboto-slab style
-    ctx.fontWeight = '400';
+    const fontSize = width < 400 ? REGION_LABEL_CONFIG.fontSize.mobile : REGION_LABEL_CONFIG.fontSize.desktop;
+    ctx.font = `${REGION_LABEL_CONFIG.fontWeight} ${fontSize}px ${REGION_LABEL_CONFIG.fontFamily}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     
     // Healthy label
-    const healthyScreenX = width / 2 + HEALTHY_REGION.center[0] * Math.min(width, height) / 4;
-    const healthyScreenY = height / 2 + HEALTHY_REGION.center[1] * Math.min(width, height) / 4;
+    const healthyScreenX = width / 2 + HEALTHY_REGION.center[0] * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
+    const healthyScreenY = height / 2 + HEALTHY_REGION.center[1] * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
     
-    ctx.fillStyle = 'rgba(100, 100, 100, 0.7)'; // Desaturated gray text
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // Subtle white outline
-    ctx.lineWidth = 1.5;
+    ctx.fillStyle = REGION_LABEL_CONFIG.textColor;
+    ctx.strokeStyle = REGION_LABEL_CONFIG.strokeColor;
+    ctx.lineWidth = REGION_LABEL_CONFIG.strokeWidth;
     ctx.strokeText(HEALTHY_REGION.label, healthyScreenX, healthyScreenY);
     ctx.fillText(HEALTHY_REGION.label, healthyScreenX, healthyScreenY);
     
     // Disease lobe labels
     DISEASE_LOBES.forEach((lobe) => {
-      const lobeScreenX = width / 2 + lobe.center[0] * Math.min(width, height) / 4;
-      const lobeScreenY = height / 2 + lobe.center[1] * Math.min(width, height) / 4;
+      const lobeScreenX = width / 2 + lobe.center[0] * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
+      const lobeScreenY = height / 2 + lobe.center[1] * Math.min(width, height) / POINT_CLOUD_CONFIG.worldScale;
       
-      ctx.fillStyle = 'rgba(100, 100, 100, 0.7)'; // Desaturated gray text
-      ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)'; // Subtle white outline  
-      ctx.lineWidth = 1.5;
+      ctx.fillStyle = REGION_LABEL_CONFIG.textColor;
+      ctx.strokeStyle = REGION_LABEL_CONFIG.strokeColor;
+      ctx.lineWidth = REGION_LABEL_CONFIG.strokeWidth;
       ctx.strokeText(lobe.label, lobeScreenX, lobeScreenY);
       ctx.fillText(lobe.label, lobeScreenX, lobeScreenY);
     });
     
-    // Draw drug candidate arrows ON TOP (so they're not occluded)
-    activeCandidates.forEach(candidate => {
+    // Draw drug candidate arrows
+    activeCandidates.forEach((candidate: DrugCandidate) => {
       if (candidate.opacity <= 0) return;
       
       const currentTime = Date.now();
-      const pulseValue = Math.sin(currentTime * 0.003 + candidate.pulsePhase) * 0.2 + 0.8;
+      const pulseValue = Math.sin(currentTime * ARROW_CONFIG.drug.pulseSpeed + candidate.pulsePhase) * ARROW_CONFIG.drug.pulseAmplitude + ARROW_CONFIG.drug.pulseOffset;
       const finalOpacity = candidate.opacity * pulseValue;
       
       // Glow effect
       const glowAlpha = Math.floor(finalOpacity * 40).toString(16).padStart(2, '0');
-      ctx.strokeStyle = '#fbbf24' + glowAlpha;
-      ctx.lineWidth = 4 * candidate.scale;
-      ctx.lineCap = 'round';
+      ctx.strokeStyle = ARROW_CONFIG.drug.glowColor + glowAlpha;
+      ctx.lineWidth = ARROW_CONFIG.drug.glowLineWidth * candidate.scale;
+      ctx.lineCap = ARROW_CONFIG.drug.lineCap;
       
       ctx.beginPath();
       ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
@@ -604,9 +826,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       
       // Main arrow
       const alpha = Math.floor(finalOpacity * 255).toString(16).padStart(2, '0');
-      ctx.strokeStyle = '#f59e0b' + alpha;
-      ctx.fillStyle = '#f59e0b' + alpha;
-      ctx.lineWidth = 2 * candidate.scale;
+      ctx.strokeStyle = ARROW_CONFIG.drug.mainColor + alpha;
+      ctx.fillStyle = ARROW_CONFIG.drug.mainColor + alpha;
+      ctx.lineWidth = ARROW_CONFIG.drug.mainLineWidth * candidate.scale;
       
       ctx.beginPath();
       ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
@@ -618,226 +840,62 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
         candidate.endScreenY - candidate.startScreenY,
         candidate.endScreenX - candidate.startScreenX
       );
-      const headLength = 10 * candidate.scale; // Larger arrowheads
-      const headAngle = Math.PI / 4; // Wider angle for better visibility
+      const headLength = ARROW_CONFIG.drug.headLength * candidate.scale;
       
       ctx.beginPath();
       ctx.moveTo(candidate.endScreenX, candidate.endScreenY);
       ctx.lineTo(
-        candidate.endScreenX - headLength * Math.cos(angle - headAngle),
-        candidate.endScreenY - headLength * Math.sin(angle - headAngle)
+        candidate.endScreenX - headLength * Math.cos(angle - ARROW_CONFIG.drug.headAngle),
+        candidate.endScreenY - headLength * Math.sin(angle - ARROW_CONFIG.drug.headAngle)
       );
       ctx.lineTo(
         candidate.endScreenX - headLength * 0.6 * Math.cos(angle),
         candidate.endScreenY - headLength * 0.6 * Math.sin(angle)
       );
       ctx.lineTo(
-        candidate.endScreenX - headLength * Math.cos(angle + headAngle),
-        candidate.endScreenY - headLength * Math.sin(angle + headAngle)
+        candidate.endScreenX - headLength * Math.cos(angle + ARROW_CONFIG.drug.headAngle),
+        candidate.endScreenY - headLength * Math.sin(angle + ARROW_CONFIG.drug.headAngle)
       );
       ctx.closePath();
       ctx.fill();
     });
     
-    // Draw drug labels ON TOP (so they're not occluded)
-    // Draw drug labels (only for final surviving drugs)
-    // finalDrugs is already defined above; just use it here
-
-    if (finalDrugs.length > 0) {
-      ctx.font = `9px ui-serif, Georgia, serif`;
-      ctx.fontWeight = '400';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
+    // Draw drug labels LAST (highest z-index priority)
+    if (DRUG_LABEL_CONFIG.zIndexPriority && finalDrugs.length > 0) {
+      ctx.font = `${DRUG_LABEL_CONFIG.fontWeight} ${DRUG_LABEL_CONFIG.fontSize}px ${DRUG_LABEL_CONFIG.fontFamily}`;
+      ctx.textAlign = DRUG_LABEL_CONFIG.textAlign;
+      ctx.textBaseline = DRUG_LABEL_CONFIG.textBaseline;
       
-      finalDrugs.forEach((drug, index) => {
+      finalDrugs.forEach((drug: DrugCandidate, index: number) => {
         // Position label near the end of the arrow, but not on the arrowhead
         const labelX = drug.startScreenX + (drug.endScreenX - drug.startScreenX) * 0.7;
         const labelY = drug.startScreenY + (drug.endScreenY - drug.startScreenY) * 0.7;
         
         // Smart offset to avoid overlap and stay readable
         const angle = Math.atan2(drug.endScreenY - drug.startScreenY, drug.endScreenX - drug.startScreenX);
-        const offsetDistance = 15;
-        const offsetX = Math.cos(angle + Math.PI/2) * offsetDistance * (index % 2 === 0 ? 1 : -1);
-        const offsetY = Math.sin(angle + Math.PI/2) * offsetDistance * (index % 2 === 0 ? 1 : -1);
+        const offsetX = Math.cos(angle + Math.PI/2) * DRUG_LABEL_CONFIG.offsetDistance * (index % 2 === 0 ? 1 : -1);
+        const offsetY = Math.sin(angle + Math.PI/2) * DRUG_LABEL_CONFIG.offsetDistance * (index % 2 === 0 ? 1 : -1);
         
         const finalLabelX = labelX + offsetX;
         const finalLabelY = labelY + offsetY;
         
         // Draw label background
-        const labelWidth = drug.drugName.length * 4.5 + 6;
-        const labelHeight = 12;
+        const labelWidth = drug.drugName.length * DRUG_LABEL_CONFIG.characterWidth + DRUG_LABEL_CONFIG.padding.horizontal;
+        const labelHeight = DRUG_LABEL_CONFIG.padding.vertical;
         
-        ctx.fillStyle = 'rgba(255, 248, 220, 0.9)';
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
-        ctx.lineWidth = 1;
+        ctx.fillStyle = DRUG_LABEL_CONFIG.backgroundColor;
+        ctx.strokeStyle = DRUG_LABEL_CONFIG.borderColor;
+        ctx.lineWidth = DRUG_LABEL_CONFIG.borderWidth;
         ctx.fillRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
         ctx.strokeRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
         
         // Draw label text
-        ctx.fillStyle = '#92400e';
+        ctx.fillStyle = DRUG_LABEL_CONFIG.textColor;
         ctx.fillText(drug.drugName, finalLabelX, finalLabelY);
       });
     }
     
-    // Draw drug arrows
-    activeCandidates.forEach(candidate => {
-      if (candidate.opacity <= 0) return;
-      
-      const currentTime = Date.now();
-      const pulseValue = Math.sin(currentTime * 0.003 + candidate.pulsePhase) * 0.2 + 0.8;
-      const finalOpacity = candidate.opacity * pulseValue;
-      
-      // Glow effect
-      const glowAlpha = Math.floor(finalOpacity * 40).toString(16).padStart(2, '0');
-      ctx.strokeStyle = '#fbbf24' + glowAlpha;
-      ctx.lineWidth = 4 * candidate.scale;
-      ctx.lineCap = 'round';
-      
-      ctx.beginPath();
-      ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
-      ctx.lineTo(candidate.endScreenX, candidate.endScreenY);
-      ctx.stroke();
-      
-      // Main arrow
-      const alpha = Math.floor(finalOpacity * 255).toString(16).padStart(2, '0');
-      ctx.strokeStyle = '#f59e0b' + alpha;
-      ctx.fillStyle = '#f59e0b' + alpha;
-      ctx.lineWidth = 2 * candidate.scale;
-      
-      ctx.beginPath();
-      ctx.moveTo(candidate.startScreenX, candidate.startScreenY);
-      ctx.lineTo(candidate.endScreenX, candidate.endScreenY);
-      ctx.stroke();
-      
-      // Arrowhead
-      const angle = Math.atan2(
-        candidate.endScreenY - candidate.startScreenY,
-        candidate.endScreenX - candidate.startScreenX
-      );
-      const headLength = 10 * candidate.scale; // Larger arrowheads
-      const headAngle = Math.PI / 4; // Wider angle for better visibility
-      
-      ctx.beginPath();
-      ctx.moveTo(candidate.endScreenX, candidate.endScreenY);
-      ctx.lineTo(
-        candidate.endScreenX - headLength * Math.cos(angle - headAngle),
-        candidate.endScreenY - headLength * Math.sin(angle - headAngle)
-      );
-      ctx.lineTo(
-        candidate.endScreenX - headLength * 0.6 * Math.cos(angle),
-        candidate.endScreenY - headLength * 0.6 * Math.sin(angle)
-      );
-      ctx.lineTo(
-        candidate.endScreenX - headLength * Math.cos(angle + headAngle),
-        candidate.endScreenY - headLength * Math.sin(angle + headAngle)
-      );
-      ctx.closePath();
-      ctx.fill();
-    });
-    
-    // Draw drug labels (only for final surviving drugs)
-    if (finalDrugs.length > 0) {
-      ctx.font = `9px ui-serif, Georgia, serif`;
-      ctx.fontWeight = '400';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      
-      finalDrugs.forEach((drug, index) => {
-        // Position label near the end of the arrow, but not on the arrowhead
-        const labelX = drug.startScreenX + (drug.endScreenX - drug.startScreenX) * 0.7;
-        const labelY = drug.startScreenY + (drug.endScreenY - drug.startScreenY) * 0.7;
-        
-        // Smart offset to avoid overlap and stay readable
-        const angle = Math.atan2(drug.endScreenY - drug.startScreenY, drug.endScreenX - drug.startScreenX);
-        const offsetDistance = 15;
-        const offsetX = Math.cos(angle + Math.PI/2) * offsetDistance * (index % 2 === 0 ? 1 : -1);
-        const offsetY = Math.sin(angle + Math.PI/2) * offsetDistance * (index % 2 === 0 ? 1 : -1);
-        
-        const finalLabelX = labelX + offsetX;
-        const finalLabelY = labelY + offsetY;
-        
-        // Draw label background
-        const labelWidth = drug.drugName.length * 4.5 + 6;
-        const labelHeight = 12;
-        
-        ctx.fillStyle = 'rgba(255, 248, 220, 0.9)';
-        ctx.strokeStyle = 'rgba(245, 158, 11, 0.3)';
-        ctx.lineWidth = 1;
-        ctx.fillRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
-        ctx.strokeRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
-        
-        // Draw label text
-        ctx.fillStyle = '#92400e';
-        ctx.fillText(drug.drugName, finalLabelX, finalLabelY);
-      });
-    }
-    
-    // Draw region arrows (always visible)
-    points.forEach(point => {
-      if (!point.region) return;
-      
-      const distanceToMouse = Math.sqrt(
-        (point.screenX - mousePosition.x) ** 2 + 
-        (point.screenY - mousePosition.y) ** 2
-      );
-      
-      const flashlightIntensity = Math.max(0, 1 - (distanceToMouse / flashlightRadius));
-      const baseOpacity = 0.4; // Always visible base opacity
-      const flashlightBoost = flashlightIntensity * 0.6; // Additional opacity from flashlight
-      const arrowOpacity = Math.min(1, baseOpacity + flashlightBoost);
-      
-      if (arrowOpacity > 0.1) {
-        let dx, dy, arrowColor;
-        
-        if (point.region === 'healthy') {
-          // Healthy arrows point inward toward healthy center (homeostasis)
-          dx = HEALTHY_REGION.center[0] - point.worldX;
-          dy = HEALTHY_REGION.center[1] - point.worldY;
-          arrowColor = HEALTHY_REGION.color;
-        } else {
-          // Disease arrows point away from healthy center (disease progression)
-          dx = point.worldX - HEALTHY_REGION.center[0]; // Reversed direction
-          dy = point.worldY - HEALTHY_REGION.center[1]; // Reversed direction
-          const lobe = DISEASE_LOBES.find(l => l.id === point.region);
-          if (!lobe) return;
-          arrowColor = lobe.color;
-        }
-        
-        const angle = Math.atan2(dy, dx);
-        const arrowLength = 15 * Math.min(1, arrowOpacity + 0.3); // Ensure minimum visibility
-        const arrowEndX = point.screenX + Math.cos(angle) * arrowLength;
-        const arrowEndY = point.screenY + Math.sin(angle) * arrowLength;
-        
-        const alpha = Math.floor(arrowOpacity * 255).toString(16).padStart(2, '0');
-        ctx.strokeStyle = arrowColor + alpha;
-        ctx.fillStyle = arrowColor + alpha;
-        ctx.lineWidth = 1.2;
-        
-        ctx.beginPath();
-        ctx.moveTo(point.screenX, point.screenY);
-        ctx.lineTo(arrowEndX, arrowEndY);
-        ctx.stroke();
-        
-        const headLength = 5; // Larger arrowheads for region arrows too
-        const headAngle = Math.PI / 5;
-        
-        ctx.beginPath();
-        ctx.moveTo(arrowEndX, arrowEndY);
-        ctx.lineTo(
-          arrowEndX - headLength * Math.cos(angle - headAngle),
-          arrowEndY - headLength * Math.sin(angle - headAngle)
-        );
-        ctx.moveTo(arrowEndX, arrowEndY);
-        ctx.lineTo(
-          arrowEndX - headLength * Math.cos(angle + headAngle),
-          arrowEndY - headLength * Math.sin(angle + headAngle)
-        );
-        ctx.stroke();
-      }
-    });
-    
-    
-  }, [points, mousePosition, flashlightRadius, drugAnimation.drugCandidates]);
+  }, [points, mousePosition, flashlightRadius, drugAnimation.drugCandidates, drugAnimation.isRunning, width, height]);
   
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -859,47 +917,58 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
       }
     };
   }, [draw, width, height]);
-  
-  const handleMouseMove = (e) => {
+
+  const handleMouseMove = useCallback((e: MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    
+
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
-    
+
     setMousePosition({ x: mouseX, y: mouseY });
-    
+
     // Check for drug hover (only for final surviving drugs)
-    const finalDrugs = drugAnimation.drugCandidates.filter(c => !c.eliminated && c.opacity > 0 && !drugAnimation.isRunning);
-    
-    let hoveredDrug = null;
+    const finalDrugs = drugAnimation.drugCandidates.filter(
+      (c: DrugCandidate) => !c.eliminated && c.opacity > 0 && !drugAnimation.isRunning
+    );
+
+    let newHoveredDrug: DrugCandidate | null = null;
     let minDistance = Infinity;
-    
-    finalDrugs.forEach(drug => {
-      // Check distance to drug arrow line
+
+    finalDrugs.forEach((drug: DrugCandidate) => {
       const dx = drug.endScreenX - drug.startScreenX;
       const dy = drug.endScreenY - drug.startScreenY;
       const length = Math.sqrt(dx * dx + dy * dy);
-      
+
       if (length > 0) {
-        // Calculate distance from mouse to line segment
-        const t = Math.max(0, Math.min(1, ((mouseX - drug.startScreenX) * dx + (mouseY - drug.startScreenY) * dy) / (length * length)));
+        const t = Math.max(
+          0,
+          Math.min(
+            1,
+            ((mouseX - drug.startScreenX) * dx +
+              (mouseY - drug.startScreenY) * dy) /
+              (length * length)
+          )
+        );
         const projX = drug.startScreenX + t * dx;
         const projY = drug.startScreenY + t * dy;
-        const distance = Math.sqrt((mouseX - projX) ** 2 + (mouseY - projY) ** 2);
-        
+        const distance = Math.sqrt(
+          (mouseX - projX) ** 2 + (mouseY - projY) ** 2
+        );
+
         if (distance < 15 && distance < minDistance) {
           minDistance = distance;
-          hoveredDrug = drug;
+          newHoveredDrug = drug;
         }
       }
     });
-    
-    setHoveredDrug(hoveredDrug);
-  };
+
+    setHoveredDrug(newHoveredDrug);
+  }, [drugAnimation.drugCandidates, drugAnimation.isRunning]);
+
   
-  const activeDrugCount = drugAnimation.drugCandidates.filter(c => !c.eliminated && c.opacity > 0).length;
+  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0).length;
   
   return (
     <div className="relative">
@@ -916,18 +985,18 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
         <div
           className="absolute pointer-events-none z-10 transition-all duration-200 ease-out"
           style={{
-            left: mousePosition.x + 15,
-            top: mousePosition.y - 10,
+            left: mousePosition.x + DRUG_TOOLTIP_CONFIG.offset.x,
+            top: mousePosition.y + DRUG_TOOLTIP_CONFIG.offset.y,
           }}
         >
-          <div className="bg-yellow-50/95 backdrop-blur-sm border border-yellow-200 rounded-sm px-3 py-2 shadow-lg max-w-xs">
-            <div className="text-sm font-medium text-yellow-800 mb-1">
+          <div className={`${DRUG_TOOLTIP_CONFIG.backgroundColor} ${DRUG_TOOLTIP_CONFIG.backdropBlur} border ${DRUG_TOOLTIP_CONFIG.borderColor} rounded-sm px-3 py-2 shadow-lg max-w-xs`}>
+            <div className={`text-sm font-medium ${DRUG_TOOLTIP_CONFIG.titleColor} mb-1`}>
               {hoveredDrug.drugName}
             </div>
-            <div className="text-xs text-yellow-700 mb-1">
+            <div className={`text-xs ${DRUG_TOOLTIP_CONFIG.mechanismColor} mb-1`}>
               Mechanism: {hoveredDrug.mechanism}
             </div>
-            <div className="text-xs text-yellow-600">
+            <div className={`text-xs ${DRUG_TOOLTIP_CONFIG.scoreColor}`}>
               Therapeutic Score: {(hoveredDrug.therapeuticScore * 100).toFixed(1)}%
             </div>
           </div>
@@ -961,9 +1030,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }) => {
           </div>
         )}
         
-        {drugAnimation.currentPhase === 'final' && activeDrugCount === 10 && !drugAnimation.isRunning && (
+        {drugAnimation.currentPhase === 'final' && activeDrugCount === DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount && !drugAnimation.isRunning && (
           <div className="text-xs text-yellow-600 mt-1 font-medium bg-white/90 rounded px-2 py-1">
-            ✨ Top 10 identified
+            ✨ Top {DRUG_ANIMATION_CONFIG.eliminationPhases.final.keepCount} identified
           </div>
         )}
       </div>
@@ -1013,7 +1082,7 @@ const DesktopContent = () => (
                 </div>
               </div>
             </div>
-            {DISEASE_LOBES.map(lobe => (
+            {DISEASE_LOBES.map((lobe) => (
               <div key={lobe.id} className="flex items-start gap-3">
                 <div 
                   className="w-3 h-3 rounded-full mt-0.5 flex-shrink-0" 
@@ -1097,7 +1166,7 @@ const MobileContent = () => (
               </div>
             </div>
           </div>
-          {DISEASE_LOBES.slice(0, 4).map(lobe => (
+          {DISEASE_LOBES.slice(0, 4).map((lobe) => (
             <div key={lobe.id} className="flex items-start gap-2">
               <div 
                 className="w-2.5 h-2.5 rounded-full mt-0.5 flex-shrink-0" 

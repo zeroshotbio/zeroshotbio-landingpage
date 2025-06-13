@@ -2,8 +2,73 @@
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
+
+interface Point {
+  screenX: number;
+  screenY: number;
+  worldX: number;
+  worldY: number;
+  baseIntensity: number;
+  region: string | null;
+  centerDistance: number;
+}
+
+interface DrugCandidate {
+  id: number;
+  startWorldX: number;
+  startWorldY: number;
+  endWorldX: number;
+  endWorldY: number;
+  startScreenX: number;
+  startScreenY: number;
+  endScreenX: number;
+  endScreenY: number;
+  therapeuticScore: number;
+  spawnTime: number;
+  lifespan: number;
+  opacity: number;
+  scale: number;
+  glowIntensity: number;
+  illuminationRadius: number;
+  pulsePhase: number;
+  eliminated: boolean;
+}
+
+interface DrugAnimationState {
+  isRunning: boolean;
+  startTime: number;
+  duration: number;
+  drugCandidates: DrugCandidate[];
+  currentPhase: 'fast' | 'slowing' | 'final';
+}
+
+interface DiseaseRegion {
+  center: [number, number];
+  baseRadius: number;
+  elongation: { angle: number; ratio: number };
+  label: string;
+  color: string;
+  description: string;
+  id: string;
+}
+
+interface HealthyRegion {
+  center: [number, number];
+  baseRadius: number;
+  label: string;
+  color: string;
+  description: string;
+}
+
+// ============================================================================
+// REGION DEFINITIONS
+// ============================================================================
+
 // Define the healthy region and multiple disease lobes
-const HEALTHY_REGION = {
+const HEALTHY_REGION: HealthyRegion = {
   center: [-1.3, 0.2],
   baseRadius: 0.8,
   label: 'Healthy',
@@ -11,7 +76,7 @@ const HEALTHY_REGION = {
   description: 'Normal zebrafish melanocytes'
 };
 
-const DISEASE_LOBES = [
+const DISEASE_LOBES: DiseaseRegion[] = [
   {
     center: [1.4, -0.6],
     baseRadius: 0.9,
@@ -78,8 +143,8 @@ const DISEASE_LOBES = [
 ];
 
 // Generate organic, UMAP-like point distributions
-const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
-  const points = [];
+const generateUMAPStylePointCloud = (viewportWidth: number, viewportHeight: number): Point[] => {
+  const points: Point[] = []; // ✅ Explicit typing
   const spacing = 10;
   const cols = Math.ceil(viewportWidth / spacing);
   const rows = Math.ceil(viewportHeight / spacing);
@@ -131,7 +196,7 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
       }
       
       // Check disease lobes with organic elongated shapes
-      DISEASE_LOBES.forEach((lobe) => {
+      DISEASE_LOBES.forEach((lobe: DiseaseRegion) => {
         const dx = worldX - lobe.center[0];
         const dy = worldY - lobe.center[1];
         
@@ -190,25 +255,26 @@ const generateUMAPStylePointCloud = (viewportWidth, viewportHeight) => {
 };
 
 export default function ZebrafishEmbeddingSpace() {
-  const canvasRef = useRef(null);
-  const containerRef = useRef(null);
-  const animationRef = useRef();
-  const drugAnimationRef = useRef();
-  const [points, setPoints] = useState([]);
-  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
-  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
-  const [flashlightRadius] = useState(140);
-  const [drugAnimation, setDrugAnimation] = useState({
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const animationRef = useRef<number | null>(null);
+  const drugAnimationRef = useRef<number | null>(null);
+  const [points, setPoints] = useState<Point[]>([]);
+  const [mousePosition, setMousePosition] = useState<{x: number; y: number}>({ x: 0, y: 0 });
+  const [dimensions, setDimensions] = useState<{width: number; height: number}>({ width: 0, height: 0 });
+  const [flashlightRadius] = useState<number>(140);
+  const [drugAnimation, setDrugAnimation] = useState<DrugAnimationState>({
     isRunning: false,
     startTime: 0,
     duration: 10000,
-    drugCandidates: [],
-    currentPhase: 'fast'
+    drugCandidates: [] as DrugCandidate[],
+    currentPhase: 'fast' as const
   });
 
   useEffect(() => {
     if (dimensions.width > 0 && dimensions.height > 0) {
-      setPoints(generateUMAPStylePointCloud(dimensions.width, dimensions.height));
+      const newPoints = generateUMAPStylePointCloud(dimensions.width, dimensions.height);
+      setPoints(newPoints);
     }
   }, [dimensions]);
   
@@ -221,8 +287,8 @@ export default function ZebrafishEmbeddingSpace() {
   }, []);
 
   // Generate random drug candidate vectors
-  const generateDrugCandidates = useCallback((count) => {
-    const candidates = [];
+  const generateDrugCandidates = useCallback((count: number): DrugCandidate[] => {
+    const candidates: DrugCandidate[] = [];
     
     for (let i = 0; i < count; i++) {
       // Random start point throughout the space
@@ -256,7 +322,7 @@ export default function ZebrafishEmbeddingSpace() {
       
       // Bonus for starting in disease regions
       let regionBonus = 0;
-      DISEASE_LOBES.forEach(lobe => {
+      DISEASE_LOBES.forEach((lobe: DiseaseRegion) => {
         const distToLobe = Math.sqrt(
           (startWorldX - lobe.center[0]) ** 2 + (startWorldY - lobe.center[1]) ** 2
         );
@@ -301,7 +367,7 @@ export default function ZebrafishEmbeddingSpace() {
       const progress = Math.min(1, elapsed / drugAnimation.duration);
       
       // Update each candidate
-      const updatedCandidates = drugAnimation.drugCandidates.map(candidate => {
+      const updatedCandidates = drugAnimation.drugCandidates.map((candidate: DrugCandidate) => {
         const age = elapsed - candidate.spawnTime;
         
         // Smooth spawn animation
@@ -316,7 +382,7 @@ export default function ZebrafishEmbeddingSpace() {
         
         // Elimination based on therapeutic score and phase
         let shouldEliminate = false;
-        const scoreRank = drugAnimation.drugCandidates.findIndex(c => c.id === candidate.id);
+        const scoreRank = drugAnimation.drugCandidates.findIndex((c: DrugCandidate) => c.id === candidate.id);
         
         if (progress < 0.3) {
           // Fast phase - keep top 30%
@@ -348,16 +414,16 @@ export default function ZebrafishEmbeddingSpace() {
       setDrugAnimation(prev => ({
         ...prev,
         drugCandidates: updatedCandidates,
-        currentPhase: progress < 0.3 ? 'fast' : progress < 0.7 ? 'slowing' : 'final'
+        currentPhase: progress < 0.3 ? 'fast' as const : progress < 0.7 ? 'slowing' as const : 'final' as const
       }));
       
       if (progress < 1) {
         drugAnimationRef.current = requestAnimationFrame(updateDrugAnimation);
       } else {
         // Animation complete
-        const survivors = updatedCandidates
-          .filter((_, index) => index < 10)
-          .map(c => ({ ...c, opacity: 0.8, eliminated: false }));
+        const survivors: DrugCandidate[] = updatedCandidates
+          .filter((_: DrugCandidate, index: number) => index < 10)
+          .map((c: DrugCandidate) => ({ ...c, opacity: 0.8, eliminated: false }));
         
         setDrugAnimation(prev => ({
           ...prev,
@@ -374,7 +440,7 @@ export default function ZebrafishEmbeddingSpace() {
         cancelAnimationFrame(drugAnimationRef.current);
       }
     };
-  }, [drugAnimation.isRunning, drugAnimation.startTime]);
+  }, [drugAnimation.isRunning, drugAnimation.startTime, drugAnimation.drugCandidates, drugAnimation.duration]);
 
   // Start drug ranking animation
   const startDrugRanking = useCallback(() => {
@@ -387,7 +453,7 @@ export default function ZebrafishEmbeddingSpace() {
       startTime: Date.now(),
       duration: 10000,
       drugCandidates: candidates,
-      currentPhase: 'fast'
+      currentPhase: 'fast' as const
     });
   }, [dimensions, generateDrugCandidates]);
   
@@ -401,10 +467,10 @@ export default function ZebrafishEmbeddingSpace() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Calculate illumination from drug candidates
-    const drugIllumination = new Map();
-    const activeCandidates = drugAnimation.drugCandidates.filter(c => !c.eliminated && c.opacity > 0);
+    const drugIllumination = new Map<number, number>();
+    const activeCandidates = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0);
     
-    activeCandidates.forEach(candidate => {
+    activeCandidates.forEach((candidate: DrugCandidate) => {
       const currentTime = Date.now();
       const pulseValue = Math.sin(currentTime * 0.005 + candidate.pulsePhase) * 0.3 + 0.7;
       const effectiveRadius = candidate.illuminationRadius * candidate.scale * pulseValue;
@@ -414,7 +480,7 @@ export default function ZebrafishEmbeddingSpace() {
         const illuminationX = candidate.startScreenX + t * (candidate.endScreenX - candidate.startScreenX);
         const illuminationY = candidate.startScreenY + t * (candidate.endScreenY - candidate.startScreenY);
         
-        points.forEach((point, index) => {
+        points.forEach((point: Point, index: number) => {
           const distToIllumination = Math.sqrt(
             (point.screenX - illuminationX) ** 2 + 
             (point.screenY - illuminationY) ** 2
@@ -432,7 +498,7 @@ export default function ZebrafishEmbeddingSpace() {
     });
     
     // Draw points with all illumination effects
-    points.forEach((point, index) => {
+    points.forEach((point: Point, index: number) => {
       const distanceToMouse = Math.sqrt(
         (point.screenX - mousePosition.x) ** 2 + 
         (point.screenY - mousePosition.y) ** 2
@@ -460,7 +526,7 @@ export default function ZebrafishEmbeddingSpace() {
       if (point.region === 'healthy') {
         pointColor = HEALTHY_REGION.color;
       } else if (point.region) {
-        const lobe = DISEASE_LOBES.find(l => l.id === point.region);
+        const lobe = DISEASE_LOBES.find((l: DiseaseRegion) => l.id === point.region);
         if (lobe) pointColor = lobe.color;
       }
       
@@ -491,7 +557,7 @@ export default function ZebrafishEmbeddingSpace() {
     });
     
     // Draw drug candidate arrows with beautiful effects
-    activeCandidates.forEach(candidate => {
+    activeCandidates.forEach((candidate: DrugCandidate) => {
       if (candidate.opacity <= 0) return;
       
       const currentTime = Date.now();
@@ -548,7 +614,7 @@ export default function ZebrafishEmbeddingSpace() {
     });
     
     // Draw regular region arrows
-    points.forEach(point => {
+    points.forEach((point: Point) => {
       if (!point.region) return;
       
       const distanceToMouse = Math.sqrt(
@@ -567,7 +633,7 @@ export default function ZebrafishEmbeddingSpace() {
           dy = HEALTHY_REGION.center[1] - point.worldY;
           arrowColor = HEALTHY_REGION.color;
         } else {
-          const lobe = DISEASE_LOBES.find(l => l.id === point.region);
+          const lobe = DISEASE_LOBES.find((l: DiseaseRegion) => l.id === point.region);
           if (!lobe) return;
           
           dx = HEALTHY_REGION.center[0] - point.worldX;
@@ -644,7 +710,7 @@ export default function ZebrafishEmbeddingSpace() {
     };
   }, [updateDimensions]);
   
-  const handleMouseMove = (e) => {
+  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -655,16 +721,16 @@ export default function ZebrafishEmbeddingSpace() {
     });
   };
   
-  const getMostIlluminatedRegion = useCallback(() => {
+  const getMostIlluminatedRegion = useCallback((): HealthyRegion | DiseaseRegion | null => {
     if (points.length === 0) return null;
     
-    const regionIllumination = {};
+    const regionIllumination: Record<string, number> = {};
     regionIllumination['healthy'] = 0;
-    DISEASE_LOBES.forEach(lobe => {
+    DISEASE_LOBES.forEach((lobe: DiseaseRegion) => {
       regionIllumination[lobe.id] = 0;
     });
     
-    points.forEach(point => {
+    points.forEach((point: Point) => {
       if (!point.region) return;
       
       const distanceToMouse = Math.sqrt(
@@ -685,7 +751,7 @@ export default function ZebrafishEmbeddingSpace() {
       if (regionKey === 'healthy') {
         return HEALTHY_REGION;
       } else {
-        return DISEASE_LOBES.find(lobe => lobe.id === regionKey);
+        return DISEASE_LOBES.find((lobe: DiseaseRegion) => lobe.id === regionKey) || null;
       }
     }
     
@@ -693,7 +759,7 @@ export default function ZebrafishEmbeddingSpace() {
   }, [points, mousePosition, flashlightRadius]);
   
   const illuminatedRegion = getMostIlluminatedRegion();
-  const activeDrugCount = drugAnimation.drugCandidates.filter(c => !c.eliminated && c.opacity > 0).length;
+  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0).length;
   
   return (
     <div className="w-full h-screen bg-white overflow-hidden">
@@ -800,7 +866,7 @@ export default function ZebrafishEmbeddingSpace() {
                 />
                 <span className="text-xs text-gray-600">Healthy</span>
               </div>
-              {DISEASE_LOBES.map((lobe) => (
+              {DISEASE_LOBES.map((lobe: DiseaseRegion) => (
                 <div key={lobe.id} className="flex items-center space-x-2">
                   <div 
                     className="w-2 h-2 rounded-full"
@@ -842,7 +908,7 @@ export default function ZebrafishEmbeddingSpace() {
             </div>
           </div>
           
-          {DISEASE_LOBES.map((lobe) => (
+          {DISEASE_LOBES.map((lobe: DiseaseRegion) => (
             <div
               key={lobe.id}
               className="absolute transform -translate-x-1/2 -translate-y-1/2"
