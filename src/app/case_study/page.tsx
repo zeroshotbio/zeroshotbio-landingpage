@@ -11,14 +11,14 @@ import type { MouseEvent } from 'react';
 // MAJOR REGION LABEL STYLING
 const REGION_LABEL_CONFIG = {
   fontSize: {
-    desktop: 13,
-    mobile: 11
+    desktop: 15,
+    mobile: 12
   },
   fontFamily: 'ui-serif, Georgia, serif', // Match roboto-slab style
-  fontWeight: '400',
-  textColor: 'rgba(100, 100, 100, 0.7)', // Desaturated gray text
-  strokeColor: 'rgba(255, 255, 255, 0.8)', // Subtle white outline
-  strokeWidth: 1.5
+  fontWeight: '300',
+  textColor: 'rgba(0, 0, 0, 0.7)', // Desaturated gray text
+  strokeColor: 'rgba(0, 0, 0, 0.8)', // Subtle white outline
+  strokeWidth: 0.1
 };
 
 // DOT COLORS AND INTENSITY
@@ -50,7 +50,7 @@ const DOT_CONFIG = {
 
 // DRUG ILLUMINATION GOLDEN TINT
 const DRUG_ILLUMINATION_CONFIG = {
-  goldTintIntensity: 0.4,
+  goldTintIntensity: 0.8,
   goldR: 200,
   goldG: 180,
   goldBReduction: 0.3
@@ -63,16 +63,16 @@ const ARROW_CONFIG = {
     baseOpacity: 0.4, // Always visible base opacity
     flashlightBoost: 0.6, // Additional opacity from flashlight
     minVisibilityBoost: 0.3, // Ensure minimum visibility
-    lineWidth: 1.2,
-    headLength: 5,
+    lineWidth: 0.8,
+    headLength: 3,
     headAngle: Math.PI / 5,
-    arrowLength: 15
+    arrowLength: 30
   },
   // Drug arrows (therapeutic vectors)
   drug: {
-    glowLineWidth: 3,
-    mainLineWidth: 1.5,
-    headLength: 8,
+    glowLineWidth: 4,
+    mainLineWidth: 3.3,
+    headLength: 12,
     headAngle: Math.PI / 4,
     lineCap: 'round' as const,
     glowColor: '#fbbf24',
@@ -85,19 +85,18 @@ const ARROW_CONFIG = {
 const DRUG_LABEL_CONFIG = {
   fontSize: 9,
   fontFamily: 'ui-serif, Georgia, serif',
-  fontWeight: '400',
+  fontWeight: '200',
   textAlign: 'center' as const,
   textBaseline: 'middle' as const,
-  backgroundColor: 'rgba(255, 248, 220, 0.9)', // Yellow background
-  borderColor: 'rgba(245, 158, 11, 0.3)', // Yellow border
+  backgroundColor: 'rgba(255, 248, 220, 0.95)', // Slightly more opaque
+  borderColor: 'rgba(245, 158, 11, 0.4)', // Slightly more visible border
   textColor: '#92400e', // Dark yellow/brown text
   borderWidth: 1,
   padding: {
-    horizontal: 6,
-    vertical: 12
+    horizontal: 3,
+    vertical: 2
   },
-  characterWidth: 4.5, // For calculating label width
-  offsetDistance: 15, // Distance from arrow
+  offsetDistance: 20, // Increased distance from arrow
   zIndexPriority: true // Draw last for top z-index
 };
 
@@ -202,6 +201,12 @@ interface DrugCandidate {
   targetIlluminationRadius: number;
   eliminated: boolean;
   eliminatedTime?: number;
+  labelBounds?: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  };
 }
 
 interface DrugAnimationState {
@@ -460,20 +465,32 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
       const toHealthyLength = Math.sqrt(toHealthyX ** 2 + toHealthyY ** 2);
       
       const vectorLength = Math.sqrt(vectorX ** 2 + vectorY ** 2);
-      const therapeuticScore = toHealthyLength > 0 && vectorLength > 0 ? 
+      const dotProduct = toHealthyLength > 0 && vectorLength > 0 ? 
         (vectorX * toHealthyX + vectorY * toHealthyY) / (vectorLength * toHealthyLength) : 0;
       
+      // Bonus for starting in disease regions
       let regionBonus = 0;
+      let inDiseaseRegion = false;
       DISEASE_LOBES.forEach((lobe) => {
         const distToLobe = Math.sqrt(
           (startWorldX - lobe.center[0]) ** 2 + (startWorldY - lobe.center[1]) ** 2
         );
         if (distToLobe < lobe.baseRadius) {
-          regionBonus += 0.3;
+          regionBonus += 0.2;
+          inDiseaseRegion = true;
         }
       });
       
-      const finalScore = therapeuticScore + regionBonus + Math.random() * 0.1;
+      // Additional bonus for ending closer to healthy region
+      const endDistToHealthy = Math.sqrt(
+        (endWorldX - HEALTHY_REGION.center[0]) ** 2 + (endWorldY - HEALTHY_REGION.center[1]) ** 2
+      );
+      const proximityBonus = Math.max(0, 1 - endDistToHealthy / 2) * 0.3;
+      
+      // Penalty for vectors that don't start in disease regions
+      const diseaseRequirement = inDiseaseRegion ? 1 : 0.5;
+      
+      const finalScore = (dotProduct * 0.5 + regionBonus + proximityBonus + Math.random() * 0.1) * diseaseRequirement;
       
       // Generate drug names and mechanisms - more realistic for melanoma
       const drugNames = [
@@ -607,8 +624,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
           .slice(0, DRUG_ANIMATION_CONFIG.eliminationWaves[DRUG_ANIMATION_CONFIG.eliminationWaves.length - 1].keepTop)
           .map((c: DrugCandidate) => ({ 
             ...c, 
-            opacity: ARROW_CONFIG.drug.baseOpacity, 
+            opacity: ARROW_CONFIG.drug.baseOpacity,
             targetOpacity: ARROW_CONFIG.drug.baseOpacity,
+            illuminationRadius: c.targetIlluminationRadius,
             eliminated: false 
           }));
         
@@ -891,41 +909,73 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     });
     
     // Draw drug labels LAST (highest z-index priority)
-    const finalDrugs = drugAnimation.drugCandidates.filter(
-      (c: DrugCandidate) => !c.eliminated && c.opacity > 0.7 && !drugAnimation.isRunning
-    );
+    const finalDrugs = drugAnimation.drugCandidates
+      .filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0.5)
+      .slice(0, 10); // Always show top 10 if available
     
-    if (DRUG_LABEL_CONFIG.zIndexPriority && finalDrugs.length > 0) {
+    if (DRUG_LABEL_CONFIG.zIndexPriority && finalDrugs.length > 0 && !drugAnimation.isRunning) {
       ctx.font = `${DRUG_LABEL_CONFIG.fontWeight} ${DRUG_LABEL_CONFIG.fontSize}px ${DRUG_LABEL_CONFIG.fontFamily}`;
       ctx.textAlign = DRUG_LABEL_CONFIG.textAlign;
       ctx.textBaseline = DRUG_LABEL_CONFIG.textBaseline;
       
       finalDrugs.forEach((drug: DrugCandidate, index: number) => {
-        // Position label near the end of the arrow, but not on the arrowhead
-        const labelX = drug.startScreenX + (drug.endScreenX - drug.startScreenX) * 0.7;
-        const labelY = drug.startScreenY + (drug.endScreenY - drug.startScreenY) * 0.7;
+        // Position label near the middle of the arrow
+        const labelT = 0.5 + (index % 3) * 0.15; // Vary position along arrow to reduce overlap
+        const labelX = drug.startScreenX + (drug.endScreenX - drug.startScreenX) * labelT;
+        const labelY = drug.startScreenY + (drug.endScreenY - drug.startScreenY) * labelT;
         
         // Smart offset to avoid overlap and stay readable
         const angle = Math.atan2(drug.endScreenY - drug.startScreenY, drug.endScreenX - drug.startScreenX);
-        const offsetX = Math.cos(angle + Math.PI/2) * DRUG_LABEL_CONFIG.offsetDistance * (index % 2 === 0 ? 1 : -1);
-        const offsetY = Math.sin(angle + Math.PI/2) * DRUG_LABEL_CONFIG.offsetDistance * (index % 2 === 0 ? 1 : -1);
+        const perpAngle = angle + Math.PI/2;
+        
+        // Alternate sides and distances for better distribution
+        const sideMultiplier = (index % 2 === 0 ? 1 : -1);
+        const distanceMultiplier = 1 + (index % 3) * 0.3;
+        const offsetX = Math.cos(perpAngle) * DRUG_LABEL_CONFIG.offsetDistance * sideMultiplier * distanceMultiplier;
+        const offsetY = Math.sin(perpAngle) * DRUG_LABEL_CONFIG.offsetDistance * sideMultiplier * distanceMultiplier;
         
         const finalLabelX = labelX + offsetX;
         const finalLabelY = labelY + offsetY;
         
-        // Draw label background
-        const labelWidth = drug.drugName.length * DRUG_LABEL_CONFIG.characterWidth + DRUG_LABEL_CONFIG.padding.horizontal;
-        const labelHeight = DRUG_LABEL_CONFIG.padding.vertical;
+        // Draw label background with proper padding
+        const labelText = drug.drugName;
+        const metrics = ctx.measureText(labelText);
+        const labelWidth = metrics.width + DRUG_LABEL_CONFIG.padding.horizontal * 2;
+        const labelHeight = DRUG_LABEL_CONFIG.fontSize + DRUG_LABEL_CONFIG.padding.vertical * 2;
+        
+        // Store label bounds for hover detection
+        drug.labelBounds = {
+          x: finalLabelX - labelWidth/2,
+          y: finalLabelY - labelHeight/2,
+          width: labelWidth,
+          height: labelHeight
+        };
+        
+        // Draw shadow for better visibility
+        const glowPhase = (Date.now() % 2000) / 2000; // 2 second cycle
+        const glowIntensity = 0.5 + Math.sin(glowPhase * Math.PI * 2) * 0.3;
+        
+        ctx.shadowColor = `rgba(245, 158, 11, ${glowIntensity})`;
+        ctx.shadowBlur = 4 + glowIntensity * 4;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
         
         ctx.fillStyle = DRUG_LABEL_CONFIG.backgroundColor;
+        ctx.fillRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
+        
+        // Reset shadow before drawing border
+        ctx.shadowColor = 'transparent';
+        ctx.shadowBlur = 0;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 0;
+        
         ctx.strokeStyle = DRUG_LABEL_CONFIG.borderColor;
         ctx.lineWidth = DRUG_LABEL_CONFIG.borderWidth;
-        ctx.fillRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
         ctx.strokeRect(finalLabelX - labelWidth/2, finalLabelY - labelHeight/2, labelWidth, labelHeight);
         
         // Draw label text
         ctx.fillStyle = DRUG_LABEL_CONFIG.textColor;
-        ctx.fillText(drug.drugName, finalLabelX, finalLabelY);
+        ctx.fillText(labelText, finalLabelX, finalLabelY);
       });
     }
     
@@ -964,13 +1014,25 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
 
     // Check for drug hover (only for final surviving drugs)
     const finalDrugs = drugAnimation.drugCandidates.filter(
-      (c: DrugCandidate) => !c.eliminated && c.opacity > 0.7 && !drugAnimation.isRunning
-    );
+      (c: DrugCandidate) => !c.eliminated && c.opacity > 0.5 && !drugAnimation.isRunning
+    ).slice(0, 10);
 
     let newHoveredDrug: DrugCandidate | null = null;
     let minDistance = Infinity;
 
     finalDrugs.forEach((drug: DrugCandidate) => {
+      // First check if hovering over label
+      if (drug.labelBounds) {
+        if (mouseX >= drug.labelBounds.x && 
+            mouseX <= drug.labelBounds.x + drug.labelBounds.width &&
+            mouseY >= drug.labelBounds.y && 
+            mouseY <= drug.labelBounds.y + drug.labelBounds.height) {
+          newHoveredDrug = drug;
+          return;
+        }
+      }
+      
+      // Then check if hovering over arrow line
       const dx = drug.endScreenX - drug.startScreenX;
       const dy = drug.endScreenY - drug.startScreenY;
       const length = Math.sqrt(dx * dx + dy * dy);
@@ -991,7 +1053,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
           (mouseX - projX) ** 2 + (mouseY - projY) ** 2
         );
 
-        if (distance < 15 && distance < minDistance) {
+        if (distance < 10 && distance < minDistance) {
           minDistance = distance;
           newHoveredDrug = drug;
         }
@@ -1002,7 +1064,7 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
   }, [drugAnimation.drugCandidates, drugAnimation.isRunning]);
 
   
-  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && c.opacity > 0.01).length;
+  const activeDrugCount = drugAnimation.drugCandidates.filter((c: DrugCandidate) => !c.eliminated && (drugAnimation.isRunning ? c.opacity > 0.01 : true)).length;
   const lastWave = DRUG_ANIMATION_CONFIG.eliminationWaves[DRUG_ANIMATION_CONFIG.eliminationWaves.length - 1];
   const currentWave = DRUG_ANIMATION_CONFIG.eliminationWaves.find(w => 
     Date.now() - drugAnimation.startTime < w.time
@@ -1012,10 +1074,14 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
     <div className="relative">
       <canvas
         ref={canvasRef}
-        className="border border-gray-200 cursor-crosshair"
+        className="border border-gray-200"
         onMouseMove={handleMouseMove}
         onMouseLeave={() => setHoveredDrug(null)}
-        style={{ width: `${width}px`, height: `${height}px` }}
+        style={{ 
+          width: `${width}px`, 
+          height: `${height}px`,
+          cursor: hoveredDrug ? 'pointer' : 'crosshair'
+        }}
       />
       
       {/* Drug hover tooltip */}
@@ -1028,8 +1094,13 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
           }}
         >
           <div className={`${DRUG_TOOLTIP_CONFIG.backgroundColor} ${DRUG_TOOLTIP_CONFIG.backdropBlur} border ${DRUG_TOOLTIP_CONFIG.borderColor} rounded-sm px-3 py-2 shadow-lg max-w-xs`}>
-            <div className={`text-sm font-medium ${DRUG_TOOLTIP_CONFIG.titleColor} mb-1`}>
-              {hoveredDrug.drugName}
+            <div className="flex items-center justify-between mb-1">
+              <div className={`text-sm font-medium ${DRUG_TOOLTIP_CONFIG.titleColor}`}>
+                {hoveredDrug.drugName}
+              </div>
+              <div className="text-xs text-yellow-600 font-medium">
+                Rank #{drugAnimation.drugCandidates.filter(c => !c.eliminated).findIndex(c => c.id === hoveredDrug.id) + 1}
+              </div>
             </div>
             <div className={`text-xs ${DRUG_TOOLTIP_CONFIG.mechanismColor} mb-1`}>
               Mechanism: {hoveredDrug.mechanism}
@@ -1066,9 +1137,9 @@ const ZebrafishEmbeddingVisualization = ({ width = 600, height = 500 }: Zebrafis
           </div>
         )}
         
-        {!drugAnimation.isRunning && activeDrugCount === lastWave.keepTop && drugAnimation.drugCandidates.length > 0 && (
+        {!drugAnimation.isRunning && activeDrugCount > 0 && activeDrugCount <= 10 && drugAnimation.drugCandidates.length > 0 && (
           <div className="text-xs text-yellow-600 mt-1 font-medium bg-white/90 rounded px-2 py-1">
-            ✨ Top {lastWave.keepTop} identified
+            ✨ Top {activeDrugCount} drugs identified
           </div>
         )}
       </div>

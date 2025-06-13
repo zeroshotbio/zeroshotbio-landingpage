@@ -129,7 +129,7 @@ const MobileContent = () => (
       {/* Case Study Button - Mobile */}
       <Link href="/case_study">
         <button className="group relative mb-16 px-6 py-3 border border-gray-400 text-gray-semidark roboto-slab-regular text-sm hover:border-gray-600 transition-all duration-300 ease-in-out transform hover:scale-105">
-          <span className="relative z-10">View Embedding Space</span>
+          <span className="relative z-10"> Embedding Space Visualization Demo</span>
           <div className="absolute inset-0 bg-gray-100 transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 ease-in-out origin-left"></div>
         </button>
       </Link>
