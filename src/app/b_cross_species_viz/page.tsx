@@ -2,6 +2,49 @@
 
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
+// Types
+interface Gene {
+  id: string;
+  name: string;
+  category: string;
+  gridPosition: number;
+  functionalAnnotation: string;
+}
+
+interface GenePosition {
+  x: number;
+  y: number;
+  gene: Gene;
+  index: number;
+}
+
+interface OrthologMapping {
+  type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
+  zebrafishIndices: number[];
+  humanIndices: number[];
+  confidence: number;
+  validated: boolean;
+  targetGenes?: Gene[];
+}
+
+interface HoveredGene {
+  species: 'zebrafish' | 'human';
+  index: number;
+  gene: Gene;
+  position: GenePosition;
+}
+
+interface BandPosition {
+  y: number;
+  label: string;
+}
+
+interface Statistics {
+  coverage: string;
+  mappingTypes: Record<string, number>;
+  totalMappings: number;
+}
+
 // Configuration
 const CONFIG = {
   canvas: {
@@ -18,14 +61,14 @@ const CONFIG = {
     borderWidth: 1
   },
   genes: {
-    count: 80, // Reduced for cleaner layout
+    count: 80,
     nodeRadius: 3,
-    nodeSpacing: 8, // Fixed spacing between genes
+    nodeSpacing: 8,
     healthyColor: '#059669',
     diseaseColor: '#dc2626',
     drugTargetColor: '#f59e0b',
     neutralColor: '#9ca3af',
-    hoverRadius: 15 // Much larger hover area
+    hoverRadius: 15
   },
   orthologs: {
     minOpacity: 0.15,
@@ -34,7 +77,7 @@ const CONFIG = {
     maxWidth: 2.5,
     baseColor: 'rgba(0, 0, 0, ',
     highlightColor: 'rgba(245, 158, 11, ',
-    oneToManyFanAngle: 0.25 // radians
+    oneToManyFanAngle: 0.25
   },
   panel: {
     backgroundColor: '#ffffff',
@@ -42,7 +85,7 @@ const CONFIG = {
     textColor: '#374151',
     titleColor: '#111827'
   }
-};
+} as const;
 
 // Gene categories
 const GENE_CATEGORIES = {
@@ -50,15 +93,17 @@ const GENE_CATEGORIES = {
   DISEASE_MARKER: 'disease_marker',
   DRUG_TARGET: 'drug_target',
   NEUTRAL: 'neutral'
-};
+} as const;
+
+type GeneCategoryType = typeof GENE_CATEGORIES[keyof typeof GENE_CATEGORIES];
 
 // Generate genes with properties
-const generateGenes = (count) => {
-  const genes = [];
+const generateGenes = (count: number): Gene[] => {
+  const genes: Gene[] = [];
   
   for (let i = 0; i < count; i++) {
     // Assign categories with realistic distribution
-    let category;
+    let category: GeneCategoryType;
     const rand = Math.random();
     if (rand < 0.15) {
       category = GENE_CATEGORIES.HEALTHY_MARKER;
@@ -83,8 +128,8 @@ const generateGenes = (count) => {
 };
 
 // Generate functional annotations
-const generateFunctionalAnnotation = (category) => {
-  const annotations = {
+const generateFunctionalAnnotation = (category: GeneCategoryType): string => {
+  const annotations: Record<GeneCategoryType, string[]> = {
     [GENE_CATEGORIES.HEALTHY_MARKER]: [
       'Cell cycle regulation',
       'DNA repair pathway',
@@ -116,10 +161,10 @@ const generateFunctionalAnnotation = (category) => {
 };
 
 // Generate diverse ortholog mappings
-const generateOrthologMappings = (zebrafishGenes, humanGenes) => {
-  const mappings = [];
-  const usedHumanIndices = new Set();
-  const usedZebrafishIndices = new Set();
+const generateOrthologMappings = (zebrafishGenes: Gene[], humanGenes: Gene[]): OrthologMapping[] => {
+  const mappings: OrthologMapping[] = [];
+  const usedHumanIndices = new Set<number>();
+  const usedZebrafishIndices = new Set<number>();
   
   // Create diverse mapping examples
   let zIndex = 0;
@@ -148,7 +193,7 @@ const generateOrthologMappings = (zebrafishGenes, humanGenes) => {
   for (let i = 0; i < 10 && zIndex < zebrafishGenes.length - 5; i++, zIndex += 2) {
     if (!usedZebrafishIndices.has(zIndex)) {
       const numTargets = 2 + Math.floor(Math.random() * 2); // 2-3 targets
-      const targets = [];
+      const targets: number[] = [];
       
       for (let j = 0; j < numTargets; j++) {
         let hIndex = zIndex + j * 3 + Math.floor(Math.random() * 2);
@@ -197,7 +242,7 @@ const generateOrthologMappings = (zebrafishGenes, humanGenes) => {
   // Add a few many-to-many mappings (low confidence)
   for (let i = 0; i < 3 && zIndex < zebrafishGenes.length - 4; i++, zIndex += 4) {
     if (!usedZebrafishIndices.has(zIndex) && !usedZebrafishIndices.has(zIndex + 1)) {
-      const targets = [];
+      const targets: number[] = [];
       for (let j = 0; j < 2; j++) {
         let hIndex = zIndex + j * 2 + Math.floor(Math.random() * 2);
         hIndex = Math.max(0, Math.min(humanGenes.length - 1, hIndex));
@@ -225,16 +270,16 @@ const generateOrthologMappings = (zebrafishGenes, humanGenes) => {
   return mappings;
 };
 
-const OrthologMappingVisualization = () => {
-  const canvasRef = useRef(null);
-  const animationFrameRef = useRef(null);
-  const [zebrafishGenes] = useState(() => generateGenes(CONFIG.genes.count));
-  const [humanGenes] = useState(() => generateGenes(CONFIG.genes.count));
-  const [orthologMappings] = useState(() => generateOrthologMappings(zebrafishGenes, humanGenes));
-  const [hoveredGene, setHoveredGene] = useState(null);
+const OrthologMappingVisualization: React.FC = () => {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const [zebrafishGenes] = useState<Gene[]>(() => generateGenes(CONFIG.genes.count));
+  const [humanGenes] = useState<Gene[]>(() => generateGenes(CONFIG.genes.count));
+  const [orthologMappings] = useState<OrthologMapping[]>(() => generateOrthologMappings(zebrafishGenes, humanGenes));
+  const [hoveredGene, setHoveredGene] = useState<HoveredGene | null>(null);
   
   // Calculate band positions
-  const bandPositions = useMemo(() => {
+  const bandPositions = useMemo<{ zebrafish: BandPosition; human: BandPosition }>(() => {
     const centerY = CONFIG.canvas.height / 2;
     return {
       zebrafish: {
@@ -249,8 +294,8 @@ const OrthologMappingVisualization = () => {
   }, []);
   
   // Calculate gene positions on grid
-  const genePositions = useMemo(() => {
-    const positions = { zebrafish: [], human: [] };
+  const genePositions = useMemo<{ zebrafish: GenePosition[]; human: GenePosition[] }>(() => {
+    const positions: { zebrafish: GenePosition[]; human: GenePosition[] } = { zebrafish: [], human: [] };
     const availableWidth = CONFIG.canvas.width - CONFIG.canvas.margin.left - CONFIG.canvas.margin.right;
     const totalSpacing = (CONFIG.genes.count - 1) * CONFIG.genes.nodeSpacing;
     const startX = CONFIG.canvas.margin.left + (availableWidth - totalSpacing) / 2;
@@ -277,7 +322,7 @@ const OrthologMappingVisualization = () => {
   }, [zebrafishGenes, humanGenes, bandPositions]);
   
   // Get color for gene category
-  const getGeneColor = useCallback((category) => {
+  const getGeneColor = useCallback((category: string): string => {
     switch (category) {
       case GENE_CATEGORIES.HEALTHY_MARKER:
         return CONFIG.genes.healthyColor;
@@ -291,8 +336,8 @@ const OrthologMappingVisualization = () => {
   }, []);
   
   // Calculate statistics
-  const statistics = useMemo(() => {
-    const mappingTypes = {
+  const statistics = useMemo<Statistics>(() => {
+    const mappingTypes: Record<string, number> = {
       'one-to-one': 0,
       'one-to-many': 0,
       'many-to-one': 0,
@@ -304,7 +349,7 @@ const OrthologMappingVisualization = () => {
     });
     
     const totalGenes = zebrafishGenes.length;
-    const mappedGenes = new Set();
+    const mappedGenes = new Set<number>();
     
     orthologMappings.forEach(mapping => {
       mapping.zebrafishIndices.forEach(idx => mappedGenes.add(idx));
@@ -323,6 +368,7 @@ const OrthologMappingVisualization = () => {
     if (!canvas) return;
     
     const ctx = canvas.getContext('2d', { alpha: false });
+    if (!ctx) return;
     
     // Clear canvas
     ctx.fillStyle = CONFIG.canvas.backgroundColor;
@@ -437,7 +483,7 @@ const OrthologMappingVisualization = () => {
       } else if (mapping.type === 'many-to-one') {
         const hPos = genePositions.human[mapping.humanIndices[0]];
         if (hPos) {
-          mapping.zebrafishIndices.forEach((zIndex, i) => {
+          mapping.zebrafishIndices.forEach((zIndex) => {
             const zPos = genePositions.zebrafish[zIndex];
             if (zPos) {
               ctx.beginPath();
@@ -522,7 +568,7 @@ const OrthologMappingVisualization = () => {
   }, [draw]);
   
   // Handle mouse movement
-  const handleMouseMove = useCallback((e) => {
+  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     
@@ -531,7 +577,7 @@ const OrthologMappingVisualization = () => {
     const y = e.clientY - rect.top;
     
     // Check for gene hover with large detection radius
-    let foundGene = null;
+    let foundGene: HoveredGene | null = null;
     let minDistance = Infinity;
     
     // Check zebrafish genes

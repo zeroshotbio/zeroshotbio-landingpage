@@ -37,11 +37,35 @@ const PIN_RADIUS_HOVER    = 3.2;
 const PIN_SHADOW_BLUR     = 8;
 const PIN_PULSE_MS        = 1300;
 const HIT_RADIUS          = 16;
+const ARROW_CONF = {
+  lineWidth: 1.2,
+  headLength: 6,
+  headAngle: Math.PI / 7
+};
 
 
 import { useEffect, useRef, useState, useCallback } from 'react';
 import Link from 'next/link';
 import type { MouseEvent } from 'react';
+/* helper that converts an ordered list of IDs into an id→index map */
+function buildIndex(list: string[]) {
+  const m = new Map<string, number>();
+  list.forEach((id, i) => m.set(id, i));
+  return m;
+}
+
+interface EdgePayload {
+  fishGenes:  string[];
+  humanGenes: string[];
+  edges: {
+    zebrafish_id: string;
+    human_id: string;
+    orthology_type: string;
+    confidence: number;   // 0-1
+    validated:  boolean;
+  }[];
+  counts: Record<string, number>;
+}
 
 /* ========================================================================== */
 /* CONFIGURATION — enhanced UMAP-like blobs, subtle grid, and inter-region arrows    */
@@ -61,8 +85,6 @@ const THEME = {
 const GRID = { spacing: 8, dotRadius: 1, baseAlpha: 0.1, globalNoise: 0.05 };
 const FLASHLIGHT = { radius: 120, power: 0.7, boost: 0.6 };
 const PINS = { base: 2.4, hover: 3.2, glow: 8, pulse: 1300 };
-const ORTHO = { total: 350, anchors: 0.12, cov0: 0.42, cov1: 0.81 };
-const det = HIT_RADIUS;
 
 /* ========================================================================== */
 /* UMAP-BLOB DEFINITIONS — sub-cell types instead of healthy/disease          */
@@ -111,14 +133,6 @@ interface Pair {
 /* UTILITIES                                                                  */
 /* ========================================================================== */
 
-function randGene(upper = false) {
-  const L = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
-  let g = '';
-  for (let i = 0; i < 3 + Math.floor(Math.random() * 2); i++) {
-    g += L[Math.floor(Math.random() * 26)];
-  }
-  return upper ? g : g.toLowerCase();
-}
 
 function generateGrid(w: number, h: number, left: boolean): Dot[] {
   const half = w / 2;
@@ -136,17 +150,6 @@ function generateGrid(w: number, h: number, left: boolean): Dot[] {
   return dots;
 }
 
-function makePairs(fish: Pt[], human: Pt[]): Pair[] {
-  const ps: Pair[] = [];
-  for (let i = 0; i < ORTHO.total; i++) {
-    const f = fish[Math.floor(Math.random() * fish.length)];
-    const h = human[Math.floor(Math.random() * human.length)];
-    const conf = Math.random();
-    const anchor = i < ORTHO.total * ORTHO.anchors;
-    ps.push({ fish: f, human: h, conf, anchor, geneFish: randGene(), geneHuman: randGene(true) });
-  }
-  return ps.sort((a, b) => b.conf - a.conf);
-}
 
 /* ========================================================================== */
 /* CANVAS COMPONENT                                                            */
@@ -162,13 +165,38 @@ function TranslationCanvas({ w = 900, h = 500 }: { w?: number; h?: number }) {
   const [mouse, setMouse] = useState<{ x: number; y: number } | null>(null);
   const raf = useRef<number>();
 
-  useEffect(() => {
-    const f = generateGrid(w, h, true);
-    const u = generateGrid(w, h, false);
-    setFishDots(f);
-    setHumanDots(u);
-    setPairs(makePairs(f.map(d => d), u.map(d => d)));
-  }, [w, h]);
+useEffect(() => {
+  fetch("/api/orthologs")
+    .then(r => r.json())
+    .then((d: EdgePayload) => {
+      /* lay out the fixed grids once we know canvas size */
+      const fishGrid  = generateGrid(w, h, true);   // left half
+      const humanGrid = generateGrid(w, h, false);  // right half
+
+      /* build quick lookup maps */
+      const fishMap  = buildIndex(d.fishGenes);
+      const humanMap = buildIndex(d.humanGenes);
+
+      /* translate every edge into a canvas Pair */
+      const edgePairs = d.edges.map(e => {
+        const fIdx = fishMap.get(e.zebrafish_id)! % fishGrid.length;
+        const hIdx = humanMap.get(e.human_id)!    % humanGrid.length;
+        return {
+          fish: fishGrid[fIdx],
+          human: humanGrid[hIdx],
+          conf: e.confidence,
+          anchor: e.validated,         // highlight if ZFIN-validated
+          geneFish:  e.zebrafish_id,
+          geneHuman: e.human_id
+        };
+      }).sort((a, b) => b.conf - a.conf);          // strong first
+
+      setFishDots(fishGrid);
+      setHumanDots(humanGrid);
+      setPairs(edgePairs);
+    });
+}, [w, h]);
+
 
   const draw = useCallback(() => {
     const cvs = ref.current;
@@ -309,14 +337,18 @@ function TranslationCanvas({ w = 900, h = 500 }: { w?: number; h?: number }) {
     ctx.fillText('Zebrafish Embedding', w * 0.25, 24);
     ctx.fillText('Human Embedding',    w * 0.75, 24);
     ctx.textAlign = 'right';
-    ctx.fillText(`Ortholog coverage ${(ORTHO.cov0 + (ORTHO.cov1 - ORTHO.cov0) * prog) * 100 | 0}%`, w - 14, h - 18);
-
+    const validatedPct = (pairs.filter(p => p.anchor).length / (pairs.length || 1)) * 100;
+    ctx.fillText(`ZFIN-validated ${validatedPct.toFixed(0)}%`, w - 14, h - 18);
     raf.current = requestAnimationFrame(draw);
   }, [w, h, fishDots, humanDots, pairs, slider, hover, mouse]);
 
   useEffect(() => {
     raf.current = requestAnimationFrame(draw);
-    return () => raf.current && cancelAnimationFrame(raf.current);
+    return () => {
+      if (raf.current) {
+        cancelAnimationFrame(raf.current);
+      }
+    };
   }, [draw]);
 
   const onMove = (e: MouseEvent<HTMLCanvasElement>) => {
