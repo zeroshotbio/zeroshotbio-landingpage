@@ -38,3 +38,6 @@ next-env.d.ts
 
 # environment variables
 .env.local
+
+# large ortholog‐alliance files  (keep them out of the repo)
+public/data/ORTHOLOGY-ALLIANCE_COMBINED_*.tsv

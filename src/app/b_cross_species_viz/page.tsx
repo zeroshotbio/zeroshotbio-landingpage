@@ -3,815 +3,960 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 
 // Types
-interface Gene {
-  id: string;
-  name: string;
-  category: string;
-  gridPosition: number;
-  functionalAnnotation: string;
-}
-
-interface GenePosition {
-  x: number;
-  y: number;
-  gene: Gene;
-  index: number;
-}
-
-interface OrthologMapping {
-  type: 'one-to-one' | 'one-to-many' | 'many-to-one' | 'many-to-many';
-  zebrafishIndices: number[];
-  humanIndices: number[];
+interface Edge {
+  zebrafish_id: string;
+  human_id: string;
+  orthology_type: 'ortholog_one2one' | 'ortholog_one2many' | 'ortholog_many2one' | 'ortholog_many2many';
   confidence: number;
   validated: boolean;
-  targetGenes?: Gene[];
 }
 
-interface HoveredGene {
-  species: 'zebrafish' | 'human';
-  index: number;
-  gene: Gene;
-  position: GenePosition;
+interface EdgePayload {
+  fishGenes: string[];
+  humanGenes: string[];
+  edges: Edge[];
+  counts: Record<string, number>;
+  metadata?: {
+    is_subset: boolean;
+    subset_size: number;
+    full_size: number;
+    sampling_ratio: number;
+
+    /** stats for ALL edges in the original file */
+    full_stats: {
+      total_edges: number;
+      total_fish_genes: number;
+      total_human_genes: number;
+      type_distribution: Record<string, number>;
+      confidence_distribution: {
+        high: number;
+        medium: number;
+        low: number;
+      };
+      validated_count: number;
+    };
+
+    /** stats for the SUBSET file (present only when is_subset == true) */
+    subset_stats?: {                       // ← added
+      total_edges: number;
+      total_fish_genes: number;
+      total_human_genes: number;
+      type_distribution: Record<string, number>;
+      confidence_distribution: {
+        high: number;
+        medium: number;
+        low: number;
+      };
+      validated_count: number;
+    };
+
+    subset_method: string;
+  };
 }
 
-interface BandPosition {
-  y: number;
-  label: string;
+interface FilteredEdge extends Edge {
+  fishIndex: number;
+  humanIndex: number;
 }
 
-interface Statistics {
-  coverage: string;
-  mappingTypes: Record<string, number>;
-  totalMappings: number;
-}
-
-// Configuration
+// Configuration for large-scale visualization
 const CONFIG = {
   canvas: {
-    width: 800,
-    height: 600,
-    backgroundColor: '#ffffff',
-    margin: { top: 80, right: 80, bottom: 80, left: 80 }
-  },
-  bands: {
-    height: 50,
-    separation: 240,
-    backgroundColor: 'rgba(240, 240, 240, 0.5)',
-    borderColor: 'rgba(0, 0, 0, 0.15)',
-    borderWidth: 1
+    width: 1200,
+    height: 400,
+    backgroundColor: '#fafafa',
+    margin: { top: 40, right: 40, bottom: 40, left: 40 }
   },
   genes: {
-    count: 80,
-    nodeRadius: 3,
-    nodeSpacing: 8,
-    healthyColor: '#059669',
-    diseaseColor: '#dc2626',
-    drugTargetColor: '#f59e0b',
-    neutralColor: '#9ca3af',
-    hoverRadius: 15
+    dotRadius: 1.5,
+    dotSpacing: 3,
+    hoveredRadius: 3.5,
+    colors: {
+      zebrafish: '#2563eb',
+      human: '#dc2626',
+      hovered: '#f59e0b'
+    }
   },
-  orthologs: {
-    minOpacity: 0.15,
-    maxOpacity: 0.5,
-    minWidth: 0.5,
-    maxWidth: 2.5,
-    baseColor: 'rgba(0, 0, 0, ',
-    highlightColor: 'rgba(245, 158, 11, ',
-    oneToManyFanAngle: 0.25
+  connections: {
+    baseWidth: 0.3,
+    maxWidth: 1.2,
+    baseOpacity: 0.05,
+    maxOpacity: 0.4,
+    hoveredOpacity: 0.8,
+    colors: {
+      'ortholog_one2one': 'rgba(34, 197, 94,',     // green
+      'ortholog_one2many': 'rgba(59, 130, 246,',   // blue  
+      'ortholog_many2one': 'rgba(168, 85, 247,',   // purple
+      'ortholog_many2many': 'rgba(239, 68, 68,'    // red
+    }
   },
-  panel: {
-    backgroundColor: '#ffffff',
-    borderColor: '#e5e7eb',
-    textColor: '#374151',
-    titleColor: '#111827'
+  bands: {
+    height: 30,
+    separation: 200,
+    backgroundColor: 'rgba(0, 0, 0, 0.02)',
+    borderColor: 'rgba(0, 0, 0, 0.1)'
   }
-} as const;
-
-// Gene categories
-const GENE_CATEGORIES = {
-  HEALTHY_MARKER: 'healthy_marker',
-  DISEASE_MARKER: 'disease_marker',
-  DRUG_TARGET: 'drug_target',
-  NEUTRAL: 'neutral'
-} as const;
-
-type GeneCategoryType = typeof GENE_CATEGORIES[keyof typeof GENE_CATEGORIES];
-
-// Generate genes with properties
-const generateGenes = (count: number): Gene[] => {
-  const genes: Gene[] = [];
-  
-  for (let i = 0; i < count; i++) {
-    // Assign categories with realistic distribution
-    let category: GeneCategoryType;
-    const rand = Math.random();
-    if (rand < 0.15) {
-      category = GENE_CATEGORIES.HEALTHY_MARKER;
-    } else if (rand < 0.3) {
-      category = GENE_CATEGORIES.DISEASE_MARKER;
-    } else if (rand < 0.4) {
-      category = GENE_CATEGORIES.DRUG_TARGET;
-    } else {
-      category = GENE_CATEGORIES.NEUTRAL;
-    }
-    
-    genes.push({
-      id: `gene_${i}`,
-      name: `Gene${i + 1}`,
-      category,
-      gridPosition: i,
-      functionalAnnotation: generateFunctionalAnnotation(category)
-    });
-  }
-  
-  return genes;
 };
 
-// Generate functional annotations
-const generateFunctionalAnnotation = (category: GeneCategoryType): string => {
-  const annotations: Record<GeneCategoryType, string[]> = {
-    [GENE_CATEGORIES.HEALTHY_MARKER]: [
-      'Cell cycle regulation',
-      'DNA repair pathway',
-      'Apoptosis control',
-      'Growth factor signaling'
-    ],
-    [GENE_CATEGORIES.DISEASE_MARKER]: [
-      'Oncogene activation',
-      'Tumor suppressor loss',
-      'Metastasis promotion',
-      'Angiogenesis factor'
-    ],
-    [GENE_CATEGORIES.DRUG_TARGET]: [
-      'Kinase inhibitor target',
-      'Checkpoint blockade',
-      'Metabolic vulnerability',
-      'Synthetic lethality'
-    ],
-    [GENE_CATEGORIES.NEUTRAL]: [
-      'Housekeeping gene',
-      'Structural protein',
-      'Metabolic enzyme',
-      'Transport protein'
-    ]
-  };
-  
-  const categoryAnnotations = annotations[category];
-  return categoryAnnotations[Math.floor(Math.random() * categoryAnnotations.length)];
-};
+// Define a type for the three dataset options
+type DataSourceOption =
+  | 'custom_ensembl'
+  | 'full_alliance'
+  | 'subset_alliance'
+  | 'best_training_alliance';
 
-// Generate diverse ortholog mappings
-const generateOrthologMappings = (zebrafishGenes: Gene[], humanGenes: Gene[]): OrthologMapping[] => {
-  const mappings: OrthologMapping[] = [];
-  const usedHumanIndices = new Set<number>();
-  const usedZebrafishIndices = new Set<number>();
-  
-  // Create diverse mapping examples
-  let zIndex = 0;
-  
-  // Add some one-to-one mappings (high confidence)
-  for (let i = 0; i < 30 && zIndex < zebrafishGenes.length; i++, zIndex++) {
-    if (!usedZebrafishIndices.has(zIndex)) {
-      let hIndex = zIndex + Math.floor((Math.random() - 0.5) * 5);
-      hIndex = Math.max(0, Math.min(humanGenes.length - 1, hIndex));
-      
-      if (!usedHumanIndices.has(hIndex)) {
-        usedZebrafishIndices.add(zIndex);
-        usedHumanIndices.add(hIndex);
-        mappings.push({
-          type: 'one-to-one',
-          zebrafishIndices: [zIndex],
-          humanIndices: [hIndex],
-          confidence: 0.7 + Math.random() * 0.3,
-          validated: Math.random() < 0.4
-        });
-      }
-    }
-  }
-  
-  // Add one-to-many mappings (medium confidence)
-  for (let i = 0; i < 10 && zIndex < zebrafishGenes.length - 5; i++, zIndex += 2) {
-    if (!usedZebrafishIndices.has(zIndex)) {
-      const numTargets = 2 + Math.floor(Math.random() * 2); // 2-3 targets
-      const targets: number[] = [];
-      
-      for (let j = 0; j < numTargets; j++) {
-        let hIndex = zIndex + j * 3 + Math.floor(Math.random() * 2);
-        hIndex = Math.max(0, Math.min(humanGenes.length - 1, hIndex));
-        
-        if (!usedHumanIndices.has(hIndex)) {
-          targets.push(hIndex);
-          usedHumanIndices.add(hIndex);
-        }
-      }
-      
-      if (targets.length > 0) {
-        usedZebrafishIndices.add(zIndex);
-        mappings.push({
-          type: 'one-to-many',
-          zebrafishIndices: [zIndex],
-          humanIndices: targets,
-          confidence: 0.4 + Math.random() * 0.3,
-          validated: false
-        });
-      }
-    }
-  }
-  
-  // Add many-to-one mappings (lower confidence)
-  for (let i = 0; i < 8 && zIndex < zebrafishGenes.length - 3; i++, zIndex += 3) {
-    if (!usedZebrafishIndices.has(zIndex) && !usedZebrafishIndices.has(zIndex + 1)) {
-      let hIndex = zIndex + Math.floor(Math.random() * 3);
-      hIndex = Math.max(0, Math.min(humanGenes.length - 1, hIndex));
-      
-      if (!usedHumanIndices.has(hIndex)) {
-        usedZebrafishIndices.add(zIndex);
-        usedZebrafishIndices.add(zIndex + 1);
-        usedHumanIndices.add(hIndex);
-        mappings.push({
-          type: 'many-to-one',
-          zebrafishIndices: [zIndex, zIndex + 1],
-          humanIndices: [hIndex],
-          confidence: 0.3 + Math.random() * 0.3,
-          validated: false
-        });
-      }
-    }
-  }
-  
-  // Add a few many-to-many mappings (low confidence)
-  for (let i = 0; i < 3 && zIndex < zebrafishGenes.length - 4; i++, zIndex += 4) {
-    if (!usedZebrafishIndices.has(zIndex) && !usedZebrafishIndices.has(zIndex + 1)) {
-      const targets: number[] = [];
-      for (let j = 0; j < 2; j++) {
-        let hIndex = zIndex + j * 2 + Math.floor(Math.random() * 2);
-        hIndex = Math.max(0, Math.min(humanGenes.length - 1, hIndex));
-        
-        if (!usedHumanIndices.has(hIndex)) {
-          targets.push(hIndex);
-          usedHumanIndices.add(hIndex);
-        }
-      }
-      
-      if (targets.length > 0) {
-        usedZebrafishIndices.add(zIndex);
-        usedZebrafishIndices.add(zIndex + 1);
-        mappings.push({
-          type: 'many-to-many',
-          zebrafishIndices: [zIndex, zIndex + 1],
-          humanIndices: targets,
-          confidence: 0.3 + Math.random() * 0.2,
-          validated: false
-        });
-      }
-    }
-  }
-  
-  return mappings;
-};
-
-const OrthologMappingVisualization: React.FC = () => {
+const OrthologVisualization: React.FC = () => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const animationFrameRef = useRef<number | null>(null);
-  const [zebrafishGenes] = useState<Gene[]>(() => generateGenes(CONFIG.genes.count));
-  const [humanGenes] = useState<Gene[]>(() => generateGenes(CONFIG.genes.count));
-  const [orthologMappings] = useState<OrthologMapping[]>(() => generateOrthologMappings(zebrafishGenes, humanGenes));
-  const [hoveredGene, setHoveredGene] = useState<HoveredGene | null>(null);
-  
-  // Calculate band positions
-  const bandPositions = useMemo<{ zebrafish: BandPosition; human: BandPosition }>(() => {
-    const centerY = CONFIG.canvas.height / 2;
-    return {
-      zebrafish: {
-        y: centerY - CONFIG.bands.separation / 2,
-        label: 'Zebrafish genes'
-      },
-      human: {
-        y: centerY + CONFIG.bands.separation / 2,
-        label: 'Human genes'
+
+  const [data,        setData]     = useState<EdgePayload | null>(null);
+  const [loading,     setLoading]  = useState(true);
+  const [dataSource,  setDataSource] =
+    useState<DataSourceOption>('custom_ensembl');
+  const [metadata,    setMetadata] =
+    useState<EdgePayload['metadata'] | null>(null);
+
+  // UI filters
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.5);
+  const [selectedTypes,       setSelectedTypes] =
+    useState<Set<string>>(new Set(['ortholog_one2one']));
+  const [maxConnections,      setMaxConnections] = useState(1000);
+  const [hoveredGene,         setHoveredGene]    =
+    useState<{ species: 'zebrafish' | 'human'; index: number } | null>(null);
+  const [hoveredConnection,   setHoveredConnection] =
+    useState<FilteredEdge | null>(null);
+
+  // Parse TSV data
+  const parseTSVData = useCallback((text: string): EdgePayload => {
+    const lines = text.trim().split('\n');
+    const headers = lines[0].split('\t');
+    
+    const edges: Edge[] = [];
+    const fishGenesSet = new Set<string>();
+    const humanGenesSet = new Set<string>();
+    
+    // Find column indices
+    const zebrafishIdIndex = headers.findIndex(h => h.toLowerCase().includes('gene1') || h.toLowerCase().includes('zebrafish'));
+    const humanIdIndex = headers.findIndex(h => h.toLowerCase().includes('gene2') || h.toLowerCase().includes('human'));
+    const typeIndex = headers.findIndex(h => h.toLowerCase().includes('type') || h.toLowerCase().includes('orthology'));
+    const confidenceIndex = headers.findIndex(h => h.toLowerCase().includes('confidence') || h.toLowerCase().includes('score'));
+    
+    // Parse each line (skip header)
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split('\t');
+      if (cols.length < 2) continue;
+      
+      const zebrafishId = cols[zebrafishIdIndex >= 0 ? zebrafishIdIndex : 0]?.trim();
+      const humanId = cols[humanIdIndex >= 0 ? humanIdIndex : 1]?.trim();
+      
+      // Map orthology types from Alliance format
+      let orthologyType: Edge['orthology_type'] = 'ortholog_one2one';
+      if (typeIndex >= 0 && cols[typeIndex]) {
+        const type = cols[typeIndex].toLowerCase();
+        if (type.includes('one') && type.includes('many')) {
+          orthologyType = 'ortholog_one2many';
+        } else if (type.includes('many') && type.includes('one')) {
+          orthologyType = 'ortholog_many2one';
+        } else if (type.includes('many') && type.includes('many')) {
+          orthologyType = 'ortholog_many2many';
+        }
       }
-    };
-  }, []);
-  
-  // Calculate gene positions on grid
-  const genePositions = useMemo<{ zebrafish: GenePosition[]; human: GenePosition[] }>(() => {
-    const positions: { zebrafish: GenePosition[]; human: GenePosition[] } = { zebrafish: [], human: [] };
-    const availableWidth = CONFIG.canvas.width - CONFIG.canvas.margin.left - CONFIG.canvas.margin.right;
-    const totalSpacing = (CONFIG.genes.count - 1) * CONFIG.genes.nodeSpacing;
-    const startX = CONFIG.canvas.margin.left + (availableWidth - totalSpacing) / 2;
-    
-    zebrafishGenes.forEach((gene, index) => {
-      positions.zebrafish.push({
-        x: startX + index * CONFIG.genes.nodeSpacing,
-        y: bandPositions.zebrafish.y,
-        gene,
-        index
-      });
-    });
-    
-    humanGenes.forEach((gene, index) => {
-      positions.human.push({
-        x: startX + index * CONFIG.genes.nodeSpacing,
-        y: bandPositions.human.y,
-        gene,
-        index
-      });
-    });
-    
-    return positions;
-  }, [zebrafishGenes, humanGenes, bandPositions]);
-  
-  // Get color for gene category
-  const getGeneColor = useCallback((category: string): string => {
-    switch (category) {
-      case GENE_CATEGORIES.HEALTHY_MARKER:
-        return CONFIG.genes.healthyColor;
-      case GENE_CATEGORIES.DISEASE_MARKER:
-        return CONFIG.genes.diseaseColor;
-      case GENE_CATEGORIES.DRUG_TARGET:
-        return CONFIG.genes.drugTargetColor;
-      default:
-        return CONFIG.genes.neutralColor;
+      
+      const confidence = confidenceIndex >= 0 && cols[confidenceIndex] ? 
+        parseFloat(cols[confidenceIndex]) : 0.75;
+      
+      if (zebrafishId && humanId && !zebrafishId.startsWith('#')) {
+        fishGenesSet.add(zebrafishId);
+        humanGenesSet.add(humanId);
+        
+        edges.push({
+          zebrafish_id: zebrafishId,
+          human_id: humanId,
+          orthology_type: orthologyType,
+          confidence: isNaN(confidence) ? 0.75 : Math.min(1, Math.max(0, confidence)),
+          validated: false
+        });
+      }
     }
-  }, []);
-  
-  // Calculate statistics
-  const statistics = useMemo<Statistics>(() => {
-    const mappingTypes: Record<string, number> = {
-      'one-to-one': 0,
-      'one-to-many': 0,
-      'many-to-one': 0,
-      'many-to-many': 0
-    };
     
-    orthologMappings.forEach(m => {
-      mappingTypes[m.type] = (mappingTypes[m.type] || 0) + 1;
-    });
-    
-    const totalGenes = zebrafishGenes.length;
-    const mappedGenes = new Set<number>();
-    
-    orthologMappings.forEach(mapping => {
-      mapping.zebrafishIndices.forEach(idx => mappedGenes.add(idx));
-    });
+    console.log(`Parsed ${edges.length} ortholog pairs from TSV`);
     
     return {
-      coverage: ((mappedGenes.size / totalGenes) * 100).toFixed(1),
-      mappingTypes,
-      totalMappings: orthologMappings.length
+      fishGenes: Array.from(fishGenesSet).sort(),
+      humanGenes: Array.from(humanGenesSet).sort(),
+      edges: edges,
+      counts: {}
     };
-  }, [orthologMappings, zebrafishGenes.length]);
+  }, []);
+
+    // Updated data loading effect to handle the three dataset options
+    // ────────────────────────────────────────────────────────────
+    // 1. load the chosen dataset
+    // ────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────
+// 1. load the chosen dataset
+// ────────────────────────────────────────────────────────────
+  useEffect(() => {
+    setLoading(true);
+
+    const load = (url: string, stripMeta = false) =>
+      fetch(url)
+        .then(r => r.json())
+        .then((p: EdgePayload) => {
+          setData(p);
+          setMetadata(stripMeta ? null : p.metadata || null);
+          setLoading(false);
+        })
+        .catch(e => {
+          console.error(`Load failed for ${url}:`, e);
+          setLoading(false);
+        });
+
+    switch (dataSource) {
+      case 'custom_ensembl':
+        load('/api/orthologs', /* stripMeta */ true);
+        break;
+      case 'full_alliance':
+        load('/api/alliance_full');
+        break;
+      case 'subset_alliance':
+        load('/data/alliance_subset_5k.json');
+        break;
+      case 'best_training_alliance':
+        load('/data/alliance_best_training.json');
+        break;
+    }
+  }, [dataSource]);   // ✅ only dependency you need
+
+
+  // Filter and process edges
+  const processedData = useMemo(() => {
+    if (!data) return null;
+    // Create index maps
+    const fishIndexMap = new Map(data.fishGenes.map((gene, i) => [gene, i]));
+    const humanIndexMap = new Map(data.humanGenes.map((gene, i) => [gene, i]));
+    // Filter edges
+    let filteredEdges = data.edges
+      .filter(edge => edge.confidence >= confidenceThreshold)
+      .filter(edge => selectedTypes.has(edge.orthology_type))
+      .map(edge => ({
+        ...edge,
+        fishIndex: fishIndexMap.get(edge.zebrafish_id) || 0,
+        humanIndex: humanIndexMap.get(edge.human_id) || 0
+      }));
+    // Sort by confidence and limit
+    filteredEdges = filteredEdges
+      .sort((a, b) => b.confidence - a.confidence)
+      .slice(0, maxConnections);
+    return {
+      fishGenes: data.fishGenes,
+      humanGenes: data.humanGenes,
+      edges: filteredEdges,
+      totalEdges: data.edges.length
+    };
+  }, [data, confidenceThreshold, selectedTypes, maxConnections]);
+
+  // Helper function to get point on bezier curve
+  const getBezierPoint = useCallback((t: number, x1: number, y1: number, x2: number, y2: number) => {
+    const controlY1 = y1 + (y2 - y1) * 0.3;
+    const controlY2 = y2 - (y2 - y1) * 0.3;
+    
+    const mt = 1 - t;
+    const mt2 = mt * mt;
+    const mt3 = mt2 * mt;
+    const t2 = t * t;
+    const t3 = t2 * t;
+    
+    return {
+      x: mt3 * x1 + 3 * mt2 * t * x1 + 3 * mt * t2 * x2 + t3 * x2,
+      y: mt3 * y1 + 3 * mt2 * t * controlY1 + 3 * mt * t2 * controlY2 + t3 * y2
+    };
+  }, []);
+
+  // Check if mouse is near a connection line
+  const findHoveredConnection = useCallback((mouseX: number, mouseY: number, currentPositions: any) => {
+    if (!processedData || !currentPositions) return null;
+    
+    const threshold = 12; // Increased threshold for easier hovering
+    
+    for (const edge of processedData.edges) {
+      const fishPos = currentPositions.fish[edge.fishIndex];
+      const humanPos = currentPositions.human[edge.humanIndex];
+      
+      if (!fishPos || !humanPos) continue;
+      
+      // Sample points along the bezier curve
+      for (let t = 0; t <= 1; t += 0.025) { // Increase sampling rate for better detection
+        const point = getBezierPoint(t, fishPos.x, fishPos.y, humanPos.x, humanPos.y);
+        const distance = Math.sqrt((mouseX - point.x) ** 2 + (mouseY - point.y) ** 2);
+        
+        if (distance < threshold) {
+          return edge;
+        }
+      }
+    }
+    
+    return null;
+  }, [processedData, getBezierPoint]);
+
+  const positions = useMemo(() => {
+    if (!processedData) return null;
+    const { width, height, margin } = CONFIG.canvas;
+    const availableWidth = width - margin.left - margin.right;
+    const centerY = height / 2;
+    const fishY  = centerY - CONFIG.bands.separation / 2;
+    const humanY = centerY + CONFIG.bands.separation / 2;
+    const fishPositions = processedData.fishGenes.map((_, i) => ({
+      x: margin.left + (i / Math.max(1, processedData.fishGenes.length - 1)) * availableWidth,
+      y: fishY,
+    }));
+    const humanPositions = processedData.humanGenes.map((_, i) => ({
+      x: margin.left + (i / Math.max(1, processedData.humanGenes.length - 1)) * availableWidth,
+      y: humanY,
+    }));
+    return { fish: fishPositions, human: humanPositions, fishY, humanY };
+  }, [processedData]);
   
-  // Main draw function
+  // Drawing function
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
-    
-    const ctx = canvas.getContext('2d', { alpha: false });
+    if (!canvas || !processedData || !positions) return;
+    const ctx = canvas.getContext('2d');
     if (!ctx) return;
+    const { width, height } = CONFIG.canvas;
     
     // Clear canvas
     ctx.fillStyle = CONFIG.canvas.backgroundColor;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+    ctx.fillRect(0, 0, width, height);
     // Draw bands
-    const bandWidth = CONFIG.canvas.width - CONFIG.canvas.margin.left - CONFIG.canvas.margin.right;
+    const bandWidth = width - CONFIG.canvas.margin.left - CONFIG.canvas.margin.right;
     
     // Zebrafish band
     ctx.fillStyle = CONFIG.bands.backgroundColor;
     ctx.fillRect(
       CONFIG.canvas.margin.left,
-      bandPositions.zebrafish.y - CONFIG.bands.height / 2,
-      bandWidth,
-      CONFIG.bands.height
-    );
-    ctx.strokeStyle = CONFIG.bands.borderColor;
-    ctx.lineWidth = CONFIG.bands.borderWidth;
-    ctx.strokeRect(
-      CONFIG.canvas.margin.left,
-      bandPositions.zebrafish.y - CONFIG.bands.height / 2,
+      positions.fishY - CONFIG.bands.height / 2,
       bandWidth,
       CONFIG.bands.height
     );
     
-    // Human band
-    ctx.fillStyle = CONFIG.bands.backgroundColor;
+    // Human band  
     ctx.fillRect(
       CONFIG.canvas.margin.left,
-      bandPositions.human.y - CONFIG.bands.height / 2,
+      positions.humanY - CONFIG.bands.height / 2,
+      bandWidth,
+      CONFIG.bands.height
+    );
+    // Band borders
+    ctx.strokeStyle = CONFIG.bands.borderColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(
+      CONFIG.canvas.margin.left,
+      positions.fishY - CONFIG.bands.height / 2,
       bandWidth,
       CONFIG.bands.height
     );
     ctx.strokeRect(
       CONFIG.canvas.margin.left,
-      bandPositions.human.y - CONFIG.bands.height / 2,
+      positions.humanY - CONFIG.bands.height / 2,
       bandWidth,
       CONFIG.bands.height
     );
-    
-    // Draw band labels
-    ctx.font = '14px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = CONFIG.panel.titleColor;
+    // Labels
+    ctx.fillStyle = '#374151';
+    ctx.font = '13px system-ui, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText(
-      bandPositions.zebrafish.label,
-      CONFIG.canvas.margin.left,
-      bandPositions.zebrafish.y - CONFIG.bands.height / 2 - 10
-    );
-    ctx.fillText(
-      bandPositions.human.label,
-      CONFIG.canvas.margin.left,
-      bandPositions.human.y + CONFIG.bands.height / 2 + 20
-    );
+    ctx.fillText('Zebrafish genes', CONFIG.canvas.margin.left, positions.fishY - CONFIG.bands.height / 2 - 8);
+    ctx.fillText('Human genes', CONFIG.canvas.margin.left, positions.humanY + CONFIG.bands.height / 2 + 20);
+    // Draw connections (sorted by confidence, lowest first)
+    const sortedEdges = [...processedData.edges].sort((a, b) => a.confidence - b.confidence);
     
-    // Sort mappings by confidence to draw weaker connections first
-    const sortedMappings = [...orthologMappings].sort((a, b) => a.confidence - b.confidence);
-    
-    // Draw ortholog connections
-    sortedMappings.forEach(mapping => {
-      const opacity = CONFIG.orthologs.minOpacity + 
-        (CONFIG.orthologs.maxOpacity - CONFIG.orthologs.minOpacity) * mapping.confidence;
-      const width = CONFIG.orthologs.minWidth + 
-        (CONFIG.orthologs.maxWidth - CONFIG.orthologs.minWidth) * mapping.confidence;
+    sortedEdges.forEach(edge => {
+      const fishPos = positions.fish[edge.fishIndex];
+      const humanPos = positions.human[edge.humanIndex];
       
-      // Check if this mapping involves the hovered gene
-      const isHighlighted = hoveredGene && (
-        (hoveredGene.species === 'zebrafish' && mapping.zebrafishIndices.includes(hoveredGene.index)) ||
-        (hoveredGene.species === 'human' && mapping.humanIndices.includes(hoveredGene.index))
+      if (!fishPos || !humanPos) return;
+      // Check if this edge should be highlighted
+      const isHighlighted = (hoveredGene && (
+        (hoveredGene.species === 'zebrafish' && hoveredGene.index === edge.fishIndex) ||
+        (hoveredGene.species === 'human' && hoveredGene.index === edge.humanIndex)
+      )) || hoveredConnection === edge;
+      const baseColor = CONFIG.connections.colors[edge.orthology_type];
+      const opacity = isHighlighted ? 
+        CONFIG.connections.hoveredOpacity : 
+        CONFIG.connections.baseOpacity + (CONFIG.connections.maxOpacity - CONFIG.connections.baseOpacity) * edge.confidence;
+      
+      const width = isHighlighted ?
+        CONFIG.connections.maxWidth * 2 :
+        CONFIG.connections.baseWidth + (CONFIG.connections.maxWidth - CONFIG.connections.baseWidth) * edge.confidence;
+      ctx.strokeStyle = baseColor + opacity + ')';
+      ctx.lineWidth = width;
+      ctx.globalAlpha = 1;
+      // Draw smooth curve
+      ctx.beginPath();
+      ctx.moveTo(fishPos.x, fishPos.y);
+      
+      const controlY1 = fishPos.y + (humanPos.y - fishPos.y) * 0.3;
+      const controlY2 = humanPos.y - (humanPos.y - fishPos.y) * 0.3;
+      
+      ctx.bezierCurveTo(
+        fishPos.x, controlY1,
+        humanPos.x, controlY2,
+        humanPos.x, humanPos.y
       );
-      
-      if (isHighlighted) {
-        ctx.strokeStyle = CONFIG.orthologs.highlightColor + '0.8)';
-        ctx.lineWidth = width * 2;
-      } else {
-        ctx.strokeStyle = CONFIG.orthologs.baseColor + opacity + ')';
-        ctx.lineWidth = width;
-      }
-      
-      if (mapping.type === 'one-to-one') {
-        const zPos = genePositions.zebrafish[mapping.zebrafishIndices[0]];
-        const hPos = genePositions.human[mapping.humanIndices[0]];
-        
-        if (zPos && hPos) {
-          ctx.beginPath();
-          ctx.moveTo(zPos.x, zPos.y);
-          const cp1y = zPos.y + (hPos.y - zPos.y) * 0.3;
-          const cp2y = hPos.y - (hPos.y - zPos.y) * 0.3;
-          ctx.bezierCurveTo(zPos.x, cp1y, hPos.x, cp2y, hPos.x, hPos.y);
-          ctx.stroke();
-        }
-      } else if (mapping.type === 'one-to-many') {
-        const zPos = genePositions.zebrafish[mapping.zebrafishIndices[0]];
-        if (zPos) {
-          mapping.humanIndices.forEach((hIndex, i) => {
-            const hPos = genePositions.human[hIndex];
-            if (hPos) {
-              const angle = (i - (mapping.humanIndices.length - 1) / 2) * CONFIG.orthologs.oneToManyFanAngle;
-              
-              ctx.beginPath();
-              ctx.moveTo(zPos.x, zPos.y);
-              const midY = (zPos.y + hPos.y) / 2;
-              const cp1x = zPos.x + Math.sin(angle) * 30;
-              const cp1y = zPos.y + (midY - zPos.y) * 0.6;
-              const cp2x = hPos.x + Math.sin(angle) * 20;
-              const cp2y = hPos.y - (hPos.y - midY) * 0.6;
-              ctx.bezierCurveTo(cp1x, cp1y, cp2x, cp2y, hPos.x, hPos.y);
-              ctx.stroke();
-            }
-          });
-        }
-      } else if (mapping.type === 'many-to-one') {
-        const hPos = genePositions.human[mapping.humanIndices[0]];
-        if (hPos) {
-          mapping.zebrafishIndices.forEach((zIndex) => {
-            const zPos = genePositions.zebrafish[zIndex];
-            if (zPos) {
-              ctx.beginPath();
-              ctx.moveTo(zPos.x, zPos.y);
-              ctx.bezierCurveTo(
-                zPos.x, zPos.y + (hPos.y - zPos.y) * 0.3,
-                hPos.x, hPos.y - (hPos.y - zPos.y) * 0.3,
-                hPos.x, hPos.y
-              );
-              ctx.stroke();
-            }
-          });
-        }
-      } else if (mapping.type === 'many-to-many') {
-        // Draw from each zebrafish gene to each human gene
-        mapping.zebrafishIndices.forEach(zIndex => {
-          const zPos = genePositions.zebrafish[zIndex];
-          if (zPos) {
-            mapping.humanIndices.forEach(hIndex => {
-              const hPos = genePositions.human[hIndex];
-              if (hPos) {
-                ctx.beginPath();
-                ctx.moveTo(zPos.x, zPos.y);
-                ctx.bezierCurveTo(
-                  zPos.x, zPos.y + (hPos.y - zPos.y) * 0.3,
-                  hPos.x, hPos.y - (hPos.y - zPos.y) * 0.3,
-                  hPos.x, hPos.y
-                );
-                ctx.stroke();
-              }
-            });
-          }
-        });
-      }
+      ctx.stroke();
     });
-    
-    // Draw gene nodes
-    genePositions.zebrafish.forEach((pos, index) => {
-      const isHovered = hoveredGene?.species === 'zebrafish' && hoveredGene?.index === index;
-      ctx.fillStyle = getGeneColor(pos.gene.category);
+    // Draw gene dots
+    // Zebrafish genes
+    positions.fish.forEach((pos, i) => {
+      const isHovered = hoveredGene?.species === 'zebrafish' && hoveredGene?.index === i;
+      const radius = isHovered ? CONFIG.genes.hoveredRadius : CONFIG.genes.dotRadius;
+      const color = isHovered ? CONFIG.genes.colors.hovered : CONFIG.genes.colors.zebrafish;
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, isHovered ? CONFIG.genes.nodeRadius * 1.5 : CONFIG.genes.nodeRadius, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
       ctx.fill();
-      
       if (isHovered) {
-        ctx.strokeStyle = CONFIG.orthologs.highlightColor + '1)';
+        ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
     });
-    
-    genePositions.human.forEach((pos, index) => {
-      const isHovered = hoveredGene?.species === 'human' && hoveredGene?.index === index;
-      ctx.fillStyle = getGeneColor(pos.gene.category);
+    // Human genes
+    positions.human.forEach((pos, i) => {
+      const isHovered = hoveredGene?.species === 'human' && hoveredGene?.index === i;
+      const radius = isHovered ? CONFIG.genes.hoveredRadius : CONFIG.genes.dotRadius;
+      const color = isHovered ? CONFIG.genes.colors.hovered : CONFIG.genes.colors.human;
+      ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.arc(pos.x, pos.y, isHovered ? CONFIG.genes.nodeRadius * 1.5 : CONFIG.genes.nodeRadius, 0, Math.PI * 2);
+      ctx.arc(pos.x, pos.y, radius, 0, Math.PI * 2);
       ctx.fill();
-      
       if (isHovered) {
-        ctx.strokeStyle = CONFIG.orthologs.highlightColor + '1)';
+        ctx.strokeStyle = color;
         ctx.lineWidth = 2;
         ctx.stroke();
       }
     });
-    
-  }, [bandPositions, genePositions, orthologMappings, hoveredGene, getGeneColor]);
-  
+  }, [processedData, positions, hoveredGene, hoveredConnection]);
+
   // Animation loop
   useEffect(() => {
+    let animationId: number;
     const animate = () => {
       draw();
-      animationFrameRef.current = requestAnimationFrame(animate);
+      animationId = requestAnimationFrame(animate);
     };
-    
     animate();
-    
-    return () => {
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current);
-      }
-    };
+    return () => cancelAnimationFrame(animationId);
   }, [draw]);
-  
-  // Handle mouse movement
+
+  // Mouse handling
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
+    if (!positions) return;
     const canvas = canvasRef.current;
     if (!canvas) return;
     
+    // Get accurate canvas-relative coordinates
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
     
-    // Check for gene hover with large detection radius
-    let foundGene: HoveredGene | null = null;
-    let minDistance = Infinity;
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+    
+    let foundGene: {species: 'zebrafish' | 'human', index: number} | null = null;
+    const hoverRadius = CONFIG.genes.hoveredRadius * 3; // Increase detection radius
     
     // Check zebrafish genes
-    genePositions.zebrafish.forEach((pos, index) => {
+    positions.fish.forEach((pos, i) => {
       const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-      if (distance < CONFIG.genes.hoverRadius && distance < minDistance) {
-        minDistance = distance;
-        foundGene = {
-          species: 'zebrafish',
-          index,
-          gene: pos.gene,
-          position: pos
-        };
+      if (distance < hoverRadius) {
+        foundGene = { species: 'zebrafish', index: i };
       }
     });
     
-    // Check human genes
-    genePositions.human.forEach((pos, index) => {
-      const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
-      if (distance < CONFIG.genes.hoverRadius && distance < minDistance) {
-        minDistance = distance;
-        foundGene = {
-          species: 'human',
-          index,
-          gene: pos.gene,
-          position: pos
-        };
-      }
-    });
-    
-    setHoveredGene(foundGene);
-  }, [genePositions]);
-  
-  // Get ortholog info for hovered gene
-  const getOrthologInfo = useCallback(() => {
-    if (!hoveredGene) return null;
-    
-    const relevantMappings = orthologMappings.filter(m => {
-      if (hoveredGene.species === 'zebrafish') {
-        return m.zebrafishIndices.includes(hoveredGene.index);
-      } else {
-        return m.humanIndices.includes(hoveredGene.index);
-      }
-    });
-    
-    if (relevantMappings.length === 0) {
-      return { type: 'No ortholog mapping', mappings: [] };
+    // Check human genes (if no zebrafish gene found)
+    if (!foundGene) {
+      positions.human.forEach((pos, i) => {
+        const distance = Math.sqrt((x - pos.x) ** 2 + (y - pos.y) ** 2);
+        if (distance < hoverRadius) {
+          foundGene = { species: 'human', index: i };
+        }
+      });
     }
     
-    return {
-      mappings: relevantMappings.map(m => ({
-        ...m,
-        targetGenes: hoveredGene.species === 'zebrafish' 
-          ? m.humanIndices.map(i => humanGenes[i])
-          : m.zebrafishIndices.map(i => zebrafishGenes[i])
-      }))
-    };
-  }, [hoveredGene, orthologMappings, humanGenes, zebrafishGenes]);
-  
-  const orthologInfo = getOrthologInfo();
-  
-  // Default gene info when nothing is hovered
-  const defaultGeneInfo = {
-    name: 'Hover over a gene',
-    category: 'Select a gene to see details',
-    annotation: 'Mouse over any gene node to explore ortholog relationships',
-    species: ''
+    // If no gene found, check for connection hover
+    let foundConnection: FilteredEdge | null = null;
+    if (!foundGene) {
+      foundConnection = findHoveredConnection(x, y, positions);
+    }
+    
+    setHoveredGene(foundGene);
+    setHoveredConnection(foundConnection);
+  }, [positions, findHoveredConnection]);
+
+  // Get connections for hovered gene or connection
+  const hoveredConnections = useMemo(() => {
+    if (!processedData) return [];
+    
+    if (hoveredGene) {
+      return processedData.edges.filter(edge => 
+        (hoveredGene.species === 'zebrafish' && edge.fishIndex === hoveredGene.index) ||
+        (hoveredGene.species === 'human' && edge.humanIndex === hoveredGene.index)
+      );
+    }
+    
+    if (hoveredConnection) {
+      return [hoveredConnection];
+    }
+    
+    return [];
+  }, [hoveredGene, hoveredConnection, processedData]);
+
+  // Get dataset source label for display
+  const getDataSourceLabel = () => {
+    switch (dataSource) {
+      case 'custom_ensembl':
+        return 'Custom Ensembl 114';
+      case 'full_alliance':
+        return 'Full Orthology Alliance';
+      case 'subset_alliance':
+        return 'Subset Orthology Alliance';     // ← match button caption ✅
+      case 'best_training_alliance':
+        return 'Best-Training Alliance';        // ← match button caption ✅
+      default:
+        return 'Unknown Source';
+    }
   };
-  
-  const displayGene = hoveredGene || {
-    gene: {
-      name: defaultGeneInfo.name,
-      category: defaultGeneInfo.category,
-      functionalAnnotation: defaultGeneInfo.annotation
-    },
-    species: defaultGeneInfo.species
-  };
-  
-  return (
-    <div className="flex flex-col items-center p-8 bg-gray-50 min-h-screen">
-      <div className="mb-8 text-center max-w-4xl">
-        <h1 className="text-2xl font-light text-gray-800 mb-4">
-          Cross-Species Ortholog Mapping
-        </h1>
-        <p className="text-sm text-gray-600 leading-relaxed">
-          Gene orthology between zebrafish and human genomes. Curved connections show various ortholog relationships: 
-          one-to-one (thick lines), one-to-many (fan patterns), many-to-one (converging lines), and many-to-many (complex webs). 
-          Connection thickness and opacity encode confidence levels.
-        </p>
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-gray-500">Loading ortholog data...</div>
       </div>
-      
-      <div className="flex gap-6">
-        {/* Main visualization */}
-        <div className="relative">
-          <canvas
-            ref={canvasRef}
-            width={CONFIG.canvas.width}
-            height={CONFIG.canvas.height}
-            className="bg-white border border-gray-200 shadow-sm cursor-crosshair"
-            onMouseMove={handleMouseMove}
-            onMouseLeave={() => setHoveredGene(null)}
-          />
-        </div>
+    );
+  }
+
+  if (!data || !processedData) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="text-red-500">Failed to load data</div>
+      </div>
+    );
+  }
+
+  const toggleType = (type: string) => {
+    const newTypes = new Set(selectedTypes);
+    if (newTypes.has(type)) {
+      newTypes.delete(type);
+    } else {
+      newTypes.add(type);
+    }
+    setSelectedTypes(newTypes);
+  };
+
+  return (
+    <div className="w-full max-w-6xl mx-auto p-4 space-y-4">
+      {/* Header */}
+      <div className="text-center">
+        <h1 className="text-2xl font-light text-gray-800 mb-1">
+          Cross-Species Ortholog Network
+        </h1>
+        <p className="text-gray-600 text-sm max-w-2xl mx-auto">
+          {data && metadata?.is_subset ? (
+            <>
+              Loading {data.edges.length.toLocaleString()} representative mappings from{' '}
+              {metadata?.full_stats.total_edges.toLocaleString()} total ortholog pairs between zebrafish and human genomes.
+            </>
+          ) : data ? (
+            `Exploring ${data.edges.length.toLocaleString()} ortholog mappings between zebrafish and human genomes.`
+          ) : (
+            'Loading ortholog mappings...'
+          )}
+        </p>
         
-        {/* Side panels - always visible */}
-        <div className="space-y-4">
-          {/* Gene Categories */}
-          <div className="w-64 bg-white border border-gray-200 p-4 rounded shadow-sm">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Gene Categories</h3>
-            <div className="space-y-2">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CONFIG.genes.healthyColor }} />
-                <span className="text-xs text-gray-600">Healthy markers</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CONFIG.genes.diseaseColor }} />
-                <span className="text-xs text-gray-600">Disease markers</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CONFIG.genes.drugTargetColor }} />
-                <span className="text-xs text-gray-600">Drug targets</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CONFIG.genes.neutralColor }} />
-                <span className="text-xs text-gray-600">Other genes</span>
-              </div>
+        {/* Updated Data Source Toggle with three options */}
+        <div className="mt-3 flex items-center justify-center gap-4">
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-gray-600">Data source:</span>
+            <div className="inline-flex bg-gray-100 rounded-lg p-1">
+              <button
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  dataSource === 'custom_ensembl' 
+                    ? 'bg-white text-gray-800 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                onClick={() => {
+                  setDataSource('custom_ensembl');
+                  setHoveredGene(null);
+                  setHoveredConnection(null);
+                }}
+              >
+                Custom Ensembl 114
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  dataSource === 'full_alliance' 
+                    ? 'bg-white text-gray-800 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                onClick={() => {
+                  setDataSource('full_alliance');
+                  setHoveredGene(null);
+                  setHoveredConnection(null);
+                }}
+              >
+                Full Orthology Alliance
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  dataSource === 'subset_alliance' 
+                    ? 'bg-white text-gray-800 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                onClick={() => {
+                  setDataSource('subset_alliance');
+                  setHoveredGene(null);
+                  setHoveredConnection(null);
+                }}
+              >
+                Representative Subset Alliance
+              </button>
+              <button
+                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
+                  dataSource === 'best_training_alliance' 
+                    ? 'bg-white text-gray-800 shadow-sm' 
+                    : 'text-gray-600 hover:text-gray-800'
+                }`}
+                onClick={() => {
+                  setDataSource('best_training_alliance');
+                  setHoveredGene(null);
+                  setHoveredConnection(null);
+                }}
+              >
+                Best-Training Alliance
+              </button>
             </div>
           </div>
+        </div>
+      </div>
+      {/* Controls */}
+      <div className="bg-white border border-gray-200 rounded-lg p-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           
-          {/* Gene Information - always visible */}
-          <div className="w-64 bg-white border border-gray-200 p-4 rounded shadow-sm">
-            <h3 className="font-medium text-gray-800 mb-3">
-              {displayGene.species && `${displayGene.species === 'zebrafish' ? 'Zebrafish' : 'Human'} `}
-              {displayGene.gene.name}
-            </h3>
-            
-            <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-gray-500">Category:</span>{' '}
-                {hoveredGene ? (
-                  <span className="font-medium" style={{ color: getGeneColor(hoveredGene.gene.category) }}>
-                    {hoveredGene.gene.category.replace(/_/g, ' ')}
+          {/* Confidence Filter */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Minimum Confidence: {Math.round(confidenceThreshold * 100)}%
+            </label>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.05}
+              value={confidenceThreshold}
+              onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+          {/* Max Connections */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Show Top: {maxConnections.toLocaleString()} connections
+            </label>
+            <input
+              type="range"
+              min={100}
+              max={5000}
+              step={100}
+              value={maxConnections}
+              onChange={(e) => setMaxConnections(parseInt(e.target.value))}
+              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            />
+          </div>
+          {/* Type Filters */}
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Ortholog Types
+            </label>
+            <div className="space-y-1">
+              {Object.entries(CONFIG.connections.colors).map(([type, color]) => (
+                <label key={type} className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedTypes.has(type)}
+                    onChange={() => toggleType(type)}
+                    className="mr-2 h-3 w-3"
+                  />
+                  <div 
+                    className="w-2 h-2 rounded mr-2" 
+                    style={{ backgroundColor: color + '0.8)' }}
+                  />
+                  <span className="text-xs text-gray-600">
+                    {type.replace('ortholog_', '').replace(/_/g, '-')}
                   </span>
-                ) : (
-                  <span className="text-gray-400 italic text-xs">{displayGene.gene.category}</span>
-                )}
-              </div>
-              
+                </label>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+      {/* Visualization */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2">
+        <canvas
+          ref={canvasRef}
+          width={CONFIG.canvas.width}
+          height={CONFIG.canvas.height}
+          className="w-full cursor-crosshair"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => {
+            setHoveredGene(null);
+            setHoveredConnection(null);
+          }}
+        />
+      </div>
+      {/* Info Grid */}
+      <div className="grid grid-cols-12 gap-4">
+        
+        {/* Current Selection - always visible */}
+        <div className="col-span-12 md:col-span-4 bg-white border border-gray-200 rounded p-3">
+          <h3 className="font-medium text-gray-800 text-sm mb-2">
+            {hoveredGene ? `${hoveredGene.species === 'zebrafish' ? 'Zebrafish' : 'Human'} Gene` : 
+             hoveredConnection ? 'Connection' : 'Hover to Select'}
+          </h3>
+          <div className="space-y-1 text-xs">
+            {hoveredGene && (
               <div>
-                <span className="text-gray-500">Function:</span>{' '}
-                <span className={hoveredGene ? "text-gray-700" : "text-gray-400 italic text-xs"}>
-                  {displayGene.gene.functionalAnnotation}
+                <span className="text-gray-600">ID:</span>{' '}
+                <span className="font-mono">
+                  {hoveredGene.species === 'zebrafish' 
+                    ? data.fishGenes[hoveredGene.index]
+                    : data.humanGenes[hoveredGene.index]
+                  }
                 </span>
               </div>
-              
-              {hoveredGene && orthologInfo && (
-                <>
-                  <div className="pt-2 border-t border-gray-100">
-                    <span className="text-gray-500">Ortholog mappings:</span>{' '}
-                    <span className="font-medium text-gray-700">
-                      {orthologInfo.mappings.length > 0 ? orthologInfo.mappings[0].type : 'None'}
-                    </span>
-                  </div>
-                  
-                  {orthologInfo.mappings.length > 0 && (
-                    <div className="space-y-2">
-                      {orthologInfo.mappings.map((mapping, i) => (
-                        <div key={i} className="pl-4 border-l-2 border-orange-200">
-                          <div className="text-xs text-gray-500">
-                            Confidence: <span className="font-medium">{(mapping.confidence * 100).toFixed(0)}%</span>
-                            {mapping.validated && (
-                              <span className="ml-2 text-green-600">✓ Validated</span>
-                            )}
-                          </div>
-                          {mapping.targetGenes && (
-                            <div className="text-xs text-gray-600 mt-1">
-                              {hoveredGene.species === 'zebrafish' ? '→' : '←'} 
-                              {' '}{mapping.targetGenes.map(g => g.name).join(', ')}
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+            )}
+            {hoveredConnection && (
+              <>
+                <div>
+                  <span className="text-gray-600">Fish:</span>{' '}
+                  <span className="font-mono">{hoveredConnection.zebrafish_id}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Human:</span>{' '}
+                  <span className="font-mono">{hoveredConnection.human_id}</span>
+                </div>
+                <div>
+                  <span className="text-gray-600">Type:</span>{' '}
+                  {hoveredConnection.orthology_type.replace('ortholog_', '').replace(/_/g, '-')}
+                </div>
+                <div>
+                  <span className="text-gray-600">Confidence:</span>{' '}
+                  {Math.round(hoveredConnection.confidence * 100)}%
+                  {hoveredConnection.validated && (
+                    <span className="ml-1 text-green-600">✓</span>
                   )}
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
+            {!hoveredGene && !hoveredConnection && (
+              <div className="text-gray-500">
+                Hover over genes or connections to see details
+              </div>
+            )}
           </div>
-          
-          {/* Mapping Statistics */}
-          <div className="w-64 bg-white border border-gray-200 p-4 rounded shadow-sm">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Mapping Statistics</h3>
-            <div className="space-y-2 text-xs">
-              <div className="flex justify-between">
-                <span className="text-gray-600">Coverage:</span>
-                <span className="font-medium text-gray-800">{statistics.coverage}%</span>
+        </div>
+        {/* Ortholog Types */}
+        <div className="col-span-12 md:col-span-8 bg-white border border-gray-200 rounded p-3">
+          <h3 className="font-medium text-gray-800 text-sm mb-2">Relationship Types</h3>
+          <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(34, 197, 94, 0.8)' }} />
+              <div>
+                <div className="font-medium text-gray-700">One-to-One</div>
+                <div className="text-gray-600">Highest confidence for drug translation</div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-gray-600">Total mappings:</span>
-                <span className="font-medium text-gray-800">{statistics.totalMappings}</span>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }} />
+              <div>
+                <div className="font-medium text-gray-700">One-to-Many</div>
+                <div className="text-gray-600">Gene duplication in human lineage</div>
               </div>
-              <div className="pt-2 border-t border-gray-100 space-y-1">
-                <div className="flex justify-between">
-                  <span className="text-gray-600">One-to-one:</span>
-                  <span className="font-medium text-gray-800">{statistics.mappingTypes['one-to-one']}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">One-to-many:</span>
-                  <span className="font-medium text-gray-800">{statistics.mappingTypes['one-to-many']}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Many-to-one:</span>
-                  <span className="font-medium text-gray-800">{statistics.mappingTypes['many-to-one']}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-gray-600">Many-to-many:</span>
-                  <span className="font-medium text-gray-800">{statistics.mappingTypes['many-to-many'] || 0}</span>
-                </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(168, 85, 247, 0.8)' }} />
+              <div>
+                <div className="font-medium text-gray-700">Many-to-One</div>
+                <div className="text-gray-600">Duplications in zebrafish</div>
+              </div>
+            </div>
+            <div className="flex items-start gap-2">
+              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(239, 68, 68, 0.8)' }} />
+              <div>
+                <div className="font-medium text-gray-700">Many-to-Many</div>
+                <div className="text-gray-600">Complex relationships</div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      
-      <div className="mt-8 max-w-3xl text-center">
-        <p className="text-sm text-gray-600 leading-relaxed">
-          This visualization reveals the complexity of cross-species ortholog mapping. While one-to-one mappings 
-          (thick, high-confidence lines) provide the most reliable basis for therapeutic translation, 
-          the presence of one-to-many and many-to-one relationships shows why additional validation is often needed 
-          before translating zebrafish discoveries to human applications.
-        </p>
+        {/* Statistics and Confidence - Side by side */}
+        <div className="col-span-12 md:col-span-6 bg-white border border-gray-200 rounded p-3">
+          <h3 className="font-medium text-gray-800 text-sm mb-2">
+            Mapping Statistics
+            {metadata?.is_subset && metadata.subset_size < metadata.full_size && (
+              <span className="text-xs font-normal text-amber-600 ml-2">(showing subset)</span>
+            )}
+          </h3>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+            <div className="flex justify-between">
+              <span className="text-gray-600">Total pairs:</span>
+              <span className="font-mono font-bold">
+                {metadata?.is_subset ? 
+                  metadata.full_stats.total_edges.toLocaleString() : 
+                  data.edges.length.toLocaleString()
+                }
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-gray-600">Visualizing:</span>
+              <span className="font-mono">{processedData.edges.length.toLocaleString()}</span>
+            </div>
+            {Object.entries(CONFIG.connections.colors).map(([type, color]) => {
+              const stats = metadata?.is_subset
+                ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
+                : null;
+              const count = stats ? 
+                (stats.type_distribution[type] || 0) :
+                data.edges.filter(e => e.orthology_type === type).length;
+              const total = stats ? stats.total_edges : data.edges.length;
+              const percentage = ((count / total) * 100).toFixed(1);
+              return (
+                <div key={type} className="flex justify-between items-center">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 rounded" style={{ backgroundColor: color + '0.8)' }} />
+                    <span className="text-gray-600">{type.replace('ortholog_', '').replace(/_/g, '-')}</span>
+                  </div>
+                  <span className="font-mono text-xs">{percentage}%</span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        
+        {/* Confidence Analysis */}
+        <div className="col-span-12 md:col-span-6 bg-white border border-gray-200 rounded p-3">
+          <h3 className="font-medium text-gray-800 text-sm mb-2">Confidence Distribution</h3>
+          <div className="space-y-1 text-xs">
+            {(() => {
+              const stats = metadata?.is_subset
+                ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
+                : null;
+              let highConf, medConf, lowConf, validated;
+              
+              if (stats) {
+                highConf  = stats.confidence_distribution.high   ?? 0;
+                medConf   = stats.confidence_distribution.medium ?? 0;
+                lowConf   = stats.confidence_distribution.low    ?? 0;
+                validated = stats.validated_count               ?? 0;
+              } else {
+                highConf = data.edges.filter(e => e.confidence >= 0.8).length;
+                medConf = data.edges.filter(e => e.confidence >= 0.5 && e.confidence < 0.8).length;
+                lowConf = data.edges.filter(e => e.confidence < 0.5).length;
+                validated = data.edges.filter(e => e.validated).length;
+              }
+              
+              return (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">High (≥80%):</span>
+                    <span className="font-mono">{highConf.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Medium (50-79%):</span>
+                    <span className="font-mono">{medConf.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-gray-600">Lower (&lt;50%):</span>
+                    <span className="font-mono">{lowConf.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between pt-1 border-t border-gray-100">
+                    <span className="text-gray-600">Validated:</span>
+                    <span className="font-mono text-green-600">{validated.toLocaleString()}</span>
+                  </div>
+                </>
+              );
+            })()}
+          </div>
+        </div>
+        {/* Embedding Feasibility */}
+        <div className="col-span-12 bg-white border border-gray-200 rounded p-3">
+          <h3 className="font-medium text-gray-800 text-sm mb-2">
+            Cross-Species Embedding Feasibility
+            <span className="text-xs font-normal text-gray-500 ml-2">
+              ({getDataSourceLabel()})
+            </span>
+          </h3>
+          {(() => {
+            const stats = metadata?.is_subset
+              ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
+              : null;
+            const total = stats ? stats.total_edges : data.edges.length;
+            
+            let oneToOneCount, highConfCount;
+            if (stats) {
+              oneToOneCount = stats.type_distribution['ortholog_one2one'] || 0;
+              const highBin   = stats.confidence_distribution.high   ?? 0;
+              const mediumBin = stats.confidence_distribution.medium ?? 0;
+
+              highConfCount = highBin + mediumBin * 0.5; // Approx ≥0.7
+            } else {
+              oneToOneCount = data.edges.filter(e => e.orthology_type === 'ortholog_one2one').length;
+              highConfCount = data.edges.filter(e => e.confidence >= 0.7).length;
+            }
+            
+            const oneToOnePercentage = (oneToOneCount / total) * 100;
+            const highConfPercentage = (highConfCount / total) * 100;
+            
+            let feasibilityScore = 'High';
+            let feasibilityColor = 'text-green-600';
+            let recommendation = 'Strong one-to-one correspondence supports reliable cross-species gene embedding alignment.';
+            
+            if (oneToOnePercentage < 40 || highConfPercentage < 50) {
+              feasibilityScore = 'Moderate';
+              feasibilityColor = 'text-yellow-600';
+              recommendation = 'Moderate ortholog complexity requires careful embedding strategy with confidence weighting.';
+            }
+            
+            if (oneToOnePercentage < 25 || highConfPercentage < 30) {
+              feasibilityScore = 'Limited';
+              feasibilityColor = 'text-red-600';
+              recommendation = 'High ortholog complexity suggests species-specific embeddings may be more appropriate.';
+            }
+            
+            return (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600">Overall Assessment</div>
+                  <div className={`text-lg font-bold ${feasibilityColor}`}>{feasibilityScore}</div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600">Key Metrics</div>
+                  <div className="text-xs">
+                    <div>One-to-one: <strong>{oneToOnePercentage.toFixed(1)}%</strong></div>
+                    <div>High confidence: <strong>{highConfPercentage.toFixed(1)}%</strong></div>
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div className="text-xs text-gray-600">Recommendation</div>
+                  <div className="text-xs">{recommendation}</div>
+                </div>
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
 };
 
-export default OrthologMappingVisualization;
+export default OrthologVisualization;
