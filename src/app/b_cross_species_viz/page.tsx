@@ -63,7 +63,7 @@ interface FilteredEdge extends Edge {
 const CONFIG = {
   canvas: {
     width: 1200,
-    height: 400,
+    height: 600,
     backgroundColor: '#fafafa',
     margin: { top: 40, right: 40, bottom: 40, left: 40 }
   },
@@ -92,7 +92,7 @@ const CONFIG = {
   },
   bands: {
     height: 30,
-    separation: 200,
+    separation: 400,
     backgroundColor: 'rgba(0, 0, 0, 0.02)',
     borderColor: 'rgba(0, 0, 0, 0.1)'
   }
@@ -618,26 +618,44 @@ const OrthologVisualization: React.FC = () => {
             </div>
           </div>
         </div>
+        
+        {/* Dataset Description Box */}
+        <div className="mt-4 bg-white border border-gray-200 rounded-lg p-4 max-w-4xl mx-auto">
+          {dataSource === 'custom_ensembl' && (
+            <>
+              <h3 className="font-medium text-sm text-gray-800 mb-1">Ensembl 114 – full human ⇄ zebrafish dump</h3>
+              <p className="text-xs text-gray-600 mb-2">
+                Ensembl Compara release 114 lists every orthology relationship the pipeline could infer between human and zebrafish genes. After filtering the 11 GB source file down to just the two species of interest (and discarding one malformed row) we are left with <strong>20 290 gene-pair records</strong>. Each record carries a raw confidence score from 0 – 100 % and is labelled as one-to-one, one-to-many or many-to-many. Because the file preserves <em>every</em> prediction—nearly half of which are under 50 % confidence and only ~44 % curator-validated—it is comprehensive but also noisy; it is ideal for breadth-first scans, not for training a high-precision model.
+              </p>
+              <h3 className="font-medium text-sm text-gray-800 mb-1">Our "Ensembl 114 subset"</h3>
+              <p className="text-xs text-gray-600">
+                To make the data usable in a browser we extracted just four essential columns (human ID, zebrafish ID, orthology type and confidence), stored them in a 7 MB Parquet file and loaded that file into the visualisation. No additional filtering was applied, so the subset still reflects the full dump's class imbalance and mid-range confidence profile—only the payload is smaller on disk. Consequently this view is <em>illustrative</em> rather than authoritative: it shows the raw Ensembl landscape, but users should switch to the <strong>Representative Subset Alliance</strong> or the <strong>Best-Training Alliance</strong> tabs when they need cleaner, higher-confidence anchors for downstream analysis.
+              </p>
+            </>
+          )}
+          
+          {dataSource === 'subset_alliance' && (
+            <>
+              <h3 className="font-medium text-sm text-gray-800 mb-1">Representative Subset Alliance (5k stratified sample)</h3>
+              <p className="text-xs text-gray-600">
+                Here we down-sampled the 25 165-row Alliance orthology table to <strong>exactly 5 000 edges</strong> by stratified sampling: every orthology type was guaranteed at least 10 % representation, and high-confidence ZFIN-validated pairs were given priority. The resulting subset mirrors the full table's class distribution (about <strong>35 % one-to-one, 27 % one-to-many, 12 % many-to-one and 26 % many-to-many</strong>) while remaining lightweight enough for interactive demos. Roughly <strong>3 700 edges exceed 80 % confidence</strong>, which lets you experiment quickly without losing the overall flavour of the full Alliance data.
+              </p>
+            </>
+          )}
+          
+          {dataSource === 'best_training_alliance' && (
+            <>
+              <h3 className="font-medium text-sm text-gray-800 mb-1">Best-Training Alliance (high-confidence anchor set)</h3>
+              <p className="text-xs text-gray-600">
+                This dataset is an aggressively filtered slice of the Alliance table that keeps only <strong>bidirectional one-to-one orthologs with ≥ 80 % confidence and a ZFIN "best-score" flag</strong>, yielding <strong>6 944 pristine gene pairs</strong>. Every human gene maps to exactly one zebrafish gene and vice versa, and <strong>100 % of the links are both high-confidence and curator-validated</strong>. Because of that deterministic, unambiguous mapping it is the recommended anchor set when you need to train or align cross-species embeddings with minimal noise.
+              </p>
+            </>
+          )}
+        </div>
       </div>
       {/* Controls */}
       <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          
-          {/* Confidence Filter */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Minimum Confidence: {Math.round(confidenceThreshold * 100)}%
-            </label>
-            <input
-              type="range"
-              min={0}
-              max={1}
-              step={0.05}
-              value={confidenceThreshold}
-              onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {/* Max Connections */}
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -897,20 +915,28 @@ const OrthologVisualization: React.FC = () => {
             const oneToOnePercentage = (oneToOneCount / total) * 100;
             const highConfPercentage = (highConfCount / total) * 100;
             
+            // Base assessment on metrics
             let feasibilityScore = 'High';
             let feasibilityColor = 'text-green-600';
-            let recommendation = 'Strong one-to-one correspondence supports reliable cross-species gene embedding alignment.';
+            let recommendation = '';
             
             if (oneToOnePercentage < 40 || highConfPercentage < 50) {
               feasibilityScore = 'Moderate';
               feasibilityColor = 'text-yellow-600';
-              recommendation = 'Moderate ortholog complexity requires careful embedding strategy with confidence weighting.';
             }
             
             if (oneToOnePercentage < 25 || highConfPercentage < 30) {
               feasibilityScore = 'Limited';
               feasibilityColor = 'text-red-600';
-              recommendation = 'High ortholog complexity suggests species-specific embeddings may be more appropriate.';
+            }
+            
+            // Dataset-specific detailed recommendations
+            if (dataSource === 'custom_ensembl') {
+              recommendation = 'While this dataset provides comprehensive coverage of potential orthologs, its low signal-to-noise ratio makes it suboptimal for embedding training. Nearly half of the connections have confidence scores below 50%, and many-to-many relationships create ambiguity that can confuse embedding alignment algorithms. Consider using this dataset only for exploratory analysis or to identify candidates for follow-up validation. For embedding training, the Best-Training Alliance dataset would provide cleaner anchors with fewer misleading connections.';
+            } else if (dataSource === 'subset_alliance') {
+              recommendation = 'This balanced subset preserves the diversity of the full Alliance dataset while remaining computationally manageable. With about 35% one-to-one orthologs and 3,700 high-confidence edges, it offers a reasonable foundation for embedding alignment experiments. However, the presence of complex many-to-many relationships (26%) may introduce noise during training. Consider using confidence-weighted loss functions and potentially filtering further when aligning embedding spaces. Best for intermediate development when you need representative class distribution.';
+            } else if (dataSource === 'best_training_alliance') {
+              recommendation = 'This dataset is specifically curated for embedding space alignment with only bidirectional one-to-one orthologs and 100% validation rate. Each gene maps deterministically to exactly one gene in the other species, creating clean, unambiguous anchors that minimize training noise. The high confidence threshold (≥80%) ensures that only the most reliable relationships are used. This is the optimal choice for production-grade cross-species embedding alignment, though it sacrifices coverage for precision. Ideal for supervised alignment techniques that benefit from high-quality anchor points.';
             }
             
             return (
@@ -926,7 +952,7 @@ const OrthologVisualization: React.FC = () => {
                     <div>High confidence: <strong>{highConfPercentage.toFixed(1)}%</strong></div>
                   </div>
                 </div>
-                <div className="space-y-1">
+                <div className="col-span-1 md:col-span-3 space-y-1 mt-2">
                   <div className="text-xs text-gray-600">Recommendation</div>
                   <div className="text-xs">{recommendation}</div>
                 </div>
