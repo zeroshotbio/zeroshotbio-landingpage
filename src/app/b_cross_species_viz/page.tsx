@@ -101,7 +101,6 @@ const CONFIG = {
 // Define a type for the three dataset options
 type DataSourceOption =
   | 'custom_ensembl'
-  | 'full_alliance'
   | 'subset_alliance'
   | 'best_training_alliance';
 
@@ -214,9 +213,6 @@ const OrthologVisualization: React.FC = () => {
     switch (dataSource) {
       case 'custom_ensembl':
         load('/api/orthologs', /* stripMeta */ true);
-        break;
-      case 'full_alliance':
-        load('/api/alliance_full');
         break;
       case 'subset_alliance':
         load('/data/alliance_subset_5k.json');
@@ -517,8 +513,6 @@ const OrthologVisualization: React.FC = () => {
     switch (dataSource) {
       case 'custom_ensembl':
         return 'Custom Ensembl 114';
-      case 'full_alliance':
-        return 'Full Orthology Alliance';
       case 'subset_alliance':
         return 'Subset Orthology Alliance';     // ← match button caption ✅
       case 'best_training_alliance':
@@ -592,20 +586,6 @@ const OrthologVisualization: React.FC = () => {
                 }}
               >
                 Custom Ensembl 114
-              </button>
-              <button
-                className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
-                  dataSource === 'full_alliance' 
-                    ? 'bg-white text-gray-800 shadow-sm' 
-                    : 'text-gray-600 hover:text-gray-800'
-                }`}
-                onClick={() => {
-                  setDataSource('full_alliance');
-                  setHoveredGene(null);
-                  setHoveredConnection(null);
-                }}
-              >
-                Full Orthology Alliance
               </button>
               <button
                 className={`px-3 py-1.5 text-xs rounded-md transition-colors ${
