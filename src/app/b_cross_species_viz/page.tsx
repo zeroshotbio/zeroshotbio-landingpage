@@ -553,19 +553,10 @@ const OrthologVisualization: React.FC = () => {
       {/* Header */}
       <div className="text-center">
         <h1 className="text-2xl font-light text-gray-800 mb-1">
-          Cross-Species Ortholog Network
+          Zebrafish ⇄ Human Ortholog Mapping
         </h1>
-        <p className="text-gray-600 text-sm max-w-2xl mx-auto">
-          {data && metadata?.is_subset ? (
-            <>
-              Loading {data.edges.length.toLocaleString()} representative mappings from{' '}
-              {metadata?.full_stats.total_edges.toLocaleString()} total ortholog pairs between zebrafish and human genomes.
-            </>
-          ) : data ? (
-            `Exploring ${data.edges.length.toLocaleString()} ortholog mappings between zebrafish and human genomes.`
-          ) : (
-            'Loading ortholog mappings...'
-          )}
+        <p className="text-gray-600 text-sm max-w-3xl mx-auto">
+          Zeroshot Biolabs relies on zebrafish because the whole-animal model lets us test hundreds of compounds quickly and cheaply—but every insight we generate must ultimately predict what will happen in humans. Ortholog mapping is the molecular &quot;Rosetta Stone&quot; that makes that leap possible: it tells us which zebrafish gene is functionally-equivalent to each human gene, how many copies exist on either side, and how confident we can be in that match. With a clean, well-scored ortholog table in hand we can transfer single-cell expression patterns, CRISPR targets and drug-response signatures across species, train joint embeddings that speak a common genetic language, and rank candidate therapeutics with far higher confidence than animal data alone could provide.
         </p>
         
         {/* Updated Data Source Toggle with three options */}
@@ -627,9 +618,9 @@ const OrthologVisualization: React.FC = () => {
               <p className="text-xs text-gray-600 mb-2">
                 Ensembl Compara release 114 lists every orthology relationship the pipeline could infer between human and zebrafish genes. After filtering the 11 GB source file down to just the two species of interest (and discarding one malformed row) we are left with <strong>20 290 gene-pair records</strong>. Each record carries a raw confidence score from 0 – 100 % and is labelled as one-to-one, one-to-many or many-to-many. Because the file preserves <em>every</em> prediction—nearly half of which are under 50 % confidence and only ~44 % curator-validated—it is comprehensive but also noisy; it is ideal for breadth-first scans, not for training a high-precision model.
               </p>
-              <h3 className="font-medium text-sm text-gray-800 mb-1">Our "Ensembl 114 subset"</h3>
+              <h3 className="font-medium text-sm text-gray-800 mb-1">Our &quot;Ensembl 114 subset&quot;</h3>
               <p className="text-xs text-gray-600">
-                To make the data usable in a browser we extracted just four essential columns (human ID, zebrafish ID, orthology type and confidence), stored them in a 7 MB Parquet file and loaded that file into the visualisation. No additional filtering was applied, so the subset still reflects the full dump's class imbalance and mid-range confidence profile—only the payload is smaller on disk. Consequently this view is <em>illustrative</em> rather than authoritative: it shows the raw Ensembl landscape, but users should switch to the <strong>Representative Subset Alliance</strong> or the <strong>Best-Training Alliance</strong> tabs when they need cleaner, higher-confidence anchors for downstream analysis.
+                To make the data usable in a browser we extracted just four essential columns (human ID, zebrafish ID, orthology type and confidence), stored them in a 7 MB Parquet file and loaded that file into the visualisation. No additional filtering was applied, so the subset still reflects the full dump&apos;s class imbalance and mid-range confidence profile—only the payload is smaller on disk. Consequently this view is <em>illustrative</em> rather than authoritative: it shows the raw Ensembl landscape, but users should switch to the <strong>Representative Subset Alliance</strong> or the <strong>Best-Training Alliance</strong> tabs when they need cleaner, higher-confidence anchors for downstream analysis.
               </p>
             </>
           )}
@@ -638,7 +629,7 @@ const OrthologVisualization: React.FC = () => {
             <>
               <h3 className="font-medium text-sm text-gray-800 mb-1">Representative Subset Alliance (5k stratified sample)</h3>
               <p className="text-xs text-gray-600">
-                Here we down-sampled the 25 165-row Alliance orthology table to <strong>exactly 5 000 edges</strong> by stratified sampling: every orthology type was guaranteed at least 10 % representation, and high-confidence ZFIN-validated pairs were given priority. The resulting subset mirrors the full table's class distribution (about <strong>35 % one-to-one, 27 % one-to-many, 12 % many-to-one and 26 % many-to-many</strong>) while remaining lightweight enough for interactive demos. Roughly <strong>3 700 edges exceed 80 % confidence</strong>, which lets you experiment quickly without losing the overall flavour of the full Alliance data.
+                Here we down-sampled the 25 165-row Alliance orthology table to <strong>exactly 5 000 edges</strong> by stratified sampling: every orthology type was guaranteed at least 10 % representation, and high-confidence ZFIN-validated pairs were given priority. The resulting subset mirrors the full table&apos;s class distribution (about <strong>35 % one-to-one, 27 % one-to-many, 12 % many-to-one and 26 % many-to-many</strong>) while remaining lightweight enough for interactive demos. Roughly <strong>3 700 edges exceed 80 % confidence</strong>, which lets you experiment quickly without losing the overall flavour of the full Alliance data.
               </p>
             </>
           )}
@@ -647,76 +638,62 @@ const OrthologVisualization: React.FC = () => {
             <>
               <h3 className="font-medium text-sm text-gray-800 mb-1">Best-Training Alliance (high-confidence anchor set)</h3>
               <p className="text-xs text-gray-600">
-                This dataset is an aggressively filtered slice of the Alliance table that keeps only <strong>bidirectional one-to-one orthologs with ≥ 80 % confidence and a ZFIN "best-score" flag</strong>, yielding <strong>6 944 pristine gene pairs</strong>. Every human gene maps to exactly one zebrafish gene and vice versa, and <strong>100 % of the links are both high-confidence and curator-validated</strong>. Because of that deterministic, unambiguous mapping it is the recommended anchor set when you need to train or align cross-species embeddings with minimal noise.
+                This dataset is an aggressively filtered slice of the Alliance table that keeps only <strong>bidirectional one-to-one orthologs with ≥ 80 % confidence and a ZFIN &quot;best-score&quot; flag</strong>, yielding <strong>6 944 pristine gene pairs</strong>. Every human gene maps to exactly one zebrafish gene and vice versa, and <strong>100 % of the links are both high-confidence and curator-validated</strong>. Because of that deterministic, unambiguous mapping it is the recommended anchor set when you need to train or align cross-species embeddings with minimal noise.
               </p>
             </>
           )}
         </div>
       </div>
-      {/* Controls */}
-      <div className="bg-white border border-gray-200 rounded-lg p-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Max Connections */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Show Top: {maxConnections.toLocaleString()} connections
-            </label>
-            <input
-              type="range"
-              min={100}
-              max={5000}
-              step={100}
-              value={maxConnections}
-              onChange={(e) => setMaxConnections(parseInt(e.target.value))}
-              className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            />
-          </div>
-          {/* Type Filters */}
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
-              Ortholog Types
-            </label>
-            <div className="space-y-1">
-              {Object.entries(CONFIG.connections.colors).map(([type, color]) => (
-                <label key={type} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    checked={selectedTypes.has(type)}
-                    onChange={() => toggleType(type)}
-                    className="mr-2 h-3 w-3"
-                  />
-                  <div 
-                    className="w-2 h-2 rounded mr-2" 
-                    style={{ backgroundColor: color + '0.8)' }}
-                  />
-                  <span className="text-xs text-gray-600">
-                    {type.replace('ortholog_', '').replace(/_/g, '-')}
-                  </span>
-                </label>
-              ))}
+      {/* Controls with Hover Info Box */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Controls */}
+        <div className="col-span-1 md:col-span-2 bg-white border border-gray-200 rounded-lg p-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Max Connections */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Show Top: {maxConnections.toLocaleString()} connections
+              </label>
+              <input
+                type="range"
+                min={100}
+                max={5000}
+                step={100}
+                value={maxConnections}
+                onChange={(e) => setMaxConnections(parseInt(e.target.value))}
+                className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+              />
+            </div>
+            {/* Type Filters */}
+            <div>
+              <label className="block text-xs font-medium text-gray-700 mb-1">
+                Ortholog Types
+              </label>
+              <div className="space-y-1">
+                {Object.entries(CONFIG.connections.colors).map(([type, color]) => (
+                  <label key={type} className="flex items-center">
+                    <input
+                      type="checkbox"
+                      checked={selectedTypes.has(type)}
+                      onChange={() => toggleType(type)}
+                      className="mr-2 h-3 w-3"
+                    />
+                    <div 
+                      className="w-2 h-2 rounded mr-2" 
+                      style={{ backgroundColor: color + '0.8)' }}
+                    />
+                    <span className="text-xs text-gray-600">
+                      {type.replace('ortholog_', '').replace(/_/g, '-')}
+                    </span>
+                  </label>
+                ))}
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      {/* Visualization */}
-      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2">
-        <canvas
-          ref={canvasRef}
-          width={CONFIG.canvas.width}
-          height={CONFIG.canvas.height}
-          className="w-full cursor-crosshair"
-          onMouseMove={handleMouseMove}
-          onMouseLeave={() => {
-            setHoveredGene(null);
-            setHoveredConnection(null);
-          }}
-        />
-      </div>
-      {/* Info Grid */}
-      <div className="grid grid-cols-12 gap-4">
         
-        {/* Current Selection - always visible */}
-        <div className="col-span-12 md:col-span-4 bg-white border border-gray-200 rounded p-3">
+        {/* Current Selection - moved to control row */}
+        <div className="col-span-1 md:col-span-1 bg-white border border-gray-200 rounded p-4">
           <h3 className="font-medium text-gray-800 text-sm mb-2">
             {hoveredGene ? `${hoveredGene.species === 'zebrafish' ? 'Zebrafish' : 'Human'} Gene` : 
              hoveredConnection ? 'Connection' : 'Hover to Select'}
@@ -763,202 +740,227 @@ const OrthologVisualization: React.FC = () => {
             )}
           </div>
         </div>
-        {/* Ortholog Types */}
-        <div className="col-span-12 md:col-span-8 bg-white border border-gray-200 rounded p-3">
-          <h3 className="font-medium text-gray-800 text-sm mb-2">Relationship Types</h3>
-          <div className="grid grid-cols-2 gap-2 text-xs">
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(34, 197, 94, 0.8)' }} />
-              <div>
-                <div className="font-medium text-gray-700">One-to-One</div>
-                <div className="text-gray-600">Highest confidence for drug translation</div>
+      </div>
+      {/* Visualization */}
+      <div className="bg-white border border-gray-200 rounded-lg shadow-sm p-2">
+        <canvas
+          ref={canvasRef}
+          width={CONFIG.canvas.width}
+          height={CONFIG.canvas.height}
+          className="w-full cursor-crosshair"
+          onMouseMove={handleMouseMove}
+          onMouseLeave={() => {
+            setHoveredGene(null);
+            setHoveredConnection(null);
+          }}
+        />
+      </div>
+      {/* Info Grid - Rearranged into specific rows */}
+      <div className="space-y-4">
+        {/* Row 1: Relationship Types and Mapping Statistics side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Ortholog Types */}
+          <div className="bg-white border border-gray-200 rounded p-3">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">Relationship Types</h3>
+            <div className="grid grid-cols-2 gap-2 text-xs">
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(34, 197, 94, 0.8)' }} />
+                <div>
+                  <div className="font-medium text-gray-700">One-to-One</div>
+                  <div className="text-gray-600">Highest confidence for drug translation</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }} />
-              <div>
-                <div className="font-medium text-gray-700">One-to-Many</div>
-                <div className="text-gray-600">Gene duplication in human lineage</div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(59, 130, 246, 0.8)' }} />
+                <div>
+                  <div className="font-medium text-gray-700">One-to-Many</div>
+                  <div className="text-gray-600">Gene duplication in human lineage</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(168, 85, 247, 0.8)' }} />
-              <div>
-                <div className="font-medium text-gray-700">Many-to-One</div>
-                <div className="text-gray-600">Duplications in zebrafish</div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(168, 85, 247, 0.8)' }} />
+                <div>
+                  <div className="font-medium text-gray-700">Many-to-One</div>
+                  <div className="text-gray-600">Duplications in zebrafish</div>
+                </div>
               </div>
-            </div>
-            <div className="flex items-start gap-2">
-              <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(239, 68, 68, 0.8)' }} />
-              <div>
-                <div className="font-medium text-gray-700">Many-to-Many</div>
-                <div className="text-gray-600">Complex relationships</div>
+              <div className="flex items-start gap-2">
+                <div className="w-2 h-2 rounded mt-0.5" style={{ backgroundColor: 'rgba(239, 68, 68, 0.8)' }} />
+                <div>
+                  <div className="font-medium text-gray-700">Many-to-Many</div>
+                  <div className="text-gray-600">Complex relationships</div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        {/* Statistics and Confidence - Side by side */}
-        <div className="col-span-12 md:col-span-6 bg-white border border-gray-200 rounded p-3">
-          <h3 className="font-medium text-gray-800 text-sm mb-2">
-            Mapping Statistics
-            {metadata?.is_subset && metadata.subset_size < metadata.full_size && (
-              <span className="text-xs font-normal text-amber-600 ml-2">(showing subset)</span>
-            )}
-          </h3>
-          <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-            <div className="flex justify-between">
-              <span className="text-gray-600">Total pairs:</span>
-              <span className="font-mono font-bold">
-                {metadata?.is_subset ? 
-                  metadata.full_stats.total_edges.toLocaleString() : 
-                  data.edges.length.toLocaleString()
-                }
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-gray-600">Visualizing:</span>
-              <span className="font-mono">{processedData.edges.length.toLocaleString()}</span>
-            </div>
-            {Object.entries(CONFIG.connections.colors).map(([type, color]) => {
-              const stats = metadata?.is_subset
-                ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
-                : null;
-              const count = stats ? 
-                (stats.type_distribution[type] || 0) :
-                data.edges.filter(e => e.orthology_type === type).length;
-              const total = stats ? stats.total_edges : data.edges.length;
-              const percentage = ((count / total) * 100).toFixed(1);
-              return (
-                <div key={type} className="flex justify-between items-center">
-                  <div className="flex items-center gap-1">
-                    <div className="w-2 h-2 rounded" style={{ backgroundColor: color + '0.8)' }} />
-                    <span className="text-gray-600">{type.replace('ortholog_', '').replace(/_/g, '-')}</span>
+          
+          {/* Mapping Statistics */}
+          <div className="bg-white border border-gray-200 rounded p-3">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">
+              Mapping Statistics
+              {metadata?.is_subset && metadata.subset_size < metadata.full_size && (
+                <span className="text-xs font-normal text-amber-600 ml-2">(showing subset)</span>
+              )}
+            </h3>
+            <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total pairs:</span>
+                <span className="font-mono font-bold">
+                  {metadata?.is_subset ? 
+                    metadata.full_stats.total_edges.toLocaleString() : 
+                    data.edges.length.toLocaleString()
+                  }
+                </span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Visualizing:</span>
+                <span className="font-mono">{processedData.edges.length.toLocaleString()}</span>
+              </div>
+              {Object.entries(CONFIG.connections.colors).map(([type, color]) => {
+                const stats = metadata?.is_subset
+                  ? (metadata.subset_stats ?? metadata.full_stats)
+                  : null;
+                const count = stats ? 
+                  (stats.type_distribution[type] || 0) :
+                  data.edges.filter(e => e.orthology_type === type).length;
+                const total = stats ? stats.total_edges : data.edges.length;
+                const percentage = ((count / total) * 100).toFixed(1);
+                return (
+                  <div key={type} className="flex justify-between items-center">
+                    <div className="flex items-center gap-1">
+                      <div className="w-2 h-2 rounded" style={{ backgroundColor: color + '0.8)' }} />
+                      <span className="text-gray-600">{type.replace('ortholog_', '').replace(/_/g, '-')}</span>
+                    </div>
+                    <span className="font-mono text-xs">{percentage}%</span>
                   </div>
-                  <span className="font-mono text-xs">{percentage}%</span>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
         </div>
         
-        {/* Confidence Analysis */}
-        <div className="col-span-12 md:col-span-6 bg-white border border-gray-200 rounded p-3">
-          <h3 className="font-medium text-gray-800 text-sm mb-2">Confidence Distribution</h3>
-          <div className="space-y-1 text-xs">
+        {/* Row 2: Confidence Distribution and Embedding Feasibility side by side */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Confidence Analysis */}
+          <div className="bg-white border border-gray-200 rounded p-3">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">Confidence Distribution</h3>
+            <div className="space-y-1 text-xs">
+              {(() => {
+                const stats = metadata?.is_subset
+                  ? (metadata.subset_stats ?? metadata.full_stats)
+                  : null;
+                let highConf, medConf, lowConf, validated;
+                
+                if (stats) {
+                  highConf  = stats.confidence_distribution.high   ?? 0;
+                  medConf   = stats.confidence_distribution.medium ?? 0;
+                  lowConf   = stats.confidence_distribution.low    ?? 0;
+                  validated = stats.validated_count               ?? 0;
+                } else {
+                  highConf = data.edges.filter(e => e.confidence >= 0.8).length;
+                  medConf = data.edges.filter(e => e.confidence >= 0.5 && e.confidence < 0.8).length;
+                  lowConf = data.edges.filter(e => e.confidence < 0.5).length;
+                  validated = data.edges.filter(e => e.validated).length;
+                }
+                
+                return (
+                  <>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">High (≥80%):</span>
+                      <span className="font-mono">{highConf.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Medium (50-79%):</span>
+                      <span className="font-mono">{medConf.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-gray-600">Lower (&lt;50%):</span>
+                      <span className="font-mono">{lowConf.toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between pt-1 border-t border-gray-100">
+                      <span className="text-gray-600">Validated:</span>
+                      <span className="font-mono text-green-600">{validated.toLocaleString()}</span>
+                    </div>
+                  </>
+                );
+              })()}
+            </div>
+          </div>
+          
+          {/* Embedding Feasibility - renamed */}
+          <div className="bg-white border border-gray-200 rounded p-3">
+            <h3 className="font-medium text-gray-800 text-sm mb-2">
+              Zebrafish ⇄ Human Shared Embedding Feasibility
+              <span className="text-xs font-normal text-gray-500 ml-2">
+                ({getDataSourceLabel()})
+              </span>
+            </h3>
             {(() => {
               const stats = metadata?.is_subset
-                ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
+                ? (metadata.subset_stats ?? metadata.full_stats)
                 : null;
-              let highConf, medConf, lowConf, validated;
+              const total = stats ? stats.total_edges : data.edges.length;
               
+              let oneToOneCount, highConfCount;
               if (stats) {
-                highConf  = stats.confidence_distribution.high   ?? 0;
-                medConf   = stats.confidence_distribution.medium ?? 0;
-                lowConf   = stats.confidence_distribution.low    ?? 0;
-                validated = stats.validated_count               ?? 0;
+                oneToOneCount = stats.type_distribution['ortholog_one2one'] || 0;
+                const highBin   = stats.confidence_distribution.high   ?? 0;
+                const mediumBin = stats.confidence_distribution.medium ?? 0;
+
+                highConfCount = highBin + mediumBin * 0.5; // Approx ≥0.7
               } else {
-                highConf = data.edges.filter(e => e.confidence >= 0.8).length;
-                medConf = data.edges.filter(e => e.confidence >= 0.5 && e.confidence < 0.8).length;
-                lowConf = data.edges.filter(e => e.confidence < 0.5).length;
-                validated = data.edges.filter(e => e.validated).length;
+                oneToOneCount = data.edges.filter(e => e.orthology_type === 'ortholog_one2one').length;
+                highConfCount = data.edges.filter(e => e.confidence >= 0.7).length;
+              }
+              
+              const oneToOnePercentage = (oneToOneCount / total) * 100;
+              const highConfPercentage = (highConfCount / total) * 100;
+              
+              // Base assessment on metrics
+              let feasibilityScore = 'High';
+              let feasibilityColor = 'text-green-600';
+              let recommendation = '';
+              
+              if (oneToOnePercentage < 40 || highConfPercentage < 50) {
+                feasibilityScore = 'Moderate';
+                feasibilityColor = 'text-yellow-600';
+              }
+              
+              if (oneToOnePercentage < 25 || highConfPercentage < 30) {
+                feasibilityScore = 'Limited';
+                feasibilityColor = 'text-red-600';
+              }
+              
+              // Dataset-specific detailed recommendations
+              if (dataSource === 'custom_ensembl') {
+                recommendation = 'While this dataset provides comprehensive coverage of potential orthologs, its low signal-to-noise ratio makes it suboptimal for embedding training. Nearly half of the connections have confidence scores below 50%, and many-to-many relationships create ambiguity that can confuse embedding alignment algorithms. Consider using this dataset only for exploratory analysis or to identify candidates for follow-up validation. For embedding training, the Best-Training Alliance dataset would provide cleaner anchors with fewer misleading connections.';
+              } else if (dataSource === 'subset_alliance') {
+                recommendation = 'This balanced subset preserves the diversity of the full Alliance dataset while remaining computationally manageable. With about 35% one-to-one orthologs and 3,700 high-confidence edges, it offers a reasonable foundation for embedding alignment experiments. However, the presence of complex many-to-many relationships (26%) may introduce noise during training. Consider using confidence-weighted loss functions and potentially filtering further when aligning embedding spaces. Best for intermediate development when you need representative class distribution.';
+              } else if (dataSource === 'best_training_alliance') {
+                recommendation = 'This dataset is specifically curated for embedding space alignment with only bidirectional one-to-one orthologs and 100% validation rate. Each gene maps deterministically to exactly one gene in the other species, creating clean, unambiguous anchors that minimize training noise. The high confidence threshold (≥80%) ensures that only the most reliable relationships are used. This is the optimal choice for production-grade cross-species embedding alignment, though it sacrifices coverage for precision. Ideal for supervised alignment techniques that benefit from high-quality anchor points.';
               }
               
               return (
-                <>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">High (≥80%):</span>
-                    <span className="font-mono">{highConf.toLocaleString()}</span>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-600">Overall Assessment</div>
+                    <div className={`text-lg font-bold ${feasibilityColor}`}>{feasibilityScore}</div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Medium (50-79%):</span>
-                    <span className="font-mono">{medConf.toLocaleString()}</span>
+                  <div className="space-y-1">
+                    <div className="text-xs text-gray-600">Key Metrics</div>
+                    <div className="text-xs">
+                      <div>One-to-one: <strong>{oneToOnePercentage.toFixed(1)}%</strong></div>
+                      <div>High confidence: <strong>{highConfPercentage.toFixed(1)}%</strong></div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Lower (&lt;50%):</span>
-                    <span className="font-mono">{lowConf.toLocaleString()}</span>
+                  <div className="col-span-2 space-y-1 mt-2">
+                    <div className="text-xs text-gray-600">Recommendation</div>
+                    <div className="text-xs">{recommendation}</div>
                   </div>
-                  <div className="flex justify-between pt-1 border-t border-gray-100">
-                    <span className="text-gray-600">Validated:</span>
-                    <span className="font-mono text-green-600">{validated.toLocaleString()}</span>
-                  </div>
-                </>
+                </div>
               );
             })()}
           </div>
-        </div>
-        {/* Embedding Feasibility */}
-        <div className="col-span-12 bg-white border border-gray-200 rounded p-3">
-          <h3 className="font-medium text-gray-800 text-sm mb-2">
-            Cross-Species Embedding Feasibility
-            <span className="text-xs font-normal text-gray-500 ml-2">
-              ({getDataSourceLabel()})
-            </span>
-          </h3>
-          {(() => {
-            const stats = metadata?.is_subset
-              ? (metadata.subset_stats ?? metadata.full_stats)   // ← prefer subset-specific
-              : null;
-            const total = stats ? stats.total_edges : data.edges.length;
-            
-            let oneToOneCount, highConfCount;
-            if (stats) {
-              oneToOneCount = stats.type_distribution['ortholog_one2one'] || 0;
-              const highBin   = stats.confidence_distribution.high   ?? 0;
-              const mediumBin = stats.confidence_distribution.medium ?? 0;
-
-              highConfCount = highBin + mediumBin * 0.5; // Approx ≥0.7
-            } else {
-              oneToOneCount = data.edges.filter(e => e.orthology_type === 'ortholog_one2one').length;
-              highConfCount = data.edges.filter(e => e.confidence >= 0.7).length;
-            }
-            
-            const oneToOnePercentage = (oneToOneCount / total) * 100;
-            const highConfPercentage = (highConfCount / total) * 100;
-            
-            // Base assessment on metrics
-            let feasibilityScore = 'High';
-            let feasibilityColor = 'text-green-600';
-            let recommendation = '';
-            
-            if (oneToOnePercentage < 40 || highConfPercentage < 50) {
-              feasibilityScore = 'Moderate';
-              feasibilityColor = 'text-yellow-600';
-            }
-            
-            if (oneToOnePercentage < 25 || highConfPercentage < 30) {
-              feasibilityScore = 'Limited';
-              feasibilityColor = 'text-red-600';
-            }
-            
-            // Dataset-specific detailed recommendations
-            if (dataSource === 'custom_ensembl') {
-              recommendation = 'While this dataset provides comprehensive coverage of potential orthologs, its low signal-to-noise ratio makes it suboptimal for embedding training. Nearly half of the connections have confidence scores below 50%, and many-to-many relationships create ambiguity that can confuse embedding alignment algorithms. Consider using this dataset only for exploratory analysis or to identify candidates for follow-up validation. For embedding training, the Best-Training Alliance dataset would provide cleaner anchors with fewer misleading connections.';
-            } else if (dataSource === 'subset_alliance') {
-              recommendation = 'This balanced subset preserves the diversity of the full Alliance dataset while remaining computationally manageable. With about 35% one-to-one orthologs and 3,700 high-confidence edges, it offers a reasonable foundation for embedding alignment experiments. However, the presence of complex many-to-many relationships (26%) may introduce noise during training. Consider using confidence-weighted loss functions and potentially filtering further when aligning embedding spaces. Best for intermediate development when you need representative class distribution.';
-            } else if (dataSource === 'best_training_alliance') {
-              recommendation = 'This dataset is specifically curated for embedding space alignment with only bidirectional one-to-one orthologs and 100% validation rate. Each gene maps deterministically to exactly one gene in the other species, creating clean, unambiguous anchors that minimize training noise. The high confidence threshold (≥80%) ensures that only the most reliable relationships are used. This is the optimal choice for production-grade cross-species embedding alignment, though it sacrifices coverage for precision. Ideal for supervised alignment techniques that benefit from high-quality anchor points.';
-            }
-            
-            return (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-600">Overall Assessment</div>
-                  <div className={`text-lg font-bold ${feasibilityColor}`}>{feasibilityScore}</div>
-                </div>
-                <div className="space-y-1">
-                  <div className="text-xs text-gray-600">Key Metrics</div>
-                  <div className="text-xs">
-                    <div>One-to-one: <strong>{oneToOnePercentage.toFixed(1)}%</strong></div>
-                    <div>High confidence: <strong>{highConfPercentage.toFixed(1)}%</strong></div>
-                  </div>
-                </div>
-                <div className="col-span-1 md:col-span-3 space-y-1 mt-2">
-                  <div className="text-xs text-gray-600">Recommendation</div>
-                  <div className="text-xs">{recommendation}</div>
-                </div>
-              </div>
-            );
-          })()}
         </div>
       </div>
     </div>
