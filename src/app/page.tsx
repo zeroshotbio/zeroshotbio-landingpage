@@ -61,17 +61,6 @@ const DesktopContent = () => (
           </button>
         </Link>
 
-        <Link href="/b_cross_species_viz" className="w-full max-w-sm">
-          <button className="group relative w-full px-8 py-3 border border-gray-400 text-gray-semidark roboto-slab-regular text-sm hover:border-gray-800 transition-all duration-300 ease-in-out">
-            <span className="relative z-10 flex items-center justify-center">
-              <span>Demo: Ortholog Network Visualization</span>
-              <svg className="ml-2 w-4 h-4 opacity-0 transform translate-x-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </span>
-            <div className="absolute inset-0 bg-gray-50 transform origin-left scale-x-0 group-hover:scale-x-100 transition-transform duration-300"></div>
-          </button>
-        </Link>
       </div>
       
       <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
