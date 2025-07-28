@@ -135,7 +135,7 @@ const MobileContent = () => (
         <Link href="/a_embed_space_viz" className="w-full">
           <button className="group relative w-full px-6 py-3 border border-gray-400 text-gray-semidark roboto-slab-regular text-sm hover:border-gray-800 transition-all duration-300 ease-in-out">
             <span className="relative z-10 flex items-center justify-center">
-              <span>Demo: Embedding Space Visualization</span>
+              <span>Demo: Embedding Space Visualization </span>
               <svg className="ml-2 w-4 h-4 opacity-0 transform translate-x-0 group-hover:opacity-100 group-hover:translate-x-1 transition-all duration-300" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M14 5l7 7m0 0l-7 7m7-7H3" />
               </svg>
