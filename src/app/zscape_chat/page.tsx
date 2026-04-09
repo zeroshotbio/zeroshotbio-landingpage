@@ -1,6 +1,8 @@
 "use client";
 
 import { useState, useRef, useEffect, FormEvent, KeyboardEvent } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 const ENDPOINT =
   process.env.NEXT_PUBLIC_ZSCAPE_ENDPOINT ?? "http://localhost:5002";
@@ -16,6 +18,65 @@ const SUGGESTED_PROMPTS = [
   "Tell me about tfap2a perturbation effects.",
   "Which cell types are most affected by foxd3 knockout?",
 ];
+
+// Markdown component map — styles tables, headings, lists, code, etc.
+const mdComponents: React.ComponentProps<typeof ReactMarkdown>["components"] = {
+  h2: ({ children }) => (
+    <h2 className="roboto-slab-semibold text-base text-gray-dark mt-4 mb-2">
+      {children}
+    </h2>
+  ),
+  h3: ({ children }) => (
+    <h3 className="roboto-slab-medium text-xsm text-gray-dark mt-3 mb-1">
+      {children}
+    </h3>
+  ),
+  p: ({ children }) => (
+    <p className="mb-3 last:mb-0 leading-relaxed">{children}</p>
+  ),
+  ul: ({ children }) => (
+    <ul className="list-disc list-outside ml-5 mb-3 space-y-1">{children}</ul>
+  ),
+  ol: ({ children }) => (
+    <ol className="list-decimal list-outside ml-5 mb-3 space-y-1">{children}</ol>
+  ),
+  li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+  strong: ({ children }) => (
+    <strong className="roboto-slab-semibold text-gray-dark">{children}</strong>
+  ),
+  em: ({ children }) => <em className="italic">{children}</em>,
+  hr: () => <hr className="border-gray-200 my-4" />,
+  table: ({ children }) => (
+    <div className="overflow-x-auto my-3">
+      <table className="w-full text-xxxsm border-collapse">{children}</table>
+    </div>
+  ),
+  thead: ({ children }) => (
+    <thead className="border-b border-gray-200">{children}</thead>
+  ),
+  th: ({ children }) => (
+    <th className="text-left py-1.5 px-3 roboto-slab-medium text-gray-dark whitespace-nowrap">
+      {children}
+    </th>
+  ),
+  td: ({ children }) => (
+    <td className="py-1.5 px-3 border-b border-gray-100 text-gray-semidark">
+      {children}
+    </td>
+  ),
+  code: ({ children, className }) => {
+    const isBlock = className?.includes("language-");
+    return isBlock ? (
+      <pre className="bg-gray-100 rounded-lg px-4 py-3 overflow-x-auto my-3 text-xxxsm font-mono text-gray-dark">
+        <code>{children}</code>
+      </pre>
+    ) : (
+      <code className="bg-gray-100 rounded px-1 py-0.5 text-xxxsm font-mono text-gray-dark">
+        {children}
+      </code>
+    );
+  },
+};
 
 export default function ZscapeChat() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -148,19 +209,26 @@ export default function ZscapeChat() {
             key={i}
             className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
-            <div
-              className={`max-w-[85%] px-4 py-3 rounded-2xl text-xsm leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-gray-100 text-gray-dark rounded-br-sm"
-                  : "text-gray-semidark rounded-bl-sm"
-              }`}
-            >
-              {msg.content || (
-                <span className="text-gray-verylight roboto-slab-light italic">
-                  thinking...
-                </span>
-              )}
-            </div>
+            {msg.role === "user" ? (
+              <div className="max-w-[85%] px-4 py-3 rounded-2xl rounded-br-sm bg-gray-100 text-xsm text-gray-dark leading-relaxed">
+                {msg.content}
+              </div>
+            ) : (
+              <div className="max-w-[85%] text-xsm text-gray-semidark">
+                {msg.content ? (
+                  <ReactMarkdown
+                    remarkPlugins={[remarkGfm]}
+                    components={mdComponents}
+                  >
+                    {msg.content}
+                  </ReactMarkdown>
+                ) : (
+                  <span className="text-gray-verylight roboto-slab-light italic">
+                    thinking...
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         ))}
 
