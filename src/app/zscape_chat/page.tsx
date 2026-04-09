@@ -10,6 +10,12 @@ const ENDPOINT =
 interface Message {
   role: "user" | "assistant";
   content: string;
+  simSteps?: SimStep[];   // present only while/after simulating
+}
+
+interface SimStep {
+  message: string;
+  done: boolean;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -19,7 +25,7 @@ const SUGGESTED_PROMPTS = [
   "Which cell types are most affected by foxd3 knockout?",
 ];
 
-// Markdown component map — styles tables, headings, lists, code, etc.
+// Markdown component map
 const mdComponents: React.ComponentProps<typeof ReactMarkdown>["components"] = {
   h2: ({ children }) => (
     <h2 className="roboto-slab-semibold text-base text-gray-dark mt-4 mb-2">
@@ -78,12 +84,51 @@ const mdComponents: React.ComponentProps<typeof ReactMarkdown>["components"] = {
   },
 };
 
+// Simulation animation shown while the local model runs
+function SimulationView({ steps }: { steps: SimStep[] }) {
+  return (
+    <div className="flex flex-col gap-2 py-1">
+      <p className="roboto-slab-light text-xxxsm text-gray-light italic mb-1">
+        Running simulation…
+      </p>
+      {steps.map((step, i) => {
+        const isActive = !step.done;
+        return (
+          <div key={i} className="flex items-start gap-2">
+            {/* status indicator */}
+            <span
+              className={
+                isActive
+                  ? "mt-0.5 text-gray-medium animate-pulse shrink-0"
+                  : "mt-0.5 text-gray-light shrink-0"
+              }
+              style={{ fontSize: "0.6rem", lineHeight: 1.6 }}
+            >
+              {isActive ? "◉" : "◆"}
+            </span>
+            {/* step text */}
+            <span
+              className={
+                isActive
+                  ? "roboto-slab-regular text-xxxsm text-gray-dark"
+                  : "roboto-slab-light text-xxxsm text-gray-verylight"
+              }
+            >
+              {step.message}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function ZscapeChat() {
   const [messages, setMessages] = useState<Message[]>([]);
-  const [input, setInput] = useState("");
+  const [input, setInput]       = useState("");
   const [streaming, setStreaming] = useState(false);
-  const bottomRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
+  const bottomRef  = useRef<HTMLDivElement>(null);
+  const inputRef   = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -93,25 +138,25 @@ export default function ZscapeChat() {
     if (!userText.trim() || streaming) return;
 
     const userMsg: Message = { role: "user", content: userText.trim() };
-    const history = [...messages, userMsg];
+    const history          = [...messages, userMsg];
     setMessages(history);
     setInput("");
     setStreaming(true);
 
     // Append empty assistant placeholder
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setMessages((prev) => [...prev, { role: "assistant", content: "", simSteps: [] }]);
 
     try {
       const res = await fetch(`${ENDPOINT}/api/chat`, {
-        method: "POST",
+        method:  "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: history }),
+        body:    JSON.stringify({ messages: history }),
       });
 
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (!res.ok)   throw new Error(`HTTP ${res.status}`);
       if (!res.body) throw new Error("No response body");
 
-      const reader = res.body.getReader();
+      const reader  = res.body.getReader();
       const decoder = new TextDecoder();
       let buf = "";
 
@@ -126,17 +171,48 @@ export default function ZscapeChat() {
           if (!line.startsWith("data: ")) continue;
           const payload = line.slice(6);
           if (payload === "[DONE]") break;
+
           try {
             const parsed = JSON.parse(payload);
+
             if (parsed.error) throw new Error(parsed.error);
-            setMessages((prev) => {
-              const updated = [...prev];
-              updated[updated.length - 1] = {
-                role: "assistant",
-                content: updated[updated.length - 1].content + parsed.text,
-              };
-              return updated;
-            });
+
+            // Simulation status event
+            if (parsed.status === "simulating") {
+              const stepMsg: string = parsed.message ?? "";
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last    = { ...updated[updated.length - 1] };
+                const prevSteps = last.simSteps ?? [];
+
+                // Mark previous active step as done, append new active step
+                const newSteps: SimStep[] = [
+                  ...prevSteps.map((s) => ({ ...s, done: true })),
+                  { message: stepMsg, done: false },
+                ];
+                last.simSteps = newSteps;
+                updated[updated.length - 1] = last;
+                return updated;
+              });
+              continue;
+            }
+
+            // Text chunk — once text arrives, mark all sim steps done
+            if (parsed.text) {
+              setMessages((prev) => {
+                const updated = [...prev];
+                const last    = { ...updated[updated.length - 1] };
+
+                // Finalize sim steps on first text chunk
+                if (last.simSteps && last.simSteps.some((s) => !s.done)) {
+                  last.simSteps = last.simSteps.map((s) => ({ ...s, done: true }));
+                }
+
+                last.content = last.content + parsed.text;
+                updated[updated.length - 1] = last;
+                return updated;
+              });
+            }
           } catch {
             // malformed SSE chunk — skip
           }
@@ -147,7 +223,7 @@ export default function ZscapeChat() {
       setMessages((prev) => {
         const updated = [...prev];
         updated[updated.length - 1] = {
-          role: "assistant",
+          role:    "assistant",
           content: `Error: ${msg}. Is the ZSCAPE service running?`,
         };
         return updated;
@@ -215,17 +291,28 @@ export default function ZscapeChat() {
               </div>
             ) : (
               <div className="max-w-[85%] text-xsm text-gray-semidark">
+                {/* Simulation steps (shown while running or as a preamble) */}
+                {msg.simSteps && msg.simSteps.length > 0 && (
+                  <SimulationView steps={msg.simSteps} />
+                )}
+
+                {/* Response text */}
                 {msg.content ? (
-                  <ReactMarkdown
-                    remarkPlugins={[remarkGfm]}
-                    components={mdComponents}
-                  >
-                    {msg.content}
-                  </ReactMarkdown>
+                  <div className={msg.simSteps && msg.simSteps.length > 0 ? "mt-3" : ""}>
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={mdComponents}
+                    >
+                      {msg.content}
+                    </ReactMarkdown>
+                  </div>
                 ) : (
-                  <span className="text-gray-verylight roboto-slab-light italic">
-                    thinking...
-                  </span>
+                  // No content yet and no sim steps → generic thinking state
+                  !msg.simSteps?.length && (
+                    <span className="text-gray-verylight roboto-slab-light italic">
+                      thinking…
+                    </span>
+                  )
                 )}
               </div>
             )}

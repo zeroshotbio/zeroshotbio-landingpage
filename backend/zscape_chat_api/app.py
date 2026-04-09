@@ -2,23 +2,27 @@
 """
 ZSCAPE Chat API  —  Flask SSE backend for the ZSCAPE chat interface.
 
-At startup:
-  - Loads pre-computed Jina v5 phenotype embeddings (28 × 512) for the known KOs
-  - Loads 25 plain-text KO phenotype descriptions
-  - Aggregates DE summary stats per KO from the ZSCAPE CSV files
-  - Trains a lightweight SummaryRidge (PCA-10 → Ridge) to predict
-    [pct_de, mean_lfc] for novel / unseen genes
-  - Pre-indexes LOKO Pearson scores from jina_ridge.csv (ctrl_hvg gene set)
+At startup (fast, ~5s):
+  - Load pre-computed Jina v3 cell-type embeddings  (151 × 512)
+  - Load pre-computed Jina v3 KO phenotype embeddings (28 × 512)
+  - Load complement ground truth (3,747 KO×cell-type entries, 10 categories)
+  - Train FullRidge on concatenated [KO_emb | CT_emb] → 10 phenotype scores
+  - Load KO descriptions, DE stats, LOKO Pearson scores
 
-At query time:
-  - Detects KO mentions and prediction intent
-  - For known KOs  → cosine similarity lookup, pulls description + LOKO stats
-  - For novel genes → calls Jina REST API to embed, runs SummaryRidge, reports
-    top similar KOs as analogues
-  - Passes the assembled context to Claude and streams the response via SSE
+On a known-KO query:
+  - Look up pre-computed KO embedding → run FullRidge across 151 cell types
+  - Return predicted category scores + description + LOKO stats
+
+On a novel-gene query (the interesting case):
+  - Lazy-load sentence_transformers + jinaai/jina-embeddings-v3 on first request
+    (model downloads once, ~200 MB, caches to ~/.cache/huggingface/)
+  - Stream SSE "simulating" status events during the 15-20s model-load window
+  - Embed the user's gene description locally → 512-d
+  - Run FullRidge across 151 cell types → 10-category predictions
+  - Stream results to Claude for final narrative
 
 Usage:
-  ANTHROPIC_API_KEY=sk-...  [JINA_API_KEY=jina_...]  python app.py --port 5002
+  ANTHROPIC_API_KEY=sk-...  python app.py --port 5002
 """
 
 from __future__ import annotations
@@ -26,245 +30,246 @@ from __future__ import annotations
 import os
 import csv
 import json
+import threading
 import argparse
-import urllib.request
 from collections import defaultdict
-from typing import Optional
 from flask import Flask, request, Response, stream_with_context
 from flask_cors import CORS
 import numpy as np
-from sklearn.decomposition import PCA
 from sklearn.linear_model import Ridge
-from sklearn.preprocessing import StandardScaler
 import anthropic
 
 app = Flask(__name__)
 CORS(app)
 
-# ── Paths ───────────────────────────────────────────────────────────────────
+# ── Paths ────────────────────────────────────────────────────────────────────
 
-DATA_DIR = os.environ.get("ZSCAPE_DATA_DIR", "/data/ZSCAPE_complements_v3/data")
-V4_ROOT  = "/data/ZSCAPE_complements_v4"
+V4_ROOT = os.environ.get("ZSCAPE_V4_ROOT", "/data/ZSCAPE_complements_v4")
 
-PHENOTYPE_EMB_FILE   = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_embeddings.npy"
-PHENOTYPE_NAMES_FILE = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_names.npy"
-KO_DESC_FILE         = f"{V4_ROOT}/text_loko/ko_descriptions.json"
-LOKO_RESULTS_FILE    = f"{V4_ROOT}/results/jina_ridge.csv"
+CT_EMB_FILE       = f"{V4_ROOT}/ground_truth/jina_celltype_embeddings.npy"
+CT_KEYS_FILE      = f"{V4_ROOT}/ground_truth/jina_celltype_keys.json"
+KO_EMB_FILE       = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_embeddings.npy"
+KO_NAMES_FILE     = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_names.npy"
+GT_FILE           = f"{V4_ROOT}/text_loko/complement_ground_truth.json"
+KO_DESC_FILE      = f"{V4_ROOT}/text_loko/ko_descriptions.json"
+DE_SUMMARY_FILE   = f"{V4_ROOT}/ground_truth/D_de_summary.csv"
+LOKO_RESULTS_FILE = f"{V4_ROOT}/results/jina_ridge.csv"
 
-# ── Global state ────────────────────────────────────────────────────────────
+# ── Constants ─────────────────────────────────────────────────────────────────
 
-# Loaded at startup
-KO_EMBEDDINGS:   np.ndarray          # (28, 512) Jina phenotype embeddings
-KO_NAMES:        list[str]           # 28 canonical KO names (same order as embeddings)
-KO_DESCRIPTIONS: dict[str, str]      # canonical_name → phenotype description text
-DE_STATS:        dict[str, dict]     # ko → {pct_de, mean_lfc, n_comparisons}
-LOKO_PEARSON:    dict[str, float]    # ko → mean LOKO Pearson (jina_ridge, ctrl_hvg)
+SCORE_CATS = [
+    "notochord", "somitic_muscle", "nmp_stalling", "neural_crest",
+    "cranial_ganglia", "hindbrain_seg", "hedgehog_floor_plate",
+    "cardiac_lpm", "pharyngeal_arch", "posterior_axis",
+]
 
-# Trained at startup
-SUMMARY_PCA:     PCA
-SUMMARY_SCALER:  StandardScaler
-SUMMARY_RIDGE:   Ridge               # predicts [pct_de, mean_lfc] from PCA-reduced embedding
-SUMMARY_TARGETS: np.ndarray          # (28, 2) ground-truth [pct_de, mean_lfc]
+# ── Global state ──────────────────────────────────────────────────────────────
+
+CT_EMBEDDINGS: np.ndarray        # (151, 512)
+CT_NAMES:      list[str]         # 151 cell type names
+
+KO_EMBEDDINGS: np.ndarray        # (28, 512)
+KO_NAMES:      list[str]         # 28 KO names
+KO_NAME_TO_IDX: dict[str, int]
+CT_NAME_TO_IDX: dict[str, int]
+
+KO_DESCRIPTIONS: dict[str, str]  # canonical → phenotype text
+DE_STATS:        dict[str, dict] # ko → {pct_de, mean_lfc, n_comparisons}
+LOKO_PEARSON:    dict[str, float]
+
+FULL_RIDGE: Ridge                # trained at startup
+
+GT_N_ENTRIES: int = 0            # number of GT rows used to train Ridge
+
+# Lazy-loaded local Jina model for novel-gene embedding
+_JINA_MODEL = None
+_JINA_LOCK  = threading.Lock()
 
 
-# ── Name normalisation ───────────────────────────────────────────────────────
+# ── Name normalisation ────────────────────────────────────────────────────────
 
-# ko_descriptions.json uses semicolons; ZSCAPE uses hyphens
 _DESC_KEY_MAP = {
-    "tbx16;msgn1":   "tbx16-msgn1",
-    "tbx16;tbx16l":  "tbx16-tbx16l",
-    "cdx4;cdx1a":    "cdx4-cdx1a",
-    "tfap2a;foxd3":  "tfap2a-foxd3",
-    "wnt3a;wnt8a":   "wnt3a-wnt8",
-    "foxa2;foxa3":   None,           # not in the 28 ZSCAPE KOs
+    "tbx16;msgn1":  "tbx16-msgn1",
+    "tbx16;tbx16l": "tbx16-tbx16l",
+    "cdx4;cdx1a":   "cdx4-cdx1a",
+    "tfap2a;foxd3": "tfap2a-foxd3",
+    "wnt3a;wnt8a":  "wnt3a-wnt8",
+    "foxa2;foxa3":  None,
 }
 
 def _canonical(name: str) -> "str | None":
-    """Return the canonical ZSCAPE KO name, or None if not mappable."""
     name = name.strip()
     return _DESC_KEY_MAP.get(name, name)
 
 
-# ── Data loading ─────────────────────────────────────────────────────────────
+# ── Data loading ──────────────────────────────────────────────────────────────
 
 def load_data() -> None:
-    global KO_EMBEDDINGS, KO_NAMES, KO_DESCRIPTIONS, DE_STATS, LOKO_PEARSON
-    global SUMMARY_PCA, SUMMARY_SCALER, SUMMARY_RIDGE, SUMMARY_TARGETS
+    global CT_EMBEDDINGS, CT_NAMES, CT_NAME_TO_IDX
+    global KO_EMBEDDINGS, KO_NAMES, KO_NAME_TO_IDX
+    global KO_DESCRIPTIONS, DE_STATS, LOKO_PEARSON
+    global FULL_RIDGE, GT_N_ENTRIES
 
-    # ── Jina phenotype embeddings ───────────────────────────────────────────
-    KO_EMBEDDINGS = np.load(PHENOTYPE_EMB_FILE).astype(np.float32)          # (28, 512)
-    raw_names     = np.load(PHENOTYPE_NAMES_FILE, allow_pickle=True).tolist()
+    # Cell-type embeddings
+    CT_EMBEDDINGS = np.load(CT_EMB_FILE).astype(np.float32)
+    with open(CT_KEYS_FILE) as f:
+        CT_NAMES = json.load(f)
+    CT_NAME_TO_IDX = {n: i for i, n in enumerate(CT_NAMES)}
+    print(f"[zscape_chat] CT embeddings: {CT_EMBEDDINGS.shape}, {len(CT_NAMES)} cell types")
+
+    # KO phenotype embeddings
+    KO_EMBEDDINGS = np.load(KO_EMB_FILE).astype(np.float32)
+    raw_names     = np.load(KO_NAMES_FILE, allow_pickle=True).tolist()
     KO_NAMES      = [str(n) for n in raw_names]
-    print(f"[zscape_chat] Jina embeddings: {KO_EMBEDDINGS.shape}, {len(KO_NAMES)} KOs")
+    KO_NAME_TO_IDX = {n: i for i, n in enumerate(KO_NAMES)}
+    print(f"[zscape_chat] KO embeddings: {KO_EMBEDDINGS.shape}, {len(KO_NAMES)} KOs")
 
-    # ── Phenotype descriptions ──────────────────────────────────────────────
+    # KO phenotype descriptions
     with open(KO_DESC_FILE) as f:
         raw_desc = json.load(f)
-
     KO_DESCRIPTIONS = {}
     for raw_key, text in raw_desc.items():
         if text is None:
             continue
         canon = _canonical(raw_key)
-        if canon and canon in KO_NAMES:
+        if canon and canon in KO_NAME_TO_IDX:
             KO_DESCRIPTIONS[canon] = text
-    print(f"[zscape_chat] Descriptions loaded: {len(KO_DESCRIPTIONS)} / {len(KO_NAMES)}")
 
-    # ── DE summary stats per KO ─────────────────────────────────────────────
-    pct_de_acc  = defaultdict(list)
+    # DE stats
+    pct_de_acc   = defaultdict(list)
     mean_lfc_acc = defaultdict(list)
-    with open(f"{DATA_DIR}/D_de_summary.csv") as f:
+    with open(DE_SUMMARY_FILE) as f:
         for row in csv.DictReader(f):
             if row["has_power"] != "True":
                 continue
             ko = row["knockout"]
             pct_de_acc[ko].append(float(row["pct_de_genes"]))
             mean_lfc_acc[ko].append(float(row["mean_abs_lfc_sig"]))
-
     DE_STATS = {}
     for ko in KO_NAMES:
         pcts = pct_de_acc.get(ko, [])
         lfcs = mean_lfc_acc.get(ko, [])
         DE_STATS[ko] = {
-            "pct_de":         sum(pcts) / len(pcts) if pcts else None,
-            "mean_lfc":       sum(lfcs) / len(lfcs) if lfcs else None,
-            "n_comparisons":  len(pcts),
+            "pct_de":        sum(pcts) / len(pcts) if pcts else None,
+            "mean_lfc":      sum(lfcs) / len(lfcs) if lfcs else None,
+            "n_comparisons": len(pcts),
         }
 
-    # ── LOKO Pearson scores (jina_ridge, ctrl_hvg) ─────────────────────────
+    # LOKO Pearson (jina_ridge, ctrl_hvg)
     pearson_acc = defaultdict(list)
     with open(LOKO_RESULTS_FILE) as f:
         for row in csv.DictReader(f):
-            if row["model"] == "jina_ridge" and row["gene_set"] == "ctrl_hvg":
+            if row["model"] == "cdm" and row["gene_set"] == "ctrl_hvg":
                 pearson_acc[row["knockout"]].append(float(row["pearson"]))
+    LOKO_PEARSON = {ko: sum(v) / len(v) for ko, v in pearson_acc.items()}
+    mean_p = sum(LOKO_PEARSON.values()) / max(len(LOKO_PEARSON), 1)
+    print(f"[zscape_chat] LOKO Pearson: {len(LOKO_PEARSON)} KOs, mean={mean_p:.3f}")
 
-    LOKO_PEARSON = {
-        ko: sum(v) / len(v)
-        for ko, v in pearson_acc.items()
-    }
-    print(f"[zscape_chat] LOKO Pearson loaded for {len(LOKO_PEARSON)} KOs, "
-          f"mean = {sum(LOKO_PEARSON.values()) / len(LOKO_PEARSON):.3f}")
+    # Build FullRidge: X=(N,1024) = [ko_emb | ct_emb], y=(N,10) = category scores
+    with open(GT_FILE) as f:
+        gt = json.load(f)
 
-    # ── Train SummaryRidge at startup ───────────────────────────────────────
-    # Build target matrix: [pct_de, mean_lfc] for each KO (in KO_NAMES order)
-    targets = []
-    valid_mask = []
-    for ko in KO_NAMES:
-        s = DE_STATS[ko]
-        if s["pct_de"] is not None and s["mean_lfc"] is not None:
-            targets.append([s["pct_de"], s["mean_lfc"]])
-            valid_mask.append(True)
-        else:
-            targets.append([0.0, 0.0])
-            valid_mask.append(False)
-
-    SUMMARY_TARGETS = np.array(targets, dtype=np.float32)
-
-    # PCA: 28 × 512 → 28 × 10 (reduce dimensionality before Ridge)
-    SUMMARY_PCA = PCA(n_components=10)
-    X_pca = SUMMARY_PCA.fit_transform(KO_EMBEDDINGS)   # (28, 10)
-
-    SUMMARY_SCALER = StandardScaler()
-    X_sc = SUMMARY_SCALER.fit_transform(X_pca)          # (28, 10)
-
-    # Train Ridge on all 28 points (used for novel gene extrapolation)
-    SUMMARY_RIDGE = Ridge(alpha=10.0)
-    SUMMARY_RIDGE.fit(X_sc, SUMMARY_TARGETS)
-
-    # LOO validation to report expected accuracy
-    loo_errors = []
-    for i in range(len(KO_NAMES)):
-        if not valid_mask[i]:
+    rows_X, rows_y = [], []
+    for key, entry in gt.items():
+        ko = key.split("__")[0]   # key prefix is the canonical KO name (dashes)
+        ct = entry["cell_type"]
+        if ko not in KO_NAME_TO_IDX or ct not in CT_NAME_TO_IDX:
             continue
-        mask = np.ones(len(KO_NAMES), dtype=bool)
-        mask[i] = False
-        r = Ridge(alpha=10.0)
-        r.fit(X_sc[mask], SUMMARY_TARGETS[mask])
-        pred = r.predict(X_sc[i:i+1])[0]
-        loo_errors.append(np.abs(pred - SUMMARY_TARGETS[i]))
+        ko_emb = KO_EMBEDDINGS[KO_NAME_TO_IDX[ko]]
+        ct_emb = CT_EMBEDDINGS[CT_NAME_TO_IDX[ct]]
+        rows_X.append(np.concatenate([ko_emb, ct_emb]))
+        rows_y.append([entry["scores"].get(cat, 0) for cat in SCORE_CATS])
 
-    loo_errors = np.array(loo_errors)
-    print(f"[zscape_chat] SummaryRidge LOO MAE — "
-          f"pct_de={loo_errors[:, 0].mean():.3f}, "
-          f"mean_lfc={loo_errors[:, 1].mean():.4f}")
+    X = np.array(rows_X, dtype=np.float32)
+    y = np.array(rows_y, dtype=np.float32)
+    GT_N_ENTRIES = len(X)
+
+    FULL_RIDGE = Ridge(alpha=10.0)
+    FULL_RIDGE.fit(X, y)
+    print(f"[zscape_chat] FullRidge trained on {GT_N_ENTRIES} rows, "
+          f"X={X.shape}, y={y.shape}")
 
 
-# ── Embedding utils ──────────────────────────────────────────────────────────
+# ── Jina lazy loader ──────────────────────────────────────────────────────────
+
+def _get_jina_model():
+    """Lazy-load the local Jina v3 sentence-transformer (thread-safe)."""
+    global _JINA_MODEL
+    if _JINA_MODEL is not None:
+        return _JINA_MODEL
+    with _JINA_LOCK:
+        if _JINA_MODEL is None:
+            from sentence_transformers import SentenceTransformer
+            print("[zscape_chat] Loading jinaai/jina-embeddings-v3 locally...")
+            _JINA_MODEL = SentenceTransformer(
+                "jinaai/jina-embeddings-v3",
+                trust_remote_code=True,
+                truncate_dim=512,
+            )
+            print("[zscape_chat] Jina model loaded.")
+    return _JINA_MODEL
+
+
+def embed_text_local(text: str) -> np.ndarray:
+    """Embed text with local Jina v3 → (512,) float32."""
+    model = _get_jina_model()
+    emb = model.encode([text], task="text-matching")[0]
+    return np.array(emb, dtype=np.float32)
+
+
+def _generate_gene_description(query: str) -> "tuple[str, str]":
+    """
+    Use Claude Haiku to extract the gene name and generate a 3-sentence zebrafish
+    knockout phenotype description suitable for embedding.
+    Returns (gene_name, description).  Falls back to (\"unknown\", query) on error.
+    """
+    client = anthropic.Anthropic()
+    try:
+        resp = client.messages.create(
+            model      = "claude-haiku-4-5-20251001",
+            max_tokens = 300,
+            messages   = [{
+                "role":    "user",
+                "content": (
+                    f'User query: "{query}"\n\n'
+                    "Extract the gene name and write a 3-sentence technical description of "
+                    "what knockout of that gene in zebrafish would look like, focusing on: "
+                    "which developmental cell types are affected, which signalling pathways "
+                    "are disrupted, and what tissues show the strongest phenotype. "
+                    "Be specific and use zebrafish developmental biology terminology.\n\n"
+                    "Reply in this exact format (no extra text):\n"
+                    "GENE: <gene_name>\n"
+                    "DESCRIPTION: <3-sentence phenotype description>"
+                ),
+            }],
+        )
+        text      = resp.content[0].text.strip()
+        gene_name = "unknown"
+        gene_desc = query
+        for line in text.splitlines():
+            if line.startswith("GENE:"):
+                gene_name = line[5:].strip()
+            elif line.startswith("DESCRIPTION:"):
+                gene_desc = line[12:].strip()
+        print(f"[zscape_chat] Gene={gene_name!r}  desc={gene_desc[:80]}…")
+        return gene_name, gene_desc
+    except Exception as exc:
+        print(f"[zscape_chat] Haiku description failed: {exc}")
+        return "unknown", query   # fallback: embed raw user query
+
+
+# ── Embedding utils ───────────────────────────────────────────────────────────
 
 def _l2_norm(v: np.ndarray) -> np.ndarray:
     return v / (np.linalg.norm(v) + 1e-8)
 
 def cosine_similarities(query_vec: np.ndarray, matrix: np.ndarray) -> np.ndarray:
-    """(D,), (N, D) → (N,) cosine similarities."""
     q = _l2_norm(query_vec)
     M = matrix / (np.linalg.norm(matrix, axis=1, keepdims=True) + 1e-8)
     return M @ q
 
-def embed_text_jina(text: str) -> np.ndarray | None:
-    """
-    Call Jina REST API to embed text (jina-embeddings-v3, 512-dim).
-    Returns (512,) float32 or None if JINA_API_KEY is not set / call fails.
-    """
-    api_key = os.environ.get("JINA_API_KEY", "")
-    if not api_key:
-        return None
-
-    payload = json.dumps({
-        "input": [text],
-        "model": "jina-embeddings-v3",
-        "dimensions": 512,
-        "task": "text-matching",
-    }).encode()
-
-    req = urllib.request.Request(
-        "https://api.jina.ai/v1/embeddings",
-        data=payload,
-        headers={
-            "Content-Type": "application/json",
-            "Authorization": f"Bearer {api_key}",
-        },
-    )
-    try:
-        with urllib.request.urlopen(req, timeout=10) as resp:
-            data = json.loads(resp.read())
-            return np.array(data["data"][0]["embedding"], dtype=np.float32)
-    except Exception as exc:
-        print(f"[zscape_chat] Jina API error: {exc}")
-        return None
-
-def run_summary_ridge(emb: np.ndarray) -> dict:
-    """
-    Run SummaryRidge on a (512,) embedding.
-    Returns {'pct_de': float, 'mean_lfc': float}.
-    """
-    x_pca = SUMMARY_PCA.transform(emb.reshape(1, -1))
-    x_sc  = SUMMARY_SCALER.transform(x_pca)
-    pred  = SUMMARY_RIDGE.predict(x_sc)[0]
-    return {"pct_de": float(pred[0]), "mean_lfc": float(pred[1])}
-
-
-# ── KO detection ─────────────────────────────────────────────────────────────
-
-PREDICTION_KEYWORDS = {
-    "predict", "prediction", "forecast", "hypothetical",
-    "would happen", "knocked out", "knock out", "knockout of",
-    "if we ko", "novel gene", "unseen", "new gene",
-}
-
-def is_prediction_query(query: str) -> bool:
-    q = query.lower()
-    return any(kw in q for kw in PREDICTION_KEYWORDS)
-
-def find_mentioned_kos(query: str) -> list[str]:
-    """Return canonical KO names mentioned in the query (longest match first)."""
-    q = query.lower()
-    found = []
-    for ko in sorted(KO_NAMES, key=len, reverse=True):
-        if ko.lower() in q and ko not in found:
-            found.append(ko)
-    return found
-
-def top_similar_kos(emb: np.ndarray, top_k: int = 3, exclude: str | None = None) -> list[dict]:
+def top_similar_kos(emb: np.ndarray, top_k: int = 3,
+                    exclude: "str | None" = None) -> list[dict]:
     sims = cosine_similarities(emb, KO_EMBEDDINGS)
     order = np.argsort(sims)[::-1]
     results = []
@@ -284,9 +289,70 @@ def top_similar_kos(emb: np.ndarray, top_k: int = 3, exclude: str | None = None)
     return results
 
 
-# ── Context retrieval ─────────────────────────────────────────────────────────
+# ── FullRidge prediction ──────────────────────────────────────────────────────
 
-def _format_de_stats(de: dict | None) -> str:
+def predict_across_celltypes(ko_emb: np.ndarray) -> np.ndarray:
+    """
+    Given a (512,) KO/gene embedding, predict category scores for all 151 cell types.
+    Returns: (151, 10) float array.
+    """
+    tiled_ko = np.tile(ko_emb, (len(CT_NAMES), 1))          # (151, 512)
+    X_all = np.concatenate([tiled_ko, CT_EMBEDDINGS], axis=1) # (151, 1024)
+    return FULL_RIDGE.predict(X_all).astype(np.float32)        # (151, 10)
+
+
+def format_ridge_predictions(preds: np.ndarray, top_per_cat: int = 3) -> str:
+    """
+    preds: (151, 10) — format into a readable summary for the LLM context.
+    """
+    lines = []
+
+    # Per-category: top cell types
+    lines.append("Predicted phenotype category involvement across 151 cell types:")
+    for j, cat in enumerate(SCORE_CATS):
+        scores_j = preds[:, j]
+        top_idx  = np.argsort(scores_j)[::-1][:top_per_cat]
+        top_cts  = [(CT_NAMES[i], float(scores_j[i])) for i in top_idx if scores_j[i] > 0.2]
+        if top_cts:
+            ct_str = ", ".join(f"{ct} ({s:.2f})" for ct, s in top_cts)
+            lines.append(f"  {cat}: {ct_str}")
+        else:
+            lines.append(f"  {cat}: low signal")
+
+    # Overall most disrupted cell types
+    ct_totals = preds.sum(axis=1)  # (151,)
+    top5_idx  = np.argsort(ct_totals)[::-1][:5]
+    top5_cts  = [(CT_NAMES[i], float(ct_totals[i])) for i in top5_idx]
+    lines.append("\nMost disrupted cell types (sum across all categories):")
+    lines.append("  " + ", ".join(f"{ct} ({s:.2f})" for ct, s in top5_cts))
+
+    return "\n".join(lines)
+
+
+# ── KO detection ──────────────────────────────────────────────────────────────
+
+PREDICTION_KEYWORDS = {
+    "predict", "prediction", "forecast", "hypothetical",
+    "would happen", "knocked out", "knock out", "knockout of",
+    "if we ko", "novel gene", "unseen", "new gene", "what if",
+}
+
+def is_prediction_query(query: str) -> bool:
+    q = query.lower()
+    return any(kw in q for kw in PREDICTION_KEYWORDS)
+
+def find_mentioned_kos(query: str) -> list[str]:
+    q = query.lower()
+    found = []
+    for ko in sorted(KO_NAMES, key=len, reverse=True):
+        if ko.lower() in q and ko not in found:
+            found.append(ko)
+    return found
+
+
+# ── Context retrieval (known KO path) ────────────────────────────────────────
+
+def _format_de_stats(de: "dict | None") -> str:
     if de is None or de.get("pct_de") is None:
         return "no DE stats available"
     return (f"{de['pct_de']:.1%} DE genes, "
@@ -296,60 +362,26 @@ def _format_de_stats(de: dict | None) -> str:
 def _format_similar(similar: list[dict]) -> str:
     lines = []
     for s in similar:
-        loko = f", LOKO Pearson={s['loko_pearson']:.3f}" if s['loko_pearson'] else ""
-        desc = s['description'][:120] + "…" if s['description'] and len(s['description']) > 120 else (s['description'] or "no description")
-        lines.append(
-            f"  - {s['ko']} (cosine sim={s['similarity']:.3f}{loko}): {desc}"
-        )
+        loko = f", LOKO Pearson={s['loko_pearson']:.3f}" if s["loko_pearson"] else ""
+        desc = s["description"]
+        if desc and len(desc) > 120:
+            desc = desc[:120] + "…"
+        desc = desc or "no description"
+        lines.append(f"  - {s['ko']} (cosine sim={s['similarity']:.3f}{loko}): {desc}")
     return "\n".join(lines)
 
-def retrieve_context(query: str) -> str:
-    mentioned = find_mentioned_kos(query)
+def retrieve_context_known_ko(query: str) -> str:
+    mentioned       = find_mentioned_kos(query)
     prediction_mode = is_prediction_query(query)
-    lines = []
-
-    if prediction_mode and not mentioned:
-        # Novel gene prediction: try to embed the query itself
-        lines.append("=== NOVEL GENE PREDICTION MODE ===")
-        emb = embed_text_jina(query)
-        if emb is not None:
-            ridge_pred = run_summary_ridge(emb)
-            similar    = top_similar_kos(emb, top_k=3)
-            lines.append(
-                f"Jina v5 embedding retrieved. "
-                f"SummaryRidge prediction (trained on 28 known KOs, LOO-validated):\n"
-                f"  Predicted % DE genes: {ridge_pred['pct_de']:.1%}\n"
-                f"  Predicted mean |LFC|: {ridge_pred['mean_lfc']:.3f}"
-            )
-            lines.append(f"\nMost similar known KOs by embedding similarity:")
-            lines.append(_format_similar(similar))
-            lines.append(
-                f"\nNote: mean LOKO Pearson for jina_ridge baseline across 28 KOs = 0.385 "
-                f"(ctrl-HVG gene set). Predictions for truly novel genes extrapolate beyond "
-                f"the training distribution."
-            )
-        else:
-            lines.append(
-                "JINA_API_KEY not set — embedding novel genes requires the Jina REST API. "
-                "Falling back to dataset overview."
-            )
-            ko_list = ", ".join(KO_NAMES[:20]) + "…"
-            lines.append(f"Known KOs: {ko_list}")
-        return "\n".join(lines)
+    lines           = []
 
     if not mentioned:
-        # General exploration: return dataset overview
-        lines.append(f"ZSCAPE dataset: {len(KO_NAMES)} knockouts, each held out in LOKO evaluation.")
+        lines.append(f"ZSCAPE dataset: {len(KO_NAMES)} knockouts evaluated by LOKO.")
         lines.append(f"Available KOs: {', '.join(sorted(KO_NAMES))}")
-        if prediction_mode:
-            lines.append(
-                "To make a prediction for a novel gene, set JINA_API_KEY and describe the gene in your query."
-            )
         return "\n".join(lines)
 
-    # ── Known KO(s) ─────────────────────────────────────────────────────────
     for ko in mentioned[:2]:
-        ko_emb  = KO_EMBEDDINGS[KO_NAMES.index(ko)]
+        ko_emb  = KO_EMBEDDINGS[KO_NAME_TO_IDX[ko]]
         similar = top_similar_kos(ko_emb, top_k=3, exclude=ko)
         de      = DE_STATS.get(ko)
         desc    = KO_DESCRIPTIONS.get(ko)
@@ -361,27 +393,53 @@ def retrieve_context(query: str) -> str:
         lines.append(f"DE summary: {_format_de_stats(de)}")
         if loko is not None:
             lines.append(
-                f"LOKO Pearson (jina_ridge, ctrl-HVG): {loko:.3f} — this is how well "
-                f"Ridge regression predicted this KO's expression deltas when held out."
+                f"LOKO Pearson (jina_ridge, ctrl-HVG): {loko:.3f}"
             )
 
         if prediction_mode:
-            # Also run SummaryRidge on this KO's own embedding as a sanity check
-            ridge_pred = run_summary_ridge(ko_emb)
-            lines.append(
-                f"SummaryRidge prediction from embedding: "
-                f"pct_de={ridge_pred['pct_de']:.1%}, mean_lfc={ridge_pred['mean_lfc']:.3f} "
-                f"(actual: pct_de={de['pct_de']:.1%}, mean_lfc={de['mean_lfc']:.3f})"
-                if de and de.get("pct_de") else
-                f"SummaryRidge prediction: pct_de={ridge_pred['pct_de']:.1%}, "
-                f"mean_lfc={ridge_pred['mean_lfc']:.3f}"
-            )
+            preds = predict_across_celltypes(ko_emb)
+            lines.append("\n" + format_ridge_predictions(preds))
 
-        lines.append(f"\nTop-3 most similar KOs by Jina v5 phenotype embedding:")
+        lines.append(f"\nTop-3 most similar KOs by Jina v3 phenotype embedding:")
         lines.append(_format_similar(similar))
         lines.append("")
 
     return "\n".join(lines)
+
+
+# ── Novel-gene context builder ────────────────────────────────────────────────
+
+def build_novel_gene_context(emb: np.ndarray, gene_name: str,
+                             gene_description: str) -> str:
+    """Build full context for a novel gene given its embedding."""
+    lines = [
+        f"=== NOVEL GENE SIMULATION: {gene_name.upper()} ===",
+        f"(FullRidge trained on {GT_N_ENTRIES} KO×cell-type pairs, 10 phenotype categories)",
+        f"\nEmbedded phenotype description:",
+        f"  {gene_description}",
+    ]
+
+    # Most similar known KOs by embedding similarity
+    similar = top_similar_kos(emb, top_k=3)
+    lines.append("\nTop-3 most similar known KOs by phenotype embedding similarity:")
+    lines.append(_format_similar(similar))
+
+    # FullRidge predictions across 151 cell types
+    preds = predict_across_celltypes(emb)
+    lines.append("\n" + format_ridge_predictions(preds))
+
+    mean_p = sum(LOKO_PEARSON.values()) / max(len(LOKO_PEARSON), 1)
+    lines.append(
+        f"\nNote: predictions extrapolate beyond the training distribution for novel genes. "
+        f"Ridge baseline mean LOKO Pearson ≈ {mean_p:.3f} (ctrl-HVG, 28 known KOs)."
+    )
+    return "\n".join(lines)
+
+
+# ── Simulation SSE helper ─────────────────────────────────────────────────────
+
+def _sim_event(step: int, total: int, message: str) -> str:
+    return f"data: {json.dumps({'status': 'simulating', 'step': step, 'total': total, 'message': message})}\n\n"
 
 
 # ── Claude system prompt ──────────────────────────────────────────────────────
@@ -389,38 +447,41 @@ def retrieve_context(query: str) -> str:
 SYSTEM_PROMPT = (
     "You are a scientific assistant with deep expertise in the ZSCAPE dataset — "
     "a large-scale zebrafish (Danio rerio) single-cell CRISPR knockout study covering 28 transcription "
-    "factor knockouts across multiple developmental timepoints and cell types.\n\n"
+    "factor knockouts across multiple developmental timepoints and 151 cell types.\n\n"
     "You have access to:\n"
-    "- Pre-written phenotype descriptions for 25 of the 28 KOs\n"
-    "- Jina v5 text embeddings (512-dim) encoding each KO's phenotype\n"
-    "- A SummaryRidge model (PCA-10 → Ridge) trained on the 28 KO embeddings to predict "
-    "% DE genes and mean |LFC| for novel genes\n"
-    "- Pre-computed LOKO (leave-one-KO-out) Pearson scores from the jina_ridge baseline "
-    "(mean Pearson ≈ 0.385 on ctrl-HVG gene set)\n\n"
+    "- Pre-written phenotype descriptions for each of the 28 KOs\n"
+    "- Jina v3 text embeddings (512-dim) encoding each KO's phenotype\n"
+    "- A FullRidge model (1024-d input = [KO_emb | CT_emb] → 10 phenotype category scores) "
+    "trained on 3,747 KO×cell-type pairs from the complement ground truth\n"
+    "- Pre-computed LOKO Pearson scores\n\n"
+    "The 10 phenotype categories are:\n"
+    "  notochord, somitic_muscle, nmp_stalling, neural_crest, cranial_ganglia, "
+    "hindbrain_seg, hedgehog_floor_plate, cardiac_lpm, pharyngeal_arch, posterior_axis\n\n"
     "Key concepts:\n"
-    "- % DE genes: fraction of genes significantly differentially expressed in the KO vs control\n"
-    "- mean |LFC|: average magnitude of log-fold-change for significant genes\n"
+    "- Category scores (0–2): indicate phenotype disruption strength in each developmental axis\n"
     "- LOKO Pearson: correlation between Ridge-predicted and actual expression deltas "
-    "when the KO was held out from training\n"
-    "- Cosine similarity: semantic similarity between KO phenotype embeddings\n\n"
+    "when a KO is held out from training\n"
+    "- Cosine similarity: semantic proximity between KO phenotype embeddings\n\n"
     "When answering:\n"
     "- Ground your response in the retrieved data context provided\n"
-    "- For prediction queries, clearly distinguish observed data from Ridge-predicted values\n"
+    "- For novel-gene predictions, clearly distinguish predictions from observed data\n"
     "- Be concise and biologically precise; audience is computational biology researchers\n"
-    "- When quoting predictions, note model uncertainty (LOO MAE ~ 0.17 for pct_de)"
+    "- When citing predictions, note they are from a linear Ridge model and may not capture "
+    "non-linear biology"
 )
 
 
-# ── Routes ───────────────────────────────────────────────────────────────────
+# ── Routes ────────────────────────────────────────────────────────────────────
 
 @app.route("/health")
 def health():
     return {
-        "status": "ok",
-        "kos_loaded": len(KO_NAMES),
-        "descriptions": len(KO_DESCRIPTIONS),
-        "embedding_shape": list(KO_EMBEDDINGS.shape),
-        "jina_api": bool(os.environ.get("JINA_API_KEY")),
+        "status":          "ok",
+        "kos_loaded":      len(KO_NAMES),
+        "celltypes_loaded": len(CT_NAMES),
+        "descriptions":    len(KO_DESCRIPTIONS),
+        "gt_rows":         GT_N_ENTRIES,
+        "jina_model_warm": _JINA_MODEL is not None,
     }
 
 
@@ -434,18 +495,47 @@ def chat():
     latest_user = next(
         (m["content"] for m in reversed(messages) if m["role"] == "user"), ""
     )
-    context = retrieve_context(latest_user)
-    system  = SYSTEM_PROMPT + f"\n\n<zscape_context>\n{context}\n</zscape_context>"
 
-    client = anthropic.Anthropic()
+    mentioned  = find_mentioned_kos(latest_user)
+    is_novel   = is_prediction_query(latest_user) and not mentioned
+    model_warm = _JINA_MODEL is not None
 
     def generate():
+        # ── Novel-gene path: stream simulation status events ─────────────────
+        if is_novel:
+            total_steps = 4
+            yield _sim_event(1, total_steps, "Generating zebrafish phenotype description via Haiku…")
+
+            gene_name, gene_desc = _generate_gene_description(latest_user)
+
+            if not model_warm:
+                yield _sim_event(2, total_steps, f"{gene_name.upper()} described — loading embedding model (one-time, ~15s)…")
+            else:
+                yield _sim_event(2, total_steps, f"{gene_name.upper()} described — encoding to 512-dim phenotype space…")
+
+            emb = embed_text_local(gene_desc)   # embed the phenotype description, not the raw query
+
+            yield _sim_event(3, total_steps, f"Running Ridge across {len(CT_NAMES)} cell-type contexts…")
+
+            preds = predict_across_celltypes(emb)
+
+            yield _sim_event(4, total_steps, "Scoring 10 phenotype categories…")
+
+            context = build_novel_gene_context(emb, gene_name, gene_desc)
+
+        # ── Known-KO path: no simulation delay ──────────────────────────────
+        else:
+            context = retrieve_context_known_ko(latest_user)
+
+        system = SYSTEM_PROMPT + f"\n\n<zscape_context>\n{context}\n</zscape_context>"
+        client = anthropic.Anthropic()
+
         try:
             with client.messages.stream(
-                model="claude-sonnet-4-6",
-                max_tokens=1024,
-                system=system,
-                messages=messages,
+                model    = "claude-sonnet-4-6",
+                max_tokens = 1024,
+                system   = system,
+                messages = messages,
             ) as stream:
                 for text in stream.text_stream:
                     yield f"data: {json.dumps({'text': text})}\n\n"
@@ -465,11 +555,19 @@ def chat():
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--port",     type=int, default=5002)
-    parser.add_argument("--data-dir", default=DATA_DIR, dest="data_dir")
+    parser.add_argument("--port",    type=int, default=5002)
+    parser.add_argument("--v4-root", default=V4_ROOT, dest="v4_root")
     args = parser.parse_args()
 
-    DATA_DIR = args.data_dir
-    load_data()
+    V4_ROOT           = args.v4_root
+    CT_EMB_FILE       = f"{V4_ROOT}/ground_truth/jina_celltype_embeddings.npy"
+    CT_KEYS_FILE      = f"{V4_ROOT}/ground_truth/jina_celltype_keys.json"
+    KO_EMB_FILE       = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_embeddings.npy"
+    KO_NAMES_FILE     = f"{V4_ROOT}/ground_truth/jina_ko_phenotype_names.npy"
+    GT_FILE           = f"{V4_ROOT}/text_loko/complement_ground_truth.json"
+    KO_DESC_FILE      = f"{V4_ROOT}/text_loko/ko_descriptions.json"
+    DE_SUMMARY_FILE   = f"{V4_ROOT}/ground_truth/D_de_summary.csv"
+    LOKO_RESULTS_FILE = f"{V4_ROOT}/results/jina_ridge.csv"
 
-    app.run(host="0.0.0.0", port=args.port)
+    load_data()
+    app.run(host="0.0.0.0", port=args.port, threaded=True)
