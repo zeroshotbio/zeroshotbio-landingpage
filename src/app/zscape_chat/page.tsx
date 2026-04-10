@@ -221,6 +221,22 @@ async function ridgePredict(gene: string): Promise<PredictResult> {
 
 // ── sub-components ────────────────────────────────────────────────────────────
 
+const THINKING_STEPS = [
+  "thinking…",
+  "querying Jina Ridge…",
+  "asking Claude Sonnet 4.6…",
+  "almost ready…",
+];
+
+function ThinkingIndicator() {
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    const id = setInterval(() => setIdx((i) => (i + 1) % THINKING_STEPS.length), 2200);
+    return () => clearInterval(id);
+  }, []);
+  return <span className="zs-thinking">{THINKING_STEPS[idx]}</span>;
+}
+
 function ScoreGrid({ scores, amber }: { scores: number[]; amber: boolean }) {
   const B = amber ? BA : BT;
   const ac = amber ? "on-a" : "on-t";
@@ -262,7 +278,12 @@ function KoCard({ data }: { data: KoCardData }) {
       <div className="zs-ko-sub">{KD[data.ko] ?? ""}</div>
       <ScoreGrid scores={GT[data.ko]} amber={false} />
       {data.commentary && (
-        <div className="zs-commentary">{data.commentary}</div>
+        <div className="zs-commentary">
+          <span className="zs-commentary-src-line">
+            interpretation&nbsp;·&nbsp;<span className="zs-src-tag zs-src-claude">Claude Sonnet 4.6</span>
+          </span>
+          {data.commentary}
+        </div>
       )}
     </div>
   );
@@ -277,6 +298,15 @@ function PredCard({ data }: { data: PredCardData }) {
       </span>
       <div className="zs-ko-head zs-ko-head-amber">{data.gene}</div>
       <div className="zs-ko-sub">{data.gene_description}</div>
+      <div className="zs-scores-lbl" style={{marginTop:"2px",marginBottom:"8px",fontSize:"8px",opacity:0.7}}>
+        gene description&nbsp;<span className="zs-src-tag zs-src-claude">Claude Sonnet 4.6</span>
+      </div>
+      <div className="zs-scores-lbl">
+        {isRidge ? "predicted scores" : "estimated scores"}
+        <span className={`zs-src-tag ${isRidge ? "zs-src-ridge" : "zs-src-claude"}`}>
+          {isRidge ? "Jina Ridge" : "Claude Sonnet 4.6"}
+        </span>
+      </div>
       <ScoreGrid scores={data.scores} amber={true} />
       <div className="zs-pred-meta">
         <div className="zs-pmrow">
@@ -284,6 +314,9 @@ function PredCard({ data }: { data: PredCardData }) {
           <span className="zs-pmval">
             <strong>{data.nearest_ko}</strong>
             {data.nearest_ko_reason ? ` — ${data.nearest_ko_reason}` : ""}
+          </span>
+          <span className={`zs-src-tag ${isRidge ? "zs-src-ridge" : "zs-src-claude"}`} style={{marginLeft:"auto",alignSelf:"flex-start",flexShrink:0}}>
+            {isRidge ? "ridge" : "claude"}
           </span>
         </div>
         <div className="zs-pmrow">
@@ -294,10 +327,12 @@ function PredCard({ data }: { data: PredCardData }) {
               <span className="zs-conf-reason">{data.confidence_reason}</span>
             )}
           </span>
+          <span className="zs-src-tag zs-src-claude" style={{marginLeft:"auto",alignSelf:"flex-start",flexShrink:0}}>claude</span>
         </div>
         <div className="zs-pmrow">
           <span className="zs-pmlabel">interpretation</span>
           <span className="zs-pmval">{data.commentary}</span>
+          <span className="zs-src-tag zs-src-claude" style={{marginLeft:"auto",alignSelf:"flex-start",flexShrink:0}}>claude</span>
         </div>
       </div>
     </div>
@@ -355,7 +390,7 @@ function BotBubble({ data, loading }: { data?: BotData; loading?: boolean }) {
   if (loading) {
     return (
       <div className="zs-bubble zs-bubble-bot">
-        <span className="zs-thinking">thinking…</span>
+        <ThinkingIndicator />
       </div>
     );
   }
@@ -595,8 +630,8 @@ export default function ZscapeChat() {
         .zs-logo        { font-family:var(--zs-mono); font-size:13px; font-weight:500; color:var(--zs-teal-bright); letter-spacing:0.08em; }
         .zs-logo-sep    { color:var(--zs-text3); margin:0 3px; }
         .zs-header-sub  { font-size:11px; color:var(--zs-text3); font-family:var(--zs-mono); }
-        .zs-key-badge   { font-size:10px; font-family:var(--zs-mono); padding:3px 10px; background:var(--zs-teal-dim); color:var(--zs-teal-bright); margin-left:auto; border:1px solid rgba(13,92,63,0.2); }
-        .zs-sidebar-toggle { background:none; border:1px solid var(--zs-border2); cursor:pointer; font-family:var(--zs-mono); font-size:11px; color:var(--zs-text3); padding:3px 8px; line-height:1; transition:color 0.15s,border-color 0.15s; flex-shrink:0; }
+        .zs-key-badge   { font-size:10px; font-family:var(--zs-mono); padding:3px 10px; background:var(--zs-teal-dim); color:var(--zs-teal-bright); margin-left:auto; border:1px solid rgba(13,92,63,0.2); border-radius:5px; }
+        .zs-sidebar-toggle { background:none; border:1px solid var(--zs-border2); cursor:pointer; font-family:var(--zs-mono); font-size:11px; color:var(--zs-text3); padding:3px 8px; line-height:1; transition:color 0.15s,border-color 0.15s; flex-shrink:0; border-radius:5px; }
         .zs-sidebar-toggle:hover { color:var(--zs-text); border-color:var(--zs-teal); }
         .zs-main        { flex:1; display:flex; overflow:hidden; }
 
@@ -604,7 +639,7 @@ export default function ZscapeChat() {
         .zs-sidebar-collapsed{ width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
         .zs-sidebar-inner    { overflow-y:auto; display:flex; flex-direction:column; gap:14px; min-width:127px; }
         .zs-sl-label    { font-size:9px; font-family:var(--zs-mono); letter-spacing:0.1em; color:var(--zs-text3); text-transform:uppercase; margin-bottom:5px; }
-        .zs-chip        { font-family:var(--zs-mono); font-size:11px; padding:4px 8px; border:0.5px solid var(--zs-border); color:var(--zs-text2); cursor:pointer; display:block; width:100%; text-align:left; background:none; margin-bottom:2px; transition:background 0.1s,color 0.1s; }
+        .zs-chip        { font-family:var(--zs-mono); font-size:11px; padding:4px 8px; border:0.5px solid var(--zs-border); color:var(--zs-text2); cursor:pointer; display:block; width:100%; text-align:left; background:none; margin-bottom:2px; transition:background 0.1s,color 0.1s; border-radius:4px; }
         .zs-chip:hover  { background:var(--zs-surf2); color:var(--zs-text); border-color:var(--zs-border2); }
         .zs-g-axial     { border-left:2px solid #1D9E75; }
         .zs-g-somito    { border-left:2px solid #0d7a56; }
@@ -625,12 +660,13 @@ export default function ZscapeChat() {
         .zs-msgs::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.25); }
         .zs-msg-user    { display:flex; justify-content:flex-end; }
         .zs-msg-bot     { display:flex; justify-content:flex-start; }
-        .zs-bubble-user { max-width:560px; padding:10px 14px; font-size:13px; background:var(--zs-surf2); border:1px solid var(--zs-border2); color:var(--zs-text); line-height:1.6; }
-        .zs-bubble      { max-width:640px; padding:13px 16px; font-size:13px; background:var(--zs-surf); border:1px solid var(--zs-border); color:var(--zs-text); line-height:1.6; }
+        .zs-bubble-user { max-width:560px; padding:10px 14px; font-size:13px; background:var(--zs-surf2); border:1px solid var(--zs-border2); color:var(--zs-text); line-height:1.6; border-radius:10px; }
+        .zs-bubble      { max-width:640px; padding:13px 16px; font-size:13px; background:var(--zs-surf); border:1px solid var(--zs-border); color:var(--zs-text); line-height:1.6; border-radius:10px; }
         .zs-bubble-bot  { }
-        .zs-thinking    { color:var(--zs-text3); font-style:italic; font-family:var(--zs-sans); }
+        @keyframes zs-thinking-pulse{0%,100%{opacity:0.45}50%{opacity:1}}
+        .zs-thinking    { color:var(--zs-text3); font-style:italic; font-family:var(--zs-mono); font-size:12px; animation:zs-thinking-pulse 1.8s ease-in-out infinite; }
 
-        .zs-badge       { font-family:var(--zs-mono); font-size:9px; letter-spacing:0.07em; padding:2px 6px; display:inline-block; margin-bottom:9px; text-transform:uppercase; }
+        .zs-badge       { font-family:var(--zs-mono); font-size:9px; letter-spacing:0.07em; padding:2px 6px; display:inline-block; margin-bottom:9px; text-transform:uppercase; border-radius:4px; }
         .zs-badge-truth { background:var(--zs-teal-dim); color:var(--zs-teal-bright); }
         .zs-badge-pred  { background:var(--zs-amber-dim); color:var(--zs-amber-bright); }
         .zs-badge-llm   { background:var(--zs-surf); color:var(--zs-text3); border:1px solid var(--zs-border2); }
@@ -643,8 +679,8 @@ export default function ZscapeChat() {
         .zs-sgrid   { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
         .zs-srow    { display:flex; align-items:center; gap:8px; }
         .zs-scat    { width:118px; color:var(--zs-text3); flex-shrink:0; font-family:var(--zs-mono); font-size:10px; }
-        .zs-sbg     { flex:1; height:5px; background:rgba(0,0,0,0.08); overflow:hidden; }
-        .zs-sfill   { height:100%; }
+        .zs-sbg     { flex:1; height:5px; background:rgba(0,0,0,0.08); overflow:hidden; border-radius:2px; }
+        .zs-sfill   { height:100%; border-radius:2px; }
         .zs-snum    { width:14px; text-align:right; font-family:var(--zs-mono); font-size:11px; color:var(--zs-text3); }
         .zs-sword   { width:68px; font-family:var(--zs-sans); font-size:10px; font-weight:300; color:var(--zs-text3); }
         .on-t .zs-scat, .on-t .zs-sword { color:var(--zs-text2); }
@@ -653,14 +689,14 @@ export default function ZscapeChat() {
         .on-a .zs-snum  { color:var(--zs-amber-bright); }
         .on-a .zs-sword { color:var(--zs-amber); }
 
-        .zs-pred-wrap   { border:1px solid rgba(186,117,23,0.3); padding:14px; background:var(--zs-amber-dim); }
+        .zs-pred-wrap   { border:1px solid rgba(186,117,23,0.3); padding:14px; background:var(--zs-amber-dim); border-radius:10px; }
         .zs-pred-meta   { margin-top:12px; padding-top:10px; border-top:1px solid rgba(186,117,23,0.2); display:flex; flex-direction:column; gap:7px; }
         .zs-pmrow       { display:flex; gap:8px; align-items:flex-start; }
         .zs-pmlabel     { font-family:var(--zs-mono); font-size:9px; letter-spacing:0.06em; color:var(--zs-amber-mid); min-width:90px; flex-shrink:0; text-transform:uppercase; padding-top:2px; }
         .zs-pmval       { font-family:var(--zs-sans); font-size:11px; color:var(--zs-text2); line-height:1.5; font-weight:300; }
         .zs-pmval strong{ color:var(--zs-amber-bright); font-weight:500; }
         .zs-conf-pips   { display:flex; gap:3px; align-items:center; }
-        .zs-pip         { width:9px; height:9px; }
+        .zs-pip         { width:9px; height:9px; border-radius:2px; }
         .zs-pip-on      { background:var(--zs-amber); }
         .zs-pip-off     { background:rgba(186,117,23,0.2); }
         .zs-conf-num    { font-family:var(--zs-mono); font-size:10px; color:var(--zs-amber-bright); margin-left:4px; }
@@ -675,22 +711,29 @@ export default function ZscapeChat() {
         .zs-rank-list { display:flex; flex-direction:column; gap:5px; margin-top:7px; }
         .zs-rrow      { display:flex; align-items:center; gap:8px; }
         .zs-rko       { font-family:var(--zs-mono); color:var(--zs-teal-bright); min-width:122px; font-size:11px; }
-        .zs-rbg       { flex:1; height:4px; background:rgba(0,0,0,0.08); overflow:hidden; }
-        .zs-rfill     { height:100%; background:var(--zs-teal); }
+        .zs-rbg       { flex:1; height:4px; background:rgba(0,0,0,0.08); overflow:hidden; border-radius:2px; }
+        .zs-rfill     { height:100%; background:var(--zs-teal); border-radius:2px; }
         .zs-rnum      { font-family:var(--zs-mono); font-size:11px; color:var(--zs-text2); min-width:16px; }
         .zs-rsword    { font-family:var(--zs-sans); font-size:10px; font-weight:300; color:var(--zs-text3); }
 
         .zs-input-area  { padding:12px 24px 16px; border-top:1px solid var(--zs-border); display:flex; flex-direction:column; gap:9px; flex-shrink:0; }
         .zs-sugs        { display:flex; flex-wrap:wrap; gap:6px; }
-        .zs-sug         { font-size:11px; font-family:var(--zs-mono); padding:4px 10px; border:1px solid var(--zs-border2); color:var(--zs-text3); cursor:pointer; background:none; transition:color 0.15s,border-color 0.15s; }
+        .zs-sug         { font-size:11px; font-family:var(--zs-mono); padding:4px 10px; border:1px solid var(--zs-border2); color:var(--zs-text3); cursor:pointer; background:none; transition:color 0.15s,border-color 0.15s; border-radius:5px; }
         .zs-sug:hover   { color:var(--zs-text); border-color:var(--zs-teal); }
         .zs-irow        { display:flex; gap:8px; }
-        .zs-irow input  { flex:1; background:#fff; border:1px solid var(--zs-border2); color:var(--zs-text); font-family:var(--zs-sans); font-size:13px; font-weight:300; padding:9px 14px; outline:none; transition:border-color 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
+        .zs-irow input  { flex:1; background:#fff; border:1px solid var(--zs-border2); color:var(--zs-text); font-family:var(--zs-sans); font-size:13px; font-weight:300; padding:9px 14px; outline:none; transition:border-color 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.05); border-radius:8px; }
         .zs-irow input:focus { border-color:var(--zs-teal); }
         .zs-irow input::placeholder { color:var(--zs-text3); }
-        .zs-send-btn    { background:var(--zs-teal); border:none; color:#fff; font-family:var(--zs-mono); font-size:12px; font-weight:500; padding:9px 18px; cursor:pointer; letter-spacing:0.04em; transition:background 0.15s; flex-shrink:0; }
-        .zs-send-btn:hover    { background:#0f6e50; }
-        .zs-send-btn:disabled { background:#c5e0d8; color:#7aae9e; cursor:default; }
+        .zs-send-btn    { background:#ddf0e8; border:1px solid rgba(29,158,117,0.35); color:#0d5c3f; font-family:var(--zs-mono); font-size:12px; font-weight:500; padding:9px 18px; cursor:pointer; letter-spacing:0.04em; transition:background 0.15s,border-color 0.15s; flex-shrink:0; border-radius:8px; }
+        .zs-send-btn:hover    { background:#c6e6d6; border-color:rgba(29,158,117,0.6); }
+        .zs-send-btn:disabled { background:#edf7f2; color:#9ec9b5; border-color:rgba(29,158,117,0.15); cursor:default; }
+        /* ── source attribution ── */
+        .zs-src-tag   { font-family:var(--zs-mono); font-size:8px; padding:1px 5px; border-radius:3px; text-transform:uppercase; letter-spacing:0.04em; display:inline-block; margin-left:3px; vertical-align:middle; font-weight:400; }
+        .zs-src-ridge { background:rgba(90,80,185,0.1); color:#5a52c0; }
+        .zs-src-claude{ background:rgba(186,117,23,0.12); color:var(--zs-amber-mid); }
+        .zs-src-gt    { background:var(--zs-teal-dim); color:var(--zs-teal-bright); }
+        .zs-scores-lbl{ font-family:var(--zs-mono); font-size:9px; color:var(--zs-text3); letter-spacing:0.06em; text-transform:uppercase; margin-top:10px; margin-bottom:5px; display:flex; align-items:center; gap:0; }
+        .zs-commentary-src-line { display:flex; align-items:center; gap:4px; font-family:var(--zs-mono); font-size:8px; color:var(--zs-text3); letter-spacing:0.06em; text-transform:uppercase; margin-bottom:6px; opacity:0.8; }
       `}</style>
 
       <div className="zs-wrap">
@@ -709,7 +752,7 @@ export default function ZscapeChat() {
               {" "}perturbation influence predictor · 25 KOs · 10 categories
             </span>
           </div>
-          <span className="zs-key-badge">LLM on: CLAUDE-SONNET-4-6</span>
+          <span className="zs-key-badge">LLM: CLAUDE-SONNET-4-6</span>
         </header>
 
         <div className="zs-main">
@@ -786,7 +829,7 @@ export default function ZscapeChat() {
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
-                  placeholder="Known KO lookup or predict any gene…"
+                  placeholder="Look up effect of any known KO or ask to predict the effect of any gene KO…"
                   disabled={busy}
                 />
                 <button
