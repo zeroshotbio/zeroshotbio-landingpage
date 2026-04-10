@@ -534,6 +534,33 @@ def predict():
     }
 
 
+@app.route("/api/llm", methods=["POST"])
+def llm():
+    """
+    Non-streaming Anthropic proxy with caller-supplied system prompt.
+    Used by the card-based chat UI for short commentary / meta calls.
+    Request:  {"messages": [...], "system": "...", "max_tokens": 700}
+    Response: {"content": [{"text": "..."}]}
+    """
+    body     = request.get_json(force=True)
+    messages = body.get("messages", [])
+    system   = body.get("system", "")
+    max_tok  = int(body.get("max_tokens", 700))
+    if not messages:
+        return {"error": "messages required"}, 400
+    client = anthropic.Anthropic()
+    try:
+        resp = client.messages.create(
+            model      = "claude-sonnet-4-6",
+            max_tokens = max_tok,
+            system     = system,
+            messages   = messages,
+        )
+        return {"content": [{"text": resp.content[0].text}]}
+    except Exception as exc:
+        return {"error": str(exc)}, 502
+
+
 @app.route("/health")
 def health():
     return {
