@@ -599,7 +599,25 @@ export default function ZscapeChat() {
     { ko: "phox2a",       group: "pns"    },
     { ko: "met",          group: "gf"     },
   ];
-  const CHIPS_PRED = ["shh", "gata4", "sox9a", "cdx2", "pax2a"];
+  const CHIPS_PRED_SECTIONS: { label: string; group: string; genes: string[] }[] = [
+    { label: "Wnt / β-cat",    group: "wnt",   genes: ["wnt1","wnt5a","wnt5b","wnt11","axin1","apc","ctnnb1","lef1","tcf7l2","dkk1b","sfrp1a","ror2"] },
+    { label: "Hedgehog",       group: "hh",    genes: ["shha","shhb","ihha","ptch1","ptch2","gli1","gli2a","gli3","sufu","disp1","kif7"] },
+    { label: "FGF",            group: "fgf",   genes: ["fgf3","fgf8a","fgf10a","fgf24","fgfr1a","fgfr2","fgfr4","sprouty4","etv4","etv5b","dusp6","sox3"] },
+    { label: "BMP / Smad",     group: "bmp",   genes: ["bmp2a","bmp2b","bmp4","bmp7a","chrd","nog1","nog2","smad1","smad5","smad9","id1","id2a"] },
+    { label: "Notch / Delta",  group: "notch", genes: ["notch1a","notch1b","notch3","dll4","dla","dlb","dld","jag1a","jag1b","her1","her7","mib1"] },
+    { label: "Nodal / Axis",   group: "nodal", genes: ["ndr1","ndr2","tdgf1","lefty1","foxh1","sox32","mixl1","eomesa","pou5f3","smad2","inhba","cer1"] },
+    { label: "Neural crest",   group: "nc",    genes: ["snai1b","snai2","twist1a","twist1b","sox9a","sox9b","sox10","sox5","ets1","pax3a","tfap2b","ednrba"] },
+    { label: "Craniofacial",   group: "cran",  genes: ["dlx2a","dlx3b","dlx5a","dlx6a","msx1a","msx1b","barx1","edn1","nkx3.2","col1a1a","runx2a","prrx1a"] },
+    { label: "Brain / CNS",    group: "brain", genes: ["emx2","pax6a","pax6b","rx3","six3a","otx2a","en1a","en1b","gbx2","fezf2","arxa","lhx2a"] },
+    { label: "Eye / Otic",     group: "eye",   genes: ["atoh7","vsx2","eya1","six1a","pax2a","gfi1a","neurod1","crx","barhl2","isl2a","rx1","pitx3"] },
+    { label: "Cardiac / Vasc.",group: "lpm",   genes: ["nkx2.5","gata4","gata5","gata6","tbx5a","tbx20","hand1a","kdrl","cdh5","vegfaa","hey2","alk1"] },
+    { label: "Blood / Hema",   group: "blood", genes: ["gata1a","gata2a","tal1","lmo2","runx1","cmyb","spi1b","cebpa","klf4","epor","alas2","zfpm1"] },
+    { label: "Endoderm / Gut", group: "endo",  genes: ["hhex","prox1a","pdx1","ptf1a","nkx2.1a","hnf4a","cebpb","ins","cdx2","sox4a","mnx1","foxa1"] },
+    { label: "Pigmentation",   group: "pig",   genes: ["mitfa","tfec","mc1r","tyrp1b","dct","oca2","slc45a2","slc24a5","mlpha","kita","pmel","csf1ra"] },
+    { label: "Muscle",         group: "somito",genes: ["myod1","myf5","myog","myf6","myhz1","myhz2","pax7a","pax7b","lbx1a","nfix","mef2a","mef2c"] },
+    { label: "Cell cycle / p53",group: "cc",   genes: ["tp53","rb1","cdkn1a","mdm2","ccnd1","brca2","atr","atm","chek1","chek2","cdkn2a"] },
+    { label: "Kidney",         group: "kid",   genes: ["pax8","wt1a","lhx1a","gata3","osr1","osr2","nphs1","nphs2","sall1a","hnf1bb","ptpro","robo2"] },
+  ];
 
   return (
     <>
@@ -651,6 +669,20 @@ export default function ZscapeChat() {
         .zs-g-pns       { border-left:2px solid #C04820; }
         .zs-g-gf        { border-left:2px solid #888; }
         .zs-g-pred      { border-left:2px solid var(--zs-amber); }
+        .zs-g-wnt   { border-left:2px solid #2AACBB; }
+        .zs-g-fgf   { border-left:2px solid #C84030; }
+        .zs-g-bmp   { border-left:2px solid #B040A0; }
+        .zs-g-notch { border-left:2px solid #CC7022; }
+        .zs-g-nodal { border-left:2px solid #1A9988; }
+        .zs-g-brain { border-left:2px solid #4488DD; }
+        .zs-g-eye   { border-left:2px solid #3366CC; }
+        .zs-g-blood { border-left:2px solid #993030; }
+        .zs-g-endo  { border-left:2px solid #996633; }
+        .zs-g-pig   { border-left:2px solid #7766AA; }
+        .zs-g-cran  { border-left:2px solid #CC5530; }
+        .zs-g-kid   { border-left:2px solid #3A90A0; }
+        .zs-g-cc    { border-left:2px solid #607890; }
+        .zs-sl-sublabel { font-size:8px; font-family:var(--zs-mono); letter-spacing:0.08em; color:var(--zs-text3); text-transform:uppercase; margin-top:8px; margin-bottom:2px; opacity:0.65; }
 
         .zs-chat        { flex:1; display:flex; flex-direction:column; overflow:hidden; }
         .zs-msgs        { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:18px; scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.15) transparent; }
@@ -776,14 +808,19 @@ export default function ZscapeChat() {
             </div>
             <div>
               <div className="zs-sl-label">Predict unknown</div>
-              {CHIPS_PRED.map((gene) => (
-                <button
-                  key={gene}
-                  className="zs-chip zs-g-pred"
-                  onClick={() => fill(`Predict ${gene} knockout effects`)}
-                >
-                  {gene}
-                </button>
+              {CHIPS_PRED_SECTIONS.map(({ label, group, genes }) => (
+                <div key={label}>
+                  <div className="zs-sl-sublabel">{label}</div>
+                  {genes.map((gene) => (
+                    <button
+                      key={gene}
+                      className={`zs-chip zs-g-${group}`}
+                      onClick={() => fill(`Predict ${gene} knockout effects`)}
+                    >
+                      {gene}
+                    </button>
+                  ))}
+                </div>
               ))}
             </div>
             </div>
