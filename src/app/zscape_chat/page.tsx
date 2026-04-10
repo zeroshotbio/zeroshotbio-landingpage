@@ -14,9 +14,9 @@ const CATS = [
 ];
 const SW = ["", "weak", "moderate", "strong"];
 // teal fill: 0=empty 1=dim 2=mid 3=bright
-const BT = ["rgba(255,255,255,0.04)", "#0A3D2E", "#1D9E75", "#5DCAA5"];
+const BT = ["rgba(0,0,0,0.06)", "#b8ddd3", "#1D9E75", "#0d5c3f"];
 // amber fill
-const BA = ["rgba(255,255,255,0.04)", "#412402", "#854F0B", "#BA7517"];
+const BA = ["rgba(0,0,0,0.06)", "#fde4b0", "#D4870D", "#9a5f0a"];
 
 // ── ground truth ──────────────────────────────────────────────────────────────
 
@@ -383,6 +383,7 @@ export default function ZscapeChat() {
   const [input, setInput]       = useState("");
   const [busy, setBusy]         = useState(false);
   const [sugsVisible, setSugsVisible] = useState(true);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef  = useRef<HTMLInputElement>(null);
 
@@ -568,63 +569,71 @@ export default function ZscapeChat() {
   return (
     <>
       <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Roboto+Slab:wght@300;400;500&display=swap');
         :root {
-          --zs-bg:      #0a0a0a;
-          --zs-surf:    #111;
-          --zs-surf2:   #181818;
-          --zs-border:  rgba(255,255,255,0.08);
-          --zs-border2: rgba(255,255,255,0.14);
-          --zs-text:    #e8e8e8;
-          --zs-text2:   #888;
-          --zs-text3:   #555;
+          --zs-bg:      #f6f4f2;
+          --zs-surf:    #ede9e5;
+          --zs-surf2:   #e2ddd9;
+          --zs-border:  rgba(0,0,0,0.09);
+          --zs-border2: rgba(0,0,0,0.16);
+          --zs-text:    #2b2b2b;
+          --zs-text2:   #626262;
+          --zs-text3:   #888888;
           --zs-teal:        #1D9E75;
-          --zs-teal-dim:    #0a3d2e;
-          --zs-teal-bright: #5DCAA5;
+          --zs-teal-dim:    #d0ece4;
+          --zs-teal-bright: #0d5c3f;
           --zs-amber:        #BA7517;
-          --zs-amber-dim:    #1e1000;
-          --zs-amber-mid:    #633806;
-          --zs-amber-bright: #FAC775;
+          --zs-amber-dim:    #fef0d8;
+          --zs-amber-mid:    #9a5f0a;
+          --zs-amber-bright: #7a4a06;
           --zs-mono: 'IBM Plex Mono', monospace;
-          --zs-sans: 'IBM Plex Sans', sans-serif;
+          --zs-sans: 'Roboto Slab', serif;
         }
-        @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap');
 
         .zs-wrap        { display:flex; flex-direction:column; height:100vh; background:var(--zs-bg); color:var(--zs-text); font-family:var(--zs-sans); font-size:14px; font-weight:300; overflow:hidden; }
-        .zs-header      { padding:14px 20px; border-bottom:0.5px solid var(--zs-border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
+        .zs-header      { padding:12px 18px; border-bottom:1px solid var(--zs-border); display:flex; align-items:center; gap:12px; flex-shrink:0; }
         .zs-logo        { font-family:var(--zs-mono); font-size:13px; font-weight:500; color:var(--zs-teal-bright); letter-spacing:0.08em; }
         .zs-logo-sep    { color:var(--zs-text3); margin:0 3px; }
         .zs-header-sub  { font-size:11px; color:var(--zs-text3); font-family:var(--zs-mono); }
-        .zs-key-badge   { font-size:10px; font-family:var(--zs-mono); padding:3px 8px; background:var(--zs-teal-dim); color:var(--zs-teal-bright); margin-left:auto; }
+        .zs-key-badge   { font-size:10px; font-family:var(--zs-mono); padding:3px 10px; background:var(--zs-teal-dim); color:var(--zs-teal-bright); margin-left:auto; border:1px solid rgba(13,92,63,0.2); }
+        .zs-sidebar-toggle { background:none; border:1px solid var(--zs-border2); cursor:pointer; font-family:var(--zs-mono); font-size:11px; color:var(--zs-text3); padding:3px 8px; line-height:1; transition:color 0.15s,border-color 0.15s; flex-shrink:0; }
+        .zs-sidebar-toggle:hover { color:var(--zs-text); border-color:var(--zs-teal); }
         .zs-main        { flex:1; display:flex; overflow:hidden; }
 
-        .zs-sidebar     { width:220px; border-right:0.5px solid var(--zs-border); padding:14px 12px; display:flex; flex-direction:column; gap:14px; flex-shrink:0; overflow-y:auto; }
+        .zs-sidebar          { width:147px; border-right:1px solid var(--zs-border); padding:14px 10px; display:flex; flex-direction:column; gap:14px; flex-shrink:0; overflow:hidden; transition:width 0.25s ease,padding 0.25s ease,border-color 0.25s ease; }
+        .zs-sidebar-collapsed{ width:0; padding-left:0; padding-right:0; border-right-color:transparent; }
+        .zs-sidebar-inner    { overflow-y:auto; display:flex; flex-direction:column; gap:14px; min-width:127px; }
         .zs-sl-label    { font-size:9px; font-family:var(--zs-mono); letter-spacing:0.1em; color:var(--zs-text3); text-transform:uppercase; margin-bottom:5px; }
         .zs-chip        { font-family:var(--zs-mono); font-size:11px; padding:4px 8px; border:0.5px solid var(--zs-border); color:var(--zs-text2); cursor:pointer; display:block; width:100%; text-align:left; background:none; margin-bottom:2px; transition:background 0.1s,color 0.1s; }
         .zs-chip:hover  { background:var(--zs-surf2); color:var(--zs-text); border-color:var(--zs-border2); }
-        .zs-g-axial     { border-left:2px solid #5DCAA5; }
-        .zs-g-somito    { border-left:2px solid #1D9E75; }
+        .zs-g-axial     { border-left:2px solid #1D9E75; }
+        .zs-g-somito    { border-left:2px solid #0d7a56; }
         .zs-g-post      { border-left:2px solid #0F6E56; }
-        .zs-g-hh        { border-left:2px solid #AFA9EC; }
-        .zs-g-lpm       { border-left:2px solid #7F77DD; }
+        .zs-g-hh        { border-left:2px solid #7B75CC; }
+        .zs-g-lpm       { border-left:2px solid #6A63C8; }
         .zs-g-nc        { border-left:2px solid #534AB7; }
-        .zs-g-hb        { border-left:2px solid #F0997B; }
-        .zs-g-pns       { border-left:2px solid #D85A30; }
-        .zs-g-gf        { border-left:2px solid #444; }
+        .zs-g-hb        { border-left:2px solid #D07050; }
+        .zs-g-pns       { border-left:2px solid #C04820; }
+        .zs-g-gf        { border-left:2px solid #888; }
         .zs-g-pred      { border-left:2px solid var(--zs-amber); }
 
         .zs-chat        { flex:1; display:flex; flex-direction:column; overflow:hidden; }
-        .zs-msgs        { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:18px; scrollbar-width:thin; scrollbar-color:var(--zs-border) transparent; }
+        .zs-msgs        { flex:1; overflow-y:auto; padding:20px 24px; display:flex; flex-direction:column; gap:18px; scrollbar-width:thin; scrollbar-color:rgba(0,0,0,0.15) transparent; }
+        .zs-msgs::-webkit-scrollbar { width:4px; }
+        .zs-msgs::-webkit-scrollbar-track { background:transparent; }
+        .zs-msgs::-webkit-scrollbar-thumb { background:rgba(0,0,0,0.15); border-radius:4px; }
+        .zs-msgs::-webkit-scrollbar-thumb:hover { background:rgba(0,0,0,0.25); }
         .zs-msg-user    { display:flex; justify-content:flex-end; }
         .zs-msg-bot     { display:flex; justify-content:flex-start; }
-        .zs-bubble-user { max-width:560px; padding:10px 14px; font-size:13px; background:var(--zs-surf2); border:0.5px solid var(--zs-border2); color:var(--zs-text); line-height:1.6; }
-        .zs-bubble      { max-width:640px; padding:13px 16px; font-size:13px; background:var(--zs-surf); border:0.5px solid var(--zs-border); color:var(--zs-text); line-height:1.6; }
+        .zs-bubble-user { max-width:560px; padding:10px 14px; font-size:13px; background:var(--zs-surf2); border:1px solid var(--zs-border2); color:var(--zs-text); line-height:1.6; }
+        .zs-bubble      { max-width:640px; padding:13px 16px; font-size:13px; background:var(--zs-surf); border:1px solid var(--zs-border); color:var(--zs-text); line-height:1.6; }
         .zs-bubble-bot  { }
         .zs-thinking    { color:var(--zs-text3); font-style:italic; font-family:var(--zs-sans); }
 
         .zs-badge       { font-family:var(--zs-mono); font-size:9px; letter-spacing:0.07em; padding:2px 6px; display:inline-block; margin-bottom:9px; text-transform:uppercase; }
         .zs-badge-truth { background:var(--zs-teal-dim); color:var(--zs-teal-bright); }
         .zs-badge-pred  { background:var(--zs-amber-dim); color:var(--zs-amber-bright); }
-        .zs-badge-llm   { background:#161616; color:var(--zs-text3); }
+        .zs-badge-llm   { background:var(--zs-surf); color:var(--zs-text3); border:1px solid var(--zs-border2); }
 
         .zs-ko-head        { font-family:var(--zs-mono); font-size:14px; font-weight:500; margin-bottom:2px; }
         .zs-ko-head-teal   { color:var(--zs-teal-bright); }
@@ -634,7 +643,7 @@ export default function ZscapeChat() {
         .zs-sgrid   { display:flex; flex-direction:column; gap:5px; margin-top:4px; }
         .zs-srow    { display:flex; align-items:center; gap:8px; }
         .zs-scat    { width:118px; color:var(--zs-text3); flex-shrink:0; font-family:var(--zs-mono); font-size:10px; }
-        .zs-sbg     { flex:1; height:5px; background:rgba(255,255,255,0.05); overflow:hidden; }
+        .zs-sbg     { flex:1; height:5px; background:rgba(0,0,0,0.08); overflow:hidden; }
         .zs-sfill   { height:100%; }
         .zs-snum    { width:14px; text-align:right; font-family:var(--zs-mono); font-size:11px; color:var(--zs-text3); }
         .zs-sword   { width:68px; font-family:var(--zs-sans); font-size:10px; font-weight:300; color:var(--zs-text3); }
@@ -644,8 +653,8 @@ export default function ZscapeChat() {
         .on-a .zs-snum  { color:var(--zs-amber-bright); }
         .on-a .zs-sword { color:var(--zs-amber); }
 
-        .zs-pred-wrap   { border:0.5px solid rgba(186,117,23,0.25); padding:14px; background:rgba(30,16,0,0.5); }
-        .zs-pred-meta   { margin-top:12px; padding-top:10px; border-top:0.5px solid rgba(186,117,23,0.15); display:flex; flex-direction:column; gap:7px; }
+        .zs-pred-wrap   { border:1px solid rgba(186,117,23,0.3); padding:14px; background:var(--zs-amber-dim); }
+        .zs-pred-meta   { margin-top:12px; padding-top:10px; border-top:1px solid rgba(186,117,23,0.2); display:flex; flex-direction:column; gap:7px; }
         .zs-pmrow       { display:flex; gap:8px; align-items:flex-start; }
         .zs-pmlabel     { font-family:var(--zs-mono); font-size:9px; letter-spacing:0.06em; color:var(--zs-amber-mid); min-width:90px; flex-shrink:0; text-transform:uppercase; padding-top:2px; }
         .zs-pmval       { font-family:var(--zs-sans); font-size:11px; color:var(--zs-text2); line-height:1.5; font-weight:300; }
@@ -653,11 +662,11 @@ export default function ZscapeChat() {
         .zs-conf-pips   { display:flex; gap:3px; align-items:center; }
         .zs-pip         { width:9px; height:9px; }
         .zs-pip-on      { background:var(--zs-amber); }
-        .zs-pip-off     { background:rgba(186,117,23,0.12); }
+        .zs-pip-off     { background:rgba(186,117,23,0.2); }
         .zs-conf-num    { font-family:var(--zs-mono); font-size:10px; color:var(--zs-amber-bright); margin-left:4px; }
         .zs-conf-reason { font-size:11px; margin-top:3px; display:block; font-weight:300; }
 
-        .zs-commentary  { margin-top:11px; padding-top:11px; border-top:0.5px solid rgba(255,255,255,0.06); font-family:var(--zs-sans); font-size:12px; font-weight:300; color:var(--zs-text2); line-height:1.65; }
+        .zs-commentary  { margin-top:11px; padding-top:11px; border-top:1px solid rgba(0,0,0,0.07); font-family:var(--zs-sans); font-size:12px; font-weight:300; color:var(--zs-text2); line-height:1.65; }
         .zs-text-body   { font-size:13px; line-height:1.65; color:var(--zs-text2); font-weight:300; margin-top:4px; }
 
         .zs-cmp-grid  { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:8px; }
@@ -666,27 +675,32 @@ export default function ZscapeChat() {
         .zs-rank-list { display:flex; flex-direction:column; gap:5px; margin-top:7px; }
         .zs-rrow      { display:flex; align-items:center; gap:8px; }
         .zs-rko       { font-family:var(--zs-mono); color:var(--zs-teal-bright); min-width:122px; font-size:11px; }
-        .zs-rbg       { flex:1; height:4px; background:rgba(255,255,255,0.05); overflow:hidden; }
+        .zs-rbg       { flex:1; height:4px; background:rgba(0,0,0,0.08); overflow:hidden; }
         .zs-rfill     { height:100%; background:var(--zs-teal); }
         .zs-rnum      { font-family:var(--zs-mono); font-size:11px; color:var(--zs-text2); min-width:16px; }
         .zs-rsword    { font-family:var(--zs-sans); font-size:10px; font-weight:300; color:var(--zs-text3); }
 
-        .zs-input-area  { padding:12px 24px 16px; border-top:0.5px solid var(--zs-border); display:flex; flex-direction:column; gap:9px; flex-shrink:0; }
+        .zs-input-area  { padding:12px 24px 16px; border-top:1px solid var(--zs-border); display:flex; flex-direction:column; gap:9px; flex-shrink:0; }
         .zs-sugs        { display:flex; flex-wrap:wrap; gap:6px; }
-        .zs-sug         { font-size:11px; font-family:var(--zs-mono); padding:4px 10px; border:0.5px solid var(--zs-border2); color:var(--zs-text3); cursor:pointer; background:none; transition:color 0.1s,border-color 0.1s; }
+        .zs-sug         { font-size:11px; font-family:var(--zs-mono); padding:4px 10px; border:1px solid var(--zs-border2); color:var(--zs-text3); cursor:pointer; background:none; transition:color 0.15s,border-color 0.15s; }
         .zs-sug:hover   { color:var(--zs-text); border-color:var(--zs-teal); }
         .zs-irow        { display:flex; gap:8px; }
-        .zs-irow input  { flex:1; background:var(--zs-surf2); border:0.5px solid var(--zs-border2); color:var(--zs-text); font-family:var(--zs-sans); font-size:13px; font-weight:300; padding:9px 14px; outline:none; transition:border-color 0.15s; }
+        .zs-irow input  { flex:1; background:#fff; border:1px solid var(--zs-border2); color:var(--zs-text); font-family:var(--zs-sans); font-size:13px; font-weight:300; padding:9px 14px; outline:none; transition:border-color 0.15s; box-shadow:0 1px 3px rgba(0,0,0,0.05); }
         .zs-irow input:focus { border-color:var(--zs-teal); }
         .zs-irow input::placeholder { color:var(--zs-text3); }
-        .zs-send-btn    { background:var(--zs-teal); border:none; color:#fff; font-family:var(--zs-mono); font-size:12px; font-weight:500; padding:9px 18px; cursor:pointer; letter-spacing:0.04em; transition:background 0.1s; flex-shrink:0; }
-        .zs-send-btn:hover    { background:#16825f; }
-        .zs-send-btn:disabled { background:#1a3d30; color:#3a6655; cursor:default; }
+        .zs-send-btn    { background:var(--zs-teal); border:none; color:#fff; font-family:var(--zs-mono); font-size:12px; font-weight:500; padding:9px 18px; cursor:pointer; letter-spacing:0.04em; transition:background 0.15s; flex-shrink:0; }
+        .zs-send-btn:hover    { background:#0f6e50; }
+        .zs-send-btn:disabled { background:#c5e0d8; color:#7aae9e; cursor:default; }
       `}</style>
 
       <div className="zs-wrap">
         {/* header */}
         <header className="zs-header">
+          <button
+            className="zs-sidebar-toggle"
+            onClick={() => setSidebarCollapsed((c) => !c)}
+            title="Toggle sidebar"
+          >☰</button>
           <div>
             <span className="zs-logo">
               ZSCAPE<span className="zs-logo-sep">/</span>chat
@@ -695,12 +709,13 @@ export default function ZscapeChat() {
               {" "}perturbation influence predictor · 25 KOs · 10 categories
             </span>
           </div>
-          <span className="zs-key-badge">LLM on</span>
+          <span className="zs-key-badge">LLM on: CLAUDE-SONNET-4-6</span>
         </header>
 
         <div className="zs-main">
           {/* sidebar */}
-          <div className="zs-sidebar">
+          <div className={`zs-sidebar${sidebarCollapsed ? " zs-sidebar-collapsed" : ""}`}>
+            <div className="zs-sidebar-inner">
             <div>
               <div className="zs-sl-label">Known KOs</div>
               {CHIPS_KNOWN.map(({ ko, group }) => (
@@ -727,6 +742,7 @@ export default function ZscapeChat() {
                   {gene}
                 </button>
               ))}
+            </div>
             </div>
           </div>
 
