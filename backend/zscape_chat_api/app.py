@@ -473,6 +473,67 @@ SYSTEM_PROMPT = (
 
 # ── Routes ────────────────────────────────────────────────────────────────────
 
+@app.route("/api/predict", methods=["POST"])
+def predict():
+    """
+    Jina Ridge prediction for a novel gene.
+
+    Request:  {"gene": "shh", "description": "<optional phenotype text>"}
+    Response: {"source": "ridge",
+               "scores": [0,0,0,0,0,0,3,0,0,0],   # 10 categories, 0-3
+               "nearest_ko": "smo",
+               "nearest_sim": 0.87,
+               "gene_description": "<haiku-generated description used for embedding>"}
+         or:  {"source": "llm_fallback", "error": "<reason>"}  on failure (503)
+
+    Aggregation: max across 151 cell types — surfaces peak signal per category,
+    avoids understatement of sparse effects.
+    """
+    body = request.get_json(force=True)
+    gene = (body.get("gene") or "").strip()
+    desc = (body.get("description") or "").strip()
+
+    if not gene:
+        return {"error": "gene is required"}, 400
+
+    # Generate a proper zebrafish phenotype description for embedding if the
+    # caller only passed the gene name (or nothing substantive).
+    if not desc or desc.lower() == gene.lower() or len(desc) < 50:
+        try:
+            _, desc = _generate_gene_description(gene)
+        except Exception as exc:
+            print(f"[zscape_chat] /api/predict: Haiku description failed: {exc}")
+            desc = gene   # fall back to bare gene name
+
+    # Embed
+    try:
+        emb = embed_text_local(desc)
+    except Exception as exc:
+        print(f"[zscape_chat] /api/predict: embedding failed: {exc}")
+        return {"source": "llm_fallback", "error": f"embedding failed: {exc}"}, 503
+
+    # FullRidge → (151, 10); aggregate with max across cell types
+    try:
+        preds = predict_across_celltypes(emb)                # (151, 10)
+        agg   = preds.max(axis=0)                            # (10,) peak signal
+        scores = [int(round(float(np.clip(v, 0, 3)))) for v in agg]
+    except Exception as exc:
+        print(f"[zscape_chat] /api/predict: Ridge failed: {exc}")
+        return {"source": "llm_fallback", "error": f"Ridge failed: {exc}"}, 503
+
+    # Nearest training KO by cosine similarity in phenotype embedding space
+    similar = top_similar_kos(emb, top_k=1)
+    nearest = similar[0] if similar else None
+
+    return {
+        "source":           "ridge",
+        "scores":           scores,
+        "nearest_ko":       nearest["ko"]           if nearest else None,
+        "nearest_sim":      round(nearest["similarity"], 3) if nearest else None,
+        "gene_description": desc,
+    }
+
+
 @app.route("/health")
 def health():
     return {
