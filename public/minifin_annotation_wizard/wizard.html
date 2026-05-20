@@ -2067,6 +2067,30 @@ function openJumpModal() {
       (a, b) => tierOrder[a] - tierOrder[b]
     );
     let any = false;
+    // Pin the Final Annotation Map at the top when all clusters are decided,
+    // and only when the search/filter doesn't exclude it.
+    const allDecided = Object.keys(state.decisions || {}).length >= total;
+    const summaryQueryMatch =
+      !query ||
+      "final annotation map summary sunburst result overview".includes(query.toLowerCase()) ||
+      query.toLowerCase().includes("final");
+    const summaryFilterMatch = filter !== "undecided";
+    if (allDecided && summaryQueryMatch && summaryFilterMatch) {
+      any = true;
+      html += `<div class="jump-section-header">summary</div>`;
+      const isCurrent = view === "result";
+      html += `
+        <div class="jump-row summary ${isCurrent ? "current" : ""}" data-jump="result">
+          <span class="pos">★</span>
+          <span>
+            <div class="lbl-main">Final Annotation Map</div>
+            <div class="lbl-meta">all ${total} clusters labelled · sunburst + UMAP overview</div>
+          </span>
+          <span class="tier-mini" style="background:#dcfce7;color:#166534">done</span>
+          <span class="ncells">${DATA.meta.n_total_cells.toLocaleString()}</span>
+          <span class="status">✓</span>
+        </div>`;
+    }
     for (const t of tiers) {
       const rows = buckets[t];
       if (!rows.length) continue;
@@ -2100,9 +2124,13 @@ function openJumpModal() {
     list.innerHTML = html;
     list.querySelectorAll(".jump-row").forEach((row) => {
       row.onclick = () => {
-        idx = Number(row.dataset.position);
-        view = "cluster";
         backdrop.remove();
+        if (row.dataset.jump === "result") {
+          view = "result";
+        } else {
+          idx = Number(row.dataset.position);
+          view = "cluster";
+        }
         render();
       };
     });
