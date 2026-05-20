@@ -209,6 +209,75 @@
   .deg-table .mini-bar { display: inline-block; background: var(--accent); height: 8px; border-radius: 2px; }
   .deg-table .pct-mini-cell { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
 
+  /* Jump-to modal */
+  .jump-modal { max-width: 720px; padding: 0; overflow: hidden; }
+  .jump-modal .jump-head {
+    padding: 18px 22px 12px; border-bottom: 1px solid var(--line);
+  }
+  .jump-modal .jump-head .row {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 10px;
+  }
+  .jump-modal .jump-head h2 { margin: 0; font-size: 17px; font-weight: 500; }
+  .jump-modal .jump-head .close {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: var(--muted); padding: 0 6px; line-height: 1;
+  }
+  .jump-modal .jump-head .close:hover { color: var(--ink); }
+  .jump-modal .search-row {
+    display: flex; gap: 8px; align-items: center;
+  }
+  .jump-modal input.search {
+    flex: 1; padding: 8px 12px; border: 1px solid var(--line);
+    border-radius: 6px; font-size: 13px; font-family: inherit;
+  }
+  .jump-modal input.search:focus { outline: none; border-color: var(--accent); }
+  .jump-modal .filter-chips {
+    display: flex; gap: 6px;
+  }
+  .jump-modal .filter-chips button {
+    border: 1px solid var(--line); background: white; padding: 6px 11px;
+    border-radius: 14px; cursor: pointer; font-size: 11px;
+    color: var(--muted);
+  }
+  .jump-modal .filter-chips button.active {
+    background: var(--accent-soft); border-color: var(--accent); color: var(--accent);
+  }
+  .jump-list {
+    max-height: 60vh; overflow-y: auto; padding: 4px 0;
+  }
+  .jump-section-header {
+    padding: 10px 22px 4px;
+    font-size: 10px; color: var(--muted); letter-spacing: 0.6px;
+    text-transform: uppercase; background: var(--bg);
+    position: sticky; top: 0; z-index: 1;
+  }
+  .jump-row {
+    display: grid;
+    grid-template-columns: 38px 1fr 86px 56px 22px;
+    gap: 10px; align-items: center;
+    padding: 8px 22px; cursor: pointer; font-size: 13px;
+    border-bottom: 1px dotted var(--line);
+  }
+  .jump-row:hover { background: var(--accent-soft); }
+  .jump-row.current { background: #eef2ff; }
+  .jump-row .pos { color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  .jump-row .lbl-main { color: var(--ink); }
+  .jump-row .lbl-meta { color: var(--muted); font-size: 11px; }
+  .jump-row .tier-mini {
+    font-size: 9px; padding: 2px 7px; border-radius: 8px;
+    text-align: center; letter-spacing: 0.4px; text-transform: uppercase;
+  }
+  .jump-row .ncells {
+    color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums;
+    text-align: right;
+  }
+  .jump-row .status { font-size: 12px; text-align: center; color: var(--accent); }
+  .jump-row .status.pending { color: transparent; }
+  .jump-empty {
+    padding: 30px 22px; text-align: center; color: var(--muted); font-size: 13px;
+  }
+
   /* UMAP */
   .umap-panel { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
   .umap-panel h3 { margin: 0 0 8px 0; font-size: 11px; font-weight: 600; color: var(--muted);
@@ -1919,18 +1988,156 @@ document.getElementById("btn-switch-user").onclick = () => {
   idx = 0;
   render();
 };
-document.getElementById("btn-jump").onclick = () => {
-  const lines = DATA.clusters.map((c, i) => {
-    const done = state.decisions[c.cluster_id] ? "✓" : "  ";
-    return `${done} ${String(i+1).padStart(3,' ')}. [${c.tier}] cluster ${c.cluster_id} — ${c.proposed_label} (${c.n_cells} cells)`;
-  }).join("\n");
-  const goto = prompt(`Jump to which cluster number (1–${DATA.clusters.length})?\n\n${lines}`, String(idx + 1));
-  if (!goto) return;
-  const n = parseInt(goto, 10);
-  if (!isNaN(n) && n >= 1 && n <= DATA.clusters.length) {
-    idx = n - 1; view = "cluster"; render();
+document.getElementById("btn-jump").onclick = openJumpModal;
+
+function openJumpModal() {
+  // Disabled before a user is picked.
+  if (view === "userpick") return;
+  // Avoid duplicate
+  const existing = document.getElementById("jump-modal-backdrop");
+  if (existing) existing.remove();
+
+  const tierOrder = { captured: 0, mixed: 1, begging: 2, over_labeled: 3 };
+  const tierClass = (t) => `tier-${t}`;
+  const total = DATA.clusters.length;
+
+  const backdrop = document.createElement("div");
+  backdrop.id = "jump-modal-backdrop";
+  backdrop.className = "modal-backdrop show";
+  backdrop.innerHTML = `
+    <div class="modal jump-modal" role="dialog" aria-label="Jump to cluster">
+      <div class="jump-head">
+        <div class="row">
+          <h2>Jump to cluster</h2>
+          <button class="close" id="jump-close" aria-label="Close">×</button>
+        </div>
+        <div class="search-row">
+          <input class="search" id="jump-search" type="text"
+            placeholder="search by label, marker, or cluster id…"
+            autocomplete="off" autofocus />
+          <div class="filter-chips" id="jump-filters">
+            <button data-filter="all" class="active">all</button>
+            <button data-filter="undecided">undecided</button>
+            <button data-filter="decided">decided</button>
+          </div>
+        </div>
+      </div>
+      <div class="jump-list" id="jump-list"></div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  const searchInput = backdrop.querySelector("#jump-search");
+  const list = backdrop.querySelector("#jump-list");
+  let filter = "all";
+  let query = "";
+
+  function matchesQuery(c) {
+    if (!query) return true;
+    const q = query.toLowerCase();
+    const dec = state.decisions[c.cluster_id];
+    const haystack = [
+      String(c.cluster_id),
+      c.proposed_label,
+      c.top_fine,
+      c.tier,
+      dec && dec.final_label,
+      ...(c.markers || []).slice(0, 6).map((m) => m.symbol),
+    ]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    return haystack.includes(q);
   }
-};
+  function matchesFilter(c) {
+    const isDec = !!state.decisions[c.cluster_id];
+    if (filter === "decided") return isDec;
+    if (filter === "undecided") return !isDec;
+    return true;
+  }
+
+  function rerenderList() {
+    // Group by tier, keep wizard order within
+    const buckets = { captured: [], mixed: [], begging: [], over_labeled: [] };
+    DATA.clusters.forEach((c, i) => {
+      if (!matchesQuery(c) || !matchesFilter(c)) return;
+      buckets[c.tier].push({ c, position: i });
+    });
+    let html = "";
+    const tiers = Object.keys(buckets).sort(
+      (a, b) => tierOrder[a] - tierOrder[b]
+    );
+    let any = false;
+    for (const t of tiers) {
+      const rows = buckets[t];
+      if (!rows.length) continue;
+      any = true;
+      const tierLabel = t.replace("_", " ");
+      html += `<div class="jump-section-header">${tierLabel} · ${rows.length}</div>`;
+      for (const { c, position } of rows) {
+        const dec = state.decisions[c.cluster_id];
+        const decided = !!dec;
+        const isCurrent = position === idx;
+        const finalLabel = dec ? (dec.final_label || c.proposed_label) : c.proposed_label;
+        const meta = dec
+          ? `c${c.cluster_id} · ${dec.decision}${dec.decision === "merge" && dec.merged_with ? " → c" + dec.merged_with : ""}`
+          : `c${c.cluster_id} · proposed: ${c.proposed_label}`;
+        html += `
+          <div class="jump-row ${isCurrent ? "current" : ""}" data-position="${position}">
+            <span class="pos">#${position + 1}</span>
+            <span>
+              <div class="lbl-main">${escapeHTML(finalLabel)}</div>
+              <div class="lbl-meta">${escapeHTML(meta)}</div>
+            </span>
+            <span class="tier-mini ${tierClass(c.tier)}">${tierLabel}</span>
+            <span class="ncells">${c.n_cells.toLocaleString()}</span>
+            <span class="status ${decided ? "" : "pending"}">${decided ? "✓" : ""}</span>
+          </div>`;
+      }
+    }
+    if (!any) {
+      html = `<div class="jump-empty">No clusters match "${escapeHTML(query)}".</div>`;
+    }
+    list.innerHTML = html;
+    list.querySelectorAll(".jump-row").forEach((row) => {
+      row.onclick = () => {
+        idx = Number(row.dataset.position);
+        view = "cluster";
+        backdrop.remove();
+        render();
+      };
+    });
+    // Scroll the current row into view
+    const cur = list.querySelector(".jump-row.current");
+    if (cur) cur.scrollIntoView({ block: "nearest" });
+  }
+
+  rerenderList();
+
+  searchInput.oninput = () => { query = searchInput.value.trim(); rerenderList(); };
+  backdrop.querySelectorAll("#jump-filters button").forEach((btn) => {
+    btn.onclick = () => {
+      filter = btn.dataset.filter;
+      backdrop.querySelectorAll("#jump-filters button").forEach((b) => {
+        b.classList.toggle("active", b.dataset.filter === filter);
+      });
+      rerenderList();
+    };
+  });
+  backdrop.querySelector("#jump-close").onclick = () => backdrop.remove();
+  backdrop.addEventListener("click", (e) => {
+    if (e.target === backdrop) backdrop.remove();
+  });
+  function onKey(e) {
+    if (e.key === "Escape") {
+      backdrop.remove();
+      document.removeEventListener("keydown", onKey);
+    } else if (e.key === "Enter") {
+      const first = list.querySelector(".jump-row");
+      if (first) first.click();
+    }
+  }
+  document.addEventListener("keydown", onKey);
+}
 
 /* ----- HELPERS ----- */
 function escapeHTML(s) {
