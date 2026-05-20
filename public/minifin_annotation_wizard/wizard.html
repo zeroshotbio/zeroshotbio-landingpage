@@ -547,6 +547,11 @@ async function pushStateToBackend() {
     const j = await r.json();
     saveErrCount = 0;
     lastSavedAt = Date.now();
+    // Update the local progress cache so the picker is correct on switch-back.
+    progressByUser[currentUser] = {
+      n_decided: Number(j.n_decided ?? Object.keys(state.decisions || {}).length),
+      updated_at: Number(j.updated_at ?? lastSavedAt),
+    };
     const t = new Date(lastSavedAt);
     const hh = String(t.getHours()).padStart(2, "0");
     const mm = String(t.getMinutes()).padStart(2, "0");
@@ -667,9 +672,38 @@ async function bindUserPicker() {
       await pickUser(u);
     };
   });
-  // Refresh progress from backend
-  progressByUser = await fetchAllProgress();
-  if (view === "userpick") render();
+  // Refresh progress from backend — patch DOM in place (do NOT re-render,
+  // because re-rendering would re-bind and re-fetch, causing an infinite loop).
+  const fresh = await fetchAllProgress();
+  // Merge so that locally-known counts (e.g. just-saved) aren't clobbered by a
+  // stale-by-a-few-ms server read.
+  for (const u of USERS) {
+    const a = progressByUser[u];
+    const b = fresh[u];
+    if (!a) { progressByUser[u] = b || { n_decided: 0, updated_at: null }; continue; }
+    if (!b) continue;
+    // pick whichever is newer / larger
+    if ((b.updated_at || 0) >= (a.updated_at || 0)) progressByUser[u] = b;
+  }
+  if (view === "userpick") updatePickerProgress();
+}
+
+function updatePickerProgress() {
+  const total = DATA.clusters.length;
+  USERS.forEach((u) => {
+    const p = progressByUser[u] || { n_decided: 0, updated_at: null };
+    const pct = Math.round((p.n_decided / total) * 100);
+    const card = document.querySelector(`.user-card[data-user="${u}"]`);
+    if (!card) return;
+    const bar = card.querySelector(".prog-bar > div");
+    if (bar) bar.style.width = `${pct}%`;
+    const text = card.querySelector(".prog-text");
+    if (text) {
+      const updated = p.updated_at ? `last edit ${timeAgo(p.updated_at)}` : "not started";
+      text.textContent = `${p.n_decided} of ${total} · ${updated}`;
+    }
+    card.classList.toggle("done", p.n_decided >= total);
+  });
 }
 
 async function pickUser(user) {
