@@ -208,6 +208,74 @@
   .deg-table td.sym.placeholder { font-weight: 400; color: var(--muted); font-style: italic; }
   .deg-table .mini-bar { display: inline-block; background: var(--accent); height: 8px; border-radius: 2px; }
   .deg-table .pct-mini-cell { display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+  .deg-table tr.clickable { cursor: pointer; }
+  .deg-table tr.clickable:hover { background: var(--accent-soft); }
+
+  /* Gene search & gene UMAP modal */
+  .gene-search-row {
+    margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line);
+    display: flex; align-items: center; gap: 8px; position: relative;
+  }
+  .gene-search-row .label { font-size: 11px; color: var(--muted); letter-spacing: 0.4px; text-transform: uppercase; }
+  .gene-search-row input.gene-input {
+    flex: 1; padding: 7px 11px; border: 1px solid var(--line); border-radius: 6px;
+    font-size: 13px; font-family: inherit;
+  }
+  .gene-search-row input.gene-input:focus { outline: none; border-color: var(--accent); }
+  .gene-suggestions {
+    position: absolute; left: 0; right: 0; top: 100%; margin-top: 4px;
+    background: white; border: 1px solid var(--line); border-radius: 6px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+    max-height: 230px; overflow-y: auto; z-index: 50; display: none;
+  }
+  .gene-suggestions.show { display: block; }
+  .gene-suggestions .sg {
+    padding: 6px 12px; cursor: pointer; font-size: 13px;
+    display: flex; align-items: center; gap: 8px;
+    border-bottom: 1px dotted var(--line);
+  }
+  .gene-suggestions .sg:last-child { border-bottom: none; }
+  .gene-suggestions .sg:hover, .gene-suggestions .sg.active {
+    background: var(--accent-soft);
+  }
+  .gene-suggestions .sg .sym { font-family: Menlo, monospace; font-weight: 600; color: var(--ink); }
+  .gene-suggestions .sg .ens { color: var(--muted); font-family: Menlo, monospace; font-size: 10px; }
+  .marker-list .sym.linked, .deg-table td.sym.linked {
+    text-decoration: underline; text-decoration-style: dotted;
+    text-decoration-color: var(--muted); text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .marker-list .sym.linked:hover, .deg-table td.sym.linked:hover { color: var(--accent); }
+  .gene-modal { max-width: 880px; padding: 0; overflow: hidden; }
+  .gene-modal .gene-head {
+    padding: 16px 22px 10px; border-bottom: 1px solid var(--line);
+    display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
+  }
+  .gene-modal .gene-head h2 { margin: 0; font-size: 17px; font-weight: 500; font-family: Menlo, monospace; }
+  .gene-modal .gene-head .ens { color: var(--muted); font-size: 11px; font-family: Menlo, monospace; }
+  .gene-modal .gene-head .close {
+    background: none; border: none; font-size: 22px; cursor: pointer;
+    color: var(--muted); padding: 0 6px; line-height: 1;
+  }
+  .gene-modal .gene-body { padding: 14px 22px 20px; }
+  .gene-umap-wrap { width: 100%; height: 460px; position: relative; }
+  .gene-umap-wrap svg { width: 100%; height: 100%; }
+  .gene-meta {
+    margin-top: 10px; display: flex; align-items: center; gap: 14px;
+    font-size: 11px; color: var(--muted); flex-wrap: wrap;
+  }
+  .gene-meta .ramp {
+    display: inline-flex; align-items: center; gap: 4px;
+  }
+  .gene-meta .ramp-bar {
+    width: 110px; height: 8px; border-radius: 4px;
+    background: linear-gradient(to right, #f3f4f6, #fde68a, #fb923c, #b91c1c);
+  }
+  .gene-meta .note { color: #6b7280; font-size: 10px; }
+  .gene-search-row .nf {
+    position: absolute; left: 0; top: 100%; margin-top: 4px;
+    color: var(--muted); font-size: 11px; font-style: italic;
+  }
 
   /* Jump-to modal */
   .jump-modal { max-width: 720px; padding: 0; overflow: hidden; }
@@ -1831,6 +1899,13 @@ function renderCluster(c, position) {
           ${markerRows}
         </ul>
         <button class="explore-btn" id="explore-degs-btn">Explore further — full DEG panel (top ${c.top_degs.length} genes) →</button>
+        <div class="gene-search-row">
+          <span class="label">gene UMAP</span>
+          <input type="text" class="gene-input" id="gene-input"
+            placeholder="search any gene (e.g. myl1, ppl, ENSDARG...)"
+            autocomplete="off" />
+          <div class="gene-suggestions" id="gene-suggestions"></div>
+        </div>
       </div>
 
       <div class="drug-panel">
@@ -2006,6 +2081,17 @@ function bindClusterUI(c, position) {
   const exploreBtn = document.getElementById("explore-degs-btn");
   if (exploreBtn) exploreBtn.onclick = () => openDegModal(c);
 
+  // Marker gene symbols -> click opens gene UMAP modal
+  document.querySelectorAll(".marker-list .sym.linked").forEach((el) => {
+    el.onclick = () => {
+      openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns });
+    };
+  });
+
+  // Gene search bar
+  const geneInput = document.getElementById("gene-input");
+  if (geneInput) bindGeneSearch(geneInput);
+
   refresh();
 }
 
@@ -2078,6 +2164,301 @@ function exportDecisions() {
   document.body.appendChild(a);
   a.click();
   setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 100);
+}
+
+/* ----- GENE EXPLORER ----- */
+// Lazy-loaded gene catalog + cell UMAP. Fetched once on first use.
+let _geneIndex = null;       // { n_cells, n_genes, umap_xy, genes:{sym: {idx, ens, sym, p99}}, ens_to_idx, bytes_per_gene }
+let _geneIndexPromise = null;
+const _geneCache = new Map();  // gene idx -> Uint8Array(n_cells)
+const GENE_INDEX_URL = "./gene_index.json";
+const GENE_BIN_URL   = "./gene_expression.bin";
+
+async function loadGeneIndex() {
+  if (_geneIndex) return _geneIndex;
+  if (_geneIndexPromise) return _geneIndexPromise;
+  _geneIndexPromise = (async () => {
+    const r = await fetch(GENE_INDEX_URL, { cache: "force-cache" });
+    if (!r.ok) throw new Error("Gene index HTTP " + r.status);
+    _geneIndex = await r.json();
+    return _geneIndex;
+  })();
+  return _geneIndexPromise;
+}
+
+async function fetchGeneExpression(geneIdx) {
+  if (_geneCache.has(geneIdx)) return _geneCache.get(geneIdx);
+  const idx = await loadGeneIndex();
+  const bpg = idx.bytes_per_gene;          // = n_cells (uint8)
+  const start = geneIdx * bpg;
+  const end   = start + bpg - 1;           // inclusive Range
+  const r = await fetch(GENE_BIN_URL, {
+    headers: { "Range": `bytes=${start}-${end}` },
+    cache: "force-cache",
+  });
+  if (!r.ok && r.status !== 206) throw new Error("Gene blob HTTP " + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  if (buf.length !== bpg) {
+    console.warn("Range mismatch", buf.length, "expected", bpg);
+  }
+  _geneCache.set(geneIdx, buf);
+  return buf;
+}
+
+// Resolve a user query (gene symbol or ENSDARG) against the loaded gene index.
+function resolveGene(query) {
+  if (!_geneIndex) return null;
+  const q = String(query || "").trim();
+  if (!q) return null;
+  // Direct ENSDARG hit
+  if (/^ENSDARG/i.test(q)) {
+    const ens = q.toUpperCase();
+    const gi = _geneIndex.ens_to_idx[ens];
+    if (gi == null) return null;
+    // Build a synthetic entry
+    return { idx: gi, ens, sym: q, p99: 1.0 };
+  }
+  const key = q.toLowerCase();
+  return _geneIndex.genes[key] || null;
+}
+
+function searchGenes(query, limit = 12) {
+  if (!_geneIndex) return [];
+  const q = String(query || "").trim().toLowerCase();
+  if (!q) return [];
+  // Prefix matches first, then substring
+  const prefix = [], substr = [];
+  for (const sym of Object.keys(_geneIndex.genes)) {
+    if (sym === q) { prefix.unshift(_geneIndex.genes[sym]); continue; }
+    if (sym.startsWith(q)) prefix.push(_geneIndex.genes[sym]);
+    else if (sym.includes(q)) substr.push(_geneIndex.genes[sym]);
+    if (prefix.length + substr.length >= limit * 3) break;
+  }
+  // Also try ENSDARG
+  if (/^ENSDARG/i.test(q)) {
+    const ens = q.toUpperCase();
+    for (const e of Object.keys(_geneIndex.ens_to_idx)) {
+      if (e.toUpperCase().startsWith(ens)) {
+        const idx = _geneIndex.ens_to_idx[e];
+        const sym = Object.values(_geneIndex.genes).find((g) => g.idx === idx);
+        if (sym) prefix.push(sym);
+        if (prefix.length >= limit) break;
+      }
+    }
+  }
+  return [...prefix, ...substr].slice(0, limit);
+}
+
+function bindGeneSearch(input) {
+  const wrap = input.parentElement;
+  const suggestions = wrap.querySelector(".gene-suggestions");
+  let activeIdx = -1;
+  let lastResults = [];
+
+  // Warm up the index ASAP — index is small (~570KB) and avoids a wait on first search.
+  loadGeneIndex().catch((e) => console.warn("gene index preload failed:", e));
+
+  const renderSuggestions = () => {
+    if (!lastResults.length) {
+      suggestions.classList.remove("show");
+      return;
+    }
+    suggestions.innerHTML = lastResults.map((g, i) => `
+      <div class="sg ${i === activeIdx ? "active" : ""}" data-gene-sym="${escapeHTML(g.sym)}" data-gene-ens="${g.ens}">
+        <span class="sym">${escapeHTML(g.sym)}</span>
+        <span class="ens">${g.ens}</span>
+      </div>
+    `).join("");
+    suggestions.classList.add("show");
+    suggestions.querySelectorAll(".sg").forEach((el) => {
+      el.onclick = () => {
+        suggestions.classList.remove("show");
+        input.value = "";
+        openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns });
+      };
+    });
+  };
+
+  const doSearch = async () => {
+    await loadGeneIndex();
+    lastResults = searchGenes(input.value, 10);
+    activeIdx = -1;
+    // Remove any inline "not found" notes
+    wrap.querySelectorAll(".nf").forEach((el) => el.remove());
+    if (input.value.trim() && lastResults.length === 0) {
+      const nf = document.createElement("div");
+      nf.className = "nf";
+      nf.textContent = `no HVG matches "${input.value.trim()}"`;
+      wrap.appendChild(nf);
+    }
+    renderSuggestions();
+  };
+
+  input.oninput = doSearch;
+  input.onfocus = doSearch;
+  input.onblur = () => {
+    // Delay so a click on the suggestion list still registers.
+    setTimeout(() => suggestions.classList.remove("show"), 150);
+  };
+  input.onkeydown = (e) => {
+    if (!suggestions.classList.contains("show") || !lastResults.length) {
+      if (e.key === "Enter") {
+        // Try exact resolve
+        const g = resolveGene(input.value);
+        if (g) {
+          input.value = "";
+          openGeneModal({ sym: g.sym, ens: g.ens });
+        }
+      }
+      return;
+    }
+    if (e.key === "ArrowDown") {
+      e.preventDefault();
+      activeIdx = Math.min(activeIdx + 1, lastResults.length - 1);
+      renderSuggestions();
+    } else if (e.key === "ArrowUp") {
+      e.preventDefault();
+      activeIdx = Math.max(activeIdx - 1, 0);
+      renderSuggestions();
+    } else if (e.key === "Enter") {
+      e.preventDefault();
+      const g = activeIdx >= 0 ? lastResults[activeIdx] : lastResults[0];
+      input.value = "";
+      suggestions.classList.remove("show");
+      openGeneModal({ sym: g.sym, ens: g.ens });
+    } else if (e.key === "Escape") {
+      suggestions.classList.remove("show");
+    }
+  };
+}
+
+// Viridis-ish ramp for expression values: light → amber → red.
+function expressionColor(v) {
+  // v in [0, 1]
+  if (v <= 0) return "#f3f4f6";
+  if (v < 0.20) return "#fde68a";
+  if (v < 0.45) return "#fbbf24";
+  if (v < 0.70) return "#fb923c";
+  if (v < 0.90) return "#dc2626";
+  return "#7f1d1d";
+}
+
+async function openGeneModal(gene) {
+  // Already open? Replace.
+  const existing = document.getElementById("gene-modal-backdrop");
+  if (existing) existing.remove();
+  const backdrop = document.createElement("div");
+  backdrop.id = "gene-modal-backdrop";
+  backdrop.className = "modal-backdrop show";
+  backdrop.innerHTML = `
+    <div class="modal gene-modal" role="dialog" aria-label="Gene UMAP">
+      <div class="gene-head">
+        <div>
+          <h2 id="gene-modal-title">${escapeHTML(gene.sym || "")}</h2>
+          <div class="ens" id="gene-modal-ens">${escapeHTML(gene.ens || "")}</div>
+        </div>
+        <button class="close" id="gene-close" aria-label="Close">×</button>
+      </div>
+      <div class="gene-body">
+        <div class="gene-umap-wrap" id="gene-umap-wrap">
+          <div style="color:var(--muted);font-size:12px;padding:10px;">loading expression…</div>
+        </div>
+        <div class="gene-meta" id="gene-meta">
+          <span class="ramp">
+            <span style="color:var(--ink)">low</span>
+            <span class="ramp-bar"></span>
+            <span style="color:var(--ink)">high</span>
+          </span>
+          <span class="note">${_geneIndex ? `${_geneIndex.n_cells.toLocaleString()} sampled MiniFin cells. Library-size-normalized log1p expression, scaled to each gene's 99th percentile.` : "loading sample data…"}</span>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(backdrop);
+
+  const close = () => backdrop.remove();
+  document.getElementById("gene-close").onclick = close;
+  backdrop.addEventListener("click", (e) => { if (e.target === backdrop) close(); });
+  document.addEventListener("keydown", function esc(e) {
+    if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
+  });
+
+  // Load index + this gene's expression
+  let idx;
+  try {
+    idx = await loadGeneIndex();
+  } catch (err) {
+    document.getElementById("gene-umap-wrap").innerHTML =
+      `<div style="color:var(--highlight);padding:14px;">Couldn't load gene index. (${escapeHTML(err.message)})</div>`;
+    return;
+  }
+  // Resolve the gene's index
+  let entry = null;
+  if (gene.ens) entry = (idx.ens_to_idx[gene.ens] != null ? { idx: idx.ens_to_idx[gene.ens], sym: gene.sym, ens: gene.ens } : null);
+  if (!entry && gene.sym) entry = idx.genes[String(gene.sym).toLowerCase()] || null;
+  if (!entry) {
+    document.getElementById("gene-umap-wrap").innerHTML =
+      `<div style="color:var(--muted);padding:14px;">"${escapeHTML(gene.sym || gene.ens)}" isn't among the 4,000 HVGs MiniFin was trained on, so we don't have expression for it. Try a different gene symbol.</div>`;
+    return;
+  }
+  document.getElementById("gene-modal-title").textContent = entry.sym || gene.sym;
+  document.getElementById("gene-modal-ens").textContent = entry.ens || gene.ens || "";
+  // Fetch expression
+  let expr;
+  try {
+    expr = await fetchGeneExpression(entry.idx);
+  } catch (err) {
+    document.getElementById("gene-umap-wrap").innerHTML =
+      `<div style="color:var(--highlight);padding:14px;">Couldn't load expression. (${escapeHTML(err.message)})</div>`;
+    return;
+  }
+  renderGeneUmap(entry, expr);
+  // Update meta with the current gene's p99 (so the biologist knows the scale).
+  const meta = document.getElementById("gene-meta");
+  const note = meta.querySelector(".note");
+  if (note) {
+    note.textContent = `${idx.n_cells.toLocaleString()} sampled MiniFin cells · expression scaled to this gene's 99th-percentile (log1p ${entry.p99 != null ? entry.p99.toFixed(2) : "—"}).`;
+  }
+}
+
+function renderGeneUmap(entry, expr) {
+  const container = document.getElementById("gene-umap-wrap");
+  container.innerHTML = "";
+  const W = container.clientWidth || 800;
+  const H = container.clientHeight || 460;
+  const svg = d3.select(container).append("svg")
+    .attr("viewBox", `0 0 ${W} ${H}`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+  const b = _geneIndex.umap_bounds;
+  const padX = (b.xmax - b.xmin) * 0.04, padY = (b.ymax - b.ymin) * 0.04;
+  const x = d3.scaleLinear().domain([b.xmin - padX, b.xmax + padX]).range([12, W - 12]);
+  const y = d3.scaleLinear().domain([b.ymin - padY, b.ymax + padY]).range([H - 12, 12]);
+
+  const xy = _geneIndex.umap_xy;
+  const n = expr.length;
+  // Draw in two passes: zero-expression cells first (gray), then nonzero (color),
+  // so the colored points are always on top.
+  const zeroPts = [];
+  const exprPts = [];
+  for (let i = 0; i < n; i++) {
+    const v = expr[i];
+    if (v === 0) zeroPts.push(xy[i]);
+    else exprPts.push([xy[i][0], xy[i][1], v]);
+  }
+  // Sort expression-bearing points by intensity ascending so brightest end on top
+  exprPts.sort((a, b) => a[2] - b[2]);
+
+  svg.append("g").selectAll("circle.zero")
+    .data(zeroPts).enter().append("circle")
+    .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+    .attr("r", 1.0).attr("fill", "#e5e7eb").attr("opacity", 0.7);
+
+  svg.append("g").selectAll("circle.expr")
+    .data(exprPts).enter().append("circle")
+    .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+    .attr("r", d => 1.2 + (d[2] / 255) * 1.0)
+    .attr("fill", d => expressionColor(d[2] / 255))
+    .attr("opacity", 0.85);
 }
 
 /* ----- HEADER BUTTONS ----- */
@@ -2320,7 +2701,10 @@ function renderMarkerRow(m) {
     <li>
       <span class="rank">#${m.rank}</span>
       <div class="gene">
-        <span class="sym ${isEnsId ? "placeholder" : ""}">${escapeHTML(m.symbol)}</span>
+        <span class="sym linked ${isEnsId ? "placeholder" : ""}"
+              data-gene-sym="${escapeHTML(m.symbol)}"
+              data-gene-ens="${m.ensembl}"
+              title="Click to view UMAP of ${escapeHTML(m.symbol)}">${escapeHTML(m.symbol)}</span>
         <span class="ens">${m.ensembl}${m.distinct ? ' <span class="badge-distinct">distinct</span>' : ''}</span>
       </div>
       ${lfcBar(lfc)}
@@ -2351,9 +2735,9 @@ function openDegModal(c) {
   const rows = c.top_degs.map((m, i) => {
     const isEnsId = m.symbol === m.ensembl;
     return `
-      <tr>
+      <tr class="clickable" data-gene-sym="${escapeHTML(m.symbol)}" data-gene-ens="${m.ensembl}" title="Click to view UMAP of ${escapeHTML(m.symbol)}">
         <td class="num" style="color:var(--muted);width:30px">${i+1}</td>
-        <td class="sym ${isEnsId ? "placeholder" : ""}">${escapeHTML(m.symbol)}</td>
+        <td class="sym linked ${isEnsId ? "placeholder" : ""}">${escapeHTML(m.symbol)}</td>
         <td style="font-family:Menlo,monospace;font-size:10px;color:var(--muted)">${m.ensembl}</td>
         <td style="width:200px">${lfcBar(m.log2fc)}</td>
         <td class="num" style="width:80px">${(m.pct_in*100).toFixed(0)}%</td>
@@ -2400,6 +2784,12 @@ function openDegModal(c) {
   const modal = document.getElementById("deg-modal");
   document.getElementById("deg-close").onclick = () => modal.remove();
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
+  // Make each DEG row clickable -> opens gene UMAP modal.
+  modal.querySelectorAll("tr.clickable").forEach((tr) => {
+    tr.onclick = () => {
+      openGeneModal({ sym: tr.dataset.geneSym, ens: tr.dataset.geneEns });
+    };
+  });
   document.addEventListener("keydown", function esc(e) {
     if (e.key === "Escape") { modal.remove(); document.removeEventListener("keydown", esc); }
   });
