@@ -303,7 +303,7 @@
   footer.nav .decision-status.done { color: var(--accent); }
   footer.nav .decision-status.pending { color: var(--muted); }
 
-  /* Done view */
+  /* Done view (legacy, narrow) */
   .done-view { max-width: 720px; margin: 60px auto; text-align: center; padding: 40px;
                background: var(--panel); border: 1px solid var(--line); border-radius: 12px; }
   .done-view h2 { color: var(--accent); }
@@ -311,6 +311,87 @@
   .done-view .stat { padding: 14px; background: var(--bg); border-radius: 6px; }
   .done-view .stat .n { font-size: 28px; font-weight: 600; }
   .done-view .stat .l { color: var(--muted); font-size: 12px; }
+
+  /* Result view (post-finish) */
+  .result-shell {
+    max-width: 1400px; margin: 20px auto; padding: 0 22px;
+  }
+  .result-head {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 14px 22px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; margin-bottom: 18px;
+  }
+  .result-head .title h2 { margin: 0; font-size: 20px; font-weight: 600; }
+  .result-head .title .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .result-head .actions { display: flex; gap: 10px; }
+  .result-head .actions button {
+    border: 1px solid var(--line); background: white; padding: 8px 16px;
+    border-radius: 6px; cursor: pointer; font-size: 13px;
+  }
+  .result-head .actions button.primary {
+    background: var(--accent); color: white; border-color: var(--accent);
+  }
+  .result-head .actions button:hover { border-color: var(--accent); }
+
+  .result-grid {
+    display: grid; grid-template-columns: 1fr 1.05fr; gap: 18px;
+  }
+  .result-card {
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; padding: 18px 20px;
+  }
+  .result-card h3 {
+    margin: 0 0 10px 0; font-size: 11px; font-weight: 600;
+    color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
+  }
+  .sunburst-wrap, .umap-result-wrap {
+    width: 100%; height: 560px;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .sunburst-wrap svg, .umap-result-wrap svg { width: 100%; height: 100%; }
+  .sunburst-wrap .center-label {
+    position: absolute; pointer-events: none;
+    text-align: center; max-width: 160px;
+    font-size: 12px; color: var(--muted);
+  }
+  .sunburst-wrap .center-label .big {
+    font-size: 18px; font-weight: 600; color: var(--ink); display: block;
+  }
+  .selection-detail {
+    margin-top: 14px; padding: 12px 14px;
+    background: var(--bg); border-radius: 8px;
+    font-size: 13px; color: var(--ink); line-height: 1.5;
+  }
+  .selection-detail .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .selection-detail .meta { color: var(--muted); font-size: 12px; }
+  .selection-detail .rationale {
+    font-style: italic; color: #374151;
+    border-left: 3px solid var(--line); padding-left: 10px; margin-top: 6px;
+  }
+  .selection-detail .clusters-in-group {
+    display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px;
+  }
+  .selection-detail .clusters-in-group .chip {
+    background: white; border: 1px solid var(--line);
+    border-radius: 12px; padding: 2px 10px; font-size: 11px; cursor: pointer;
+  }
+  .selection-detail .clusters-in-group .chip:hover { border-color: var(--accent); }
+
+  .legend-grid {
+    display: flex; flex-wrap: wrap; gap: 6px 10px;
+    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
+    font-size: 11px;
+  }
+  .legend-grid .item {
+    display: inline-flex; align-items: center; gap: 6px; color: var(--ink); cursor: pointer;
+    padding: 2px 8px; border-radius: 12px; border: 1px solid transparent;
+  }
+  .legend-grid .item:hover { border-color: var(--line); background: var(--bg); }
+  .legend-grid .item.active { border-color: var(--accent); background: var(--accent-soft); }
+  .legend-grid .item .swatch {
+    width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+  }
 
   /* Welcome screen */
   .welcome { max-width: 720px; margin: 40px auto; padding: 32px; background: var(--panel);
@@ -624,11 +705,10 @@ function render() {
     };
     return;
   }
-  if (view === "done") {
+  if (view === "result") {
     footer.style.display = "none";
-    main.innerHTML = renderDone();
-    document.getElementById("btn-export-done").onclick = exportDecisions;
-    document.getElementById("btn-review").onclick = () => { view="cluster"; idx=0; render(); };
+    main.innerHTML = renderResult();
+    bindResult();
     return;
   }
   // cluster view
@@ -729,7 +809,14 @@ async function pickUser(user) {
     state = loadLocalState(user) || newState();
   }
   idx = Number(state.lastIndex || 0);
-  view = state.started ? "cluster" : "welcome";
+  const nDecided = Object.keys(state.decisions || {}).length;
+  if (nDecided >= DATA.clusters.length) {
+    view = "result";
+  } else if (state.started) {
+    view = "cluster";
+  } else {
+    view = "welcome";
+  }
   setSaveStatus("idle");
   render();
 }
@@ -792,25 +879,454 @@ function renderWelcome() {
   </div>`;
 }
 
-/* ----- DONE VIEW ----- */
-function renderDone() {
+/* ----- RESULT VIEW (post-finish) ----- */
+
+// Normalize a label for grouping in the sunburst (lower, trimmed)
+function labelKey(s) { return String(s || "").trim().toLowerCase(); }
+
+// Build hierarchy: root -> final_label group -> cluster
+function buildResultHierarchy() {
+  const total = DATA.clusters.length;
+  const groups = new Map(); // key -> { display, clusters: [...] }
+  for (const c of DATA.clusters) {
+    const d = state.decisions[c.cluster_id];
+    if (!d) continue;
+    const key = labelKey(d.final_label || c.proposed_label);
+    const display = (d.final_label || c.proposed_label || "(unlabeled)").trim();
+    if (!groups.has(key)) groups.set(key, { display, key, clusters: [] });
+    groups.get(key).clusters.push({ cluster: c, decision: d });
+  }
+  // Convert to hierarchy
+  const children = [...groups.values()]
+    .map((g) => ({
+      name: g.display,
+      key: g.key,
+      isGroup: true,
+      cluster_ids: g.clusters.map((x) => x.cluster.cluster_id),
+      children: g.clusters
+        .sort((a, b) => b.cluster.n_cells - a.cluster.n_cells)
+        .map((x) => ({
+          name: `c${x.cluster.cluster_id}`,
+          key: g.key,
+          isGroup: false,
+          cluster_id: x.cluster.cluster_id,
+          decision: x.decision,
+          cluster: x.cluster,
+          value: x.cluster.n_cells,
+        })),
+    }))
+    .sort((a, b) =>
+      d3.sum(b.children, (c) => c.value) - d3.sum(a.children, (c) => c.value)
+    );
+  return { name: "All decisions", children, _total: total };
+}
+
+// Deterministic color from group key (so the same label gets the same color
+// across sunburst and UMAP).
+const LABEL_COLOR_CACHE = new Map();
+const PALETTE = [
+  "#1d4ed8", "#16a34a", "#dc2626", "#7c3aed", "#f59e0b", "#0891b2",
+  "#db2777", "#65a30d", "#2563eb", "#ea580c", "#0d9488", "#9333ea",
+  "#ca8a04", "#0ea5e9", "#e11d48", "#15803d", "#7c2d12", "#1e40af",
+  "#9333ea", "#0f766e", "#b45309", "#86198f", "#155e75", "#3f6212",
+];
+function labelColor(key) {
+  if (LABEL_COLOR_CACHE.has(key)) return LABEL_COLOR_CACHE.get(key);
+  // Hash key → palette index
+  let h = 0;
+  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
+  const c = PALETTE[h % PALETTE.length];
+  LABEL_COLOR_CACHE.set(key, c);
+  return c;
+}
+
+function renderResult() {
+  const total = DATA.clusters.length;
   const decs = Object.values(state.decisions);
-  const counts = {accept:0, rename:0, merge:0, split:0};
-  decs.forEach(d => counts[d.decision] = (counts[d.decision] || 0) + 1);
+  const counts = { accept: 0, rename: 0, merge: 0, split: 0 };
+  decs.forEach((d) => (counts[d.decision] = (counts[d.decision] || 0) + 1));
   return `
-  <div class="done-view">
-    <h2>All ${DATA.clusters.length} clusters reviewed ✓</h2>
-    <p>Thank you — your decisions are saved locally. Export to share with the team.</p>
-    <div class="stats">
-      <div class="stat"><div class="n">${counts.accept}</div><div class="l">Accepted</div></div>
-      <div class="stat"><div class="n">${counts.rename}</div><div class="l">Renamed</div></div>
-      <div class="stat"><div class="n">${counts.merge}</div><div class="l">Merged</div></div>
-      <div class="stat"><div class="n">${counts.split}</div><div class="l">Flagged for split</div></div>
+  <div class="result-shell">
+    <div class="result-head">
+      <div class="title">
+        <h2>${escapeHTML(USER_LABEL[currentUser] || currentUser)}'s annotation map ✓</h2>
+        <div class="sub">
+          All ${total} clusters labeled.
+          ${counts.accept} accepted · ${counts.rename} renamed · ${counts.merge} merged · ${counts.split} flagged for split.
+          Click a wedge in the sunburst to highlight that group on the UMAP.
+        </div>
+      </div>
+      <div class="actions">
+        <button id="btn-edit-result">Edit decisions</button>
+        <button id="btn-export-result" class="primary">Export JSON</button>
+      </div>
     </div>
-    <button id="btn-export-done" class="start-btn">Download annotation_decisions.json</button>
-    &nbsp;&nbsp;
-    <button id="btn-review" class="action-btn" style="padding:12px 20px">Review from start</button>
+    <div class="result-grid">
+      <div class="result-card">
+        <h3>Sunburst — your final labels (click to zoom)</h3>
+        <div class="sunburst-wrap" id="sunburst-wrap">
+          <div class="center-label" id="sunburst-center">
+            <span class="big">${total}</span>
+            <span>clusters labelled<br>across ${(new Set(DATA.clusters.map(c=>labelKey((state.decisions[c.cluster_id]||{}).final_label||c.proposed_label)))).size} labels</span>
+          </div>
+        </div>
+        <div id="selection-detail" class="selection-detail" style="display:none"></div>
+      </div>
+      <div class="result-card">
+        <h3>UMAP — colored by your labels</h3>
+        <div class="umap-result-wrap" id="umap-result-wrap"></div>
+        <div class="legend-grid" id="legend-grid"></div>
+      </div>
+    </div>
   </div>`;
+}
+
+function bindResult() {
+  document.getElementById("btn-export-result").onclick = exportDecisions;
+  document.getElementById("btn-edit-result").onclick = () => {
+    view = "cluster"; idx = 0; render();
+  };
+  const hier = buildResultHierarchy();
+  renderSunburst(hier);
+  renderResultUmap(hier);
+  renderLegend(hier);
+}
+
+/* ----- ZOOMABLE SUNBURST ----- */
+
+let _sunburstAPI = null;
+
+function renderSunburst(hierarchyData) {
+  const container = document.getElementById("sunburst-wrap");
+  const W = container.clientWidth, H = container.clientHeight;
+  const width = Math.min(W, H);
+  const radius = width / 6;
+  const centerEl = document.getElementById("sunburst-center");
+
+  const root = d3
+    .hierarchy(hierarchyData)
+    .sum((d) => d.value || 0)
+    .sort((a, b) => b.value - a.value);
+  d3.partition().size([2 * Math.PI, root.height + 1])(root);
+  root.each((d) => (d.current = { ...d }));
+
+  const arc = d3
+    .arc()
+    .startAngle((d) => d.x0)
+    .endAngle((d) => d.x1)
+    .padAngle((d) => Math.min((d.x1 - d.x0) / 2, 0.005))
+    .padRadius(radius * 1.5)
+    .innerRadius((d) => d.y0 * radius)
+    .outerRadius((d) => Math.max(d.y0 * radius, d.y1 * radius - 1));
+
+  d3.select(container).selectAll("svg").remove();
+  const svg = d3
+    .select(container)
+    .append("svg")
+    .attr("viewBox", [-width / 2, -width / 2, width, width])
+    .attr("preserveAspectRatio", "xMidYMid meet")
+    .style("font", "11px sans-serif");
+
+  const colorFor = (d) => {
+    // Group node: use its key. Leaf: inherit its group's color, slightly darker.
+    if (!d.data.key) return "#9ca3af";
+    return labelColor(d.data.key);
+  };
+
+  const path = svg
+    .append("g")
+    .selectAll("path")
+    .data(root.descendants().slice(1))
+    .join("path")
+    .attr("fill", (d) => colorFor(d))
+    .attr("fill-opacity", (d) =>
+      arcVisible(d.current) ? (d.children ? 0.75 : 0.55) : 0
+    )
+    .attr("pointer-events", (d) => (arcVisible(d.current) ? "auto" : "none"))
+    .attr("d", (d) => arc(d.current))
+    .style("cursor", "pointer");
+
+  // Hover effect
+  path
+    .on("mouseenter", function (event, d) {
+      d3.select(this).attr("fill-opacity", 0.95);
+    })
+    .on("mouseleave", function (event, d) {
+      d3.select(this).attr(
+        "fill-opacity",
+        arcVisible(d.current) ? (d.children ? 0.75 : 0.55) : 0
+      );
+    })
+    .on("click", (event, p) => clicked(p));
+
+  path.append("title").text((d) => {
+    if (d.data.isGroup) {
+      return `${d.data.name}\n${d.data.children.length} cluster(s), ${d.value.toLocaleString()} cells`;
+    }
+    const dec = d.data.decision;
+    return [
+      `Cluster ${d.data.cluster_id} (${d.data.cluster.tier})`,
+      `${d.value.toLocaleString()} cells`,
+      `Decision: ${dec.decision}${dec.final_label ? " → " + dec.final_label : ""}`,
+      dec.rationale ? `Rationale: ${dec.rationale}` : "",
+    ]
+      .filter(Boolean)
+      .join("\n");
+  });
+
+  const label = svg
+    .append("g")
+    .attr("pointer-events", "none")
+    .attr("text-anchor", "middle")
+    .style("user-select", "none")
+    .selectAll("text")
+    .data(root.descendants().slice(1))
+    .join("text")
+    .attr("dy", "0.35em")
+    .attr("fill", "#111418")
+    .attr("font-weight", (d) => (d.data.isGroup ? 600 : 400))
+    .attr("font-size", (d) => (d.data.isGroup ? 11 : 10))
+    .attr("fill-opacity", (d) => +labelVisible(d.current))
+    .attr("transform", (d) => labelTransform(d.current))
+    .text((d) => (d.data.isGroup ? d.data.name : `c${d.data.cluster_id}`));
+
+  const parent = svg
+    .append("circle")
+    .datum(root)
+    .attr("r", radius)
+    .attr("fill", "none")
+    .attr("pointer-events", "all")
+    .style("cursor", "pointer")
+    .on("click", (event, p) => clicked(p));
+
+  function clicked(p) {
+    if (!p || p === root) {
+      // zoom out fully
+      parent.datum(root);
+      root.each(
+        (d) =>
+          (d.target = {
+            x0: d.x0,
+            x1: d.x1,
+            y0: d.y0,
+            y1: d.y1,
+          })
+      );
+      onSelect(null);
+    } else {
+      parent.datum(p.parent || root);
+      root.each(
+        (d) =>
+          (d.target = {
+            x0:
+              Math.max(0, Math.min(1, (d.x0 - p.x0) / (p.x1 - p.x0))) *
+              2 *
+              Math.PI,
+            x1:
+              Math.max(0, Math.min(1, (d.x1 - p.x0) / (p.x1 - p.x0))) *
+              2 *
+              Math.PI,
+            y0: Math.max(0, d.y0 - p.depth),
+            y1: Math.max(0, d.y1 - p.depth),
+          })
+      );
+      onSelect(p);
+    }
+    const t = svg.transition().duration(700);
+    path
+      .transition(t)
+      .tween("data", (d) => {
+        const i = d3.interpolate(d.current, d.target);
+        return (tt) => (d.current = i(tt));
+      })
+      .filter(function (d) {
+        return +this.getAttribute("fill-opacity") || arcVisible(d.target);
+      })
+      .attr("fill-opacity", (d) =>
+        arcVisible(d.target) ? (d.children ? 0.75 : 0.55) : 0
+      )
+      .attr("pointer-events", (d) =>
+        arcVisible(d.target) ? "auto" : "none"
+      )
+      .attrTween("d", (d) => () => arc(d.current));
+    label
+      .filter(function (d) {
+        return +this.getAttribute("fill-opacity") || labelVisible(d.target);
+      })
+      .transition(t)
+      .attr("fill-opacity", (d) => +labelVisible(d.target))
+      .attrTween("transform", (d) => () => labelTransform(d.current));
+  }
+
+  function arcVisible(d) {
+    return d.y1 <= 3 && d.y0 >= 1 && d.x1 > d.x0;
+  }
+  function labelVisible(d) {
+    return d.y1 <= 3 && d.y0 >= 1 && (d.y1 - d.y0) * (d.x1 - d.x0) > 0.035;
+  }
+  function labelTransform(d) {
+    const x = ((d.x0 + d.x1) / 2) * (180 / Math.PI);
+    const y = ((d.y0 + d.y1) / 2) * radius;
+    return `rotate(${x - 90}) translate(${y},0) rotate(${x < 180 ? 0 : 180})`;
+  }
+
+  _sunburstAPI = {
+    selectByKey(key) {
+      const node = root.descendants().find((d) => d.data.isGroup && d.data.key === key);
+      if (node) clicked(node);
+    },
+    clear() { clicked(root); },
+  };
+}
+
+function onSelect(p) {
+  // Update center label + selection detail + umap highlight.
+  const center = document.getElementById("sunburst-center");
+  const detail = document.getElementById("selection-detail");
+  const total = DATA.clusters.length;
+  if (!p || !p.data || p.data === null || p === undefined) {
+    // root selected
+    center.innerHTML = `
+      <span class="big">${total}</span>
+      <span>clusters labelled</span>`;
+    detail.style.display = "none";
+    highlightUmap(null);
+    updateLegendActive(null);
+    return;
+  }
+  if (p.data.isGroup === undefined) {
+    // It's the root node (no children/parent data); skip.
+    return;
+  }
+  if (p.data.isGroup) {
+    const nCells = p.value;
+    const nClusters = p.data.children.length;
+    center.innerHTML = `
+      <span class="big">${nClusters}</span>
+      <span>cluster${nClusters === 1 ? "" : "s"}<br>labelled "${escapeHTML(p.data.name)}"</span>`;
+    const chips = p.data.cluster_ids
+      .map(
+        (cid) =>
+          `<span class="chip" data-cid="${cid}">c${cid}</span>`
+      )
+      .join("");
+    detail.innerHTML = `
+      <div class="label" style="color:${labelColor(p.data.key)}">${escapeHTML(p.data.name)}</div>
+      <div class="meta">${nClusters} cluster${nClusters === 1 ? "" : "s"} · ${nCells.toLocaleString()} cells (${((100*nCells)/DATA.meta.n_total_cells).toFixed(1)}% of MiniFin)</div>
+      <div class="clusters-in-group">${chips}</div>`;
+    detail.style.display = "block";
+    detail.querySelectorAll(".chip").forEach((el) => {
+      el.onclick = () => {
+        const cid = Number(el.dataset.cid);
+        const leaf = p.children.find((c) => c.data.cluster_id === cid);
+        if (leaf) onSelect(leaf);
+        highlightUmap([cid]);
+      };
+    });
+    highlightUmap(p.data.cluster_ids);
+    updateLegendActive(p.data.key);
+  } else {
+    const c = p.data.cluster;
+    const d = p.data.decision;
+    center.innerHTML = `
+      <span class="big">c${c.cluster_id}</span>
+      <span>${c.n_cells.toLocaleString()} cells<br>(${c.pct_of_minifin}% of MiniFin)</span>`;
+    detail.innerHTML = `
+      <div class="label" style="color:${labelColor(p.data.key)}">${escapeHTML(d.final_label || c.proposed_label)}</div>
+      <div class="meta">cluster ${c.cluster_id} · ${c.tier} · decision: <b>${d.decision}</b>${d.merged_with ? " (with c" + d.merged_with + ")" : ""}</div>
+      ${d.rationale ? `<div class="rationale">"${escapeHTML(d.rationale)}"</div>` : ""}`;
+    detail.style.display = "block";
+    highlightUmap([c.cluster_id]);
+    updateLegendActive(p.data.key);
+  }
+}
+
+/* ----- LEGEND ----- */
+function renderLegend(hier) {
+  const lg = document.getElementById("legend-grid");
+  const groups = hier.children;
+  lg.innerHTML = groups
+    .map(
+      (g) => `
+      <span class="item" data-key="${g.key}">
+        <span class="swatch" style="background:${labelColor(g.key)}"></span>
+        ${escapeHTML(g.name)} <span style="color:var(--muted);margin-left:2px">(${g.cluster_ids.length})</span>
+      </span>`
+    )
+    .join("");
+  lg.querySelectorAll(".item").forEach((el) => {
+    el.onclick = () => {
+      const k = el.dataset.key;
+      if (_sunburstAPI) _sunburstAPI.selectByKey(k);
+    };
+  });
+}
+function updateLegendActive(key) {
+  document.querySelectorAll("#legend-grid .item").forEach((el) => {
+    el.classList.toggle("active", el.dataset.key === key);
+  });
+}
+
+/* ----- RESULT UMAP ----- */
+let _resultUmapAPI = null;
+function renderResultUmap(hier) {
+  const container = document.getElementById("umap-result-wrap");
+  const W = container.clientWidth, H = container.clientHeight;
+  d3.select(container).selectAll("svg").remove();
+  const svg = d3.select(container).append("svg")
+    .attr("viewBox", `0 0 ${W} ${H}`)
+    .attr("preserveAspectRatio", "xMidYMid meet");
+
+  const b = DATA.meta.umap_bounds;
+  const padX = (b.xmax - b.xmin) * 0.04, padY = (b.ymax - b.ymin) * 0.04;
+  const x = d3.scaleLinear().domain([b.xmin - padX, b.xmax + padX]).range([10, W - 10]);
+  const y = d3.scaleLinear().domain([b.ymin - padY, b.ymax + padY]).range([H - 10, 10]);
+
+  // Cluster id → group key
+  const cid2key = new Map();
+  for (const g of hier.children) for (const cid of g.cluster_ids) cid2key.set(cid, g.key);
+
+  // Background
+  svg.append("g").attr("class", "bg")
+    .selectAll("circle")
+    .data(DATA.background_umap)
+    .enter().append("circle")
+    .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+    .attr("r", 0.9).attr("fill", "#e5e7eb");
+
+  // Per-cluster groups (so we can toggle opacity)
+  const clusterGroup = svg.append("g").attr("class", "clusters");
+  for (const c of DATA.clusters) {
+    const k = cid2key.get(c.cluster_id);
+    const col = k ? labelColor(k) : "#9ca3af";
+    const g = clusterGroup.append("g")
+      .attr("class", "cluster")
+      .attr("data-cid", c.cluster_id);
+    g.selectAll("circle")
+      .data(c.umap_xy)
+      .enter().append("circle")
+      .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+      .attr("r", 1.1).attr("fill", col).attr("opacity", 0.75);
+  }
+
+  _resultUmapAPI = {
+    highlight(cids) {
+      const sel = clusterGroup.selectAll("g.cluster");
+      if (!cids || cids.length === 0) {
+        sel.transition().duration(250).style("opacity", 1);
+        return;
+      }
+      const set = new Set(cids.map(String));
+      sel.transition().duration(250)
+        .style("opacity", function () {
+          return set.has(this.getAttribute("data-cid")) ? 1 : 0.08;
+        });
+    },
+  };
+}
+
+function highlightUmap(cids) {
+  if (_resultUmapAPI) _resultUmapAPI.highlight(cids);
 }
 
 /* ----- CLUSTER SCREEN ----- */
@@ -1079,14 +1595,14 @@ function goNext() {
     scheduleSave();
     render();
   } else {
-    // Done
-    view = Object.keys(state.decisions).length === DATA.clusters.length ? "done" : "cluster";
-    if (view === "done") render();
-    else {
-      // not all done — jump to first undecided
+    // Reached end. If everything's decided, show result; else jump to first undecided.
+    if (Object.keys(state.decisions).length === DATA.clusters.length) {
+      view = "result";
+      render();
+    } else {
       const firstUn = DATA.clusters.findIndex(c => !state.decisions[c.cluster_id]);
       if (firstUn >= 0) { idx = firstUn; render(); }
-      else { view="done"; render(); }
+      else { view = "result"; render(); }
     }
   }
 }
