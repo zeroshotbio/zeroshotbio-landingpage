@@ -848,14 +848,23 @@ function render() {
 function renderUserPicker() {
   const total = DATA.clusters.length;
   const cards = USERS.map((u) => {
-    const p = progressByUser[u] || { n_decided: 0, updated_at: null };
-    const pct = Math.round((p.n_decided / total) * 100);
-    const isDone = p.n_decided >= total;
-    const updated = p.updated_at ? `last edit ${timeAgo(p.updated_at)}` : "not started";
+    let p, pct, isDone, updated, avatarSvg, nameLabel;
+    try {
+      p = progressByUser[u] || { n_decided: 0, updated_at: null };
+      pct = Math.max(0, Math.min(100, Math.round((p.n_decided / total) * 100)));
+      isDone = p.n_decided >= total;
+      updated = p.updated_at ? `last edit ${timeAgo(p.updated_at)}` : "not started";
+      avatarSvg = renderAvatar(u, 96);
+      nameLabel = USER_LABEL[u] || u.charAt(0).toUpperCase() + u.slice(1);
+    } catch (err) {
+      console.error("user-card render error for", u, err);
+      p = { n_decided: 0, updated_at: null }; pct = 0; isDone = false;
+      updated = "not started"; avatarSvg = ""; nameLabel = u;
+    }
     return `
       <div class="user-card ${isDone ? "done" : ""}" data-user="${u}">
-        <div class="avatar">${renderAvatar(u, 96)}</div>
-        <div class="name">${USER_LABEL[u]}</div>
+        <div class="avatar">${avatarSvg}</div>
+        <div class="name">${escapeHTML(nameLabel)}</div>
         <div class="prog-bar"><div style="width:${pct}%"></div></div>
         <div class="prog-text">${p.n_decided} of ${total} · ${updated}</div>
       </div>`;
