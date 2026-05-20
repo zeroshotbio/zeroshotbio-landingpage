@@ -2203,16 +2203,22 @@ function exportDecisions() {
 let _geneIndex = null;       // { n_cells, n_genes, umap_xy, genes:{sym: {idx, ens, sym, p99}}, ens_to_idx, bytes_per_gene }
 let _geneIndexPromise = null;
 const _geneCache = new Map();  // gene idx -> Uint8Array(n_cells)
-const GENE_INDEX_URL = "./gene_index.json";
-const GENE_BIN_URL   = "./gene_expression.bin";
+// Cache-bust on every gene-assets schema change. Bump this when the build
+// script adds/removes fields (e.g. cell_clusters, cluster_stats_bytes_per_gene).
+const GENE_ASSETS_V = "3";
+const GENE_INDEX_URL = `./gene_index.json?v=${GENE_ASSETS_V}`;
+const GENE_BIN_URL   = `./gene_expression.bin?v=${GENE_ASSETS_V}`;
 
 async function loadGeneIndex() {
   if (_geneIndex) return _geneIndex;
   if (_geneIndexPromise) return _geneIndexPromise;
   _geneIndexPromise = (async () => {
-    const r = await fetch(GENE_INDEX_URL, { cache: "force-cache" });
+    const r = await fetch(GENE_INDEX_URL);
     if (!r.ok) throw new Error("Gene index HTTP " + r.status);
     _geneIndex = await r.json();
+    if (!_geneIndex.cell_clusters) {
+      console.warn("gene_index.json is missing cell_clusters — cluster overlay will be empty. Bump GENE_ASSETS_V or hard-refresh.");
+    }
     return _geneIndex;
   })();
   return _geneIndexPromise;
@@ -2382,7 +2388,7 @@ function expressionColor(v) {
 
 // Cluster-stats binary: per gene, n_supp * 2 uint8 bytes (pct, mean) per cluster.
 const _clusterStatsCache = new Map();  // gene_idx -> Uint8Array
-const CLUSTER_STATS_URL = "./cluster_stats.bin";
+const CLUSTER_STATS_URL = `./cluster_stats.bin?v=${GENE_ASSETS_V}`;
 async function fetchClusterStats(geneIdx) {
   if (_clusterStatsCache.has(geneIdx)) return _clusterStatsCache.get(geneIdx);
   const idx = await loadGeneIndex();
