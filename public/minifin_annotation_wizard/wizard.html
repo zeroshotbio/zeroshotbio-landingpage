@@ -464,6 +464,15 @@
     width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
   }
   .legend-grid .item .ncount { color: var(--muted); font-size: 8px; margin-left: 1px; }
+  .umap-footnote {
+    display: flex; align-items: center; gap: 6px;
+    margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--line);
+    font-size: 9.5px; color: var(--muted); line-height: 1.3;
+  }
+  .umap-footnote .bg-swatch {
+    width: 8px; height: 8px; border-radius: 50%; background: #e5e7eb;
+    border: 1px solid #cbd5e1; flex-shrink: 0;
+  }
 
   /* Sunburst toolbar (sliders) */
   .sunburst-toolbar {
@@ -1119,6 +1128,13 @@ function renderResult() {
         <h3>UMAP — colored by your labels</h3>
         <div class="umap-result-wrap" id="umap-result-wrap"></div>
         <div class="legend-grid" id="legend-grid"></div>
+        <div class="umap-footnote">
+          <span class="bg-swatch"></span>
+          <span>
+            Light-grey points = cells in <b style="font-weight:400">unsupported leiden clusters</b>
+            (~${(DATA.meta.n_total_cells - DATA.clusters.reduce((s,c)=>s+c.n_cells,0)).toLocaleString()} cells the intrinsic-clustering pipeline filtered out as too small or marker-poor; shown for spatial context only).
+          </span>
+        </div>
       </div>
     </div>
   </div>`;
