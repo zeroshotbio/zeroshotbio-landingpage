@@ -2226,12 +2226,17 @@ async function fetchGeneExpression(geneIdx) {
   const end   = start + bpg - 1;           // inclusive Range
   const r = await fetch(GENE_BIN_URL, {
     headers: { "Range": `bytes=${start}-${end}` },
-    cache: "force-cache",
   });
   if (!r.ok && r.status !== 206) throw new Error("Gene blob HTTP " + r.status);
-  const buf = new Uint8Array(await r.arrayBuffer());
+  let buf = new Uint8Array(await r.arrayBuffer());
+  // Some browsers/CDNs ignore Range when the resource is already cached as a
+  // 200 response — they hand back the entire file. Slice it ourselves.
   if (buf.length !== bpg) {
-    console.warn("Range mismatch", buf.length, "expected", bpg);
+    if (buf.length >= start + bpg) {
+      buf = buf.subarray(start, start + bpg);
+    } else {
+      throw new Error(`gene blob short: got ${buf.length} bytes, need ${bpg} starting at ${start}`);
+    }
   }
   _geneCache.set(geneIdx, buf);
   return buf;
@@ -2382,14 +2387,19 @@ async function fetchClusterStats(geneIdx) {
   if (_clusterStatsCache.has(geneIdx)) return _clusterStatsCache.get(geneIdx);
   const idx = await loadGeneIndex();
   const bpg = idx.cluster_stats_bytes_per_gene;
+  if (!bpg) throw new Error("cluster_stats_bytes_per_gene missing from gene_index.json");
   const start = geneIdx * bpg;
   const end = start + bpg - 1;
   const r = await fetch(CLUSTER_STATS_URL, {
     headers: { "Range": `bytes=${start}-${end}` },
-    cache: "force-cache",
   });
   if (!r.ok && r.status !== 206) throw new Error("cluster_stats HTTP " + r.status);
-  const buf = new Uint8Array(await r.arrayBuffer());
+  let buf = new Uint8Array(await r.arrayBuffer());
+  // Browser/CDN ignored Range; slice ourselves.
+  if (buf.length !== bpg) {
+    if (buf.length >= start + bpg) buf = buf.subarray(start, start + bpg);
+    else throw new Error(`cluster_stats short: got ${buf.length}, need ${bpg} starting at ${start}`);
+  }
   _clusterStatsCache.set(geneIdx, buf);
   return buf;
 }
@@ -2407,6 +2417,20 @@ const _geneModalState = {
 };
 
 async function openGeneModal(gene, ctx) {
+  try {
+    return await openGeneModalInner(gene, ctx);
+  } catch (err) {
+    console.error("openGeneModal failed:", err);
+    const wrap = document.getElementById("gene-umap-wrap");
+    if (wrap) {
+      wrap.innerHTML = `<div style="color:#b91c1c;padding:14px;font-size:12px;">
+        Unexpected error rendering this gene. (${escapeHTML(String(err && err.message || err))}). Open the browser console for details.
+      </div>`;
+    }
+  }
+}
+
+async function openGeneModalInner(gene, ctx) {
   ctx = ctx || {};
   const ctxCluster = ctx.cluster || null;
   // Already open? Replace.
