@@ -1031,6 +1031,11 @@ function renderResult() {
               <input type="range" id="slider-leaf-font" min="4" max="14" step="0.5" value="${labelOpts.maxLeaf}">
               <span class="val" id="slider-leaf-val">${labelOpts.maxLeaf}px</span>
             </label>
+            <label title="Slices with less arc length than this hide their label. Lower = more labels appear.">
+              <span>show-cutoff</span>
+              <input type="range" id="slider-min-arc" min="0" max="40" step="1" value="${labelOpts.minArc}">
+              <span class="val" id="slider-min-arc-val">${labelOpts.minArc}px</span>
+            </label>
           </div>
         </div>
         <div class="sunburst-wrap" id="sunburst-wrap">
@@ -1080,6 +1085,14 @@ function bindResult() {
   sLeaf.oninput = () => {
     labelOpts.maxLeaf = Number(sLeaf.value);
     sLeafVal.textContent = `${labelOpts.maxLeaf}px`;
+    persistLabelOpts();
+    if (_sunburstAPI) _sunburstAPI.refreshLabels();
+  };
+  const sMin = document.getElementById("slider-min-arc");
+  const sMinVal = document.getElementById("slider-min-arc-val");
+  sMin.oninput = () => {
+    labelOpts.minArc = Number(sMin.value);
+    sMinVal.textContent = `${labelOpts.minArc}px`;
     persistLabelOpts();
     if (_sunburstAPI) _sunburstAPI.refreshLabels();
   };
@@ -1145,11 +1158,12 @@ function tooltipHTML(d) {
 let _sunburstAPI = null;
 // User-tunable label sizing — defaults are conservative; sliders override.
 let labelOpts = (() => {
+  const def = { maxGroup: 11, maxLeaf: 9, maxChars: 18, minArc: 10 };
   try {
     const raw = localStorage.getItem("minifin_label_opts_v1");
-    if (raw) return JSON.parse(raw);
+    if (raw) return { ...def, ...JSON.parse(raw) };
   } catch (e) {}
-  return { maxGroup: 11, maxLeaf: 9, maxChars: 18 };
+  return def;
 })();
 function persistLabelOpts() {
   try { localStorage.setItem("minifin_label_opts_v1", JSON.stringify(labelOpts)); } catch (e) {}
@@ -1227,12 +1241,17 @@ function renderSunburst(hierarchyData) {
 
   // Adaptive label sizing — caps come from labelOpts (mutable via sliders).
   const CHAR_W = 0.58;          // approximate width-to-font-size ratio for our sans
-  const MIN_FONT = 5;           // absolute floor for any label
-  const MIN_TANGENTIAL = 18;    // px of arc length below which we just hide
-  const MIN_RADIAL = 8;         // px of radial thickness below which we hide
+  const MIN_FONT = 4.5;         // absolute floor for any label
 
   function rawLabelText(d) {
     if (d.data.isGroup) return d.data.name;
+    // Leaves: prefer the reference fine-label (informative biological name),
+    // fall back to top marker symbol, then the bare cluster id.
+    const c = d.data.cluster;
+    if (c && c.top_fine && c.top_fine.trim()) return c.top_fine.trim();
+    if (c && c.markers && c.markers[0] && c.markers[0].symbol) {
+      return c.markers[0].symbol;
+    }
     return `c${d.data.cluster_id}`;
   }
   function truncateForSlice(text) {
@@ -1255,12 +1274,13 @@ function renderSunburst(hierarchyData) {
   }
   function fitText(d) {
     const g = arcGeom(d.current);
-    if (g.tangential < MIN_TANGENTIAL || g.radial < MIN_RADIAL) return "";
+    // Cutoff slider: only hide when arc length is below the user-chosen threshold.
+    if (g.tangential < labelOpts.minArc || g.radial < 6) return "";
     const raw = rawLabelText(d);
     let candidate = truncateForSlice(raw);
     if (fontSizeFor(d, candidate) >= MIN_FONT) return candidate;
-    // Try shrinking further by truncation only on leaves; group names hide.
-    if (d.data.isGroup) return "";
+    // If still too long, shrink by truncation (groups and leaves alike — we
+    // already trimmed to maxChars above, so further trim is per-arc-length).
     const maxChars = Math.max(1, Math.floor((g.tangential - 4) / (MIN_FONT * CHAR_W)));
     if (maxChars < 2) return "";
     if (maxChars >= candidate.length) return "";
