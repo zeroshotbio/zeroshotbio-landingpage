@@ -246,7 +246,7 @@
     cursor: pointer;
   }
   .marker-list .sym.linked:hover, .deg-table td.sym.linked:hover { color: var(--accent); }
-  .gene-modal { max-width: 880px; padding: 0; overflow: hidden; }
+  .gene-modal { max-width: 920px; padding: 0; overflow: hidden; }
   .gene-modal .gene-head {
     padding: 16px 22px 10px; border-bottom: 1px solid var(--line);
     display: flex; align-items: baseline; justify-content: space-between; gap: 12px;
@@ -257,21 +257,53 @@
     background: none; border: none; font-size: 22px; cursor: pointer;
     color: var(--muted); padding: 0 6px; line-height: 1;
   }
-  .gene-modal .gene-body { padding: 14px 22px 20px; }
-  .gene-umap-wrap { width: 100%; height: 460px; position: relative; }
+  .gene-modal .gene-body { padding: 12px 22px 18px; }
+  .gene-controls {
+    display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+    padding: 8px 0 10px; border-bottom: 1px solid var(--line); margin-bottom: 10px;
+    font-size: 11px; color: var(--ink);
+  }
+  .gene-controls .group { display: inline-flex; align-items: center; gap: 6px; }
+  .gene-controls label.tog {
+    display: inline-flex; align-items: center; gap: 5px; cursor: pointer;
+    padding: 3px 8px; border-radius: 12px; border: 1px solid var(--line);
+    background: white; user-select: none;
+  }
+  .gene-controls label.tog input { accent-color: var(--accent); cursor: pointer; }
+  .gene-controls label.tog:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); }
+  .gene-controls .slider { display: inline-flex; align-items: center; gap: 6px; }
+  .gene-controls .slider input[type=range] { width: 110px; accent-color: var(--accent); }
+  .gene-controls .slider .val { font-variant-numeric: tabular-nums; min-width: 28px; }
+  .gene-controls .swatch-current {
+    width: 10px; height: 10px; border-radius: 50%;
+    background: transparent; border: 2px solid #eab308; display: inline-block;
+  }
+  .gene-umap-wrap { width: 100%; height: 440px; position: relative; }
   .gene-umap-wrap svg { width: 100%; height: 100%; }
   .gene-meta {
     margin-top: 10px; display: flex; align-items: center; gap: 14px;
     font-size: 11px; color: var(--muted); flex-wrap: wrap;
   }
-  .gene-meta .ramp {
-    display: inline-flex; align-items: center; gap: 4px;
-  }
+  .gene-meta .ramp { display: inline-flex; align-items: center; gap: 4px; }
   .gene-meta .ramp-bar {
     width: 110px; height: 8px; border-radius: 4px;
     background: linear-gradient(to right, #f3f4f6, #fde68a, #fb923c, #b91c1c);
   }
   .gene-meta .note { color: #6b7280; font-size: 10px; }
+  .gene-stats {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px;
+    padding: 10px 12px; margin-top: 10px;
+    background: var(--bg); border-radius: 8px;
+    font-size: 12px;
+  }
+  .gene-stats .col { display: flex; flex-direction: column; gap: 2px; }
+  .gene-stats .col .head {
+    font-size: 9px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase;
+  }
+  .gene-stats .col .v { font-size: 14px; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .gene-stats .col .sub { font-size: 10px; color: var(--muted); }
+  .gene-stats .lfc-pos { color: #16a34a; }
+  .gene-stats .lfc-neg { color: #b91c1c; }
   .gene-search-row .nf {
     position: absolute; left: 0; top: 100%; margin-top: 4px;
     color: var(--muted); font-size: 11px; font-style: italic;
@@ -2081,16 +2113,16 @@ function bindClusterUI(c, position) {
   const exploreBtn = document.getElementById("explore-degs-btn");
   if (exploreBtn) exploreBtn.onclick = () => openDegModal(c);
 
-  // Marker gene symbols -> click opens gene UMAP modal
+  // Marker gene symbols -> click opens gene UMAP modal (with cluster context)
   document.querySelectorAll(".marker-list .sym.linked").forEach((el) => {
     el.onclick = () => {
-      openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns });
+      openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns }, { cluster: c });
     };
   });
 
-  // Gene search bar
+  // Gene search bar (carries cluster context so the modal opens with overlays on)
   const geneInput = document.getElementById("gene-input");
-  if (geneInput) bindGeneSearch(geneInput);
+  if (geneInput) bindGeneSearch(geneInput, { cluster: c });
 
   refresh();
 }
@@ -2249,7 +2281,7 @@ function searchGenes(query, limit = 12) {
   return [...prefix, ...substr].slice(0, limit);
 }
 
-function bindGeneSearch(input) {
+function bindGeneSearch(input, ctx) {
   const wrap = input.parentElement;
   const suggestions = wrap.querySelector(".gene-suggestions");
   let activeIdx = -1;
@@ -2274,7 +2306,7 @@ function bindGeneSearch(input) {
       el.onclick = () => {
         suggestions.classList.remove("show");
         input.value = "";
-        openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns });
+        openGeneModal({ sym: el.dataset.geneSym, ens: el.dataset.geneEns }, ctx);
       };
     });
   };
@@ -2307,7 +2339,7 @@ function bindGeneSearch(input) {
         const g = resolveGene(input.value);
         if (g) {
           input.value = "";
-          openGeneModal({ sym: g.sym, ens: g.ens });
+          openGeneModal({ sym: g.sym, ens: g.ens }, ctx);
         }
       }
       return;
@@ -2325,7 +2357,7 @@ function bindGeneSearch(input) {
       const g = activeIdx >= 0 ? lastResults[activeIdx] : lastResults[0];
       input.value = "";
       suggestions.classList.remove("show");
-      openGeneModal({ sym: g.sym, ens: g.ens });
+      openGeneModal({ sym: g.sym, ens: g.ens }, ctx);
     } else if (e.key === "Escape") {
       suggestions.classList.remove("show");
     }
@@ -2343,23 +2375,79 @@ function expressionColor(v) {
   return "#7f1d1d";
 }
 
-async function openGeneModal(gene) {
+// Cluster-stats binary: per gene, n_supp * 2 uint8 bytes (pct, mean) per cluster.
+const _clusterStatsCache = new Map();  // gene_idx -> Uint8Array
+const CLUSTER_STATS_URL = "./cluster_stats.bin";
+async function fetchClusterStats(geneIdx) {
+  if (_clusterStatsCache.has(geneIdx)) return _clusterStatsCache.get(geneIdx);
+  const idx = await loadGeneIndex();
+  const bpg = idx.cluster_stats_bytes_per_gene;
+  const start = geneIdx * bpg;
+  const end = start + bpg - 1;
+  const r = await fetch(CLUSTER_STATS_URL, {
+    headers: { "Range": `bytes=${start}-${end}` },
+    cache: "force-cache",
+  });
+  if (!r.ok && r.status !== 206) throw new Error("cluster_stats HTTP " + r.status);
+  const buf = new Uint8Array(await r.arrayBuffer());
+  _clusterStatsCache.set(geneIdx, buf);
+  return buf;
+}
+
+// Modal-local state so controls can re-render without refetching.
+const _geneModalState = {
+  entry: null,
+  expr: null,
+  clusterStats: null,
+  ctxClusterId: null,
+  showCluster: true,
+  focusCluster: false,
+  hideZeros: false,
+  threshold: 0,
+};
+
+async function openGeneModal(gene, ctx) {
+  ctx = ctx || {};
+  const ctxCluster = ctx.cluster || null;
   // Already open? Replace.
   const existing = document.getElementById("gene-modal-backdrop");
   if (existing) existing.remove();
   const backdrop = document.createElement("div");
   backdrop.id = "gene-modal-backdrop";
   backdrop.className = "modal-backdrop show";
+  const ctxLine = ctxCluster
+    ? `cluster c${ctxCluster.cluster_id} (${escapeHTML(ctxCluster.tier)})`
+    : "";
   backdrop.innerHTML = `
     <div class="modal gene-modal" role="dialog" aria-label="Gene UMAP">
       <div class="gene-head">
         <div>
           <h2 id="gene-modal-title">${escapeHTML(gene.sym || "")}</h2>
-          <div class="ens" id="gene-modal-ens">${escapeHTML(gene.ens || "")}</div>
+          <div class="ens" id="gene-modal-ens">${escapeHTML(gene.ens || "")}${ctxLine ? " · " + ctxLine : ""}</div>
         </div>
         <button class="close" id="gene-close" aria-label="Close">×</button>
       </div>
       <div class="gene-body">
+        <div class="gene-controls" id="gene-controls" style="${ctxCluster ? "" : "display:none"}">
+          <label class="tog">
+            <input type="checkbox" id="ctl-show-cluster" checked>
+            <span class="swatch-current"></span>
+            highlight cluster
+          </label>
+          <label class="tog">
+            <input type="checkbox" id="ctl-focus">
+            focus on cluster
+          </label>
+          <label class="tog">
+            <input type="checkbox" id="ctl-hide-zeros">
+            hide zero-expression cells
+          </label>
+          <span class="slider">
+            threshold
+            <input type="range" id="ctl-threshold" min="0" max="255" step="1" value="0">
+            <span class="val" id="ctl-threshold-val">0%</span>
+          </span>
+        </div>
         <div class="gene-umap-wrap" id="gene-umap-wrap">
           <div style="color:var(--muted);font-size:12px;padding:10px;">loading expression…</div>
         </div>
@@ -2369,8 +2457,10 @@ async function openGeneModal(gene) {
             <span class="ramp-bar"></span>
             <span style="color:var(--ink)">high</span>
           </span>
-          <span class="note">${_geneIndex ? `${_geneIndex.n_cells.toLocaleString()} sampled MiniFin cells. Library-size-normalized log1p expression, scaled to each gene's 99th percentile.` : "loading sample data…"}</span>
+          ${ctxCluster ? '<span class="ramp"><span class="swatch-current"></span> current cluster outline</span>' : ""}
+          <span class="note" id="gene-meta-note">${_geneIndex ? `${_geneIndex.n_cells.toLocaleString()} sampled MiniFin cells. log1p expression, scaled to gene's 99th percentile.` : "loading sample data…"}</span>
         </div>
+        <div class="gene-stats" id="gene-stats" style="display:none"></div>
       </div>
     </div>`;
   document.body.appendChild(backdrop);
@@ -2382,7 +2472,6 @@ async function openGeneModal(gene) {
     if (e.key === "Escape") { close(); document.removeEventListener("keydown", esc); }
   });
 
-  // Load index + this gene's expression
   let idx;
   try {
     idx = await loadGeneIndex();
@@ -2391,7 +2480,6 @@ async function openGeneModal(gene) {
       `<div style="color:var(--highlight);padding:14px;">Couldn't load gene index. (${escapeHTML(err.message)})</div>`;
     return;
   }
-  // Resolve the gene's index
   let entry = null;
   if (gene.ens) entry = (idx.ens_to_idx[gene.ens] != null ? { idx: idx.ens_to_idx[gene.ens], sym: gene.sym, ens: gene.ens } : null);
   if (!entry && gene.sym) entry = idx.genes[String(gene.sym).toLowerCase()] || null;
@@ -2401,30 +2489,123 @@ async function openGeneModal(gene) {
     return;
   }
   document.getElementById("gene-modal-title").textContent = entry.sym || gene.sym;
-  document.getElementById("gene-modal-ens").textContent = entry.ens || gene.ens || "";
-  // Fetch expression
-  let expr;
+  document.getElementById("gene-modal-ens").textContent =
+    (entry.ens || gene.ens || "") + (ctxLine ? " · " + ctxLine : "");
+  // Fetch expression + cluster stats (in parallel)
+  let expr, clusterStats;
   try {
-    expr = await fetchGeneExpression(entry.idx);
+    [expr, clusterStats] = await Promise.all([
+      fetchGeneExpression(entry.idx),
+      ctxCluster ? fetchClusterStats(entry.idx).catch((e) => { console.warn(e); return null; }) : Promise.resolve(null),
+    ]);
   } catch (err) {
     document.getElementById("gene-umap-wrap").innerHTML =
       `<div style="color:var(--highlight);padding:14px;">Couldn't load expression. (${escapeHTML(err.message)})</div>`;
     return;
   }
-  renderGeneUmap(entry, expr);
-  // Update meta with the current gene's p99 (so the biologist knows the scale).
-  const meta = document.getElementById("gene-meta");
-  const note = meta.querySelector(".note");
-  if (note) {
-    note.textContent = `${idx.n_cells.toLocaleString()} sampled MiniFin cells · expression scaled to this gene's 99th-percentile (log1p ${entry.p99 != null ? entry.p99.toFixed(2) : "—"}).`;
-  }
+
+  // Initialize state
+  _geneModalState.entry = entry;
+  _geneModalState.expr = expr;
+  _geneModalState.clusterStats = clusterStats;
+  _geneModalState.ctxClusterId = ctxCluster ? ctxCluster.cluster_id : null;
+  _geneModalState.ctxCluster = ctxCluster;
+  _geneModalState.showCluster = !!ctxCluster;
+  _geneModalState.focusCluster = false;
+  _geneModalState.hideZeros = false;
+  _geneModalState.threshold = 0;
+
+  // Wire controls
+  const ctlShow   = document.getElementById("ctl-show-cluster");
+  const ctlFocus  = document.getElementById("ctl-focus");
+  const ctlZeros  = document.getElementById("ctl-hide-zeros");
+  const ctlThresh = document.getElementById("ctl-threshold");
+  const ctlThreshVal = document.getElementById("ctl-threshold-val");
+  if (ctlShow) ctlShow.onchange = () => { _geneModalState.showCluster = ctlShow.checked; redrawGeneUmap(); };
+  if (ctlFocus) ctlFocus.onchange = () => { _geneModalState.focusCluster = ctlFocus.checked; redrawGeneUmap(); };
+  if (ctlZeros) ctlZeros.onchange = () => { _geneModalState.hideZeros = ctlZeros.checked; redrawGeneUmap(); };
+  if (ctlThresh) ctlThresh.oninput = () => {
+    _geneModalState.threshold = Number(ctlThresh.value);
+    ctlThreshVal.textContent = `${Math.round((_geneModalState.threshold / 255) * 100)}%`;
+    redrawGeneUmap();
+  };
+
+  // Stats line
+  if (ctxCluster && clusterStats) renderGeneStats(entry, clusterStats, ctxCluster);
+  // Meta note
+  document.getElementById("gene-meta-note").textContent =
+    `${idx.n_cells.toLocaleString()} sampled MiniFin cells · expression scaled to this gene's 99th-percentile (log1p ${entry.p99 != null ? entry.p99.toFixed(2) : "—"}).`;
+
+  redrawGeneUmap();
 }
 
-function renderGeneUmap(entry, expr) {
+function renderGeneStats(entry, clusterStats, ctxCluster) {
+  const idx = _geneIndex;
+  const supported = idx.supported_cluster_ids;
+  const cpos = supported.indexOf(ctxCluster.cluster_id);
+  if (cpos < 0) return;
+  const pctRaw = clusterStats[cpos * 2 + 0];
+  const meanRaw = clusterStats[cpos * 2 + 1];
+  const pctIn = pctRaw / 255;
+  const meanIn = (meanRaw / 255) * (entry.p99 || 1);
+
+  // Compute "out of cluster" stats by averaging stats across other supported clusters
+  // weighted by their cell counts. Use DATA.clusters for cell counts.
+  let totalOut = 0, sumPctOut = 0, sumMeanOut = 0;
+  for (let i = 0; i < supported.length; i++) {
+    if (i === cpos) continue;
+    const cid = supported[i];
+    const cluster = DATA.clusters.find((cc) => cc.cluster_id === cid);
+    if (!cluster) continue;
+    const n = cluster.n_cells;
+    totalOut += n;
+    sumPctOut += (clusterStats[i * 2 + 0] / 255) * n;
+    sumMeanOut += (clusterStats[i * 2 + 1] / 255) * (entry.p99 || 1) * n;
+  }
+  const pctOut = totalOut > 0 ? sumPctOut / totalOut : 0;
+  const meanOut = totalOut > 0 ? sumMeanOut / totalOut : 0;
+  const lfc = Math.log2((meanIn + 0.01) / (meanOut + 0.01));
+
+  const statsEl = document.getElementById("gene-stats");
+  const lfcCls = lfc > 0.3 ? "lfc-pos" : (lfc < -0.3 ? "lfc-neg" : "");
+  statsEl.innerHTML = `
+    <div class="col">
+      <span class="head">in cluster c${ctxCluster.cluster_id}</span>
+      <span class="v">${(pctIn * 100).toFixed(0)}% express</span>
+      <span class="sub">mean log1p ${meanIn.toFixed(2)} · ${ctxCluster.n_cells.toLocaleString()} cells</span>
+    </div>
+    <div class="col">
+      <span class="head">other supported clusters</span>
+      <span class="v">${(pctOut * 100).toFixed(0)}% express</span>
+      <span class="sub">weighted mean log1p ${meanOut.toFixed(2)}</span>
+    </div>
+    <div class="col">
+      <span class="head">cluster vs others</span>
+      <span class="v ${lfcCls}">log2FC ${lfc >= 0 ? "+" : ""}${lfc.toFixed(2)}</span>
+      <span class="sub">${lfc > 1 ? "strong up" : lfc > 0.3 ? "elevated" : lfc < -1 ? "strong down" : lfc < -0.3 ? "depleted" : "comparable"} in cluster</span>
+    </div>`;
+  statsEl.style.display = "grid";
+}
+
+// Re-render the gene UMAP using current _geneModalState.
+function redrawGeneUmap() {
+  const s = _geneModalState;
+  if (!s.entry || !s.expr) return;
+  renderGeneUmap(s.entry, s.expr, {
+    ctxClusterId: s.ctxClusterId,
+    showCluster: s.showCluster,
+    focusCluster: s.focusCluster,
+    hideZeros: s.hideZeros,
+    threshold: s.threshold,
+  });
+}
+
+function renderGeneUmap(entry, expr, opts) {
+  opts = opts || {};
   const container = document.getElementById("gene-umap-wrap");
   container.innerHTML = "";
-  const W = container.clientWidth || 800;
-  const H = container.clientHeight || 460;
+  const W = container.clientWidth || 820;
+  const H = container.clientHeight || 440;
   const svg = d3.select(container).append("svg")
     .attr("viewBox", `0 0 ${W} ${H}`)
     .attr("preserveAspectRatio", "xMidYMid meet");
@@ -2435,30 +2616,99 @@ function renderGeneUmap(entry, expr) {
   const y = d3.scaleLinear().domain([b.ymin - padY, b.ymax + padY]).range([H - 12, 12]);
 
   const xy = _geneIndex.umap_xy;
+  const cellClusters = _geneIndex.cell_clusters || [];
   const n = expr.length;
-  // Draw in two passes: zero-expression cells first (gray), then nonzero (color),
-  // so the colored points are always on top.
-  const zeroPts = [];
-  const exprPts = [];
+  const threshold = opts.threshold || 0;
+  const ctxId = opts.ctxClusterId;
+  const focusOn = !!opts.focusCluster && ctxId != null;
+  const hideZeros = !!opts.hideZeros;
+  const showCluster = !!opts.showCluster && ctxId != null;
+
+  // Build draw pass arrays
+  const zeroPts = [];          // [x, y, inCluster]
+  const exprPts = [];          // [x, y, v, inCluster]
+  let nClusterSamples = 0, nClusterExpressing = 0;
+  let exprSumIn = 0, exprSumOut = 0, nOut = 0;
   for (let i = 0; i < n; i++) {
     const v = expr[i];
-    if (v === 0) zeroPts.push(xy[i]);
-    else exprPts.push([xy[i][0], xy[i][1], v]);
+    const inCluster = (ctxId != null && cellClusters[i] === ctxId);
+    if (inCluster) {
+      nClusterSamples += 1;
+      if (v > 0) nClusterExpressing += 1;
+      exprSumIn += v;
+    } else {
+      exprSumOut += v;
+      nOut += 1;
+    }
+    if (v < threshold) {
+      if (!hideZeros) zeroPts.push([xy[i][0], xy[i][1], inCluster]);
+      continue;
+    }
+    if (v === 0) {
+      if (!hideZeros) zeroPts.push([xy[i][0], xy[i][1], inCluster]);
+      continue;
+    }
+    exprPts.push([xy[i][0], xy[i][1], v, inCluster]);
   }
-  // Sort expression-bearing points by intensity ascending so brightest end on top
-  exprPts.sort((a, b) => a[2] - b[2]);
+  // Brightest on top, but keep in-cluster on top of equally-bright out-of-cluster
+  exprPts.sort((a, b) => (a[2] - b[2]) || (a[3] - b[3]));
 
+  // Backdrop layer: greys (zero or below-threshold). If focusing on cluster, drop opacity hard.
+  const greyOpacity = focusOn ? 0.18 : 0.7;
   svg.append("g").selectAll("circle.zero")
     .data(zeroPts).enter().append("circle")
     .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
-    .attr("r", 1.0).attr("fill", "#e5e7eb").attr("opacity", 0.7);
+    .attr("r", d => d[2] ? 1.5 : 1.0)
+    .attr("fill", "#e5e7eb")
+    .attr("opacity", d => d[2] && !focusOn ? 0.9 : greyOpacity);
 
+  // Expression layer
   svg.append("g").selectAll("circle.expr")
     .data(exprPts).enter().append("circle")
     .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
     .attr("r", d => 1.2 + (d[2] / 255) * 1.0)
     .attr("fill", d => expressionColor(d[2] / 255))
-    .attr("opacity", 0.85);
+    .attr("opacity", d => focusOn && !d[3] ? 0.12 : 0.9);
+
+  // Cluster overlay: gold ring around cells in the current cluster
+  if (showCluster) {
+    const ring = [];
+    for (let i = 0; i < n; i++) {
+      if (cellClusters[i] !== ctxId) continue;
+      const v = expr[i];
+      if (hideZeros && v < threshold) continue;
+      ring.push([xy[i][0], xy[i][1]]);
+    }
+    svg.append("g").selectAll("circle.ring")
+      .data(ring).enter().append("circle")
+      .attr("cx", d => x(d[0])).attr("cy", d => y(d[1]))
+      .attr("r", 2.6)
+      .attr("fill", "none")
+      .attr("stroke", "#eab308")
+      .attr("stroke-width", 1.3)
+      .attr("opacity", 0.9);
+
+    // Centroid label so Patrick can see "this is where my cluster sits"
+    if (ring.length > 0) {
+      const cx = d3.mean(ring, d => d[0]);
+      const cy = d3.mean(ring, d => d[1]);
+      svg.append("text")
+        .attr("x", x(cx)).attr("y", y(cy) - 14)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 10)
+        .attr("fill", "#a16207")
+        .attr("font-weight", 500)
+        .text(`c${ctxId} (n=${ring.length} sampled)`);
+    } else {
+      // No sampled cells happened to be in this cluster; surface a hint.
+      svg.append("text")
+        .attr("x", W / 2).attr("y", 18)
+        .attr("text-anchor", "middle")
+        .attr("font-size", 11)
+        .attr("fill", "#a16207")
+        .text(`c${ctxId} has no cells in the 3,000-cell sample — overlay hidden.`);
+    }
+  }
 }
 
 /* ----- HEADER BUTTONS ----- */
@@ -2784,10 +3034,10 @@ function openDegModal(c) {
   const modal = document.getElementById("deg-modal");
   document.getElementById("deg-close").onclick = () => modal.remove();
   modal.addEventListener("click", (e) => { if (e.target === modal) modal.remove(); });
-  // Make each DEG row clickable -> opens gene UMAP modal.
+  // Make each DEG row clickable -> opens gene UMAP modal with cluster context.
   modal.querySelectorAll("tr.clickable").forEach((tr) => {
     tr.onclick = () => {
-      openGeneModal({ sym: tr.dataset.geneSym, ens: tr.dataset.geneEns });
+      openGeneModal({ sym: tr.dataset.geneSym, ens: tr.dataset.geneEns }, { cluster: c });
     };
   });
   document.addEventListener("keydown", function esc(e) {
