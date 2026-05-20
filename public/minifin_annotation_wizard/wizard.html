@@ -321,7 +321,7 @@
     padding: 10px 18px; background: var(--panel); border: 1px solid var(--line);
     border-radius: 10px; margin-bottom: 12px;
   }
-  .result-head .title h2 { margin: 0; font-size: 20px; font-weight: 600; }
+  .result-head .title h2 { margin: 0; font-size: 20px; font-weight: 400; }
   .result-head .title .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
   .result-head .actions { display: flex; gap: 10px; }
   .result-head .actions button {
@@ -341,7 +341,7 @@
     border-radius: 10px; padding: 12px 16px;
   }
   .result-card h3 {
-    margin: 0 0 6px 0; font-size: 11px; font-weight: 600;
+    margin: 0 0 6px 0; font-size: 11px; font-weight: 400;
     color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
   }
   .sunburst-wrap, .umap-result-wrap {
@@ -356,14 +356,14 @@
     font-size: 12px; color: var(--muted);
   }
   .sunburst-wrap .center-label .big {
-    font-size: 18px; font-weight: 600; color: var(--ink); display: block;
+    font-size: 18px; font-weight: 400; color: var(--ink); display: block;
   }
   .selection-detail {
     margin-top: 10px; padding: 8px 12px;
     background: var(--bg); border-radius: 8px;
     font-size: 12px; color: var(--ink); line-height: 1.4;
   }
-  .selection-detail .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+  .selection-detail .label { font-size: 14px; font-weight: 400; margin-bottom: 4px; }
   .selection-detail .meta { color: var(--muted); font-size: 12px; }
   .selection-detail .rationale {
     font-style: italic; color: #374151;
@@ -395,6 +395,39 @@
     width: 6px; height: 6px; border-radius: 50%; display: inline-block; flex-shrink: 0;
   }
   .legend-grid .item .ncount { color: var(--muted); font-size: 8px; margin-left: 1px; }
+
+  /* Sunburst toolbar (sliders) */
+  .sunburst-toolbar {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 14px; margin-bottom: 4px;
+  }
+  .font-sliders { display: flex; gap: 14px; font-size: 10px; color: var(--muted); }
+  .font-sliders label { display: inline-flex; align-items: center; gap: 5px; }
+  .font-sliders input[type="range"] { width: 92px; accent-color: var(--accent); }
+  .font-sliders .val {
+    font-variant-numeric: tabular-nums; min-width: 32px; text-align: right;
+    color: var(--ink);
+  }
+
+  /* Sunburst hover popup */
+  .sunburst-tooltip {
+    position: fixed; z-index: 200; pointer-events: none;
+    background: rgba(17, 20, 24, 0.95); color: #f9fafb;
+    font-size: 11px; line-height: 1.4;
+    padding: 9px 11px; border-radius: 6px;
+    max-width: 280px;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.25);
+    transition: opacity 0.1s;
+    opacity: 0;
+  }
+  .sunburst-tooltip.show { opacity: 1; }
+  .sunburst-tooltip .ttl { font-size: 12px; margin-bottom: 4px; }
+  .sunburst-tooltip .meta { color: #cbd5e1; font-size: 10px; margin-bottom: 4px; }
+  .sunburst-tooltip .quote { color: #e5e7eb; font-style: italic;
+    border-left: 2px solid #475569; padding-left: 8px; margin-top: 6px; }
+  .sunburst-tooltip .markers { color: #93c5fd; font-size: 10px; margin-top: 5px; }
+  .sunburst-tooltip .swatch { width: 8px; height: 8px; border-radius: 50%;
+    display: inline-block; vertical-align: middle; margin-right: 6px; }
 
   /* Welcome screen */
   .welcome { max-width: 720px; margin: 40px auto; padding: 32px; background: var(--panel);
@@ -676,6 +709,10 @@ window.addEventListener("beforeunload", () => {
 
 /* ----- RENDER ROOT ----- */
 function render() {
+  // Stale tooltip cleanup — view changes shouldn't leave a pinned popup behind.
+  const _t = document.getElementById("sunburst-tooltip");
+  if (_t) _t.classList.remove("show");
+
   const main = document.getElementById("main");
   const footer = document.getElementById("footer-nav");
   const userChip = document.getElementById("user-chip");
@@ -887,15 +924,30 @@ function renderWelcome() {
 // Normalize a label for grouping in the sunburst (lower, trimmed)
 function labelKey(s) { return String(s || "").trim().toLowerCase(); }
 
+// Collapse missing/unknown labels into a shared "unlabelled" bucket.
+const UNLABELLED_KEY = "__unlabelled__";
+function isUnlabelledLabel(s) {
+  if (s == null) return true;
+  const t = String(s).trim().toLowerCase();
+  if (!t) return true;
+  return /^(unknown|unlabel(?:l)?ed|n\/a|none|tbd|\?+)$/.test(t);
+}
+
 // Build hierarchy: root -> final_label group -> cluster
 function buildResultHierarchy() {
   const total = DATA.clusters.length;
-  const groups = new Map(); // key -> { display, clusters: [...] }
+  const groups = new Map(); // key -> { display, key, clusters: [...] }
   for (const c of DATA.clusters) {
-    const d = state.decisions[c.cluster_id];
-    if (!d) continue;
-    const key = labelKey(d.final_label || c.proposed_label);
-    const display = (d.final_label || c.proposed_label || "(unlabeled)").trim();
+    const d = state.decisions[c.cluster_id] || null;
+    const rawLabel = d ? (d.final_label || c.proposed_label) : null;
+    let key, display;
+    if (!d || isUnlabelledLabel(rawLabel)) {
+      key = UNLABELLED_KEY;
+      display = "unlabelled";
+    } else {
+      key = labelKey(rawLabel);
+      display = String(rawLabel).trim();
+    }
     if (!groups.has(key)) groups.set(key, { display, key, clusters: [] });
     groups.get(key).clusters.push({ cluster: c, decision: d });
   }
@@ -934,8 +986,8 @@ const PALETTE = [
   "#9333ea", "#0f766e", "#b45309", "#86198f", "#155e75", "#3f6212",
 ];
 function labelColor(key) {
+  if (key === UNLABELLED_KEY) return "#9ca3af";  // muted gray
   if (LABEL_COLOR_CACHE.has(key)) return LABEL_COLOR_CACHE.get(key);
-  // Hash key → palette index
   let h = 0;
   for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) >>> 0;
   const c = PALETTE[h % PALETTE.length];
@@ -966,11 +1018,25 @@ function renderResult() {
     </div>
     <div class="result-grid">
       <div class="result-card">
-        <h3>Sunburst — your final labels (click to zoom)</h3>
+        <div class="sunburst-toolbar">
+          <h3 style="margin:0">Sunburst — click to zoom · hover for detail</h3>
+          <div class="font-sliders">
+            <label>
+              <span>group font</span>
+              <input type="range" id="slider-group-font" min="5" max="18" step="0.5" value="${labelOpts.maxGroup}">
+              <span class="val" id="slider-group-val">${labelOpts.maxGroup}px</span>
+            </label>
+            <label>
+              <span>cluster font</span>
+              <input type="range" id="slider-leaf-font" min="4" max="14" step="0.5" value="${labelOpts.maxLeaf}">
+              <span class="val" id="slider-leaf-val">${labelOpts.maxLeaf}px</span>
+            </label>
+          </div>
+        </div>
         <div class="sunburst-wrap" id="sunburst-wrap">
           <div class="center-label" id="sunburst-center">
             <span class="big">${total}</span>
-            <span>clusters labelled<br>across ${(new Set(DATA.clusters.map(c=>labelKey((state.decisions[c.cluster_id]||{}).final_label||c.proposed_label)))).size} labels</span>
+            <span>clusters labelled<br>across ${groupCount(state.decisions)} labels</span>
           </div>
         </div>
         <div id="selection-detail" class="selection-detail" style="display:none"></div>
@@ -984,10 +1050,38 @@ function renderResult() {
   </div>`;
 }
 
+// Compute the number of distinct groups (including unlabelled) for the centre label.
+function groupCount(decisions) {
+  const keys = new Set();
+  for (const c of DATA.clusters) {
+    const d = decisions[c.cluster_id] || null;
+    const raw = d ? (d.final_label || c.proposed_label) : null;
+    keys.add((!d || isUnlabelledLabel(raw)) ? UNLABELLED_KEY : labelKey(raw));
+  }
+  return keys.size;
+}
+
 function bindResult() {
   document.getElementById("btn-export-result").onclick = exportDecisions;
   document.getElementById("btn-edit-result").onclick = () => {
     view = "cluster"; idx = 0; render();
+  };
+  // Font sliders
+  const sGroup = document.getElementById("slider-group-font");
+  const sLeaf  = document.getElementById("slider-leaf-font");
+  const sGroupVal = document.getElementById("slider-group-val");
+  const sLeafVal  = document.getElementById("slider-leaf-val");
+  sGroup.oninput = () => {
+    labelOpts.maxGroup = Number(sGroup.value);
+    sGroupVal.textContent = `${labelOpts.maxGroup}px`;
+    persistLabelOpts();
+    if (_sunburstAPI) _sunburstAPI.refreshLabels();
+  };
+  sLeaf.oninput = () => {
+    labelOpts.maxLeaf = Number(sLeaf.value);
+    sLeafVal.textContent = `${labelOpts.maxLeaf}px`;
+    persistLabelOpts();
+    if (_sunburstAPI) _sunburstAPI.refreshLabels();
   };
   const hier = buildResultHierarchy();
   renderSunburst(hier);
@@ -997,7 +1091,69 @@ function bindResult() {
 
 /* ----- ZOOMABLE SUNBURST ----- */
 
+function ensureSunburstTooltip() {
+  let t = document.getElementById("sunburst-tooltip");
+  if (!t) {
+    t = document.createElement("div");
+    t.id = "sunburst-tooltip";
+    t.className = "sunburst-tooltip";
+    document.body.appendChild(t);
+  }
+  return t;
+}
+function positionTooltip(t, event) {
+  const margin = 14;
+  const w = t.offsetWidth || 220;
+  const h = t.offsetHeight || 80;
+  let x = event.clientX + margin;
+  let y = event.clientY + margin;
+  if (x + w + 6 > window.innerWidth)  x = event.clientX - w - margin;
+  if (y + h + 6 > window.innerHeight) y = event.clientY - h - margin;
+  t.style.left = `${Math.max(4, x)}px`;
+  t.style.top  = `${Math.max(4, y)}px`;
+}
+function tooltipHTML(d) {
+  const color = labelColor(d.data.key || "");
+  if (d.data.isGroup) {
+    const sw = `<span class="swatch" style="background:${color}"></span>`;
+    const cids = d.data.cluster_ids.slice(0, 12).map(c => "c" + c).join(", ")
+      + (d.data.cluster_ids.length > 12 ? ` + ${d.data.cluster_ids.length - 12} more` : "");
+    return `
+      <div class="ttl">${sw}${escapeHTML(d.data.name)}</div>
+      <div class="meta">${d.data.children.length} cluster${d.data.children.length === 1 ? "" : "s"} · ${d.value.toLocaleString()} cells (${((100 * d.value) / DATA.meta.n_total_cells).toFixed(1)}% of MiniFin)</div>
+      <div class="meta" style="margin-top:4px">${cids}</div>`;
+  }
+  const c = d.data.cluster;
+  const dec = d.data.decision;
+  const sw = `<span class="swatch" style="background:${color}"></span>`;
+  const labelLine = dec ? (dec.final_label || c.proposed_label) : c.proposed_label;
+  const decisionLine = dec
+    ? `decision: ${dec.decision}${dec.merged_with ? " → c" + dec.merged_with : ""}`
+    : "no decision recorded";
+  const topFine = c.top_fine ? `reference fine-label: ${escapeHTML(c.top_fine)} (${(c.top_fine_frac * 100).toFixed(0)}% of cluster)` : "";
+  const markers = (c.markers || []).slice(0, 5).map(m => m.symbol).join(", ");
+  const rationale = dec && dec.rationale ? `<div class="quote">"${escapeHTML(dec.rationale)}"</div>` : "";
+  return `
+    <div class="ttl">${sw}${escapeHTML(labelLine)}</div>
+    <div class="meta">cluster ${c.cluster_id} · ${c.tier} · ${c.n_cells.toLocaleString()} cells (${c.pct_of_minifin}%)</div>
+    <div class="meta">${decisionLine}</div>
+    ${topFine ? `<div class="meta">${topFine}</div>` : ""}
+    ${markers ? `<div class="markers">markers: ${escapeHTML(markers)}</div>` : ""}
+    ${rationale}`;
+}
+
 let _sunburstAPI = null;
+// User-tunable label sizing — defaults are conservative; sliders override.
+let labelOpts = (() => {
+  try {
+    const raw = localStorage.getItem("minifin_label_opts_v1");
+    if (raw) return JSON.parse(raw);
+  } catch (e) {}
+  return { maxGroup: 11, maxLeaf: 9, maxChars: 18 };
+})();
+function persistLabelOpts() {
+  try { localStorage.setItem("minifin_label_opts_v1", JSON.stringify(labelOpts)); } catch (e) {}
+}
 
 function renderSunburst(hierarchyData) {
   const container = document.getElementById("sunburst-wrap");
@@ -1049,52 +1205,40 @@ function renderSunburst(hierarchyData) {
     .attr("d", (d) => arc(d.current))
     .style("cursor", "pointer");
 
-  // Hover effect
+  // Hover popup (custom div, not native SVG <title>)
+  const tooltip = ensureSunburstTooltip();
   path
     .on("mouseenter", function (event, d) {
       d3.select(this).attr("fill-opacity", 0.95);
+      tooltip.innerHTML = tooltipHTML(d);
+      tooltip.classList.add("show");
+    })
+    .on("mousemove", function (event) {
+      positionTooltip(tooltip, event);
     })
     .on("mouseleave", function (event, d) {
       d3.select(this).attr(
         "fill-opacity",
         arcVisible(d.current) ? (d.children ? 0.75 : 0.55) : 0
       );
+      tooltip.classList.remove("show");
     })
     .on("click", (event, p) => clicked(p));
 
-  path.append("title").text((d) => {
-    if (d.data.isGroup) {
-      return `${d.data.name}\n${d.data.children.length} cluster(s), ${d.value.toLocaleString()} cells`;
-    }
-    const dec = d.data.decision;
-    return [
-      `Cluster ${d.data.cluster_id} (${d.data.cluster.tier})`,
-      `${d.value.toLocaleString()} cells`,
-      `Decision: ${dec.decision}${dec.final_label ? " → " + dec.final_label : ""}`,
-      dec.rationale ? `Rationale: ${dec.rationale}` : "",
-    ]
-      .filter(Boolean)
-      .join("\n");
-  });
-
-  // Adaptive label sizing: small fonts by default (slices on a large screen
-  // shouldn't shout), aggressive truncation, hide outright when the slice
-  // can't comfortably hold even 8px text.
-  const MAX_LABEL_CHARS = 14;
-  const MIN_FONT = 6.5;
-  const MAX_FONT_GROUP = 9;     // ring 1
-  const MAX_FONT_LEAF  = 7.5;   // ring 2
+  // Adaptive label sizing — caps come from labelOpts (mutable via sliders).
   const CHAR_W = 0.58;          // approximate width-to-font-size ratio for our sans
-  const MIN_TANGENTIAL = 22;    // px of arc length below which we just hide
-  const MIN_RADIAL = 10;        // px of radial thickness below which we hide
+  const MIN_FONT = 5;           // absolute floor for any label
+  const MIN_TANGENTIAL = 18;    // px of arc length below which we just hide
+  const MIN_RADIAL = 8;         // px of radial thickness below which we hide
 
   function rawLabelText(d) {
     if (d.data.isGroup) return d.data.name;
     return `c${d.data.cluster_id}`;
   }
   function truncateForSlice(text) {
-    if (text.length <= MAX_LABEL_CHARS) return text;
-    return text.slice(0, MAX_LABEL_CHARS - 1) + "…";
+    const cap = labelOpts.maxChars;
+    if (text.length <= cap) return text;
+    return text.slice(0, Math.max(1, cap - 1)) + "…";
   }
   function arcGeom(curState) {
     const dx = curState.x1 - curState.x0;
@@ -1104,7 +1248,7 @@ function renderSunburst(hierarchyData) {
   }
   function fontSizeFor(d, text) {
     const g = arcGeom(d.current);
-    const cap = d.data.isGroup ? MAX_FONT_GROUP : MAX_FONT_LEAF;
+    const cap = d.data.isGroup ? labelOpts.maxGroup : labelOpts.maxLeaf;
     const byRadial = g.radial * 0.55;
     const byTangential = (g.tangential - 4) / Math.max(text.length, 1) / CHAR_W;
     return Math.max(0, Math.min(byRadial, byTangential, cap));
@@ -1114,13 +1258,12 @@ function renderSunburst(hierarchyData) {
     if (g.tangential < MIN_TANGENTIAL || g.radial < MIN_RADIAL) return "";
     const raw = rawLabelText(d);
     let candidate = truncateForSlice(raw);
-    // First try with our chosen char cap.
     if (fontSizeFor(d, candidate) >= MIN_FONT) return candidate;
-    // If still too long, fit-by-length using the minimum readable font.
+    // Try shrinking further by truncation only on leaves; group names hide.
+    if (d.data.isGroup) return "";
     const maxChars = Math.max(1, Math.floor((g.tangential - 4) / (MIN_FONT * CHAR_W)));
     if (maxChars < 2) return "";
-    if (maxChars >= candidate.length) return ""; // already failed above
-    if (d.data.isGroup) return "";              // never truncate group names below MAX_LABEL_CHARS
+    if (maxChars >= candidate.length) return "";
     const trimmed = raw.slice(0, Math.max(1, maxChars - 1)) + "…";
     if (fontSizeFor(d, trimmed) >= MIN_FONT) return trimmed;
     return "";
@@ -1129,6 +1272,16 @@ function renderSunburst(hierarchyData) {
     const t = fitText(d);
     if (!t) return 0;
     return Math.max(MIN_FONT, fontSizeFor(d, t));
+  }
+
+  // Stash label refresh on the sunburst API so sliders can call it.
+  function refreshLabels() {
+    label
+      .text((d) => fitText(d))
+      .attr("font-size", (d) => effectiveFontSize(d))
+      .attr("fill-opacity", (d) =>
+        arcVisible(d.current) && effectiveFontSize(d) > 0 ? 1 : 0
+      );
   }
 
   const label = svg
@@ -1141,7 +1294,7 @@ function renderSunburst(hierarchyData) {
     .join("text")
     .attr("dy", "0.35em")
     .attr("fill", "#111418")
-    .attr("font-weight", (d) => (d.data.isGroup ? 600 : 400))
+    .attr("font-weight", 400)
     .attr("font-size", (d) => effectiveFontSize(d))
     .attr("fill-opacity", (d) =>
       arcVisible(d.current) && effectiveFontSize(d) > 0 ? 1 : 0
@@ -1244,6 +1397,7 @@ function renderSunburst(hierarchyData) {
       if (node) clicked(node);
     },
     clear() { clicked(root); },
+    refreshLabels,
   };
 }
 
@@ -1301,7 +1455,7 @@ function onSelect(p) {
       <span>${c.n_cells.toLocaleString()} cells<br>(${c.pct_of_minifin}% of MiniFin)</span>`;
     detail.innerHTML = `
       <div class="label" style="color:${labelColor(p.data.key)}">${escapeHTML(d.final_label || c.proposed_label)}</div>
-      <div class="meta">cluster ${c.cluster_id} · ${c.tier} · decision: <b>${d.decision}</b>${d.merged_with ? " (with c" + d.merged_with + ")" : ""}</div>
+      <div class="meta">cluster ${c.cluster_id} · ${c.tier} · decision: ${d.decision}${d.merged_with ? " (with c" + d.merged_with + ")" : ""}</div>
       ${d.rationale ? `<div class="rationale">"${escapeHTML(d.rationale)}"</div>` : ""}`;
     detail.style.display = "block";
     highlightUmap([c.cluster_id]);
