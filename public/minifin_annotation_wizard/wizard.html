@@ -314,12 +314,12 @@
 
   /* Result view (post-finish) */
   .result-shell {
-    max-width: 1400px; margin: 20px auto; padding: 0 22px;
+    max-width: 1400px; margin: 12px auto; padding: 0 18px;
   }
   .result-head {
     display: flex; align-items: baseline; justify-content: space-between;
-    padding: 14px 22px; background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; margin-bottom: 18px;
+    padding: 10px 18px; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; margin-bottom: 12px;
   }
   .result-head .title h2 { margin: 0; font-size: 20px; font-weight: 600; }
   .result-head .title .sub { color: var(--muted); font-size: 13px; margin-top: 2px; }
@@ -334,18 +334,18 @@
   .result-head .actions button:hover { border-color: var(--accent); }
 
   .result-grid {
-    display: grid; grid-template-columns: 1fr 1.05fr; gap: 18px;
+    display: grid; grid-template-columns: 1fr 1.05fr; gap: 12px;
   }
   .result-card {
     background: var(--panel); border: 1px solid var(--line);
-    border-radius: 10px; padding: 18px 20px;
+    border-radius: 10px; padding: 12px 16px;
   }
   .result-card h3 {
-    margin: 0 0 10px 0; font-size: 11px; font-weight: 600;
+    margin: 0 0 6px 0; font-size: 11px; font-weight: 600;
     color: var(--muted); letter-spacing: 1px; text-transform: uppercase;
   }
   .sunburst-wrap, .umap-result-wrap {
-    width: 100%; height: 560px;
+    width: 100%; height: 460px;
     display: flex; align-items: center; justify-content: center;
     position: relative;
   }
@@ -359,9 +359,9 @@
     font-size: 18px; font-weight: 600; color: var(--ink); display: block;
   }
   .selection-detail {
-    margin-top: 14px; padding: 12px 14px;
+    margin-top: 10px; padding: 8px 12px;
     background: var(--bg); border-radius: 8px;
-    font-size: 13px; color: var(--ink); line-height: 1.5;
+    font-size: 12px; color: var(--ink); line-height: 1.4;
   }
   .selection-detail .label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
   .selection-detail .meta { color: var(--muted); font-size: 12px; }
@@ -379,19 +379,22 @@
   .selection-detail .clusters-in-group .chip:hover { border-color: var(--accent); }
 
   .legend-grid {
-    display: flex; flex-wrap: wrap; gap: 6px 10px;
-    margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--line);
-    font-size: 11px;
+    display: flex; flex-wrap: wrap; gap: 3px 4px;
+    margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line);
+    font-size: 10px; max-height: 64px; overflow-y: auto;
+    line-height: 1.3;
   }
   .legend-grid .item {
-    display: inline-flex; align-items: center; gap: 6px; color: var(--ink); cursor: pointer;
-    padding: 2px 8px; border-radius: 12px; border: 1px solid transparent;
+    display: inline-flex; align-items: center; gap: 4px; color: var(--ink); cursor: pointer;
+    padding: 1px 6px; border-radius: 10px; border: 1px solid transparent;
+    white-space: nowrap;
   }
   .legend-grid .item:hover { border-color: var(--line); background: var(--bg); }
   .legend-grid .item.active { border-color: var(--accent); background: var(--accent-soft); }
   .legend-grid .item .swatch {
-    width: 10px; height: 10px; border-radius: 50%; display: inline-block; flex-shrink: 0;
+    width: 8px; height: 8px; border-radius: 50%; display: inline-block; flex-shrink: 0;
   }
+  .legend-grid .item .ncount { color: var(--muted); font-size: 9px; }
 
   /* Welcome screen */
   .welcome { max-width: 720px; margin: 40px auto; padding: 32px; background: var(--panel);
@@ -1074,6 +1077,49 @@ function renderSunburst(hierarchyData) {
       .join("\n");
   });
 
+  // Adaptive label sizing: scale font with arc dimensions, hide+truncate
+  // when there's not enough room. Avoids the spaghetti of overlapping text.
+  function rawLabelText(d) {
+    return d.data.isGroup ? d.data.name : `c${d.data.cluster_id}`;
+  }
+  // Arc tangential length at centroid (in svg px); radial thickness in svg px.
+  function arcGeom(curState) {
+    const dx = curState.x1 - curState.x0;            // radians
+    const rMid = ((curState.y0 + curState.y1) / 2) * radius;
+    const rThick = (curState.y1 - curState.y0) * radius;
+    return { tangential: dx * rMid, radial: rThick };
+  }
+  function fontSizeFor(d, text) {
+    const g = arcGeom(d.current);
+    // Two constraints: font must fit in radial thickness, and arc length must
+    // hold the text (≈0.55 × font-size per char for our sans).
+    const byRadial = g.radial * 0.55;
+    const byTangential = (g.tangential - 4) / Math.max(text.length, 1) / 0.55;
+    return Math.max(0, Math.min(byRadial, byTangential, 13));
+  }
+  // Truncate text with ellipsis based on available px.
+  function fitText(d) {
+    const t = rawLabelText(d);
+    const g = arcGeom(d.current);
+    if (g.tangential < 14 || g.radial < 9) return "";  // too small to label
+    let fs = fontSizeFor(d, t);
+    if (fs >= 8) return t;
+    // Try truncating leaves (group names rarely truncate well — better to hide)
+    if (!d.data.isGroup) {
+      const maxChars = Math.max(1, Math.floor((g.tangential - 4) / (8 * 0.55)));
+      if (maxChars < t.length) {
+        const trimmed = t.slice(0, Math.max(1, maxChars));
+        if (fontSizeFor(d, trimmed) >= 8) return trimmed;
+      }
+    }
+    return "";
+  }
+  function effectiveFontSize(d) {
+    const t = fitText(d);
+    if (!t) return 0;
+    return Math.max(8, Math.min(fontSizeFor(d, t), d.data.isGroup ? 12 : 11));
+  }
+
   const label = svg
     .append("g")
     .attr("pointer-events", "none")
@@ -1085,10 +1131,12 @@ function renderSunburst(hierarchyData) {
     .attr("dy", "0.35em")
     .attr("fill", "#111418")
     .attr("font-weight", (d) => (d.data.isGroup ? 600 : 400))
-    .attr("font-size", (d) => (d.data.isGroup ? 11 : 10))
-    .attr("fill-opacity", (d) => +labelVisible(d.current))
+    .attr("font-size", (d) => effectiveFontSize(d))
+    .attr("fill-opacity", (d) =>
+      arcVisible(d.current) && effectiveFontSize(d) > 0 ? 1 : 0
+    )
     .attr("transform", (d) => labelTransform(d.current))
-    .text((d) => (d.data.isGroup ? d.data.name : `c${d.data.cluster_id}`));
+    .text((d) => fitText(d));
 
   const parent = svg
     .append("circle")
@@ -1151,10 +1199,19 @@ function renderSunburst(hierarchyData) {
       .attrTween("d", (d) => () => arc(d.current));
     label
       .filter(function (d) {
-        return +this.getAttribute("fill-opacity") || labelVisible(d.target);
+        return +this.getAttribute("fill-opacity") || arcVisible(d.target);
       })
       .transition(t)
-      .attr("fill-opacity", (d) => +labelVisible(d.target))
+      .tween("relayout", function (d) {
+        const node = d3.select(this);
+        return () => {
+          // Re-pick label/font as the arc geometry interpolates.
+          const t2 = fitText(d);
+          const fs = effectiveFontSize(d);
+          node.text(t2).attr("font-size", fs);
+          node.attr("fill-opacity", t2 && arcVisible(d.current) ? 1 : 0);
+        };
+      })
       .attrTween("transform", (d) => () => labelTransform(d.current));
   }
 
@@ -1248,9 +1305,9 @@ function renderLegend(hier) {
   lg.innerHTML = groups
     .map(
       (g) => `
-      <span class="item" data-key="${g.key}">
+      <span class="item" data-key="${g.key}" title="${escapeHTML(g.name)} (${g.cluster_ids.length} cluster${g.cluster_ids.length===1?'':'s'})">
         <span class="swatch" style="background:${labelColor(g.key)}"></span>
-        ${escapeHTML(g.name)} <span style="color:var(--muted);margin-left:2px">(${g.cluster_ids.length})</span>
+        ${escapeHTML(g.name)}<span class="ncount">·${g.cluster_ids.length}</span>
       </span>`
     )
     .join("");
