@@ -672,18 +672,31 @@ async function bindUserPicker() {
       await pickUser(u);
     };
   });
-  // Refresh progress from backend — patch DOM in place (do NOT re-render,
-  // because re-rendering would re-bind and re-fetch, causing an infinite loop).
-  const fresh = await fetchAllProgress();
-  // Merge so that locally-known counts (e.g. just-saved) aren't clobbered by a
-  // stale-by-a-few-ms server read.
+  // 1. Seed from localStorage so the picker reflects work done on this device
+  //    even if the backend is unreachable.
   for (const u of USERS) {
-    const a = progressByUser[u];
+    const local = loadLocalState(u);
+    if (local && local.decisions) {
+      const n_local = Object.keys(local.decisions).length;
+      const cur = progressByUser[u] || { n_decided: 0, updated_at: null };
+      if (n_local > (cur.n_decided || 0)) {
+        progressByUser[u] = { n_decided: n_local, updated_at: cur.updated_at };
+      }
+    }
+  }
+  if (view === "userpick") updatePickerProgress();
+  // 2. Refresh from backend — patch DOM in place (do NOT re-render here, that
+  //    would re-bind + re-fetch and create an infinite loop).
+  const fresh = await fetchAllProgress();
+  for (const u of USERS) {
+    const a = progressByUser[u] || { n_decided: 0, updated_at: null };
     const b = fresh[u];
-    if (!a) { progressByUser[u] = b || { n_decided: 0, updated_at: null }; continue; }
     if (!b) continue;
-    // pick whichever is newer / larger
-    if ((b.updated_at || 0) >= (a.updated_at || 0)) progressByUser[u] = b;
+    // pick whichever count is higher (server may lag, local may be ahead, but
+    // either way the larger count is the truthful one for a UI hint).
+    if (b.n_decided >= a.n_decided) {
+      progressByUser[u] = b;
+    }
   }
   if (view === "userpick") updatePickerProgress();
 }

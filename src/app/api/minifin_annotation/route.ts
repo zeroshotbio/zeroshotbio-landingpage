@@ -9,7 +9,6 @@ import {
   DynamoDBClient,
   GetItemCommand,
   PutItemCommand,
-  BatchGetItemCommand,
 } from "@aws-sdk/client-dynamodb";
 import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
 
@@ -41,29 +40,42 @@ export async function GET(request: NextRequest) {
     const action = url.searchParams.get("action");
 
     if (action === "progress") {
-      const cmd = new BatchGetItemCommand({
-        RequestItems: {
-          [TABLE_NAME]: {
-            Keys: USERS.map((u) => marshall({ id: idFor(u) })),
-            ProjectionExpression: "id, n_decided, updated_at, user_label",
-          },
-        },
-      });
-      const resp = await ddbClient.send(cmd);
-      const items = resp.Responses?.[TABLE_NAME] ?? [];
       const out: Record<string, { n_decided: number; updated_at: number | null }> = {};
-      for (const u of USERS) {
-        out[u] = { n_decided: 0, updated_at: null };
-      }
-      for (const raw of items) {
-        const it = unmarshall(raw);
-        const user = String(it.id).replace("minifin_annot::", "");
-        out[user] = {
-          n_decided: Number(it.n_decided ?? 0),
-          updated_at: it.updated_at ? Number(it.updated_at) : null,
-        };
-      }
-      return NextResponse.json({ success: true, progress: out });
+      const errors: Record<string, string> = {};
+      // Read each user's row independently — simpler IAM (only GetItem), easier to debug.
+      await Promise.all(
+        USERS.map(async (u) => {
+          try {
+            const resp = await ddbClient.send(
+              new GetItemCommand({
+                TableName: TABLE_NAME,
+                Key: marshall({ id: idFor(u) }),
+              })
+            );
+            if (!resp.Item) {
+              out[u] = { n_decided: 0, updated_at: null };
+              return;
+            }
+            const it = unmarshall(resp.Item);
+            out[u] = {
+              n_decided: Number(it.n_decided ?? 0),
+              updated_at: it.updated_at ? Number(it.updated_at) : null,
+            };
+          } catch (err) {
+            console.error(
+              `minifin_annot progress GetItem failed for ${u}:`,
+              (err as Error).message
+            );
+            errors[u] = (err as Error).message;
+            out[u] = { n_decided: 0, updated_at: null };
+          }
+        })
+      );
+      return NextResponse.json({
+        success: true,
+        progress: out,
+        ...(Object.keys(errors).length ? { errors } : {}),
+      });
     }
 
     const user = url.searchParams.get("user");
