@@ -1295,7 +1295,6 @@ function tooltipHTML(d) {
   }
   const c = d.data.cluster;
   const dec = d.data.decision;
-  const sw = `<span class="swatch" style="background:${color}"></span>`;
   const labelLine = dec ? (dec.final_label || c.proposed_label) : c.proposed_label;
   const decisionLine = dec
     ? `decision: ${dec.decision}${dec.merged_with ? " → c" + dec.merged_with : ""}`
