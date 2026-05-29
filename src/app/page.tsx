@@ -31,6 +31,12 @@ const DesktopContent = () => (
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        A zebrafish embryo is, in a very real sense, a library written in cells &mdash; tens of thousands of tiny
+        transcriptional sentences, each one describing where it is, what it has become, and how it is responding
+        to the world around it. Drop a compound into that library and the prose rearranges itself.
+        Our job is to read every page at once.
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
         we create AI learning pipelines that translate zebrafish drug exposure data
         into human pre-clincal insights.
@@ -39,19 +45,19 @@ const DesktopContent = () => (
         <strong>Why zebrafish?</strong>
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-8 sm:whitespace-normal">
-        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics 
+        It&#39;s an increasingly popular animal model that provides whole-organism vertebrate physiology, ideal unit-economics
         for AI-scale training, and rapid turnaround time.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-12 sm:whitespace-normal">
-        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate 
+        Combined with high-throughput scRNA sequencing, our team is able to create optimized compound rankings that accelerate
         hit-to-lead decisions for therapeutics customers.
       </p>
-      
+
       <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug sm:whitespace-normal">
-        Email <span className="text-gray-dark">steven@zeroshot.bio</span> 
+        Email <span className="text-gray-dark">steven@zeroshot.bio</span>
       </p>
       <p className="roboto-slab-regular text-xxsm sm:text-sm md:text-sm text-gray-light leading-snug mb-4 sm:whitespace-normal">
-        if you&#39;d like to get in touch. 
+        if you&#39;d like to get in touch.
       </p>
       <dl className="w-1/2 mx-auto italic roboto-slab-regular text-xxxsm sm:text-xxsm md:text-xxsm text-gray-verylight leading-snug mb-4 mt-12 sm:whitespace-normal">
         <dt>
@@ -96,6 +102,12 @@ const MobileContent = () => (
     <div className="textboxmain w-full px-10 text-center mt-12 sm:mt-6 md:mt-12 lg:mt-16 sm:max-w-md md:max-w-md lg:max-w-md text-gray-dark">
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-tight mb-4 sm:whitespace-normal">
         AI-driven understanding of gene expression is beginning to deliver powerful new capabilities for therapeutics developers.
+      </p>
+      <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
+        A zebrafish embryo is, in a very real sense, a library written in cells &mdash; tens of thousands of tiny
+        transcriptional sentences, each one describing where it is, what it has become, and how it is responding
+        to the world around it. Drop a compound into that library and the prose rearranges itself.
+        Our job is to read every page at once.
       </p>
       <p className="roboto-slab-regular text-xsm sm:text-base md:text-m text-gray-semidark leading-snug mb-4 sm:whitespace-normal">
         At <strong>zeroshot bio</strong>,
