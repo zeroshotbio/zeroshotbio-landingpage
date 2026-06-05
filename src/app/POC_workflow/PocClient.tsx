@@ -4,7 +4,26 @@
 // chemistry) are precomputed. The through-line is MoA as the explicit bridge: two routes
 // (chemistry-predicted vs phenotype-neighbor mechanism) and whether they agree.
 // Honest cell-line (NOT tissue) + projection labeling throughout.
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+
+/* FLIP helper: animate `el` from a previously-measured rect (`from`) to its current position/size.
+   Used so the SMILES + structure boxes physically slide & resize between Step-1 phases. */
+const NOVEL_FLIP: { smiles?: DOMRect | null; struct?: DOMRect | null } = {};
+function flipFrom(el: HTMLElement | null, from?: DOMRect | null) {
+  if (!el || !from) return;
+  const to = el.getBoundingClientRect();
+  if (!to.width || !to.height) return;
+  const dx = from.left - to.left, dy = from.top - to.top;
+  const sx = from.width / to.width, sy = from.height / to.height;
+  el.style.transformOrigin = "top left";
+  el.style.transition = "none";
+  el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
+  void el.offsetWidth; // force reflow so the start transform paints
+  requestAnimationFrame(() => {
+    el.style.transition = "transform .85s cubic-bezier(.22,.61,.36,1)";
+    el.style.transform = "";
+  });
+}
 
 type Gene = { gene: string; lfc: number; support?: number };
 type SharedGene = { gene: string; lfc_query: number; lfc_neighbor: number };
@@ -340,6 +359,8 @@ export default function PocClient() {
     setLeaving(true);
     setTimeout(() => { setLeaving(false); setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setTypeTarget(""); setNote(""); setRevealed(false); setRevealPhase("input"); }, 430);
   }
+  // direct reset to the input screen (NovelReveal plays its own exit animation first)
+  function backToSearch() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setTypeTarget(""); setNote(""); setRevealed(false); setRevealPhase("input"); }
   // typewriter: advance the visible SMILES one char at a time while it's still a prefix of the target
   useEffect(() => {
     if (revealPhase !== "preview" || !typeTarget) return;
@@ -411,6 +432,8 @@ export default function PocClient() {
       @keyframes pocCollapse{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.98)}}
       @keyframes pocSlideUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:none}}
       .poc-slideup{animation:pocSlideUp .8s cubic-bezier(.22,.61,.36,1) both}
+      @keyframes pocSlideDown{from{opacity:1;transform:none}to{opacity:0;transform:translateY(44px) scale(.97)}}
+      .poc-slidedown{animation:pocSlideDown .55s cubic-bezier(.55,.06,.68,.19) forwards}
       .poc-rise{animation:pocRise .7s cubic-bezier(.22,.61,.36,1) both}
       .poc-fade{animation:pocFade .6s ease both}
       .poc-slide{transition:transform .95s cubic-bezier(.45,.05,.2,1)}
@@ -512,7 +535,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, backToSearch, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -544,7 +567,17 @@ export default function PocClient() {
    Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
-  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext }: any) {
+  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, backToSearch, onNext }: any) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const previewStructRef = useRef<HTMLDivElement>(null);
+  // snapshot the SMILES + structure rects so the reveal can FLIP them into the top row
+  function captureAndSubmit() {
+    if (revealPhase === "preview") {
+      NOVEL_FLIP.smiles = inputRef.current?.getBoundingClientRect() ?? null;
+      NOVEL_FLIP.struct = previewStructRef.current?.getBoundingClientRect() ?? null;
+    }
+    submitStep1();
+  }
 
   // ---------- input + preview: one clean box that eases up and reveals the picked structure ----------
   if (revealPhase === "input" || revealPhase === "preview") {
@@ -557,10 +590,10 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
           <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Submit a molecule</h2>
           <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-6">A SMILES string — matched by InChIKey to the measured atlas or the Broad Repurposing Hub.</p>
           <div className="flex gap-2">
-            <input value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
-              onKeyDown={(e) => { if (e.key === "Enter") submitStep1(); }} autoFocus
+            <input ref={inputRef} value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
+              onKeyDown={(e) => { if (e.key === "Enter") captureAndSubmit(); }} autoFocus
               className="roboto-slab-regular flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 font-mono shadow-sm focus:border-gray-700 focus:outline-none transition" />
-            <button onClick={submitStep1}
+            <button onClick={captureAndSubmit}
               className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-7 py-3 text-sm hover:bg-gray-700 transition">Submit</button>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-5 text-[11px]">
@@ -579,7 +612,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         {/* single sub-box: fades in, then the molecule pops */}
         {preview && (
           <div className="w-full max-w-xl mx-auto mt-6 poc-fade" style={{ animationDelay: "420ms" }}>
-            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div ref={previewStructRef} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
                 {typeTarget ? <RDKitDepiction smiles={typeTarget} w={300} h={210} /> : <span className="roboto-slab-regular text-xs text-gray-400">resolving…</span>}
               </div>
@@ -597,7 +630,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
 
   // novel candidate gets the dedicated coverage-heatmap layout
   if (sel && novel) {
-    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} leaving={leaving} onBack={refineStep1} onNext={onNext} />;
+    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onNext={onNext} />;
   }
 
   return (
@@ -676,25 +709,40 @@ function UnknownCard({ smiles }: { smiles: string }) {
 }
 
 /* ============ Novel-candidate reveal: 3 symmetric top boxes + the coverage heatmap ============ */
-function NovelReveal({ sel, smiles, data, ready, leaving, onBack, onNext }:
-  { sel: Drug; smiles: string; data: Data | null; ready: boolean; leaving: boolean; onBack: () => void; onNext: () => void }) {
+function NovelReveal({ sel, smiles, data, ready, onBack, onNext }:
+  { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onNext: () => void }) {
   const mark = sel.step3_embedding.chem2d;
   const neighbors = (sel.step3_embedding.chem_neighbors ?? []).map((n: Neighbor) => ({ id: n.id, sim: n.similarity }));
+  const smilesBoxRef = useRef<HTMLDivElement>(null);
+  const structBoxRef = useRef<HTMLDivElement>(null);
+  const [exiting, setExiting] = useState(false);
+
+  // FLIP the SMILES + structure boxes from their preview rects into the top row (real slide + resize)
+  useLayoutEffect(() => {
+    flipFrom(smilesBoxRef.current, NOVEL_FLIP.smiles);
+    flipFrom(structBoxRef.current, NOVEL_FLIP.struct);
+    NOVEL_FLIP.smiles = null; NOVEL_FLIP.struct = null;
+  }, []);
+
+  // reverse: boxes slide back down/out, then return to the bare search screen
+  function handleBack() { setExiting(true); setTimeout(onBack, 560); }
+
   return (
-    <div className={leaving ? "poc-collapse" : ""}>
-      {/* top row — three equal, square-ish boxes that slide up into place */}
-      <div className="grid grid-cols-3 gap-3 poc-slideup">
-        <div className="rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col">
+    <div className={exiting ? "poc-slidedown" : ""}>
+      {/* top row — three equal, square-ish boxes (cols 1–2 FLIP in, the search box fades in) */}
+      <div className="grid grid-cols-3 gap-3">
+        <div ref={smilesBoxRef} className="rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col">
           <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
           <div className="flex-1 flex items-center justify-center overflow-hidden">
             <span className="font-mono text-[10px] leading-tight text-gray-600 break-all text-center">{smiles}</span>
           </div>
         </div>
-        <div className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
+        <div ref={structBoxRef} className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
           <RDKitDepiction smiles={smiles} w={150} h={140} />
         </div>
-        <button onClick={onBack} title="New search" aria-label="New search"
-          className="rounded-xl border border-gray-200 bg-white h-40 flex flex-col items-center justify-center gap-1 hover:bg-gray-50 hover:border-gray-400 transition group">
+        <button onClick={handleBack} title="New search" aria-label="New search"
+          className="poc-fade rounded-xl border border-gray-200 bg-white h-40 flex flex-col items-center justify-center gap-1 hover:bg-gray-50 hover:border-gray-400 transition group"
+          style={{ animationDelay: "200ms" }}>
           <svg className="h-9 w-9 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
             <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
@@ -702,12 +750,12 @@ function NovelReveal({ sel, smiles, data, ready, leaving, onBack, onNext }:
         </button>
       </div>
 
-      {/* the star: atlas coverage heatmap (interpolation vs extrapolation) */}
-      <div className="mt-3 poc-rise" style={{ animationDelay: "260ms" }}>
+      {/* the star: atlas coverage heatmap — slides up from below into its spot */}
+      <div className="mt-3 poc-slideup" style={{ animationDelay: "180ms" }}>
         <ChemHeatmap data={data} mark={mark} markLabel="novel candidate" neighbors={neighbors} />
       </div>
 
-      {ready && (
+      {ready && !exiting && (
         <div className="poc-fade flex items-center justify-center mt-5">
           <button onClick={onNext}
             className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-900 text-gray-50 px-6 py-2 text-sm hover:bg-gray-700 transition">Next ▸ Exposure</button>
@@ -811,12 +859,16 @@ function ChemHeatmap({ data, mark, markLabel, neighbors }:
           <circle cx={cx} cy={cy} r={5.5} fill="#ffffff" stroke="#0a0c1a" strokeWidth={1.4} />
           <text x={cx + 11} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
             style={{ paintOrder: "stroke", stroke: "#0a0c1a", strokeWidth: 3 } as any}>{markLabel}</text>
-          {/* legend */}
-          {Array.from({ length: 28 }).map((_, i) => (
-            <rect key={i} x={pad + i * 5.4} y={H - pad - 12} width={6} height={7} fill={coverColor(i / 27)} />
-          ))}
-          <text x={pad} y={H - pad - 16} fontSize={9} fill="#fca5a5" className="roboto-slab-regular">extrapolation · atlas blind</text>
-          <text x={pad + 28 * 5.4} y={H - pad - 16} fontSize={9} fill="#6ee7b7" textAnchor="end" className="roboto-slab-regular">interpolation · atlas reliable</text>
+          {/* legend — full-width gradient bar, labels pinned to opposite ends so they never overlap */}
+          {(() => { const lx = pad, lw = W - 2 * pad, segs = 96, sw = lw / segs; return (
+            <g>
+              {Array.from({ length: segs }).map((_, i) => (
+                <rect key={i} x={lx + i * sw} y={H - pad - 11} width={sw + 0.6} height={8} fill={coverColor(i / (segs - 1))} />
+              ))}
+              <text x={lx + 1} y={H - pad - 15} fontSize={10} fill="#fca5a5" className="roboto-slab-regular">extrapolation · atlas blind</text>
+              <text x={lx + lw - 1} y={H - pad - 15} fontSize={10} fill="#6ee7b7" textAnchor="end" className="roboto-slab-regular">interpolation · atlas reliable</text>
+            </g>
+          ); })()}
         </svg>
       </div>
       <p className="roboto-slab-regular text-xs text-gray-600 mt-2">
