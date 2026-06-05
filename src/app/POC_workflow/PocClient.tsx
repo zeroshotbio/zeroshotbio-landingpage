@@ -480,8 +480,11 @@ function NovelGenerator({ data, cloud, chooseCandidate }: { data: Data | null; c
   );
 }
 
-/* 2D depiction + interactive 3D shown side-by-side (3D = self-contained canvas renderer, no library) */
+/* 2D depiction + 3D shown side-by-side. 3D defaults to the instant self-contained canvas; an
+   on-demand "Cinematic (Mol*)" mode lazy-loads the Mol* engine for a publication-grade binding view. */
 function StructureCard({ sel }: { sel: Drug }) {
+  const [useMol, setUseMol] = useState(false);
+  useEffect(() => { setUseMol(false); }, [sel.id]); // reset to lightweight on drug change
   return (
     <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -491,8 +494,16 @@ function StructureCard({ sel }: { sel: Drug }) {
             aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
         </div>
         <div className="flex flex-col items-center border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 pt-4 md:pt-0">
-          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">3D {sel.step1_structure.target_pdb ? "structure / target complex" : "conformer"}</div>
-          <Mol3DViewer sel={sel} />
+          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">{useMol ? "Mol* binding view" : `3D ${sel.step1_structure.target_pdb ? "structure / target complex" : "conformer"}`}</div>
+          {useMol ? <MolStarPanel sel={sel} /> : (
+            <>
+              <Mol3DViewer sel={sel} />
+              <button onClick={() => setUseMol(true)}
+                className="roboto-slab-regular text-[11px] mt-2 rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-1 hover:bg-violet-100">
+                ✨ Open cinematic view (Mol*){sel.step1_structure.target_pdb ? " — binding site" : ""}
+              </button>
+            </>
+          )}
         </div>
       </div>
       <div className="text-center mt-3 border-t border-gray-100 pt-3">
@@ -500,6 +511,85 @@ function StructureCard({ sel }: { sel: Drug }) {
         <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
         {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
       </div>
+    </div>
+  );
+}
+
+/* lazy-load the self-hosted Mol* engine (4.9 MB) only when the cinematic view is opened */
+let _molstarP: Promise<any> | null = null;
+function loadMolstar(): Promise<any> {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  const w = window as any;
+  if (w.molstar) return Promise.resolve(w.molstar);
+  if (_molstarP) return _molstarP;
+  _molstarP = new Promise((resolve, reject) => {
+    const link = document.createElement("link"); link.rel = "stylesheet"; link.href = "/POC_workflow/lib/molstar.css"; document.head.appendChild(link);
+    const s = document.createElement("script"); s.src = "/POC_workflow/lib/molstar.js"; s.async = true;
+    s.onload = () => resolve(w.molstar); s.onerror = () => reject(new Error("molstar load failed"));
+    document.head.appendChild(s);
+  });
+  return _molstarP;
+}
+/* Mol* binding view: conformer for any drug, protein–ligand complex (cartoon + ligand + spin) for the 10 */
+function MolStarPanel({ sel }: { sel: Drug }) {
+  const host = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<any>(null);
+  const tpdb = sel.step1_structure.target_pdb;
+  const [mode, setMode] = useState<"molecule" | "complex">(tpdb ? "complex" : "molecule");
+  const [status, setStatus] = useState("loading Mol*…");
+  const [spin, setSpin] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading Mol*…");
+    loadMolstar().then(async (molstar) => {
+      if (cancelled || !host.current) return;
+      if (!viewerRef.current) viewerRef.current = await molstar.Viewer.create(host.current, {
+        layoutIsExpanded: false, layoutShowControls: false, layoutShowRemoteState: false, layoutShowSequence: false,
+        layoutShowLog: false, layoutShowLeftPanel: false, viewportShowExpand: true, viewportShowControls: false,
+        viewportShowSelectionMode: false, viewportShowAnimation: false, pdbProvider: "rcsb", emdbProvider: "pdbe",
+      });
+      const viewer = viewerRef.current;
+      setStatus("loading structure…");
+      try { await viewer.plugin.clear(); } catch { /* first load */ }
+      if (mode === "complex" && tpdb) await viewer.loadStructureFromUrl(`/POC_workflow/pdb/${tpdb.pdb}.pdb`, "pdb", false);
+      else if (sel.step1_structure.mol3d) await viewer.loadStructureFromData(sel.step1_structure.mol3d, "mol", false);
+      else { setStatus("3D unavailable"); return; }
+      if (cancelled) return;
+      setStatus("");
+      try { viewer.plugin.canvas3d?.setProps({ trackball: { animate: spin ? { name: "spin", params: { speed: 0.4 } } : { name: "off", params: {} } } }); } catch { /* noop */ }
+    }).catch(() => setStatus("could not load Mol* viewer"));
+    return () => { cancelled = true; };
+  }, [sel.id, mode, tpdb, sel.step1_structure.mol3d]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => { // keep viewport sized
+    const el = host.current; if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => { try { viewerRef.current?.handleResize(); } catch { /* noop */ } });
+    ro.observe(el); return () => ro.disconnect();
+  }, []);
+  useEffect(() => () => { try { viewerRef.current?.dispose(); } catch { /* noop */ } viewerRef.current = null; }, []);
+  function toggleSpin() {
+    setSpin((s) => { const ns = !s; try { viewerRef.current?.plugin.canvas3d?.setProps({ trackball: { animate: ns ? { name: "spin", params: { speed: 0.4 } } : { name: "off", params: {} } } }); } catch { /* noop */ } return ns; });
+  }
+  return (
+    <div className="w-full flex flex-col items-center">
+      <div className="inline-flex items-center gap-2 mb-2">
+        {tpdb && (
+          <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+            <button onClick={() => setMode("molecule")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "molecule" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Molecule</button>
+            <button onClick={() => setMode("complex")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "complex" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Binding site</button>
+          </div>
+        )}
+        <button onClick={toggleSpin} className="roboto-slab-regular text-[11px] px-2.5 py-1 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">{spin ? "⏸ spin" : "▶ spin"}</button>
+      </div>
+      <div ref={host} className="relative rounded border border-gray-200 overflow-hidden bg-white" style={{ width: "100%", maxWidth: 360, height: 300 }}>
+        {status && <div className="absolute inset-0 z-10 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none">{status}</div>}
+      </div>
+      <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2 text-center">
+        {mode === "complex" && tpdb
+          ? <>Mol* — {sel.display_name} bound to {tpdb.target} (PDB {tpdb.pdb}). Drag to orbit, scroll to zoom.</>
+          : <>Mol* interactive 3D conformer (illustrative geometry). Drag to orbit, scroll to zoom.</>}
+      </p>
     </div>
   );
 }

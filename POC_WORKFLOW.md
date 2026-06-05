@@ -265,3 +265,14 @@ Whole demo switched off Tahoe-375 onto the **94-compound MegaFin zebrafish atlas
 bg/border overrides (by putting `dark` on the page `<main>`), and adds a **POC-scoped** stylesheet under
 `.poc-dark` (text grays + accent-panel tints + keep the 2D RDKit depiction on white + invert the logo) so
 it does NOT touch globals.css or any other page. POC files only (PocClient.tsx).
+
+---
+
+## Build status — v10 (Mol* cinematic binding view)
+Researched the JacobMolBio GLP-1 demo (a rendered ChimeraX + ElevenLabs movie). For our site we chose the
+interactive route: **vendored the Mol* standalone build** (`public/POC_workflow/lib/molstar.{js,css}`,
+~4.9 MB, lazy-loaded only when opened — keeps default load light). In Step 1 the 3D pane keeps the instant
+self-contained canvas as default; a **"✨ Open cinematic view (Mol*)"** button swaps to a publication-grade
+Mol* viewer: conformer for any drug (loads the embedded MOL block) and **protein–ligand binding site** for
+the 10 target-PDB drugs (cartoon + ligand, gentle auto-spin, orbit/zoom). Molecule/Binding-site toggle +
+spin control. POC files only (PocClient.tsx + vendored molstar + doc).
