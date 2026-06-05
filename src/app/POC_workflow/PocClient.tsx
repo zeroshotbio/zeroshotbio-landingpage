@@ -139,10 +139,109 @@ function OrganIntensityList({ organs }: { organs: Organ[] }) {
 }
 
 type Path = "known" | "novel" | null;
+type Modality = "mab" | "rna" | "smol" | null;
+
+/* ---------------- Pixel-art renderer ----------------
+   Renders a chunky pixel sprite from a row/char map. Crisp-edged, scales to fill its container.
+   '.' = transparent; any other char maps to a palette color. */
+function PixelArt({ rows, palette, label }: { rows: string[]; palette: Record<string, string>; label?: string }) {
+  const h = rows.length;
+  const w = Math.max(...rows.map((r) => r.length));
+  const rects: JSX.Element[] = [];
+  for (let y = 0; y < h; y++) {
+    for (let x = 0; x < rows[y].length; x++) {
+      const c = rows[y][x];
+      const fill = palette[c];
+      if (!fill) continue;
+      rects.push(<rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={fill} />);
+    }
+  }
+  return (
+    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" role="img" aria-label={label}
+      shapeRendering="crispEdges" style={{ imageRendering: "pixelated", display: "block" }}>
+      {rects}
+    </svg>
+  );
+}
+
+const MODALITIES: { id: Exclude<Modality, null>; icon: string; title: string; blurb: string;
+  rows: string[]; palette: Record<string, string> }[] = [
+  {
+    id: "mab", icon: "🧬", title: "Monoclonal Antibody",
+    blurb: "A targeted biologic. Push an mAb through whole-organism phenotype screening to read its organism-scale response.",
+    palette: { t: "#f87171", a: "#38bdf8", h: "#2dd4bf", f: "#818cf8" },
+    rows: [
+      "t..............t",
+      "tt............tt",
+      ".tt..........tt.",
+      ".aa..........aa.",
+      "..aa........aa..",
+      "..aa........aa..",
+      "...aa......aa...",
+      "....aa....aa....",
+      ".....aa..aa.....",
+      "......aaaa......",
+      ".......hh.......",
+      ".......hh.......",
+      "......ffff......",
+      "......f..f......",
+      "......ffff......",
+      ".......ff.......",
+    ],
+  },
+  {
+    id: "rna", icon: "🧪", title: "RNA Therapeutic",
+    blurb: "siRNA, ASO, or mRNA. Trace a nucleic-acid payload's phenotype signature across the atlas.",
+    palette: { p: "#c084fc", g: "#22c55e", c: "#3b82f6", a: "#f87171", u: "#eab308" },
+    rows: [
+      "................",
+      "................",
+      "................",
+      "..g...a...c...u.",
+      "..g...a...c...u.",
+      "..g...a...c...u.",
+      "..p...p...p...p.",
+      "pppppppppppppppp",
+      "pppppppppppppppp",
+      "....p...p...p...",
+      "....c...u...g...",
+      "....c...u...g...",
+      "....c...u...g...",
+      "................",
+      "................",
+      "................",
+    ],
+  },
+  {
+    id: "smol", icon: "⬡", title: "Small Molecule",
+    blurb: "A classic drug-like compound. Pick from the 94-compound MegaFin atlas — or submit a novel SMILES string.",
+    palette: { c: "#64748b", o: "#f87171", n: "#60a5fa" },
+    rows: [
+      ".......oo.......",
+      ".......cc.......",
+      ".....cccccc.....",
+      "....c......c....",
+      "...c........c...",
+      "..c..........c..",
+      "..c..........cnn",
+      "..c..........c..",
+      "..c..........c..",
+      "...c........c...",
+      "....c......c....",
+      ".....cccccc.....",
+      "................",
+      "................",
+      "................",
+      "................",
+    ],
+  },
+];
+
 export default function PocClient() {
   const [data, setData] = useState<Data | null>(null);
   const [cloud, setCloud] = useState<Const | null>(null);
   const [path, setPath] = useState<Path>(null);
+  const [modality, setModality] = useState<Modality>(null);
   const [selId, setSelId] = useState("");
   const [novel, setNovel] = useState(false);    // selected compound is an interpolated candidate
   const [smiles, setSmiles] = useState("");
@@ -171,10 +270,11 @@ export default function PocClient() {
   function quickStart() { loadDrug(QUICKSTART); setStep(1); }
   function go(n: number) { if (n >= 1 && n <= 6 && (sel || n === 1)) setStep(n); }
   function reset(p: Path) { setPath(p); setSelId(""); setNovel(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
+  function backToStart() { setModality(null); reset(null); }
 
   const Logo = (
     <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
-      <button onClick={() => reset(null)} title="Back to start" aria-label="Back to start"
+      <button onClick={backToStart} title="Back to start" aria-label="Back to start"
         className="inline-flex items-center gap-2 group">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/zeroshot_bio_gritty.png" alt="zeroshot bio" className="h-8 w-auto" />
@@ -190,7 +290,10 @@ export default function PocClient() {
   const Banner = (
     <div className="w-full max-w-3xl mb-6">
       <div className="rounded-md border border-gray-300 bg-gray-100 px-4 py-3 text-center">
-        <p className="roboto-slab-regular text-xs sm:text-sm text-gray-700 leading-snug">{honesty}</p>
+        <p className="roboto-slab-regular text-xs sm:text-sm text-gray-700 leading-snug">
+          Proof-of-concept workflow for drug discovery customers generating scRNA results with the Zeroshot Zebrafish
+          Phenotype Screening Service. This workflow focuses on the non-AI value-add of the 94-drug MegaFin Atlas.
+        </p>
       </div>
     </div>
   );
@@ -221,8 +324,8 @@ export default function PocClient() {
     ` }} />
   );
 
-  // ---- intro: choose a path ----
-  if (!path) {
+  // ---- intro: choose a therapeutic modality ----
+  if (!modality) {
     return (
       <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
         {DarkStyle}
@@ -230,6 +333,78 @@ export default function PocClient() {
         {Banner}
         <div className="w-full max-w-3xl">
           <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900 mb-1">Zeroshot compound workflow</h1>
+          <p className="roboto-slab-regular text-sm text-gray-500 mb-6">How do you want to start? Choose a therapeutic modality to run through the MegaFin screening workflow.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            {MODALITIES.map((m) => (
+              <button key={m.id} onClick={() => setModality(m.id)}
+                className="group text-left rounded-lg border border-gray-300 bg-white overflow-hidden hover:border-gray-700 hover:shadow-md transition">
+                <div className="aspect-square w-full p-5 flex items-center justify-center"
+                  style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)" }}>
+                  <div className="w-full h-full transition-transform duration-200 group-hover:scale-105">
+                    <PixelArt rows={m.rows} palette={m.palette} label={m.title} />
+                  </div>
+                </div>
+                <div className="p-5">
+                  <div className="roboto-slab-medium text-gray-900 mb-1 flex items-center gap-2">
+                    <span className="text-lg leading-none">{m.icon}</span>{m.title}
+                  </div>
+                  <p className="roboto-slab-regular text-sm text-gray-500">{m.blurb}</p>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+        <p className="roboto-slab-regular text-xs text-gray-400 mt-8 text-center max-w-3xl">{honesty}</p>
+      </main>
+    );
+  }
+
+  // ---- modalities whose workflow isn't wired yet ----
+  if (modality !== "smol") {
+    const m = MODALITIES.find((x) => x.id === modality)!;
+    return (
+      <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
+        {DarkStyle}
+        {Logo}
+        {Banner}
+        <div className="w-full max-w-3xl">
+          <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
+            ◂ Choose a different modality
+          </button>
+          <div className="rounded-lg border border-gray-300 bg-white p-6 flex flex-col sm:flex-row items-center gap-6">
+            <div className="w-40 h-40 shrink-0 rounded-md p-4 flex items-center justify-center"
+              style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)" }}>
+              <PixelArt rows={m.rows} palette={m.palette} label={m.title} />
+            </div>
+            <div>
+              <h1 className="roboto-slab-medium text-2xl text-gray-900 mb-1 flex items-center gap-2">
+                <span>{m.icon}</span>{m.title}
+              </h1>
+              <p className="roboto-slab-regular text-sm text-gray-600 mb-2">{m.blurb}</p>
+              <p className="roboto-slab-regular text-sm text-gray-500">
+                The {m.title.toLowerCase()} workflow is coming soon. The small-molecule vertical slice is live today —
+                switch modalities to walk through it end to end.
+              </p>
+            </div>
+          </div>
+        </div>
+        <p className="roboto-slab-regular text-xs text-gray-400 mt-8 text-center max-w-3xl">{honesty}</p>
+      </main>
+    );
+  }
+
+  // ---- small molecule: choose a path ----
+  if (!path) {
+    return (
+      <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
+        {DarkStyle}
+        {Logo}
+        {Banner}
+        <div className="w-full max-w-3xl">
+          <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
+            ◂ Small Molecule — change modality
+          </button>
+          <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900 mb-1">Small-molecule workflow</h1>
           <p className="roboto-slab-regular text-sm text-gray-500 mb-6">How do you want to start? This sets what you submit in Step 1.</p>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <button onClick={() => reset("known")}
