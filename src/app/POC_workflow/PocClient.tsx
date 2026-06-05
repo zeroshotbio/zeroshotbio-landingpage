@@ -239,8 +239,9 @@ export default function PocClient() {
   const [candidate, setCandidate] = useState<HubDrug | null>(null); // unmeasured Hub drug → chemistry-only path
   const [hub, setHub] = useState<Hub | null>(null);
   const [hubBusy, setHubBusy] = useState(false);
-  const [revealPhase, setRevealPhase] = useState<"input" | "reveal" | "ready">("input"); // Step-1 cinematic
+  const [revealPhase, setRevealPhase] = useState<"input" | "preview" | "reveal" | "ready">("input"); // Step-1 cinematic
   const [leaving, setLeaving] = useState(false);
+  const [typeTarget, setTypeTarget] = useState(""); // full SMILES being typewritten during preview
   const [smiles, setSmiles] = useState("");
   const [note, setNote] = useState("");
   const [step, setStep] = useState(1);
@@ -262,10 +263,6 @@ export default function PocClient() {
   function loadDrug(id: string) {
     const d = data?.drugs.find((x) => x.id === id);
     setSelId(id); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(d ? d.step1_structure.smiles : ""); setNote(""); setRevealed(false);
-  }
-  // Drop a novel candidate into the interpolation space (anchored on its nearest atlas exemplar). Stays on Step 1.
-  function placeCandidate(anchorId: string, pseudoSmiles: string) {
-    setSelId(anchorId); setNovel(true); setUnknown(false); setCandidate(null); setSmiles(pseudoSmiles); setNote(""); setRevealed(false);
   }
   // A Hub drug: if it overlaps the measured atlas (by InChIKey) run the full measured path; otherwise
   // it's an unmeasured candidate → the honest chemistry-only path (no fabricated phenotype).
@@ -301,37 +298,56 @@ export default function PocClient() {
       setSelId(""); setCandidate(null); setNovel(false); setUnknown(true);
     } catch { setNote(""); setSelId(""); setCandidate(null); setUnknown(true); }
   }
-  // Pull a random drug from the real Broad Repurposing Hub and route it through the right path.
-  async function randomRepurposing() {
-    const h = await ensureHub();
-    if (!h || !h.drugs.length) return;
-    pickHubDrug(h.drugs[Math.floor(Math.random() * h.drugs.length)]);
+  function go(n: number) { if (n >= 1 && n <= 6 && (sel || candidate || n === 1)) setStep(n); }
+  function reset() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setTypeTarget(""); setNote(""); setStep(1); setRevealed(false); setRevealPhase("input"); setLeaving(false); }
+  function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
+  function backToStart() { setModality(null); reset(); }
+
+  // ---- Step-1 cinematic ----------------------------------------------------------------
+  // A random pick lands in the "preview" beat: its SMILES is typewritten, the input cluster eases up,
+  // and a single box shows the structure. Nothing else happens until Submit → the full atlas reveal.
+  function beginPreview(targetSmiles: string) {
+    loadRDKit().catch(() => {}); // warm the wasm so the structure pops fast
+    setUnknown(false); setSmiles(""); setTypeTarget(targetSmiles); setNote(""); setRevealed(false); setRevealPhase("preview");
   }
-  // Synthesize a novel SMILES sitting in a high-confidence (densely-covered) region of the manifold.
-  function randomNovel() {
+  async function pickHubReveal() {
+    setRevealPhase("preview"); setSmiles(""); setTypeTarget("");
+    const h = await ensureHub();
+    if (!h || !h.drugs.length) { setRevealPhase("input"); return; }
+    const d = h.drugs[Math.floor(Math.random() * h.drugs.length)];
+    if (d.measured && d.atlas_id && data?.drugs.some((x) => x.id === d.atlas_id)) {
+      const ad = data.drugs.find((x) => x.id === d.atlas_id)!;
+      setSelId(ad.id); setNovel(false); setCandidate(null); beginPreview(ad.step1_structure.smiles);
+    } else {
+      setSelId(""); setNovel(false); setCandidate(d); beginPreview(d.smiles);
+    }
+  }
+  function pickNovelReveal() {
     if (!data) return;
     const scored = data.drugs.filter((d) => !d.is_guest).map((d) => ({
       d, s: d.step3_embedding.neighbors.slice(0, 3).reduce((a, n) => a + n.similarity, 0) / 3,
     })).sort((a, b) => b.s - a.s);
     if (!scored.length) return;
-    const pool = scored.slice(0, 25); // densest regions = high-confidence interpolation space
-    const anchor = pool[Math.floor(Math.random() * pool.length)].d;
-    placeCandidate(anchor.id, mutateSmiles(anchor.step1_structure.smiles));
+    const anchor = scored.slice(0, 25)[Math.floor(Math.random() * Math.min(25, scored.length))].d; // densest = high-confidence
+    setSelId(anchor.id); setNovel(true); setCandidate(null); beginPreview(mutateSmiles(anchor.step1_structure.smiles));
   }
-  function go(n: number) { if (n >= 1 && n <= 6 && (sel || candidate || n === 1)) setStep(n); }
-  function reset() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setStep(1); setRevealed(false); setRevealPhase("input"); setLeaving(false); }
-  function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
-  function backToStart() { setModality(null); reset(); }
-
-  // ---- Step-1 cinematic: submit → unfold the placement → (after a hold) reveal Next / Refine ----
-  function submitStep1() { if (!smiles.trim()) return; setRevealPhase("reveal"); analyzeSmiles(); }
-  function pickHubReveal() { setRevealPhase("reveal"); randomRepurposing(); }
-  function pickNovelReveal() { setRevealPhase("reveal"); randomNovel(); }
+  function submitStep1() {
+    if (revealPhase === "preview") { if (sel || candidate) setRevealPhase("reveal"); return; } // already resolved
+    if (!smiles.trim()) return;
+    setRevealPhase("reveal"); analyzeSmiles();
+  }
   function refineStep1() {
     setLeaving(true);
-    setTimeout(() => { setLeaving(false); setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setRevealed(false); setRevealPhase("input"); }, 430);
+    setTimeout(() => { setLeaving(false); setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setTypeTarget(""); setNote(""); setRevealed(false); setRevealPhase("input"); }, 430);
   }
-  // once the selection has resolved during the reveal, hold ~5s past the unfold, then show the controls
+  // typewriter: advance the visible SMILES one char at a time while it's still a prefix of the target
+  useEffect(() => {
+    if (revealPhase !== "preview" || !typeTarget) return;
+    if (smiles.length >= typeTarget.length || !typeTarget.startsWith(smiles)) return;
+    const t = setTimeout(() => setSmiles(typeTarget.slice(0, smiles.length + 1)), 26);
+    return () => clearTimeout(t);
+  }, [revealPhase, typeTarget, smiles]);
+  // once the selection resolves during the full reveal, hold ~5s past the unfold, then show the controls
   const resolved = !!sel || !!candidate || unknown;
   useEffect(() => {
     if (revealPhase !== "reveal" || !resolved) return;
@@ -394,6 +410,7 @@ export default function PocClient() {
       @keyframes pocCollapse{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.98)}}
       .poc-rise{animation:pocRise .7s cubic-bezier(.22,.61,.36,1) both}
       .poc-fade{animation:pocFade .6s ease both}
+      .poc-slide{transition:transform .95s cubic-bezier(.45,.05,.2,1)}
       .poc-collapse{animation:pocCollapse .42s ease forwards}
       .poc-pt{transform-box:fill-box;transform-origin:center;animation:pocPop .5s ease both}
     ` }} />
@@ -474,8 +491,8 @@ export default function PocClient() {
           ◂ Small Molecule — change modality
         </button>
 
-        {/* Step indicator — hidden on the minimal Step-1 input screen */}
-        {!(step === 1 && revealPhase === "input") && (
+        {/* Step indicator — hidden on the minimal Step-1 input / preview screens */}
+        {!(step === 1 && (revealPhase === "input" || revealPhase === "preview")) && (
           <div className="flex flex-nowrap items-center gap-1.5 mb-7 overflow-x-auto poc-fade">
             {STEPS_SHORT.map((s, i) => {
               const n = i + 1; const active = n === step; const avail = n === 1 || !!sel || !!candidate;
@@ -492,7 +509,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -523,14 +540,17 @@ export default function PocClient() {
 /* ---------------- Step 1 — Molecule input ----------------
    Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
-function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles,
+function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
   revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext }: any) {
 
-  // ---------- input phase: one clean box + two subdued text shortcuts ----------
-  if (revealPhase === "input") {
+  // ---------- input + preview: one clean box that eases up and reveals the picked structure ----------
+  if (revealPhase === "input" || revealPhase === "preview") {
+    const preview = revealPhase === "preview";
+    const previewName = candidate?.name ?? (novel ? "novel candidate" : sel?.display_name ?? "");
     return (
-      <div className="poc-fade flex flex-col items-center justify-center min-h-[360px] py-6">
-        <div className="w-full max-w-xl">
+      <div className="relative min-h-[400px]">
+        {/* input cluster — eases upward (slow accel / slow settle) once a candidate is previewed */}
+        <div className="poc-slide w-full max-w-xl mx-auto" style={{ transform: preview ? "translateY(0)" : "translateY(110px)" }}>
           <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Submit a molecule</h2>
           <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-6">A SMILES string — matched by InChIKey to the measured atlas or the Broad Repurposing Hub.</p>
           <div className="flex gap-2">
@@ -552,6 +572,18 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
             </button>
           </div>
         </div>
+
+        {/* single sub-box: fades in, then the molecule pops */}
+        {preview && (
+          <div className="w-full max-w-xl mx-auto mt-6 poc-fade" style={{ animationDelay: "420ms" }}>
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+              <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
+                {typeTarget ? <RDKitDepiction smiles={typeTarget} w={300} h={210} /> : <span className="roboto-slab-regular text-xs text-gray-400">resolving…</span>}
+              </div>
+              {previewName && <div className="text-center roboto-slab-medium text-sm text-gray-700 mt-1">{previewName}</div>}
+            </div>
+          </div>
+        )}
       </div>
     );
   }
