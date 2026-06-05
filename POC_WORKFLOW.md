@@ -224,3 +224,23 @@ Whole demo switched off Tahoe-375 onto the **94-compound MegaFin zebrafish atlas
 - **Expanded "What we infer" section**: generator emits an 8–9-sentence deterministic **narrative**
   (per-organ + per-pathway interpretation, confidence, dossier note) rendered as a "Reading the
   inference" panel — the interpretation layer the user flagged as most valuable.
+
+---
+
+## Build status — v7 (Step 2 split-flap .h5ad, Step 3 organ detail + pathway diagrams, Step 4 confidence field)
+- **Step 2 redesigned**: a canvas **split-flap `.h5ad` board** (100×100 cells×genes) that resolves over
+  ~5 s (deterministic per-drug, diagonal lock wave), with "that's what an scRNA-seq run would have been
+  producing · ≈1 month from submission", a "view mock pseudo-results" button that resolves the board into
+  an expression **heatmap**, then "Next → fingerprint section". Old Rube-Goldberg removed.
+- **Step 3 Zebrafish**: each organ row is now **clickable** → developer-relevant detail (what high
+  involvement means + how we'd confirm it in zebrafish + why it lit up).
+- **Step 3 Pathways**: **pathway diagrams** below the bars — per top-3 program, a hub→member-gene diagram
+  (induced ▲ red / repressed ▼ blue from the signature). **Volcano tab removed** (and volcano dropped from
+  the generator → drugs.json ~4.5 MB).
+- **Step 4**: an **interpolation-confidence heat field** (atlas-density KDE rendered to a canvas →
+  `<image>`) behind the manifold — warm where dense (confident interpolation), cool in gaps; pans/zooms
+  with the plot, on/off toggle + legend.
+- **Guest fix**: literature guests now seed phenotype from a **mechanism-based program profile**
+  (`GUEST_PROGRAMS`, since the agentic step tells us the mechanism) instead of blind chemistry-nearest —
+  so Doxorubicin reads as p53/DNA-damage (phenoNN Rucaparib), not steroid. Chemistry route stays real
+  (honestly shows chemistry≠mechanism). Quick-Start guest = Doxorubicin.

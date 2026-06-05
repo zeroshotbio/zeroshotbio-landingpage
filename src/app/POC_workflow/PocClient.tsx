@@ -39,7 +39,7 @@ type Drug = {
     mol3d: string | null; target_pdb: TargetPDB | null };
   step2_fingerprint: { basis: string; n_cell_lines: number; dose_uM: number; control: string;
     n_genes_tested: number; top_up: Gene[]; top_down: Gene[];
-    volcano: Volcano; programs: Programs; organs: Organ[]; organ_basis: string };
+    volcano?: Volcano; programs: Programs; organs: Organ[]; organ_basis: string };
   step3_embedding: { coords2d: [number, number]; chem2d: [number, number];
     neighbors: Neighbor[]; chem_neighbors: Neighbor[]; projection: string; chem_projection: string };
   step4_mechanism: { moa_fine: string; targets: string[]; neighbor_overlap: Overlap[];
@@ -276,7 +276,7 @@ export default function PocClient() {
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
           {step === 1 && <Step1 {...{ data, cloud, path, sel, selId, loadDrug, smiles, setSmiles, note, setNote, quickStart, chooseCandidate }} />}
-          {step === 2 && sel && <Step2 sel={sel} revealed={revealed} setRevealed={setRevealed} novel={novel || !!sel.is_guest} />}
+          {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
           {step === 4 && sel && <Step4 sel={sel} cloud={cloud} manifest={data?.manifest} />}
           {step === 5 && sel && <Step5 sel={sel} manifest={data?.manifest} />}
@@ -556,110 +556,123 @@ function Mol3DViewer({ sel }: { sel: Drug }) {
   );
 }
 
-/* ---------------- Step 2 ---------------- */
-function Step2({ sel, revealed, setRevealed, novel }: { sel: Drug; revealed: boolean; setRevealed: (b: boolean) => void; novel?: boolean }) {
-  const fp = sel.step2_fingerprint;
+/* ---------------- Step 2 — split-flap .h5ad acquisition board ---------------- */
+function heatColor(t: number) { // viridis-ish: deep indigo → teal → yellow
+  const stops = [[13, 8, 35], [59, 28, 140], [33, 144, 140], [180, 222, 44], [253, 231, 37]];
+  const x = Math.max(0, Math.min(1, t)) * (stops.length - 1); const i = Math.floor(x), f = x - i;
+  const a = stops[i], b = stops[Math.min(stops.length - 1, i + 1)];
+  return `rgb(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)})`;
+}
+function Step2({ sel, novel, onNext }: { sel: Drug; novel?: boolean; onNext: () => void }) {
+  const [phase, setPhase] = useState<"running" | "ready" | "resolved">("running");
+  useEffect(() => { setPhase("running"); }, [sel.id]); // restart for a new compound
   return (
     <div>
-      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 2 — Whole-organism exposure</h2>
-      {novel ? (
-        <p className="roboto-slab-regular text-sm text-gray-600 leading-relaxed mb-4">
-          A novel molecule has no measured profile. Instead of dosing, we <strong>interpolate its whole-organism
-          response</strong> from the nearest MegaFin atlas compounds — the predicted readout below.
-        </p>
-      ) : (
-        <p className="roboto-slab-regular text-sm text-gray-600 leading-relaxed mb-4">
-          In production, this is the wet step: <strong>dose zebrafish embryos with {sel.display_name}, then run
-          whole-organism single-cell RNA-seq</strong> to read how every cell type responds. {sel.display_name} is
-          one of the {94} MegaFin atlas compounds, so its profile is read straight from the atlas.
-        </p>
-      )}
-      <ExposureFlow novel={novel} />
-      <p className="roboto-slab-regular text-sm text-gray-500 leading-relaxed mb-5">
-        <strong>Note:</strong> the MegaFin single-cell dataset isn&apos;t wired into this preview yet, so the readout below
-        is a <strong>synthesized, class-driven placeholder</strong> — illustrative of the shape of the real result.
-      </p>
-      {!revealed ? (
-        <button onClick={() => setRevealed(true)}
-          className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-5 py-2 text-sm hover:bg-gray-700">
-          {novel ? "Interpolate the predicted readout ▸" : "Reveal the atlas readout ▸"}
-        </button>
-      ) : (
-        <div className="rounded-md border border-gray-200 bg-white p-5">
-          <div className="roboto-slab-medium text-gray-800 mb-2">{novel ? "Predicted readout assembled" : "Atlas readout acquired"}</div>
-          <ul className="roboto-slab-regular text-sm text-gray-600 space-y-1">
-            <li>• {novel ? "Interpolated from nearest atlas neighbors" : "Whole-organism single-cell profile (MegaFin zebrafish atlas)"}</li>
-            <li>• Across <strong>{fp.n_cell_lines}</strong> illustrative units · {fp.control}</li>
-            <li>• <strong>{fp.n_genes_tested.toLocaleString()}+</strong> marker genes across 23 transcriptional programs</li>
-          </ul>
-          <p className="roboto-slab-regular text-xs text-gray-400 mt-3">The fingerprint, pathways and organ map are in Step 3.</p>
-        </div>
-      )}
+      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-3">Step 2 — Whole-organism exposure</h2>
+      <div className="mx-auto" style={{ maxWidth: 520 }}>
+        <H5adBoard seed={sel.id} phase={phase} onDone={() => setPhase((p) => (p === "running" ? "ready" : p))} />
+      </div>
+      <div className="mt-4 text-center">
+        {phase === "running" && (
+          <p className="roboto-slab-regular text-sm text-gray-500">Acquiring single-cell readout… <span className="text-gray-400">(cells × genes)</span></p>
+        )}
+        {phase === "ready" && (
+          <>
+            <p className="roboto-slab-medium text-sm text-gray-700">That&apos;s what an scRNA-seq run would have been producing.</p>
+            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">≈ 1 month from submission in the real pipeline — dose → incubate → dissociate → sequence → QC.</p>
+            <button onClick={() => setPhase("resolved")}
+              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-5 py-2 text-sm hover:bg-gray-700">
+              View mock, generated pseudo-results for this demo ▸
+            </button>
+          </>
+        )}
+        {phase === "resolved" && (
+          <>
+            <p className="roboto-slab-medium text-sm text-gray-700">Pseudo-results ready{novel ? " (interpolated)" : ""}.</p>
+            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">
+              A 100×100 slice of the {novel ? "interpolated" : "synthesized"} cell×gene expression matrix — illustrative stand-in for the MegaFin readout.
+            </p>
+            <button onClick={onNext}
+              className="roboto-slab-medium rounded-md border border-teal-700 bg-teal-700 text-white px-5 py-2 text-sm hover:bg-teal-800">
+              Next — see the perturbation results in the fingerprint section ▸
+            </button>
+          </>
+        )}
+      </div>
     </div>
   );
 }
 
-/* A playful Rube-Goldberg-style loop of the real wet pipeline: dose → incubate → dissociate → seq → data. */
-function ExposureFlow({ novel }: { novel?: boolean }) {
-  const X = [70, 190, 305, 420, 525, 605];
-  const labels = ["dose", "zebrafish", "incubate", "dissociate", "scRNA-seq", "data"];
-  const icons = ["💊", "🐟", "⏱️", "🧫", "🧬", "▦"];
+/* 100×100 split-flap matrix (like an old train-station board) that resolves on final numbers, then a heatmap. */
+function H5adBoard({ seed, phase, onDone }: { seed: string; phase: "running" | "ready" | "resolved"; onDone: () => void }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const ROWS = 100, COLS = 100, DUR = 5000;
+  const data = useMemo(() => {
+    let h = 2166136261 >>> 0;
+    for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return (h >>> 0) / 4294967296; };
+    const finalv = new Uint8Array(ROWS * COLS), heat = new Float32Array(ROWS * COLS), lockT = new Float32Array(ROWS * COLS);
+    const col = new Float32Array(COLS); for (let c = 0; c < COLS; c++) col[c] = rnd();
+    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+      const i = r * COLS + c, base = col[c] * 0.7 + rnd() * 0.3;
+      finalv[i] = Math.min(9, Math.floor(base * 9.999));
+      heat[i] = Math.max(0, Math.min(1, base + (rnd() - 0.5) * 0.4));
+      lockT[i] = (r + c) / (ROWS + COLS) * 0.8 + rnd() * 0.2;
+    }
+    return { finalv, heat, lockT };
+  }, [seed]);
+
+  // acquisition animation (split-flap resolve)
+  useEffect(() => {
+    const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
+    const CW = cv.width / COLS, CH = cv.height / ROWS;
+    ctx.font = `${Math.floor(CH * 0.92)}px ui-monospace, Menlo, monospace`;
+    ctx.textAlign = "center"; ctx.textBaseline = "middle";
+    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, cv.width, cv.height);
+    const locked = new Uint8Array(ROWS * COLS);
+    let raf = 0, start = 0, last = 0, done = false;
+    const draw = (i: number, ch: string, fg: string) => {
+      const r = Math.floor(i / COLS), c = i % COLS, x = c * CW, y = r * CH;
+      ctx.fillStyle = "#0b1020"; ctx.fillRect(x, y, CW, CH);
+      ctx.fillStyle = fg; ctx.fillText(ch, x + CW / 2, y + CH / 2);
+    };
+    const frame = (ts: number) => {
+      if (!start) start = ts;
+      const t = (ts - start) / DUR;
+      if (ts - last > 32) { // cap ~30fps
+        last = ts;
+        for (let i = 0; i < ROWS * COLS; i++) {
+          if (locked[i]) continue;
+          if (t >= data.lockT[i]) { locked[i] = 1; draw(i, String(data.finalv[i]), "#e2e8f0"); }
+          else draw(i, String((Math.random() * 10) | 0), "#38bdf8");
+        }
+      }
+      if (t >= 1 && !done) { done = true; onDone(); return; }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [seed]);
+
+  // resolved → repaint as an expression heatmap
+  useEffect(() => {
+    if (phase !== "resolved") return;
+    const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
+    const CW = cv.width / COLS, CH = cv.height / ROWS;
+    for (let i = 0; i < ROWS * COLS; i++) {
+      ctx.fillStyle = heatColor(data.heat[i]);
+      ctx.fillRect((i % COLS) * CW, Math.floor(i / COLS) * CH, CW + 0.5, CH + 0.5);
+    }
+  }, [phase, data]);
+
   return (
-    <div className="rounded-md border border-gray-200 bg-white p-3 mb-4">
-      <div className="flex items-start gap-2 mb-1">
-        <span className="roboto-slab-medium text-[11px] text-teal-700 bg-teal-50 border border-teal-100 rounded px-2 py-0.5 whitespace-nowrap">▶ live in production</span>
-        <p className="roboto-slab-regular text-[11px] text-gray-500 leading-snug">
-          This is where we&apos;d actually initiate a <strong>zebrafish drug-exposure run</strong> — dose embryos, incubate,
-          dissociate to single cells, and run scRNA-seq — generating the fresh data that powers the rest of the workflow.
-          {novel ? " For a novel molecule we skip the bench and interpolate instead." : " For this preview the readout is a synthesized stand-in."}
-        </p>
+    <div className="rounded-md border border-gray-700 overflow-hidden" style={{ background: "#0b1020" }}>
+      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700">
+        <span className="roboto-slab-medium text-[11px] text-sky-300">perturbation.h5ad</span>
+        <span className="roboto-slab-regular text-[10px] text-gray-500">AnnData · 100 cells × 100 genes (slice)</span>
       </div>
-      <svg width="100%" viewBox="0 0 640 150" role="img" aria-label="zebrafish exposure to single-cell pipeline (animation)">
-        {/* contraption track */}
-        <path d="M30 118 Q120 92 190 118 T350 118 T510 118 L610 118" fill="none" stroke="#e5e7eb" strokeWidth={3} strokeDasharray="2 6" />
-        {/* stations */}
-        {X.map((x, i) => (
-          <g key={i}>
-            <text x={x} y={i === 5 ? 124 : 126} fontSize={i === 5 ? 26 : 30} textAnchor="middle">{icons[i]}</text>
-            <text x={x} y={142} fontSize={9} textAnchor="middle" fill="#9ca3af" className="roboto-slab-regular">{labels[i]}</text>
-          </g>
-        ))}
-        {/* zebrafish wiggles */}
-        <g>
-          <animateTransform attributeName="transform" type="rotate" values="-7 190 116;7 190 116;-7 190 116" dur="1.3s" repeatCount="indefinite" />
-        </g>
-        {/* compound droplet falls onto the dish */}
-        <circle cx={70} r={4} fill="#0d9488">
-          <animate attributeName="cy" values="104;150;104" dur="1.8s" repeatCount="indefinite" />
-          <animate attributeName="opacity" values="1;0;1" dur="1.8s" repeatCount="indefinite" />
-        </circle>
-        {/* incubate clock hand */}
-        <line x1={305} y1={112} x2={305} y2={100} stroke="#0d9488" strokeWidth={1.5}>
-          <animateTransform attributeName="transform" type="rotate" from="0 305 112" to="360 305 112" dur="2.2s" repeatCount="indefinite" />
-        </line>
-        {/* dissociated cells stream toward the sequencer */}
-        {[0, 1, 2, 3].map((k) => (
-          <circle key={k} cy={116} r={3} fill="#7c3aed">
-            <animate attributeName="cx" values="430;520" dur="1.4s" begin={`${k * 0.35}s`} repeatCount="indefinite" />
-            <animate attributeName="opacity" values="0;1;1;0" dur="1.4s" begin={`${k * 0.35}s`} repeatCount="indefinite" />
-          </circle>
-        ))}
-        {/* sequencer status light */}
-        <circle cx={525} cy={104} r={2.5} fill="#10b981">
-          <animate attributeName="opacity" values="0.2;1;0.2" dur="0.7s" repeatCount="indefinite" />
-        </circle>
-        {/* data grid fills in */}
-        {[0, 1, 2, 3].map((r) => [0, 1, 2].map((c) => (
-          <rect key={`${r}-${c}`} x={596 + c * 6} y={104 + r * 5} width={5} height={4} fill="#0d9488">
-            <animate attributeName="opacity" values="0;1" dur="0.4s" begin={`${(r * 3 + c) * 0.15}s`} fill="freeze" repeatCount="1" />
-            <animate attributeName="opacity" values="1;1;0;0" dur="3s" begin="2s" repeatCount="indefinite" />
-          </rect>
-        )))}
-        {/* the marble that ties it together */}
-        <circle r={6} fill="#111827">
-          <animateMotion dur="6s" repeatCount="indefinite" path="M70 100 Q130 74 190 100 T350 100 T510 100 L605 100" />
-        </circle>
-      </svg>
+      <canvas ref={ref} width={600} height={600} className="block w-full" />
     </div>
   );
 }
@@ -674,7 +687,6 @@ function lfcColor(x: number, m = 3): string {
 type Tip = { title: string; sub: string; x: number; y: number } | null;
 const FP_VIEWS = [
   { key: "zebrafish", label: "Zebrafish organs" }, { key: "programs", label: "Pathways" },
-  { key: "volcano", label: "Volcano" },
 ] as const;
 type FpView = typeof FP_VIEWS[number]["key"];
 
@@ -685,8 +697,7 @@ function Step3({ sel }: { sel: Drug }) {
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 3 — Response fingerprint</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
-        Mean log₂ fold-change <strong>across {fp.n_cell_lines} cancer cell lines</strong> ({fp.dose_uM} µM vs {fp.control}).
-        Read it gene-by-gene (volcano), lifted to mechanism (pathways), or projected onto a whole organism (zebrafish).
+        The {sel.display_name} response, projected onto a whole organism (zebrafish organ systems) and lifted to mechanism (transcriptional pathways).
       </p>
       <div className="inline-flex flex-wrap rounded-md border border-gray-300 overflow-hidden mb-3">
         {FP_VIEWS.map((v) => (
@@ -697,49 +708,8 @@ function Step3({ sel }: { sel: Drug }) {
           </button>
         ))}
       </div>
-      {view === "volcano" && <VolcanoView fp={fp} />}
       {view === "programs" && <ProgramsView fp={fp} />}
       {view === "zebrafish" && <ZebrafishView fp={fp} sel={sel} />}
-    </div>
-  );
-}
-
-/* Volcano — log2FC (x) vs cell-line support (y, robustness stand-in) */
-function VolcanoView({ fp }: { fp: Drug["step2_fingerprint"] }) {
-  const W = 640, H = 380, pad = 42;
-  const [tip, setTip] = useState<Tip>(null);
-  const v = fp.volcano;
-  const xm = Math.max(1, ...v.points.map((p) => Math.abs(p.x)));
-  const ym = v.n_lines;
-  const sx = (x: number) => pad + ((x + xm) / (2 * xm)) * (W - 2 * pad);
-  const sy = (y: number) => H - pad - (y / (ym || 1)) * (H - 2 * pad);
-  const labelSet = new Map<string, number>(); // gene -> lfc, for the robust top genes
-  [...fp.top_up.slice(0, 6), ...fp.top_down.slice(0, 6)].forEach((g) => labelSet.set(g.gene, g.lfc));
-  const labelPts = v.points.filter((p) => labelSet.has(p.g));
-  return (
-    <div className="relative rounded-md border border-gray-200 bg-white p-2">
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="volcano plot">
-        <line x1={sx(0)} y1={pad - 8} x2={sx(0)} y2={H - pad} stroke="#e5e7eb" strokeWidth={1} />
-        {[-1, 1].map((t) => <line key={t} x1={sx(t)} y1={pad - 8} x2={sx(t)} y2={H - pad} stroke="#f3f4f6" strokeDasharray="3 3" />)}
-        <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="#9ca3af" strokeWidth={1} />
-        {v.points.map((p, i) => {
-          const top = p.t === 1;
-          return <circle key={i} cx={sx(p.x)} cy={sy(p.y)} r={top ? 3 : 2}
-            fill={top ? (p.x >= 0 ? "#10b981" : "#f43f5e") : "#d1d5db"} opacity={top ? 0.85 : 0.4}
-            onMouseEnter={(e) => setTip({ title: p.g, sub: `log₂FC ${p.x.toFixed(2)} · support ${p.y}/${v.n_lines}`, x: (e.nativeEvent as any).offsetX, y: (e.nativeEvent as any).offsetY })}
-            onMouseLeave={() => setTip(null)} style={{ cursor: "pointer" }} />;
-        })}
-        {labelPts.map((p, i) => (
-          <text key={i} x={sx(p.x) + (p.x >= 0 ? 5 : -5)} y={sy(p.y) - 4} fontSize={9}
-            textAnchor={p.x >= 0 ? "start" : "end"} fill="#374151" className="roboto-slab-regular">{p.g}</text>
-        ))}
-        <text x={pad} y={H - 14} fontSize={10} fill="#9ca3af" className="roboto-slab-regular">← repressed</text>
-        <text x={W - pad} y={H - 14} fontSize={10} fill="#9ca3af" textAnchor="end" className="roboto-slab-regular">induced →</text>
-        <text x={sx(0)} y={H - 14} fontSize={10} fill="#6b7280" textAnchor="middle" className="roboto-slab-medium">log₂FC</text>
-        <text x={12} y={pad + 6} fontSize={10} fill="#6b7280" className="roboto-slab-regular" transform={`rotate(-90 12 ${H / 2})`}>cell-line support →</text>
-      </svg>
-      {tip && <FpTip tip={tip} />}
-      <p className="roboto-slab-regular text-xs text-gray-400 mt-1">{v.axis}.</p>
     </div>
   );
 }
@@ -763,8 +733,8 @@ function ZebrafishView({ fp, sel }: { fp: Drug["step2_fingerprint"]; sel: Drug }
           {tip && <FpTip tip={tip} />}
         </div>
         <div>
-          <div className="roboto-slab-medium text-xs text-gray-600 mb-2">Inferred organ-system involvement</div>
-          <OrganIntensityList organs={fp.organs} />
+          <div className="roboto-slab-medium text-xs text-gray-600 mb-2">Inferred organ-system involvement <span className="text-gray-400 font-normal">— click a system for detail</span></div>
+          <OrganDetailList organs={fp.organs} drug={sel.display_name} />
         </div>
       </div>
       <div className="flex items-center gap-2 mt-3">
@@ -773,6 +743,51 @@ function ZebrafishView({ fp, sel }: { fp: Drug["step2_fingerprint"]; sel: Drug }
         <span className="roboto-slab-regular text-[11px] text-gray-500">high</span>
       </div>
       <p className="roboto-slab-regular text-xs text-gray-400 mt-2">{fp.organ_basis}.</p>
+    </div>
+  );
+}
+
+/* developer-relevant detail per organ system (what high involvement implies + how you'd follow up) */
+const ORGAN_DETAIL: Record<string, { what: string; assay: string }> = {
+  "Brain / CNS": { what: "Neuro-activity, behavioral, and neurotoxicity risk — relevant to therapeutic window and CNS penetrance.", assay: "Zebrafish locomotor (startle / optomotor) assays, seizure-liability readouts, neuronal markers (elavl3, sox2)." },
+  "Eye / retina": { what: "Ocular developmental or phototoxicity effects; eyes are a sensitive, easily-imaged organ in zebrafish.", assay: "Eye-size morphometry, retinal lamination, opsin/rhodopsin (opn1, rho) markers." },
+  "Heart": { what: "Cardiac involvement is a top dose-limiting-toxicity flag (e.g. anthracycline-like cardiotoxicity).", assay: "Heart-rate & ejection-fraction video, pericardial-edema scoring; markers myh6, tnnt2, nppa/nppb." },
+  "Liver": { what: "Hepatic metabolism, lipid handling, clearance, and drug-induced-liver-injury (DILI) risk — informs PK.", assay: "Liver-size, neutral-lipid (oil-red-O / fluorescent), hepatocyte markers (fabp10a); metabolite profiling." },
+  "Intestine / gut": { what: "Effects on the rapidly-dividing gut epithelium — a proliferation / GI-toxicity readout.", assay: "Gut morphology & motility, proliferation (pcna), enterocyte markers (fabp2)." },
+  "Kidney (pronephros)": { what: "Nephrotoxicity and fluid-balance liability — edema is an easily-scored zebrafish phenotype.", assay: "Pronephros morphology, glomerular filtration (FITC-dextran clearance), pax2a / nphs markers." },
+  "Skeletal muscle": { what: "Myotoxicity or metabolic load on muscle; somite integrity is birefringence-visible.", assay: "Muscle birefringence, somite boundaries, markers myod1, actc1; touch-evoked movement." },
+  "Blood / immune": { what: "Haematopoietic suppression or immunomodulation — myelosuppression and inflammation liabilities.", assay: "gata1 / pu.1 reporters, neutrophil (lcp1) counts, tail-wound inflammation assay." },
+  "Vasculature": { what: "Central to anti-angiogenic intent and vascular toxicity; vessels are live-imaged in transgenic lines.", assay: "Intersegmental-vessel sprouting in kdrl/fli1:GFP reporters, vessel-patterning & perfusion." },
+};
+function OrganDetailList({ organs, drug }: { organs: Organ[]; drug: string }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const sorted = [...organs].sort((a, b) => b.intensity - a.intensity);
+  return (
+    <div className="space-y-1">
+      {sorted.map((o) => {
+        const det = ORGAN_DETAIL[o.system]; const isOpen = open === o.system;
+        return (
+          <div key={o.system} className="rounded border border-transparent hover:border-gray-200">
+            <button onClick={() => setOpen(isOpen ? null : o.system)} className="w-full flex items-center gap-2 py-0.5 text-left">
+              <span className="roboto-slab-regular text-[11px] text-gray-600 w-36 truncate text-right">{o.system}</span>
+              <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+                <div className="h-3 rounded" style={{ width: `${Math.round(o.intensity * 100)}%`, background: organColor(o.intensity) }} />
+              </div>
+              <span className="roboto-slab-regular text-[10px] text-gray-400 w-8 text-right">{Math.round(o.intensity * 100)}%</span>
+              <span className="roboto-slab-regular text-[10px] text-gray-300">{isOpen ? "▾" : "▸"}</span>
+            </button>
+            {isOpen && det && (
+              <div className="ml-2 mb-2 mt-1 rounded bg-gray-50 border border-gray-200 px-3 py-2">
+                <p className="roboto-slab-regular text-[11px] text-gray-700 leading-relaxed mb-1"><strong>What it means:</strong> {det.what}</p>
+                <p className="roboto-slab-regular text-[11px] text-gray-600 leading-relaxed mb-1"><strong>How we&apos;d confirm in zebrafish:</strong> {det.assay}</p>
+                {o.drivers && o.drivers.length > 0 && (
+                  <p className="roboto-slab-regular text-[11px] text-gray-500"><strong>Why it lit up for {drug}:</strong> driven by the {o.drivers.join(", ")} program{o.drivers.length > 1 ? "s" : ""}.</p>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -822,6 +837,45 @@ function ProgramsView({ fp }: { fp: Drug["step2_fingerprint"] }) {
         {fp.programs.basis}. Click a program to see its member genes. This lifts the per-gene fingerprint to the
         mechanism level — the same MoA story Steps 4–5 build on.
       </p>
+
+      {/* pathway diagrams for the most-affected programs */}
+      <div className="mt-4 border-t border-gray-100 pt-3">
+        <div className="roboto-slab-medium text-sm text-gray-700 mb-2">Pathway diagrams — top affected programs</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {ps.slice(0, 3).map((p) => <PathwayDiagram key={p.name} p={p} />)}
+        </div>
+        <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2">
+          Each diagram shows the program&apos;s regulatory output: the pathway node drives its member genes up (red ▲) or down (blue ▼). Direction and magnitude are from the signature above.
+        </p>
+      </div>
+    </div>
+  );
+}
+
+/* A compact pathway diagram: pathway node → its strongest induced/repressed member genes. */
+function PathwayDiagram({ p }: { p: Program }) {
+  const W = 220, H = 150;
+  const up = p.hits.filter((h) => h.lfc > 0).slice(0, 3);
+  const dn = p.hits.filter((h) => h.lfc < 0).slice(0, 3);
+  const hubY = H / 2, hubX = 30;
+  const node = (g: ProgHit, x: number, y: number, dir: "up" | "down") => (
+    <g key={g.g}>
+      <line x1={hubX + 18} y1={hubY} x2={x - 24} y2={y} stroke={dir === "up" ? "#fca5a5" : "#93c5fd"} strokeWidth={1.2} />
+      <rect x={x - 24} y={y - 9} width={48} height={18} rx={4} fill={lfcColor(g.lfc)} stroke="#e5e7eb" />
+      <text x={x} y={y + 1} fontSize={8} textAnchor="middle" dominantBaseline="middle" fill="#1f2937" className="roboto-slab-medium">{g.g}</text>
+      <text x={x + 28} y={y + 3} fontSize={9} fill={dir === "up" ? "#dc2626" : "#2563eb"}>{dir === "up" ? "▲" : "▼"}</text>
+    </g>
+  );
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-2">
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label={`${p.name} pathway diagram`}>
+        {up.map((g, i) => node(g, 150, 26 + i * 22, "up"))}
+        {dn.map((g, i) => node(g, 150, H - 26 - i * 22, "down"))}
+        <circle cx={hubX} cy={hubY} r={18} fill={p.score >= 0 ? "#ecfdf5" : "#fef2f2"} stroke={p.score >= 0 ? "#10b981" : "#f43f5e"} strokeWidth={1.5} />
+        <text x={hubX} y={hubY + 1} fontSize={8} textAnchor="middle" dominantBaseline="middle" fill="#374151" className="roboto-slab-medium">path</text>
+      </svg>
+      <div className="roboto-slab-medium text-[11px] text-gray-700 truncate text-center" title={p.name}>{p.name}</div>
+      <div className={`roboto-slab-regular text-[10px] text-center ${p.score >= 0 ? "text-emerald-700" : "text-rose-700"}`}>{p.score > 0 ? "+" : ""}{p.score} · n={p.n}</div>
     </div>
   );
 }
@@ -842,9 +896,16 @@ function coordOf(p: CPoint, r: Regime): [number, number] { return r === "phenoty
 function qCoord(sel: Drug, r: Regime): [number, number] { return r === "phenotype" ? sel.step3_embedding.coords2d : sel.step3_embedding.chem2d; }
 function regimeNeighbors(sel: Drug, r: Regime): Neighbor[] { return r === "phenotype" ? sel.step3_embedding.neighbors : sel.step3_embedding.chem_neighbors; }
 
+function fieldColor(t: number): [number, number, number, number] { // uncertain (indigo) → confident (amber)
+  const stops = [[55, 48, 163], [20, 184, 166], [245, 158, 11]];
+  const x = Math.max(0, Math.min(1, t)) * (stops.length - 1); const i = Math.floor(x), f = x - i;
+  const a = stops[i], b = stops[Math.min(stops.length - 1, i + 1)];
+  return [Math.round(a[0] + (b[0] - a[0]) * f), Math.round(a[1] + (b[1] - a[1]) * f), Math.round(a[2] + (b[2] - a[2]) * f), Math.round(35 + 165 * t)];
+}
 function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manifest?: Manifest }) {
   const [regime, setRegime] = useState<Regime>("phenotype");
   const [colorByMoa, setColorByMoa] = useState(true);
+  const [showField, setShowField] = useState(true);
   const W = 640, H = 440, pad = 28;
   const pts = useMemo(() => cloud?.points ?? [], [cloud]);
 
@@ -856,6 +917,24 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
     const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
     return { sx, sy };
   }, [pts, regime]);
+
+  // interpolation-confidence field: KDE of atlas density over the manifold → warm where we can interpolate
+  const fieldUrl = useMemo(() => {
+    if (typeof document === "undefined" || !pts.length) return null;
+    const GW = 128, GH = Math.round((GW * H) / W);
+    const cnv = document.createElement("canvas"); cnv.width = GW; cnv.height = GH;
+    const ctx = cnv.getContext("2d"); if (!ctx) return null;
+    const pos = pts.map((p) => { const c = coordOf(p, regime); return [(base.sx(c[0]) * GW) / W, (base.sy(c[1]) * GH) / H] as [number, number]; });
+    const h = 8.5, dens = new Float32Array(GW * GH); let max = 0;
+    for (let gy = 0; gy < GH; gy++) for (let gx = 0; gx < GW; gx++) {
+      let s = 0; for (let k = 0; k < pos.length; k++) { const dx = gx - pos[k][0], dy = gy - pos[k][1]; s += Math.exp(-(dx * dx + dy * dy) / (2 * h * h)); }
+      dens[gy * GW + gx] = s; if (s > max) max = s;
+    }
+    const img = ctx.createImageData(GW, GH);
+    for (let i = 0; i < GW * GH; i++) { const [r, g, b, a] = fieldColor(dens[i] / (max || 1)); img.data[i * 4] = r; img.data[i * 4 + 1] = g; img.data[i * 4 + 2] = b; img.data[i * 4 + 3] = a; }
+    ctx.putImageData(img, 0, 0);
+    return cnv.toDataURL();
+  }, [pts, regime, base]);
 
   // pan/zoom transform (precomputed coords only — no recompute of the embedding)
   const [view, setView] = useState({ k: 1, tx: 0, ty: 0 });
@@ -921,9 +1000,9 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 4 — Project into the atlas</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
-        {sel.display_name} (◆) placed among the {pts.length}-compound reference. Toggle the regime to see the
-        <strong> two routes</strong>: who its neighbors are by <strong>phenotype</strong> vs by <strong>chemistry</strong>.
-        Drag to pan, scroll to zoom, hover for identity, click a point to inspect.
+        {sel.display_name} (◆) placed among the {pts.length}-compound atlas. The <strong>heat field</strong> is the
+        interpolation-confidence landscape — warm where the atlas is dense (we can interpolate well), cool in the gaps.
+        Toggle phenotype vs chemistry space; drag to pan, scroll to zoom, click a point to inspect.
       </p>
 
       {/* controls */}
@@ -940,6 +1019,10 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
           className="roboto-slab-regular text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">
           Color: {colorByMoa ? "by MoA" : "neutral"}
         </button>
+        <button onClick={() => setShowField((s) => !s)}
+          className="roboto-slab-regular text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">
+          Confidence field: {showField ? "on" : "off"}
+        </button>
         <button onClick={() => setView({ k: 1, tx: 0, ty: 0 })}
           className="roboto-slab-regular text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">
           Reset view
@@ -951,6 +1034,11 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
         <svg ref={svgRef} width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="interactive atlas projection"
           onWheel={onWheel} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={() => { onUp(); setHover(null); }}
           style={{ cursor: drag.current ? "grabbing" : "grab", display: "block" }}>
+          {/* interpolation-confidence field (pans/zooms with the plot) */}
+          {showField && fieldUrl && (
+            <image href={fieldUrl} x={view.tx} y={view.ty} width={view.k * W} height={view.k * H}
+              preserveAspectRatio="none" opacity={0.8} style={{ imageRendering: "auto" }} />
+          )}
           {/* neighbor links (this regime's route) */}
           {nbrs.map((n) => {
             const c = coordById(n.id); if (!c) return null;
@@ -989,6 +1077,14 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
       </div>
 
       {/* legend + picked readout */}
+      {showField && (
+        <div className="flex items-center gap-2 mt-2">
+          <span className="roboto-slab-regular text-[11px] text-gray-500">interpolation confidence:</span>
+          <span className="roboto-slab-regular text-[11px] text-gray-400">low</span>
+          <div className="h-3 w-32 rounded" style={{ background: "linear-gradient(90deg,rgb(55,48,163),rgb(20,184,166),rgb(245,158,11))" }} />
+          <span className="roboto-slab-regular text-[11px] text-gray-400">high</span>
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
         {colorByMoa && legend.map(([moa, col]) => (
           <span key={moa} className="inline-flex items-center gap-1 roboto-slab-regular text-[11px] text-gray-500">
