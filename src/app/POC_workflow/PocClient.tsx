@@ -60,6 +60,67 @@ type Manifest = {
 type Data = { manifest: Manifest; drugs: Drug[] };
 type CPoint = { id: string; moa_fine: string; drug_class?: string; coords2d: [number, number]; chem2d: [number, number]; is_demo: boolean };
 type Const = { points: CPoint[] };
+// Broad Drug Repurposing Hub (precomputed offline — see /tmp/hub/build_hub.py)
+type HubNN = { id: string; sim: number };
+type HubDrug = { name: string; smiles: string; inchikey: string; moa: string; target: string; phase: string;
+  measured: boolean; atlas_id: string | null; nn: HubNN[]; chem2d: [number, number] };
+type Hub = { meta: Record<string, any>; measured_index: Record<string, string>; drugs: HubDrug[] };
+
+/* lazy-load the self-hosted RDKit MinimalLib (6.9 MB wasm) — only when we must render an arbitrary
+   structure or canonicalize a typed SMILES to an InChIKey. */
+let _rdkitP: Promise<any> | null = null;
+function loadRDKit(): Promise<any> {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  const w = window as any;
+  if (w.RDKit) return Promise.resolve(w.RDKit);
+  if (_rdkitP) return _rdkitP;
+  _rdkitP = new Promise((resolve, reject) => {
+    const s = document.createElement("script"); s.src = "/POC_workflow/lib/RDKit_minimal.js"; s.async = true;
+    s.onload = () => (w.initRDKitModule)({ locateFile: () => "/POC_workflow/lib/RDKit_minimal.wasm" })
+      .then((R: any) => { w.RDKit = R; resolve(R); }).catch(reject);
+    s.onerror = () => reject(new Error("rdkit load failed"));
+    document.head.appendChild(s);
+  });
+  return _rdkitP;
+}
+function smilesToInchiKey(R: any, smiles: string): string | null {
+  let mol: any = null;
+  try {
+    mol = R.get_mol(smiles);
+    if (!mol || (mol.is_valid && !mol.is_valid())) return null;
+    const inchi = mol.get_inchi();
+    if (!inchi) return null;
+    return R.get_inchikey_for_inchi(inchi) || null;
+  } catch { return null; } finally { try { mol?.delete(); } catch { /* noop */ } }
+}
+// lazy single fetch of the compact Hub file (~2.5 MB, gzipped over the wire)
+let _hubP: Promise<Hub> | null = null;
+function loadHub(): Promise<Hub> {
+  if (!_hubP) _hubP = fetch("/POC_workflow/repurposing_hub.json").then((r) => r.json());
+  return _hubP;
+}
+/* Render an arbitrary SMILES to SVG client-side via RDKit (no baked depictions for the 6k Hub). */
+function RDKitDepiction({ smiles, w = 320, h = 240 }: { smiles: string; w?: number; h?: number }) {
+  const [svg, setSvg] = useState("");
+  const [err, setErr] = useState(false);
+  useEffect(() => {
+    let cancel = false; setSvg(""); setErr(false);
+    loadRDKit().then((R) => {
+      if (cancel) return;
+      let mol: any = null;
+      try {
+        mol = R.get_mol(smiles);
+        if (!mol || (mol.is_valid && !mol.is_valid())) { setErr(true); return; }
+        const s = mol.get_svg(w, h);
+        if (!cancel) setSvg(s);
+      } catch { if (!cancel) setErr(true); } finally { try { mol?.delete(); } catch { /* noop */ } }
+    }).catch(() => { if (!cancel) setErr(true); });
+    return () => { cancel = true; };
+  }, [smiles, w, h]);
+  if (err) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Could not render this structure.</div>;
+  if (!svg) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Rendering structure…</div>;
+  return <div aria-label={`2D structure of ${smiles}`} dangerouslySetInnerHTML={{ __html: svg }} />;
+}
 
 const STEPS = ["Submit compound", "Wet-lab exposure", "Response fingerprint",
   "Project into atlas", "Contextualized results", "Atlas report"];
@@ -175,6 +236,9 @@ export default function PocClient() {
   const [selId, setSelId] = useState("");
   const [novel, setNovel] = useState(false);    // selected compound is an interpolated candidate
   const [unknown, setUnknown] = useState(false); // submitted SMILES matched nothing (truly novel/unknown)
+  const [candidate, setCandidate] = useState<HubDrug | null>(null); // unmeasured Hub drug → chemistry-only path
+  const [hub, setHub] = useState<Hub | null>(null);
+  const [hubBusy, setHubBusy] = useState(false);
   const [smiles, setSmiles] = useState("");
   const [note, setNote] = useState("");
   const [step, setStep] = useState(1);
@@ -195,24 +259,51 @@ export default function PocClient() {
 
   function loadDrug(id: string) {
     const d = data?.drugs.find((x) => x.id === id);
-    setSelId(id); setNovel(false); setUnknown(false); setSmiles(d ? d.step1_structure.smiles : ""); setNote(""); setRevealed(false);
+    setSelId(id); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(d ? d.step1_structure.smiles : ""); setNote(""); setRevealed(false);
   }
   // Drop a novel candidate into the interpolation space (anchored on its nearest atlas exemplar). Stays on Step 1.
   function placeCandidate(anchorId: string, pseudoSmiles: string) {
-    setSelId(anchorId); setNovel(true); setUnknown(false); setSmiles(pseudoSmiles); setNote(""); setRevealed(false);
+    setSelId(anchorId); setNovel(true); setUnknown(false); setCandidate(null); setSmiles(pseudoSmiles); setNote(""); setRevealed(false);
   }
-  // Auto-detect what the submitted SMILES is: a measured atlas compound, a repurposing-library drug, or novel/unknown.
-  function analyzeSmiles() {
+  // A Hub drug: if it overlaps the measured atlas (by InChIKey) run the full measured path; otherwise
+  // it's an unmeasured candidate → the honest chemistry-only path (no fabricated phenotype).
+  function pickHubDrug(d: HubDrug) {
+    if (d.measured && d.atlas_id && data?.drugs.some((x) => x.id === d.atlas_id)) { loadDrug(d.atlas_id); return; }
+    setSelId(""); setNovel(false); setUnknown(false); setCandidate(d); setSmiles(d.smiles); setNote(""); setRevealed(false);
+  }
+  async function ensureHub(): Promise<Hub | null> {
+    if (hub) return hub;
+    setHubBusy(true);
+    try { const h = await loadHub(); setHub(h); return h; } catch { setNote("Could not load the repurposing library."); return null; }
+    finally { setHubBusy(false); }
+  }
+  // Auto-detect what the submitted SMILES is, by RDKit-canonical InChIKey: measured atlas compound,
+  // Broad Repurposing Hub drug (measured or not), or genuinely novel/unknown.
+  async function analyzeSmiles() {
     const q = smiles.trim();
     if (!q || !data) { setNote("Paste a SMILES string, or use one of the buttons below."); return; }
-    const hit = data.drugs.find((d) => d.step1_structure.smiles.trim() === q);
-    if (hit) loadDrug(hit.id);
-    else { setSelId(""); setNovel(false); setUnknown(true); setNote(""); setRevealed(false); }
+    // fast path: exact canonical-SMILES match against a measured atlas compound (no wasm needed)
+    const exact = data.drugs.find((d) => !d.is_guest && d.step1_structure.smiles.trim() === q);
+    if (exact) { loadDrug(exact.id); return; }
+    setNote("Canonicalizing structure…");
+    try {
+      const R = await loadRDKit();
+      const ik = smilesToInchiKey(R, q);
+      if (!ik) { setNote(""); setSelId(""); setCandidate(null); setNovel(false); setUnknown(true); return; }
+      const h = await ensureHub();
+      const atlasId = h?.measured_index[ik];
+      if (atlasId && data.drugs.some((d) => d.id === atlasId)) { setNote(""); loadDrug(atlasId); return; }
+      const hd = h?.drugs.find((d) => d.inchikey === ik);
+      setNote("");
+      if (hd) { pickHubDrug(hd); return; }
+      setSelId(""); setCandidate(null); setNovel(false); setUnknown(true);
+    } catch { setNote(""); setSelId(""); setCandidate(null); setUnknown(true); }
   }
-  function randomRepurposing() {
-    const gs = (data?.drugs ?? []).filter((d) => d.is_guest);
-    if (!gs.length) return;
-    loadDrug(gs[Math.floor(Math.random() * gs.length)].id);
+  // Pull a random drug from the real Broad Repurposing Hub and route it through the right path.
+  async function randomRepurposing() {
+    const h = await ensureHub();
+    if (!h || !h.drugs.length) return;
+    pickHubDrug(h.drugs[Math.floor(Math.random() * h.drugs.length)]);
   }
   // Synthesize a novel SMILES sitting in a high-confidence (densely-covered) region of the manifold.
   function randomNovel() {
@@ -225,8 +316,8 @@ export default function PocClient() {
     const anchor = pool[Math.floor(Math.random() * pool.length)].d;
     placeCandidate(anchor.id, mutateSmiles(anchor.step1_structure.smiles));
   }
-  function go(n: number) { if (n >= 1 && n <= 6 && (sel || n === 1)) setStep(n); }
-  function reset() { setSelId(""); setNovel(false); setUnknown(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
+  function go(n: number) { if (n >= 1 && n <= 6 && (sel || candidate || n === 1)) setStep(n); }
+  function reset() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
   function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
   function backToStart() { setModality(null); reset(); }
 
@@ -360,7 +451,7 @@ export default function PocClient() {
         {/* Step indicator — single row */}
         <div className="flex flex-nowrap items-center gap-1.5 mb-7 overflow-x-auto">
           {STEPS_SHORT.map((s, i) => {
-            const n = i + 1; const active = n === step; const avail = n === 1 || !!sel;
+            const n = i + 1; const active = n === step; const avail = n === 1 || !!sel || !!candidate;
             return (
               <button key={s} onClick={() => go(n)} disabled={!avail} title={STEPS[i]}
                 className={`roboto-slab-regular text-[11px] px-2.5 py-1 rounded-full border whitespace-nowrap transition ${
@@ -373,20 +464,23 @@ export default function PocClient() {
         </div>
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, novel, unknown, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }} />}
+          {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
           {step === 4 && sel && <Step4 sel={sel} cloud={cloud} manifest={data?.manifest} />}
           {step === 5 && sel && <Step5 sel={sel} manifest={data?.manifest} />}
           {step === 6 && sel && <Step6 sel={sel} honesty={honesty} />}
-          {step > 1 && !sel && <p className="roboto-slab-regular text-sm text-gray-400">Submit a compound in Step 1 first.</p>}
+          {/* unmeasured Hub candidate path — chemistry-only, never a fabricated phenotype */}
+          {step >= 2 && !sel && candidate && <CandidateStep step={step} candidate={candidate} data={data} cloud={cloud} />}
+          {step > 1 && !sel && !candidate && <p className="roboto-slab-regular text-sm text-gray-400">Submit a compound in Step 1 first.</p>}
         </section>
 
         {/* Nav */}
         <div className="flex justify-between mt-5">
           <button onClick={() => go(step - 1)} disabled={step === 1}
             className="roboto-slab-regular rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100">◂ Back</button>
-          <button onClick={() => go(step + 1)} disabled={step === 6 || !sel}
+          <button onClick={() => go(step + 1)} disabled={step === 6 || (!sel && !candidate)}
             className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-700">Next ▸</button>
         </div>
 
@@ -397,10 +491,10 @@ export default function PocClient() {
 }
 
 /* ---------------- Step 1 — Molecule input ----------------
-   One SMILES box. The backend auto-detects whether the structure is (a) a measured atlas compound,
-   (b) a drug-repurposing-library entry, or (c) novel/unknown. Two shortcuts seed the box: a random
-   repurposing-library drug, or a freshly synthesized SMILES in the high-confidence interpolation space. */
-function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }: any) {
+   One SMILES box. We resolve the structure by RDKit-canonical InChIKey to: (a) a measured atlas compound,
+   (b) a Broad Repurposing Hub drug (measured or not), or (c) genuinely novel/unknown. Shortcuts: a random
+   real Hub drug, or a synthesized SMILES in the atlas's high-confidence interpolation space. */
+function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }: any) {
   // detected category — derived from what the submitted SMILES resolved to
   const detection: "atlas" | "repurposing" | "novel" | "unknown" | null =
     sel ? (novel ? "novel" : sel.is_guest ? "repurposing" : "atlas") : (unknown ? "unknown" : null);
@@ -408,9 +502,8 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 1 — Molecule input</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-5">
-        Submit a SMILES string. We auto-detect whether it&apos;s already <strong>measured in the MegaFin Atlas</strong>,
-        a structure from the <strong>drug-repurposing library</strong>, or a <strong>novel</strong> molecule placed by
-        interpolation.
+        Submit a SMILES string. We match it by <strong>InChIKey</strong> to the <strong>measured MegaFin Atlas</strong>,
+        the <strong>Broad Drug Repurposing Hub</strong> (~5.8k clinical compounds), or flag it as genuinely novel.
       </p>
       <div className="flex flex-col gap-4">
         <label className="block">
@@ -424,9 +517,9 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
           </div>
         </label>
         <div className="flex flex-col sm:flex-row gap-2">
-          <button onClick={randomRepurposing}
-            className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100">
-            🎲 Random repurposing-library drug
+          <button onClick={randomRepurposing} disabled={hubBusy}
+            className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100 disabled:opacity-50">
+            {hubBusy ? "Loading Hub…" : "🎲 Random Drug-Repurposing candidate (Broad Hub)"}
           </button>
           <button onClick={randomNovel}
             className="roboto-slab-medium flex-1 rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-2 text-sm hover:bg-violet-100">
@@ -436,12 +529,17 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
 
         {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
         {detection && detection !== "novel" && <DetectionBanner detection={detection} sel={sel} />}
+        {candidate && <CandidateBanner candidate={candidate} />}
 
-        <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />
+        {/* phenotype manifold only when we have a measured/interpolated point; a Hub candidate is placed by
+            chemistry in Step 4, never dropped onto the phenotype map */}
+        {!candidate && <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />}
 
         {sel && <StructureCard sel={sel} novel={novel} smiles={smiles} />}
-        {/* literature research only for real, named compounds — a novel structure has nothing to look up */}
-        {sel && !novel && <AgenticResearch sel={sel} />}
+        {candidate && <CandidateStructureCard candidate={candidate} />}
+        {/* live literature research for any real, named compound (measured atlas or named Hub drug) */}
+        {sel && !novel && <AgenticResearch idKey={sel.id} name={sel.display_name} smiles={sel.step1_structure.smiles} moa={sel.moa_fine} targets={sel.targets} drugClass={sel.drug_class} fallback={sel.dossier ?? null} />}
+        {candidate && <AgenticResearch idKey={candidate.inchikey} name={candidate.name} smiles={candidate.smiles} moa={candidate.moa} targets={candidate.target ? candidate.target.split("|") : []} drugClass={candidate.moa} fallback={null} />}
       </div>
     </div>
   );
@@ -489,7 +587,8 @@ const RESEARCH_STEPS = [
   "Assessing zebrafish phenotype relevance…",
   "Synthesizing dossier…",
 ];
-function AgenticResearch({ sel }: { sel: Drug }) {
+function AgenticResearch({ idKey, name, smiles, moa, targets, drugClass, fallback }:
+  { idKey: string; name: string; smiles: string; moa: string; targets: string[]; drugClass: string; fallback?: Dossier | null }) {
   const [status, setStatus] = useState<"loading" | "done" | "fallback">("loading");
   const [doc, setDoc] = useState<Dossier | null>(null);
   const [stepIdx, setStepIdx] = useState(0);
@@ -501,17 +600,14 @@ function AgenticResearch({ sel }: { sel: Drug }) {
     const tick = setInterval(() => setStepIdx((i) => Math.min(i + 1, RESEARCH_STEPS.length - 1)), 1100);
     fetch("/api/agentic_dossier", {
       method: "POST", headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        name: sel.display_name, smiles: sel.step1_structure.smiles,
-        moa_fine: sel.moa_fine, targets: sel.targets, drug_class: sel.drug_class,
-      }),
+      body: JSON.stringify({ name, smiles, moa_fine: moa, targets, drug_class: drugClass }),
     })
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
       .then((j) => { if (cancelled) return; setDoc(j.dossier as Dossier); setLive(true); setStatus("done"); })
-      .catch(() => { if (cancelled) return; setDoc(sel.dossier ?? null); setLive(false); setStatus(sel.dossier ? "fallback" : "done"); })
+      .catch(() => { if (cancelled) return; setDoc(fallback ?? null); setLive(false); setStatus(fallback ? "fallback" : "done"); })
       .finally(() => clearInterval(tick));
     return () => { cancelled = true; clearInterval(tick); };
-  }, [sel.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [idKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (status === "loading") {
     return (
@@ -521,7 +617,7 @@ function AgenticResearch({ sel }: { sel: Drug }) {
             <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
             <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
           </svg>
-          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {sel.display_name}</div>
+          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {name}</div>
         </div>
         <ul className="space-y-1">
           {RESEARCH_STEPS.map((s, i) => (
@@ -539,7 +635,7 @@ function AgenticResearch({ sel }: { sel: Drug }) {
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
           <span className="text-base">🔎</span>
-          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {sel.display_name}</div>
+          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {name}</div>
         </div>
         <span className={`roboto-slab-regular text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 ${live ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
           {live ? "live · agent" : "offline cache"}
@@ -559,6 +655,198 @@ function AgenticResearch({ sel }: { sel: Drug }) {
       <p className="roboto-slab-regular text-[11px] text-gray-400">
         {doc.source}. These findings prime the downstream interpretation — in production they reweight the atlas-neighbor consensus.
       </p>
+    </div>
+  );
+}
+
+/* ============ Unmeasured Broad-Hub candidate: chemistry-only, honestly labeled ============ */
+function nnInfo(data: Data | null, id: string) {
+  const d = data?.drugs.find((x) => x.id === id);
+  return { display: d?.display_name ?? id, moa: d?.moa_fine ?? "—", chem2d: d?.step3_embedding.chem2d ?? null };
+}
+// chemistry distance to the nearest measured drug = the honest reliability horizon
+function horizonBand(sim: number) {
+  if (sim >= 0.55) return { key: "in", label: "in-domain", cls: "text-emerald-700", bar: "#059669",
+    note: "Chemically close to measured drugs — a chemistry-anchored read-out is a reasonable prior." };
+  if (sim >= 0.35) return { key: "edge", label: "borderline", cls: "text-amber-700", bar: "#d97706",
+    note: "On the edge of the measured atlas — treat any inference as a weak prior, not a result." };
+  return { key: "out", label: "out-of-domain", cls: "text-rose-700", bar: "#e11d48",
+    note: "Chemically far from anything we've measured — this is extrapolation. Best treated purely as a wet-lab candidate." };
+}
+
+function CandidateBanner({ candidate }: { candidate: HubDrug }) {
+  return (
+    <div className="rounded-md border px-3 py-2 border-sky-200 bg-sky-50 text-sky-800">
+      <div className="roboto-slab-medium text-xs uppercase tracking-wide mb-0.5">Detected · Broad Drug-Repurposing Hub</div>
+      <p className="roboto-slab-regular text-[12px] leading-snug">
+        <strong>{candidate.name}</strong>{candidate.phase ? ` · ${candidate.phase}` : ""} — a real clinical-stage compound,
+        but <strong>not measured</strong> in the MegaFin atlas. There is no phenotype to show; we place it by chemistry and
+        flag where the atlas can and can&apos;t speak to it.
+      </p>
+    </div>
+  );
+}
+
+function CandidateStructureCard({ candidate }: { candidate: HubDrug }) {
+  const sim = candidate.nn[0]?.sim ?? 0;
+  return (
+    <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col items-center">
+          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">2D structure (RDKit · illustrative)</div>
+          <div className="flex-1 flex items-center justify-center" style={{ minHeight: 240 }}>
+            <RDKitDepiction smiles={candidate.smiles} w={300} h={230} />
+          </div>
+        </div>
+        <div className="flex flex-col justify-center gap-1.5">
+          <div className="roboto-slab-medium text-gray-800 text-lg">{candidate.name}</div>
+          <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Hub MoA:</span> {candidate.moa || "—"}</div>
+          <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Target(s):</span> {candidate.target ? candidate.target.replace(/\|/g, ", ") : "—"}</div>
+          <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Clinical phase:</span> {candidate.phase || "—"}</div>
+          <div className="roboto-slab-regular text-[11px] text-gray-400 font-mono break-all"><span className="font-sans">InChIKey:</span> {candidate.inchikey}</div>
+          <div className="mt-1 rounded bg-amber-50 border border-amber-100 px-2 py-1 roboto-slab-regular text-[11px] text-amber-800">
+            Not measured in the atlas. Chemistry nearest neighbor at Tanimoto {sim.toFixed(2)} — full placement in Step 4.
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* Chemistry scatter on the ECFP/RDKit-descriptor manifold (chem2d). Places the candidate by chemistry and
+   draws its ECFP nearest measured neighbors. No phenotype is shown anywhere. */
+function ChemScatter({ data, candidate }: { data: Data | null; candidate: HubDrug }) {
+  const W = 620, H = 360, pad = 16;
+  const meas = (data?.drugs ?? []).filter((d) => !d.is_guest);
+  if (!meas.length) return null;
+  const xs = meas.map((d) => d.step3_embedding.chem2d[0]), ys = meas.map((d) => d.step3_embedding.chem2d[1]);
+  const allx = xs.concat(candidate.chem2d[0]), ally = ys.concat(candidate.chem2d[1]);
+  const xmin = Math.min(...allx), xmax = Math.max(...allx), ymin = Math.min(...ally), ymax = Math.max(...ally);
+  const sx = (x: number) => pad + ((x - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
+  const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
+  const cx = sx(candidate.chem2d[0]), cy = sy(candidate.chem2d[1]);
+  const nnSet = new Set(candidate.nn.map((n) => n.id));
+  return (
+    <div className="rounded overflow-hidden border border-gray-100" style={{ background: "#0a0c23" }}>
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="ECFP chemistry scatter">
+        {meas.map((d) => {
+          const isn = nnSet.has(d.id);
+          return <circle key={d.id} cx={sx(d.step3_embedding.chem2d[0])} cy={sy(d.step3_embedding.chem2d[1])}
+            r={isn ? 4 : 2.3} fill={moaColor(d.moa_fine)} opacity={isn ? 1 : 0.45}
+            stroke={isn ? "#fff" : "none"} strokeWidth={isn ? 1 : 0} />;
+        })}
+        {candidate.nn.map((n) => { const c = nnInfo(data, n.id).chem2d; if (!c) return null;
+          return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 3" opacity={0.85} />; })}
+        <circle cx={cx} cy={cy} r={11} fill="none" stroke="#7c3aed" strokeWidth={1.5} opacity={0.6} />
+        <circle cx={cx} cy={cy} r={5.5} fill="#7c3aed" stroke="#fff" strokeWidth={1.2} />
+        <text x={cx + 10} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
+          style={{ paintOrder: "stroke", stroke: "#0a0c23", strokeWidth: 3 } as any}>{candidate.name}</text>
+        <text x={pad} y={H - 6} fontSize={9} fill="#7c8595" className="roboto-slab-regular">ECFP chemistry space · PCA(2) of RDKit descriptors · {meas.length} measured drugs</text>
+      </svg>
+    </div>
+  );
+}
+
+function CandidateStep({ step, candidate, data }: { step: number; candidate: HubDrug; data: Data | null; cloud: Const | null }) {
+  const nn0 = candidate.nn[0];
+  const near = nnInfo(data, nn0?.id ?? "");
+  const sim = nn0?.sim ?? 0;
+  const band = horizonBand(sim);
+
+  if (step === 2 || step === 3) {
+    return (
+      <div>
+        <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step {step} — {step === 2 ? "Whole-organism exposure" : "Response fingerprint"}</h2>
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-5">
+          <div className="roboto-slab-medium text-sm text-amber-900 mb-2">Not measured — nothing to show here</div>
+          <p className="roboto-slab-regular text-sm text-amber-800 mb-2">
+            <strong>{candidate.name}</strong> has never been run through the zebrafish screen, so there is no exposure
+            and no measured {step === 3 ? "expression fingerprint" : "phenotype"} to display. This is exactly the compound
+            you&apos;d send to the wet lab.
+          </p>
+          <p className="roboto-slab-regular text-xs text-amber-700">
+            We do not fabricate a measured read-out. What we <em>can</em> do is place it relative to what we have measured —
+            by chemistry. Continue to Step 4.
+          </p>
+        </div>
+      </div>
+    );
+  }
+  if (step === 4) {
+    return (
+      <div>
+        <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 4 — Chemistry placement</h2>
+        <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
+          With no phenotype, we place <strong>{candidate.name}</strong> by structure: its ECFP4 nearest neighbors among the
+          measured atlas. This is a chemistry prior, not a measured result.
+        </p>
+        <ChemScatter data={data} candidate={candidate} />
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="rounded-md border border-gray-200 bg-white p-3">
+            <div className="roboto-slab-medium text-xs text-gray-500 mb-1">MoA — from the Hub annotation</div>
+            <div className="roboto-slab-regular text-sm text-gray-800">{candidate.moa || "—"}</div>
+            <div className="roboto-slab-regular text-[11px] text-gray-400 mt-1">target(s): {candidate.target ? candidate.target.replace(/\|/g, ", ") : "—"}</div>
+          </div>
+          <div className="rounded-md border border-violet-200 bg-violet-50 p-3">
+            <div className="roboto-slab-medium text-xs text-violet-700 mb-1">MoA — via nearest measured neighbor</div>
+            <div className="roboto-slab-regular text-sm text-violet-900">{near.moa}</div>
+            <div className="roboto-slab-regular text-[11px] text-violet-500 mt-1">{near.display} · Tanimoto {sim.toFixed(2)}</div>
+          </div>
+        </div>
+        <ul className="mt-2 roboto-slab-regular text-xs text-gray-500 list-disc pl-5">
+          {candidate.nn.map((n) => { const i = nnInfo(data, n.id); return <li key={n.id}>{i.display} — {i.moa} <span className="text-gray-400">(Tanimoto {n.sim.toFixed(2)})</span></li>; })}
+        </ul>
+      </div>
+    );
+  }
+  if (step === 5) {
+    const dist = (1 - sim);
+    return (
+      <div>
+        <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 5 — Reliability horizon</h2>
+        <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
+          How far is this candidate from anything we&apos;ve actually measured? That chemistry distance is the honest ceiling
+          on what the atlas can say.
+        </p>
+        <div className="rounded-md border border-gray-200 bg-white p-4">
+          <div className="flex items-center justify-between mb-1">
+            <div className="roboto-slab-medium text-sm text-gray-800">Nearest measured drug: {near.display}</div>
+            <div className={`roboto-slab-medium text-xs uppercase tracking-wide ${band.cls}`}>{band.label}</div>
+          </div>
+          <div className="h-2.5 w-full rounded-full bg-gray-100 overflow-hidden mb-1">
+            <div className="h-full rounded-full" style={{ width: `${Math.round(sim * 100)}%`, background: band.bar }} />
+          </div>
+          <div className="roboto-slab-regular text-[11px] text-gray-500 mb-2">Tanimoto similarity {sim.toFixed(2)} · chemistry distance {dist.toFixed(2)}</div>
+          <p className={`roboto-slab-regular text-sm ${band.cls}`}>{band.note}</p>
+        </div>
+      </div>
+    );
+  }
+  // step 6 — chemistry-only report (deterministic)
+  const dist = (1 - sim);
+  return (
+    <div>
+      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 6 — Chemistry-only report</h2>
+      <div className="rounded-md border border-gray-200 bg-white p-5">
+        <div className="roboto-slab-medium text-base text-gray-900 mb-2">
+          {candidate.name}: chemistry-only prediction for an <span className="text-rose-700">unmeasured</span> candidate
+        </div>
+        <p className="roboto-slab-regular text-sm text-gray-700 mb-2">
+          <span className="text-gray-400">Mechanism (Broad Hub):</span> {candidate.moa || "unannotated"}{candidate.target ? ` · targets ${candidate.target.replace(/\|/g, ", ")}` : ""}.
+        </p>
+        <p className="roboto-slab-regular text-sm text-gray-700 mb-2">
+          <span className="text-gray-400">Chemistry placement:</span> nearest measured atlas drug is <strong>{near.display}</strong> (a {near.moa})
+          at Tanimoto {sim.toFixed(2)} (distance {dist.toFixed(2)}).
+        </p>
+        <p className={`roboto-slab-regular text-sm mb-2 ${band.cls}`}>
+          <span className="text-gray-400">Reliability:</span> {band.label} — {band.note}
+        </p>
+        <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-50 border border-gray-100 rounded px-3 py-2">
+          Honesty: <strong>{candidate.name}</strong> was not measured in the MegaFin atlas. No phenotype, cell-line response, or
+          fingerprint was observed — everything above is a chemistry-only placement against measured reference drugs. Run it
+          through the zebrafish screen to obtain a real read-out. 2D depiction is illustrative.
+        </p>
+      </div>
     </div>
   );
 }
