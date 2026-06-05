@@ -257,3 +257,11 @@ Whole demo switched off Tahoe-375 onto the **94-compound MegaFin zebrafish atlas
   **atomizes** into particles → a **sequencer** box shakes then fades → a 4×4 `.h5ad` corner (cells/genes
   labelled) **zooms out** through ~100×100 toward **32,000 × 32,000** with split-flap digit-flipping and
   a "processing & sequencing in progress" + growing size counter → **resolves into a heatmap** → Next.
+
+---
+
+## Build status — v9 (dark-mode light switch)
+☀️/🌙 toggle in the header (persisted to localStorage). Reuses the site's existing global `.dark`
+bg/border overrides (by putting `dark` on the page `<main>`), and adds a **POC-scoped** stylesheet under
+`.poc-dark` (text grays + accent-panel tints + keep the 2D RDKit depiction on white + invert the logo) so
+it does NOT touch globals.css or any other page. POC files only (PocClient.tsx).

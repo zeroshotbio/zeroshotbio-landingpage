@@ -149,11 +149,15 @@ export default function PocClient() {
   const [note, setNote] = useState("");
   const [step, setStep] = useState(1);
   const [revealed, setRevealed] = useState(false);
+  const [dark, setDark] = useState(false);
 
   useEffect(() => {
     fetch("/POC_workflow/drugs.json").then((r) => r.json()).then(setData).catch(() => setNote("Could not load demo data."));
     fetch("/POC_workflow/constellation.json").then((r) => r.json()).then(setCloud).catch(() => {});
+    try { if (localStorage.getItem("poc-theme") === "dark") setDark(true); } catch { /* no-op */ }
   }, []);
+  useEffect(() => { try { localStorage.setItem("poc-theme", dark ? "dark" : "light"); } catch { /* no-op */ } }, [dark]);
+  const themeClass = dark ? "dark poc-dark" : "";
 
   const sel = useMemo(() => data?.drugs.find((d) => d.id === selId) || null, [data, selId]);
   const honesty = data?.manifest.honesty_label ??
@@ -169,12 +173,17 @@ export default function PocClient() {
   function reset(p: Path) { setPath(p); setSelId(""); setNovel(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
 
   const Logo = (
-    <div className="w-full max-w-3xl mb-4">
+    <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
       <button onClick={() => reset(null)} title="Back to start" aria-label="Back to start"
         className="inline-flex items-center gap-2 group">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img src="/images/zeroshot_bio_gritty.png" alt="zeroshot bio" className="h-8 w-auto" />
         <span className="roboto-slab-medium text-sm text-gray-400 group-hover:text-gray-800 transition">workflow</span>
+      </button>
+      <button onClick={() => setDark((d) => !d)} title="Toggle dark mode" aria-label="Toggle dark mode"
+        className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-2.5 py-1 hover:bg-gray-100">
+        <span className="text-sm leading-none">{dark ? "🌙" : "☀️"}</span>
+        <span className="roboto-slab-regular text-[11px] text-gray-500">{dark ? "Dark" : "Light"}</span>
       </button>
     </div>
   );
@@ -185,11 +194,38 @@ export default function PocClient() {
       </div>
     </div>
   );
+  // POC-scoped dark theme (reuses the site's global `.dark` bg/border overrides; adds text + accent tints
+  // under `.poc-dark` so it doesn't touch globals.css or other pages).
+  const DarkStyle = (
+    <style dangerouslySetInnerHTML={{ __html: `
+      .poc-dark{background:#0a0a0a;color-scheme:dark}
+      .poc-dark .text-gray-900{color:#f1f5f9}.poc-dark .text-gray-800{color:#e2e8f0}
+      .poc-dark .text-gray-700{color:#cbd5e1}.poc-dark .text-gray-600{color:#aab4c2}
+      .poc-dark .text-gray-500{color:#94a3b8}.poc-dark .text-gray-400{color:#7c8595}
+      .poc-dark .text-gray-300{color:#5b6573}
+      .poc-dark .bg-amber-50{background:#3a2e12}.poc-dark .text-amber-800{color:#fcd34d}
+      .poc-dark .border-amber-200,.poc-dark .border-amber-100{border-color:#5a4a1a}
+      .poc-dark .bg-violet-50,.poc-dark .bg-violet-50\\/40{background:#241b3a}
+      .poc-dark .text-violet-900,.poc-dark .text-violet-800,.poc-dark .text-violet-700{color:#c4b5fd}
+      .poc-dark .border-violet-200,.poc-dark .border-violet-100{border-color:#3b2d63}
+      .poc-dark .bg-teal-50,.poc-dark .bg-teal-50\\/40,.poc-dark .bg-teal-50\\/60{background:#0c2b2b}
+      .poc-dark .text-teal-900,.poc-dark .text-teal-800,.poc-dark .text-teal-700{color:#5eead4}
+      .poc-dark .border-teal-200,.poc-dark .border-teal-100{border-color:#155e5e}
+      .poc-dark .bg-sky-50,.poc-dark .bg-sky-50\\/60{background:#0c2433}
+      .poc-dark .text-sky-900,.poc-dark .text-sky-300{color:#7dd3fc}.poc-dark .border-sky-200{border-color:#155e75}
+      .poc-dark .bg-emerald-50{background:#0c2b1d}.poc-dark .text-emerald-800,.poc-dark .text-emerald-700{color:#6ee7b7}
+      .poc-dark .border-emerald-100,.poc-dark .border-emerald-200{border-color:#14532d}
+      .poc-dark .bg-rose-50{background:#3a1620}.poc-dark .text-rose-800,.poc-dark .text-rose-700{color:#fda4af}
+      .poc-dark img[alt="zeroshot bio"]{filter:invert(1) hue-rotate(180deg)}
+      .poc-dark [aria-label^="2D structure"]{background:#fff;border-radius:6px;padding:4px}
+    ` }} />
+  );
 
   // ---- intro: choose a path ----
   if (!path) {
     return (
-      <main className="min-h-screen w-full flex flex-col items-center px-6 py-10">
+      <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
+        {DarkStyle}
         {Logo}
         {Banner}
         <div className="w-full max-w-3xl">
@@ -216,7 +252,8 @@ export default function PocClient() {
   }
 
   return (
-    <main className="min-h-screen w-full flex flex-col items-center px-6 py-10">
+    <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
+      {DarkStyle}
       {Logo}
       {Banner}
       <div className="w-full max-w-3xl">
