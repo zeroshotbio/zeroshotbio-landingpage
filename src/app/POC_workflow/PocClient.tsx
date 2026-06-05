@@ -423,17 +423,6 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
               className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700 whitespace-nowrap">Analyze ▸</button>
           </div>
         </label>
-        {(novel || sel?.is_guest) && (
-          <div className="rounded-md border border-violet-200 bg-violet-50 px-3 py-2">
-            <p className="roboto-slab-regular text-[11px] text-violet-800">
-              {sel?.is_guest && !novel ? (
-                <><strong>Predicted profile.</strong> {sel.display_name} isn&apos;t in the measured 94-atlas — its whole-organism profile is <em>interpolated</em> from its nearest atlas neighbors and informed by the literature dossier below. Not measured.</>
-              ) : (
-                <><strong>Interpolated candidate.</strong> This profile is <em>predicted</em> for a novel point by interpolation from its nearest atlas compounds (anchor: {sel?.display_name}). Not a measured compound.</>
-              )}
-            </p>
-          </div>
-        )}
         <div className="flex flex-col sm:flex-row gap-2">
           <button onClick={randomRepurposing}
             className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100">
@@ -446,12 +435,13 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
         </div>
 
         {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
-        {detection && <DetectionBanner detection={detection} sel={sel} />}
+        {detection && detection !== "novel" && <DetectionBanner detection={detection} sel={sel} />}
 
         <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />
 
-        {detection === "repurposing" && sel && <AgenticResearch sel={sel} />}
-        {sel && <StructureCard sel={sel} />}
+        {sel && <StructureCard sel={sel} novel={novel} smiles={smiles} />}
+        {/* literature research only for real, named compounds — a novel structure has nothing to look up */}
+        {sel && !novel && <AgenticResearch sel={sel} />}
       </div>
     </div>
   );
@@ -708,8 +698,34 @@ function InterpolationHeatmap({ data, cloud, sel, novel }: { data: Data | null; 
   );
 }
 
+/* For a truly novel structure there is no measured identity — no name, target, MoA, or PubChem entry.
+   The only thing we can show is the submitted SMILES and the nearest measured analog (for reference). */
+function NovelStructureCard({ sel, smiles }: { sel: Drug; smiles?: string }) {
+  const ns = sel.step3_embedding.neighbors;
+  const sim = Math.round(Math.min(0.99, ns[0]?.similarity ?? 0) * 100);
+  return (
+    <div className="mt-2 rounded-md border border-violet-200 bg-white p-4">
+      <div className="roboto-slab-medium text-sm text-violet-900 mb-2">Submitted structure — novel / unknown</div>
+      <div className="rounded bg-gray-50 border border-gray-200 px-3 py-2 mb-3 font-mono text-[11px] text-gray-700 break-all">{smiles || "(generated SMILES)"}</div>
+      <p className="roboto-slab-regular text-xs text-gray-600 mb-3">
+        Not in any database — no name, target, mechanism, or PubChem entry. Nothing here is &ldquo;known&rdquo; about the molecule itself.
+        Everything downstream is inferred purely from <strong>where it lands in the atlas</strong> — its {ns.length} nearest measured
+        neighbors (kNN interpolation), nothing more.
+      </p>
+      <div className="rounded-md border border-gray-100 bg-gray-50 p-3">
+        <div className="roboto-slab-medium text-xs text-gray-500 mb-2">
+          Nearest measured analog — {sel.display_name} <span className="text-gray-400">· {sim}% similarity, shown for reference only</span>
+        </div>
+        <div className="flex items-center justify-center" style={{ minHeight: 200 }}
+          aria-label={`2D structure of nearest analog ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
+      </div>
+    </div>
+  );
+}
+
 /* 2D depiction + lightweight self-contained 3D conformer, shown side-by-side. */
-function StructureCard({ sel }: { sel: Drug }) {
+function StructureCard({ sel, novel, smiles }: { sel: Drug; novel?: boolean; smiles?: string }) {
+  if (novel) return <NovelStructureCard sel={sel} smiles={smiles} />;
   return (
     <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
