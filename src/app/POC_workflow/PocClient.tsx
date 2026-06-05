@@ -79,7 +79,7 @@ function organColor(t: number): string {
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
-/* ---- lazy-load 3Dmol.js from CDN (avoids touching package.json) ---- */
+/* ---- lazy-load 3Dmol.js — self-hosted from our own origin (no third-party dependency) ---- */
 let _3dmolPromise: Promise<any> | null = null;
 function load3Dmol(): Promise<any> {
   if (typeof window === "undefined") return Promise.reject(new Error("no window"));
@@ -88,7 +88,7 @@ function load3Dmol(): Promise<any> {
   if (_3dmolPromise) return _3dmolPromise;
   _3dmolPromise = new Promise((resolve, reject) => {
     const s = document.createElement("script");
-    s.src = "https://3Dmol.org/build/3Dmol-min.js"; s.async = true;
+    s.src = "/POC_workflow/lib/3Dmol-min.js"; s.async = true;
     s.onload = () => resolve(w.$3Dmol); s.onerror = () => reject(new Error("3Dmol load failed"));
     document.head.appendChild(s);
   });
@@ -274,26 +274,25 @@ function Step1({ data, sel, selId, loadDrug, smiles, setSmiles, loadFromSmiles, 
   );
 }
 
-/* 2D depiction ⇄ interactive 3D (molecule conformer + verified target-complex via 3Dmol.js) */
+/* 2D depiction + interactive 3D shown side-by-side (3D from self-hosted 3Dmol.js + local PDB) */
 function StructureCard({ sel }: { sel: Drug }) {
-  const has3d = !!sel.step1_structure.mol3d;
-  const [mode, setMode] = useState<"2d" | "3d">("2d");
   return (
-    <div className="mt-2">
-      <div className="inline-flex rounded-md border border-gray-300 overflow-hidden mb-2">
-        <button onClick={() => setMode("2d")} className={`roboto-slab-regular text-xs px-3 py-1 ${mode === "2d" ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"}`}>2D structure</button>
-        <button onClick={() => setMode("3d")} disabled={!has3d}
-          className={`roboto-slab-regular text-xs px-3 py-1 ${mode === "3d" ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"} disabled:text-gray-300`}>3D / target</button>
-      </div>
-      <div className="rounded-md border border-gray-200 bg-white p-4 flex flex-col items-center justify-center" style={{ minHeight: 300 }}>
-        {mode === "2d"
-          ? <div aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
-          : <Mol3DViewer sel={sel} />}
-        <div className="text-center mt-3">
-          <div className="roboto-slab-medium text-gray-800">{sel.display_name}</div>
-          <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
-          {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
+    <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="flex flex-col items-center">
+          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">2D structure</div>
+          <div className="flex-1 flex items-center justify-center" style={{ minHeight: 260 }}
+            aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
         </div>
+        <div className="flex flex-col items-center border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 pt-4 md:pt-0">
+          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">3D {sel.step1_structure.target_pdb ? "structure / target complex" : "conformer"}</div>
+          <Mol3DViewer sel={sel} />
+        </div>
+      </div>
+      <div className="text-center mt-3 border-t border-gray-100 pt-3">
+        <div className="roboto-slab-medium text-gray-800">{sel.display_name}</div>
+        <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
+        {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
       </div>
     </div>
   );
@@ -318,17 +317,18 @@ function Mol3DViewer({ sel }: { sel: Drug }) {
         v.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.23 } });
         v.zoomTo(); v.render(); setStatus("");
       } else if (tpdb) {
-        setStatus(`loading ${tpdb.pdb} from RCSB…`);
-        $3Dmol.download(`pdb:${tpdb.pdb}`, v, {}, () => {
+        setStatus(`loading ${tpdb.pdb}…`);
+        fetch(`/POC_workflow/pdb/${tpdb.pdb}.pdb`).then((r) => r.text()).then((txt) => {
           if (cancelled) return;
+          v.addModel(txt, "pdb");
           v.setStyle({}, { cartoon: { color: "spectrum", opacity: 0.65 } });
           v.addStyle({ resn: tpdb.ligand }, { stick: { colorscheme: "magentaCarbon", radius: 0.3 } });
           v.addStyle({ resn: tpdb.ligand }, { sphere: { scale: 0.28 } });
           try { v.zoomTo({ resn: tpdb.ligand }); } catch { v.zoomTo(); }
           v.render(); setStatus("");
-        });
+        }).catch(() => setStatus(`could not load ${tpdb.pdb}`));
       }
-    }).catch(() => setStatus("could not load 3D viewer (offline?)"));
+    }).catch(() => setStatus("could not load 3D viewer"));
     return () => { cancelled = true; };
   }, [sel.id, mode, tpdb]);
   return (
