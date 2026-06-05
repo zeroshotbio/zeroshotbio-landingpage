@@ -304,18 +304,37 @@ function Mol3DViewer({ sel }: { sel: Drug }) {
   const tpdb = sel.step1_structure.target_pdb;
   const [mode, setMode] = useState<"molecule" | "complex">("molecule");
   const [status, setStatus] = useState("loading 3D viewer…");
+
+  // keep the WebGL canvas sized to its (responsive) container — fixes the blank-canvas-at-0px case
+  useEffect(() => {
+    const el = host.current; if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => {
+      const v = viewer.current; if (!v) return;
+      try { v.resize(); v.render(); } catch { /* viewer not ready */ }
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
     setStatus("loading 3D viewer…");
+    const draw = (v: any) => {
+      // force the canvas to match the laid-out container, then render (twice, across frames)
+      try { v.resize(); } catch { /* noop */ }
+      v.render();
+      requestAnimationFrame(() => { if (!cancelled) { try { v.resize(); } catch { /* noop */ } v.render(); } });
+      setTimeout(() => { if (!cancelled) { try { v.resize(); } catch { /* noop */ } v.render(); } }, 250);
+    };
     load3Dmol().then(($3Dmol) => {
       if (cancelled || !host.current) return;
       if (!viewer.current) viewer.current = $3Dmol.createViewer(host.current, { backgroundColor: "white" });
       const v = viewer.current; v.clear();
       if (mode === "molecule") {
         if (!sel.step1_structure.mol3d) { setStatus("3D conformer unavailable"); return; }
-        v.addModel(sel.step1_structure.mol3d, "mol");
+        v.addModel(sel.step1_structure.mol3d, "sdf"); // MOL/V2000 block is read by the sdf parser
         v.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.23 } });
-        v.zoomTo(); v.render(); setStatus("");
+        v.zoomTo(); setStatus(""); draw(v);
       } else if (tpdb) {
         setStatus(`loading ${tpdb.pdb}…`);
         fetch(`/POC_workflow/pdb/${tpdb.pdb}.pdb`).then((r) => r.text()).then((txt) => {
@@ -325,22 +344,23 @@ function Mol3DViewer({ sel }: { sel: Drug }) {
           v.addStyle({ resn: tpdb.ligand }, { stick: { colorscheme: "magentaCarbon", radius: 0.3 } });
           v.addStyle({ resn: tpdb.ligand }, { sphere: { scale: 0.28 } });
           try { v.zoomTo({ resn: tpdb.ligand }); } catch { v.zoomTo(); }
-          v.render(); setStatus("");
+          setStatus(""); draw(v);
         }).catch(() => setStatus(`could not load ${tpdb.pdb}`));
       }
     }).catch(() => setStatus("could not load 3D viewer"));
     return () => { cancelled = true; };
   }, [sel.id, mode, tpdb]);
   return (
-    <div className="w-full">
+    <div className="w-full flex flex-col items-center">
       {tpdb && (
         <div className="inline-flex rounded-md border border-gray-300 overflow-hidden mb-2">
           <button onClick={() => setMode("molecule")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "molecule" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Molecule</button>
           <button onClick={() => setMode("complex")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "complex" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Target complex</button>
         </div>
       )}
-      <div ref={host} className="relative mx-auto rounded border border-gray-100" style={{ width: "100%", maxWidth: 380, height: 260 }}>
-        {status && <div className="absolute inset-0 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none">{status}</div>}
+      <div ref={host} className="relative rounded border border-gray-100 bg-white"
+        style={{ width: "100%", maxWidth: 360, height: 280, minHeight: 280, overflow: "hidden" }}>
+        {status && <div className="absolute inset-0 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none z-10">{status}</div>}
       </div>
       <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2 text-center">
         {mode === "complex" && tpdb
