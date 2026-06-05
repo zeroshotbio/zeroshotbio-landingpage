@@ -244,3 +244,16 @@ Whole demo switched off Tahoe-375 onto the **94-compound MegaFin zebrafish atlas
   (`GUEST_PROGRAMS`, since the agentic step tells us the mechanism) instead of blind chemistry-nearest —
   so Doxorubicin reads as p53/DNA-damage (phenoNN Rucaparib), not steroid. Chemistry route stays real
   (honestly shows chemistry≠mechanism). Quick-Start guest = Doxorubicin.
+
+---
+
+## Build status — v8 (self-contained 3D viewer + cinematic Step 2)
+- **3D viewer rewritten with NO external library** (3Dmol.js dropped; vendored lib removed). A
+  self-contained renderer parses the embedded MOL/V2000 conformer (and the local PDB → Cα backbone
+  trace + ligand) and draws **ball-and-stick on a 2D canvas** with its own rotation math (auto-spin +
+  drag). Molecule/Target-complex toggle kept; PDBs still served locally. Can't fail to load — no WebGL.
+- **Step 2 is now a cinematic** (single canvas, stage machine): zebrafish + the drug's real conformer
+  side-by-side with an obvious "Dose → run exposure" button → drug shrinks and strikes the fish → fish
+  **atomizes** into particles → a **sequencer** box shakes then fades → a 4×4 `.h5ad` corner (cells/genes
+  labelled) **zooms out** through ~100×100 toward **32,000 × 32,000** with split-flap digit-flipping and
+  a "processing & sequencing in progress" + growing size counter → **resolves into a heatmap** → Next.

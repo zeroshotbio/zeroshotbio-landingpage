@@ -84,22 +84,6 @@ function organColor(t: number): string {
   return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
 }
 
-/* ---- lazy-load 3Dmol.js — self-hosted from our own origin (no third-party dependency) ---- */
-let _3dmolPromise: Promise<any> | null = null;
-function load3Dmol(): Promise<any> {
-  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  const w = window as any;
-  if (w.$3Dmol) return Promise.resolve(w.$3Dmol);
-  if (_3dmolPromise) return _3dmolPromise;
-  _3dmolPromise = new Promise((resolve, reject) => {
-    const s = document.createElement("script");
-    s.src = "/POC_workflow/lib/3Dmol-min.js"; s.async = true;
-    s.onload = () => resolve(w.$3Dmol); s.onerror = () => reject(new Error("3Dmol load failed"));
-    document.head.appendChild(s);
-  });
-  return _3dmolPromise;
-}
-
 /* ---- zebrafish anatomy: organ regions keyed by system; fill by intensity (illustrative stand-in) ---- */
 const FISH_ORGANS: { sys: string; el: "ellipse" | "rect" | "path"; attrs: any; label: [number, number] }[] = [
   { sys: "Brain / CNS", el: "ellipse", attrs: { cx: 92, cy: 84, rx: 19, ry: 14 }, label: [92, 84] },
@@ -459,7 +443,7 @@ function NovelGenerator({ data, cloud, chooseCandidate }: { data: Data | null; c
   );
 }
 
-/* 2D depiction + interactive 3D shown side-by-side (3D from self-hosted 3Dmol.js + local PDB) */
+/* 2D depiction + interactive 3D shown side-by-side (3D = self-contained canvas renderer, no library) */
 function StructureCard({ sel }: { sel: Drug }) {
   return (
     <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
@@ -483,58 +467,133 @@ function StructureCard({ sel }: { sel: Drug }) {
   );
 }
 
+/* ---- self-contained 3D molecular viewer: parses the embedded conformer / PDB and renders
+   ball-and-stick on a 2D canvas with its own rotation. No WebGL, no external library. ---- */
+const ELEM: Record<string, [string, number]> = {
+  H: ["#cfd4da", 0.30], C: ["#404652", 0.40], N: ["#3b5bdb", 0.40], O: ["#e03131", 0.40],
+  S: ["#e0b020", 0.52], P: ["#e07b1a", 0.50], F: ["#37b24d", 0.36], CL: ["#2f9e44", 0.52],
+  BR: ["#a0522d", 0.58], I: ["#9c36b5", 0.64], NA: ["#7048e8", 0.5], FE: ["#d9480f", 0.5],
+};
+const elemInfo = (el: string) => ELEM[el.toUpperCase()] || ["#9c6ade", 0.44];
+type V3 = { x: number; y: number; z: number };
+function rotV(p: V3, rx: number, ry: number): V3 {
+  const x1 = p.x * Math.cos(ry) + p.z * Math.sin(ry), z1 = -p.x * Math.sin(ry) + p.z * Math.cos(ry);
+  const y2 = p.y * Math.cos(rx) - z1 * Math.sin(rx), z2 = p.y * Math.sin(rx) + z1 * Math.cos(rx);
+  return { x: x1, y: y2, z: z2 };
+}
+function centerScale(pts: V3[]) {
+  const n = pts.length || 1; let cx = 0, cy = 0, cz = 0;
+  for (const p of pts) { cx += p.x; cy += p.y; cz += p.z; } cx /= n; cy /= n; cz /= n;
+  let r = 0.001; for (const p of pts) { const dx = p.x - cx, dy = p.y - cy, dz = p.z - cz; r = Math.max(r, Math.hypot(dx, dy, dz)); }
+  return { c: { x: cx, y: cy, z: cz }, s: 1 / r };
+}
+function parseMolBlock(mol: string) {
+  const L = mol.split("\n"); if (L.length < 4) return null;
+  const na = parseInt(L[3].slice(0, 3)), nb = parseInt(L[3].slice(3, 6)); if (!na) return null;
+  const atoms: (V3 & { el: string })[] = [];
+  for (let i = 0; i < na; i++) { const r = L[4 + i] || ""; atoms.push({ x: +r.slice(0, 10), y: +r.slice(10, 20), z: +r.slice(20, 30), el: (r.slice(31, 34) || "C").trim() }); }
+  const bonds: [number, number][] = [];
+  for (let i = 0; i < nb; i++) { const r = L[4 + na + i] || ""; bonds.push([parseInt(r.slice(0, 3)) - 1, parseInt(r.slice(3, 6)) - 1]); }
+  const { c, s } = centerScale(atoms);
+  atoms.forEach((a) => { a.x = (a.x - c.x) * s; a.y = (a.y - c.y) * s; a.z = (a.z - c.z) * s; });
+  return { kind: "mol" as const, atoms, bonds };
+}
+function parsePdbScene(txt: string, ligand: string) {
+  const chains: Record<string, V3[]> = {}; const lig: (V3 & { el: string })[] = [];
+  for (const r of txt.split("\n")) {
+    const rec = r.slice(0, 6);
+    if (rec === "ATOM  ") { if (r.slice(12, 16).trim() === "CA") { const ch = r[21]; (chains[ch] = chains[ch] || []).push({ x: +r.slice(30, 38), y: +r.slice(38, 46), z: +r.slice(46, 54) }); } }
+    else if (rec === "HETATM" && r.slice(17, 20).trim() === ligand) { lig.push({ x: +r.slice(30, 38), y: +r.slice(38, 46), z: +r.slice(46, 54), el: (r.slice(76, 78).trim() || r.slice(12, 14).trim().replace(/[0-9]/g, "") || "C") }); }
+  }
+  const traces = Object.values(chains); const all: V3[] = [...lig, ...traces.flat()];
+  if (!all.length) return null;
+  const { c, s } = centerScale(all);
+  const ap = (p: V3) => { p.x = (p.x - c.x) * s; p.y = (p.y - c.y) * s; p.z = (p.z - c.z) * s; };
+  traces.forEach((t) => t.forEach(ap)); lig.forEach(ap);
+  const lb: [number, number][] = [];
+  for (let i = 0; i < lig.length; i++) for (let j = i + 1; j < lig.length; j++) { const d = Math.hypot(lig[i].x - lig[j].x, lig[i].y - lig[j].y, lig[i].z - lig[j].z); if (d < 1.9 * s) lb.push([i, j]); }
+  return { kind: "pdb" as const, traces, lig, lb };
+}
+type MolScene = NonNullable<ReturnType<typeof parseMolBlock>>;
+type PdbScene = NonNullable<ReturnType<typeof parsePdbScene>>;
+function drawScene(ctx: CanvasRenderingContext2D, W: number, H: number, sc: MolScene | PdbScene, rx: number, ry: number) {
+  const S = Math.min(W, H) * 0.4, cx = W / 2, cy = H / 2;
+  const proj = (p: V3) => { const r = rotV(p, rx, ry); return { px: cx + r.x * S, py: cy - r.y * S, z: r.z }; };
+  if (sc.kind === "mol") {
+    const P = sc.atoms.map(proj);
+    ctx.lineCap = "round";
+    for (const [i, j] of sc.bonds) { // bonds as depth-shaded sticks
+      if (P[i] === undefined || P[j] === undefined) continue;
+      const zc = (P[i].z + P[j].z) / 2, sh = 0.55 + 0.45 * (zc + 1) / 2;
+      ctx.strokeStyle = `rgba(120,128,140,${0.55 + 0.4 * sh})`; ctx.lineWidth = Math.max(1.5, S * 0.05);
+      ctx.beginPath(); ctx.moveTo(P[i].px, P[i].py); ctx.lineTo(P[j].px, P[j].py); ctx.stroke();
+    }
+    sc.atoms.map((a, i) => ({ a, p: P[i] })).sort((u, v) => u.p.z - v.p.z).forEach(({ a, p }) => {
+      const [col, rad] = elemInfo(a.el); if (a.el === "H") return; // hide H for clarity
+      const sh = 0.45 + 0.55 * (p.z + 1) / 2, R = Math.max(2, rad * S * 0.42);
+      const g = ctx.createRadialGradient(p.px - R * 0.3, p.py - R * 0.3, R * 0.2, p.px, p.py, R);
+      g.addColorStop(0, mix(col, "#ffffff", 0.45 * sh)); g.addColorStop(1, mix(col, "#000000", 0.35 * (1 - sh)));
+      ctx.fillStyle = g; ctx.beginPath(); ctx.arc(p.px, p.py, R, 0, 7); ctx.fill();
+    });
+  } else {
+    for (const t of sc.traces) { // Cα backbone trace
+      ctx.strokeStyle = "rgba(45,160,170,0.7)"; ctx.lineWidth = 1.6; ctx.beginPath();
+      t.forEach((p, k) => { const q = proj(p); if (k === 0) ctx.moveTo(q.px, q.py); else ctx.lineTo(q.px, q.py); }); ctx.stroke();
+    }
+    const LP = sc.lig.map(proj);
+    for (const [i, j] of sc.lb) { ctx.strokeStyle = "#c026d3"; ctx.lineWidth = Math.max(2, S * 0.045); ctx.lineCap = "round"; ctx.beginPath(); ctx.moveTo(LP[i].px, LP[i].py); ctx.lineTo(LP[j].px, LP[j].py); ctx.stroke(); }
+    sc.lig.map((a, i) => ({ a, p: LP[i] })).sort((u, v) => u.p.z - v.p.z).forEach(({ a, p }) => {
+      const R = Math.max(2.5, elemInfo(a.el)[1] * S * 0.4); ctx.fillStyle = a.el.toUpperCase() === "C" ? "#a21caf" : elemInfo(a.el)[0];
+      ctx.beginPath(); ctx.arc(p.px, p.py, R, 0, 7); ctx.fill();
+    });
+  }
+}
+function mix(a: string, b: string, t: number) {
+  const pa = [parseInt(a.slice(1, 3), 16), parseInt(a.slice(3, 5), 16), parseInt(a.slice(5, 7), 16)];
+  const pb = [parseInt(b.slice(1, 3), 16), parseInt(b.slice(3, 5), 16), parseInt(b.slice(5, 7), 16)];
+  return `rgb(${pa.map((x, i) => Math.round(x + (pb[i] - x) * t)).join(",")})`;
+}
 function Mol3DViewer({ sel }: { sel: Drug }) {
-  const host = useRef<HTMLDivElement>(null);
-  const viewer = useRef<any>(null);
+  const ref = useRef<HTMLCanvasElement>(null);
   const tpdb = sel.step1_structure.target_pdb;
   const [mode, setMode] = useState<"molecule" | "complex">("molecule");
-  const [status, setStatus] = useState("loading 3D viewer…");
-
-  // keep the WebGL canvas sized to its (responsive) container — fixes the blank-canvas-at-0px case
-  useEffect(() => {
-    const el = host.current; if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => {
-      const v = viewer.current; if (!v) return;
-      try { v.resize(); v.render(); } catch { /* viewer not ready */ }
-    });
-    ro.observe(el);
-    return () => ro.disconnect();
-  }, []);
+  const [status, setStatus] = useState("");
+  const rot = useRef({ x: 0.35, y: 0, auto: true });
+  const drag = useRef<{ x: number; y: number } | null>(null);
+  const scene = useRef<MolScene | PdbScene | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
-    setStatus("loading 3D viewer…");
-    const draw = (v: any) => {
-      // force the canvas to match the laid-out container, then render (twice, across frames)
-      try { v.resize(); } catch { /* noop */ }
-      v.render();
-      requestAnimationFrame(() => { if (!cancelled) { try { v.resize(); } catch { /* noop */ } v.render(); } });
-      setTimeout(() => { if (!cancelled) { try { v.resize(); } catch { /* noop */ } v.render(); } }, 250);
-    };
-    load3Dmol().then(($3Dmol) => {
-      if (cancelled || !host.current) return;
-      if (!viewer.current) viewer.current = $3Dmol.createViewer(host.current, { backgroundColor: "white" });
-      const v = viewer.current; v.clear();
-      if (mode === "molecule") {
-        if (!sel.step1_structure.mol3d) { setStatus("3D conformer unavailable"); return; }
-        v.addModel(sel.step1_structure.mol3d, "sdf"); // MOL/V2000 block is read by the sdf parser
-        v.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.23 } });
-        v.zoomTo(); setStatus(""); draw(v);
-      } else if (tpdb) {
-        setStatus(`loading ${tpdb.pdb}…`);
-        fetch(`/POC_workflow/pdb/${tpdb.pdb}.pdb`).then((r) => r.text()).then((txt) => {
-          if (cancelled) return;
-          v.addModel(txt, "pdb");
-          v.setStyle({}, { cartoon: { color: "spectrum", opacity: 0.65 } });
-          v.addStyle({ resn: tpdb.ligand }, { stick: { colorscheme: "magentaCarbon", radius: 0.3 } });
-          v.addStyle({ resn: tpdb.ligand }, { sphere: { scale: 0.28 } });
-          try { v.zoomTo({ resn: tpdb.ligand }); } catch { v.zoomTo(); }
-          setStatus(""); draw(v);
-        }).catch(() => setStatus(`could not load ${tpdb.pdb}`));
-      }
-    }).catch(() => setStatus("could not load 3D viewer"));
+    let cancelled = false; scene.current = null;
+    if (mode === "molecule") {
+      const m = sel.step1_structure.mol3d ? parseMolBlock(sel.step1_structure.mol3d) : null;
+      scene.current = m; setStatus(m ? "" : "3D conformer unavailable");
+    } else if (tpdb) {
+      setStatus(`loading ${tpdb.pdb}…`);
+      fetch(`/POC_workflow/pdb/${tpdb.pdb}.pdb`).then((r) => r.text()).then((txt) => {
+        if (cancelled) return; const s = parsePdbScene(txt, tpdb.ligand); scene.current = s; setStatus(s ? "" : `could not parse ${tpdb.pdb}`);
+      }).catch(() => setStatus(`could not load ${tpdb.pdb}`));
+    }
+    rot.current.auto = true;
     return () => { cancelled = true; };
   }, [sel.id, mode, tpdb]);
+
+  useEffect(() => {
+    const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
+    let raf = 0;
+    const frame = () => {
+      ctx.clearRect(0, 0, cv.width, cv.height);
+      const sc = scene.current;
+      if (sc) { if (rot.current.auto) rot.current.y += 0.009; drawScene(ctx, cv.width, cv.height, sc, rot.current.x, rot.current.y); }
+      raf = requestAnimationFrame(frame);
+    };
+    raf = requestAnimationFrame(frame);
+    return () => cancelAnimationFrame(raf);
+  }, []);
+
+  const onDown = (e: React.PointerEvent) => { drag.current = { x: e.clientX, y: e.clientY }; rot.current.auto = false; (e.target as Element).setPointerCapture?.(e.pointerId); };
+  const onMove = (e: React.PointerEvent) => { if (!drag.current) return; rot.current.y += (e.clientX - drag.current.x) * 0.012; rot.current.x += (e.clientY - drag.current.y) * 0.012; drag.current = { x: e.clientX, y: e.clientY }; };
+  const onUp = () => { drag.current = null; };
+
   return (
     <div className="w-full flex flex-col items-center">
       {tpdb && (
@@ -543,14 +602,15 @@ function Mol3DViewer({ sel }: { sel: Drug }) {
           <button onClick={() => setMode("complex")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "complex" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Target complex</button>
         </div>
       )}
-      <div ref={host} className="relative rounded border border-gray-100 bg-white"
-        style={{ width: "100%", maxWidth: 360, height: 280, minHeight: 280, overflow: "hidden" }}>
-        {status && <div className="absolute inset-0 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none z-10">{status}</div>}
+      <div className="relative rounded border border-gray-100 bg-white" style={{ width: "100%", maxWidth: 360 }}>
+        <canvas ref={ref} width={360} height={280} className="block w-full touch-none" style={{ cursor: "grab" }}
+          onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={onUp} />
+        {status && <div className="absolute inset-0 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none">{status}</div>}
       </div>
       <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2 text-center">
         {mode === "complex" && tpdb
-          ? <>Experimental structure <strong>PDB {tpdb.pdb}</strong> — {sel.display_name} (magenta) bound to {tpdb.target}. Drag to rotate, scroll to zoom.</>
-          : <>3D conformer (RDKit ETKDG, illustrative geometry). Drag to rotate, scroll to zoom.{tpdb ? " Switch to “Target complex” for the binding interface." : ""}</>}
+          ? <>Experimental structure <strong>PDB {tpdb.pdb}</strong> — {sel.display_name} (magenta) bound to {tpdb.target}. Auto-rotates; drag to spin.</>
+          : <>3D conformer (RDKit ETKDG, illustrative geometry). Auto-rotates; drag to spin.{tpdb ? " Switch to “Target complex” for the binding interface." : ""}</>}
       </p>
     </div>
   );
@@ -564,34 +624,33 @@ function heatColor(t: number) { // viridis-ish: deep indigo → teal → yellow
   return `rgb(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)})`;
 }
 function Step2({ sel, novel, onNext }: { sel: Drug; novel?: boolean; onNext: () => void }) {
-  const [phase, setPhase] = useState<"running" | "ready" | "resolved">("running");
-  useEffect(() => { setPhase("running"); }, [sel.id]); // restart for a new compound
+  const [stage, setStage] = useState<"ready" | "playing" | "resolved">("ready");
+  useEffect(() => { setStage("ready"); }, [sel.id]);
   return (
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-3">Step 2 — Whole-organism exposure</h2>
-      <div className="mx-auto" style={{ maxWidth: 520 }}>
-        <H5adBoard seed={sel.id} phase={phase} onDone={() => setPhase((p) => (p === "running" ? "ready" : p))} />
+      <div className="mx-auto relative" style={{ maxWidth: 560 }}>
+        <ExposureCinema sel={sel} playing={stage !== "ready"} onResolved={() => setStage("resolved")} />
+        {stage === "ready" && (
+          <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 pointer-events-none">
+            <button onClick={() => setStage("playing")}
+              className="pointer-events-auto roboto-slab-medium rounded-full border border-teal-500 bg-teal-600 text-white px-6 py-2.5 text-sm shadow-lg hover:bg-teal-700 animate-pulse">
+              ▶ Dose {sel.display_name} → run exposure
+            </button>
+          </div>
+        )}
       </div>
       <div className="mt-4 text-center">
-        {phase === "running" && (
-          <p className="roboto-slab-regular text-sm text-gray-500">Acquiring single-cell readout… <span className="text-gray-400">(cells × genes)</span></p>
+        {stage === "ready" && (
+          <p className="roboto-slab-regular text-sm text-gray-500">Click to dose the zebrafish with {sel.display_name} and run a whole-organism single-cell readout.</p>
         )}
-        {phase === "ready" && (
-          <>
-            <p className="roboto-slab-medium text-sm text-gray-700">That&apos;s what an scRNA-seq run would have been producing.</p>
-            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">≈ 1 month from submission in the real pipeline — dose → incubate → dissociate → sequence → QC.</p>
-            <button onClick={() => setPhase("resolved")}
-              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-5 py-2 text-sm hover:bg-gray-700">
-              View mock, generated pseudo-results for this demo ▸
-            </button>
-          </>
+        {stage === "playing" && (
+          <p className="roboto-slab-regular text-xs text-gray-400">That&apos;s what an scRNA-seq run would be doing — ≈ 1 month from submission in the real pipeline.</p>
         )}
-        {phase === "resolved" && (
+        {stage === "resolved" && (
           <>
-            <p className="roboto-slab-medium text-sm text-gray-700">Pseudo-results ready{novel ? " (interpolated)" : ""}.</p>
-            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">
-              A 100×100 slice of the {novel ? "interpolated" : "synthesized"} cell×gene expression matrix — illustrative stand-in for the MegaFin readout.
-            </p>
+            <p className="roboto-slab-medium text-sm text-gray-700">Pseudo-results ready{novel ? " (interpolated)" : ""} — a {novel ? "interpolated" : "synthesized"} cell×gene expression matrix.</p>
+            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">Illustrative stand-in for the MegaFin readout (the real dataset isn&apos;t wired into this preview).</p>
             <button onClick={onNext}
               className="roboto-slab-medium rounded-md border border-teal-700 bg-teal-700 text-white px-5 py-2 text-sm hover:bg-teal-800">
               Next — see the perturbation results in the fingerprint section ▸
@@ -603,78 +662,120 @@ function Step2({ sel, novel, onNext }: { sel: Drug; novel?: boolean; onNext: () 
   );
 }
 
-/* 100×100 split-flap matrix (like an old train-station board) that resolves on final numbers, then a heatmap. */
-function H5adBoard({ seed, phase, onDone }: { seed: string; phase: "running" | "ready" | "resolved"; onDone: () => void }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const ROWS = 100, COLS = 100, DUR = 5000;
-  const data = useMemo(() => {
-    let h = 2166136261 >>> 0;
-    for (let i = 0; i < seed.length; i++) { h ^= seed.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-    const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return (h >>> 0) / 4294967296; };
-    const finalv = new Uint8Array(ROWS * COLS), heat = new Float32Array(ROWS * COLS), lockT = new Float32Array(ROWS * COLS);
-    const col = new Float32Array(COLS); for (let c = 0; c < COLS; c++) col[c] = rnd();
-    for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-      const i = r * COLS + c, base = col[c] * 0.7 + rnd() * 0.3;
-      finalv[i] = Math.min(9, Math.floor(base * 9.999));
-      heat[i] = Math.max(0, Math.min(1, base + (rnd() - 0.5) * 0.4));
-      lockT[i] = (r + c) / (ROWS + COLS) * 0.8 + rnd() * 0.2;
-    }
-    return { finalv, heat, lockT };
-  }, [seed]);
+/* zebrafish on canvas */
+function drawFish(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, alpha: number) {
+  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(cx, cy);
+  ctx.fillStyle = "#cfe8ef"; ctx.strokeStyle = "#7fb4c2"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.ellipse(0, 0, 46 * s, 20 * s, 0, 0, 7); ctx.fill(); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(40 * s, 0); ctx.lineTo(64 * s, -14 * s); ctx.lineTo(60 * s, 0); ctx.lineTo(64 * s, 14 * s); ctx.closePath(); ctx.fill(); ctx.stroke();
+  ctx.strokeStyle = "#5f97a6"; ctx.lineWidth = 2 * s;
+  for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * 12 * s, -16 * s); ctx.lineTo(i * 12 * s - 4 * s, 16 * s); ctx.stroke(); }
+  ctx.fillStyle = "#1f2937"; ctx.beginPath(); ctx.arc(-34 * s, -3 * s, 3 * s, 0, 7); ctx.fill();
+  ctx.restore();
+}
+function drawMolGlyph(ctx: CanvasRenderingContext2D, mol: MolScene | null, cx: number, cy: number, R: number, alpha: number) {
+  ctx.save(); ctx.globalAlpha = alpha;
+  if (!mol) { ctx.fillStyle = "#7c3aed"; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, 7); ctx.fill(); ctx.restore(); return; }
+  const rx = 0.4, ry = 0.7;
+  const P = mol.atoms.map((a) => { const r = rotV(a, rx, ry); return { px: cx + r.x * R, py: cy - r.y * R, z: r.z, el: a.el }; });
+  ctx.strokeStyle = `rgba(120,128,140,${0.8 * alpha})`; ctx.lineWidth = Math.max(1, R * 0.06); ctx.lineCap = "round";
+  for (const [i, j] of mol.bonds) { if (!P[i] || !P[j]) continue; ctx.beginPath(); ctx.moveTo(P[i].px, P[i].py); ctx.lineTo(P[j].px, P[j].py); ctx.stroke(); }
+  P.filter((p) => p.el !== "H").sort((a, b) => a.z - b.z).forEach((p) => { ctx.fillStyle = elemInfo(p.el)[0]; ctx.beginPath(); ctx.arc(p.px, p.py, Math.max(1.5, elemInfo(p.el)[1] * R * 0.4), 0, 7); ctx.fill(); });
+  ctx.restore();
+}
 
-  // acquisition animation (split-flap resolve)
+/* the cinematic: fish + drug → impact → atomize → sequencer → .h5ad zoom-out → heatmap */
+function ExposureCinema({ sel, playing, onResolved }: { sel: Drug; playing: boolean; onResolved: () => void }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const startRef = useRef<number | null>(null);
+  const mol = useMemo(() => (sel.step1_structure.mol3d ? parseMolBlock(sel.step1_structure.mol3d) : null), [sel.id]);
+  const W = 560, H = 360;
+  // deterministic heat field + atomize particles
+  const { heat, hcols, hrows, parts } = useMemo(() => {
+    let h = 2166136261 >>> 0; for (let i = 0; i < sel.id.length; i++) { h ^= sel.id.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
+    const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return (h >>> 0) / 4294967296; };
+    const hcols = 112, hrows = Math.round((hcols * H) / W);
+    const colb = new Float32Array(hcols); for (let c = 0; c < hcols; c++) colb[c] = rnd();
+    const heat = new Float32Array(hcols * hrows);
+    for (let r = 0; r < hrows; r++) for (let c = 0; c < hcols; c++) heat[r * hcols + c] = Math.max(0, Math.min(1, colb[c] * 0.7 + rnd() * 0.4));
+    const parts: { x: number; y: number; vx: number; vy: number }[] = [];
+    for (let i = 0; i < 150; i++) { const a = rnd() * 6.283, rr = Math.sqrt(rnd()); parts.push({ x: Math.cos(a) * 44 * rr, y: Math.sin(a) * 18 * rr, vx: Math.cos(a) * (40 + rnd() * 90), vy: Math.sin(a) * (40 + rnd() * 90) - 20 }); }
+    return { heat, hcols, hrows, parts };
+  }, [sel.id]);
+
+  useEffect(() => { startRef.current = null; }, [sel.id, playing]);
   useEffect(() => {
     const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
-    const CW = cv.width / COLS, CH = cv.height / ROWS;
-    ctx.font = `${Math.floor(CH * 0.92)}px ui-monospace, Menlo, monospace`;
-    ctx.textAlign = "center"; ctx.textBaseline = "middle";
-    ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, cv.width, cv.height);
-    const locked = new Uint8Array(ROWS * COLS);
-    let raf = 0, start = 0, last = 0, done = false;
-    const draw = (i: number, ch: string, fg: string) => {
-      const r = Math.floor(i / COLS), c = i % COLS, x = c * CW, y = r * CH;
-      ctx.fillStyle = "#0b1020"; ctx.fillRect(x, y, CW, CH);
-      ctx.fillStyle = fg; ctx.fillText(ch, x + CW / 2, y + CH / 2);
-    };
+    const PH: [string, number][] = [["impact", 1400], ["atomize", 1400], ["sequencer", 1500], ["zoom", 5500]];
+    const total = PH.reduce((a, p) => a + p[1], 0);
+    let raf = 0, resolved = false;
+    const bg = () => { ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H); };
     const frame = (ts: number) => {
-      if (!start) start = ts;
-      const t = (ts - start) / DUR;
-      if (ts - last > 32) { // cap ~30fps
-        last = ts;
-        for (let i = 0; i < ROWS * COLS; i++) {
-          if (locked[i]) continue;
-          if (t >= data.lockT[i]) { locked[i] = 1; draw(i, String(data.finalv[i]), "#e2e8f0"); }
-          else draw(i, String((Math.random() * 10) | 0), "#38bdf8");
+      if (!playing) { ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H); drawFish(ctx, W * 0.3, H / 2, 1.1, 1); drawMolGlyph(ctx, mol, W * 0.72, H / 2, 60, 1); ctx.fillStyle = "#64748b"; ctx.font = "16px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("+", W * 0.51, H / 2 + 5); raf = requestAnimationFrame(frame); return; }
+      if (startRef.current == null) startRef.current = ts;
+      let e = ts - startRef.current; const clamped = Math.min(e, total);
+      let acc = 0, phase = "zoom", lt = 1;
+      for (const [name, dur] of PH) { if (clamped < acc + dur) { phase = name; lt = (clamped - acc) / dur; break; } acc += dur; }
+      if (phase === "impact") {
+        ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H);
+        drawFish(ctx, W * 0.3, H / 2, 1.1, 1);
+        const mx = W * 0.72 + (W * 0.3 - W * 0.72) * lt, my = H / 2, R = 60 * (1 - 0.78 * lt);
+        drawMolGlyph(ctx, mol, mx, my, R, 1);
+        if (lt > 0.82) { const f = (lt - 0.82) / 0.18; ctx.strokeStyle = `rgba(124,58,237,${1 - f})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(W * 0.3, H / 2, 10 + f * 60, 0, 7); ctx.stroke(); }
+      } else if (phase === "atomize") {
+        ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H);
+        drawFish(ctx, W * 0.3, H / 2, 1.1, Math.max(0, 1 - lt * 1.6));
+        ctx.fillStyle = "#7c3aed";
+        for (const p of parts) { const a = 1 - lt; if (a <= 0) continue; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(W * 0.3 + p.x + p.vx * lt, H / 2 + p.y + p.vy * lt, 1.8, 0, 7); ctx.fill(); }
+        ctx.globalAlpha = 1;
+        ctx.fillStyle = "#64748b"; ctx.font = "13px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("dissociating to single cells…", W / 2, H - 24);
+      } else if (phase === "sequencer") {
+        ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H);
+        const a = lt < 0.7 ? 1 : 1 - (lt - 0.7) / 0.3; const dx = Math.sin(e * 0.05) * 5 * (1 - lt * 0.4);
+        ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2 + dx, H / 2);
+        ctx.fillStyle = "#1e293b"; ctx.strokeStyle = "#475569"; ctx.lineWidth = 2; roundRect(ctx, -90, -50, 180, 100, 8); ctx.fill(); ctx.stroke();
+        for (let i = 0; i < 5; i++) { ctx.fillStyle = (Math.floor(e / 120) + i) % 2 ? "#10b981" : "#334155"; ctx.beginPath(); ctx.arc(-60 + i * 30, -28, 4, 0, 7); ctx.fill(); }
+        ctx.fillStyle = "#7dd3fc"; ctx.font = "12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("SEQUENCING", 0, 14); ctx.restore();
+        ctx.globalAlpha = 1;
+      } else {
+        // zoom-out .h5ad
+        bg();
+        const L = Math.round(4 * Math.pow(8000, Math.min(1, lt)));
+        const vis = Math.max(4, Math.min(hcols, Math.round(4 * Math.pow(28, Math.min(1, lt)))));
+        const cw = W / vis, ch = cw; const rows = Math.min(hrows, Math.ceil(H / ch));
+        for (let r = 0; r < rows; r++) for (let c = 0; c < vis; c++) {
+          const hv = heat[(r % hrows) * hcols + (c % hcols)];
+          if (cw >= 26) { ctx.fillStyle = "#0b1020"; ctx.fillRect(c * cw, r * ch, cw, ch); ctx.fillStyle = "#9ad8ff"; ctx.font = `${Math.floor(ch * 0.6)}px ui-monospace, monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String((Math.random() * 10) | 0), c * cw + cw / 2, r * ch + ch / 2); }
+          else { ctx.fillStyle = heatColor(cw < 9 ? hv : (Math.random() < 0.5 ? hv : hv * 0.6 + 0.2)); ctx.fillRect(c * cw, r * ch, cw + 0.6, ch + 0.6); }
         }
+        if (vis <= 6) { ctx.fillStyle = "#7dd3fc"; ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; for (let r = 0; r < Math.min(rows, 6); r++) ctx.fillText(`cell_${r}`, 4, r * ch + ch / 2); ctx.save(); ctx.translate(0, 0); for (let c = 0; c < Math.min(vis, 6); c++) { ctx.save(); ctx.translate(c * cw + cw / 2, 4); ctx.rotate(-Math.PI / 2); ctx.textAlign = "right"; ctx.fillText(`gene_${c}`, 0, 0); ctx.restore(); } ctx.restore(); }
+        // overlay labels
+        ctx.fillStyle = "rgba(11,16,32,0.72)"; ctx.fillRect(0, H - 30, W, 30);
+        ctx.fillStyle = "#e2e8f0"; ctx.font = "12px ui-monospace, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
+        ctx.fillText(lt < 1 ? "processing & sequencing in progress…" : "expression matrix ready", 8, H - 15);
+        ctx.textAlign = "right"; ctx.fillStyle = "#7dd3fc"; ctx.fillText(`${L.toLocaleString()} cells × ${L.toLocaleString()} genes`, W - 8, H - 15);
       }
-      if (t >= 1 && !done) { done = true; onDone(); return; }
+      if (e >= total && !resolved) { resolved = true; onResolved(); }
       raf = requestAnimationFrame(frame);
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [seed]);
-
-  // resolved → repaint as an expression heatmap
-  useEffect(() => {
-    if (phase !== "resolved") return;
-    const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
-    const CW = cv.width / COLS, CH = cv.height / ROWS;
-    for (let i = 0; i < ROWS * COLS; i++) {
-      ctx.fillStyle = heatColor(data.heat[i]);
-      ctx.fillRect((i % COLS) * CW, Math.floor(i / COLS) * CH, CW + 0.5, CH + 0.5);
-    }
-  }, [phase, data]);
+  }, [playing, sel.id, mol, heat]);
 
   return (
     <div className="rounded-md border border-gray-700 overflow-hidden" style={{ background: "#0b1020" }}>
       <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700">
         <span className="roboto-slab-medium text-[11px] text-sky-300">perturbation.h5ad</span>
-        <span className="roboto-slab-regular text-[10px] text-gray-500">AnnData · 100 cells × 100 genes (slice)</span>
+        <span className="roboto-slab-regular text-[10px] text-gray-500">zebrafish whole-organism scRNA-seq (illustrative)</span>
       </div>
-      <canvas ref={ref} width={600} height={600} className="block w-full" />
+      <canvas ref={ref} width={W} height={H} className="block w-full" />
     </div>
   );
+}
+function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
 }
 
 /* ---------------- Step 3 — response fingerprint (3 views: volcano · pathways · zebrafish) ----------- */
