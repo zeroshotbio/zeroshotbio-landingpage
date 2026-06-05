@@ -1,26 +1,44 @@
 "use client";
-// Mode-1 POC wizard — Steps 1–6 wired to the approved static JSON (/public/POC_workflow/).
-// Renders approved JSON only: no new modeling. Honest cell-line + projection labeling throughout.
-import { useEffect, useMemo, useState } from "react";
+// Mode-1 POC wizard (v2) — wired to the static JSON in /public/POC_workflow/.
+// Renders precomputed JSON only: no live modeling, no live UMAP. Both 2D regimes (phenotype +
+// chemistry) are precomputed. The through-line is MoA as the explicit bridge: two routes
+// (chemistry-predicted vs phenotype-neighbor mechanism) and whether they agree.
+// Honest cell-line (NOT tissue) + projection labeling throughout.
+import { useEffect, useMemo, useRef, useState } from "react";
 
 type Gene = { gene: string; lfc: number };
+type SharedGene = { gene: string; lfc_query: number; lfc_neighbor: number };
 type Neighbor = { id: string; display: string; similarity: number; rank: number; moa_fine: string };
 type Overlap = { id: string; shared_moa: boolean; shared_targets: string[] };
+type Route = { nn_id: string; nn_similarity: number; nn_moa: string; predicted_moa: string; metric: string };
+type Routes = {
+  query_moa: string | null; chem_route: Route; pheno_route: Route;
+  chem_route_matches_truth: boolean; pheno_route_matches_truth: boolean; routes_agree: boolean;
+};
+type Consensus = { moa: string | null; count: number; k: number; fraction: number };
+type Why = { neighbor: string; shared_up: SharedGene[]; shared_down: SharedGene[]; basis: string };
 type Drug = {
   id: string; display_name: string; pubchem_cid: number | null;
   moa_fine: string; moa_broad: string; targets: string[];
   step1_structure: { smiles: string; svg: string; source: string };
   step2_fingerprint: { basis: string; n_cell_lines: number; dose_uM: number; control: string;
     n_genes_tested: number; top_up: Gene[]; top_down: Gene[] };
-  step3_embedding: { coords2d: [number, number]; neighbors: Neighbor[]; projection: string };
-  step4_mechanism: { moa_fine: string; targets: string[]; neighbor_overlap: Overlap[] };
+  step3_embedding: { coords2d: [number, number]; chem2d: [number, number];
+    neighbors: Neighbor[]; chem_neighbors: Neighbor[]; projection: string; chem_projection: string };
+  step4_mechanism: { moa_fine: string; targets: string[]; neighbor_overlap: Overlap[];
+    routes: Routes; pheno_consensus: Consensus; chem_consensus: Consensus; why: Why };
   step5_reliability: { nn_id: string; nn_similarity: number; nn_distance: number;
     horizon_band: string; metric: string; basis: string };
-  step6_report: { headline: string; mechanism_text: string; confidence_text: string; caveat: string };
+  step6_report: { headline: string; mechanism_text: string; confidence_text: string;
+    bridge_text: string; caveat: string };
 };
-type Manifest = { honesty_label: string; pca_var_explained: number[]; n_reference_drugs: number };
+type Manifest = {
+  honesty_label: string; pca_var_explained: number[]; chem_var_explained: number[];
+  n_reference_drugs: number; knn: number; nn_dist_tertiles: number[]; ref_nn_dist: number[];
+  moa_retrieval_note: string;
+};
 type Data = { manifest: Manifest; drugs: Drug[] };
-type CPoint = { id: string; moa_fine: string; coords2d: [number, number]; is_demo: boolean };
+type CPoint = { id: string; moa_fine: string; coords2d: [number, number]; chem2d: [number, number]; is_demo: boolean };
 type Const = { points: CPoint[] };
 
 const STEPS = ["Submit compound", "Wet-lab exposure", "Response fingerprint",
@@ -102,8 +120,8 @@ export default function PocClient() {
           {step === 1 && <Step1 {...{ data, sel, selId, loadDrug, smiles, setSmiles, loadFromSmiles, note, quickStart }} />}
           {step === 2 && sel && <Step2 sel={sel} revealed={revealed} setRevealed={setRevealed} />}
           {step === 3 && sel && <Step3 sel={sel} />}
-          {step === 4 && sel && <Step4 sel={sel} cloud={cloud} varexp={data?.manifest.pca_var_explained} />}
-          {step === 5 && sel && <Step5 sel={sel} />}
+          {step === 4 && sel && <Step4 sel={sel} cloud={cloud} manifest={data?.manifest} />}
+          {step === 5 && sel && <Step5 sel={sel} manifest={data?.manifest} />}
           {step === 6 && sel && <Step6 sel={sel} honesty={honesty} />}
           {step > 1 && !sel && <p className="roboto-slab-regular text-sm text-gray-400">Select a compound in Step 1 (or Quick-Start) first.</p>}
         </section>
@@ -242,64 +260,302 @@ function Step3({ sel }: { sel: Drug }) {
   );
 }
 
-/* ---------------- Step 4 ---------------- */
-function Step4({ sel, cloud, varexp }: { sel: Drug; cloud: Const | null; varexp?: number[] }) {
-  const W = 620, H = 420, pad = 30;
-  const pts = cloud?.points ?? [];
-  const xs = pts.map((p) => p.coords2d[0]), ys = pts.map((p) => p.coords2d[1]);
-  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
-  const sx = (x: number) => pad + ((x - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
-  const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
-  const q = sel.step3_embedding.coords2d;
-  const nbrIds = new Set(sel.step3_embedding.neighbors.map((n) => n.id));
-  const coordOf = (id: string) => pts.find((p) => p.id === id)?.coords2d;
-  const vexp = varexp ? `${((varexp[0] + varexp[1]) * 100).toFixed(1)}%` : "low";
+/* ---------------- Step 4 — interactive atlas (pan/zoom/hover/click, regime toggle, MoA overlay) -------- */
+type Regime = "phenotype" | "chemistry";
+function coordOf(p: CPoint, r: Regime): [number, number] { return r === "phenotype" ? p.coords2d : p.chem2d; }
+function qCoord(sel: Drug, r: Regime): [number, number] { return r === "phenotype" ? sel.step3_embedding.coords2d : sel.step3_embedding.chem2d; }
+function regimeNeighbors(sel: Drug, r: Regime): Neighbor[] { return r === "phenotype" ? sel.step3_embedding.neighbors : sel.step3_embedding.chem_neighbors; }
+
+function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manifest?: Manifest }) {
+  const [regime, setRegime] = useState<Regime>("phenotype");
+  const [colorByMoa, setColorByMoa] = useState(true);
+  const W = 640, H = 440, pad = 28;
+  const pts = useMemo(() => cloud?.points ?? [], [cloud]);
+
+  // base (untransformed) screen positions for the active regime
+  const base = useMemo(() => {
+    const xs = pts.map((p) => coordOf(p, regime)[0]), ys = pts.map((p) => coordOf(p, regime)[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const sx = (x: number) => pad + ((x - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
+    const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
+    return { sx, sy };
+  }, [pts, regime]);
+
+  // pan/zoom transform (precomputed coords only — no recompute of the embedding)
+  const [view, setView] = useState({ k: 1, tx: 0, ty: 0 });
+  useEffect(() => { setView({ k: 1, tx: 0, ty: 0 }); }, [regime]); // reset view on regime switch
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const [hover, setHover] = useState<{ id: string; moa: string; x: number; y: number } | null>(null);
+  const [picked, setPicked] = useState<string | null>(null);
+
+  function onWheel(e: React.WheelEvent) {
+    e.preventDefault();
+    const rect = svgRef.current!.getBoundingClientRect();
+    const mx = e.clientX - rect.left, my = e.clientY - rect.top;
+    const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+    setView((v) => {
+      const k = Math.min(12, Math.max(1, v.k * factor));
+      const f = k / v.k;
+      return { k, tx: mx - f * (mx - v.tx), ty: my - f * (my - v.ty) };
+    });
+  }
+  function onDown(e: React.PointerEvent) {
+    (e.target as Element).setPointerCapture?.(e.pointerId);
+    drag.current = { x: e.clientX, y: e.clientY, moved: false };
+  }
+  function onMove(e: React.PointerEvent) {
+    if (!drag.current) return;
+    const dx = e.clientX - drag.current.x, dy = e.clientY - drag.current.y;
+    if (Math.abs(dx) + Math.abs(dy) > 3) drag.current.moved = true;
+    drag.current.x = e.clientX; drag.current.y = e.clientY;
+    setView((v) => ({ ...v, tx: v.tx + dx, ty: v.ty + dy }));
+  }
+  function onUp() { drag.current = null; }
+
+  const tf = (x: number, y: number): [number, number] => [view.tx + view.k * x, view.ty + view.k * y];
+  const q = qCoord(sel, regime);
+  const qx = base.sx(q[0]), qy = base.sy(q[1]);
+  const nbrs = regimeNeighbors(sel, regime);
+  const nbrIds = new Set(nbrs.map((n) => n.id));
+  const coordById = (id: string) => { const p = pts.find((pp) => pp.id === id); return p ? coordOf(p, regime) : null; };
+
+  const vexpArr = regime === "phenotype" ? manifest?.pca_var_explained : manifest?.chem_var_explained;
+  const vexp = vexpArr ? `${((vexpArr[0] + vexpArr[1]) * 100).toFixed(1)}%` : "low";
+  const r0 = 3 / view.k, rN = 5 / view.k;
+
+  // MoA legend: query + its neighbors in this regime
+  const legend = useMemo(() => {
+    const m = new Map<string, string>();
+    m.set(sel.moa_fine, moaColor(sel.moa_fine));
+    nbrs.forEach((n) => m.set(n.moa_fine, moaColor(n.moa_fine)));
+    return Array.from(m.entries());
+  }, [sel, nbrs]);
+
+  const pickedPt = picked ? pts.find((p) => p.id === picked) : null;
+
+  if (!pts.length) return (
+    <div>
+      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 4 — Project into the atlas</h2>
+      <p className="roboto-slab-regular text-sm text-gray-400 mt-4">Loading the reference atlas…</p>
+    </div>
+  );
+
   return (
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 4 — Project into the atlas</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
-        {sel.display_name} (◆) placed among the {pts.length}-compound reference cloud, colored by mechanism. Lines mark its phenotype neighbors.
+        {sel.display_name} (◆) placed among the {pts.length}-compound reference. Toggle the regime to see the
+        <strong> two routes</strong>: who its neighbors are by <strong>phenotype</strong> vs by <strong>chemistry</strong>.
+        Drag to pan, scroll to zoom, hover for identity, click a point to inspect.
       </p>
-      <div className="rounded-md border border-gray-200 bg-white p-2 overflow-x-auto">
-        <svg width={W} height={H} role="img" aria-label="atlas projection">
-          {/* neighbor links */}
-          {sel.step3_embedding.neighbors.map((n) => {
-            const c = coordOf(n.id); if (!c) return null;
-            return <line key={n.id} x1={sx(q[0])} y1={sy(q[1])} x2={sx(c[0])} y2={sy(c[1])} stroke="#9ca3af" strokeWidth={1} strokeDasharray="3 3" />;
+
+      {/* controls */}
+      <div className="flex flex-wrap items-center gap-2 mb-2">
+        <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
+          {(["phenotype", "chemistry"] as Regime[]).map((rg) => (
+            <button key={rg} onClick={() => { setRegime(rg); setPicked(null); }}
+              className={`roboto-slab-regular text-xs px-3 py-1.5 ${regime === rg ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"}`}>
+              {rg === "phenotype" ? "Phenotype space" : "Chemistry space"}
+            </button>
+          ))}
+        </div>
+        <button onClick={() => setColorByMoa((c) => !c)}
+          className="roboto-slab-regular text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">
+          Color: {colorByMoa ? "by MoA" : "neutral"}
+        </button>
+        <button onClick={() => setView({ k: 1, tx: 0, ty: 0 })}
+          className="roboto-slab-regular text-xs px-3 py-1.5 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">
+          Reset view
+        </button>
+        <span className="roboto-slab-regular text-xs text-gray-400">zoom {view.k.toFixed(1)}×</span>
+      </div>
+
+      <div className="relative rounded-md border border-gray-200 bg-white overflow-hidden" style={{ touchAction: "none" }}>
+        <svg ref={svgRef} width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="interactive atlas projection"
+          onWheel={onWheel} onPointerDown={onDown} onPointerMove={onMove} onPointerUp={onUp} onPointerLeave={() => { onUp(); setHover(null); }}
+          style={{ cursor: drag.current ? "grabbing" : "grab", display: "block" }}>
+          {/* neighbor links (this regime's route) */}
+          {nbrs.map((n) => {
+            const c = coordById(n.id); if (!c) return null;
+            const [x1, y1] = tf(qx, qy); const [x2, y2] = tf(base.sx(c[0]), base.sy(c[1]));
+            return <line key={n.id} x1={x1} y1={y1} x2={x2} y2={y2} stroke="#9ca3af" strokeWidth={1} strokeDasharray="3 3" />;
           })}
           {/* reference cloud */}
           {pts.map((p) => {
-            const isQ = p.id === sel.id, isN = nbrIds.has(p.id);
-            if (isQ) return null;
-            return <circle key={p.id} cx={sx(p.coords2d[0])} cy={sy(p.coords2d[1])} r={isN ? 5 : 3}
-              fill={moaColor(p.moa_fine)} opacity={isN ? 1 : 0.55} stroke={isN ? "#1f2937" : "none"} strokeWidth={isN ? 1.5 : 0} />;
+            if (p.id === sel.id) return null;
+            const c = coordOf(p, regime); const [cx, cy] = tf(base.sx(c[0]), base.sy(c[1]));
+            const isN = nbrIds.has(p.id); const isPick = p.id === picked;
+            const fill = colorByMoa ? moaColor(p.moa_fine) : (isN ? "#6b7280" : "#d1d5db");
+            return <circle key={p.id} cx={cx} cy={cy} r={isN ? rN : r0}
+              fill={fill} opacity={isN ? 1 : 0.5}
+              stroke={isPick ? "#0d9488" : isN ? "#1f2937" : "none"} strokeWidth={(isPick ? 2 : isN ? 1.5 : 0) / view.k}
+              onMouseEnter={(e) => { const rect = svgRef.current!.getBoundingClientRect(); setHover({ id: p.id, moa: p.moa_fine, x: e.clientX - rect.left, y: e.clientY - rect.top }); }}
+              onMouseLeave={() => setHover(null)}
+              onClick={() => { if (!drag.current?.moved) setPicked(p.id); }}
+              style={{ cursor: "pointer" }} />;
           })}
-          {/* query */}
-          <rect x={sx(q[0]) - 6} y={sy(q[1]) - 6} width={12} height={12} transform={`rotate(45 ${sx(q[0])} ${sy(q[1])})`} fill="#111827" />
-          <text x={sx(q[0]) + 10} y={sy(q[1]) + 4} className="roboto-slab-medium" fontSize={12} fill="#111827">{sel.display_name}</text>
+          {/* query marker */}
+          {(() => { const [x, y] = tf(qx, qy); const s = 6; return (
+            <g>
+              <rect x={x - s} y={y - s} width={2 * s} height={2 * s} transform={`rotate(45 ${x} ${y})`} fill="#111827" />
+              <text x={x + 10} y={y + 4} className="roboto-slab-medium" fontSize={12} fill="#111827">{sel.display_name}</text>
+            </g>); })()}
         </svg>
+
+        {hover && (
+          <div className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-[11px] text-gray-50"
+            style={{ left: Math.min(hover.x + 10, W - 160), top: hover.y + 10 }}>
+            <div className="roboto-slab-medium">{hover.id}</div>
+            <div className="text-gray-300">{hover.moa}</div>
+          </div>
+        )}
       </div>
+
+      {/* legend + picked readout */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-2">
+        {colorByMoa && legend.map(([moa, col]) => (
+          <span key={moa} className="inline-flex items-center gap-1 roboto-slab-regular text-[11px] text-gray-500">
+            <span className="inline-block w-2.5 h-2.5 rounded-full" style={{ background: col }} /> {moa}
+          </span>
+        ))}
+      </div>
+      {pickedPt && (
+        <p className="roboto-slab-regular text-xs text-gray-600 mt-2 bg-gray-50 border border-gray-200 rounded px-3 py-2">
+          Selected: <strong>{pickedPt.id}</strong> — {pickedPt.moa_fine}
+          {nbrIds.has(pickedPt.id) ? ` · a ${regime} neighbor of ${sel.display_name}` : ""}
+        </p>
+      )}
+
       <p className="roboto-slab-regular text-xs text-gray-400 mt-3">
-        Honest note: this 2D layout is a <strong>low-variance PCA projection</strong> (PC1+PC2 ≈ {vexp} of variance) for visualization only.
-        Nearest neighbors are computed in the <strong>full phenotype space</strong>, not from these 2D distances.
+        Honest note: this 2D layout is an <strong>illustrative low-variance PCA projection</strong>
+        {" "}(PC1+PC2 ≈ {vexp} of variance in {regime} space) for visualization only — both regimes are
+        precomputed, nothing is recomputed live. Neighbors are computed in the{" "}
+        <strong>{regime === "phenotype" ? "full phenotype space (HVG-2000 cosine)" : "full chemistry space (ECFP Tanimoto)"}</strong>,
+        not from these 2D distances.
       </p>
     </div>
   );
 }
 
-/* ---------------- Step 5 ---------------- */
-function Step5({ sel }: { sel: Drug }) {
+/* ---------------- Step 5 — two routes, why-it-resembles, consensus, reliability histogram ------------- */
+function AgreeBadge({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <span className={`roboto-slab-regular text-[11px] px-2 py-0.5 rounded-full border ${
+      ok ? "border-emerald-300 bg-emerald-50 text-emerald-700" : "border-gray-300 bg-gray-50 text-gray-500"}`}>
+      {ok ? "✓ " : "— "}{label}
+    </span>
+  );
+}
+function RouteCard({ title, route, matches, accent }: { title: string; route: Route; matches: boolean; accent: string }) {
+  return (
+    <div className="flex-1 rounded-md border border-gray-200 bg-white p-4">
+      <div className="flex items-center justify-between mb-1">
+        <div className="roboto-slab-medium text-sm" style={{ color: accent }}>{title}</div>
+        <AgreeBadge ok={matches} label="matches true MoA" />
+      </div>
+      <div className="roboto-slab-regular text-xs text-gray-400 mb-2">{route.metric}</div>
+      <div className="roboto-slab-regular text-sm text-gray-700">
+        Nearest anchor: <strong>{route.nn_id}</strong> <span className="text-gray-400">(sim {route.nn_similarity.toFixed(3)})</span>
+      </div>
+      <div className="roboto-slab-regular text-sm text-gray-600 mt-1">
+        Predicted mechanism → <span className="roboto-slab-medium" style={{ color: moaColor(route.predicted_moa) }}>{route.predicted_moa}</span>
+      </div>
+    </div>
+  );
+}
+function SharedGenes({ title, genes, dir }: { title: string; genes: SharedGene[]; dir: "up" | "down" }) {
+  if (!genes.length) return (
+    <div className="flex-1"><div className={`roboto-slab-medium text-xs mb-1 ${dir === "up" ? "text-emerald-700" : "text-rose-700"}`}>{title}</div>
+      <div className="roboto-slab-regular text-xs text-gray-400">none in common</div></div>
+  );
+  return (
+    <div className="flex-1">
+      <div className={`roboto-slab-medium text-xs mb-1 ${dir === "up" ? "text-emerald-700" : "text-rose-700"}`}>{title}</div>
+      <div className="flex flex-wrap gap-1">
+        {genes.slice(0, 6).map((g) => (
+          <span key={g.gene} title={`query ${g.lfc_query} · neighbor ${g.lfc_neighbor}`}
+            className={`roboto-slab-regular text-[11px] px-1.5 py-0.5 rounded border ${
+              dir === "up" ? "border-emerald-200 bg-emerald-50 text-emerald-800" : "border-rose-200 bg-rose-50 text-rose-800"}`}>
+            {g.gene}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+function NNHistogram({ manifest, queryDist, band }: { manifest: Manifest; queryDist: number; band: string }) {
+  const W = 600, H = 150, pad = 26;
+  const vals = manifest.ref_nn_dist;
+  const [p33, p66] = manifest.nn_dist_tertiles;
+  const lo = Math.min(...vals), hi = Math.max(...vals);
+  const NB = 28; const bins = new Array(NB).fill(0);
+  vals.forEach((v) => { const i = Math.min(NB - 1, Math.floor(((v - lo) / (hi - lo || 1)) * NB)); bins[i]++; });
+  const maxc = Math.max(...bins);
+  const bx = (v: number) => pad + ((v - lo) / (hi - lo || 1)) * (W - 2 * pad);
+  const bandColor = (v: number) => v <= p33 ? "#a7f3d0" : v <= p66 ? "#fde68a" : "#fecaca";
+  return (
+    <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="reference nearest-neighbor distance distribution">
+      {bins.map((c, i) => {
+        const v0 = lo + (i / NB) * (hi - lo), v1 = lo + ((i + 1) / NB) * (hi - lo);
+        const x = bx(v0), w = bx(v1) - bx(v0) - 1, h = (c / maxc) * (H - 2 * pad);
+        return <rect key={i} x={x} y={H - pad - h} width={Math.max(1, w)} height={h} fill={bandColor((v0 + v1) / 2)} />;
+      })}
+      {/* tertile dividers */}
+      {[p33, p66].map((p) => <line key={p} x1={bx(p)} y1={pad - 6} x2={bx(p)} y2={H - pad} stroke="#9ca3af" strokeWidth={1} strokeDasharray="2 2" />)}
+      {/* query marker */}
+      <line x1={bx(queryDist)} y1={4} x2={bx(queryDist)} y2={H - pad} stroke="#111827" strokeWidth={2} />
+      <polygon points={`${bx(queryDist) - 5},4 ${bx(queryDist) + 5},4 ${bx(queryDist)},12`} fill="#111827" />
+      <text x={bx(queryDist)} y={H - 8} textAnchor="middle" fontSize={10} fill="#111827" className="roboto-slab-medium">
+        this drug {queryDist.toFixed(2)} ({BAND_LABEL[band]})
+      </text>
+      <text x={pad} y={H - 8} fontSize={9} fill="#9ca3af" className="roboto-slab-regular">closer</text>
+      <text x={W - pad} y={H - 8} textAnchor="end" fontSize={9} fill="#9ca3af" className="roboto-slab-regular">farther</text>
+    </svg>
+  );
+}
+function Step5({ sel, manifest }: { sel: Drug; manifest?: Manifest }) {
   const rel = sel.step5_reliability;
-  const m = rel.basis.match(/p33=([0-9.]+) p66=([0-9.]+)/);
-  const p33 = m ? parseFloat(m[1]) : 0.56, p66 = m ? parseFloat(m[2]) : 0.67;
-  const ov = new Map(sel.step4_mechanism.neighbor_overlap.map((o) => [o.id, o]));
-  const pos = Math.max(0, Math.min(1, rel.nn_distance)); // distance 0..1 → gauge
+  const mech = sel.step4_mechanism;
+  const routes = mech.routes; const why = mech.why;
+  const ov = new Map(mech.neighbor_overlap.map((o) => [o.id, o]));
+  const consLine = (c: Consensus, route: string) =>
+    c.moa ? `${c.count}/${c.k} of the top ${route} neighbors are ${c.moa} (${Math.round(c.fraction * 100)}%)` : "no consensus mechanism";
+
   return (
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 5 — Contextualized results</h2>
-      <p className="roboto-slab-regular text-sm text-gray-500 mb-4">Phenotype neighbors and how reliable this region of the atlas is.</p>
+      <p className="roboto-slab-regular text-sm text-gray-500 mb-4">
+        A neighbor is a <strong>characterized anchor</strong> whose mechanism detail ports to {sel.display_name}.
+        Mechanism (MoA) is the bridge — here are the two routes to it and whether they agree.
+      </p>
 
+      {/* TWO ROUTES */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-2">
+        <RouteCard title="Chemistry route" route={routes.chem_route} matches={routes.chem_route_matches_truth} accent="#7c3aed" />
+        <RouteCard title="Phenotype route" route={routes.pheno_route} matches={routes.pheno_route_matches_truth} accent="#0d9488" />
+      </div>
+      <div className="flex flex-wrap items-center gap-2 mb-1">
+        <span className="roboto-slab-regular text-xs text-gray-500">Query&apos;s annotated MoA: <strong>{routes.query_moa ?? "unclear"}</strong></span>
+        <AgreeBadge ok={routes.routes_agree} label="the two routes agree with each other" />
+      </div>
+      <p className="roboto-slab-regular text-xs text-gray-400 mb-5">
+        {manifest?.moa_retrieval_note}
+      </p>
+
+      {/* WHY IT RESEMBLES */}
       <div className="rounded-md border border-gray-200 bg-white p-4 mb-5">
+        <div className="roboto-slab-medium text-sm text-gray-700 mb-1">Why {sel.display_name} resembles its phenotype neighbor ({why.neighbor})</div>
+        <div className="flex flex-col sm:flex-row gap-4 mt-2">
+          <SharedGenes title="Induced in both ▲" genes={why.shared_up} dir="up" />
+          <SharedGenes title="Repressed in both ▼" genes={why.shared_down} dir="down" />
+        </div>
+        <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2">{why.basis}.</p>
+      </div>
+
+      {/* NEIGHBOR TABLE + CONSENSUS */}
+      <div className="rounded-md border border-gray-200 bg-white p-4 mb-5">
+        <div className="roboto-slab-medium text-sm text-gray-700 mb-2">Top phenotype neighbors</div>
         <table className="w-full text-sm">
           <thead><tr className="roboto-slab-medium text-gray-500 text-left text-xs">
             <th className="py-1">Neighbor</th><th>Similarity</th><th>Mechanism</th><th>Shared MoA</th><th>Shared targets</th>
@@ -317,23 +573,26 @@ function Step5({ sel }: { sel: Drug }) {
             })}
           </tbody>
         </table>
+        <div className="flex flex-col sm:flex-row gap-2 mt-3">
+          <div className="flex-1 rounded bg-violet-50 border border-violet-100 px-3 py-2 roboto-slab-regular text-xs text-violet-800">
+            <strong>Chemistry consensus:</strong> {consLine(mech.chem_consensus, "chemistry")}
+          </div>
+          <div className="flex-1 rounded bg-teal-50 border border-teal-100 px-3 py-2 roboto-slab-regular text-xs text-teal-800">
+            <strong>Phenotype consensus:</strong> {consLine(mech.pheno_consensus, "phenotype")}
+          </div>
+        </div>
       </div>
 
-      {/* reliability gauge */}
+      {/* RELIABILITY HISTOGRAM */}
       <div className="rounded-md border border-gray-200 bg-white p-4">
-        <div className="roboto-slab-medium text-sm text-gray-700 mb-2">Reliability horizon — <span className="text-gray-900">{BAND_LABEL[rel.horizon_band]}</span></div>
-        <div className="relative h-6 rounded overflow-hidden flex">
-          <div className="bg-emerald-200" style={{ width: `${p33 * 100}%` }} />
-          <div className="bg-amber-200" style={{ width: `${(p66 - p33) * 100}%` }} />
-          <div className="bg-rose-200" style={{ width: `${(1 - p66) * 100}%` }} />
-          <div className="absolute top-0 h-6 w-0.5 bg-gray-900" style={{ left: `${pos * 100}%` }} />
-        </div>
-        <div className="flex justify-between roboto-slab-regular text-[10px] text-gray-400 mt-1">
-          <span>in-domain</span><span>near edge</span><span>out-of-domain</span>
-        </div>
-        <p className="roboto-slab-regular text-xs text-gray-500 mt-3">
+        <div className="roboto-slab-medium text-sm text-gray-700 mb-1">Reliability horizon — <span className="text-gray-900">{BAND_LABEL[rel.horizon_band]}</span></div>
+        <p className="roboto-slab-regular text-xs text-gray-500 mb-2">
+          Where {sel.display_name}&apos;s distance to its nearest reference drug falls within the distribution of
+          all {manifest?.n_reference_drugs} reference drugs&apos; nearest-neighbor distances. Bands are tertiles.
+        </p>
+        {manifest && <NNHistogram manifest={manifest} queryDist={rel.nn_distance} band={rel.horizon_band} />}
+        <p className="roboto-slab-regular text-xs text-gray-500 mt-2">
           Nearest reference: <strong>{rel.nn_id}</strong> · distance <strong>{rel.nn_distance.toFixed(3)}</strong> ({rel.metric}).
-          Bands are tertiles of the reference&apos;s nearest-neighbor distances.
         </p>
       </div>
     </div>
@@ -352,6 +611,9 @@ function Step6({ sel, honesty }: { sel: Drug; honesty: string }) {
       ``,
       `MECHANISM`,
       r.mechanism_text,
+      ``,
+      `TWO ROUTES TO MECHANISM`,
+      r.bridge_text,
       ``,
       `CONFIDENCE`,
       r.confidence_text,
@@ -374,6 +636,10 @@ function Step6({ sel, honesty }: { sel: Drug; honesty: string }) {
         <div className="mb-4">
           <div className="roboto-slab-medium text-xs uppercase tracking-wide text-gray-400 mb-1">Mechanism</div>
           <p className="roboto-slab-regular text-sm text-gray-700 leading-relaxed">{r.mechanism_text}</p>
+        </div>
+        <div className="mb-4">
+          <div className="roboto-slab-medium text-xs uppercase tracking-wide text-gray-400 mb-1">Two routes to mechanism</div>
+          <p className="roboto-slab-regular text-sm text-gray-700 leading-relaxed">{r.bridge_text}</p>
         </div>
         <div className="mb-4">
           <div className="roboto-slab-medium text-xs uppercase tracking-wide text-gray-400 mb-1">Confidence</div>

@@ -106,3 +106,33 @@ Steps: 1 Submit compound · 2 Wet-lab exposure (conceptual + reveal) · 3 Respon
 neighbor links, low-variance-projection note) · 5 Contextualized results (neighbor table + tertile
 reliability gauge) · 6 Atlas report (deterministic card + client-side .txt download). Honesty banner
 top+bottom; step nav + chips. Local branch `poc-workflow-scaffold`, nothing committed/pushed/deployed.
+
+---
+
+## Build status — v2 (MoA-bridge, deployed to preview surface)
+Enriched data layer + interactive UI. **The through-line is now MoA as the explicit bridge**: every
+neighbor is reframed as a *characterized anchor* whose mechanism ports to the query, and the wizard
+shows **two routes** to that mechanism — chemistry-predicted vs phenotype-neighbor — and whether they
+agree. Production build clean (`next build` exit 0); `/POC_workflow` static, ~7.9 kB.
+
+Data layer (generated read-only from Tahoe artifacts by `tahoe_embedding/scores/gen_poc_json_v2.py`):
+- (a) **chemistry-space 2D projection** (PCA over standardized RDKit descriptors) alongside the
+  phenotype PCA — drives the Step-4 regime toggle. Both regimes precomputed; **no live UMAP/recompute**.
+- (b) **per-drug shared up/down genes** vs its nearest phenotype neighbor ("why it resembles").
+- (c) **chemistry-route nearest neighbor + its MoA** (the second route; ECFP Tanimoto). Self-aliases
+  (salts/solvates/stereoisomers of the same parent) are excluded so neighbors are distinct drugs.
+- (d) **top-k mechanism consensus** for both routes.
+- (e) the full **reference NN-distance distribution** (375 values) for a richer reliability histogram.
+
+Demo-set MoA recovery (honest, shown as-is): **chemistry route 13/16**, **phenotype route 2/16**,
+routes agree 2/16 — i.e. chemistry→MoA is strong, phenotype→MoA is weak; the wizard does not hide it.
+
+UI changes: **Step 4** → interactive scatter (pan/zoom/hover/click) with a phenotype↔chemistry
+**regime toggle**, color-by-MoA overlay + legend, query ◆ and the active route's neighbor links, and an
+honest per-regime "2D is illustrative" caption. **Step 5** → two-route panel with agreement badges,
+"why it resembles" gene-overlap chips, per-route top-k consensus, and an NN-distance **histogram** with
+the query marked against the tertile bands. **Step 6** report gains a deterministic two-route synthesis.
+Honesty banner (top+bottom), cell-line (NOT tissue) labeling, and deterministic report text retained.
+
+Deployed POC-only on top of the v1 commit (no unrelated site files touched). Surface:
+**https://zeroshot.bio/POC_workflow** (Vercel auto-deploy). Quick-Start default = Panobinostat.
