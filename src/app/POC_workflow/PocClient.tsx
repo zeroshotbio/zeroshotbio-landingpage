@@ -351,9 +351,10 @@ export default function PocClient() {
   const resolved = !!sel || !!candidate || unknown;
   useEffect(() => {
     if (revealPhase !== "reveal" || !resolved) return;
-    const t = setTimeout(() => setRevealPhase("ready"), 9500); // ~4.5s unfold + ~5s hold
+    const hold = (sel && novel) ? 4200 : 9500; // novel heatmap blooms fast; the staggered atlas needs longer
+    const t = setTimeout(() => setRevealPhase("ready"), hold);
     return () => clearTimeout(t);
-  }, [revealPhase, resolved]);
+  }, [revealPhase, resolved, sel, novel]);
 
   const Logo = (
     <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
@@ -408,6 +409,8 @@ export default function PocClient() {
       @keyframes pocFade{from{opacity:0}to{opacity:1}}
       @keyframes pocPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
       @keyframes pocCollapse{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.98)}}
+      @keyframes pocSlideUp{from{opacity:0;transform:translateY(48px)}to{opacity:1;transform:none}}
+      .poc-slideup{animation:pocSlideUp .8s cubic-bezier(.22,.61,.36,1) both}
       .poc-rise{animation:pocRise .7s cubic-bezier(.22,.61,.36,1) both}
       .poc-fade{animation:pocFade .6s ease both}
       .poc-slide{transition:transform .95s cubic-bezier(.45,.05,.2,1)}
@@ -591,6 +594,12 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
   // ---------- reveal / ready phase ----------
   const ready = revealPhase === "ready";
   const resolved = sel || candidate || unknown;
+
+  // novel candidate gets the dedicated coverage-heatmap layout
+  if (sel && novel) {
+    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} leaving={leaving} onBack={refineStep1} onNext={onNext} />;
+  }
+
   return (
     <div className={leaving ? "poc-collapse" : ""}>
       {!resolved && (
@@ -614,12 +623,6 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
           {candidate && <div className="poc-rise" style={{ animationDelay: "150ms" }}>
             <RevealManifoldBox title="Chemistry manifold — placement vs the MegaFin Atlas" subtitle="ECFP4 · nearest measured neighbors">
               <ChemManifold data={data} mark={candidate.chem2d} markLabel={candidate.name} markColor="#7c3aed" neighbors={candidate.nn} animate />
-            </RevealManifoldBox>
-          </div>}
-          {sel && novel && <div className="poc-rise" style={{ animationDelay: "150ms" }}>
-            <RevealManifoldBox title="Chemistry manifold — placement vs the MegaFin Atlas" subtitle="ECFP · nearest measured neighbors">
-              <ChemManifold data={data} mark={sel.step3_embedding.chem2d} markLabel="novel candidate" markColor="#7c3aed"
-                neighbors={sel.step3_embedding.chem_neighbors.map((n: Neighbor) => ({ id: n.id, sim: n.similarity }))} animate />
             </RevealManifoldBox>
           </div>}
           {sel && !novel && <div className="poc-rise" style={{ animationDelay: "150ms" }}><InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={false} /></div>}
@@ -667,6 +670,159 @@ function UnknownCard({ smiles }: { smiles: string }) {
       <div className="rounded bg-white/60 border border-amber-100 px-3 py-2 mb-2 font-mono text-[11px] text-amber-800 break-all">{smiles}</div>
       <p className="roboto-slab-regular text-xs text-amber-800">
         This structure isn&apos;t in the measured atlas or the Broad Hub — genuinely unknown. The honest next move is the wet lab.
+      </p>
+    </div>
+  );
+}
+
+/* ============ Novel-candidate reveal: 3 symmetric top boxes + the coverage heatmap ============ */
+function NovelReveal({ sel, smiles, data, ready, leaving, onBack, onNext }:
+  { sel: Drug; smiles: string; data: Data | null; ready: boolean; leaving: boolean; onBack: () => void; onNext: () => void }) {
+  const mark = sel.step3_embedding.chem2d;
+  const neighbors = (sel.step3_embedding.chem_neighbors ?? []).map((n: Neighbor) => ({ id: n.id, sim: n.similarity }));
+  return (
+    <div className={leaving ? "poc-collapse" : ""}>
+      {/* top row — three equal, square-ish boxes that slide up into place */}
+      <div className="grid grid-cols-3 gap-3 poc-slideup">
+        <div className="rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col">
+          <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
+          <div className="flex-1 flex items-center justify-center overflow-hidden">
+            <span className="font-mono text-[10px] leading-tight text-gray-600 break-all text-center">{smiles}</span>
+          </div>
+        </div>
+        <div className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
+          <RDKitDepiction smiles={smiles} w={150} h={140} />
+        </div>
+        <button onClick={onBack} title="New search" aria-label="New search"
+          className="rounded-xl border border-gray-200 bg-white h-40 flex flex-col items-center justify-center gap-1 hover:bg-gray-50 hover:border-gray-400 transition group">
+          <svg className="h-9 w-9 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <span className="roboto-slab-regular text-[10px] text-gray-400 group-hover:text-gray-600 transition">new search</span>
+        </button>
+      </div>
+
+      {/* the star: atlas coverage heatmap (interpolation vs extrapolation) */}
+      <div className="mt-3 poc-rise" style={{ animationDelay: "260ms" }}>
+        <ChemHeatmap data={data} mark={mark} markLabel="novel candidate" neighbors={neighbors} />
+      </div>
+
+      {ready && (
+        <div className="poc-fade flex items-center justify-center mt-5">
+          <button onClick={onNext}
+            className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-900 text-gray-50 px-6 py-2 text-sm hover:bg-gray-700 transition">Next ▸ Exposure</button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* Coverage colormap: low density (extrapolation, atlas-blind) → red/black; high density (interpolation,
+   atlas-reliable) → green. The amber mid-band marks the boundary. */
+const COVER_STOPS: [number, [number, number, number]][] = [
+  [0.0, [18, 9, 9]], [0.16, [124, 28, 28]], [0.34, [180, 60, 16]], [0.5, [202, 138, 8]],
+  [0.66, [101, 124, 22]], [0.82, [21, 128, 61]], [1.0, [74, 222, 128]],
+];
+function coverColor(t: number): string {
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < COVER_STOPS.length; i++) {
+    if (t <= COVER_STOPS[i][0]) {
+      const [t0, c0] = COVER_STOPS[i - 1], [t1, c1] = COVER_STOPS[i];
+      const u = (t - t0) / (t1 - t0 || 1);
+      const c = [0, 1, 2].map((k) => Math.round(c0[k] + (c1[k] - c0[k]) * u));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  return "rgb(74,222,128)";
+}
+
+/* High-fidelity chemistry-coverage heatmap: a KDE density field over the measured atlas in ECFP/RDKit
+   descriptor space. Bright green = dense (interpolation, the atlas is reliable). Red/black = sparse
+   (extrapolation, the atlas is blind). The submitted molecule is dropped on top with its neighbors. */
+function ChemHeatmap({ data, mark, markLabel, neighbors }:
+  { data: Data | null; mark: [number, number]; markLabel: string; neighbors: { id: string; sim: number }[] }) {
+  const W = 660, H = 400, pad = 14;
+  const field = useMemo(() => {
+    const meas = (data?.drugs ?? []).filter((d) => !d.is_guest);
+    if (!meas.length) return null;
+    const pts = meas.map((d) => d.step3_embedding.chem2d);
+    const xs = pts.map((p) => p[0]).concat(mark[0]), ys = pts.map((p) => p[1]).concat(mark[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const mx = (xmax - xmin) * 0.08 || 1, my = (ymax - ymin) * 0.08 || 1;
+    const x0 = xmin - mx, x1 = xmax + mx, y0 = ymin - my, y1 = ymax + my;
+    const spanx = x1 - x0, spany = y1 - y0;
+    const cols = 84, rows = Math.round(84 * (H - 2 * pad) / (W - 2 * pad));
+    const h = 0.085 * Math.max(spanx, spany), inv = 1 / (2 * h * h);
+    const grid: number[][] = []; let maxd = 0;
+    for (let r = 0; r < rows; r++) {
+      const gy = y1 - ((r + 0.5) / rows) * spany; const row: number[] = [];
+      for (let c = 0; c < cols; c++) {
+        const gx = x0 + ((c + 0.5) / cols) * spanx; let d = 0;
+        for (const p of pts) { const dx = gx - p[0], dy = gy - p[1]; d += Math.exp(-(dx * dx + dy * dy) * inv); }
+        row.push(d); if (d > maxd) maxd = d;
+      }
+      grid.push(row);
+    }
+    return { grid, maxd, x0, y0, spanx, spany, cols, rows, meas, pts };
+  }, [data, mark]);
+
+  const heatLayer = useMemo(() => {
+    if (!field) return null;
+    const cw = (W - 2 * pad) / field.cols, ch = (H - 2 * pad) / field.rows;
+    const cells: JSX.Element[] = [];
+    for (let r = 0; r < field.rows; r++) for (let c = 0; c < field.cols; c++) {
+      cells.push(<rect key={`${r}-${c}`} x={pad + c * cw} y={pad + r * ch} width={cw + 0.6} height={ch + 0.6} fill={coverColor(field.grid[r][c] / (field.maxd || 1))} />);
+    }
+    return <g filter="url(#covblur)">{cells}</g>;
+  }, [field]);
+
+  if (!field) return <div className="rounded-md border border-gray-200 bg-white p-6 text-center roboto-slab-regular text-xs text-gray-400">Loading atlas manifold…</div>;
+
+  const sx = (x: number) => pad + ((x - field.x0) / field.spanx) * (W - 2 * pad);
+  const sy = (y: number) => H - pad - ((y - field.y0) / field.spany) * (H - 2 * pad);
+  const sampleT = (x: number, y: number) => {
+    const c = Math.min(field.cols - 1, Math.max(0, Math.floor(((x - field.x0) / field.spanx) * field.cols)));
+    const r = Math.min(field.rows - 1, Math.max(0, Math.floor((1 - (y - field.y0) / field.spany) * field.rows)));
+    return field.grid[r][c] / (field.maxd || 1);
+  };
+  const coordById = (id: string) => data?.drugs.find((d) => d.id === id)?.step3_embedding.chem2d;
+  const cx = sx(mark[0]), cy = sy(mark[1]);
+  const t = sampleT(mark[0], mark[1]);
+  const zone = t > 0.6 ? { label: "interpolation zone", cls: "text-emerald-700", txt: "densely covered by measured drugs — the atlas should be reliable here." }
+    : t > 0.33 ? { label: "boundary zone", cls: "text-amber-700", txt: "on the edge of the measured set — treat any read-out as a weak prior." }
+    : { label: "extrapolation zone", cls: "text-rose-700", txt: "far from anything measured — the atlas is fundamentally blind here." };
+
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="roboto-slab-medium text-sm text-gray-700">Atlas coverage — chemistry manifold</div>
+        <div className="roboto-slab-regular text-[11px] text-gray-400">KDE over {field.meas.length} measured drugs · ECFP/RDKit PCA(2)</div>
+      </div>
+      <div className="rounded-lg overflow-hidden border border-gray-100" style={{ background: "#0a0c1a" }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="atlas coverage heat-map">
+          <defs><filter id="covblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation={4.6} /></filter></defs>
+          {heatLayer}
+          {/* measured drugs as faint anchors */}
+          {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill="#ffffff" opacity={0.5} />)}
+          {/* candidate + its nearest measured neighbors */}
+          {neighbors.map((n) => { const c = coordById(n.id); if (!c) return null;
+            return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#ffffff" strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />; })}
+          <circle cx={cx} cy={cy} r={12} fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.7} />
+          <circle cx={cx} cy={cy} r={5.5} fill="#ffffff" stroke="#0a0c1a" strokeWidth={1.4} />
+          <text x={cx + 11} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
+            style={{ paintOrder: "stroke", stroke: "#0a0c1a", strokeWidth: 3 } as any}>{markLabel}</text>
+          {/* legend */}
+          {Array.from({ length: 28 }).map((_, i) => (
+            <rect key={i} x={pad + i * 5.4} y={H - pad - 12} width={6} height={7} fill={coverColor(i / 27)} />
+          ))}
+          <text x={pad} y={H - pad - 16} fontSize={9} fill="#fca5a5" className="roboto-slab-regular">extrapolation · atlas blind</text>
+          <text x={pad + 28 * 5.4} y={H - pad - 16} fontSize={9} fill="#6ee7b7" textAnchor="end" className="roboto-slab-regular">interpolation · atlas reliable</text>
+        </svg>
+      </div>
+      <p className="roboto-slab-regular text-xs text-gray-600 mt-2">
+        This molecule lands in the <strong className={zone.cls}>{zone.label}</strong> — {zone.txt} The field is the measured
+        atlas&apos;s chemical coverage: <span className="text-emerald-700">green</span> is where neighbors are dense enough to
+        interpolate, <span className="text-rose-700">red</span> is uncharted chemistry where a prediction is really extrapolation.
       </p>
     </div>
   );
