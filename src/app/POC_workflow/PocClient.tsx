@@ -239,6 +239,8 @@ export default function PocClient() {
   const [candidate, setCandidate] = useState<HubDrug | null>(null); // unmeasured Hub drug → chemistry-only path
   const [hub, setHub] = useState<Hub | null>(null);
   const [hubBusy, setHubBusy] = useState(false);
+  const [revealPhase, setRevealPhase] = useState<"input" | "reveal" | "ready">("input"); // Step-1 cinematic
+  const [leaving, setLeaving] = useState(false);
   const [smiles, setSmiles] = useState("");
   const [note, setNote] = useState("");
   const [step, setStep] = useState(1);
@@ -317,9 +319,25 @@ export default function PocClient() {
     placeCandidate(anchor.id, mutateSmiles(anchor.step1_structure.smiles));
   }
   function go(n: number) { if (n >= 1 && n <= 6 && (sel || candidate || n === 1)) setStep(n); }
-  function reset() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
+  function reset() { setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setStep(1); setRevealed(false); setRevealPhase("input"); setLeaving(false); }
   function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
   function backToStart() { setModality(null); reset(); }
+
+  // ---- Step-1 cinematic: submit → unfold the placement → (after a hold) reveal Next / Refine ----
+  function submitStep1() { if (!smiles.trim()) return; setRevealPhase("reveal"); analyzeSmiles(); }
+  function pickHubReveal() { setRevealPhase("reveal"); randomRepurposing(); }
+  function pickNovelReveal() { setRevealPhase("reveal"); randomNovel(); }
+  function refineStep1() {
+    setLeaving(true);
+    setTimeout(() => { setLeaving(false); setSelId(""); setNovel(false); setUnknown(false); setCandidate(null); setSmiles(""); setNote(""); setRevealed(false); setRevealPhase("input"); }, 430);
+  }
+  // once the selection has resolved during the reveal, hold ~5s past the unfold, then show the controls
+  const resolved = !!sel || !!candidate || unknown;
+  useEffect(() => {
+    if (revealPhase !== "reveal" || !resolved) return;
+    const t = setTimeout(() => setRevealPhase("ready"), 9500); // ~4.5s unfold + ~5s hold
+    return () => clearTimeout(t);
+  }, [revealPhase, resolved]);
 
   const Logo = (
     <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
@@ -370,6 +388,14 @@ export default function PocClient() {
       .poc-dark .bg-rose-50{background:#3a1620}.poc-dark .text-rose-800,.poc-dark .text-rose-700{color:#fda4af}
       .poc-dark img[alt="zeroshot bio"]{filter:invert(1) hue-rotate(180deg)}
       .poc-dark [aria-label^="2D structure"]{background:#fff;border-radius:6px;padding:4px}
+      @keyframes pocRise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
+      @keyframes pocFade{from{opacity:0}to{opacity:1}}
+      @keyframes pocPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
+      @keyframes pocCollapse{from{opacity:1;transform:none}to{opacity:0;transform:translateY(10px) scale(.98)}}
+      .poc-rise{animation:pocRise .7s cubic-bezier(.22,.61,.36,1) both}
+      .poc-fade{animation:pocFade .6s ease both}
+      .poc-collapse{animation:pocCollapse .42s ease forwards}
+      .poc-pt{transform-box:fill-box;transform-origin:center;animation:pocPop .5s ease both}
     ` }} />
   );
 
@@ -448,23 +474,25 @@ export default function PocClient() {
           ◂ Small Molecule — change modality
         </button>
 
-        {/* Step indicator — single row */}
-        <div className="flex flex-nowrap items-center gap-1.5 mb-7 overflow-x-auto">
-          {STEPS_SHORT.map((s, i) => {
-            const n = i + 1; const active = n === step; const avail = n === 1 || !!sel || !!candidate;
-            return (
-              <button key={s} onClick={() => go(n)} disabled={!avail} title={STEPS[i]}
-                className={`roboto-slab-regular text-[11px] px-2.5 py-1 rounded-full border whitespace-nowrap transition ${
-                  active ? "border-gray-700 bg-gray-800 text-gray-50"
-                  : avail ? "border-gray-300 text-gray-600 hover:bg-gray-100" : "border-gray-200 text-gray-300 cursor-not-allowed"}`}>
-                {n}. {s}
-              </button>
-            );
-          })}
-        </div>
+        {/* Step indicator — hidden on the minimal Step-1 input screen */}
+        {!(step === 1 && revealPhase === "input") && (
+          <div className="flex flex-nowrap items-center gap-1.5 mb-7 overflow-x-auto poc-fade">
+            {STEPS_SHORT.map((s, i) => {
+              const n = i + 1; const active = n === step; const avail = n === 1 || !!sel || !!candidate;
+              return (
+                <button key={s} onClick={() => go(n)} disabled={!avail} title={STEPS[i]}
+                  className={`roboto-slab-regular text-[11px] px-2.5 py-1 rounded-full border whitespace-nowrap transition ${
+                    active ? "border-gray-700 bg-gray-800 text-gray-50"
+                    : avail ? "border-gray-300 text-gray-600 hover:bg-gray-100" : "border-gray-200 text-gray-300 cursor-not-allowed"}`}>
+                  {n}. {s}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -476,104 +504,138 @@ export default function PocClient() {
           {step > 1 && !sel && !candidate && <p className="roboto-slab-regular text-sm text-gray-400">Submit a compound in Step 1 first.</p>}
         </section>
 
-        {/* Nav */}
-        <div className="flex justify-between mt-5">
-          <button onClick={() => go(step - 1)} disabled={step === 1}
-            className="roboto-slab-regular rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100">◂ Back</button>
-          <button onClick={() => go(step + 1)} disabled={step === 6 || (!sel && !candidate)}
-            className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-700">Next ▸</button>
-        </div>
+        {/* Nav — Step 1 has its own in-reveal Next / Refine, so the chrome nav is hidden there */}
+        {step > 1 && (
+          <div className="flex justify-between mt-5">
+            <button onClick={() => go(step - 1)}
+              className="roboto-slab-regular rounded-md border border-gray-300 px-4 py-2 text-sm text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed hover:bg-gray-100">◂ Back</button>
+            <button onClick={() => go(step + 1)} disabled={step === 6 || (!sel && !candidate)}
+              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm disabled:opacity-40 disabled:cursor-not-allowed hover:bg-gray-700">Next ▸</button>
+          </div>
+        )}
 
-        <p className="roboto-slab-regular text-xs text-gray-400 mt-8 text-center">{honesty}</p>
+        {step > 1 && <p className="roboto-slab-regular text-xs text-gray-400 mt-8 text-center">{honesty}</p>}
       </div>
     </main>
   );
 }
 
 /* ---------------- Step 1 — Molecule input ----------------
-   One SMILES box. We resolve the structure by RDKit-canonical InChIKey to: (a) a measured atlas compound,
-   (b) a Broad Repurposing Hub drug (measured or not), or (c) genuinely novel/unknown. Shortcuts: a random
-   real Hub drug, or a synthesized SMILES in the atlas's high-confidence interpolation space. */
-function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }: any) {
-  // detected category — derived from what the submitted SMILES resolved to
-  const detection: "atlas" | "repurposing" | "novel" | "unknown" | null =
-    sel ? (novel ? "novel" : sel.is_guest ? "repurposing" : "atlas") : (unknown ? "unknown" : null);
-  return (
-    <div>
-      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 1 — Molecule input</h2>
-      <p className="roboto-slab-regular text-sm text-gray-500 mb-5">
-        Submit a SMILES string. We match it by <strong>InChIKey</strong> to the <strong>measured MegaFin Atlas</strong>,
-        the <strong>Broad Drug Repurposing Hub</strong> (~5.8k clinical compounds), or flag it as genuinely novel.
-      </p>
-      <div className="flex flex-col gap-4">
-        <label className="block">
-          <span className="roboto-slab-regular block text-xs text-gray-500 mb-1">SMILES string</span>
+   Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
+   Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
+function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles,
+  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, onNext }: any) {
+
+  // ---------- input phase: one clean box + two subdued text shortcuts ----------
+  if (revealPhase === "input") {
+    return (
+      <div className="poc-fade flex flex-col items-center justify-center min-h-[360px] py-6">
+        <div className="w-full max-w-xl">
+          <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Submit a molecule</h2>
+          <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-6">A SMILES string — matched by InChIKey to the measured atlas or the Broad Repurposing Hub.</p>
           <div className="flex gap-2">
             <input value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
-              onKeyDown={(e) => { if (e.key === "Enter") analyzeSmiles(); }}
-              className="roboto-slab-regular flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 font-mono" />
-            <button onClick={analyzeSmiles}
-              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700 whitespace-nowrap">Analyze ▸</button>
+              onKeyDown={(e) => { if (e.key === "Enter") submitStep1(); }} autoFocus
+              className="roboto-slab-regular flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 font-mono shadow-sm focus:border-gray-700 focus:outline-none transition" />
+            <button onClick={submitStep1}
+              className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-7 py-3 text-sm hover:bg-gray-700 transition">Submit</button>
           </div>
-        </label>
-        <div className="flex flex-col sm:flex-row gap-2">
-          <button onClick={randomRepurposing} disabled={hubBusy}
-            className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100 disabled:opacity-50">
-            {hubBusy ? "Loading Hub…" : "🎲 Random Drug-Repurposing candidate (Broad Hub)"}
-          </button>
-          <button onClick={randomNovel}
-            className="roboto-slab-medium flex-1 rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-2 text-sm hover:bg-violet-100">
-            ✶ Random novel SMILES (interpolation space)
-          </button>
+          <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-5 text-[11px]">
+            <button onClick={pickHubReveal} disabled={hubBusy}
+              className="roboto-slab-regular text-gray-400 hover:text-gray-800 underline decoration-dotted underline-offset-2 disabled:opacity-50 transition">
+              {hubBusy ? "loading Hub…" : "Random Drug-Repurposing candidate (Broad Hub)"}
+            </button>
+            <span className="text-gray-300">·</span>
+            <button onClick={pickNovelReveal}
+              className="roboto-slab-regular text-gray-400 hover:text-gray-800 underline decoration-dotted underline-offset-2 transition">
+              Random novel SMILES
+            </button>
+          </div>
         </div>
-
-        {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
-        {detection && detection !== "novel" && <DetectionBanner detection={detection} sel={sel} />}
-        {candidate && <CandidateBanner candidate={candidate} />}
-
-        {/* phenotype manifold only when we have a measured/interpolated point; a Hub candidate is placed by
-            chemistry in Step 4, never dropped onto the phenotype map */}
-        {!candidate && <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />}
-
-        {sel && <StructureCard sel={sel} novel={novel} smiles={smiles} />}
-        {candidate && <CandidateStructureCard candidate={candidate} />}
-        {/* live literature research for any real, named compound (measured atlas or named Hub drug) */}
-        {sel && !novel && <AgenticResearch idKey={sel.id} name={sel.display_name} smiles={sel.step1_structure.smiles} moa={sel.moa_fine} targets={sel.targets} drugClass={sel.drug_class} fallback={sel.dossier ?? null} />}
-        {candidate && <AgenticResearch idKey={candidate.inchikey} name={candidate.name} smiles={candidate.smiles} moa={candidate.moa} targets={candidate.target ? candidate.target.split("|") : []} drugClass={candidate.moa} fallback={null} />}
       </div>
+    );
+  }
+
+  // ---------- reveal / ready phase ----------
+  const ready = revealPhase === "ready";
+  const resolved = sel || candidate || unknown;
+  return (
+    <div className={leaving ? "poc-collapse" : ""}>
+      {!resolved && (
+        <div className="flex items-center justify-center min-h-[360px] gap-2 text-gray-400">
+          <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <span className="roboto-slab-regular text-sm">Resolving structure…</span>
+        </div>
+      )}
+
+      {resolved && (
+        <div className="flex flex-col gap-4">
+          {/* structure box */}
+          {sel && <div className="poc-rise" style={{ animationDelay: "0ms" }}><StructureCard sel={sel} novel={novel} smiles={smiles} /></div>}
+          {candidate && <div className="poc-rise" style={{ animationDelay: "0ms" }}><CandidateStructureCard candidate={candidate} /></div>}
+          {unknown && <div className="poc-rise"><UnknownCard smiles={smiles} /></div>}
+
+          {/* placement box — the atlas unfolds piece by piece */}
+          {candidate && <div className="poc-rise" style={{ animationDelay: "150ms" }}>
+            <RevealManifoldBox title="Chemistry manifold — placement vs the MegaFin Atlas" subtitle="ECFP4 · nearest measured neighbors">
+              <ChemManifold data={data} mark={candidate.chem2d} markLabel={candidate.name} markColor="#7c3aed" neighbors={candidate.nn} animate />
+            </RevealManifoldBox>
+          </div>}
+          {sel && novel && <div className="poc-rise" style={{ animationDelay: "150ms" }}>
+            <RevealManifoldBox title="Chemistry manifold — placement vs the MegaFin Atlas" subtitle="ECFP · nearest measured neighbors">
+              <ChemManifold data={data} mark={sel.step3_embedding.chem2d} markLabel="novel candidate" markColor="#7c3aed"
+                neighbors={sel.step3_embedding.chem_neighbors.map((n: Neighbor) => ({ id: n.id, sim: n.similarity }))} animate />
+            </RevealManifoldBox>
+          </div>}
+          {sel && !novel && <div className="poc-rise" style={{ animationDelay: "150ms" }}><InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={false} /></div>}
+
+          {/* live literature research for any real, named compound */}
+          {sel && !novel && <div className="poc-rise" style={{ animationDelay: "320ms" }}>
+            <AgenticResearch idKey={sel.id} name={sel.display_name} smiles={sel.step1_structure.smiles} moa={sel.moa_fine} targets={sel.targets} drugClass={sel.drug_class} fallback={sel.dossier ?? null} />
+          </div>}
+          {candidate && <div className="poc-rise" style={{ animationDelay: "320ms" }}>
+            <AgenticResearch idKey={candidate.inchikey} name={candidate.name} smiles={candidate.smiles} moa={candidate.moa} targets={candidate.target ? candidate.target.split("|") : []} drugClass={candidate.moa} fallback={null} />
+          </div>}
+        </div>
+      )}
+
+      {ready && (
+        <div className="poc-fade flex items-center justify-center gap-3 mt-6">
+          <button onClick={refineStep1}
+            className="roboto-slab-regular rounded-md border border-gray-300 px-5 py-2 text-sm text-gray-600 hover:bg-gray-100 transition">↺ Refine</button>
+          {(sel || candidate) && (
+            <button onClick={onNext}
+              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-900 text-gray-50 px-6 py-2 text-sm hover:bg-gray-700 transition">Next ▸ Exposure</button>
+          )}
+        </div>
+      )}
     </div>
   );
 }
 
-/* Auto-detection verdict banner. */
-function DetectionBanner({ detection, sel }: { detection: string; sel: Drug | null }) {
-  const map: Record<string, { cls: string; tag: string; body: JSX.Element }> = {
-    atlas: {
-      cls: "border-emerald-200 bg-emerald-50 text-emerald-800",
-      tag: "Measured in the MegaFin Atlas",
-      body: <>Exact match to <strong>{sel?.display_name}</strong> — one of the 94 measured reference compounds. Its whole-organism profile is observed, not interpolated.</>,
-    },
-    repurposing: {
-      cls: "border-sky-200 bg-sky-50 text-sky-800",
-      tag: "Drug-repurposing library",
-      body: <>Matches <strong>{sel?.display_name}</strong> ({sel?.drug_class}). Not in the measured 94 — we attach its literature dossier and place it by interpolation from nearest atlas neighbors.</>,
-    },
-    novel: {
-      cls: "border-violet-200 bg-violet-50 text-violet-800",
-      tag: "Novel — interpolated",
-      body: <>Unseen structure dropped into a high-confidence region of the manifold. Its predicted profile is interpolated from nearby atlas compounds (anchor exemplar: <strong>{sel?.display_name}</strong>).</>,
-    },
-    unknown: {
-      cls: "border-amber-200 bg-amber-50 text-amber-800",
-      tag: "Novel — unrecognized",
-      body: <>This SMILES doesn&apos;t match the atlas or the repurposing library. Live embedding of an arbitrary structure isn&apos;t wired into this preview — use <em>Random novel SMILES</em> to drop a candidate into the interpolation space.</>,
-    },
-  };
-  const m = map[detection]; if (!m) return null;
+function RevealManifoldBox({ title, subtitle, children }: { title: string; subtitle: string; children: JSX.Element }) {
   return (
-    <div className={`rounded-md border px-3 py-2 ${m.cls}`}>
-      <div className="roboto-slab-medium text-xs uppercase tracking-wide mb-0.5">Detected · {m.tag}</div>
-      <p className="roboto-slab-regular text-[12px] leading-snug">{m.body}</p>
+    <div className="rounded-md border border-gray-200 bg-white p-3">
+      <div className="flex items-center justify-between mb-2">
+        <div className="roboto-slab-medium text-sm text-gray-700">{title}</div>
+        <div className="roboto-slab-regular text-[11px] text-gray-400">{subtitle}</div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function UnknownCard({ smiles }: { smiles: string }) {
+  return (
+    <div className="rounded-md border border-amber-200 bg-amber-50 p-5">
+      <div className="roboto-slab-medium text-sm text-amber-900 mb-2">Novel / unrecognized structure</div>
+      <div className="rounded bg-white/60 border border-amber-100 px-3 py-2 mb-2 font-mono text-[11px] text-amber-800 break-all">{smiles}</div>
+      <p className="roboto-slab-regular text-xs text-amber-800">
+        This structure isn&apos;t in the measured atlas or the Broad Hub — genuinely unknown. The honest next move is the wet lab.
+      </p>
     </div>
   );
 }
@@ -674,19 +736,6 @@ function horizonBand(sim: number) {
     note: "Chemically far from anything we've measured — this is extrapolation. Best treated purely as a wet-lab candidate." };
 }
 
-function CandidateBanner({ candidate }: { candidate: HubDrug }) {
-  return (
-    <div className="rounded-md border px-3 py-2 border-sky-200 bg-sky-50 text-sky-800">
-      <div className="roboto-slab-medium text-xs uppercase tracking-wide mb-0.5">Detected · Broad Drug-Repurposing Hub</div>
-      <p className="roboto-slab-regular text-[12px] leading-snug">
-        <strong>{candidate.name}</strong>{candidate.phase ? ` · ${candidate.phase}` : ""} — a real clinical-stage compound,
-        but <strong>not measured</strong> in the MegaFin atlas. There is no phenotype to show; we place it by chemistry and
-        flag where the atlas can and can&apos;t speak to it.
-      </p>
-    </div>
-  );
-}
-
 function CandidateStructureCard({ candidate }: { candidate: HubDrug }) {
   const sim = candidate.nn[0]?.sim ?? 0;
   return (
@@ -713,34 +762,43 @@ function CandidateStructureCard({ candidate }: { candidate: HubDrug }) {
   );
 }
 
-/* Chemistry scatter on the ECFP/RDKit-descriptor manifold (chem2d). Places the candidate by chemistry and
-   draws its ECFP nearest measured neighbors. No phenotype is shown anywhere. */
-function ChemScatter({ data, candidate }: { data: Data | null; candidate: HubDrug }) {
-  const W = 620, H = 360, pad = 16;
+/* Chemistry scatter on the ECFP/RDKit-descriptor manifold (chem2d). Places a marker by chemistry and draws
+   its nearest measured neighbors. `animate` makes the atlas points unfold left-to-right, then the marker. */
+function ChemManifold({ data, mark, markLabel, markColor, neighbors, animate }:
+  { data: Data | null; mark: [number, number]; markLabel: string; markColor: string; neighbors: { id: string; sim: number }[]; animate?: boolean }) {
+  const W = 620, H = 360, pad = 16, STAG = 4200;
   const meas = (data?.drugs ?? []).filter((d) => !d.is_guest);
   if (!meas.length) return null;
   const xs = meas.map((d) => d.step3_embedding.chem2d[0]), ys = meas.map((d) => d.step3_embedding.chem2d[1]);
-  const allx = xs.concat(candidate.chem2d[0]), ally = ys.concat(candidate.chem2d[1]);
+  const allx = xs.concat(mark[0]), ally = ys.concat(mark[1]);
   const xmin = Math.min(...allx), xmax = Math.max(...allx), ymin = Math.min(...ally), ymax = Math.max(...ally);
   const sx = (x: number) => pad + ((x - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
   const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
-  const cx = sx(candidate.chem2d[0]), cy = sy(candidate.chem2d[1]);
-  const nnSet = new Set(candidate.nn.map((n) => n.id));
+  const cx = sx(mark[0]), cy = sy(mark[1]);
+  const nnSet = new Set(neighbors.map((n) => n.id));
+  // left-to-right unfold order
+  const rank = new Map<string, number>();
+  meas.map((d) => d).sort((a, b) => a.step3_embedding.chem2d[0] - b.step3_embedding.chem2d[0]).forEach((d, r) => rank.set(d.id, r));
+  const N = meas.length || 1;
+  const ptDelay = (id: string) => (animate ? ((rank.get(id) ?? 0) / N) * STAG : 0);
   return (
     <div className="rounded overflow-hidden border border-gray-100" style={{ background: "#0a0c23" }}>
       <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="ECFP chemistry scatter">
         {meas.map((d) => {
           const isn = nnSet.has(d.id);
-          return <circle key={d.id} cx={sx(d.step3_embedding.chem2d[0])} cy={sy(d.step3_embedding.chem2d[1])}
+          return <circle key={d.id} className={animate ? "poc-pt" : undefined} style={animate ? { animationDelay: `${ptDelay(d.id)}ms` } : undefined}
+            cx={sx(d.step3_embedding.chem2d[0])} cy={sy(d.step3_embedding.chem2d[1])}
             r={isn ? 4 : 2.3} fill={moaColor(d.moa_fine)} opacity={isn ? 1 : 0.45}
             stroke={isn ? "#fff" : "none"} strokeWidth={isn ? 1 : 0} />;
         })}
-        {candidate.nn.map((n) => { const c = nnInfo(data, n.id).chem2d; if (!c) return null;
-          return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 3" opacity={0.85} />; })}
-        <circle cx={cx} cy={cy} r={11} fill="none" stroke="#7c3aed" strokeWidth={1.5} opacity={0.6} />
-        <circle cx={cx} cy={cy} r={5.5} fill="#7c3aed" stroke="#fff" strokeWidth={1.2} />
-        <text x={cx + 10} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
-          style={{ paintOrder: "stroke", stroke: "#0a0c23", strokeWidth: 3 } as any}>{candidate.name}</text>
+        <g className={animate ? "poc-fade" : undefined} style={animate ? { animationDelay: `${STAG + 200}ms` } : undefined}>
+          {neighbors.map((n) => { const c = nnInfo(data, n.id).chem2d; if (!c) return null;
+            return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#a78bfa" strokeWidth={1} strokeDasharray="3 3" opacity={0.85} />; })}
+          <circle cx={cx} cy={cy} r={11} fill="none" stroke={markColor} strokeWidth={1.5} opacity={0.6} />
+          <circle cx={cx} cy={cy} r={5.5} fill={markColor} stroke="#fff" strokeWidth={1.2} />
+          <text x={cx + 10} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
+            style={{ paintOrder: "stroke", stroke: "#0a0c23", strokeWidth: 3 } as any}>{markLabel}</text>
+        </g>
         <text x={pad} y={H - 6} fontSize={9} fill="#7c8595" className="roboto-slab-regular">ECFP chemistry space · PCA(2) of RDKit descriptors · {meas.length} measured drugs</text>
       </svg>
     </div>
@@ -780,7 +838,7 @@ function CandidateStep({ step, candidate, data }: { step: number; candidate: Hub
           With no phenotype, we place <strong>{candidate.name}</strong> by structure: its ECFP4 nearest neighbors among the
           measured atlas. This is a chemistry prior, not a measured result.
         </p>
-        <ChemScatter data={data} candidate={candidate} />
+        <ChemManifold data={data} mark={candidate.chem2d} markLabel={candidate.name} markColor="#7c3aed" neighbors={candidate.nn} />
         <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-3">
           <div className="rounded-md border border-gray-200 bg-white p-3">
             <div className="roboto-slab-medium text-xs text-gray-500 mb-1">MoA — from the Hub annotation</div>
