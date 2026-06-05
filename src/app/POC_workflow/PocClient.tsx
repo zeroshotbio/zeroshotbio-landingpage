@@ -11,14 +11,16 @@ type SharedGene = { gene: string; lfc_query: number; lfc_neighbor: number };
 // Step-3 response-fingerprint view payloads (precomputed in gen_poc_json_v3.py)
 type VolcanoPt = { g: string; x: number; y: number; t: number };
 type Volcano = { points: VolcanoPt[]; n_lines: number; n_top: number; axis: string };
-type WaterMark = { g: string; r: number; lfc: number };
-type Waterfall = { curve: { r: number; lfc: number }[]; n_total: number; n_up_strong: number;
-  n_down_strong: number; top_up: WaterMark[]; top_down: WaterMark[]; threshold: number };
-type Heatmap = { genes: string[]; cols: string[]; col_moa: string[]; n_up: number;
-  values: (number | null)[][]; basis: string };
 type ProgHit = { g: string; lfc: number; sup: number };
 type Program = { name: string; score: number; n: number; hits: ProgHit[] };
 type Programs = { programs: Program[]; basis: string };
+type Organ = { system: string; intensity: number; raw?: number; drivers?: string[] };
+type TargetPDB = { pdb: string; target: string; ligand: string };
+// neighbor effects → assumed effect (Step 4 atlas)
+type EffProgram = { name: string; score: number; n: number };
+type NeighborProfile = { id: string; moa_fine: string; programs: EffProgram[]; organs: Organ[] };
+type NeighborEffects = { neighbors: NeighborProfile[]; assumed_organs: Organ[];
+  assumed_programs: { name: string; score: number; k: number }[]; subject_organs: Organ[]; basis: string };
 type Neighbor = { id: string; display: string; similarity: number; rank: number; moa_fine: string };
 type Overlap = { id: string; shared_moa: boolean; shared_targets: string[] };
 type Route = { nn_id: string; nn_similarity: number; nn_moa: string; predicted_moa: string; metric: string };
@@ -31,14 +33,16 @@ type Why = { neighbor: string; shared_up: SharedGene[]; shared_down: SharedGene[
 type Drug = {
   id: string; display_name: string; pubchem_cid: number | null;
   moa_fine: string; moa_broad: string; targets: string[];
-  step1_structure: { smiles: string; svg: string; source: string };
+  step1_structure: { smiles: string; svg: string; source: string;
+    mol3d: string | null; target_pdb: TargetPDB | null };
   step2_fingerprint: { basis: string; n_cell_lines: number; dose_uM: number; control: string;
     n_genes_tested: number; top_up: Gene[]; top_down: Gene[];
-    volcano: Volcano; waterfall: Waterfall; heatmap: Heatmap; programs: Programs };
+    volcano: Volcano; programs: Programs; organs: Organ[]; organ_basis: string };
   step3_embedding: { coords2d: [number, number]; chem2d: [number, number];
     neighbors: Neighbor[]; chem_neighbors: Neighbor[]; projection: string; chem_projection: string };
   step4_mechanism: { moa_fine: string; targets: string[]; neighbor_overlap: Overlap[];
-    routes: Routes; pheno_consensus: Consensus; chem_consensus: Consensus; why: Why };
+    routes: Routes; pheno_consensus: Consensus; chem_consensus: Consensus; why: Why;
+    neighbor_effects: NeighborEffects };
   step5_reliability: { nn_id: string; nn_similarity: number; nn_distance: number;
     horizon_band: string; metric: string; basis: string };
   step6_report: { headline: string; mechanism_text: string; confidence_text: string;
@@ -47,7 +51,7 @@ type Drug = {
 type Manifest = {
   honesty_label: string; pca_var_explained: number[]; chem_var_explained: number[];
   n_reference_drugs: number; knn: number; nn_dist_tertiles: number[]; ref_nn_dist: number[];
-  moa_retrieval_note: string;
+  moa_retrieval_note: string; organ_systems?: string[]; n_programs?: number;
 };
 type Data = { manifest: Manifest; drugs: Drug[] };
 type CPoint = { id: string; moa_fine: string; coords2d: [number, number]; chem2d: [number, number]; is_demo: boolean };
@@ -65,6 +69,85 @@ function moaColor(moa: string): string {
 const BAND_LABEL: Record<string, string> = {
   "in-domain": "In-domain", "near-edge": "Near edge", "out-of-domain": "Out-of-domain",
 };
+
+/* ---- organ-intensity heat color (gray → amber → red) ---- */
+function lerp(a: number[], b: number[], t: number) { return a.map((x, i) => Math.round(x + (b[i] - x) * t)); }
+function organColor(t: number): string {
+  const clamp = Math.max(0, Math.min(1, t));
+  const rgb = clamp < 0.5 ? lerp([229, 231, 235], [245, 158, 11], clamp / 0.5)
+    : lerp([245, 158, 11], [220, 38, 38], (clamp - 0.5) / 0.5);
+  return `rgb(${rgb[0]},${rgb[1]},${rgb[2]})`;
+}
+
+/* ---- lazy-load 3Dmol.js from CDN (avoids touching package.json) ---- */
+let _3dmolPromise: Promise<any> | null = null;
+function load3Dmol(): Promise<any> {
+  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
+  const w = window as any;
+  if (w.$3Dmol) return Promise.resolve(w.$3Dmol);
+  if (_3dmolPromise) return _3dmolPromise;
+  _3dmolPromise = new Promise((resolve, reject) => {
+    const s = document.createElement("script");
+    s.src = "https://3Dmol.org/build/3Dmol-min.js"; s.async = true;
+    s.onload = () => resolve(w.$3Dmol); s.onerror = () => reject(new Error("3Dmol load failed"));
+    document.head.appendChild(s);
+  });
+  return _3dmolPromise;
+}
+
+/* ---- zebrafish anatomy: organ regions keyed by system; fill by intensity (illustrative stand-in) ---- */
+const FISH_ORGANS: { sys: string; el: "ellipse" | "rect" | "path"; attrs: any; label: [number, number] }[] = [
+  { sys: "Brain / CNS", el: "ellipse", attrs: { cx: 92, cy: 84, rx: 19, ry: 14 }, label: [92, 84] },
+  { sys: "Eye / retina", el: "ellipse", attrs: { cx: 64, cy: 90, rx: 7, ry: 7 }, label: [64, 90] },
+  { sys: "Heart", el: "path", attrs: { d: "M120 108 q8 -12 16 0 q-8 12 -16 0 Z" }, label: [128, 108] },
+  { sys: "Liver", el: "ellipse", attrs: { cx: 168, cy: 112, rx: 22, ry: 13 }, label: [168, 112] },
+  { sys: "Intestine / gut", el: "rect", attrs: { x: 196, y: 110, width: 108, height: 12, rx: 6 }, label: [250, 116] },
+  { sys: "Kidney (pronephros)", el: "rect", attrs: { x: 150, y: 70, width: 150, height: 9, rx: 4 }, label: [225, 74] },
+  { sys: "Skeletal muscle", el: "path", attrs: { d: "M150 86 q70 -18 150 6 q-70 22 -150 -6 Z" }, label: [250, 92] },
+  { sys: "Blood / immune", el: "ellipse", attrs: { cx: 352, cy: 104, rx: 15, ry: 9 }, label: [352, 104] },
+  { sys: "Vasculature", el: "rect", attrs: { x: 130, y: 98, width: 245, height: 5, rx: 2.5 }, label: [255, 100] },
+];
+function ZebrafishSVG({ organs, height = 200, onHover }:
+  { organs: Organ[]; height?: number; onHover?: (o: Organ | null, x: number, y: number) => void }) {
+  const bySys = new Map(organs.map((o) => [o.system, o]));
+  const body = "M30 95 C42 70 72 58 122 56 L300 60 C342 62 366 70 384 80 L432 54 L408 95 L432 138 L384 110 C366 120 342 128 300 130 L122 134 C72 132 42 120 30 95 Z";
+  return (
+    <svg width="100%" viewBox="0 0 460 200" role="img" aria-label="zebrafish organ-system involvement" style={{ maxHeight: height }}>
+      <path d={body} fill="#f8fafc" stroke="#cbd5e1" strokeWidth={1.5} />
+      <path d="M384 80 L432 54 L408 95 L432 138 L384 110 Z" fill="#f1f5f9" stroke="#cbd5e1" strokeWidth={1} />
+      {FISH_ORGANS.map((o) => {
+        const od = bySys.get(o.sys); const t = od ? od.intensity : 0;
+        const common = {
+          fill: organColor(t), stroke: "#94a3b8", strokeWidth: 0.8, opacity: 0.95, style: { cursor: "pointer" },
+          onMouseEnter: (e: any) => onHover?.(od ?? { system: o.sys, intensity: t }, e.nativeEvent.offsetX, e.nativeEvent.offsetY),
+          onMouseLeave: () => onHover?.(null, 0, 0),
+        };
+        if (o.el === "ellipse") return <ellipse key={o.sys} {...o.attrs} {...common} />;
+        if (o.el === "rect") return <rect key={o.sys} {...o.attrs} {...common} />;
+        return <path key={o.sys} {...o.attrs} {...common} />;
+      })}
+      <circle cx={60} cy={90} r={2} fill="#475569" />
+    </svg>
+  );
+}
+function OrganIntensityList({ organs }: { organs: Organ[] }) {
+  const sorted = [...organs].sort((a, b) => b.intensity - a.intensity);
+  return (
+    <div className="space-y-1">
+      {sorted.map((o) => (
+        <div key={o.system} className="flex items-center gap-2">
+          <span className="roboto-slab-regular text-[11px] text-gray-600 w-36 truncate text-right" title={o.system}>{o.system}</span>
+          <div className="flex-1 h-3 bg-gray-100 rounded overflow-hidden">
+            <div className="h-3 rounded" style={{ width: `${Math.round(o.intensity * 100)}%`, background: organColor(o.intensity) }} />
+          </div>
+          {o.drivers && o.drivers.length > 0 && (
+            <span className="roboto-slab-regular text-[10px] text-gray-400 w-40 truncate" title={o.drivers.join(", ")}>{o.drivers[0]}</span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function PocClient() {
   const [data, setData] = useState<Data | null>(null);
@@ -181,19 +264,89 @@ function Step1({ data, sel, selId, loadDrug, smiles, setSmiles, loadFromSmiles, 
           </div>
         </label>
         {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
-        <div className="mt-2 rounded-md border border-gray-200 bg-white p-4 flex flex-col items-center min-h-[260px] justify-center">
-          {sel ? (
-            <>
-              <div aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
-              <div className="text-center mt-3">
-                <div className="roboto-slab-medium text-gray-800">{sel.display_name}</div>
-                <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
-                {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
-              </div>
-            </>
-          ) : <span className="roboto-slab-regular text-sm text-gray-400">No compound selected — choose a demo or Quick-Start.</span>}
+        {sel ? <StructureCard sel={sel} /> : (
+          <div className="mt-2 rounded-md border border-gray-200 bg-white p-4 flex flex-col items-center min-h-[260px] justify-center">
+            <span className="roboto-slab-regular text-sm text-gray-400">No compound selected — choose a demo or Quick-Start.</span>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* 2D depiction ⇄ interactive 3D (molecule conformer + verified target-complex via 3Dmol.js) */
+function StructureCard({ sel }: { sel: Drug }) {
+  const has3d = !!sel.step1_structure.mol3d;
+  const [mode, setMode] = useState<"2d" | "3d">("2d");
+  return (
+    <div className="mt-2">
+      <div className="inline-flex rounded-md border border-gray-300 overflow-hidden mb-2">
+        <button onClick={() => setMode("2d")} className={`roboto-slab-regular text-xs px-3 py-1 ${mode === "2d" ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"}`}>2D structure</button>
+        <button onClick={() => setMode("3d")} disabled={!has3d}
+          className={`roboto-slab-regular text-xs px-3 py-1 ${mode === "3d" ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"} disabled:text-gray-300`}>3D / target</button>
+      </div>
+      <div className="rounded-md border border-gray-200 bg-white p-4 flex flex-col items-center justify-center" style={{ minHeight: 300 }}>
+        {mode === "2d"
+          ? <div aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
+          : <Mol3DViewer sel={sel} />}
+        <div className="text-center mt-3">
+          <div className="roboto-slab-medium text-gray-800">{sel.display_name}</div>
+          <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
+          {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
         </div>
       </div>
+    </div>
+  );
+}
+
+function Mol3DViewer({ sel }: { sel: Drug }) {
+  const host = useRef<HTMLDivElement>(null);
+  const viewer = useRef<any>(null);
+  const tpdb = sel.step1_structure.target_pdb;
+  const [mode, setMode] = useState<"molecule" | "complex">("molecule");
+  const [status, setStatus] = useState("loading 3D viewer…");
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading 3D viewer…");
+    load3Dmol().then(($3Dmol) => {
+      if (cancelled || !host.current) return;
+      if (!viewer.current) viewer.current = $3Dmol.createViewer(host.current, { backgroundColor: "white" });
+      const v = viewer.current; v.clear();
+      if (mode === "molecule") {
+        if (!sel.step1_structure.mol3d) { setStatus("3D conformer unavailable"); return; }
+        v.addModel(sel.step1_structure.mol3d, "mol");
+        v.setStyle({}, { stick: { radius: 0.16 }, sphere: { scale: 0.23 } });
+        v.zoomTo(); v.render(); setStatus("");
+      } else if (tpdb) {
+        setStatus(`loading ${tpdb.pdb} from RCSB…`);
+        $3Dmol.download(`pdb:${tpdb.pdb}`, v, {}, () => {
+          if (cancelled) return;
+          v.setStyle({}, { cartoon: { color: "spectrum", opacity: 0.65 } });
+          v.addStyle({ resn: tpdb.ligand }, { stick: { colorscheme: "magentaCarbon", radius: 0.3 } });
+          v.addStyle({ resn: tpdb.ligand }, { sphere: { scale: 0.28 } });
+          try { v.zoomTo({ resn: tpdb.ligand }); } catch { v.zoomTo(); }
+          v.render(); setStatus("");
+        });
+      }
+    }).catch(() => setStatus("could not load 3D viewer (offline?)"));
+    return () => { cancelled = true; };
+  }, [sel.id, mode, tpdb]);
+  return (
+    <div className="w-full">
+      {tpdb && (
+        <div className="inline-flex rounded-md border border-gray-300 overflow-hidden mb-2">
+          <button onClick={() => setMode("molecule")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "molecule" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Molecule</button>
+          <button onClick={() => setMode("complex")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "complex" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Target complex</button>
+        </div>
+      )}
+      <div ref={host} className="relative mx-auto rounded border border-gray-100" style={{ width: "100%", maxWidth: 380, height: 260 }}>
+        {status && <div className="absolute inset-0 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none">{status}</div>}
+      </div>
+      <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2 text-center">
+        {mode === "complex" && tpdb
+          ? <>Experimental structure <strong>PDB {tpdb.pdb}</strong> — {sel.display_name} (magenta) bound to {tpdb.target}. Drag to rotate, scroll to zoom.</>
+          : <>3D conformer (RDKit ETKDG, illustrative geometry). Drag to rotate, scroll to zoom.{tpdb ? " Switch to “Target complex” for the binding interface." : ""}</>}
+      </p>
     </div>
   );
 }
@@ -233,7 +386,7 @@ function Step2({ sel, revealed, setRevealed }: { sel: Drug; revealed: boolean; s
   );
 }
 
-/* ---------------- Step 3 — response fingerprint (4 views: volcano · waterfall · heatmap · pathways) -- */
+/* ---------------- Step 3 — response fingerprint (3 views: volcano · pathways · zebrafish) ----------- */
 // diverging color for log2FC: red = induced, blue = repressed
 function lfcColor(x: number, m = 3): string {
   const t = Math.max(-1, Math.min(1, x / m));
@@ -242,8 +395,8 @@ function lfcColor(x: number, m = 3): string {
 }
 type Tip = { title: string; sub: string; x: number; y: number } | null;
 const FP_VIEWS = [
-  { key: "volcano", label: "Volcano" }, { key: "waterfall", label: "Waterfall" },
-  { key: "heatmap", label: "Heatmap" }, { key: "programs", label: "Pathways" },
+  { key: "volcano", label: "Volcano" }, { key: "programs", label: "Pathways" },
+  { key: "zebrafish", label: "Zebrafish organs" },
 ] as const;
 type FpView = typeof FP_VIEWS[number]["key"];
 
@@ -255,7 +408,7 @@ function Step3({ sel }: { sel: Drug }) {
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 3 — Response fingerprint</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
         Mean log₂ fold-change <strong>across {fp.n_cell_lines} cancer cell lines</strong> ({fp.dose_uM} µM vs {fp.control}).
-        Four standard ways to read a transcriptional response — switch views.
+        Read it gene-by-gene (volcano), lifted to mechanism (pathways), or projected onto a whole organism (zebrafish).
       </p>
       <div className="inline-flex flex-wrap rounded-md border border-gray-300 overflow-hidden mb-3">
         {FP_VIEWS.map((v) => (
@@ -267,9 +420,8 @@ function Step3({ sel }: { sel: Drug }) {
         ))}
       </div>
       {view === "volcano" && <VolcanoView fp={fp} />}
-      {view === "waterfall" && <WaterfallView fp={fp} />}
-      {view === "heatmap" && <HeatmapView fp={fp} sel={sel} />}
       {view === "programs" && <ProgramsView fp={fp} />}
+      {view === "zebrafish" && <ZebrafishView fp={fp} sel={sel} />}
     </div>
   );
 }
@@ -314,89 +466,35 @@ function VolcanoView({ fp }: { fp: Drug["step2_fingerprint"] }) {
   );
 }
 
-/* Waterfall — every gene ranked by log2FC (S-curve), robust top movers labelled */
-function WaterfallView({ fp }: { fp: Drug["step2_fingerprint"] }) {
-  const W = 640, H = 360, pad = 40;
+/* Zebrafish — illustrative whole-organism projection: organ systems light by inferred involvement */
+function ZebrafishView({ fp, sel }: { fp: Drug["step2_fingerprint"]; sel: Drug }) {
   const [tip, setTip] = useState<Tip>(null);
-  const w = fp.waterfall;
-  const ym = Math.max(1, ...w.curve.map((c) => Math.abs(c.lfc)));
-  const sx = (r: number) => pad + r * (W - 2 * pad);
-  const sy = (y: number) => H / 2 - (y / ym) * (H / 2 - pad);
-  const path = w.curve.map((c, i) => `${i === 0 ? "M" : "L"}${sx(c.r).toFixed(1)},${sy(c.lfc).toFixed(1)}`).join(" ");
-  const area = `${path} L${sx(1)},${sy(0)} L${sx(0)},${sy(0)} Z`;
-  const marks = [...w.top_up.map((m) => ({ ...m, dir: "up" as const })), ...w.top_down.map((m) => ({ ...m, dir: "down" as const }))];
   return (
-    <div className="relative rounded-md border border-gray-200 bg-white p-2">
-      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="ranked waterfall plot">
-        <defs>
-          <linearGradient id="wfUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity="0.25" /><stop offset="100%" stopColor="#10b981" stopOpacity="0" /></linearGradient>
-        </defs>
-        <path d={area} fill="url(#wfUp)" />
-        <line x1={pad} y1={sy(0)} x2={W - pad} y2={sy(0)} stroke="#9ca3af" strokeWidth={1} />
-        <path d={path} fill="none" stroke="#374151" strokeWidth={1.6} />
-        {marks.map((m, i) => (
-          <g key={i}>
-            <circle cx={sx(m.r)} cy={sy(m.lfc)} r={3} fill={m.dir === "up" ? "#10b981" : "#f43f5e"}
-              onMouseEnter={(e) => setTip({ title: m.g, sub: `log₂FC ${m.lfc.toFixed(2)} · rank ${(m.r * 100).toFixed(0)}%`, x: (e.nativeEvent as any).offsetX, y: (e.nativeEvent as any).offsetY })}
-              onMouseLeave={() => setTip(null)} style={{ cursor: "pointer" }} />
-            <text x={sx(m.r) + (m.dir === "up" ? 5 : 5)} y={sy(m.lfc) + (m.dir === "up" ? -4 : 12)} fontSize={9}
-              fill="#374151" className="roboto-slab-regular">{m.g}</text>
-          </g>
-        ))}
-        <text x={pad} y={20} fontSize={10} fill="#10b981" className="roboto-slab-medium">induced</text>
-        <text x={pad} y={H - 10} fontSize={10} fill="#f43f5e" className="roboto-slab-medium">repressed</text>
-        <text x={W - pad} y={sy(0) - 6} fontSize={10} fill="#9ca3af" textAnchor="end" className="roboto-slab-regular">all {w.n_total.toLocaleString()} genes, ranked →</text>
-      </svg>
-      {tip && <FpTip tip={tip} />}
-      <p className="roboto-slab-regular text-xs text-gray-400 mt-1">
-        Every detected gene ranked by mean log₂FC. <strong>{w.n_up_strong.toLocaleString()}</strong> strongly induced and
-        {" "}<strong>{w.n_down_strong.toLocaleString()}</strong> strongly repressed (|log₂FC| ≥ {w.threshold}). Labelled genes are the robust top movers.
-      </p>
-    </div>
-  );
-}
-
-/* Heatmap — this drug's signature genes × related drugs (query + neighbors + chemistry anchor) */
-function HeatmapView({ fp, sel }: { fp: Drug["step2_fingerprint"]; sel: Drug }) {
-  const h = fp.heatmap;
-  const cell = 30, labelW = 96, headH = 92;
-  return (
-    <div className="rounded-md border border-gray-200 bg-white p-3 overflow-x-auto">
-      <div className="inline-block" style={{ minWidth: labelW + h.cols.length * cell }}>
-        {/* column headers */}
-        <div className="flex" style={{ marginLeft: labelW, height: headH }}>
-          {h.cols.map((c, j) => (
-            <div key={c} style={{ width: cell }} className="relative">
-              <div className="absolute bottom-1 left-1/2 origin-bottom-left -rotate-45 whitespace-nowrap roboto-slab-regular text-[10px] text-gray-600 flex items-center gap-1">
-                <span className="inline-block w-2 h-2 rounded-full" style={{ background: moaColor(h.col_moa[j]) }} />
-                <span className={j === 0 ? "roboto-slab-medium text-gray-900" : ""}>{c.replace(/\s*\(.*\)/, "")}{j === 0 ? " ◆" : ""}</span>
-              </div>
-            </div>
-          ))}
+    <div className="rounded-md border border-gray-200 bg-white p-4">
+      <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2 mb-3">
+        <p className="roboto-slab-regular text-[11px] text-amber-800">
+          <strong>Stand-in for the product vision.</strong> We aren&apos;t running zebrafish yet — organ involvement here is
+          <em> inferred</em> from {sel.display_name}&apos;s molecular programs via a curated pathway→organ map. In production this
+          panel is read directly from whole-organism zebrafish single-cell data.
+        </p>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+        <div className="relative">
+          <ZebrafishSVG organs={fp.organs} height={210}
+            onHover={(o, x, y) => setTip(o ? { title: o.system, sub: `involvement ${Math.round(o.intensity * 100)}%${o.drivers && o.drivers.length ? " · " + o.drivers.join(", ") : ""}`, x, y } : null)} />
+          {tip && <FpTip tip={tip} />}
         </div>
-        {/* rows */}
-        {h.genes.map((g, i) => (
-          <div key={g} className="flex items-center" style={{ height: cell }}>
-            <div className="roboto-slab-regular text-[11px] text-right pr-2 truncate"
-              style={{ width: labelW, color: i < h.n_up ? "#047857" : "#be123c" }} title={g}>{g}</div>
-            {h.values[i].map((val, j) => (
-              <div key={j} title={`${g} × ${h.cols[j]}: ${val === null ? "n/a" : (val as number).toFixed(2)}`}
-                style={{ width: cell, height: cell, background: val === null ? "#f9fafb" : lfcColor(val as number),
-                  outline: j === 0 ? "2px solid #111827" : "1px solid #fff", outlineOffset: -1 }} />
-            ))}
-          </div>
-        ))}
+        <div>
+          <div className="roboto-slab-medium text-xs text-gray-600 mb-2">Inferred organ-system involvement</div>
+          <OrganIntensityList organs={fp.organs} />
+        </div>
       </div>
-      <div className="flex items-center gap-3 mt-3">
-        <span className="roboto-slab-regular text-[11px] text-gray-500">repressed</span>
-        <div className="h-3 w-40 rounded" style={{ background: "linear-gradient(90deg,#3a3aff,#fff,#ff3a3a)" }} />
-        <span className="roboto-slab-regular text-[11px] text-gray-500">induced</span>
-        <span className="roboto-slab-regular text-[11px] text-gray-400 ml-2">◆ = {sel.display_name} (query)</span>
+      <div className="flex items-center gap-2 mt-3">
+        <span className="roboto-slab-regular text-[11px] text-gray-500">low</span>
+        <div className="h-3 w-40 rounded" style={{ background: "linear-gradient(90deg,#e5e7eb,#f59e0b,#dc2626)" }} />
+        <span className="roboto-slab-regular text-[11px] text-gray-500">high</span>
       </div>
-      <p className="roboto-slab-regular text-xs text-gray-400 mt-2">
-        {sel.display_name}&apos;s signature genes (rows) across {h.basis}. Shared color down a row = a shared response;
-        it ties the fingerprint to the mechanism neighbors from Steps 4–5.
-      </p>
+      <p className="roboto-slab-regular text-xs text-gray-400 mt-2">{fp.organ_basis}.</p>
     </div>
   );
 }
@@ -408,7 +506,11 @@ function ProgramsView({ fp }: { fp: Drug["step2_fingerprint"] }) {
   const m = Math.max(0.5, ...ps.map((p) => Math.abs(p.score)));
   return (
     <div className="rounded-md border border-gray-200 bg-white p-4">
-      <div className="space-y-2">
+      <div className="flex justify-between roboto-slab-regular text-[10px] text-gray-400 mb-1 px-1">
+        <span className="ml-auto mr-auto">← repressed&nbsp;&nbsp;|&nbsp;&nbsp;induced →</span>
+        <span>{ps.length} programs</span>
+      </div>
+      <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
         {ps.map((p) => {
           const pct = (Math.abs(p.score) / m) * 50; const up = p.score >= 0;
           return (
@@ -630,6 +732,72 @@ function Step4({ sel, cloud, manifest }: { sel: Drug; cloud: Const | null; manif
         <strong>{regime === "phenotype" ? "full phenotype space (HVG-2000 cosine)" : "full chemistry space (ECFP Tanimoto)"}</strong>,
         not from these 2D distances.
       </p>
+
+      <NeighborEffects ne={sel.step4_mechanism.neighbor_effects} sel={sel} />
+    </div>
+  );
+}
+
+/* Neighbor effects → assumed effect: the atlas premise made visual. The subject is assumed to behave
+   like its nearest characterized neighbors; their effects synthesize into its inferred profile. */
+function NeighborEffects({ ne, sel }: { ne: NeighborEffects; sel: Drug }) {
+  const [tip, setTip] = useState<Tip>(null);
+  return (
+    <div className="mt-6">
+      <h3 className="roboto-slab-medium text-base text-gray-800 mb-1">What we infer {sel.display_name} does — from its neighbors</h3>
+      <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
+        Each nearest neighbor is a <strong>characterized</strong> compound. Their measured effects are the evidence;
+        their consensus is the effect we <strong>assume</strong> for {sel.display_name}.
+      </p>
+
+      {/* neighbor cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mb-4">
+        {ne.neighbors.map((nb) => {
+          const top = [...nb.organs].sort((a, b) => b.intensity - a.intensity).slice(0, 3);
+          return (
+            <div key={nb.id} className="rounded-md border border-gray-200 bg-white p-3">
+              <div className="roboto-slab-medium text-sm text-gray-800 truncate" title={nb.id}>{nb.id}</div>
+              <div className="roboto-slab-regular text-[11px] mb-1.5" style={{ color: moaColor(nb.moa_fine) }}>{nb.moa_fine}</div>
+              <div className="space-y-1">
+                {top.map((o) => (
+                  <div key={o.system} className="flex items-center gap-1.5">
+                    <span className="roboto-slab-regular text-[10px] text-gray-500 w-28 truncate text-right">{o.system}</span>
+                    <div className="flex-1 h-2 bg-gray-100 rounded overflow-hidden"><div className="h-2" style={{ width: `${Math.round(o.intensity * 100)}%`, background: organColor(o.intensity) }} /></div>
+                  </div>
+                ))}
+              </div>
+              <div className="roboto-slab-regular text-[10px] text-gray-400 mt-1.5 truncate" title={nb.programs.map((p) => p.name).join(", ")}>
+                {nb.programs.slice(0, 2).map((p) => `${p.name.split(" /")[0]} ${p.score > 0 ? "+" : ""}${p.score}`).join(" · ")}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* assumed effect */}
+      <div className="rounded-md border border-teal-200 bg-teal-50/40 p-4">
+        <div className="roboto-slab-medium text-sm text-teal-900 mb-2">⮕ Assumed effect for {sel.display_name} (neighbor consensus)</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-center">
+          <div className="relative">
+            <ZebrafishSVG organs={ne.assumed_organs} height={180}
+              onHover={(o, x, y) => setTip(o ? { title: o.system, sub: `assumed involvement ${Math.round(o.intensity * 100)}%`, x, y } : null)} />
+            {tip && <FpTip tip={tip} />}
+          </div>
+          <div>
+            <div className="roboto-slab-regular text-xs text-gray-600 mb-1">Consensus programs</div>
+            <div className="flex flex-wrap gap-1">
+              {ne.assumed_programs.map((p) => (
+                <span key={p.name} className="roboto-slab-regular text-[11px] px-2 py-0.5 rounded-full border"
+                  style={{ borderColor: p.score >= 0 ? "#99f6e4" : "#fecdd3", background: p.score >= 0 ? "#f0fdfa" : "#fff1f2",
+                    color: p.score >= 0 ? "#0f766e" : "#be123c" }}>
+                  {p.name.split(" /")[0]} {p.score > 0 ? "+" : ""}{p.score}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+        <p className="roboto-slab-regular text-xs text-gray-400 mt-3">{ne.basis}.</p>
+      </div>
     </div>
   );
 }
