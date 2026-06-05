@@ -138,7 +138,6 @@ function OrganIntensityList({ organs }: { organs: Organ[] }) {
   );
 }
 
-type Path = "known" | "novel" | null;
 type Modality = "mab" | "rna" | "smol" | null;
 
 /* ---------------- Modality sprites ----------------
@@ -173,10 +172,10 @@ const MODALITIES: { id: Exclude<Modality, null>; title: string; blurb: string; i
 export default function PocClient() {
   const [data, setData] = useState<Data | null>(null);
   const [cloud, setCloud] = useState<Const | null>(null);
-  const [path, setPath] = useState<Path>(null);
   const [modality, setModality] = useState<Modality>(null);
   const [selId, setSelId] = useState("");
   const [novel, setNovel] = useState(false);    // selected compound is an interpolated candidate
+  const [unknown, setUnknown] = useState(false); // submitted SMILES matched nothing (truly novel/unknown)
   const [smiles, setSmiles] = useState("");
   const [note, setNote] = useState("");
   const [step, setStep] = useState(1);
@@ -197,13 +196,41 @@ export default function PocClient() {
 
   function loadDrug(id: string) {
     const d = data?.drugs.find((x) => x.id === id);
-    setSelId(id); setNovel(false); setSmiles(d ? d.step1_structure.smiles : ""); setNote(""); setRevealed(false);
+    setSelId(id); setNovel(false); setUnknown(false); setSmiles(d ? d.step1_structure.smiles : ""); setNote(""); setRevealed(false);
   }
-  function chooseCandidate(anchorId: string) { setSelId(anchorId); setNovel(true); setNote(""); setRevealed(false); setStep(2); }
+  // Drop a novel candidate into the interpolation space (anchored on its nearest atlas exemplar). Stays on Step 1.
+  function placeCandidate(anchorId: string, pseudoSmiles: string) {
+    setSelId(anchorId); setNovel(true); setUnknown(false); setSmiles(pseudoSmiles); setNote(""); setRevealed(false);
+  }
+  // Auto-detect what the submitted SMILES is: a measured atlas compound, a repurposing-library drug, or novel/unknown.
+  function analyzeSmiles() {
+    const q = smiles.trim();
+    if (!q || !data) { setNote("Paste a SMILES string, or use one of the buttons below."); return; }
+    const hit = data.drugs.find((d) => d.step1_structure.smiles.trim() === q);
+    if (hit) loadDrug(hit.id);
+    else { setSelId(""); setNovel(false); setUnknown(true); setNote(""); setRevealed(false); }
+  }
+  function randomRepurposing() {
+    const gs = (data?.drugs ?? []).filter((d) => d.is_guest);
+    if (!gs.length) return;
+    loadDrug(gs[Math.floor(Math.random() * gs.length)].id);
+  }
+  // Synthesize a novel SMILES sitting in a high-confidence (densely-covered) region of the manifold.
+  function randomNovel() {
+    if (!data) return;
+    const scored = data.drugs.filter((d) => !d.is_guest).map((d) => ({
+      d, s: d.step3_embedding.neighbors.slice(0, 3).reduce((a, n) => a + n.similarity, 0) / 3,
+    })).sort((a, b) => b.s - a.s);
+    if (!scored.length) return;
+    const pool = scored.slice(0, 25); // densest regions = high-confidence interpolation space
+    const anchor = pool[Math.floor(Math.random() * pool.length)].d;
+    placeCandidate(anchor.id, mutateSmiles(anchor.step1_structure.smiles));
+  }
   function quickStart() { loadDrug(QUICKSTART); setStep(1); }
   function go(n: number) { if (n >= 1 && n <= 6 && (sel || n === 1)) setStep(n); }
-  function reset(p: Path) { setPath(p); setSelId(""); setNovel(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
-  function backToStart() { setModality(null); reset(null); }
+  function reset() { setSelId(""); setNovel(false); setUnknown(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
+  function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
+  function backToStart() { setModality(null); reset(); }
 
   const Logo = (
     <div className="w-full max-w-3xl mb-4 flex items-center justify-between">
@@ -269,7 +296,7 @@ export default function PocClient() {
           <p className="roboto-slab-regular text-sm text-gray-500 mb-6">How do you want to start? Choose a therapeutic modality to run through the MegaFin screening workflow.</p>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {MODALITIES.map((m) => (
-              <button key={m.id} onClick={() => setModality(m.id)}
+              <button key={m.id} onClick={() => chooseModality(m.id)}
                 className="group text-left rounded-lg border border-gray-300 bg-white overflow-hidden hover:border-gray-700 hover:shadow-md transition">
                 <div className="aspect-square w-full p-4 flex items-center justify-center"
                   style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)" }}>
@@ -322,39 +349,7 @@ export default function PocClient() {
     );
   }
 
-  // ---- small molecule: choose a path ----
-  if (!path) {
-    return (
-      <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
-        {DarkStyle}
-        {Logo}
-        {Banner}
-        <div className="w-full max-w-3xl">
-          <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
-            ◂ Small Molecule — change modality
-          </button>
-          <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900 mb-1">Small-molecule workflow</h1>
-          <p className="roboto-slab-regular text-sm text-gray-500 mb-6">How do you want to start? This sets what you submit in Step 1.</p>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <button onClick={() => reset("known")}
-              className="text-left rounded-lg border border-gray-300 bg-white p-5 hover:border-gray-700 hover:shadow-sm transition">
-              <div className="text-2xl mb-2">🧪</div>
-              <div className="roboto-slab-medium text-gray-900 mb-1">Known compound</div>
-              <p className="roboto-slab-regular text-sm text-gray-500">Run a drug with published, characterized properties through the workflow. Pick from the {data?.manifest.n_reference_drugs ?? 94}-compound MegaFin atlas.</p>
-            </button>
-            <button onClick={() => reset("novel")}
-              className="text-left rounded-lg border border-gray-300 bg-white p-5 hover:border-gray-700 hover:shadow-sm transition">
-              <div className="text-2xl mb-2">✶</div>
-              <div className="roboto-slab-medium text-gray-900 mb-1">Novel molecule</div>
-              <p className="roboto-slab-regular text-sm text-gray-500">A brand-new, unseen structure. Paste a SMILES string — or generate a candidate inside the atlas&apos;s high-confidence interpolation space.</p>
-            </button>
-          </div>
-        </div>
-        <p className="roboto-slab-regular text-xs text-gray-400 mt-8 text-center max-w-3xl">{honesty}</p>
-      </main>
-    );
-  }
-
+  // ---- small-molecule workflow (unified molecule input, no secondary path picker) ----
   return (
     <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
       {DarkStyle}
@@ -362,14 +357,12 @@ export default function PocClient() {
       {Banner}
       <div className="w-full max-w-3xl">
         <div className="flex items-center justify-between mb-1">
-          <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900">Compound-insight workflow</h1>
-          {path === "known" && (
-            <button onClick={quickStart}
-              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700">Quick-Start ▸</button>
-          )}
+          <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900">Small-molecule workflow</h1>
+          <button onClick={quickStart}
+            className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700">Quick-Start ▸</button>
         </div>
-        <button onClick={() => reset(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
-          ◂ {path === "known" ? "Known compound" : "Novel molecule"} — change path
+        <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
+          ◂ Small Molecule — change modality
         </button>
 
         {(novel || sel?.is_guest) && (
@@ -400,7 +393,7 @@ export default function PocClient() {
         </div>
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, path, sel, selId, loadDrug, smiles, setSmiles, note, setNote, quickStart, chooseCandidate }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, novel, unknown, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }} />}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
           {step === 4 && sel && <Step4 sel={sel} cloud={cloud} manifest={data?.manifest} />}
@@ -423,38 +416,85 @@ export default function PocClient() {
   );
 }
 
-/* ---------------- Step 1 (path-aware: known literature drug · novel SMILES + interpolation) -------- */
-function Step1({ data, cloud, path, sel, selId, loadDrug, smiles, setSmiles, note, setNote, quickStart, chooseCandidate }: any) {
-  if (path === "novel") return <Step1Novel {...{ data, cloud, sel, smiles, setSmiles, note, setNote, loadDrug, chooseCandidate }} />;
-  // known compound: a real, literature-backed drug NOT in the measured 94 — agentic research, then interpolate.
-  const guests: Drug[] = (data?.drugs ?? []).filter((d: Drug) => d.is_guest);
+/* ---------------- Step 1 — Molecule input ----------------
+   One SMILES box. The backend auto-detects whether the structure is (a) a measured atlas compound,
+   (b) a drug-repurposing-library entry, or (c) novel/unknown. Two shortcuts seed the box: a random
+   repurposing-library drug, or a freshly synthesized SMILES in the high-confidence interpolation space. */
+function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, analyzeSmiles, randomRepurposing, randomNovel }: any) {
+  // detected category — derived from what the submitted SMILES resolved to
+  const detection: "atlas" | "repurposing" | "novel" | "unknown" | null =
+    sel ? (novel ? "novel" : sel.is_guest ? "repurposing" : "atlas") : (unknown ? "unknown" : null);
   return (
     <div>
-      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 1 — Submit a known compound</h2>
+      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 1 — Molecule input</h2>
       <p className="roboto-slab-regular text-sm text-gray-500 mb-5">
-        A real drug with published properties — <strong>not</strong> one of the measured 94. We run agentic literature
-        research on it first, then place it in the atlas by interpolation. (Curated demo set; production accepts any drug.)
+        Submit a SMILES string. We auto-detect whether it&apos;s already <strong>measured in the MegaFin Atlas</strong>,
+        a structure from the <strong>drug-repurposing library</strong>, or a <strong>novel</strong> molecule placed by
+        interpolation. (Curated demo set; production accepts any structure.)
       </p>
       <div className="flex flex-col gap-4">
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-          <label className="flex-1">
-            <span className="roboto-slab-regular block text-xs text-gray-500 mb-1">Known drug</span>
-            <select value={selId} onChange={(e) => loadDrug(e.target.value)}
-              className="roboto-slab-regular w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800">
-              <option value="">— select a known drug —</option>
-              {guests.map((d) => <option key={d.id} value={d.id}>{d.display_name} — {d.drug_class}</option>)}
-            </select>
-          </label>
-          <button onClick={quickStart}
-            className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700">Quick-Start</button>
-        </div>
-        {sel?.dossier && <DossierPanel sel={sel} />}
-        {sel ? <StructureCard sel={sel} /> : (
-          <div className="mt-2 rounded-md border border-gray-200 bg-white p-4 flex flex-col items-center min-h-[260px] justify-center">
-            <span className="roboto-slab-regular text-sm text-gray-400">No compound selected — pick a known drug above or Quick-Start.</span>
+        <label className="block">
+          <span className="roboto-slab-regular block text-xs text-gray-500 mb-1">SMILES string</span>
+          <div className="flex gap-2">
+            <input value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
+              onKeyDown={(e) => { if (e.key === "Enter") analyzeSmiles(); }}
+              className="roboto-slab-regular flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 font-mono" />
+            <button onClick={analyzeSmiles}
+              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700 whitespace-nowrap">Analyze ▸</button>
           </div>
-        )}
+        </label>
+        <div className="flex flex-col sm:flex-row gap-2">
+          <button onClick={randomRepurposing}
+            className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100">
+            🎲 Random repurposing-library drug
+          </button>
+          <button onClick={randomNovel}
+            className="roboto-slab-medium flex-1 rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-2 text-sm hover:bg-violet-100">
+            ✶ Random novel SMILES (interpolation space)
+          </button>
+        </div>
+
+        {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
+        {detection && <DetectionBanner detection={detection} sel={sel} />}
+
+        <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />
+
+        {detection === "repurposing" && sel?.dossier && <DossierPanel sel={sel} />}
+        {sel && <StructureCard sel={sel} />}
       </div>
+    </div>
+  );
+}
+
+/* Auto-detection verdict banner. */
+function DetectionBanner({ detection, sel }: { detection: string; sel: Drug | null }) {
+  const map: Record<string, { cls: string; tag: string; body: JSX.Element }> = {
+    atlas: {
+      cls: "border-emerald-200 bg-emerald-50 text-emerald-800",
+      tag: "Measured in the MegaFin Atlas",
+      body: <>Exact match to <strong>{sel?.display_name}</strong> — one of the 94 measured reference compounds. Its whole-organism profile is observed, not interpolated.</>,
+    },
+    repurposing: {
+      cls: "border-sky-200 bg-sky-50 text-sky-800",
+      tag: "Drug-repurposing library",
+      body: <>Matches <strong>{sel?.display_name}</strong> ({sel?.drug_class}). Not in the measured 94 — we attach its literature dossier and place it by interpolation from nearest atlas neighbors.</>,
+    },
+    novel: {
+      cls: "border-violet-200 bg-violet-50 text-violet-800",
+      tag: "Novel — interpolated",
+      body: <>Unseen structure dropped into a high-confidence region of the manifold. Its predicted profile is interpolated from nearby atlas compounds (anchor exemplar: <strong>{sel?.display_name}</strong>).</>,
+    },
+    unknown: {
+      cls: "border-amber-200 bg-amber-50 text-amber-800",
+      tag: "Novel — unrecognized",
+      body: <>This SMILES doesn&apos;t match the atlas or the repurposing library. Live embedding of an arbitrary structure isn&apos;t wired into this preview — use <em>Random novel SMILES</em> to drop a candidate into the interpolation space.</>,
+    },
+  };
+  const m = map[detection]; if (!m) return null;
+  return (
+    <div className={`rounded-md border px-3 py-2 ${m.cls}`}>
+      <div className="roboto-slab-medium text-xs uppercase tracking-wide mb-0.5">Detected · {m.tag}</div>
+      <p className="roboto-slab-regular text-[12px] leading-snug">{m.body}</p>
     </div>
   );
 }
@@ -486,99 +526,128 @@ function DossierPanel({ sel }: { sel: Drug }) {
   );
 }
 
-/* Novel path: paste a SMILES, or generate a candidate inside the high-confidence interpolation space. */
-function Step1Novel({ data, cloud, sel, smiles, setSmiles, note, setNote, loadDrug, chooseCandidate }: any) {
-  function tryLoadSmiles() {
-    const hit = data?.drugs.find((d: Drug) => d.step1_structure.smiles.trim() === smiles.trim());
-    if (hit) { loadDrug(hit.id); setNote(`That SMILES matches atlas compound ${hit.display_name} — loading it.`); }
-    else setNote("Live embedding of an arbitrary SMILES isn't wired into this preview. Use “Generate within the interpolation space” to drop a candidate into the atlas, or paste a SMILES that matches an atlas compound.");
-  }
-  return (
-    <div>
-      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 1 — Submit a novel molecule</h2>
-      <p className="roboto-slab-regular text-sm text-gray-500 mb-5">A brand-new structure has no measured profile. Paste a SMILES, or drop a candidate into the atlas&apos;s high-confidence interpolation space for a demo run.</p>
-      <div className="flex flex-col gap-4">
-        <label className="block">
-          <span className="roboto-slab-regular block text-xs text-gray-500 mb-1">SMILES (novel structure)</span>
-          <div className="flex gap-2">
-            <input value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
-              className="roboto-slab-regular flex-1 rounded-md border border-gray-300 bg-white px-3 py-2 text-sm text-gray-800 font-mono" />
-            <button onClick={tryLoadSmiles}
-              className="roboto-slab-medium rounded-md border border-gray-400 bg-white text-gray-700 px-4 py-2 text-sm hover:bg-gray-100">Embed</button>
-          </div>
-        </label>
-        {note && <p className="roboto-slab-regular text-xs text-gray-500 bg-gray-100 border border-gray-200 rounded-md px-3 py-2">{note}</p>}
-        <div className="flex items-center gap-3">
-          <div className="flex-1 h-px bg-gray-200" /><span className="roboto-slab-regular text-xs text-gray-400">or</span><div className="flex-1 h-px bg-gray-200" />
-        </div>
-        <NovelGenerator data={data} cloud={cloud} chooseCandidate={chooseCandidate} />
-        {sel && <StructureCard sel={sel} />}
-      </div>
-    </div>
-  );
+/* Illustrative novel analog of a SMILES — grafts a methyl onto the first aliphatic carbon. */
+function mutateSmiles(s: string): string {
+  const m = s.match(/C(?!l)/);
+  if (!m || m.index === undefined) return s + "C";
+  const i = m.index;
+  return s.slice(0, i + 1) + "(C)" + s.slice(i + 1);
 }
 
-/* Pick a random high-density location in the atlas → an interpolated candidate with confidence. */
-function NovelGenerator({ data, cloud, chooseCandidate }: { data: Data | null; cloud: Const | null; chooseCandidate: (id: string) => void }) {
-  const [seed, setSeed] = useState(0);
-  const W = 560, H = 320, pad = 24;
-  const pts = cloud?.points ?? [];
-  // candidate = a high-density atlas anchor (nearest-neighbour distance small) + jitter
-  const pick = useMemo(() => {
-    if (!data || !pts.length) return null;
-    // density: mean of top phenotype-neighbour similarities for each measured atlas drug (exclude guests)
-    const scored = data.drugs.filter((d) => !d.is_guest).map((d) => {
-      const s = d.step3_embedding.neighbors.slice(0, 3).reduce((a, n) => a + n.similarity, 0) / 3;
-      return { d, s };
-    }).sort((a, b) => b.s - a.s);
-    const pool = scored.slice(0, 30); // densest 30 regions
-    const anchor = pool[(seed * 7 + 3) % pool.length].d;
-    const conf = Math.round(Math.min(0.99, anchor.step3_embedding.neighbors[0].similarity) * 100);
-    // jitter the candidate slightly off the anchor in the phenotype manifold
-    const jx = ((seed * 31) % 11 - 5) * 0.12, jy = ((seed * 17) % 11 - 5) * 0.12;
-    const cx = anchor.step3_embedding.coords2d[0] + jx, cy = anchor.step3_embedding.coords2d[1] + jy;
-    return { anchor, conf, cx, cy, neighbors: anchor.step3_embedding.neighbors.slice(0, 5) };
-  }, [data, pts, seed]);
+/* inferno-style perceptual ramp: low (deep navy) → high (pale yellow) interpolation confidence */
+const HEAT_STOPS: [number, [number, number, number]][] = [
+  [0.0, [10, 12, 35]], [0.22, [48, 18, 92]], [0.45, [120, 28, 109]],
+  [0.65, [190, 48, 96]], [0.82, [240, 132, 82]], [1.0, [250, 246, 184]],
+];
+function interpColor(t: number): string {
+  t = Math.max(0, Math.min(1, t));
+  for (let i = 1; i < HEAT_STOPS.length; i++) {
+    if (t <= HEAT_STOPS[i][0]) {
+      const [t0, c0] = HEAT_STOPS[i - 1], [t1, c1] = HEAT_STOPS[i];
+      const u = (t - t0) / (t1 - t0 || 1);
+      const c = [0, 1, 2].map((k) => Math.round(c0[k] + (c1[k] - c0[k]) * u));
+      return `rgb(${c[0]},${c[1]},${c[2]})`;
+    }
+  }
+  return "rgb(250,246,184)";
+}
 
-  const xs = pts.map((p) => p.coords2d[0]), ys = pts.map((p) => p.coords2d[1]);
-  const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
-  const sx = (x: number) => pad + ((x - xmin) / (xmax - xmin || 1)) * (W - 2 * pad);
-  const sy = (y: number) => H - pad - ((y - ymin) / (ymax - ymin || 1)) * (H - 2 * pad);
+/* High-fidelity heat-map of the phenotype manifold: a KDE density field over the 94 measured atlas
+   compounds = interpolation-confidence strength. The submitted/generated molecule is dropped on top. */
+function InterpolationHeatmap({ data, cloud, sel, novel }: { data: Data | null; cloud: Const | null; sel: Drug | null; novel: boolean }) {
+  const W = 620, H = 360, pad = 14;
+  const field = useMemo(() => {
+    const pts = cloud?.points ?? [];
+    if (!pts.length) return null;
+    const xs = pts.map((p) => p.coords2d[0]), ys = pts.map((p) => p.coords2d[1]);
+    const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
+    const mx = (xmax - xmin) * 0.06 || 1, my = (ymax - ymin) * 0.06 || 1; // small margin
+    const x0 = xmin - mx, x1 = xmax + mx, y0 = ymin - my, y1 = ymax + my;
+    const spanx = x1 - x0, spany = y1 - y0;
+    const cols = 80, rows = Math.round(80 * (H - 2 * pad) / (W - 2 * pad));
+    const h = 0.075 * Math.max(spanx, spany); const inv2h2 = 1 / (2 * h * h);
+    const grid: number[][] = []; let maxd = 0;
+    for (let r = 0; r < rows; r++) {
+      const gy = y1 - ((r + 0.5) / rows) * spany; const row: number[] = [];
+      for (let c = 0; c < cols; c++) {
+        const gx = x0 + ((c + 0.5) / cols) * spanx; let d = 0;
+        for (const p of pts) { const dx = gx - p.coords2d[0], dy = gy - p.coords2d[1]; d += Math.exp(-(dx * dx + dy * dy) * inv2h2); }
+        row.push(d); if (d > maxd) maxd = d;
+      }
+      grid.push(row);
+    }
+    return { grid, maxd, x0, y0, spanx, spany, cols, rows, pts };
+  }, [cloud]);
+
+  const heatLayer = useMemo(() => {
+    if (!field) return null;
+    const cw = (W - 2 * pad) / field.cols, ch = (H - 2 * pad) / field.rows;
+    const cells: JSX.Element[] = [];
+    for (let r = 0; r < field.rows; r++) for (let c = 0; c < field.cols; c++) {
+      const t = field.grid[r][c] / (field.maxd || 1);
+      cells.push(<rect key={`${r}-${c}`} x={pad + c * cw} y={pad + r * ch} width={cw + 0.6} height={ch + 0.6} fill={interpColor(t)} />);
+    }
+    return <g filter="url(#heatblur)">{cells}</g>;
+  }, [field]);
+
+  if (!field) return <div className="rounded-md border border-gray-200 bg-white p-6 text-center roboto-slab-regular text-xs text-gray-400">Loading atlas manifold…</div>;
+
+  const sx = (x: number) => pad + ((x - field.x0) / field.spanx) * (W - 2 * pad);
+  const sy = (y: number) => H - pad - ((y - field.y0) / field.spany) * (H - 2 * pad);
+  const sampleT = (x: number, y: number) => {
+    const c = Math.min(field.cols - 1, Math.max(0, Math.floor(((x - field.x0) / field.spanx) * field.cols)));
+    const r = Math.min(field.rows - 1, Math.max(0, Math.floor((1 - (y - field.y0) / field.spany) * field.rows)));
+    return field.grid[r][c] / (field.maxd || 1);
+  };
   const coordById = (id: string) => data?.drugs.find((d) => d.id === id)?.step3_embedding.coords2d;
+
+  const mark = sel?.step3_embedding.coords2d ?? null;
+  const neighbors = sel ? sel.step3_embedding.neighbors.slice(0, 5) : [];
+  const localT = mark ? sampleT(mark[0], mark[1]) : null;
+  const conf = sel ? Math.round(Math.min(0.99, sel.step3_embedding.neighbors[0]?.similarity ?? 0) * 100) : null;
+  const markColor = sel ? (novel ? "#7c3aed" : sel.is_guest ? "#0284c7" : "#059669") : "#7c3aed";
+  const markLabel = sel ? (novel ? "novel candidate" : sel.display_name) : "";
 
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3">
       <div className="flex items-center justify-between mb-2">
-        <div className="roboto-slab-medium text-sm text-gray-700">Generate within the interpolation space</div>
-        <button onClick={() => setSeed((s) => s + 1)}
-          className="roboto-slab-medium rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-1.5 text-xs hover:bg-violet-100">🎲 Random candidate</button>
+        <div className="roboto-slab-medium text-sm text-gray-700">Interpolation-confidence field — phenotype manifold</div>
+        <div className="roboto-slab-regular text-[11px] text-gray-400">KDE over {field.pts.length} measured compounds · PCA(2)</div>
       </div>
-      {!pick ? <p className="roboto-slab-regular text-xs text-gray-400">Loading atlas…</p> : (
-        <>
-          <div className="rounded border border-gray-100 overflow-hidden">
-            <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="interpolation manifold">
-              {pts.map((p) => <circle key={p.id} cx={sx(p.coords2d[0])} cy={sy(p.coords2d[1])} r={3} fill={moaColor(p.moa_fine)} opacity={0.5} />)}
-              {pick.neighbors.map((n) => { const c = coordById(n.id); if (!c) return null;
-                return <line key={n.id} x1={sx(pick.cx)} y1={sy(pick.cy)} x2={sx(c[0])} y2={sy(c[1])} stroke="#7c3aed" strokeWidth={1} strokeDasharray="3 3" />; })}
-              <circle cx={sx(pick.cx)} cy={sy(pick.cy)} r={10} fill="none" stroke="#7c3aed" strokeWidth={1.5} opacity={0.5} />
-              <circle cx={sx(pick.cx)} cy={sy(pick.cy)} r={5} fill="#7c3aed" />
-              <text x={sx(pick.cx) + 9} y={sy(pick.cy) + 4} fontSize={11} className="roboto-slab-medium" fill="#5b21b6">novel candidate</text>
-            </svg>
-          </div>
-          <div className="flex flex-col sm:flex-row sm:items-center gap-2 mt-2">
-            <div className="flex-1">
-              <div className="roboto-slab-regular text-xs text-gray-600">
-                Interpolation confidence <strong className="text-violet-700">{pick.conf}%</strong> — sits among {pick.neighbors.length} close atlas neighbors
-                ({pick.neighbors.slice(0, 3).map((n) => n.id).join(", ")}…). Densely-covered region of the manifold.
-              </div>
-            </div>
-            <button onClick={() => chooseCandidate(pick.anchor.id)}
-              className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700 whitespace-nowrap">Use this candidate ▸</button>
-          </div>
-          <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2">
-            Illustrative: the candidate&apos;s predicted profile is interpolated from its nearest atlas compounds (anchor exemplar: {pick.anchor.display_name}).
-          </p>
-        </>
+      <div className="rounded overflow-hidden border border-gray-100" style={{ background: "#0a0c23" }}>
+        <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="interpolation-confidence heat-map">
+          <defs>
+            <filter id="heatblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation={4.2} /></filter>
+          </defs>
+          {heatLayer}
+          {/* measured atlas compounds */}
+          {field.pts.map((p) => (
+            <circle key={p.id} cx={sx(p.coords2d[0])} cy={sy(p.coords2d[1])} r={2.1} fill="#ffffff" opacity={0.55} />
+          ))}
+          {/* placed molecule + its nearest atlas neighbors */}
+          {mark && neighbors.map((n) => { const c = coordById(n.id); if (!c) return null;
+            return <line key={n.id} x1={sx(mark[0])} y1={sy(mark[1])} x2={sx(c[0])} y2={sy(c[1])} stroke={markColor} strokeWidth={1} strokeDasharray="3 3" opacity={0.85} />; })}
+          {mark && <>
+            <circle cx={sx(mark[0])} cy={sy(mark[1])} r={11} fill="none" stroke={markColor} strokeWidth={1.5} opacity={0.6} />
+            <circle cx={sx(mark[0])} cy={sy(mark[1])} r={5} fill={markColor} stroke="#fff" strokeWidth={1.2} />
+            <text x={sx(mark[0]) + 10} y={sy(mark[1]) + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
+              style={{ paintOrder: "stroke", stroke: "#0a0c23", strokeWidth: 3 } as any}>{markLabel}</text>
+          </>}
+          {/* legend */}
+          {Array.from({ length: 24 }).map((_, i) => (
+            <rect key={i} x={W - pad - 132 + i * 5.2} y={H - pad - 14} width={6} height={7} fill={interpColor(i / 23)} />
+          ))}
+          <text x={W - pad - 132} y={H - pad - 18} fontSize={9} fill="#cbd5e1" className="roboto-slab-regular">low</text>
+          <text x={W - pad - 18} y={H - pad - 18} fontSize={9} fill="#cbd5e1" textAnchor="end" className="roboto-slab-regular">high confidence</text>
+        </svg>
+      </div>
+      {sel ? (
+        <div className="roboto-slab-regular text-xs text-gray-600 mt-2">
+          {novel ? <>Dropped into a <strong className="text-violet-700">{localT !== null && localT > 0.66 ? "high" : localT !== null && localT > 0.33 ? "moderate" : "sparse"}-density</strong> region · interpolation confidence <strong className="text-violet-700">{conf}%</strong> — nearest atlas neighbors {neighbors.slice(0, 3).map((n) => n.id).join(", ")}.</>
+            : <><strong>{sel.display_name}</strong> sits in a {localT !== null && localT > 0.66 ? "densely" : localT !== null && localT > 0.33 ? "moderately" : "sparsely"}-covered region · nearest-neighbor similarity <strong>{conf}%</strong>.</>}
+        </div>
+      ) : (
+        <p className="roboto-slab-regular text-xs text-gray-400 mt-2">Brighter regions are densely covered by measured compounds — where interpolation is most reliable. Submit or generate a molecule to place it on the field.</p>
       )}
     </div>
   );
