@@ -141,99 +141,32 @@ function OrganIntensityList({ organs }: { organs: Organ[] }) {
 type Path = "known" | "novel" | null;
 type Modality = "mab" | "rna" | "smol" | null;
 
-/* ---------------- Pixel-art renderer ----------------
-   Renders a chunky pixel sprite from a row/char map. Crisp-edged, scales to fill its container.
-   '.' = transparent; any other char maps to a palette color. */
-function PixelArt({ rows, palette, label }: { rows: string[]; palette: Record<string, string>; label?: string }) {
-  const h = rows.length;
-  const w = Math.max(...rows.map((r) => r.length));
-  const rects: JSX.Element[] = [];
-  for (let y = 0; y < h; y++) {
-    for (let x = 0; x < rows[y].length; x++) {
-      const c = rows[y][x];
-      const fill = palette[c];
-      if (!fill) continue;
-      rects.push(<rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={fill} />);
-    }
-  }
+/* ---------------- Modality sprites ----------------
+   High-res cel-shaded pixel-art sprites (procedurally generated — see public/POC_workflow/sprites/gen.py).
+   Rendered with image-rendering:pixelated so they stay crisp when scaled up. */
+function Sprite({ src, label }: { src: string; label: string }) {
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} width="100%" height="100%" role="img" aria-label={label}
-      shapeRendering="crispEdges" style={{ imageRendering: "pixelated", display: "block" }}>
-      {rects}
-    </svg>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img src={src} alt={label} width={120} height={120}
+      style={{ imageRendering: "pixelated", width: "100%", height: "100%", objectFit: "contain", display: "block" }} />
   );
 }
 
-const MODALITIES: { id: Exclude<Modality, null>; icon: string; title: string; blurb: string;
-  rows: string[]; palette: Record<string, string> }[] = [
+const MODALITIES: { id: Exclude<Modality, null>; title: string; blurb: string; img: string }[] = [
   {
-    id: "mab", icon: "🧬", title: "Monoclonal Antibody",
+    id: "mab", title: "Monoclonal Antibody",
     blurb: "A targeted biologic. Push an mAb through whole-organism phenotype screening to read its organism-scale response.",
-    palette: { t: "#f87171", a: "#38bdf8", h: "#2dd4bf", f: "#818cf8" },
-    rows: [
-      "t..............t",
-      "tt............tt",
-      ".tt..........tt.",
-      ".aa..........aa.",
-      "..aa........aa..",
-      "..aa........aa..",
-      "...aa......aa...",
-      "....aa....aa....",
-      ".....aa..aa.....",
-      "......aaaa......",
-      ".......hh.......",
-      ".......hh.......",
-      "......ffff......",
-      "......f..f......",
-      "......ffff......",
-      ".......ff.......",
-    ],
+    img: "/POC_workflow/sprites/mab.png",
   },
   {
-    id: "rna", icon: "🧪", title: "RNA Therapeutic",
+    id: "rna", title: "RNA Therapeutic",
     blurb: "siRNA, ASO, or mRNA. Trace a nucleic-acid payload's phenotype signature across the atlas.",
-    palette: { p: "#c084fc", g: "#22c55e", c: "#3b82f6", a: "#f87171", u: "#eab308" },
-    rows: [
-      "................",
-      "................",
-      "................",
-      "..g...a...c...u.",
-      "..g...a...c...u.",
-      "..g...a...c...u.",
-      "..p...p...p...p.",
-      "pppppppppppppppp",
-      "pppppppppppppppp",
-      "....p...p...p...",
-      "....c...u...g...",
-      "....c...u...g...",
-      "....c...u...g...",
-      "................",
-      "................",
-      "................",
-    ],
+    img: "/POC_workflow/sprites/rna.png",
   },
   {
-    id: "smol", icon: "⬡", title: "Small Molecule",
+    id: "smol", title: "Small Molecule",
     blurb: "A classic drug-like compound. Pick from the 94-compound MegaFin atlas — or submit a novel SMILES string.",
-    palette: { c: "#64748b", o: "#f87171", n: "#60a5fa" },
-    rows: [
-      ".......oo.......",
-      ".......cc.......",
-      ".....cccccc.....",
-      "....c......c....",
-      "...c........c...",
-      "..c..........c..",
-      "..c..........cnn",
-      "..c..........c..",
-      "..c..........c..",
-      "...c........c...",
-      "....c......c....",
-      ".....cccccc.....",
-      "................",
-      "................",
-      "................",
-      "................",
-    ],
+    img: "/POC_workflow/sprites/smol.png",
   },
 ];
 
@@ -338,16 +271,14 @@ export default function PocClient() {
             {MODALITIES.map((m) => (
               <button key={m.id} onClick={() => setModality(m.id)}
                 className="group text-left rounded-lg border border-gray-300 bg-white overflow-hidden hover:border-gray-700 hover:shadow-md transition">
-                <div className="aspect-square w-full p-5 flex items-center justify-center"
+                <div className="aspect-square w-full p-4 flex items-center justify-center"
                   style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)" }}>
                   <div className="w-full h-full transition-transform duration-200 group-hover:scale-105">
-                    <PixelArt rows={m.rows} palette={m.palette} label={m.title} />
+                    <Sprite src={m.img} label={m.title} />
                   </div>
                 </div>
                 <div className="p-5">
-                  <div className="roboto-slab-medium text-gray-900 mb-1 flex items-center gap-2">
-                    <span className="text-lg leading-none">{m.icon}</span>{m.title}
-                  </div>
+                  <div className="roboto-slab-medium text-gray-900 mb-1">{m.title}</div>
                   <p className="roboto-slab-regular text-sm text-gray-500">{m.blurb}</p>
                 </div>
               </button>
@@ -372,14 +303,12 @@ export default function PocClient() {
             ◂ Choose a different modality
           </button>
           <div className="rounded-lg border border-gray-300 bg-white p-6 flex flex-col sm:flex-row items-center gap-6">
-            <div className="w-40 h-40 shrink-0 rounded-md p-4 flex items-center justify-center"
+            <div className="w-40 h-40 shrink-0 rounded-md p-3 flex items-center justify-center"
               style={{ background: "linear-gradient(135deg,#0f172a 0%,#1e293b 100%)" }}>
-              <PixelArt rows={m.rows} palette={m.palette} label={m.title} />
+              <Sprite src={m.img} label={m.title} />
             </div>
             <div>
-              <h1 className="roboto-slab-medium text-2xl text-gray-900 mb-1 flex items-center gap-2">
-                <span>{m.icon}</span>{m.title}
-              </h1>
+              <h1 className="roboto-slab-medium text-2xl text-gray-900 mb-1">{m.title}</h1>
               <p className="roboto-slab-regular text-sm text-gray-600 mb-2">{m.blurb}</p>
               <p className="roboto-slab-regular text-sm text-gray-500">
                 The {m.title.toLowerCase()} workflow is coming soon. The small-molecule vertical slice is live today —
