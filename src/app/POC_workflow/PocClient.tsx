@@ -64,7 +64,6 @@ type Const = { points: CPoint[] };
 const STEPS = ["Submit compound", "Wet-lab exposure", "Response fingerprint",
   "Project into atlas", "Contextualized results", "Atlas report"];
 const STEPS_SHORT = ["Submit", "Exposure", "Fingerprint", "Atlas", "Inference", "Report"];
-const QUICKSTART = "Doxorubicin"; // literature guest w/ a strong zebrafish cardiotox story
 
 function moaColor(moa: string): string {
   if (!moa || moa.toLowerCase() === "unclear") return "#cfcfcf";
@@ -226,7 +225,6 @@ export default function PocClient() {
     const anchor = pool[Math.floor(Math.random() * pool.length)].d;
     placeCandidate(anchor.id, mutateSmiles(anchor.step1_structure.smiles));
   }
-  function quickStart() { loadDrug(QUICKSTART); setStep(1); }
   function go(n: number) { if (n >= 1 && n <= 6 && (sel || n === 1)) setStep(n); }
   function reset() { setSelId(""); setNovel(false); setUnknown(false); setSmiles(""); setNote(""); setStep(1); setRevealed(false); }
   function chooseModality(m: Exclude<Modality, null>) { setModality(m); reset(); }
@@ -324,7 +322,6 @@ export default function PocClient() {
       <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
         {DarkStyle}
         {Logo}
-        {Banner}
         <div className="w-full max-w-3xl">
           <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
             ◂ Choose a different modality
@@ -354,28 +351,11 @@ export default function PocClient() {
     <main className={`min-h-screen w-full flex flex-col items-center px-6 py-10 ${themeClass}`}>
       {DarkStyle}
       {Logo}
-      {Banner}
       <div className="w-full max-w-3xl">
-        <div className="flex items-center justify-between mb-1">
-          <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900">Small-molecule workflow</h1>
-          <button onClick={quickStart}
-            className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700">Quick-Start ▸</button>
-        </div>
+        <h1 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900">Small-molecule workflow</h1>
         <button onClick={() => setModality(null)} className="roboto-slab-regular text-xs text-gray-400 hover:text-gray-700 mb-3">
           ◂ Small Molecule — change modality
         </button>
-
-        {(novel || sel?.is_guest) && (
-          <div className="rounded-md border border-violet-200 bg-violet-50 px-3 py-2 mb-3">
-            <p className="roboto-slab-regular text-[11px] text-violet-800">
-              {sel?.is_guest && !novel ? (
-                <><strong>Predicted profile.</strong> {sel.display_name} isn&apos;t in the measured 94-atlas — its whole-organism profile here is <em>interpolated</em> from its nearest atlas neighbors and informed by the literature dossier in Step 1. Not measured.</>
-              ) : (
-                <><strong>Interpolated candidate.</strong> This profile is <em>predicted</em> for a novel point by interpolation from its nearest atlas compounds (anchor: {sel?.display_name}). Not a measured compound.</>
-              )}
-            </p>
-          </div>
-        )}
 
         {/* Step indicator — single row */}
         <div className="flex flex-nowrap items-center gap-1.5 mb-7 overflow-x-auto">
@@ -430,7 +410,7 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
       <p className="roboto-slab-regular text-sm text-gray-500 mb-5">
         Submit a SMILES string. We auto-detect whether it&apos;s already <strong>measured in the MegaFin Atlas</strong>,
         a structure from the <strong>drug-repurposing library</strong>, or a <strong>novel</strong> molecule placed by
-        interpolation. (Curated demo set; production accepts any structure.)
+        interpolation.
       </p>
       <div className="flex flex-col gap-4">
         <label className="block">
@@ -443,6 +423,17 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
               className="roboto-slab-medium rounded-md border border-gray-700 bg-gray-800 text-gray-50 px-4 py-2 text-sm hover:bg-gray-700 whitespace-nowrap">Analyze ▸</button>
           </div>
         </label>
+        {(novel || sel?.is_guest) && (
+          <div className="rounded-md border border-violet-200 bg-violet-50 px-3 py-2">
+            <p className="roboto-slab-regular text-[11px] text-violet-800">
+              {sel?.is_guest && !novel ? (
+                <><strong>Predicted profile.</strong> {sel.display_name} isn&apos;t in the measured 94-atlas — its whole-organism profile is <em>interpolated</em> from its nearest atlas neighbors and informed by the literature dossier below. Not measured.</>
+              ) : (
+                <><strong>Interpolated candidate.</strong> This profile is <em>predicted</em> for a novel point by interpolation from its nearest atlas compounds (anchor: {sel?.display_name}). Not a measured compound.</>
+              )}
+            </p>
+          </div>
+        )}
         <div className="flex flex-col sm:flex-row gap-2">
           <button onClick={randomRepurposing}
             className="roboto-slab-medium flex-1 rounded-md border border-sky-300 bg-sky-50 text-sky-800 px-3 py-2 text-sm hover:bg-sky-100">
@@ -459,7 +450,7 @@ function Step1({ data, cloud, sel, novel, unknown, smiles, setSmiles, note, anal
 
         <InterpolationHeatmap data={data} cloud={cloud} sel={sel} novel={novel} />
 
-        {detection === "repurposing" && sel?.dossier && <DossierPanel sel={sel} />}
+        {detection === "repurposing" && sel && <AgenticResearch sel={sel} />}
         {sel && <StructureCard sel={sel} />}
       </div>
     </div>
@@ -499,28 +490,84 @@ function DetectionBanner({ detection, sel }: { detection: string; sel: Drug | nu
   );
 }
 
-/* Agentic literature research result for a known drug (illustrative dossier). */
-function DossierPanel({ sel }: { sel: Drug }) {
-  const d = sel.dossier!;
+/* Agentic literature research: hits a real (cheap) Claude call via /api/agentic_dossier, shows a live
+   "what the agent is doing" loader, then renders the dossier. Falls back to the precomputed dossier on error. */
+const RESEARCH_STEPS = [
+  "Searching PubMed & ChEMBL…",
+  "Reading abstracts and label data…",
+  "Extracting target & mechanism of action…",
+  "Assessing zebrafish phenotype relevance…",
+  "Synthesizing dossier…",
+];
+function AgenticResearch({ sel }: { sel: Drug }) {
+  const [status, setStatus] = useState<"loading" | "done" | "fallback">("loading");
+  const [doc, setDoc] = useState<Dossier | null>(null);
+  const [stepIdx, setStepIdx] = useState(0);
+  const [live, setLive] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    setStatus("loading"); setDoc(null); setStepIdx(0); setLive(true);
+    const tick = setInterval(() => setStepIdx((i) => Math.min(i + 1, RESEARCH_STEPS.length - 1)), 1100);
+    fetch("/api/agentic_dossier", {
+      method: "POST", headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        name: sel.display_name, smiles: sel.step1_structure.smiles,
+        moa_fine: sel.moa_fine, targets: sel.targets, drug_class: sel.drug_class,
+      }),
+    })
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(String(r.status)))))
+      .then((j) => { if (cancelled) return; setDoc(j.dossier as Dossier); setLive(true); setStatus("done"); })
+      .catch(() => { if (cancelled) return; setDoc(sel.dossier ?? null); setLive(false); setStatus(sel.dossier ? "fallback" : "done"); })
+      .finally(() => clearInterval(tick));
+    return () => { cancelled = true; clearInterval(tick); };
+  }, [sel.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (status === "loading") {
+    return (
+      <div className="rounded-md border border-sky-200 bg-sky-50/60 p-4">
+        <div className="flex items-center gap-2 mb-3">
+          <svg className="animate-spin h-4 w-4 text-sky-600" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="3" opacity="0.25" />
+            <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+          </svg>
+          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {sel.display_name}</div>
+        </div>
+        <ul className="space-y-1">
+          {RESEARCH_STEPS.map((s, i) => (
+            <li key={s} className={`roboto-slab-regular text-xs flex items-center gap-2 ${i < stepIdx ? "text-gray-400" : i === stepIdx ? "text-sky-800" : "text-gray-300"}`}>
+              <span className="w-3 inline-block">{i < stepIdx ? "✓" : i === stepIdx ? "▸" : "·"}</span>{s}
+            </li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (!doc) return null;
   return (
     <div className="rounded-md border border-sky-200 bg-sky-50/60 p-4">
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-base">🔎</span>
-        <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {sel.display_name}</div>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <span className="text-base">🔎</span>
+          <div className="roboto-slab-medium text-sm text-sky-900">Agentic literature research — {sel.display_name}</div>
+        </div>
+        <span className={`roboto-slab-regular text-[10px] uppercase tracking-wide rounded px-1.5 py-0.5 ${live ? "bg-emerald-100 text-emerald-700" : "bg-gray-100 text-gray-500"}`}>
+          {live ? "live · agent" : "offline cache"}
+        </span>
       </div>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mb-2">
-        <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Target:</span> {d.target}</div>
-        <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Indication:</span> {d.indication}</div>
+        <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Target:</span> {doc.target}</div>
+        <div className="roboto-slab-regular text-xs text-gray-600"><span className="text-gray-400">Indication:</span> {doc.indication}</div>
       </div>
-      <p className="roboto-slab-regular text-xs text-gray-700 mb-2"><span className="text-gray-400">Mechanism:</span> {d.moa}</p>
+      <p className="roboto-slab-regular text-xs text-gray-700 mb-2"><span className="text-gray-400">Mechanism:</span> {doc.moa}</p>
       <ul className="roboto-slab-regular text-xs text-gray-700 space-y-1 mb-2 list-disc pl-5">
-        {d.findings.map((f, i) => <li key={i}>{f}</li>)}
+        {doc.findings.map((f, i) => <li key={i}>{f}</li>)}
       </ul>
       <p className="roboto-slab-regular text-xs text-emerald-800 bg-emerald-50 border border-emerald-100 rounded px-2 py-1 mb-2">
-        🐟 Zebrafish relevance: {d.zebrafish}
+        🐟 Zebrafish relevance: {doc.zebrafish}
       </p>
       <p className="roboto-slab-regular text-[11px] text-gray-400">
-        {d.source}. These findings prime the downstream interpretation — in production they reweight the atlas-neighbor consensus.
+        {doc.source}. These findings prime the downstream interpretation — in production they reweight the atlas-neighbor consensus.
       </p>
     </div>
   );
@@ -610,10 +657,18 @@ function InterpolationHeatmap({ data, cloud, sel, novel }: { data: Data | null; 
 
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3">
-      <div className="flex items-center justify-between mb-2">
+      <div className="flex items-center justify-between mb-1">
         <div className="roboto-slab-medium text-sm text-gray-700">Interpolation-confidence field — phenotype manifold</div>
         <div className="roboto-slab-regular text-[11px] text-gray-400">KDE over {field.pts.length} measured compounds · PCA(2)</div>
       </div>
+      <p className="roboto-slab-regular text-[11px] leading-snug text-gray-500 mb-2">
+        Every measured drug sits somewhere in &ldquo;phenotype space&rdquo; — how the whole organism responds to it. Bright regions
+        are crowded with reference drugs, so a new molecule landing there can be read off its close neighbors with confidence;
+        dark regions are uncharted, where a prediction is really a guess. For a discovery team this is the go/no-go map: it tells
+        you up-front whether the atlas can actually speak to your compound. <strong>Nearest-neighbor similarity</strong> is the headline number —
+        ~50% is a loose match (hypothesis-generating, treat with caution), while readouts have historically been dependable above ~65–70%,
+        where the nearest analog behaves enough like your molecule to trust the inference.
+      </p>
       <div className="rounded overflow-hidden border border-gray-100" style={{ background: "#0a0c23" }}>
         <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="interpolation-confidence heat-map">
           <defs>
@@ -653,11 +708,8 @@ function InterpolationHeatmap({ data, cloud, sel, novel }: { data: Data | null; 
   );
 }
 
-/* 2D depiction + 3D shown side-by-side. 3D defaults to the instant self-contained canvas; an
-   on-demand "Cinematic (Mol*)" mode lazy-loads the Mol* engine for a publication-grade binding view. */
+/* 2D depiction + lightweight self-contained 3D conformer, shown side-by-side. */
 function StructureCard({ sel }: { sel: Drug }) {
-  const [useMol, setUseMol] = useState(false);
-  useEffect(() => { setUseMol(false); }, [sel.id]); // reset to lightweight on drug change
   return (
     <div className="mt-2 rounded-md border border-gray-200 bg-white p-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -667,16 +719,8 @@ function StructureCard({ sel }: { sel: Drug }) {
             aria-label={`2D structure of ${sel.display_name}`} dangerouslySetInnerHTML={{ __html: sel.step1_structure.svg }} />
         </div>
         <div className="flex flex-col items-center border-t md:border-t-0 md:border-l border-gray-100 md:pl-4 pt-4 md:pt-0">
-          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">{useMol ? "Mol* binding view" : `3D ${sel.step1_structure.target_pdb ? "structure / target complex" : "conformer"}`}</div>
-          {useMol ? <MolStarPanel sel={sel} /> : (
-            <>
-              <Mol3DViewer sel={sel} />
-              <button onClick={() => setUseMol(true)}
-                className="roboto-slab-regular text-[11px] mt-2 rounded-md border border-violet-300 bg-violet-50 text-violet-800 px-3 py-1 hover:bg-violet-100">
-                ✨ Open cinematic view (Mol*){sel.step1_structure.target_pdb ? " — binding site" : ""}
-              </button>
-            </>
-          )}
+          <div className="roboto-slab-medium text-xs text-gray-500 mb-2">3D {sel.step1_structure.target_pdb ? "structure / target complex" : "conformer"}</div>
+          <Mol3DViewer sel={sel} />
         </div>
       </div>
       <div className="text-center mt-3 border-t border-gray-100 pt-3">
@@ -684,85 +728,6 @@ function StructureCard({ sel }: { sel: Drug }) {
         <div className="roboto-slab-regular text-sm text-gray-500">{sel.moa_fine}{sel.targets.length ? ` · target(s): ${sel.targets.join(", ")}` : ""}</div>
         {sel.pubchem_cid && <div className="roboto-slab-regular text-xs text-gray-400 mt-1">PubChem CID {sel.pubchem_cid} · {sel.step1_structure.source}</div>}
       </div>
-    </div>
-  );
-}
-
-/* lazy-load the self-hosted Mol* engine (4.9 MB) only when the cinematic view is opened */
-let _molstarP: Promise<any> | null = null;
-function loadMolstar(): Promise<any> {
-  if (typeof window === "undefined") return Promise.reject(new Error("no window"));
-  const w = window as any;
-  if (w.molstar) return Promise.resolve(w.molstar);
-  if (_molstarP) return _molstarP;
-  _molstarP = new Promise((resolve, reject) => {
-    const link = document.createElement("link"); link.rel = "stylesheet"; link.href = "/POC_workflow/lib/molstar.css"; document.head.appendChild(link);
-    const s = document.createElement("script"); s.src = "/POC_workflow/lib/molstar.js"; s.async = true;
-    s.onload = () => resolve(w.molstar); s.onerror = () => reject(new Error("molstar load failed"));
-    document.head.appendChild(s);
-  });
-  return _molstarP;
-}
-/* Mol* binding view: conformer for any drug, protein–ligand complex (cartoon + ligand + spin) for the 10 */
-function MolStarPanel({ sel }: { sel: Drug }) {
-  const host = useRef<HTMLDivElement>(null);
-  const viewerRef = useRef<any>(null);
-  const tpdb = sel.step1_structure.target_pdb;
-  const [mode, setMode] = useState<"molecule" | "complex">(tpdb ? "complex" : "molecule");
-  const [status, setStatus] = useState("loading Mol*…");
-  const [spin, setSpin] = useState(true);
-
-  useEffect(() => {
-    let cancelled = false;
-    setStatus("loading Mol*…");
-    loadMolstar().then(async (molstar) => {
-      if (cancelled || !host.current) return;
-      if (!viewerRef.current) viewerRef.current = await molstar.Viewer.create(host.current, {
-        layoutIsExpanded: false, layoutShowControls: false, layoutShowRemoteState: false, layoutShowSequence: false,
-        layoutShowLog: false, layoutShowLeftPanel: false, viewportShowExpand: true, viewportShowControls: false,
-        viewportShowSelectionMode: false, viewportShowAnimation: false, pdbProvider: "rcsb", emdbProvider: "pdbe",
-      });
-      const viewer = viewerRef.current;
-      setStatus("loading structure…");
-      try { await viewer.plugin.clear(); } catch { /* first load */ }
-      if (mode === "complex" && tpdb) await viewer.loadStructureFromUrl(`/POC_workflow/pdb/${tpdb.pdb}.pdb`, "pdb", false);
-      else if (sel.step1_structure.mol3d) await viewer.loadStructureFromData(sel.step1_structure.mol3d, "mol", false);
-      else { setStatus("3D unavailable"); return; }
-      if (cancelled) return;
-      setStatus("");
-      try { viewer.plugin.canvas3d?.setProps({ trackball: { animate: spin ? { name: "spin", params: { speed: 0.4 } } : { name: "off", params: {} } } }); } catch { /* noop */ }
-    }).catch(() => setStatus("could not load Mol* viewer"));
-    return () => { cancelled = true; };
-  }, [sel.id, mode, tpdb, sel.step1_structure.mol3d]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => { // keep viewport sized
-    const el = host.current; if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => { try { viewerRef.current?.handleResize(); } catch { /* noop */ } });
-    ro.observe(el); return () => ro.disconnect();
-  }, []);
-  useEffect(() => () => { try { viewerRef.current?.dispose(); } catch { /* noop */ } viewerRef.current = null; }, []);
-  function toggleSpin() {
-    setSpin((s) => { const ns = !s; try { viewerRef.current?.plugin.canvas3d?.setProps({ trackball: { animate: ns ? { name: "spin", params: { speed: 0.4 } } : { name: "off", params: {} } } }); } catch { /* noop */ } return ns; });
-  }
-  return (
-    <div className="w-full flex flex-col items-center">
-      <div className="inline-flex items-center gap-2 mb-2">
-        {tpdb && (
-          <div className="inline-flex rounded-md border border-gray-300 overflow-hidden">
-            <button onClick={() => setMode("molecule")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "molecule" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Molecule</button>
-            <button onClick={() => setMode("complex")} className={`roboto-slab-regular text-[11px] px-2.5 py-1 ${mode === "complex" ? "bg-teal-700 text-white" : "bg-white text-gray-600 hover:bg-gray-100"}`}>Binding site</button>
-          </div>
-        )}
-        <button onClick={toggleSpin} className="roboto-slab-regular text-[11px] px-2.5 py-1 rounded-md border border-gray-300 bg-white text-gray-600 hover:bg-gray-100">{spin ? "⏸ spin" : "▶ spin"}</button>
-      </div>
-      <div ref={host} className="relative rounded border border-gray-200 overflow-hidden bg-white" style={{ width: "100%", maxWidth: 360, height: 300 }}>
-        {status && <div className="absolute inset-0 z-10 flex items-center justify-center roboto-slab-regular text-xs text-gray-400 pointer-events-none">{status}</div>}
-      </div>
-      <p className="roboto-slab-regular text-[11px] text-gray-400 mt-2 text-center">
-        {mode === "complex" && tpdb
-          ? <>Mol* — {sel.display_name} bound to {tpdb.target} (PDB {tpdb.pdb}). Drag to orbit, scroll to zoom.</>
-          : <>Mol* interactive 3D conformer (illustrative geometry). Drag to orbit, scroll to zoom.</>}
-      </p>
     </div>
   );
 }
