@@ -6,8 +6,19 @@
 // Honest cell-line (NOT tissue) + projection labeling throughout.
 import { useEffect, useMemo, useRef, useState } from "react";
 
-type Gene = { gene: string; lfc: number };
+type Gene = { gene: string; lfc: number; support?: number };
 type SharedGene = { gene: string; lfc_query: number; lfc_neighbor: number };
+// Step-3 response-fingerprint view payloads (precomputed in gen_poc_json_v3.py)
+type VolcanoPt = { g: string; x: number; y: number; t: number };
+type Volcano = { points: VolcanoPt[]; n_lines: number; n_top: number; axis: string };
+type WaterMark = { g: string; r: number; lfc: number };
+type Waterfall = { curve: { r: number; lfc: number }[]; n_total: number; n_up_strong: number;
+  n_down_strong: number; top_up: WaterMark[]; top_down: WaterMark[]; threshold: number };
+type Heatmap = { genes: string[]; cols: string[]; col_moa: string[]; n_up: number;
+  values: (number | null)[][]; basis: string };
+type ProgHit = { g: string; lfc: number; sup: number };
+type Program = { name: string; score: number; n: number; hits: ProgHit[] };
+type Programs = { programs: Program[]; basis: string };
 type Neighbor = { id: string; display: string; similarity: number; rank: number; moa_fine: string };
 type Overlap = { id: string; shared_moa: boolean; shared_targets: string[] };
 type Route = { nn_id: string; nn_similarity: number; nn_moa: string; predicted_moa: string; metric: string };
@@ -22,7 +33,8 @@ type Drug = {
   moa_fine: string; moa_broad: string; targets: string[];
   step1_structure: { smiles: string; svg: string; source: string };
   step2_fingerprint: { basis: string; n_cell_lines: number; dose_uM: number; control: string;
-    n_genes_tested: number; top_up: Gene[]; top_down: Gene[] };
+    n_genes_tested: number; top_up: Gene[]; top_down: Gene[];
+    volcano: Volcano; waterfall: Waterfall; heatmap: Heatmap; programs: Programs };
   step3_embedding: { coords2d: [number, number]; chem2d: [number, number];
     neighbors: Neighbor[]; chem_neighbors: Neighbor[]; projection: string; chem_projection: string };
   step4_mechanism: { moa_fine: string; targets: string[]; neighbor_overlap: Overlap[];
@@ -221,41 +233,225 @@ function Step2({ sel, revealed, setRevealed }: { sel: Drug; revealed: boolean; s
   );
 }
 
-/* ---------------- Step 3 ---------------- */
-function GeneBar({ g, max, dir }: { g: Gene; max: number; dir: "up" | "down" }) {
-  const w = Math.min(100, (Math.abs(g.lfc) / max) * 100);
-  return (
-    <div className="flex items-center gap-2">
-      <span className="roboto-slab-regular text-xs text-gray-700 w-28 truncate" title={g.gene}>{g.gene}</span>
-      <div className="flex-1 h-3 bg-gray-100 rounded">
-        <div className={`h-3 rounded ${dir === "up" ? "bg-emerald-500" : "bg-rose-500"}`} style={{ width: `${w}%` }} />
-      </div>
-      <span className="roboto-slab-regular text-xs text-gray-500 w-12 text-right">{g.lfc.toFixed(2)}</span>
-    </div>
-  );
+/* ---------------- Step 3 — response fingerprint (4 views: volcano · waterfall · heatmap · pathways) -- */
+// diverging color for log2FC: red = induced, blue = repressed
+function lfcColor(x: number, m = 3): string {
+  const t = Math.max(-1, Math.min(1, x / m));
+  if (t >= 0) { const c = Math.round(255 - 165 * t); return `rgb(255,${c},${c})`; }
+  const tt = -t; const c = Math.round(255 - 165 * tt); return `rgb(${c},${c},255)`;
 }
+type Tip = { title: string; sub: string; x: number; y: number } | null;
+const FP_VIEWS = [
+  { key: "volcano", label: "Volcano" }, { key: "waterfall", label: "Waterfall" },
+  { key: "heatmap", label: "Heatmap" }, { key: "programs", label: "Pathways" },
+] as const;
+type FpView = typeof FP_VIEWS[number]["key"];
+
 function Step3({ sel }: { sel: Drug }) {
   const fp = sel.step2_fingerprint;
-  const maxUp = Math.max(...fp.top_up.map((g) => Math.abs(g.lfc)), 0.1);
-  const maxDn = Math.max(...fp.top_down.map((g) => Math.abs(g.lfc)), 0.1);
+  const [view, setView] = useState<FpView>("volcano");
   return (
     <div>
       <h2 className="roboto-slab-medium text-lg text-gray-800 mb-1">Step 3 — Response fingerprint</h2>
-      <p className="roboto-slab-regular text-sm text-gray-500 mb-4">
-        Mean log₂ fold-change <strong>averaged across {fp.n_cell_lines} cancer cell lines</strong> ({fp.dose_uM} µM vs {fp.control}).
-        Top named genes shown.
+      <p className="roboto-slab-regular text-sm text-gray-500 mb-3">
+        Mean log₂ fold-change <strong>across {fp.n_cell_lines} cancer cell lines</strong> ({fp.dose_uM} µM vs {fp.control}).
+        Four standard ways to read a transcriptional response — switch views.
       </p>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-        <div>
-          <div className="roboto-slab-medium text-sm text-emerald-700 mb-2">Induced ▲</div>
-          <div className="space-y-1.5">{fp.top_up.slice(0, 10).map((g) => <GeneBar key={g.gene} g={g} max={maxUp} dir="up" />)}</div>
-        </div>
-        <div>
-          <div className="roboto-slab-medium text-sm text-rose-700 mb-2">Repressed ▼</div>
-          <div className="space-y-1.5">{fp.top_down.slice(0, 10).map((g) => <GeneBar key={g.gene} g={g} max={maxDn} dir="down" />)}</div>
-        </div>
+      <div className="inline-flex flex-wrap rounded-md border border-gray-300 overflow-hidden mb-3">
+        {FP_VIEWS.map((v) => (
+          <button key={v.key} onClick={() => setView(v.key)}
+            className={`roboto-slab-regular text-xs px-3 py-1.5 border-r border-gray-200 last:border-r-0 ${
+              view === v.key ? "bg-gray-800 text-gray-50" : "bg-white text-gray-600 hover:bg-gray-100"}`}>
+            {v.label}
+          </button>
+        ))}
       </div>
-      <p className="roboto-slab-regular text-xs text-gray-400 mt-4">{fp.basis}</p>
+      {view === "volcano" && <VolcanoView fp={fp} />}
+      {view === "waterfall" && <WaterfallView fp={fp} />}
+      {view === "heatmap" && <HeatmapView fp={fp} sel={sel} />}
+      {view === "programs" && <ProgramsView fp={fp} />}
+    </div>
+  );
+}
+
+/* Volcano — log2FC (x) vs cell-line support (y, robustness stand-in) */
+function VolcanoView({ fp }: { fp: Drug["step2_fingerprint"] }) {
+  const W = 640, H = 380, pad = 42;
+  const [tip, setTip] = useState<Tip>(null);
+  const v = fp.volcano;
+  const xm = Math.max(1, ...v.points.map((p) => Math.abs(p.x)));
+  const ym = v.n_lines;
+  const sx = (x: number) => pad + ((x + xm) / (2 * xm)) * (W - 2 * pad);
+  const sy = (y: number) => H - pad - (y / (ym || 1)) * (H - 2 * pad);
+  const labelSet = new Map<string, number>(); // gene -> lfc, for the robust top genes
+  [...fp.top_up.slice(0, 6), ...fp.top_down.slice(0, 6)].forEach((g) => labelSet.set(g.gene, g.lfc));
+  const labelPts = v.points.filter((p) => labelSet.has(p.g));
+  return (
+    <div className="relative rounded-md border border-gray-200 bg-white p-2">
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="volcano plot">
+        <line x1={sx(0)} y1={pad - 8} x2={sx(0)} y2={H - pad} stroke="#e5e7eb" strokeWidth={1} />
+        {[-1, 1].map((t) => <line key={t} x1={sx(t)} y1={pad - 8} x2={sx(t)} y2={H - pad} stroke="#f3f4f6" strokeDasharray="3 3" />)}
+        <line x1={pad} y1={H - pad} x2={W - pad} y2={H - pad} stroke="#9ca3af" strokeWidth={1} />
+        {v.points.map((p, i) => {
+          const top = p.t === 1;
+          return <circle key={i} cx={sx(p.x)} cy={sy(p.y)} r={top ? 3 : 2}
+            fill={top ? (p.x >= 0 ? "#10b981" : "#f43f5e") : "#d1d5db"} opacity={top ? 0.85 : 0.4}
+            onMouseEnter={(e) => setTip({ title: p.g, sub: `log₂FC ${p.x.toFixed(2)} · support ${p.y}/${v.n_lines}`, x: (e.nativeEvent as any).offsetX, y: (e.nativeEvent as any).offsetY })}
+            onMouseLeave={() => setTip(null)} style={{ cursor: "pointer" }} />;
+        })}
+        {labelPts.map((p, i) => (
+          <text key={i} x={sx(p.x) + (p.x >= 0 ? 5 : -5)} y={sy(p.y) - 4} fontSize={9}
+            textAnchor={p.x >= 0 ? "start" : "end"} fill="#374151" className="roboto-slab-regular">{p.g}</text>
+        ))}
+        <text x={pad} y={H - 14} fontSize={10} fill="#9ca3af" className="roboto-slab-regular">← repressed</text>
+        <text x={W - pad} y={H - 14} fontSize={10} fill="#9ca3af" textAnchor="end" className="roboto-slab-regular">induced →</text>
+        <text x={sx(0)} y={H - 14} fontSize={10} fill="#6b7280" textAnchor="middle" className="roboto-slab-medium">log₂FC</text>
+        <text x={12} y={pad + 6} fontSize={10} fill="#6b7280" className="roboto-slab-regular" transform={`rotate(-90 12 ${H / 2})`}>cell-line support →</text>
+      </svg>
+      {tip && <FpTip tip={tip} />}
+      <p className="roboto-slab-regular text-xs text-gray-400 mt-1">{v.axis}.</p>
+    </div>
+  );
+}
+
+/* Waterfall — every gene ranked by log2FC (S-curve), robust top movers labelled */
+function WaterfallView({ fp }: { fp: Drug["step2_fingerprint"] }) {
+  const W = 640, H = 360, pad = 40;
+  const [tip, setTip] = useState<Tip>(null);
+  const w = fp.waterfall;
+  const ym = Math.max(1, ...w.curve.map((c) => Math.abs(c.lfc)));
+  const sx = (r: number) => pad + r * (W - 2 * pad);
+  const sy = (y: number) => H / 2 - (y / ym) * (H / 2 - pad);
+  const path = w.curve.map((c, i) => `${i === 0 ? "M" : "L"}${sx(c.r).toFixed(1)},${sy(c.lfc).toFixed(1)}`).join(" ");
+  const area = `${path} L${sx(1)},${sy(0)} L${sx(0)},${sy(0)} Z`;
+  const marks = [...w.top_up.map((m) => ({ ...m, dir: "up" as const })), ...w.top_down.map((m) => ({ ...m, dir: "down" as const }))];
+  return (
+    <div className="relative rounded-md border border-gray-200 bg-white p-2">
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="ranked waterfall plot">
+        <defs>
+          <linearGradient id="wfUp" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="#10b981" stopOpacity="0.25" /><stop offset="100%" stopColor="#10b981" stopOpacity="0" /></linearGradient>
+        </defs>
+        <path d={area} fill="url(#wfUp)" />
+        <line x1={pad} y1={sy(0)} x2={W - pad} y2={sy(0)} stroke="#9ca3af" strokeWidth={1} />
+        <path d={path} fill="none" stroke="#374151" strokeWidth={1.6} />
+        {marks.map((m, i) => (
+          <g key={i}>
+            <circle cx={sx(m.r)} cy={sy(m.lfc)} r={3} fill={m.dir === "up" ? "#10b981" : "#f43f5e"}
+              onMouseEnter={(e) => setTip({ title: m.g, sub: `log₂FC ${m.lfc.toFixed(2)} · rank ${(m.r * 100).toFixed(0)}%`, x: (e.nativeEvent as any).offsetX, y: (e.nativeEvent as any).offsetY })}
+              onMouseLeave={() => setTip(null)} style={{ cursor: "pointer" }} />
+            <text x={sx(m.r) + (m.dir === "up" ? 5 : 5)} y={sy(m.lfc) + (m.dir === "up" ? -4 : 12)} fontSize={9}
+              fill="#374151" className="roboto-slab-regular">{m.g}</text>
+          </g>
+        ))}
+        <text x={pad} y={20} fontSize={10} fill="#10b981" className="roboto-slab-medium">induced</text>
+        <text x={pad} y={H - 10} fontSize={10} fill="#f43f5e" className="roboto-slab-medium">repressed</text>
+        <text x={W - pad} y={sy(0) - 6} fontSize={10} fill="#9ca3af" textAnchor="end" className="roboto-slab-regular">all {w.n_total.toLocaleString()} genes, ranked →</text>
+      </svg>
+      {tip && <FpTip tip={tip} />}
+      <p className="roboto-slab-regular text-xs text-gray-400 mt-1">
+        Every detected gene ranked by mean log₂FC. <strong>{w.n_up_strong.toLocaleString()}</strong> strongly induced and
+        {" "}<strong>{w.n_down_strong.toLocaleString()}</strong> strongly repressed (|log₂FC| ≥ {w.threshold}). Labelled genes are the robust top movers.
+      </p>
+    </div>
+  );
+}
+
+/* Heatmap — this drug's signature genes × related drugs (query + neighbors + chemistry anchor) */
+function HeatmapView({ fp, sel }: { fp: Drug["step2_fingerprint"]; sel: Drug }) {
+  const h = fp.heatmap;
+  const cell = 30, labelW = 96, headH = 92;
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 overflow-x-auto">
+      <div className="inline-block" style={{ minWidth: labelW + h.cols.length * cell }}>
+        {/* column headers */}
+        <div className="flex" style={{ marginLeft: labelW, height: headH }}>
+          {h.cols.map((c, j) => (
+            <div key={c} style={{ width: cell }} className="relative">
+              <div className="absolute bottom-1 left-1/2 origin-bottom-left -rotate-45 whitespace-nowrap roboto-slab-regular text-[10px] text-gray-600 flex items-center gap-1">
+                <span className="inline-block w-2 h-2 rounded-full" style={{ background: moaColor(h.col_moa[j]) }} />
+                <span className={j === 0 ? "roboto-slab-medium text-gray-900" : ""}>{c.replace(/\s*\(.*\)/, "")}{j === 0 ? " ◆" : ""}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* rows */}
+        {h.genes.map((g, i) => (
+          <div key={g} className="flex items-center" style={{ height: cell }}>
+            <div className="roboto-slab-regular text-[11px] text-right pr-2 truncate"
+              style={{ width: labelW, color: i < h.n_up ? "#047857" : "#be123c" }} title={g}>{g}</div>
+            {h.values[i].map((val, j) => (
+              <div key={j} title={`${g} × ${h.cols[j]}: ${val === null ? "n/a" : (val as number).toFixed(2)}`}
+                style={{ width: cell, height: cell, background: val === null ? "#f9fafb" : lfcColor(val as number),
+                  outline: j === 0 ? "2px solid #111827" : "1px solid #fff", outlineOffset: -1 }} />
+            ))}
+          </div>
+        ))}
+      </div>
+      <div className="flex items-center gap-3 mt-3">
+        <span className="roboto-slab-regular text-[11px] text-gray-500">repressed</span>
+        <div className="h-3 w-40 rounded" style={{ background: "linear-gradient(90deg,#3a3aff,#fff,#ff3a3a)" }} />
+        <span className="roboto-slab-regular text-[11px] text-gray-500">induced</span>
+        <span className="roboto-slab-regular text-[11px] text-gray-400 ml-2">◆ = {sel.display_name} (query)</span>
+      </div>
+      <p className="roboto-slab-regular text-xs text-gray-400 mt-2">
+        {sel.display_name}&apos;s signature genes (rows) across {h.basis}. Shared color down a row = a shared response;
+        it ties the fingerprint to the mechanism neighbors from Steps 4–5.
+      </p>
+    </div>
+  );
+}
+
+/* Pathways — canonical transcriptional-program signature scores (diverging bars) */
+function ProgramsView({ fp }: { fp: Drug["step2_fingerprint"] }) {
+  const [open, setOpen] = useState<string | null>(null);
+  const ps = fp.programs.programs;
+  const m = Math.max(0.5, ...ps.map((p) => Math.abs(p.score)));
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-4">
+      <div className="space-y-2">
+        {ps.map((p) => {
+          const pct = (Math.abs(p.score) / m) * 50; const up = p.score >= 0;
+          return (
+            <div key={p.name}>
+              <div className="flex items-center gap-2 cursor-pointer" onClick={() => setOpen(open === p.name ? null : p.name)}>
+                <div className="roboto-slab-regular text-xs text-gray-700 w-44 truncate text-right" title={p.name}>{p.name}</div>
+                <div className="relative flex-1 h-5 bg-gray-50 rounded">
+                  <div className="absolute top-0 bottom-0 left-1/2 w-px bg-gray-300" />
+                  <div className="absolute top-0.5 bottom-0.5 rounded" style={{
+                    [up ? "left" : "right"]: "50%", width: `${pct}%`,
+                    background: up ? "#10b981" : "#f43f5e" } as any} />
+                  <div className={`absolute top-0 h-5 flex items-center roboto-slab-medium text-[11px] ${up ? "text-emerald-800" : "text-rose-800"}`}
+                    style={{ [up ? "left" : "right"]: `calc(50% + ${pct}% + 4px)` } as any}>{p.score > 0 ? "+" : ""}{p.score.toFixed(2)}</div>
+                </div>
+                <div className="roboto-slab-regular text-[10px] text-gray-400 w-12">n={p.n}</div>
+              </div>
+              {open === p.name && (
+                <div className="ml-44 mt-1 mb-2 flex flex-wrap gap-1">
+                  {p.hits.map((hh) => (
+                    <span key={hh.g} title={`log₂FC ${hh.lfc} · support ${hh.sup}`}
+                      className="roboto-slab-regular text-[11px] px-1.5 py-0.5 rounded border"
+                      style={{ borderColor: "#e5e7eb", background: lfcColor(hh.lfc) }}>{hh.g}</span>
+                  ))}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      <p className="roboto-slab-regular text-xs text-gray-400 mt-3">
+        {fp.programs.basis}. Click a program to see its member genes. This lifts the per-gene fingerprint to the
+        mechanism level — the same MoA story Steps 4–5 build on.
+      </p>
+    </div>
+  );
+}
+
+function FpTip({ tip }: { tip: NonNullable<Tip> }) {
+  return (
+    <div className="pointer-events-none absolute z-10 rounded bg-gray-900/90 px-2 py-1 text-[11px] text-gray-50"
+      style={{ left: tip.x + 12, top: tip.y + 12 }}>
+      <div className="roboto-slab-medium">{tip.title}</div>
+      <div className="text-gray-300">{tip.sub}</div>
     </div>
   );
 }

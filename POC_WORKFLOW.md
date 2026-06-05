@@ -136,3 +136,25 @@ Honesty banner (top+bottom), cell-line (NOT tissue) labeling, and deterministic 
 
 Deployed POC-only on top of the v1 commit (no unrelated site files touched). Surface:
 **https://zeroshot.bio/POC_workflow** (Vercel auto-deploy). Quick-Start default = Panobinostat.
+
+---
+
+## Build status — v3 (Step-3 response fingerprint, expanded to 4 views)
+Researched the canonical ways people read a differential / perturbation response (volcano, heatmap,
+GSEA/pathway, ranked-waterfall; MA also common but needs baseline expression we don't store). Step 3
+is now a **four-view tabbed fingerprint**, all precomputed by `tahoe_embedding/scores/gen_poc_json_v3.py`:
+1. **Volcano** — x = mean log₂FC, y = **cell-line support** (n of N lines). We only kept per-(drug,gene)
+   sum+count (mean = S/C), so no per-replicate p-values exist; support is an *honest robustness
+   stand-in*, labeled as such. Shows the full cloud incl. high-effect/low-support flukes.
+2. **Waterfall** — every detected gene ranked by log₂FC (S-curve) with strong-mover counts; the named
+   markers are **robust** genes only (support ≥ 30% of lines), so 1-cell-line flukes don't headline.
+3. **Heatmap** — the query's signature genes × related drugs (self + phenotype neighbors + chemistry
+   anchor), mean log₂FC, diverging color. Ties the fingerprint to the Step 4–5 MoA bridge.
+4. **Pathways** — canonical transcriptional-program signature scores (mean log₂FC of detected marker
+   genes; illustrative marker sets, not formal GSEA/FDR). Lights up correctly: Trametinib→MAPK
+   feedback −2.6 (SPRY/DUSP/ETV), Bortezomib→proteostasis/heat-shock +2.0 (HSPA/CRYAB),
+   Palbociclib→cell-cycle −0.8, Dexamethasone→glucocorticoid +1.3.
+
+Labeled-gene views (bars→now robust top-up/down with support) use support-filtered genes; the volcano
+still shows all. Build clean (`next build` exit 0); `/POC_workflow` static ~10 kB; drugs.json ~1.05 MB
+(volcano clouds; gzips small). Honest labeling retained throughout.
