@@ -205,3 +205,22 @@ Whole demo switched off Tahoe-375 onto the **94-compound MegaFin zebrafish atlas
   zebrafish/known-vs-novel. 10/94 target complexes vendored (Paclitaxel 1JFF, Palbociclib 5L2I, Rapamycin
   1FAP, Dexamethasone 1M2Z, Bicalutamide 1Z95, Celecoxib 3LN1, Sorafenib 1UWH, Vorinostat 1T69, Olaparib
   5DS3, Abiraterone 3RUK); 5 now-unused Tahoe-drug PDBs removed. drugs.json ~4.8 MB (gzips ~1 MB).
+
+---
+
+## Build status — v6 (refinements: known=literature-guest, logo/home, Step2 animation, narrative)
+- **Reframed "Known compound"**: it's a real, literature-backed drug *not* in the measured 94. Added 12
+  curated **guests** (Imatinib, Gefitinib, Erlotinib, Doxorubicin, Methotrexate, Tamoxifen, Warfarin,
+  Sildenafil, Omeprazole, Morphine, Diclofenac, Trametinib) — real chem from PubChem, **interpolated**
+  into the atlas (chem-Tanimoto-weighted mean of nearest-94 program vectors, projected onto the fitted
+  chem/pheno PCA), each with an **agentic-research dossier** (target/indication/MoA/findings/zebrafish,
+  illustrative). Known Step 1 lists guests + shows the 🔎 dossier panel. Novel path unchanged (94-only
+  interpolation). drugs.json now 106 records (94 atlas + 12 guests), ~5.6 MB. Quick-Start = Doxorubicin.
+- **Logo/home button** (`/images/zeroshot_bio_gritty.png`) top-left of every screen → back to the intro.
+- **Steps bar** forced to one row (short labels + `flex-nowrap` + overflow-x scroll).
+- **Step 2 animation**: a looping Rube-Goldberg SVG (dose→zebrafish→incubate→dissociate→scRNA-seq→data,
+  travelling marble + SMIL) with an explainer that this is where a real zebrafish exposure run kicks off.
+- **Step 3** now defaults to the **Zebrafish organs** view (first tab).
+- **Expanded "What we infer" section**: generator emits an 8–9-sentence deterministic **narrative**
+  (per-organ + per-pathway interpretation, confidence, dossier note) rendered as a "Reading the
+  inference" panel — the interpretation layer the user flagged as most valuable.
