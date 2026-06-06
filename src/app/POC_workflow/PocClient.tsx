@@ -5,6 +5,7 @@
 // (chemistry-predicted vs phenotype-neighbor mechanism) and whether they agree.
 // Honest cell-line (NOT tissue) + projection labeling throughout.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useSelectableTargets, TargetSelect, BindingBand, AnchorPrior } from "./TargetAware";
 
 /* Make an RDKit SVG fill its container without distortion: keep the viewBox (so the aspect ratio is
    preserved and lines never stretch), drop the fixed px width/height so it scales to the wrapper. */
@@ -281,6 +282,10 @@ export default function PocClient() {
   const themeClass = dark ? "dark poc-dark" : "";
 
   const sel = useMemo(() => data?.drugs.find((d) => d.id === selId) || null, [data, selId]);
+  // target-aware submission: curated zebrafish-gated dropdown + the chosen target
+  const selectableTargets = useSelectableTargets();
+  const [selTarget, setSelTarget] = useState("");
+  const drugByName = useMemo(() => new Map((data?.drugs || []).map((d) => [d.id, d])), [data]);
   const honesty = data?.manifest.honesty_label ??
     "Illustrative proof-of-concept on the 94-compound MegaFin zebrafish atlas.";
 
@@ -563,12 +568,12 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, selectableTargets, selTarget, setSelTarget, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
           {step === 4 && sel && <Step4 sel={sel} cloud={cloud} manifest={data?.manifest} />}
-          {step === 5 && sel && <Step5 sel={sel} manifest={data?.manifest} />}
+          {step === 5 && sel && <Step5 sel={sel} manifest={data?.manifest} selTarget={selTarget} selectableTargets={selectableTargets} smiles={smiles} drugByName={drugByName} />}
           {step === 6 && sel && <Step6 sel={sel} honesty={honesty} />}
           {/* unmeasured Hub candidate path — chemistry-only, never a fabricated phenotype */}
           {step >= 2 && !sel && candidate && <CandidateStep step={step} candidate={candidate} data={data} cloud={cloud} />}
@@ -595,7 +600,8 @@ export default function PocClient() {
    Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
-  revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
+  revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch,
+  selectableTargets, selTarget, setSelTarget, onNext }: any) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
   // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
@@ -635,6 +641,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
               Random novel SMILES
             </button>
           </div>
+          <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} />
         </div>
 
         {/* single sub-box: fades in, then the molecule pops */}
@@ -2242,7 +2249,9 @@ function NNHistogram({ manifest, queryDist, band }: { manifest: Manifest; queryD
     </svg>
   );
 }
-function Step5({ sel, manifest }: { sel: Drug; manifest?: Manifest }) {
+function Step5({ sel, manifest, selTarget, selectableTargets, smiles, drugByName }:
+  { sel: Drug; manifest?: Manifest; selTarget?: string; selectableTargets?: any[] | null; smiles?: string; drugByName?: Map<string, any> }) {
+  const tgt = selTarget && selectableTargets ? selectableTargets.find((t) => t.human_gene === selTarget) : null;
   const rel = sel.step5_reliability;
   const mech = sel.step4_mechanism;
   const routes = mech.routes; const why = mech.why;
@@ -2257,6 +2266,14 @@ function Step5({ sel, manifest }: { sel: Drug; manifest?: Manifest }) {
         A neighbor is a <strong>characterized anchor</strong> whose mechanism detail ports to {sel.display_name}.
         Mechanism (MoA) is the bridge — here are the two routes to it and whether they agree.
       </p>
+
+      {/* target-aware panels: binding plausibility (Boltz-2) + grounded anchor prior */}
+      {tgt && (
+        <div className="flex flex-col gap-3 mb-5">
+          {smiles ? <BindingBand smiles={smiles} gene={tgt.human_gene} /> : null}
+          <AnchorPrior target={tgt} drugByName={drugByName || new Map()} />
+        </div>
+      )}
 
       {/* TWO ROUTES */}
       <div className="flex flex-col sm:flex-row gap-3 mb-2">

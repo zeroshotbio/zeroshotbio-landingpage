@@ -1,0 +1,5097 @@
+[
+ {
+  "human_gene": "SLC6A4",
+  "zfin_ortholog": "slc6a4a",
+  "zfin_id": "ZDB-GENE-060314-1",
+  "expression_max_frac": 0.1266,
+  "expression_celltype": "aortic arch",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 9,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Citalopram",
+   "Fluoxetine",
+   "Paroxetine",
+   "Sertraline",
+   "Aripiprazole",
+   "Clopidogrel",
+   "Olanzapine",
+   "Propranolol",
+   "Verapamil"
+  ]
+ },
+ {
+  "human_gene": "HDAC1",
+  "zfin_ortholog": "hdac1",
+  "zfin_id": "ZDB-GENE-020419-32",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "diencephalon",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Entinostat",
+   "Panobinostat",
+   "Romidepsin",
+   "Vorinostat",
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "FKBP1A",
+  "zfin_ortholog": "fkbp1aa",
+  "zfin_id": "ZDB-GENE-030131-7275",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Everolimus",
+   "Pimecrolimus",
+   "Rapamycin",
+   "Tacrolimus",
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "PARP1",
+  "zfin_ortholog": "parp1",
+  "zfin_id": "ZDB-GENE-030131-3955",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "head mesenchyme",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Niraparib",
+   "Olaparib",
+   "Rucaparib",
+   "Veliparib",
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "ADRB1",
+  "zfin_ortholog": "adrb1",
+  "zfin_id": "ZDB-GENE-081022-145",
+  "expression_max_frac": 0.1235,
+  "expression_celltype": "hatching gland cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Atenolol",
+   "Isoprenaline",
+   "Metoprolol",
+   "Propranolol",
+   "Aripiprazole"
+  ]
+ },
+ {
+  "human_gene": "TUBB4B",
+  "zfin_ortholog": "tubb4b",
+  "zfin_id": "ZDB-GENE-030131-8625",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Colchicine",
+   "Epothilone B",
+   "Paclitaxel",
+   "Vinblastine"
+  ]
+ },
+ {
+  "human_gene": "NR3C1",
+  "zfin_ortholog": "nr3c1",
+  "zfin_id": "ZDB-GENE-050522-503",
+  "expression_max_frac": 0.7553,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Budesonide",
+   "Dexamethasone",
+   "Hydrocortisone",
+   "Prednisone"
+  ]
+ },
+ {
+  "human_gene": "HMGCR",
+  "zfin_ortholog": "hmgcrb",
+  "zfin_id": "ZDB-GENE-051108-1",
+  "expression_max_frac": 0.5962,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Atorvastatin",
+   "Lovastatin",
+   "Pravastatin",
+   "Simvastatin"
+  ]
+ },
+ {
+  "human_gene": "FLT1",
+  "zfin_ortholog": "flt1",
+  "zfin_id": "ZDB-GENE-050407-1",
+  "expression_max_frac": 0.4373,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib",
+   "Sorafenib",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "DRD2",
+  "zfin_ortholog": "drd2b",
+  "zfin_id": "ZDB-GENE-030910-2",
+  "expression_max_frac": 0.1321,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 4,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Haloperidol",
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "PDGFRB",
+  "zfin_ortholog": "pdgfrb",
+  "zfin_id": "ZDB-GENE-030805-2",
+  "expression_max_frac": 0.5948,
+  "expression_celltype": "fin",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 3,
+  "anchors": [
+   "Pazopanib",
+   "Sorafenib",
+   "Sunitinib",
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "KIT",
+  "zfin_ortholog": "kita",
+  "zfin_id": "ZDB-GENE-980526-464",
+  "expression_max_frac": 0.4175,
+  "expression_celltype": "lateral line ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 3,
+  "anchors": [
+   "Pazopanib",
+   "Sorafenib",
+   "Sunitinib",
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "AR",
+  "zfin_ortholog": "ar",
+  "zfin_id": "ZDB-GENE-060131-1",
+  "expression_max_frac": 0.1964,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 8,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 3,
+  "anchors": [
+   "Abiraterone",
+   "Bicalutamide",
+   "Enzalutamide",
+   "Budesonide"
+  ]
+ },
+ {
+  "human_gene": "PTGS2",
+  "zfin_ortholog": "ptgs2a",
+  "zfin_id": "ZDB-GENE-020530-2",
+  "expression_max_frac": 0.594,
+  "expression_celltype": "epidermal cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 3,
+  "anchors": [
+   "Aspirin",
+   "Celecoxib",
+   "Ibuprofen"
+  ]
+ },
+ {
+  "human_gene": "CSF1R",
+  "zfin_ortholog": "csf1rb",
+  "zfin_id": "ZDB-GENE-091118-1",
+  "expression_max_frac": 0.794,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Pazopanib",
+   "Sunitinib",
+   "Axitinib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "RET",
+  "zfin_ortholog": "ret",
+  "zfin_id": "ZDB-GENE-980526-307",
+  "expression_max_frac": 0.5,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC"
+  ],
+  "ortholog_n_pubs": 8,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Sorafenib",
+   "Sunitinib",
+   "Axitinib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "CDK1",
+  "zfin_ortholog": "cdk1",
+  "zfin_id": "ZDB-GENE-010320-1",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine",
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "CDK2",
+  "zfin_ortholog": "cdk2",
+  "zfin_id": "ZDB-GENE-040426-2741",
+  "expression_max_frac": 0.8478,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine",
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "CDK5",
+  "zfin_ortholog": "cdk5",
+  "zfin_id": "ZDB-GENE-010131-2",
+  "expression_max_frac": 0.4933,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine",
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "ACE",
+  "zfin_ortholog": "ace",
+  "zfin_id": "ZDB-GENE-030131-1826",
+  "expression_max_frac": 0.2523,
+  "expression_celltype": "xanthophore",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Enalapril",
+   "Ramipril",
+   "Losartan"
+  ]
+ },
+ {
+  "human_gene": "CDK4",
+  "zfin_ortholog": "cdk4",
+  "zfin_id": "ZDB-GENE-060929-974",
+  "expression_max_frac": 0.1758,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Palbociclib",
+   "Ribociclib",
+   "Dinaciclib"
+  ]
+ },
+ {
+  "human_gene": "AGTR1",
+  "zfin_ortholog": "agtr1b",
+  "zfin_id": "ZDB-GENE-110411-117",
+  "expression_max_frac": 0.1078,
+  "expression_celltype": "pectoral fin",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Losartan",
+   "Valsartan",
+   "Aripiprazole"
+  ]
+ },
+ {
+  "human_gene": "PSMD1",
+  "zfin_ortholog": "psmd1",
+  "zfin_id": "ZDB-GENE-040426-810",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Carfilzomib",
+   "Ixazomib"
+  ]
+ },
+ {
+  "human_gene": "HSP90AA1",
+  "zfin_ortholog": "hsp90aa1.2",
+  "zfin_id": "ZDB-GENE-031001-3",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "17-AAG",
+   "Ganetespib"
+  ]
+ },
+ {
+  "human_gene": "SMO",
+  "zfin_ortholog": "smo",
+  "zfin_id": "ZDB-GENE-980526-89",
+  "expression_max_frac": 0.9565,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Erismodegib",
+   "Vismodegib"
+  ]
+ },
+ {
+  "human_gene": "CDK9",
+  "zfin_ortholog": "cdk9",
+  "zfin_id": "ZDB-GENE-030131-321",
+  "expression_max_frac": 0.8696,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine"
+  ]
+ },
+ {
+  "human_gene": "P2RY12",
+  "zfin_ortholog": "p2ry12",
+  "zfin_id": "ZDB-GENE-110208-4",
+  "expression_max_frac": 0.5064,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Clopidogrel",
+   "Ticagrelor"
+  ]
+ },
+ {
+  "human_gene": "F10",
+  "zfin_ortholog": "f10",
+  "zfin_id": "ZDB-GENE-021206-9",
+  "expression_max_frac": 0.3582,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Apixaban",
+   "Rivaroxaban"
+  ]
+ },
+ {
+  "human_gene": "SCN1A",
+  "zfin_ortholog": "scn1laa",
+  "zfin_id": "ZDB-GENE-040426-751",
+  "expression_max_frac": 0.2667,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 2,
+  "anchors": [
+   "Carbamazepine",
+   "Lidocaine"
+  ]
+ },
+ {
+  "human_gene": "KDR",
+  "zfin_ortholog": "kdr",
+  "zfin_id": "ZDB-GENE-041001-112",
+  "expression_max_frac": 0.7103,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Sunitinib",
+   "Axitinib",
+   "Pazopanib",
+   "Quercetin",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "HDAC6",
+  "zfin_ortholog": "hdac6",
+  "zfin_id": "ZDB-GENE-030131-3232",
+  "expression_max_frac": 0.2857,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "OT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Vorinostat",
+   "Celecoxib",
+   "Panobinostat",
+   "Quercetin",
+   "Romidepsin"
+  ]
+ },
+ {
+  "human_gene": "PDGFRA",
+  "zfin_ortholog": "pdgfra",
+  "zfin_id": "ZDB-GENE-990415-208",
+  "expression_max_frac": 0.9535,
+  "expression_celltype": "head mesenchyme",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Sunitinib",
+   "Axitinib",
+   "Pazopanib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "PARP2",
+  "zfin_ortholog": "parp2",
+  "zfin_id": "ZDB-GENE-031113-6",
+  "expression_max_frac": 0.9365,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Niraparib",
+   "Olaparib",
+   "Rucaparib",
+   "Veliparib"
+  ]
+ },
+ {
+  "human_gene": "FLT4",
+  "zfin_ortholog": "flt4",
+  "zfin_id": "ZDB-GENE-980526-326",
+  "expression_max_frac": 0.8663,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Sunitinib",
+   "Axitinib",
+   "Pazopanib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CDK6",
+  "zfin_ortholog": "cdk6",
+  "zfin_id": "ZDB-GENE-060503-786",
+  "expression_max_frac": 0.7912,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Ribociclib",
+   "Olaparib",
+   "Palbociclib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "MTOR",
+  "zfin_ortholog": "mtor",
+  "zfin_id": "ZDB-GENE-030131-2974",
+  "expression_max_frac": 0.7391,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Omipalisib",
+   "Everolimus",
+   "Rapamycin",
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "HDAC3",
+  "zfin_ortholog": "hdac3",
+  "zfin_id": "ZDB-GENE-040426-847",
+  "expression_max_frac": 0.5435,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Vorinostat",
+   "Entinostat",
+   "Panobinostat",
+   "Romidepsin"
+  ]
+ },
+ {
+  "human_gene": "ADRB2",
+  "zfin_ortholog": "adrb2a",
+  "zfin_id": "ZDB-GENE-100414-3",
+  "expression_max_frac": 0.4378,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Propranolol",
+   "Aripiprazole",
+   "Dexamethasone",
+   "Isoprenaline"
+  ]
+ },
+ {
+  "human_gene": "HTR1A",
+  "zfin_ortholog": "htr1aa",
+  "zfin_id": "ZDB-GENE-071203-1",
+  "expression_max_frac": 0.2442,
+  "expression_celltype": "ganglion",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Propranolol"
+  ]
+ },
+ {
+  "human_gene": "CCND1",
+  "zfin_ortholog": "ccnd1",
+  "zfin_id": "ZDB-GENE-980526-176",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Palbociclib",
+   "Ribociclib"
+  ]
+ },
+ {
+  "human_gene": "POLA1",
+  "zfin_ortholog": "pola1",
+  "zfin_id": "ZDB-GENE-030114-9",
+  "expression_max_frac": 0.9483,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Gemcitabine",
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "FGFR3",
+  "zfin_ortholog": "fgfr3",
+  "zfin_id": "ZDB-GENE-000816-1",
+  "expression_max_frac": 0.9348,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 7,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Pazopanib",
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "PIK3R1",
+  "zfin_ortholog": "pik3r1",
+  "zfin_id": "ZDB-GENE-030131-1280",
+  "expression_max_frac": 0.8333,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Omipalisib",
+   "Idelalisib"
+  ]
+ },
+ {
+  "human_gene": "CDK7",
+  "zfin_ortholog": "cdk7",
+  "zfin_id": "ZDB-GENE-010320-2",
+  "expression_max_frac": 0.7826,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Roscovitine",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "FGFR1",
+  "zfin_ortholog": "fgfr1a",
+  "zfin_id": "ZDB-GENE-980526-255",
+  "expression_max_frac": 0.7657,
+  "expression_celltype": "epidermal cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "FC"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Pazopanib",
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "PIK3CD",
+  "zfin_ortholog": "pik3cd",
+  "zfin_id": "ZDB-GENE-040426-1128",
+  "expression_max_frac": 0.4335,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Idelalisib",
+   "Omipalisib"
+  ]
+ },
+ {
+  "human_gene": "BRAF",
+  "zfin_ortholog": "braf",
+  "zfin_id": "ZDB-GENE-040805-1",
+  "expression_max_frac": 0.2716,
+  "expression_celltype": "neuron",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Sorafenib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "PPIA",
+  "zfin_ortholog": "ppiab",
+  "zfin_id": "ZDB-GENE-030131-7459",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "RRM1",
+  "zfin_ortholog": "rrm1",
+  "zfin_id": "ZDB-GENE-990415-247",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Gemcitabine"
+  ]
+ },
+ {
+  "human_gene": "PPAT",
+  "zfin_ortholog": "ppat",
+  "zfin_id": "ZDB-GENE-041210-323",
+  "expression_max_frac": 0.9386,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Mercaptopurine"
+  ]
+ },
+ {
+  "human_gene": "TYMS",
+  "zfin_ortholog": "tyms",
+  "zfin_id": "ZDB-GENE-040426-59",
+  "expression_max_frac": 0.8689,
+  "expression_celltype": "hematopoietic system",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Fluorouracil"
+  ]
+ },
+ {
+  "human_gene": "LIPF",
+  "zfin_ortholog": "lipf",
+  "zfin_id": "ZDB-GENE-040426-2737",
+  "expression_max_frac": 0.8112,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "CYP17A1",
+  "zfin_ortholog": "cyp17a1",
+  "zfin_id": "ZDB-GENE-040213-2",
+  "expression_max_frac": 0.7826,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Abiraterone"
+  ]
+ },
+ {
+  "human_gene": "DHODH",
+  "zfin_ortholog": "dhodh",
+  "zfin_id": "ZDB-GENE-030131-3157",
+  "expression_max_frac": 0.5934,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Leflunomide"
+  ]
+ },
+ {
+  "human_gene": "KCNJ11",
+  "zfin_ortholog": "kcnj11",
+  "zfin_id": "ZDB-GENE-060308-2",
+  "expression_max_frac": 0.451,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Glibenclamide"
+  ]
+ },
+ {
+  "human_gene": "RAF1",
+  "zfin_ortholog": "raf1b",
+  "zfin_id": "ZDB-GENE-090826-2",
+  "expression_max_frac": 0.381,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "GPD2",
+  "zfin_ortholog": "gpd2",
+  "zfin_id": "ZDB-GENE-030131-4869",
+  "expression_max_frac": 0.2778,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Metformin"
+  ]
+ },
+ {
+  "human_gene": "SRD5A2",
+  "zfin_ortholog": "srd5a2a",
+  "zfin_id": "ZDB-GENE-050417-199",
+  "expression_max_frac": 0.1245,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 1,
+  "anchors": [
+   "Finasteride"
+  ]
+ },
+ {
+  "human_gene": "LMNA",
+  "zfin_ortholog": "lmna",
+  "zfin_id": "ZDB-GENE-020424-3",
+  "expression_max_frac": 0.5275,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 8,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 8,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Atenolol",
+   "Carbamazepine",
+   "Enalapril",
+   "Famotidine",
+   "Fluorouracil",
+   "Ibuprofen",
+   "Leflunomide",
+   "Metformin"
+  ]
+ },
+ {
+  "human_gene": "ADRA1A",
+  "zfin_ortholog": "adra1aa",
+  "zfin_id": "ZDB-GENE-030131-2831",
+  "expression_max_frac": 0.1549,
+  "expression_celltype": "artery",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 8,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone",
+   "Aripiprazole",
+   "Atenolol",
+   "Clozapine",
+   "Haloperidol",
+   "Isoprenaline",
+   "Olanzapine",
+   "Verapamil"
+  ]
+ },
+ {
+  "human_gene": "ADRA2A",
+  "zfin_ortholog": "adra2a",
+  "zfin_id": "ZDB-GENE-021010-1",
+  "expression_max_frac": 0.1905,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 6,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone",
+   "Amlodipine",
+   "Aripiprazole",
+   "Clozapine",
+   "Fluoxetine",
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "CA2",
+  "zfin_ortholog": "cahz",
+  "zfin_id": "ZDB-GENE-980526-39",
+  "expression_max_frac": 0.9968,
+  "expression_celltype": "hematopoietic system",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Curcumin",
+   "Famotidine",
+   "Pazopanib",
+   "Pioglitazone"
+  ]
+ },
+ {
+  "human_gene": "SIGMAR1",
+  "zfin_ortholog": "sigmar1",
+  "zfin_id": "ZDB-GENE-040426-1006",
+  "expression_max_frac": 0.7921,
+  "expression_celltype": "neural crest",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone",
+   "Citalopram",
+   "Fluoxetine",
+   "Haloperidol",
+   "Sertraline"
+  ]
+ },
+ {
+  "human_gene": "DRD3",
+  "zfin_ortholog": "drd3",
+  "zfin_id": "ZDB-GENE-021119-1",
+  "expression_max_frac": 0.4132,
+  "expression_celltype": "melanocyte",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Haloperidol",
+   "Olanzapine",
+   "Verapamil"
+  ]
+ },
+ {
+  "human_gene": "ADRA2B",
+  "zfin_ortholog": "adra2b",
+  "zfin_id": "ZDB-GENE-021010-2",
+  "expression_max_frac": 0.2013,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Haloperidol",
+   "Olanzapine",
+   "Sertraline"
+  ]
+ },
+ {
+  "human_gene": "NFKB1",
+  "zfin_ortholog": "nfkb1",
+  "zfin_id": "ZDB-GENE-121204-3",
+  "expression_max_frac": 0.1245,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 5,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Budesonide",
+   "Clozapine",
+   "Haloperidol",
+   "Hydrocortisone",
+   "Ibuprofen"
+  ]
+ },
+ {
+  "human_gene": "CA9",
+  "zfin_ortholog": "ca9",
+  "zfin_id": "ZDB-GENE-080818-5",
+  "expression_max_frac": 0.625,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Famotidine",
+   "Pazopanib",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "BLM",
+  "zfin_ortholog": "blm",
+  "zfin_id": "ZDB-GENE-070702-5",
+  "expression_max_frac": 0.3326,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 4,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aspirin",
+   "Clozapine",
+   "Famotidine",
+   "Finasteride"
+  ]
+ },
+ {
+  "human_gene": "BRD4",
+  "zfin_ortholog": "brd4",
+  "zfin_id": "ZDB-GENE-030131-267",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat",
+   "Romidepsin",
+   "Vorinostat"
+  ]
+ },
+ {
+  "human_gene": "DYRK1B",
+  "zfin_ortholog": "dyrk1b",
+  "zfin_id": "ZDB-GENE-060503-499",
+  "expression_max_frac": 0.8094,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin",
+   "Niraparib",
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "DDR1",
+  "zfin_ortholog": "ddr1",
+  "zfin_id": "ZDB-GENE-060323-2",
+  "expression_max_frac": 0.7619,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CCNT1",
+  "zfin_ortholog": "ccnt1",
+  "zfin_id": "ZDB-GENE-030131-6397",
+  "expression_max_frac": 0.7609,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib",
+   "Ribociclib",
+   "Roscovitine"
+  ]
+ },
+ {
+  "human_gene": "STK10",
+  "zfin_ortholog": "stk10",
+  "zfin_id": "ZDB-GENE-040426-1136",
+  "expression_max_frac": 0.7565,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib",
+   "Sorafenib",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "CLK2",
+  "zfin_ortholog": "clk2b",
+  "zfin_id": "ZDB-GENE-060929-1126",
+  "expression_max_frac": 0.7391,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib",
+   "Roscovitine",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "ADRA1D",
+  "zfin_ortholog": "adra1d",
+  "zfin_id": "ZDB-GENE-090312-203",
+  "expression_max_frac": 0.7128,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Clozapine",
+   "Haloperidol",
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "EGFR",
+  "zfin_ortholog": "egfra",
+  "zfin_id": "ZDB-GENE-030918-1",
+  "expression_max_frac": 0.597,
+  "expression_celltype": "pectoral fin musculature",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein",
+   "Sorafenib",
+   "Vorinostat"
+  ]
+ },
+ {
+  "human_gene": "FKBP1B",
+  "zfin_ortholog": "fkbp1b",
+  "zfin_id": "ZDB-GENE-040426-1785",
+  "expression_max_frac": 0.5632,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A",
+   "Rapamycin",
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "PIK3CB",
+  "zfin_ortholog": "pik3cb",
+  "zfin_id": "ZDB-GENE-030131-1904",
+  "expression_max_frac": 0.5622,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Idelalisib",
+   "Omipalisib",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "GAK",
+  "zfin_ortholog": "gak",
+  "zfin_id": "ZDB-GENE-041210-358",
+  "expression_max_frac": 0.4893,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib",
+   "Ribociclib",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "HTR3A",
+  "zfin_ortholog": "htr3a",
+  "zfin_id": "ZDB-GENE-071012-5",
+  "expression_max_frac": 0.4533,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "PARP3",
+  "zfin_ortholog": "parp3",
+  "zfin_id": "ZDB-GENE-030131-7435",
+  "expression_max_frac": 0.3826,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Niraparib",
+   "Olaparib",
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "MAPK1",
+  "zfin_ortholog": "mapk1",
+  "zfin_id": "ZDB-GENE-030722-2",
+  "expression_max_frac": 0.3621,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carbamazepine",
+   "Olanzapine",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "PARP4",
+  "zfin_ortholog": "parp4",
+  "zfin_id": "ZDB-GENE-070912-387",
+  "expression_max_frac": 0.2957,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Niraparib",
+   "Olaparib",
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "HDAC10",
+  "zfin_ortholog": "hdac10",
+  "zfin_id": "ZDB-GENE-030131-5464",
+  "expression_max_frac": 0.2664,
+  "expression_celltype": "hematopoietic system",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat",
+   "Romidepsin",
+   "Vorinostat"
+  ]
+ },
+ {
+  "human_gene": "MAP2K5",
+  "zfin_ortholog": "map2k5",
+  "zfin_id": "ZDB-GENE-030131-1517",
+  "expression_max_frac": 0.2381,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "ADRA1B",
+  "zfin_ortholog": "adra1ba",
+  "zfin_id": "ZDB-GENE-120510-1",
+  "expression_max_frac": 0.2318,
+  "expression_celltype": "fin",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole",
+   "Clozapine",
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "PIK3CA",
+  "zfin_ortholog": "pik3ca",
+  "zfin_id": "ZDB-GENE-130409-1",
+  "expression_max_frac": 0.2173,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Idelalisib",
+   "Omipalisib",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "CA14",
+  "zfin_ortholog": "ca14",
+  "zfin_id": "ZDB-GENE-051030-57",
+  "expression_max_frac": 0.2,
+  "expression_celltype": "lens",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Famotidine",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "SLC6A2",
+  "zfin_ortholog": "slc6a2",
+  "zfin_id": "ZDB-GENE-110408-4",
+  "expression_max_frac": 0.1259,
+  "expression_celltype": "renal system",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 3,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Niraparib",
+   "Paroxetine",
+   "Sertraline"
+  ]
+ },
+ {
+  "human_gene": "FGFR2",
+  "zfin_ortholog": "fgfr2",
+  "zfin_id": "ZDB-GENE-030323-1",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "FKBP4",
+  "zfin_ortholog": "fkbp4",
+  "zfin_id": "ZDB-GENE-030131-514",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A",
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "PSMB5",
+  "zfin_ortholog": "psmb5",
+  "zfin_id": "ZDB-GENE-990415-215",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carfilzomib",
+   "Ixazomib"
+  ]
+ },
+ {
+  "human_gene": "PSMB2",
+  "zfin_ortholog": "psmb2",
+  "zfin_id": "ZDB-GENE-040718-353",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carfilzomib",
+   "Ixazomib"
+  ]
+ },
+ {
+  "human_gene": "AURKB",
+  "zfin_ortholog": "aurkb",
+  "zfin_id": "ZDB-GENE-020419-40",
+  "expression_max_frac": 0.9783,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "HIF1A",
+  "zfin_ortholog": "hif1ab",
+  "zfin_id": "ZDB-GENE-040426-706",
+  "expression_max_frac": 0.9783,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 8,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Hydrocortisone",
+   "Nifedipine"
+  ]
+ },
+ {
+  "human_gene": "TIE1",
+  "zfin_ortholog": "tie1",
+  "zfin_id": "ZDB-GENE-990415-55",
+  "expression_max_frac": 0.9749,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CDK8",
+  "zfin_ortholog": "cdk8",
+  "zfin_id": "ZDB-GENE-030903-2",
+  "expression_max_frac": 0.9067,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "TNIK",
+  "zfin_ortholog": "tnika",
+  "zfin_id": "ZDB-GENE-030131-3767",
+  "expression_max_frac": 0.9048,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "CA6",
+  "zfin_ortholog": "ca6",
+  "zfin_id": "ZDB-GENE-030131-7091",
+  "expression_max_frac": 0.875,
+  "expression_celltype": "median fin fold",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Famotidine"
+  ]
+ },
+ {
+  "human_gene": "CSNK1D",
+  "zfin_ortholog": "csnk1da",
+  "zfin_id": "ZDB-GENE-030131-825",
+  "expression_max_frac": 0.8454,
+  "expression_celltype": "lateral line ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Roscovitine",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "TEK",
+  "zfin_ortholog": "tek",
+  "zfin_id": "ZDB-GENE-990415-56",
+  "expression_max_frac": 0.8245,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "HDAC9",
+  "zfin_ortholog": "hdac9b",
+  "zfin_id": "ZDB-GENE-040109-7",
+  "expression_max_frac": 0.7343,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Entinostat",
+   "Panobinostat"
+  ]
+ },
+ {
+  "human_gene": "PIK3C3",
+  "zfin_ortholog": "pik3c3",
+  "zfin_id": "ZDB-GENE-050410-13",
+  "expression_max_frac": 0.7268,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Omipalisib",
+   "Panobinostat"
+  ]
+ },
+ {
+  "human_gene": "ADRB3",
+  "zfin_ortholog": "adrb3a",
+  "zfin_id": "ZDB-GENE-080917-21",
+  "expression_max_frac": 0.723,
+  "expression_celltype": "hematopoietic system",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Isoprenaline",
+   "Propranolol"
+  ]
+ },
+ {
+  "human_gene": "CLK4",
+  "zfin_ortholog": "clk4a",
+  "zfin_id": "ZDB-GENE-030131-576",
+  "expression_max_frac": 0.6739,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "PTGES",
+  "zfin_ortholog": "ptges",
+  "zfin_id": "ZDB-GENE-050407-2",
+  "expression_max_frac": 0.6418,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "HDAC4",
+  "zfin_ortholog": "hdac4",
+  "zfin_id": "ZDB-GENE-061013-95",
+  "expression_max_frac": 0.64,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat",
+   "Romidepsin"
+  ]
+ },
+ {
+  "human_gene": "PIK3CG",
+  "zfin_ortholog": "pik3cg",
+  "zfin_id": "ZDB-GENE-040426-2532",
+  "expression_max_frac": 0.6223,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Idelalisib",
+   "Omipalisib"
+  ]
+ },
+ {
+  "human_gene": "FKBP5",
+  "zfin_ortholog": "fkbp5",
+  "zfin_id": "ZDB-GENE-030616-630",
+  "expression_max_frac": 0.5975,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Rapamycin",
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "CCNE1",
+  "zfin_ortholog": "ccne1",
+  "zfin_id": "ZDB-GENE-980526-168",
+  "expression_max_frac": 0.587,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "OT"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine"
+  ]
+ },
+ {
+  "human_gene": "CSNK1E",
+  "zfin_ortholog": "csnk1e",
+  "zfin_id": "ZDB-GENE-030131-7873",
+  "expression_max_frac": 0.5733,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Roscovitine",
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "PPP3CA",
+  "zfin_ortholog": "ppp3ca",
+  "zfin_id": "ZDB-GENE-091113-24",
+  "expression_max_frac": 0.5733,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A",
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "HDAC8",
+  "zfin_ortholog": "hdac8",
+  "zfin_id": "ZDB-GENE-040426-2772",
+  "expression_max_frac": 0.5652,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat",
+   "Romidepsin"
+  ]
+ },
+ {
+  "human_gene": "MAP2K4",
+  "zfin_ortholog": "map2k4a",
+  "zfin_id": "ZDB-GENE-060512-98",
+  "expression_max_frac": 0.5461,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "ERBB2",
+  "zfin_ortholog": "erbb2",
+  "zfin_id": "ZDB-GENE-031118-121",
+  "expression_max_frac": 0.487,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "17-AAG",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CCNK",
+  "zfin_ortholog": "ccnk",
+  "zfin_id": "ZDB-GENE-030131-5126",
+  "expression_max_frac": 0.4348,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib",
+   "Roscovitine"
+  ]
+ },
+ {
+  "human_gene": "CDK16",
+  "zfin_ortholog": "cdk16",
+  "zfin_id": "ZDB-GENE-030131-2939",
+  "expression_max_frac": 0.4091,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Roscovitine",
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "EBP",
+  "zfin_ortholog": "ebp",
+  "zfin_id": "ZDB-GENE-040718-12",
+  "expression_max_frac": 0.3793,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone",
+   "Haloperidol"
+  ]
+ },
+ {
+  "human_gene": "EPHB6",
+  "zfin_ortholog": "ephb6",
+  "zfin_id": "ZDB-GENE-100922-51",
+  "expression_max_frac": 0.3681,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "HDAC5",
+  "zfin_ortholog": "hdac5",
+  "zfin_id": "ZDB-GENE-121219-3",
+  "expression_max_frac": 0.3632,
+  "expression_celltype": "pectoral fin musculature",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat",
+   "Romidepsin"
+  ]
+ },
+ {
+  "human_gene": "PLK4",
+  "zfin_ortholog": "plk4",
+  "zfin_id": "ZDB-GENE-030619-14",
+  "expression_max_frac": 0.3291,
+  "expression_celltype": "diencephalon",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "STK16",
+  "zfin_ortholog": "stk16",
+  "zfin_id": "ZDB-GENE-050417-102",
+  "expression_max_frac": 0.321,
+  "expression_celltype": "hatching gland cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib",
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "NFKB2",
+  "zfin_ortholog": "nfkb2",
+  "zfin_id": "ZDB-GENE-030131-6701",
+  "expression_max_frac": 0.2982,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dexamethasone",
+   "Ixazomib"
+  ]
+ },
+ {
+  "human_gene": "CA4",
+  "zfin_ortholog": "ca4a",
+  "zfin_id": "ZDB-GENE-080204-85",
+  "expression_max_frac": 0.2766,
+  "expression_celltype": "otic vesicle",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib",
+   "Famotidine"
+  ]
+ },
+ {
+  "human_gene": "DPP4",
+  "zfin_ortholog": "dpp4",
+  "zfin_id": "ZDB-GENE-081104-277",
+  "expression_max_frac": 0.2719,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "DDR2",
+  "zfin_ortholog": "ddr2a",
+  "zfin_id": "ZDB-GENE-090316-2",
+  "expression_max_frac": 0.2704,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib",
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "DYRK1A",
+  "zfin_ortholog": "dyrk1aa",
+  "zfin_id": "ZDB-GENE-050302-29",
+  "expression_max_frac": 0.2619,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin",
+   "Niraparib"
+  ]
+ },
+ {
+  "human_gene": "TACR1",
+  "zfin_ortholog": "tacr1b",
+  "zfin_id": "ZDB-GENE-091117-17",
+  "expression_max_frac": 0.1667,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A",
+   "Paroxetine"
+  ]
+ },
+ {
+  "human_gene": "ESR1",
+  "zfin_ortholog": "esr1",
+  "zfin_id": "ZDB-GENE-020806-5",
+  "expression_max_frac": 0.1519,
+  "expression_celltype": "aortic arch",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 11,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein",
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "ABCB11",
+  "zfin_ortholog": "abcb11a",
+  "zfin_id": "ZDB-GENE-050517-13",
+  "expression_max_frac": 0.1491,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A",
+   "Pioglitazone"
+  ]
+ },
+ {
+  "human_gene": "KCNK2",
+  "zfin_ortholog": "kcnk2b",
+  "zfin_id": "ZDB-GENE-051120-69",
+  "expression_max_frac": 0.1049,
+  "expression_celltype": "neuron",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 2,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amlodipine",
+   "Nifedipine"
+  ]
+ },
+ {
+  "human_gene": "HMGB1",
+  "zfin_ortholog": "hmgb1a",
+  "zfin_id": "ZDB-GENE-030131-341",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "diencephalon",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aspirin"
+  ]
+ },
+ {
+  "human_gene": "PPID",
+  "zfin_ortholog": "ppid",
+  "zfin_id": "ZDB-GENE-040625-34",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "PPIB",
+  "zfin_ortholog": "ppib",
+  "zfin_id": "ZDB-GENE-040426-1955",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "POLB",
+  "zfin_ortholog": "polb",
+  "zfin_id": "ZDB-GENE-040830-1",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "CSNK2B",
+  "zfin_ortholog": "csnk2b",
+  "zfin_id": "ZDB-GENE-990415-29",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "hindbrain",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 7,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "CHD4",
+  "zfin_ortholog": "chd4b",
+  "zfin_id": "ZDB-GENE-030131-4532",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "diencephalon",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib"
+  ]
+ },
+ {
+  "human_gene": "PSMB7",
+  "zfin_ortholog": "psmb7",
+  "zfin_id": "ZDB-GENE-001208-4",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carfilzomib"
+  ]
+ },
+ {
+  "human_gene": "PSMB6",
+  "zfin_ortholog": "psmb6",
+  "zfin_id": "ZDB-GENE-990415-216",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carfilzomib"
+  ]
+ },
+ {
+  "human_gene": "PSMB1",
+  "zfin_ortholog": "psmb1",
+  "zfin_id": "ZDB-GENE-040618-2",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ixazomib"
+  ]
+ },
+ {
+  "human_gene": "HSP90AB1",
+  "zfin_ortholog": "hsp90ab1",
+  "zfin_id": "ZDB-GENE-990415-95",
+  "expression_max_frac": 1.0,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ganetespib"
+  ]
+ },
+ {
+  "human_gene": "KDM1A",
+  "zfin_ortholog": "kdm1a",
+  "zfin_id": "ZDB-GENE-030131-7828",
+  "expression_max_frac": 0.9951,
+  "expression_celltype": "neuron",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Entinostat"
+  ]
+ },
+ {
+  "human_gene": "PIM1",
+  "zfin_ortholog": "pim1",
+  "zfin_id": "ZDB-GENE-061013-139",
+  "expression_max_frac": 0.9783,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "HSP90B1",
+  "zfin_ortholog": "hsp90b1",
+  "zfin_id": "ZDB-GENE-031002-1",
+  "expression_max_frac": 0.9783,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ganetespib"
+  ]
+ },
+ {
+  "human_gene": "HSD17B10",
+  "zfin_ortholog": "hsd17b10",
+  "zfin_id": "ZDB-GENE-041010-201",
+  "expression_max_frac": 0.978,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "SHH",
+  "zfin_ortholog": "shha",
+  "zfin_id": "ZDB-GENE-980526-166",
+  "expression_max_frac": 0.9762,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 8,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Vismodegib"
+  ]
+ },
+ {
+  "human_gene": "PPIF",
+  "zfin_ortholog": "ppifb",
+  "zfin_id": "ZDB-GENE-051030-126",
+  "expression_max_frac": 0.9571,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "EIF4E",
+  "zfin_ortholog": "eif4eb",
+  "zfin_id": "ZDB-GENE-041121-14",
+  "expression_max_frac": 0.9565,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Rapamycin"
+  ]
+ },
+ {
+  "human_gene": "SMN1",
+  "zfin_ortholog": "smn1",
+  "zfin_id": "ZDB-GENE-990715-16",
+  "expression_max_frac": 0.9565,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC",
+   "OT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Hydrocortisone"
+  ]
+ },
+ {
+  "human_gene": "ABHD6",
+  "zfin_ortholog": "abhd6a",
+  "zfin_id": "ZDB-GENE-090925-1",
+  "expression_max_frac": 0.9565,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "SLC29A1",
+  "zfin_ortholog": "slc29a1a",
+  "zfin_id": "ZDB-GENE-050913-138",
+  "expression_max_frac": 0.956,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ticagrelor"
+  ]
+ },
+ {
+  "human_gene": "SF3B3",
+  "zfin_ortholog": "sf3b3",
+  "zfin_id": "ZDB-GENE-040426-2901",
+  "expression_max_frac": 0.9348,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "CAMK2G",
+  "zfin_ortholog": "camk2g1",
+  "zfin_id": "ZDB-GENE-050913-146",
+  "expression_max_frac": 0.9291,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ribociclib"
+  ]
+ },
+ {
+  "human_gene": "JUN",
+  "zfin_ortholog": "jun",
+  "zfin_id": "ZDB-GENE-030131-7859",
+  "expression_max_frac": 0.9286,
+  "expression_celltype": "endoderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "ABHD12",
+  "zfin_ortholog": "abhd12",
+  "zfin_id": "ZDB-GENE-060929-268",
+  "expression_max_frac": 0.9217,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "ALOX12",
+  "zfin_ortholog": "alox12",
+  "zfin_id": "ZDB-GENE-030131-1452",
+  "expression_max_frac": 0.9217,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "SLK",
+  "zfin_ortholog": "slka",
+  "zfin_id": "ZDB-GENE-050411-66",
+  "expression_max_frac": 0.9185,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "RIOK1",
+  "zfin_ortholog": "riok1",
+  "zfin_id": "ZDB-GENE-040426-1927",
+  "expression_max_frac": 0.9121,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "NAPRT",
+  "zfin_ortholog": "naprt",
+  "zfin_id": "ZDB-GENE-040426-1897",
+  "expression_max_frac": 0.9043,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aspirin"
+  ]
+ },
+ {
+  "human_gene": "IP6K2",
+  "zfin_ortholog": "ip6k2a",
+  "zfin_id": "ZDB-GENE-030131-760",
+  "expression_max_frac": 0.9005,
+  "expression_celltype": "pectoral fin musculature",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "TTK",
+  "zfin_ortholog": "ttk",
+  "zfin_id": "ZDB-GENE-030123-1",
+  "expression_max_frac": 0.8913,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "PIP4K2C",
+  "zfin_ortholog": "pip4k2ca",
+  "zfin_id": "ZDB-GENE-030828-9",
+  "expression_max_frac": 0.8851,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "TIPARP",
+  "zfin_ortholog": "tiparp",
+  "zfin_id": "ZDB-GENE-031002-47",
+  "expression_max_frac": 0.8667,
+  "expression_celltype": "endoderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Olaparib"
+  ]
+ },
+ {
+  "human_gene": "ACHE",
+  "zfin_ortholog": "ache",
+  "zfin_id": "ZDB-GENE-010906-1",
+  "expression_max_frac": 0.8478,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Fluoxetine"
+  ]
+ },
+ {
+  "human_gene": "FYN",
+  "zfin_ortholog": "fyna",
+  "zfin_id": "ZDB-GENE-030903-5",
+  "expression_max_frac": 0.84,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "OT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone"
+  ]
+ },
+ {
+  "human_gene": "LIPG",
+  "zfin_ortholog": "lipg",
+  "zfin_id": "ZDB-GENE-040426-699",
+  "expression_max_frac": 0.8372,
+  "expression_celltype": "ganglion",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "MUSK",
+  "zfin_ortholog": "musk",
+  "zfin_id": "ZDB-GENE-030131-6458",
+  "expression_max_frac": 0.8272,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "ROCK2",
+  "zfin_ortholog": "rock2a",
+  "zfin_id": "ZDB-GENE-030115-3",
+  "expression_max_frac": 0.8143,
+  "expression_celltype": "endoderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "CAMK2D",
+  "zfin_ortholog": "camk2d1",
+  "zfin_id": "ZDB-GENE-040801-121",
+  "expression_max_frac": 0.8121,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ribociclib"
+  ]
+ },
+ {
+  "human_gene": "LIMK2",
+  "zfin_ortholog": "limk2",
+  "zfin_id": "ZDB-GENE-040718-398",
+  "expression_max_frac": 0.807,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "TAOK3",
+  "zfin_ortholog": "taok3a",
+  "zfin_id": "ZDB-GENE-100921-50",
+  "expression_max_frac": 0.7949,
+  "expression_celltype": "hematopoietic system",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "MAPK3",
+  "zfin_ortholog": "mapk3",
+  "zfin_id": "ZDB-GENE-040121-1",
+  "expression_max_frac": 0.7913,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "MYLK4",
+  "zfin_ortholog": "mylk4b",
+  "zfin_id": "ZDB-GENE-041001-128",
+  "expression_max_frac": 0.784,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "GFER",
+  "zfin_ortholog": "gfer",
+  "zfin_id": "ZDB-GENE-060810-186",
+  "expression_max_frac": 0.7826,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Olanzapine"
+  ]
+ },
+ {
+  "human_gene": "CACNA1S",
+  "zfin_ortholog": "cacna1sb",
+  "zfin_id": "ZDB-GENE-051227-1",
+  "expression_max_frac": 0.778,
+  "expression_celltype": "muscle pioneer",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Diltiazem"
+  ]
+ },
+ {
+  "human_gene": "MAPK14",
+  "zfin_ortholog": "mapk14a",
+  "zfin_id": "ZDB-GENE-010202-2",
+  "expression_max_frac": 0.7609,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib"
+  ]
+ },
+ {
+  "human_gene": "ABHD16A",
+  "zfin_ortholog": "abhd16a",
+  "zfin_id": "ZDB-GENE-010601-2",
+  "expression_max_frac": 0.7511,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "NT"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "MKNK2",
+  "zfin_ortholog": "mknk2b",
+  "zfin_id": "ZDB-GENE-030829-2",
+  "expression_max_frac": 0.7473,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "IGF1R",
+  "zfin_ortholog": "igf1rb",
+  "zfin_id": "ZDB-GENE-020503-2",
+  "expression_max_frac": 0.7425,
+  "expression_celltype": "epidermal cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "TRAP1",
+  "zfin_ortholog": "trap1",
+  "zfin_id": "ZDB-GENE-030131-4257",
+  "expression_max_frac": 0.7407,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Ganetespib"
+  ]
+ },
+ {
+  "human_gene": "AURKA",
+  "zfin_ortholog": "aurka",
+  "zfin_id": "ZDB-GENE-040801-161",
+  "expression_max_frac": 0.7391,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "AGTR2",
+  "zfin_ortholog": "agtr2",
+  "zfin_id": "ZDB-GENE-050306-56",
+  "expression_max_frac": 0.7298,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Losartan"
+  ]
+ },
+ {
+  "human_gene": "DYRK2",
+  "zfin_ortholog": "dyrk2",
+  "zfin_id": "ZDB-GENE-030131-2804",
+  "expression_max_frac": 0.7143,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "ALOX5",
+  "zfin_ortholog": "alox5a",
+  "zfin_id": "ZDB-GENE-090311-47",
+  "expression_max_frac": 0.7039,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "PTPN1",
+  "zfin_ortholog": "ptpn1",
+  "zfin_id": "ZDB-GENE-980605-23",
+  "expression_max_frac": 0.6957,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pioglitazone"
+  ]
+ },
+ {
+  "human_gene": "TAOK1",
+  "zfin_ortholog": "taok1a",
+  "zfin_id": "ZDB-GENE-130103-9",
+  "expression_max_frac": 0.6933,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "ARAF",
+  "zfin_ortholog": "araf",
+  "zfin_id": "ZDB-GENE-050102-2",
+  "expression_max_frac": 0.6739,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "PIM3",
+  "zfin_ortholog": "pim3",
+  "zfin_id": "ZDB-GENE-050809-111",
+  "expression_max_frac": 0.6667,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "TDP1",
+  "zfin_ortholog": "tdp1",
+  "zfin_id": "ZDB-GENE-090909-1",
+  "expression_max_frac": 0.6609,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Atenolol"
+  ]
+ },
+ {
+  "human_gene": "CISD1",
+  "zfin_ortholog": "cisd1",
+  "zfin_id": "ZDB-GENE-040426-1162",
+  "expression_max_frac": 0.6481,
+  "expression_celltype": "cardiac muscle cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "TNKS",
+  "zfin_ortholog": "tnksb",
+  "zfin_id": "ZDB-GENE-030131-4865",
+  "expression_max_frac": 0.64,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Rucaparib"
+  ]
+ },
+ {
+  "human_gene": "TMEM97",
+  "zfin_ortholog": "tmem97",
+  "zfin_id": "ZDB-GENE-110627-1",
+  "expression_max_frac": 0.6304,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Haloperidol"
+  ]
+ },
+ {
+  "human_gene": "PRKDC",
+  "zfin_ortholog": "prkdc",
+  "zfin_id": "ZDB-GENE-030131-9008",
+  "expression_max_frac": 0.6228,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Omipalisib"
+  ]
+ },
+ {
+  "human_gene": "FOXO1",
+  "zfin_ortholog": "foxo1a",
+  "zfin_id": "ZDB-GENE-061013-59",
+  "expression_max_frac": 0.6184,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Panobinostat"
+  ]
+ },
+ {
+  "human_gene": "PARP12",
+  "zfin_ortholog": "parp12b",
+  "zfin_id": "ZDB-GENE-030131-2617",
+  "expression_max_frac": 0.6087,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Niraparib"
+  ]
+ },
+ {
+  "human_gene": "BCR",
+  "zfin_ortholog": "bcr",
+  "zfin_id": "ZDB-GENE-040724-43",
+  "expression_max_frac": 0.6,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "MAP4K2",
+  "zfin_ortholog": "map4k2",
+  "zfin_id": "ZDB-GENE-030616-163",
+  "expression_max_frac": 0.5766,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "PHKG2",
+  "zfin_ortholog": "phkg2",
+  "zfin_id": "ZDB-GENE-040426-825",
+  "expression_max_frac": 0.5634,
+  "expression_celltype": "tail bud",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "MERTK",
+  "zfin_ortholog": "mertka",
+  "zfin_id": "ZDB-GENE-081107-1",
+  "expression_max_frac": 0.5478,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "STK17A",
+  "zfin_ortholog": "stk17a",
+  "zfin_id": "ZDB-GENE-030131-5556",
+  "expression_max_frac": 0.5476,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "CHUK",
+  "zfin_ortholog": "chuk",
+  "zfin_id": "ZDB-GENE-040426-1069",
+  "expression_max_frac": 0.5476,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dexamethasone"
+  ]
+ },
+ {
+  "human_gene": "PIP4K2A",
+  "zfin_ortholog": "pip4k2aa",
+  "zfin_id": "ZDB-GENE-080721-18",
+  "expression_max_frac": 0.5461,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "EPHX2",
+  "zfin_ortholog": "ephx2",
+  "zfin_id": "ZDB-GENE-041212-70",
+  "expression_max_frac": 0.5365,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CYP3A4",
+  "zfin_ortholog": "cyp3c1",
+  "zfin_id": "ZDB-GENE-030131-3060",
+  "expression_max_frac": 0.5361,
+  "expression_celltype": "lateral line ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Tacrolimus"
+  ]
+ },
+ {
+  "human_gene": "ULK2",
+  "zfin_ortholog": "ulk2",
+  "zfin_id": "ZDB-GENE-090218-30",
+  "expression_max_frac": 0.5333,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "F3",
+  "zfin_ortholog": "f3a",
+  "zfin_id": "ZDB-GENE-071119-5",
+  "expression_max_frac": 0.5284,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Curcumin"
+  ]
+ },
+ {
+  "human_gene": "STK11",
+  "zfin_ortholog": "stk11",
+  "zfin_id": "ZDB-GENE-050417-383",
+  "expression_max_frac": 0.5217,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "BMP2K",
+  "zfin_ortholog": "bmp2k",
+  "zfin_id": "ZDB-GENE-041212-72",
+  "expression_max_frac": 0.5193,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "DAGLA",
+  "zfin_ortholog": "dagla",
+  "zfin_id": "ZDB-GENE-070619-1",
+  "expression_max_frac": 0.5067,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "MAPK15",
+  "zfin_ortholog": "mapk15",
+  "zfin_id": "ZDB-GENE-050522-307",
+  "expression_max_frac": 0.5,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "CYP1A1",
+  "zfin_ortholog": "cyp1a",
+  "zfin_id": "ZDB-GENE-011219-1",
+  "expression_max_frac": 0.4821,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "CCNH",
+  "zfin_ortholog": "ccnh",
+  "zfin_id": "ZDB-GENE-050320-13",
+  "expression_max_frac": 0.4661,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Roscovitine"
+  ]
+ },
+ {
+  "human_gene": "CHEK2",
+  "zfin_ortholog": "chek2",
+  "zfin_id": "ZDB-GENE-030131-8942",
+  "expression_max_frac": 0.4564,
+  "expression_celltype": "optic cup",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "MINK1",
+  "zfin_ortholog": "mink1",
+  "zfin_id": "ZDB-GENE-060526-45",
+  "expression_max_frac": 0.4373,
+  "expression_celltype": "blood vasculature",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "ABL2",
+  "zfin_ortholog": "abl2",
+  "zfin_id": "ZDB-GENE-020809-2",
+  "expression_max_frac": 0.428,
+  "expression_celltype": "myotome",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "RIPK2",
+  "zfin_ortholog": "ripk2",
+  "zfin_id": "ZDB-GENE-030902-3",
+  "expression_max_frac": 0.4249,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "HIPK2",
+  "zfin_ortholog": "hipk2",
+  "zfin_id": "ZDB-GENE-031125-4",
+  "expression_max_frac": 0.4126,
+  "expression_celltype": "renal system",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "STK33",
+  "zfin_ortholog": "stk33",
+  "zfin_id": "ZDB-GENE-040724-242",
+  "expression_max_frac": 0.4048,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "MET",
+  "zfin_ortholog": "met",
+  "zfin_id": "ZDB-GENE-041014-1",
+  "expression_max_frac": 0.3772,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "ESRRA",
+  "zfin_ortholog": "esrra",
+  "zfin_id": "ZDB-GENE-990415-68",
+  "expression_max_frac": 0.366,
+  "expression_celltype": "lateral line ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein"
+  ]
+ },
+ {
+  "human_gene": "MAOA",
+  "zfin_ortholog": "mao",
+  "zfin_id": "ZDB-GENE-040329-3",
+  "expression_max_frac": 0.3629,
+  "expression_celltype": "macrophage",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "OT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein"
+  ]
+ },
+ {
+  "human_gene": "PARP8",
+  "zfin_ortholog": "parp8",
+  "zfin_id": "ZDB-GENE-060929-432",
+  "expression_max_frac": 0.3605,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Olaparib"
+  ]
+ },
+ {
+  "human_gene": "HSF1",
+  "zfin_ortholog": "hsf1",
+  "zfin_id": "ZDB-GENE-000616-16",
+  "expression_max_frac": 0.36,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dinaciclib"
+  ]
+ },
+ {
+  "human_gene": "ULK1",
+  "zfin_ortholog": "ulk1b",
+  "zfin_id": "ZDB-GENE-071203-2",
+  "expression_max_frac": 0.3516,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "MYLK3",
+  "zfin_ortholog": "mylk3",
+  "zfin_id": "ZDB-GENE-030131-3497",
+  "expression_max_frac": 0.3478,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "CYP1B1",
+  "zfin_ortholog": "cyp1b1",
+  "zfin_id": "ZDB-GENE-030902-1",
+  "expression_max_frac": 0.3418,
+  "expression_celltype": "aortic arch",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "SLC5A11",
+  "zfin_ortholog": "slc5a11",
+  "zfin_id": "ZDB-GENE-041114-9",
+  "expression_max_frac": 0.3393,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dapagliflozin"
+  ]
+ },
+ {
+  "human_gene": "PARP6",
+  "zfin_ortholog": "parp6b",
+  "zfin_id": "ZDB-GENE-080219-1",
+  "expression_max_frac": 0.3333,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Olaparib"
+  ]
+ },
+ {
+  "human_gene": "ABL1",
+  "zfin_ortholog": "abl1",
+  "zfin_id": "ZDB-GENE-100812-9",
+  "expression_max_frac": 0.3273,
+  "expression_celltype": "otic vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Axitinib"
+  ]
+ },
+ {
+  "human_gene": "AAK1",
+  "zfin_ortholog": "aak1a",
+  "zfin_id": "ZDB-GENE-081105-101",
+  "expression_max_frac": 0.2879,
+  "expression_celltype": "presumptive enteric nervous system",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sunitinib"
+  ]
+ },
+ {
+  "human_gene": "ESR2",
+  "zfin_ortholog": "esr2a",
+  "zfin_id": "ZDB-GENE-030116-2",
+  "expression_max_frac": 0.2791,
+  "expression_celltype": "ganglion",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "NT",
+   "PT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein"
+  ]
+ },
+ {
+  "human_gene": "F2",
+  "zfin_ortholog": "f2",
+  "zfin_id": "ZDB-GENE-030131-4606",
+  "expression_max_frac": 0.2679,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 4,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Rivaroxaban"
+  ]
+ },
+ {
+  "human_gene": "DAPK3",
+  "zfin_ortholog": "dapk3",
+  "zfin_id": "ZDB-GENE-030131-3026",
+  "expression_max_frac": 0.2593,
+  "expression_celltype": "hatching gland cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "NT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "PLA2G7",
+  "zfin_ortholog": "pla2g7",
+  "zfin_id": "ZDB-GENE-040426-2248",
+  "expression_max_frac": 0.2575,
+  "expression_celltype": "blood island",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Orlistat"
+  ]
+ },
+ {
+  "human_gene": "THRA",
+  "zfin_ortholog": "thraa",
+  "zfin_id": "ZDB-GENE-990415-263",
+  "expression_max_frac": 0.2533,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "FC",
+   "PT"
+  ],
+  "ortholog_n_pubs": 10,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Amiodarone"
+  ]
+ },
+ {
+  "human_gene": "MKNK1",
+  "zfin_ortholog": "mknk1",
+  "zfin_id": "ZDB-GENE-080220-11",
+  "expression_max_frac": 0.2174,
+  "expression_celltype": "notochord",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Sorafenib"
+  ]
+ },
+ {
+  "human_gene": "STING1",
+  "zfin_ortholog": "sting1",
+  "zfin_id": "ZDB-GENE-120921-1",
+  "expression_max_frac": 0.2046,
+  "expression_celltype": "macrophage",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 6,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Palbociclib"
+  ]
+ },
+ {
+  "human_gene": "HRH3",
+  "zfin_ortholog": "hrh3",
+  "zfin_id": "ZDB-GENE-040724-204",
+  "expression_max_frac": 0.2018,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Clozapine"
+  ]
+ },
+ {
+  "human_gene": "MMP9",
+  "zfin_ortholog": "mmp9",
+  "zfin_id": "ZDB-GENE-040426-2132",
+  "expression_max_frac": 0.1951,
+  "expression_celltype": "median fin fold",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "CA5A",
+  "zfin_ortholog": "ca5a",
+  "zfin_id": "ZDB-GENE-080220-57",
+  "expression_max_frac": 0.1913,
+  "expression_celltype": "periderm",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Celecoxib"
+  ]
+ },
+ {
+  "human_gene": "TRPA1",
+  "zfin_ortholog": "trpa1b",
+  "zfin_id": "ZDB-GENE-050106-1",
+  "expression_max_frac": 0.1867,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Resveratrol"
+  ]
+ },
+ {
+  "human_gene": "SLC5A1",
+  "zfin_ortholog": "slc5a1",
+  "zfin_id": "ZDB-GENE-040426-1524",
+  "expression_max_frac": 0.1786,
+  "expression_celltype": "liver",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dapagliflozin"
+  ]
+ },
+ {
+  "human_gene": "IKBKB",
+  "zfin_ortholog": "ikbkb",
+  "zfin_id": "ZDB-GENE-071115-2",
+  "expression_max_frac": 0.1667,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Dexamethasone"
+  ]
+ },
+ {
+  "human_gene": "HTR1D",
+  "zfin_ortholog": "htr1d",
+  "zfin_id": "ZDB-GENE-090409-3",
+  "expression_max_frac": 0.1667,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole"
+  ]
+ },
+ {
+  "human_gene": "GRIN2B",
+  "zfin_ortholog": "grin2bb",
+  "zfin_id": "ZDB-GENE-061207-27",
+  "expression_max_frac": 0.1646,
+  "expression_celltype": "aortic arch",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Haloperidol"
+  ]
+ },
+ {
+  "human_gene": "STK36",
+  "zfin_ortholog": "stk36",
+  "zfin_id": "ZDB-GENE-030912-6",
+  "expression_max_frac": 0.1628,
+  "expression_celltype": "ganglion",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ },
+ {
+  "human_gene": "GSTO1",
+  "zfin_ortholog": "gsto1",
+  "zfin_id": "ZDB-GENE-040718-365",
+  "expression_max_frac": 0.1609,
+  "expression_celltype": "pigment cell",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Carfilzomib"
+  ]
+ },
+ {
+  "human_gene": "OPRD1",
+  "zfin_ortholog": "oprd1b",
+  "zfin_id": "ZDB-GENE-030131-8473",
+  "expression_max_frac": 0.16,
+  "expression_celltype": "trigeminal ganglion",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 5,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Paroxetine"
+  ]
+ },
+ {
+  "human_gene": "ABCG2",
+  "zfin_ortholog": "abcg2d",
+  "zfin_id": "ZDB-GENE-050517-38",
+  "expression_max_frac": 0.1589,
+  "expression_celltype": "xanthophore",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 2,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Quercetin"
+  ]
+ },
+ {
+  "human_gene": "ESRRB",
+  "zfin_ortholog": "esrrb",
+  "zfin_id": "ZDB-GENE-040616-2",
+  "expression_max_frac": 0.1579,
+  "expression_celltype": "gut",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL",
+   "PT"
+  ],
+  "ortholog_n_pubs": 3,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Genistein"
+  ]
+ },
+ {
+  "human_gene": "SLC47A1",
+  "zfin_ortholog": "slc47a1",
+  "zfin_id": "ZDB-GENE-050327-20",
+  "expression_max_frac": 0.1429,
+  "expression_celltype": "floor plate neural tube",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Famotidine"
+  ]
+ },
+ {
+  "human_gene": "ABCB1",
+  "zfin_ortholog": "abcb4",
+  "zfin_id": "ZDB-GENE-080204-52",
+  "expression_max_frac": 0.1394,
+  "expression_celltype": "artery",
+  "expression_timepoint": "2dpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Aripiprazole"
+  ]
+ },
+ {
+  "human_gene": "SLC10A1",
+  "zfin_ortholog": "slc10a1",
+  "zfin_id": "ZDB-GENE-041001-190",
+  "expression_max_frac": 0.1277,
+  "expression_celltype": "pharyngeal arch 3-7",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA",
+   "CL"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Cyclosporin A"
+  ]
+ },
+ {
+  "human_gene": "RIPK1",
+  "zfin_ortholog": "ripk1l",
+  "zfin_id": "ZDB-GENE-070705-132",
+  "expression_max_frac": 0.1099,
+  "expression_celltype": "solid lens vesicle",
+  "expression_timepoint": "24hpf",
+  "ortholog_evidence": [
+   "AA"
+  ],
+  "ortholog_n_pubs": 1,
+  "binding_site_conservation": "not_assessed",
+  "n_anchors": 1,
+  "n_anchors_primary": 0,
+  "anchors": [
+   "Pazopanib"
+  ]
+ }
+]
