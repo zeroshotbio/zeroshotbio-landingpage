@@ -9,6 +9,9 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 /* Make an RDKit SVG fill its container without distortion: keep the viewBox (so the aspect ratio is
    preserved and lines never stretch), drop the fixed px width/height so it scales to the wrapper. */
 function fitSvg(svg: string, w: number, h: number): string {
+  // drop RDKit's opaque white background rect → transparent, so it sits on the card's own color in
+  // either theme (no darker inverted box behind the molecule in dark mode).
+  svg = svg.replace(/<rect\b[^>]*?(?:fill:#FFFFFF|fill=['"]#FFFFFF['"])[^>]*?(?:\/>|>\s*<\/rect>)/i, "");
   if (!/viewBox=/.test(svg)) svg = svg.replace(/<svg/, `<svg viewBox="0 0 ${w} ${h}"`);
   svg = svg
     .replace(/(<svg\b[^>]*?)\swidth=(['"])[\d.]+(?:px)?\2/, "$1")
@@ -111,7 +114,7 @@ function loadHub(): Promise<Hub> {
   return _hubP;
 }
 /* Render an arbitrary SMILES to SVG client-side via RDKit (no baked depictions for the 6k Hub). */
-function RDKitDepiction({ smiles, w = 320, h = 240 }: { smiles: string; w?: number; h?: number }) {
+function RDKitDepiction({ smiles, w = 320, h = 240, fill = false }: { smiles: string; w?: number; h?: number; fill?: boolean }) {
   const [svg, setSvg] = useState("");
   const [err, setErr] = useState(false);
   useEffect(() => {
@@ -134,9 +137,13 @@ function RDKitDepiction({ smiles, w = 320, h = 240 }: { smiles: string; w?: numb
     }).catch(() => { if (!cancel) setErr(true); });
     return () => { cancel = true; };
   }, [smiles, w, h]);
-  if (err) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Could not render this structure.</div>;
-  if (!svg) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Rendering structure…</div>;
-  return <div aria-label={`2D structure of ${smiles}`} className="flex items-center justify-center" style={{ width: w, height: h }} dangerouslySetInnerHTML={{ __html: svg }} />;
+  // fill mode: occupy the whole parent (which must be `relative`) with a small inset, so the molecule
+  // scales up to nearly fill its box instead of sitting tiny in the middle.
+  const box = fill ? "absolute inset-[6px] flex items-center justify-center" : "flex items-center justify-center";
+  const style = fill ? undefined : { width: w, height: h };
+  if (err) return <div className={`roboto-slab-regular text-xs text-gray-400 ${box}`} style={style ?? { minHeight: h }}>Could not render this structure.</div>;
+  if (!svg) return <div className={`roboto-slab-regular text-xs text-gray-400 ${box}`} style={style ?? { minHeight: h }}>Rendering structure…</div>;
+  return <div aria-label={`2D structure of ${smiles}`} className={box} style={style} dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 const STEPS = ["Submit compound", "Wet-lab exposure", "Response fingerprint",
@@ -556,7 +563,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -588,7 +595,7 @@ export default function PocClient() {
    Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
-  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
+  revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
   // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
@@ -651,7 +658,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
 
   // novel candidate gets the dedicated coverage-heatmap layout (no key — a refresh updates content in place)
   if (sel && novel) {
-    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
+    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} dark={dark} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
   }
 
   return (
@@ -729,9 +736,28 @@ function UnknownCard({ smiles }: { smiles: string }) {
   );
 }
 
+/* SMILES preview that matches the search box (font-mono, left-aligned, waterfalling) but auto-shrinks
+   its font so even a very long string fits the fixed box height without scrolling. */
+function SmilesFit({ smiles }: { smiles: string }) {
+  const boxRef = useRef<HTMLDivElement>(null);
+  const spanRef = useRef<HTMLSpanElement>(null);
+  useLayoutEffect(() => {
+    const box = boxRef.current, span = spanRef.current;
+    if (!box || !span) return;
+    let fs = 14; // start at text-sm, matching the search box; shrink only if it overflows
+    span.style.fontSize = `${fs}px`;
+    while (fs > 8 && span.scrollHeight > box.clientHeight) { fs -= 0.5; span.style.fontSize = `${fs}px`; }
+  }, [smiles]);
+  return (
+    <div ref={boxRef} className="flex-1 overflow-hidden">
+      <span ref={spanRef} className="block font-mono leading-snug text-gray-700 break-all">{smiles}</span>
+    </div>
+  );
+}
+
 /* ============ Novel-candidate reveal: 3 symmetric top boxes + the coverage heatmap ============ */
-function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext }:
-  { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
+function NovelReveal({ sel, smiles, data, ready, dark, onBack, onInterpolation, onNext }:
+  { sel: Drug; smiles: string; data: Data | null; ready: boolean; dark: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
   const mark = sel.step3_embedding.chem2d;
   const [exiting, setExiting] = useState(false);
 
@@ -745,13 +771,10 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext
       <div className="grid grid-cols-3 gap-3">
         <div className="poc-rise rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col" style={{ animationDelay: "0ms" }}>
           <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
-          <div className="flex-1 overflow-y-auto">
-            {/* same font + size as the search box; left-aligned and waterfalling so long strings fit */}
-            <span className="font-mono text-sm leading-relaxed text-gray-700 break-all">{smiles}</span>
-          </div>
+          <SmilesFit smiles={smiles} />
         </div>
-        <div className="poc-rise rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center" style={{ animationDelay: "90ms" }}>
-          <RDKitDepiction smiles={smiles} w={150} h={140} />
+        <div className="poc-rise relative rounded-xl border border-gray-200 bg-white h-40" style={{ animationDelay: "90ms" }}>
+          <RDKitDepiction smiles={smiles} w={300} h={280} fill />
         </div>
         {/* third column split into two: plain new search, and "generate within the interpolation zone" */}
         <div className="flex flex-col gap-2 h-40">
@@ -763,18 +786,18 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext
             <span className="roboto-slab-regular text-[11px] text-gray-400 group-hover:text-gray-700 transition">New search</span>
           </button>
           <button onClick={onInterpolation} title="Generate Random New Drug within Interpolation Zone" aria-label="Generate Random New Drug within Interpolation Zone"
-            className="poc-fade flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col items-center justify-center gap-1 px-2 text-center hover:bg-emerald-50 hover:border-emerald-400 transition group" style={{ animationDelay: "260ms" }}>
-            <svg className="h-5 w-5 shrink-0 text-emerald-400 group-hover:text-emerald-600 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            className="poc-fade flex-1 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center gap-1 px-2 text-center hover:bg-gray-50 hover:border-gray-400 transition group" style={{ animationDelay: "260ms" }}>
+            <svg className="h-5 w-5 shrink-0 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none" />
             </svg>
-            <span className="roboto-slab-regular text-[10px] leading-tight text-emerald-700 group-hover:text-emerald-800 transition">Generate Random New Drug within Interpolation Zone</span>
+            <span className="roboto-slab-regular text-[10px] leading-tight text-gray-400 group-hover:text-gray-700 transition">Generate Random New Drug within Interpolation Zone</span>
           </button>
         </div>
       </div>
 
       {/* the star: atlas coverage heatmap — slides up from below into its spot */}
       <div className="mt-3 poc-slideup" style={{ animationDelay: "180ms" }}>
-        <ChemHeatmap data={data} mark={mark} markLabel="your candidate" />
+        <ChemHeatmap data={data} mark={mark} markLabel="your candidate" dark={dark} />
       </div>
 
       {ready && !exiting && (
@@ -815,8 +838,15 @@ const FIG_FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, H
    An organic heat island (KDE similarity field) anchored by the 94 measured drugs, dusted with
    theoretical molecules, plus a minimalist legend + colorbar. The submitted candidate is highlighted
    and glides to a new position on an interpolation refresh. */
-function ChemHeatmap({ data, mark, markLabel }:
-  { data: Data | null; mark: [number, number]; markLabel: string }) {
+function ChemHeatmap({ data, mark, markLabel, dark }:
+  { data: Data | null; mark: [number, number]; markLabel: string; dark?: boolean }) {
+  // ink palette — the card bg is dark in dark mode (.dark .bg-white → #0a0a0a), so the dark figure text
+  // must flip to light. The heat-island colormap and white markers read fine on either background.
+  const ink = dark ? "#f1f5f9" : "#0f172a";       // title / candidate strokes & label
+  const ink2 = dark ? "#cbd5e1" : "#334155";      // legend labels & anchor outline
+  const halo = dark ? "#0a0a0a" : "#ffffff";      // text halo, matches the bg
+  const dotFill = dark ? "#94a3b8" : "#64748b";   // theoretical-molecule dusting
+  const barStroke = dark ? "#334155" : "#e5e7eb";
   const W = 1280, H = 720;
   const IX0 = 40, IX1 = 842, IY0 = 152, IY1 = 596; // organic-island region (left two-thirds)
   const field = useMemo(() => {
@@ -890,30 +920,30 @@ function ChemHeatmap({ data, mark, markLabel }:
         </defs>
 
         {/* title block (top-left) */}
-        <text x={40} y={64} fontSize={34} fontWeight={700} fill="#0f172a">MegaFin Atlas: From Anchors to Exploration</text>
+        <text x={40} y={64} fontSize={34} fontWeight={700} fill={ink}>MegaFin Atlas: From Anchors to Exploration</text>
         <text x={42} y={96} fontSize={17} fill="#9aa6b6">Similarity to Atlas (Higher = Closer)</text>
 
         {/* organic heat island */}
         {heatLayer}
         {/* theoretical molecules — a fine, semi-transparent dusting */}
-        {field.dots.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill="#64748b" opacity={0.3} />)}
+        {field.dots.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill={dotFill} opacity={0.3} />)}
         {/* 94 anchor drugs — white markers with a thin dark outline */}
-        {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={5} fill="#ffffff" stroke="#334155" strokeWidth={1.1} />)}
+        {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={5} fill="#ffffff" stroke={ink2} strokeWidth={1.1} />)}
 
         {/* the submitted candidate — highlighted, glides on refresh */}
-        <circle cx={cx} cy={cy} r={16} fill="none" stroke="#0f172a" strokeWidth={1.3} opacity={0.22} style={glide} />
-        <circle cx={cx} cy={cy} r={8} fill="#ffffff" stroke="#0f172a" strokeWidth={2.6} style={glide} />
-        <text x={cx} y={cy - 22} textAnchor="middle" fontSize={15} fontWeight={600} fill="#0f172a"
-          style={{ paintOrder: "stroke", stroke: "#ffffff", strokeWidth: 4, ...glideXY }}>{markLabel}</text>
+        <circle cx={cx} cy={cy} r={16} fill="none" stroke={ink} strokeWidth={1.3} opacity={0.22} style={glide} />
+        <circle cx={cx} cy={cy} r={8} fill="#ffffff" stroke={ink} strokeWidth={2.6} style={glide} />
+        <text x={cx} y={cy - 22} textAnchor="middle" fontSize={15} fontWeight={600} fill={ink}
+          style={{ paintOrder: "stroke", stroke: halo, strokeWidth: 4, ...glideXY }}>{markLabel}</text>
 
         {/* legend + colorbar (right) */}
-        <circle cx={LGX + 9} cy={196} r={9} fill="#ffffff" stroke="#334155" strokeWidth={1.4} />
-        <text x={LGX + 28} y={201} fontSize={16} fill="#334155">94 MegaFin Drugs (Anchors)</text>
-        <circle cx={LGX + 9} cy={234} r={3.2} fill="#64748b" opacity={0.6} />
+        <circle cx={LGX + 9} cy={196} r={9} fill="#ffffff" stroke={ink2} strokeWidth={1.4} />
+        <text x={LGX + 28} y={201} fontSize={16} fill={ink2}>94 MegaFin Drugs (Anchors)</text>
+        <circle cx={LGX + 9} cy={234} r={3.2} fill={dotFill} opacity={0.6} />
         <text x={LGX + 28} y={239} fontSize={14} fill="#94a3b8">Theoretical Molecules (Exploration)</text>
 
-        <text x={LGX} y={310} fontSize={15} fill="#334155">Similarity to Atlas</text>
-        <rect x={barX} y={barY} width={barW} height={barH} fill="url(#atlasbar)" rx={3} stroke="#e5e7eb" strokeWidth={1} />
+        <text x={LGX} y={310} fontSize={15} fill={ink2}>Similarity to Atlas</text>
+        <rect x={barX} y={barY} width={barW} height={barH} fill="url(#atlasbar)" rx={3} stroke={barStroke} strokeWidth={1} />
         <text x={barX + barW + 10} y={barY + 8} fontSize={13} fill="#b9533a">High (Closer)</text>
         <text x={barX + barW + 10} y={barY + barH} fontSize={13} fill="#5b5f97">Low (Farther)</text>
 
