@@ -612,22 +612,29 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
     el.style.height = `${el.scrollHeight}px`;  // grow to fit — CSS transition animates the change
   }, [smiles, revealPhase]);
   const captureAndSubmit = submitStep1;
+  // staged input flow: Submit reveals the molecule vis + the (optional) target step IN PLACE; the
+  // whole-organism atlas reveal only fires from the explicit "Run" button below.
+  const [staged, setStaged] = useState(false);
+  useEffect(() => { if (!smiles) setStaged(false); }, [smiles]);
 
   // ---------- input + preview: one clean box that eases up and reveals the picked structure ----------
   if (revealPhase === "input" || revealPhase === "preview") {
     const preview = revealPhase === "preview";
     const previewName = candidate?.name ?? (novel ? "novel candidate" : sel?.display_name ?? "");
+    const showStaged = staged || preview;          // molecule vis + target appear after Submit (or a Random pick)
+    const visSmiles = typeTarget || smiles;
+    const stage = () => { if (smiles.trim() || typeTarget) setStaged(true); };
     return (
-      <div className="relative min-h-[400px]">
-        {/* input cluster — eases upward (slow accel / slow settle) once a candidate is previewed */}
-        <div className="poc-slide w-full max-w-xl mx-auto" style={{ transform: preview ? "translateY(0)" : "translateY(110px)" }}>
+      <div className="relative min-h-[400px] pb-8">
+        {/* input cluster — eases upward (slow accel / slow settle) once a molecule is staged */}
+        <div className="poc-slide w-full max-w-xl mx-auto" style={{ transform: showStaged ? "translateY(0)" : "translateY(110px)" }}>
           <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Submit a molecule</h2>
           <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-6">A SMILES string — matched by InChIKey to the measured atlas or the Broad Repurposing Hub.</p>
           <div className="flex items-start gap-2">
             <textarea ref={inputRef} value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
-              rows={1} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); captureAndSubmit(); } }} autoFocus
+              rows={1} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); stage(); } }} autoFocus
               className="roboto-slab-regular flex-1 resize-none overflow-hidden break-all leading-relaxed rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 font-mono shadow-sm focus:border-gray-700 focus:outline-none transition-[height,border-color] duration-200 ease-out" />
-            <button onClick={captureAndSubmit}
+            <button onClick={stage}
               className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-7 py-3 text-sm hover:bg-gray-700 transition">Submit</button>
           </div>
           <div className="flex flex-wrap items-center justify-center gap-x-3 gap-y-1 mt-5 text-[11px]">
@@ -641,18 +648,32 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
               Random novel SMILES
             </button>
           </div>
-          <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} />
         </div>
 
-        {/* single sub-box: fades in, then the molecule pops */}
-        {preview && (
-          <div className="w-full max-w-xl mx-auto mt-6 poc-fade" style={{ animationDelay: "420ms" }}>
+        {/* molecule vis — pops in right below the input once submitted */}
+        {showStaged && visSmiles && (
+          <div className="w-full max-w-xl mx-auto mt-6 poc-fade" style={{ animationDelay: "120ms" }}>
             <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
-                {typeTarget ? <RDKitDepiction smiles={typeTarget} w={300} h={210} /> : <span className="roboto-slab-regular text-xs text-gray-400">resolving…</span>}
+                {visSmiles ? <RDKitDepiction smiles={visSmiles} w={300} h={210} /> : <span className="roboto-slab-regular text-xs text-gray-400">resolving…</span>}
               </div>
               {previewName && <div className="text-center roboto-slab-medium text-sm text-gray-700 mt-1">{previewName}</div>}
             </div>
+          </div>
+        )}
+
+        {/* intended-target step — only after a molecule has been submitted */}
+        {showStaged && (
+          <div className="mt-12 poc-fade" style={{ animationDelay: "260ms" }}>
+            <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} />
+          </div>
+        )}
+
+        {/* proceed to the whole-organism screen (the atlas cinematic) */}
+        {showStaged && (
+          <div className="w-full max-w-xl mx-auto mt-8 flex justify-center poc-fade" style={{ animationDelay: "320ms" }}>
+            <button onClick={captureAndSubmit}
+              className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-8 py-3 text-sm hover:bg-gray-700 transition">Run whole-organism screen →</button>
           </div>
         )}
       </div>
