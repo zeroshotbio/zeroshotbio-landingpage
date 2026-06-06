@@ -733,7 +733,6 @@ function UnknownCard({ smiles }: { smiles: string }) {
 function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext }:
   { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
   const mark = sel.step3_embedding.chem2d;
-  const neighbors = (sel.step3_embedding.chem_neighbors ?? []).map((n: Neighbor) => ({ id: n.id, sim: n.similarity }));
   const smilesBoxRef = useRef<HTMLDivElement>(null);
   const structBoxRef = useRef<HTMLDivElement>(null);
   const [exiting, setExiting] = useState(false);
@@ -784,7 +783,7 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext
 
       {/* the star: atlas coverage heatmap — slides up from below into its spot */}
       <div className="mt-3 poc-slideup" style={{ animationDelay: "180ms" }}>
-        <ChemHeatmap data={data} mark={mark} markLabel="novel candidate" neighbors={neighbors} />
+        <ChemHeatmap data={data} mark={mark} markLabel="your candidate" />
       </div>
 
       {ready && !exiting && (
@@ -797,43 +796,48 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext
   );
 }
 
-/* Coverage colormap: low density (extrapolation, atlas-blind) → red/black; high density (interpolation,
-   atlas-reliable) → green. The amber mid-band marks the boundary. */
-const COVER_STOPS: [number, [number, number, number]][] = [
-  [0.0, [18, 9, 9]], [0.16, [124, 28, 28]], [0.34, [180, 60, 16]], [0.5, [202, 138, 8]],
-  [0.66, [101, 124, 22]], [0.82, [21, 128, 61]], [1.0, [74, 222, 128]],
+/* Atlas-similarity colormap (single continuous scientific ramp, no rainbow): deep indigo/purple at the
+   cold edges → blue → teal → green → yellow → orange-red hotspots at the warmest (closest-to-atlas) cores. */
+const ATLAS_STOPS: [number, [number, number, number]][] = [
+  [0.00, [49, 34, 102]], [0.18, [40, 53, 147]], [0.38, [21, 101, 168]], [0.55, [38, 139, 139]],
+  [0.70, [86, 161, 70]], [0.84, [214, 184, 38]], [0.93, [232, 132, 31]], [1.00, [217, 45, 32]],
 ];
-function coverColor(t: number): string {
+function atlasColor(t: number): string {
   t = Math.max(0, Math.min(1, t));
-  for (let i = 1; i < COVER_STOPS.length; i++) {
-    if (t <= COVER_STOPS[i][0]) {
-      const [t0, c0] = COVER_STOPS[i - 1], [t1, c1] = COVER_STOPS[i];
+  for (let i = 1; i < ATLAS_STOPS.length; i++) {
+    if (t <= ATLAS_STOPS[i][0]) {
+      const [t0, c0] = ATLAS_STOPS[i - 1], [t1, c1] = ATLAS_STOPS[i];
       const u = (t - t0) / (t1 - t0 || 1);
       const c = [0, 1, 2].map((k) => Math.round(c0[k] + (c1[k] - c0[k]) * u));
       return `rgb(${c[0]},${c[1]},${c[2]})`;
     }
   }
-  return "rgb(74,222,128)";
+  return "rgb(217,45,32)";
 }
+function smoothstep(a: number, b: number, x: number): number {
+  const u = Math.max(0, Math.min(1, (x - a) / (b - a || 1)));
+  return u * u * (3 - 2 * u);
+}
+const FIG_FONT = "ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif";
 
-/* High-fidelity chemistry-coverage heatmap: a KDE density field over the measured atlas in ECFP/RDKit
-   descriptor space. Bright green = dense (interpolation, the atlas is reliable). Red/black = sparse
-   (extrapolation, the atlas is blind). The submitted molecule is dropped on top with its neighbors. */
-function ChemHeatmap({ data, mark, markLabel, neighbors }:
-  { data: Data | null; mark: [number, number]; markLabel: string; neighbors: { id: string; sim: number }[] }) {
-  const W = 660, H = 400, pad = 14;
-  // Field bounds come from the measured atlas only (not the marker), so the heatmap stays fixed while a
-  // refresh just moves the candidate dot. Memoized on data alone.
+/* "MegaFin Atlas: From Anchors to Exploration" — a clean 16:9 scientific infographic on white.
+   An organic heat island (KDE similarity field) anchored by the 94 measured drugs, dusted with
+   theoretical molecules, plus a minimalist legend + colorbar. The submitted candidate is highlighted
+   and glides to a new position on an interpolation refresh. */
+function ChemHeatmap({ data, mark, markLabel }:
+  { data: Data | null; mark: [number, number]; markLabel: string }) {
+  const W = 1280, H = 720;
+  const IX0 = 40, IX1 = 842, IY0 = 152, IY1 = 596; // organic-island region (left two-thirds)
   const field = useMemo(() => {
     const meas = (data?.drugs ?? []).filter((d) => !d.is_guest);
     if (!meas.length) return null;
     const pts = meas.map((d) => d.step3_embedding.chem2d);
     const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
     const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
-    const mx = (xmax - xmin) * 0.1 || 1, my = (ymax - ymin) * 0.1 || 1;
+    const mx = (xmax - xmin) * 0.16 || 1, my = (ymax - ymin) * 0.16 || 1;
     const x0 = xmin - mx, x1 = xmax + mx, y0 = ymin - my, y1 = ymax + my;
     const spanx = x1 - x0, spany = y1 - y0;
-    const cols = 84, rows = Math.round(84 * (H - 2 * pad) / (W - 2 * pad));
+    const cols = 104, rows = Math.round(104 * (IY1 - IY0) / (IX1 - IX0));
     const h = 0.085 * Math.max(spanx, spany), inv = 1 / (2 * h * h);
     const grid: number[][] = []; let maxd = 0;
     for (let r = 0; r < rows; r++) {
@@ -845,74 +849,86 @@ function ChemHeatmap({ data, mark, markLabel, neighbors }:
       }
       grid.push(row);
     }
-    return { grid, maxd, x0, y0, spanx, spany, cols, rows, meas, pts };
+    const sampleN = (x: number, y: number) => {
+      const c = Math.min(cols - 1, Math.max(0, Math.floor(((x - x0) / spanx) * cols)));
+      const r = Math.min(rows - 1, Math.max(0, Math.floor((1 - (y - y0) / spany) * rows)));
+      return grid[r][c] / (maxd || 1);
+    };
+    // theoretical molecules — a deterministic dusting that lands inside the island (warm and cold)
+    let seed = 99173; const rnd = () => { seed = (seed * 1103515245 + 12345) & 0x7fffffff; return seed / 0x7fffffff; };
+    const dots: [number, number][] = [];
+    for (let i = 0; i < 1400 && dots.length < 240; i++) {
+      const x = x0 + rnd() * spanx, y = y0 + rnd() * spany;
+      if (sampleN(x, y) > 0.05) dots.push([x, y]);
+    }
+    return { grid, maxd, x0, y0, spanx, spany, cols, rows, pts, dots };
   }, [data]);
 
   const heatLayer = useMemo(() => {
     if (!field) return null;
-    const cw = (W - 2 * pad) / field.cols, ch = (H - 2 * pad) / field.rows;
+    const cw = (IX1 - IX0) / field.cols, ch = (IY1 - IY0) / field.rows;
     const cells: JSX.Element[] = [];
     for (let r = 0; r < field.rows; r++) for (let c = 0; c < field.cols; c++) {
-      cells.push(<rect key={`${r}-${c}`} x={pad + c * cw} y={pad + r * ch} width={cw + 0.6} height={ch + 0.6} fill={coverColor(field.grid[r][c] / (field.maxd || 1))} />);
+      const t = field.grid[r][c] / (field.maxd || 1);
+      const a = smoothstep(0.03, 0.13, t); // fade to white at the soft island edge
+      if (a < 0.02) continue;
+      cells.push(<rect key={`${r}-${c}`} x={IX0 + c * cw} y={IY0 + r * ch} width={cw + 1} height={ch + 1} fill={atlasColor(t)} opacity={a} />);
     }
-    return <g filter="url(#covblur)">{cells}</g>;
+    return <g filter="url(#atlasblur)">{cells}</g>;
   }, [field]);
 
-  if (!field) return <div className="rounded-md border border-gray-200 bg-white p-6 text-center roboto-slab-regular text-xs text-gray-400">Loading atlas manifold…</div>;
+  if (!field) return <div className="rounded-xl border border-gray-100 bg-white p-8 text-center" style={{ fontFamily: FIG_FONT, color: "#94a3b8", fontSize: 13 }}>Loading atlas…</div>;
 
-  const sx = (x: number) => pad + ((x - field.x0) / field.spanx) * (W - 2 * pad);
-  const sy = (y: number) => H - pad - ((y - field.y0) / field.spany) * (H - 2 * pad);
-  const sampleT = (x: number, y: number) => {
-    const c = Math.min(field.cols - 1, Math.max(0, Math.floor(((x - field.x0) / field.spanx) * field.cols)));
-    const r = Math.min(field.rows - 1, Math.max(0, Math.floor((1 - (y - field.y0) / field.spany) * field.rows)));
-    return field.grid[r][c] / (field.maxd || 1);
-  };
-  const coordById = (id: string) => data?.drugs.find((d) => d.id === id)?.step3_embedding.chem2d;
+  const sx = (x: number) => IX0 + ((x - field.x0) / field.spanx) * (IX1 - IX0);
+  const sy = (y: number) => IY1 - ((y - field.y0) / field.spany) * (IY1 - IY0);
   const cx = sx(mark[0]), cy = sy(mark[1]);
-  const t = sampleT(mark[0], mark[1]);
-  const zone = t > 0.6 ? { label: "interpolation zone", cls: "text-emerald-700", txt: "densely covered by measured drugs — the atlas should be reliable here." }
-    : t > 0.33 ? { label: "boundary zone", cls: "text-amber-700", txt: "on the edge of the measured set — treat any read-out as a weak prior." }
-    : { label: "extrapolation zone", cls: "text-rose-700", txt: "far from anything measured — the atlas is fundamentally blind here." };
+  const glide = { transition: "cx .65s cubic-bezier(.4,0,.2,1), cy .65s cubic-bezier(.4,0,.2,1)" } as any;
+  const glideXY = { transition: "x .65s cubic-bezier(.4,0,.2,1), y .65s cubic-bezier(.4,0,.2,1)" } as any;
+  // legend geometry
+  const LGX = 904, barX = 912, barY = 330, barW = 18, barH = 210;
 
   return (
-    <div className="rounded-xl border border-gray-200 bg-white p-3">
-      <div className="flex items-center justify-between mb-2">
-        <div className="roboto-slab-medium text-sm text-gray-700">Atlas coverage — chemistry manifold</div>
-        <div className="roboto-slab-regular text-[11px] text-gray-400">KDE over {field.meas.length} measured drugs · ECFP/RDKit PCA(2)</div>
-      </div>
-      <div className="rounded-lg overflow-hidden border border-gray-100" style={{ background: "#0a0c1a" }}>
-        <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="atlas coverage heat-map">
-          <defs><filter id="covblur" x="-5%" y="-5%" width="110%" height="110%"><feGaussianBlur stdDeviation={4.6} /></filter></defs>
-          {heatLayer}
-          {/* measured drugs as faint anchors */}
-          {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill="#ffffff" opacity={0.5} />)}
-          {/* candidate + its nearest measured neighbors */}
-          {neighbors.map((n) => { const c = coordById(n.id); if (!c) return null;
-            return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#ffffff" strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />; })}
-          {/* candidate dot — glides smoothly to its new position on an interpolation refresh */}
-          <circle cx={cx} cy={cy} r={12} fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.7}
-            style={{ transition: "cx .65s cubic-bezier(.4,0,.2,1), cy .65s cubic-bezier(.4,0,.2,1)" }} />
-          <circle cx={cx} cy={cy} r={5.5} fill="#ffffff" stroke="#0a0c1a" strokeWidth={1.4}
-            style={{ transition: "cx .65s cubic-bezier(.4,0,.2,1), cy .65s cubic-bezier(.4,0,.2,1)" }} />
-          <text x={cx + 11} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
-            style={{ paintOrder: "stroke", stroke: "#0a0c1a", strokeWidth: 3, transition: "x .65s cubic-bezier(.4,0,.2,1), y .65s cubic-bezier(.4,0,.2,1)" } as any}>{markLabel}</text>
-          {/* legend — full-width gradient bar, labels pinned to opposite ends so they never overlap */}
-          {(() => { const lx = pad, lw = W - 2 * pad, segs = 96, sw = lw / segs; return (
-            <g>
-              {Array.from({ length: segs }).map((_, i) => (
-                <rect key={i} x={lx + i * sw} y={H - pad - 11} width={sw + 0.6} height={8} fill={coverColor(i / (segs - 1))} />
-              ))}
-              <text x={lx + 1} y={H - pad - 15} fontSize={10} fill="#fca5a5" className="roboto-slab-regular">extrapolation · atlas blind</text>
-              <text x={lx + lw - 1} y={H - pad - 15} fontSize={10} fill="#6ee7b7" textAnchor="end" className="roboto-slab-regular">interpolation · atlas reliable</text>
-            </g>
-          ); })()}
-        </svg>
-      </div>
-      <p className="roboto-slab-regular text-xs text-gray-600 mt-2">
-        This molecule lands in the <strong className={zone.cls}>{zone.label}</strong> — {zone.txt} The field is the measured
-        atlas&apos;s chemical coverage: <span className="text-emerald-700">green</span> is where neighbors are dense enough to
-        interpolate, <span className="text-rose-700">red</span> is uncharted chemistry where a prediction is really extrapolation.
-      </p>
+    <div className="rounded-xl border border-gray-100 bg-white overflow-hidden">
+      <svg width="100%" viewBox={`0 0 ${W} ${H}`} role="img" aria-label="MegaFin Atlas: from anchors to exploration"
+        style={{ fontFamily: FIG_FONT }}>
+        <defs>
+          <filter id="atlasblur" x="-6%" y="-6%" width="112%" height="112%"><feGaussianBlur stdDeviation={8} /></filter>
+          <linearGradient id="atlasbar" x1="0" y1="1" x2="0" y2="0">
+            {ATLAS_STOPS.map(([pos]) => <stop key={pos} offset={pos} stopColor={atlasColor(pos)} />)}
+          </linearGradient>
+        </defs>
+
+        {/* title block (top-left) */}
+        <text x={40} y={64} fontSize={34} fontWeight={700} fill="#0f172a">MegaFin Atlas: From Anchors to Exploration</text>
+        <text x={42} y={96} fontSize={17} fill="#9aa6b6">Similarity to Atlas (Higher = Closer)</text>
+
+        {/* organic heat island */}
+        {heatLayer}
+        {/* theoretical molecules — a fine, semi-transparent dusting */}
+        {field.dots.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill="#64748b" opacity={0.3} />)}
+        {/* 94 anchor drugs — white markers with a thin dark outline */}
+        {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={5} fill="#ffffff" stroke="#334155" strokeWidth={1.1} />)}
+
+        {/* the submitted candidate — highlighted, glides on refresh */}
+        <circle cx={cx} cy={cy} r={16} fill="none" stroke="#0f172a" strokeWidth={1.3} opacity={0.22} style={glide} />
+        <circle cx={cx} cy={cy} r={8} fill="#ffffff" stroke="#0f172a" strokeWidth={2.6} style={glide} />
+        <text x={cx} y={cy - 22} textAnchor="middle" fontSize={15} fontWeight={600} fill="#0f172a"
+          style={{ paintOrder: "stroke", stroke: "#ffffff", strokeWidth: 4, ...glideXY }}>{markLabel}</text>
+
+        {/* legend + colorbar (right) */}
+        <circle cx={LGX + 9} cy={196} r={9} fill="#ffffff" stroke="#334155" strokeWidth={1.4} />
+        <text x={LGX + 28} y={201} fontSize={16} fill="#334155">94 MegaFin Drugs (Anchors)</text>
+        <circle cx={LGX + 9} cy={234} r={3.2} fill="#64748b" opacity={0.6} />
+        <text x={LGX + 28} y={239} fontSize={14} fill="#94a3b8">Theoretical Molecules (Exploration)</text>
+
+        <text x={LGX} y={310} fontSize={15} fill="#334155">Similarity to Atlas</text>
+        <rect x={barX} y={barY} width={barW} height={barH} fill="url(#atlasbar)" rx={3} stroke="#e5e7eb" strokeWidth={1} />
+        <text x={barX + barW + 10} y={barY + 8} fontSize={13} fill="#b9533a">High (Closer)</text>
+        <text x={barX + barW + 10} y={barY + barH} fontSize={13} fill="#5b5f97">Low (Farther)</text>
+
+        {/* quiet caption (bottom center of the island) */}
+        <text x={(IX0 + IX1) / 2} y={652} textAnchor="middle" fontSize={16} fill="#9aa6b6">Anchored in 94 known drugs. Exploring the vast space of what could be next.</text>
+      </svg>
     </div>
   );
 }
