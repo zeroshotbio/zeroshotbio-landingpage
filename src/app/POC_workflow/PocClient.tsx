@@ -123,7 +123,7 @@ function RDKitDepiction({ smiles, w = 320, h = 240 }: { smiles: string; w?: numb
   const [svg, setSvg] = useState("");
   const [err, setErr] = useState(false);
   useEffect(() => {
-    let cancel = false; setSvg(""); setErr(false);
+    let cancel = false; setErr(false); // keep the previous depiction visible until the new one is ready
     loadRDKit().then((R) => {
       if (cancel) return;
       let mol: any = null;
@@ -367,8 +367,9 @@ export default function PocClient() {
     }).filter((x) => x.d.id !== selId).sort((a, b) => b.s - a.s);
     const pool = scored.slice(0, 18); // densest chem2d KDE = green interpolation core
     const anchor = pool[Math.floor(Math.random() * pool.length)].d;
+    // update content only — keep the current reveal phase so the boxes/heatmap stay in place
     setSelId(anchor.id); setNovel(true); setCandidate(null); setUnknown(false);
-    setSmiles(mutateSmiles(anchor.step1_structure.smiles)); setTypeTarget(""); setNote(""); setRevealPhase("reveal");
+    setSmiles(mutateSmiles(anchor.step1_structure.smiles)); setTypeTarget(""); setNote("");
   }
   function submitStep1() {
     if (revealPhase === "preview") { if (sel || candidate) setRevealPhase("reveal"); return; } // already resolved
@@ -648,9 +649,9 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
   const ready = revealPhase === "ready";
   const resolved = sel || candidate || unknown;
 
-  // novel candidate gets the dedicated coverage-heatmap layout; key by id so a refresh re-animates
+  // novel candidate gets the dedicated coverage-heatmap layout (no key — a refresh updates content in place)
   if (sel && novel) {
-    return <NovelReveal key={sel.id} sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
+    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
   }
 
   return (
@@ -762,21 +763,21 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext
         <div ref={structBoxRef} className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
           <RDKitDepiction smiles={smiles} w={150} h={140} />
         </div>
-        {/* third column split into two: plain new search, and a refresh within the interpolation zone */}
-        <div className="flex flex-col gap-3 h-40">
+        {/* third column split into two: plain new search, and "generate within the interpolation zone" */}
+        <div className="flex flex-col gap-2 h-40">
           <button onClick={handleBack} title="New search" aria-label="New search"
-            className="poc-fade flex-1 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center gap-0.5 hover:bg-gray-50 hover:border-gray-400 transition group" style={{ animationDelay: "160ms" }}>
-            <svg className="h-6 w-6 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            className="poc-fade rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 hover:bg-gray-50 hover:border-gray-400 transition group" style={{ height: 52, animationDelay: "160ms" }}>
+            <svg className="h-5 w-5 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <span className="roboto-slab-regular text-[9px] text-gray-400 group-hover:text-gray-600 transition">new search</span>
+            <span className="roboto-slab-regular text-[11px] text-gray-400 group-hover:text-gray-700 transition">New search</span>
           </button>
-          <button onClick={onInterpolation} title="New candidate within the interpolation region" aria-label="New candidate within the interpolation region"
-            className="poc-fade flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col items-center justify-center gap-0.5 hover:bg-emerald-50 hover:border-emerald-400 transition group" style={{ animationDelay: "260ms" }}>
-            <svg className="h-6 w-6 text-emerald-400 group-hover:text-emerald-600 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <button onClick={onInterpolation} title="Generate Random New Drug within Interpolation Zone" aria-label="Generate Random New Drug within Interpolation Zone"
+            className="poc-fade flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col items-center justify-center gap-1 px-2 text-center hover:bg-emerald-50 hover:border-emerald-400 transition group" style={{ animationDelay: "260ms" }}>
+            <svg className="h-5 w-5 shrink-0 text-emerald-400 group-hover:text-emerald-600 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none" />
             </svg>
-            <span className="roboto-slab-regular text-[9px] text-emerald-600 group-hover:text-emerald-700 transition text-center leading-tight px-1">interpolation zone</span>
+            <span className="roboto-slab-regular text-[10px] leading-tight text-emerald-700 group-hover:text-emerald-800 transition">Generate Random New Drug within Interpolation Zone</span>
           </button>
         </div>
       </div>
@@ -821,13 +822,15 @@ function coverColor(t: number): string {
 function ChemHeatmap({ data, mark, markLabel, neighbors }:
   { data: Data | null; mark: [number, number]; markLabel: string; neighbors: { id: string; sim: number }[] }) {
   const W = 660, H = 400, pad = 14;
+  // Field bounds come from the measured atlas only (not the marker), so the heatmap stays fixed while a
+  // refresh just moves the candidate dot. Memoized on data alone.
   const field = useMemo(() => {
     const meas = (data?.drugs ?? []).filter((d) => !d.is_guest);
     if (!meas.length) return null;
     const pts = meas.map((d) => d.step3_embedding.chem2d);
-    const xs = pts.map((p) => p[0]).concat(mark[0]), ys = pts.map((p) => p[1]).concat(mark[1]);
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
     const xmin = Math.min(...xs), xmax = Math.max(...xs), ymin = Math.min(...ys), ymax = Math.max(...ys);
-    const mx = (xmax - xmin) * 0.08 || 1, my = (ymax - ymin) * 0.08 || 1;
+    const mx = (xmax - xmin) * 0.1 || 1, my = (ymax - ymin) * 0.1 || 1;
     const x0 = xmin - mx, x1 = xmax + mx, y0 = ymin - my, y1 = ymax + my;
     const spanx = x1 - x0, spany = y1 - y0;
     const cols = 84, rows = Math.round(84 * (H - 2 * pad) / (W - 2 * pad));
@@ -843,7 +846,7 @@ function ChemHeatmap({ data, mark, markLabel, neighbors }:
       grid.push(row);
     }
     return { grid, maxd, x0, y0, spanx, spany, cols, rows, meas, pts };
-  }, [data, mark]);
+  }, [data]);
 
   const heatLayer = useMemo(() => {
     if (!field) return null;
@@ -886,10 +889,13 @@ function ChemHeatmap({ data, mark, markLabel, neighbors }:
           {/* candidate + its nearest measured neighbors */}
           {neighbors.map((n) => { const c = coordById(n.id); if (!c) return null;
             return <line key={n.id} x1={cx} y1={cy} x2={sx(c[0])} y2={sy(c[1])} stroke="#ffffff" strokeWidth={1} strokeDasharray="3 3" opacity={0.7} />; })}
-          <circle cx={cx} cy={cy} r={12} fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.7} />
-          <circle cx={cx} cy={cy} r={5.5} fill="#ffffff" stroke="#0a0c1a" strokeWidth={1.4} />
+          {/* candidate dot — glides smoothly to its new position on an interpolation refresh */}
+          <circle cx={cx} cy={cy} r={12} fill="none" stroke="#ffffff" strokeWidth={1.5} opacity={0.7}
+            style={{ transition: "cx .65s cubic-bezier(.4,0,.2,1), cy .65s cubic-bezier(.4,0,.2,1)" }} />
+          <circle cx={cx} cy={cy} r={5.5} fill="#ffffff" stroke="#0a0c1a" strokeWidth={1.4}
+            style={{ transition: "cx .65s cubic-bezier(.4,0,.2,1), cy .65s cubic-bezier(.4,0,.2,1)" }} />
           <text x={cx + 11} y={cy + 4} fontSize={12} className="roboto-slab-medium" fill="#fff"
-            style={{ paintOrder: "stroke", stroke: "#0a0c1a", strokeWidth: 3 } as any}>{markLabel}</text>
+            style={{ paintOrder: "stroke", stroke: "#0a0c1a", strokeWidth: 3, transition: "x .65s cubic-bezier(.4,0,.2,1), y .65s cubic-bezier(.4,0,.2,1)" } as any}>{markLabel}</text>
           {/* legend — full-width gradient bar, labels pinned to opposite ends so they never overlap */}
           {(() => { const lx = pad, lw = W - 2 * pad, segs = 96, sw = lw / segs; return (
             <g>
