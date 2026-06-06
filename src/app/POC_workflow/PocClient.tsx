@@ -1527,168 +1527,97 @@ function heatColor(t: number) { // viridis-ish: deep indigo → teal → yellow
   const a = stops[i], b = stops[Math.min(stops.length - 1, i + 1)];
   return `rgb(${Math.round(a[0] + (b[0] - a[0]) * f)},${Math.round(a[1] + (b[1] - a[1]) * f)},${Math.round(a[2] + (b[2] - a[2]) * f)})`;
 }
+/* Step 2 — a customer-facing pitch for the wet-lab exposure: the run that converts the chemistry
+   prediction into a measured whole-organism readout and unlocks the rest of the workflow. */
 function Step2({ sel, novel, onNext }: { sel: Drug; novel?: boolean; onNext: () => void }) {
-  const [stage, setStage] = useState<"ready" | "playing" | "resolved">("ready");
-  useEffect(() => { setStage("ready"); }, [sel.id]);
+  const compound = novel ? "your candidate" : sel.display_name;
+  const OFFER = [
+    { big: "$20,000", label: "per compound", sub: "fixed price · all-in" },
+    { big: "~2 months", label: "ship → readout", sub: "dose · sequence · analyze" },
+    { big: "1 vertebrate", label: "whole-organism scRNA", sub: "every tissue · single-cell" },
+  ];
+  const TEASE = [
+    { n: 3, title: "Response fingerprint", body: "The cell × gene perturbation matrix — exactly which gene programs and cell types move." },
+    { n: 4, title: "Atlas placement", body: "Your measured point among the 94 reference drugs — observed, not interpolated." },
+    { n: 5, title: "Mechanism & context", body: "Most-likely mechanism of action, nearest measured neighbors, off-target & tox signals." },
+    { n: 6, title: "Decision report", body: "A decision-grade summary you can take straight to the next go / no-go." },
+  ];
   return (
-    <div>
-      <h2 className="roboto-slab-medium text-lg text-gray-800 mb-3">Step 2 — Whole-organism exposure</h2>
-      <div className="mx-auto relative" style={{ maxWidth: 560 }}>
-        <ExposureCinema sel={sel} playing={stage !== "ready"} onResolved={() => setStage("resolved")} />
-        {stage === "ready" && (
-          <div className="absolute inset-0 flex flex-col items-center justify-end pb-6 pointer-events-none">
-            <button onClick={() => setStage("playing")}
-              className="pointer-events-auto roboto-slab-medium rounded-full border border-teal-500 bg-teal-600 text-white px-6 py-2.5 text-sm shadow-lg hover:bg-teal-700 animate-pulse">
-              ▶ Dose {sel.display_name} → run exposure
-            </button>
+    <div className="poc-fade">
+      {/* hero */}
+      <div className="text-center mb-6">
+        <div className="inline-flex items-center gap-2 rounded-full border border-teal-200 bg-teal-50 px-3 py-1 mb-3">
+          <span className="text-base leading-none">🐟</span>
+          <span className="roboto-slab-medium text-[10px] uppercase tracking-wide text-teal-700">Zeroshot Zebrafish Phenotype Screening</span>
+        </div>
+        <h2 className="roboto-slab-medium text-2xl sm:text-3xl text-gray-900 mb-2">Turn the prediction into a measurement.</h2>
+        <p className="roboto-slab-regular text-sm text-gray-500 max-w-xl mx-auto">
+          Everything up to here is chemistry — where <strong>{compound}</strong> <em>probably</em> sits. One wet-lab run replaces the
+          guess with a real vertebrate readout, and turns the rest of this workflow from prediction into evidence.
+        </p>
+      </div>
+
+      {/* offer band */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
+        {OFFER.map((o) => (
+          <div key={o.big} className="rounded-xl border border-gray-200 bg-white p-4 text-center">
+            <div className="roboto-slab-medium text-2xl text-gray-900">{o.big}</div>
+            <div className="roboto-slab-medium text-xs text-teal-700 mt-0.5">{o.label}</div>
+            <div className="roboto-slab-regular text-[11px] text-gray-400 mt-0.5">{o.sub}</div>
           </div>
-        )}
+        ))}
       </div>
-      <div className="mt-4 text-center">
-        {stage === "ready" && (
-          <p className="roboto-slab-regular text-sm text-gray-500">Click to dose the zebrafish with {sel.display_name} and run a whole-organism single-cell readout.</p>
-        )}
-        {stage === "playing" && (
-          <p className="roboto-slab-regular text-xs text-gray-400">That&apos;s what an scRNA-seq run would be doing — ≈ 1 month from submission in the real pipeline.</p>
-        )}
-        {stage === "resolved" && (
-          <>
-            <p className="roboto-slab-medium text-sm text-gray-700">Pseudo-results ready{novel ? " (interpolated)" : ""} — a {novel ? "interpolated" : "synthesized"} cell×gene expression matrix.</p>
-            <p className="roboto-slab-regular text-xs text-gray-400 mt-1 mb-3">Illustrative stand-in for the MegaFin readout (the real dataset isn&apos;t wired into this preview).</p>
-            <button onClick={onNext}
-              className="roboto-slab-medium rounded-md border border-teal-700 bg-teal-700 text-white px-5 py-2 text-sm hover:bg-teal-800">
-              Next — see the perturbation results in the fingerprint section ▸
-            </button>
-          </>
-        )}
+
+      {/* the deliverable — the 3 sentences */}
+      <div className="rounded-xl border border-gray-200 bg-white p-5 mb-6">
+        <div className="roboto-slab-medium text-xs uppercase tracking-wide text-gray-400 mb-3">What comes back</div>
+        <ol className="space-y-3">
+          {[
+            <>We dose live zebrafish with your compound and run <strong>whole-organism single-cell RNA-seq</strong> — a directly measured transcriptional response spanning every major tissue and cell type of an intact vertebrate, at single-cell resolution.</>,
+            <>That measured fingerprint anchors your molecule in the <strong>94-drug MegaFin Atlas by observation</strong> rather than interpolation — placing it among reference compounds whose mechanism and in-vivo effects are already known.</>,
+            <>From there the rest of this workflow stops predicting and starts <strong>reporting</strong>: the gene programs and tissues your compound actually perturbs, its most-likely mechanism and nearest measured neighbors, and developmental / organ-level liabilities — a decision-grade readout from a real vertebrate, months before a mouse study would tell you anything.</>,
+          ].map((body, i) => (
+            <li key={i} className="flex gap-3">
+              <span className="shrink-0 mt-0.5 h-5 w-5 rounded-full bg-teal-600 text-white text-[11px] roboto-slab-medium flex items-center justify-center">{i + 1}</span>
+              <p className="roboto-slab-regular text-sm text-gray-700 leading-snug">{body}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+
+      {/* teaser of the rest of the workflow */}
+      <div className="mb-6">
+        <div className="roboto-slab-medium text-xs uppercase tracking-wide text-gray-400 mb-2 text-center">…which unlocks the rest of this workflow</div>
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+          {TEASE.map((t) => (
+            <div key={t.n} className="rounded-xl border border-gray-200 bg-gray-50 p-3">
+              <div className="roboto-slab-regular text-[10px] text-gray-400 mb-0.5">Step {t.n}</div>
+              <div className="roboto-slab-medium text-[13px] text-gray-800 mb-1">{t.title}</div>
+              <div className="roboto-slab-regular text-[11px] text-gray-500 leading-snug">{t.body}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* CTA */}
+      <div className="text-center">
+        <button onClick={onNext}
+          className="roboto-slab-medium rounded-md border border-teal-700 bg-teal-700 text-white px-7 py-2.5 text-sm hover:bg-teal-800 transition">
+          See what the readout unlocks ▸
+        </button>
+        <p className="roboto-slab-regular text-[11px] text-gray-400 mt-3">Illustrative customer preview — pricing, timeline and copy are a mock-up for this POC.</p>
       </div>
     </div>
   );
 }
 
-/* zebrafish on canvas */
-function drawFish(ctx: CanvasRenderingContext2D, cx: number, cy: number, s: number, alpha: number) {
-  ctx.save(); ctx.globalAlpha = alpha; ctx.translate(cx, cy);
-  ctx.fillStyle = "#cfe8ef"; ctx.strokeStyle = "#7fb4c2"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.ellipse(0, 0, 46 * s, 20 * s, 0, 0, 7); ctx.fill(); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(40 * s, 0); ctx.lineTo(64 * s, -14 * s); ctx.lineTo(60 * s, 0); ctx.lineTo(64 * s, 14 * s); ctx.closePath(); ctx.fill(); ctx.stroke();
-  ctx.strokeStyle = "#5f97a6"; ctx.lineWidth = 2 * s;
-  for (let i = -2; i <= 2; i++) { ctx.beginPath(); ctx.moveTo(i * 12 * s, -16 * s); ctx.lineTo(i * 12 * s - 4 * s, 16 * s); ctx.stroke(); }
-  ctx.fillStyle = "#1f2937"; ctx.beginPath(); ctx.arc(-34 * s, -3 * s, 3 * s, 0, 7); ctx.fill();
-  ctx.restore();
-}
-function drawMolGlyph(ctx: CanvasRenderingContext2D, mol: MolScene | null, cx: number, cy: number, R: number, alpha: number) {
-  ctx.save(); ctx.globalAlpha = alpha;
-  if (!mol) { ctx.fillStyle = "#7c3aed"; ctx.beginPath(); ctx.arc(cx, cy, R * 0.5, 0, 7); ctx.fill(); ctx.restore(); return; }
-  const rx = 0.4, ry = 0.7;
-  const P = mol.atoms.map((a) => { const r = rotV(a, rx, ry); return { px: cx + r.x * R, py: cy - r.y * R, z: r.z, el: a.el }; });
-  ctx.strokeStyle = `rgba(120,128,140,${0.8 * alpha})`; ctx.lineWidth = Math.max(1, R * 0.06); ctx.lineCap = "round";
-  for (const [i, j] of mol.bonds) { if (!P[i] || !P[j]) continue; ctx.beginPath(); ctx.moveTo(P[i].px, P[i].py); ctx.lineTo(P[j].px, P[j].py); ctx.stroke(); }
-  P.filter((p) => p.el !== "H").sort((a, b) => a.z - b.z).forEach((p) => { ctx.fillStyle = elemInfo(p.el)[0]; ctx.beginPath(); ctx.arc(p.px, p.py, Math.max(1.5, elemInfo(p.el)[1] * R * 0.4), 0, 7); ctx.fill(); });
-  ctx.restore();
-}
-
-/* the cinematic: fish + drug → impact → atomize → sequencer → .h5ad zoom-out → heatmap */
-function ExposureCinema({ sel, playing, onResolved }: { sel: Drug; playing: boolean; onResolved: () => void }) {
-  const ref = useRef<HTMLCanvasElement>(null);
-  const startRef = useRef<number | null>(null);
-  const mol = useMemo(() => (sel.step1_structure.mol3d ? parseMolBlock(sel.step1_structure.mol3d) : null), [sel.id]);
-  const W = 560, H = 360;
-  // deterministic heat field + atomize particles
-  const { heat, hcols, hrows, parts } = useMemo(() => {
-    let h = 2166136261 >>> 0; for (let i = 0; i < sel.id.length; i++) { h ^= sel.id.charCodeAt(i); h = Math.imul(h, 16777619) >>> 0; }
-    const rnd = () => { h ^= h << 13; h >>>= 0; h ^= h >>> 17; h ^= h << 5; h >>>= 0; return (h >>> 0) / 4294967296; };
-    const hcols = 112, hrows = Math.round((hcols * H) / W);
-    const colb = new Float32Array(hcols); for (let c = 0; c < hcols; c++) colb[c] = rnd();
-    const heat = new Float32Array(hcols * hrows);
-    for (let r = 0; r < hrows; r++) for (let c = 0; c < hcols; c++) heat[r * hcols + c] = Math.max(0, Math.min(1, colb[c] * 0.7 + rnd() * 0.4));
-    const parts: { x: number; y: number; vx: number; vy: number }[] = [];
-    for (let i = 0; i < 150; i++) { const a = rnd() * 6.283, rr = Math.sqrt(rnd()); parts.push({ x: Math.cos(a) * 44 * rr, y: Math.sin(a) * 18 * rr, vx: Math.cos(a) * (40 + rnd() * 90), vy: Math.sin(a) * (40 + rnd() * 90) - 20 }); }
-    return { heat, hcols, hrows, parts };
-  }, [sel.id]);
-
-  useEffect(() => { startRef.current = null; }, [sel.id, playing]);
-  useEffect(() => {
-    const cv = ref.current; if (!cv) return; const ctx = cv.getContext("2d"); if (!ctx) return;
-    const PH: [string, number][] = [["impact", 1400], ["atomize", 1400], ["sequencer", 1500], ["zoom", 5500]];
-    const total = PH.reduce((a, p) => a + p[1], 0);
-    let raf = 0, resolved = false;
-    const bg = () => { ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H); };
-    const frame = (ts: number) => {
-      if (!playing) { ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H); drawFish(ctx, W * 0.3, H / 2, 1.1, 1); drawMolGlyph(ctx, mol, W * 0.72, H / 2, 60, 1); ctx.fillStyle = "#64748b"; ctx.font = "16px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("+", W * 0.51, H / 2 + 5); raf = requestAnimationFrame(frame); return; }
-      if (startRef.current == null) startRef.current = ts;
-      let e = ts - startRef.current; const clamped = Math.min(e, total);
-      let acc = 0, phase = "zoom", lt = 1;
-      for (const [name, dur] of PH) { if (clamped < acc + dur) { phase = name; lt = (clamped - acc) / dur; break; } acc += dur; }
-      if (phase === "impact") {
-        ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H);
-        drawFish(ctx, W * 0.3, H / 2, 1.1, 1);
-        const mx = W * 0.72 + (W * 0.3 - W * 0.72) * lt, my = H / 2, R = 60 * (1 - 0.78 * lt);
-        drawMolGlyph(ctx, mol, mx, my, R, 1);
-        if (lt > 0.82) { const f = (lt - 0.82) / 0.18; ctx.strokeStyle = `rgba(124,58,237,${1 - f})`; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(W * 0.3, H / 2, 10 + f * 60, 0, 7); ctx.stroke(); }
-      } else if (phase === "atomize") {
-        ctx.fillStyle = "#eef4f6"; ctx.fillRect(0, 0, W, H);
-        drawFish(ctx, W * 0.3, H / 2, 1.1, Math.max(0, 1 - lt * 1.6));
-        ctx.fillStyle = "#7c3aed";
-        for (const p of parts) { const a = 1 - lt; if (a <= 0) continue; ctx.globalAlpha = a; ctx.beginPath(); ctx.arc(W * 0.3 + p.x + p.vx * lt, H / 2 + p.y + p.vy * lt, 1.8, 0, 7); ctx.fill(); }
-        ctx.globalAlpha = 1;
-        ctx.fillStyle = "#64748b"; ctx.font = "13px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("dissociating to single cells…", W / 2, H - 24);
-      } else if (phase === "sequencer") {
-        ctx.fillStyle = "#0b1020"; ctx.fillRect(0, 0, W, H);
-        const a = lt < 0.7 ? 1 : 1 - (lt - 0.7) / 0.3; const dx = Math.sin(e * 0.05) * 5 * (1 - lt * 0.4);
-        ctx.save(); ctx.globalAlpha = a; ctx.translate(W / 2 + dx, H / 2);
-        ctx.fillStyle = "#1e293b"; ctx.strokeStyle = "#475569"; ctx.lineWidth = 2; roundRect(ctx, -90, -50, 180, 100, 8); ctx.fill(); ctx.stroke();
-        for (let i = 0; i < 5; i++) { ctx.fillStyle = (Math.floor(e / 120) + i) % 2 ? "#10b981" : "#334155"; ctx.beginPath(); ctx.arc(-60 + i * 30, -28, 4, 0, 7); ctx.fill(); }
-        ctx.fillStyle = "#7dd3fc"; ctx.font = "12px ui-monospace, monospace"; ctx.textAlign = "center"; ctx.fillText("SEQUENCING", 0, 14); ctx.restore();
-        ctx.globalAlpha = 1;
-      } else {
-        // zoom-out .h5ad
-        bg();
-        const L = Math.round(4 * Math.pow(8000, Math.min(1, lt)));
-        const vis = Math.max(4, Math.min(hcols, Math.round(4 * Math.pow(28, Math.min(1, lt)))));
-        const cw = W / vis, ch = cw; const rows = Math.min(hrows, Math.ceil(H / ch));
-        for (let r = 0; r < rows; r++) for (let c = 0; c < vis; c++) {
-          const hv = heat[(r % hrows) * hcols + (c % hcols)];
-          if (cw >= 26) { ctx.fillStyle = "#0b1020"; ctx.fillRect(c * cw, r * ch, cw, ch); ctx.fillStyle = "#9ad8ff"; ctx.font = `${Math.floor(ch * 0.6)}px ui-monospace, monospace`; ctx.textAlign = "center"; ctx.textBaseline = "middle"; ctx.fillText(String((Math.random() * 10) | 0), c * cw + cw / 2, r * ch + ch / 2); }
-          else { ctx.fillStyle = heatColor(cw < 9 ? hv : (Math.random() < 0.5 ? hv : hv * 0.6 + 0.2)); ctx.fillRect(c * cw, r * ch, cw + 0.6, ch + 0.6); }
-        }
-        if (vis <= 6) { ctx.fillStyle = "#7dd3fc"; ctx.font = "11px ui-monospace, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "middle"; for (let r = 0; r < Math.min(rows, 6); r++) ctx.fillText(`cell_${r}`, 4, r * ch + ch / 2); ctx.save(); ctx.translate(0, 0); for (let c = 0; c < Math.min(vis, 6); c++) { ctx.save(); ctx.translate(c * cw + cw / 2, 4); ctx.rotate(-Math.PI / 2); ctx.textAlign = "right"; ctx.fillText(`gene_${c}`, 0, 0); ctx.restore(); } ctx.restore(); }
-        // overlay labels
-        ctx.fillStyle = "rgba(11,16,32,0.72)"; ctx.fillRect(0, H - 30, W, 30);
-        ctx.fillStyle = "#e2e8f0"; ctx.font = "12px ui-monospace, monospace"; ctx.textAlign = "left"; ctx.textBaseline = "middle";
-        ctx.fillText(lt < 1 ? "processing & sequencing in progress…" : "expression matrix ready", 8, H - 15);
-        ctx.textAlign = "right"; ctx.fillStyle = "#7dd3fc"; ctx.fillText(`${L.toLocaleString()} cells × ${L.toLocaleString()} genes`, W - 8, H - 15);
-      }
-      if (e >= total && !resolved) { resolved = true; onResolved(); }
-      raf = requestAnimationFrame(frame);
-    };
-    raf = requestAnimationFrame(frame);
-    return () => cancelAnimationFrame(raf);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [playing, sel.id, mol, heat]);
-
-  return (
-    <div className="rounded-md border border-gray-700 overflow-hidden" style={{ background: "#0b1020" }}>
-      <div className="flex items-center justify-between px-3 py-1.5 border-b border-gray-700">
-        <span className="roboto-slab-medium text-[11px] text-sky-300">perturbation.h5ad</span>
-        <span className="roboto-slab-regular text-[10px] text-gray-500">zebrafish whole-organism scRNA-seq (illustrative)</span>
-      </div>
-      <canvas ref={ref} width={W} height={H} className="block w-full" />
-    </div>
-  );
-}
-function roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
-  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
-  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
-}
-
-/* ---------------- Step 3 — response fingerprint (3 views: volcano · pathways · zebrafish) ----------- */
-// diverging color for log2FC: red = induced, blue = repressed
-function lfcColor(x: number, m = 3): string {
-  const t = Math.max(-1, Math.min(1, x / m));
+// log-fold-change → diverging color: positive (up) red, negative (down) blue, ~0 white
+function lfcColor(lfc: number): string {
+  const t = Math.max(-1, Math.min(1, lfc / 2.5));
   if (t >= 0) { const c = Math.round(255 - 165 * t); return `rgb(255,${c},${c})`; }
   const tt = -t; const c = Math.round(255 - 165 * tt); return `rgb(${c},${c},255)`;
 }
+
 type Tip = { title: string; sub: string; x: number; y: number } | null;
 const FP_VIEWS = [
   { key: "zebrafish", label: "Zebrafish organs" }, { key: "programs", label: "Pathways" },
