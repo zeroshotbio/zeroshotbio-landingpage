@@ -683,7 +683,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         {/* intended-target step — only after a molecule has been submitted */}
         {showStaged && (
           <div className="mt-12 poc-fade" style={{ animationDelay: "260ms" }}>
-            <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} scores={targetScores} />
+            <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} scores={targetScores} dark={dark} />
           </div>
         )}
 

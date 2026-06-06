@@ -136,6 +136,95 @@ export function ProteinCanvas({ gene, ortholog, w = 200, h = 170 }: { gene: stri
   return <canvas ref={ref} width={w} height={h} aria-label={`AlphaFold structure for ${gene}`} />;
 }
 
+/* ---- labelled-fish tissue-impact heatmap: lights the segmented zebrafish SVG by where the
+   selected target's zebrafish ortholog is EXPRESSED at 24-48hpf (Zebrahub). Honest: an
+   expression-based expectation of the tissues most likely directly engaged, NOT a phenotype. ---- */
+const TISSUE_LABEL: Record<string, string> = {
+  epidermis: "Epidermis", eye: "Eye", yolk_sac: "Yolk sac", notochord: "Notochord",
+  central_nervous_system: "CNS / brain", ear: "Otic / ear", muscle: "Muscle",
+  olfactory: "Olfactory", cranial_muscle_late: "Cranial muscle", fin: "Fin", heart: "Heart",
+  endothelial: "Vasculature", kidney: "Kidney", pigment: "Pigment",
+  pharyngeal_arch: "Pharyngeal arch", connective_tissue: "Connective",
+};
+function heat(t: number) {
+  t = Math.max(0, Math.min(1, t));
+  const a = [253, 230, 138], b = [220, 38, 38];  // amber -> red
+  const c = [0, 1, 2].map((k) => Math.round(a[k] + (b[k] - a[k]) * t));
+  return `rgb(${c[0]},${c[1]},${c[2]})`;
+}
+export function useTissueImpact() {
+  const [imp, setImp] = useState<Record<string, Record<string, number>> | null>(null);
+  useEffect(() => { fetch("/POC_workflow/target_tissue_impact.json").then((r) => r.json()).then(setImp).catch(() => setImp({})); }, []);
+  return imp;
+}
+let _fishSvg: string | null = null;
+export function ZebrafishImpact({ gene, impact, delayMs = 1000, dark }:
+  { gene: string; impact?: Record<string, number> | null; delayMs?: number; dark?: boolean }) {
+  const host = useRef<HTMLDivElement>(null);
+  const [show, setShow] = useState(false);
+  const [svg, setSvg] = useState<string | null>(_fishSvg);
+  useEffect(() => { setShow(false); const t = setTimeout(() => setShow(true), delayMs); return () => clearTimeout(t); }, [gene, delayMs]);
+  useEffect(() => {
+    if (svg) return; let c = false;
+    fetch("/POC_workflow/zebrafish.svg").then((r) => r.text()).then((x) => {
+      // injected as HTML (not XML) — normalize the deprecated xlink:href so the embedded fish image renders
+      const norm = x.replace(/xlink:href=/g, "href=");
+      if (!c) { _fishSvg = norm; setSvg(norm); }
+    }).catch(() => {});
+    return () => { c = true; };
+  }, [svg]);
+  useEffect(() => {
+    if (!show || !svg || !host.current) return;
+    const root = host.current.querySelector("svg") as SVGSVGElement | null;
+    if (!root) return;
+    root.removeAttribute("width"); root.removeAttribute("height");
+    root.style.width = "100%"; root.style.height = "auto";
+    root.querySelectorAll(".impact-label").forEach((e) => e.remove());
+    const imp = impact || {};
+    const lit: { id: string; v: number; el: SVGGraphicsElement }[] = [];
+    root.querySelectorAll('[id^="tissue_"],[id^="scaffold_"]').forEach((node) => {
+      const el = node as SVGGraphicsElement;
+      const id = el.id.replace(/^tissue_|^scaffold_/, "");
+      const v = imp[id] || 0;
+      el.style.transition = "fill-opacity .6s ease, fill .6s ease";
+      if (v > 0) { el.style.fill = heat(v); el.style.fillOpacity = String(0.35 + 0.5 * v); el.style.stroke = "rgba(0,0,0,.4)"; el.style.strokeWidth = "0.6"; lit.push({ id, v, el }); }
+      else { el.style.fill = dark ? "#374151" : "#e5e7eb"; el.style.fillOpacity = "0.18"; el.style.stroke = "rgba(120,120,120,.25)"; }
+    });
+    const NS = "http://www.w3.org/2000/svg";
+    lit.sort((a, b) => b.v - a.v).slice(0, 7).forEach(({ id, el }) => {
+      let bb: DOMRect; try { bb = el.getBBox(); } catch { return; }
+      const txt = document.createElementNS(NS, "text");
+      txt.setAttribute("class", "impact-label");
+      txt.setAttribute("x", String(bb.x + bb.width / 2)); txt.setAttribute("y", String(bb.y + bb.height / 2));
+      txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "700");
+      txt.setAttribute("fill", dark ? "#f8fafc" : "#0f172a");
+      txt.setAttribute("paint-order", "stroke"); txt.setAttribute("stroke", dark ? "#0a0a0a" : "#ffffff"); txt.setAttribute("stroke-width", "2.6");
+      txt.textContent = TISSUE_LABEL[id] || id;
+      root.appendChild(txt);
+    });
+  }, [show, svg, impact, gene, dark]);
+
+  if (!show) return null;
+  const nLit = impact ? Object.keys(impact).length : 0;
+  return (
+    <div className="mt-3 poc-fade rounded-xl border border-gray-200 bg-white p-3 shadow-sm">
+      <div className="flex items-baseline justify-between mb-1">
+        <span className="roboto-slab-medium text-sm text-gray-700">Expected tissue impact — {gene}</span>
+        <span className="roboto-slab-regular text-[10px] text-gray-400">{nLit ? `${nLit} tissue${nLit === 1 ? "" : "s"} engaged` : "no expressed tissue"}</span>
+      </div>
+      <div ref={host} dangerouslySetInnerHTML={{ __html: svg || "" }} />
+      <div className="flex items-center gap-2 mt-1">
+        <span className="roboto-slab-regular text-[10px] text-gray-400">low</span>
+        <div className="h-2 flex-1 rounded-full" style={{ background: "linear-gradient(90deg, rgb(253,230,138), rgb(220,38,38))" }} />
+        <span className="roboto-slab-regular text-[10px] text-gray-400">high expression</span>
+      </div>
+      <p className="roboto-slab-regular text-[10px] text-gray-400 mt-1">
+        Lit tissues are where {gene}&apos;s zebrafish ortholog is expressed at 24–48hpf — the regions most likely directly engaged. An expectation from expression, not a measured phenotype.
+      </p>
+    </div>
+  );
+}
+
 /* ---- chemical-compatibility ranking: ECFP4 Tanimoto of the candidate vs each target's anchors
    (max over anchors), computed in-browser with RDKit wasm. Used to rank the dropdown. ---- */
 export function tanimotoBits(a: string, b: string) {
@@ -174,9 +263,10 @@ export function rankTargets(R: any, candidateSmiles: string, targets: Selectable
 /* ---- curated dropdown (heading + selector + protein vis on selection) ----
    Mirrors the "Submit a molecule" heading style. The selector is meant to be revealed only
    after a molecule has been submitted (parent gates rendering). */
-export function TargetSelect({ targets, value, onChange, scores }:
-  { targets: SelectableTarget[] | null; value: string; onChange: (g: string) => void; scores?: Map<string, number> | null }) {
+export function TargetSelect({ targets, value, onChange, scores, dark }:
+  { targets: SelectableTarget[] | null; value: string; onChange: (g: string) => void; scores?: Map<string, number> | null; dark?: boolean }) {
   const sel = targets?.find((t) => t.human_gene === value) || null;
+  const tissueImpact = useTissueImpact();
   const ranked = !!(scores && scores.size);
   const ordered = (targets || []).slice().sort((a, b) => {
     if (ranked) {
@@ -206,19 +296,22 @@ export function TargetSelect({ targets, value, onChange, scores }:
         })}
       </select>
       {sel && (
-        <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm poc-fade flex items-center gap-4">
-          <div className="shrink-0 rounded-lg bg-gray-50 border border-gray-100 p-1">
-            <ProteinCanvas gene={sel.human_gene} ortholog={sel.zfin_ortholog} />
-            <div className="text-center roboto-slab-regular text-[9px] text-gray-400 -mt-1">AlphaFold model — zebrafish {sel.zfin_ortholog} (Cα, drag-free auto-spin)</div>
+        <>
+          <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm poc-fade flex items-center gap-4">
+            <div className="shrink-0 rounded-lg bg-gray-50 border border-gray-100 p-1">
+              <ProteinCanvas gene={sel.human_gene} ortholog={sel.zfin_ortholog} />
+              <div className="text-center roboto-slab-regular text-[9px] text-gray-400 -mt-1">AlphaFold model — zebrafish {sel.zfin_ortholog} (Cα, drag-free auto-spin)</div>
+            </div>
+            <div className="text-[11px] text-gray-600 roboto-slab-regular leading-relaxed">
+              <div><strong>{sel.human_gene}</strong> → zebrafish <strong>{sel.zfin_ortholog}</strong> ({sel.zfin_id})</div>
+              {ranked ? <div>Chemical similarity to its anchors: <strong>{(scores!.get(sel.human_gene) || 0).toFixed(2)}</strong> (max ECFP4 Tanimoto).</div> : null}
+              <div>Expressed in <strong>{Math.round(sel.expression_max_frac * 100)}%</strong> of <em>{sel.expression_celltype}</em> cells at {sel.expression_timepoint}.</div>
+              <div>Engaged by <strong>{sel.n_anchors}</strong> anchor drug{sel.n_anchors === 1 ? "" : "s"}{sel.n_anchors_primary ? `, ${sel.n_anchors_primary} as canonical MOA` : ""}: {sel.anchors.slice(0, 6).join(", ")}{sel.anchors.length > 6 ? "…" : ""}.</div>
+              <div className="text-gray-400 mt-1">Ortholog evidence: {sel.ortholog_evidence.join("/")} ({sel.ortholog_n_pubs} pub{sel.ortholog_n_pubs === 1 ? "" : "s"}). Binding-site conservation: {sel.binding_site_conservation.replace(/_/g, " ")}.</div>
+            </div>
           </div>
-          <div className="text-[11px] text-gray-600 roboto-slab-regular leading-relaxed">
-            <div><strong>{sel.human_gene}</strong> → zebrafish <strong>{sel.zfin_ortholog}</strong> ({sel.zfin_id})</div>
-            {ranked ? <div>Chemical similarity to its anchors: <strong>{(scores!.get(sel.human_gene) || 0).toFixed(2)}</strong> (max ECFP4 Tanimoto).</div> : null}
-            <div>Expressed in <strong>{Math.round(sel.expression_max_frac * 100)}%</strong> of <em>{sel.expression_celltype}</em> cells at {sel.expression_timepoint}.</div>
-            <div>Engaged by <strong>{sel.n_anchors}</strong> anchor drug{sel.n_anchors === 1 ? "" : "s"}{sel.n_anchors_primary ? `, ${sel.n_anchors_primary} as canonical MOA` : ""}: {sel.anchors.slice(0, 6).join(", ")}{sel.anchors.length > 6 ? "…" : ""}.</div>
-            <div className="text-gray-400 mt-1">Ortholog evidence: {sel.ortholog_evidence.join("/")} ({sel.ortholog_n_pubs} pub{sel.ortholog_n_pubs === 1 ? "" : "s"}). Binding-site conservation: {sel.binding_site_conservation.replace(/_/g, " ")}.</div>
-          </div>
-        </div>
+          <ZebrafishImpact key={sel.human_gene} gene={sel.human_gene} impact={tissueImpact?.[sel.human_gene]} dark={dark} delayMs={1000} />
+        </>
       )}
     </div>
   );
