@@ -589,8 +589,16 @@ export default function PocClient() {
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
   revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
   const previewStructRef = useRef<HTMLDivElement>(null);
+  // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
+  // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
+  useLayoutEffect(() => {
+    const el = inputRef.current;
+    if (!el) return;
+    el.style.height = "auto";                 // collapse so scrollHeight reflects true content height
+    el.style.height = `${el.scrollHeight}px`;  // grow to fit — CSS transition animates the change
+  }, [smiles, revealPhase]);
   // snapshot the SMILES + structure rects so the reveal can FLIP them into the top row
   function captureAndSubmit() {
     if (revealPhase === "preview") {
@@ -610,10 +618,10 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         <div className="poc-slide w-full max-w-xl mx-auto" style={{ transform: preview ? "translateY(0)" : "translateY(110px)" }}>
           <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Submit a molecule</h2>
           <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-6">A SMILES string — matched by InChIKey to the measured atlas or the Broad Repurposing Hub.</p>
-          <div className="flex gap-2">
-            <input ref={inputRef} value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
-              onKeyDown={(e) => { if (e.key === "Enter") captureAndSubmit(); }} autoFocus
-              className="roboto-slab-regular flex-1 rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 font-mono shadow-sm focus:border-gray-700 focus:outline-none transition" />
+          <div className="flex items-start gap-2">
+            <textarea ref={inputRef} value={smiles} onChange={(e) => setSmiles(e.target.value)} placeholder="paste a SMILES string…"
+              rows={1} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); captureAndSubmit(); } }} autoFocus
+              className="roboto-slab-regular flex-1 resize-none overflow-hidden break-all leading-relaxed rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 font-mono shadow-sm focus:border-gray-700 focus:outline-none transition-[height,border-color] duration-200 ease-out" />
             <button onClick={captureAndSubmit}
               className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-7 py-3 text-sm hover:bg-gray-700 transition">Submit</button>
           </div>
