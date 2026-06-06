@@ -350,6 +350,26 @@ export default function PocClient() {
     const anchor = scored.slice(0, 25)[Math.floor(Math.random() * Math.min(25, scored.length))].d; // densest = high-confidence
     setSelId(anchor.id); setNovel(true); setCandidate(null); beginPreview(mutateSmiles(anchor.step1_structure.smiles));
   }
+  // Refresh the novel reveal in place with a new candidate that lands in the dense (green) interpolation
+  // zone — ranked by the SAME chem2d KDE density the coverage heatmap shows, excluding the current pick.
+  function pickNovelInterpolation() {
+    if (!data) return;
+    const meas = data.drugs.filter((d) => !d.is_guest);
+    if (!meas.length) return;
+    const pts = meas.map((d) => d.step3_embedding.chem2d);
+    const xs = pts.map((p) => p[0]), ys = pts.map((p) => p[1]);
+    const span = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...ys) - Math.min(...ys));
+    const inv = 1 / (2 * Math.pow(0.085 * span || 1, 2));
+    const scored = meas.map((d, i) => {
+      let s = 0; const [px, py] = pts[i];
+      for (const [qx, qy] of pts) { const dx = px - qx, dy = py - qy; s += Math.exp(-(dx * dx + dy * dy) * inv); }
+      return { d, s };
+    }).filter((x) => x.d.id !== selId).sort((a, b) => b.s - a.s);
+    const pool = scored.slice(0, 18); // densest chem2d KDE = green interpolation core
+    const anchor = pool[Math.floor(Math.random() * pool.length)].d;
+    setSelId(anchor.id); setNovel(true); setCandidate(null); setUnknown(false);
+    setSmiles(mutateSmiles(anchor.step1_structure.smiles)); setTypeTarget(""); setNote(""); setRevealPhase("reveal");
+  }
   function submitStep1() {
     if (revealPhase === "preview") { if (sel || candidate) setRevealPhase("reveal"); return; } // already resolved
     if (!smiles.trim()) return;
@@ -535,7 +555,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, backToSearch, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -567,7 +587,7 @@ export default function PocClient() {
    Minimal SMILES box → on submit the placement unfolds piece by piece (chemistry manifold for novel /
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
-  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, refineStep1, backToSearch, onNext }: any) {
+  revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
   const inputRef = useRef<HTMLInputElement>(null);
   const previewStructRef = useRef<HTMLDivElement>(null);
   // snapshot the SMILES + structure rects so the reveal can FLIP them into the top row
@@ -628,9 +648,9 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
   const ready = revealPhase === "ready";
   const resolved = sel || candidate || unknown;
 
-  // novel candidate gets the dedicated coverage-heatmap layout
+  // novel candidate gets the dedicated coverage-heatmap layout; key by id so a refresh re-animates
   if (sel && novel) {
-    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onNext={onNext} />;
+    return <NovelReveal key={sel.id} sel={sel} smiles={smiles} data={data} ready={ready} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
   }
 
   return (
@@ -709,15 +729,17 @@ function UnknownCard({ smiles }: { smiles: string }) {
 }
 
 /* ============ Novel-candidate reveal: 3 symmetric top boxes + the coverage heatmap ============ */
-function NovelReveal({ sel, smiles, data, ready, onBack, onNext }:
-  { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onNext: () => void }) {
+function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext }:
+  { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
   const mark = sel.step3_embedding.chem2d;
   const neighbors = (sel.step3_embedding.chem_neighbors ?? []).map((n: Neighbor) => ({ id: n.id, sim: n.similarity }));
   const smilesBoxRef = useRef<HTMLDivElement>(null);
   const structBoxRef = useRef<HTMLDivElement>(null);
   const [exiting, setExiting] = useState(false);
+  // FLIP only on the initial reveal (from Submit, where source rects were captured); on an in-place
+  // refresh there's no source, so the row slides up fresh instead.
+  const flipped = useRef(!!(NOVEL_FLIP.smiles || NOVEL_FLIP.struct));
 
-  // FLIP the SMILES + structure boxes from their preview rects into the top row (real slide + resize)
   useLayoutEffect(() => {
     flipFrom(smilesBoxRef.current, NOVEL_FLIP.smiles);
     flipFrom(structBoxRef.current, NOVEL_FLIP.struct);
@@ -729,8 +751,8 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onNext }:
 
   return (
     <div className={exiting ? "poc-slidedown" : ""}>
-      {/* top row — three equal, square-ish boxes (cols 1–2 FLIP in, the search box fades in) */}
-      <div className="grid grid-cols-3 gap-3">
+      {/* top row — SMILES · structure · (new search / interpolation refresh) */}
+      <div className={`grid grid-cols-3 gap-3 ${flipped.current ? "" : "poc-slideup"}`}>
         <div ref={smilesBoxRef} className="rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col">
           <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
           <div className="flex-1 flex items-center justify-center overflow-hidden">
@@ -740,14 +762,23 @@ function NovelReveal({ sel, smiles, data, ready, onBack, onNext }:
         <div ref={structBoxRef} className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
           <RDKitDepiction smiles={smiles} w={150} h={140} />
         </div>
-        <button onClick={handleBack} title="New search" aria-label="New search"
-          className="poc-fade rounded-xl border border-gray-200 bg-white h-40 flex flex-col items-center justify-center gap-1 hover:bg-gray-50 hover:border-gray-400 transition group"
-          style={{ animationDelay: "200ms" }}>
-          <svg className="h-9 w-9 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-          <span className="roboto-slab-regular text-[10px] text-gray-400 group-hover:text-gray-600 transition">new search</span>
-        </button>
+        {/* third column split into two: plain new search, and a refresh within the interpolation zone */}
+        <div className="flex flex-col gap-3 h-40">
+          <button onClick={handleBack} title="New search" aria-label="New search"
+            className="poc-fade flex-1 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center gap-0.5 hover:bg-gray-50 hover:border-gray-400 transition group" style={{ animationDelay: "160ms" }}>
+            <svg className="h-6 w-6 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+            </svg>
+            <span className="roboto-slab-regular text-[9px] text-gray-400 group-hover:text-gray-600 transition">new search</span>
+          </button>
+          <button onClick={onInterpolation} title="New candidate within the interpolation region" aria-label="New candidate within the interpolation region"
+            className="poc-fade flex-1 rounded-xl border border-emerald-200 bg-emerald-50/40 flex flex-col items-center justify-center gap-0.5 hover:bg-emerald-50 hover:border-emerald-400 transition group" style={{ animationDelay: "260ms" }}>
+            <svg className="h-6 w-6 text-emerald-400 group-hover:text-emerald-600 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none" />
+            </svg>
+            <span className="roboto-slab-regular text-[9px] text-emerald-600 group-hover:text-emerald-700 transition text-center leading-tight px-1">interpolation zone</span>
+          </button>
+        </div>
       </div>
 
       {/* the star: atlas coverage heatmap — slides up from below into its spot */}
