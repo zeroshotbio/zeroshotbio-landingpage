@@ -82,36 +82,138 @@ export function ProteinDepiction({ gene, w = 200, h = 170 }: { gene: string; w?:
   );
 }
 
+/* ---- real protein structure: auto-rotating Cα backbone of the AlphaFold model (zebrafish
+   ortholog), drawn on a plain 2D canvas (no WebGL). Falls back to the schematic if no model. ---- */
+function parseCA(txt: string): number[][] {
+  const pts: number[][] = [];
+  for (const ln of txt.split("\n")) {
+    if (ln.startsWith("ATOM") && ln.slice(12, 16).trim() === "CA") {
+      const x = parseFloat(ln.slice(30, 38)), y = parseFloat(ln.slice(38, 46)), z = parseFloat(ln.slice(46, 54));
+      if (Number.isFinite(x) && Number.isFinite(y) && Number.isFinite(z)) pts.push([x, y, z]);
+    }
+  }
+  return pts;
+}
+export function ProteinCanvas({ gene, ortholog, w = 200, h = 170 }: { gene: string; ortholog?: string; w?: number; h?: number }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+  const pts = useRef<number[][] | null>(null);
+  const [ok, setOk] = useState<boolean | null>(null);
+  useEffect(() => {
+    let cancel = false; setOk(null); pts.current = null;
+    fetch(`/POC_workflow/protein_pdb/${gene}.pdb`).then((r) => (r.ok ? r.text() : Promise.reject()))
+      .then((txt) => { if (cancel) return; const p = parseCA(txt); if (p.length > 3) { pts.current = p; setOk(true); } else setOk(false); })
+      .catch(() => { if (!cancel) setOk(false); });
+    return () => { cancel = true; };
+  }, [gene]);
+  useEffect(() => {
+    if (!ok || !pts.current || !ref.current) return;
+    const P = pts.current, cv = ref.current, ctx = cv.getContext("2d");
+    if (!ctx) return;
+    const c = [0, 1, 2].map((k) => P.reduce((s, p) => s + p[k], 0) / P.length);
+    let maxd = 1; for (const p of P) for (let k = 0; k < 3; k++) maxd = Math.max(maxd, Math.abs(p[k] - c[k]));
+    const scale = (Math.min(w, h) * 0.42) / maxd;
+    const hue = (hashStr(gene) % 360);
+    let ang = 0, raf = 0;
+    const draw = () => {
+      ctx.clearRect(0, 0, w, h);
+      const ca = Math.cos(ang), sa = Math.sin(ang);
+      const proj = P.map((p) => { const x = p[0] - c[0], y = p[1] - c[1], z = p[2] - c[2]; return [w / 2 + (x * ca - z * sa) * scale, h / 2 - y * scale, x * sa + z * ca]; });
+      const zr = proj.map((p) => p[2]); const zmin = Math.min(...zr), zmax = Math.max(...zr) || 1;
+      for (let i = 0; i < proj.length - 1; i++) {
+        const a = proj[i], b = proj[i + 1];
+        const t = (((a[2] + b[2]) / 2) - zmin) / (zmax - zmin || 1);   // 0 far .. 1 near
+        ctx.strokeStyle = `hsl(${hue} 62% ${78 - t * 42}%)`;
+        ctx.lineWidth = 1.4 + t * 2.6; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke();
+      }
+      ang += 0.006; raf = requestAnimationFrame(draw);
+    };
+    draw();
+    return () => cancelAnimationFrame(raf);
+  }, [ok, gene, w, h]);
+
+  if (ok === false) return <ProteinDepiction gene={ortholog || gene} w={w} h={h} />;
+  return <canvas ref={ref} width={w} height={h} aria-label={`AlphaFold structure for ${gene}`} />;
+}
+
+/* ---- chemical-compatibility ranking: ECFP4 Tanimoto of the candidate vs each target's anchors
+   (max over anchors), computed in-browser with RDKit wasm. Used to rank the dropdown. ---- */
+export function tanimotoBits(a: string, b: string) {
+  let inter = 0, uni = 0;
+  const n = Math.min(a.length, b.length);
+  for (let i = 0; i < n; i++) { const x = a[i] === "1", y = b[i] === "1"; if (x && y) inter++; if (x || y) uni++; }
+  return uni ? inter / uni : 0;
+}
+function morganFp(R: any, smiles: string): string | null {
+  let m: any = null;
+  try { m = R.get_mol(smiles); } catch { return null; }
+  if (!m) return null;
+  let fp: string | null = null;
+  try { fp = m.get_morgan_fp(JSON.stringify({ radius: 2, nBits: 2048 })); }
+  catch { try { fp = m.get_morgan_fp(); } catch { fp = null; } }
+  try { m.delete(); } catch { /* no-op */ }
+  return fp || null;
+}
+export function rankTargets(R: any, candidateSmiles: string, targets: SelectableTarget[], smilesByDrug: Map<string, string>): Map<string, number> {
+  const out = new Map<string, number>();
+  const cfp = morganFp(R, candidateSmiles);
+  if (!cfp) return out;
+  const fpCache = new Map<string, string | null>();
+  const fpOf = (name: string) => {
+    if (fpCache.has(name)) return fpCache.get(name)!;
+    const s = smilesByDrug.get(name); const f = s ? morganFp(R, s) : null; fpCache.set(name, f); return f;
+  };
+  for (const t of targets) {
+    let best = 0;
+    for (const a of t.anchors) { const f = fpOf(a); if (f) { const s = tanimotoBits(cfp, f); if (s > best) best = s; } }
+    out.set(t.human_gene, best);
+  }
+  return out;
+}
+
 /* ---- curated dropdown (heading + selector + protein vis on selection) ----
    Mirrors the "Submit a molecule" heading style. The selector is meant to be revealed only
    after a molecule has been submitted (parent gates rendering). */
-export function TargetSelect({ targets, value, onChange }:
-  { targets: SelectableTarget[] | null; value: string; onChange: (g: string) => void }) {
+export function TargetSelect({ targets, value, onChange, scores }:
+  { targets: SelectableTarget[] | null; value: string; onChange: (g: string) => void; scores?: Map<string, number> | null }) {
   const sel = targets?.find((t) => t.human_gene === value) || null;
+  const ranked = !!(scores && scores.size);
+  const ordered = (targets || []).slice().sort((a, b) => {
+    if (ranked) {
+      const d = (scores!.get(b.human_gene) || 0) - (scores!.get(a.human_gene) || 0);
+      if (Math.abs(d) > 1e-6) return d;
+    }
+    return (b.n_anchors_primary - a.n_anchors_primary) || (b.n_anchors - a.n_anchors);
+  });
   return (
     <div className="w-full max-w-xl mx-auto">
       <h2 className="roboto-slab-medium text-xl text-gray-800 text-center mb-1">Intended protein target</h2>
       <p className="roboto-slab-regular text-xs text-gray-400 text-center mb-4">
-        Optional. Only human targets with a zebrafish ortholog expressed at 24–48hpf are selectable.
+        Optional. Only human targets with a zebrafish ortholog expressed at 24–48hpf are selectable
+        {ranked ? <>, <strong>ranked by chemical similarity of your molecule to each target&apos;s anchors</strong></> : null}.
       </p>
       <select value={value} onChange={(e) => onChange(e.target.value)}
         className="roboto-slab-regular w-full rounded-xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-800 shadow-sm focus:border-gray-700 focus:outline-none">
         <option value="">— no target (chemistry-only triage) —</option>
-        {(targets || []).map((t) => (
-          <option key={t.human_gene} value={t.human_gene}>
-            {t.human_gene} → {t.zfin_ortholog}  ·  {t.n_anchors} anchor{t.n_anchors === 1 ? "" : "s"}
-            {t.n_anchors_primary ? ` (${t.n_anchors_primary} on-MOA)` : ""}
-          </option>
-        ))}
+        {ordered.map((t) => {
+          const sc = scores?.get(t.human_gene) || 0;
+          return (
+            <option key={t.human_gene} value={t.human_gene}>
+              {ranked ? `[sim ${sc.toFixed(2)}] ` : ""}{t.human_gene} → {t.zfin_ortholog}  ·  {t.n_anchors} anchor{t.n_anchors === 1 ? "" : "s"}
+              {t.n_anchors_primary ? ` (${t.n_anchors_primary} on-MOA)` : ""}
+            </option>
+          );
+        })}
       </select>
       {sel && (
         <div className="mt-3 rounded-xl border border-gray-200 bg-white p-4 shadow-sm poc-fade flex items-center gap-4">
           <div className="shrink-0 rounded-lg bg-gray-50 border border-gray-100 p-1">
-            <ProteinDepiction gene={sel.zfin_ortholog} />
-            <div className="text-center roboto-slab-regular text-[9px] text-gray-400 -mt-1">schematic fold (illustrative)</div>
+            <ProteinCanvas gene={sel.human_gene} ortholog={sel.zfin_ortholog} />
+            <div className="text-center roboto-slab-regular text-[9px] text-gray-400 -mt-1">AlphaFold model — zebrafish {sel.zfin_ortholog} (Cα, drag-free auto-spin)</div>
           </div>
           <div className="text-[11px] text-gray-600 roboto-slab-regular leading-relaxed">
             <div><strong>{sel.human_gene}</strong> → zebrafish <strong>{sel.zfin_ortholog}</strong> ({sel.zfin_id})</div>
+            {ranked ? <div>Chemical similarity to its anchors: <strong>{(scores!.get(sel.human_gene) || 0).toFixed(2)}</strong> (max ECFP4 Tanimoto).</div> : null}
             <div>Expressed in <strong>{Math.round(sel.expression_max_frac * 100)}%</strong> of <em>{sel.expression_celltype}</em> cells at {sel.expression_timepoint}.</div>
             <div>Engaged by <strong>{sel.n_anchors}</strong> anchor drug{sel.n_anchors === 1 ? "" : "s"}{sel.n_anchors_primary ? `, ${sel.n_anchors_primary} as canonical MOA` : ""}: {sel.anchors.slice(0, 6).join(", ")}{sel.anchors.length > 6 ? "…" : ""}.</div>
             <div className="text-gray-400 mt-1">Ortholog evidence: {sel.ortholog_evidence.join("/")} ({sel.ortholog_n_pubs} pub{sel.ortholog_n_pubs === 1 ? "" : "s"}). Binding-site conservation: {sel.binding_site_conservation.replace(/_/g, " ")}.</div>

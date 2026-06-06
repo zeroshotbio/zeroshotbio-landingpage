@@ -5,7 +5,7 @@
 // (chemistry-predicted vs phenotype-neighbor mechanism) and whether they agree.
 // Honest cell-line (NOT tissue) + projection labeling throughout.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSelectableTargets, TargetSelect, BindingBand, AnchorPrior } from "./TargetAware";
+import { useSelectableTargets, TargetSelect, BindingBand, AnchorPrior, rankTargets } from "./TargetAware";
 
 /* Make an RDKit SVG fill its container without distortion: keep the viewBox (so the aspect ratio is
    preserved and lines never stretch), drop the fixed px width/height so it scales to the wrapper. */
@@ -286,6 +286,21 @@ export default function PocClient() {
   const selectableTargets = useSelectableTargets();
   const [selTarget, setSelTarget] = useState("");
   const drugByName = useMemo(() => new Map((data?.drugs || []).map((d) => [d.id, d])), [data]);
+  // rank the target dropdown by chemical similarity of the submitted molecule to each target's anchors
+  // (ECFP4 Tanimoto, in-browser RDKit). Debounced so the typewriter/paste doesn't thrash the wasm.
+  const [targetScores, setTargetScores] = useState<Map<string, number> | null>(null);
+  useEffect(() => {
+    if (!smiles.trim() || !selectableTargets || !data) { setTargetScores(null); return; }
+    let cancel = false;
+    const id = setTimeout(() => {
+      loadRDKit().then((R) => {
+        if (cancel) return;
+        const sb = new Map(data.drugs.map((d) => [d.id, d.step1_structure.smiles]));
+        setTargetScores(rankTargets(R, smiles, selectableTargets, sb));
+      }).catch(() => {});
+    }, 350);
+    return () => { cancel = true; clearTimeout(id); };
+  }, [smiles, selectableTargets, data]);
   const honesty = data?.manifest.honesty_label ??
     "Illustrative proof-of-concept on the 94-compound MegaFin zebrafish atlas.";
 
@@ -568,7 +583,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, selectableTargets, selTarget, setSelTarget, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, selectableTargets, selTarget, setSelTarget, targetScores, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -601,7 +616,7 @@ export default function PocClient() {
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
   revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch,
-  selectableTargets, selTarget, setSelTarget, onNext }: any) {
+  selectableTargets, selTarget, setSelTarget, targetScores, onNext }: any) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
   // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
@@ -665,7 +680,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         {/* intended-target step — only after a molecule has been submitted */}
         {showStaged && (
           <div className="mt-12 poc-fade" style={{ animationDelay: "260ms" }}>
-            <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} />
+            <TargetSelect targets={selectableTargets} value={selTarget} onChange={setSelTarget} scores={targetScores} />
           </div>
         )}
 
@@ -673,7 +688,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         {showStaged && (
           <div className="w-full max-w-xl mx-auto mt-8 flex justify-center poc-fade" style={{ animationDelay: "320ms" }}>
             <button onClick={captureAndSubmit}
-              className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-8 py-3 text-sm hover:bg-gray-700 transition">Run whole-organism screen →</button>
+              className="roboto-slab-medium rounded-xl bg-gray-900 text-gray-50 px-8 py-3 text-sm hover:bg-gray-700 transition">Calculate Zebrafish Screen Suitability</button>
           </div>
         )}
       </div>
