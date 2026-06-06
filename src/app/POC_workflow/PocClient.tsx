@@ -6,23 +6,15 @@
 // Honest cell-line (NOT tissue) + projection labeling throughout.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 
-/* FLIP helper: animate `el` from a previously-measured rect (`from`) to its current position/size.
-   Used so the SMILES + structure boxes physically slide & resize between Step-1 phases. */
-const NOVEL_FLIP: { smiles?: DOMRect | null; struct?: DOMRect | null } = {};
-function flipFrom(el: HTMLElement | null, from?: DOMRect | null) {
-  if (!el || !from) return;
-  const to = el.getBoundingClientRect();
-  if (!to.width || !to.height) return;
-  const dx = from.left - to.left, dy = from.top - to.top;
-  const sx = from.width / to.width, sy = from.height / to.height;
-  el.style.transformOrigin = "top left";
-  el.style.transition = "none";
-  el.style.transform = `translate(${dx}px, ${dy}px) scale(${sx}, ${sy})`;
-  void el.offsetWidth; // force reflow so the start transform paints
-  requestAnimationFrame(() => {
-    el.style.transition = "transform .85s cubic-bezier(.22,.61,.36,1)";
-    el.style.transform = "";
-  });
+/* Make an RDKit SVG fill its container without distortion: keep the viewBox (so the aspect ratio is
+   preserved and lines never stretch), drop the fixed px width/height so it scales to the wrapper. */
+function fitSvg(svg: string, w: number, h: number): string {
+  if (!/viewBox=/.test(svg)) svg = svg.replace(/<svg/, `<svg viewBox="0 0 ${w} ${h}"`);
+  svg = svg
+    .replace(/(<svg\b[^>]*?)\swidth=(['"])[\d.]+(?:px)?\2/, "$1")
+    .replace(/(<svg\b[^>]*?)\sheight=(['"])[\d.]+(?:px)?\2/, "$1")
+    .replace(/<svg\b/, `<svg preserveAspectRatio="xMidYMid meet" width="100%" height="100%"`);
+  return svg;
 }
 
 type Gene = { gene: string; lfc: number; support?: number };
@@ -130,15 +122,21 @@ function RDKitDepiction({ smiles, w = 320, h = 240 }: { smiles: string; w?: numb
       try {
         mol = R.get_mol(smiles);
         if (!mol || (mol.is_valid && !mol.is_valid())) { setErr(true); return; }
-        const s = mol.get_svg(w, h);
-        if (!cancel) setSvg(s);
+        // render at 2× the display size for crisp, fine bond lines (RDKit's line width is ~constant in
+        // device px, so a larger canvas → proportionally thinner strokes), then fit to the box.
+        const RW = Math.round(w * 2), RH = Math.round(h * 2);
+        let s = "";
+        try { s = mol.get_svg_with_highlights(JSON.stringify({ width: RW, height: RH, bondLineWidth: 1 })); }
+        catch { /* older MinimalLib — fall back to the plain renderer */ }
+        if (!s) s = mol.get_svg(RW, RH);
+        if (!cancel) setSvg(fitSvg(s, RW, RH));
       } catch { if (!cancel) setErr(true); } finally { try { mol?.delete(); } catch { /* noop */ } }
     }).catch(() => { if (!cancel) setErr(true); });
     return () => { cancel = true; };
   }, [smiles, w, h]);
   if (err) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Could not render this structure.</div>;
   if (!svg) return <div className="roboto-slab-regular text-xs text-gray-400 flex items-center justify-center" style={{ minHeight: h }}>Rendering structure…</div>;
-  return <div aria-label={`2D structure of ${smiles}`} dangerouslySetInnerHTML={{ __html: svg }} />;
+  return <div aria-label={`2D structure of ${smiles}`} className="flex items-center justify-center" style={{ width: w, height: h }} dangerouslySetInnerHTML={{ __html: svg }} />;
 }
 
 const STEPS = ["Submit compound", "Wet-lab exposure", "Response fingerprint",
@@ -446,7 +444,9 @@ export default function PocClient() {
       .poc-dark .border-emerald-100,.poc-dark .border-emerald-200{border-color:#14532d}
       .poc-dark .bg-rose-50{background:#3a1620}.poc-dark .text-rose-800,.poc-dark .text-rose-700{color:#fda4af}
       .poc-dark img[alt="zeroshot bio"]{filter:invert(1) hue-rotate(180deg)}
-      .poc-dark [aria-label^="2D structure"]{background:#fff;border-radius:6px;padding:4px}
+      /* light bonds on the dark card: invert flips black↔white, hue-rotate(180) restores heteroatom
+         colors (O red, N blue stay true) so the drawing blends instead of floating on a white patch */
+      .poc-dark [aria-label^="2D structure"] svg{filter:invert(1) hue-rotate(180deg)}
       @keyframes pocRise{from{opacity:0;transform:translateY(16px) scale(.985)}to{opacity:1;transform:none}}
       @keyframes pocFade{from{opacity:0}to{opacity:1}}
       @keyframes pocPop{from{opacity:0;transform:scale(0)}to{opacity:1;transform:scale(1)}}
@@ -590,7 +590,6 @@ export default function PocClient() {
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
   revealPhase, leaving, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, onNext }: any) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
-  const previewStructRef = useRef<HTMLDivElement>(null);
   // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
   // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
   useLayoutEffect(() => {
@@ -599,14 +598,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
     el.style.height = "auto";                 // collapse so scrollHeight reflects true content height
     el.style.height = `${el.scrollHeight}px`;  // grow to fit — CSS transition animates the change
   }, [smiles, revealPhase]);
-  // snapshot the SMILES + structure rects so the reveal can FLIP them into the top row
-  function captureAndSubmit() {
-    if (revealPhase === "preview") {
-      NOVEL_FLIP.smiles = inputRef.current?.getBoundingClientRect() ?? null;
-      NOVEL_FLIP.struct = previewStructRef.current?.getBoundingClientRect() ?? null;
-    }
-    submitStep1();
-  }
+  const captureAndSubmit = submitStep1;
 
   // ---------- input + preview: one clean box that eases up and reveals the picked structure ----------
   if (revealPhase === "input" || revealPhase === "preview") {
@@ -641,7 +633,7 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
         {/* single sub-box: fades in, then the molecule pops */}
         {preview && (
           <div className="w-full max-w-xl mx-auto mt-6 poc-fade" style={{ animationDelay: "420ms" }}>
-            <div ref={previewStructRef} className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm">
               <div className="flex items-center justify-center" style={{ minHeight: 220 }}>
                 {typeTarget ? <RDKitDepiction smiles={typeTarget} w={300} h={210} /> : <span className="roboto-slab-regular text-xs text-gray-400">resolving…</span>}
               </div>
@@ -741,33 +733,24 @@ function UnknownCard({ smiles }: { smiles: string }) {
 function NovelReveal({ sel, smiles, data, ready, onBack, onInterpolation, onNext }:
   { sel: Drug; smiles: string; data: Data | null; ready: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
   const mark = sel.step3_embedding.chem2d;
-  const smilesBoxRef = useRef<HTMLDivElement>(null);
-  const structBoxRef = useRef<HTMLDivElement>(null);
   const [exiting, setExiting] = useState(false);
-  // FLIP only on the initial reveal (from Submit, where source rects were captured); on an in-place
-  // refresh there's no source, so the row slides up fresh instead.
-  const flipped = useRef(!!(NOVEL_FLIP.smiles || NOVEL_FLIP.struct));
-
-  useLayoutEffect(() => {
-    flipFrom(smilesBoxRef.current, NOVEL_FLIP.smiles);
-    flipFrom(structBoxRef.current, NOVEL_FLIP.struct);
-    NOVEL_FLIP.smiles = null; NOVEL_FLIP.struct = null;
-  }, []);
 
   // reverse: boxes slide back down/out, then return to the bare search screen
   function handleBack() { setExiting(true); setTimeout(onBack, 560); }
 
   return (
     <div className={exiting ? "poc-slidedown" : ""}>
-      {/* top row — SMILES · structure · (new search / interpolation refresh) */}
-      <div className={`grid grid-cols-3 gap-3 ${flipped.current ? "" : "poc-slideup"}`}>
-        <div ref={smilesBoxRef} className="rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col">
+      {/* top row — SMILES · structure · (new search / interpolation refresh). Each tile rises into
+          place with a small stagger — a calm settle, no geometric morph from the search box. */}
+      <div className="grid grid-cols-3 gap-3">
+        <div className="poc-rise rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col" style={{ animationDelay: "0ms" }}>
           <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
-          <div className="flex-1 flex items-center justify-center overflow-hidden">
-            <span className="font-mono text-[10px] leading-tight text-gray-600 break-all text-center">{smiles}</span>
+          <div className="flex-1 overflow-y-auto">
+            {/* same font + size as the search box; left-aligned and waterfalling so long strings fit */}
+            <span className="font-mono text-sm leading-relaxed text-gray-700 break-all">{smiles}</span>
           </div>
         </div>
-        <div ref={structBoxRef} className="rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center">
+        <div className="poc-rise rounded-xl border border-gray-200 bg-white p-2 h-40 flex items-center justify-center" style={{ animationDelay: "90ms" }}>
           <RDKitDepiction smiles={smiles} w={150} h={140} />
         </div>
         {/* third column split into two: plain new search, and "generate within the interpolation zone" */}
