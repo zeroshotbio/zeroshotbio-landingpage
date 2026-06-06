@@ -5,7 +5,7 @@
 // (chemistry-predicted vs phenotype-neighbor mechanism) and whether they agree.
 // Honest cell-line (NOT tissue) + projection labeling throughout.
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { useSelectableTargets, TargetSelect, BindingBand, AnchorPrior, rankTargets } from "./TargetAware";
+import { useSelectableTargets, TargetSelect, BindingBand, AnchorPrior, rankTargets, ProteinCanvas, SuitabilityBox } from "./TargetAware";
 
 /* Make an RDKit SVG fill its container without distortion: keep the viewBox (so the aspect ratio is
    preserved and lines never stretch), drop the fixed px width/height so it scales to the wrapper. */
@@ -289,14 +289,17 @@ export default function PocClient() {
   // rank the target dropdown by chemical similarity of the submitted molecule to each target's anchors
   // (ECFP4 Tanimoto, in-browser RDKit). Debounced so the typewriter/paste doesn't thrash the wasm.
   const [targetScores, setTargetScores] = useState<Map<string, number> | null>(null);
+  const [atlasProximity, setAtlasProximity] = useState(0); // max Tanimoto of candidate to any anchor
   useEffect(() => {
-    if (!smiles.trim() || !selectableTargets || !data) { setTargetScores(null); return; }
+    if (!smiles.trim() || !selectableTargets || !data) { setTargetScores(null); setAtlasProximity(0); return; }
     let cancel = false;
     const id = setTimeout(() => {
       loadRDKit().then((R) => {
         if (cancel) return;
         const sb = new Map(data.drugs.map((d) => [d.id, d.step1_structure.smiles]));
-        setTargetScores(rankTargets(R, smiles, selectableTargets, sb));
+        const scores = rankTargets(R, smiles, selectableTargets, sb);
+        setTargetScores(scores);
+        setAtlasProximity(scores.size ? Math.max(...Array.from(scores.values())) : 0);
       }).catch(() => {});
     }, 350);
     return () => { cancel = true; clearTimeout(id); };
@@ -583,7 +586,7 @@ export default function PocClient() {
         )}
 
         <section className="rounded-lg border border-gray-200 bg-gray-50 p-6 min-h-[420px]">
-          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, selectableTargets, selTarget, setSelTarget, targetScores, onNext: () => go(2) }} />}
+          {step === 1 && <Step1 {...{ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, note, typeTarget, revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch, selectableTargets, selTarget, setSelTarget, targetScores, atlasProximity, onNext: () => go(2) }} />}
           {/* measured atlas path */}
           {step === 2 && sel && <Step2 sel={sel} novel={novel || !!sel.is_guest} onNext={() => { setRevealed(true); go(3); }} />}
           {step === 3 && sel && <Step3 sel={sel} />}
@@ -616,7 +619,7 @@ export default function PocClient() {
    Hub candidates, phenotype manifold for measured), then Next / Refine fade in. */
 function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, setSmiles, typeTarget,
   revealPhase, leaving, dark, submitStep1, pickHubReveal, pickNovelReveal, pickNovelInterpolation, refineStep1, backToSearch,
-  selectableTargets, selTarget, setSelTarget, targetScores, onNext }: any) {
+  selectableTargets, selTarget, setSelTarget, targetScores, atlasProximity, onNext }: any) {
   const inputRef = useRef<HTMLTextAreaElement>(null);
   // auto-grow the SMILES box to fit waterfalling text; shrink back when it gets shorter.
   // keyed on `smiles` so it tracks both typing/paste and programmatic fills (Random buttons, typewriter).
@@ -701,7 +704,8 @@ function Step1({ data, cloud, sel, candidate, novel, unknown, hubBusy, smiles, s
 
   // novel candidate gets the dedicated coverage-heatmap layout (no key — a refresh updates content in place)
   if (sel && novel) {
-    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} dark={dark} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext} />;
+    return <NovelReveal sel={sel} smiles={smiles} data={data} ready={ready} dark={dark} onBack={backToSearch} onInterpolation={pickNovelInterpolation} onNext={onNext}
+      selTarget={selTarget} selectableTargets={selectableTargets} targetScores={targetScores} atlasProximity={atlasProximity} />;
   }
 
   return (
@@ -799,48 +803,56 @@ function SmilesFit({ smiles }: { smiles: string }) {
 }
 
 /* ============ Novel-candidate reveal: 3 symmetric top boxes + the coverage heatmap ============ */
-function NovelReveal({ sel, smiles, data, ready, dark, onBack, onInterpolation, onNext }:
-  { sel: Drug; smiles: string; data: Data | null; ready: boolean; dark: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void }) {
+function NovelReveal({ sel, smiles, data, ready, dark, onBack, onInterpolation, onNext, selTarget, selectableTargets, targetScores, atlasProximity }:
+  { sel: Drug; smiles: string; data: Data | null; ready: boolean; dark: boolean; onBack: () => void; onInterpolation: () => void; onNext: () => void;
+    selTarget?: string; selectableTargets?: any[] | null; targetScores?: Map<string, number> | null; atlasProximity?: number }) {
   const mark = sel.step3_embedding.chem2d;
   const [exiting, setExiting] = useState(false);
+  const tgt = selTarget && selectableTargets ? selectableTargets.find((t) => t.human_gene === selTarget) : null;
 
   // reverse: boxes slide back down/out, then return to the bare search screen
   function handleBack() { setExiting(true); setTimeout(onBack, 560); }
 
   return (
     <div className={exiting ? "poc-slidedown" : ""}>
-      {/* top row — SMILES · structure · (new search / interpolation refresh). Each tile rises into
-          place with a small stagger — a calm settle, no geometric morph from the search box. */}
+      {/* quiet controls */}
+      <div className="flex items-center justify-end gap-3 mb-2 text-[11px]">
+        <button onClick={handleBack} className="roboto-slab-regular text-gray-400 hover:text-gray-800 underline decoration-dotted underline-offset-2 transition">New search</button>
+        <span className="text-gray-300">·</span>
+        <button onClick={onInterpolation} className="roboto-slab-regular text-gray-400 hover:text-gray-800 underline decoration-dotted underline-offset-2 transition">Generate within interpolation zone</button>
+      </div>
+
+      {/* three visuals — SMILES · molecule · target protein */}
       <div className="grid grid-cols-3 gap-3">
-        <div className="poc-rise rounded-xl border border-gray-200 bg-white p-3 h-40 overflow-hidden flex flex-col" style={{ animationDelay: "0ms" }}>
+        <div className="poc-rise rounded-xl border border-gray-200 bg-white p-3 h-44 overflow-hidden flex flex-col" style={{ animationDelay: "0ms" }}>
           <div className="roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">SMILES</div>
           <SmilesFit smiles={smiles} />
         </div>
-        <div className="poc-rise relative rounded-xl border border-gray-200 bg-white h-40" style={{ animationDelay: "90ms" }}>
-          <RDKitDepiction smiles={smiles} w={300} h={280} fill />
+        <div className="poc-rise relative rounded-xl border border-gray-200 bg-white h-44" style={{ animationDelay: "90ms" }}>
+          <div className="absolute left-3 top-2 roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 z-10">Candidate</div>
+          <RDKitDepiction smiles={smiles} w={300} h={300} fill />
         </div>
-        {/* third column split into two: plain new search, and "generate within the interpolation zone" */}
-        <div className="flex flex-col gap-2 h-40">
-          <button onClick={handleBack} title="New search" aria-label="New search"
-            className="poc-fade rounded-xl border border-gray-200 bg-white flex items-center justify-center gap-1.5 hover:bg-gray-50 hover:border-gray-400 transition group" style={{ height: 52, animationDelay: "160ms" }}>
-            <svg className="h-5 w-5 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="11" cy="11" r="7" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-            </svg>
-            <span className="roboto-slab-regular text-[11px] text-gray-400 group-hover:text-gray-700 transition">New search</span>
-          </button>
-          <button onClick={onInterpolation} title="Generate Random New Drug within Interpolation Zone" aria-label="Generate Random New Drug within Interpolation Zone"
-            className="poc-fade flex-1 rounded-xl border border-gray-200 bg-white flex flex-col items-center justify-center gap-1 px-2 text-center hover:bg-gray-50 hover:border-gray-400 transition group" style={{ animationDelay: "260ms" }}>
-            <svg className="h-5 w-5 shrink-0 text-gray-300 group-hover:text-gray-700 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="8.5" /><circle cx="12" cy="12" r="3.5" /><circle cx="12" cy="12" r="0.6" fill="currentColor" stroke="none" />
-            </svg>
-            <span className="roboto-slab-regular text-[10px] leading-tight text-gray-400 group-hover:text-gray-700 transition">Generate Random New Drug within Interpolation Zone</span>
-          </button>
+        <div className="poc-rise rounded-xl border border-gray-200 bg-white h-44 flex flex-col items-center justify-center p-2" style={{ animationDelay: "180ms" }}>
+          <div className="self-start roboto-slab-regular text-[10px] uppercase tracking-wide text-gray-400 mb-1">Target protein</div>
+          {tgt ? (
+            <>
+              <ProteinCanvas gene={tgt.human_gene} ortholog={tgt.zfin_ortholog} w={150} h={120} />
+              <div className="roboto-slab-regular text-[10px] text-gray-500 mt-0.5">{tgt.human_gene} → {tgt.zfin_ortholog}</div>
+            </>
+          ) : (
+            <div className="roboto-slab-regular text-[11px] text-gray-400 text-center px-3">No target selected — chemistry-only triage.</div>
+          )}
         </div>
       </div>
 
-      {/* the star: atlas coverage heatmap — slides up from below into its spot */}
-      <div className="mt-3 poc-slideup" style={{ animationDelay: "180ms" }}>
-        <ChemHeatmap data={data} mark={mark} markLabel="your candidate" dark={dark} />
+      {/* suitability composite */}
+      <div className="mt-3 poc-rise" style={{ animationDelay: "240ms" }}>
+        <SuitabilityBox target={tgt || null} targetScore={(targetScores && selTarget && targetScores.get(selTarget)) || 0} atlasProximity={atlasProximity || 0} dark={dark} />
+      </div>
+
+      {/* the atlas — candidate is the focal point; field + anchors are intentionally muted */}
+      <div className="mt-3 poc-slideup" style={{ animationDelay: "300ms" }}>
+        <ChemHeatmap data={data} mark={mark} markLabel="Your Candidate" dark={dark} />
       </div>
 
       {ready && !exiting && (
@@ -888,8 +900,9 @@ function ChemHeatmap({ data, mark, markLabel, dark }:
   const ink = dark ? "#f1f5f9" : "#0f172a";       // title / candidate strokes & label
   const ink2 = dark ? "#cbd5e1" : "#334155";      // legend labels & anchor outline
   const halo = dark ? "#0a0a0a" : "#ffffff";      // text halo, matches the bg
-  const dotFill = dark ? "#94a3b8" : "#64748b";   // theoretical-molecule dusting
+  const dotFill = dark ? "#94a3b8" : "#64748b";   // theoretical-molecule dusting + muted anchors
   const barStroke = dark ? "#334155" : "#e5e7eb";
+  const cand = "#e11d48";                          // candidate accent — reads on both light & dark
   const W = 1280, H = 720;
   const IX0 = 40, IX1 = 842, IY0 = 152, IY1 = 596; // organic-island region (left two-thirds)
   const field = useMemo(() => {
@@ -934,7 +947,7 @@ function ChemHeatmap({ data, mark, markLabel, dark }:
     const cells: JSX.Element[] = [];
     for (let r = 0; r < field.rows; r++) for (let c = 0; c < field.cols; c++) {
       const t = field.grid[r][c] / (field.maxd || 1);
-      const a = smoothstep(0.03, 0.13, t); // fade to white at the soft island edge
+      const a = smoothstep(0.03, 0.13, t) * 0.4; // muted field — keep the candidate the focal point
       if (a < 0.02) continue;
       cells.push(<rect key={`${r}-${c}`} x={IX0 + c * cw} y={IY0 + r * ch} width={cw + 1} height={ch + 1} fill={atlasColor(t)} opacity={a} />);
     }
@@ -968,22 +981,25 @@ function ChemHeatmap({ data, mark, markLabel, dark }:
 
         {/* organic heat island */}
         {heatLayer}
-        {/* theoretical molecules — a fine, semi-transparent dusting */}
-        {field.dots.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.8} fill={dotFill} opacity={0.3} />)}
-        {/* 94 anchor drugs — white markers with a thin dark outline */}
-        {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={5} fill="#ffffff" stroke={ink2} strokeWidth={1.1} />)}
+        {/* theoretical molecules — a very faint dusting */}
+        {field.dots.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={1.6} fill={dotFill} opacity={0.16} />)}
+        {/* 94 anchor drugs — muted so they recede behind the candidate */}
+        {field.pts.map((p, i) => <circle key={i} cx={sx(p[0])} cy={sy(p[1])} r={3} fill={dotFill} opacity={0.4} />)}
 
-        {/* the submitted candidate — highlighted, glides on refresh */}
-        <circle cx={cx} cy={cy} r={16} fill="none" stroke={ink} strokeWidth={1.3} opacity={0.22} style={glide} />
-        <circle cx={cx} cy={cy} r={8} fill="#ffffff" stroke={ink} strokeWidth={2.6} style={glide} />
-        <text x={cx} y={cy - 22} textAnchor="middle" fontSize={15} fontWeight={600} fill={ink}
-          style={{ paintOrder: "stroke", stroke: halo, strokeWidth: 4, ...glideXY }}>{markLabel}</text>
+        {/* the submitted candidate — the focal point: bold accent + concentric rings + halo label */}
+        <circle cx={cx} cy={cy} r={26} fill="none" stroke={cand} strokeWidth={1.4} opacity={0.3} style={glide} />
+        <circle cx={cx} cy={cy} r={16} fill="none" stroke={cand} strokeWidth={1.8} opacity={0.5} style={glide} />
+        <circle cx={cx} cy={cy} r={8.5} fill={cand} stroke={halo} strokeWidth={3} style={glide} />
+        <text x={cx} y={cy - 28} textAnchor="middle" fontSize={19} fontWeight={700} fill={cand}
+          style={{ paintOrder: "stroke", stroke: halo, strokeWidth: 5, ...glideXY }}>{markLabel}</text>
 
         {/* legend + colorbar (right) */}
-        <circle cx={LGX + 9} cy={196} r={9} fill="#ffffff" stroke={ink2} strokeWidth={1.4} />
-        <text x={LGX + 28} y={201} fontSize={16} fill={ink2}>94 MegaFin Drugs (Anchors)</text>
-        <circle cx={LGX + 9} cy={234} r={3.2} fill={dotFill} opacity={0.6} />
-        <text x={LGX + 28} y={239} fontSize={14} fill="#94a3b8">Theoretical Molecules (Exploration)</text>
+        <circle cx={LGX + 9} cy={168} r={7} fill={cand} stroke={halo} strokeWidth={2.4} />
+        <text x={LGX + 28} y={173} fontSize={16} fontWeight={700} fill={ink}>Your Candidate</text>
+        <circle cx={LGX + 9} cy={200} r={3.4} fill={dotFill} opacity={0.5} />
+        <text x={LGX + 28} y={205} fontSize={15} fill={ink2}>94 MegaFin Drugs (Anchors)</text>
+        <circle cx={LGX + 9} cy={232} r={2.4} fill={dotFill} opacity={0.3} />
+        <text x={LGX + 28} y={237} fontSize={14} fill="#94a3b8">Theoretical Molecules (Exploration)</text>
 
         <text x={LGX} y={310} fontSize={15} fill={ink2}>Similarity to Atlas</text>
         <rect x={barX} y={barY} width={barW} height={barH} fill="url(#atlasbar)" rx={3} stroke={barStroke} strokeWidth={1} />

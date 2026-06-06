@@ -323,6 +323,62 @@ export function BindingBand({ smiles, gene }: { smiles: string; gene: string }) 
   );
 }
 
+/* ---- suitability composite: sums the signals we can compute now into a % screen-suitability,
+   with a one-sentence read. Honest: heuristic (not calibrated), and binding is intentionally
+   excluded here (it's computed in the next step). ---- */
+export function SuitabilityBox({ target, targetScore, atlasProximity, dark }:
+  { target: SelectableTarget | null; targetScore: number; atlasProximity: number; dark?: boolean }) {
+  const c01 = (x: number) => Math.max(0, Math.min(1, x || 0));
+  const factors: { label: string; value: number; weight: number; note: string }[] = [
+    { label: "Chemical fit to the MegaFin atlas", value: c01(atlasProximity), weight: 0.35, note: "max ECFP4 Tanimoto to the 94 anchors" },
+  ];
+  if (target) factors.push(
+    { label: `Chemical match to ${target.human_gene} anchors`, value: c01(targetScore), weight: 0.30, note: "Tanimoto to anchors hitting this target" },
+    { label: `Zebrafish ${target.zfin_ortholog} expression`, value: c01(target.expression_max_frac), weight: 0.20, note: `${Math.round(target.expression_max_frac * 100)}% of ${target.expression_celltype}, 24–48hpf` },
+    { label: "Anchor evidence depth", value: c01(target.n_anchors / 5), weight: 0.15, note: `${target.n_anchors} anchor${target.n_anchors === 1 ? "" : "s"} engage it` },
+  );
+  const wsum = factors.reduce((s, f) => s + f.weight, 0);
+  const composite = factors.reduce((s, f) => s + f.value * f.weight, 0) / (wsum || 1);
+  const pct = Math.round(composite * 100);
+  const band = pct >= 66 ? "strong" : pct >= 40 ? "moderate" : "weak";
+  const accent = band === "strong" ? "#0d9488" : band === "moderate" ? "#d97706" : "#9ca3af";
+  const weakest = factors.slice().sort((a, b) => a.value - b.value)[0];
+  const sentence = !target
+    ? `Chemistry-only read — this candidate sits ${pct >= 66 ? "close to" : pct >= 40 ? "at the edge of" : "far from"} the characterized MegaFin manifold. Pick a target to fold in expression, evidence, and (next step) binding.`
+    : band === "strong"
+      ? `Well-grounded: chemically close to characterized anchors at an expressed zebrafish target — a MegaFin screen sits on solid prior.`
+      : band === "moderate"
+        ? `Partially grounded: informative but more exploratory — ${weakest.label.toLowerCase()} is the limiting factor.`
+        : `Largely exploratory: ${weakest.label.toLowerCase()} is low, so a screen would be hypothesis-generating rather than confirmatory.`;
+  return (
+    <div className="rounded-xl border border-gray-200 bg-white p-4 shadow-sm h-full flex flex-col">
+      <div className="flex items-baseline justify-between gap-2 mb-3">
+        <span className="roboto-slab-medium text-sm text-gray-700">Zebrafish screen suitability</span>
+        <span className="flex items-baseline gap-2">
+          <span className="roboto-slab-medium text-3xl" style={{ color: accent }}>{pct}%</span>
+          <span className="roboto-slab-regular text-xs px-2 py-0.5 rounded-full" style={{ background: accent + "22", color: accent }}>{band}</span>
+        </span>
+      </div>
+      <div className="flex flex-col gap-2 flex-1">
+        {factors.map((f) => (
+          <div key={f.label}>
+            <div className="flex justify-between roboto-slab-regular text-[11px] text-gray-500">
+              <span>{f.label}</span><span className="tabular-nums">{Math.round(f.value * 100)}%</span>
+            </div>
+            <div className="relative h-1.5 mt-0.5 rounded-full bg-gray-100">
+              <div className="absolute h-1.5 rounded-full" style={{ width: `${f.value * 100}%`, background: accent + "cc" }} />
+            </div>
+          </div>
+        ))}
+      </div>
+      <p className="roboto-slab-regular text-[11px] text-gray-600 mt-3 leading-snug">{sentence}</p>
+      <p className="roboto-slab-regular text-[10px] text-gray-400 mt-1">
+        Heuristic composite of the signals computable now — <strong>not calibrated</strong>. Binding plausibility is computed in the next step and not yet folded in.
+      </p>
+    </div>
+  );
+}
+
 /* ---- grounded prior: anchors sharing the selected target + their phenotype signatures ---- */
 export function AnchorPrior({ target, drugByName }:
   { target: SelectableTarget; drugByName: Map<string, any> }) {
