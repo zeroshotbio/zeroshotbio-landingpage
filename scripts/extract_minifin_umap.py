@@ -66,13 +66,14 @@ for idx, cid in enumerate(cluster_ids):
             "cx": round(cx, 3),
             "cy": round(cy, 3),
             "degsUp": [],
+            "markers": [],
         }
     )
 
 cluster_index = {c["id"]: i for i, c in enumerate(clusters)}
 
-# --- top DEGs per cluster (up-regulated; sorted by score) ---
-diff = defaultdict(list)  # cluster_id(str) -> list[(score, gene_name)]
+# --- top DEGs per cluster (up-regulated; sorted by score) with specificity stats ---
+diff = defaultdict(list)  # cluster_id(str) -> list[(score, gene, l2fc, pct1, pct2)]
 with open(DIFF, newline="") as f:
     r = csv.DictReader(f)
     for row in r:
@@ -80,25 +81,32 @@ with open(DIFF, newline="") as f:
         try:
             score = float(row["score"])
             l2fc = float(row["log2_FC"])
+            p1 = float(row["pct1"])
+            p2 = float(row["pct2"])
         except (ValueError, KeyError):
             continue
         if l2fc <= 0:
             continue
         gene = (row.get("gene_name") or row.get("gene_id") or "").strip()
         if gene:
-            diff[cid].append((score, gene))
+            diff[cid].append((score, gene, l2fc, p1, p2))
 
 for cid, lst in diff.items():
     if cid not in cluster_index:
         continue
     lst.sort(key=lambda t: t[0], reverse=True)
-    seen = []
-    for _, g in lst:
-        if g not in seen:
-            seen.append(g)
-        if len(seen) >= TOP_DEGS:
+    markers = []
+    seen = set()
+    for score, g, l2fc, p1, p2 in lst:
+        if g in seen:
+            continue
+        seen.add(g)
+        markers.append({"g": g, "l2fc": round(l2fc, 2), "p1": round(p1, 3), "p2": round(p2, 3)})
+        if len(markers) >= TOP_DEGS:
             break
-    clusters[cluster_index[cid]]["degsUp"] = seen
+    ci = cluster_index[cid]
+    clusters[ci]["markers"] = markers
+    clusters[ci]["degsUp"] = [m["g"] for m in markers]
 
 random.shuffle(points)  # avoid draw-order bias by cluster
 

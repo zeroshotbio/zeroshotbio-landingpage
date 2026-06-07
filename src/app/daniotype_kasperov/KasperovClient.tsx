@@ -12,6 +12,7 @@ const STORAGE_KEY = "daniotype_kasperov_v3";
 const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
 type Pt = { x: number; y: number };
+type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
 interface Cluster {
   id: string;
   label: string;
@@ -20,6 +21,7 @@ interface Cluster {
   cx: number;
   cy: number;
   degsUp: string[];
+  markers: Marker[];
   points: Pt[];
   bounds: { minx: number; maxx: number; miny: number; maxy: number };
 }
@@ -63,6 +65,7 @@ function useAtlas() {
           cx: c.cx,
           cy: c.cy,
           degsUp: c.degsUp ?? [],
+          markers: c.markers ?? [],
           points: [],
           bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
         }));
@@ -395,7 +398,8 @@ function MapStage({
 }
 
 // ---------------------------------------------------------------------------
-type ChatMsg = { role: "user" | "assistant"; content: string };
+type AgentMode = "research" | "archivist";
+type ChatMsg = { role: "user" | "assistant"; content: string; mode?: AgentMode };
 
 function defaultPrompt(c: Cluster): string {
   const upList = c.degsUp.slice(0, 8).join(", ");
@@ -453,6 +457,7 @@ function ClusterStage({
   const [sText, setText] = useState("");
   const [showThinking, setShowThinking] = useState(true);
   const [elapsed, setElapsed] = useState(0); // seconds since run started
+  const [sMode, setSMode] = useState<AgentMode>("research");
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const msgs = transcripts[active.id] ?? [];
@@ -492,12 +497,13 @@ function ClusterStage({
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
+    let mode: AgentMode = "research";
     try {
       const res = await fetch("/api/kasperov_agent", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          cluster: { id: active.id, label: active.label, degsUp: active.degsUp },
+          cluster: { id: active.id, label: active.label, degsUp: active.degsUp, markers: active.markers, nCells: active.nCells },
           messages: nextMsgs,
         }),
       });
@@ -520,7 +526,10 @@ function ClusterStage({
           } catch {
             continue;
           }
-          if (evt.t === "status") setStatus(evt.v);
+          if (evt.t === "mode") {
+            mode = evt.v === "archivist" ? "archivist" : "research";
+            setSMode(mode);
+          } else if (evt.t === "status") setStatus(evt.v);
           else if (evt.t === "thinking") setThinking((p) => p + evt.v);
           else if (evt.t === "text") {
             acc += evt.v;
@@ -538,7 +547,7 @@ function ClusterStage({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_" }] }));
+      setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }] }));
       setStreaming(false);
       setStatus("");
       setText("");
@@ -583,6 +592,9 @@ function ClusterStage({
             <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 2, letterSpacing: 0.5 }}>WORLD MAP</div>
             <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={210} height={158} showFocus />
           </div>
+
+          {/* marker panel — same aesthetic as the world-map HUD */}
+          <MarkersBox cluster={active} />
         </div>
 
         {/* draggable splitter */}
@@ -618,7 +630,7 @@ function ClusterStage({
                 {m.role === "user" ? (
                   <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
                 ) : (
-                  <AgentMessage content={m.content} />
+                  <AgentMessage content={m.content} mode={m.mode} />
                 )}
               </div>
             ))}
@@ -654,7 +666,7 @@ function ClusterStage({
                 )}
                 {/* streamed answer */}
                 {sText ? (
-                  <AgentMessage content={sText} />
+                  <AgentMessage content={sText} mode={sMode} />
                 ) : (
                   !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>Consulting ZFIN, ZFA and GO…</div>
                 )}
@@ -694,40 +706,93 @@ function ClusterStage({
 }
 
 // ---------------------------------------------------------------------------
-// Rich rendering of an agent answer: styled markdown sections + a pulled-out
-// Verdict callout with a confidence chip.
+// Evidence-source classification (colours the rounded evidence boxes)
 // ---------------------------------------------------------------------------
-const MD = {
+type SourceKey = "ZFIN" | "ZFA" | "GO" | "NCBI" | "UniProt";
+const SOURCE_STYLE: Record<SourceKey, { color: string; bg: string }> = {
+  ZFIN: { color: "#2563eb", bg: "#eff6ff" },
+  ZFA: { color: "#7c3aed", bg: "#f5f3ff" },
+  GO: { color: "#15803d", bg: "#f0fdf4" },
+  NCBI: { color: "#0e7490", bg: "#ecfeff" },
+  UniProt: { color: "#ea580c", bg: "#fff7ed" },
+};
+function classifyHref(href: string): SourceKey | null {
+  const h = href.toLowerCase();
+  if (h.includes("zfin.org")) return "ZFIN";
+  if (h.includes("/zfa") || h.includes("ols") && h.includes("zfa")) return "ZFA";
+  if (h.includes("quickgo") || h.includes("geneontology") || h.includes("amigo")) return "GO";
+  if (h.includes("uniprot")) return "UniProt";
+  if (h.includes("ncbi.nlm.nih.gov")) return "NCBI";
+  if (h.includes("ebi.ac.uk")) return "ZFA"; // OLS default → anatomy
+  return null;
+}
+// pull the first href + any leading **SOURCE** token from a hast li node
+function liSource(node: any): SourceKey | null {
+  let href: string | null = null;
+  const walk = (n: any) => {
+    if (!n || href) return;
+    if (n.tagName === "a" && n.properties?.href) href = String(n.properties.href);
+    (n.children ?? []).forEach(walk);
+  };
+  (node?.children ?? []).forEach(walk);
+  if (href) {
+    const k = classifyHref(href);
+    if (k) return k;
+  }
+  // fall back to a leading bold source word
+  const txt = JSON.stringify(node ?? {});
+  const m = txt.match(/\b(ZFIN|ZFA|GO|NCBI|UniProt)\b/);
+  return (m?.[1] as SourceKey) ?? null;
+}
+
+// ---------------------------------------------------------------------------
+const mdH: React.CSSProperties = { fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700, color: ACCENT, margin: "12px 0 6px", paddingTop: 8, borderTop: "1px solid #f0ece7" };
+const baseMD = {
   h1: (p: any) => <div style={mdH}>{p.children}</div>,
   h2: (p: any) => <div style={mdH}>{p.children}</div>,
   h3: (p: any) => <div style={mdH}>{p.children}</div>,
   p: (p: any) => <p style={{ margin: "0 0 8px", lineHeight: 1.55 }}>{p.children}</p>,
-  ul: (p: any) => <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>{p.children}</ul>,
+  ul: (p: any) => <ul style={{ margin: "0 0 8px", padding: 0, listStyle: "none", display: "flex", flexDirection: "column", gap: 6 }}>{p.children}</ul>,
   ol: (p: any) => <ol style={{ margin: "0 0 8px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>{p.children}</ol>,
-  li: (p: any) => <li style={{ lineHeight: 1.45 }}>{p.children}</li>,
   strong: (p: any) => <strong style={{ fontWeight: 700, color: "#1f2937" }}>{p.children}</strong>,
   a: (p: any) => (
-    <a href={p.href} target="_blank" rel="noreferrer" style={{ color: ACCENT, textDecoration: "underline", textUnderlineOffset: 2 }}>
-      {p.children}
-    </a>
+    <a href={p.href} target="_blank" rel="noreferrer" style={{ color: ACCENT, textDecoration: "underline", textUnderlineOffset: 2 }}>{p.children}</a>
   ),
   blockquote: (p: any) => (
     <blockquote style={{ margin: "0 0 8px", padding: "4px 10px", borderLeft: `3px solid #e5e1dc`, color: "#777", background: "#faf8f6" }}>{p.children}</blockquote>
   ),
   code: (p: any) => <code style={{ background: "#f0eeec", padding: "1px 5px", borderRadius: 4, fontSize: 12.5 }}>{p.children}</code>,
+  table: (p: any) => (
+    <div style={{ border: "1px solid #d8d3cd", borderRadius: 8, overflow: "hidden", margin: "0 0 8px" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontFamily: "ui-monospace, monospace", fontSize: 12 }}>{p.children}</table>
+    </div>
+  ),
+  th: (p: any) => <th style={{ textAlign: "left", padding: "5px 8px", background: "#f3f0ec", borderBottom: "1px solid #e5e1dc", fontWeight: 700, color: "#555" }}>{p.children}</th>,
+  td: (p: any) => <td style={{ padding: "5px 8px", borderBottom: "1px solid #f3f0ec" }}>{p.children}</td>,
 };
-const mdH: React.CSSProperties = {
-  fontSize: 11.5,
-  textTransform: "uppercase",
-  letterSpacing: 0.6,
-  fontWeight: 700,
-  color: ACCENT,
-  margin: "12px 0 6px",
-  paddingTop: 8,
-  borderTop: "1px solid #f0ece7",
+// research mode: bullets become source-coloured rounded boxes
+const researchMD = {
+  ...baseMD,
+  li: (p: any) => {
+    const src = liSource(p.node);
+    if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
+    const st = SOURCE_STYLE[src];
+    return (
+      <li style={{ listStyle: "none", display: "flex", gap: 8, alignItems: "flex-start", background: st.bg, border: `1px solid ${st.color}33`, borderLeft: `3px solid ${st.color}`, borderRadius: 8, padding: "6px 9px", lineHeight: 1.4 }}>
+        <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, color: st.color, background: "#fff", border: `1px solid ${st.color}55`, borderRadius: 5, padding: "1px 5px", marginTop: 1, whiteSpace: "nowrap" }}>{src}</span>
+        <span>{p.children}</span>
+      </li>
+    );
+  },
+};
+const archivistMD = { ...baseMD, li: (p: any) => <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li> };
+
+const MODE_BADGE: Record<AgentMode, { label: string; icon: string; color: string; bg: string }> = {
+  research: { label: "Researcher · ZFIN/ZFA/GO", icon: "🔬", color: "#0e7490", bg: "#ecfeff" },
+  archivist: { label: "Archivist · raw MiniFin", icon: "🗄", color: "#4338ca", bg: "#eef2ff" },
 };
 
-function AgentMessage({ content }: { content: string }) {
+function AgentMessage({ content, mode = "research" }: { content: string; mode?: AgentMode }) {
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
   const verdict = m ? m[1].trim() : null;
   const body = (m ? content.slice(0, m.index) : content).trim();
@@ -741,9 +806,31 @@ function AgentMessage({ content }: { content: string }) {
       : null
     : null;
   const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
+  const badge = MODE_BADGE[mode];
+  const isArchivist = mode === "archivist";
   return (
-    <div style={{ fontSize: 13.5, color: INK }}>
-      {body && <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{body}</ReactMarkdown>}
+    <div
+      style={{
+        fontSize: 13.5,
+        color: INK,
+        ...(isArchivist
+          ? { border: `1px solid ${badge.color}33`, borderLeft: `3px solid ${badge.color}`, borderRadius: 8, background: "#fbfbff", padding: "8px 10px" }
+          : {}),
+      }}
+    >
+      <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", color: badge.color, background: badge.bg, border: `1px solid ${badge.color}33`, borderRadius: 99, padding: "2px 9px", marginBottom: 8 }}>
+        <span>{badge.icon}</span> {badge.label}
+      </div>
+      {isArchivist && (
+        <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontStyle: "italic" }}>
+          Values under “Raw facts” are read directly from the MiniFin dataset; anything under “Read” is GPT-5-Mini&apos;s inference.
+        </div>
+      )}
+      {body && (
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={isArchivist ? archivistMD : researchMD}>
+          {body}
+        </ReactMarkdown>
+      )}
       {verdict && (
         <div style={{ marginTop: 8, border: `1px solid ${conf?.color ?? ACCENT}`, borderRadius: 10, background: "#fffdfb", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
@@ -757,6 +844,40 @@ function AgentMessage({ content }: { content: string }) {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Focused-cluster markers panel — HUD aesthetic matching the world map
+// ---------------------------------------------------------------------------
+function MarkersBox({ cluster }: { cluster: Cluster }) {
+  const top = cluster.markers.slice(0, 8);
+  const maxFc = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
+  return (
+    <div style={{ position: "absolute", top: 16, right: 16, width: 232, background: "rgba(255,253,251,0.94)", border: "1px solid #e5e1dc", borderRadius: 10, padding: "8px 10px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+      <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 6, letterSpacing: 0.5 }}>TOP MARKERS</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", marginBottom: 4 }}>▲ UP-REGULATED</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        {top.map((m) => (
+          <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
+            <span style={{ width: 74, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>
+              {m.g}
+            </span>
+            <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+              <div style={{ width: `${((m.l2fc ?? 0) / maxFc) * 100}%`, height: "100%", background: "#15803d" }} />
+            </div>
+            <span style={{ width: 50, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>
+              {m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}
+            </span>
+          </div>
+        ))}
+      </div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "8px 0 2px" }}>▼ DOWN-REGULATED</div>
+      <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>
+        Not in the split-pipe export — computable from the h5ad on request.
+      </div>
+      <div style={{ fontSize: 9.5, color: "#bbb", marginTop: 6, textAlign: "right" }}>bars = log2FC · %in/%out</div>
     </div>
   );
 }
