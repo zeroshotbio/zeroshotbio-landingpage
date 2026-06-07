@@ -423,8 +423,28 @@ function ClusterStage({
   const [prompt, setPrompt] = useState(defaultPrompt(active));
   const [input, setInput] = useState("");
   const [zoomW, setZoomW] = useState(560);
+  const [panelW, setPanelW] = useState(470); // resizable GPT-5-Mini panel
   const leftRef = useRef<HTMLDivElement | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
+
+  // drag the splitter to trade space between the focused-cluster view and the panel
+  function startDrag(e: React.MouseEvent) {
+    e.preventDefault();
+    const onMove = (ev: MouseEvent) => {
+      const w = Math.min(Math.max(window.innerWidth - ev.clientX, 320), window.innerWidth - 360);
+      setPanelW(w);
+    };
+    const onUp = () => {
+      window.removeEventListener("mousemove", onMove);
+      window.removeEventListener("mouseup", onUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    };
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMove);
+    window.addEventListener("mouseup", onUp);
+  }
 
   // live streaming buffers
   const [streaming, setStreaming] = useState(false);
@@ -449,12 +469,12 @@ function ClusterStage({
 
   useEffect(() => {
     function fit() {
-      setZoomW(Math.max(360, (leftRef.current?.clientWidth ?? 560) - 24));
+      setZoomW(Math.max(280, (leftRef.current?.clientWidth ?? 560) - 24));
     }
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
-  }, []);
+  }, [panelW]);
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -565,10 +585,19 @@ function ClusterStage({
           </div>
         </div>
 
-        {/* RIGHT — research agent */}
-        <aside style={{ width: 470, flexShrink: 0, borderLeft: "1px solid #e5e1dc", background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
+        {/* draggable splitter */}
+        <div
+          onMouseDown={startDrag}
+          title="Drag to resize"
+          style={{ width: 7, flexShrink: 0, cursor: "col-resize", background: "#e5e1dc", display: "flex", alignItems: "center", justifyContent: "center" }}
+        >
+          <div style={{ width: 2, height: 34, borderRadius: 2, background: "#bdb6ae" }} />
+        </div>
+
+        {/* RIGHT — GPT-5-Mini research panel (resizable) */}
+        <aside style={{ width: panelW, flexShrink: 0, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
-            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>Research agent</div>
+            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>GPT-5-Mini</div>
             <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
           </div>
 
@@ -584,14 +613,12 @@ function ClusterStage({
             {msgs.map((m, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
                 <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : ACCENT, fontWeight: 600, marginBottom: 3 }}>
-                  {m.role === "user" ? "You asked" : "Agent"}
+                  {m.role === "user" ? "You asked" : "GPT-5-Mini"}
                 </div>
                 {m.role === "user" ? (
                   <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
                 ) : (
-                  <div className="kasperov-md" style={{ fontSize: 13.5, color: INK, lineHeight: 1.55 }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                  </div>
+                  <AgentMessage content={m.content} />
                 )}
               </div>
             ))}
@@ -627,9 +654,7 @@ function ClusterStage({
                 )}
                 {/* streamed answer */}
                 {sText ? (
-                  <div className="kasperov-md" style={{ fontSize: 13.5, color: INK, lineHeight: 1.55 }}>
-                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{sText}</ReactMarkdown>
-                  </div>
+                  <AgentMessage content={sText} />
                 ) : (
                   !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>Consulting ZFIN, ZFA and GO…</div>
                 )}
@@ -664,6 +689,74 @@ function ClusterStage({
           )}
         </aside>
       </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Rich rendering of an agent answer: styled markdown sections + a pulled-out
+// Verdict callout with a confidence chip.
+// ---------------------------------------------------------------------------
+const MD = {
+  h1: (p: any) => <div style={mdH}>{p.children}</div>,
+  h2: (p: any) => <div style={mdH}>{p.children}</div>,
+  h3: (p: any) => <div style={mdH}>{p.children}</div>,
+  p: (p: any) => <p style={{ margin: "0 0 8px", lineHeight: 1.55 }}>{p.children}</p>,
+  ul: (p: any) => <ul style={{ margin: "0 0 8px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>{p.children}</ul>,
+  ol: (p: any) => <ol style={{ margin: "0 0 8px", paddingLeft: 18, display: "flex", flexDirection: "column", gap: 4 }}>{p.children}</ol>,
+  li: (p: any) => <li style={{ lineHeight: 1.45 }}>{p.children}</li>,
+  strong: (p: any) => <strong style={{ fontWeight: 700, color: "#1f2937" }}>{p.children}</strong>,
+  a: (p: any) => (
+    <a href={p.href} target="_blank" rel="noreferrer" style={{ color: ACCENT, textDecoration: "underline", textUnderlineOffset: 2 }}>
+      {p.children}
+    </a>
+  ),
+  blockquote: (p: any) => (
+    <blockquote style={{ margin: "0 0 8px", padding: "4px 10px", borderLeft: `3px solid #e5e1dc`, color: "#777", background: "#faf8f6" }}>{p.children}</blockquote>
+  ),
+  code: (p: any) => <code style={{ background: "#f0eeec", padding: "1px 5px", borderRadius: 4, fontSize: 12.5 }}>{p.children}</code>,
+};
+const mdH: React.CSSProperties = {
+  fontSize: 11.5,
+  textTransform: "uppercase",
+  letterSpacing: 0.6,
+  fontWeight: 700,
+  color: ACCENT,
+  margin: "12px 0 6px",
+  paddingTop: 8,
+  borderTop: "1px solid #f0ece7",
+};
+
+function AgentMessage({ content }: { content: string }) {
+  const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
+  const verdict = m ? m[1].trim() : null;
+  const body = (m ? content.slice(0, m.index) : content).trim();
+  const conf = verdict
+    ? /high/i.test(verdict)
+      ? { label: "high", color: "#15803d", bg: "#dcfce7" }
+      : /med/i.test(verdict)
+      ? { label: "medium", color: "#b45309", bg: "#fef3c7" }
+      : /low/i.test(verdict)
+      ? { label: "low", color: "#b91c1c", bg: "#fee2e2" }
+      : null
+    : null;
+  const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
+  return (
+    <div style={{ fontSize: 13.5, color: INK }}>
+      {body && <ReactMarkdown remarkPlugins={[remarkGfm]} components={MD}>{body}</ReactMarkdown>}
+      {verdict && (
+        <div style={{ marginTop: 8, border: `1px solid ${conf?.color ?? ACCENT}`, borderRadius: 10, background: "#fffdfb", overflow: "hidden" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
+            <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 700 }}>Verdict</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#1f2937", flex: 1 }}>{verdictName || verdict}</span>
+            {conf && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: conf.color, background: conf.bg, padding: "2px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {conf.label}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

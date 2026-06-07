@@ -48,7 +48,12 @@ function buildInstructions(cluster: Cluster): string {
     "- Use the zebrafish (identity, state) model: identity is the lineage/cell-type name; state ∈ {progenitor, cycling, quiescent, mature, stress} only when markers support it.",
     "- If evidence is ambiguous, say so and abstain rather than force-fit. The human adjudicates.",
     "",
-    "OUTPUT: concise markdown, **300 words maximum**. End with a final line: `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
+    "OUTPUT — write skimmable, visually structured markdown so a human can scan straight to a judgement. **200 words maximum.** Use this shape:",
+    "- Start with a single bold one-line identity call (no heading).",
+    "- `## Evidence` — one bullet per key marker, formatted `**gene** — finding [source](url)`. Bold the gene; keep each bullet to one line.",
+    "- `## Caveats` — include only if there is genuine ambiguity; 1–2 short bullets.",
+    "- End with this exact final line (its own paragraph): `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
+    "Do not exceed the sections above; no preamble like \"I'll ground this…\".",
     "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
   ].join("\n");
