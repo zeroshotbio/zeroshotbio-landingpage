@@ -440,9 +440,17 @@ function splitDispatch(content: string): { clean: string; dispatches: { to: Agen
     return { clean: content.replace(re, "").trim(), dispatches: [] };
   }
   const arr = Array.isArray(raw) ? raw : [raw];
+  const seen = new Set<string>();
   const dispatches = arr
     .filter((x) => x && typeof x.prompt === "string")
-    .map((x) => ({ to: (x.to === "archivist" ? "archivist" : "research") as AgentMode, prompt: String(x.prompt) }));
+    .map((x) => ({ to: (x.to === "archivist" ? "archivist" : "research") as AgentMode, prompt: String(x.prompt) }))
+    .filter((d) => {
+      const k = `${d.to}:${d.prompt}`;
+      if (seen.has(k)) return false;
+      seen.add(k);
+      return true;
+    })
+    .slice(0, 2); // never flood the chat with dispatch buttons
   return { clean: content.replace(re, "").trim(), dispatches };
 }
 
@@ -576,11 +584,11 @@ function ClusterStage({
   const placementsRef = useRef<{ wm: Box; mk: Box; cf: Box } | null>(null);
   useEffect(() => {
     if (placed || containerSize.w < 60 || containerSize.h < 60) return;
-    const W = containerSize.w, H = containerSize.h;
+    // all panels start left-adjusted, stacked top → bottom (then freely draggable)
     placementsRef.current = {
-      wm: { x: 14, y: Math.max(40, H - 200), w: 226, h: 184 },
-      mk: { x: Math.max(14, W - 256), y: Math.max(40, H - 252), w: 242, h: 238 },
-      cf: { x: Math.max(14, W - 264), y: 14, w: 250, h: 122 },
+      wm: { x: 14, y: 14, w: 226, h: 184 },
+      mk: { x: 14, y: 206, w: 242, h: 238 },
+      cf: { x: 14, y: 456, w: 250, h: 122 },
     };
     setPlaced(true);
   }, [containerSize, placed]);
@@ -705,7 +713,7 @@ function ClusterStage({
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
         {/* LEFT — zoom map + HUD */}
         <div ref={leftRef} style={{ flex: "1.25 1 0", position: "relative", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)" }}>
-          <div style={{ position: "absolute", top: 16, left: 18, fontSize: 12, color: "#999", textTransform: "uppercase", letterSpacing: 1 }}>Focused cluster</div>
+          <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", fontSize: 12, color: "#bbb", textTransform: "uppercase", letterSpacing: 1, pointerEvents: "none" }}>Focused cluster</div>
           <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
 
           {placed && placementsRef.current && (
