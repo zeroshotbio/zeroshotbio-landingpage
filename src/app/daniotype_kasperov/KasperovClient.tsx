@@ -12,7 +12,7 @@ const STORAGE_KEY = "daniotype_kasperov_v3";
 const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
 type Pt = { x: number; y: number };
-type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
+type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string };
 interface Cluster {
   id: string;
   label: string;
@@ -398,8 +398,32 @@ function MapStage({
 }
 
 // ---------------------------------------------------------------------------
-type AgentMode = "research" | "archivist";
+type AgentMode = "research" | "archivist" | "reason";
 type ChatMsg = { role: "user" | "assistant"; content: string; mode?: AgentMode };
+
+// per-personality theming for badges, router cards, and loading views
+const THEME: Record<AgentMode, { name: string; icon: string; color: string; bg: string; trace: string; verb: string; blurb: string }> = {
+  research: { name: "Researcher", icon: "🔬", color: "#0e7490", bg: "#ecfeff", trace: "Research log", verb: "Searching ZFIN · ZFA · GO…", blurb: "ZFIN / ZFA / GO literature" },
+  archivist: { name: "Archivist", icon: "🗄", color: "#4338ca", bg: "#eef2ff", trace: "Archive search", verb: "Pulling records from the MiniFin stacks…", blurb: "raw MiniFin records" },
+  reason: { name: "Reasoner", icon: "🧠", color: "#7c3aed", bg: "#f5f3ff", trace: "Reasoning", verb: "Reasoning across what's known…", blurb: "generalist synthesis" },
+};
+const MODES: AgentMode[] = ["research", "archivist", "reason"];
+
+// extract the hidden ```kasperov-markers``` block: returns display text + parsed markers
+function splitMarkerBlock(content: string): { clean: string; markers: Marker[] } {
+  const re = /```kasperov-markers\s*([\s\S]*?)```/i;
+  const m = content.match(re);
+  if (!m) return { clean: content, markers: [] };
+  let markers: Marker[] = [];
+  try {
+    const arr = JSON.parse(m[1].trim());
+    if (Array.isArray(arr))
+      markers = arr
+        .filter((x) => x && typeof x.g === "string")
+        .map((x) => ({ g: x.g, l2fc: x.l2fc ?? undefined, p1: x.p1 ?? undefined, p2: x.p2 ?? undefined, note: x.note ?? undefined }));
+  } catch {}
+  return { clean: content.replace(re, "").trim(), markers };
+}
 
 function defaultPrompt(c: Cluster): string {
   const upList = c.degsUp.slice(0, 8).join(", ");
@@ -458,7 +482,26 @@ function ClusterStage({
   const [showThinking, setShowThinking] = useState(true);
   const [elapsed, setElapsed] = useState(0); // seconds since run started
   const [sMode, setSMode] = useState<AgentMode>("research");
+  const [routing, setRouting] = useState(false); // ~1s "choosing a specialist" phase
+  const [routed, setRouted] = useState(false); // chosen mode known
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  // markers added to the Top Markers panel from chat, per cluster
+  const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
+  const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
+  const [flash, setFlash] = useState(false);
+
+  function incorporate(msgKey: string, markers: Marker[]) {
+    setAugmented((a) => {
+      const cur = a[active.id] ?? [];
+      const byGene = new Map(cur.map((m) => [m.g, m]));
+      markers.forEach((m) => byGene.set(m.g, { ...byGene.get(m.g), ...m }));
+      return { ...a, [active.id]: Array.from(byGene.values()) };
+    });
+    setIncorporated((s) => new Set(s).add(msgKey));
+    setFlash(true);
+    setTimeout(() => setFlash(false), 900);
+  }
 
   const msgs = transcripts[active.id] ?? [];
   const started = msgs.length > 0 || streaming;
@@ -470,6 +513,8 @@ function ClusterStage({
     setThinking("");
     setText("");
     setStreaming(false);
+    setRouting(false);
+    setRouted(false);
   }, [active.id]);
 
   useEffect(() => {
@@ -488,7 +533,9 @@ function ClusterStage({
   async function streamAgent(nextMsgs: ChatMsg[]) {
     setTranscripts((t) => ({ ...t, [active.id]: nextMsgs }));
     setStreaming(true);
-    setStatus("Starting research…");
+    setRouting(true);
+    setRouted(false);
+    setStatus("");
     setThinking("");
     setText("");
     // elapsed-time bar, counts up toward the 60s ceiling
@@ -527,8 +574,12 @@ function ClusterStage({
             continue;
           }
           if (evt.t === "mode") {
-            mode = evt.v === "archivist" ? "archivist" : "research";
+            mode = evt.v === "archivist" ? "archivist" : evt.v === "reason" ? "reason" : "research";
             setSMode(mode);
+            setRouted(true);
+            // hold the router animation for a beat, then reveal the working view
+            const wait = Math.max(0, 1100 - (Date.now() - startedAt));
+            setTimeout(() => setRouting(false), wait);
           } else if (evt.t === "status") setStatus(evt.v);
           else if (evt.t === "thinking") setThinking((p) => p + evt.v);
           else if (evt.t === "text") {
@@ -549,6 +600,7 @@ function ClusterStage({
       }
       setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }] }));
       setStreaming(false);
+      setRouting(false);
       setStatus("");
       setText("");
       setThinking("");
@@ -570,7 +622,12 @@ function ClusterStage({
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
-      <style>{`@keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}`}</style>
+      <style>{`
+        @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
+        @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
+        @keyframes kflash{0%{box-shadow:0 0 0 0 rgba(67,56,202,.5)}100%{box-shadow:0 0 0 14px rgba(67,56,202,0)}}
+        @keyframes kpop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+      `}</style>
 
       {/* top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 18px", borderBottom: "1px solid #e5e1dc", background: "#fffdfb" }}>
@@ -593,8 +650,8 @@ function ClusterStage({
             <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={210} height={158} showFocus />
           </div>
 
-          {/* marker panel — same aesthetic as the world-map HUD */}
-          <MarkersBox cluster={active} />
+          {/* marker panel — same aesthetic as the world-map HUD; grows as chat adds insight */}
+          <MarkersBox cluster={active} added={augmented[active.id] ?? []} flash={flash} />
         </div>
 
         {/* draggable splitter */}
@@ -622,54 +679,105 @@ function ClusterStage({
               </div>
             )}
 
-            {msgs.map((m, i) => (
-              <div key={i} style={{ marginBottom: 14 }}>
-                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : ACCENT, fontWeight: 600, marginBottom: 3 }}>
-                  {m.role === "user" ? "You asked" : "GPT-5-Mini"}
+            {msgs.map((m, i) => {
+              const parsed = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] };
+              const key = `${active.id}:${i}`;
+              const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
+              return (
+                <div key={i} style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : ACCENT, fontWeight: 600, marginBottom: 3 }}>
+                    {m.role === "user" ? "You asked" : "GPT-5-Mini"}
+                  </div>
+                  {m.role === "user" ? (
+                    <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
+                  ) : (
+                    <>
+                      <AgentMessage content={parsed.clean} mode={m.mode} />
+                      {canAdd && (
+                        <button
+                          onClick={() => incorporate(key, parsed.markers)}
+                          style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 7, background: "#eef2ff", border: "1px solid #4338ca55", color: "#4338ca", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                        >
+                          ➕ Add {parsed.markers.length} marker insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
+                        </button>
+                      )}
+                      {parsed.markers.length > 0 && incorporated.has(key) && (
+                        <div style={{ marginTop: 6, fontSize: 11.5, color: "#15803d", fontWeight: 600 }}>✓ added to Top Markers</div>
+                      )}
+                    </>
+                  )}
                 </div>
-                {m.role === "user" ? (
-                  <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
-                ) : (
-                  <AgentMessage content={m.content} mode={m.mode} />
-                )}
-              </div>
-            ))}
+              );
+            })}
 
-            {/* live streaming view */}
-            {streaming && (
-              <div style={{ marginTop: 4 }}>
-                {/* elapsed-time progress bar — fills toward the 60s ceiling */}
+            {/* router: three specialists, ~1s to decide, then the chosen one lights up */}
+            {streaming && routing && (
+              <div style={{ marginTop: 6 }}>
+                <div style={{ fontSize: 12.5, color: "#888", marginBottom: 10, animation: "kpulse 1.4s ease-in-out infinite" }}>
+                  {routed ? `→ Routing to the ${THEME[sMode].name}…` : "Choosing the right specialist…"}
+                </div>
+                <div style={{ display: "flex", gap: 8 }}>
+                  {MODES.map((mk, idx) => {
+                    const th = THEME[mk];
+                    const isChosen = routed && mk === sMode;
+                    const dim = routed && mk !== sMode;
+                    return (
+                      <div
+                        key={mk}
+                        style={{
+                          flex: 1,
+                          textAlign: "center",
+                          padding: "12px 6px",
+                          borderRadius: 10,
+                          border: `1.5px solid ${isChosen ? th.color : "#e5e1dc"}`,
+                          background: isChosen ? th.bg : "#fffdfb",
+                          opacity: dim ? 0.4 : 1,
+                          transform: isChosen ? "scale(1.04)" : "scale(1)",
+                          transition: "all .35s ease",
+                          animation: routed ? "none" : `kscan 1.1s ease-in-out ${idx * 0.18}s infinite`,
+                        }}
+                      >
+                        <div style={{ fontSize: 22 }}>{th.icon}</div>
+                        <div style={{ fontSize: 12, fontWeight: 700, color: isChosen ? th.color : "#555", marginTop: 2 }}>{th.name}</div>
+                        <div style={{ fontSize: 10, color: "#999", marginTop: 1 }}>{th.blurb}</div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* working view — themed per chosen personality */}
+            {streaming && !routing && (
+              <div style={{ marginTop: 4, animation: "kpop .3s ease" }}>
+                {/* personality banner */}
+                <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: THEME[sMode].color, background: THEME[sMode].bg, border: `1px solid ${THEME[sMode].color}33`, borderRadius: 99, padding: "3px 10px", marginBottom: 8 }}>
+                  <span>{THEME[sMode].icon}</span> {THEME[sMode].name} at work
+                </div>
+                {/* elapsed-time bar in the personality's colour */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                   <div style={{ position: "relative", flex: 1, height: 5, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: elapsed > 50 ? "#b45309" : ACCENT, borderRadius: 99, transition: "width .25s linear" }} />
+                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: elapsed > 50 ? "#b45309" : THEME[sMode].color, borderRadius: 99, transition: "width .25s linear" }} />
                   </div>
-                  <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 56, textAlign: "right" }}>
-                    {elapsed.toFixed(0)}s / 60s
-                  </span>
+                  <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 56, textAlign: "right" }}>{elapsed.toFixed(0)}s / 60s</span>
                 </div>
-                {/* live status */}
-                {sStatus && (
-                  <div style={{ fontSize: 12.5, color: ACCENT, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>🔍 {sStatus}</div>
-                )}
-                {/* reasoning trace */}
+                {/* live status — themed verb */}
+                <div style={{ fontSize: 12.5, color: THEME[sMode].color, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>
+                  {THEME[sMode].icon} {sStatus || THEME[sMode].verb}
+                </div>
+                {/* reasoning trace — themed header/colour per personality */}
                 {sThinking && (
-                  <div style={{ marginBottom: 10, border: "1px solid #ece8e3", borderRadius: 8, background: "#faf8f6" }}>
-                    <button onClick={() => setShowThinking((s) => !s)} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "7px 10px", fontSize: 11.5, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer", fontWeight: 600 }}>
-                      {showThinking ? "▾" : "▸"} reasoning
+                  <div style={{ marginBottom: 10, border: `1px solid ${THEME[sMode].color}33`, borderRadius: 8, background: THEME[sMode].bg }}>
+                    <button onClick={() => setShowThinking((s) => !s)} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "7px 10px", fontSize: 11, color: THEME[sMode].color, textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer", fontWeight: 700 }}>
+                      {showThinking ? "▾" : "▸"} {THEME[sMode].trace}
                     </button>
                     {showThinking && (
-                      <div style={{ maxHeight: 160, overflowY: "auto", padding: "0 10px 8px", fontSize: 12, color: "#777", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace" }}>
-                        {sThinking}
-                      </div>
+                      <div style={{ maxHeight: 170, overflowY: "auto", padding: "0 10px 8px", fontSize: 12, color: "#666", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace" }}>{sThinking}</div>
                     )}
                   </div>
                 )}
-                {/* streamed answer */}
-                {sText ? (
-                  <AgentMessage content={sText} mode={sMode} />
-                ) : (
-                  !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>Consulting ZFIN, ZFA and GO…</div>
-                )}
+                {/* streamed answer (marker block stripped during streaming) */}
+                {sText ? <AgentMessage content={splitMarkerBlock(sText).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
@@ -790,6 +898,7 @@ const archivistMD = { ...baseMD, li: (p: any) => <li style={{ lineHeight: 1.45, 
 const MODE_BADGE: Record<AgentMode, { label: string; icon: string; color: string; bg: string }> = {
   research: { label: "Researcher · ZFIN/ZFA/GO", icon: "🔬", color: "#0e7490", bg: "#ecfeff" },
   archivist: { label: "Archivist · raw MiniFin", icon: "🗄", color: "#4338ca", bg: "#eef2ff" },
+  reason: { label: "Reasoner · generalist", icon: "🧠", color: "#7c3aed", bg: "#f5f3ff" },
 };
 
 function AgentMessage({ content, mode = "research" }: { content: string; mode?: AgentMode }) {
@@ -851,19 +960,39 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
 // ---------------------------------------------------------------------------
 // Focused-cluster markers panel — HUD aesthetic matching the world map
 // ---------------------------------------------------------------------------
-function MarkersBox({ cluster }: { cluster: Cluster }) {
+function MarkersBox({ cluster, added, flash }: { cluster: Cluster; added: Marker[]; flash: boolean }) {
   const top = cluster.markers.slice(0, 8);
   const maxFc = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
+  const hasAdded = added.length > 0;
+  // box grows + widens as chat contributes insight
+  const width = hasAdded ? 300 : 232;
+  const maxHeight = hasAdded ? 420 : 300;
   return (
-    <div style={{ position: "absolute", top: 16, right: 16, width: 232, background: "rgba(255,253,251,0.94)", border: "1px solid #e5e1dc", borderRadius: 10, padding: "8px 10px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-      <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 6, letterSpacing: 0.5 }}>TOP MARKERS</div>
+    <div
+      style={{
+        position: "absolute",
+        bottom: 16,
+        right: 16,
+        width,
+        maxHeight,
+        overflowY: "auto",
+        background: "rgba(255,253,251,0.95)",
+        border: `1px solid ${hasAdded ? "#4338ca55" : "#e5e1dc"}`,
+        borderRadius: 10,
+        padding: "8px 10px",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
+        transition: "width .35s ease, max-height .35s ease, border-color .35s ease",
+        animation: flash ? "kflash .9s ease-out" : "none",
+      }}
+    >
+      <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 6, letterSpacing: 0.5 }}>
+        TOP MARKERS{hasAdded ? ` · +${added.length} from chat` : ""}
+      </div>
       <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", marginBottom: 4 }}>▲ UP-REGULATED</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {top.map((m) => (
           <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-            <span style={{ width: 74, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>
-              {m.g}
-            </span>
+            <span style={{ width: 74, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
             <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ width: `${((m.l2fc ?? 0) / maxFc) * 100}%`, height: "100%", background: "#15803d" }} />
             </div>
@@ -873,10 +1002,25 @@ function MarkersBox({ cluster }: { cluster: Cluster }) {
           </div>
         ))}
       </div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "8px 0 2px" }}>▼ DOWN-REGULATED</div>
-      <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>
-        Not in the split-pipe export — computable from the h5ad on request.
-      </div>
+
+      {hasAdded && (
+        <>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#4338ca", margin: "9px 0 3px" }}>✦ ADDED FROM CHAT</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {added.map((m) => (
+              <div key={m.g} style={{ fontSize: 11.5, borderLeft: "2px solid #4338ca", paddingLeft: 7 }}>
+                <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
+                {m.l2fc != null && <span style={{ color: "#888" }}> · log2FC {m.l2fc}</span>}
+                {m.p1 != null && <span style={{ color: "#888" }}> · {(m.p1 * 100).toFixed(0)}/{((m.p2 ?? 0) * 100).toFixed(0)}%</span>}
+                {m.note && <div style={{ color: "#555", lineHeight: 1.35, marginTop: 1 }}>{m.note}</div>}
+              </div>
+            ))}
+          </div>
+        </>
+      )}
+
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 2px" }}>▼ DOWN-REGULATED</div>
+      <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>Not in the split-pipe export — computable from the h5ad on request.</div>
       <div style={{ fontSize: 9.5, color: "#bbb", marginTop: 6, textAlign: "right" }}>bars = log2FC · %in/%out</div>
     </div>
   );

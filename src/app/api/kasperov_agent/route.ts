@@ -33,22 +33,37 @@ const ALLOWED_DOMAINS = [
   "www.uniprot.org",
 ];
 
+type Mode = "research" | "archivist" | "reason";
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
 type Cluster = { id: string; label?: string; degsUp?: string[]; markers?: Marker[]; nCells?: number };
 
-// --- mode routing ----------------------------------------------------------
+// --- mode routing (3-way) --------------------------------------------------
 const ARCHIVIST_CUES =
-  /\b(how many|number of|count|raw|dataset|data set|minifin|log2|fold[- ]?change|pct|percent|expression value|statistic|score|exact|list the|which genes|what genes|top (genes|markers)|markers? (for|of this)|specificity|cell count|cluster size|umap)\b/i;
+  /\b(how many|number of|count|raw|dataset|data set|minifin|log2|fold[- ]?change|pct|percent|expression value|statistic|score|exact|list the|which genes|what genes|top (genes|markers)|markers? (for|of this)|specificity|cell count|cluster size|umap)\b/gi;
 const RESEARCH_CUES =
-  /\b(cell type|identity|zfin|zfa|\bgo\b|anatomy|function|what is this|consistent with|lineage|marker of|role of|literature|known to|express(ed|ion) in|develops?|differentiat)\b/i;
+  /\b(cell type|identity|zfin|zfa|\bgo\b|anatomy|function|consistent with|lineage|marker of|role of|literature|known to|express(ed|ion) in|develops?|differentiat|in vivo|ontology)\b/gi;
+const REASON_CUES =
+  /\b(why|how come|could it|would you|might|hypothes|compare|contrast|explain|interpret|do you think|your (take|opinion)|infer|speculat|overall|in general|make sense|implication|trade[- ]?off|what if)\b/gi;
 
-function classifyMode(text: string, isFirst: boolean): "research" | "archivist" {
+function classifyMode(text: string, isFirst: boolean): Mode {
   if (isFirst) return "research"; // the auto-run identity call is always research
   const a = (text.match(ARCHIVIST_CUES) || []).length;
   const r = (text.match(RESEARCH_CUES) || []).length;
-  return a > r && a > 0 ? "archivist" : "research";
+  const g = (text.match(REASON_CUES) || []).length;
+  if (a >= r && a >= g && a > 0) return "archivist";
+  if (r >= g && r > 0) return "research";
+  if (g > 0) return "reason";
+  return "reason"; // a bare follow-up with no signal → generalist reasoner
 }
+
+// Shared tail: lets any personality optionally enrich the Top Markers panel.
+const MARKER_BLOCK_INSTR =
+  "\n\nIf you discuss specific marker genes (with stats or a notable annotation) for THIS cluster, append at the very END a fenced block (it is hidden from the user and used to optionally enrich the Top Markers panel):\n" +
+  "```kasperov-markers\n" +
+  '[{"g":"GENE","l2fc":<number or null>,"p1":<0-1 or null>,"p2":<0-1 or null>,"note":"<≤8 words>"}]\n' +
+  "```\n" +
+  "List only genes you actually discussed; use null for unknown numbers; always include a short note. Omit the block entirely if you discussed no specific markers.";
 
 function rawFactsBlock(cluster: Cluster): string {
   const rows = (cluster.markers ?? []).map(
@@ -86,7 +101,22 @@ function researchInstructions(cluster: Cluster): string {
     "- Final line: `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
     "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
-  ].join("\n");
+  ].join("\n") + MARKER_BLOCK_INSTR;
+}
+
+function reasonInstructions(cluster: Cluster): string {
+  const up = (cluster.degsUp ?? []).join(", ");
+  return [
+    "You are GPT-5-Mini in REASONER mode — a generalist scientific thinker. You synthesize across everything available: the cluster's markers, the conversation so far, and your own biological knowledge. You do NOT have web search here and you are NOT restricted to raw dataset values — you reason and explain.",
+    "Be clear that you are reasoning/synthesizing, not quoting curated records or dataset facts. Flag genuine uncertainty.",
+    "",
+    "OUTPUT — skimmable markdown, **200 words max**, no preamble:",
+    "- Lead with a one-line bold takeaway.",
+    "- A short `## Reasoning` with 2–4 bullets connecting the evidence to a conclusion.",
+    "- Optional `## What would confirm it` — 1–2 concrete checks.",
+    "",
+    `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
+  ].join("\n") + MARKER_BLOCK_INSTR;
 }
 
 function archivistInstructions(cluster: Cluster): string {
@@ -102,7 +132,7 @@ function archivistInstructions(cluster: Cluster): string {
     "=== MINIFIN FACTS (authoritative; quote exactly) ===",
     rawFactsBlock(cluster),
     "=== END FACTS ===",
-  ].join("\n");
+  ].join("\n") + MARKER_BLOCK_INSTR;
 }
 
 function offlineDossier(cluster: Cluster): string {
@@ -136,8 +166,8 @@ export async function POST(req: Request) {
 
   const isFirst = messages.filter((m) => m.role === "user").length <= 1;
   const lastUser = [...messages].reverse().find((m) => m.role === "user")?.content ?? "";
-  const mode: "research" | "archivist" =
-    body?.mode === "research" || body?.mode === "archivist" ? body.mode : classifyMode(lastUser, isFirst);
+  const mode: Mode =
+    body?.mode === "research" || body?.mode === "archivist" || body?.mode === "reason" ? body.mode : classifyMode(lastUser, isFirst);
 
   const key = process.env.OPENAI_API_KEY;
   const enc = new TextEncoder();
@@ -160,7 +190,8 @@ export async function POST(req: Request) {
         stream: true,
         reasoning: { effort: "low", summary: "auto" },
         max_output_tokens: 5000,
-        instructions: mode === "archivist" ? archivistInstructions(cluster) : researchInstructions(cluster),
+        instructions:
+          mode === "archivist" ? archivistInstructions(cluster) : mode === "reason" ? reasonInstructions(cluster) : researchInstructions(cluster),
         input: messages.map((m) => ({ role: m.role, content: m.content })),
       };
       if (mode === "research") {
