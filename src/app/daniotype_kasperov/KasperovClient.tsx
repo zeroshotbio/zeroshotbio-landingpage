@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -581,19 +581,43 @@ function ClusterStage({
     setPanelW(Math.round(window.innerWidth / 2));
   }, []);
 
-  // place the floating panels once we know the container size (then they're draggable)
-  const [placed, setPlaced] = useState(false);
-  const placementsRef = useRef<{ wm: Box; mk: Box; cf: Box } | null>(null);
+  // floating panels — geometry lifted here so Top Markers / Confidence can
+  // auto-grow to fit content and push the others down (until the user drags one)
+  const GAP = 12;
+  const [pb, setPb] = useState<{ wm: Box; mk: Box; cf: Box } | null>(null);
+  const manualRef = useRef(false);
   useEffect(() => {
-    if (placed || containerSize.w < 60 || containerSize.h < 60) return;
-    // all panels start left-adjusted, stacked top → bottom (then freely draggable)
-    placementsRef.current = {
+    if (pb || containerSize.w < 60 || containerSize.h < 60) return;
+    setPb({
       wm: { x: 14, y: 14, w: 226, h: 184 },
-      mk: { x: 14, y: 206, w: 242, h: 238 },
-      cf: { x: 14, y: 456, w: 250, h: 122 },
-    };
-    setPlaced(true);
-  }, [containerSize, placed]);
+      mk: { x: 14, y: 210, w: 250, h: 238 },
+      cf: { x: 14, y: 462, w: 252, h: 120 },
+    });
+  }, [containerSize, pb]);
+
+  function reflowBoxes(b: { wm: Box; mk: Box; cf: Box }) {
+    const x = b.wm.x;
+    const mk = { ...b.mk, x, y: b.wm.y + b.wm.h + GAP };
+    const cf = { ...b.cf, x, y: mk.y + mk.h + GAP };
+    return { ...b, mk, cf };
+  }
+  const moveBox = useCallback((k: "wm" | "mk" | "cf", x: number, y: number) => {
+    manualRef.current = true;
+    setPb((p) => (p ? { ...p, [k]: { ...p[k], x, y } } : p));
+  }, []);
+  const resizeBox = useCallback((k: "wm" | "mk" | "cf", w: number, h: number) => {
+    manualRef.current = true;
+    setPb((p) => (p ? { ...p, [k]: { ...p[k], w, h } } : p));
+  }, []);
+  const measureBox = useCallback((k: "mk" | "cf", h: number) => {
+    setPb((p) => {
+      if (!p || Math.abs(p[k].h - h) < 1) return p;
+      const u = { ...p, [k]: { ...p[k], h } };
+      return manualRef.current ? u : reflowBoxes(u);
+    });
+    // reflowBoxes is pure + GAP constant; safe to omit from deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -718,21 +742,40 @@ function ClusterStage({
           <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", fontSize: 12, color: "#bbb", textTransform: "uppercase", letterSpacing: 1, pointerEvents: "none" }}>Focused cluster</div>
           <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
 
-          {placed && placementsRef.current && (
+          {pb && (
             <>
               {/* world map — draggable + resizable */}
-              <DraggablePanel title="WORLD MAP" accent="#999" initial={placementsRef.current.wm} minW={150} minH={120}>
+              <DraggablePanel title="WORLD MAP" accent="#999" box={pb.wm} minW={150} minH={120} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
                 {(w, h) => <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
               </DraggablePanel>
 
-              {/* top markers — draggable + resizable; grows in content as chat adds insight */}
-              <DraggablePanel title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`} accent="#8a847b" initial={placementsRef.current.mk} minW={190} minH={140} flash={flash}>
+              {/* top markers — auto-grows to fit content, pushing the others down */}
+              <DraggablePanel
+                title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`}
+                accent="#8a847b"
+                box={pb.mk}
+                minW={190}
+                flash={flash}
+                autoFitHeight
+                onMove={(x, y) => moveBox("mk", x, y)}
+                onResize={(w, h) => resizeBox("mk", w, h)}
+                onMeasure={(h) => measureBox("mk", h)}
+              >
                 {() => <MarkersContent cluster={active} added={augmented[active.id] ?? []} />}
               </DraggablePanel>
 
-              {/* live confidence — only once the chat gives us reason to score it */}
+              {/* live confidence — auto-grows to fit its rationale */}
               {confidence[active.id] && (
-                <DraggablePanel title="CONFIDENCE" accent="#8a847b" initial={placementsRef.current.cf} minW={180} minH={96}>
+                <DraggablePanel
+                  title="CONFIDENCE"
+                  accent="#8a847b"
+                  box={pb.cf}
+                  minW={180}
+                  autoFitHeight
+                  onMove={(x, y) => moveBox("cf", x, y)}
+                  onResize={(w, h) => resizeBox("cf", w, h)}
+                  onMeasure={(h) => measureBox("cf", h)}
+                >
                   {() => <ConfidenceContent pct={confidence[active.id].pct} why={confidence[active.id].why} />}
                 </DraggablePanel>
               )}
@@ -1032,9 +1075,12 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
       style={{
         fontSize: 13.5,
         color: INK,
-        ...(isArchivist
-          ? { border: `1px solid ${badge.color}33`, borderLeft: `3px solid ${badge.color}`, borderRadius: 8, background: "#fbfbff", padding: "8px 10px" }
-          : {}),
+        // every personality's response sits in its own colour-bordered section
+        border: `1px solid ${badge.color}33`,
+        borderLeft: `3px solid ${badge.color}`,
+        borderRadius: 8,
+        background: "#fffdfb",
+        padding: "8px 10px",
       }}
     >
       <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", color: badge.color, background: badge.bg, border: `1px solid ${badge.color}33`, borderRadius: 99, padding: "2px 9px", marginBottom: 8 }}>
@@ -1079,31 +1125,50 @@ let zTop = 20; // shared stacking counter — last interacted panel sits on top
 function DraggablePanel({
   title,
   accent,
-  initial,
+  box,
   minW = 160,
   minH = 90,
   flash = false,
+  autoFitHeight = false,
+  onMove,
+  onResize,
+  onMeasure,
   children,
 }: {
   title: string;
   accent: string;
-  initial: Box;
+  box: Box;
   minW?: number;
   minH?: number;
   flash?: boolean;
+  autoFitHeight?: boolean;
+  onMove: (x: number, y: number) => void;
+  onResize: (w: number, h: number) => void;
+  onMeasure?: (h: number) => void;
   children: (w: number, h: number) => React.ReactNode;
 }) {
-  const [box, setBox] = useState<Box>(initial);
   const [z, setZ] = useState(() => ++zTop);
   const raise = () => setZ(++zTop);
   const HEADER = 24;
+  const rootRef = useRef<HTMLDivElement | null>(null);
 
-  function onDrag(e: React.MouseEvent) {
+  // auto-fit panels report their rendered height so the parent can reflow
+  useEffect(() => {
+    if (!autoFitHeight || !onMeasure) return;
+    const el = rootRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const report = () => onMeasure(el.offsetHeight);
+    const ro = new ResizeObserver(report);
+    ro.observe(el);
+    report();
+    return () => ro.disconnect();
+  }, [autoFitHeight, onMeasure]);
+
+  function startDrag(e: React.MouseEvent) {
     e.preventDefault();
     raise();
-    const sx = e.clientX, sy = e.clientY;
-    const o = { ...box };
-    const move = (ev: MouseEvent) => setBox((b) => ({ ...b, x: Math.max(0, o.x + ev.clientX - sx), y: Math.max(0, o.y + ev.clientY - sy) }));
+    const sx = e.clientX, sy = e.clientY, ox = box.x, oy = box.y;
+    const move = (ev: MouseEvent) => onMove(Math.max(0, ox + ev.clientX - sx), Math.max(0, oy + ev.clientY - sy));
     const up = () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
@@ -1113,13 +1178,12 @@ function DraggablePanel({
     window.addEventListener("mousemove", move);
     window.addEventListener("mouseup", up);
   }
-  function onResize(e: React.MouseEvent) {
+  function startResize(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     raise();
-    const sx = e.clientX, sy = e.clientY;
-    const o = { ...box };
-    const move = (ev: MouseEvent) => setBox((b) => ({ ...b, w: Math.max(minW, o.w + ev.clientX - sx), h: Math.max(minH, o.h + ev.clientY - sy) }));
+    const sx = e.clientX, sy = e.clientY, ow = box.w, oh = box.h;
+    const move = (ev: MouseEvent) => onResize(Math.max(minW, ow + ev.clientX - sx), autoFitHeight ? box.h : Math.max(minH, oh + ev.clientY - sy));
     const up = () => {
       window.removeEventListener("mousemove", move);
       window.removeEventListener("mouseup", up);
@@ -1132,13 +1196,14 @@ function DraggablePanel({
 
   return (
     <div
+      ref={rootRef}
       onMouseDown={raise}
       style={{
         position: "absolute",
         left: box.x,
         top: box.y,
         width: box.w,
-        height: box.h,
+        height: autoFitHeight ? "auto" : box.h,
         zIndex: z,
         background: "rgba(255,253,251,0.96)",
         border: `1px solid ${accent}44`,
@@ -1149,13 +1214,16 @@ function DraggablePanel({
         flexDirection: "column",
         overflow: "hidden",
         animation: flash ? "kflash .9s ease-out" : "none",
+        transition: "top .2s ease, left .2s ease",
       }}
     >
-      <div onMouseDown={onDrag} style={{ height: HEADER, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: accent, userSelect: "none" }}>
+      <div onMouseDown={startDrag} style={{ height: HEADER, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: accent, userSelect: "none" }}>
         <span style={{ opacity: 0.5 }}>⠿</span> {title}
       </div>
-      <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "0 8px 6px" }}>{children(box.w - 16, box.h - HEADER - 12)}</div>
-      <div onMouseDown={onResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 14, height: 14, cursor: "nwse-resize", color: accent, opacity: 0.5, fontSize: 11, lineHeight: "14px", textAlign: "right" }}>◢</div>
+      <div style={{ flex: autoFitHeight ? "0 0 auto" : 1, minHeight: 0, overflow: autoFitHeight ? "visible" : "auto", padding: "0 8px 6px" }}>
+        {children(box.w - 16, autoFitHeight ? 0 : box.h - HEADER - 12)}
+      </div>
+      <div onMouseDown={startResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 14, height: 14, cursor: "nwse-resize", color: accent, opacity: 0.5, fontSize: 11, lineHeight: "14px", textAlign: "right" }}>◢</div>
     </div>
   );
 }
