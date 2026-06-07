@@ -49,6 +49,9 @@ const NAME_TARGETS: [RegExp, Mode][] = [
   [/\breasoner\b/i, "reason"],
   [/\b(researcher|research personality)\b/i, "research"],
 ];
+// "give me the prompt for the Archivist" = ask the Reasoner to CRAFT a prompt
+// (it owns the dispatch button), NOT a message addressed to the named personality.
+const PROMPT_CRAFT = /\b(prompt (for|to send|to give) (the )?\w+|(give|craft|write|draft|make|prepare|compose|generate) (me )?(a |the |another )?prompt)\b/i;
 const RESEARCH_VERBS = /\b(do research|research the|research on|look (it |this )?up in zfin|check zfin|search (zfin|the literature|the canonical)|find (the )?(literature|citations|records))\b/i;
 const ARCHIVIST_VERBS = /\b(pull up|pull the|fetch the|raw values|raw data|from (the )?minifin|dataset values|list the (top|down|up)|show me the (top|down|up|markers|genes))\b/i;
 const REASON_VERBS = /\b(update the confidence|develop confidence|what do you think|your take|reason (about|through)|do you think|interpret|make sense of|synthesi[sz]e|weigh|how confident)\b/i;
@@ -62,6 +65,9 @@ const REASON_CUES =
 
 function classifyMode(text: string, isFirst: boolean): Mode {
   if (isFirst) return "research"; // the auto-run identity call is always research
+  // 0) crafting a prompt for another personality is the Reasoner's job — even
+  // though the message names that other personality, do NOT route there.
+  if (PROMPT_CRAFT.test(text)) return "reason";
   // 1) explicit address — if exactly one personality is named, obey it
   const targets = new Set<Mode>();
   for (const [re, m] of NAME_TARGETS) if (re.test(text)) targets.add(m);
@@ -194,6 +200,7 @@ function archivistInstructions(cluster: Cluster): string {
     "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer.",
     "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
     "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
+    "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
     "",
     "OUTPUT — markdown, **220 words max**:",
     "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.",
