@@ -12,7 +12,8 @@ const STORAGE_KEY = "daniotype_kasperov_v3";
 const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
 type Pt = { x: number; y: number };
-type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string };
+type Box = { x: number; y: number; w: number; h: number };
+type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string; via?: AgentMode };
 interface Cluster {
   id: string;
   label: string;
@@ -402,10 +403,11 @@ type AgentMode = "research" | "archivist" | "reason";
 type ChatMsg = { role: "user" | "assistant"; content: string; mode?: AgentMode };
 
 // per-personality theming for badges, router cards, and loading views
+// Global personality colour code: green = Researcher, yellow = Archivist, blue = Reasoner.
 const THEME: Record<AgentMode, { name: string; icon: string; color: string; bg: string; trace: string; verb: string; blurb: string }> = {
-  research: { name: "Researcher", icon: "🔬", color: "#0e7490", bg: "#ecfeff", trace: "Research log", verb: "Searching ZFIN · ZFA · GO…", blurb: "ZFIN / ZFA / GO literature" },
-  archivist: { name: "Archivist", icon: "🗄", color: "#4338ca", bg: "#eef2ff", trace: "Archive search", verb: "Pulling records from the MiniFin stacks…", blurb: "raw MiniFin records" },
-  reason: { name: "Reasoner", icon: "🧠", color: "#7c3aed", bg: "#f5f3ff", trace: "Reasoning", verb: "Reasoning across what's known…", blurb: "generalist synthesis" },
+  research: { name: "Researcher", icon: "🔬", color: "#15803d", bg: "#f0fdf4", trace: "Research log", verb: "Searching ZFIN · ZFA · GO…", blurb: "ZFIN / ZFA / GO literature" },
+  archivist: { name: "Archivist", icon: "🗄", color: "#a16207", bg: "#fef9c3", trace: "Archive search", verb: "Pulling records from the MiniFin stacks…", blurb: "raw MiniFin records" },
+  reason: { name: "Reasoner", icon: "🧠", color: "#2563eb", bg: "#eff6ff", trace: "Reasoning", verb: "Reasoning across what's known…", blurb: "generalist synthesis" },
 };
 const MODES: AgentMode[] = ["research", "archivist", "reason"];
 
@@ -491,16 +493,32 @@ function ClusterStage({
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState(false);
 
-  function incorporate(msgKey: string, markers: Marker[]) {
+  function incorporate(msgKey: string, markers: Marker[], via: AgentMode) {
     setAugmented((a) => {
       const cur = a[active.id] ?? [];
       const byGene = new Map(cur.map((m) => [m.g, m]));
-      markers.forEach((m) => byGene.set(m.g, { ...byGene.get(m.g), ...m }));
+      markers.forEach((m) => byGene.set(m.g, { ...byGene.get(m.g), ...m, via }));
       return { ...a, [active.id]: Array.from(byGene.values()) };
     });
     setIncorporated((s) => new Set(s).add(msgKey));
     setFlash(true);
     setTimeout(() => setFlash(false), 900);
+  }
+
+  // live confidence box (appears once there's a conversation to assess)
+  const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
+  async function refreshConfidence(msgs: ChatMsg[], clusterId: string) {
+    if (!msgs.some((m) => m.role === "assistant")) return;
+    try {
+      const r = await fetch("/api/kasperov_confidence", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ cluster: { id: clusterId, label: active.label }, messages: msgs }),
+      });
+      if (!r.ok) return;
+      const d = await r.json();
+      if (typeof d.pct === "number") setConfidence((c) => ({ ...c, [clusterId]: { pct: d.pct, why: d.why || "" } }));
+    } catch {}
   }
 
   const msgs = transcripts[active.id] ?? [];
@@ -517,14 +535,36 @@ function ClusterStage({
     setRouted(false);
   }, [active.id]);
 
+  const [containerSize, setContainerSize] = useState({ w: 0, h: 0 });
   useEffect(() => {
     function fit() {
-      setZoomW(Math.max(280, (leftRef.current?.clientWidth ?? 560) - 24));
+      const el = leftRef.current;
+      setZoomW(Math.max(280, (el?.clientWidth ?? 560) - 24));
+      if (el) setContainerSize({ w: el.clientWidth, h: el.clientHeight });
     }
     fit();
     window.addEventListener("resize", fit);
     return () => window.removeEventListener("resize", fit);
   }, [panelW]);
+
+  // start with chat + focused-cluster splitting the screen 50/50
+  useEffect(() => {
+    setPanelW(Math.round(window.innerWidth / 2));
+  }, []);
+
+  // place the floating panels once we know the container size (then they're draggable)
+  const [placed, setPlaced] = useState(false);
+  const placementsRef = useRef<{ wm: Box; mk: Box; cf: Box } | null>(null);
+  useEffect(() => {
+    if (placed || containerSize.w < 60 || containerSize.h < 60) return;
+    const W = containerSize.w, H = containerSize.h;
+    placementsRef.current = {
+      wm: { x: 14, y: Math.max(40, H - 200), w: 226, h: 184 },
+      mk: { x: Math.max(14, W - 256), y: Math.max(40, H - 252), w: 242, h: 238 },
+      cf: { x: Math.max(14, W - 264), y: 14, w: 250, h: 122 },
+    };
+    setPlaced(true);
+  }, [containerSize, placed]);
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -577,8 +617,8 @@ function ClusterStage({
             mode = evt.v === "archivist" ? "archivist" : evt.v === "reason" ? "reason" : "research";
             setSMode(mode);
             setRouted(true);
-            // hold the router animation for a beat, then reveal the working view
-            const wait = Math.max(0, 1100 - (Date.now() - startedAt));
+            // hold the selection screen ~2s — it's a feature, let it breathe
+            const wait = Math.max(0, 2000 - (Date.now() - startedAt));
             setTimeout(() => setRouting(false), wait);
           } else if (evt.t === "status") setStatus(evt.v);
           else if (evt.t === "thinking") setThinking((p) => p + evt.v);
@@ -598,12 +638,14 @@ function ClusterStage({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }] }));
+      const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
+      setTranscripts((t) => ({ ...t, [active.id]: finalMsgs }));
       setStreaming(false);
       setRouting(false);
       setStatus("");
       setText("");
       setThinking("");
+      refreshConfidence(finalMsgs, active.id);
     }
   }
 
@@ -645,13 +687,27 @@ function ClusterStage({
         <div ref={leftRef} style={{ flex: "1.25 1 0", position: "relative", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)" }}>
           <div style={{ position: "absolute", top: 16, left: 18, fontSize: 12, color: "#999", textTransform: "uppercase", letterSpacing: 1 }}>Focused cluster</div>
           <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
-          <div style={{ position: "absolute", bottom: 16, left: 16, background: "rgba(255,253,251,0.92)", border: "1px solid #e5e1dc", borderRadius: 10, padding: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
-            <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 2, letterSpacing: 0.5 }}>WORLD MAP</div>
-            <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={210} height={158} showFocus />
-          </div>
 
-          {/* marker panel — same aesthetic as the world-map HUD; grows as chat adds insight */}
-          <MarkersBox cluster={active} added={augmented[active.id] ?? []} flash={flash} />
+          {placed && placementsRef.current && (
+            <>
+              {/* world map — draggable + resizable */}
+              <DraggablePanel title="WORLD MAP" accent="#999" initial={placementsRef.current.wm} minW={150} minH={120}>
+                {(w, h) => <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
+              </DraggablePanel>
+
+              {/* top markers — draggable + resizable; grows in content as chat adds insight */}
+              <DraggablePanel title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`} accent="#15803d" initial={placementsRef.current.mk} minW={190} minH={140} flash={flash}>
+                {() => <MarkersContent cluster={active} added={augmented[active.id] ?? []} />}
+              </DraggablePanel>
+
+              {/* live confidence — only once the chat gives us reason to score it */}
+              {confidence[active.id] && (
+                <DraggablePanel title="CONFIDENCE" accent="#0e7490" initial={placementsRef.current.cf} minW={180} minH={96}>
+                  {() => <ConfidenceContent pct={confidence[active.id].pct} why={confidence[active.id].why} />}
+                </DraggablePanel>
+              )}
+            </>
+          )}
         </div>
 
         {/* draggable splitter */}
@@ -695,10 +751,10 @@ function ClusterStage({
                       <AgentMessage content={parsed.clean} mode={m.mode} />
                       {canAdd && (
                         <button
-                          onClick={() => incorporate(key, parsed.markers)}
-                          style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 7, background: "#eef2ff", border: "1px solid #4338ca55", color: "#4338ca", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                          onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
+                          style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 7, background: THEME[m.mode ?? "research"].bg, border: `1px solid ${THEME[m.mode ?? "research"].color}55`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
                         >
-                          ➕ Add {parsed.markers.length} marker insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
+                          ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
                         </button>
                       )}
                       {parsed.markers.length > 0 && incorporated.has(key) && (
@@ -895,12 +951,6 @@ const researchMD = {
 };
 const archivistMD = { ...baseMD, li: (p: any) => <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li> };
 
-const MODE_BADGE: Record<AgentMode, { label: string; icon: string; color: string; bg: string }> = {
-  research: { label: "Researcher · ZFIN/ZFA/GO", icon: "🔬", color: "#0e7490", bg: "#ecfeff" },
-  archivist: { label: "Archivist · raw MiniFin", icon: "🗄", color: "#4338ca", bg: "#eef2ff" },
-  reason: { label: "Reasoner · generalist", icon: "🧠", color: "#7c3aed", bg: "#f5f3ff" },
-};
-
 function AgentMessage({ content, mode = "research" }: { content: string; mode?: AgentMode }) {
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
   const verdict = m ? m[1].trim() : null;
@@ -915,7 +965,8 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
       : null
     : null;
   const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
-  const badge = MODE_BADGE[mode];
+  const th = THEME[mode];
+  const badge = { label: `${th.name} · ${th.blurb}`, icon: th.icon, color: th.color, bg: th.bg };
   const isArchivist = mode === "archivist";
   return (
     <div
@@ -960,68 +1011,148 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
 // ---------------------------------------------------------------------------
 // Focused-cluster markers panel — HUD aesthetic matching the world map
 // ---------------------------------------------------------------------------
-function MarkersBox({ cluster, added, flash }: { cluster: Cluster; added: Marker[]; flash: boolean }) {
-  const top = cluster.markers.slice(0, 8);
-  const maxFc = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
-  const hasAdded = added.length > 0;
-  // box grows + widens as chat contributes insight
-  const width = hasAdded ? 300 : 232;
-  const maxHeight = hasAdded ? 420 : 300;
+// ---------------------------------------------------------------------------
+// A floating panel that can be dragged (by its header) and resized (corner).
+// children may be a render-prop receiving the inner content (w,h).
+// ---------------------------------------------------------------------------
+function DraggablePanel({
+  title,
+  accent,
+  initial,
+  minW = 160,
+  minH = 90,
+  flash = false,
+  children,
+}: {
+  title: string;
+  accent: string;
+  initial: Box;
+  minW?: number;
+  minH?: number;
+  flash?: boolean;
+  children: (w: number, h: number) => React.ReactNode;
+}) {
+  const [box, setBox] = useState<Box>(initial);
+  const HEADER = 24;
+
+  function onDrag(e: React.MouseEvent) {
+    e.preventDefault();
+    const sx = e.clientX, sy = e.clientY;
+    const o = { ...box };
+    const move = (ev: MouseEvent) => setBox((b) => ({ ...b, x: Math.max(0, o.x + ev.clientX - sx), y: Math.max(0, o.y + ev.clientY - sy) }));
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      document.body.style.userSelect = "";
+    };
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  }
+  function onResize(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const sx = e.clientX, sy = e.clientY;
+    const o = { ...box };
+    const move = (ev: MouseEvent) => setBox((b) => ({ ...b, w: Math.max(minW, o.w + ev.clientX - sx), h: Math.max(minH, o.h + ev.clientY - sy) }));
+    const up = () => {
+      window.removeEventListener("mousemove", move);
+      window.removeEventListener("mouseup", up);
+      document.body.style.userSelect = "";
+    };
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", move);
+    window.addEventListener("mouseup", up);
+  }
+
   return (
     <div
       style={{
         position: "absolute",
-        bottom: 16,
-        right: 16,
-        width,
-        maxHeight,
-        overflowY: "auto",
-        background: "rgba(255,253,251,0.95)",
-        border: `1px solid ${hasAdded ? "#4338ca55" : "#e5e1dc"}`,
+        left: box.x,
+        top: box.y,
+        width: box.w,
+        height: box.h,
+        background: "rgba(255,253,251,0.96)",
+        border: `1px solid ${accent}44`,
+        borderTop: `2px solid ${accent}`,
         borderRadius: 10,
-        padding: "8px 10px",
-        boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-        transition: "width .35s ease, max-height .35s ease, border-color .35s ease",
+        boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
+        display: "flex",
+        flexDirection: "column",
+        overflow: "hidden",
         animation: flash ? "kflash .9s ease-out" : "none",
       }}
     >
-      <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 6, letterSpacing: 0.5 }}>
-        TOP MARKERS{hasAdded ? ` · +${added.length} from chat` : ""}
+      <div onMouseDown={onDrag} style={{ height: HEADER, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: accent, userSelect: "none" }}>
+        <span style={{ opacity: 0.5 }}>⠿</span> {title}
       </div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", marginBottom: 4 }}>▲ UP-REGULATED</div>
+      <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "0 8px 6px" }}>{children(box.w - 16, box.h - HEADER - 12)}</div>
+      <div onMouseDown={onResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 14, height: 14, cursor: "nwse-resize", color: accent, opacity: 0.5, fontSize: 11, lineHeight: "14px", textAlign: "right" }}>◢</div>
+    </div>
+  );
+}
+
+function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] }) {
+  const top = cluster.markers.slice(0, 8);
+  const maxFc = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", margin: "2px 0 4px" }}>▲ UP-REGULATED</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {top.map((m) => (
           <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-            <span style={{ width: 74, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+            <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
             <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
               <div style={{ width: `${((m.l2fc ?? 0) / maxFc) * 100}%`, height: "100%", background: "#15803d" }} />
             </div>
-            <span style={{ width: 50, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>
-              {m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}
-            </span>
+            <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
           </div>
         ))}
       </div>
 
-      {hasAdded && (
+      {added.length > 0 && (
         <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#4338ca", margin: "9px 0 3px" }}>✦ ADDED FROM CHAT</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {added.map((m) => (
-              <div key={m.g} style={{ fontSize: 11.5, borderLeft: "2px solid #4338ca", paddingLeft: 7 }}>
-                <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
-                {m.l2fc != null && <span style={{ color: "#888" }}> · log2FC {m.l2fc}</span>}
-                {m.p1 != null && <span style={{ color: "#888" }}> · {(m.p1 * 100).toFixed(0)}/{((m.p2 ?? 0) * 100).toFixed(0)}%</span>}
-                {m.note && <div style={{ color: "#555", lineHeight: 1.35, marginTop: 1 }}>{m.note}</div>}
-              </div>
-            ))}
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ADDED FROM CHAT</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {added.map((m) => {
+              const th = THEME[m.via ?? "research"];
+              return (
+                <div key={m.g} style={{ fontSize: 11.5, borderLeft: `3px solid ${th.color}`, background: th.bg, borderRadius: 5, padding: "4px 7px" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                    <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
+                    <span style={{ fontSize: 8.5, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 4px", textTransform: "uppercase" }}>{th.name}</span>
+                  </div>
+                  {(m.l2fc != null || m.p1 != null) && (
+                    <div style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>
+                      {m.l2fc != null ? `log2FC ${m.l2fc}` : ""}{m.p1 != null ? `${m.l2fc != null ? " · " : ""}${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}
+                    </div>
+                  )}
+                  {m.note && <div style={{ color: "#555", lineHeight: 1.35 }}>{m.note}</div>}
+                </div>
+              );
+            })}
           </div>
         </>
       )}
 
       <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 2px" }}>▼ DOWN-REGULATED</div>
       <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>Not in the split-pipe export — computable from the h5ad on request.</div>
-      <div style={{ fontSize: 9.5, color: "#bbb", marginTop: 6, textAlign: "right" }}>bars = log2FC · %in/%out</div>
+    </div>
+  );
+}
+
+function ConfidenceContent({ pct, why }: { pct: number; why: string }) {
+  const color = pct >= 75 ? "#15803d" : pct >= 50 ? "#b45309" : "#b91c1c";
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
+        <span style={{ fontSize: 26, fontWeight: 800, color, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+        <div style={{ flex: 1, height: 7, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
+          <div style={{ width: `${pct}%`, height: "100%", background: color, transition: "width .4s ease" }} />
+        </div>
+      </div>
+      <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 6 }}>{why}</div>
     </div>
   );
 }
