@@ -1,0 +1,18 @@
+[Unit]
+Description=MiniFin query microservice (daniotype_kasperov Archivist backend)
+After=network.target
+
+[Service]
+Type=simple
+User=ssm-user
+WorkingDirectory=/data/zeroshotbio-landingpage/backend/minifin_query_api
+# CHANGE the token, then keep it in sync with the Vercel MINIFIN_SERVICE_TOKEN env var
+Environment=MINIFIN_API_TOKEN=CHANGE_ME_TO_A_LONG_RANDOM_STRING
+Environment=MINIFIN_H5AD=/data/datasets/raw_datasets/MiniFin/minifin_filtered.h5ad
+Environment=MINIFIN_ASSIGN=/data/datasets/raw_datasets/MiniFin/all-sample/report/cluster_assignment.csv
+ExecStart=/data/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 5007
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

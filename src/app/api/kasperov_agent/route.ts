@@ -198,7 +198,8 @@ function archivistInstructions(cluster: Cluster): string {
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most two tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool.",
     "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
-    "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table). Adjusted p-values are NOT in this export — state that plainly and report log2FC + percentages + specificity instead; never stall waiting for p-values or ask the curator to run an export.",
+    "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table).",
+    "STATISTICS: for adjusted p-values use kind='pvalues'; for cell-level co-expression (fraction of this cluster's cells expressing several genes together) use kind='coexpress'. These call a live compute service — if it returns an error that it is not configured, report the available log2FC/percentages/specificity instead and tell the curator p-values/co-expression need that service. Never stall or ask the curator to run an export themselves.",
     "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
     "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
     "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
@@ -232,11 +233,11 @@ const QUERY_TOOL = {
   type: "function",
   name: "query_minifin",
   description:
-    "Query the MiniFin dataset for THIS cluster. kinds: gene/genes = one-vs-rest log2FC + %in/%out for one or several genes (batch several in ONE call); top = top-N up/down markers; search = substring gene match; across = ONE gene's mean expression + %expressing in EVERY cluster, with the active cluster's specificity rank; specificity = compact cross-cluster specificity summary (active value, rank, top clusters) for a LIST of genes. Use across/specificity for 'expression in each cluster', 'how specific is this to the cluster', 'which cluster is this a marker of', or cross-cluster comparisons. Never say data is unavailable — query it. (Note: adjusted p-values are not in this export.)",
+    "Query the MiniFin dataset for THIS cluster. kinds: gene/genes = one-vs-rest log2FC + %in/%out for one or several genes (batch several in ONE call); top = top-N up/down markers; search = substring gene match; across = ONE gene's mean expression + %expressing in EVERY cluster + the active cluster's specificity rank; specificity = compact cross-cluster specificity summary for a LIST of genes; pvalues = BH-adjusted one-vs-rest p-values (+log2FC, %in/out) for a gene list; coexpress = cell-level fraction of this cluster's cells co-expressing ALL listed genes. Use across/specificity for cross-cluster questions, pvalues for significance, coexpress for co-expression. Never say data is unavailable — query it.",
   parameters: {
     type: "object",
     properties: {
-      kind: { type: "string", enum: ["gene", "genes", "top", "search", "across", "specificity"], description: "gene/genes = log2FC+%in/out; top = top-N markers; search = substring; across = one gene across all clusters; specificity = cross-cluster specificity summary for a gene list" },
+      kind: { type: "string", enum: ["gene", "genes", "top", "search", "across", "specificity", "pvalues", "coexpress"], description: "gene/genes = log2FC+%in/out; top = top-N; search = substring; across = one gene across clusters; specificity = cross-cluster summary for a list; pvalues = adjusted p-values for a list; coexpress = cell-level co-expression of a list" },
       gene: { type: "string", description: "gene for kind=gene or kind=across" },
       genes: { type: "array", items: { type: "string" }, description: "gene list for kind=genes or kind=specificity (up to 40)" },
       direction: { type: "string", enum: ["up", "down"], description: "for kind=top" },
@@ -274,11 +275,42 @@ async function getMatrix(origin: string): Promise<GeneMatrix | null> {
   } catch {}
   return matrixCache;
 }
+// Live MiniFin compute service (p-values + cell-level co-expression). Optional:
+// set MINIFIN_SERVICE_URL (+ MINIFIN_SERVICE_TOKEN) to enable; otherwise these
+// kinds degrade gracefully.
+const SERVICE_URL = (process.env.MINIFIN_SERVICE_URL || "").replace(/\/$/, "");
+const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
+async function callService(kind: string, clusterId: string, genes: string[]): Promise<any> {
+  if (!SERVICE_URL)
+    return { error: "the live MiniFin stats service (p-values / co-expression) is not configured for this deployment — report log2FC, percentages and specificity instead, and tell the curator p-values/co-expression need that service." };
+  try {
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 35000);
+    const r = await fetch(`${SERVICE_URL}/query`, {
+      method: "POST",
+      signal: ctrl.signal,
+      headers: { "content-type": "application/json", "x-api-token": SERVICE_TOKEN },
+      body: JSON.stringify({ kind, cluster: String(clusterId), genes }),
+    });
+    clearTimeout(t);
+    if (!r.ok) return { error: `stats service returned ${r.status}` };
+    return await r.json();
+  } catch {
+    return { error: "stats service unreachable" };
+  }
+}
+
 async function runQuery(argsStr: string, clusterId: string, origin: string): Promise<any> {
   let a: any = {};
   try {
     a = JSON.parse(argsStr || "{}");
   } catch {}
+
+  // p-values + cell-level co-expression are served by the live compute service
+  if (a.kind === "pvalues" || a.kind === "coexpress") {
+    const genes = Array.isArray(a.genes) ? a.genes.slice(0, 60) : a.gene ? [a.gene] : [];
+    return await callService(a.kind, String(clusterId), genes);
+  }
 
   // cross-cluster / specificity kinds use the gene × cluster matrix
   if (a.kind === "across" || a.kind === "specificity") {
@@ -514,6 +546,8 @@ export async function POST(req: Request) {
                   : a.kind === "search" ? `search “${a.query}”`
                   : a.kind === "across" ? `${a.gene} across clusters`
                   : a.kind === "specificity" ? `specificity of ${(a.genes ?? []).length} genes`
+                  : a.kind === "pvalues" ? `p-values for ${(a.genes ?? []).length} genes`
+                  : a.kind === "coexpress" ? `co-expression of ${(a.genes ?? []).length} genes`
                   : "MiniFin";
               } catch {}
               sse(controller, enc, { t: "status", v: `Querying MiniFin: ${label}…` });
