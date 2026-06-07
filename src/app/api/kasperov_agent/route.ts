@@ -13,7 +13,9 @@
 
 import "server-only";
 export const runtime = "nodejs";
-export const maxDuration = 120;
+// 60s is the Vercel hobby-plan ceiling. If you upgrade to Pro you can raise this
+// to 300 for deeper multi-search agent runs.
+export const maxDuration = 60;
 
 import { NextResponse } from "next/server";
 import { ATLAS, type AtlasNode } from "../../daniotype_kasperov/atlas";
@@ -148,7 +150,7 @@ export async function POST(req: Request) {
     let finalText = "";
     for (let i = 0; i < 4; i++) {
       const ctrl = new AbortController();
-      const t = setTimeout(() => ctrl.abort(), 105000);
+      const t = setTimeout(() => ctrl.abort(), 55000);
       const r = await fetch("https://api.anthropic.com/v1/messages", {
         method: "POST",
         signal: ctrl.signal,
