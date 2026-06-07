@@ -3,132 +3,92 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { ATLAS, type AtlasNode } from "./atlas";
 
-// ---------------------------------------------------------------------------
-// Palette
 // ---------------------------------------------------------------------------
 const PAPER = "#f6f4f2";
 const INK = "#2b2b2b";
 const ACCENT = "#0e7490";
-const STORAGE_KEY = "daniotype_kasperov_v2";
+const STORAGE_KEY = "daniotype_kasperov_v3";
+const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
-// ---------------------------------------------------------------------------
-// Derive the flat list of clusters (the leaves of the spine tree) + a stable
-// synthetic UMAP layout grouped into germ-layer lobes. Sample geometry — swaps
-// for real run coords later; the shapes are what matter for the POC.
-// ---------------------------------------------------------------------------
 type Pt = { x: number; y: number };
 interface Cluster {
   id: string;
-  name: string;
-  state: string | null;
-  germ: string; // ecto | meso | endo
-  color: string;
-  proposed: string;
+  label: string;
   nCells: number;
-  degsUp: string[];
-  degsDown: string[];
-  points: Pt[];
+  color: string;
   cx: number;
-  cy: number; // centroid (data coords)
+  cy: number;
+  degsUp: string[];
+  points: Pt[];
   bounds: { minx: number; maxx: number; miny: number; maxy: number };
 }
 
-function mulberry32(seed: number) {
-  return function () {
-    seed |= 0;
-    seed = (seed + 0x6d2b79f5) | 0;
-    let t = Math.imul(seed ^ (seed >>> 15), 1 | seed);
-    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-function gauss(rnd: () => number) {
-  // Box–Muller
-  const u = Math.max(rnd(), 1e-9);
-  const v = rnd();
-  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
-}
-function hashId(s: string) {
-  let h = 2166136261;
-  for (let i = 0; i < s.length; i++) {
-    h ^= s.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return h >>> 0;
+interface AtlasMeta {
+  source: string;
+  totalCells: number;
+  nClusters: number;
 }
 
-const LOBES: Record<string, Pt> = {
-  ecto: { x: -3.4, y: 1.7 },
-  meso: { x: 3.4, y: 1.7 },
-  endo: { x: 0, y: -3.1 },
-};
-const GERM_COLORS: Record<string, string[]> = {
-  ecto: ["#0e7490", "#0891b2", "#06b6d4", "#22d3ee", "#38bdf8"],
-  meso: ["#b91c1c", "#dc2626", "#ea580c", "#f59e0b", "#d97706"],
-  endo: ["#15803d", "#16a34a", "#65a30d", "#84cc16", "#4d7c0f"],
-};
-
-function buildClusters(): Cluster[] {
-  const parents = new Set(ATLAS.map((n) => n.parent).filter(Boolean) as string[]);
-  const leaves = ATLAS.filter((n) => !parents.has(n.id));
-  // group by germ layer (first id segment)
-  const byGerm: Record<string, AtlasNode[]> = {};
-  leaves.forEach((n) => {
-    const g = n.id.split(".")[0];
-    (byGerm[g] ??= []).push(n);
-  });
-
-  const clusters: Cluster[] = [];
-  Object.entries(byGerm).forEach(([germ, nodes]) => {
-    const lobe = LOBES[germ] ?? { x: 0, y: 0 };
-    const colors = GERM_COLORS[germ] ?? ["#666"];
-    const k = nodes.length;
-    nodes.forEach((n, gi) => {
-      const ang = (gi / Math.max(k, 1)) * Math.PI * 2 + hashId(n.id) / 4294967296;
-      const rad = k === 1 ? 0 : 1.5;
-      const cx = lobe.x + Math.cos(ang) * rad;
-      const cy = lobe.y + Math.sin(ang) * rad;
-      const rnd = mulberry32(hashId(n.id));
-      const nPts = Math.max(55, Math.min(240, Math.round(Math.sqrt(n.n_cells) * 2.4)));
-      const sd = 0.5;
-      const points: Pt[] = [];
-      let minx = Infinity,
-        maxx = -Infinity,
-        miny = Infinity,
-        maxy = -Infinity;
-      for (let i = 0; i < nPts; i++) {
-        const x = cx + gauss(rnd) * sd;
-        const y = cy + gauss(rnd) * sd;
-        points.push({ x, y });
-        if (x < minx) minx = x;
-        if (x > maxx) maxx = x;
-        if (y < miny) miny = y;
-        if (y > maxy) maxy = y;
-      }
-      clusters.push({
-        id: n.id,
-        name: n.decision.name,
-        state: n.decision.state,
-        germ,
-        color: colors[gi % colors.length],
-        proposed: n.decision.name + (n.decision.state ? ` (${n.decision.state})` : ""),
-        nCells: n.n_cells,
-        degsUp: n.markers.filter((m) => m.direction === "up").map((m) => m.gene),
-        degsDown: n.markers.filter((m) => m.direction === "down").map((m) => m.gene),
-        points,
-        cx,
-        cy,
-        bounds: { minx, maxx, miny, maxy },
-      });
-    });
-  });
-  return clusters;
+function paletteColor(i: number, n: number) {
+  const h = Math.round((i * 360) / n + (i % 2 ? 180 / n : 0)) % 360;
+  const s = 60 + (i % 3) * 9;
+  const l = 46 + (i % 2) * 9;
+  return `hsl(${h} ${s}% ${l}%)`;
 }
 
 // ---------------------------------------------------------------------------
-// UMAP canvas — global (HUD / world map) and zoom (focused cluster) modes.
+// Load + shape the real MiniFin atlas asset
+// ---------------------------------------------------------------------------
+function useAtlas() {
+  const [clusters, setClusters] = useState<Cluster[] | null>(null);
+  const [meta, setMeta] = useState<AtlasMeta | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(DATA_URL)
+      .then((r) => {
+        if (!r.ok) throw new Error(`asset ${r.status}`);
+        return r.json();
+      })
+      .then((d: any) => {
+        if (!alive) return;
+        const n = d.clusters.length;
+        const cs: Cluster[] = d.clusters.map((c: any, i: number) => ({
+          id: c.id,
+          label: c.label,
+          nCells: c.nCells,
+          color: paletteColor(i, n),
+          cx: c.cx,
+          cy: c.cy,
+          degsUp: c.degsUp ?? [],
+          points: [],
+          bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
+        }));
+        for (const [x, y, ci] of d.points as [number, number, number][]) {
+          const c = cs[ci];
+          if (!c) continue;
+          c.points.push({ x, y });
+          if (x < c.bounds.minx) c.bounds.minx = x;
+          if (x > c.bounds.maxx) c.bounds.maxx = x;
+          if (y < c.bounds.miny) c.bounds.miny = y;
+          if (y > c.bounds.maxy) c.bounds.maxy = y;
+        }
+        setClusters(cs);
+        setMeta({ source: d.source, totalCells: d.totalCells, nClusters: n });
+      })
+      .catch((e) => alive && setError(String(e?.message ?? e)));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  return { clusters, meta, error };
+}
+
+// ---------------------------------------------------------------------------
+// UMAP canvas — global (world map / HUD) and zoom (focused cluster)
 // ---------------------------------------------------------------------------
 function UmapCanvas({
   clusters,
@@ -154,12 +114,11 @@ function UmapCanvas({
   const ref = useRef<HTMLCanvasElement | null>(null);
   const active = clusters.find((c) => c.id === activeId) || null;
 
-  // Transform from data coords → canvas px (CSS units).
   const transform = useMemo(() => {
-    const pad = 18;
+    const pad = 16;
     let minx: number, maxx: number, miny: number, maxy: number;
     if (mode === "zoom" && active) {
-      const ext = Math.max(active.bounds.maxx - active.bounds.minx, active.bounds.maxy - active.bounds.miny) * 0.75 + 0.6;
+      const ext = Math.max(active.bounds.maxx - active.bounds.minx, active.bounds.maxy - active.bounds.miny) * 0.7 + 1;
       minx = active.cx - ext;
       maxx = active.cx + ext;
       miny = active.cy - ext;
@@ -176,16 +135,11 @@ function UmapCanvas({
         maxy = Math.max(maxy, c.bounds.maxy);
       });
     }
-    const sx = (width - 2 * pad) / (maxx - minx);
-    const sy = (height - 2 * pad) / (maxy - miny);
-    const scale = Math.min(sx, sy);
+    const scale = Math.min((width - 2 * pad) / (maxx - minx), (height - 2 * pad) / (maxy - miny));
     const ox = pad + (width - 2 * pad - (maxx - minx) * scale) / 2;
     const oy = pad + (height - 2 * pad - (maxy - miny) * scale) / 2;
-    const toC = (x: number, y: number) => ({
-      cx: ox + (x - minx) * scale,
-      cy: height - (oy + (y - miny) * scale), // invert y
-    });
-    return { scale, toC, minx, maxx, miny, maxy };
+    const toC = (x: number, y: number) => ({ cx: ox + (x - minx) * scale, cy: height - (oy + (y - miny) * scale) });
+    return { scale, toC };
   }, [clusters, mode, active, width, height]);
 
   useEffect(() => {
@@ -199,53 +153,50 @@ function UmapCanvas({
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.clearRect(0, 0, width, height);
 
-    const r = mode === "zoom" ? 2.6 : 1.6;
+    const baseR = mode === "zoom" ? 2.4 : width < 260 ? 1.0 : 1.5;
     clusters.forEach((c) => {
       const isActive = c.id === activeId;
-      let fill = "#d6d0c9";
-      if (mode === "zoom") fill = isActive ? c.color : "#e2ddd6";
+      let fill: string;
+      if (mode === "zoom") fill = isActive ? c.color : "#e3ded7";
       else fill = colored ? c.color : "#cbc5be";
-      ctx.globalAlpha = mode === "zoom" ? (isActive ? 0.95 : 0.4) : colored ? 0.85 : 0.55;
+      ctx.globalAlpha = mode === "zoom" ? (isActive ? 0.95 : 0.35) : colored ? 0.82 : 0.5;
+      ctx.fillStyle = fill;
+      const r = isActive && mode === "zoom" ? baseR + 0.6 : baseR;
       c.points.forEach((p) => {
         const { cx, cy } = transform.toC(p.x, p.y);
         ctx.beginPath();
-        ctx.arc(cx, cy, isActive && mode === "zoom" ? r + 0.6 : r, 0, Math.PI * 2);
-        ctx.fillStyle = fill;
+        ctx.arc(cx, cy, r, 0, Math.PI * 2);
         ctx.fill();
       });
     });
     ctx.globalAlpha = 1;
 
-    // validated checkmarks (global, colored)
     if (mode === "global" && colored) {
       clusters.forEach((c) => {
         if (!validated.has(c.id)) return;
         const { cx, cy } = transform.toC(c.cx, c.cy);
         ctx.beginPath();
-        ctx.arc(cx, cy, 7, 0, Math.PI * 2);
+        ctx.arc(cx, cy, width < 260 ? 5 : 7, 0, Math.PI * 2);
         ctx.fillStyle = "#15803d";
         ctx.fill();
         ctx.strokeStyle = "#fff";
         ctx.lineWidth = 1.5;
         ctx.beginPath();
         ctx.moveTo(cx - 3, cy);
-        ctx.lineTo(cx - 1, cy + 2.5);
-        ctx.lineTo(cx + 3.2, cy - 2.5);
+        ctx.lineTo(cx - 1, cy + 2.4);
+        ctx.lineTo(cx + 3, cy - 2.4);
         ctx.stroke();
       });
     }
 
-    // focus rectangle on HUD
     if (showFocus && active) {
       const a = transform.toC(active.bounds.minx, active.bounds.maxy);
       const b = transform.toC(active.bounds.maxx, active.bounds.miny);
-      const x = Math.min(a.cx, b.cx) - 4;
-      const y = Math.min(a.cy, b.cy) - 4;
-      const w = Math.abs(b.cx - a.cx) + 8;
-      const h = Math.abs(b.cy - a.cy) + 8;
+      const x = Math.min(a.cx, b.cx) - 3;
+      const y = Math.min(a.cy, b.cy) - 3;
       ctx.strokeStyle = ACCENT;
       ctx.lineWidth = 2;
-      ctx.strokeRect(x, y, w, h);
+      ctx.strokeRect(x, y, Math.abs(b.cx - a.cx) + 6, Math.abs(b.cy - a.cy) + 6);
     }
   }, [clusters, mode, colored, activeId, validated, width, height, transform, showFocus, active]);
 
@@ -264,31 +215,23 @@ function UmapCanvas({
         bestId = c.id;
       }
     });
-    if (bestId && bestD < 55) onPick(bestId);
+    if (bestId && bestD < 45) onPick(bestId);
   }
 
   return (
     <canvas
       ref={ref}
       onClick={handleClick}
-      style={{
-        width,
-        height,
-        display: "block",
-        cursor: onPick && mode === "global" && colored ? "pointer" : "default",
-        borderRadius: 10,
-      }}
+      style={{ width, height, display: "block", cursor: onPick && mode === "global" && colored ? "pointer" : "default", borderRadius: 10 }}
     />
   );
 }
 
 // ---------------------------------------------------------------------------
-// Top-level wizard
-// ---------------------------------------------------------------------------
 type Stage = "intro" | "map" | "cluster";
 
 export default function KasperovClient() {
-  const clusters = useMemo(buildClusters, []);
+  const { clusters, meta, error } = useAtlas();
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -312,10 +255,6 @@ export default function KasperovClient() {
     } catch {}
   }, [validated, loaded]);
 
-  function openCluster(id: string) {
-    setActiveId(id);
-    setStage("cluster");
-  }
   function markValidated(id: string, yes: boolean) {
     setValidated((prev) => {
       const next = new Set(prev);
@@ -325,64 +264,60 @@ export default function KasperovClient() {
     });
   }
 
-  if (stage === "intro") return <Intro onStart={() => setStage("map")} />;
+  if (stage === "intro") return <Intro onStart={() => setStage("map")} meta={meta} />;
+
+  if (!clusters) {
+    return (
+      <Centered>
+        {error ? `Failed to load the atlas: ${error}` : "Loading the MiniFin atlas…"}
+      </Centered>
+    );
+  }
 
   if (stage === "map")
     return (
       <MapStage
         clusters={clusters}
+        meta={meta}
         revealed={revealed}
         onReveal={() => setRevealed(true)}
         validated={validated}
-        onPick={openCluster}
+        onPick={(id) => {
+          setActiveId(id);
+          setStage("cluster");
+        }}
       />
     );
 
   const active = clusters.find((c) => c.id === activeId)!;
   return (
-    <ClusterStage
-      clusters={clusters}
-      active={active}
-      validated={validated}
-      onBack={() => setStage("map")}
-      onValidate={markValidated}
-    />
+    <ClusterStage clusters={clusters} active={active} validated={validated} onBack={() => setStage("map")} onValidate={markValidated} />
+  );
+}
+
+function Centered({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: "#777", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
+      {children}
+    </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Intro
-// ---------------------------------------------------------------------------
-function Intro({ onStart }: { onStart: () => void }) {
+function Intro({ onStart, meta }: { onStart: () => void; meta: AtlasMeta | null }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 720, padding: "84px 28px" }}>
-        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>
-          daniotype · kasperov
-        </div>
-        <h1 style={{ fontSize: 42, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.08 }}>
-          Label the atlas, together
-        </h1>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov</div>
+        <h1 style={{ fontSize: 42, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.08 }}>Label the atlas, together</h1>
         <p style={{ fontSize: 18, color: "#555", lineHeight: 1.6, marginTop: 14 }}>
-          Kasparov&apos;s wager: the strongest systems are human–AI hybrids. Here you fly over the whole MiniFin
-          single-cell atlas, drop into any cluster, and a research agent pulls grounded evidence from the
-          canonical zebrafish resources (ZFIN, ZFA, GO) for the cluster&apos;s top markers. You decide whether its
-          read is on track — accept it, or dig deeper in chat.
+          Kasparov&apos;s wager: the strongest systems are human–AI hybrids. You fly over the real MiniFin
+          single-cell atlas{meta ? ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} Leiden clusters)` : ""}, drop into any
+          cluster, and a research agent pulls grounded evidence from the canonical zebrafish resources (ZFIN, ZFA, GO)
+          for that cluster&apos;s top markers — showing its reasoning and searches live. You decide whether its read is
+          on track: accept it, or dig deeper in chat.
         </p>
-        <button
-          onClick={onStart}
-          style={{
-            marginTop: 28,
-            background: ACCENT,
-            color: "#fff",
-            border: "none",
-            borderRadius: 10,
-            padding: "15px 30px",
-            fontSize: 18,
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
+        <button onClick={onStart} style={{ marginTop: 28, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "15px 30px", fontSize: 18, fontWeight: 600, cursor: "pointer" }}>
           Begin the descent →
         </button>
       </div>
@@ -391,26 +326,26 @@ function Intro({ onStart }: { onStart: () => void }) {
 }
 
 // ---------------------------------------------------------------------------
-// Map stage — global UMAP → reveal Leiden clusters → click in
-// ---------------------------------------------------------------------------
 function MapStage({
   clusters,
+  meta,
   revealed,
   onReveal,
   validated,
   onPick,
 }: {
   clusters: Cluster[];
+  meta: AtlasMeta | null;
   revealed: boolean;
   onReveal: () => void;
   validated: Set<string>;
   onPick: (id: string) => void;
 }) {
-  const [size, setSize] = useState({ w: 720, h: 560 });
+  const [size, setSize] = useState({ w: 760, h: 560 });
   const wrap = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     function fit() {
-      const w = Math.min(820, (wrap.current?.clientWidth ?? 760) - 8);
+      const w = Math.min(860, (wrap.current?.clientWidth ?? 800) - 8);
       setSize({ w, h: Math.round(w * 0.74) });
     }
     fit();
@@ -420,80 +355,34 @@ function MapStage({
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
-      <div style={{ maxWidth: 920, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
-        <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>
-          World map · MiniFin atlas
-        </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>
-          {revealed ? "Choose a cluster to investigate" : "The whole dataset"}
-        </h2>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
+        <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · MiniFin atlas</div>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : "The whole dataset"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 18 }}>
           {revealed
-            ? `${clusters.length} Leiden clusters · ${validated.size} validated. Click any cluster to begin.`
-            : "Every cell, one point. Reveal the Leiden clustering to start labelling."}
+            ? `${clusters.length} Leiden clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            : `${meta ? meta.totalCells.toLocaleString() : ""} cells, one point each — real UMAP. Reveal the Leiden clustering to start.`}
         </p>
 
-        <div
-          ref={wrap}
-          style={{
-            display: "inline-block",
-            background: "#fffdfb",
-            border: "1px solid #e5e1dc",
-            borderRadius: 14,
-            padding: 10,
-            boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-          }}
-        >
-          <UmapCanvas
-            clusters={clusters}
-            mode="global"
-            colored={revealed}
-            activeId={null}
-            validated={validated}
-            width={size.w}
-            height={size.h}
-            onPick={onPick}
-          />
+        <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
+          <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
 
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
-            <button
-              onClick={onReveal}
-              style={{
-                background: ACCENT,
-                color: "#fff",
-                border: "none",
-                borderRadius: 10,
-                padding: "13px 26px",
-                fontSize: 16,
-                fontWeight: 600,
-                cursor: "pointer",
-              }}
-            >
+            <button onClick={onReveal} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
               View Leiden clusters →
             </button>
           ) : (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap", justifyContent: "center" }}>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", maxHeight: 150, overflowY: "auto", padding: 4 }}>
               {clusters.map((c) => (
                 <button
                   key={c.id}
                   onClick={() => onPick(c.id)}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 7,
-                    background: "#fffdfb",
-                    border: `1px solid ${validated.has(c.id) ? "#15803d" : "#e5e1dc"}`,
-                    borderRadius: 99,
-                    padding: "6px 12px",
-                    fontSize: 13,
-                    cursor: "pointer",
-                    color: INK,
-                  }}
+                  style={{ display: "flex", alignItems: "center", gap: 6, background: "#fffdfb", border: `1px solid ${validated.has(c.id) ? "#15803d" : "#e5e1dc"}`, borderRadius: 99, padding: "5px 10px", fontSize: 12.5, cursor: "pointer", color: INK }}
                 >
-                  <span style={{ width: 10, height: 10, borderRadius: 99, background: c.color }} />
-                  {c.name}
+                  <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color }} />
+                  {c.label}
                   {validated.has(c.id) && <span style={{ color: "#15803d", fontWeight: 700 }}>✓</span>}
                 </button>
               ))}
@@ -506,19 +395,14 @@ function MapStage({
 }
 
 // ---------------------------------------------------------------------------
-// Cluster stage — zoomed map (left) + HUD world map (bottom-left) + agent (right)
-// ---------------------------------------------------------------------------
 type ChatMsg = { role: "user" | "assistant"; content: string };
 
 function defaultPrompt(c: Cluster): string {
-  const upList = c.degsUp.slice(0, 6).join(", ");
-  const downList = c.degsDown.slice(0, 3).join(", ");
+  const upList = c.degsUp.slice(0, 8).join(", ");
   return (
-    `This cluster's top up-regulated markers are ${upList || "(none)"}` +
-    (downList ? `, and notably absent: ${downList}` : "") +
-    `. Using ZFIN curated expression, ZFA anatomy, and GO, identify the most likely zebrafish cell type ` +
-    `(with state if supported), grounding each claim in a cited record. The pipeline tentatively calls it ` +
-    `"${c.proposed}" — verify or refute that.`
+    `${c.label}'s top up-regulated markers are: ${upList || "(none)"}. ` +
+    `Using ZFIN curated expression, ZFA anatomy, and GO, identify the most likely zebrafish cell type ` +
+    `(with state if the markers support it), grounding each claim in a cited record. If the evidence is ambiguous, say so.`
   );
 }
 
@@ -535,21 +419,30 @@ function ClusterStage({
   onBack: () => void;
   onValidate: (id: string, yes: boolean) => void;
 }) {
-  // agent transcript per cluster, kept in memory for the session
   const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
   const [prompt, setPrompt] = useState(defaultPrompt(active));
   const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
   const [zoomW, setZoomW] = useState(560);
   const leftRef = useRef<HTMLDivElement | null>(null);
   const threadRef = useRef<HTMLDivElement | null>(null);
 
+  // live streaming buffers
+  const [streaming, setStreaming] = useState(false);
+  const [sStatus, setStatus] = useState("");
+  const [sThinking, setThinking] = useState("");
+  const [sText, setText] = useState("");
+  const [showThinking, setShowThinking] = useState(true);
+
   const msgs = transcripts[active.id] ?? [];
-  const started = msgs.length > 0;
+  const started = msgs.length > 0 || streaming;
 
   useEffect(() => {
     setPrompt(defaultPrompt(active));
     setInput("");
+    setStatus("");
+    setThinking("");
+    setText("");
+    setStreaming(false);
   }, [active.id]);
 
   useEffect(() => {
@@ -563,191 +456,123 @@ function ClusterStage({
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
-  }, [msgs.length, loading]);
+  }, [msgs.length, sText, sThinking, streaming]);
 
-  async function callAgent(nextMsgs: ChatMsg[]) {
-    setLoading(true);
+  async function streamAgent(nextMsgs: ChatMsg[]) {
     setTranscripts((t) => ({ ...t, [active.id]: nextMsgs }));
+    setStreaming(true);
+    setStatus("Starting research…");
+    setThinking("");
+    setText("");
+    let acc = "";
     try {
-      const r = await fetch("/api/kasperov_agent", {
+      const res = await fetch("/api/kasperov_agent", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ clusterId: active.id, messages: nextMsgs }),
+        body: JSON.stringify({
+          cluster: { id: active.id, label: active.label, degsUp: active.degsUp },
+          messages: nextMsgs,
+        }),
       });
-      const data = await r.json();
-      const reply: string = data?.reply ?? "_(the agent returned no text)_";
-      setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: reply }] }));
+      if (!res.body) throw new Error("no stream");
+      const reader = res.body.getReader();
+      const dec = new TextDecoder();
+      let buf = "";
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
+        buf += dec.decode(value, { stream: true });
+        const parts = buf.split("\n\n");
+        buf = parts.pop() ?? "";
+        for (const part of parts) {
+          const line = part.split("\n").find((l) => l.startsWith("data:"));
+          if (!line) continue;
+          let evt: any;
+          try {
+            evt = JSON.parse(line.slice(5).trim());
+          } catch {
+            continue;
+          }
+          if (evt.t === "status") setStatus(evt.v);
+          else if (evt.t === "thinking") setThinking((p) => p + evt.v);
+          else if (evt.t === "text") {
+            acc += evt.v;
+            setText(acc);
+          } else if (evt.t === "error") {
+            acc += `\n\n_Error: ${evt.v}_`;
+            setText(acc);
+          }
+        }
+      }
     } catch (e: any) {
-      setTranscripts((t) => ({
-        ...t,
-        [active.id]: [...nextMsgs, { role: "assistant", content: `_Request failed: ${String(e?.message ?? e)}_` }],
-      }));
+      acc += `\n\n_Request failed: ${String(e?.message ?? e)}_`;
     } finally {
-      setLoading(false);
+      setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_" }] }));
+      setStreaming(false);
+      setStatus("");
+      setText("");
+      setThinking("");
     }
   }
 
   function runResearch() {
-    if (loading) return;
-    callAgent([{ role: "user", content: prompt }]);
+    if (streaming) return;
+    streamAgent([{ role: "user", content: prompt }]);
   }
   function sendChat() {
     const text = input.trim();
-    if (!text || loading) return;
+    if (!text || streaming) return;
     setInput("");
-    callAgent([...msgs, { role: "user", content: text }]);
+    streamAgent([...msgs, { role: "user", content: text }]);
   }
 
   const isValidated = validated.has(active.id);
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
-      {/* slim top bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          padding: "10px 18px",
-          borderBottom: "1px solid #e5e1dc",
-          background: "#fffdfb",
-        }}
-      >
-        <button onClick={onBack} style={btnGhost}>
-          ← World map
-        </button>
+      <style>{`@keyframes kbar{0%{left:-40%}100%{left:100%}} @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}`}</style>
+
+      {/* top bar */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 18px", borderBottom: "1px solid #e5e1dc", background: "#fffdfb" }}>
+        <button onClick={onBack} style={btnGhost}>← World map</button>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 12, height: 12, borderRadius: 99, background: active.color }} />
-          <strong style={{ fontSize: 16 }}>{active.name}</strong>
-          {active.state && <span style={{ color: "#b45309" }}>· {active.state}</span>}
+          <strong style={{ fontSize: 16 }}>{active.label}</strong>
         </div>
         <span style={{ fontSize: 13, color: "#888" }}>{active.nCells.toLocaleString()} cells</span>
-        <div style={{ marginLeft: "auto", fontSize: 13, color: "#888" }}>
-          {validated.size}/{clusters.length} validated
-        </div>
+        <div style={{ marginLeft: "auto", fontSize: 13, color: "#888" }}>{validated.size}/{clusters.length} validated</div>
       </div>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {/* LEFT — zoomed cluster map + HUD world map overlay */}
-        <div
-          ref={leftRef}
-          style={{
-            flex: "1.25 1 0",
-            position: "relative",
-            minWidth: 0,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)",
-          }}
-        >
-          <div style={{ position: "absolute", top: 16, left: 18, fontSize: 12, color: "#999", textTransform: "uppercase", letterSpacing: 1 }}>
-            Focused cluster
-          </div>
-          <UmapCanvas
-            clusters={clusters}
-            mode="zoom"
-            colored
-            activeId={active.id}
-            validated={validated}
-            width={zoomW}
-            height={Math.round(zoomW * 0.8)}
-          />
-          {/* HUD world map */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: 16,
-              left: 16,
-              background: "rgba(255,253,251,0.92)",
-              border: "1px solid #e5e1dc",
-              borderRadius: 10,
-              padding: 6,
-              boxShadow: "0 2px 8px rgba(0,0,0,0.08)",
-            }}
-          >
-            <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 2, letterSpacing: 0.5 }}>
-              WORLD MAP
-            </div>
-            <UmapCanvas
-              clusters={clusters}
-              mode="global"
-              colored
-              activeId={active.id}
-              validated={validated}
-              width={200}
-              height={150}
-              showFocus
-            />
+        {/* LEFT — zoom map + HUD */}
+        <div ref={leftRef} style={{ flex: "1.25 1 0", position: "relative", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)" }}>
+          <div style={{ position: "absolute", top: 16, left: 18, fontSize: 12, color: "#999", textTransform: "uppercase", letterSpacing: 1 }}>Focused cluster</div>
+          <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
+          <div style={{ position: "absolute", bottom: 16, left: 16, background: "rgba(255,253,251,0.92)", border: "1px solid #e5e1dc", borderRadius: 10, padding: 6, boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <div style={{ fontSize: 10, color: "#999", textAlign: "center", marginBottom: 2, letterSpacing: 0.5 }}>WORLD MAP</div>
+            <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={210} height={158} showFocus />
           </div>
         </div>
 
         {/* RIGHT — research agent */}
-        <aside
-          style={{
-            width: 460,
-            flexShrink: 0,
-            borderLeft: "1px solid #e5e1dc",
-            background: "#fffdfb",
-            display: "flex",
-            flexDirection: "column",
-            minHeight: 0,
-          }}
-        >
+        <aside style={{ width: 470, flexShrink: 0, borderLeft: "1px solid #e5e1dc", background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
-            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>
-              Research agent
-            </div>
-            <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>
-              Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.
-            </div>
+            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>Research agent</div>
+            <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
           </div>
 
-          {/* thread */}
           <div ref={threadRef} style={{ flex: 1, overflowY: "auto", padding: "14px 16px" }}>
-            {!started && (
+            {msgs.length === 0 && !streaming && (
               <div>
-                <div style={{ fontSize: 12, color: "#999", marginBottom: 6 }}>
-                  Pre-filled prompt from the cluster&apos;s top DEGs — edit if you like, then run it.
-                </div>
-                <textarea
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                  style={{
-                    width: "100%",
-                    minHeight: 140,
-                    padding: 10,
-                    border: "1px solid #d8d3cd",
-                    borderRadius: 8,
-                    fontSize: 13.5,
-                    fontFamily: "inherit",
-                    lineHeight: 1.5,
-                    resize: "vertical",
-                    background: "#fff",
-                  }}
-                />
-                <button
-                  onClick={runResearch}
-                  disabled={loading}
-                  style={{ ...btnPrimary, width: "100%", marginTop: 10, opacity: loading ? 0.6 : 1 }}
-                >
-                  {loading ? "Researching…" : "▶ Run research agent"}
-                </button>
+                <div style={{ fontSize: 12, color: "#999", marginBottom: 6 }}>Pre-filled from the cluster&apos;s top DEGs — edit if you like, then run it.</div>
+                <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} style={{ width: "100%", minHeight: 130, padding: 10, border: "1px solid #d8d3cd", borderRadius: 8, fontSize: 13.5, fontFamily: "inherit", lineHeight: 1.5, resize: "vertical", background: "#fff" }} />
+                <button onClick={runResearch} style={{ ...btnPrimary, width: "100%", marginTop: 10 }}>▶ Run research agent</button>
               </div>
             )}
 
             {msgs.map((m, i) => (
               <div key={i} style={{ marginBottom: 14 }}>
-                <div
-                  style={{
-                    fontSize: 11,
-                    textTransform: "uppercase",
-                    letterSpacing: 0.5,
-                    color: m.role === "user" ? "#999" : ACCENT,
-                    fontWeight: 600,
-                    marginBottom: 3,
-                  }}
-                >
+                <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : ACCENT, fontWeight: 600, marginBottom: 3 }}>
                   {m.role === "user" ? "You asked" : "Agent"}
                 </div>
                 {m.role === "user" ? (
@@ -760,12 +585,43 @@ function ClusterStage({
               </div>
             ))}
 
-            {loading && started && (
-              <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>Agent is searching the literature…</div>
+            {/* live streaming view */}
+            {streaming && (
+              <div style={{ marginTop: 4 }}>
+                {/* progress bar */}
+                <div style={{ position: "relative", height: 4, background: "#ece8e3", borderRadius: 99, overflow: "hidden", marginBottom: 8 }}>
+                  <div style={{ position: "absolute", top: 0, width: "40%", height: "100%", background: ACCENT, borderRadius: 99, animation: "kbar 1.1s ease-in-out infinite" }} />
+                </div>
+                {/* live status */}
+                {sStatus && (
+                  <div style={{ fontSize: 12.5, color: ACCENT, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>🔍 {sStatus}</div>
+                )}
+                {/* reasoning trace */}
+                {sThinking && (
+                  <div style={{ marginBottom: 10, border: "1px solid #ece8e3", borderRadius: 8, background: "#faf8f6" }}>
+                    <button onClick={() => setShowThinking((s) => !s)} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "7px 10px", fontSize: 11.5, color: "#999", textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer", fontWeight: 600 }}>
+                      {showThinking ? "▾" : "▸"} reasoning
+                    </button>
+                    {showThinking && (
+                      <div style={{ maxHeight: 160, overflowY: "auto", padding: "0 10px 8px", fontSize: 12, color: "#777", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace" }}>
+                        {sThinking}
+                      </div>
+                    )}
+                  </div>
+                )}
+                {/* streamed answer */}
+                {sText ? (
+                  <div className="kasperov-md" style={{ fontSize: 13.5, color: INK, lineHeight: 1.55 }}>
+                    <ReactMarkdown remarkPlugins={[remarkGfm]}>{sText}</ReactMarkdown>
+                  </div>
+                ) : (
+                  !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>Consulting ZFIN, ZFA and GO…</div>
+                )}
+              </div>
             )}
           </div>
 
-          {/* judge + chat footer */}
+          {/* footer: chat + judge */}
           {started && (
             <div style={{ borderTop: "1px solid #f0ece7", padding: "10px 16px" }}>
               <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
@@ -773,43 +629,20 @@ function ClusterStage({
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                  placeholder="Ask the agent to dig deeper…"
-                  style={{
-                    flex: 1,
-                    padding: "9px 11px",
-                    border: "1px solid #d8d3cd",
-                    borderRadius: 8,
-                    fontSize: 13.5,
-                    fontFamily: "inherit",
-                    background: "#fff",
-                  }}
+                  placeholder={streaming ? "Agent is working…" : "Ask the agent to dig deeper…"}
+                  disabled={streaming}
+                  style={{ flex: 1, padding: "9px 11px", border: "1px solid #d8d3cd", borderRadius: 8, fontSize: 13.5, fontFamily: "inherit", background: streaming ? "#f3f0ec" : "#fff" }}
                 />
-                <button onClick={sendChat} disabled={loading} style={{ ...btnGhost, opacity: loading ? 0.5 : 1 }}>
-                  Send
-                </button>
+                <button onClick={sendChat} disabled={streaming} style={{ ...btnGhost, opacity: streaming ? 0.5 : 1 }}>Send</button>
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
-                  onClick={() => {
-                    onValidate(active.id, !isValidated);
-                  }}
-                  style={{
-                    flex: 1,
-                    padding: "11px",
-                    borderRadius: 8,
-                    border: `1.5px solid #15803d`,
-                    background: isValidated ? "#15803d" : "#fffdfb",
-                    color: isValidated ? "#fff" : "#15803d",
-                    fontWeight: 600,
-                    fontSize: 14,
-                    cursor: "pointer",
-                  }}
+                  onClick={() => onValidate(active.id, !isValidated)}
+                  style={{ flex: 1, padding: "11px", borderRadius: 8, border: `1.5px solid #15803d`, background: isValidated ? "#15803d" : "#fffdfb", color: isValidated ? "#fff" : "#15803d", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
                 >
                   {isValidated ? "✓ Identity validated" : "✓ Accept this identity"}
                 </button>
-                <button onClick={onBack} style={btnGhost}>
-                  Next →
-                </button>
+                <button onClick={onBack} style={btnGhost}>Next →</button>
               </div>
             </div>
           )}
@@ -820,23 +653,5 @@ function ClusterStage({
 }
 
 // ---------------------------------------------------------------------------
-const btnPrimary: React.CSSProperties = {
-  background: ACCENT,
-  color: "#fff",
-  border: "none",
-  borderRadius: 8,
-  padding: "11px 18px",
-  fontSize: 14,
-  fontWeight: 600,
-  cursor: "pointer",
-};
-const btnGhost: React.CSSProperties = {
-  background: "transparent",
-  border: "1px solid #d8d3cd",
-  borderRadius: 8,
-  padding: "8px 14px",
-  fontSize: 13.5,
-  fontWeight: 500,
-  cursor: "pointer",
-  color: INK,
-};
+const btnPrimary: React.CSSProperties = { background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "11px 18px", fontSize: 14, fontWeight: 600, cursor: "pointer" };
+const btnGhost: React.CSSProperties = { background: "transparent", border: "1px solid #d8d3cd", borderRadius: 8, padding: "8px 14px", fontSize: 13.5, fontWeight: 500, cursor: "pointer", color: INK };
