@@ -286,15 +286,26 @@ async function streamOnce(
   const calls: { call_id: string; name: string; args: string }[] = [];
   let responseId = "";
   let produced = false;
-  const r = await fetch("https://api.openai.com/v1/responses", {
-    method: "POST",
-    signal,
-    headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-  if (!r.ok || !r.body) {
-    const detail = await r.text().catch(() => "");
-    sse(controller, enc, { t: "text", v: `_The agent could not start (${r.status}). ${detail.slice(0, 160)}_` });
+  // retry once on a transient upstream (429 / 5xx) before giving up
+  let r: Response | null = null;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    r = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      signal,
+      headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+    if (r.ok && r.body) break;
+    if (attempt === 0 && (r.status === 429 || r.status >= 500)) {
+      sse(controller, enc, { t: "status", v: "Upstream busy — retrying…" });
+      await new Promise((res) => setTimeout(res, 900));
+      continue;
+    }
+    break;
+  }
+  if (!r || !r.ok || !r.body) {
+    const detail = r ? await r.text().catch(() => "") : "no response";
+    sse(controller, enc, { t: "text", v: `_The agent could not start (${r?.status ?? "?"}). ${detail.slice(0, 160)}_` });
     return { responseId, calls, produced, ok: false };
   }
   const reader = r.body.getReader();
