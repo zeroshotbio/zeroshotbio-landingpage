@@ -148,6 +148,7 @@ function researchInstructions(cluster: Cluster): string {
     "RULES (cite-discipline):",
     "- Use web search against the canonical resources only (ZFIN, ZFA via EBI OLS, GO/QuickGO, NCBI Gene, UniProt). Never assert anatomy/function from unsourced memory — look it up.",
     "- Marker symbols may be human-ortholog-cased (e.g. HOXB13); map to the zebrafish gene.",
+    "- CITE-DISCIPLINE: only treat the cluster's PROVIDED marker genes (listed below) as this cluster's markers. Do NOT introduce other genes (e.g. tfec, nme4, mpeg1.1) as if they were markers of this cluster. You MAY mention a canonical marker for comparison, but you must explicitly say it is NOT in this cluster's marker list and that its expression here is unverified (the Archivist can check it).",
     "- Use the (identity, state) model: state ∈ {progenitor, cycling, quiescent, mature, stress} only when supported.",
     "- If ambiguous, say so and abstain rather than force-fit.",
     "- You CANNOT read raw dataset values or marker lists you weren't given (e.g. the cluster's down-regulated genes). If the curator needs those, tell them the Archivist can pull them — do NOT ask the curator to paste data.",
@@ -190,6 +191,8 @@ function archivistInstructions(cluster: Cluster): string {
     "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
+    "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer.",
+    "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
     "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
     "",
     "OUTPUT — markdown, **220 words max**:",
@@ -221,12 +224,13 @@ const QUERY_TOOL = {
   type: "function",
   name: "query_minifin",
   description:
-    "Query the FULL MiniFin per-cluster gene profile (every detected gene with one-vs-rest log2FC, % in-cluster, % out-of-cluster) for THIS cluster. Use this for ANY gene-specific question, marker rankings deeper than the headline list, substring gene search, or expression thresholds — never say data is unavailable, query it.",
+    "Query the FULL MiniFin per-cluster gene profile (every detected gene with one-vs-rest log2FC, % in-cluster, % out-of-cluster) for THIS cluster. Use this for ANY gene-specific question, marker rankings deeper than the headline list, substring gene search, or expression thresholds — never say data is unavailable, query it. For MULTIPLE genes use kind='genes' with the full list in ONE call — do NOT call once per gene.",
   parameters: {
     type: "object",
     properties: {
-      kind: { type: "string", enum: ["gene", "top", "search"], description: "gene = stats for one named gene; top = top-N up- or down-regulated markers; search = substring gene-symbol match" },
+      kind: { type: "string", enum: ["gene", "genes", "top", "search"], description: "gene = one named gene; genes = a LIST of genes in one call (preferred for several); top = top-N up/down markers; search = substring match" },
       gene: { type: "string", description: "gene symbol/ID for kind=gene" },
+      genes: { type: "array", items: { type: "string" }, description: "list of gene symbols/IDs for kind=genes (up to 40)" },
       direction: { type: "string", enum: ["up", "down"], description: "for kind=top" },
       n: { type: "integer", description: "how many rows for kind=top (max 50)" },
       query: { type: "string", description: "substring for kind=search" },
@@ -256,10 +260,17 @@ async function runQuery(argsStr: string, clusterId: string, origin: string): Pro
   const p = await getProfile(clusterId, origin);
   if (!p) return { error: "profile unavailable for this cluster" };
   const ctx = { cluster: clusterId, nCells: p.nCells, datasetCells: p.datasetCells, genesProfiled: p.nGenes };
-  if (a.kind === "gene") {
-    const g = String(a.gene ?? "").toLowerCase();
+  const lookup = (name: string) => {
+    const g = String(name).toLowerCase();
     const hit = p.genes.find((m) => m.g.toLowerCase() === g) || p.genes.find((m) => m.g.toLowerCase().includes(g));
-    return { ...ctx, query: a, result: hit ? { ...hit, found: true } : { found: false, note: "gene not detected in this cluster's profile" } };
+    return hit ? { ...hit, found: true } : { g: String(name), found: false };
+  };
+  if (a.kind === "gene") {
+    return { ...ctx, query: a, result: lookup(a.gene ?? "") };
+  }
+  if (a.kind === "genes") {
+    const list = Array.isArray(a.genes) ? a.genes.slice(0, 40) : [];
+    return { ...ctx, query: a, result: list.map(lookup) };
   }
   if (a.kind === "top") {
     const n = Math.max(1, Math.min(50, Number(a.n ?? 10)));
@@ -411,7 +422,7 @@ export async function POST(req: Request) {
         let prevId = "";
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
         let anyProduced = false;
-        for (let iter = 0; iter < 5; iter++) {
+        for (let iter = 0; iter < 6; iter++) {
           const payload: any = {
             model: MODEL,
             stream: true,
@@ -432,7 +443,8 @@ export async function POST(req: Request) {
               let label = "MiniFin";
               try {
                 const a = JSON.parse(c.args || "{}");
-                label = a.kind === "gene" ? `gene ${a.gene}` : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}` : a.kind === "search" ? `search “${a.query}”` : "MiniFin";
+                label =
+                  a.kind === "gene" ? `gene ${a.gene}` : a.kind === "genes" ? `${(a.genes ?? []).length} genes` : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}` : a.kind === "search" ? `search “${a.query}”` : "MiniFin";
               } catch {}
               sse(controller, enc, { t: "status", v: `Querying MiniFin: ${label}…` });
               const out = await runQuery(c.args, String(cluster.id), origin);

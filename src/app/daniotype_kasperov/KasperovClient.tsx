@@ -1155,68 +1155,81 @@ function DraggablePanel({
   );
 }
 
+// one chat-contributed annotation, shown inline beneath its gene's row
+function Annot({ m }: { m: Marker }) {
+  const th = THEME[m.via ?? "research"];
+  return (
+    <div style={{ marginLeft: 76, marginTop: 1, marginBottom: 3, borderLeft: `2px solid ${th.color}`, paddingLeft: 7, fontSize: 10.5, color: "#666", lineHeight: 1.35 }}>
+      <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 4px", textTransform: "uppercase", marginRight: 5 }}>{th.name}</span>
+      {m.note}
+    </div>
+  );
+}
+
+function MarkerRow({ m, max, color }: { m: Marker; max: number; color: string }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
+      <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+      <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+        <div style={{ width: `${(Math.abs(m.l2fc ?? 0) / max) * 100}%`, height: "100%", background: color }} />
+      </div>
+      <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
+    </div>
+  );
+}
+
 function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] }) {
   const top = cluster.markers.slice(0, 8);
-  const maxFc = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
+  const down = cluster.markersDown.slice(0, 8);
+  const maxUp = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
+  const maxDn = Math.max(...down.map((m) => Math.abs(m.l2fc ?? 0)), 1);
+  // chat annotations attach to their gene's row; genes not in either list go below
+  const annByGene = new Map(added.map((m) => [m.g.toLowerCase(), m]));
+  const listed = new Set([...top, ...down].map((m) => m.g.toLowerCase()));
+  const extra = added.filter((m) => !listed.has(m.g.toLowerCase()));
+
   return (
     <div>
       <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", margin: "2px 0 4px" }}>▲ UP-REGULATED</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {top.map((m) => (
-          <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-            <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
-            <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
-              <div style={{ width: `${((m.l2fc ?? 0) / maxFc) * 100}%`, height: "100%", background: "#15803d" }} />
-            </div>
-            <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
-          </div>
+          <React.Fragment key={m.g}>
+            <MarkerRow m={m} max={maxUp} color="#15803d" />
+            {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
+          </React.Fragment>
         ))}
       </div>
 
-      {added.length > 0 && (
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
+      {down.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {down.map((m) => (
+            <React.Fragment key={m.g}>
+              <MarkerRow m={m} max={maxDn} color="#b45309" />
+              {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
+            </React.Fragment>
+          ))}
+        </div>
+      ) : (
+        <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>none computed</div>
+      )}
+
+      {extra.length > 0 && (
         <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ADDED FROM CHAT</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {added.map((m) => {
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ALSO DISCUSSED (not in top lists)</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+            {extra.map((m) => {
               const th = THEME[m.via ?? "research"];
               return (
-                <div key={m.g} style={{ fontSize: 11.5, borderLeft: `3px solid ${th.color}`, background: th.bg, borderRadius: 5, padding: "4px 7px" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                    <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
-                    <span style={{ fontSize: 8.5, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 4px", textTransform: "uppercase" }}>{th.name}</span>
-                  </div>
-                  {(m.l2fc != null || m.p1 != null) && (
-                    <div style={{ color: "#888", fontVariantNumeric: "tabular-nums" }}>
-                      {m.l2fc != null ? `log2FC ${m.l2fc}` : ""}{m.p1 != null ? `${m.l2fc != null ? " · " : ""}${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}
-                    </div>
-                  )}
-                  {m.note && <div style={{ color: "#555", lineHeight: 1.35 }}>{m.note}</div>}
+                <div key={m.g} style={{ fontSize: 11, borderLeft: `2px solid ${th.color}`, paddingLeft: 7 }}>
+                  <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
+                  {m.l2fc != null && <span style={{ color: "#888" }}> · log2FC {m.l2fc}</span>}
+                  {m.note && <span style={{ color: "#666" }}> — {m.note}</span>}
                 </div>
               );
             })}
           </div>
         </>
-      )}
-
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
-      {cluster.markersDown.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-          {cluster.markersDown.slice(0, 8).map((m) => {
-            const mag = Math.abs(m.l2fc ?? 0);
-            const maxDn = Math.max(...cluster.markersDown.map((d) => Math.abs(d.l2fc ?? 0)), 1);
-            return (
-              <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-                <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
-                <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
-                  <div style={{ width: `${(mag / maxDn) * 100}%`, height: "100%", background: "#b45309" }} />
-                </div>
-                <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>none computed</div>
       )}
     </div>
   );
