@@ -200,7 +200,7 @@ function UmapCanvas({
       const b = transform.toC(active.bounds.maxx, active.bounds.miny);
       const x = Math.min(a.cx, b.cx) - 3;
       const y = Math.min(a.cy, b.cy) - 3;
-      ctx.strokeStyle = ACCENT;
+      ctx.strokeStyle = "#555";
       ctx.lineWidth = 2;
       ctx.strokeRect(x, y, Math.abs(b.cx - a.cx) + 6, Math.abs(b.cy - a.cy) + 6);
     }
@@ -726,13 +726,13 @@ function ClusterStage({
               </DraggablePanel>
 
               {/* top markers — draggable + resizable; grows in content as chat adds insight */}
-              <DraggablePanel title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`} accent="#15803d" initial={placementsRef.current.mk} minW={190} minH={140} flash={flash}>
+              <DraggablePanel title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`} accent="#8a847b" initial={placementsRef.current.mk} minW={190} minH={140} flash={flash}>
                 {() => <MarkersContent cluster={active} added={augmented[active.id] ?? []} />}
               </DraggablePanel>
 
               {/* live confidence — only once the chat gives us reason to score it */}
               {confidence[active.id] && (
-                <DraggablePanel title="CONFIDENCE" accent="#0e7490" initial={placementsRef.current.cf} minW={180} minH={96}>
+                <DraggablePanel title="CONFIDENCE" accent="#8a847b" initial={placementsRef.current.cf} minW={180} minH={96}>
                   {() => <ConfidenceContent pct={confidence[active.id].pct} why={confidence[active.id].why} />}
                 </DraggablePanel>
               )}
@@ -752,7 +752,7 @@ function ClusterStage({
         {/* RIGHT — GPT-5-Mini research panel (resizable) */}
         <aside style={{ width: panelW, flexShrink: 0, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
-            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>GPT-5-Mini</div>
+            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "#555", fontWeight: 600 }}>GPT-5-Mini</div>
             <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
           </div>
 
@@ -761,7 +761,7 @@ function ClusterStage({
               <div>
                 <div style={{ fontSize: 12, color: "#999", marginBottom: 6 }}>Pre-filled from the cluster&apos;s top DEGs — edit if you like, then run it.</div>
                 <textarea value={prompt} onChange={(e) => setPrompt(e.target.value)} style={{ width: "100%", minHeight: 130, padding: 10, border: "1px solid #d8d3cd", borderRadius: 8, fontSize: 13.5, fontFamily: "inherit", lineHeight: 1.5, resize: "vertical", background: "#fff" }} />
-                <button onClick={runResearch} style={{ ...btnPrimary, width: "100%", marginTop: 10 }}>▶ Run research agent</button>
+                <button onClick={runResearch} style={{ ...btnPrimary, background: THEME.research.color, width: "100%", marginTop: 10 }}>▶ Run research agent</button>
               </div>
             )}
 
@@ -773,8 +773,8 @@ function ClusterStage({
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
               return (
                 <div key={i} style={{ marginBottom: 14 }}>
-                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : ACCENT, fontWeight: 600, marginBottom: 3 }}>
-                    {m.role === "user" ? "You asked" : "GPT-5-Mini"}
+                  <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : THEME[m.mode ?? "research"].color, fontWeight: 600, marginBottom: 3 }}>
+                    {m.role === "user" ? "You asked" : `GPT-5-Mini${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
                   </div>
                   {m.role === "user" ? (
                     <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
@@ -790,7 +790,7 @@ function ClusterStage({
                         </button>
                       )}
                       {parsed.markers.length > 0 && incorporated.has(key) && (
-                        <div style={{ marginTop: 6, fontSize: 11.5, color: "#15803d", fontWeight: 600 }}>✓ added to Top Markers</div>
+                        <div style={{ marginTop: 6, fontSize: 11.5, color: "#888", fontWeight: 600 }}>✓ added to Top Markers</div>
                       )}
                       {dp.dispatches.map((d, di) => (
                         <button
@@ -856,7 +856,7 @@ function ClusterStage({
                 {/* elapsed-time bar in the personality's colour */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                   <div style={{ position: "relative", flex: 1, height: 5, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: elapsed > 50 ? "#b45309" : THEME[sMode].color, borderRadius: 99, transition: "width .25s linear" }} />
+                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: THEME[sMode].color, borderRadius: 99, transition: "width .25s linear" }} />
                   </div>
                   <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 56, textAlign: "right" }}>{elapsed.toFixed(0)}s / 60s</span>
                 </div>
@@ -900,7 +900,7 @@ function ClusterStage({
               <div style={{ display: "flex", gap: 8 }}>
                 <button
                   onClick={() => onValidate(active.id, !isValidated)}
-                  style={{ flex: 1, padding: "11px", borderRadius: 8, border: `1.5px solid #15803d`, background: isValidated ? "#15803d" : "#fffdfb", color: isValidated ? "#fff" : "#15803d", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
+                  style={{ flex: 1, padding: "11px", borderRadius: 8, border: `1.5px solid ${isValidated ? "#444" : "#bdb6ae"}`, background: isValidated ? "#444" : "#fffdfb", color: isValidated ? "#fff" : "#555", fontWeight: 600, fontSize: 14, cursor: "pointer" }}
                 >
                   {isValidated ? "✓ Identity validated" : "✓ Accept this identity"}
                 </button>
@@ -972,13 +972,25 @@ const baseMD = {
   th: (p: any) => <th style={{ textAlign: "left", padding: "5px 8px", background: "#f3f0ec", borderBottom: "1px solid #e5e1dc", fontWeight: 700, color: "#555" }}>{p.children}</th>,
   td: (p: any) => <td style={{ padding: "5px 8px", borderBottom: "1px solid #f3f0ec" }}>{p.children}</td>,
 };
-// Markdown components for a personality. Evidence bullets are coloured by the
-// PERSONALITY (so Researcher output reads green), with the source shown as a chip.
+// Markdown components for a personality. Every colour in an agent message is the
+// PERSONALITY colour (headings, links, evidence); plain text stays neutral.
 function mdFor(mode: AgentMode) {
-  if (mode !== "research") return baseMD; // archivist tables / reasoner prose render plain
-  const th = THEME.research;
-  return {
+  const th = THEME[mode];
+  const heading = (p: any) => <div style={{ ...mdH, color: th.color }}>{p.children}</div>;
+  const base: any = {
     ...baseMD,
+    h1: heading,
+    h2: heading,
+    h3: heading,
+    a: (p: any) => (
+      <a href={p.href} target="_blank" rel="noreferrer" style={{ color: th.color, textDecoration: "underline", textUnderlineOffset: 2 }}>
+        {p.children}
+      </a>
+    ),
+  };
+  if (mode !== "research") return base; // archivist tables / reasoner prose render plain
+  return {
+    ...base,
     li: (p: any) => {
       const src = liSource(p.node);
       if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
@@ -1009,15 +1021,8 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
   const verdict = m ? m[1].trim() : null;
   const body = (m ? content.slice(0, m.index) : content).trim();
-  const conf = verdict
-    ? /high/i.test(verdict)
-      ? { label: "high", color: "#15803d", bg: "#dcfce7" }
-      : /med/i.test(verdict)
-      ? { label: "medium", color: "#b45309", bg: "#fef3c7" }
-      : /low/i.test(verdict)
-      ? { label: "low", color: "#b91c1c", bg: "#fee2e2" }
-      : null
-    : null;
+  // confidence level is shown greyscale — colour encodes personality only
+  const confLabel = verdict ? (/high/i.test(verdict) ? "high" : /med/i.test(verdict) ? "medium" : /low/i.test(verdict) ? "low" : null) : null;
   const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
   const th = THEME[mode];
   const badge = { label: `${th.name} · ${th.blurb}`, icon: th.icon, color: th.color, bg: th.bg };
@@ -1046,13 +1051,13 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
         </ReactMarkdown>
       )}
       {verdict && (
-        <div style={{ marginTop: 8, border: `1px solid ${conf?.color ?? ACCENT}`, borderRadius: 10, background: "#fffdfb", overflow: "hidden" }}>
+        <div style={{ marginTop: 8, border: `1px solid ${badge.color}`, borderLeft: `3px solid ${badge.color}`, borderRadius: 10, background: "#fffdfb", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
-            <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 700 }}>Verdict</span>
-            <span style={{ fontSize: 14, fontWeight: 700, color: "#1f2937", flex: 1 }}>{verdictName || verdict}</span>
-            {conf && (
-              <span style={{ fontSize: 11, fontWeight: 700, color: conf.color, background: conf.bg, padding: "2px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: 0.5 }}>
-                {conf.label}
+            <span style={{ fontSize: 10.5, textTransform: "uppercase", letterSpacing: 1, color: badge.color, fontWeight: 700 }}>Verdict</span>
+            <span style={{ fontSize: 14, fontWeight: 700, color: "#2b2b2b", flex: 1 }}>{verdictName || verdict}</span>
+            {confLabel && (
+              <span style={{ fontSize: 11, fontWeight: 700, color: "#555", background: "#ece8e3", padding: "2px 8px", borderRadius: 99, textTransform: "uppercase", letterSpacing: 0.5 }}>
+                {confLabel}
               </span>
             )}
           </div>
@@ -1190,22 +1195,22 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
 
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#15803d", margin: "2px 0 4px" }}>▲ UP-REGULATED</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "2px 0 4px" }}>▲ UP-REGULATED</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
         {top.map((m) => (
           <React.Fragment key={m.g}>
-            <MarkerRow m={m} max={maxUp} color="#15803d" />
+            <MarkerRow m={m} max={maxUp} color="#8a847b" />
             {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
           </React.Fragment>
         ))}
       </div>
 
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
       {down.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {down.map((m) => (
             <React.Fragment key={m.g}>
-              <MarkerRow m={m} max={maxDn} color="#b45309" />
+              <MarkerRow m={m} max={maxDn} color="#b8b2a8" />
               {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
             </React.Fragment>
           ))}
@@ -1236,13 +1241,13 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
 }
 
 function ConfidenceContent({ pct, why }: { pct: number; why: string }) {
-  const color = pct >= 75 ? "#15803d" : pct >= 50 ? "#b45309" : "#b91c1c";
+  // greyscale only — colour is reserved for personalities
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-        <span style={{ fontSize: 26, fontWeight: 800, color, fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
-        <div style={{ flex: 1, height: 7, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ width: `${pct}%`, height: "100%", background: color, transition: "width .4s ease" }} />
+        <span style={{ fontSize: 26, fontWeight: 800, color: "#2b2b2b", fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+        <div style={{ flex: 1, height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden" }}>
+          <div style={{ width: `${pct}%`, height: "100%", background: "#6b6660", transition: "width .4s ease" }} />
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 6 }}>{why}</div>
