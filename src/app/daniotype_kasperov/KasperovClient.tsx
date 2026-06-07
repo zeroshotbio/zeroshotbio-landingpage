@@ -432,6 +432,8 @@ function ClusterStage({
   const [sThinking, setThinking] = useState("");
   const [sText, setText] = useState("");
   const [showThinking, setShowThinking] = useState(true);
+  const [elapsed, setElapsed] = useState(0); // seconds since run started
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const msgs = transcripts[active.id] ?? [];
   const started = msgs.length > 0 || streaming;
@@ -464,6 +466,11 @@ function ClusterStage({
     setStatus("Starting research…");
     setThinking("");
     setText("");
+    // elapsed-time bar, counts up toward the 60s ceiling
+    setElapsed(0);
+    const startedAt = Date.now();
+    if (timerRef.current) clearInterval(timerRef.current);
+    timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
     try {
       const res = await fetch("/api/kasperov_agent", {
@@ -507,6 +514,10 @@ function ClusterStage({
     } catch (e: any) {
       acc += `\n\n_Request failed: ${String(e?.message ?? e)}_`;
     } finally {
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
       setTranscripts((t) => ({ ...t, [active.id]: [...nextMsgs, { role: "assistant", content: acc || "_(no response)_" }] }));
       setStreaming(false);
       setStatus("");
@@ -530,7 +541,7 @@ function ClusterStage({
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
-      <style>{`@keyframes kbar{0%{left:-40%}100%{left:100%}} @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}`}</style>
+      <style>{`@keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}`}</style>
 
       {/* top bar */}
       <div style={{ display: "flex", alignItems: "center", gap: 14, padding: "10px 18px", borderBottom: "1px solid #e5e1dc", background: "#fffdfb" }}>
@@ -588,9 +599,14 @@ function ClusterStage({
             {/* live streaming view */}
             {streaming && (
               <div style={{ marginTop: 4 }}>
-                {/* progress bar */}
-                <div style={{ position: "relative", height: 4, background: "#ece8e3", borderRadius: 99, overflow: "hidden", marginBottom: 8 }}>
-                  <div style={{ position: "absolute", top: 0, width: "40%", height: "100%", background: ACCENT, borderRadius: 99, animation: "kbar 1.1s ease-in-out infinite" }} />
+                {/* elapsed-time progress bar — fills toward the 60s ceiling */}
+                <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
+                  <div style={{ position: "relative", flex: 1, height: 5, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: elapsed > 50 ? "#b45309" : ACCENT, borderRadius: 99, transition: "width .25s linear" }} />
+                  </div>
+                  <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 56, textAlign: "right" }}>
+                    {elapsed.toFixed(0)}s / 60s
+                  </span>
                 </div>
                 {/* live status */}
                 {sStatus && (

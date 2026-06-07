@@ -1,28 +1,27 @@
 // src/app/api/kasperov_agent/route.ts
 //
 // Streaming research-agent backend for the daniotype_kasperov labelling wizard.
-//
-// Given a Leiden cluster's top differential genes, it runs Claude with the
-// web-search server tool restricted to the canonical zebrafish evidence
-// resources (ZFIN, ZFA via EBI OLS, GO / QuickGO, NCBI Gene, UniProt) — the
-// evidence ladder the daniotype descent grounds on — and streams back the
-// model's summarized reasoning, its live search activity, and the answer as it
-// is written, so the UI can show progress instead of a dead spinner.
+// Provider: OpenAI Responses API (web search restricted to canonical zebrafish
+// resources + streamed reasoning summaries). Given a Leiden cluster's top
+// differential genes, it grounds a cell-type call in ZFIN / ZFA / GO and streams
+// its reasoning, search activity, and answer so the UI can show live progress.
 //
 // Server-Sent Events. Each line is `data: {json}` where json is one of:
-//   {t:"status",   v:"Searching: <query>"}     live search activity
-//   {t:"thinking", v:"<delta>"}                 summarized reasoning trace
-//   {t:"text",     v:"<delta>"}                 answer text, streamed
-//   {t:"done"}                                  stream complete
-//   {t:"error",    v:"<message>"}               fatal error (rare)
+//   {t:"status",   v:"Searching ZFIN/ZFA/GO…"}   live search activity
+//   {t:"thinking", v:"<delta>"}                   reasoning-summary trace
+//   {t:"text",     v:"<delta>"}                   answer text, streamed
+//   {t:"done"}                                    stream complete
+//
+// Requires OPENAI_API_KEY in the environment (Vercel project env in prod).
 
 import "server-only";
 export const runtime = "nodejs";
 // 60s is the Vercel hobby-plan ceiling. Raise to 300 on Pro for deeper runs.
 export const maxDuration = 60;
 
-const MODEL = process.env.KASPEROV_AGENT_MODEL || "claude-opus-4-8";
+const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
 
+// Canonical zebrafish evidence resources — the only domains web search may use.
 const ALLOWED_DOMAINS = [
   "zfin.org",
   "www.ebi.ac.uk",
@@ -36,19 +35,20 @@ const ALLOWED_DOMAINS = [
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type Cluster = { id: string; label?: string; degsUp?: string[] };
 
-function buildSystem(cluster: Cluster): string {
+function buildInstructions(cluster: Cluster): string {
   const up = (cluster.degsUp ?? []).join(", ");
   return [
     "You are a zebrafish (Danio rerio) single-cell cell-type annotation research agent working alongside a human curator who makes the final call.",
-    "Your job: from a Leiden cluster's top differential markers, determine the most defensible cell-type identity by grounding it in canonical evidence — as a curator does: markers → in-vivo expression (ZFIN) → ZFA anatomy → cell type, corroborated by GO function.",
+    "From a Leiden cluster's top differential markers, determine the most defensible cell-type identity by grounding it in canonical evidence — as a curator does: markers → in-vivo expression (ZFIN) → ZFA anatomy → cell type, corroborated by GO function.",
     "",
     "RULES (cite-discipline):",
-    "- Search ONLY the canonical resources available to you (ZFIN, ZFA via EBI OLS, GO/QuickGO, NCBI Gene, UniProt). Do not assert any anatomical or functional claim from unsourced memory — look it up.",
-    "- Ground every claim in one of the cluster's listed marker genes and a looked-up ZFA / GO id or a ZFIN expression record. Cite sources inline as markdown links.",
-    "- Note: marker symbols may be human-ortholog-cased (e.g. HOXB13); map to the zebrafish gene where needed.",
+    "- Use web search against the canonical resources only (ZFIN, ZFA via EBI OLS, GO/QuickGO, NCBI Gene, UniProt). Do not assert any anatomical or functional claim from unsourced memory — look it up.",
+    "- Ground every claim in one of the cluster's listed marker genes and a looked-up record; cite sources inline as markdown links.",
+    "- Marker symbols may be human-ortholog-cased (e.g. HOXB13); map to the zebrafish gene where needed.",
     "- Use the zebrafish (identity, state) model: identity is the lineage/cell-type name; state ∈ {progenitor, cycling, quiescent, mature, stress} only when markers support it.",
-    "- If the evidence cannot ground a confident name, say so and abstain — do not force-fit. The human adjudicates.",
-    "- Be concise and skimmable: short markdown. End with a final line: `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
+    "- If evidence is ambiguous, say so and abstain rather than force-fit. The human adjudicates.",
+    "",
+    "OUTPUT: concise markdown, **300 words maximum**. End with a final line: `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
     "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
   ].join("\n");
@@ -57,7 +57,7 @@ function buildSystem(cluster: Cluster): string {
 function offlineDossier(cluster: Cluster): string {
   const up = (cluster.degsUp ?? []).slice(0, 12);
   return [
-    `*(Offline mode — no live research agent configured. Showing the cluster's top markers; connect ANTHROPIC_API_KEY for grounded research.)*`,
+    `*(No OPENAI_API_KEY configured — set it in the Vercel project env to enable the live agent. Showing the cluster's top markers.)*`,
     "",
     `**${cluster.label ?? cluster.id} — top up-regulated markers:** ${up.join(", ") || "—"}`,
     "",
@@ -85,7 +85,7 @@ export async function POST(req: Request) {
     : [];
   if (messages.length === 0) return new Response("no messages", { status: 400 });
 
-  const key = process.env.ANTHROPIC_API_KEY;
+  const key = process.env.OPENAI_API_KEY;
   const enc = new TextEncoder();
 
   const stream = new ReadableStream({
@@ -102,43 +102,33 @@ export async function POST(req: Request) {
 
       const payload = {
         model: MODEL,
-        max_tokens: 3000,
         stream: true,
-        system: buildSystem(cluster),
-        thinking: { type: "adaptive", display: "summarized" },
-        output_config: { effort: "medium" },
-        tools: [{ type: "web_search_20260209", name: "web_search", allowed_domains: ALLOWED_DOMAINS, max_uses: 5 }],
-        messages: messages.map((m) => ({ role: m.role, content: m.content })),
+        reasoning: { effort: "low", summary: "auto" },
+        max_output_tokens: 5000,
+        instructions: buildInstructions(cluster),
+        tools: [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }],
+        input: messages.map((m) => ({ role: m.role, content: m.content })),
       };
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 56000);
       try {
-        const r = await fetch("https://api.anthropic.com/v1/messages", {
+        const r = await fetch("https://api.openai.com/v1/responses", {
           method: "POST",
           signal: ctrl.signal,
-          headers: {
-            "x-api-key": key,
-            "anthropic-version": "2023-06-01",
-            "content-type": "application/json",
-          },
+          headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
           body: JSON.stringify(payload),
         });
         if (!r.ok || !r.body) {
           const detail = await r.text().catch(() => "");
-          sse(controller, enc, { t: "status", v: "Live agent unavailable — showing markers." });
-          sse(controller, enc, { t: "text", v: offlineDossier(cluster) });
-          if (detail) sse(controller, enc, { t: "status", v: `(${detail.slice(0, 120)})` });
+          sse(controller, enc, { t: "text", v: `_The research agent could not start (${r.status}). ${detail.slice(0, 160)}_` });
           return done();
         }
 
-        // Parse Anthropic's SSE stream and re-emit a simplified event stream.
         const reader = r.body.getReader();
         const dec = new TextDecoder();
         let buf = "";
-        let curBlock = ""; // current content_block type
-        let toolJson = ""; // accumulating server_tool_use input json
-        let produced = false; // did we emit any answer text?
+        let produced = false;
 
         while (true) {
           const { value, done: rdone } = await reader.read();
@@ -149,55 +139,50 @@ export async function POST(req: Request) {
           for (const part of parts) {
             const line = part.split("\n").find((l) => l.startsWith("data:"));
             if (!line) continue;
+            const payloadStr = line.slice(5).trim();
+            if (payloadStr === "[DONE]") continue;
             let evt: any;
             try {
-              evt = JSON.parse(line.slice(5).trim());
+              evt = JSON.parse(payloadStr);
             } catch {
               continue;
             }
             switch (evt.type) {
-              case "content_block_start": {
-                curBlock = evt.content_block?.type ?? "";
-                if (curBlock === "server_tool_use") toolJson = "";
-                if (curBlock === "web_search_tool_result") {
-                  const n = Array.isArray(evt.content_block?.content) ? evt.content_block.content.length : 0;
-                  sse(controller, enc, { t: "status", v: n ? `Found ${n} source${n === 1 ? "" : "s"} — reading…` : "Reading results…" });
-                }
+              case "response.reasoning_summary_text.delta":
+                if (evt.delta) sse(controller, enc, { t: "thinking", v: evt.delta });
                 break;
-              }
-              case "content_block_delta": {
-                const d = evt.delta ?? {};
-                if (d.type === "thinking_delta" && d.thinking) sse(controller, enc, { t: "thinking", v: d.thinking });
-                else if (d.type === "text_delta" && d.text) {
+              case "response.output_text.delta":
+                if (evt.delta) {
                   produced = true;
-                  sse(controller, enc, { t: "text", v: d.text });
-                } else if (d.type === "input_json_delta" && d.partial_json) toolJson += d.partial_json;
-                break;
-              }
-              case "content_block_stop": {
-                if (curBlock === "server_tool_use" && toolJson) {
-                  try {
-                    const q = JSON.parse(toolJson)?.query;
-                    if (q) sse(controller, enc, { t: "status", v: `Searching ZFIN/ZFA/GO: “${String(q).slice(0, 80)}”` });
-                  } catch {}
+                  sse(controller, enc, { t: "text", v: evt.delta });
                 }
-                curBlock = "";
+                break;
+              case "response.web_search_call.in_progress":
+                sse(controller, enc, { t: "status", v: "Searching ZFIN / ZFA / GO…" });
+                break;
+              case "response.web_search_call.completed":
+                sse(controller, enc, { t: "status", v: "Reading results…" });
+                break;
+              case "response.output_item.done": {
+                const q = evt.item?.action?.query;
+                if (evt.item?.type === "web_search_call" && q)
+                  sse(controller, enc, { t: "status", v: `Searched: “${String(q).slice(0, 80)}”` });
                 break;
               }
+              case "response.failed":
+              case "response.error":
               case "error": {
-                sse(controller, enc, { t: "status", v: `upstream: ${evt.error?.message ?? "error"}` });
+                const msg = evt.response?.error?.message ?? evt.error?.message ?? evt.message ?? "stream error";
+                sse(controller, enc, { t: "text", v: `\n\n_Agent error: ${String(msg).slice(0, 200)}_` });
                 break;
               }
             }
           }
         }
-        if (!produced) {
-          sse(controller, enc, { t: "text", v: "_(The agent finished without a written answer — try asking again or rephrasing.)_" });
-        }
+        if (!produced) sse(controller, enc, { t: "text", v: "_(The agent finished without a written answer — try again or rephrase.)_" });
         done();
       } catch (e: any) {
-        sse(controller, enc, { t: "status", v: "Agent timed out — showing markers." });
-        sse(controller, enc, { t: "text", v: offlineDossier(cluster) });
+        sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
         done();
       } finally {
         clearTimeout(timer);
