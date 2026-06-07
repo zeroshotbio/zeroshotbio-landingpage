@@ -427,6 +427,25 @@ function splitMarkerBlock(content: string): { clean: string; markers: Marker[] }
   return { clean: content.replace(re, "").trim(), markers };
 }
 
+// extract the hidden ```kasperov-dispatch``` block: a prompt the Reasoner crafted
+// for another personality, surfaced as a send button.
+function splitDispatch(content: string): { clean: string; dispatches: { to: AgentMode; prompt: string }[] } {
+  const re = /```kasperov-dispatch\s*([\s\S]*?)```/i;
+  const m = content.match(re);
+  if (!m) return { clean: content, dispatches: [] };
+  let raw: any;
+  try {
+    raw = JSON.parse(m[1].trim());
+  } catch {
+    return { clean: content.replace(re, "").trim(), dispatches: [] };
+  }
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const dispatches = arr
+    .filter((x) => x && typeof x.prompt === "string")
+    .map((x) => ({ to: (x.to === "archivist" ? "archivist" : "research") as AgentMode, prompt: String(x.prompt) }));
+  return { clean: content.replace(re, "").trim(), dispatches };
+}
+
 function defaultPrompt(c: Cluster): string {
   const upList = c.degsUp.slice(0, 8).join(", ");
   return (
@@ -570,7 +589,7 @@ function ClusterStage({
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs.length, sText, sThinking, streaming]);
 
-  async function streamAgent(nextMsgs: ChatMsg[]) {
+  async function streamAgent(nextMsgs: ChatMsg[], forceMode?: AgentMode) {
     setTranscripts((t) => ({ ...t, [active.id]: nextMsgs }));
     setStreaming(true);
     setRouting(true);
@@ -592,6 +611,7 @@ function ClusterStage({
         body: JSON.stringify({
           cluster: { id: active.id, label: active.label, degsUp: active.degsUp, markers: active.markers, nCells: active.nCells },
           messages: nextMsgs,
+          ...(forceMode ? { mode: forceMode } : {}),
         }),
       });
       if (!res.body) throw new Error("no stream");
@@ -736,7 +756,9 @@ function ClusterStage({
             )}
 
             {msgs.map((m, i) => {
-              const parsed = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] };
+              const mk = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] as Marker[] };
+              const dp = m.role === "assistant" ? splitDispatch(mk.clean) : { clean: mk.clean, dispatches: [] as { to: AgentMode; prompt: string }[] };
+              const parsed = { clean: dp.clean, markers: mk.markers };
               const key = `${active.id}:${i}`;
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
               return (
@@ -760,6 +782,17 @@ function ClusterStage({
                       {parsed.markers.length > 0 && incorporated.has(key) && (
                         <div style={{ marginTop: 6, fontSize: 11.5, color: "#15803d", fontWeight: 600 }}>✓ added to Top Markers</div>
                       )}
+                      {dp.dispatches.map((d, di) => (
+                        <button
+                          key={di}
+                          onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
+                          disabled={streaming}
+                          title={d.prompt}
+                          style={{ marginTop: 8, marginRight: 8, display: "inline-flex", alignItems: "center", gap: 7, background: THEME[d.to].bg, border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
+                        >
+                          {THEME[d.to].icon} ▶ Send this prompt to the {THEME[d.to].name} →
+                        </button>
+                      ))}
                     </>
                   )}
                 </div>
@@ -828,12 +861,14 @@ function ClusterStage({
                       {showThinking ? "▾" : "▸"} {THEME[sMode].trace}
                     </button>
                     {showThinking && (
-                      <div style={{ maxHeight: 170, overflowY: "auto", padding: "0 10px 8px", fontSize: 12, color: "#666", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, monospace" }}>{sThinking}</div>
+                      <div style={{ maxHeight: 180, overflowY: "auto", padding: "0 10px 8px", fontSize: 11.5, color: "#888", lineHeight: 1.45 }}>
+                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={traceMD}>{sThinking}</ReactMarkdown>
+                      </div>
                     )}
                   </div>
                 )}
                 {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitMarkerBlock(sText).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
+                {sText ? <AgentMessage content={splitDispatch(splitMarkerBlock(sText).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
@@ -873,13 +908,6 @@ function ClusterStage({
 // Evidence-source classification (colours the rounded evidence boxes)
 // ---------------------------------------------------------------------------
 type SourceKey = "ZFIN" | "ZFA" | "GO" | "NCBI" | "UniProt";
-const SOURCE_STYLE: Record<SourceKey, { color: string; bg: string }> = {
-  ZFIN: { color: "#2563eb", bg: "#eff6ff" },
-  ZFA: { color: "#7c3aed", bg: "#f5f3ff" },
-  GO: { color: "#15803d", bg: "#f0fdf4" },
-  NCBI: { color: "#0e7490", bg: "#ecfeff" },
-  UniProt: { color: "#ea580c", bg: "#fff7ed" },
-};
 function classifyHref(href: string): SourceKey | null {
   const h = href.toLowerCase();
   if (h.includes("zfin.org")) return "ZFIN";
@@ -934,22 +962,38 @@ const baseMD = {
   th: (p: any) => <th style={{ textAlign: "left", padding: "5px 8px", background: "#f3f0ec", borderBottom: "1px solid #e5e1dc", fontWeight: 700, color: "#555" }}>{p.children}</th>,
   td: (p: any) => <td style={{ padding: "5px 8px", borderBottom: "1px solid #f3f0ec" }}>{p.children}</td>,
 };
-// research mode: bullets become source-coloured rounded boxes
-const researchMD = {
-  ...baseMD,
-  li: (p: any) => {
-    const src = liSource(p.node);
-    if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
-    const st = SOURCE_STYLE[src];
-    return (
-      <li style={{ listStyle: "none", display: "flex", gap: 8, alignItems: "flex-start", background: st.bg, border: `1px solid ${st.color}33`, borderLeft: `3px solid ${st.color}`, borderRadius: 8, padding: "6px 9px", lineHeight: 1.4 }}>
-        <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, color: st.color, background: "#fff", border: `1px solid ${st.color}55`, borderRadius: 5, padding: "1px 5px", marginTop: 1, whiteSpace: "nowrap" }}>{src}</span>
-        <span>{p.children}</span>
-      </li>
-    );
-  },
+// Markdown components for a personality. Evidence bullets are coloured by the
+// PERSONALITY (so Researcher output reads green), with the source shown as a chip.
+function mdFor(mode: AgentMode) {
+  if (mode !== "research") return baseMD; // archivist tables / reasoner prose render plain
+  const th = THEME.research;
+  return {
+    ...baseMD,
+    li: (p: any) => {
+      const src = liSource(p.node);
+      if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
+      return (
+        <li style={{ listStyle: "none", display: "flex", gap: 8, alignItems: "flex-start", background: th.bg, border: `1px solid ${th.color}33`, borderLeft: `3px solid ${th.color}`, borderRadius: 8, padding: "6px 9px", lineHeight: 1.4 }}>
+          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, color: th.color, background: "#fff", border: `1px solid ${th.color}55`, borderRadius: 5, padding: "1px 5px", marginTop: 1, whiteSpace: "nowrap" }}>{src}</span>
+          <span>{p.children}</span>
+        </li>
+      );
+    },
+  };
+}
+
+// Compact, grey, markdown-rendered reasoning trace.
+const traceMD = {
+  p: (p: any) => <p style={{ margin: "0 0 5px", lineHeight: 1.45 }}>{p.children}</p>,
+  h1: (p: any) => <div style={{ fontWeight: 700, color: "#666", margin: "6px 0 3px" }}>{p.children}</div>,
+  h2: (p: any) => <div style={{ fontWeight: 700, color: "#666", margin: "6px 0 3px" }}>{p.children}</div>,
+  h3: (p: any) => <div style={{ fontWeight: 700, color: "#666", margin: "6px 0 3px" }}>{p.children}</div>,
+  strong: (p: any) => <strong style={{ fontWeight: 700, color: "#555" }}>{p.children}</strong>,
+  ul: (p: any) => <ul style={{ margin: "0 0 5px", paddingLeft: 16 }}>{p.children}</ul>,
+  li: (p: any) => <li style={{ marginBottom: 2 }}>{p.children}</li>,
+  a: (p: any) => <a href={p.href} target="_blank" rel="noreferrer" style={{ color: "#888" }}>{p.children}</a>,
+  code: (p: any) => <code style={{ background: "#eee", padding: "0 3px", borderRadius: 3 }}>{p.children}</code>,
 };
-const archivistMD = { ...baseMD, li: (p: any) => <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li> };
 
 function AgentMessage({ content, mode = "research" }: { content: string; mode?: AgentMode }) {
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
@@ -987,7 +1031,7 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
         </div>
       )}
       {body && (
-        <ReactMarkdown remarkPlugins={[remarkGfm]} components={isArchivist ? archivistMD : researchMD}>
+        <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdFor(mode)}>
           {body}
         </ReactMarkdown>
       )}
