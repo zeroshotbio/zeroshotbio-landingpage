@@ -106,6 +106,24 @@ for cid in up_by_cluster:
     for d in up_by_cluster[cid]:
         d.pop("score", None)
 
+# per-cluster FULL gene profile (every detected gene) for live tool queries
+PROFILE_DIR = os.path.join(ROOT, "public", "daniotype_kasperov", "archivist")
+os.makedirs(PROFILE_DIR, exist_ok=True)
+DET_MIN = 0.005  # keep genes detected in >=0.5% of either group
+print("writing per-cluster full profiles…")
+for k, c in enumerate(clusters):
+    mean_in = sum_norm[k] / n_k[k]
+    mean_out = (g_norm - sum_norm[k]) / (N_assigned - n_k[k])
+    pct_in = sum_bin[k] / n_k[k]
+    pct_out = (g_bin - sum_bin[k]) / (N_assigned - n_k[k])
+    l2fc = np.log2((mean_in + eps) / (mean_out + eps))
+    keep_g = np.where((pct_in >= DET_MIN) | (pct_out >= DET_MIN))[0]
+    order = keep_g[np.argsort(-l2fc[keep_g])]  # most up first → most down last
+    prof = [{"g": str(genes[i]), "l2fc": round(float(l2fc[i]), 2), "p1": round(float(pct_in[i]), 3), "p2": round(float(pct_out[i]), 3)} for i in order]
+    with open(os.path.join(PROFILE_DIR, f"{c}.json"), "w") as f:
+        json.dump({"id": str(c), "nCells": int(n_k[k]), "datasetCells": int(N), "nGenes": len(prof), "genes": prof}, f, separators=(",", ":"))
+print(f"wrote {len(clusters)} profiles to {PROFILE_DIR}")
+
 archivist = {
     "datasetCells": int(N),
     "assignedCells": int(N_assigned),

@@ -169,7 +169,7 @@ function archivistInstructions(cluster: Cluster): string {
     PERSONAS_CONTEXT,
     "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
     "",
-    "You can serve UP-regulated markers, DOWN-regulated markers, per-cluster and dataset-wide cell counts — all are in the facts below. If asked for more rows than exist, return all available and say how many there are.",
+    "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "",
     "OUTPUT — markdown, **220 words max**:",
     "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.",
@@ -195,6 +195,143 @@ function sse(controller: ReadableStreamDefaultController, enc: TextEncoder, obj:
   controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 }
 
+// --- query_minifin: the Archivist's live tool over each cluster's FULL profile ---
+const QUERY_TOOL = {
+  type: "function",
+  name: "query_minifin",
+  description:
+    "Query the FULL MiniFin per-cluster gene profile (every detected gene with one-vs-rest log2FC, % in-cluster, % out-of-cluster) for THIS cluster. Use this for ANY gene-specific question, marker rankings deeper than the headline list, substring gene search, or expression thresholds — never say data is unavailable, query it.",
+  parameters: {
+    type: "object",
+    properties: {
+      kind: { type: "string", enum: ["gene", "top", "search"], description: "gene = stats for one named gene; top = top-N up- or down-regulated markers; search = substring gene-symbol match" },
+      gene: { type: "string", description: "gene symbol/ID for kind=gene" },
+      direction: { type: "string", enum: ["up", "down"], description: "for kind=top" },
+      n: { type: "integer", description: "how many rows for kind=top (max 50)" },
+      query: { type: "string", description: "substring for kind=search" },
+    },
+    required: ["kind"],
+    additionalProperties: false,
+  },
+};
+
+type Profile = { id: string; nCells: number; datasetCells: number; nGenes: number; genes: StatMarker[] };
+const profileCache = new Map<string, Profile | null>();
+async function getProfile(clusterId: string, origin: string): Promise<Profile | null> {
+  if (profileCache.has(clusterId)) return profileCache.get(clusterId)!;
+  let prof: Profile | null = null;
+  try {
+    const r = await fetch(`${origin}/daniotype_kasperov/archivist/${clusterId}.json`);
+    if (r.ok) prof = (await r.json()) as Profile;
+  } catch {}
+  profileCache.set(clusterId, prof);
+  return prof;
+}
+async function runQuery(argsStr: string, clusterId: string, origin: string): Promise<any> {
+  let a: any = {};
+  try {
+    a = JSON.parse(argsStr || "{}");
+  } catch {}
+  const p = await getProfile(clusterId, origin);
+  if (!p) return { error: "profile unavailable for this cluster" };
+  const ctx = { cluster: clusterId, nCells: p.nCells, datasetCells: p.datasetCells, genesProfiled: p.nGenes };
+  if (a.kind === "gene") {
+    const g = String(a.gene ?? "").toLowerCase();
+    const hit = p.genes.find((m) => m.g.toLowerCase() === g) || p.genes.find((m) => m.g.toLowerCase().includes(g));
+    return { ...ctx, query: a, result: hit ? { ...hit, found: true } : { found: false, note: "gene not detected in this cluster's profile" } };
+  }
+  if (a.kind === "top") {
+    const n = Math.max(1, Math.min(50, Number(a.n ?? 10)));
+    const dir = a.direction === "down" ? "down" : "up";
+    const rows = dir === "up" ? p.genes.slice(0, n) : p.genes.slice(-n).reverse();
+    return { ...ctx, query: a, result: rows };
+  }
+  if (a.kind === "search") {
+    const q = String(a.query ?? "").toLowerCase();
+    return { ...ctx, query: a, result: p.genes.filter((m) => m.g.toLowerCase().includes(q)).slice(0, 25) };
+  }
+  return { ...ctx, error: "unknown kind" };
+}
+
+// Stream one OpenAI Responses turn; forward text/thinking/status; collect any
+// function calls + the response id (for continuation).
+async function streamOnce(
+  payload: any,
+  controller: ReadableStreamDefaultController,
+  enc: TextEncoder,
+  key: string,
+  signal: AbortSignal
+): Promise<{ responseId: string; calls: { call_id: string; name: string; args: string }[]; produced: boolean; ok: boolean }> {
+  const calls: { call_id: string; name: string; args: string }[] = [];
+  let responseId = "";
+  let produced = false;
+  const r = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST",
+    signal,
+    headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  if (!r.ok || !r.body) {
+    const detail = await r.text().catch(() => "");
+    sse(controller, enc, { t: "text", v: `_The agent could not start (${r.status}). ${detail.slice(0, 160)}_` });
+    return { responseId, calls, produced, ok: false };
+  }
+  const reader = r.body.getReader();
+  const dec = new TextDecoder();
+  let buf = "";
+  while (true) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += dec.decode(value, { stream: true });
+    const parts = buf.split("\n\n");
+    buf = parts.pop() ?? "";
+    for (const part of parts) {
+      const line = part.split("\n").find((l) => l.startsWith("data:"));
+      if (!line) continue;
+      const ps = line.slice(5).trim();
+      if (ps === "[DONE]") continue;
+      let evt: any;
+      try {
+        evt = JSON.parse(ps);
+      } catch {
+        continue;
+      }
+      if (evt.response?.id) responseId = evt.response.id;
+      switch (evt.type) {
+        case "response.reasoning_summary_text.delta":
+          if (evt.delta) sse(controller, enc, { t: "thinking", v: evt.delta });
+          break;
+        case "response.output_text.delta":
+          if (evt.delta) {
+            produced = true;
+            sse(controller, enc, { t: "text", v: evt.delta });
+          }
+          break;
+        case "response.web_search_call.in_progress":
+          sse(controller, enc, { t: "status", v: "Searching ZFIN / ZFA / GO…" });
+          break;
+        case "response.web_search_call.completed":
+          sse(controller, enc, { t: "status", v: "Reading results…" });
+          break;
+        case "response.output_item.done": {
+          const it = evt.item;
+          if (it?.type === "web_search_call" && it?.action?.query) sse(controller, enc, { t: "status", v: `Searched: “${String(it.action.query).slice(0, 80)}”` });
+          if (it?.type === "function_call" && it?.call_id) calls.push({ call_id: it.call_id, name: it.name, args: it.arguments ?? "{}" });
+          break;
+        }
+        case "response.failed":
+        case "response.error":
+        case "error": {
+          const msg = evt.response?.error?.message ?? evt.error?.message ?? evt.message ?? "stream error";
+          sse(controller, enc, { t: "text", v: `\n\n_Agent error: ${String(msg).slice(0, 200)}_` });
+          break;
+        }
+      }
+    }
+  }
+  return { responseId, calls, produced, ok: true };
+}
+
 export async function POST(req: Request) {
   let body: any;
   try {
@@ -218,6 +355,7 @@ export async function POST(req: Request) {
 
   const key = process.env.OPENAI_API_KEY;
   const enc = new TextEncoder();
+  const origin = new URL(req.url).origin;
 
   const stream = new ReadableStream({
     async start(controller) {
@@ -232,87 +370,49 @@ export async function POST(req: Request) {
         return done();
       }
 
-      const payload: any = {
-        model: MODEL,
-        stream: true,
-        reasoning: { effort: "low", summary: "auto" },
-        max_output_tokens: 5000,
-        instructions:
-          mode === "archivist" ? archivistInstructions(cluster) : mode === "reason" ? reasonInstructions(cluster) : researchInstructions(cluster),
-        input: messages.map((m) => ({ role: m.role, content: m.content })),
-      };
-      if (mode === "research") {
-        payload.tools = [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }];
-      }
+      const instructions = mode === "archivist" ? archivistInstructions(cluster) : mode === "reason" ? reasonInstructions(cluster) : researchInstructions(cluster);
+      const tools = mode === "research" ? [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }] : mode === "archivist" ? [QUERY_TOOL] : undefined;
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 56000);
       try {
-        const r = await fetch("https://api.openai.com/v1/responses", {
-          method: "POST",
-          signal: ctrl.signal,
-          headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-          body: JSON.stringify(payload),
-        });
-        if (!r.ok || !r.body) {
-          const detail = await r.text().catch(() => "");
-          sse(controller, enc, { t: "text", v: `_The agent could not start (${r.status}). ${detail.slice(0, 160)}_` });
-          return done();
-        }
-
-        const reader = r.body.getReader();
-        const dec = new TextDecoder();
-        let buf = "";
-        let produced = false;
-        while (true) {
-          const { value, done: rdone } = await reader.read();
-          if (rdone) break;
-          buf += dec.decode(value, { stream: true });
-          const parts = buf.split("\n\n");
-          buf = parts.pop() ?? "";
-          for (const part of parts) {
-            const line = part.split("\n").find((l) => l.startsWith("data:"));
-            if (!line) continue;
-            const ps = line.slice(5).trim();
-            if (ps === "[DONE]") continue;
-            let evt: any;
-            try {
-              evt = JSON.parse(ps);
-            } catch {
-              continue;
+        let prevId = "";
+        let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
+        let anyProduced = false;
+        for (let iter = 0; iter < 5; iter++) {
+          const payload: any = {
+            model: MODEL,
+            stream: true,
+            store: true,
+            reasoning: { effort: "low", summary: "auto" },
+            max_output_tokens: 5000,
+            input: nextInput,
+            ...(prevId ? { previous_response_id: prevId } : { instructions }),
+            ...(tools ? { tools } : {}),
+          };
+          const res = await streamOnce(payload, controller, enc, key, ctrl.signal);
+          anyProduced = anyProduced || res.produced;
+          if (!res.ok) break;
+          // Archivist tool loop: execute query_minifin calls, then continue.
+          if (mode === "archivist" && res.calls.length) {
+            const outputs: any[] = [];
+            for (const c of res.calls) {
+              let label = "MiniFin";
+              try {
+                const a = JSON.parse(c.args || "{}");
+                label = a.kind === "gene" ? `gene ${a.gene}` : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}` : a.kind === "search" ? `search “${a.query}”` : "MiniFin";
+              } catch {}
+              sse(controller, enc, { t: "status", v: `Querying MiniFin: ${label}…` });
+              const out = await runQuery(c.args, String(cluster.id), origin);
+              outputs.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) });
             }
-            switch (evt.type) {
-              case "response.reasoning_summary_text.delta":
-                if (evt.delta) sse(controller, enc, { t: "thinking", v: evt.delta });
-                break;
-              case "response.output_text.delta":
-                if (evt.delta) {
-                  produced = true;
-                  sse(controller, enc, { t: "text", v: evt.delta });
-                }
-                break;
-              case "response.web_search_call.in_progress":
-                sse(controller, enc, { t: "status", v: "Searching ZFIN / ZFA / GO…" });
-                break;
-              case "response.web_search_call.completed":
-                sse(controller, enc, { t: "status", v: "Reading results…" });
-                break;
-              case "response.output_item.done": {
-                const q = evt.item?.action?.query;
-                if (evt.item?.type === "web_search_call" && q) sse(controller, enc, { t: "status", v: `Searched: “${String(q).slice(0, 80)}”` });
-                break;
-              }
-              case "response.failed":
-              case "response.error":
-              case "error": {
-                const msg = evt.response?.error?.message ?? evt.error?.message ?? evt.message ?? "stream error";
-                sse(controller, enc, { t: "text", v: `\n\n_Agent error: ${String(msg).slice(0, 200)}_` });
-                break;
-              }
-            }
+            prevId = res.responseId;
+            nextInput = outputs;
+            continue;
           }
+          break;
         }
-        if (!produced) sse(controller, enc, { t: "text", v: "_(No written answer — try again or rephrase.)_" });
+        if (!anyProduced) sse(controller, enc, { t: "text", v: "_(No written answer — try again or rephrase.)_" });
         done();
       } catch {
         sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
