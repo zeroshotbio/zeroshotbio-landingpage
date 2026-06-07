@@ -43,15 +43,34 @@ type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
 type Cluster = { id: string; label?: string; degsUp?: string[]; markers?: Marker[]; nCells?: number };
 
 // --- mode routing (3-way) --------------------------------------------------
+// 1) explicit personality address wins; 2) strong intent verbs; 3) keyword cues.
+const NAME_TARGETS: [RegExp, Mode][] = [
+  [/\barchivist\b/i, "archivist"],
+  [/\breasoner\b/i, "reason"],
+  [/\b(researcher|research personality)\b/i, "research"],
+];
+const RESEARCH_VERBS = /\b(do research|research the|research on|look (it |this )?up in zfin|check zfin|search (zfin|the literature|the canonical)|find (the )?(literature|citations|records))\b/i;
+const ARCHIVIST_VERBS = /\b(pull up|pull the|fetch the|raw values|raw data|from (the )?minifin|dataset values|list the (top|down|up)|show me the (top|down|up|markers|genes))\b/i;
+const REASON_VERBS = /\b(update the confidence|develop confidence|what do you think|your take|reason (about|through)|do you think|interpret|make sense of|synthesi[sz]e|weigh|how confident)\b/i;
+
 const ARCHIVIST_CUES =
-  /\b(how many|number of|count|raw|dataset|data set|minifin|log2|fold[- ]?change|pct|percent|expression value|statistic|score|exact|list the|which genes|what genes|top (genes|markers)|markers? (for|of this)|specificity|cell count|cluster size|umap)\b/gi;
+  /\b(how many|number of|count|raw|dataset|data set|minifin|log2|fold[- ]?change|pct|percent|expression (value|of)|statistic|exact|list the|which genes|what genes|top \d+|top (genes|markers)|markers? (for|of this)|down[- ]?regulated|up[- ]?regulated|specificity|cell count|cluster size|umap)\b/gi;
 const RESEARCH_CUES =
   /\b(cell type|identity|zfin|zfa|\bgo\b|anatomy|function|consistent with|lineage|marker of|role of|literature|known to|express(ed|ion) in|develops?|differentiat|in vivo|ontology)\b/gi;
 const REASON_CUES =
-  /\b(why|how come|could it|would you|might|hypothes|compare|contrast|explain|interpret|do you think|your (take|opinion)|infer|speculat|overall|in general|make sense|implication|trade[- ]?off|what if)\b/gi;
+  /\b(why|how come|could it|would you|might|hypothes|compare|contrast|explain|interpret|do you think|your (take|opinion)|infer|speculat|overall|in general|make sense|implication|confidence|trade[- ]?off|what if)\b/gi;
 
 function classifyMode(text: string, isFirst: boolean): Mode {
   if (isFirst) return "research"; // the auto-run identity call is always research
+  // 1) explicit address — if exactly one personality is named, obey it
+  const targets = new Set<Mode>();
+  for (const [re, m] of NAME_TARGETS) if (re.test(text)) targets.add(m);
+  if (targets.size === 1) return Array.from(targets)[0];
+  // 2) strong intent verbs (research intent beats an incidental "confidence")
+  if (RESEARCH_VERBS.test(text)) return "research";
+  if (ARCHIVIST_VERBS.test(text)) return "archivist";
+  if (REASON_VERBS.test(text)) return "reason";
+  // 3) keyword cue counting
   const a = (text.match(ARCHIVIST_CUES) || []).length;
   const r = (text.match(RESEARCH_CUES) || []).length;
   const g = (text.match(REASON_CUES) || []).length;
@@ -131,6 +150,7 @@ function researchInstructions(cluster: Cluster): string {
     "- Marker symbols may be human-ortholog-cased (e.g. HOXB13); map to the zebrafish gene.",
     "- Use the (identity, state) model: state ∈ {progenitor, cycling, quiescent, mature, stress} only when supported.",
     "- If ambiguous, say so and abstain rather than force-fit.",
+    "- You CANNOT read raw dataset values or marker lists you weren't given (e.g. the cluster's down-regulated genes). If the curator needs those, tell them the Archivist can pull them — do NOT ask the curator to paste data.",
     "",
     "OUTPUT — skimmable, sectioned markdown, **200 words max**, no preamble:",
     "- One bold one-line identity call (no heading).",
@@ -170,6 +190,7 @@ function archivistInstructions(cluster: Cluster): string {
     "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
+    "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
     "",
     "OUTPUT — markdown, **220 words max**:",
     "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.",
