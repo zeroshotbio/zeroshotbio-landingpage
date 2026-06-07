@@ -198,6 +198,7 @@ function archivistInstructions(cluster: Cluster): string {
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most two tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool.",
     "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
+    "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table). Adjusted p-values are NOT in this export — state that plainly and report log2FC + percentages + specificity instead; never stall waiting for p-values or ask the curator to run an export.",
     "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
     "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
     "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
@@ -231,13 +232,13 @@ const QUERY_TOOL = {
   type: "function",
   name: "query_minifin",
   description:
-    "Query the FULL MiniFin per-cluster gene profile (every detected gene with one-vs-rest log2FC, % in-cluster, % out-of-cluster) for THIS cluster. Use this for ANY gene-specific question, marker rankings deeper than the headline list, substring gene search, or expression thresholds — never say data is unavailable, query it. For MULTIPLE genes use kind='genes' with the full list in ONE call — do NOT call once per gene.",
+    "Query the MiniFin dataset for THIS cluster. kinds: gene/genes = one-vs-rest log2FC + %in/%out for one or several genes (batch several in ONE call); top = top-N up/down markers; search = substring gene match; across = ONE gene's mean expression + %expressing in EVERY cluster, with the active cluster's specificity rank; specificity = compact cross-cluster specificity summary (active value, rank, top clusters) for a LIST of genes. Use across/specificity for 'expression in each cluster', 'how specific is this to the cluster', 'which cluster is this a marker of', or cross-cluster comparisons. Never say data is unavailable — query it. (Note: adjusted p-values are not in this export.)",
   parameters: {
     type: "object",
     properties: {
-      kind: { type: "string", enum: ["gene", "genes", "top", "search"], description: "gene = one named gene; genes = a LIST of genes in one call (preferred for several); top = top-N up/down markers; search = substring match" },
-      gene: { type: "string", description: "gene symbol/ID for kind=gene" },
-      genes: { type: "array", items: { type: "string" }, description: "list of gene symbols/IDs for kind=genes (up to 40)" },
+      kind: { type: "string", enum: ["gene", "genes", "top", "search", "across", "specificity"], description: "gene/genes = log2FC+%in/out; top = top-N markers; search = substring; across = one gene across all clusters; specificity = cross-cluster specificity summary for a gene list" },
+      gene: { type: "string", description: "gene for kind=gene or kind=across" },
+      genes: { type: "array", items: { type: "string" }, description: "gene list for kind=genes or kind=specificity (up to 40)" },
       direction: { type: "string", enum: ["up", "down"], description: "for kind=top" },
       n: { type: "integer", description: "how many rows for kind=top (max 50)" },
       query: { type: "string", description: "substring for kind=search" },
@@ -259,11 +260,61 @@ async function getProfile(clusterId: string, origin: string): Promise<Profile | 
   profileCache.set(clusterId, prof);
   return prof;
 }
+
+// gene × cluster matrix (mean + pct per cluster) for cross-cluster / specificity queries
+type GeneMatrix = { clusters: string[]; clusterSizes: number[]; datasetCells: number; nGenes: number; genes: Record<string, { m: number[]; p: number[] }> };
+let matrixCache: GeneMatrix | null = null;
+let matrixTried = false;
+async function getMatrix(origin: string): Promise<GeneMatrix | null> {
+  if (matrixCache || matrixTried) return matrixCache;
+  matrixTried = true;
+  try {
+    const r = await fetch(`${origin}/daniotype_kasperov/archivist/gene_matrix.json`);
+    if (r.ok) matrixCache = (await r.json()) as GeneMatrix;
+  } catch {}
+  return matrixCache;
+}
 async function runQuery(argsStr: string, clusterId: string, origin: string): Promise<any> {
   let a: any = {};
   try {
     a = JSON.parse(argsStr || "{}");
   } catch {}
+
+  // cross-cluster / specificity kinds use the gene × cluster matrix
+  if (a.kind === "across" || a.kind === "specificity") {
+    const mx = await getMatrix(origin);
+    if (!mx) return { error: "gene matrix unavailable" };
+    const ai = mx.clusters.indexOf(String(clusterId));
+    const ctx = { cluster: clusterId, nCells: ai >= 0 ? mx.clusterSizes[ai] : null, datasetCells: mx.datasetCells, note: "mean = normalised mean expression (CP10K); pct = fraction of cells expressing. No p-values in this export." };
+    if (a.kind === "across") {
+      const row = mx.genes[String(a.gene ?? "").toLowerCase()];
+      if (!row) return { ...ctx, query: a, result: { g: a.gene, found: false } };
+      const table = mx.clusters.map((c, i) => ({ cluster: c, mean: row.m[i], pct: row.p[i] }));
+      const sorted = [...table].sort((x, y) => y.mean - x.mean);
+      return { ...ctx, query: a, result: { g: a.gene, found: true, rankOfActiveByMean: sorted.findIndex((t) => t.cluster === String(clusterId)) + 1, ofClusters: mx.clusters.length, topClusters: sorted.slice(0, 6), perCluster: table } };
+    }
+    // specificity: compact rank summary for a list of genes
+    const list = Array.isArray(a.genes) ? a.genes.slice(0, 40) : a.gene ? [a.gene] : [];
+    const result = list.map((name: string) => {
+      const row = mx.genes[String(name).toLowerCase()];
+      if (!row) return { g: name, found: false };
+      const idx = mx.clusters.map((_c, i) => i).sort((x, y) => row.m[y] - row.m[x]);
+      const rank = idx.indexOf(ai) + 1;
+      const top = idx.slice(0, 3).map((i) => ({ cluster: mx.clusters[i], mean: row.m[i], pct: row.p[i] }));
+      return {
+        g: name,
+        found: true,
+        activeMean: ai >= 0 ? row.m[ai] : null,
+        activePct: ai >= 0 ? row.p[ai] : null,
+        rankOfActiveByMean: rank,
+        ofClusters: mx.clusters.length,
+        topClusters: top,
+        clustersExpressedAtLeast10pct: row.p.filter((v) => v >= 0.1).length,
+      };
+    });
+    return { ...ctx, query: a, result };
+  }
+
   const p = await getProfile(clusterId, origin);
   if (!p) return { error: "profile unavailable for this cluster" };
   const ctx = { cluster: clusterId, nCells: p.nCells, datasetCells: p.datasetCells, genesProfiled: p.nGenes };
@@ -457,7 +508,13 @@ export async function POST(req: Request) {
               try {
                 const a = JSON.parse(c.args || "{}");
                 label =
-                  a.kind === "gene" ? `gene ${a.gene}` : a.kind === "genes" ? `${(a.genes ?? []).length} genes` : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}` : a.kind === "search" ? `search “${a.query}”` : "MiniFin";
+                  a.kind === "gene" ? `gene ${a.gene}`
+                  : a.kind === "genes" ? `${(a.genes ?? []).length} genes`
+                  : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}`
+                  : a.kind === "search" ? `search “${a.query}”`
+                  : a.kind === "across" ? `${a.gene} across clusters`
+                  : a.kind === "specificity" ? `specificity of ${(a.genes ?? []).length} genes`
+                  : "MiniFin";
               } catch {}
               sse(controller, enc, { t: "status", v: `Querying MiniFin: ${label}…` });
               const out = await runQuery(c.args, String(cluster.id), origin);

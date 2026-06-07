@@ -124,6 +124,36 @@ for k, c in enumerate(clusters):
         json.dump({"id": str(c), "nCells": int(n_k[k]), "datasetCells": int(N), "nGenes": len(prof), "genes": prof}, f, separators=(",", ":"))
 print(f"wrote {len(clusters)} profiles to {PROFILE_DIR}")
 
+# gene × cluster matrix: every (reasonably-expressed) gene's mean + pct in EACH
+# cluster, so the Archivist can answer per-cluster / specificity / cross-cluster
+# queries. Keyed by lowercase gene for case-insensitive lookup.
+print("building gene × cluster matrix…")
+mean_mat = sum_norm / n_k[:, None]          # (clusters, genes), normalised mean
+pct_mat = sum_bin / n_k[:, None]            # (clusters, genes), fraction expressing
+gmax_pct = pct_mat.max(axis=0)              # per-gene max pct across clusters
+gene_rows = {}
+for j in range(G):
+    if gmax_pct[j] < 0.01:                  # drop genes not expressed anywhere meaningful
+        continue
+    key = str(genes[j]).lower()
+    if key in gene_rows:
+        continue
+    gene_rows[key] = {
+        "m": [round(float(v), 1) for v in mean_mat[:, j]],
+        "p": [round(float(v), 3) for v in pct_mat[:, j]],
+    }
+matrix = {
+    "clusters": [str(c) for c in clusters],
+    "clusterSizes": [int(n_k[cidx[c]]) for c in clusters],
+    "datasetCells": int(N),
+    "nGenes": len(gene_rows),
+    "genes": gene_rows,
+}
+MATRIX_OUT = os.path.join(PROFILE_DIR, "gene_matrix.json")
+with open(MATRIX_OUT, "w") as f:
+    json.dump(matrix, f, separators=(",", ":"))
+print(f"wrote {MATRIX_OUT}  ({os.path.getsize(MATRIX_OUT)/1024/1024:.1f} MB)  {len(gene_rows)} genes × {len(clusters)} clusters")
+
 archivist = {
     "datasetCells": int(N),
     "assignedCells": int(N_assigned),
