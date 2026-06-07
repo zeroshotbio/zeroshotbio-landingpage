@@ -21,6 +21,10 @@ import "server-only";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+// Server-side richer MiniFin extract the Archivist queries (full up + computed
+// down markers + dataset cell counts per cluster). Bundled at build.
+import ARCHIVIST_DATA from "./minifin_archivist.json";
+
 const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
 
 const ALLOWED_DOMAINS = [
@@ -74,18 +78,42 @@ const MARKER_BLOCK_INSTR =
   "```\n" +
   "List only genes you actually discussed; use null for unknown numbers; always include a short note. Omit the block entirely if you discussed no specific markers.";
 
+type StatMarker = { g: string; l2fc?: number; p1?: number; p2?: number };
+function mtable(ms: StatMarker[]): string[] {
+  return [
+    "| gene | log2FC | % in-cluster | % out-of-cluster |",
+    "| --- | --- | --- | --- |",
+    ...ms.map((m) => `| ${m.g} | ${m.l2fc ?? "?"} | ${m.p1 != null ? (m.p1 * 100).toFixed(0) + "%" : "?"} | ${m.p2 != null ? (m.p2 * 100).toFixed(0) + "%" : "?"} |`),
+  ];
+}
+
+// Build the authoritative facts the Archivist quotes — from the server-side
+// MiniFin extract when available, else the markers the client sent.
 function rawFactsBlock(cluster: Cluster): string {
-  const rows = (cluster.markers ?? []).map(
-    (m) => `| ${m.g} | ${m.l2fc ?? "?"} | ${m.p1 != null ? (m.p1 * 100).toFixed(0) + "%" : "?"} | ${m.p2 != null ? (m.p2 * 100).toFixed(0) + "%" : "?"} |`
-  );
+  const data: any = ARCHIVIST_DATA as any;
+  const rec = data?.clusters?.[String(cluster.id)];
+  if (rec) {
+    const up: StatMarker[] = rec.up ?? [];
+    const down: StatMarker[] = rec.down ?? [];
+    return [
+      `Cluster: ${cluster.label ?? cluster.id}`,
+      `Cells in this cluster: ${rec.nCells}. Total cells in the MiniFin dataset: ${data.datasetCells}.`,
+      "",
+      `UP-REGULATED markers (one-vs-rest, split-pipe leiden) — ${up.length} available, sorted by score:`,
+      ...mtable(up),
+      "",
+      `DOWN-REGULATED markers (one-vs-rest, computed from the h5ad: most-negative log2FC among genes broadly expressed outside the cluster) — top ${down.length}:`,
+      ...mtable(down),
+    ].join("\n");
+  }
+  // fallback: only what the client sent (top up markers)
+  const rows = mtable(cluster.markers ?? []);
   return [
     `Cluster: ${cluster.label ?? cluster.id}`,
     cluster.nCells != null ? `Cells in cluster: ${cluster.nCells}` : "",
     "Top up-regulated markers (one-vs-rest, split-pipe leiden):",
-    "| gene | log2FC | % in-cluster | % out-of-cluster |",
-    "| --- | --- | --- | --- |",
     ...rows,
-    "(Down-regulated markers are not present in the split-pipe export.)",
+    "(Down-regulated markers unavailable in this fallback.)",
   ]
     .filter(Boolean)
     .join("\n");
@@ -141,8 +169,10 @@ function archivistInstructions(cluster: Cluster): string {
     PERSONAS_CONTEXT,
     "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
     "",
-    "OUTPUT — markdown, **200 words max**:",
-    "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Prefer a markdown table when reporting marker stats. Do NOT invent or round beyond what is given.",
+    "You can serve UP-regulated markers, DOWN-regulated markers, per-cluster and dataset-wide cell counts — all are in the facts below. If asked for more rows than exist, return all available and say how many there are.",
+    "",
+    "OUTPUT — markdown, **220 words max**:",
+    "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.",
     "- `## Read` — OPTIONAL, only if the user asked for interpretation; ≤60 words, clearly your own inference, not dataset fact.",
     "Never fabricate numbers or genes that are not in the facts below.",
     "",

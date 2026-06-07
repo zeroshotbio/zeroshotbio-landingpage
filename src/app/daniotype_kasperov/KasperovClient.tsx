@@ -23,6 +23,7 @@ interface Cluster {
   cy: number;
   degsUp: string[];
   markers: Marker[];
+  markersDown: Marker[];
   points: Pt[];
   bounds: { minx: number; maxx: number; miny: number; maxy: number };
 }
@@ -67,6 +68,7 @@ function useAtlas() {
           cy: c.cy,
           degsUp: c.degsUp ?? [],
           markers: c.markers ?? [],
+          markersDown: c.markersDown ?? [],
           points: [],
           bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
         }));
@@ -1067,6 +1069,8 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
 // A floating panel that can be dragged (by its header) and resized (corner).
 // children may be a render-prop receiving the inner content (w,h).
 // ---------------------------------------------------------------------------
+let zTop = 20; // shared stacking counter — last interacted panel sits on top
+
 function DraggablePanel({
   title,
   accent,
@@ -1085,10 +1089,13 @@ function DraggablePanel({
   children: (w: number, h: number) => React.ReactNode;
 }) {
   const [box, setBox] = useState<Box>(initial);
+  const [z, setZ] = useState(() => ++zTop);
+  const raise = () => setZ(++zTop);
   const HEADER = 24;
 
   function onDrag(e: React.MouseEvent) {
     e.preventDefault();
+    raise();
     const sx = e.clientX, sy = e.clientY;
     const o = { ...box };
     const move = (ev: MouseEvent) => setBox((b) => ({ ...b, x: Math.max(0, o.x + ev.clientX - sx), y: Math.max(0, o.y + ev.clientY - sy) }));
@@ -1104,6 +1111,7 @@ function DraggablePanel({
   function onResize(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    raise();
     const sx = e.clientX, sy = e.clientY;
     const o = { ...box };
     const move = (ev: MouseEvent) => setBox((b) => ({ ...b, w: Math.max(minW, o.w + ev.clientX - sx), h: Math.max(minH, o.h + ev.clientY - sy) }));
@@ -1119,12 +1127,14 @@ function DraggablePanel({
 
   return (
     <div
+      onMouseDown={raise}
       style={{
         position: "absolute",
         left: box.x,
         top: box.y,
         width: box.w,
         height: box.h,
+        zIndex: z,
         background: "rgba(255,253,251,0.96)",
         border: `1px solid ${accent}44`,
         borderTop: `2px solid ${accent}`,
@@ -1188,8 +1198,26 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
         </>
       )}
 
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 2px" }}>▼ DOWN-REGULATED</div>
-      <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>Not in the split-pipe export — computable from the h5ad on request.</div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: "#b45309", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
+      {cluster.markersDown.length ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+          {cluster.markersDown.slice(0, 8).map((m) => {
+            const mag = Math.abs(m.l2fc ?? 0);
+            const maxDn = Math.max(...cluster.markersDown.map((d) => Math.abs(d.l2fc ?? 0)), 1);
+            return (
+              <div key={m.g} style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
+                <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+                <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+                  <div style={{ width: `${(mag / maxDn) * 100}%`, height: "100%", background: "#b45309" }} />
+                </div>
+                <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
+              </div>
+            );
+          })}
+        </div>
+      ) : (
+        <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>none computed</div>
+      )}
     </div>
   );
 }
