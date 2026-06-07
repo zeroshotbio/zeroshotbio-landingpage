@@ -197,7 +197,8 @@ function archivistInstructions(cluster: Cluster): string {
     "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
-    "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer.",
+    "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most two tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool.",
+    "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
     "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
     "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
     "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
@@ -429,22 +430,28 @@ export async function POST(req: Request) {
         let prevId = "";
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
         let anyProduced = false;
-        for (let iter = 0; iter < 6; iter++) {
+        let toolRounds = 0;
+        const MAX_TOOL_ROUNDS = 2;
+        for (let iter = 0; iter < 5; iter++) {
+          // after the tool-round budget, force a written answer (no more tool calls)
+          const forceAnswer = mode === "archivist" && toolRounds >= MAX_TOOL_ROUNDS;
           const payload: any = {
             model: MODEL,
             stream: true,
             store: true,
-            reasoning: { effort: "low", summary: "auto" },
+            reasoning: { effort: mode === "archivist" ? "minimal" : "low", summary: "auto" },
             max_output_tokens: 5000,
             input: nextInput,
             ...(prevId ? { previous_response_id: prevId } : { instructions }),
             ...(tools ? { tools } : {}),
+            ...(forceAnswer ? { tool_choice: "none" } : {}),
           };
           const res = await streamOnce(payload, controller, enc, key, ctrl.signal);
           anyProduced = anyProduced || res.produced;
           if (!res.ok) break;
           // Archivist tool loop: execute query_minifin calls, then continue.
-          if (mode === "archivist" && res.calls.length) {
+          if (mode === "archivist" && res.calls.length && toolRounds < MAX_TOOL_ROUNDS) {
+            toolRounds++;
             const outputs: any[] = [];
             for (const c of res.calls) {
               let label = "MiniFin";
