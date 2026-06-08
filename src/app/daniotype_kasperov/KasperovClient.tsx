@@ -596,32 +596,61 @@ const THEME: Record<AgentMode, { name: string; icon: string; color: string; bg: 
 const MODES: AgentMode[] = ["research", "archivist", "reason"];
 
 // extract the hidden ```kasperov-markers``` block: returns display text + parsed markers
+// Extract a hidden control block by keyword. Robust to the model emitting it
+// EITHER fenced ( ```kasperov-x\n[...]\n``` ) OR bare ( kasperov-x [...] ) — it
+// locates the keyword, bracket-matches the following JSON array, and removes the
+// whole thing (plus any surrounding fence) from the visible text.
+function extractTagged(content: string, keyword: string): { json: string | null; clean: string } {
+  const kw = new RegExp("(?:```)?\\s*" + keyword + "\\s*", "i");
+  const m = content.match(kw);
+  if (!m || m.index === undefined) return { json: null, clean: content };
+  const start = content.indexOf("[", m.index + m[0].length);
+  if (start === -1) return { json: null, clean: content };
+  let depth = 0;
+  let end = -1;
+  for (let i = start; i < content.length; i++) {
+    const c = content[i];
+    if (c === "[") depth++;
+    else if (c === "]") {
+      depth--;
+      if (depth === 0) {
+        end = i;
+        break;
+      }
+    }
+  }
+  if (end === -1) return { json: null, clean: content };
+  let after = end + 1;
+  const tail = content.slice(after).match(/^\s*```/); // consume a trailing fence if present
+  if (tail) after += tail[0].length;
+  const json = content.slice(start, end + 1);
+  const clean = (content.slice(0, m.index) + content.slice(after)).trim();
+  return { json, clean };
+}
+
 function splitMarkerBlock(content: string): { clean: string; markers: Marker[] } {
-  const re = /```kasperov-markers\s*([\s\S]*?)```/i;
-  const m = content.match(re);
-  if (!m) return { clean: content, markers: [] };
+  const { json, clean } = extractTagged(content, "kasperov-markers");
+  if (!json) return { clean: content, markers: [] };
   let markers: Marker[] = [];
   try {
-    const arr = JSON.parse(m[1].trim());
+    const arr = JSON.parse(json);
     if (Array.isArray(arr))
       markers = arr
         .filter((x) => x && typeof x.g === "string")
         .map((x) => ({ g: x.g, l2fc: x.l2fc ?? undefined, p1: x.p1 ?? undefined, p2: x.p2 ?? undefined, note: x.note ?? undefined }));
   } catch {}
-  return { clean: content.replace(re, "").trim(), markers };
+  return { clean, markers };
 }
 
-// extract the hidden ```kasperov-dispatch``` block: a prompt the Reasoner crafted
-// for another personality, surfaced as a send button.
+// a prompt the Reasoner crafted for another personality, surfaced as a send button.
 function splitDispatch(content: string): { clean: string; dispatches: { to: AgentMode; prompt: string }[] } {
-  const re = /```kasperov-dispatch\s*([\s\S]*?)```/i;
-  const m = content.match(re);
-  if (!m) return { clean: content, dispatches: [] };
+  const { json, clean } = extractTagged(content, "kasperov-dispatch");
+  if (!json) return { clean: content, dispatches: [] };
   let raw: any;
   try {
-    raw = JSON.parse(m[1].trim());
+    raw = JSON.parse(json);
   } catch {
-    return { clean: content.replace(re, "").trim(), dispatches: [] };
+    return { clean, dispatches: [] };
   }
   const arr = Array.isArray(raw) ? raw : [raw];
   const seen = new Set<string>();
@@ -635,27 +664,25 @@ function splitDispatch(content: string): { clean: string; dispatches: { to: Agen
       return true;
     })
     .slice(0, 2); // never flood the chat with dispatch buttons
-  return { clean: content.replace(re, "").trim(), dispatches };
+  return { clean, dispatches };
 }
 
-// extract the hidden ```kasperov-promote``` block: the Reasoner moving an
-// "also-discussed" gene up into the UP/DOWN marker list.
+// the Reasoner moving an "also-discussed" gene up into the UP/DOWN marker list.
 function splitPromote(content: string): { clean: string; promotes: { gene: string; dir: "up" | "down"; note?: string }[] } {
-  const re = /```kasperov-promote\s*([\s\S]*?)```/i;
-  const m = content.match(re);
-  if (!m) return { clean: content, promotes: [] };
+  const { json, clean } = extractTagged(content, "kasperov-promote");
+  if (!json) return { clean: content, promotes: [] };
   let raw: any;
   try {
-    raw = JSON.parse(m[1].trim());
+    raw = JSON.parse(json);
   } catch {
-    return { clean: content.replace(re, "").trim(), promotes: [] };
+    return { clean, promotes: [] };
   }
   const arr = Array.isArray(raw) ? raw : [raw];
   const promotes = arr
     .filter((x) => x && typeof x.gene === "string" && (x.dir === "up" || x.dir === "down"))
     .map((x) => ({ gene: String(x.gene), dir: x.dir as "up" | "down", note: x.note ? String(x.note) : undefined }))
     .slice(0, 6);
-  return { clean: content.replace(re, "").trim(), promotes };
+  return { clean, promotes };
 }
 
 function defaultPrompt(c: Cluster): string {
@@ -850,6 +877,23 @@ function ClusterStage({
     // reflowBoxes is pure + GAP constant; safe to omit from deps
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Top Markers & Confidence also grow WIDER as they gather content (until the
+  // user drags a panel, which switches everything to manual layout)
+  useEffect(() => {
+    if (manualRef.current) return;
+    const added = augmented[active.id] ?? [];
+    const why = confidence[active.id]?.why ?? "";
+    const longestNote = added.reduce((mx, m) => Math.max(mx, m.note?.length ?? 0), 0);
+    const mkW = Math.min(380, Math.max(250, 250 + (longestNote > 38 ? 105 : longestNote > 0 ? 45 : 0) + (added.length > 3 ? 25 : 0)));
+    const cfW = Math.min(380, Math.max(250, 250 + Math.floor(why.length / 5)));
+    setPb((p) => {
+      if (!p || (p.mk.w === mkW && p.cf.w === cfW)) return p;
+      const u = { ...p, mk: { ...p.mk, w: mkW }, cf: { ...p.cf, w: cfW } };
+      return manualRef.current ? u : reflowBoxes(u);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [augmented, confidence, active.id]);
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
