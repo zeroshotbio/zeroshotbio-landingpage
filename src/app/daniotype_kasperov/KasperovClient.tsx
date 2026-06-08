@@ -1264,14 +1264,60 @@ function extractTagged(content: string, keyword: string): { json: string | null;
 }
 
 // the Reasoner's final call for a cluster (settled identity) — drives auto-accept.
-function splitConclude(content: string): { clean: string; conclude: { label: string; confidence?: number; done: boolean } | null } {
+// The Reasoner's settled call, daniotype-style: an (identity, state) at the
+// ontology tier the evidence supports, an assign/abstain decision, and the
+// cluster markers it leaned on. Legacy flat {label,...} blocks still parse.
+type Conclude = {
+  label: string; // formatted display string
+  identity?: string;
+  tier?: string;
+  state?: string; // omitted when "none"
+  decision?: "assign" | "abstain";
+  citedMarkers?: string[];
+  confidence?: number;
+  done: boolean;
+};
+
+function formatConcludeLabel(c: { identity?: string; state?: string; tier?: string; decision?: "assign" | "abstain" }): string {
+  const id = (c.identity ?? "").trim();
+  if (c.decision === "abstain") return `${id || "unresolved"} (abstained · ${c.tier ?? "tier"})`;
+  return c.state ? `${id} · ${c.state}` : id;
+}
+
+function splitConclude(content: string): { clean: string; conclude: Conclude | null } {
   const { json, clean } = extractTagged(content, "kasperov-conclude");
   if (!json) return { clean: content, conclude: null };
   try {
     const o = JSON.parse(json);
+    if (o && typeof o.identity === "string") {
+      const state = typeof o.state === "string" && o.state.toLowerCase() !== "none" && o.state.trim() ? String(o.state) : undefined;
+      const decision: "assign" | "abstain" = o.decision === "abstain" ? "abstain" : "assign";
+      const citedMarkers = Array.isArray(o.cited_markers) ? o.cited_markers.filter((g: unknown) => typeof g === "string").map(String) : [];
+      const base = { identity: String(o.identity), tier: typeof o.tier === "string" ? o.tier : undefined, state, decision };
+      return {
+        clean,
+        conclude: { ...base, label: formatConcludeLabel(base), citedMarkers, confidence: typeof o.confidence === "number" ? o.confidence : undefined, done: o.done !== false },
+      };
+    }
+    // legacy flat block
     if (o && typeof o.label === "string") return { clean, conclude: { label: String(o.label), confidence: typeof o.confidence === "number" ? o.confidence : undefined, done: o.done !== false } };
   } catch {}
   return { clean, conclude: null };
+}
+
+// Require-evidence-to-name, enforced (not just prompted): a confident "assign"
+// must cite ≥1 marker that is actually one of THIS cluster's differential genes
+// (its degsUp or a gene promoted into the panel). If it can't, we roll up to an
+// abstention rather than letting an ungrounded name through.
+function enforceCiteDiscipline(c: Conclude, cl: Cluster, added: Marker[]): Conclude {
+  if (!c.identity) return c; // legacy flat label — nothing to enforce
+  const universe = new Set([...(cl.degsUp ?? []), ...(added ?? []).map((m) => m.g)].map((s) => String(s).toLowerCase()));
+  const cited = (c.citedMarkers ?? []).filter((g) => universe.has(String(g).toLowerCase()));
+  if (c.decision === "assign" && cited.length === 0) {
+    const downgraded = { ...c, decision: "abstain" as const, citedMarkers: cited, confidence: Math.min(c.confidence ?? 40, 45) };
+    return { ...downgraded, label: formatConcludeLabel(downgraded) };
+  }
+  return { ...c, citedMarkers: cited };
 }
 
 // heuristic: a specialist deferred / is asking the curator to choose instead of
@@ -1356,6 +1402,18 @@ function defaultPrompt(c: Cluster): string {
   );
 }
 
+// the K=2 second proposer for auto-pilot — an independent, alternative-hypothesis
+// read so the Reasoner has two grounded opinions to adjudicate, not one.
+function secondOpinionPrompt(c: Cluster): string {
+  const upList = c.degsUp.slice(0, 8).join(", ");
+  return (
+    `Independent second opinion for ${c.label}. Its top up-regulated markers are: ${upList || "(none)"}. ` +
+    `Assume NO prior conclusion. Name at least one ALTERNATIVE cell-type hypothesis besides the most obvious one and weigh them ` +
+    `against each other using ZFIN curated expression, ZFA anatomy, and GO, citing a record for each claim. ` +
+    `If the markers are ambiguous between identities, say which and why, and which tier (germ layer / tissue / cell type) is the deepest you can defend.`
+  );
+}
+
 // pure marker merge (gene-keyed; classifies up/down by log2FC) — shared by the
 // manual "Add to Top Markers" button and the auto-pilot.
 function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
@@ -1370,9 +1428,9 @@ function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const AUTO_REASON_PROMPT =
-  "Summarize what we've established for this cluster. If the Researcher and Archivist are exhausted and you're satisfied with the cell-type identity, conclude with a kasperov-conclude block. Otherwise dispatch the single most useful next query to the Researcher or Archivist (kasperov-dispatch).";
+  "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read). Reconcile them: where they agree, that's strong; where they disagree, resolve it with the evidence. If the specialists are exhausted and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch).";
 const AUTO_NUDGE_PROMPT =
-  "Decide now — do not ask me. Either conclude with a kasperov-conclude block (if the specialists are exhausted and the identity is settled) or dispatch the next query with a kasperov-dispatch block.";
+  "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
 
 function ClusterStage({
@@ -1732,10 +1790,22 @@ function ClusterStage({
 
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
-    // 1) identity pass (Researcher)
-    let conv = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
-    added = autoAddMarkers(cl, conv[conv.length - 1].content, "research", added);
-    // 2) Reasoner-orchestrated rounds
+    // 1) K=2 INDEPENDENT identity proposers (Researcher) — a default read and an
+    //    alternative-hypothesis read, each from a fresh context so they can't
+    //    anchor on each other. The Reasoner then adjudicates the two.
+    const p1 = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
+    added = autoAddMarkers(cl, p1[p1.length - 1].content, "research", added);
+    if (autoAbort.current) return;
+    const p2 = await autoStream(cl, [{ role: "user", content: secondOpinionPrompt(cl) }], "research");
+    added = autoAddMarkers(cl, p2[p2.length - 1].content, "research", added);
+    // merged context: both independent reads, for the Reasoner to reconcile
+    let conv: ChatMsg[] = [
+      { role: "user", content: defaultPrompt(cl) },
+      p1[p1.length - 1],
+      { role: "user", content: "Independent second read (alternative-hypothesis pass) for the same cluster:" },
+      p2[p2.length - 1],
+    ];
+    // 2) Reasoner-orchestrated rounds — adjudicate, dispatch follow-ups, conclude
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
       if (autoAbort.current) return;
       conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
@@ -1752,7 +1822,9 @@ function ClusterStage({
         dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       }
       if (concl?.done) {
-        onLabel(cl.id, concl.label);
+        // require-evidence-to-name: roll up to abstain if no cited marker is grounded
+        const grounded = enforceCiteDiscipline(concl, cl, added);
+        onLabel(cl.id, grounded.label);
         onValidate(cl.id, true);
         return;
       }
@@ -1936,7 +2008,9 @@ function ClusterStage({
               const mk = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] as Marker[] };
               const dp = m.role === "assistant" ? splitDispatch(mk.clean) : { clean: mk.clean, dispatches: [] as { to: AgentMode; prompt: string }[] };
               const pr = m.role === "assistant" ? splitPromote(dp.clean) : { clean: dp.clean, promotes: [] as { gene: string; dir: "up" | "down"; note?: string }[] };
-              const cc = m.role === "assistant" ? splitConclude(pr.clean) : { clean: pr.clean, conclude: null as null | { label: string; confidence?: number; done: boolean } };
+              const cc = m.role === "assistant" ? splitConclude(pr.clean) : { clean: pr.clean, conclude: null as Conclude | null };
+              // enforce require-evidence-to-name before showing the accept button
+              const grounded = cc.conclude ? enforceCiteDiscipline(cc.conclude, active, augmented[active.id] ?? []) : null;
               const parsed = { clean: cc.clean, markers: mk.markers };
               const key = `${active.id}:${i}`;
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
@@ -1944,15 +2018,16 @@ function ClusterStage({
               const actions =
                 m.role === "assistant" ? (
                   <>
-                    {cc.conclude && (
+                    {grounded && (
                       <button
                         onClick={() => {
-                          onLabel(active.id, cc.conclude!.label);
+                          onLabel(active.id, grounded.label);
                           onValidate(active.id, true);
                         }}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: validated.has(active.id) ? "#15803d" : "#fff", border: `1px solid #15803d`, color: validated.has(active.id) ? "#fff" : "#15803d", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+                        title={grounded.decision === "abstain" ? "Require-evidence-to-name: no cited marker was one of this cluster's DEGs, so this rolls up to an abstention." : grounded.citedMarkers?.length ? `Grounded on: ${grounded.citedMarkers.join(", ")}` : undefined}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: validated.has(active.id) ? "#15803d" : "#fff", border: `1px solid ${grounded.decision === "abstain" ? "#a16207" : "#15803d"}`, color: validated.has(active.id) ? "#fff" : grounded.decision === "abstain" ? "#a16207" : "#15803d", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
                       >
-                        {validated.has(active.id) ? "✓ Accepted" : "✓ Accept identity"}: {cc.conclude.label}
+                        {validated.has(active.id) ? "✓ Accepted" : grounded.decision === "abstain" ? "⤴ Accept (abstain/roll-up)" : "✓ Accept identity"}: {grounded.label}
                       </button>
                     )}
                     {canAdd && (
