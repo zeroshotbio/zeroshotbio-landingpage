@@ -724,9 +724,6 @@ function ClusterStage({
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState(false);
-  // the Researcher/Archivist unlock once the Reasoner has suggested them
-  const [unlocked, setUnlocked] = useState<Record<string, { research: boolean; archivist: boolean }>>({});
-  const un = unlocked[active.id] ?? { research: false, archivist: false };
 
   function classifyDir(m: Marker): "up" | "down" | undefined {
     if (m.dir) return m.dir;
@@ -928,17 +925,6 @@ function ClusterStage({
       }
       const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
       setTranscripts((t) => ({ ...t, [active.id]: finalMsgs }));
-      // a Reasoner dispatch unlocks the targeted specialist's input line
-      if (mode === "reason") {
-        const dsp = splitDispatch(splitMarkerBlock(acc).clean).dispatches;
-        if (dsp.length)
-          setUnlocked((u) => {
-            const cur = u[active.id] ?? { research: false, archivist: false };
-            const nx = { ...cur };
-            dsp.forEach((d) => (nx[d.to === "archivist" ? "archivist" : "research"] = true));
-            return { ...u, [active.id]: nx };
-          });
-      }
       setStreaming(false);
       setRouting(false);
       setStatus("");
@@ -1099,10 +1085,10 @@ function ClusterStage({
                     {/* always offer to hand back to the Reasoner for the next step */}
                     {isLast && m.mode !== "reason" && (
                       <button
-                        onClick={() => ask("reason", "Given everything so far, what makes sense next — and have we exhausted the Researcher and Archivist?")}
+                        onClick={() => ask("reason", "Summarize what we've established for this cluster so far, then suggest the next steps — or tell me if we're done.")}
                         style={{ display: "inline-flex", alignItems: "center", gap: 6, background: THEME.reason.bg, border: `1px solid ${THEME.reason.color}66`, color: THEME.reason.color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
                       >
-                        🧠 Suggested next prompt for the Reasoner →
+                        🧠 Ask Reasoner to Summarize and Suggest Next Steps →
                       </button>
                     )}
                   </>
@@ -1200,8 +1186,8 @@ function ClusterStage({
             <div style={{ borderTop: "1px solid #f0ece7", padding: "10px 16px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 9 }}>
                 <AskLine mode="reason" value={inReason} setValue={setInReason} onSend={() => { ask("reason", inReason); setInReason(""); }} enabled={!streaming} locked={false} />
-                <AskLine mode="research" value={inRes} setValue={setInRes} onSend={() => { ask("research", inRes); setInRes(""); }} enabled={!streaming && un.research} locked={!un.research} />
-                <AskLine mode="archivist" value={inArch} setValue={setInArch} onSend={() => { ask("archivist", inArch); setInArch(""); }} enabled={!streaming && un.archivist} locked={!un.archivist} />
+                <AskLine mode="research" value={inRes} setValue={setInRes} onSend={() => { ask("research", inRes); setInRes(""); }} enabled={!streaming} locked={false} />
+                <AskLine mode="archivist" value={inArch} setValue={setInArch} onSend={() => { ask("archivist", inArch); setInArch(""); }} enabled={!streaming} locked={false} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
