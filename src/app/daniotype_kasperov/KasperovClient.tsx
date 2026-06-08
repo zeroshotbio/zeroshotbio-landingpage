@@ -251,7 +251,8 @@ export default function KasperovClient() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
-        if (p.personasV === 2) setPersonasSeen(true); // re-show the updated primer
+        // personasSeen is intentionally NOT persisted — the primer shows once per
+        // page load (reliably present each visit, not nagging within a session).
       }
     } catch {}
     setLoaded(true);
@@ -259,9 +260,9 @@ export default function KasperovClient() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), personasV: personasSeen ? 2 : 0 }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated) }));
     } catch {}
-  }, [validated, personasSeen, loaded]);
+  }, [validated, loaded]);
 
   // pick a cluster → show the personalities primer once, then the chat
   function openCluster(id: string) {
@@ -411,20 +412,20 @@ const PIX_REASONER = [
 
 function Personas({ onContinue }: { onContinue: () => void }) {
   const cards = [
-    { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Your main partner. Synthesises everything, judges when you're done, and dispatches the other two for you." },
-    { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence. Unlocks when the Reasoner calls for it." },
-    { mode: "archivist" as AgentMode, pix: PIX_ARCHIVIST, blurb: "Pulls raw MiniFin values — stats, specificity, p-values, co-expression. Unlocks when the Reasoner calls for it." },
+    { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Your partner. Synthesises everything, judges when you're done, and offers one-click prompts to send the other two." },
+    { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence." },
+    { mode: "archivist" as AgentMode, pix: PIX_ARCHIVIST, blurb: "Pulls raw MiniFin values — stats, specificity, p-values, co-expression." },
   ];
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 880, padding: "60px 28px", textAlign: "center" }}>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#999", fontWeight: 600 }}>Your three specialists</div>
         <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One GPT-5-Mini, three personalities</h1>
-        <p style={{ fontSize: 15, color: "#666", maxWidth: 680, margin: "0 auto 26px", lineHeight: 1.55 }}>
-          Talk to the <strong style={{ color: THEME.reason.color }}>Reasoner</strong> — it&apos;s your partner. It reads the evidence,
-          tells you what&apos;s worth checking next, and hands the <strong style={{ color: THEME.research.color }}>Researcher</strong> and{" "}
-          <strong style={{ color: THEME.archivist.color }}>Archivist</strong> ready-to-send prompts. Those two unlock once the Reasoner
-          suggests them. Each has its own input line below the chat.
+        <p style={{ fontSize: 15, color: "#666", maxWidth: 700, margin: "0 auto 26px", lineHeight: 1.55 }}>
+          Each specialist has its own input line below the chat — ask any of them directly, any time. Lean on the{" "}
+          <strong style={{ color: THEME.reason.color }}>Reasoner</strong> as your partner: it reads the evidence, judges when you&apos;re
+          done, and offers one-click prompts to send the <strong style={{ color: THEME.research.color }}>Researcher</strong> and{" "}
+          <strong style={{ color: THEME.archivist.color }}>Archivist</strong>.
         </p>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
           {cards.map(({ mode, pix, blurb }) => {
