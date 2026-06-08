@@ -312,7 +312,7 @@ function UmapCanvas({
 }
 
 // ---------------------------------------------------------------------------
-type Stage = "intro" | "map" | "personas" | "cluster";
+type Stage = "intro" | "map" | "personas" | "cluster" | "scorecard";
 
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
@@ -488,10 +488,14 @@ export default function KasperovClient() {
         onExport={exportResults}
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
+        onScore={() => setStage("scorecard")}
         labels={labels}
         confidence={confidence}
       />
     );
+
+  if (stage === "scorecard")
+    return <Scorecard dataset={dataset} clusters={clusters} labels={labels} confidence={confidence} onBack={() => setStage("map")} />;
 
   const active = clusters.find((c) => c.id === activeId)!;
 
@@ -798,6 +802,7 @@ function MapStage({
   onExport,
   onReset,
   onSwitchDataset,
+  onScore,
   labels = {},
   confidence = {},
 }: {
@@ -812,6 +817,7 @@ function MapStage({
   onExport: () => void;
   onReset: () => void;
   onSwitchDataset: () => void;
+  onScore: () => void;
   labels?: Record<string, string>;
   confidence?: Record<string, { pct: number; why: string }>;
 }) {
@@ -866,6 +872,14 @@ function MapStage({
                 >
                   🤖 Activate AutoPilot Cluster Labeller →
                 </button>
+                {dataset.groundTruthUrl && labelled.length > 0 && (
+                  <button
+                    onClick={onScore}
+                    style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
+                  >
+                    🎯 Score vs ground truth →
+                  </button>
+                )}
                 <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
                 {(labelled.length > 0 || validated.size > 0) && (
                   <button onClick={onReset} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, color: "#b91c1c", borderColor: "#e7c3c3" }}>↺ Reset run</button>
@@ -933,6 +947,264 @@ function MapStage({
             </>
           )}
         </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Ground-truth scorecard — score our de-novo labels against the authors'
+// published labels at every ontology tier (germ layer → tissue → broad → sub),
+// via an LLM semantic judge. Depth-stratified: coarse tiers should agree more.
+// ---------------------------------------------------------------------------
+type GTTier = { label: string | null; frac: number; n: number };
+type GroundTruth = { tiers: string[]; fullDatasetCells?: number; clusteredCells?: number; clusters: Record<string, Record<string, GTTier>> };
+type TierVerdict = { match: boolean; note: string };
+type ClusterVerdict = { id: string; germ_layer: TierVerdict; tissue: TierVerdict; cell_type_broad: TierVerdict; cell_type_sub: TierVerdict };
+const SCORE_TIERS: { key: keyof Omit<ClusterVerdict, "id">; gtKey: string; label: string }[] = [
+  { key: "germ_layer", gtKey: "germ_layer", label: "Germ layer" },
+  { key: "tissue", gtKey: "tissue", label: "Tissue" },
+  { key: "cell_type_broad", gtKey: "cell_type_broad", label: "Cell type — broad" },
+  { key: "cell_type_sub", gtKey: "cell_type_sub", label: "Cell type — sub" },
+];
+
+function Scorecard({
+  dataset,
+  clusters,
+  labels,
+  confidence,
+  onBack,
+}: {
+  dataset: DatasetDef;
+  clusters: Cluster[];
+  labels: Record<string, string>;
+  confidence: Record<string, { pct: number; why: string }>;
+  onBack: () => void;
+}) {
+  const labelled = useMemo(() => clusters.filter((c) => labels[c.id]), [clusters, labels]);
+  const fingerprint = useMemo(() => JSON.stringify(labelled.map((c) => [c.id, labels[c.id]]).sort()), [labelled, labels]);
+  const scoreKey = `daniotype_kasperov_score:${dataset.id}`;
+
+  const [gt, setGt] = useState<GroundTruth | null>(null);
+  const [verdicts, setVerdicts] = useState<Record<string, ClusterVerdict>>({});
+  const [status, setStatus] = useState<"loading" | "ready" | "scoring" | "done" | "error">("loading");
+  const [progress, setProgress] = useState({ done: 0, total: 0 });
+  const [err, setErr] = useState("");
+  const ranRef = useRef(false);
+
+  // load ground truth (+ any cached score for this exact label set)
+  useEffect(() => {
+    if (!dataset.groundTruthUrl) {
+      setErr("This dataset has no published ground truth.");
+      setStatus("error");
+      return;
+    }
+    let alive = true;
+    fetch(dataset.groundTruthUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`ground truth ${r.status}`);
+        return r.json();
+      })
+      .then((d: GroundTruth) => {
+        if (!alive) return;
+        setGt(d);
+        try {
+          const raw = localStorage.getItem(scoreKey);
+          if (raw) {
+            const p = JSON.parse(raw);
+            if (p.fingerprint === fingerprint && p.verdicts) {
+              setVerdicts(p.verdicts);
+              setStatus("done");
+              return;
+            }
+          }
+        } catch {}
+        setStatus("ready");
+      })
+      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
+    return () => {
+      alive = false;
+    };
+  }, [dataset.groundTruthUrl, scoreKey, fingerprint]);
+
+  const gtTiersFor = useCallback(
+    (id: string) => {
+      const rec = gt?.clusters?.[id] ?? {};
+      return {
+        germ_layer: rec.germ_layer?.label ?? null,
+        tissue: rec.tissue?.label ?? null,
+        cell_type_broad: rec.cell_type_broad?.label ?? null,
+        cell_type_sub: rec.cell_type_sub?.label ?? null,
+      };
+    },
+    [gt]
+  );
+
+  const runScoring = useCallback(async () => {
+    if (!gt) return;
+    setStatus("scoring");
+    setErr("");
+    const items = labelled.map((c) => ({ id: c.id, ourLabel: labels[c.id], markers: c.degsUp, gt: gtTiersFor(c.id) }));
+    const BATCH = 10;
+    const batches: (typeof items)[] = [];
+    for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
+    setProgress({ done: 0, total: items.length });
+    const acc: Record<string, ClusterVerdict> = {};
+    let failed = 0;
+    let next = 0;
+    async function worker() {
+      while (next < batches.length) {
+        const b = batches[next++];
+        try {
+          const r = await fetch("/api/kasperov_score", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ dataset: dataset.id, items: b }),
+          });
+          if (!r.ok) throw new Error(`score ${r.status}`);
+          const d = await r.json();
+          for (const res of d.results ?? []) if (res?.id) acc[res.id] = res;
+        } catch {
+          failed += b.length;
+        }
+        setVerdicts({ ...acc });
+        setProgress({ done: Object.keys(acc).length + failed, total: items.length });
+      }
+    }
+    await Promise.all(Array.from({ length: Math.min(3, batches.length) }, worker));
+    setStatus("done");
+    try {
+      localStorage.setItem(scoreKey, JSON.stringify({ fingerprint, verdicts: acc }));
+    } catch {}
+  }, [gt, labelled, labels, gtTiersFor, dataset.id, scoreKey, fingerprint]);
+
+  // auto-run once when ready
+  useEffect(() => {
+    if (status === "ready" && !ranRef.current) {
+      ranRef.current = true;
+      runScoring();
+    }
+  }, [status, runScoring]);
+
+  // per-tier aggregate agreement over clusters that have a verdict + a reference label
+  const agg = SCORE_TIERS.map((t) => {
+    let matched = 0;
+    let total = 0;
+    for (const c of labelled) {
+      const v = verdicts[c.id];
+      const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
+      if (!v || !ref) continue;
+      total++;
+      if (v[t.key].match) matched++;
+    }
+    return { ...t, matched, total, pct: total ? (100 * matched) / total : 0 };
+  });
+  const scoredCount = labelled.filter((c) => verdicts[c.id]).length;
+
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
+      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 24px 70px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
+          <button onClick={onBack} style={btnGhost}>← World map</button>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>{dataset.name} · ground-truth scorecard</div>
+        </div>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "4px 0 2px" }}>Our de-novo labels vs the published atlas</h2>
+        <p style={{ color: "#666", fontSize: 14.5, margin: "0 0 18px", lineHeight: 1.5 }}>
+          An LLM judge scores each of our {scoredCount}/{labelled.length} labelled clusters against the authors&apos; published labels at every ontology tier — by
+          biological meaning, not string match. Agreement should fall as the tier gets finer; that gradient is the honest read on how deep our calls actually resolve.
+        </p>
+
+        {status === "error" && (
+          <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", borderRadius: 10, padding: "12px 14px", fontSize: 14 }}>
+            {err || "Scoring failed."}
+          </div>
+        )}
+
+        {(status === "scoring" || status === "loading") && (
+          <div style={{ display: "flex", alignItems: "center", gap: 10, color: "#555", fontSize: 14, marginBottom: 16 }}>
+            <span style={{ animation: "kpulse 1s infinite" }}>🎯</span>
+            {status === "loading" ? "Loading ground truth…" : `Scoring clusters… ${progress.done}/${progress.total}`}
+          </div>
+        )}
+
+        {/* tier agreement bars */}
+        {(status === "done" || (status === "scoring" && scoredCount > 0)) && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
+            {agg.map((t) => {
+              const heat = confColor(t.pct);
+              return (
+                <div key={t.key} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" }}>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
+                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+                    <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct.toFixed(0) : "—"}{t.total ? "%" : ""}</span>
+                    <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
+                  </div>
+                  <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
+                    <div style={{ width: `${t.pct}%`, height: "100%", background: heat.fg }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {/* re-run control */}
+        <div style={{ display: "flex", gap: 10, margin: "14px 0 18px", alignItems: "center" }}>
+          {status === "done" && (
+            <button onClick={() => { ranRef.current = true; runScoring(); }} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run scoring</button>
+          )}
+          <span style={{ fontSize: 12, color: "#aaa" }}>
+            Reference: {dataset.name} published labels{gt?.clusteredCells ? ` · ${gt.clusteredCells.toLocaleString()} cells clustered` : ""}. Numeric sub-type suffixes (e.g. &ldquo;periderm 10&rdquo;) are matched on the biological stem.
+          </span>
+        </div>
+
+        {/* per-cluster detail */}
+        {scoredCount > 0 && (
+          <div style={{ overflowX: "auto", border: "1px solid #e5e1dc", borderRadius: 12, background: "#fffdfb" }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
+              <thead>
+                <tr style={{ textAlign: "left", color: "#888", background: "#faf7f3" }}>
+                  <th style={{ padding: "9px 12px", fontWeight: 700 }}>Cluster · our label</th>
+                  {SCORE_TIERS.map((t) => (
+                    <th key={t.key} style={{ padding: "9px 12px", fontWeight: 700, whiteSpace: "nowrap" }}>{t.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {labelled.map((c) => {
+                  const v = verdicts[c.id];
+                  const refs = gtTiersFor(c.id);
+                  const conf = confidence[c.id]?.pct;
+                  return (
+                    <tr key={c.id} style={{ borderTop: "1px solid #eee7df" }}>
+                      <td style={{ padding: "9px 12px", minWidth: 220, verticalAlign: "top" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                          <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
+                          <strong>{c.label}</strong>
+                          {typeof conf === "number" && <span style={{ fontSize: 11, color: "#aaa" }}>· {conf.toFixed(0)}%</span>}
+                        </div>
+                        <div style={{ color: "#555", marginTop: 2 }}>{labels[c.id]}</div>
+                      </td>
+                      {SCORE_TIERS.map((t) => {
+                        const ref = refs[t.gtKey as keyof typeof refs];
+                        const tv = v ? v[t.key] : null;
+                        const ok = tv?.match;
+                        return (
+                          <td key={t.key} style={{ padding: "9px 12px", verticalAlign: "top", minWidth: 150 }} title={tv?.note || ""}>
+                            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                              <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800 }}>{!tv ? "·" : ok ? "✓" : "✗"}</span>
+                              <span style={{ color: "#444" }}>{ref ?? "—"}</span>
+                            </div>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );
