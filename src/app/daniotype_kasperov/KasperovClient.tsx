@@ -340,6 +340,19 @@ export default function KasperovClient() {
     setAutoStart((n) => n + 1);
   }
 
+  function resetRun() {
+    if (typeof window !== "undefined" && !window.confirm("Clear all validations, cell-type labels, and the saved run history? This can't be undone.")) return;
+    setValidated(new Set());
+    setLabels({});
+    setTranscripts({});
+    setAugmented({});
+    setConfidence({});
+    setIncorporated(new Set());
+    try {
+      localStorage.removeItem(RESULTS_KEY);
+    } catch {}
+  }
+
   // pick a cluster → show the personalities primer once, then the chat
   function openCluster(id: string) {
     setActiveId(id);
@@ -376,6 +389,7 @@ export default function KasperovClient() {
         onPick={openCluster}
         onAuto={startAutopilot}
         onExport={exportResults}
+        onReset={resetRun}
         labels={labels}
       />
     );
@@ -620,6 +634,7 @@ function MapStage({
   onPick,
   onAuto,
   onExport,
+  onReset,
   labels = {},
 }: {
   clusters: Cluster[];
@@ -630,8 +645,14 @@ function MapStage({
   onPick: (id: string) => void;
   onAuto: () => void;
   onExport: () => void;
+  onReset: () => void;
   labels?: Record<string, string>;
 }) {
+  const labelled = clusters.filter((c) => labels[c.id]);
+  const trim15 = (s: string) => {
+    const w = s.trim().split(/\s+/);
+    return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
+  };
   const [size, setSize] = useState({ w: 760, h: 560 });
   const wrap = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
@@ -675,6 +696,9 @@ function MapStage({
                   🤖 Go through each cluster on your own →
                 </button>
                 <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
+                {(labelled.length > 0 || validated.size > 0) && (
+                  <button onClick={onReset} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, color: "#b91c1c", borderColor: "#e7c3c3" }}>↺ Reset run</button>
+                )}
               </div>
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
                 Auto-pilot drives the Reasoner across every un-validated cluster — dispatching the Researcher &amp; Archivist,
@@ -696,6 +720,29 @@ function MapStage({
                   </button>
                 ))}
               </div>
+
+              {/* run summary — each labelled cluster + its cell type (≤15 words) */}
+              {labelled.length > 0 && (
+                <div style={{ marginTop: 24, textAlign: "left" }}>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600, marginBottom: 8 }}>
+                    Run summary · {labelled.length} labelled
+                  </div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 6 }}>
+                    {labelled.map((c) => (
+                      <button
+                        key={c.id}
+                        onClick={() => onPick(c.id)}
+                        title={`${c.label}: ${labels[c.id]}`}
+                        style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 11px", cursor: "pointer", color: INK, minWidth: 0 }}
+                      >
+                        <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
+                        <strong style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>{c.label.replace("Cluster ", "Cluster ")}</strong>
+                        <span style={{ fontSize: 12, color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>— {trim15(labels[c.id])}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </>
           )}
         </div>
