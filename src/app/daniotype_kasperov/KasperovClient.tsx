@@ -3,6 +3,12 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, type KasperovModel } from "./models";
+
+const MODEL_KEY = "daniotype_kasperov_model"; // selected model persists globally
+type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
+type TierAgg = { key: string; label: string; matched: number; total: number; pct: number };
+type RunScore = { verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[] };
 
 // ---------------------------------------------------------------------------
 const PAPER = "#f6f4f2";
@@ -336,6 +342,29 @@ export default function KasperovClient() {
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const hydratedRef = useRef<string | null>(null);
 
+  // selected model (global), accumulated token usage per model (per-dataset), and
+  // the latest ground-truth scoring (per-dataset) — all carried into the export.
+  const [model, setModel] = useState<KasperovModel>(DEFAULT_MODEL);
+  const [usage, setUsage] = useState<Usage>({});
+  const [score, setScore] = useState<RunScore>({ verdicts: {}, scoredAt: null, agg: [] });
+  const addUsage = useCallback((m: string, inT: number, outT: number) => {
+    if (!inT && !outT) return;
+    setUsage((u) => ({ ...u, [m]: { in: (u[m]?.in ?? 0) + (inT || 0), out: (u[m]?.out ?? 0) + (outT || 0) } }));
+  }, []);
+
+  // restore the globally-selected model once
+  useEffect(() => {
+    try {
+      const m = localStorage.getItem(MODEL_KEY);
+      if (m && (KASPEROV_MODELS as readonly string[]).includes(m)) setModel(m as KasperovModel);
+    } catch {}
+  }, []);
+  useEffect(() => {
+    try {
+      localStorage.setItem(MODEL_KEY, model);
+    } catch {}
+  }, [model]);
+
   // When a dataset is chosen, clear any prior dataset's run state and hydrate this
   // dataset's saved run (validated/labels + transcripts/markers/confidence). Each
   // dataset persists under its own keys so runs never collide.
@@ -352,6 +381,8 @@ export default function KasperovClient() {
     setRevealed(false);
     setActiveId(null);
     setStage("intro");
+    setUsage({});
+    setScore({ verdicts: {}, scoredAt: null, agg: [] });
     try {
       const raw = localStorage.getItem(resultsKey(dataset.id));
       if (raw) {
@@ -359,6 +390,8 @@ export default function KasperovClient() {
         if (p.transcripts) setTranscripts(p.transcripts);
         if (p.augmented) setAugmented(p.augmented);
         if (p.confidence) setConfidence(p.confidence);
+        if (p.usage) setUsage(p.usage);
+        if (p.score) setScore({ verdicts: p.score.verdicts ?? {}, scoredAt: p.score.scoredAt ?? null, agg: p.score.agg ?? [] });
       }
     } catch {}
     try {
@@ -380,15 +413,15 @@ export default function KasperovClient() {
     if (!dataset || hydratedRef.current !== dataset.id) return;
     const id = setTimeout(() => {
       try {
-        localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ transcripts, augmented, confidence }));
+        localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ transcripts, augmented, confidence, usage, score }));
       } catch {
         try {
-          localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ augmented, confidence }));
+          localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ augmented, confidence, usage, score }));
         } catch {}
       }
     }, 800);
     return () => clearTimeout(id);
-  }, [transcripts, augmented, confidence, dataset]);
+  }, [transcripts, augmented, confidence, usage, score, dataset]);
 
   useEffect(() => {
     if (!dataset || !loaded || hydratedRef.current !== dataset.id) return;
@@ -401,11 +434,22 @@ export default function KasperovClient() {
     setLabels((l) => ({ ...l, [id]: label }));
   }
 
-  // download the full run — transcripts + evidence + markers + confidence + labels
-  function exportResults() {
-    const out = {
-      exportedAt: new Date().toISOString(),
+  // one combined run object — cluster labels + ground-truth scores + metadata
+  // (model, estimated cost, dates). Reused by export-to-file and (Increment B)
+  // save-to-server.
+  function buildRunJSON() {
+    const cost = estimateCost(usage);
+    const labelledN = (clusters ?? []).filter((c) => labels[c.id]).length;
+    return {
+      schema: "daniotype_kasperov_run/v1",
       dataset: dataset?.name ?? "",
+      datasetId: dataset?.id ?? "",
+      model,
+      cost: { usd: Math.round(cost.usd * 10000) / 10000, estimated: cost.estimated, usage },
+      exportedAt: new Date().toISOString(),
+      scoredAt: score.scoredAt,
+      nLabelled: labelledN,
+      nValidated: validated.size,
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
         label: c.label,
@@ -415,8 +459,13 @@ export default function KasperovClient() {
         addedMarkers: augmented[c.id] ?? [],
         transcript: transcripts[c.id] ?? [],
       })),
+      groundTruth: score.scoredAt ? { scoredAt: score.scoredAt, aggregate: score.agg, verdicts: score.verdicts } : null,
     };
-    const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+  }
+
+  // download the combined run JSON
+  function exportResults() {
+    const blob = new Blob([JSON.stringify(buildRunJSON(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -463,6 +512,15 @@ export default function KasperovClient() {
     setAugmented(nAug);
     setTranscripts(nTrans);
     setIncorporated(new Set());
+    // restore run metadata (model, cost/usage, ground-truth scores) when present
+    if (data.cost?.usage && typeof data.cost.usage === "object") setUsage(data.cost.usage);
+    else setUsage({});
+    if ((KASPEROV_MODELS as readonly string[]).includes(data.model)) setModel(data.model as KasperovModel);
+    if (data.groundTruth && Array.isArray(data.groundTruth.aggregate)) {
+      setScore({ verdicts: data.groundTruth.verdicts ?? {}, scoredAt: data.groundTruth.scoredAt ?? null, agg: data.groundTruth.aggregate });
+    } else {
+      setScore({ verdicts: {}, scoredAt: null, agg: [] });
+    }
     setRevealed(true); // so the cluster grid is visible immediately
     window.alert(`Imported ${loaded} labelled cluster${loaded === 1 ? "" : "s"} into the ${dataset.name} run.`);
   }
@@ -532,15 +590,17 @@ export default function KasperovClient() {
         onExport={exportResults}
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
-        onScore={() => setStage("scorecard")}
         onImport={importResults}
         labels={labels}
         confidence={confidence}
+        model={model}
+        onModelChange={setModel}
+        usage={usage}
+        score={score}
+        setScore={setScore}
+        addUsage={addUsage}
       />
     );
-
-  if (stage === "scorecard")
-    return <Scorecard dataset={dataset} clusters={clusters} labels={labels} confidence={confidence} onImport={importResults} onBack={() => setStage("map")} />;
 
   const active = clusters.find((c) => c.id === activeId)!;
 
@@ -556,6 +616,8 @@ export default function KasperovClient() {
   return (
     <ClusterStage
       dataset={dataset}
+      model={model}
+      addUsage={addUsage}
       clusters={clusters}
       active={active}
       validated={validated}
@@ -882,10 +944,15 @@ function MapStage({
   onExport,
   onReset,
   onSwitchDataset,
-  onScore,
   onImport,
   labels = {},
   confidence = {},
+  model,
+  onModelChange,
+  usage,
+  score,
+  setScore,
+  addUsage,
 }: {
   dataset: DatasetDef;
   clusters: Cluster[];
@@ -898,13 +965,19 @@ function MapStage({
   onExport: () => void;
   onReset: () => void;
   onSwitchDataset: () => void;
-  onScore: () => void;
   onImport: (data: unknown) => void;
   labels?: Record<string, string>;
   confidence?: Record<string, { pct: number; why: string }>;
+  model: KasperovModel;
+  onModelChange: (m: KasperovModel) => void;
+  usage: Usage;
+  score: RunScore;
+  setScore: React.Dispatch<React.SetStateAction<RunScore>>;
+  addUsage: (model: string, inT: number, outT: number) => void;
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
+  const [showScore, setShowScore] = useState(!!score.scoredAt);
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -951,6 +1024,31 @@ function MapStage({
             : ""}
         </p>
 
+        {/* run controls bar — model selector + estimated spend + last-scored stamp */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
+          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#555" }}>
+            <span style={{ fontWeight: 600 }}>Model</span>
+            <select
+              value={model}
+              onChange={(e) => onModelChange(e.target.value as KasperovModel)}
+              style={{ fontFamily: "inherit", fontSize: 13, padding: "5px 9px", borderRadius: 8, border: "1px solid #d8d3cd", background: "#fff", color: INK, cursor: "pointer" }}
+            >
+              {KASPEROV_MODELS.map((m) => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </label>
+          {(() => {
+            const c = estimateCost(usage);
+            return (
+              <span style={{ color: "#999" }} title={c.estimated ? "Includes tier-estimated pricing for newer models." : "From confirmed OpenAI pricing."}>
+                ~${c.usd < 1 ? c.usd.toFixed(3) : c.usd.toFixed(2)} est. spend{c.estimated ? "*" : ""}
+                {score.scoredAt ? ` · scored ${new Date(score.scoredAt).toLocaleDateString()}` : ""}
+              </span>
+            );
+          })()}
+        </div>
+
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
@@ -972,10 +1070,10 @@ function MapStage({
                 </button>
                 {dataset.groundTruthUrl && labelled.length > 0 && (
                   <button
-                    onClick={onScore}
+                    onClick={() => setShowScore(true)}
                     style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
                   >
-                    🎯 Score vs ground truth →
+                    🎯 Score vs ground truth ↓
                   </button>
                 )}
                 <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
@@ -1043,6 +1141,24 @@ function MapStage({
                   {unlabelled.length} of {clusters.length} clusters not yet labelled: {unlabelled.map((c) => c.label.replace("Cluster ", "C")).join(", ")}. Run &ldquo;Activate AutoPilot Cluster Labeller&rdquo; — it auto-skips the {labelled.length} already labelled and finishes only these.
                 </div>
               )}
+
+              {/* ground-truth scoring, inline under the run summary */}
+              {dataset.groundTruthUrl && showScore && labelled.length > 0 && (
+                <div style={{ marginTop: 28 }}>
+                  <Scorecard
+                    embedded
+                    dataset={dataset}
+                    clusters={clusters}
+                    labels={labels}
+                    confidence={confidence}
+                    model={model}
+                    addUsage={addUsage}
+                    score={score}
+                    setScore={setScore}
+                    onImport={onImport}
+                  />
+                </div>
+              )}
             </>
           )}
         </div>
@@ -1067,67 +1183,51 @@ const SCORE_TIERS: { key: keyof Omit<ClusterVerdict, "id">; gtKey: string; label
   { key: "cell_type_sub", gtKey: "cell_type_sub", label: "Cell type — sub" },
 ];
 
+function ScorecardEmbedWrap({ children }: { children: React.ReactNode }) {
+  return <div style={{ textAlign: "left" }}>{children}</div>;
+}
+function ScorecardPageWrap({ children }: { children: React.ReactNode }) {
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
+      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 24px 70px" }}>{children}</div>
+    </div>
+  );
+}
+
 function Scorecard({
   dataset,
   clusters,
   labels,
   confidence,
+  model,
+  addUsage,
+  score,
+  setScore,
   onImport,
+  embedded,
   onBack,
 }: {
   dataset: DatasetDef;
   clusters: Cluster[];
   labels: Record<string, string>;
   confidence: Record<string, { pct: number; why: string }>;
+  model: string;
+  addUsage: (model: string, inT: number, outT: number) => void;
+  score: RunScore;
+  setScore: React.Dispatch<React.SetStateAction<RunScore>>;
   onImport: (data: unknown) => void;
-  onBack: () => void;
+  embedded?: boolean;
+  onBack?: () => void;
 }) {
   const labelled = useMemo(() => clusters.filter((c) => labels[c.id]), [clusters, labels]);
   const fingerprint = useMemo(() => JSON.stringify(labelled.map((c) => [c.id, labels[c.id]]).sort()), [labelled, labels]);
-  const scoreKey = `daniotype_kasperov_score:${dataset.id}`;
+  const verdicts = score.verdicts; // controlled by the parent (so export sees it)
 
   const [gt, setGt] = useState<GroundTruth | null>(null);
-  const [verdicts, setVerdicts] = useState<Record<string, ClusterVerdict>>({});
   const [status, setStatus] = useState<"loading" | "ready" | "scoring" | "done" | "error">("loading");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [err, setErr] = useState("");
   const ranRef = useRef(false);
-
-  // load ground truth (+ any cached score for this exact label set)
-  useEffect(() => {
-    ranRef.current = false; // a new label-set (incl. an import) re-arms auto-scoring
-    if (!dataset.groundTruthUrl) {
-      setErr("This dataset has no published ground truth.");
-      setStatus("error");
-      return;
-    }
-    let alive = true;
-    fetch(dataset.groundTruthUrl)
-      .then((r) => {
-        if (!r.ok) throw new Error(`ground truth ${r.status}`);
-        return r.json();
-      })
-      .then((d: GroundTruth) => {
-        if (!alive) return;
-        setGt(d);
-        try {
-          const raw = localStorage.getItem(scoreKey);
-          if (raw) {
-            const p = JSON.parse(raw);
-            if (p.fingerprint === fingerprint && p.verdicts) {
-              setVerdicts(p.verdicts);
-              setStatus("done");
-              return;
-            }
-          }
-        } catch {}
-        setStatus("ready");
-      })
-      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
-    return () => {
-      alive = false;
-    };
-  }, [dataset.groundTruthUrl, scoreKey, fingerprint]);
 
   const gtTiersFor = useCallback(
     (id: string) => {
@@ -1142,43 +1242,101 @@ function Scorecard({
     [gt]
   );
 
-  const runScoring = useCallback(async () => {
-    if (!gt) return;
-    setStatus("scoring");
-    setErr("");
-    const items = labelled.map((c) => ({ id: c.id, ourLabel: labels[c.id], markers: c.degsUp, gt: gtTiersFor(c.id) }));
-    const BATCH = 10;
-    const batches: (typeof items)[] = [];
-    for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
-    setProgress({ done: 0, total: items.length });
-    const acc: Record<string, ClusterVerdict> = {};
-    let failed = 0;
-    let next = 0;
-    async function worker() {
-      while (next < batches.length) {
-        const b = batches[next++];
-        try {
-          const r = await fetch("/api/kasperov_score", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ dataset: dataset.id, items: b }),
-          });
-          if (!r.ok) throw new Error(`score ${r.status}`);
-          const d = await r.json();
-          for (const res of d.results ?? []) if (res?.id) acc[res.id] = res;
-        } catch {
-          failed += b.length;
+  // per-tier agreement over clusters that have a verdict + a reference label
+  const computeAgg = useCallback(
+    (verds: Record<string, ClusterVerdict>): TierAgg[] =>
+      SCORE_TIERS.map((t) => {
+        let matched = 0;
+        let total = 0;
+        for (const c of labelled) {
+          const v = verds[c.id];
+          const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
+          if (!v || !ref) continue;
+          total++;
+          if (v[t.key].match) matched++;
         }
-        setVerdicts({ ...acc });
-        setProgress({ done: Object.keys(acc).length + failed, total: items.length });
-      }
+        return { key: t.key, label: t.label, matched, total, pct: total ? (100 * matched) / total : 0 };
+      }),
+    [labelled, gtTiersFor]
+  );
+
+  // load ground truth; decide whether the stored score already covers this label set
+  useEffect(() => {
+    ranRef.current = false; // a new label-set (incl. an import) re-arms auto-scoring
+    if (!dataset.groundTruthUrl) {
+      setErr("This dataset has no published ground truth.");
+      setStatus("error");
+      return;
     }
-    await Promise.all(Array.from({ length: Math.min(3, batches.length) }, worker));
-    setStatus("done");
-    try {
-      localStorage.setItem(scoreKey, JSON.stringify({ fingerprint, verdicts: acc }));
-    } catch {}
-  }, [gt, labelled, labels, gtTiersFor, dataset.id, scoreKey, fingerprint]);
+    let alive = true;
+    const decide = () => {
+      const need = labelled.some((c) => !score.verdicts[c.id]);
+      setStatus(score.scoredAt && !need ? "done" : "ready");
+    };
+    if (gt) {
+      decide();
+      return;
+    }
+    fetch(dataset.groundTruthUrl)
+      .then((r) => {
+        if (!r.ok) throw new Error(`ground truth ${r.status}`);
+        return r.json();
+      })
+      .then((d: GroundTruth) => {
+        if (!alive) return;
+        setGt(d);
+        decide();
+      })
+      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dataset.groundTruthUrl, fingerprint]);
+
+  // score clusters (default: only those missing a verdict; full=true re-scores all)
+  const runScoring = useCallback(
+    async (full?: boolean) => {
+      if (!gt) return;
+      setStatus("scoring");
+      setErr("");
+      const targets = full ? labelled : labelled.filter((c) => !score.verdicts[c.id]);
+      const toScore = targets.length ? targets : labelled;
+      const items = toScore.map((c) => ({ id: c.id, ourLabel: labels[c.id], markers: c.degsUp, gt: gtTiersFor(c.id) }));
+      const BATCH = 10;
+      const batches: (typeof items)[] = [];
+      for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
+      setProgress({ done: 0, total: items.length });
+      const acc: Record<string, ClusterVerdict> = { ...score.verdicts };
+      let failed = 0;
+      let doneN = 0;
+      let next = 0;
+      async function worker() {
+        while (next < batches.length) {
+          const b = batches[next++];
+          try {
+            const r = await fetch("/api/kasperov_score", {
+              method: "POST",
+              headers: { "content-type": "application/json" },
+              body: JSON.stringify({ dataset: dataset.id, model, items: b }),
+            });
+            if (!r.ok) throw new Error(`score ${r.status}`);
+            const d = await r.json();
+            if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
+            for (const res of d.results ?? []) if (res?.id) (acc[res.id] = res), doneN++;
+          } catch {
+            failed += b.length;
+          }
+          setScore((s) => ({ ...s, verdicts: { ...acc } }));
+          setProgress({ done: doneN + failed, total: items.length });
+        }
+      }
+      await Promise.all(Array.from({ length: Math.min(3, batches.length) }, worker));
+      setScore({ verdicts: acc, scoredAt: new Date().toISOString(), agg: computeAgg(acc) });
+      setStatus("done");
+    },
+    [gt, labelled, labels, gtTiersFor, computeAgg, dataset.id, model, addUsage, score.verdicts, setScore]
+  );
 
   // auto-run once when ready
   useEffect(() => {
@@ -1188,30 +1346,19 @@ function Scorecard({
     }
   }, [status, runScoring]);
 
-  // per-tier aggregate agreement over clusters that have a verdict + a reference label
-  const agg = SCORE_TIERS.map((t) => {
-    let matched = 0;
-    let total = 0;
-    for (const c of labelled) {
-      const v = verdicts[c.id];
-      const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
-      if (!v || !ref) continue;
-      total++;
-      if (v[t.key].match) matched++;
-    }
-    return { ...t, matched, total, pct: total ? (100 * matched) / total : 0 };
-  });
+  const agg = computeAgg(verdicts);
   const scoredCount = labelled.filter((c) => verdicts[c.id]).length;
 
+  const Wrapper = embedded ? ScorecardEmbedWrap : ScorecardPageWrap;
+
   return (
-    <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
-      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "24px 24px 70px" }}>
+    <Wrapper>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
-          <button onClick={onBack} style={btnGhost}>← World map</button>
+          {!embedded && onBack && <button onClick={onBack} style={btnGhost}>← World map</button>}
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>{dataset.name} · ground-truth scorecard</div>
           <ImportButton onImport={onImport} label="⬆ Import run (JSON)" style={{ marginLeft: "auto", padding: "8px 14px", fontSize: 13 }} />
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "4px 0 2px" }}>Our de-novo labels vs the published atlas</h2>
+        <h2 style={{ fontSize: embedded ? 22 : 26, fontWeight: 700, margin: "4px 0 2px" }}>Our de-novo labels vs the published atlas</h2>
         <p style={{ color: "#666", fontSize: 14.5, margin: "0 0 18px", lineHeight: 1.5 }}>
           An LLM judge scores each of our {scoredCount}/{labelled.length} labelled clusters against the authors&apos; published labels at every ontology tier — by
           biological meaning, not string match. Agreement should fall as the tier gets finer; that gradient is the honest read on how deep our calls actually resolve.
@@ -1252,12 +1399,12 @@ function Scorecard({
         )}
 
         {/* re-run control */}
-        <div style={{ display: "flex", gap: 10, margin: "14px 0 18px", alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 10, margin: "14px 0 18px", alignItems: "center", flexWrap: "wrap" }}>
           {status === "done" && (
-            <button onClick={() => { ranRef.current = true; runScoring(); }} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run scoring</button>
+            <button onClick={() => { ranRef.current = true; runScoring(true); }} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run scoring</button>
           )}
           <span style={{ fontSize: 12, color: "#aaa" }}>
-            Reference: {dataset.name} published labels{gt?.clusteredCells ? ` · ${gt.clusteredCells.toLocaleString()} cells clustered` : ""}. Numeric sub-type suffixes (e.g. &ldquo;periderm 10&rdquo;) are matched on the biological stem.
+            Reference: {dataset.name} published labels{gt?.clusteredCells ? ` · ${gt.clusteredCells.toLocaleString()} cells clustered` : ""} · model {model}. Numeric sub-type suffixes (e.g. &ldquo;periderm 10&rdquo;) are matched on the biological stem.
           </span>
         </div>
 
@@ -1308,8 +1455,7 @@ function Scorecard({
             </table>
           </div>
         )}
-      </div>
-    </div>
+    </Wrapper>
   );
 }
 
@@ -1538,6 +1684,8 @@ const AUTO_MAX_ROUNDS = 4;
 
 function ClusterStage({
   dataset,
+  model,
+  addUsage,
   clusters,
   active,
   validated,
@@ -1557,6 +1705,8 @@ function ClusterStage({
   setIncorporated,
 }: {
   dataset: DatasetDef;
+  model: string;
+  addUsage: (model: string, inT: number, outT: number) => void;
   clusters: Cluster[];
   active: Cluster;
   validated: Set<string>;
@@ -1663,10 +1813,11 @@ function ClusterStage({
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dataset: dataset.id, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
+        body: JSON.stringify({ dataset: dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
       });
       if (!r.ok) return;
       const d = await r.json();
+      if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
       if (typeof d.pct === "number") setConfidence((c) => ({ ...c, [clusterId]: { pct: d.pct, why: d.why || "" } }));
     } catch {}
   }
@@ -1787,6 +1938,7 @@ function ClusterStage({
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           dataset: dataset.id,
+          model,
           cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, nCells: cl.nCells },
           messages: nextMsgs,
           ...(forceMode ? { mode: forceMode } : {}),
@@ -1824,6 +1976,7 @@ function ClusterStage({
             }
           } else if (evt.t === "status") setStatus(evt.v);
           else if (evt.t === "thinking") setThinking((p) => p + evt.v);
+          else if (evt.t === "usage") addUsage(evt.v?.model ?? model, evt.v?.in ?? 0, evt.v?.out ?? 0);
           else if (evt.t === "text") {
             acc += evt.v;
             setText(acc);

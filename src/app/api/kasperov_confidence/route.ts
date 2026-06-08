@@ -10,8 +10,9 @@ export const runtime = "nodejs";
 export const maxDuration = 30;
 
 import { NextResponse } from "next/server";
+import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
-const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
+const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 
 export async function POST(req: Request) {
   let body: any;
@@ -21,6 +22,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_json" }, { status: 400 });
   }
   const cluster = body?.cluster ?? {};
+  const model = isKasperovModel(body?.model) ? body.model : DEFAULT;
   const messages: { role: string; content: string }[] = Array.isArray(body?.messages) ? body.messages.slice(-12) : [];
   const key = process.env.OPENAI_API_KEY;
   if (!key) return NextResponse.json({ error: "no_key" }, { status: 503 });
@@ -41,7 +43,7 @@ export async function POST(req: Request) {
       signal: ctrl.signal,
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         reasoning: { effort: "minimal" },
         max_output_tokens: 900,
         instructions,
@@ -80,7 +82,8 @@ export async function POST(req: Request) {
     }
     const pct = Math.round(Math.max(0, Math.min(100, Number(parsed.confidence_pct ?? 0))) * 10) / 10;
     const why = String(parsed.rationale ?? "").slice(0, 800);
-    return NextResponse.json({ pct, why });
+    const usage = { model, in: data?.usage?.input_tokens ?? 0, out: data?.usage?.output_tokens ?? 0 };
+    return NextResponse.json({ pct, why, usage });
   } catch (e: any) {
     return NextResponse.json({ error: "exception", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }

@@ -25,6 +25,7 @@ export const maxDuration = 60;
 // computed down markers + dataset cell counts per cluster). Bundled at build.
 import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
 import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
+import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
 // One agent route serves every dataset; the body's `dataset` id selects which
 // archivist extract + static-asset base + display name to use.
@@ -35,7 +36,7 @@ const DATASET_CFG: Record<string, DatasetCfg> = {
 };
 const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
-const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
+const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 
 const ALLOWED_DOMAINS = [
   "zfin.org",
@@ -447,10 +448,12 @@ async function streamOnce(
   enc: TextEncoder,
   key: string,
   signal: AbortSignal
-): Promise<{ responseId: string; calls: { call_id: string; name: string; args: string }[]; produced: boolean; ok: boolean }> {
+): Promise<{ responseId: string; calls: { call_id: string; name: string; args: string }[]; produced: boolean; ok: boolean; usageIn: number; usageOut: number }> {
   const calls: { call_id: string; name: string; args: string }[] = [];
   let responseId = "";
   let produced = false;
+  let usageIn = 0;
+  let usageOut = 0;
   // retry once on a transient upstream (429 / 5xx) before giving up
   let r: Response | null = null;
   for (let attempt = 0; attempt < 2; attempt++) {
@@ -471,7 +474,7 @@ async function streamOnce(
   if (!r || !r.ok || !r.body) {
     const detail = r ? await r.text().catch(() => "") : "no response";
     sse(controller, enc, { t: "text", v: `_The agent could not start (${r?.status ?? "?"}). ${detail.slice(0, 160)}_` });
-    return { responseId, calls, produced, ok: false };
+    return { responseId, calls, produced, ok: false, usageIn, usageOut };
   }
   const reader = r.body.getReader();
   const dec = new TextDecoder();
@@ -494,6 +497,10 @@ async function streamOnce(
         continue;
       }
       if (evt.response?.id) responseId = evt.response.id;
+      if (evt.response?.usage) {
+        usageIn = evt.response.usage.input_tokens ?? usageIn;
+        usageOut = evt.response.usage.output_tokens ?? usageOut;
+      }
       switch (evt.type) {
         case "response.reasoning_summary_text.delta":
           if (evt.delta) sse(controller, enc, { t: "thinking", v: evt.delta });
@@ -526,7 +533,7 @@ async function streamOnce(
       }
     }
   }
-  return { responseId, calls, produced, ok: true };
+  return { responseId, calls, produced, ok: true, usageIn, usageOut };
 }
 
 export async function POST(req: Request) {
@@ -538,6 +545,7 @@ export async function POST(req: Request) {
   }
 
   const ds = dsOf(body?.dataset);
+  const model = isKasperovModel(body?.model) ? body.model : DEFAULT;
   const cluster: Cluster = body?.cluster ?? { id: String(body?.clusterId ?? "?") };
   const messages: ChatMessage[] = Array.isArray(body?.messages)
     ? body.messages
@@ -573,6 +581,8 @@ export async function POST(req: Request) {
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 56000);
+      let usageIn = 0;
+      let usageOut = 0;
       try {
         let prevId = "";
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -583,7 +593,7 @@ export async function POST(req: Request) {
           // after the tool-round budget, force a written answer (no more tool calls)
           const forceAnswer = mode === "archivist" && toolRounds >= MAX_TOOL_ROUNDS;
           const payload: any = {
-            model: MODEL,
+            model,
             stream: true,
             store: true,
             reasoning: { effort: mode === "archivist" ? "minimal" : "low", summary: "auto" },
@@ -594,6 +604,8 @@ export async function POST(req: Request) {
             ...(forceAnswer ? { tool_choice: "none" } : {}),
           };
           const res = await streamOnce(payload, controller, enc, key, ctrl.signal);
+          usageIn += res.usageIn;
+          usageOut += res.usageOut;
           anyProduced = anyProduced || res.produced;
           if (!res.ok) break;
           // Archivist tool loop: execute query_minifin calls, then continue.
@@ -627,9 +639,11 @@ export async function POST(req: Request) {
           break;
         }
         if (!anyProduced) sse(controller, enc, { t: "text", v: "_(No written answer — try again or rephrase.)_" });
+        sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
       } catch {
         sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
+        sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
       } finally {
         clearTimeout(timer);

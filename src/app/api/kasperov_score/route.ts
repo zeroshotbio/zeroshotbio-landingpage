@@ -12,8 +12,9 @@ export const runtime = "nodejs";
 export const maxDuration = 60;
 
 import { NextResponse } from "next/server";
+import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
-const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
+const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 const TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
 type Tier = (typeof TIERS)[number];
 
@@ -68,6 +69,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "bad_json" }, { status: 400 });
   }
   const items: Item[] = Array.isArray(body?.items) ? body.items.slice(0, 14) : [];
+  const model = isKasperovModel(body?.model) ? body.model : DEFAULT;
   if (items.length === 0) return NextResponse.json({ error: "no_items" }, { status: 400 });
   const key = process.env.OPENAI_API_KEY;
   if (!key) return NextResponse.json({ error: "no_key" }, { status: 503 });
@@ -80,7 +82,7 @@ export async function POST(req: Request) {
       signal: ctrl.signal,
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
       body: JSON.stringify({
-        model: MODEL,
+        model,
         reasoning: { effort: "low" },
         max_output_tokens: 6000,
         instructions: INSTRUCTIONS,
@@ -130,7 +132,8 @@ export async function POST(req: Request) {
     } catch {
       return NextResponse.json({ error: "parse" }, { status: 502 });
     }
-    return NextResponse.json({ results: Array.isArray(parsed.results) ? parsed.results : [] });
+    const usage = { model, in: data?.usage?.input_tokens ?? 0, out: data?.usage?.output_tokens ?? 0 };
+    return NextResponse.json({ results: Array.isArray(parsed.results) ? parsed.results : [], usage });
   } catch (e: any) {
     return NextResponse.json({ error: "exception", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }
