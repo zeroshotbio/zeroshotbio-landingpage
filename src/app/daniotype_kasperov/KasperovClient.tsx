@@ -234,7 +234,7 @@ function UmapCanvas({
 }
 
 // ---------------------------------------------------------------------------
-type Stage = "intro" | "map" | "cluster";
+type Stage = "intro" | "map" | "personas" | "cluster";
 
 export default function KasperovClient() {
   const { clusters, meta, error } = useAtlas();
@@ -242,6 +242,7 @@ export default function KasperovClient() {
   const [revealed, setRevealed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validated, setValidated] = useState<Set<string>>(new Set());
+  const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   useEffect(() => {
@@ -250,6 +251,7 @@ export default function KasperovClient() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
+        if (p.personasSeen) setPersonasSeen(true);
       }
     } catch {}
     setLoaded(true);
@@ -257,9 +259,15 @@ export default function KasperovClient() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated) }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), personasSeen }));
     } catch {}
-  }, [validated, loaded]);
+  }, [validated, personasSeen, loaded]);
+
+  // pick a cluster → show the personalities primer once, then the chat
+  function openCluster(id: string) {
+    setActiveId(id);
+    setStage(personasSeen ? "cluster" : "personas");
+  }
 
   function markValidated(id: string, yes: boolean) {
     setValidated((prev) => {
@@ -288,14 +296,21 @@ export default function KasperovClient() {
         revealed={revealed}
         onReveal={() => setRevealed(true)}
         validated={validated}
-        onPick={(id) => {
-          setActiveId(id);
-          setStage("cluster");
-        }}
+        onPick={openCluster}
       />
     );
 
   const active = clusters.find((c) => c.id === activeId)!;
+
+  if (stage === "personas")
+    return (
+      <Personas
+        onContinue={() => {
+          setPersonasSeen(true);
+          setStage("cluster");
+        }}
+      />
+    );
   return (
     <ClusterStage clusters={clusters} active={active} validated={validated} onBack={() => setStage("map")} onValidate={markValidated} />
   );
@@ -325,6 +340,106 @@ function Intro({ onStart, meta }: { onStart: () => void; meta: AtlasMeta | null 
         </p>
         <button onClick={onStart} style={{ marginTop: 28, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "15px 30px", fontSize: 18, fontWeight: 600, cursor: "pointer" }}>
           Begin the descent →
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Personalities primer (shown once before the chat) + pixel-art icons
+// ---------------------------------------------------------------------------
+function PixelIcon({ rows, color, size = 80 }: { rows: string[]; color: string; size?: number }) {
+  const n = rows.length;
+  const cells: React.ReactNode[] = [];
+  rows.forEach((row, y) =>
+    row.split("").forEach((ch, x) => {
+      if (ch === ".") return;
+      cells.push(<rect key={`${x}-${y}`} x={x} y={y} width={1.02} height={1.02} fill={ch === "o" ? "#2b2b2b" : color} />);
+    })
+  );
+  return (
+    <svg width={size} height={size} viewBox={`0 0 ${n} ${n}`} shapeRendering="crispEdges" style={{ imageRendering: "pixelated" }}>
+      {cells}
+    </svg>
+  );
+}
+
+// 12×12 pixel glyphs
+const PIX_RESEARCHER = [
+  ".xxxx.......",
+  "x....x......",
+  "x....x......",
+  "x....x......",
+  ".xxxx.......",
+  ".....xx.....",
+  "......xx....",
+  ".......xx...",
+  "........xx..",
+  ".........xx.",
+  "..........x.",
+  "............",
+];
+const PIX_ARCHIVIST = [
+  "............",
+  "...xxxx.....",
+  "..xxxxxxxxx.",
+  ".xxxxxxxxxxx",
+  ".x.........x",
+  ".x..oooo...x",
+  ".x.........x",
+  ".x..oooo...x",
+  ".x.........x",
+  ".x..oooo...x",
+  ".xxxxxxxxxxx",
+  "............",
+];
+const PIX_REASONER = [
+  "....xxx.....",
+  "...x...x....",
+  "..x..o..x...",
+  "..x.ooo.x...",
+  "..x..o..x...",
+  "...x.o.x....",
+  "...x.o.x....",
+  "....xxx.....",
+  "....x.x.....",
+  ".....x......",
+  "....ooo.....",
+  "....ooo.....",
+];
+
+function Personas({ onContinue }: { onContinue: () => void }) {
+  const cards = [
+    { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence. Your default first pass." },
+    { mode: "archivist" as AgentMode, pix: PIX_ARCHIVIST, blurb: "Pulls raw MiniFin values — markers, stats, cross-cluster specificity, p-values, co-expression." },
+    { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Synthesises everything and can hand crafted prompts to the other two." },
+  ];
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
+      <div style={{ maxWidth: 880, padding: "64px 28px", textAlign: "center" }}>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#999", fontWeight: 600 }}>Your three specialists</div>
+        <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One GPT-5-Mini, three personalities</h1>
+        <p style={{ fontSize: 15, color: "#666", maxWidth: 620, margin: "0 auto 28px" }}>
+          Just ask — your question is routed to the right specialist automatically. Name one (“Archivist, …”) to force it.
+        </p>
+        <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
+          {cards.map(({ mode, pix, blurb }) => {
+            const th = THEME[mode];
+            return (
+              <div key={mode} style={{ flex: "1 1 240px", maxWidth: 260, background: th.bg, border: `1px solid ${th.color}44`, borderTop: `3px solid ${th.color}`, borderRadius: 12, padding: "20px 18px" }}>
+                <PixelIcon rows={pix} color={th.color} />
+                <div style={{ fontSize: 17, fontWeight: 700, color: th.color, marginTop: 8 }}>{th.name}</div>
+                <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, marginTop: 6 }}>{blurb}</div>
+              </div>
+            );
+          })}
+        </div>
+        <button
+          onClick={onContinue}
+          style={{ marginTop: 30, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 30px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}
+        >
+          Enter the cluster →
         </button>
       </div>
     </div>

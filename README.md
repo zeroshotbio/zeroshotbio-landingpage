@@ -75,6 +75,85 @@ are a fixed allow-list (`patrick`, `darien`, `steven`, `creighton`, `harsha`).
 
 ---
 
+## daniotype · kasperov — human-in-the-loop cell-type labelling
+
+`https://www.zeroshot.bio/daniotype_kasperov`
+
+A "video-game" wizard for judging the MiniFin atlas cluster by cluster. Flow:
+**intro → global UMAP → "View Leiden clusters" → click a cluster → (one-time
+3-personality primer) → chat.** Each focused-cluster screen has draggable /
+resizable HUD panels (World Map, Top Markers, live Confidence) and a chat panel.
+Built natively in Next.js (`src/app/daniotype_kasperov/`), not an iframe bundle.
+
+### The agent — one model, three routed personalities
+
+`/api/kasperov_agent` (SSE) is backed by **OpenAI `gpt-5-mini`** (Responses API,
+key in Vercel env `OPENAI_API_KEY`; override model with `KASPEROV_OPENAI_MODEL`).
+Every question is routed to one of three personalities; colour = personality
+everywhere in the chat (🟢 Researcher / 🟡 Archivist / 🔵 Reasoner), everything
+else greyscale. Name one ("Archivist, …") to force it.
+
+- **Researcher** — web search restricted to ZFIN/ZFA/GO/NCBI/UniProt; cites records.
+- **Archivist** — answers **only** from MiniFin via a `query_minifin` tool (below); never web.
+- **Reasoner** — generalist synthesis, no tools; emits ready-to-send dispatch
+  prompts (→ "Send to Researcher/Archivist" buttons).
+
+A separate `/api/kasperov_confidence` returns a live 0–100 confidence + ≤40-word
+rationale after each turn.
+
+### Archivist data architecture (important)
+
+The Archivist's `query_minifin` tool answers progressively heavier queries from
+two sources:
+
+| Source | Served from | Kinds |
+|---|---|---|
+| **Static precomputed** (aggregated, public on the CDN) | `public/daniotype_kasperov/archivist/` | `gene`, `genes`, `top`, `search` (per-cluster profiles); `across`, `specificity` (gene × cluster matrix, 24,252 genes × 47 clusters) |
+| **Live microservice** (token-gated) | EC2 `minifin_query` service | `pvalues` (BH-adjusted one-vs-rest), `coexpress` (cell-level co-expression) |
+
+Both are derived from the MiniFin **h5ad** by `scripts/extract_minifin_umap.py`
+and `scripts/compute_minifin_archivist.py` (run with `/data/.venv/bin/python`).
+
+> **Security posture (critical):** the raw **`.h5ad` is NEVER served** — it lives
+> only on the EC2 box and is read solely by the microservice, which returns only
+> aggregated answers. The static CDN files are aggregated, derived stats on an
+> unlisted path. The microservice endpoint is **token-gated** (401 without it) and
+> reached over HTTPS.
+
+### The MiniFin query microservice
+
+`backend/minifin_query_api/` — FastAPI; loads the h5ad once (~94.6k cells,
+~6 GB, ~30 s startup), binds `127.0.0.1:5007`. Endpoints: `GET /health`,
+`POST /query` (header `x-api-token`). Computes **adjusted p-values** (Welch
+t-test on log-normalised expression, Benjamini-Hochberg across the
+transcriptome; per-cluster results cached) and **cell-level co-expression**
+(fraction of a cluster's cells expressing all listed genes). Responds in
+0.01–0.7 s. See its README for the full deploy.
+
+**Live deployment (already set up on the EC2):**
+
+- systemd unit `minifin_query` (`enabled` — survives reboot). Manage with
+  `sudo systemctl status|restart minifin_query`, `sudo journalctl -u minifin_query -f`.
+- Exposed via nginx as `https://zscape.zeroshot.bio/minifin/` (a `location /minifin/`
+  added to the existing `zscape_chat.conf` server block → `127.0.0.1:5007`).
+- Token lives only in the systemd unit (`MINIFIN_API_TOKEN`), not in the repo.
+- **Vercel env (Production):** `MINIFIN_SERVICE_URL=https://zscape.zeroshot.bio/minifin`
+  and `MINIFIN_SERVICE_TOKEN=<same token>`. When unset, `pvalues`/`coexpress`
+  degrade gracefully and the rest still works from static files.
+
+### Operational notes
+
+- The agent runs under the **60 s Vercel hobby `maxDuration`** (aborts at ~56 s).
+  The Archivist runs at minimal reasoning effort, batches multi-gene lookups into
+  one tool call, caps tool rounds (then forces a written answer). The microservice
+  is not the bottleneck (sub-second); a rare "(time limit)" is an upstream OpenAI
+  latency blip — just re-ask.
+- Verdicts persist to `localStorage` (POC); the export shape mirrors the
+  `/api/minifin_annotation` `{lastIndex, decisions}` contract for later DynamoDB
+  wiring.
+
+---
+
 ## ZSCAPE chat
 
 `/zscape_chat` — a single-page chat interface for querying the effects of
