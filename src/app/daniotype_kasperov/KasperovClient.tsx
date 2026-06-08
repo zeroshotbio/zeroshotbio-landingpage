@@ -649,6 +649,7 @@ function MapStage({
   labels?: Record<string, string>;
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
+  const unlabelled = clusters.filter((c) => !labels[c.id]);
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -705,7 +706,10 @@ function MapStage({
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
               </p>
 
-              {/* all 47 clusters at once — grid, no scroll */}
+              {/* GRID 1 — the navigator: every cluster, ✓ = identity validated */}
+              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600, marginBottom: 8, textAlign: "left" }}>
+                All clusters · {clusters.length} total — click any to investigate · ✓ = identity validated
+              </div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 6, padding: 4 }}>
                 {clusters.map((c) => (
                   <button
@@ -721,11 +725,11 @@ function MapStage({
                 ))}
               </div>
 
-              {/* run summary — each labelled cluster + its cell type (≤15 words) */}
+              {/* GRID 2 — run summary: each labelled cluster + its assigned cell type */}
               {labelled.length > 0 && (
                 <div style={{ marginTop: 24, textAlign: "left" }}>
                   <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600, marginBottom: 8 }}>
-                    Run summary · {labelled.length} labelled
+                    Run summary · {labelled.length} labelled — cluster → assigned cell type
                   </div>
                   <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 6 }}>
                     {labelled.map((c) => (
@@ -733,14 +737,23 @@ function MapStage({
                         key={c.id}
                         onClick={() => onPick(c.id)}
                         title={`${c.label}: ${labels[c.id]}`}
-                        style={{ display: "flex", alignItems: "center", gap: 8, textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 11px", cursor: "pointer", color: INK, minWidth: 0 }}
+                        style={{ display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 11px", cursor: "pointer", color: INK, minWidth: 0 }}
                       >
-                        <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
-                        <strong style={{ fontSize: 12.5, whiteSpace: "nowrap" }}>{c.label.replace("Cluster ", "Cluster ")}</strong>
-                        <span style={{ fontSize: 12, color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>— {trim15(labels[c.id])}</span>
+                        <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0, marginTop: 4 }} />
+                        <span style={{ minWidth: 0, lineHeight: 1.4 }}>
+                          <strong style={{ fontSize: 12.5 }}>{c.label}</strong>{" "}
+                          <span style={{ fontSize: 12, color: "#666" }}>— {trim15(labels[c.id])}</span>
+                        </span>
                       </button>
                     ))}
                   </div>
+                </div>
+              )}
+
+              {/* surface the gap — clusters that completed the run without a cell-type label */}
+              {labelled.length > 0 && unlabelled.length > 0 && (
+                <div style={{ marginTop: 14, textAlign: "left", fontSize: 12.5, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 11px" }}>
+                  {unlabelled.length} of {clusters.length} clusters not yet labelled: {unlabelled.map((c) => c.label.replace("Cluster ", "C")).join(", ")}. Re-run &ldquo;Go through each cluster on your own&rdquo; — it auto-skips the {labelled.length} already done and finishes only these.
                 </div>
               )}
             </>
@@ -823,6 +836,12 @@ function looksStuck(content: string): boolean {
     /\b(would you (prefer|like)|which would you|do you want me to|shall i|let me know which|prefer\b[\s\S]{0,40}\(a\)|\(a\)[\s\S]{0,120}\(b\)|don'?t have access to those results|i have the .*ready)\b/i.test(t) ||
     /\?\s*$/.test(t)
   );
+}
+
+// a streamed reply that came back as a request error / empty body — auto-pilot
+// uses this to decide whether to retry the call.
+function streamFailed(content: string): boolean {
+  return /_Request failed:|_Error:|_\(no response\)_/.test(content ?? "");
 }
 
 function splitMarkerBlock(content: string): { clean: string; markers: Marker[] } {
@@ -992,6 +1011,14 @@ function ClusterStage({
   // auto-pilot run state
   const [auto, setAuto] = useState<{ running: boolean; current: string | null; done: number; total: number }>({ running: false, current: null, done: 0, total: 0 });
   const autoAbort = useRef(false);
+  // live mirror of `validated` so the running loop can skip clusters that became
+  // validated mid-sweep (manual accept, a prior pass) without rebuilding its closure.
+  const validatedRef = useRef(validated);
+  useEffect(() => {
+    validatedRef.current = validated;
+  }, [validated]);
+  // what the last auto-pilot run skipped (already validated) / couldn't finish (errored after retry)
+  const [autoReport, setAutoReport] = useState<{ already: number; failed: string[] } | null>(null);
 
   function addedText(list: Marker[]): string {
     return list.map((m) => `${m.g}${m.l2fc != null ? ` log2FC ${m.l2fc}` : ""}${m.note ? ` — ${m.note}` : ""} [${m.dir ?? "?"}, via ${m.via}]`).join("; ");
@@ -1126,7 +1153,7 @@ function ClusterStage({
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs.length, sText, sThinking, streaming]);
 
-  async function streamAgent(cl: Cluster, nextMsgs: ChatMsg[], forceMode?: AgentMode, fast = false): Promise<ChatMsg[]> {
+  async function streamAgent(cl: Cluster, nextMsgs: ChatMsg[], forceMode?: AgentMode, fast = false, timeoutMs?: number): Promise<ChatMsg[]> {
     setTranscripts((t) => ({ ...t, [cl.id]: nextMsgs }));
     setStreaming(true);
     setRouting(!fast);
@@ -1141,6 +1168,9 @@ function ClusterStage({
     timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
     let mode: AgentMode = forceMode ?? "research";
+    // hard timeout so a hung request can't stall the whole auto-pilot sweep
+    const ctrl = new AbortController();
+    const killTimer = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
     try {
       const res = await fetch("/api/kasperov_agent", {
         method: "POST",
@@ -1150,6 +1180,7 @@ function ClusterStage({
           messages: nextMsgs,
           ...(forceMode ? { mode: forceMode } : {}),
         }),
+        signal: ctrl.signal,
       });
       if (!res.body) throw new Error("no stream");
       const reader = res.body.getReader();
@@ -1198,6 +1229,7 @@ function ClusterStage({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
+      if (killTimer) clearTimeout(killTimer);
       setStreaming(false);
       setRouting(false);
       setStatus("");
@@ -1234,22 +1266,36 @@ function ClusterStage({
     return next;
   }
 
+  // auto-pilot stream with one retry + a hard timeout, so a hung or failed request
+  // can't stall the sweep. Throws if it STILL fails — runAutopilot records the
+  // cluster as "couldn't finish" and moves on instead of hanging on it.
+  async function autoStream(cl: Cluster, msgs: ChatMsg[], mode: AgentMode): Promise<ChatMsg[]> {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (autoAbort.current) throw new Error("aborted");
+      const conv = await streamAgent(cl, msgs, mode, true, 90_000);
+      const last = conv[conv.length - 1]?.content ?? "";
+      if (!streamFailed(last)) return conv;
+      if (attempt === 0) await sleep(1200); // brief backoff, then one retry
+    }
+    throw new Error("stream failed after retry");
+  }
+
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
     // 1) identity pass (Researcher)
-    let conv = await streamAgent(cl, [{ role: "user", content: defaultPrompt(cl) }], "research", true);
+    let conv = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
     added = autoAddMarkers(cl, conv[conv.length - 1].content, "research", added);
     // 2) Reasoner-orchestrated rounds
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
       if (autoAbort.current) return;
-      conv = await streamAgent(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason", true);
+      conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
       let rc = conv[conv.length - 1].content;
       added = autoAddMarkers(cl, rc, "reason", added);
       let concl = splitConclude(rc).conclude;
       let dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       if (!concl && dispatches.length === 0) {
         // neither concluded nor dispatched → nudge once
-        conv = await streamAgent(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason", true);
+        conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason");
         rc = conv[conv.length - 1].content;
         added = autoAddMarkers(cl, rc, "reason", added);
         concl = splitConclude(rc).conclude;
@@ -1262,7 +1308,7 @@ function ClusterStage({
       }
       for (const d of dispatches) {
         if (autoAbort.current) return;
-        conv = await streamAgent(cl, [...conv, { role: "user", content: d.prompt }], d.to, true);
+        conv = await autoStream(cl, [...conv, { role: "user", content: d.prompt }], d.to);
         added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to, added);
       }
     }
@@ -1274,21 +1320,34 @@ function ClusterStage({
   async function runAutopilot() {
     if (auto.running) return;
     autoAbort.current = false;
+    setAutoReport(null);
+    // auto-detect & skip clusters whose identity is already validated
+    const alreadyValidated = clusters.filter((c) => validated.has(c.id)).length;
     const queue = clusters.filter((c) => !validated.has(c.id));
+    const failed: string[] = [];
     setAuto({ running: true, current: null, done: 0, total: queue.length });
     for (let i = 0; i < queue.length; i++) {
       if (autoAbort.current) break;
       const c = queue[i];
+      // skip if it became validated since the queue was built (manual accept / prior pass)
+      if (validatedRef.current.has(c.id)) {
+        setAuto((a) => ({ ...a, done: i + 1 }));
+        continue;
+      }
       setAuto((a) => ({ ...a, current: c.id, done: i }));
       goToCluster(c.id);
       await sleep(80); // let the per-cluster reset effect settle before streaming
       try {
         await runOneCluster(c);
       } catch {
-        /* keep going to the next cluster */
+        failed.push(c.id); // errored after retry — record it and keep going
       }
     }
     setAuto((a) => ({ ...a, running: false, current: null, done: a.total }));
+    if (!autoAbort.current) {
+      setAutoReport({ already: alreadyValidated, failed });
+      if (failed.length) console.warn("[auto-pilot] could not finish clusters:", failed.join(", "));
+    }
   }
   function stopAutopilot() {
     autoAbort.current = true;
@@ -1329,6 +1388,21 @@ function ClusterStage({
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, fontWeight: 600, color: THEME.reason.color, background: THEME.reason.bg, padding: "4px 10px", borderRadius: 99 }}>
             <span style={{ animation: "kpulse 1s infinite" }}>🤖</span> Auto-pilot · cluster {auto.done + 1}/{auto.total}
             <button onClick={stopAutopilot} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 6, padding: "2px 9px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>■ Stop</button>
+          </span>
+        )}
+        {!auto.running && autoReport && (autoReport.failed.length > 0 || autoReport.already > 0) && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, color: autoReport.failed.length ? "#b91c1c" : "#15803d", background: autoReport.failed.length ? "#fef2f2" : "#f0fdf4", padding: "4px 10px", borderRadius: 99 }}>
+            {autoReport.already > 0 && <span>skipped {autoReport.already} already-validated</span>}
+            {autoReport.failed.length > 0 && (
+              <>
+                <span>
+                  {autoReport.already > 0 ? "· " : ""}
+                  {autoReport.failed.length} couldn&apos;t finish: {autoReport.failed.map((id) => clusters.find((c) => c.id === id)?.label.replace("Cluster ", "C") ?? id).join(", ")}
+                </span>
+                <button onClick={() => { setAutoReport(null); runAutopilot(); }} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 6, padding: "2px 9px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>↻ Retry these</button>
+              </>
+            )}
+            <button onClick={() => setAutoReport(null)} title="Dismiss" style={{ background: "transparent", border: "none", color: "#999", cursor: "pointer", fontSize: 14, lineHeight: 1 }}>✕</button>
           </span>
         )}
         <div style={{ marginLeft: "auto", fontSize: 13, color: "#888" }}>{validated.size}/{clusters.length} validated</div>
