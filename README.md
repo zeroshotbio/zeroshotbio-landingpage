@@ -85,8 +85,10 @@ evidence; you make the call. Built natively in Next.js
 (`src/app/daniotype_kasperov/`), not an iframe bundle.
 
 **Flow:** intro → global UMAP of the whole atlas → **"View Leiden clusters"**
-(colours the 47 clusters) → click a cluster → **one-time 3-personality primer**
-(pixel-art cards; re-shows when its version bumps) → the cluster chat screen.
+(colours all 47, shown at once as a grid — no scroll) → click a cluster →
+**3-personality primer** (pixel-art cards; shows once per page load) → the cluster
+chat screen. Or hit **🤖 Go through each cluster on your own** to let it run the
+whole loop itself (see *Auto-pilot* below).
 
 **Cluster screen layout:** a focused-cluster UMAP on the left with three
 draggable + resizable HUD panels floating over it (**World Map**, **Top Markers**,
@@ -109,11 +111,12 @@ bars, confidence, "added" confirmations, user turns) is greyscale.
 - **Researcher** — web search restricted to ZFIN/ZFA/GO/NCBI/UniProt; cites records.
 - **Archivist** — answers **only** from MiniFin via the `query_minifin` tool (below); never web.
 
-**The chat is Reasoner-led.** You talk to the Reasoner; the **Researcher and
-Archivist input lines stay locked until the Reasoner dispatches them.** The chat
-footer has three labelled, colour-coded, pixel-art input lines — *Ask the
+**The chat is Reasoner-led, but everything is reachable.** The footer has three
+always-available, labelled, colour-coded, pixel-art input lines — *Ask the
 Reasoner / Researcher / Archivist* — and the line you type in **forces** that
-personality (so a name mentioned in passing can't misroute you).
+personality (so a name mentioned in passing can't misroute you). Lean on the
+Reasoner as your partner; it also offers one-click prompts that dispatch the
+other two.
 
 **Routing (`classifyMode`)**, in order: a message starting with `Researcher:` /
 `Archivist:` / `Reasoner:` **forces** that one → a prompt-crafting request goes to
@@ -124,10 +127,14 @@ heuristics.
 **Chat affordances** (all rendered *inside* the speaker's colour-bordered bubble):
 
 - "➕ Add N insights to Top Markers" (from a hidden ` kasperov-markers ` block).
-- "▶ Send to the Researcher/Archivist" dispatch buttons (from a ` kasperov-dispatch ` block; also unlock that input line).
+- "▶ Send to the Researcher/Archivist" dispatch buttons (from a ` kasperov-dispatch ` block).
 - "▲/▼ Promote X to UP/DOWN-regulated" (from a ` kasperov-promote ` block).
-- "🧠 Suggested next prompt for the Reasoner" at the end of every non-Reasoner response (hands back for the next step / are-we-done check).
+- "✓ Accept identity: \<label\>" (from a ` kasperov-conclude ` block — the Reasoner's settled call).
+- "🧠 Ask Reasoner to Summarize and Suggest Next Steps" at the end of every non-Reasoner response.
+- "▶ Yes — just run it and show everything" — a safety net that appears only when a specialist *defers* (asks you to choose), re-forcing that personality to fetch and report it all.
 - Researcher answers render as `**gene** — finding [record]` lines with a small source chip (ZFIN/ZFA/GO/…); the **Verdict** is pulled into a personality-coloured callout with a greyscale confidence chip.
+
+All control blocks parse whether the model emits them **fenced or bare**, and are stripped from the visible text.
 
 ### HUD panels
 
@@ -136,11 +143,14 @@ heuristics.
   matching gene; a discussed gene with a direction (auto by sign of log2FC, or via
   a Reasoner *promote*) **floats up** into the UP/DOWN list; genes with no
   direction sit in "✦ also discussed".
-- **Confidence** — appears once there's a conversation. A live 0–100 score + a
-  fresh **≤100-word highest-level summary** (strongest support + main
-  uncertainty) from `/api/kasperov_confidence`. Refreshes after **every turn** and
-  **whenever evidence is added to Top Markers** (the added markers feed the
-  assessment). Greyscale.
+- **Confidence** — appears once there's a conversation. A live **granular** score
+  (one decimal, e.g. `65.4%`) that **scrolls smoothly** toward each new value with
+  ease-in-out, the bar gliding in sync, plus a fresh **≤100-word highest-level
+  summary** (strongest support + main uncertainty) from `/api/kasperov_confidence`.
+  Refreshes after **every turn** and **whenever evidence is added to Top Markers**.
+  Greyscale.
+- Top Markers & Confidence also grow **wider** (not just taller) as they gather
+  content, until you drag a panel (then layout is fully manual).
 - **World Map** — the whole atlas with a focus box on the active cluster.
 
 ### Behavioural guardrails (prompt-engineered)
@@ -201,12 +211,41 @@ Currently deployed on the EC2 box:
 
 ### Hidden control blocks
 
-The agent embeds fenced blocks that the client parses and **strips from view**,
-turning them into buttons:
+The agent embeds blocks (fenced **or** bare) that the client parses and **strips
+from view**, turning them into buttons:
 
 - ` kasperov-markers ` — `[{g, l2fc, p1, p2, note}]` → "Add to Top Markers".
 - ` kasperov-dispatch ` — `[{to:"researcher"|"archivist", prompt}]` → "Send to …".
 - ` kasperov-promote ` — `[{gene, dir:"up"|"down", note}]` → "Promote to UP/DOWN".
+- ` kasperov-conclude ` — `{label, confidence, done}` → the Reasoner's settled
+  identity; surfaces "✓ Accept identity" and drives auto-pilot's accept-and-advance.
+
+### Auto-pilot — the system runs itself
+
+**🤖 "Go through each cluster on your own"** (World Map) drives the whole loop with
+no human in the seat. Per un-validated cluster it: runs the identity pass
+(Researcher) → repeatedly asks the Reasoner to summarise + decide → fires the
+Reasoner's `kasperov-dispatch` prompts to the Researcher/Archivist → auto-adds
+their `kasperov-markers` → and when the Reasoner emits a `kasperov-conclude`
+block, records the label, **accepts the identity, and advances**. Bounded to
+`AUTO_MAX_ROUNDS` (4) Reasoner rounds/cluster (best-effort accept if it maxes out)
+so it can't loop forever. The view follows each cluster live; a top-bar badge
+shows progress with a **■ Stop**; inputs are disabled while it runs; the routing
+animation is skipped for speed; already-validated clusters are skipped (resumable).
+
+Implementation note: `streamAgent(cluster, msgs, mode, fast)` returns the final
+message array, so the loop chains calls headlessly while the UI mirrors the active
+cluster. State (transcripts/markers/confidence/labels) lives in the **top-level
+component** — not `ClusterStage`, which unmounts on the map — so navigating
+map↔cluster preserves every cluster's record.
+
+### Run summary, reset & export (World Map)
+
+- **Run summary** — each labelled cluster with its cell-type identity
+  (≤15 words) next to the cluster name; click to reopen its full record.
+- **↺ Reset run** — clears validations, labels, and saved history (confirm-gated).
+- **⬇ Export results (JSON)** — the whole run: per-cluster `{finalLabel,
+  confidence, addedMarkers, transcript, validated}`.
 
 ### Endpoints
 
@@ -224,8 +263,12 @@ turning them into buttons:
   answer), and retries once on a transient upstream 5xx. The microservice is
   sub-second, not the bottleneck; a rare "(time limit)" is an upstream OpenAI
   latency blip — just re-ask.
-- Validated-cluster state + `personasV` persist to `localStorage` (POC). Chat
-  transcripts, added markers, unlocks, and confidence are in-memory per session.
+- **Persistence (POC).** Validated set + cell-type labels persist to
+  `localStorage` (`daniotype_kasperov_v3`). The full run — transcripts + added
+  markers + confidence — is persisted (debounced) to `daniotype_kasperov_results`
+  and restored on load, so revisiting any cluster shows its record and the run
+  survives reload. On storage-quota overflow it falls back to markers+confidence
+  only. (The primer is intentionally **not** persisted — it shows once per load.)
 
 ### Reproduce the data assets
 
