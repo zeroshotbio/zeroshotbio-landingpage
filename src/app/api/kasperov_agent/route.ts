@@ -197,6 +197,12 @@ function reasonInstructions(cluster: Cluster): string {
     "```",
     "Include one object per personality (MAX 2). Each prompt must be self-contained — name the cluster and exact genes/terms — and must NOT duplicate a query already run. When the answer is settled or no new query would change it, emit NO block and just give the conclusion.",
     "",
+    "PROMOTE A MARKER: when the evidence now clearly establishes that a specific gene (currently only 'also-discussed') is genuinely an UP- or DOWN-regulated marker of THIS cluster, append a fenced block — it surfaces a one-click button that lifts the gene into the Top Markers up/down list:",
+    "```kasperov-promote",
+    '[{"gene":"GENE","dir":"up"|"down","note":"<≤8 words why>"}]',
+    "```",
+    "Only promote when the evidence (stats or curated annotation) supports it; omit otherwise.",
+    "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
   ].join("\n") + MARKER_BLOCK_INSTR;
 }

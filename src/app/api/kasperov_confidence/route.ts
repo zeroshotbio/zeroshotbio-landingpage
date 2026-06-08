@@ -27,10 +27,11 @@ export async function POST(req: Request) {
   if (messages.length === 0) return NextResponse.json({ error: "no_messages" }, { status: 400 });
 
   const convo = messages.map((m) => `${m.role === "user" ? "Curator" : "Agent"}: ${m.content}`).join("\n\n").slice(0, 8000);
+  const added = typeof body?.addedMarkers === "string" ? body.addedMarkers.slice(0, 1200) : "";
   const instructions =
-    "You assess how confident a curator should be in the proposed cell-type identity for a zebrafish single-cell cluster, given ONLY the conversation so far. " +
-    "Weigh: strength and specificity of cited evidence, agreement across turns, and unresolved caveats. If little is established, score low. " +
-    "Return confidence_pct (integer 0-100) and a single-sentence rationale of 40 words or fewer explaining why, referencing what was actually discussed.";
+    "You assess how confident a curator should be in the proposed cell-type identity for a zebrafish single-cell cluster, given ONLY the conversation and the evidence added to the Top Markers panel. " +
+    "Weigh: strength and specificity of cited evidence, agreement across turns, statistical support, and unresolved caveats. If little is established, score low. " +
+    "Return confidence_pct (integer 0-100) and a rationale of 100 words or fewer giving the HIGHEST-LEVEL reasons for that level of confidence (or lack of it) — what is the single strongest support and the main remaining uncertainty. Reference what was actually discussed; no preamble.";
 
   try {
     const ctrl = new AbortController();
@@ -42,9 +43,9 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model: MODEL,
         reasoning: { effort: "minimal" },
-        max_output_tokens: 600,
+        max_output_tokens: 900,
         instructions,
-        input: [{ role: "user", content: `Cluster: ${cluster?.label ?? cluster?.id ?? "?"}\n\nConversation:\n${convo}` }],
+        input: [{ role: "user", content: `Cluster: ${cluster?.label ?? cluster?.id ?? "?"}\n\nConversation:\n${convo}${added ? `\n\nEvidence added to Top Markers panel:\n${added}` : ""}` }],
         text: {
           format: {
             type: "json_schema",
@@ -78,7 +79,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: "parse" }, { status: 502 });
     }
     const pct = Math.max(0, Math.min(100, Number(parsed.confidence_pct ?? 0)));
-    const why = String(parsed.rationale ?? "").slice(0, 280);
+    const why = String(parsed.rationale ?? "").slice(0, 800);
     return NextResponse.json({ pct, why });
   } catch (e: any) {
     return NextResponse.json({ error: "exception", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });

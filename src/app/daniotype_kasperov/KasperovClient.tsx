@@ -13,7 +13,7 @@ const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
 type Pt = { x: number; y: number };
 type Box = { x: number; y: number; w: number; h: number };
-type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string; via?: AgentMode };
+type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string; via?: AgentMode; dir?: "up" | "down" };
 interface Cluster {
   id: string;
   label: string;
@@ -251,7 +251,7 @@ export default function KasperovClient() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
-        if (p.personasSeen) setPersonasSeen(true);
+        if (p.personasV === 2) setPersonasSeen(true); // re-show the updated primer
       }
     } catch {}
     setLoaded(true);
@@ -259,7 +259,7 @@ export default function KasperovClient() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), personasSeen }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), personasV: personasSeen ? 2 : 0 }));
     } catch {}
   }, [validated, personasSeen, loaded]);
 
@@ -411,20 +411,20 @@ const PIX_REASONER = [
 
 function Personas({ onContinue }: { onContinue: () => void }) {
   const cards = [
-    { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence. Your default first pass." },
-    { mode: "archivist" as AgentMode, pix: PIX_ARCHIVIST, blurb: "Pulls raw MiniFin values — markers, stats, cross-cluster specificity, p-values, co-expression." },
-    { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Synthesises everything and can hand crafted prompts to the other two." },
+    { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Your main partner. Synthesises everything, judges when you're done, and dispatches the other two for you." },
+    { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence. Unlocks when the Reasoner calls for it." },
+    { mode: "archivist" as AgentMode, pix: PIX_ARCHIVIST, blurb: "Pulls raw MiniFin values — stats, specificity, p-values, co-expression. Unlocks when the Reasoner calls for it." },
   ];
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 880, padding: "64px 28px", textAlign: "center" }}>
+      <div style={{ maxWidth: 880, padding: "60px 28px", textAlign: "center" }}>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#999", fontWeight: 600 }}>Your three specialists</div>
         <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One GPT-5-Mini, three personalities</h1>
-        <p style={{ fontSize: 15, color: "#666", maxWidth: 660, margin: "0 auto 28px" }}>
-          Just ask — your question is routed to the right specialist automatically. To force one, start your message with{" "}
-          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Researcher:</code>,{" "}
-          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Archivist:</code>, or{" "}
-          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Reasoner:</code>
+        <p style={{ fontSize: 15, color: "#666", maxWidth: 680, margin: "0 auto 26px", lineHeight: 1.55 }}>
+          Talk to the <strong style={{ color: THEME.reason.color }}>Reasoner</strong> — it&apos;s your partner. It reads the evidence,
+          tells you what&apos;s worth checking next, and hands the <strong style={{ color: THEME.research.color }}>Researcher</strong> and{" "}
+          <strong style={{ color: THEME.archivist.color }}>Archivist</strong> ready-to-send prompts. Those two unlock once the Reasoner
+          suggests them. Each has its own input line below the chat.
         </p>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
           {cards.map(({ mode, pix, blurb }) => {
@@ -445,6 +445,69 @@ function Personas({ onContinue }: { onContinue: () => void }) {
           Enter the cluster →
         </button>
       </div>
+    </div>
+  );
+}
+
+const PIX_BY_MODE: Record<AgentMode, string[]> = { reason: PIX_REASONER, research: PIX_RESEARCHER, archivist: PIX_ARCHIVIST };
+
+// one labelled, colour-coded personality input line (gated until unlocked)
+function AskLine({
+  mode,
+  value,
+  setValue,
+  onSend,
+  enabled,
+  locked,
+}: {
+  mode: AgentMode;
+  value: string;
+  setValue: (s: string) => void;
+  onSend: () => void;
+  enabled: boolean;
+  locked: boolean;
+}) {
+  const th = THEME[mode];
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, opacity: locked ? 0.55 : 1 }}>
+      <div style={{ width: 24, height: 24, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center" }} title={th.name}>
+        <PixelIcon rows={PIX_BY_MODE[mode]} color={locked ? "#b0a99f" : th.color} size={22} />
+      </div>
+      <input
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        onKeyDown={(e) => e.key === "Enter" && enabled && onSend()}
+        placeholder={locked ? `${th.name} — unlocks when the Reasoner calls for it` : `Ask the ${th.name}…`}
+        disabled={!enabled}
+        style={{
+          flex: 1,
+          padding: "8px 10px",
+          border: `1px solid ${locked ? "#d8d3cd" : th.color + "66"}`,
+          borderLeft: `3px solid ${locked ? "#cfcac4" : th.color}`,
+          borderRadius: 8,
+          fontSize: 13,
+          fontFamily: "inherit",
+          background: enabled ? "#fff" : "#f3f0ec",
+        }}
+      />
+      <button
+        onClick={onSend}
+        disabled={!enabled || !value.trim()}
+        title={locked ? "Locked" : `Send to the ${th.name}`}
+        style={{
+          flexShrink: 0,
+          background: enabled && value.trim() ? th.color : "#fff",
+          color: enabled && value.trim() ? "#fff" : "#bbb",
+          border: `1px solid ${enabled && value.trim() ? th.color : "#d8d3cd"}`,
+          borderRadius: 8,
+          padding: "8px 12px",
+          fontSize: 13,
+          fontWeight: 600,
+          cursor: enabled && value.trim() ? "pointer" : "default",
+        }}
+      >
+        {locked ? "🔒" : "→"}
+      </button>
     </div>
   );
 }
@@ -574,6 +637,26 @@ function splitDispatch(content: string): { clean: string; dispatches: { to: Agen
   return { clean: content.replace(re, "").trim(), dispatches };
 }
 
+// extract the hidden ```kasperov-promote``` block: the Reasoner moving an
+// "also-discussed" gene up into the UP/DOWN marker list.
+function splitPromote(content: string): { clean: string; promotes: { gene: string; dir: "up" | "down"; note?: string }[] } {
+  const re = /```kasperov-promote\s*([\s\S]*?)```/i;
+  const m = content.match(re);
+  if (!m) return { clean: content, promotes: [] };
+  let raw: any;
+  try {
+    raw = JSON.parse(m[1].trim());
+  } catch {
+    return { clean: content.replace(re, "").trim(), promotes: [] };
+  }
+  const arr = Array.isArray(raw) ? raw : [raw];
+  const promotes = arr
+    .filter((x) => x && typeof x.gene === "string" && (x.dir === "up" || x.dir === "down"))
+    .map((x) => ({ gene: String(x.gene), dir: x.dir as "up" | "down", note: x.note ? String(x.note) : undefined }))
+    .slice(0, 6);
+  return { clean: content.replace(re, "").trim(), promotes };
+}
+
 function defaultPrompt(c: Cluster): string {
   const upList = c.degsUp.slice(0, 8).join(", ");
   return (
@@ -598,7 +681,9 @@ function ClusterStage({
 }) {
   const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
   const [prompt, setPrompt] = useState(defaultPrompt(active));
-  const [input, setInput] = useState("");
+  const [inReason, setInReason] = useState("");
+  const [inRes, setInRes] = useState("");
+  const [inArch, setInArch] = useState("");
   const [zoomW, setZoomW] = useState(560);
   const [panelW, setPanelW] = useState(470); // resizable GPT-5-Mini panel
   const leftRef = useRef<HTMLDivElement | null>(null);
@@ -639,28 +724,57 @@ function ClusterStage({
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState(false);
+  // the Researcher/Archivist unlock once the Reasoner has suggested them
+  const [unlocked, setUnlocked] = useState<Record<string, { research: boolean; archivist: boolean }>>({});
+  const un = unlocked[active.id] ?? { research: false, archivist: false };
+
+  function classifyDir(m: Marker): "up" | "down" | undefined {
+    if (m.dir) return m.dir;
+    if (m.l2fc != null) return m.l2fc >= 1 ? "up" : m.l2fc <= -1 ? "down" : undefined;
+    return undefined;
+  }
+  function addedText(list: Marker[]): string {
+    return list.map((m) => `${m.g}${m.l2fc != null ? ` log2FC ${m.l2fc}` : ""}${m.note ? ` — ${m.note}` : ""} [${m.dir ?? "?"}, via ${m.via}]`).join("; ");
+  }
 
   function incorporate(msgKey: string, markers: Marker[], via: AgentMode) {
-    setAugmented((a) => {
-      const cur = a[active.id] ?? [];
-      const byGene = new Map(cur.map((m) => [m.g, m]));
-      markers.forEach((m) => byGene.set(m.g, { ...byGene.get(m.g), ...m, via }));
-      return { ...a, [active.id]: Array.from(byGene.values()) };
+    const cur = augmented[active.id] ?? [];
+    const byGene = new Map(cur.map((m) => [m.g.toLowerCase(), m]));
+    markers.forEach((m) => {
+      const merged: Marker = { ...byGene.get(m.g.toLowerCase()), ...m, via };
+      merged.dir = classifyDir(merged);
+      byGene.set(m.g.toLowerCase(), merged);
     });
+    const next = Array.from(byGene.values());
+    setAugmented((a) => ({ ...a, [active.id]: next }));
     setIncorporated((s) => new Set(s).add(msgKey));
     setFlash(true);
     setTimeout(() => setFlash(false), 900);
+    refreshConfidence(transcripts[active.id] ?? [], active.id, addedText(next));
+  }
+
+  // Reasoner lifting an "also-discussed" gene into the up/down marker list
+  function promote(gene: string, dir: "up" | "down", note: string | undefined, via: AgentMode) {
+    const cur = augmented[active.id] ?? [];
+    const byGene = new Map(cur.map((m) => [m.g.toLowerCase(), m]));
+    const ex = byGene.get(gene.toLowerCase());
+    byGene.set(gene.toLowerCase(), { ...(ex ?? { g: gene }), g: ex?.g ?? gene, dir, note: note ?? ex?.note, via: via ?? ex?.via ?? "reason" });
+    const next = Array.from(byGene.values());
+    setAugmented((a) => ({ ...a, [active.id]: next }));
+    setFlash(true);
+    setTimeout(() => setFlash(false), 900);
+    refreshConfidence(transcripts[active.id] ?? [], active.id, addedText(next));
   }
 
   // live confidence box (appears once there's a conversation to assess)
   const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
-  async function refreshConfidence(msgs: ChatMsg[], clusterId: string) {
+  async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
     try {
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cluster: { id: clusterId, label: active.label }, messages: msgs }),
+        body: JSON.stringify({ cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
       });
       if (!r.ok) return;
       const d = await r.json();
@@ -673,7 +787,9 @@ function ClusterStage({
 
   useEffect(() => {
     setPrompt(defaultPrompt(active));
-    setInput("");
+    setInReason("");
+    setInRes("");
+    setInArch("");
     setStatus("");
     setThinking("");
     setText("");
@@ -812,6 +928,17 @@ function ClusterStage({
       }
       const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
       setTranscripts((t) => ({ ...t, [active.id]: finalMsgs }));
+      // a Reasoner dispatch unlocks the targeted specialist's input line
+      if (mode === "reason") {
+        const dsp = splitDispatch(splitMarkerBlock(acc).clean).dispatches;
+        if (dsp.length)
+          setUnlocked((u) => {
+            const cur = u[active.id] ?? { research: false, archivist: false };
+            const nx = { ...cur };
+            dsp.forEach((d) => (nx[d.to === "archivist" ? "archivist" : "research"] = true));
+            return { ...u, [active.id]: nx };
+          });
+      }
       setStreaming(false);
       setRouting(false);
       setStatus("");
@@ -825,11 +952,11 @@ function ClusterStage({
     if (streaming) return;
     streamAgent([{ role: "user", content: prompt }]);
   }
-  function sendChat() {
-    const text = input.trim();
-    if (!text || streaming) return;
-    setInput("");
-    streamAgent([...msgs, { role: "user", content: text }]);
+  // send a message forced to a specific personality (via the labelled input line or a button)
+  function ask(mode: AgentMode, text: string) {
+    const t = text.trim();
+    if (!t || streaming) return;
+    streamAgent([...msgs, { role: "user", content: t }], mode);
   }
 
   const isValidated = validated.has(active.id);
@@ -929,36 +1056,57 @@ function ClusterStage({
             {msgs.map((m, i) => {
               const mk = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] as Marker[] };
               const dp = m.role === "assistant" ? splitDispatch(mk.clean) : { clean: mk.clean, dispatches: [] as { to: AgentMode; prompt: string }[] };
-              const parsed = { clean: dp.clean, markers: mk.markers };
+              const pr = m.role === "assistant" ? splitPromote(dp.clean) : { clean: dp.clean, promotes: [] as { gene: string; dir: "up" | "down"; note?: string }[] };
+              const parsed = { clean: pr.clean, markers: mk.markers };
               const key = `${active.id}:${i}`;
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
-              const hasActions = canAdd || (parsed.markers.length > 0 && incorporated.has(key)) || dp.dispatches.length > 0;
-              const actions = hasActions ? (
-                <>
-                  {canAdd && (
-                    <button
-                      onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[m.mode ?? "research"].color}66`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-                    >
-                      ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
-                    </button>
-                  )}
-                  {parsed.markers.length > 0 && incorporated.has(key) && (
-                    <span style={{ fontSize: 11.5, color: "#888", fontWeight: 600, alignSelf: "center" }}>✓ added to Top Markers</span>
-                  )}
-                  {dp.dispatches.map((d, di) => (
-                    <button
-                      key={di}
-                      onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
-                      disabled={streaming}
-                      title={d.prompt}
-                      style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
-                    >
-                      {THEME[d.to].icon} ▶ Send to the {THEME[d.to].name} →
-                    </button>
-                  ))}
-                </>
-              ) : undefined;
+              const isLast = m.role === "assistant" && i === msgs.length - 1 && !streaming;
+              const actions =
+                m.role === "assistant" ? (
+                  <>
+                    {canAdd && (
+                      <button
+                        onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[m.mode ?? "research"].color}66`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
+                      </button>
+                    )}
+                    {parsed.markers.length > 0 && incorporated.has(key) && (
+                      <span style={{ fontSize: 11.5, color: "#888", fontWeight: 600, alignSelf: "center" }}>✓ added to Top Markers</span>
+                    )}
+                    {pr.promotes.map((p, pi) => (
+                      <button
+                        key={`pr${pi}`}
+                        onClick={() => promote(p.gene, p.dir, p.note, m.mode ?? "reason")}
+                        title={p.note}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fff", border: `1px solid #8a847b`, color: "#555", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        {p.dir === "up" ? "▲" : "▼"} Promote {p.gene} to {p.dir.toUpperCase()}-regulated →
+                      </button>
+                    ))}
+                    {dp.dispatches.map((d, di) => (
+                      <button
+                        key={di}
+                        onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
+                        disabled={streaming}
+                        title={d.prompt}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
+                      >
+                        {THEME[d.to].icon} ▶ Send to the {THEME[d.to].name} →
+                      </button>
+                    ))}
+                    {/* always offer to hand back to the Reasoner for the next step */}
+                    {isLast && m.mode !== "reason" && (
+                      <button
+                        onClick={() => ask("reason", "Given everything so far, what makes sense next — and have we exhausted the Researcher and Archivist?")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, background: THEME.reason.bg, border: `1px solid ${THEME.reason.color}66`, color: THEME.reason.color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                      >
+                        🧠 Suggested next prompt for the Reasoner →
+                      </button>
+                    )}
+                  </>
+                ) : undefined;
               return (
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : THEME[m.mode ?? "research"].color, fontWeight: 600, marginBottom: 3 }}>
@@ -1042,24 +1190,18 @@ function ClusterStage({
                   </div>
                 )}
                 {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitDispatch(splitMarkerBlock(sText).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
+                {sText ? <AgentMessage content={splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
 
-          {/* footer: chat + judge */}
+          {/* footer: three personality input lines + judge */}
           {started && (
             <div style={{ borderTop: "1px solid #f0ece7", padding: "10px 16px" }}>
-              <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-                <input
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && sendChat()}
-                  placeholder={streaming ? "Agent is working…" : "Ask the agent to dig deeper…"}
-                  disabled={streaming}
-                  style={{ flex: 1, padding: "9px 11px", border: "1px solid #d8d3cd", borderRadius: 8, fontSize: 13.5, fontFamily: "inherit", background: streaming ? "#f3f0ec" : "#fff" }}
-                />
-                <button onClick={sendChat} disabled={streaming} style={{ ...btnGhost, opacity: streaming ? 0.5 : 1 }}>Send</button>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 9 }}>
+                <AskLine mode="reason" value={inReason} setValue={setInReason} onSend={() => { ask("reason", inReason); setInReason(""); }} enabled={!streaming} locked={false} />
+                <AskLine mode="research" value={inRes} setValue={setInRes} onSend={() => { ask("research", inRes); setInRes(""); }} enabled={!streaming && un.research} locked={!un.research} />
+                <AskLine mode="archivist" value={inArch} setValue={setInArch} onSend={() => { ask("archivist", inArch); setInArch(""); }} enabled={!streaming && un.archivist} locked={!un.archivist} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button
@@ -1374,15 +1516,36 @@ function MarkerRow({ m, max, color }: { m: Marker; max: number; color: string })
   );
 }
 
+// a chat-added gene that has floated into the up/down list as a ✦ row
+function AddedRow({ m, max, color }: { m: Marker; max: number; color: string }) {
+  const th = THEME[m.via ?? "research"];
+  return (
+    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, marginLeft: -2 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
+        <span style={{ width: 66, fontFamily: "ui-monospace, monospace", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+        <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+          {m.l2fc != null && <div style={{ width: `${(Math.abs(m.l2fc) / max) * 100}%`, height: "100%", background: color }} />}
+        </div>
+        <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase" }}>✦{th.name[0]}</span>
+      </div>
+      {m.note && <div style={{ fontSize: 10, color: "#777", marginLeft: 8, lineHeight: 1.3 }}>{m.note}</div>}
+    </div>
+  );
+}
+
 function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] }) {
   const top = cluster.markers.slice(0, 8);
   const down = cluster.markersDown.slice(0, 8);
-  const maxUp = Math.max(...top.map((m) => m.l2fc ?? 0), 1);
-  const maxDn = Math.max(...down.map((m) => Math.abs(m.l2fc ?? 0)), 1);
-  // chat annotations attach to their gene's row; genes not in either list go below
+  const baseUp = new Set(top.map((m) => m.g.toLowerCase()));
+  const baseDown = new Set(down.map((m) => m.g.toLowerCase()));
+  const listed = new Set<string>([...top.map((m) => m.g.toLowerCase()), ...down.map((m) => m.g.toLowerCase())]);
+  // annotations attach to base rows; chat genes with a direction float into the lists
   const annByGene = new Map(added.map((m) => [m.g.toLowerCase(), m]));
-  const listed = new Set([...top, ...down].map((m) => m.g.toLowerCase()));
-  const extra = added.filter((m) => !listed.has(m.g.toLowerCase()));
+  const addedUp = added.filter((m) => m.dir === "up" && !baseUp.has(m.g.toLowerCase()));
+  const addedDown = added.filter((m) => m.dir === "down" && !baseDown.has(m.g.toLowerCase()));
+  const extra = added.filter((m) => !m.dir && !listed.has(m.g.toLowerCase()));
+  const maxUp = Math.max(...top.map((m) => m.l2fc ?? 0), ...addedUp.map((m) => Math.abs(m.l2fc ?? 0)), 1);
+  const maxDn = Math.max(...down.map((m) => Math.abs(m.l2fc ?? 0)), ...addedDown.map((m) => Math.abs(m.l2fc ?? 0)), 1);
 
   return (
     <div>
@@ -1394,16 +1557,22 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
             {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
           </React.Fragment>
         ))}
+        {addedUp.map((m) => (
+          <AddedRow key={m.g} m={m} max={maxUp} color="#8a847b" />
+        ))}
       </div>
 
       <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
-      {down.length ? (
+      {down.length || addedDown.length ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
           {down.map((m) => (
             <React.Fragment key={m.g}>
               <MarkerRow m={m} max={maxDn} color="#b8b2a8" />
               {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
             </React.Fragment>
+          ))}
+          {addedDown.map((m) => (
+            <AddedRow key={m.g} m={m} max={maxDn} color="#b8b2a8" />
           ))}
         </div>
       ) : (
@@ -1412,7 +1581,7 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
 
       {extra.length > 0 && (
         <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ALSO DISCUSSED (not in top lists)</div>
+          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ALSO DISCUSSED (not yet placed)</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
             {extra.map((m) => {
               const th = THEME[m.via ?? "research"];
