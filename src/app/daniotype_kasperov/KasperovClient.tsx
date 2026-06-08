@@ -248,6 +248,42 @@ export default function KasperovClient() {
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
+  // chat state lives HERE (not in ClusterStage) so it survives map↔cluster
+  // navigation — ClusterStage unmounts when you return to the map.
+  const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
+  const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
+  const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
+  const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
+  const hydratedRef = useRef(false);
+
+  // restore the full run on first load → revisiting any cluster shows its record
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RESULTS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.transcripts) setTranscripts(p.transcripts);
+        if (p.augmented) setAugmented(p.augmented);
+        if (p.confidence) setConfidence(p.confidence);
+      }
+    } catch {}
+    hydratedRef.current = true;
+  }, []);
+  // persist (debounced); on quota overflow, fall back to markers+confidence only
+  useEffect(() => {
+    if (!hydratedRef.current) return;
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(RESULTS_KEY, JSON.stringify({ transcripts, augmented, confidence }));
+      } catch {
+        try {
+          localStorage.setItem(RESULTS_KEY, JSON.stringify({ augmented, confidence }));
+        } catch {}
+      }
+    }, 800);
+    return () => clearTimeout(id);
+  }, [transcripts, augmented, confidence]);
+
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -274,10 +310,6 @@ export default function KasperovClient() {
 
   // download the full run — transcripts + evidence + markers + confidence + labels
   function exportResults() {
-    let results: any = {};
-    try {
-      results = JSON.parse(localStorage.getItem(RESULTS_KEY) ?? "{}");
-    } catch {}
     const out = {
       exportedAt: new Date().toISOString(),
       dataset: "MiniFin",
@@ -286,9 +318,9 @@ export default function KasperovClient() {
         label: c.label,
         validated: validated.has(c.id),
         finalLabel: labels[c.id] ?? null,
-        confidence: results.confidence?.[c.id] ?? null,
-        addedMarkers: results.augmented?.[c.id] ?? [],
-        transcript: results.transcripts?.[c.id] ?? [],
+        confidence: confidence[c.id] ?? null,
+        addedMarkers: augmented[c.id] ?? [],
+        transcript: transcripts[c.id] ?? [],
       })),
     };
     const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
@@ -370,6 +402,14 @@ export default function KasperovClient() {
       autoStart={autoStart}
       labels={labels}
       onLabel={setLabel}
+      transcripts={transcripts}
+      setTranscripts={setTranscripts}
+      augmented={augmented}
+      setAugmented={setAugmented}
+      confidence={confidence}
+      setConfidence={setConfidence}
+      incorporated={incorporated}
+      setIncorporated={setIncorporated}
     />
   );
 }
@@ -833,6 +873,14 @@ function ClusterStage({
   autoStart,
   labels,
   onLabel,
+  transcripts,
+  setTranscripts,
+  augmented,
+  setAugmented,
+  confidence,
+  setConfidence,
+  incorporated,
+  setIncorporated,
 }: {
   clusters: Cluster[];
   active: Cluster;
@@ -843,8 +891,15 @@ function ClusterStage({
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
+  transcripts: Record<string, ChatMsg[]>;
+  setTranscripts: React.Dispatch<React.SetStateAction<Record<string, ChatMsg[]>>>;
+  augmented: Record<string, Marker[]>;
+  setAugmented: React.Dispatch<React.SetStateAction<Record<string, Marker[]>>>;
+  confidence: Record<string, { pct: number; why: string }>;
+  setConfidence: React.Dispatch<React.SetStateAction<Record<string, { pct: number; why: string }>>>;
+  incorporated: Set<string>;
+  setIncorporated: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
-  const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
   const [prompt, setPrompt] = useState(defaultPrompt(active));
   const [inReason, setInReason] = useState("");
   const [inRes, setInRes] = useState("");
@@ -885,9 +940,7 @@ function ClusterStage({
   const [routed, setRouted] = useState(false); // chosen mode known
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // markers added to the Top Markers panel from chat, per cluster
-  const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
-  const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
+  // markers added to the Top Markers panel from chat, per cluster (state in parent)
   const [flash, setFlash] = useState(false);
   // auto-pilot run state
   const [auto, setAuto] = useState<{ running: boolean; current: string | null; done: number; total: number }>({ running: false, current: null, done: 0, total: 0 });
@@ -919,8 +972,7 @@ function ClusterStage({
     refreshConfidence(transcripts[active.id] ?? [], active.id, addedText(next));
   }
 
-  // live confidence box (appears once there's a conversation to assess)
-  const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
+  // live confidence box (appears once there's a conversation to assess) — state in parent
   async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
     try {
@@ -1205,30 +1257,6 @@ function ClusterStage({
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [autoStart]);
-
-  // persist the full run (transcripts + markers + confidence) so it survives
-  // reload and is queryable / exportable after the loop finishes
-  useEffect(() => {
-    const id = setTimeout(() => {
-      try {
-        localStorage.setItem(RESULTS_KEY, JSON.stringify({ transcripts, augmented, confidence }));
-      } catch {}
-    }, 800);
-    return () => clearTimeout(id);
-  }, [transcripts, augmented, confidence]);
-  // restore on mount → revisiting any cluster shows its full record
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(RESULTS_KEY);
-      if (raw) {
-        const p = JSON.parse(raw);
-        if (p.transcripts) setTranscripts(p.transcripts);
-        if (p.augmented) setAugmented(p.augmented);
-        if (p.confidence) setConfidence(p.confidence);
-      }
-    } catch {}
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   const isValidated = validated.has(active.id);
 
