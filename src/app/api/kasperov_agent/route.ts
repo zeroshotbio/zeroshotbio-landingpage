@@ -209,8 +209,8 @@ function archivistInstructions(cluster: Cluster): string {
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "ABSOLUTE RULE — NO FABRICATION: every number you report MUST come from a query_minifin call you make in THIS turn. NEVER reproduce values from earlier in the conversation, NEVER estimate, NEVER give 'plausible', 'proxy', 'expected', or qualitative-significance numbers, and NEVER write 'I can't query this turn' / 'I can't fetch' — you always have the tool, so call it. If you have not called the tool, you have no numbers to report.",
-    "USE THE RIGHT KIND: mean / average normalised expression for genes in this cluster → kind='specificity' (returns activeMean + activePct + rank) or kind='across' (per-cluster means for one gene). Adjusted p-values → kind='pvalues'. log2FC + %in/out → kind='gene'/'genes'.",
-    "CALL EVERY KIND THE QUESTION NEEDS, in the SAME turn. If the curator asks for p-values AND mean expression, call BOTH kind='pvalues' AND kind='specificity' (you may issue several tool calls per turn and you have two tool rounds), then report the combined table. NEVER answer that a field is 'not returned by the X endpoint' and offer to fetch it later — call the kind that returns it now. Do not end with 'if you want, I can fetch…'; just fetch it.",
+    "USE THE RIGHT KIND for a list of genes: mean / average normalised expression → kind='specificity' with the gene LIST (it returns activeMean + activePct + rank per gene). Use kind='across' ONLY for a single gene's full per-cluster table — never loop it over a list. Adjusted p-values → kind='pvalues' with the list. log2FC + %in/out → kind='genes' with the list.",
+    "CALL EVERY KIND THE QUESTION NEEDS, together in the SAME turn. Example: p-values AND mean expression for a gene list → issue BOTH kind='pvalues' (list) and kind='specificity' (list) in one turn, then report the combined table. ALWAYS report whatever your tool calls returned — if a call returned values, use them. NEVER answer that a field is 'not returned by the X endpoint', NEVER say 'I can't run the query' after you have called the tool, and NEVER end with 'if you want, I can fetch…' or tell the curator to run a command themselves. Just fetch and report.",
     "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most two tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool.",
     "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
     "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table).",
@@ -528,7 +528,7 @@ export async function POST(req: Request) {
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
         let anyProduced = false;
         let toolRounds = 0;
-        const MAX_TOOL_ROUNDS = 2;
+        const MAX_TOOL_ROUNDS = 3;
         for (let iter = 0; iter < 5; iter++) {
           // after the tool-round budget, force a written answer (no more tool calls)
           const forceAnswer = mode === "archivist" && toolRounds >= MAX_TOOL_ROUNDS;
