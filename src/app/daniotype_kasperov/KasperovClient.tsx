@@ -334,7 +334,9 @@ export default function KasperovClient() {
 
   function startAutopilot() {
     if (!clusters) return;
-    const first = clusters.find((c) => !validated.has(c.id)) ?? clusters[0];
+    // "done" == has a cell-type label (NOT merely validated — a cluster can be
+    // validated by hand without a label). Land on the first unlabelled cluster.
+    const first = clusters.find((c) => !labels[c.id]) ?? clusters[0];
     setActiveId(first.id);
     setStage("cluster");
     setAutoStart((n) => n + 1);
@@ -694,7 +696,7 @@ function MapStage({
                   onClick={onAuto}
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, background: THEME.reason.color, color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
                 >
-                  🤖 Go through each cluster on your own →
+                  🤖 Activate AutoPilot Cluster Labeller →
                 </button>
                 <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
                 {(labelled.length > 0 || validated.size > 0) && (
@@ -702,7 +704,7 @@ function MapStage({
                 )}
               </div>
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
-                Auto-pilot drives the Reasoner across every un-validated cluster — dispatching the Researcher &amp; Archivist,
+                Auto-pilot drives the Reasoner across every un-labelled cluster — dispatching the Researcher &amp; Archivist,
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
               </p>
 
@@ -753,7 +755,7 @@ function MapStage({
               {/* surface the gap — clusters that completed the run without a cell-type label */}
               {labelled.length > 0 && unlabelled.length > 0 && (
                 <div style={{ marginTop: 14, textAlign: "left", fontSize: 12.5, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 11px" }}>
-                  {unlabelled.length} of {clusters.length} clusters not yet labelled: {unlabelled.map((c) => c.label.replace("Cluster ", "C")).join(", ")}. Re-run &ldquo;Go through each cluster on your own&rdquo; — it auto-skips the {labelled.length} already done and finishes only these.
+                  {unlabelled.length} of {clusters.length} clusters not yet labelled: {unlabelled.map((c) => c.label.replace("Cluster ", "C")).join(", ")}. Run &ldquo;Activate AutoPilot Cluster Labeller&rdquo; — it auto-skips the {labelled.length} already labelled and finishes only these.
                 </div>
               )}
             </>
@@ -1011,13 +1013,14 @@ function ClusterStage({
   // auto-pilot run state
   const [auto, setAuto] = useState<{ running: boolean; current: string | null; done: number; total: number }>({ running: false, current: null, done: 0, total: 0 });
   const autoAbort = useRef(false);
-  // live mirror of `validated` so the running loop can skip clusters that became
-  // validated mid-sweep (manual accept, a prior pass) without rebuilding its closure.
-  const validatedRef = useRef(validated);
+  // live mirror of `labels` so the running loop can skip clusters that got labelled
+  // mid-sweep (a prior pass) without rebuilding its closure. "done" is keyed off
+  // labels, not `validated` — a cluster can be validated by hand without a label.
+  const labelsRef = useRef(labels);
   useEffect(() => {
-    validatedRef.current = validated;
-  }, [validated]);
-  // what the last auto-pilot run skipped (already validated) / couldn't finish (errored after retry)
+    labelsRef.current = labels;
+  }, [labels]);
+  // what the last auto-pilot run skipped (already labelled) / couldn't finish (errored after retry)
   const [autoReport, setAutoReport] = useState<{ already: number; failed: string[] } | null>(null);
 
   function addedText(list: Marker[]): string {
@@ -1321,16 +1324,18 @@ function ClusterStage({
     if (auto.running) return;
     autoAbort.current = false;
     setAutoReport(null);
-    // auto-detect & skip clusters whose identity is already validated
-    const alreadyValidated = clusters.filter((c) => validated.has(c.id)).length;
-    const queue = clusters.filter((c) => !validated.has(c.id));
+    // auto-detect & skip clusters that already have a cell-type label (= done).
+    // NB: keyed off labels, not `validated` — a cluster can be validated by hand
+    // without a label, and those still need the labeller to run.
+    const alreadyLabelled = clusters.filter((c) => labels[c.id]).length;
+    const queue = clusters.filter((c) => !labels[c.id]);
     const failed: string[] = [];
     setAuto({ running: true, current: null, done: 0, total: queue.length });
     for (let i = 0; i < queue.length; i++) {
       if (autoAbort.current) break;
       const c = queue[i];
-      // skip if it became validated since the queue was built (manual accept / prior pass)
-      if (validatedRef.current.has(c.id)) {
+      // skip if it got labelled since the queue was built (a prior pass)
+      if (labelsRef.current[c.id]) {
         setAuto((a) => ({ ...a, done: i + 1 }));
         continue;
       }
@@ -1345,7 +1350,7 @@ function ClusterStage({
     }
     setAuto((a) => ({ ...a, running: false, current: null, done: a.total }));
     if (!autoAbort.current) {
-      setAutoReport({ already: alreadyValidated, failed });
+      setAutoReport({ already: alreadyLabelled, failed });
       if (failed.length) console.warn("[auto-pilot] could not finish clusters:", failed.join(", "));
     }
   }
@@ -1392,7 +1397,7 @@ function ClusterStage({
         )}
         {!auto.running && autoReport && (autoReport.failed.length > 0 || autoReport.already > 0) && (
           <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, color: autoReport.failed.length ? "#b91c1c" : "#15803d", background: autoReport.failed.length ? "#fef2f2" : "#f0fdf4", padding: "4px 10px", borderRadius: 99 }}>
-            {autoReport.already > 0 && <span>skipped {autoReport.already} already-validated</span>}
+            {autoReport.already > 0 && <span>skipped {autoReport.already} already-labelled</span>}
             {autoReport.failed.length > 0 && (
               <>
                 <span>
