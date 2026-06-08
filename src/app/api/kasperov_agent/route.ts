@@ -209,8 +209,8 @@ function archivistInstructions(cluster: Cluster): string {
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "ABSOLUTE RULE — NO FABRICATION: every number you report MUST come from a query_minifin call you make in THIS turn. NEVER reproduce values from earlier in the conversation, NEVER estimate, NEVER give 'plausible', 'proxy', 'expected', or qualitative-significance numbers, and NEVER write 'I can't query this turn' / 'I can't fetch' — you always have the tool, so call it. If you have not called the tool, you have no numbers to report.",
-    "USE THE RIGHT KIND for a list of genes: mean / average normalised expression → kind='specificity' with the gene LIST (it returns activeMean + activePct + rank per gene). Use kind='across' ONLY for a single gene's full per-cluster table — never loop it over a list. Adjusted p-values → kind='pvalues' with the list. log2FC + %in/out → kind='genes' with the list.",
-    "CALL EVERY KIND THE QUESTION NEEDS, together in the SAME turn. Example: p-values AND mean expression for a gene list → issue BOTH kind='pvalues' (list) and kind='specificity' (list) in one turn, then report the combined table. ALWAYS report whatever your tool calls returned — if a call returned values, use them. NEVER answer that a field is 'not returned by the X endpoint', NEVER say 'I can't run the query' after you have called the tool, and NEVER end with 'if you want, I can fetch…' or tell the curator to run a command themselves. Just fetch and report.",
+    "USE kind='fullstats' WITH THE GENE LIST for any question asking for stats / p-values / mean expression of specific genes — ONE call returns log2FC, %in/out, BH-adjusted p-value, and mean normalised expression for every gene. Do NOT combine pvalues+specificity and do NOT loop 'across' over a list. (Other kinds: top = top-N markers; specificity/across = cross-cluster; coexpress = cell-level co-expression.)",
+    "ALWAYS report whatever your tool call returned — if it returned values, present them. NEVER say a field is 'not returned by the endpoint', NEVER say 'I can't run the query' after calling the tool, NEVER end with 'if you want, I can fetch…', and NEVER tell the curator to run a command/Seurat/Scanpy themselves. Fetch and report.",
     "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with kind='genes' and the full list — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most two tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool.",
     "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
     "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table).",
@@ -248,11 +248,11 @@ const QUERY_TOOL = {
   type: "function",
   name: "query_minifin",
   description:
-    "Query the MiniFin dataset for THIS cluster. kinds: gene/genes = one-vs-rest log2FC + %in/%out for one or several genes (batch several in ONE call); top = top-N up/down markers; search = substring gene match; across = ONE gene's mean expression + %expressing in EVERY cluster + the active cluster's specificity rank; specificity = compact cross-cluster specificity summary for a LIST of genes; pvalues = BH-adjusted one-vs-rest p-values (+log2FC, %in/out) for a gene list; coexpress = cell-level fraction of this cluster's cells co-expressing ALL listed genes. Use across/specificity for cross-cluster questions, pvalues for significance, coexpress for co-expression. Never say data is unavailable — query it.",
+    "Query the MiniFin dataset for THIS cluster. kinds: fullstats = log2FC + %in/out + BH-adjusted p-value + mean normalised expression for a gene LIST, all in ONE call (USE THIS for any 'stats / p-value / mean expression' question about specific genes); gene/genes = log2FC + %in/out only; top = top-N up/down markers; search = substring gene match; across = ONE gene's mean + %expressing in EVERY cluster + specificity rank; specificity = cross-cluster specificity summary for a LIST; pvalues = adjusted p-values for a list; coexpress = cell-level fraction of cells co-expressing ALL listed genes. Never say data is unavailable — query it.",
   parameters: {
     type: "object",
     properties: {
-      kind: { type: "string", enum: ["gene", "genes", "top", "search", "across", "specificity", "pvalues", "coexpress"], description: "gene/genes = log2FC+%in/out; top = top-N; search = substring; across = one gene across clusters; specificity = cross-cluster summary for a list; pvalues = adjusted p-values for a list; coexpress = cell-level co-expression of a list" },
+      kind: { type: "string", enum: ["fullstats", "gene", "genes", "top", "search", "across", "specificity", "pvalues", "coexpress"], description: "fullstats = log2FC+%in/out+padj+mean for a gene list (one call); gene/genes = log2FC+%in/out; top = top-N; search = substring; across = one gene across clusters; specificity = cross-cluster summary for a list; pvalues = adjusted p-values; coexpress = cell-level co-expression" },
       gene: { type: "string", description: "gene for kind=gene or kind=across" },
       genes: { type: "array", items: { type: "string" }, description: "gene list for kind=genes or kind=specificity (up to 40)" },
       direction: { type: "string", enum: ["up", "down"], description: "for kind=top" },
@@ -325,6 +325,30 @@ async function runQuery(argsStr: string, clusterId: string, origin: string): Pro
   if (a.kind === "pvalues" || a.kind === "coexpress") {
     const genes = Array.isArray(a.genes) ? a.genes.slice(0, 60) : a.gene ? [a.gene] : [];
     return await callService(a.kind, String(clusterId), genes);
+  }
+
+  // fullstats: everything for a gene list in ONE call — log2FC + %in/out + padj + mean
+  if (a.kind === "fullstats") {
+    const genes = Array.isArray(a.genes) ? a.genes.slice(0, 40) : a.gene ? [a.gene] : [];
+    const mx = await getMatrix(origin);
+    const ai = mx ? mx.clusters.indexOf(String(clusterId)) : -1;
+    const meanOf = (g: string) => {
+      const row = mx?.genes[g.toLowerCase()];
+      return row && ai >= 0 ? row.m[ai] : null;
+    };
+    if (SERVICE_URL) {
+      const pv = await callService("pvalues", String(clusterId), genes);
+      if (pv && Array.isArray(pv.result)) {
+        const result = pv.result.map((r: any) => ({ ...r, mean: r.found ? meanOf(r.g) : null }));
+        return { cluster: clusterId, nCells: pv.nCells, result, note: "log2FC + %in/out + BH-adjusted p-value + mean normalised expression (CP10K) — complete; nothing further to fetch." };
+      }
+    }
+    // fallback (no live service): mean + %in from the matrix, no p-values
+    const result = genes.map((g: string) => {
+      const row = mx?.genes[g.toLowerCase()];
+      return row && ai >= 0 ? { g, found: true, mean: row.m[ai], pct_in: row.p[ai] } : { g, found: false };
+    });
+    return { cluster: clusterId, result, note: "mean + %in from the matrix; p-values require the live stats service (not configured)." };
   }
 
   // cross-cluster / specificity kinds use the gene × cluster matrix
@@ -555,7 +579,8 @@ export async function POST(req: Request) {
               try {
                 const a = JSON.parse(c.args || "{}");
                 label =
-                  a.kind === "gene" ? `gene ${a.gene}`
+                  a.kind === "fullstats" ? `full stats for ${(a.genes ?? []).length} genes`
+                  : a.kind === "gene" ? `gene ${a.gene}`
                   : a.kind === "genes" ? `${(a.genes ?? []).length} genes`
                   : a.kind === "top" ? `top ${a.n ?? ""} ${a.direction ?? "up"}`
                   : a.kind === "search" ? `search “${a.query}”`
