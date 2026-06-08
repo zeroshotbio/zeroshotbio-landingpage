@@ -420,8 +420,11 @@ function Personas({ onContinue }: { onContinue: () => void }) {
       <div style={{ maxWidth: 880, padding: "64px 28px", textAlign: "center" }}>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#999", fontWeight: 600 }}>Your three specialists</div>
         <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One GPT-5-Mini, three personalities</h1>
-        <p style={{ fontSize: 15, color: "#666", maxWidth: 620, margin: "0 auto 28px" }}>
-          Just ask — your question is routed to the right specialist automatically. Name one (“Archivist, …”) to force it.
+        <p style={{ fontSize: 15, color: "#666", maxWidth: 660, margin: "0 auto 28px" }}>
+          Just ask — your question is routed to the right specialist automatically. To force one, start your message with{" "}
+          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Researcher:</code>,{" "}
+          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Archivist:</code>, or{" "}
+          <code style={{ background: "#efece8", padding: "1px 5px", borderRadius: 4 }}>Reasoner:</code>
         </p>
         <div style={{ display: "flex", gap: 16, flexWrap: "wrap", justifyContent: "center" }}>
           {cards.map(({ mode, pix, blurb }) => {
@@ -929,39 +932,42 @@ function ClusterStage({
               const parsed = { clean: dp.clean, markers: mk.markers };
               const key = `${active.id}:${i}`;
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
+              const hasActions = canAdd || (parsed.markers.length > 0 && incorporated.has(key)) || dp.dispatches.length > 0;
+              const actions = hasActions ? (
+                <>
+                  {canAdd && (
+                    <button
+                      onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[m.mode ?? "research"].color}66`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
+                    >
+                      ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
+                    </button>
+                  )}
+                  {parsed.markers.length > 0 && incorporated.has(key) && (
+                    <span style={{ fontSize: 11.5, color: "#888", fontWeight: 600, alignSelf: "center" }}>✓ added to Top Markers</span>
+                  )}
+                  {dp.dispatches.map((d, di) => (
+                    <button
+                      key={di}
+                      onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
+                      disabled={streaming}
+                      title={d.prompt}
+                      style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
+                    >
+                      {THEME[d.to].icon} ▶ Send to the {THEME[d.to].name} →
+                    </button>
+                  ))}
+                </>
+              ) : undefined;
               return (
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : THEME[m.mode ?? "research"].color, fontWeight: 600, marginBottom: 3 }}>
                     {m.role === "user" ? "You asked" : `GPT-5-Mini${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
                   </div>
                   {m.role === "user" ? (
-                    <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5 }}>{m.content}</div>
+                    <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
                   ) : (
-                    <>
-                      <AgentMessage content={parsed.clean} mode={m.mode} />
-                      {canAdd && (
-                        <button
-                          onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
-                          style={{ marginTop: 8, display: "flex", alignItems: "center", gap: 7, background: THEME[m.mode ?? "research"].bg, border: `1px solid ${THEME[m.mode ?? "research"].color}55`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-                        >
-                          ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
-                        </button>
-                      )}
-                      {parsed.markers.length > 0 && incorporated.has(key) && (
-                        <div style={{ marginTop: 6, fontSize: 11.5, color: "#888", fontWeight: 600 }}>✓ added to Top Markers</div>
-                      )}
-                      {dp.dispatches.map((d, di) => (
-                        <button
-                          key={di}
-                          onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
-                          disabled={streaming}
-                          title={d.prompt}
-                          style={{ marginTop: 8, marginRight: 8, display: "inline-flex", alignItems: "center", gap: 7, background: THEME[d.to].bg, border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
-                        >
-                          {THEME[d.to].icon} ▶ Send this prompt to the {THEME[d.to].name} →
-                        </button>
-                      ))}
-                    </>
+                    <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} />
                   )}
                 </div>
               );
@@ -1149,12 +1155,13 @@ function mdFor(mode: AgentMode) {
   if (mode !== "research") return base; // archivist tables / reasoner prose render plain
   return {
     ...base,
+    // each evidence item: a small source chip + plain text — no boxed section
     li: (p: any) => {
       const src = liSource(p.node);
       if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
       return (
-        <li style={{ listStyle: "none", display: "flex", gap: 8, alignItems: "flex-start", background: th.bg, border: `1px solid ${th.color}33`, borderLeft: `3px solid ${th.color}`, borderRadius: 8, padding: "6px 9px", lineHeight: 1.4 }}>
-          <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, color: th.color, background: "#fff", border: `1px solid ${th.color}55`, borderRadius: 5, padding: "1px 5px", marginTop: 1, whiteSpace: "nowrap" }}>{src}</span>
+        <li style={{ listStyle: "none", display: "flex", gap: 7, alignItems: "flex-start", lineHeight: 1.45, marginBottom: 3 }}>
+          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.4, color: th.color, border: `1px solid ${th.color}55`, borderRadius: 4, padding: "0 4px", marginTop: 2, whiteSpace: "nowrap" }}>{src}</span>
           <span>{p.children}</span>
         </li>
       );
@@ -1175,7 +1182,7 @@ const traceMD = {
   code: (p: any) => <code style={{ background: "#eee", padding: "0 3px", borderRadius: 3 }}>{p.children}</code>,
 };
 
-function AgentMessage({ content, mode = "research" }: { content: string; mode?: AgentMode }) {
+function AgentMessage({ content, mode = "research", actions }: { content: string; mode?: AgentMode; actions?: React.ReactNode }) {
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
   const verdict = m ? m[1].trim() : null;
   const body = (m ? content.slice(0, m.index) : content).trim();
@@ -1224,6 +1231,7 @@ function AgentMessage({ content, mode = "research" }: { content: string; mode?: 
           </div>
         </div>
       )}
+      {actions && <div style={{ marginTop: 10, display: "flex", flexWrap: "wrap", gap: 8 }}>{actions}</div>}
     </div>
   );
 }

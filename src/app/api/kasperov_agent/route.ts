@@ -43,7 +43,9 @@ type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
 type Cluster = { id: string; label?: string; degsUp?: string[]; markers?: Marker[]; nCells?: number };
 
 // --- mode routing (3-way) --------------------------------------------------
-// 1) explicit personality address wins; 2) strong intent verbs; 3) keyword cues.
+// Force a specialist by starting the message with "Researcher:" / "Archivist:" /
+// "Reasoner:"; otherwise route by address, intent verbs, then keyword cues.
+const FORCE_PREFIX = /^\s*(researcher|archivist|reasoner)\s*:/i;
 const NAME_TARGETS: [RegExp, Mode][] = [
   [/\barchivist\b/i, "archivist"],
   [/\breasoner\b/i, "reason"],
@@ -64,6 +66,12 @@ const REASON_CUES =
   /\b(why|how come|could it|would you|might|hypothes|compare|contrast|explain|interpret|do you think|your (take|opinion)|infer|speculat|overall|in general|make sense|implication|confidence|trade[- ]?off|what if)\b/gi;
 
 function classifyMode(text: string, isFirst: boolean): Mode {
+  // -1) explicit force: message starts with "Researcher:" / "Archivist:" / "Reasoner:"
+  const fp = text.match(FORCE_PREFIX);
+  if (fp) {
+    const w = fp[1].toLowerCase();
+    return w === "archivist" ? "archivist" : w === "reasoner" ? "reason" : "research";
+  }
   if (isFirst) return "research"; // the auto-run identity call is always research
   // 0) crafting a prompt for another personality is the Reasoner's job — even
   // though the message names that other personality, do NOT route there.
@@ -161,7 +169,7 @@ function researchInstructions(cluster: Cluster): string {
     "",
     "OUTPUT — skimmable, sectioned markdown, **200 words max**, no preamble:",
     "- One bold one-line identity call (no heading).",
-    "- `## Evidence` — one bullet per key marker. **Begin each bullet with the source in bold caps** — one of **ZFIN**, **ZFA**, **GO**, **NCBI**, **UniProt** — then ` · ` then the gene in bold, the finding, and a markdown link to the record. Example: `**ZFIN** · **gata1a** — erythroid master TF [record](https://zfin.org/...)`.",
+    "- `## Evidence` — one bullet per key marker: the gene in bold, an em-dash, the finding, then a markdown link to the record. Example: `**gata1a** — erythroid master TF [record](https://zfin.org/...)`. Do NOT prefix the source name (ZFIN/ZFA/GO/NCBI/UniProt) — the UI tags it automatically from the link, so writing it again is redundant.",
     "- `## Caveats` — only if genuinely ambiguous; 1–2 short bullets.",
     "- Final line: `**Verdict:** <name>[, <state>] — confidence <low|medium|high>`.",
     "",
