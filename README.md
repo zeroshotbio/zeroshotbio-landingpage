@@ -7,14 +7,15 @@
 ## What's in this repo
 
 The Zeroshot Bio web app: a marketing landing page plus a small family of
-single-cell tools. Two products are live today — the **ZSCAPE chat** and the
-**MiniFin annotation wizard**.
+single-cell tools — the **ZSCAPE chat**, the **MiniFin annotation wizard**, and
+the **DanioType Auto Pilot Cell Type Labeller**.
 
 | Route | What it is | Stack |
 |---|---|---|
 | `/` | Marketing landing page | Next.js + Tailwind |
 | `/zscape_chat` | ZSCAPE perturbation chat | Next.js front-end → Flask backend |
 | `/minifin_annotation_wizard` | Expert wizard for reviewing MiniFin single-cell clusters | Next.js shell → self-contained static bundle + DynamoDB state |
+| `/daniotype_kasperov` | DanioType Auto Pilot Cell Type Labeller — multi-dataset AI cluster-naming wizard + ground-truth scorecard | Next.js + OpenAI `gpt-5-mini` (SSE) |
 
 Older experiments (gene explorer, cross-species / perturbation viz, point
 clouds, dataroom, design language) live under `src/archive/` and are not wired
@@ -75,20 +76,68 @@ are a fixed allow-list (`patrick`, `darien`, `steven`, `creighton`, `harsha`).
 
 ---
 
-## daniotype · kasperov — human-in-the-loop cell-type labelling
+## DanioType Auto Pilot Cell Type Labeller
 
-`https://www.zeroshot.bio/daniotype_kasperov`
+`https://www.zeroshot.bio/daniotype_kasperov` · *(internally "daniotype · kasperov")*
 
-A "video-game" wizard for judging the MiniFin atlas cluster by cluster. A human
-plays referee (Kasparov's human–AI-hybrid thesis): the AI surfaces grounded
-evidence; you make the call. Built natively in Next.js
-(`src/app/daniotype_kasperov/`), not an iframe bundle.
+A "video-game" wizard for naming single-cell clusters cluster by cluster, across
+multiple zebrafish atlases. A human plays referee (Kasparov's human–AI-hybrid
+thesis): the AI surfaces grounded evidence and proposes an `(identity, state)`
+call; you accept, relabel, or dig deeper. It can also **run the whole loop
+itself** (auto-pilot), and — where the source atlas ships published cell-type
+labels — **score its de-novo calls against that ground truth** afterward. Built
+natively in Next.js (`src/app/daniotype_kasperov/`), not an iframe bundle.
 
-**Flow:** intro → global UMAP of the whole atlas → **"View Leiden clusters"**
-(colours all 47, shown at once as a grid — no scroll) → click a cluster →
-**3-personality primer** (pixel-art cards; shows once per page load) → the cluster
-chat screen. Or hit **🤖 Go through each cluster on your own** to let it run the
-whole loop itself (see *Auto-pilot* below).
+It folds in mechanics from the standalone `daniotype` descent (Darien's CTO
+project): de-novo, evidence-grounded naming under **cite-discipline**, an
+`identity × state` label at the **ontology tier the evidence supports**,
+**require-evidence-to-name → abstain/roll-up**, and **multi-proposer consensus** —
+all inside the 3-personality chat UX.
+
+**Flow:** **dataset picker** → intro → global UMAP → **"View clusters"** (colours
+every cluster, one unified grid with a confidence heatmap + ✓-validated marks) →
+click a cluster → **3-personality primer** (pixel-art cards; once per page load) →
+the cluster chat screen. Or hit **🤖 Activate AutoPilot Cluster Labeller** to run
+the whole loop headlessly (see *Auto-pilot*), then **🎯 Score vs ground truth** (see
+*Ground-truth scorecard*).
+
+### Datasets — the picker
+
+The entry screen chooses which atlas the wizard runs on. Each dataset is a
+self-contained asset family under `public/daniotype_kasperov/` selected by a
+`datasetId`; runs persist under per-dataset `localStorage` keys so they never
+collide. A "✓ ground truth" badge marks datasets with published labels to score
+against.
+
+| Dataset | Cells | Clusters | Ground truth | Status |
+|---|---|---|---|---|
+| **MiniFin** | 94,616 (Parse Evercode, 48 hpf) | 47 Leiden | — | ready |
+| **ZSCAPE** | 250k de-novo sample of the 3,231,733-cell Saunders atlas | 55 de-novo | germ_layer / tissue / cell_type_broad / cell_type_sub | ready |
+| **ChemFish** | 2.1M (Barkan et al.) | — | `cell_type` (~348) | soon (needs clustering) |
+| **MegaFin** | 2.1M (Parse Evercode) | — | — (kNN-projected only) | soon (not sequenced) |
+
+### World map
+
+The pre-reveal screen shows the raw UMAP; **"View clusters"** colours the de-novo
+clustering. For a **sampled** dataset (ZSCAPE) the header explains that the
+250,000 cells are a *representative random sample of the full 3.2M-cell atlas*
+spanning all conditions (perturbed + control) — not a biological subset — drawn
+so de-novo clustering stays interactive, and that **we re-cluster from scratch
+with the authors' labels held out** so they can serve as a benchmark. MiniFin
+(the whole 94.6k) shows no sampling note.
+
+A **single cluster grid** doubles as the navigator and the run summary: every
+cluster as a card with its colour dot, our cell-type label (or muted "not yet
+labelled"), a **confidence % badge heat-tinted red→green**, and a **✓ when the
+identity is validated**. Clicking a card opens that cluster's full record.
+
+The clustering itself is computed in `scripts/build_zscape_asset.py` (per
+dataset): de-novo Leiden on a subsample, then **silhouette-gated recursive
+sub-Leiden** (a coarse cluster is split only when the split clears a silhouette
+floor + min-leaf size — the daniotype "sub-cluster large clusters" mechanic).
+Published labels are computed per cluster (majority + purity at each tier) and
+written to a **separate `groundtruth.json` that is never sent to the agent**, so
+the labeller can't peek at the answer.
 
 **Cluster screen layout:** a focused-cluster UMAP on the left with three
 draggable + resizable HUD panels floating over it (**World Map**, **Top Markers**,
@@ -129,7 +178,7 @@ heuristics.
 - "➕ Add N insights to Top Markers" (from a hidden ` kasperov-markers ` block).
 - "▶ Send to the Researcher/Archivist" dispatch buttons (from a ` kasperov-dispatch ` block).
 - "▲/▼ Promote X to UP/DOWN-regulated" (from a ` kasperov-promote ` block).
-- "✓ Accept identity: \<label\>" (from a ` kasperov-conclude ` block — the Reasoner's settled call).
+- "✓ Accept identity: \<label\>" (from a ` kasperov-conclude ` block — the Reasoner's settled `(identity, state, tier)` call). When require-evidence fails it instead reads **"⤴ Accept (abstain/roll-up)"** at the deepest defensible tier (see *Daniotype mechanics*).
 - "🧠 Ask Reasoner to Summarize and Suggest Next Steps" at the end of every non-Reasoner response.
 - "▶ Yes — just run it and show everything" — a safety net that appears only when a specialist *defers* (asks you to choose), re-forcing that personality to fetch and report it all.
 - Researcher answers render as `**gene** — finding [record]` lines with a small source chip (ZFIN/ZFA/GO/…); the **Verdict** is pulled into a personality-coloured callout with a greyscale confidence chip.
@@ -165,6 +214,36 @@ All control blocks parse whether the model emits them **fenced or bare**, and ar
 - **Researcher** — narrow follow-ups (map a locus, find a synonym) get a specific
   answer, not a re-run of the full identity verdict.
 
+### Daniotype mechanics (label quality)
+
+Folded into the 3-personality loop to harden the calls — the headline lift over a
+bare "LLM names the cluster" baseline:
+
+- **`identity × state × tier` conclude.** The Reasoner's settled call is
+  `{identity, tier, state, cited_markers, decision, confidence}`, not a flat
+  label. `state ∈ {progenitor, cycling, quiescent, mature, stress, none}` applies
+  only at the cell-type tier; coarser tiers carry identity only. Renders as
+  `identity · state` (e.g. *hematopoietic progenitor · cycling*).
+- **Require-evidence-to-name — enforced, not just prompted.**
+  `enforceCiteDiscipline` (client) checks that `cited_markers` are actually drawn
+  from *this cluster's* DEGs (its `degsUp` or genes promoted into the panel). A
+  confident `"assign"` with no grounded marker is **downgraded to an abstention
+  that rolls up to the deepest defensible tier** — shown as
+  *"⤴ Accept (abstain/roll-up): \<tier\>"*. Applied on both the manual Accept
+  button and the auto-pilot accept.
+- **K = 2 consensus in auto-pilot.** Each cluster gets two *independent*
+  Researcher proposers — a default read and an alternative-hypothesis read, each
+  from a fresh context so they can't anchor on each other — and the Reasoner
+  **adjudicates the two** before concluding. Costs one extra research call per
+  cluster.
+- **Back-compatible.** `splitConclude` still parses the legacy flat
+  `{label, confidence, done}` block.
+
+> **Deferred:** real *structured* ZFIN/ZFA/GO tools (an `expression_lookup`
+> against the curated ZFIN wildtype-expression table + a ZFA `develops_from`
+> lineage walker) — an ontology-data-layer build rather than a prompt change. The
+> Researcher still grounds via restricted web search over those domains today.
+
 ### `query_minifin` tool — kinds & data sources
 
 | Kind | Returns | Backed by |
@@ -178,10 +257,14 @@ All control blocks parse whether the model emits them **fenced or bare**, and ar
 | `coexpress` | cell-level fraction co-expressing **all** listed genes | **live microservice** |
 | `fullstats` | log2FC + %in/out + **p-value + mean expression** for a gene list, **in one call** | matrix + live service merged |
 
-Static files live in `public/daniotype_kasperov/archivist/` (per-cluster
-`<id>.json` profiles + `gene_matrix.json`, 24,252 genes × 47 clusters). All
-derived from the MiniFin **h5ad** by `scripts/extract_minifin_umap.py` and
-`scripts/compute_minifin_archivist.py` (run with `/data/.venv/bin/python`).
+The archivist tool is **per-dataset**: the agent route picks the archivist
+extract + static-asset base from the request's `datasetId`. Static files live
+under `public/daniotype_kasperov/archivist/` (MiniFin: 24,252 genes × 47
+clusters) and `public/daniotype_kasperov/datasets/<id>/archivist/` (ZSCAPE:
+16,718 genes × 55 clusters) — per-cluster `<id>.json` profiles + `gene_matrix.json`,
+derived from each **h5ad** by the build scripts below. The live p-value /
+co-expression microservice is **MiniFin-only**; other datasets answer from the
+static archivist (the `pvalues`/`coexpress`/`fullstats` kinds degrade gracefully).
 
 > **Security posture (critical):** the raw **`.h5ad` is NEVER served** — it lives
 > only on the EC2 box, read solely by the microservice, which returns only
@@ -217,21 +300,31 @@ from view**, turning them into buttons:
 - ` kasperov-markers ` — `[{g, l2fc, p1, p2, note}]` → "Add to Top Markers".
 - ` kasperov-dispatch ` — `[{to:"researcher"|"archivist", prompt}]` → "Send to …".
 - ` kasperov-promote ` — `[{gene, dir:"up"|"down", note}]` → "Promote to UP/DOWN".
-- ` kasperov-conclude ` — `{label, confidence, done}` → the Reasoner's settled
-  identity; surfaces "✓ Accept identity" and drives auto-pilot's accept-and-advance.
+- ` kasperov-conclude ` — `{identity, tier, state, cited_markers, decision,
+  confidence, done}` (legacy `{label, …}` still parses) → the Reasoner's settled
+  call; surfaces "✓ Accept identity" (or "⤴ Accept (abstain/roll-up)" when
+  cite-discipline downgrades it) and drives auto-pilot's accept-and-advance.
 
 ### Auto-pilot — the system runs itself
 
-**🤖 "Go through each cluster on your own"** (World Map) drives the whole loop with
-no human in the seat. Per un-validated cluster it: runs the identity pass
-(Researcher) → repeatedly asks the Reasoner to summarise + decide → fires the
-Reasoner's `kasperov-dispatch` prompts to the Researcher/Archivist → auto-adds
-their `kasperov-markers` → and when the Reasoner emits a `kasperov-conclude`
-block, records the label, **accepts the identity, and advances**. Bounded to
-`AUTO_MAX_ROUNDS` (4) Reasoner rounds/cluster (best-effort accept if it maxes out)
-so it can't loop forever. The view follows each cluster live; a top-bar badge
-shows progress with a **■ Stop**; inputs are disabled while it runs; the routing
-animation is skipped for speed; already-validated clusters are skipped (resumable).
+**🤖 "Activate AutoPilot Cluster Labeller"** (World Map) drives the whole loop with
+no human in the seat. Per un-**labelled** cluster it: runs **two independent
+identity proposers** (Researcher; default + alternative-hypothesis) → asks the
+Reasoner to **reconcile** them and summarise + decide → fires the Reasoner's
+`kasperov-dispatch` prompts to the Researcher/Archivist → auto-adds their
+`kasperov-markers` → and when the Reasoner emits a `kasperov-conclude` block,
+**enforces require-evidence** (roll up to abstain if ungrounded), records the
+label, **accepts, and advances**. Bounded to `AUTO_MAX_ROUNDS` (4) Reasoner
+rounds/cluster (best-effort accept if it maxes out) so it can't loop forever.
+
+**Resilience:** each stream has a hard timeout + one retry, so a hung/failed
+request can't stall the sweep; a cluster that still errors is recorded and
+skipped, then surfaced in a post-run banner with a **↻ Retry these**. "Done" is
+keyed off **having a label**, not merely being validated (a cluster can be
+validated by hand without a label), so the sweep auto-skips already-labelled
+clusters and resumes cleanly. The view follows each cluster live; a top-bar badge
+shows progress with **■ Stop**; inputs are disabled while it runs; the routing
+animation is skipped for speed.
 
 Implementation note: `streamAgent(cluster, msgs, mode, fast)` returns the final
 message array, so the loop chains calls headlessly while the UI mirrors the active
@@ -239,10 +332,32 @@ cluster. State (transcripts/markers/confidence/labels) lives in the **top-level
 component** — not `ClusterStage`, which unmounts on the map — so navigating
 map↔cluster preserves every cluster's record.
 
+### Ground-truth scorecard
+
+For a dataset with published labels, **🎯 Score vs ground truth** (World Map, shown
+once ≥1 cluster is labelled) opens a scorecard that grades our de-novo calls
+against the authors' labels at **all four ontology tiers** (germ_layer → tissue →
+cell_type_broad → cell_type_sub).
+
+- **`/api/kasperov_score`** — an LLM judge (`gpt-5-mini`, strict `json_schema`)
+  decides, per tier, whether our label is **semantically** the same biological
+  entity as the reference — synonyms / ontology / lineage equivalence, **numeric
+  sub-suffixes ignored** ("periderm 10" → "periderm"), **not** string match. It
+  enforces **depth discipline**: a correct-but-coarser label scores ✗ at the finer
+  tier, so abstain/roll-up calls produce the honest depth gradient instead of
+  inflated fine-tier credit.
+- **UI** — four depth-stratified agreement bars (heat-tinted red→green,
+  `matched/total`) + a per-cluster table of ours-vs-theirs with ✓/✗ and the
+  judge's note on hover. Scoring batches across clusters with concurrency + a
+  progress readout; the result is cached per label-set in `localStorage` with a
+  **↻ Re-run** control. The reference (`groundtruth.json`) is loaded only here —
+  never by the labelling agent.
+
 ### Run summary, reset & export (World Map)
 
-- **Run summary** — each labelled cluster with its cell-type identity
-  (≤15 words) next to the cluster name; click to reopen its full record.
+- **Cluster grid** — the unified navigator/run-summary grid: every cluster with
+  its label, confidence heatmap badge, and ✓-validated mark; click to reopen its
+  full record.
 - **↺ Reset run** — clears validations, labels, and saved history (confirm-gated).
 - **⬇ Export results (JSON)** — the whole run: per-cluster `{finalLabel,
   confidence, addedMarkers, transcript, validated}`.
@@ -251,9 +366,10 @@ map↔cluster preserves every cluster's record.
 
 | Route | Purpose |
 |---|---|
-| `/api/kasperov_agent` (SSE) | the 3-personality agent + `query_minifin` tool loop |
+| `/api/kasperov_agent` (SSE) | the 3-personality agent + per-dataset archivist tool loop |
 | `/api/kasperov_confidence` | live confidence score + ≤100-word summary |
-| `https://zscape.zeroshot.bio/minifin/query` | live p-values / co-expression (token-gated) |
+| `/api/kasperov_score` | ground-truth scorecard — per-tier semantic agreement |
+| `https://zscape.zeroshot.bio/minifin/query` | live p-values / co-expression (token-gated, MiniFin) |
 
 ### Operational notes
 
@@ -263,19 +379,29 @@ map↔cluster preserves every cluster's record.
   answer), and retries once on a transient upstream 5xx. The microservice is
   sub-second, not the bottleneck; a rare "(time limit)" is an upstream OpenAI
   latency blip — just re-ask.
-- **Persistence (POC).** Validated set + cell-type labels persist to
-  `localStorage` (`daniotype_kasperov_v3`). The full run — transcripts + added
-  markers + confidence — is persisted (debounced) to `daniotype_kasperov_results`
-  and restored on load, so revisiting any cluster shows its record and the run
-  survives reload. On storage-quota overflow it falls back to markers+confidence
-  only. (The primer is intentionally **not** persisted — it shows once per load.)
+- **Persistence (POC).** Keyed **per dataset**: validated set + labels under
+  `daniotype_kasperov_v3:<id>`; the full run (transcripts + markers + confidence)
+  under `daniotype_kasperov_results:<id>` (debounced, restored on load, falls back
+  to markers+confidence on quota overflow); the scorecard result under
+  `daniotype_kasperov_score:<id>`. So each dataset's run is independent and
+  survives reload. (The primer is intentionally **not** persisted — once per load.)
 
 ### Reproduce the data assets
 
 ```bash
+# MiniFin (the original 94.6k atlas)
 /data/.venv/bin/python scripts/extract_minifin_umap.py        # public UMAP + markers
 /data/.venv/bin/python scripts/compute_minifin_archivist.py   # per-cluster profiles + gene_matrix
+
+# ZSCAPE (de-novo cluster + markers + held-out ground truth, one script)
+/data/.venv/bin/python scripts/build_zscape_asset.py          # umap.json + archivist/ + groundtruth.json
 ```
+
+Per-dataset assets land under `public/daniotype_kasperov/datasets/<id>/`
+(`umap.json`, `archivist/`, `groundtruth.json`) plus a server-side
+`<id>_archivist.json` next to the agent route. `build_zscape_asset.py` does the
+de-novo Leiden + silhouette-gated sub-clustering and writes the held-out
+`groundtruth.json` the scorecard scores against.
 
 ---
 
