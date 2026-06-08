@@ -425,6 +425,48 @@ export default function KasperovClient() {
     URL.revokeObjectURL(url);
   }
 
+  // re-load a previously exported run (the exportResults shape) into state for
+  // THIS dataset — restores labels, validations, confidence, markers, transcripts.
+  function importResults(data: any) {
+    if (!dataset) return;
+    if (!data || !Array.isArray(data.clusters)) {
+      window.alert("That doesn't look like a daniotype run export (no `clusters` array).");
+      return;
+    }
+    if (data.dataset && String(data.dataset).toLowerCase() !== dataset.name.toLowerCase()) {
+      if (!window.confirm(`This file was exported from "${data.dataset}", but you're on ${dataset.name}. Import anyway? Cluster ids may not line up.`)) return;
+    }
+    const hasWork = Object.keys(labels).length > 0 || validated.size > 0;
+    if (hasWork && !window.confirm(`Replace the current ${dataset.name} run with the imported one? Your current labels for this dataset will be overwritten.`)) return;
+
+    const nLabels: Record<string, string> = {};
+    const nConf: Record<string, { pct: number; why: string }> = {};
+    const nAug: Record<string, Marker[]> = {};
+    const nTrans: Record<string, ChatMsg[]> = {};
+    const nVal = new Set<string>();
+    let loaded = 0;
+    for (const c of data.clusters) {
+      if (!c || c.id == null) continue;
+      const id = String(c.id);
+      if (c.finalLabel) {
+        nLabels[id] = String(c.finalLabel);
+        loaded++;
+      }
+      if (c.validated) nVal.add(id);
+      if (c.confidence && typeof c.confidence.pct === "number") nConf[id] = { pct: c.confidence.pct, why: String(c.confidence.why ?? "") };
+      if (Array.isArray(c.addedMarkers) && c.addedMarkers.length) nAug[id] = c.addedMarkers;
+      if (Array.isArray(c.transcript) && c.transcript.length) nTrans[id] = c.transcript;
+    }
+    setLabels(nLabels);
+    setValidated(nVal);
+    setConfidence(nConf);
+    setAugmented(nAug);
+    setTranscripts(nTrans);
+    setIncorporated(new Set());
+    setRevealed(true); // so the cluster grid is visible immediately
+    window.alert(`Imported ${loaded} labelled cluster${loaded === 1 ? "" : "s"} into the ${dataset.name} run.`);
+  }
+
   function startAutopilot() {
     if (!clusters) return;
     // "done" == has a cell-type label (NOT merely validated — a cluster can be
@@ -491,13 +533,14 @@ export default function KasperovClient() {
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
         onScore={() => setStage("scorecard")}
+        onImport={importResults}
         labels={labels}
         confidence={confidence}
       />
     );
 
   if (stage === "scorecard")
-    return <Scorecard dataset={dataset} clusters={clusters} labels={labels} confidence={confidence} onBack={() => setStage("map")} />;
+    return <Scorecard dataset={dataset} clusters={clusters} labels={labels} confidence={confidence} onImport={importResults} onBack={() => setStage("map")} />;
 
   const active = clusters.find((c) => c.id === activeId)!;
 
@@ -539,6 +582,41 @@ function Centered({ children }: { children: React.ReactNode }) {
     <div style={{ minHeight: "100vh", background: PAPER, color: "#777", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>
       {children}
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Import button — reads a previously exported run JSON and hands it to onImport.
+// Shared by the World Map controls and the scorecard.
+// ---------------------------------------------------------------------------
+function ImportButton({ onImport, label, style }: { onImport: (data: unknown) => void; label: string; style?: React.CSSProperties }) {
+  const ref = useRef<HTMLInputElement | null>(null);
+  return (
+    <>
+      <input
+        ref={ref}
+        type="file"
+        accept="application/json,.json"
+        style={{ display: "none" }}
+        onChange={(e) => {
+          const f = e.target.files?.[0];
+          if (!f) return;
+          const r = new FileReader();
+          r.onload = () => {
+            try {
+              onImport(JSON.parse(String(r.result)));
+            } catch {
+              window.alert("Couldn't parse that file as JSON.");
+            }
+          };
+          r.readAsText(f);
+          e.target.value = ""; // let the same file be re-picked
+        }}
+      />
+      <button onClick={() => ref.current?.click()} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, ...style }}>
+        {label}
+      </button>
+    </>
   );
 }
 
@@ -805,6 +883,7 @@ function MapStage({
   onReset,
   onSwitchDataset,
   onScore,
+  onImport,
   labels = {},
   confidence = {},
 }: {
@@ -820,6 +899,7 @@ function MapStage({
   onReset: () => void;
   onSwitchDataset: () => void;
   onScore: () => void;
+  onImport: (data: unknown) => void;
   labels?: Record<string, string>;
   confidence?: Record<string, { pct: number; why: string }>;
 }) {
@@ -899,6 +979,7 @@ function MapStage({
                   </button>
                 )}
                 <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
+                <ImportButton onImport={onImport} label="⬆ Import results (JSON)" />
                 {(labelled.length > 0 || validated.size > 0) && (
                   <button onClick={onReset} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, color: "#b91c1c", borderColor: "#e7c3c3" }}>↺ Reset run</button>
                 )}
@@ -991,12 +1072,14 @@ function Scorecard({
   clusters,
   labels,
   confidence,
+  onImport,
   onBack,
 }: {
   dataset: DatasetDef;
   clusters: Cluster[];
   labels: Record<string, string>;
   confidence: Record<string, { pct: number; why: string }>;
+  onImport: (data: unknown) => void;
   onBack: () => void;
 }) {
   const labelled = useMemo(() => clusters.filter((c) => labels[c.id]), [clusters, labels]);
@@ -1012,6 +1095,7 @@ function Scorecard({
 
   // load ground truth (+ any cached score for this exact label set)
   useEffect(() => {
+    ranRef.current = false; // a new label-set (incl. an import) re-arms auto-scoring
     if (!dataset.groundTruthUrl) {
       setErr("This dataset has no published ground truth.");
       setStatus("error");
@@ -1125,6 +1209,7 @@ function Scorecard({
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
           <button onClick={onBack} style={btnGhost}>← World map</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>{dataset.name} · ground-truth scorecard</div>
+          <ImportButton onImport={onImport} label="⬆ Import run (JSON)" style={{ marginLeft: "auto", padding: "8px 14px", fontSize: 13 }} />
         </div>
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "4px 0 2px" }}>Our de-novo labels vs the published atlas</h2>
         <p style={{ color: "#666", fontSize: 14.5, margin: "0 0 18px", lineHeight: 1.5 }}>
