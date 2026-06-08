@@ -21,9 +21,19 @@ import "server-only";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Server-side richer MiniFin extract the Archivist queries (full up + computed
-// down markers + dataset cell counts per cluster). Bundled at build.
-import ARCHIVIST_DATA from "./minifin_archivist.json";
+// Server-side richer per-dataset extract the Archivist queries (full up +
+// computed down markers + dataset cell counts per cluster). Bundled at build.
+import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
+import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
+
+// One agent route serves every dataset; the body's `dataset` id selects which
+// archivist extract + static-asset base + display name to use.
+type DatasetCfg = { id: string; name: string; base: string; archivist: any };
+const DATASET_CFG: Record<string, DatasetCfg> = {
+  minifin: { id: "minifin", name: "MiniFin", base: "/daniotype_kasperov/archivist", archivist: MINIFIN_ARCHIVIST as any },
+  zscape: { id: "zscape", name: "ZSCAPE", base: "/daniotype_kasperov/datasets/zscape/archivist", archivist: ZSCAPE_ARCHIVIST as any },
+};
+const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
 const MODEL = process.env.KASPEROV_OPENAI_MODEL || "gpt-5-mini";
 
@@ -122,15 +132,15 @@ function mtable(ms: StatMarker[]): string[] {
 
 // Build the authoritative facts the Archivist quotes — from the server-side
 // MiniFin extract when available, else the markers the client sent.
-function rawFactsBlock(cluster: Cluster): string {
-  const data: any = ARCHIVIST_DATA as any;
+function rawFactsBlock(cluster: Cluster, ds: DatasetCfg): string {
+  const data: any = ds.archivist;
   const rec = data?.clusters?.[String(cluster.id)];
   if (rec) {
     const up: StatMarker[] = rec.up ?? [];
     const down: StatMarker[] = rec.down ?? [];
     return [
       `Cluster: ${cluster.label ?? cluster.id}`,
-      `Cells in this cluster: ${rec.nCells}. Total cells in the MiniFin dataset: ${data.datasetCells}.`,
+      `Cells in this cluster: ${rec.nCells}. Total cells in the ${ds.name} dataset: ${data.datasetCells}.`,
       "",
       `UP-REGULATED markers (one-vs-rest, split-pipe leiden) — ${up.length} available, sorted by score:`,
       ...mtable(up),
@@ -179,7 +189,7 @@ function researchInstructions(cluster: Cluster): string {
   ].join("\n") + MARKER_BLOCK_INSTR;
 }
 
-function reasonInstructions(cluster: Cluster): string {
+function reasonInstructions(cluster: Cluster, ds: DatasetCfg): string {
   const up = (cluster.degsUp ?? []).join(", ");
   return [
     "You are GPT-5-Mini in REASONER mode — a generalist scientific thinker. You synthesize across everything available: the cluster's markers, the conversation so far, and your own biological knowledge. You do NOT have web search here and you are NOT restricted to raw dataset values — you reason and explain.",
@@ -187,7 +197,7 @@ function reasonInstructions(cluster: Cluster): string {
     "",
     "STYLE: Write clean, well-formed prose — complete sentences with normal capitalization, punctuation, and grammar, like a thoughtful colleague. Keep it concise (~150 words). When you list things, use proper markdown bullets (each line starting with '- '), never bare line breaks or dumped gene lists. Don't over-structure or add headings. Be clear you are reasoning/synthesising, not quoting curated records or dataset values.",
     "",
-    "SCOPE: You work purely with this dataset and the two in-app tools (Researcher = ZFIN/ZFA/GO; Archivist = raw MiniFin values incl. p-values, specificity, co-expression). NEVER mention laboratory, bench, wet-lab, experiments, or their absence — it is irrelevant here. Do not write phrases like 'non-wet-lab', 'no bench work', or suggest the curator run code/Seurat/Scanpy themselves. The two personalities do all the work.",
+    `SCOPE: You work purely with this dataset and the two in-app tools (Researcher = ZFIN/ZFA/GO; Archivist = raw ${ds.name} values incl. p-values, specificity, co-expression). NEVER mention laboratory, bench, wet-lab, experiments, or their absence — it is irrelevant here. Do not write phrases like 'non-wet-lab', 'no bench work', or suggest the curator run code/Seurat/Scanpy themselves. The two personalities do all the work.`,
     "",
     "KNOW WHEN IT'S DONE — this is critical. Before proposing ANY follow-up query, check the conversation: if that lookup has already been answered, DO NOT propose it again (re-dispatching answered queries is the #1 failure here). When the evidence has converged — strong, consistent, statistically significant markers all pointing one way — SAY the call is settled and that further queries won't change it. Do NOT manufacture 'next steps' to chase a higher confidence number; confidence is not a quota to maximise. If the curator asks 'are we done / have we exhausted them', answer directly: say YES and summarise the conclusion when the identity is well-supported and only minor, non-decisive curation gaps remain (e.g. an uncurated si:… locus). Only say no when there is a SPECIFIC, not-yet-asked query that could actually change the answer.",
     "",
@@ -213,11 +223,11 @@ function reasonInstructions(cluster: Cluster): string {
   ].join("\n") + MARKER_BLOCK_INSTR;
 }
 
-function archivistInstructions(cluster: Cluster): string {
+function archivistInstructions(cluster: Cluster, ds: DatasetCfg): string {
   return [
-    "You are GPT-5-Mini in ARCHIVIST mode — a raw-data archivist for the MiniFin single-cell dataset.",
+    `You are GPT-5-Mini in ARCHIVIST mode — a raw-data archivist for the ${ds.name} single-cell dataset.`,
     PERSONAS_CONTEXT,
-    "Answer ONLY from the MiniFin facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: \"That isn't in the MiniFin export.\"",
+    `Answer ONLY from the ${ds.name} facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: "That isn't in the ${ds.name} export."`,
     "",
     "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
     "ABSOLUTE RULE — NO FABRICATION: every number you report MUST come from a query_minifin call you make in THIS turn. NEVER reproduce values from earlier in the conversation, NEVER estimate, NEVER give 'plausible', 'proxy', 'expected', or qualitative-significance numbers, and NEVER write 'I can't query this turn' / 'I can't fetch' — you always have the tool, so call it. If you have not called the tool, you have no numbers to report.",
@@ -233,12 +243,12 @@ function archivistInstructions(cluster: Cluster): string {
     "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
     "",
     "OUTPUT — markdown, **220 words max**:",
-    "- `## Raw facts (MiniFin)` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.",
+    `- \`## Raw facts (${ds.name})\` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.`,
     "- `## Read` — OPTIONAL, only if the user asked for interpretation; ≤60 words, clearly your own inference, not dataset fact.",
     "Never fabricate numbers or genes that are not in the facts below.",
     "",
-    "=== MINIFIN FACTS (authoritative; quote exactly) ===",
-    rawFactsBlock(cluster),
+    `=== ${ds.name.toUpperCase()} FACTS (authoritative; quote exactly) ===`,
+    rawFactsBlock(cluster, ds),
     "=== END FACTS ===",
   ].join("\n") + MARKER_BLOCK_INSTR;
 }
@@ -278,30 +288,31 @@ const QUERY_TOOL = {
 };
 
 type Profile = { id: string; nCells: number; datasetCells: number; nGenes: number; genes: StatMarker[] };
-const profileCache = new Map<string, Profile | null>();
-async function getProfile(clusterId: string, origin: string): Promise<Profile | null> {
-  if (profileCache.has(clusterId)) return profileCache.get(clusterId)!;
+const profileCache = new Map<string, Profile | null>(); // keyed by `${ds.id}:${clusterId}`
+async function getProfile(clusterId: string, origin: string, ds: DatasetCfg): Promise<Profile | null> {
+  const key = `${ds.id}:${clusterId}`;
+  if (profileCache.has(key)) return profileCache.get(key)!;
   let prof: Profile | null = null;
   try {
-    const r = await fetch(`${origin}/daniotype_kasperov/archivist/${clusterId}.json`);
+    const r = await fetch(`${origin}${ds.base}/${clusterId}.json`);
     if (r.ok) prof = (await r.json()) as Profile;
   } catch {}
-  profileCache.set(clusterId, prof);
+  profileCache.set(key, prof);
   return prof;
 }
 
 // gene × cluster matrix (mean + pct per cluster) for cross-cluster / specificity queries
 type GeneMatrix = { clusters: string[]; clusterSizes: number[]; datasetCells: number; nGenes: number; genes: Record<string, { m: number[]; p: number[] }> };
-let matrixCache: GeneMatrix | null = null;
-let matrixTried = false;
-async function getMatrix(origin: string): Promise<GeneMatrix | null> {
-  if (matrixCache || matrixTried) return matrixCache;
-  matrixTried = true;
+const matrixCache = new Map<string, GeneMatrix | null>(); // keyed by ds.id
+async function getMatrix(origin: string, ds: DatasetCfg): Promise<GeneMatrix | null> {
+  if (matrixCache.has(ds.id)) return matrixCache.get(ds.id)!;
+  let mx: GeneMatrix | null = null;
   try {
-    const r = await fetch(`${origin}/daniotype_kasperov/archivist/gene_matrix.json`);
-    if (r.ok) matrixCache = (await r.json()) as GeneMatrix;
+    const r = await fetch(`${origin}${ds.base}/gene_matrix.json`);
+    if (r.ok) mx = (await r.json()) as GeneMatrix;
   } catch {}
-  return matrixCache;
+  matrixCache.set(ds.id, mx);
+  return mx;
 }
 // Live MiniFin compute service (p-values + cell-level co-expression). Optional:
 // set MINIFIN_SERVICE_URL (+ MINIFIN_SERVICE_TOKEN) to enable; otherwise these
@@ -328,7 +339,7 @@ async function callService(kind: string, clusterId: string, genes: string[]): Pr
   }
 }
 
-async function runQuery(argsStr: string, clusterId: string, origin: string): Promise<any> {
+async function runQuery(argsStr: string, clusterId: string, origin: string, ds: DatasetCfg): Promise<any> {
   let a: any = {};
   try {
     a = JSON.parse(argsStr || "{}");
@@ -343,7 +354,7 @@ async function runQuery(argsStr: string, clusterId: string, origin: string): Pro
   // fullstats: everything for a gene list in ONE call — log2FC + %in/out + padj + mean
   if (a.kind === "fullstats") {
     const genes = Array.isArray(a.genes) ? a.genes.slice(0, 40) : a.gene ? [a.gene] : [];
-    const mx = await getMatrix(origin);
+    const mx = await getMatrix(origin, ds);
     const ai = mx ? mx.clusters.indexOf(String(clusterId)) : -1;
     const meanOf = (g: string) => {
       const row = mx?.genes[g.toLowerCase()];
@@ -366,7 +377,7 @@ async function runQuery(argsStr: string, clusterId: string, origin: string): Pro
 
   // cross-cluster / specificity kinds use the gene × cluster matrix
   if (a.kind === "across" || a.kind === "specificity") {
-    const mx = await getMatrix(origin);
+    const mx = await getMatrix(origin, ds);
     if (!mx) return { error: "gene matrix unavailable" };
     const ai = mx.clusters.indexOf(String(clusterId));
     const ctx = { cluster: clusterId, nCells: ai >= 0 ? mx.clusterSizes[ai] : null, datasetCells: mx.datasetCells, note: "mean = normalised mean expression (CP10K); pct = fraction of cells expressing. No p-values in this export." };
@@ -399,7 +410,7 @@ async function runQuery(argsStr: string, clusterId: string, origin: string): Pro
     return { ...ctx, query: a, result };
   }
 
-  const p = await getProfile(clusterId, origin);
+  const p = await getProfile(clusterId, origin, ds);
   if (!p) return { error: "profile unavailable for this cluster" };
   const ctx = { cluster: clusterId, nCells: p.nCells, datasetCells: p.datasetCells, genesProfiled: p.nGenes };
   const lookup = (name: string) => {
@@ -525,6 +536,7 @@ export async function POST(req: Request) {
     return new Response("bad json", { status: 400 });
   }
 
+  const ds = dsOf(body?.dataset);
   const cluster: Cluster = body?.cluster ?? { id: String(body?.clusterId ?? "?") };
   const messages: ChatMessage[] = Array.isArray(body?.messages)
     ? body.messages
@@ -555,7 +567,7 @@ export async function POST(req: Request) {
         return done();
       }
 
-      const instructions = mode === "archivist" ? archivistInstructions(cluster) : mode === "reason" ? reasonInstructions(cluster) : researchInstructions(cluster);
+      const instructions = mode === "archivist" ? archivistInstructions(cluster, ds) : mode === "reason" ? reasonInstructions(cluster, ds) : researchInstructions(cluster);
       const tools = mode === "research" ? [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }] : mode === "archivist" ? [QUERY_TOOL] : undefined;
 
       const ctrl = new AbortController();
@@ -588,7 +600,7 @@ export async function POST(req: Request) {
             toolRounds++;
             const outputs: any[] = [];
             for (const c of res.calls) {
-              let label = "MiniFin";
+              let label = ds.name;
               try {
                 const a = JSON.parse(c.args || "{}");
                 label =
@@ -601,10 +613,10 @@ export async function POST(req: Request) {
                   : a.kind === "specificity" ? `specificity of ${(a.genes ?? []).length} genes`
                   : a.kind === "pvalues" ? `p-values for ${(a.genes ?? []).length} genes`
                   : a.kind === "coexpress" ? `co-expression of ${(a.genes ?? []).length} genes`
-                  : "MiniFin";
+                  : ds.name;
               } catch {}
-              sse(controller, enc, { t: "status", v: `Querying MiniFin: ${label}…` });
-              const out = await runQuery(c.args, String(cluster.id), origin);
+              sse(controller, enc, { t: "status", v: `Querying ${ds.name}: ${label}…` });
+              const out = await runQuery(c.args, String(cluster.id), origin, ds);
               outputs.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) });
             }
             prevId = res.responseId;

@@ -8,9 +8,75 @@ import remarkGfm from "remark-gfm";
 const PAPER = "#f6f4f2";
 const INK = "#2b2b2b";
 const ACCENT = "#0e7490";
-const STORAGE_KEY = "daniotype_kasperov_v3";
-const RESULTS_KEY = "daniotype_kasperov_results"; // full run history: transcripts + markers + confidence
-const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
+const STORAGE_BASE = "daniotype_kasperov_v3";
+const RESULTS_BASE = "daniotype_kasperov_results"; // full run history: transcripts + markers + confidence
+// per-dataset storage so each dataset's run is independent
+const storageKey = (d: string) => `${STORAGE_BASE}:${d}`;
+const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
+
+// ---------------------------------------------------------------------------
+// Dataset registry — each entry points the same wizard at a different atlas.
+// ZSCAPE / CHEMFISH carry published cell-type labels (ground truth) we score
+// our de-novo names against; MiniFin has none; MegaFin isn't sequenced yet.
+// ---------------------------------------------------------------------------
+type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin";
+interface DatasetDef {
+  id: DatasetId;
+  name: string;
+  tagline: string;
+  blurb: string;
+  dataUrl: string; // umap.json
+  archivistBase: string; // dir holding <cluster>.json + gene_matrix.json
+  groundTruthUrl: string | null; // published-label benchmark, or null
+  status: "ready" | "soon";
+}
+const DATASETS: DatasetDef[] = [
+  {
+    id: "minifin",
+    name: "MiniFin",
+    tagline: "Parse Evercode · 48 hpf · 94.6k cells · 47 Leiden clusters",
+    blurb:
+      "Our in-house zebrafish reference (Parse Biosciences Evercode). No external cell-type labels — the original sandbox for the labelling wizard.",
+    dataUrl: "/daniotype_kasperov/minifin_umap.json",
+    archivistBase: "/daniotype_kasperov/archivist",
+    groundTruthUrl: null,
+    status: "ready",
+  },
+  {
+    id: "zscape",
+    name: "ZSCAPE",
+    tagline: "Saunders et al. · 3.2M cells · 55 de-novo clusters",
+    blurb:
+      "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
+    dataUrl: "/daniotype_kasperov/datasets/zscape/umap.json",
+    archivistBase: "/daniotype_kasperov/datasets/zscape/archivist",
+    groundTruthUrl: "/daniotype_kasperov/datasets/zscape/groundtruth.json",
+    status: "ready",
+  },
+  {
+    id: "chemfish",
+    name: "ChemFish",
+    tagline: "Barkan et al. · 2.1M cells · published cell_type (~348)",
+    blurb:
+      "Chemical-screen zebrafish atlas with published cell-type labels. Clustering + asset prep is the next dataset we wire up.",
+    dataUrl: "/daniotype_kasperov/datasets/chemfish/umap.json",
+    archivistBase: "/daniotype_kasperov/datasets/chemfish/archivist",
+    groundTruthUrl: "/daniotype_kasperov/datasets/chemfish/groundtruth.json",
+    status: "soon",
+  },
+  {
+    id: "megafin",
+    name: "MegaFin",
+    tagline: "Parse Evercode · 2.1M cells · sequencing pending",
+    blurb:
+      "Our large-scale drug-screen atlas. Not sequenced yet; its only labels would be kNN-projected from ZSCAPE, so there's no independent ground truth to score against.",
+    dataUrl: "/daniotype_kasperov/datasets/megafin/umap.json",
+    archivistBase: "/daniotype_kasperov/datasets/megafin/archivist",
+    groundTruthUrl: null,
+    status: "soon",
+  },
+];
+const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
 
 type Pt = { x: number; y: number };
 type Box = { x: number; y: number; w: number; h: number };
@@ -52,14 +118,18 @@ function confColor(pct: number): { bg: string; fg: string } {
 // ---------------------------------------------------------------------------
 // Load + shape the real MiniFin atlas asset
 // ---------------------------------------------------------------------------
-function useAtlas() {
+function useAtlas(dataUrl: string | null) {
   const [clusters, setClusters] = useState<Cluster[] | null>(null);
   const [meta, setMeta] = useState<AtlasMeta | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    if (!dataUrl) return;
+    setClusters(null);
+    setMeta(null);
+    setError(null);
     let alive = true;
-    fetch(DATA_URL)
+    fetch(dataUrl)
       .then((r) => {
         if (!r.ok) throw new Error(`asset ${r.status}`);
         return r.json();
@@ -96,7 +166,7 @@ function useAtlas() {
     return () => {
       alive = false;
     };
-  }, []);
+  }, [dataUrl]);
 
   return { clusters, meta, error };
 }
@@ -245,7 +315,8 @@ function UmapCanvas({
 type Stage = "intro" | "map" | "personas" | "cluster";
 
 export default function KasperovClient() {
-  const { clusters, meta, error } = useAtlas();
+  const [dataset, setDataset] = useState<DatasetDef | null>(null);
+  const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -261,12 +332,26 @@ export default function KasperovClient() {
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
   const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
-  const hydratedRef = useRef(false);
+  const hydratedRef = useRef<string | null>(null);
 
-  // restore the full run on first load → revisiting any cluster shows its record
+  // When a dataset is chosen, clear any prior dataset's run state and hydrate this
+  // dataset's saved run (validated/labels + transcripts/markers/confidence). Each
+  // dataset persists under its own keys so runs never collide.
   useEffect(() => {
+    if (!dataset) return;
+    setLoaded(false);
+    hydratedRef.current = null;
+    setValidated(new Set());
+    setLabels({});
+    setTranscripts({});
+    setAugmented({});
+    setConfidence({});
+    setIncorporated(new Set());
+    setRevealed(false);
+    setActiveId(null);
+    setStage("intro");
     try {
-      const raw = localStorage.getItem(RESULTS_KEY);
+      const raw = localStorage.getItem(resultsKey(dataset.id));
       if (raw) {
         const p = JSON.parse(raw);
         if (p.transcripts) setTranscripts(p.transcripts);
@@ -274,26 +359,8 @@ export default function KasperovClient() {
         if (p.confidence) setConfidence(p.confidence);
       }
     } catch {}
-    hydratedRef.current = true;
-  }, []);
-  // persist (debounced); on quota overflow, fall back to markers+confidence only
-  useEffect(() => {
-    if (!hydratedRef.current) return;
-    const id = setTimeout(() => {
-      try {
-        localStorage.setItem(RESULTS_KEY, JSON.stringify({ transcripts, augmented, confidence }));
-      } catch {
-        try {
-          localStorage.setItem(RESULTS_KEY, JSON.stringify({ augmented, confidence }));
-        } catch {}
-      }
-    }, 800);
-    return () => clearTimeout(id);
-  }, [transcripts, augmented, confidence]);
-
-  useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey(dataset.id));
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
@@ -302,14 +369,31 @@ export default function KasperovClient() {
         // page load (reliably present each visit, not nagging within a session).
       }
     } catch {}
+    hydratedRef.current = dataset.id;
     setLoaded(true);
-  }, []);
+  }, [dataset]);
+
+  // persist the full run (debounced); on quota overflow, fall back to markers+confidence only
   useEffect(() => {
-    if (!loaded) return;
+    if (!dataset || hydratedRef.current !== dataset.id) return;
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ transcripts, augmented, confidence }));
+      } catch {
+        try {
+          localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ augmented, confidence }));
+        } catch {}
+      }
+    }, 800);
+    return () => clearTimeout(id);
+  }, [transcripts, augmented, confidence, dataset]);
+
+  useEffect(() => {
+    if (!dataset || !loaded || hydratedRef.current !== dataset.id) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), labels }));
+      localStorage.setItem(storageKey(dataset.id), JSON.stringify({ validated: Array.from(validated), labels }));
     } catch {}
-  }, [validated, labels, loaded]);
+  }, [validated, labels, loaded, dataset]);
 
   function setLabel(id: string, label: string) {
     setLabels((l) => ({ ...l, [id]: label }));
@@ -319,7 +403,7 @@ export default function KasperovClient() {
   function exportResults() {
     const out = {
       exportedAt: new Date().toISOString(),
-      dataset: "MiniFin",
+      dataset: dataset?.name ?? "",
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
         label: c.label,
@@ -334,7 +418,7 @@ export default function KasperovClient() {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = "daniotype_kasperov_results.json";
+    a.download = `daniotype_kasperov_${dataset?.id ?? "run"}_results.json`;
     a.click();
     URL.revokeObjectURL(url);
   }
@@ -358,7 +442,7 @@ export default function KasperovClient() {
     setConfidence({});
     setIncorporated(new Set());
     try {
-      localStorage.removeItem(RESULTS_KEY);
+      if (dataset) localStorage.removeItem(resultsKey(dataset.id));
     } catch {}
   }
 
@@ -377,12 +461,15 @@ export default function KasperovClient() {
     });
   }
 
-  if (stage === "intro") return <Intro onStart={() => setStage("map")} meta={meta} />;
+  if (!dataset) return <DatasetPicker onPick={setDataset} />;
+
+  if (stage === "intro")
+    return <Intro dataset={dataset} meta={meta} onStart={() => setStage("map")} onSwitch={() => setDataset(null)} />;
 
   if (!clusters) {
     return (
       <Centered>
-        {error ? `Failed to load the atlas: ${error}` : "Loading the MiniFin atlas…"}
+        {error ? `Failed to load the atlas: ${error}` : `Loading the ${dataset.name} atlas…`}
       </Centered>
     );
   }
@@ -390,6 +477,7 @@ export default function KasperovClient() {
   if (stage === "map")
     return (
       <MapStage
+        dataset={dataset}
         clusters={clusters}
         meta={meta}
         revealed={revealed}
@@ -399,6 +487,7 @@ export default function KasperovClient() {
         onAuto={startAutopilot}
         onExport={exportResults}
         onReset={resetRun}
+        onSwitchDataset={() => setDataset(null)}
         labels={labels}
         confidence={confidence}
       />
@@ -417,6 +506,7 @@ export default function KasperovClient() {
     );
   return (
     <ClusterStage
+      dataset={dataset}
       clusters={clusters}
       active={active}
       validated={validated}
@@ -447,18 +537,79 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-function Intro({ onStart, meta }: { onStart: () => void; meta: AtlasMeta | null }) {
+// Dataset picker — the entry screen: choose which atlas to run the wizard on.
+// ---------------------------------------------------------------------------
+function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
+      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov</div>
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a dataset to label</h1>
+        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
+          Run the same human–AI labelling wizard on any of these zebrafish single-cell atlases. Where the authors
+          published their own cell-type labels, you can score our de-novo names against that ground truth when the run
+          completes.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+          {DATASETS.map((d) => {
+            const ready = d.status === "ready";
+            return (
+              <button
+                key={d.id}
+                onClick={() => ready && onPick(d)}
+                disabled={!ready}
+                style={{
+                  textAlign: "left",
+                  background: ready ? "#fffdfb" : "#f3f0ec",
+                  border: `1px solid ${ready ? "#e5e1dc" : "#e9e5df"}`,
+                  borderTop: `3px solid ${ready ? ACCENT : "#cfcac4"}`,
+                  borderRadius: 12,
+                  padding: "18px 18px 20px",
+                  cursor: ready ? "pointer" : "default",
+                  opacity: ready ? 1 : 0.7,
+                  color: INK,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 7,
+                  minHeight: 188,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 19, fontWeight: 700 }}>{d.name}</span>
+                  {!ready && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
+                  {d.groundTruthUrl && (
+                    <span title="Has published cell-type labels to score against" style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "2px 8px" }}>
+                      ✓ ground truth
+                    </span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>{d.tagline}</div>
+                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5, marginTop: 2 }}>{d.blurb}</div>
+                {ready && <div style={{ marginTop: "auto", paddingTop: 10, fontSize: 13.5, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+function Intro({ onStart, meta, dataset, onSwitch }: { onStart: () => void; meta: AtlasMeta | null; dataset: DatasetDef; onSwitch: () => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 720, padding: "84px 28px" }}>
-        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov</div>
+        <button onClick={onSwitch} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← All datasets</button>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
         <h1 style={{ fontSize: 42, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.08 }}>Label the atlas, together</h1>
         <p style={{ fontSize: 18, color: "#555", lineHeight: 1.6, marginTop: 14 }}>
-          Kasparov&apos;s wager: the strongest systems are human–AI hybrids. You fly over the real MiniFin
-          single-cell atlas{meta ? ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} Leiden clusters)` : ""}, drop into any
+          Kasparov&apos;s wager: the strongest systems are human–AI hybrids. You fly over the real {dataset.name}
+          {" "}single-cell atlas{meta ? ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} clusters)` : ""}, drop into any
           cluster, and a research agent pulls grounded evidence from the canonical zebrafish resources (ZFIN, ZFA, GO)
-          for that cluster&apos;s top markers — showing its reasoning and searches live. You decide whether its read is
+          {" "}for that cluster&apos;s top markers — showing its reasoning and searches live. You decide whether its read is
           on track: accept it, or dig deeper in chat.
+          {dataset.groundTruthUrl ? " When you finish, score our names against the authors' published labels." : ""}
         </p>
         <button onClick={onStart} style={{ marginTop: 28, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "15px 30px", fontSize: 18, fontWeight: 600, cursor: "pointer" }}>
           Begin the descent →
@@ -636,6 +787,7 @@ function AskLine({
 
 // ---------------------------------------------------------------------------
 function MapStage({
+  dataset,
   clusters,
   meta,
   revealed,
@@ -645,9 +797,11 @@ function MapStage({
   onAuto,
   onExport,
   onReset,
+  onSwitchDataset,
   labels = {},
   confidence = {},
 }: {
+  dataset: DatasetDef;
   clusters: Cluster[];
   meta: AtlasMeta | null;
   revealed: boolean;
@@ -657,6 +811,7 @@ function MapStage({
   onAuto: () => void;
   onExport: () => void;
   onReset: () => void;
+  onSwitchDataset: () => void;
   labels?: Record<string, string>;
   confidence?: Record<string, { pct: number; why: string }>;
 }) {
@@ -681,12 +836,15 @@ function MapStage({
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
-        <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · MiniFin atlas</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, position: "relative" }}>
+          <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
+        </div>
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : "The whole dataset"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 18 }}>
           {revealed
-            ? `${clusters.length} Leiden clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
-            : `${meta ? meta.totalCells.toLocaleString() : ""} cells, one point each — real UMAP. Reveal the Leiden clustering to start.`}
+            ? `${clusters.length} clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            : `${meta ? meta.totalCells.toLocaleString() : ""} cells, one point each — real UMAP. Reveal the clustering to start.`}
         </p>
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
@@ -946,6 +1104,7 @@ const AUTO_NUDGE_PROMPT =
 const AUTO_MAX_ROUNDS = 4;
 
 function ClusterStage({
+  dataset,
   clusters,
   active,
   validated,
@@ -964,6 +1123,7 @@ function ClusterStage({
   incorporated,
   setIncorporated,
 }: {
+  dataset: DatasetDef;
   clusters: Cluster[];
   active: Cluster;
   validated: Set<string>;
@@ -1070,7 +1230,7 @@ function ClusterStage({
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
+        body: JSON.stringify({ dataset: dataset.id, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
       });
       if (!r.ok) return;
       const d = await r.json();
@@ -1193,6 +1353,7 @@ function ClusterStage({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
+          dataset: dataset.id,
           cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, nCells: cl.nCells },
           messages: nextMsgs,
           ...(forceMode ? { mode: forceMode } : {}),
