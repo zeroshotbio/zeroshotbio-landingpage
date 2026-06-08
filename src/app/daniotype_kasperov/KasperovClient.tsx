@@ -42,6 +42,13 @@ function paletteColor(i: number, n: number) {
   return `hsl(${h} ${s}% ${l}%)`;
 }
 
+// confidence % → a subtle red→amber→green heat tint for the world-map cards.
+function confColor(pct: number): { bg: string; fg: string } {
+  const p = Math.max(0, Math.min(100, pct));
+  const h = (p / 100) * 130; // 0% = red, 100% = green
+  return { bg: `hsl(${h} 72% 92%)`, fg: `hsl(${h} 55% 27%)` };
+}
+
 // ---------------------------------------------------------------------------
 // Load + shape the real MiniFin atlas asset
 // ---------------------------------------------------------------------------
@@ -393,6 +400,7 @@ export default function KasperovClient() {
         onExport={exportResults}
         onReset={resetRun}
         labels={labels}
+        confidence={confidence}
       />
     );
 
@@ -638,6 +646,7 @@ function MapStage({
   onExport,
   onReset,
   labels = {},
+  confidence = {},
 }: {
   clusters: Cluster[];
   meta: AtlasMeta | null;
@@ -649,6 +658,7 @@ function MapStage({
   onExport: () => void;
   onReset: () => void;
   labels?: Record<string, string>;
+  confidence?: Record<string, { pct: number; why: string }>;
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
@@ -708,49 +718,53 @@ function MapStage({
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
               </p>
 
-              {/* GRID 1 — the navigator: every cluster, ✓ = identity validated */}
-              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600, marginBottom: 8, textAlign: "left" }}>
-                All clusters · {clusters.length} total — click any to investigate · ✓ = identity validated
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 6, padding: 4 }}>
-                {clusters.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => onPick(c.id)}
-                    title={labels[c.id] ? `${c.label}: ${labels[c.id]}` : c.label}
-                    style={{ display: "flex", alignItems: "center", gap: 5, background: validated.has(c.id) ? "#f0fdf4" : "#fffdfb", border: `1px solid ${validated.has(c.id) ? "#15803d" : "#e5e1dc"}`, borderRadius: 8, padding: "5px 8px", fontSize: 12, cursor: "pointer", color: INK, minWidth: 0 }}
-                  >
-                    <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
-                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label.replace("Cluster ", "C")}</span>
-                    {validated.has(c.id) && <span style={{ color: "#15803d", fontWeight: 700, marginLeft: "auto" }}>✓</span>}
-                  </button>
-                ))}
-              </div>
-
-              {/* GRID 2 — run summary: each labelled cluster + its assigned cell type */}
-              {labelled.length > 0 && (
-                <div style={{ marginTop: 24, textAlign: "left" }}>
-                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600, marginBottom: 8 }}>
-                    Run summary · {labelled.length} labelled — cluster → assigned cell type
+              {/* single cluster grid — cell type + confidence (heat-tinted) + ✓ validated */}
+              <div style={{ marginTop: 8, textAlign: "left" }}>
+                <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600 }}>
+                    Run summary · {labelled.length}/{clusters.length} labelled · {validated.size} validated
                   </div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 6 }}>
-                    {labelled.map((c) => (
+                  <div style={{ fontSize: 11.5, color: "#aaa" }}>✓ = validated · % = confidence (red→green)</div>
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 6 }}>
+                  {clusters.map((c) => {
+                    const conf = confidence[c.id]?.pct;
+                    const isVal = validated.has(c.id);
+                    const hasLabel = !!labels[c.id];
+                    const heat = typeof conf === "number" ? confColor(conf) : null;
+                    return (
                       <button
                         key={c.id}
                         onClick={() => onPick(c.id)}
-                        title={`${c.label}: ${labels[c.id]}`}
-                        style={{ display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 11px", cursor: "pointer", color: INK, minWidth: 0 }}
+                        title={
+                          hasLabel
+                            ? `${c.label}: ${labels[c.id]}${typeof conf === "number" ? ` · ${conf.toFixed(0)}% confidence` : ""}`
+                            : `${c.label} — not yet labelled`
+                        }
+                        style={{ display: "flex", alignItems: "flex-start", gap: 8, textAlign: "left", background: isVal ? "#f6fdf8" : "#fffdfb", border: `1px solid ${isVal ? "#bfe3cc" : "#e5e1dc"}`, borderRadius: 8, padding: "7px 11px", cursor: "pointer", color: INK, minWidth: 0 }}
                       >
-                        <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0, marginTop: 4 }} />
-                        <span style={{ minWidth: 0, lineHeight: 1.4 }}>
-                          <strong style={{ fontSize: 12.5 }}>{c.label}</strong>{" "}
-                          <span style={{ fontSize: 12, color: "#666" }}>— {trim15(labels[c.id])}</span>
+                        <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0, marginTop: 5 }} />
+                        <span style={{ flex: 1, minWidth: 0, lineHeight: 1.4 }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}>
+                            <strong style={{ fontSize: 12.5 }}>{c.label}</strong>
+                            {isVal && <span style={{ color: "#15803d", fontWeight: 800, fontSize: 12 }}>✓</span>}
+                          </span>{" "}
+                          {hasLabel ? (
+                            <span style={{ fontSize: 12, color: "#666" }}>— {trim15(labels[c.id])}</span>
+                          ) : (
+                            <span style={{ fontSize: 12, color: "#b3ada5", fontStyle: "italic" }}>— not yet labelled</span>
+                          )}
                         </span>
+                        {typeof conf === "number" && heat && (
+                          <span style={{ flexShrink: 0, marginTop: 2, fontSize: 11.5, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: heat.fg, background: heat.bg, border: `1px solid ${heat.fg}22`, borderRadius: 99, padding: "2px 7px" }}>
+                            {conf.toFixed(0)}%
+                          </span>
+                        )}
                       </button>
-                    ))}
-                  </div>
+                    );
+                  })}
                 </div>
-              )}
+              </div>
 
               {/* surface the gap — clusters that completed the run without a cell-type label */}
               {labelled.length > 0 && unlabelled.length > 0 && (
