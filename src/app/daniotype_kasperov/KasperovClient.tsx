@@ -97,8 +97,10 @@ interface Cluster {
 
 interface AtlasMeta {
   source: string;
-  totalCells: number;
+  totalCells: number; // cells actually clustered (may be a sample of the full atlas)
   nClusters: number;
+  fullDatasetCells?: number; // full atlas size, when totalCells is a sample
+  pointsShown?: number; // dots plotted on the map (a downsample of totalCells)
 }
 
 function paletteColor(i: number, n: number) {
@@ -160,7 +162,7 @@ function useAtlas(dataUrl: string | null) {
           if (y > c.bounds.maxy) c.bounds.maxy = y;
         }
         setClusters(cs);
-        setMeta({ source: d.source, totalCells: d.totalCells, nClusters: n });
+        setMeta({ source: d.source, totalCells: d.totalCells, nClusters: n, fullDatasetCells: d.fullDatasetCells, pointsShown: Array.isArray(d.points) ? d.points.length : undefined });
       })
       .catch((e) => alive && setError(String(e?.message ?? e)));
     return () => {
@@ -609,7 +611,7 @@ function Intro({ onStart, meta, dataset, onSwitch }: { onStart: () => void; meta
         <h1 style={{ fontSize: 42, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.08 }}>Label the atlas, together</h1>
         <p style={{ fontSize: 18, color: "#555", lineHeight: 1.6, marginTop: 14 }}>
           Kasparov&apos;s wager: the strongest systems are human–AI hybrids. You fly over the real {dataset.name}
-          {" "}single-cell atlas{meta ? ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} clusters)` : ""}, drop into any
+          {" "}single-cell atlas{meta ? (meta.fullDatasetCells && meta.fullDatasetCells > meta.totalCells ? ` (a ${meta.totalCells.toLocaleString()}-cell sample of the ${meta.fullDatasetCells.toLocaleString()}-cell atlas, ${meta.nClusters} de-novo clusters)` : ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} clusters)`) : ""}, drop into any
           cluster, and a research agent pulls grounded evidence from the canonical zebrafish resources (ZFIN, ZFA, GO)
           {" "}for that cluster&apos;s top markers — showing its reasoning and searches live. You decide whether its read is
           on track: accept it, or dig deeper in chat.
@@ -839,6 +841,11 @@ function MapStage({
     return () => window.removeEventListener("resize", fit);
   }, []);
 
+  // is the clustered set a sample of a larger atlas? (ZSCAPE: 250k of 3.2M)
+  const fullCells = meta?.fullDatasetCells;
+  const clusteredCells = meta?.totalCells ?? 0;
+  const sampled = !!(fullCells && fullCells > clusteredCells);
+
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
       <div style={{ maxWidth: 960, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
@@ -846,11 +853,22 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : "The whole dataset"}</h2>
-        <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 18 }}>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : sampled ? "A representative sample of the atlas" : "The whole dataset"}</h2>
+        <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
-            ? `${clusters.length} clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
-            : `${meta ? meta.totalCells.toLocaleString() : ""} cells, one point each — real UMAP. Reveal the clustering to start.`}
+            ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            : sampled
+            ? `${clusteredCells.toLocaleString()} cells — a representative random sample of the full ${fullCells!.toLocaleString()}-cell ${dataset.name} atlas, sized so de-novo clustering stays interactive. Each dot is one sampled cell — real UMAP. Reveal the clustering to start.`
+            : `${clusteredCells.toLocaleString()} cells, one dot each — real UMAP. Reveal the clustering to start.`}
+        </p>
+        {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
+        <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
+          {sampled
+            ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.`
+            : ""}
+          {dataset.groundTruthUrl
+            ? ` We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward.`
+            : ""}
         </p>
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
