@@ -31,7 +31,7 @@ export async function POST(req: Request) {
   const instructions =
     "You assess how confident a curator should be in the proposed cell-type identity for a zebrafish single-cell cluster, given ONLY the conversation and the evidence added to the Top Markers panel. " +
     "Weigh: strength and specificity of cited evidence, agreement across turns, statistical support, and unresolved caveats. If little is established, score low. " +
-    "Return confidence_pct (integer 0-100) and a rationale of 100 words or fewer giving the HIGHEST-LEVEL reasons for that level of confidence (or lack of it) — what is the single strongest support and the main remaining uncertainty. Reference what was actually discussed; no preamble.";
+    "Return confidence_pct (a number 0-100 with ONE decimal place — be granular, e.g. 65.4 or 88.7, not a round number) and a rationale of 100 words or fewer giving the HIGHEST-LEVEL reasons for that level of confidence (or lack of it) — what is the single strongest support and the main remaining uncertainty. Reference what was actually discussed; no preamble.";
 
   try {
     const ctrl = new AbortController();
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
             schema: {
               type: "object",
               properties: {
-                confidence_pct: { type: "integer", minimum: 0, maximum: 100 },
+                confidence_pct: { type: "number", minimum: 0, maximum: 100 },
                 rationale: { type: "string" },
               },
               required: ["confidence_pct", "rationale"],
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
     } catch {
       return NextResponse.json({ error: "parse" }, { status: 502 });
     }
-    const pct = Math.max(0, Math.min(100, Number(parsed.confidence_pct ?? 0)));
+    const pct = Math.round(Math.max(0, Math.min(100, Number(parsed.confidence_pct ?? 0))) * 10) / 10;
     const why = String(parsed.rationale ?? "").slice(0, 800);
     return NextResponse.json({ pct, why });
   } catch (e: any) {

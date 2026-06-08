@@ -628,6 +628,16 @@ function extractTagged(content: string, keyword: string): { json: string | null;
   return { json, clean };
 }
 
+// heuristic: a specialist deferred / is asking the curator to choose instead of
+// just doing the work → surface a one-click "just run it" button.
+function looksStuck(content: string): boolean {
+  const t = content.trim();
+  return (
+    /\b(would you (prefer|like)|which would you|do you want me to|shall i|let me know which|prefer\b[\s\S]{0,40}\(a\)|\(a\)[\s\S]{0,120}\(b\)|don'?t have access to those results|i have the .*ready)\b/i.test(t) ||
+    /\?\s*$/.test(t)
+  );
+}
+
 function splitMarkerBlock(content: string): { clean: string; markers: Marker[] } {
   const { json, clean } = extractTagged(content, "kasperov-markers");
   if (!json) return { clean: content, markers: [] };
@@ -1127,6 +1137,15 @@ function ClusterStage({
                         {THEME[d.to].icon} ▶ Send to the {THEME[d.to].name} →
                       </button>
                     ))}
+                    {/* safety net: a specialist that defers / asks you to choose gets a one-click "just do it" */}
+                    {isLast && m.mode !== "reason" && looksStuck(parsed.clean) && (
+                      <button
+                        onClick={() => ask(m.mode ?? "archivist", "Yes — go ahead and run the query now and return the full result for everything I asked. Don't ask me to choose or summarise; just fetch and report it all.")}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 6, background: THEME[m.mode ?? "archivist"].color, border: `1px solid ${THEME[m.mode ?? "archivist"].color}`, color: "#fff", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+                      >
+                        ▶ Yes — just run it and show everything →
+                      </button>
+                    )}
                     {/* always offer to hand back to the Reasoner for the next step */}
                     {isLast && m.mode !== "reason" && (
                       <button
@@ -1631,14 +1650,43 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
   );
 }
 
+// tween a number toward `target` with ease-in-out (accelerate then decelerate)
+function useTween(target: number, duration = 1100): number {
+  const [val, setVal] = useState(target);
+  const fromRef = useRef(target);
+  useEffect(() => {
+    const from = fromRef.current;
+    const to = target;
+    if (from === to) return;
+    if (typeof requestAnimationFrame === "undefined" || typeof performance === "undefined") {
+      fromRef.current = to;
+      setVal(to);
+      return;
+    }
+    let raf = 0;
+    const start = performance.now();
+    const ease = (t: number) => (t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2); // easeInOutQuad
+    const tick = (now: number) => {
+      const p = Math.min(1, (now - start) / duration);
+      setVal(from + (to - from) * ease(p));
+      if (p < 1) raf = requestAnimationFrame(tick);
+      else fromRef.current = to;
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [target, duration]);
+  return val;
+}
+
 function ConfidenceContent({ pct, why }: { pct: number; why: string }) {
   // greyscale only — colour is reserved for personalities
+  const shown = useTween(pct); // number scrolls smoothly (accel/decel) toward the new value
   return (
     <div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-        <span style={{ fontSize: 26, fontWeight: 800, color: "#2b2b2b", fontVariantNumeric: "tabular-nums" }}>{pct}%</span>
+        <span style={{ fontSize: 26, fontWeight: 800, color: "#2b2b2b", fontVariantNumeric: "tabular-nums", minWidth: 86, display: "inline-block" }}>{shown.toFixed(1)}%</span>
         <div style={{ flex: 1, height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ width: `${pct}%`, height: "100%", background: "#6b6660", transition: "width .4s ease" }} />
+          <div style={{ width: `${shown}%`, height: "100%", background: "#6b6660" }} />
         </div>
       </div>
       <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 6 }}>{why}</div>
