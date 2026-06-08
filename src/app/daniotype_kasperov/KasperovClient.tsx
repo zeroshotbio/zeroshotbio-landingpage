@@ -9,6 +9,7 @@ const PAPER = "#f6f4f2";
 const INK = "#2b2b2b";
 const ACCENT = "#0e7490";
 const STORAGE_KEY = "daniotype_kasperov_v3";
+const RESULTS_KEY = "daniotype_kasperov_results"; // full run history: transcripts + markers + confidence
 const DATA_URL = "/daniotype_kasperov/minifin_umap.json";
 
 type Pt = { x: number; y: number };
@@ -242,6 +243,8 @@ export default function KasperovClient() {
   const [revealed, setRevealed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validated, setValidated] = useState<Set<string>>(new Set());
+  const [labels, setLabels] = useState<Record<string, string>>({});
+  const [autoStart, setAutoStart] = useState(0); // bumping this signals ClusterStage to run auto-pilot
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -251,6 +254,7 @@ export default function KasperovClient() {
       if (raw) {
         const p = JSON.parse(raw);
         if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
+        if (p.labels && typeof p.labels === "object") setLabels(p.labels);
         // personasSeen is intentionally NOT persisted — the primer shows once per
         // page load (reliably present each visit, not nagging within a session).
       }
@@ -260,9 +264,49 @@ export default function KasperovClient() {
   useEffect(() => {
     if (!loaded) return;
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated) }));
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({ validated: Array.from(validated), labels }));
     } catch {}
-  }, [validated, loaded]);
+  }, [validated, labels, loaded]);
+
+  function setLabel(id: string, label: string) {
+    setLabels((l) => ({ ...l, [id]: label }));
+  }
+
+  // download the full run — transcripts + evidence + markers + confidence + labels
+  function exportResults() {
+    let results: any = {};
+    try {
+      results = JSON.parse(localStorage.getItem(RESULTS_KEY) ?? "{}");
+    } catch {}
+    const out = {
+      exportedAt: new Date().toISOString(),
+      dataset: "MiniFin",
+      clusters: (clusters ?? []).map((c) => ({
+        id: c.id,
+        label: c.label,
+        validated: validated.has(c.id),
+        finalLabel: labels[c.id] ?? null,
+        confidence: results.confidence?.[c.id] ?? null,
+        addedMarkers: results.augmented?.[c.id] ?? [],
+        transcript: results.transcripts?.[c.id] ?? [],
+      })),
+    };
+    const blob = new Blob([JSON.stringify(out, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "daniotype_kasperov_results.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  function startAutopilot() {
+    if (!clusters) return;
+    const first = clusters.find((c) => !validated.has(c.id)) ?? clusters[0];
+    setActiveId(first.id);
+    setStage("cluster");
+    setAutoStart((n) => n + 1);
+  }
 
   // pick a cluster → show the personalities primer once, then the chat
   function openCluster(id: string) {
@@ -298,6 +342,9 @@ export default function KasperovClient() {
         onReveal={() => setRevealed(true)}
         validated={validated}
         onPick={openCluster}
+        onAuto={startAutopilot}
+        onExport={exportResults}
+        labels={labels}
       />
     );
 
@@ -313,7 +360,17 @@ export default function KasperovClient() {
       />
     );
   return (
-    <ClusterStage clusters={clusters} active={active} validated={validated} onBack={() => setStage("map")} onValidate={markValidated} />
+    <ClusterStage
+      clusters={clusters}
+      active={active}
+      validated={validated}
+      onBack={() => setStage("map")}
+      onValidate={markValidated}
+      goToCluster={setActiveId}
+      autoStart={autoStart}
+      labels={labels}
+      onLabel={setLabel}
+    />
   );
 }
 
@@ -521,6 +578,9 @@ function MapStage({
   onReveal,
   validated,
   onPick,
+  onAuto,
+  onExport,
+  labels = {},
 }: {
   clusters: Cluster[];
   meta: AtlasMeta | null;
@@ -528,6 +588,9 @@ function MapStage({
   onReveal: () => void;
   validated: Set<string>;
   onPick: (id: string) => void;
+  onAuto: () => void;
+  onExport: () => void;
+  labels?: Record<string, string>;
 }) {
   const [size, setSize] = useState({ w: 760, h: 560 });
   const wrap = useRef<HTMLDivElement | null>(null);
@@ -562,19 +625,38 @@ function MapStage({
               View Leiden clusters →
             </button>
           ) : (
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", justifyContent: "center", maxHeight: 150, overflowY: "auto", padding: 4 }}>
-              {clusters.map((c) => (
+            <>
+              {/* run-itself controls */}
+              <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginBottom: 14 }}>
                 <button
-                  key={c.id}
-                  onClick={() => onPick(c.id)}
-                  style={{ display: "flex", alignItems: "center", gap: 6, background: "#fffdfb", border: `1px solid ${validated.has(c.id) ? "#15803d" : "#e5e1dc"}`, borderRadius: 99, padding: "5px 10px", fontSize: 12.5, cursor: "pointer", color: INK }}
+                  onClick={onAuto}
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, background: THEME.reason.color, color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
                 >
-                  <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color }} />
-                  {c.label}
-                  {validated.has(c.id) && <span style={{ color: "#15803d", fontWeight: 700 }}>✓</span>}
+                  🤖 Go through each cluster on your own →
                 </button>
-              ))}
-            </div>
+                <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
+              </div>
+              <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
+                Auto-pilot drives the Reasoner across every un-validated cluster — dispatching the Researcher &amp; Archivist,
+                adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
+              </p>
+
+              {/* all 47 clusters at once — grid, no scroll */}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(104px, 1fr))", gap: 6, padding: 4 }}>
+                {clusters.map((c) => (
+                  <button
+                    key={c.id}
+                    onClick={() => onPick(c.id)}
+                    title={labels[c.id] ? `${c.label}: ${labels[c.id]}` : c.label}
+                    style={{ display: "flex", alignItems: "center", gap: 5, background: validated.has(c.id) ? "#f0fdf4" : "#fffdfb", border: `1px solid ${validated.has(c.id) ? "#15803d" : "#e5e1dc"}`, borderRadius: 8, padding: "5px 8px", fontSize: 12, cursor: "pointer", color: INK, minWidth: 0 }}
+                  >
+                    <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
+                    <span style={{ whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{c.label.replace("Cluster ", "C")}</span>
+                    {validated.has(c.id) && <span style={{ color: "#15803d", fontWeight: 700, marginLeft: "auto" }}>✓</span>}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
         </div>
       </div>
@@ -604,14 +686,21 @@ function extractTagged(content: string, keyword: string): { json: string | null;
   const kw = new RegExp("(?:```)?\\s*" + keyword + "\\s*", "i");
   const m = content.match(kw);
   if (!m || m.index === undefined) return { json: null, clean: content };
-  const start = content.indexOf("[", m.index + m[0].length);
+  const afterKw = m.index + m[0].length;
+  const ai = content.indexOf("[", afterKw);
+  const oi = content.indexOf("{", afterKw);
+  let start = -1;
+  let open = "[";
+  if (ai !== -1 && (oi === -1 || ai < oi)) { start = ai; open = "["; }
+  else if (oi !== -1) { start = oi; open = "{"; }
   if (start === -1) return { json: null, clean: content };
+  const close = open === "[" ? "]" : "}";
   let depth = 0;
   let end = -1;
   for (let i = start; i < content.length; i++) {
     const c = content[i];
-    if (c === "[") depth++;
-    else if (c === "]") {
+    if (c === open) depth++;
+    else if (c === close) {
       depth--;
       if (depth === 0) {
         end = i;
@@ -626,6 +715,17 @@ function extractTagged(content: string, keyword: string): { json: string | null;
   const json = content.slice(start, end + 1);
   const clean = (content.slice(0, m.index) + content.slice(after)).trim();
   return { json, clean };
+}
+
+// the Reasoner's final call for a cluster (settled identity) — drives auto-accept.
+function splitConclude(content: string): { clean: string; conclude: { label: string; confidence?: number; done: boolean } | null } {
+  const { json, clean } = extractTagged(content, "kasperov-conclude");
+  if (!json) return { clean: content, conclude: null };
+  try {
+    const o = JSON.parse(json);
+    if (o && typeof o.label === "string") return { clean, conclude: { label: String(o.label), confidence: typeof o.confidence === "number" ? o.confidence : undefined, done: o.done !== false } };
+  } catch {}
+  return { clean, conclude: null };
 }
 
 // heuristic: a specialist deferred / is asking the curator to choose instead of
@@ -704,18 +804,45 @@ function defaultPrompt(c: Cluster): string {
   );
 }
 
+// pure marker merge (gene-keyed; classifies up/down by log2FC) — shared by the
+// manual "Add to Top Markers" button and the auto-pilot.
+function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
+  const byGene = new Map(cur.map((m) => [m.g.toLowerCase(), m]));
+  add.forEach((m) => {
+    const merged: Marker = { ...byGene.get(m.g.toLowerCase()), ...m, via };
+    merged.dir = merged.dir ?? (merged.l2fc != null ? (merged.l2fc >= 1 ? "up" : merged.l2fc <= -1 ? "down" : undefined) : undefined);
+    byGene.set(m.g.toLowerCase(), merged);
+  });
+  return Array.from(byGene.values());
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+const AUTO_REASON_PROMPT =
+  "Summarize what we've established for this cluster. If the Researcher and Archivist are exhausted and you're satisfied with the cell-type identity, conclude with a kasperov-conclude block. Otherwise dispatch the single most useful next query to the Researcher or Archivist (kasperov-dispatch).";
+const AUTO_NUDGE_PROMPT =
+  "Decide now — do not ask me. Either conclude with a kasperov-conclude block (if the specialists are exhausted and the identity is settled) or dispatch the next query with a kasperov-dispatch block.";
+const AUTO_MAX_ROUNDS = 4;
+
 function ClusterStage({
   clusters,
   active,
   validated,
   onBack,
   onValidate,
+  goToCluster,
+  autoStart,
+  labels,
+  onLabel,
 }: {
   clusters: Cluster[];
   active: Cluster;
   validated: Set<string>;
   onBack: () => void;
   onValidate: (id: string, yes: boolean) => void;
+  goToCluster: (id: string) => void;
+  autoStart: number;
+  labels: Record<string, string>;
+  onLabel: (id: string, label: string) => void;
 }) {
   const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
   const [prompt, setPrompt] = useState(defaultPrompt(active));
@@ -762,25 +889,16 @@ function ClusterStage({
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const [flash, setFlash] = useState(false);
+  // auto-pilot run state
+  const [auto, setAuto] = useState<{ running: boolean; current: string | null; done: number; total: number }>({ running: false, current: null, done: 0, total: 0 });
+  const autoAbort = useRef(false);
 
-  function classifyDir(m: Marker): "up" | "down" | undefined {
-    if (m.dir) return m.dir;
-    if (m.l2fc != null) return m.l2fc >= 1 ? "up" : m.l2fc <= -1 ? "down" : undefined;
-    return undefined;
-  }
   function addedText(list: Marker[]): string {
     return list.map((m) => `${m.g}${m.l2fc != null ? ` log2FC ${m.l2fc}` : ""}${m.note ? ` — ${m.note}` : ""} [${m.dir ?? "?"}, via ${m.via}]`).join("; ");
   }
 
   function incorporate(msgKey: string, markers: Marker[], via: AgentMode) {
-    const cur = augmented[active.id] ?? [];
-    const byGene = new Map(cur.map((m) => [m.g.toLowerCase(), m]));
-    markers.forEach((m) => {
-      const merged: Marker = { ...byGene.get(m.g.toLowerCase()), ...m, via };
-      merged.dir = classifyDir(merged);
-      byGene.set(m.g.toLowerCase(), merged);
-    });
-    const next = Array.from(byGene.values());
+    const next = mergeMarkers(augmented[active.id] ?? [], markers, via);
     setAugmented((a) => ({ ...a, [active.id]: next }));
     setIncorporated((s) => new Set(s).add(msgKey));
     setFlash(true);
@@ -909,10 +1027,10 @@ function ClusterStage({
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
   }, [msgs.length, sText, sThinking, streaming]);
 
-  async function streamAgent(nextMsgs: ChatMsg[], forceMode?: AgentMode) {
-    setTranscripts((t) => ({ ...t, [active.id]: nextMsgs }));
+  async function streamAgent(cl: Cluster, nextMsgs: ChatMsg[], forceMode?: AgentMode, fast = false): Promise<ChatMsg[]> {
+    setTranscripts((t) => ({ ...t, [cl.id]: nextMsgs }));
     setStreaming(true);
-    setRouting(true);
+    setRouting(!fast);
     setRouted(false);
     setStatus("");
     setThinking("");
@@ -923,13 +1041,13 @@ function ClusterStage({
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
-    let mode: AgentMode = "research";
+    let mode: AgentMode = forceMode ?? "research";
     try {
       const res = await fetch("/api/kasperov_agent", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          cluster: { id: active.id, label: active.label, degsUp: active.degsUp, markers: active.markers, nCells: active.nCells },
+          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, nCells: cl.nCells },
           messages: nextMsgs,
           ...(forceMode ? { mode: forceMode } : {}),
         }),
@@ -957,9 +1075,12 @@ function ClusterStage({
             mode = evt.v === "archivist" ? "archivist" : evt.v === "reason" ? "reason" : "research";
             setSMode(mode);
             setRouted(true);
-            // hold the selection screen ~2s — it's a feature, let it breathe
-            const wait = Math.max(0, 2000 - (Date.now() - startedAt));
-            setTimeout(() => setRouting(false), wait);
+            // hold the selection screen ~2s — it's a feature, let it breathe (skip in auto)
+            if (fast) setRouting(false);
+            else {
+              const wait = Math.max(0, 2000 - (Date.now() - startedAt));
+              setTimeout(() => setRouting(false), wait);
+            }
           } else if (evt.t === "status") setStatus(evt.v);
           else if (evt.t === "thinking") setThinking((p) => p + evt.v);
           else if (evt.t === "text") {
@@ -978,27 +1099,136 @@ function ClusterStage({
         clearInterval(timerRef.current);
         timerRef.current = null;
       }
-      const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
-      setTranscripts((t) => ({ ...t, [active.id]: finalMsgs }));
       setStreaming(false);
       setRouting(false);
       setStatus("");
       setText("");
       setThinking("");
-      refreshConfidence(finalMsgs, active.id);
     }
+    const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
+    setTranscripts((t) => ({ ...t, [cl.id]: finalMsgs }));
+    refreshConfidence(finalMsgs, cl.id);
+    return finalMsgs;
   }
 
   function runResearch() {
     if (streaming) return;
-    streamAgent([{ role: "user", content: prompt }]);
+    streamAgent(active, [{ role: "user", content: prompt }]);
   }
   // send a message forced to a specific personality (via the labelled input line or a button)
   function ask(mode: AgentMode, text: string) {
     const t = text.trim();
     if (!t || streaming) return;
-    streamAgent([...msgs, { role: "user", content: t }], mode);
+    streamAgent(active, [...msgs, { role: "user", content: t }], mode);
   }
+
+  // ---- AUTO-PILOT: drive the whole loop across every cluster --------------
+  // pull any kasperov-markers out of a message and add them to Top Markers
+  function autoAddMarkers(cl: Cluster, content: string, via: AgentMode, running: Marker[]): Marker[] {
+    const mk = splitMarkerBlock(content).markers;
+    if (!mk.length) return running;
+    const next = mergeMarkers(running, mk, via);
+    setAugmented((a) => ({ ...a, [cl.id]: next }));
+    setFlash(true);
+    setTimeout(() => setFlash(false), 700);
+    refreshConfidence(transcripts[cl.id] ?? [], cl.id, addedText(next));
+    return next;
+  }
+
+  async function runOneCluster(cl: Cluster) {
+    let added: Marker[] = augmented[cl.id] ?? [];
+    // 1) identity pass (Researcher)
+    let conv = await streamAgent(cl, [{ role: "user", content: defaultPrompt(cl) }], "research", true);
+    added = autoAddMarkers(cl, conv[conv.length - 1].content, "research", added);
+    // 2) Reasoner-orchestrated rounds
+    for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
+      if (autoAbort.current) return;
+      conv = await streamAgent(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason", true);
+      let rc = conv[conv.length - 1].content;
+      added = autoAddMarkers(cl, rc, "reason", added);
+      let concl = splitConclude(rc).conclude;
+      let dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
+      if (!concl && dispatches.length === 0) {
+        // neither concluded nor dispatched → nudge once
+        conv = await streamAgent(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason", true);
+        rc = conv[conv.length - 1].content;
+        added = autoAddMarkers(cl, rc, "reason", added);
+        concl = splitConclude(rc).conclude;
+        dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
+      }
+      if (concl?.done) {
+        onLabel(cl.id, concl.label);
+        onValidate(cl.id, true);
+        return;
+      }
+      for (const d of dispatches) {
+        if (autoAbort.current) return;
+        conv = await streamAgent(cl, [...conv, { role: "user", content: d.prompt }], d.to, true);
+        added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to, added);
+      }
+    }
+    // ran out of rounds — accept best-effort so the loop keeps moving
+    onValidate(cl.id, true);
+    if (!labels[cl.id]) onLabel(cl.id, "(unresolved — review)");
+  }
+
+  async function runAutopilot() {
+    if (auto.running) return;
+    autoAbort.current = false;
+    const queue = clusters.filter((c) => !validated.has(c.id));
+    setAuto({ running: true, current: null, done: 0, total: queue.length });
+    for (let i = 0; i < queue.length; i++) {
+      if (autoAbort.current) break;
+      const c = queue[i];
+      setAuto((a) => ({ ...a, current: c.id, done: i }));
+      goToCluster(c.id);
+      await sleep(80); // let the per-cluster reset effect settle before streaming
+      try {
+        await runOneCluster(c);
+      } catch {
+        /* keep going to the next cluster */
+      }
+    }
+    setAuto((a) => ({ ...a, running: false, current: null, done: a.total }));
+  }
+  function stopAutopilot() {
+    autoAbort.current = true;
+    setAuto((a) => ({ ...a, running: false }));
+  }
+
+  // kick off when the map's "go through each cluster" button bumps autoStart
+  const autoStartedRef = useRef(0);
+  useEffect(() => {
+    if (autoStart > 0 && autoStart !== autoStartedRef.current) {
+      autoStartedRef.current = autoStart;
+      runAutopilot();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoStart]);
+
+  // persist the full run (transcripts + markers + confidence) so it survives
+  // reload and is queryable / exportable after the loop finishes
+  useEffect(() => {
+    const id = setTimeout(() => {
+      try {
+        localStorage.setItem(RESULTS_KEY, JSON.stringify({ transcripts, augmented, confidence }));
+      } catch {}
+    }, 800);
+    return () => clearTimeout(id);
+  }, [transcripts, augmented, confidence]);
+  // restore on mount → revisiting any cluster shows its full record
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(RESULTS_KEY);
+      if (raw) {
+        const p = JSON.parse(raw);
+        if (p.transcripts) setTranscripts(p.transcripts);
+        if (p.augmented) setAugmented(p.augmented);
+        if (p.confidence) setConfidence(p.confidence);
+      }
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const isValidated = validated.has(active.id);
 
@@ -1019,6 +1249,13 @@ function ClusterStage({
           <strong style={{ fontSize: 16 }}>{active.label}</strong>
         </div>
         <span style={{ fontSize: 13, color: "#888" }}>{active.nCells.toLocaleString()} cells</span>
+        {labels[active.id] && <span style={{ fontSize: 12.5, color: THEME.reason.color, fontWeight: 600, background: THEME.reason.bg, padding: "2px 8px", borderRadius: 99 }}>{labels[active.id]}</span>}
+        {auto.running && (
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 8, fontSize: 12.5, fontWeight: 600, color: THEME.reason.color, background: THEME.reason.bg, padding: "4px 10px", borderRadius: 99 }}>
+            <span style={{ animation: "kpulse 1s infinite" }}>🤖</span> Auto-pilot · cluster {auto.done + 1}/{auto.total}
+            <button onClick={stopAutopilot} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 6, padding: "2px 9px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>■ Stop</button>
+          </span>
+        )}
         <div style={{ marginLeft: "auto", fontSize: 13, color: "#888" }}>{validated.size}/{clusters.length} validated</div>
       </div>
 
@@ -1098,13 +1335,25 @@ function ClusterStage({
               const mk = m.role === "assistant" ? splitMarkerBlock(m.content) : { clean: m.content, markers: [] as Marker[] };
               const dp = m.role === "assistant" ? splitDispatch(mk.clean) : { clean: mk.clean, dispatches: [] as { to: AgentMode; prompt: string }[] };
               const pr = m.role === "assistant" ? splitPromote(dp.clean) : { clean: dp.clean, promotes: [] as { gene: string; dir: "up" | "down"; note?: string }[] };
-              const parsed = { clean: pr.clean, markers: mk.markers };
+              const cc = m.role === "assistant" ? splitConclude(pr.clean) : { clean: pr.clean, conclude: null as null | { label: string; confidence?: number; done: boolean } };
+              const parsed = { clean: cc.clean, markers: mk.markers };
               const key = `${active.id}:${i}`;
               const canAdd = parsed.markers.length > 0 && !incorporated.has(key);
               const isLast = m.role === "assistant" && i === msgs.length - 1 && !streaming;
               const actions =
                 m.role === "assistant" ? (
                   <>
+                    {cc.conclude && (
+                      <button
+                        onClick={() => {
+                          onLabel(active.id, cc.conclude!.label);
+                          onValidate(active.id, true);
+                        }}
+                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: validated.has(active.id) ? "#15803d" : "#fff", border: `1px solid #15803d`, color: validated.has(active.id) ? "#fff" : "#15803d", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
+                      >
+                        {validated.has(active.id) ? "✓ Accepted" : "✓ Accept identity"}: {cc.conclude.label}
+                      </button>
+                    )}
                     {canAdd && (
                       <button
                         onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
@@ -1129,7 +1378,7 @@ function ClusterStage({
                     {dp.dispatches.map((d, di) => (
                       <button
                         key={di}
-                        onClick={() => streamAgent([...msgs, { role: "user", content: d.prompt }], d.to)}
+                        onClick={() => streamAgent(active, [...msgs, { role: "user", content: d.prompt }], d.to)}
                         disabled={streaming}
                         title={d.prompt}
                         style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[d.to].color}66`, color: THEME[d.to].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: streaming ? "default" : "pointer", opacity: streaming ? 0.5 : 1 }}
@@ -1240,7 +1489,7 @@ function ClusterStage({
                   </div>
                 )}
                 {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
+                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
@@ -1249,9 +1498,9 @@ function ClusterStage({
           {started && (
             <div style={{ borderTop: "1px solid #f0ece7", padding: "10px 16px" }}>
               <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 9 }}>
-                <AskLine mode="reason" value={inReason} setValue={setInReason} onSend={() => { ask("reason", inReason); setInReason(""); }} enabled={!streaming} locked={false} />
-                <AskLine mode="research" value={inRes} setValue={setInRes} onSend={() => { ask("research", inRes); setInRes(""); }} enabled={!streaming} locked={false} />
-                <AskLine mode="archivist" value={inArch} setValue={setInArch} onSend={() => { ask("archivist", inArch); setInArch(""); }} enabled={!streaming} locked={false} />
+                <AskLine mode="reason" value={inReason} setValue={setInReason} onSend={() => { ask("reason", inReason); setInReason(""); }} enabled={!streaming && !auto.running} locked={false} />
+                <AskLine mode="research" value={inRes} setValue={setInRes} onSend={() => { ask("research", inRes); setInRes(""); }} enabled={!streaming && !auto.running} locked={false} />
+                <AskLine mode="archivist" value={inArch} setValue={setInArch} onSend={() => { ask("archivist", inArch); setInArch(""); }} enabled={!streaming && !auto.running} locked={false} />
               </div>
               <div style={{ display: "flex", gap: 8 }}>
                 <button

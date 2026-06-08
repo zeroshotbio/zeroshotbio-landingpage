@@ -203,6 +203,12 @@ function reasonInstructions(cluster: Cluster): string {
     "```",
     "Only promote when the evidence (stats or curated annotation) supports it; omit otherwise.",
     "",
+    "CONCLUDE: when the Researcher and Archivist are genuinely exhausted for this cluster and you are satisfied with the cell-type identity, END your message with a fenced block stating the final call — it lets the curator (or the auto-pilot) accept the label and move on:",
+    "```kasperov-conclude",
+    '{"label":"<final zebrafish cell-type label, with state if supported>","confidence":<0-100>,"done":true}',
+    "```",
+    "Emit it ONLY when settled. If a useful query remains, dispatch that instead and do NOT conclude. When you do conclude, you may still include a one-line wrap-up sentence before the block.",
+    "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
   ].join("\n") + MARKER_BLOCK_INSTR;
 }
