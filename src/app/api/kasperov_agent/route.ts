@@ -249,6 +249,7 @@ function archivistInstructions(cluster: Cluster, ds: DatasetCfg): string {
     `- \`## Raw facts (${ds.name})\` — present the relevant DIRECT dataset values, quoting the exact numbers given. Use a markdown table for marker stats. Do NOT invent or round beyond what is given.`,
     "- `## Read` — OPTIONAL, only if the user asked for interpretation; ≤60 words, clearly your own inference, not dataset fact.",
     "Never fabricate numbers or genes that are not in the facts below.",
+    "MANDATORY: after your answer, ALWAYS append the kasperov-markers block (format below) for EVERY gene you reported numbers on this turn — set l2fc/p1/p2 to the EXACT values you fetched (p1/p2 as 0-1 fractions, e.g. 95% → 0.95) and a ≤8-word note quoting the headline figure (e.g. \"log2FC 4.1, 95% in-cluster\"). This is the ONLY way your raw numbers attach to the Top Markers panel — never omit it when you reported gene stats.",
     "",
     `=== ${ds.name.toUpperCase()} FACTS (authoritative; quote exactly) ===`,
     rawFactsBlock(cluster, ds),
@@ -449,10 +450,11 @@ async function streamOnce(
   enc: TextEncoder,
   key: string,
   signal: AbortSignal
-): Promise<{ responseId: string; calls: { call_id: string; name: string; args: string }[]; produced: boolean; ok: boolean; usageIn: number; usageOut: number }> {
+): Promise<{ responseId: string; calls: { call_id: string; name: string; args: string }[]; produced: boolean; ok: boolean; usageIn: number; usageOut: number; text: string }> {
   const calls: { call_id: string; name: string; args: string }[] = [];
   let responseId = "";
   let produced = false;
+  let producedText = "";
   let usageIn = 0;
   let usageOut = 0;
   // retry once on a transient upstream (429 / 5xx) before giving up
@@ -475,7 +477,7 @@ async function streamOnce(
   if (!r || !r.ok || !r.body) {
     const detail = r ? await r.text().catch(() => "") : "no response";
     sse(controller, enc, { t: "text", v: `_The agent could not start (${r?.status ?? "?"}). ${detail.slice(0, 160)}_` });
-    return { responseId, calls, produced, ok: false, usageIn, usageOut };
+    return { responseId, calls, produced, ok: false, usageIn, usageOut, text: producedText };
   }
   const reader = r.body.getReader();
   const dec = new TextDecoder();
@@ -532,6 +534,7 @@ async function streamOnce(
         case "response.output_text.delta":
           if (evt.delta) {
             produced = true;
+            producedText += evt.delta;
             sse(controller, enc, { t: "text", v: evt.delta });
           }
           break;
@@ -557,7 +560,31 @@ async function streamOnce(
       }
     }
   }
-  return { responseId, calls, produced, ok: true, usageIn, usageOut };
+  return { responseId, calls, produced, ok: true, usageIn, usageOut, text: producedText };
+}
+
+// Pull per-gene stats out of a query_minifin result so the Archivist's REAL
+// numbers can be attached to Top Markers server-side — after a multi-round tool
+// loop the model usually forgets the kasperov-markers block, so we synthesise it.
+const numOrU = (v: any): number | undefined => (typeof v === "number" && isFinite(v) ? v : undefined);
+function collectStats(out: any, map: Map<string, StatMarker>) {
+  if (!out) return;
+  const rows = Array.isArray(out.result) ? out.result : out.result ? [out.result] : [];
+  for (const r of rows) {
+    if (!r || r.found === false || typeof r.g !== "string") continue;
+    const l2fc = numOrU(r.l2fc ?? r.log2FC ?? r.log2fc);
+    const p1 = numOrU(r.p1 ?? r.pct_in ?? r.activePct ?? r.pct);
+    const p2 = numOrU(r.p2 ?? r.pct_out);
+    if (l2fc == null && p1 == null && p2 == null) continue;
+    const ex = map.get(r.g.toLowerCase());
+    map.set(r.g.toLowerCase(), { g: ex?.g ?? r.g, l2fc: l2fc ?? ex?.l2fc, p1: p1 ?? ex?.p1, p2: p2 ?? ex?.p2 });
+  }
+}
+function statNote(m: StatMarker): string {
+  const bits: string[] = [];
+  if (m.l2fc != null) bits.push(`log2FC ${m.l2fc.toFixed(1)}`);
+  if (m.p1 != null) bits.push(`${Math.round(m.p1 * 100)}% in-cluster`);
+  return bits.join(", ") || "queried from dataset";
 }
 
 export async function POST(req: Request) {
@@ -608,6 +635,8 @@ export async function POST(req: Request) {
       let usageIn = 0;
       let usageOut = 0;
       let anyProduced = false;
+      let allText = ""; // accumulated answer text (to detect a model-emitted block)
+      const archivistStats = new Map<string, StatMarker>(); // real per-gene tool stats
       try {
         let prevId = "";
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
@@ -633,6 +662,7 @@ export async function POST(req: Request) {
           usageIn += res.usageIn;
           usageOut += res.usageOut;
           anyProduced = anyProduced || res.produced;
+          allText += res.text;
           if (!res.ok) break;
           // Archivist tool loop: execute query_minifin calls, then continue.
           if (mode === "archivist" && res.calls.length && toolRounds < MAX_TOOL_ROUNDS) {
@@ -656,6 +686,7 @@ export async function POST(req: Request) {
               } catch {}
               sse(controller, enc, { t: "status", v: `Querying ${ds.name}: ${label}…` });
               const out = await runQuery(c.args, String(cluster.id), origin, ds);
+              collectStats(out, archivistStats); // keep the real numbers for the Top Markers block
               outputs.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) });
             }
             prevId = res.responseId;
@@ -666,6 +697,12 @@ export async function POST(req: Request) {
         }
         if (!anyProduced)
           sse(controller, enc, { t: "text", v: `_(No answer from **${model}** — it likely spent its budget on reasoning/search without writing. Try again, or pick a faster model (gpt-5-mini / gpt-5) for the interactive wizard.)_` });
+        // Archivist: if it reported gene stats but omitted the markers block,
+        // synthesise one from the REAL tool numbers so they attach to Top Markers.
+        if (mode === "archivist" && archivistStats.size && !allText.includes("kasperov-markers")) {
+          const arr = Array.from(archivistStats.values()).slice(0, 12).map((m) => ({ g: m.g, l2fc: m.l2fc ?? null, p1: m.p1 ?? null, p2: m.p2 ?? null, note: statNote(m) }));
+          sse(controller, enc, { t: "text", v: "\n\n```kasperov-markers\n" + JSON.stringify(arr) + "\n```" });
+        }
         sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
       } catch {

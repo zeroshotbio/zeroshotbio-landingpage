@@ -1989,6 +1989,10 @@ const AUTO_REASON_PROMPT =
 const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
+// per-personality loading-bar ceiling (seconds). The agent route's maxDuration
+// is 300s on Vercel Pro, shared by all three personalities, so the bar counts
+// toward 300 — heavy Researcher/Archivist tool turns can run that long.
+const TURN_MAX_S: Record<AgentMode, number> = { research: 300, archivist: 300, reason: 300 };
 
 
 function ClusterStage({
@@ -2179,9 +2183,8 @@ function ClusterStage({
     setPanelW(Math.round(window.innerWidth / 2));
   }, []);
 
-  // floating panels — geometry lifted here so Top Markers / Confidence can
-  // auto-grow to fit content and push the others down (until the user drags one)
-  const GAP = 12;
+  // floating panels — natural geometry lifted here (content heights via measureBox,
+  // widths via the auto-grow effect); on-screen positions/caps come from fitPanels
   const [pb, setPb] = useState<{ wm: Box; mk: Box; cf: Box } | null>(null);
   const manualRef = useRef(false);
   useEffect(() => {
@@ -2193,12 +2196,6 @@ function ClusterStage({
     });
   }, [containerSize, pb]);
 
-  function reflowBoxes(b: { wm: Box; mk: Box; cf: Box }) {
-    const x = b.wm.x;
-    const mk = { ...b.mk, x, y: b.wm.y + b.wm.h + GAP };
-    const cf = { ...b.cf, x, y: mk.y + mk.h + GAP };
-    return { ...b, mk, cf };
-  }
   const moveBox = useCallback((k: "wm" | "mk" | "cf", x: number, y: number) => {
     manualRef.current = true;
     setPb((p) => (p ? { ...p, [k]: { ...p[k], x, y } } : p));
@@ -2207,14 +2204,10 @@ function ClusterStage({
     manualRef.current = true;
     setPb((p) => (p ? { ...p, [k]: { ...p[k], w, h } } : p));
   }, []);
+  // store each auto-fit panel's NATURAL content height; on-screen positions and
+  // height caps are derived (fitPanels) so the stack always fits the container
   const measureBox = useCallback((k: "mk" | "cf", h: number) => {
-    setPb((p) => {
-      if (!p || Math.abs(p[k].h - h) < 1) return p;
-      const u = { ...p, [k]: { ...p[k], h } };
-      return manualRef.current ? u : reflowBoxes(u);
-    });
-    // reflowBoxes is pure + GAP constant; safe to omit from deps
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    setPb((p) => (!p || Math.abs(p[k].h - h) < 1 ? p : { ...p, [k]: { ...p[k], h } }));
   }, []);
 
   // Top Markers & Confidence also grow WIDER as they gather content (until the
@@ -2226,13 +2219,17 @@ function ClusterStage({
     const longestNote = added.reduce((mx, m) => Math.max(mx, ...markerNotes(m).map((n) => n.text.length), 0), 0);
     const mkW = Math.min(400, Math.max(250, 250 + (longestNote > 38 ? 120 : longestNote > 0 ? 55 : 0) + (added.length > 3 ? 25 : 0)));
     const cfW = Math.min(380, Math.max(250, 250 + Math.floor(why.length / 5)));
-    setPb((p) => {
-      if (!p || (p.mk.w === mkW && p.cf.w === cfW)) return p;
-      const u = { ...p, mk: { ...p.mk, w: mkW }, cf: { ...p.cf, w: cfW } };
-      return manualRef.current ? u : reflowBoxes(u);
-    });
+    setPb((p) => (!p || (p.mk.w === mkW && p.cf.w === cfW) ? p : { ...p, mk: { ...p.mk, w: mkW }, cf: { ...p.cf, w: cfW } }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [augmented, confidence, active.id]);
+
+  // on-screen geometry that ALWAYS fits the focused-cluster pane: panels stack,
+  // the two auto-fit panels cap their height (scrolling past it), and everything
+  // is clamped so nothing is pushed completely off-screen ("playdoh" fit)
+  const layout = useMemo(
+    () => (pb ? fitPanels(pb, containerSize.w, containerSize.h, manualRef.current) : null),
+    [pb, containerSize]
+  );
 
   useEffect(() => {
     threadRef.current?.scrollTo({ top: threadRef.current.scrollHeight, behavior: "smooth" });
@@ -2246,11 +2243,11 @@ function ClusterStage({
     setStatus("");
     setThinking("");
     setText("");
-    // elapsed-time bar, counts up toward the 60s ceiling
+    // elapsed-time bar, counts up toward the per-personality ceiling (≤300s)
     setElapsed(0);
     const startedAt = Date.now();
     if (timerRef.current) clearInterval(timerRef.current);
-    timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
+    timerRef.current = setInterval(() => setElapsed(Math.min(300, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
     let think = ""; // full reasoning trace for this turn (stored on the message)
     let mode: AgentMode = forceMode ?? "research";
@@ -2553,18 +2550,19 @@ function ClusterStage({
           <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", fontSize: 12, color: "#bbb", textTransform: "uppercase", letterSpacing: 1, pointerEvents: "none" }}>Focused cluster</div>
           <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
 
-          {pb && (
+          {layout && (
             <>
               {/* world map — draggable + resizable */}
-              <DraggablePanel title="WORLD MAP" accent="#999" box={pb.wm} minW={150} minH={120} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
+              <DraggablePanel title="WORLD MAP" accent="#999" box={layout.wm.box} minW={150} minH={120} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
                 {(w, h) => <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
               </DraggablePanel>
 
-              {/* top markers — auto-grows to fit content, pushing the others down */}
+              {/* top markers — grows with content, capped to stay on-screen (scrolls past the cap) */}
               <DraggablePanel
                 title={`TOP MARKERS${(augmented[active.id] ?? []).length ? ` · +${(augmented[active.id] ?? []).length} from chat` : ""}`}
                 accent="#8a847b"
-                box={pb.mk}
+                box={layout.mk.box}
+                maxH={layout.mk.maxH}
                 minW={190}
                 flash={flash}
                 autoFitHeight
@@ -2575,12 +2573,13 @@ function ClusterStage({
                 {() => <MarkersContent cluster={active} added={augmented[active.id] ?? []} />}
               </DraggablePanel>
 
-              {/* TIER CONFIDENCE — always visible HUD; its four numbers tween
-                  up/down every turn as evidence accrues. Auto-grows to fit. */}
+              {/* TIER CONFIDENCE — always visible HUD; its four numbers tween up/down
+                  every turn. Grows with content but stays on-screen below Top Markers. */}
               <DraggablePanel
                 title="TIER CONFIDENCE"
                 accent="#8a847b"
-                box={pb.cf}
+                box={layout.cf.box}
+                maxH={layout.cf.maxH}
                 minW={230}
                 flash={flash}
                 autoFitHeight
@@ -2745,9 +2744,9 @@ function ClusterStage({
                 {/* elapsed-time bar in the personality's colour */}
                 <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8 }}>
                   <div style={{ position: "relative", flex: 1, height: 5, background: "#ece8e3", borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${(elapsed / 60) * 100}%`, height: "100%", background: THEME[sMode].color, borderRadius: 99, transition: "width .25s linear" }} />
+                    <div style={{ width: `${Math.min(100, (elapsed / TURN_MAX_S[sMode]) * 100)}%`, height: "100%", background: THEME[sMode].color, borderRadius: 99, transition: "width .25s linear" }} />
                   </div>
-                  <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 56, textAlign: "right" }}>{elapsed.toFixed(0)}s / 60s</span>
+                  <span style={{ fontSize: 11, color: "#999", fontVariantNumeric: "tabular-nums", minWidth: 64, textAlign: "right" }}>{elapsed.toFixed(0)}s / {TURN_MAX_S[sMode]}s</span>
                 </div>
                 {/* live status — themed verb */}
                 <div style={{ fontSize: 12.5, color: THEME[sMode].color, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>
@@ -2997,6 +2996,45 @@ function AgentMessage({ content, mode = "research", actions, thinking, thinkingC
 // ---------------------------------------------------------------------------
 let zTop = 20; // shared stacking counter — last interacted panel sits on top
 
+// Lay the three HUD panels out so they ALWAYS fit the focused-cluster pane:
+// stack World Map → Top Markers → Tier Confidence; cap the two auto-fit panels'
+// heights (they scroll past the cap) and clamp every panel so it can never be
+// pushed completely off-screen. Returns each panel's display box + optional cap.
+function fitPanels(
+  pb: { wm: Box; mk: Box; cf: Box },
+  W: number,
+  H: number,
+  manual: boolean
+): { wm: { box: Box; maxH?: number }; mk: { box: Box; maxH?: number }; cf: { box: Box; maxH?: number } } {
+  const GAP = 12, M = 10;
+  const cw = (w: number) => Math.max(180, Math.min(w, Math.max(180, W - 8)));
+  const cx = (x: number) => Math.max(2, Math.min(x, Math.max(2, W - 48)));
+  const cy = (y: number) => Math.max(2, Math.min(y, Math.max(2, H - 26)));
+  if (manual) {
+    // respect the user's positions/sizes, but clamp so nothing leaves the pane
+    const fix = (b: Box, auto: boolean) => {
+      const x = cx(b.x), y = cy(b.y);
+      return { box: { ...b, x, y, w: cw(b.w) }, maxH: auto ? Math.max(80, H - y - M) : undefined };
+    };
+    return { wm: fix(pb.wm, false), mk: fix(pb.mk, true), cf: fix(pb.cf, true) };
+  }
+  // auto: stack from the top-left, fitting Top Markers + Confidence under World Map
+  const x = cx(pb.wm.x);
+  const mkY = 12 + pb.wm.h + GAP;
+  const cfMin = 92, mkMin = 110;
+  const avail = Math.max(mkMin + cfMin + GAP, H - mkY - M); // vertical room for mk + cf
+  const wantMk = pb.mk.h, wantCf = pb.cf.h;
+  let mkMax: number;
+  if (wantMk + GAP + wantCf <= avail) mkMax = wantMk; // everything fits — no cap squeeze
+  else mkMax = Math.max(mkMin, avail - GAP - Math.min(wantCf, Math.max(cfMin, Math.round((avail - GAP) * 0.42))));
+  const cfY = mkY + Math.min(wantMk, mkMax) + GAP;
+  return {
+    wm: { box: { ...pb.wm, x, y: 12, w: cw(pb.wm.w) }, maxH: undefined },
+    mk: { box: { ...pb.mk, x, y: mkY, w: cw(pb.mk.w) }, maxH: mkMax },
+    cf: { box: { ...pb.cf, x, y: cfY, w: cw(pb.cf.w) }, maxH: Math.max(cfMin, H - cfY - M) },
+  };
+}
+
 function DraggablePanel({
   title,
   accent,
@@ -3005,6 +3043,7 @@ function DraggablePanel({
   minH = 90,
   flash = false,
   autoFitHeight = false,
+  maxH,
   onMove,
   onResize,
   onMeasure,
@@ -3017,6 +3056,7 @@ function DraggablePanel({
   minH?: number;
   flash?: boolean;
   autoFitHeight?: boolean;
+  maxH?: number; // cap the auto-fit height; the body scrolls past it (keeps panels on-screen)
   onMove: (x: number, y: number) => void;
   onResize: (w: number, h: number) => void;
   onMeasure?: (h: number) => void;
@@ -3026,18 +3066,22 @@ function DraggablePanel({
   const raise = () => setZ(++zTop);
   const HEADER = 24;
   const rootRef = useRef<HTMLDivElement | null>(null);
+  const contentRef = useRef<HTMLDivElement | null>(null);
 
-  // auto-fit panels report their rendered height so the parent can reflow
+  // auto-fit panels report their NATURAL content height (independent of any cap)
+  // so the parent can lay all panels out to fit the container
   useEffect(() => {
     if (!autoFitHeight || !onMeasure) return;
-    const el = rootRef.current;
+    const el = contentRef.current;
     if (!el || typeof ResizeObserver === "undefined") return;
-    const report = () => onMeasure(el.offsetHeight);
+    const report = () => onMeasure(HEADER + el.offsetHeight + 6);
     const ro = new ResizeObserver(report);
     ro.observe(el);
     report();
     return () => ro.disconnect();
   }, [autoFitHeight, onMeasure]);
+
+  const capped = autoFitHeight && maxH != null;
 
   function startDrag(e: React.MouseEvent) {
     e.preventDefault();
@@ -3079,6 +3123,7 @@ function DraggablePanel({
         top: box.y,
         width: box.w,
         height: autoFitHeight ? "auto" : box.h,
+        maxHeight: capped ? maxH : undefined,
         zIndex: z,
         background: "rgba(255,253,251,0.96)",
         border: `1px solid ${accent}44`,
@@ -3089,14 +3134,14 @@ function DraggablePanel({
         flexDirection: "column",
         overflow: "hidden",
         animation: flash ? "kflash .9s ease-out" : "none",
-        transition: "top .2s ease, left .2s ease",
+        transition: "top .2s ease, left .2s ease, max-height .2s ease",
       }}
     >
       <div onMouseDown={startDrag} style={{ height: HEADER, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: accent, userSelect: "none" }}>
         <span style={{ opacity: 0.5 }}>⠿</span> {title}
       </div>
-      <div style={{ flex: autoFitHeight ? "0 0 auto" : 1, minHeight: 0, overflow: autoFitHeight ? "visible" : "auto", padding: "0 8px 6px" }}>
-        {children(box.w - 16, autoFitHeight ? 0 : box.h - HEADER - 12)}
+      <div style={{ flex: autoFitHeight && !capped ? "0 0 auto" : 1, minHeight: 0, overflowY: capped ? "auto" : autoFitHeight ? "visible" : "auto", overflowX: "hidden", padding: "0 8px 6px" }}>
+        <div ref={contentRef}>{children(box.w - 16, autoFitHeight ? 0 : box.h - HEADER - 12)}</div>
       </div>
       <div onMouseDown={startResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 14, height: 14, cursor: "nwse-resize", color: accent, opacity: 0.5, fontSize: 11, lineHeight: "14px", textAlign: "right" }}>◢</div>
     </div>
