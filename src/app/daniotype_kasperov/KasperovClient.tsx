@@ -1995,16 +1995,7 @@ const AUTO_MAX_ROUNDS = 4;
 // a faux file-explorer while the Archivist parses the dataset. Intentionally
 // stylised; the point is to make the grounded work feel real to a viewer.
 // ---------------------------------------------------------------------------
-const RESEARCH_SITES = [
-  { id: "zfin", name: "ZFIN", host: "zfin.org", accent: "#15803d" },
-  { id: "zfa", name: "ZFA · EBI OLS", host: "ebi.ac.uk/ols", accent: "#0e7490" },
-  { id: "go", name: "GO · QuickGO", host: "ebi.ac.uk/QuickGO", accent: "#7c3aed" },
-  { id: "ncbi", name: "NCBI Gene", host: "ncbi.nlm.nih.gov/gene", accent: "#b45309" },
-];
-const ANAT_TERMS = ["epidermis", "periderm", "neural tube", "somite", "pharyngeal arch", "lateral plate mesoderm", "retina", "hematopoietic system", "notochord", "fin bud", "hindbrain", "pronephros"];
-const GO_TERMS = ["epithelial cell differentiation", "anatomical structure morphogenesis", "regulation of transcription", "cell adhesion", "ion transport", "signal transduction", "tissue development"];
-
-function ActivityPane({ mode, status, streaming, routing, cluster, datasetName }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; datasetName: string }) {
+function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, researchText }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; datasetName: string; researchText: string }) {
   const genes = cluster.degsUp ?? [];
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -2014,15 +2005,40 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName }
   }, [streaming]);
 
   const gene = genes.length ? genes[tick % genes.length] : "—";
-  const qMatch = status.match(/[“”"']([^“”"']{2,})[“”"']/);
-  const query = qMatch ? qMatch[1] : `${gene} expression in vivo`;
-  const site = RESEARCH_SITES[tick % RESEARCH_SITES.length];
-  const anat = ANAT_TERMS.slice((tick * 2) % ANAT_TERMS.length, ((tick * 2) % ANAT_TERMS.length) + 3);
-  const go = GO_TERMS.slice(tick % GO_TERMS.length, (tick % GO_TERMS.length) + 2);
   const marker = (cluster.markers ?? []).find((m) => m.g === gene);
+
+  // the real page the Researcher is citing — pull (gene, url) pairs out of the
+  // latest Research Log text, preferring ZFIN / Wikipedia (they render well in
+  // the proxied frame); show the most recent one.
+  const chosen = useMemo(() => {
+    const links: { gene?: string; url: string }[] = [];
+    const re = /\*\*([^*\n]{1,40})\*\*[^\n[]{0,90}?\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(researchText))) links.push({ gene: m[1].trim(), url: m[2] });
+    if (!links.length) {
+      const ure = /(https?:\/\/[^)\s\]]+)/g;
+      let u: RegExpExecArray | null;
+      while ((u = ure.exec(researchText))) links.push({ url: u[1].replace(/[.,;]+$/, "") });
+    }
+    if (!links.length) return null;
+    const prefer = [...links].reverse().find((l) => {
+      try {
+        const h = new URL(l.url).hostname;
+        return h.endsWith("zfin.org") || h.endsWith("wikipedia.org");
+      } catch {
+        return false;
+      }
+    });
+    return prefer ?? links[links.length - 1];
+  }, [researchText]);
 
   const live = streaming;
   const chrome = mode === "archivist" ? "#a16207" : THEME[mode]?.color ?? "#0e7490";
+  let chosenHost = "";
+  try {
+    chosenHost = chosen ? new URL(chosen.url).hostname.replace(/^www\./, "") : "";
+  } catch {}
+  const proxySrc = chosen ? `/api/kasperov_proxy?url=${encodeURIComponent(chosen.url)}&highlight=${encodeURIComponent(chosen.gene || gene || "")}` : "";
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9" }}>
@@ -2079,43 +2095,31 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName }
               )}
             </div>
           </div>
-        ) : (
+        ) : chosen ? (
+          // Researcher — the ACTUAL cited page, proxied + scrolled/highlighted to the gene
           <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff", border: "1px solid #d8d3cd", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", gap: 4, padding: "6px 8px 0", background: "#ece7df" }}>
-              {RESEARCH_SITES.map((s) => (
-                <div key={s.id} style={{ fontSize: 10.5, fontWeight: 600, padding: "5px 9px", borderRadius: "7px 7px 0 0", background: s.id === site.id ? "#fff" : "#e2ddd5", color: s.id === site.id ? s.accent : "#888" }}>{s.name}</div>
-              ))}
-            </div>
             <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
+              <span style={{ fontWeight: 700, color: THEME.research.color, flexShrink: 0 }}>{chosenHost}</span>
               <span>🔒</span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>https://{site.host}/search?q={encodeURIComponent(query)}</span>
-              {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${site.accent}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chosen.url}</span>
+              {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${THEME.research.color}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
             </div>
-            <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
-              <div style={{ padding: "12px 14px", animation: live ? "apscroll 9s ease-in-out infinite alternate" : "none" }}>
-                <div style={{ fontSize: 15, fontWeight: 700, color: site.accent }}>{gene}</div>
-                <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Danio rerio · {site.name} record</div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#555", marginTop: 8 }}>In-vivo expression</div>
-                <div style={{ fontSize: 12, color: "#444", lineHeight: 1.6 }}>
-                  Expressed in{" "}
-                  {anat.map((a, i) => (
-                    <span key={a}>
-                      <span style={{ animation: live ? "aphl 2.2s ease-in-out infinite" : "none", borderRadius: 3, padding: "0 2px" }}>{a}</span>
-                      {i < anat.length - 1 ? ", " : ""}
-                    </span>
-                  ))}{" "}during segmentation / pharyngula stages.
-                </div>
-                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#555", marginTop: 10 }}>Gene Ontology</div>
-                <div style={{ fontSize: 12, color: "#444", lineHeight: 1.6 }}>{go.join("; ")}.</div>
-                <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
-                  {[0, 1, 2].map((i) => (
-                    <div key={i} style={{ flex: 1, height: 54, background: `linear-gradient(135deg, ${site.accent}22, ${site.accent}0a)`, border: "1px solid #eee", borderRadius: 6 }} />
-                  ))}
-                </div>
-                <div style={{ fontSize: 10.5, color: "#aaa", marginTop: 6 }}>Fig. in-situ hybridisation, lateral views.</div>
-                <div style={{ height: 60 }} />
-              </div>
-            </div>
+            <iframe
+              key={proxySrc}
+              src={proxySrc}
+              title="Researcher source"
+              sandbox="allow-scripts allow-popups allow-forms"
+              referrerPolicy="no-referrer"
+              style={{ border: 0, width: "100%", flex: 1, background: "#fff" }}
+            />
+            <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>Live source — scrolled to {chosen.gene || gene}. Some sites (NCBI/EBI) may block embedding.</div>
+          </div>
+        ) : (
+          // no cited source yet
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
+            <div style={{ fontSize: 30, animation: live ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
+            <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
+            <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
           </div>
         )}
       </div>
@@ -2279,6 +2283,17 @@ function ClusterStage({
 
   const msgs = transcripts[active.id] ?? [];
   const started = msgs.length > 0 || streaming;
+
+  // the latest Researcher text (live while streaming, else the last research turn)
+  // — drives the live-activity pane's real page view
+  const researchText = useMemo(() => {
+    if (streaming && sMode === "research" && sText) return sText;
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === "assistant" && msgs[i].mode === "research") return msgs[i].content;
+    }
+    return "";
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [msgs, streaming, sMode, sText]);
 
   useEffect(() => {
     setPrompt(defaultPrompt(active));
@@ -2902,7 +2917,7 @@ function ClusterStage({
 
         {/* RIGHT — live activity preview (Researcher browser / Archivist explorer) */}
         <div style={{ flex: "1 1 0", minWidth: 260, minHeight: 0 }}>
-          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} datasetName={dataset.name} />
+          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} datasetName={dataset.name} researchText={researchText} />
         </div>
       </div>
     </div>
