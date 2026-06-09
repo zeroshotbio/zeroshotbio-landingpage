@@ -22,6 +22,7 @@ type Item = {
   id: string;
   ourLabel: string;
   markers?: string[];
+  predictions?: Partial<Record<Tier, string | null>>; // our per-tier prediction
   gt: Partial<Record<Tier, string | null>>;
 };
 
@@ -34,13 +35,13 @@ const TIER_SCHEMA = {
 
 const INSTRUCTIONS = [
   "You are a strict-but-fair benchmark judge scoring an automated zebrafish (Danio rerio) cell-type annotator against a published reference atlas.",
-  "For each cluster you get: OUR de-novo label, the cluster's top marker genes, and the REFERENCE label at four nested ontology tiers (germ_layer = coarsest → tissue → cell_type_broad → cell_type_sub = finest).",
-  "For EACH tier, decide whether OUR label denotes the same biological entity as the reference label AT THAT TIER's level of resolution:",
-  "- Accept synonyms, ontology parent/child equivalence, and lineage equivalence (e.g. our 'periderm' vs reference tissue 'Epidermis' → match: periderm is epidermal; our 'erythroid progenitor' vs reference 'erythroid lineage' → match).",
+  "For each cluster you get OUR PREDICTION at four nested ontology tiers (germ_layer = coarsest → tissue → cell_type_broad → cell_type_sub = finest), the cluster's top marker genes, and the REFERENCE label at each of those tiers.",
+  "For EACH tier, decide whether OUR PREDICTION at that tier denotes the same biological entity as the REFERENCE at that tier:",
+  "- Accept synonyms, ontology parent/child equivalence, and lineage equivalence (e.g. our 'epidermis' vs reference 'Epidermis' → match; our 'ectoderm' vs reference 'ectoderm' → match).",
   "- IGNORE arbitrary numeric suffixes on reference sub labels (e.g. 'periderm 10', 'mature fast muscle 6' — treat as 'periderm', 'mature fast muscle'); match on the biological stem, not the number.",
-  "- DEPTH DISCIPLINE: only mark match=true at a tier if our label is SPECIFIC ENOUGH to denote that tier. If our label is correct but COARSER than the tier (e.g. we said 'epidermal cell' and the tier asks for the fine sub-type), mark match=false at that finer tier — being right at a coarse tier does not earn credit at a finer one.",
-  "- If our label is simply wrong / a different lineage, match=false at every tier it conflicts with.",
-  "- If a reference tier label is missing/empty, match=false with note 'no reference'.",
+  "- Judge each tier on ITS OWN prediction vs ITS OWN reference — do not borrow a coarser tier's correctness for a finer one.",
+  "- If our prediction at a tier is wrong / a different lineage, match=false.",
+  "- If our prediction is empty or a reference tier label is missing/empty, match=false with note 'missing'.",
   "Each tier verdict carries a note of 10 words or fewer justifying the call. Return one result object per input cluster, in the same order, keyed by the given id.",
 ].join("\n");
 
@@ -48,14 +49,14 @@ function buildInput(items: Item[]): string {
   return items
     .map((it, i) => {
       const gt = it.gt || {};
+      const p = it.predictions || {};
       return [
         `### Cluster ${i + 1} (id=${it.id})`,
-        `OUR label: ${it.ourLabel || "(none)"}`,
         `Top markers: ${(it.markers ?? []).slice(0, 12).join(", ") || "(none)"}`,
-        `REFERENCE germ_layer: ${gt.germ_layer ?? "(none)"}`,
-        `REFERENCE tissue: ${gt.tissue ?? "(none)"}`,
-        `REFERENCE cell_type_broad: ${gt.cell_type_broad ?? "(none)"}`,
-        `REFERENCE cell_type_sub: ${gt.cell_type_sub ?? "(none)"}`,
+        `OUR germ_layer: ${p.germ_layer ?? it.ourLabel ?? "(none)"}    | REFERENCE: ${gt.germ_layer ?? "(none)"}`,
+        `OUR tissue: ${p.tissue ?? it.ourLabel ?? "(none)"}    | REFERENCE: ${gt.tissue ?? "(none)"}`,
+        `OUR cell_type_broad: ${p.cell_type_broad ?? it.ourLabel ?? "(none)"}    | REFERENCE: ${gt.cell_type_broad ?? "(none)"}`,
+        `OUR cell_type_sub: ${p.cell_type_sub ?? it.ourLabel ?? "(none)"}    | REFERENCE: ${gt.cell_type_sub ?? "(none)"}`,
       ].join("\n");
     })
     .join("\n\n");

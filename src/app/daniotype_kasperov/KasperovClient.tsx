@@ -10,6 +10,22 @@ type Usage = Record<string, { in: number; out: number }>; // tokens keyed by mod
 type TierAgg = { key: string; label: string; matched: number; total: number; pct: number };
 type RunScore = { verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[] };
 
+// Per-cluster characterization: a prediction + confidence at each of the four
+// ontology tiers — the goal of a cluster's work is to drive these confidences up.
+type TierPred = { prediction: string; pct: number };
+type ClusterConf = { germ_layer: TierPred; tissue: TierPred; cell_type_broad: TierPred; cell_type_sub: TierPred; why?: string };
+const CONF_TIERS: { key: keyof Omit<ClusterConf, "why">; gtKey: string; label: string }[] = [
+  { key: "germ_layer", gtKey: "germ_layer", label: "Germ layer" },
+  { key: "tissue", gtKey: "tissue", label: "Tissue" },
+  { key: "cell_type_broad", gtKey: "cell_type_broad", label: "Cell type — broad" },
+  { key: "cell_type_sub", gtKey: "cell_type_sub", label: "Cell type — sub" },
+];
+function overallConf(cc?: ClusterConf): number | undefined {
+  if (!cc) return undefined;
+  const ps = [cc.germ_layer, cc.tissue, cc.cell_type_broad, cc.cell_type_sub].map((t) => t?.pct).filter((x): x is number => typeof x === "number");
+  return ps.length ? ps.reduce((a, b) => a + b, 0) / ps.length : undefined;
+}
+
 // ---------------------------------------------------------------------------
 const PAPER = "#f6f4f2";
 const INK = "#2b2b2b";
@@ -347,7 +363,7 @@ export default function KasperovClient() {
   // navigation — ClusterStage unmounts when you return to the map.
   const [transcripts, setTranscripts] = useState<Record<string, ChatMsg[]>>({});
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
-  const [confidence, setConfidence] = useState<Record<string, { pct: number; why: string }>>({});
+  const [confidence, setConfidence] = useState<Record<string, ClusterConf>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
   const hydratedRef = useRef<string | null>(null);
 
@@ -527,7 +543,7 @@ export default function KasperovClient() {
     if (hasWork && !window.confirm(`Replace the current ${dataset.name} run with the imported one? Your current labels for this dataset will be overwritten.`)) return;
 
     const nLabels: Record<string, string> = {};
-    const nConf: Record<string, { pct: number; why: string }> = {};
+    const nConf: Record<string, ClusterConf> = {};
     const nAug: Record<string, Marker[]> = {};
     const nTrans: Record<string, ChatMsg[]> = {};
     const nVal = new Set<string>();
@@ -540,7 +556,7 @@ export default function KasperovClient() {
         loaded++;
       }
       if (c.validated) nVal.add(id);
-      if (c.confidence && typeof c.confidence.pct === "number") nConf[id] = { pct: c.confidence.pct, why: String(c.confidence.why ?? "") };
+      if (c.confidence && c.confidence.germ_layer && typeof c.confidence.germ_layer.pct === "number") nConf[id] = c.confidence as ClusterConf;
       if (Array.isArray(c.addedMarkers) && c.addedMarkers.length) nAug[id] = c.addedMarkers;
       if (Array.isArray(c.transcript) && c.transcript.length) nTrans[id] = c.transcript;
     }
@@ -1160,7 +1176,7 @@ function MapStage({
   onSwitchDataset: () => void;
   onImport: (data: unknown) => void;
   labels?: Record<string, string>;
-  confidence?: Record<string, { pct: number; why: string }>;
+  confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
   onModelChange: (m: KasperovModel) => void;
   usage: Usage;
@@ -1345,7 +1361,7 @@ function MapStage({
                 </div>
                 <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))", gap: 6 }}>
                   {clusters.map((c) => {
-                    const conf = confidence[c.id]?.pct;
+                    const conf = overallConf(confidence[c.id]);
                     const isVal = validated.has(c.id);
                     const hasLabel = !!labels[c.id];
                     const heat = typeof conf === "number" ? confColor(conf) : null;
@@ -1464,7 +1480,7 @@ function Scorecard({
   dataset: DatasetDef;
   clusters: Cluster[];
   labels: Record<string, string>;
-  confidence: Record<string, { pct: number; why: string }>;
+  confidence: Record<string, ClusterConf>;
   validated?: Set<string>;
   onPick?: (id: string) => void;
   model: string;
@@ -1558,7 +1574,17 @@ function Scorecard({
       setErr("");
       const targets = full ? labelled : labelled.filter((c) => !score.verdicts[c.id]);
       const toScore = targets.length ? targets : labelled;
-      const items = toScore.map((c) => ({ id: c.id, ourLabel: labels[c.id], markers: c.degsUp, gt: gtTiersFor(c.id) }));
+      const items = toScore.map((c) => {
+        const cc = confidence[c.id];
+        const fallback = labels[c.id] || "";
+        const predictions = {
+          germ_layer: cc?.germ_layer?.prediction || fallback,
+          tissue: cc?.tissue?.prediction || fallback,
+          cell_type_broad: cc?.cell_type_broad?.prediction || fallback,
+          cell_type_sub: cc?.cell_type_sub?.prediction || fallback,
+        };
+        return { id: c.id, ourLabel: labels[c.id], predictions, markers: c.degsUp, gt: gtTiersFor(c.id) };
+      });
       const BATCH = 10;
       const batches: (typeof items)[] = [];
       for (let i = 0; i < items.length; i += BATCH) batches.push(items.slice(i, i + BATCH));
@@ -1591,7 +1617,7 @@ function Scorecard({
       setScore({ verdicts: acc, scoredAt: new Date().toISOString(), agg: computeAgg(acc) });
       setStatus("done");
     },
-    [gt, labelled, labels, gtTiersFor, computeAgg, dataset.id, model, addUsage, score.verdicts, setScore]
+    [gt, labelled, labels, confidence, gtTiersFor, computeAgg, dataset.id, model, addUsage, score.verdicts, setScore]
   );
 
   const agg = computeAgg(verdicts);
@@ -1683,7 +1709,8 @@ function Scorecard({
                 {clusters.map((c) => {
                   const v = verdicts[c.id];
                   const refs = gtTiersFor(c.id);
-                  const conf = confidence[c.id]?.pct;
+                  const cc = confidence[c.id];
+                  const conf = overallConf(cc);
                   const hasLabel = !!labels[c.id];
                   const isVal = validated?.has(c.id);
                   const heat = typeof conf === "number" ? confColor(conf) : null;
@@ -1711,18 +1738,20 @@ function Scorecard({
                         const ref = refs[t.gtKey as keyof typeof refs];
                         const tv = v ? v[t.key] : null;
                         const ok = tv?.match;
+                        const tp = cc ? (cc[t.key as keyof Omit<ClusterConf, "why">] as TierPred | undefined) : undefined;
+                        const tHeat = tp && typeof tp.pct === "number" ? confColor(tp.pct) : null;
                         return (
-                          <td key={t.key} style={{ padding: "9px 12px", verticalAlign: "top", minWidth: 150 }} title={tv?.note || ""}>
-                            {!tv ? (
-                              // un-filled until the comparison is run
-                              <span style={{ color: "#cbc5be" }}>·</span>
-                            ) : (
-                              <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-                                <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800, flexShrink: 0 }}>{ok ? "✓" : "✗"}</span>
-                                {/* the corrected ZSCAPE label — subtle red when our call was wrong */}
-                                {ref && <span style={{ color: ok ? "#9a948c" : "#dc7a5a", fontSize: ok ? 11.5 : 12 }}>{ref}</span>}
-                              </div>
-                            )}
+                          <td key={t.key} style={{ padding: "9px 12px", verticalAlign: "top", minWidth: 160 }} title={tv?.note || ""}>
+                            {/* OUR prediction + per-tier confidence (shown as we work the cluster) */}
+                            <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+                              {tv && <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800, flexShrink: 0 }}>{ok ? "✓" : "✗"}</span>}
+                              <span style={{ color: tp ? "#333" : "#cbc5be", minWidth: 0 }}>{tp?.prediction || "·"}</span>
+                              {tp && tHeat && typeof tp.pct === "number" && (
+                                <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: tHeat.fg, background: tHeat.bg, borderRadius: 99, padding: "0px 5px" }}>{tp.pct.toFixed(0)}%</span>
+                              )}
+                            </div>
+                            {/* the corrected ZSCAPE label — subtle red — only after scoring + only when wrong */}
+                            {tv && !ok && ref && <div style={{ color: "#dc7a5a", fontSize: 11.5, marginTop: 2 }}>→ {ref}</div>}
                           </td>
                         );
                       })}
@@ -2000,8 +2029,8 @@ function ClusterStage({
   setTranscripts: React.Dispatch<React.SetStateAction<Record<string, ChatMsg[]>>>;
   augmented: Record<string, Marker[]>;
   setAugmented: React.Dispatch<React.SetStateAction<Record<string, Marker[]>>>;
-  confidence: Record<string, { pct: number; why: string }>;
-  setConfidence: React.Dispatch<React.SetStateAction<Record<string, { pct: number; why: string }>>>;
+  confidence: Record<string, ClusterConf>;
+  setConfidence: React.Dispatch<React.SetStateAction<Record<string, ClusterConf>>>;
   incorporated: Set<string>;
   setIncorporated: React.Dispatch<React.SetStateAction<Set<string>>>;
 }) {
@@ -2098,7 +2127,10 @@ function ClusterStage({
       if (!r.ok) return;
       const d = await r.json();
       if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
-      if (typeof d.pct === "number") setConfidence((c) => ({ ...c, [clusterId]: { pct: d.pct, why: d.why || "" } }));
+      if (d.tiers && d.tiers.germ_layer) {
+        const cc: ClusterConf = { ...d.tiers, why: d.why || "" };
+        setConfidence((c) => ({ ...c, [clusterId]: cc }));
+      }
     } catch {}
   }
 
@@ -2500,16 +2532,16 @@ function ClusterStage({
               {/* live confidence — auto-grows to fit its rationale */}
               {confidence[active.id] && (
                 <DraggablePanel
-                  title="CONFIDENCE"
+                  title="TIER CONFIDENCE"
                   accent="#8a847b"
                   box={pb.cf}
-                  minW={180}
+                  minW={220}
                   autoFitHeight
                   onMove={(x, y) => moveBox("cf", x, y)}
                   onResize={(w, h) => resizeBox("cf", w, h)}
                   onMeasure={(h) => measureBox("cf", h)}
                 >
-                  {() => <ConfidenceContent pct={confidence[active.id].pct} why={confidence[active.id].why} />}
+                  {() => <ConfidenceContent conf={confidence[active.id]} />}
                 </DraggablePanel>
               )}
             </>
@@ -3140,18 +3172,33 @@ function useTween(target: number, duration = 1100): number {
   return val;
 }
 
-function ConfidenceContent({ pct, why }: { pct: number; why: string }) {
-  // greyscale only — colour is reserved for personalities
-  const shown = useTween(pct); // number scrolls smoothly (accel/decel) toward the new value
+// one tier's prediction + a smoothly-tweened confidence bar (greyscale — colour
+// is reserved for personalities)
+function TierConfRow({ label, pred, pct }: { label: string; pred: string; pct: number }) {
+  const shown = useTween(pct);
+  return (
+    <div style={{ marginBottom: 9 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 11.5 }}>
+        <span style={{ color: "#999", fontWeight: 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
+        <span style={{ color: "#2b2b2b", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pred || "—"}</span>
+        <span style={{ color: "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{shown.toFixed(0)}%</span>
+      </div>
+      <div style={{ height: 6, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
+        <div style={{ width: `${shown}%`, height: "100%", background: "#6b6660" }} />
+      </div>
+    </div>
+  );
+}
+
+function ConfidenceContent({ conf }: { conf: ClusterConf }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 2 }}>
-        <span style={{ fontSize: 26, fontWeight: 800, color: "#2b2b2b", fontVariantNumeric: "tabular-nums", minWidth: 86, display: "inline-block" }}>{shown.toFixed(1)}%</span>
-        <div style={{ flex: 1, height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden" }}>
-          <div style={{ width: `${shown}%`, height: "100%", background: "#6b6660" }} />
-        </div>
-      </div>
-      <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 6 }}>{why}</div>
+      <div style={{ fontSize: 10.5, color: "#aaa", marginBottom: 7 }}>Goal: drive every tier&apos;s confidence up.</div>
+      {CONF_TIERS.map((t) => {
+        const tp = conf[t.key];
+        return <TierConfRow key={t.key} label={t.label} pred={tp?.prediction ?? ""} pct={tp?.pct ?? 0} />;
+      })}
+      {conf.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}>{conf.why}</div>}
     </div>
   );
 }

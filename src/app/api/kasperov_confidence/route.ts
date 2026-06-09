@@ -31,9 +31,17 @@ export async function POST(req: Request) {
   const convo = messages.map((m) => `${m.role === "user" ? "Curator" : "Agent"}: ${m.content}`).join("\n\n").slice(0, 8000);
   const added = typeof body?.addedMarkers === "string" ? body.addedMarkers.slice(0, 1200) : "";
   const instructions =
-    "You assess how confident a curator should be in the proposed cell-type identity for a zebrafish single-cell cluster, given ONLY the conversation and the evidence added to the Top Markers panel. " +
-    "Weigh: strength and specificity of cited evidence, agreement across turns, statistical support, and unresolved caveats. If little is established, score low. " +
-    "Return confidence_pct (a number 0-100 with ONE decimal place — be granular, e.g. 65.4 or 88.7, not a round number) and a rationale of 100 words or fewer giving the HIGHEST-LEVEL reasons for that level of confidence (or lack of it) — what is the single strongest support and the main remaining uncertainty. Reference what was actually discussed; no preamble.";
+    "You characterize a zebrafish single-cell cluster at FOUR nested ontology tiers — germ layer → tissue → cell type (broad) → cell type (sub) — using ONLY the conversation and the evidence added to the Top Markers panel. " +
+    "For EACH tier give: prediction (your single best short label for that tier, e.g. germ_layer 'ectoderm', tissue 'epidermis', cell_type_broad 'periderm', cell_type_sub 'periderm (outer)'; if genuinely unestablished, your best provisional guess) and confidence_pct (0-100, ONE decimal, granular — e.g. 84.3 not 85). " +
+    "Confidence is grounded in the evidence actually discussed (cited markers, in-vivo expression, anatomy) — generally highest at the coarse germ-layer tier and lower at the fine sub-type tier; if a tier is barely supported, score it low. The GOAL of the cluster's work is to drive all four tier confidences up. " +
+    "Also give a `why` of 60 words or fewer: the single strongest support and the main remaining uncertainty across the tiers. No preamble.";
+
+  const TIER = {
+    type: "object",
+    properties: { prediction: { type: "string" }, confidence_pct: { type: "number", minimum: 0, maximum: 100 } },
+    required: ["prediction", "confidence_pct"],
+    additionalProperties: false,
+  };
 
   try {
     const ctrl = new AbortController();
@@ -45,21 +53,18 @@ export async function POST(req: Request) {
       body: JSON.stringify({
         model,
         reasoning: { effort: "minimal" },
-        max_output_tokens: 900,
+        max_output_tokens: 1200,
         instructions,
         input: [{ role: "user", content: `Cluster: ${cluster?.label ?? cluster?.id ?? "?"}\n\nConversation:\n${convo}${added ? `\n\nEvidence added to Top Markers panel:\n${added}` : ""}` }],
         text: {
           format: {
             type: "json_schema",
-            name: "confidence",
+            name: "characterization",
             strict: true,
             schema: {
               type: "object",
-              properties: {
-                confidence_pct: { type: "number", minimum: 0, maximum: 100 },
-                rationale: { type: "string" },
-              },
-              required: ["confidence_pct", "rationale"],
+              properties: { germ_layer: TIER, tissue: TIER, cell_type_broad: TIER, cell_type_sub: TIER, why: { type: "string" } },
+              required: ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub", "why"],
               additionalProperties: false,
             },
           },
@@ -80,10 +85,19 @@ export async function POST(req: Request) {
     } catch {
       return NextResponse.json({ error: "parse" }, { status: 502 });
     }
-    const pct = Math.round(Math.max(0, Math.min(100, Number(parsed.confidence_pct ?? 0))) * 10) / 10;
-    const why = String(parsed.rationale ?? "").slice(0, 800);
+    const tier = (o: any) => ({
+      prediction: String(o?.prediction ?? "").slice(0, 80),
+      pct: Math.round(Math.max(0, Math.min(100, Number(o?.confidence_pct ?? 0))) * 10) / 10,
+    });
+    const tiers = {
+      germ_layer: tier(parsed.germ_layer),
+      tissue: tier(parsed.tissue),
+      cell_type_broad: tier(parsed.cell_type_broad),
+      cell_type_sub: tier(parsed.cell_type_sub),
+    };
+    const why = String(parsed.why ?? "").slice(0, 600);
     const usage = { model, in: data?.usage?.input_tokens ?? 0, out: data?.usage?.output_tokens ?? 0 };
-    return NextResponse.json({ pct, why, usage });
+    return NextResponse.json({ tiers, why, usage });
   } catch (e: any) {
     return NextResponse.json({ error: "exception", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }
