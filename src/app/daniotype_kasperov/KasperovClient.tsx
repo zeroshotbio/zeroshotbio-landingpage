@@ -2013,11 +2013,36 @@ function extractEvidenceMarkers(text: string): Marker[] {
   return out;
 }
 
-// a small signature so live (frequent) re-scrapes only commit a state update when
-// the gene set / note counts / directions actually changed
+// Scrape mentions of KNOWN cluster genes from free-form prose (the reasoning log
+// / Research Log, where the Researcher spends most of its time before the final
+// answer). For each gene found, take the short clause AFTER it as a live note —
+// this is what makes Top Markers update continuously while the agent thinks.
+function escapeRe(s: string): string {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+function extractMentions(text: string, vocab: string[]): Marker[] {
+  if (!text) return [];
+  const out: Marker[] = [];
+  for (const g of vocab) {
+    if (g.length < 2) continue;
+    const re = new RegExp(`\\b${escapeRe(g)}\\b`, "gi");
+    let last = -1;
+    let m: RegExpExecArray | null;
+    while ((m = re.exec(text))) last = m.index + m[0].length;
+    if (last < 0) continue;
+    const after = text.slice(last, last + 110).replace(/\*\*/g, "").replace(/\s+/g, " ").replace(/^[\s,.;:)\]]+/, "").trim();
+    const note = after.split(/[.;\n]/)[0].split(" ").slice(0, 9).join(" ").replace(/[\s.,;:([]+$/, "");
+    if (note.length >= 3) out.push({ g, note });
+  }
+  return out;
+}
+
+// a signature so live (frequent) re-scrapes only commit a state update when the
+// gene set / note TEXT / directions actually changed (note text is included so
+// continually-edited live notes do get flushed to the UI)
 function augSig(list: Marker[]): string {
   return list
-    .map((m) => `${m.g.toLowerCase()}:${m.notes?.length ?? (m.note ? 1 : 0)}:${m.dir ?? ""}`)
+    .map((m) => `${m.g.toLowerCase()}:${(m.notes ?? []).map((n) => n.via + n.text).join("~") || (m.note ?? "")}:${m.dir ?? ""}`)
     .sort()
     .join("|");
 }
@@ -2260,18 +2285,21 @@ function ClusterStage({
     setPb((p) => (!p || Math.abs(p[k].h - h) < 1 ? p : { ...p, [k]: { ...p[k], h } }));
   }, []);
 
-  // Top Markers & Confidence also grow WIDER as they gather content (until the
-  // user drags a panel, which switches everything to manual layout)
+  // Top Markers & Confidence grow WIDER as they gather content — wide enough that
+  // each tagged note sits on ONE line, so the box stays short and ALL content is
+  // visible without scrolling (until the user drags a panel → manual layout)
   useEffect(() => {
     if (manualRef.current) return;
     const added = augmented[active.id] ?? [];
     const why = confidence[active.id]?.why ?? "";
     const longestNote = added.reduce((mx, m) => Math.max(mx, ...markerNotes(m).map((n) => n.text.length), 0), 0);
-    const mkW = Math.min(400, Math.max(250, 250 + (longestNote > 38 ? 120 : longestNote > 0 ? 55 : 0) + (added.length > 3 ? 25 : 0)));
-    const cfW = Math.min(380, Math.max(250, 250 + Math.floor(why.length / 5)));
+    // allow the boxes to use most of the focused-cluster pane's width
+    const maxBoxW = Math.max(300, Math.round((containerSize.w || 560) * 0.66));
+    const mkW = Math.round(Math.min(maxBoxW, Math.max(280, 282 + longestNote * 4 + added.length * 4)));
+    const cfW = Math.round(Math.min(maxBoxW, Math.max(280, 280 + why.length * 1.3)));
     setPb((p) => (!p || (p.mk.w === mkW && p.cf.w === cfW) ? p : { ...p, mk: { ...p.mk, w: mkW }, cf: { ...p.cf, w: cfW } }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [augmented, confidence, active.id]);
+  }, [augmented, confidence, active.id, containerSize.w]);
 
   // on-screen geometry that ALWAYS fits the focused-cluster pane: panels stack,
   // the two auto-fit panels cap their height (scrolling past it), and everything
@@ -2301,19 +2329,23 @@ function ClusterStage({
     let acc = "";
     let think = ""; // full reasoning trace for this turn (stored on the message)
     let mode: AgentMode = forceMode ?? "research";
-    // LIVE CADENCE: while the turn streams (esp. the slow Researcher), fold its
-    // partial evidence into Top Markers every ~2.5s and re-score Tier Confidence
-    // every ~9s — so the boxes update progressively instead of once at the end.
+    // LIVE CADENCE: while the turn streams, continuously fold the Research Log
+    // (reasoning trace) + partial answer into Top Markers (~every 1.1s) and
+    // re-score Tier Confidence (~every 5s) — the Researcher spends most of its
+    // time reasoning before the answer, so we scrape the log, not just the answer.
     let lastLiveConf = 0;
     const liveTimer = setInterval(() => {
-      if (!acc) return;
-      incorporateFrom(cl, acc, mode);
+      const log = think ? think + "\n\n" + acc : acc;
+      if (!log) return;
+      incorporateFrom(cl, log, mode);
       const now = Date.now();
-      if (now - lastLiveConf > 9000) {
+      // re-score confidence often when a human is watching; throttle in auto-pilot
+      // (fast) where each cluster fires many sub-streams, to keep token cost sane
+      if (now - lastLiveConf > (fast ? 15000 : 5000)) {
         lastLiveConf = now;
-        refreshConfidence([...nextMsgs, { role: "assistant", content: acc }], cl.id, addedText(augmentedRef.current[cl.id] ?? []));
+        refreshConfidence([...nextMsgs, { role: "assistant", content: log.slice(-4000) }], cl.id, addedText(augmentedRef.current[cl.id] ?? []));
       }
-    }, 2500);
+    }, 1100);
     // hard timeout so a hung request can't stall the whole auto-pilot sweep
     const ctrl = new AbortController();
     const killTimer = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
@@ -2391,31 +2423,39 @@ function ClusterStage({
     }
     const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode, ...(think.trim() ? { thinking: think.slice(0, 6000) } : {}) }];
     setTranscripts((t) => ({ ...t, [cl.id]: finalMsgs }));
-    // final fold of this turn's conclusions into Top Markers + a confidence refresh
-    const mergedMk = incorporateFrom(cl, acc, mode);
+    // final fold of this turn (reasoning log + answer) into Top Markers + confidence
+    const mergedMk = incorporateFrom(cl, (think ? think + "\n\n" : "") + acc, mode);
     refreshConfidence(finalMsgs, cl.id, addedText(mergedMk));
     return finalMsgs;
   }
 
   // Fold a personality's output into Top Markers — called LIVE while it streams
-  // (so the box snowballs before the final verdict) and again at turn end. Pulls
-  // `**gene** — finding` evidence bullets, the kasperov-markers block, and any
-  // promotes. Reads/writes augmentedRef so rapid live ticks don't fight stale
-  // state, and only commits when the gene set actually changed. Returns the list.
+  // (so the box snowballs continuously, off the Research Log, before the final
+  // verdict) and again at turn end. Pulls: mentions of known cluster genes in the
+  // reasoning prose (lowest priority, but the most frequent live signal), then
+  // `**gene** — finding` evidence bullets, then the kasperov-markers block, then
+  // promotes — each later source overriding the same personality's earlier note.
+  // Ref-based so rapid ticks don't fight stale state; commits only on real change.
   function incorporateFrom(cl: Cluster, content: string, via: AgentMode): Marker[] {
+    const vocab = Array.from(new Set([...(cl.degsUp ?? []), ...((cl.markers ?? []).map((m) => m.g))]));
+    const mentions = via === "archivist" ? [] : extractMentions(content, vocab);
     const evidence = extractEvidenceMarkers(content);
     const block = splitMarkerBlock(content).markers;
     const promotes = splitPromote(content).promotes;
     const cur = augmentedRef.current[cl.id] ?? [];
     let next = cur;
+    if (mentions.length) next = mergeMarkers(next, mentions, via);
     if (evidence.length) next = mergeMarkers(next, evidence, via);
-    if (block.length) next = mergeMarkers(next, block, via); // block wins over the live scrape
+    if (block.length) next = mergeMarkers(next, block, via); // authoritative — wins over live scrapes
     if (promotes.length) next = applyPromotes(next, promotes, via);
     if (augSig(next) === augSig(cur)) return cur;
+    const grew = next.length > cur.length;
     augmentedRef.current = { ...augmentedRef.current, [cl.id]: next };
     setAugmented((a) => ({ ...a, [cl.id]: next }));
-    setFlash(true);
-    setTimeout(() => setFlash(false), 800);
+    if (grew) {
+      setFlash(true);
+      setTimeout(() => setFlash(false), 700);
+    }
     return next;
   }
 
@@ -3232,8 +3272,8 @@ function markerNotes(m: Marker): { via: AgentMode; text: string }[] {
 function NoteLine({ via, text }: { via: AgentMode; text: string }) {
   const th = THEME[via] ?? THEME.research;
   return (
-    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 7, fontSize: 10.5, color: "#555", lineHeight: 1.35 }}>
-      <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 4px", textTransform: "uppercase", marginRight: 5 }}>{th.name}</span>
+    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, fontSize: 10, color: "#555", lineHeight: 1.28 }}>
+      <span style={{ fontSize: 7.5, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase", marginRight: 4 }}>{th.name}</span>
       {text}
     </div>
   );
