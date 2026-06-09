@@ -60,3 +60,27 @@ exported runs still download locally and re-load via **Import results**.
   server-side for simplicity; everything else matches.
 - Auto-pilot status is in-memory (per process); a completed run is durable
   because it's written to the EBS volume.
+
+## Timelapse GIF capture (`capture_gif.py`)
+
+`POST /capture {datasetId, model}` → `{captureId, outDir, gif}` · `GET /capture/{id}` → progress.
+
+The headless API loop has no UI, so to FILM a run the worker spawns a headless
+Chromium (Playwright) that drives the wizard's **capture mode**
+(`/daniotype_kasperov?capture=1&dataset=<id>&model=<m>`) — which auto-runs the
+in-browser AutoPilot and saves the run when done. It screenshots every ~10s into
+`$AUTOPILOT_RUNS_DIR/gifs/<id>/frames/` and squeezes them into one ~60s
+`timelapse.gif` (Pillow). In the UI this is the "record a GIF" option on the
+**☁ Run AutoPilot on server** button; the capture run replaces the API-loop run
+(it both films and saves), so the AutoPilot only executes once.
+
+One-time setup on the box (same `ssm-user` the worker runs as):
+
+```bash
+/data/.venv/bin/pip install playwright Pillow
+/data/.venv/bin/python -m playwright install chromium   # browser → ~/.cache/ms-playwright
+```
+
+`CAPTURE_PYTHON` (default `/data/.venv/bin/python`) selects the interpreter. The
+GIF lands at `$AUTOPILOT_RUNS_DIR/gifs/<captureId>/timelapse.gif` — grab it off
+the EBS volume directly.

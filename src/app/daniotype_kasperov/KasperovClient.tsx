@@ -1248,8 +1248,25 @@ function MapStage({
 
   // persistent server-side auto-pilot (runs on EC2, survives the browser closing)
   const [serverRun, setServerRun] = useState<{ runId?: string; phase: string; done: number; total: number; msg?: string } | null>(null);
+  // timelapse GIF capture (a headless browser on EC2 films the in-browser AutoPilot)
+  const [capture, setCapture] = useState<{ captureId?: string; phase: string; gif?: string; outDir?: string; frames?: number; run_phase?: string; done?: number; total?: number; size_mb?: number } | null>(null);
   async function startServerRun() {
     if (!window.confirm(`Run the AutoPilot Cluster Labeller on the server for ${dataset.name} with ${model}? It runs independently — you can close this tab and the result will be saved to "Load Previous Run" when done.`)) return;
+    // OPTIONAL timelapse GIF: a headless browser on the EC2 box films the whole
+    // run and squeezes it into a ~1-minute GIF on the EBS volume.
+    const wantGif = window.confirm(`Also record a ~1-minute timelapse GIF of the entire run?\n\nA headless browser on the EC2 box will film the AutoPilot and assemble the GIF onto the EBS volume — you'll get a file path to grab it. The run still saves to "Load Previous Run" when done.\n\nOK = run + record GIF   ·   Cancel = run without GIF`);
+    if (wantGif) {
+      setCapture({ phase: "starting" });
+      try {
+        const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "capture", dataset: dataset.id, model }) });
+        if (r.status === 503) return setCapture({ phase: "not_configured" });
+        const d = await r.json().catch(() => ({}));
+        setCapture(d?.captureId ? { captureId: d.captureId, phase: "spawned", gif: d.gif, outDir: d.outDir } : { phase: "error" });
+      } catch {
+        setCapture({ phase: "error" });
+      }
+      return; // the capture run IS the run (it films + saves) — don't double-run
+    }
     setServerRun({ phase: "starting", done: 0, total: 0 });
     try {
       const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", dataset: dataset.id, model }) });
@@ -1260,6 +1277,18 @@ function MapStage({
       setServerRun({ phase: "error", done: 0, total: 0, msg: "worker unreachable" });
     }
   }
+  // poll capture progress
+  useEffect(() => {
+    if (!capture?.captureId || ["done", "error", "capture_error", "not_configured"].includes(capture.phase)) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "captureStatus", captureId: capture.captureId }) });
+        const d = await r.json().catch(() => ({}));
+        if (d && d.phase) setCapture((c) => (c ? { ...c, ...d } : c));
+      } catch {}
+    }, 6000);
+    return () => clearInterval(id);
+  }, [capture?.captureId, capture?.phase]);
   useEffect(() => {
     if (!serverRun?.runId || ["done", "error", "aborted", "not_configured"].includes(serverRun.phase)) return;
     const id = setInterval(async () => {
@@ -1389,6 +1418,29 @@ function MapStage({
                     <span>
                       <span style={{ animation: "kpulse 1s infinite" }}>☁</span> Server run · {serverRun.phase}
                       {serverRun.total ? ` · ${serverRun.done}/${serverRun.total} clusters` : ""} — you can safely close this tab; it keeps running.
+                    </span>
+                  )}
+                </div>
+              )}
+              {capture && (
+                <div style={{ fontSize: 12.5, marginBottom: 12, color: capture.phase === "error" || capture.phase === "capture_error" || capture.phase === "not_configured" ? "#b91c1c" : capture.phase === "done" ? "#15803d" : "#a16207", maxWidth: 640, marginLeft: "auto", marginRight: "auto", lineHeight: 1.5 }}>
+                  {capture.phase === "not_configured" ? (
+                    <span>GIF capture needs the server runner configured (<code>KASPEROV_AUTOPILOT_URL</code>).</span>
+                  ) : capture.phase === "error" || capture.phase === "capture_error" ? (
+                    <span>Couldn&apos;t start the timelapse capture.</span>
+                  ) : capture.phase === "done" ? (
+                    <span>
+                      🎬 <strong>Timelapse ready</strong>{capture.size_mb ? ` (${capture.size_mb} MB${capture.frames ? `, ${capture.frames} frames` : ""})` : ""} on the EC2 EBS volume:
+                      <br />
+                      <code style={{ fontSize: 11.5, wordBreak: "break-all", background: "#f0fdf4", padding: "1px 5px", borderRadius: 4 }}>{capture.gif}</code>
+                    </span>
+                  ) : (
+                    <span>
+                      <span style={{ animation: "kpulse 1s infinite" }}>🎬</span> Recording timelapse on the server{capture.run_phase === "running" && capture.total ? ` · labelling ${capture.done}/${capture.total}` : capture.frames ? ` · ${capture.frames} frames` : "…"}. The GIF will land at:
+                      <br />
+                      <code style={{ fontSize: 11.5, wordBreak: "break-all", background: "#fef9c3", padding: "1px 5px", borderRadius: 4 }}>{capture.gif}</code>
+                      <br />
+                      You can close this tab — it films and saves on the EC2 box.
                     </span>
                   )}
                 </div>

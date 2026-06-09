@@ -14,7 +14,9 @@ Env:  AUTOPILOT_BASE_URL (default https://www.zeroshot.bio) — the deployed app
 import json
 import os
 import re
+import subprocess
 import threading
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -473,3 +475,48 @@ def abort(run_id: str, x_api_token: str = Header(default="")):
     if run_id in RUNS:
         RUNS[run_id]["abort"] = True
     return {"ok": True}
+
+
+# --- timelapse GIF capture (headless browser films the in-browser AutoPilot) ---
+_HERE = os.path.dirname(os.path.abspath(__file__))
+CAPTURE_SCRIPT = os.path.join(_HERE, "capture_gif.py")
+CAPTURE_PY = os.environ.get("CAPTURE_PYTHON", "/data/.venv/bin/python")
+GIFS_DIR = os.path.join(RUNS_DIR, "gifs")
+
+
+class CaptureReq(BaseModel):
+    datasetId: str
+    model: str = "gpt-5-mini"
+    baseUrl: Optional[str] = None
+
+
+@app.post("/capture")
+def capture_start(req: CaptureReq, x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    cid = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
+    out = os.path.join(GIFS_DIR, cid)
+    os.makedirs(out, exist_ok=True)
+    base = (req.baseUrl or DEFAULT_BASE).rstrip("/")
+    args = [CAPTURE_PY, CAPTURE_SCRIPT, "--dataset", req.datasetId, "--model", req.model, "--base", base, "--out", out]
+    logf = open(os.path.join(out, "capture.log"), "ab")
+    # detached, daemon-like child so it survives this request and keeps filming
+    subprocess.Popen(args, stdout=logf, stderr=logf, cwd=_HERE, start_new_session=True)
+    with open(os.path.join(out, "status.json"), "w") as f:
+        json.dump({"phase": "spawned", "t": int(time.time())}, f)
+    return {"captureId": cid, "outDir": out, "gif": os.path.join(out, "timelapse.gif")}
+
+
+@app.get("/capture/{cid}")
+def capture_status(cid: str, x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    p = os.path.join(GIFS_DIR, cid, "status.json")
+    if not os.path.exists(p):
+        raise HTTPException(status_code=404, detail="unknown capture")
+    try:
+        with open(p) as f:
+            st = json.load(f)
+    except Exception:
+        st = {"phase": "unknown"}
+    st["captureId"] = cid
+    st["outDir"] = os.path.join(GIFS_DIR, cid)
+    return st

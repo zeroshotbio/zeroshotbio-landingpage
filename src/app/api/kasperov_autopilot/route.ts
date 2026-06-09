@@ -38,6 +38,17 @@ export async function POST(req: NextRequest) {
       const r = await fetch(`${URL_BASE}/abort/${encodeURIComponent(String(body?.runId || ""))}`, { method: "POST", headers });
       return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
     }
+    // timelapse capture: a headless browser on the EC2 box films the in-browser
+    // AutoPilot and assembles a ~60s GIF (and saves the run when it finishes).
+    if (body?.action === "capture") {
+      const model = isKasperovModel(body?.model) ? body.model : DEFAULT_MODEL;
+      const r = await fetch(`${URL_BASE}/capture`, { method: "POST", headers, body: JSON.stringify({ datasetId: String(body?.dataset || ""), model }) });
+      return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
+    }
+    if (body?.action === "captureStatus") {
+      const r = await fetch(`${URL_BASE}/capture/${encodeURIComponent(String(body?.captureId || ""))}`, { headers });
+      return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
+    }
     return NextResponse.json({ error: "bad_action" }, { status: 400 });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });

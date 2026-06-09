@@ -17,10 +17,11 @@ Writes <out>/frames/frame_NNNNN.png, <out>/timelapse.gif, and <out>/status.json
 import argparse, json, os, sys, time, traceback
 
 TARGET_SECONDS = 60.0       # final GIF length
-GIF_WIDTH = 1000            # downscale width
-GIF_COLORS = 128            # palette size per frame
+GIF_WIDTH = 900             # downscale width
+GIF_COLORS = 96             # palette size per frame
 MIN_FRAME_MS = 40           # GIF min sane frame duration
 MAX_FRAME_MS = 240
+MAX_GIF_FRAMES = 800        # bound the GIF size (a 2-3h run captures ~1000+ frames)
 
 
 def write_status(out, **kw):
@@ -38,6 +39,11 @@ def assemble_gif(frame_dir, gif_path, status_out):
     if not frames:
         write_status(status_out, phase="error", error="no frames captured")
         return None
+    captured = len(frames)
+    # bound the GIF: if we filmed more than MAX_GIF_FRAMES, keep an evenly-spaced subset
+    if captured > MAX_GIF_FRAMES:
+        step = captured / MAX_GIF_FRAMES
+        frames = [frames[int(i * step)] for i in range(MAX_GIF_FRAMES)]
     n = len(frames)
     per_ms = int(max(MIN_FRAME_MS, min(MAX_FRAME_MS, round(TARGET_SECONDS * 1000 / n))))
     write_status(status_out, phase="encoding", frames=n, gif=gif_path)
@@ -67,7 +73,7 @@ def main():
     ap.add_argument("--model", required=True)
     ap.add_argument("--base", default="https://www.zeroshot.bio")
     ap.add_argument("--out", required=True)
-    ap.add_argument("--interval", type=float, default=8.0)   # seconds between frames
+    ap.add_argument("--interval", type=float, default=10.0)   # seconds between frames
     ap.add_argument("--max-hours", type=float, default=5.0)
     ap.add_argument("--width", type=int, default=1600)
     ap.add_argument("--height", type=int, default=900)
