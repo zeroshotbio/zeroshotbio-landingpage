@@ -2049,7 +2049,7 @@ function augSig(list: Marker[]): string {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const AUTO_REASON_PROMPT =
-  "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read). Reconcile them: where they agree, that's strong; where they disagree, resolve it with the evidence. If the specialists are exhausted and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch).";
+  "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read) AND the Archivist's raw ground-truth stats for the top markers. Reconcile the literature reads AGAINST the raw numbers: where they agree, that's strong; where they disagree, resolve it with the Archivist's stats (which marker is actually the most enriched / most specific?). If a discussed gene's DEG score still matters and the Archivist hasn't reported it, dispatch the Archivist for it. If the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing.";
 const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
@@ -2500,12 +2500,21 @@ function ClusterStage({
     if (autoAbort.current) return;
     const p2 = await autoStream(cl, [{ role: "user", content: secondOpinionPrompt(cl) }], "research");
     added = autoAddMarkers(cl, p2[p2.length - 1].content, "research");
-    // merged context: both independent reads, for the Reasoner to reconcile
+    if (autoAbort.current) return;
+    // 1b) ARCHIVIST verification — at least once per cluster, pull the cluster's
+    //     ground-truth numbers (log2FC, %in/out, p-values, specificity) for the
+    //     top markers, so the Reasoner adjudicates against raw data, not just lit.
+    const topG = (cl.degsUp ?? []).slice(0, 6).join(", ") || (cl.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
+    const arch = await autoStream(cl, [{ role: "user", content: `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.` }], "archivist");
+    added = autoAddMarkers(cl, arch[arch.length - 1].content, "archivist");
+    // merged context: both independent reads + the Archivist's raw stats, for the Reasoner to reconcile
     let conv: ChatMsg[] = [
       { role: "user", content: defaultPrompt(cl) },
       p1[p1.length - 1],
       { role: "user", content: "Independent second read (alternative-hypothesis pass) for the same cluster:" },
       p2[p2.length - 1],
+      { role: "user", content: "Archivist raw-data verification of the top markers (ground-truth stats):" },
+      arch[arch.length - 1],
     ];
     // 2) Reasoner-orchestrated rounds — adjudicate, dispatch follow-ups, conclude
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
@@ -3466,13 +3475,16 @@ function TierConfRow({ label, pred, pct, celebrate }: { label: string; pred: str
   const shown = useTween(pct); // easeInOutQuad — accelerates then decelerates toward the new value
   const barColor = celebrate ? "#15803d" : "#6b6660";
   return (
-    <div style={{ marginBottom: 9, borderRadius: 6, padding: celebrate ? "3px 5px" : 0, margin: celebrate ? "0 -5px 6px" : "0 0 9px", animation: celebrate ? "krowglow 1.6s ease-out forwards" : "none" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 11.5 }}>
-        <span style={{ color: celebrate ? "#15803d" : "#999", fontWeight: celebrate ? 700 : 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
-        <Typewriter text={pred || "—"} style={{ color: celebrate ? "#14532d" : "#2b2b2b", fontWeight: celebrate ? 700 : 400, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} />
-        <span style={{ color: celebrate ? "#15803d" : "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, minWidth: 42, textAlign: "right" }}>{shown.toFixed(0)}%</span>
+    <div style={{ marginBottom: 11, borderRadius: 6, padding: celebrate ? "3px 5px" : 0, margin: celebrate ? "0 -5px 8px" : "0 0 11px", animation: celebrate ? "krowglow 1.6s ease-out forwards" : "none" }}>
+      {/* row 1: tier name + the % */}
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 6 }}>
+        <span style={{ color: celebrate ? "#15803d" : "#999", fontWeight: celebrate ? 700 : 600, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
+        <span style={{ color: celebrate ? "#15803d" : "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, textAlign: "right" }}>{shown.toFixed(0)}%</span>
       </div>
-      <div style={{ height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
+      {/* row 2: the label gets its OWN full-width line (names can be long) */}
+      <Typewriter text={pred || "—"} style={{ display: "block", color: celebrate ? "#14532d" : "#2b2b2b", fontWeight: celebrate ? 700 : 500, fontSize: 12.5, lineHeight: 1.3, margin: "1px 0 3px", wordBreak: "break-word" }} />
+      {/* row 3: the confidence bar */}
+      <div style={{ height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden" }}>
         <div style={{ width: `${shown}%`, height: "100%", background: barColor, transition: "background .3s ease" }} />
       </div>
     </div>
