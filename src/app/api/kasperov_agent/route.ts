@@ -583,10 +583,10 @@ export async function POST(req: Request) {
       const timer = setTimeout(() => ctrl.abort(), 56000);
       let usageIn = 0;
       let usageOut = 0;
+      let anyProduced = false;
       try {
         let prevId = "";
         let nextInput: any = messages.map((m) => ({ role: m.role, content: m.content }));
-        let anyProduced = false;
         let toolRounds = 0;
         const MAX_TOOL_ROUNDS = 3;
         for (let iter = 0; iter < 5; iter++) {
@@ -597,7 +597,7 @@ export async function POST(req: Request) {
             stream: true,
             store: true,
             reasoning: { effort: mode === "archivist" ? "minimal" : "low", summary: "auto" },
-            max_output_tokens: 5000,
+            max_output_tokens: 9000,
             input: nextInput,
             ...(prevId ? { previous_response_id: prevId } : { instructions }),
             ...(tools ? { tools } : {}),
@@ -638,11 +638,14 @@ export async function POST(req: Request) {
           }
           break;
         }
-        if (!anyProduced) sse(controller, enc, { t: "text", v: "_(No written answer — try again or rephrase.)_" });
+        if (!anyProduced)
+          sse(controller, enc, { t: "text", v: `_(No answer from **${model}** — it likely spent its budget on reasoning/search without writing. Try again, or pick a faster model (gpt-5-mini / gpt-5) for the interactive wizard.)_` });
         sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
       } catch {
-        sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
+        if (!anyProduced)
+          sse(controller, enc, { t: "text", v: `_(**${model}** didn't respond within the 60-second limit — heavier models (gpt-5.4 / gpt-5.5) often time out in the interactive wizard. Use gpt-5-mini or gpt-5 here, or run the heavy model via the persistent server auto-pilot.)_` });
+        else sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
         sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
       } finally {

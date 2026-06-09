@@ -620,7 +620,7 @@ export default function KasperovClient() {
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
   if (stage === "model")
-    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("intro"); }} onBack={() => setDataset(null)} />;
+    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage(revealed ? "map" : "intro"); }} onBack={() => setDataset(null)} />;
 
   if (stage === "intro")
     return <Intro dataset={dataset} meta={meta} onStart={() => setStage("map")} onSwitch={() => setDataset(null)} />;
@@ -651,7 +651,7 @@ export default function KasperovClient() {
         labels={labels}
         confidence={confidence}
         model={model}
-        onModelChange={setModel}
+        onChangeModel={() => setStage("model")}
         usage={usage}
         score={score}
         setScore={setScore}
@@ -1156,7 +1156,7 @@ function MapStage({
   labels = {},
   confidence = {},
   model,
-  onModelChange,
+  onChangeModel,
   usage,
   score,
   setScore,
@@ -1178,7 +1178,7 @@ function MapStage({
   labels?: Record<string, string>;
   confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
-  onModelChange: (m: KasperovModel) => void;
+  onChangeModel: () => void;
   usage: Usage;
   score: RunScore;
   setScore: React.Dispatch<React.SetStateAction<RunScore>>;
@@ -1267,24 +1267,17 @@ function MapStage({
             : ""}
         </p>
 
-        {/* run controls bar — model selector + estimated spend + last-scored stamp */}
+        {/* run info bar — model (chosen on the previous screen) + projected cost.
+            "spent so far" shows only once a run actually has labelled clusters. */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-          <label style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "#555" }}>
-            <span style={{ fontWeight: 600 }}>Model</span>
-            <select
-              value={model}
-              onChange={(e) => onModelChange(e.target.value as KasperovModel)}
-              style={{ fontFamily: "inherit", fontSize: 13, padding: "5px 9px", borderRadius: 8, border: "1px solid #d8d3cd", background: "#fff", color: INK, cursor: "pointer" }}
-            >
-              {KASPEROV_MODELS.map((m) => (
-                <option key={m} value={m}>{m}</option>
-              ))}
-            </select>
-          </label>
-          <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price. The number rolls as you change models.">
-            ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters with <strong>{model}</strong>
+          <span style={{ color: "#555" }}>
+            Model <strong>{model}</strong>{" "}
+            <button onClick={onChangeModel} style={{ background: "none", border: "none", color: ACCENT, cursor: "pointer", fontSize: 12.5, textDecoration: "underline", padding: 0 }}>change</button>
           </span>
-          {spent > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
+          <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price.">
+            ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters
+          </span>
+          {spent > 0 && labelled.length > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
           {score.scoredAt && <span style={{ color: "#aaa" }}>· scored {new Date(score.scoredAt).toLocaleDateString()}</span>}
         </div>
 
