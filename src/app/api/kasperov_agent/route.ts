@@ -52,7 +52,7 @@ const ALLOWED_DOMAINS = [
 type Mode = "research" | "archivist" | "reason";
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type Marker = { g: string; l2fc?: number; p1?: number; p2?: number };
-type Cluster = { id: string; label?: string; degsUp?: string[]; markers?: Marker[]; nCells?: number };
+type Cluster = { id: string; label?: string; degsUp?: string[]; markers?: Marker[]; markersDown?: Marker[]; nCells?: number };
 
 // --- mode routing (3-way) --------------------------------------------------
 // Force a specialist by starting the message with "Researcher:" / "Archivist:" /
@@ -193,6 +193,7 @@ function researchInstructions(cluster: Cluster): string {
 
 function reasonInstructions(cluster: Cluster, ds: DatasetCfg): string {
   const up = (cluster.degsUp ?? []).join(", ");
+  const down = (cluster.markersDown ?? []).slice(0, 8).map((m) => m.g).join(", ");
   return [
     "You are the assistant in REASONER mode — a generalist scientific thinker. You synthesize across everything available: the cluster's markers, the conversation so far, and your own biological knowledge. You do NOT have web search here and you are NOT restricted to raw dataset values — you reason and explain.",
     PERSONAS_CONTEXT,
@@ -223,6 +224,7 @@ function reasonInstructions(cluster: Cluster, ds: DatasetCfg): string {
     "Emit the block ONLY when settled. If a useful query remains, dispatch that instead and do NOT conclude. You may include a one-line wrap-up sentence before the block.",
     "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
+    down ? `Notable DOWN-regulated genes (depleted vs the rest of the atlas): ${down}. When any of these is informative (it argues AGAINST a candidate identity, or its absence is itself diagnostic), say so briefly and include it in the kasperov-markers block with a ≤8-word note so it annotates the Down-regulated panel.` : "",
   ].join("\n") + MARKER_BLOCK_INSTR;
 }
 

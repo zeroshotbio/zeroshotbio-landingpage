@@ -2285,21 +2285,15 @@ function ClusterStage({
     setPb((p) => (!p || Math.abs(p[k].h - h) < 1 ? p : { ...p, [k]: { ...p[k], h } }));
   }, []);
 
-  // Top Markers & Confidence grow WIDER as they gather content — wide enough that
-  // each tagged note sits on ONE line, so the box stays short and ALL content is
-  // visible without scrolling (until the user drags a panel → manual layout)
+  // Top Markers fills the left column (width set by fitPanels); only Tier
+  // Confidence (right column, below the World Map) sizes to its rationale text.
   useEffect(() => {
     if (manualRef.current) return;
-    const added = augmented[active.id] ?? [];
     const why = confidence[active.id]?.why ?? "";
-    const longestNote = added.reduce((mx, m) => Math.max(mx, ...markerNotes(m).map((n) => n.text.length), 0), 0);
-    // allow the boxes to use most of the focused-cluster pane's width
-    const maxBoxW = Math.max(300, Math.round((containerSize.w || 560) * 0.66));
-    const mkW = Math.round(Math.min(maxBoxW, Math.max(280, 282 + longestNote * 4 + added.length * 4)));
-    const cfW = Math.round(Math.min(maxBoxW, Math.max(280, 280 + why.length * 1.3)));
-    setPb((p) => (!p || (p.mk.w === mkW && p.cf.w === cfW) ? p : { ...p, mk: { ...p.mk, w: mkW }, cf: { ...p.cf, w: cfW } }));
+    const cfW = Math.round(Math.min(Math.max(300, Math.round((containerSize.w || 560) * 0.42)), Math.max(280, 280 + why.length * 1.2)));
+    setPb((p) => (!p || p.cf.w === cfW ? p : { ...p, cf: { ...p.cf, w: cfW } }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [augmented, confidence, active.id, containerSize.w]);
+  }, [confidence, active.id, containerSize.w]);
 
   // on-screen geometry that ALWAYS fits the focused-cluster pane: panels stack,
   // the two auto-fit panels cap their height (scrolling past it), and everything
@@ -2356,7 +2350,7 @@ function ClusterStage({
         body: JSON.stringify({
           dataset: dataset.id,
           model,
-          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, nCells: cl.nCells },
+          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, markersDown: cl.markersDown, nCells: cl.nCells },
           messages: nextMsgs,
           ...(forceMode ? { mode: forceMode } : {}),
         }),
@@ -2437,7 +2431,9 @@ function ClusterStage({
   // promotes — each later source overriding the same personality's earlier note.
   // Ref-based so rapid ticks don't fight stale state; commits only on real change.
   function incorporateFrom(cl: Cluster, content: string, via: AgentMode): Marker[] {
-    const vocab = Array.from(new Set([...(cl.degsUp ?? []), ...((cl.markers ?? []).map((m) => m.g))]));
+    // include DOWN-regulated genes in the vocab too, so when any personality
+    // mentions one (the Archivist/Reasoner can see them) it annotates that row
+    const vocab = Array.from(new Set([...(cl.degsUp ?? []), ...((cl.markers ?? []).map((m) => m.g)), ...((cl.markersDown ?? []).map((m) => m.g))]));
     const mentions = via === "archivist" ? [] : extractMentions(content, vocab);
     const evidence = extractEvidenceMarkers(content);
     const block = splitMarkerBlock(content).markers;
@@ -3108,10 +3104,12 @@ function AgentMessage({ content, mode = "research", actions, thinking, thinkingC
 // ---------------------------------------------------------------------------
 let zTop = 20; // shared stacking counter — last interacted panel sits on top
 
-// Lay the three HUD panels out so they ALWAYS fit the focused-cluster pane:
-// stack World Map → Top Markers → Tier Confidence; cap the two auto-fit panels'
-// heights (they scroll past the cap) and clamp every panel so it can never be
-// pushed completely off-screen. Returns each panel's display box + optional cap.
+// Lay the HUD panels out so they ALWAYS fit the focused-cluster pane. TWO
+// columns: World Map sits in the top-RIGHT corner with Tier Confidence beneath
+// it, leaving the whole LEFT column to Top Markers — which gets full height and
+// most of the width, so the entire UP + DOWN gene set stays visible. Auto-fit
+// panels still cap their height (scroll past it) and everything is clamped so
+// nothing is pushed off-screen. Returns each panel's display box + optional cap.
 function fitPanels(
   pb: { wm: Box; mk: Box; cf: Box },
   W: number,
@@ -3119,7 +3117,7 @@ function fitPanels(
   manual: boolean
 ): { wm: { box: Box; maxH?: number }; mk: { box: Box; maxH?: number }; cf: { box: Box; maxH?: number } } {
   const GAP = 12, M = 10;
-  const cw = (w: number) => Math.max(180, Math.min(w, Math.max(180, W - 8)));
+  const cw = (w: number) => Math.max(160, Math.min(w, Math.max(160, W - 8)));
   const cx = (x: number) => Math.max(2, Math.min(x, Math.max(2, W - 48)));
   const cy = (y: number) => Math.max(2, Math.min(y, Math.max(2, H - 26)));
   if (manual) {
@@ -3130,20 +3128,19 @@ function fitPanels(
     };
     return { wm: fix(pb.wm, false), mk: fix(pb.mk, true), cf: fix(pb.cf, true) };
   }
-  // auto: stack from the top-left, fitting Top Markers + Confidence under World Map
-  const x = cx(pb.wm.x);
-  const mkY = 12 + pb.wm.h + GAP;
-  const cfMin = 92, mkMin = 110;
-  const avail = Math.max(mkMin + cfMin + GAP, H - mkY - M); // vertical room for mk + cf
-  const wantMk = pb.mk.h, wantCf = pb.cf.h;
-  let mkMax: number;
-  if (wantMk + GAP + wantCf <= avail) mkMax = wantMk; // everything fits — no cap squeeze
-  else mkMax = Math.max(mkMin, avail - GAP - Math.min(wantCf, Math.max(cfMin, Math.round((avail - GAP) * 0.42))));
-  const cfY = mkY + Math.min(wantMk, mkMax) + GAP;
+  // RIGHT column (World Map on top, Tier Confidence below) — share one width,
+  // capped at ~36% of the pane so the LEFT column (Top Markers) stays wide
+  const rightW = Math.max(180, Math.min(Math.max(cw(pb.wm.w), cw(pb.cf.w)), Math.round(W * 0.36)));
+  const rightX = Math.max(M, W - rightW - M);
+  const cfY = 12 + pb.wm.h + GAP;
+  const cfMin = 92;
+  // LEFT column: Top Markers fills it — full height, wide
+  const mkX = M;
+  const mkW = Math.max(240, rightX - GAP - mkX);
   return {
-    wm: { box: { ...pb.wm, x, y: 12, w: cw(pb.wm.w) }, maxH: undefined },
-    mk: { box: { ...pb.mk, x, y: mkY, w: cw(pb.mk.w) }, maxH: mkMax },
-    cf: { box: { ...pb.cf, x, y: cfY, w: cw(pb.cf.w) }, maxH: Math.max(cfMin, H - cfY - M) },
+    wm: { box: { ...pb.wm, x: rightX, y: 12, w: rightW }, maxH: undefined },
+    mk: { box: { ...pb.mk, x: mkX, y: 12, w: mkW }, maxH: Math.max(160, H - 12 - M) },
+    cf: { box: { ...pb.cf, x: rightX, y: cfY, w: rightW }, maxH: Math.max(cfMin, H - cfY - M) },
   };
 }
 
@@ -3269,11 +3266,11 @@ function markerNotes(m: Marker): { via: AgentMode; text: string }[] {
 }
 
 // one tagged note line: a coloured personality chip + its ≤8-word contribution
-function NoteLine({ via, text }: { via: AgentMode; text: string }) {
+function NoteLine({ via, text, scale = 1 }: { via: AgentMode; text: string; scale?: number }) {
   const th = THEME[via] ?? THEME.research;
   return (
-    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, fontSize: 10, color: "#555", lineHeight: 1.28 }}>
-      <span style={{ fontSize: 7.5, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase", marginRight: 4 }}>{th.name}</span>
+    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, fontSize: 10 * scale, color: "#555", lineHeight: 1.28 }}>
+      <span style={{ fontSize: 7.5 * scale, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase", marginRight: 4 }}>{th.name}</span>
       {text}
     </div>
   );
@@ -3281,46 +3278,46 @@ function NoteLine({ via, text }: { via: AgentMode; text: string }) {
 
 // chat-contributed annotations, snowballed inline beneath a gene's row — one
 // tagged line per personality that has weighed in on the gene
-function Annot({ m }: { m: Marker }) {
+function Annot({ m, scale = 1 }: { m: Marker; scale?: number }) {
   const notes = markerNotes(m);
   if (!notes.length) return null;
   return (
-    <div style={{ marginLeft: 76, marginTop: 1, marginBottom: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+    <div style={{ marginLeft: 60 * scale, marginTop: 1, marginBottom: 2, display: "flex", flexDirection: "column", gap: 1 }}>
       {notes.map((n, i) => (
-        <NoteLine key={i} via={n.via} text={n.text} />
+        <NoteLine key={i} via={n.via} text={n.text} scale={scale} />
       ))}
     </div>
   );
 }
 
-function MarkerRow({ m, max, color }: { m: Marker; max: number; color: string }) {
+function MarkerRow({ m, max, color, scale = 1 }: { m: Marker; max: number; color: string; scale?: number }) {
   return (
-    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-      <span style={{ width: 70, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
-      <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 * scale }}>
+      <span style={{ width: 66 * scale, fontFamily: "ui-monospace, monospace", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+      <div style={{ flex: 1, height: 6 * scale + 1, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
         <div style={{ width: `${(Math.abs(m.l2fc ?? 0) / max) * 100}%`, height: "100%", background: color }} />
       </div>
-      <span style={{ width: 48, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
+      <span style={{ width: 46 * scale, textAlign: "right", color: "#888", fontVariantNumeric: "tabular-nums" }}>{m.p1 != null ? `${(m.p1 * 100).toFixed(0)}/${((m.p2 ?? 0) * 100).toFixed(0)}%` : ""}</span>
     </div>
   );
 }
 
 // a chat-added gene that has floated into the up/down list as a ✦ row
-function AddedRow({ m, max, color }: { m: Marker; max: number; color: string }) {
+function AddedRow({ m, max, color, scale = 1 }: { m: Marker; max: number; color: string; scale?: number }) {
   const th = THEME[m.via ?? "research"];
   return (
     <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, marginLeft: -2 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 }}>
-        <span style={{ width: 66, fontFamily: "ui-monospace, monospace", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
-        <div style={{ flex: 1, height: 7, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11.5 * scale }}>
+        <span style={{ width: 62 * scale, fontFamily: "ui-monospace, monospace", fontWeight: 700, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }} title={m.g}>{m.g}</span>
+        <div style={{ flex: 1, height: 6 * scale + 1, background: "#eee", borderRadius: 4, overflow: "hidden" }}>
           {m.l2fc != null && <div style={{ width: `${(Math.abs(m.l2fc) / max) * 100}%`, height: "100%", background: color }} />}
         </div>
-        <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase" }}>✦{th.name[0]}</span>
+        <span style={{ fontSize: 8 * scale, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase" }}>✦{th.name[0]}</span>
       </div>
       {markerNotes(m).length > 0 && (
-        <div style={{ marginLeft: 8, marginTop: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+        <div style={{ marginLeft: 8, marginTop: 1, display: "flex", flexDirection: "column", gap: 1 }}>
           {markerNotes(m).map((n, i) => (
-            <NoteLine key={i} via={n.via} text={n.text} />
+            <NoteLine key={i} via={n.via} text={n.text} scale={scale} />
           ))}
         </div>
       )}
@@ -3342,52 +3339,60 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
   const maxUp = Math.max(...top.map((m) => m.l2fc ?? 0), ...addedUp.map((m) => Math.abs(m.l2fc ?? 0)), 1);
   const maxDn = Math.max(...down.map((m) => Math.abs(m.l2fc ?? 0)), ...addedDown.map((m) => Math.abs(m.l2fc ?? 0)), 1);
 
+  // dynamic density: as the snowball grows, shrink text/spacing so the WHOLE
+  // UP + DOWN set + notes stays visible without a scrollbar
+  const totalNotes = added.reduce((s, m) => s + markerNotes(m).length, 0);
+  const lines = top.length + down.length + addedUp.length + addedDown.length + extra.length + totalNotes;
+  const scale = lines > 46 ? 0.72 : lines > 38 ? 0.79 : lines > 30 ? 0.86 : lines > 23 ? 0.93 : 1;
+  const rowGap = Math.max(1, Math.round(3 * scale));
+  const hz = 10 * scale; // section header font
+
   return (
     <div>
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "2px 0 4px" }}>▲ UP-REGULATED</div>
-      <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+      <div style={{ fontSize: hz, fontWeight: 700, color: "#555", margin: `2px 0 ${rowGap + 1}px` }}>▲ UP-REGULATED</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: rowGap }}>
         {top.map((m) => (
           <React.Fragment key={m.g}>
-            <MarkerRow m={m} max={maxUp} color="#8a847b" />
-            {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
+            <MarkerRow m={m} max={maxUp} color="#8a847b" scale={scale} />
+            {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} scale={scale} />}
           </React.Fragment>
         ))}
         {addedUp.map((m) => (
-          <AddedRow key={m.g} m={m} max={maxUp} color="#8a847b" />
+          <AddedRow key={m.g} m={m} max={maxUp} color="#8a847b" scale={scale} />
         ))}
       </div>
 
-      <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 4px" }}>▼ DOWN-REGULATED</div>
+      <div style={{ fontSize: hz, fontWeight: 700, color: "#555", margin: `${rowGap + 6}px 0 ${rowGap + 1}px` }}>▼ DOWN-REGULATED</div>
       {down.length || addedDown.length ? (
-        <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: rowGap }}>
           {down.map((m) => (
             <React.Fragment key={m.g}>
-              <MarkerRow m={m} max={maxDn} color="#b8b2a8" />
-              {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} />}
+              <MarkerRow m={m} max={maxDn} color="#b8b2a8" scale={scale} />
+              {annByGene.has(m.g.toLowerCase()) && <Annot m={annByGene.get(m.g.toLowerCase())!} scale={scale} />}
             </React.Fragment>
           ))}
           {addedDown.map((m) => (
-            <AddedRow key={m.g} m={m} max={maxDn} color="#b8b2a8" />
+            <AddedRow key={m.g} m={m} max={maxDn} color="#b8b2a8" scale={scale} />
           ))}
         </div>
       ) : (
-        <div style={{ fontSize: 10.5, color: "#aaa", lineHeight: 1.35 }}>none computed</div>
+        <div style={{ fontSize: 10.5 * scale, color: "#aaa", lineHeight: 1.35 }}>none computed</div>
       )}
 
       {extra.length > 0 && (
         <>
-          <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ALSO DISCUSSED (not yet placed)</div>
-          <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          <div style={{ fontSize: hz, fontWeight: 700, color: "#555", margin: `${rowGap + 6}px 0 ${rowGap}px` }}>✦ ALSO DISCUSSED (not yet placed)</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: rowGap + 1 }}>
             {extra.map((m) => (
-              <div key={m.g} style={{ fontSize: 11 }}>
+              <div key={m.g} style={{ fontSize: 11 * scale }}>
                 <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
                   <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
-                  {m.l2fc != null && <span style={{ color: "#888", fontSize: 10 }}>log2FC {m.l2fc}</span>}
+                  {m.l2fc != null && <span style={{ color: "#888", fontSize: 10 * scale }}>log2FC {m.l2fc}</span>}
                 </div>
                 {markerNotes(m).length > 0 && (
-                  <div style={{ marginTop: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <div style={{ marginTop: 1, display: "flex", flexDirection: "column", gap: 1 }}>
                     {markerNotes(m).map((n, i) => (
-                      <NoteLine key={i} via={n.via} text={n.text} />
+                      <NoteLine key={i} via={n.via} text={n.text} scale={scale} />
                     ))}
                   </div>
                 )}
