@@ -331,6 +331,10 @@ export default function KasperovClient() {
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Record<string, string>>({});
   const [autoStart, setAutoStart] = useState(0); // bumping this signals ClusterStage to run auto-pilot
+  // tracks the last autoStart value the (re-mountable) ClusterStage has consumed —
+  // lives in the PARENT so a plain cluster click (which remounts ClusterStage)
+  // can't be mistaken for a fresh auto-pilot trigger.
+  const autoConsumedRef = useRef(0);
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
@@ -655,6 +659,7 @@ export default function KasperovClient() {
       onValidate={markValidated}
       goToCluster={setActiveId}
       autoStart={autoStart}
+      autoConsumedRef={autoConsumedRef}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -1870,6 +1875,7 @@ function ClusterStage({
   onValidate,
   goToCluster,
   autoStart,
+  autoConsumedRef,
   labels,
   onLabel,
   transcripts,
@@ -1890,6 +1896,7 @@ function ClusterStage({
   onBack: () => void;
   onValidate: (id: string, yes: boolean) => void;
   goToCluster: (id: string) => void;
+  autoConsumedRef: React.MutableRefObject<number>;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2311,11 +2318,12 @@ function ClusterStage({
     setAuto((a) => ({ ...a, running: false }));
   }
 
-  // kick off when the map's "go through each cluster" button bumps autoStart
-  const autoStartedRef = useRef(0);
+  // kick off ONLY when the world-map auto-pilot button bumps autoStart. The
+  // consumed-marker lives in the parent (autoConsumedRef), so re-mounting
+  // ClusterStage via a plain cluster click never re-triggers a sweep.
   useEffect(() => {
-    if (autoStart > 0 && autoStart !== autoStartedRef.current) {
-      autoStartedRef.current = autoStart;
+    if (autoStart > 0 && autoStart !== autoConsumedRef.current) {
+      autoConsumedRef.current = autoStart;
       runAutopilot();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
