@@ -219,7 +219,7 @@ def _agent(base, dataset_id, model, cluster, messages, mode, usage):
         "mode": mode,
     }
     text = ""
-    with requests.post(f"{base}/api/kasperov_agent", json=body, stream=True, timeout=120) as r:
+    with requests.post(f"{base}/api/kasperov_agent", json=body, stream=True, timeout=305) as r:
         r.raise_for_status()
         for raw in r.iter_lines(decode_unicode=True):
             if not raw or not raw.startswith("data:"):
@@ -245,7 +245,7 @@ def get_confidence(base, dataset_id, model, cluster, conv, usage):
         r = requests.post(
             f"{base}/api/kasperov_confidence",
             json={"dataset": dataset_id, "model": model, "cluster": {"id": cluster["id"], "label": cluster["label"]}, "messages": conv},
-            timeout=60,
+            timeout=130,
         )
         if not r.ok:
             return None
@@ -302,7 +302,7 @@ def score_clusters(base, dataset_id, model, labelled, gt, usage):
     for i in range(0, len(items), 10):
         batch = items[i : i + 10]
         try:
-            r = requests.post(f"{base}/api/kasperov_score", json={"dataset": dataset_id, "model": model, "items": batch}, timeout=120)
+            r = requests.post(f"{base}/api/kasperov_score", json={"dataset": dataset_id, "model": model, "items": batch}, timeout=305)
             r.raise_for_status()
             d = r.json()
             u = d.get("usage")

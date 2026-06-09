@@ -7,7 +7,7 @@
 
 import "server-only";
 export const runtime = "nodejs";
-export const maxDuration = 30;
+export const maxDuration = 120;
 
 import { NextResponse } from "next/server";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
@@ -45,7 +45,7 @@ export async function POST(req: Request) {
 
   try {
     const ctrl = new AbortController();
-    const t = setTimeout(() => ctrl.abort(), 25000);
+    const t = setTimeout(() => ctrl.abort(), 110000);
     const r = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       signal: ctrl.signal,

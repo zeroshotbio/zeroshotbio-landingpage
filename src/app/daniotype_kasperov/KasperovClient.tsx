@@ -2507,7 +2507,7 @@ function ClusterStage({
   async function autoStream(cl: Cluster, msgs: ChatMsg[], mode: AgentMode): Promise<ChatMsg[]> {
     for (let attempt = 0; attempt < 2; attempt++) {
       if (autoAbort.current) throw new Error("aborted");
-      const conv = await streamAgent(cl, msgs, mode, true, 90_000);
+      const conv = await streamAgent(cl, msgs, mode, true, 285_000);
       const last = conv[conv.length - 1]?.content ?? "";
       if (!streamFailed(last)) return conv;
       if (attempt === 0) await sleep(1200); // brief backoff, then one retry
