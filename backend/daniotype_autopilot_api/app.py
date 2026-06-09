@@ -497,7 +497,7 @@ def capture_start(req: CaptureReq, x_api_token: str = Header(default="")):
     out = os.path.join(GIFS_DIR, cid)
     os.makedirs(out, exist_ok=True)
     base = (req.baseUrl or DEFAULT_BASE).rstrip("/")
-    args = [CAPTURE_PY, CAPTURE_SCRIPT, "--dataset", req.datasetId, "--model", req.model, "--base", base, "--out", out]
+    args = [CAPTURE_PY, CAPTURE_SCRIPT, "--dataset", req.datasetId, "--model", req.model, "--base", base, "--out", out, "--max-hours", "16"]
     logf = open(os.path.join(out, "capture.log"), "ab")
     # detached, daemon-like child so it survives this request and keeps filming
     subprocess.Popen(args, stdout=logf, stderr=logf, cwd=_HERE, start_new_session=True)

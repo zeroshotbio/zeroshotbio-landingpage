@@ -1,4 +1,7 @@
+Pillow
 fastapi
-uvicorn[standard]
-requests
+imageio-ffmpeg
+playwright
 pydantic
+requests
+uvicorn[standard]
