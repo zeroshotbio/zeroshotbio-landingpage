@@ -1983,12 +1983,16 @@ const AUTO_NUDGE_PROMPT =
 const AUTO_MAX_ROUNDS = 4;
 
 // ---------------------------------------------------------------------------
-// Live activity pane (right column) — a theatrical "what the agent is doing
-// right now" view: a faux browser while the Researcher searches ZFIN/ZFA/GO,
-// a faux file-explorer while the Archivist parses the dataset. Intentionally
-// stylised; the point is to make the grounded work feel real to a viewer.
+// Live activity pane (right column) — a real "what the agent is doing right
+// now" view, themed to the ACTIVE personality's colour (accent follows whoever
+// is speaking):
+//   • Reasoner   → the live reasoning trace streams here; only the settled
+//     answer lands in the middle chat.
+//   • Researcher → the ACTUAL cited page (proxied, scrolled + highlighted).
+//   • Archivist  → a visual of the whole dataset (UMAP with the cluster lit up)
+//     plus the real per-gene stats terminal.
 // ---------------------------------------------------------------------------
-function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, researchText }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; datasetName: string; researchText: string }) {
+function ActivityPane({ mode, status, streaming, routing, cluster, clusters, validated, datasetName, researchText, thinking }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; clusters: Cluster[]; validated: Set<string>; datasetName: string; researchText: string; thinking: string }) {
   const genes = cluster.degsUp ?? [];
   const [tick, setTick] = useState(0);
   useEffect(() => {
@@ -1999,6 +2003,24 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
 
   const gene = genes.length ? genes[tick % genes.length] : "—";
   const marker = (cluster.markers ?? []).find((m) => m.g === gene);
+
+  // measure the pane so the Archivist's dataset-viz canvas fills the width
+  const paneRef = useRef<HTMLDivElement | null>(null);
+  const [paneW, setPaneW] = useState(280);
+  useEffect(() => {
+    const el = paneRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const ro = new ResizeObserver(() => setPaneW(el.clientWidth));
+    ro.observe(el);
+    setPaneW(el.clientWidth);
+    return () => ro.disconnect();
+  }, []);
+
+  // keep the reasoning trace pinned to its latest line as it streams
+  const traceRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    traceRef.current?.scrollTo({ top: traceRef.current.scrollHeight });
+  }, [thinking]);
 
   // the real page the Researcher is citing — pull (gene, url) pairs out of the
   // latest Research Log text, preferring ZFIN / Wikipedia (they render well in
@@ -2033,58 +2055,59 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
   }, [researchText, genes[0]]);
 
   const live = streaming;
-  const chrome = mode === "archivist" ? "#a16207" : THEME[mode]?.color ?? "#0e7490";
+  const theme = THEME[mode] ?? THEME.research;
+  const chrome = theme.color;
   let chosenHost = "";
   try {
     chosenHost = chosen ? new URL(chosen.url).hostname.replace(/^www\./, "") : "";
   } catch {}
   const proxySrc = chosen ? `/api/kasperov_proxy?url=${encodeURIComponent(chosen.url)}&highlight=${encodeURIComponent(chosen.gene || gene || "")}` : "";
   const cited = /https?:\/\//.test(researchText);
+  const vizW = Math.max(160, paneW - 24);
+
+  // the live reasoning trace — `big` makes it the primary view (Reasoner); the
+  // compact strip rides above the Researcher's page / Archivist's data so the
+  // model's thinking is always visible without crowding the main artefact.
+  const traceBox = (big: boolean) => (
+    <div style={{ border: `1px solid ${chrome}33`, borderLeft: `3px solid ${chrome}`, borderRadius: 8, background: theme.bg, overflow: "hidden", display: "flex", flexDirection: "column", ...(big ? { flex: 1, minHeight: 0 } : { flexShrink: 0, marginBottom: 10 }) }}>
+      <div style={{ padding: "6px 10px", fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: chrome, display: "flex", alignItems: "center", gap: 6, borderBottom: `1px solid ${chrome}22` }}>
+        {live && <span style={{ width: 6, height: 6, borderRadius: 99, background: chrome, animation: "kpulse 1.1s infinite" }} />}
+        <span>{theme.icon} {theme.trace}{big ? " — live" : ""}</span>
+      </div>
+      <div ref={traceRef} style={{ overflowY: "auto", padding: "8px 10px", fontSize: 11.5, color: "#777", lineHeight: 1.5, ...(big ? { flex: 1 } : { maxHeight: 70 }) }}>
+        {thinking ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={traceMD}>{thinking}</ReactMarkdown> : <span style={{ color: "#aaa", fontStyle: "italic" }}>{live ? theme.verb : "—"}</span>}
+      </div>
+    </div>
+  );
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9" }}>
-      <style>{`
-        @keyframes apscroll{0%{transform:translateY(0)}100%{transform:translateY(-46%)}}
-        @keyframes aphl{0%,100%{background:#fff6c2}50%{background:#ffe98a}}
-        @keyframes apspin{to{transform:rotate(360deg)}}
-        @keyframes apopen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
-      `}</style>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9", borderTop: `3px solid ${chrome}`, transition: "border-color .45s ease" }}>
+      <style>{`@keyframes apspin{to{transform:rotate(360deg)}}`}</style>
 
-      {/* pane header */}
-      <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid #e2ddd5", display: "flex", alignItems: "center", gap: 8 }}>
+      {/* pane header — accent + tint follow the active personality */}
+      <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${chrome}22`, background: theme.bg, display: "flex", alignItems: "center", gap: 8, transition: "background .45s ease, border-color .45s ease" }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: live ? "#dc2626" : "#bbb", boxShadow: live ? "0 0 0 0 rgba(220,38,38,.5)" : "none", animation: live ? "kpulse 1.2s infinite" : "none" }} />
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: "#666" }}>Live activity</span>
-        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : mode === "archivist" ? "Archivist" : mode === "reason" ? "Reasoner" : "Researcher"}</span>
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: chrome }}>Live activity</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : theme.name}</span>
       </div>
 
-      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 12 }}>
+      <div ref={paneRef} style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 12, display: "flex", flexDirection: "column" }}>
         {routing ? (
           <Centered2>Choosing a specialist…</Centered2>
         ) : mode === "reason" ? (
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#555", gap: 14 }}>
-            <div style={{ fontSize: 34, animation: live ? "kpulse 1.4s infinite" : "none" }}>🧠</div>
-            <div style={{ fontSize: 13.5, fontWeight: 600, color: THEME.reason.color }}>Synthesising across the evidence</div>
-            <div style={{ display: "flex", gap: 8 }}>
-              {["Researcher", "Archivist", "two reads"].map((x) => (
-                <span key={x} style={{ fontSize: 11, color: "#777", background: "#fff", border: "1px solid #e5e1dc", borderRadius: 99, padding: "3px 9px" }}>✓ {x}</span>
-              ))}
-            </div>
-            <div style={{ fontSize: 12, color: "#999", maxWidth: 240 }}>Weighing markers → in-vivo expression → anatomy to settle the four-tier call.</div>
-          </div>
+          // Reasoner — the live reasoning trace is the star
+          traceBox(true)
         ) : mode === "archivist" ? (
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
-            <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "10px 12px", lineHeight: 1.9, color: "#444" }}>
-              <div>📂 {datasetName}/</div>
-              <div style={{ paddingLeft: 16 }}>📂 archivist/</div>
-              <div style={{ paddingLeft: 32 }}>📂 cluster_{cluster.id}/</div>
-              <div style={{ paddingLeft: 48, color: "#15803d" }}>✓ markers_up.tsv</div>
-              <div style={{ paddingLeft: 48, color: "#15803d" }}>✓ gene_matrix.json</div>
-              <div key={gene} style={{ paddingLeft: 48, color: chrome, animation: "apopen .3s ease" }}>
-                {live ? <span style={{ display: "inline-block", animation: "apspin .8s linear infinite" }}>⟳</span> : "·"} {gene}.json
-              </div>
+          <>
+            {/* visual representation of the whole dataset, the cluster lit up */}
+            <div style={{ flexShrink: 0, border: `1px solid ${chrome}33`, borderRadius: 10, overflow: "hidden", background: "#fffdfb", marginBottom: 10 }}>
+              <div style={{ padding: "5px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: chrome, borderBottom: `1px solid ${chrome}22` }}>{datasetName} atlas · cluster {cluster.id}{live && <span style={{ display: "inline-block", marginLeft: 7, animation: "apspin .8s linear infinite" }}>⟳</span>}</div>
+              <UmapCanvas clusters={clusters} mode="global" colored activeId={cluster.id} validated={validated} width={vizW} height={Math.round(vizW * 0.5)} showFocus />
             </div>
-            <div style={{ marginTop: 10, background: "#1f2937", color: "#d1fae5", borderRadius: 8, padding: "10px 12px", flex: 1, overflow: "hidden", lineHeight: 1.7 }}>
-              <div style={{ color: "#94a3b8" }}>{"// parsing "}{gene} from {datasetName}…</div>
+            {thinking && traceBox(false)}
+            {/* real per-gene stats terminal */}
+            <div style={{ background: "#1f2937", color: "#d1fae5", borderRadius: 8, padding: "10px 12px", flex: 1, minHeight: 0, overflow: "auto", lineHeight: 1.7, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
+              <div style={{ color: "#94a3b8" }}>{"// querying "}{datasetName} for {gene}…</div>
               {marker ? (
                 <>
                   <div>gene: <span style={{ color: "#fde68a" }}>{gene}</span></div>
@@ -2095,38 +2118,44 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
                 <div style={{ color: "#94a3b8" }}>{gene}: scanning gene × cluster matrix…</div>
               )}
             </div>
-          </div>
+          </>
         ) : chosen ? (
           // Researcher — the ACTUAL cited page, proxied + scrolled/highlighted to the gene
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff", border: "1px solid #d8d3cd", borderRadius: 10, overflow: "hidden" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
-              <span style={{ fontWeight: 700, color: THEME.research.color, flexShrink: 0 }}>{chosenHost}</span>
-              <span>🔒</span>
-              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chosen.url}</span>
-              {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${THEME.research.color}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
+          <>
+            {thinking && traceBox(false)}
+            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#fff", border: `1px solid ${chrome}44`, borderRadius: 10, overflow: "hidden" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
+                <span style={{ fontWeight: 700, color: chrome, flexShrink: 0 }}>{chosenHost}</span>
+                <span>🔒</span>
+                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chosen.url}</span>
+                {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${chrome}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
+              </div>
+              <iframe
+                key={proxySrc}
+                src={proxySrc}
+                title="Researcher source"
+                sandbox="allow-scripts allow-popups allow-forms"
+                referrerPolicy="no-referrer"
+                style={{ border: 0, width: "100%", flex: 1, background: "#fff" }}
+              />
+              <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>{cited ? `Cited source — scrolled to ${chosen.gene || gene}.` : `Pre-loading ${chosen.gene || gene} — the Researcher's cited pages appear here as it works.`} Some sites (NCBI/EBI) may block embedding.</div>
             </div>
-            <iframe
-              key={proxySrc}
-              src={proxySrc}
-              title="Researcher source"
-              sandbox="allow-scripts allow-popups allow-forms"
-              referrerPolicy="no-referrer"
-              style={{ border: 0, width: "100%", flex: 1, background: "#fff" }}
-            />
-            <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>{cited ? `Cited source — scrolled to ${chosen.gene || gene}.` : `Pre-loading ${chosen.gene || gene} — the Researcher's cited pages appear here as it works.`} Some sites (NCBI/EBI) may block embedding.</div>
-          </div>
+          </>
         ) : (
           // no cited source yet
-          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
-            <div style={{ fontSize: 30, animation: live ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
-            <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
-            <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
-          </div>
+          <>
+            {thinking && traceBox(false)}
+            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
+              <div style={{ fontSize: 30, animation: live ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
+              <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
+              <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
+            </div>
+          </>
         )}
       </div>
 
       {/* real status line at the bottom */}
-      <div style={{ padding: "8px 14px", borderTop: "1px solid #e2ddd5", fontSize: 11, color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+      <div style={{ padding: "8px 14px", borderTop: `1px solid ${chrome}22`, fontSize: 11, color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
         {status || (live ? "working…" : "idle — open a cluster and run the agent to watch it work")}
       </div>
     </div>
@@ -2215,7 +2244,6 @@ function ClusterStage({
   const [sStatus, setStatus] = useState("");
   const [sThinking, setThinking] = useState("");
   const [sText, setText] = useState("");
-  const [showThinking, setShowThinking] = useState(true);
   const [elapsed, setElapsed] = useState(0); // seconds since run started
   const [sMode, setSMode] = useState<AgentMode>("research");
   const [routing, setRouting] = useState(false); // ~1s "choosing a specialist" phase
@@ -2688,21 +2716,21 @@ function ClusterStage({
                 {() => <MarkersContent cluster={active} added={augmented[active.id] ?? []} />}
               </DraggablePanel>
 
-              {/* live confidence — auto-grows to fit its rationale */}
-              {confidence[active.id] && (
-                <DraggablePanel
-                  title="TIER CONFIDENCE"
-                  accent="#8a847b"
-                  box={pb.cf}
-                  minW={220}
-                  autoFitHeight
-                  onMove={(x, y) => moveBox("cf", x, y)}
-                  onResize={(w, h) => resizeBox("cf", w, h)}
-                  onMeasure={(h) => measureBox("cf", h)}
-                >
-                  {() => <ConfidenceContent conf={confidence[active.id]} />}
-                </DraggablePanel>
-              )}
+              {/* TIER CONFIDENCE — always visible HUD; its four numbers tween
+                  up/down every turn as evidence accrues. Auto-grows to fit. */}
+              <DraggablePanel
+                title="TIER CONFIDENCE"
+                accent="#8a847b"
+                box={pb.cf}
+                minW={230}
+                flash={flash}
+                autoFitHeight
+                onMove={(x, y) => moveBox("cf", x, y)}
+                onResize={(w, h) => resizeBox("cf", w, h)}
+                onMeasure={(h) => measureBox("cf", h)}
+              >
+                {() => <ConfidenceContent conf={confidence[active.id]} live={streaming} />}
+              </DraggablePanel>
             </>
           )}
         </div>
@@ -2873,21 +2901,10 @@ function ClusterStage({
                 <div style={{ fontSize: 12.5, color: THEME[sMode].color, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>
                   {THEME[sMode].icon} {sStatus || THEME[sMode].verb}
                 </div>
-                {/* reasoning trace — themed header/colour per personality */}
-                {sThinking && (
-                  <div style={{ marginBottom: 10, border: `1px solid ${THEME[sMode].color}33`, borderRadius: 8, background: THEME[sMode].bg }}>
-                    <button onClick={() => setShowThinking((s) => !s)} style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "7px 10px", fontSize: 11, color: THEME[sMode].color, textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer", fontWeight: 700 }}>
-                      {showThinking ? "▾" : "▸"} {THEME[sMode].trace}
-                    </button>
-                    {showThinking && (
-                      <div style={{ maxHeight: 180, overflowY: "auto", padding: "0 10px 8px", fontSize: 11.5, color: "#888", lineHeight: 1.45 }}>
-                        <ReactMarkdown remarkPlugins={[remarkGfm]} components={traceMD}>{sThinking}</ReactMarkdown>
-                      </div>
-                    )}
-                  </div>
-                )}
+                {/* reasoning trace now streams in the Live Activity pane (right);
+                    the middle pane shows only the settled output */}
                 {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
+                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{sThinking ? "🧠 thinking in Live activity → settling the answer…" : THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
@@ -2918,7 +2935,7 @@ function ClusterStage({
 
         {/* RIGHT — live activity preview (Researcher browser / Archivist explorer) */}
         <div style={{ flex: "1 1 0", minWidth: 260, minHeight: 0 }}>
-          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} datasetName={dataset.name} researchText={researchText} />
+          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} clusters={clusters} validated={validated} datasetName={dataset.name} researchText={researchText} thinking={sThinking} />
         </div>
       </div>
     </div>
@@ -3336,30 +3353,35 @@ function useTween(target: number, duration = 1100): number {
 // one tier's prediction + a smoothly-tweened confidence bar (greyscale — colour
 // is reserved for personalities)
 function TierConfRow({ label, pred, pct }: { label: string; pred: string; pct: number }) {
-  const shown = useTween(pct);
+  const shown = useTween(pct); // easeInOutQuad — accelerates then decelerates toward the new value
   return (
     <div style={{ marginBottom: 9 }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 11.5 }}>
         <span style={{ color: "#999", fontWeight: 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
         <span style={{ color: "#2b2b2b", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pred || "—"}</span>
-        <span style={{ color: "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{shown.toFixed(0)}%</span>
+        <span style={{ color: "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, minWidth: 42, textAlign: "right" }}>{shown.toFixed(0)}%</span>
       </div>
-      <div style={{ height: 6, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
+      <div style={{ height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
         <div style={{ width: `${shown}%`, height: "100%", background: "#6b6660" }} />
       </div>
     </div>
   );
 }
 
-function ConfidenceContent({ conf }: { conf: ClusterConf }) {
+// Always-on TIER CONFIDENCE HUD. Renders the four tiers even before the first
+// assessment (placeholder "—" / 0%), then the numbers tween up/down each turn.
+function ConfidenceContent({ conf, live }: { conf?: ClusterConf; live?: boolean }) {
   return (
     <div>
-      <div style={{ fontSize: 10.5, color: "#aaa", marginBottom: 7 }}>Goal: drive every tier&apos;s confidence up.</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5, color: "#aaa", marginBottom: 7 }}>
+        {live && <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6b6660", animation: "kpulse 1.1s infinite", flexShrink: 0 }} />}
+        <span>{conf ? "Goal: drive every tier's confidence up." : "Awaiting evidence — confidences update every turn."}</span>
+      </div>
       {CONF_TIERS.map((t) => {
-        const tp = conf[t.key];
+        const tp = conf?.[t.key];
         return <TierConfRow key={t.key} label={t.label} pred={tp?.prediction ?? ""} pct={tp?.pct ?? 0} />;
       })}
-      {conf.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}>{conf.why}</div>}
+      {conf?.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}>{conf.why}</div>}
     </div>
   );
 }
