@@ -1983,6 +1983,45 @@ function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
   return Array.from(byGene.values());
 }
 
+function applyPromotes(list: Marker[], promotes: { gene: string; dir: "up" | "down"; note?: string }[], via: AgentMode): Marker[] {
+  const byGene = new Map(list.map((m) => [m.g.toLowerCase(), m]));
+  for (const p of promotes) {
+    const ex = byGene.get(p.gene.toLowerCase());
+    const notes = (ex?.notes ?? []).filter((n) => n.via !== via);
+    if (p.note) notes.push({ via, text: p.note });
+    byGene.set(p.gene.toLowerCase(), { ...(ex ?? { g: p.gene }), g: ex?.g ?? p.gene, dir: p.dir, note: p.note ?? ex?.note, via, notes });
+  }
+  return Array.from(byGene.values());
+}
+
+// section headers / non-gene bold tokens to ignore when scraping evidence bullets
+const EVIDENCE_SKIP = new Set(["verdict", "evidence", "caveats", "note", "notes", "identity", "read", "raw", "facts", "specificity", "statistics", "summary", "context", "conclusion", "caveat"]);
+// While a personality streams, scrape `**gene** — short finding` evidence bullets
+// out of the partial text so Top Markers can snowball BEFORE the final block.
+function extractEvidenceMarkers(text: string): Marker[] {
+  const out: Marker[] = [];
+  const seen = new Set<string>();
+  const re = /\*\*([A-Za-z][A-Za-z0-9.:_-]{0,17})\*\*\s*[—:–-]+\s*([^\n[]{3,})/g;
+  let m: RegExpExecArray | null;
+  while ((m = re.exec(text))) {
+    const g = m[1].replace(/[:._-]+$/, "").trim();
+    if (g.length < 2 || /\s/.test(g) || EVIDENCE_SKIP.has(g.toLowerCase()) || seen.has(g.toLowerCase())) continue;
+    seen.add(g.toLowerCase());
+    const note = m[2].replace(/\*\*/g, "").replace(/\s+/g, " ").trim().split(" ").slice(0, 8).join(" ").replace(/[\s.,;:([]+$/, "");
+    out.push({ g, note });
+  }
+  return out;
+}
+
+// a small signature so live (frequent) re-scrapes only commit a state update when
+// the gene set / note counts / directions actually changed
+function augSig(list: Marker[]): string {
+  return list
+    .map((m) => `${m.g.toLowerCase()}:${m.notes?.length ?? (m.note ? 1 : 0)}:${m.dir ?? ""}`)
+    .sort()
+    .join("|");
+}
+
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const AUTO_REASON_PROMPT =
   "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read). Reconcile them: where they agree, that's strong; where they disagree, resolve it with the evidence. If the specialists are exhausted and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch).";
@@ -2093,6 +2132,10 @@ function ClusterStage({
   }, [labels]);
   // what the last auto-pilot run skipped (already labelled) / couldn't finish (errored after retry)
   const [autoReport, setAutoReport] = useState<{ already: number; failed: string[] } | null>(null);
+  // auto-pilot "job complete" celebration: green glow on TIER CONFIDENCE with the
+  // four settled tiers highlighted, held before the world map re-focuses + advances
+  const [celebrateId, setCelebrateId] = useState<string | null>(null);
+  const [wmPulse, setWmPulse] = useState(false);
 
   function addedText(list: Marker[]): string {
     return list.map((m) => `${m.g}${m.l2fc != null ? ` log2FC ${m.l2fc}` : ""}${m.note ? ` — ${m.note}` : ""} [${m.dir ?? "?"}, via ${m.via}]`).join("; ");
@@ -2123,6 +2166,13 @@ function ClusterStage({
   // TIER CONFIDENCE refresh — runs at the end of every turn (and whenever
   // markers change), re-scoring all four tiers from the conversation + the
   // evidence now folded into Top Markers. `confBusy` drives the "updating…" pulse.
+  // a live mirror of `augmented` so the streaming cadence ticker reads the
+  // freshest markers without waiting for streamAgent's closure to be recreated
+  const augmentedRef = useRef(augmented);
+  useEffect(() => {
+    augmentedRef.current = augmented;
+  }, [augmented]);
+
   const [confBusy, setConfBusy] = useState(false);
   async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
@@ -2131,7 +2181,7 @@ function ClusterStage({
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dataset: dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
+        body: JSON.stringify({ dataset: dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmentedRef.current[clusterId] ?? []) }),
       });
       if (!r.ok) {
         console.warn("[kasperov] confidence refresh failed:", r.status, await r.text().catch(() => ""));
@@ -2251,6 +2301,19 @@ function ClusterStage({
     let acc = "";
     let think = ""; // full reasoning trace for this turn (stored on the message)
     let mode: AgentMode = forceMode ?? "research";
+    // LIVE CADENCE: while the turn streams (esp. the slow Researcher), fold its
+    // partial evidence into Top Markers every ~2.5s and re-score Tier Confidence
+    // every ~9s — so the boxes update progressively instead of once at the end.
+    let lastLiveConf = 0;
+    const liveTimer = setInterval(() => {
+      if (!acc) return;
+      incorporateFrom(cl, acc, mode);
+      const now = Date.now();
+      if (now - lastLiveConf > 9000) {
+        lastLiveConf = now;
+        refreshConfidence([...nextMsgs, { role: "assistant", content: acc }], cl.id, addedText(augmentedRef.current[cl.id] ?? []));
+      }
+    }, 2500);
     // hard timeout so a hung request can't stall the whole auto-pilot sweep
     const ctrl = new AbortController();
     const killTimer = timeoutMs ? setTimeout(() => ctrl.abort(), timeoutMs) : null;
@@ -2314,6 +2377,7 @@ function ClusterStage({
     } catch (e: any) {
       acc += `\n\n_Request failed: ${String(e?.message ?? e)}_`;
     } finally {
+      clearInterval(liveTimer);
       if (timerRef.current) {
         clearInterval(timerRef.current);
         timerRef.current = null;
@@ -2327,37 +2391,31 @@ function ClusterStage({
     }
     const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode, ...(think.trim() ? { thinking: think.slice(0, 6000) } : {}) }];
     setTranscripts((t) => ({ ...t, [cl.id]: finalMsgs }));
-    // automatically fold this turn's conclusions (markers + promotes) into Top
-    // Markers, then refresh TIER CONFIDENCE with the richer evidence — no button.
-    const mergedMk = autoIncorporate(cl, acc, mode);
+    // final fold of this turn's conclusions into Top Markers + a confidence refresh
+    const mergedMk = incorporateFrom(cl, acc, mode);
     refreshConfidence(finalMsgs, cl.id, addedText(mergedMk));
     return finalMsgs;
   }
 
-  // Merge a turn's structured conclusions (kasperov-markers + kasperov-promote)
-  // into the cluster's Top Markers automatically. Returns the merged list so the
-  // confidence refresh can include it immediately (state update is async).
-  function autoIncorporate(cl: Cluster, content: string, via: AgentMode): Marker[] {
-    const cur = augmented[cl.id] ?? [];
-    const mk = splitMarkerBlock(content).markers;
+  // Fold a personality's output into Top Markers — called LIVE while it streams
+  // (so the box snowballs before the final verdict) and again at turn end. Pulls
+  // `**gene** — finding` evidence bullets, the kasperov-markers block, and any
+  // promotes. Reads/writes augmentedRef so rapid live ticks don't fight stale
+  // state, and only commits when the gene set actually changed. Returns the list.
+  function incorporateFrom(cl: Cluster, content: string, via: AgentMode): Marker[] {
+    const evidence = extractEvidenceMarkers(content);
+    const block = splitMarkerBlock(content).markers;
     const promotes = splitPromote(content).promotes;
+    const cur = augmentedRef.current[cl.id] ?? [];
     let next = cur;
-    if (mk.length) next = mergeMarkers(next, mk, via);
-    if (promotes.length) {
-      const byGene = new Map(next.map((m) => [m.g.toLowerCase(), m]));
-      for (const p of promotes) {
-        const ex = byGene.get(p.gene.toLowerCase());
-        const notes = (ex?.notes ?? []).filter((n) => n.via !== via);
-        if (p.note) notes.push({ via, text: p.note });
-        byGene.set(p.gene.toLowerCase(), { ...(ex ?? { g: p.gene }), g: ex?.g ?? p.gene, dir: p.dir, note: p.note ?? ex?.note, via, notes });
-      }
-      next = Array.from(byGene.values());
-    }
-    if (next !== cur) {
-      setAugmented((a) => ({ ...a, [cl.id]: next }));
-      setFlash(true);
-      setTimeout(() => setFlash(false), 800);
-    }
+    if (evidence.length) next = mergeMarkers(next, evidence, via);
+    if (block.length) next = mergeMarkers(next, block, via); // block wins over the live scrape
+    if (promotes.length) next = applyPromotes(next, promotes, via);
+    if (augSig(next) === augSig(cur)) return cur;
+    augmentedRef.current = { ...augmentedRef.current, [cl.id]: next };
+    setAugmented((a) => ({ ...a, [cl.id]: next }));
+    setFlash(true);
+    setTimeout(() => setFlash(false), 800);
     return next;
   }
 
@@ -2373,14 +2431,11 @@ function ClusterStage({
   }
 
   // ---- AUTO-PILOT: drive the whole loop across every cluster --------------
-  // pull any kasperov-markers out of a message and add them to Top Markers
-  function autoAddMarkers(cl: Cluster, content: string, via: AgentMode, running: Marker[]): Marker[] {
-    const mk = splitMarkerBlock(content).markers;
-    if (!mk.length) return running;
-    const next = mergeMarkers(running, mk, via);
-    setAugmented((a) => ({ ...a, [cl.id]: next }));
-    setFlash(true);
-    setTimeout(() => setFlash(false), 700);
+  // fold a turn's evidence/markers/promotes into Top Markers (same snowball path
+  // the interactive flow uses) and refresh confidence. Returns the full merged
+  // list so the loop can ground its cite-discipline check on it.
+  function autoAddMarkers(cl: Cluster, content: string, via: AgentMode): Marker[] {
+    const next = incorporateFrom(cl, content, via);
     refreshConfidence(transcripts[cl.id] ?? [], cl.id, addedText(next));
     return next;
   }
@@ -2405,10 +2460,10 @@ function ClusterStage({
     //    alternative-hypothesis read, each from a fresh context so they can't
     //    anchor on each other. The Reasoner then adjudicates the two.
     const p1 = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
-    added = autoAddMarkers(cl, p1[p1.length - 1].content, "research", added);
+    added = autoAddMarkers(cl, p1[p1.length - 1].content, "research");
     if (autoAbort.current) return;
     const p2 = await autoStream(cl, [{ role: "user", content: secondOpinionPrompt(cl) }], "research");
-    added = autoAddMarkers(cl, p2[p2.length - 1].content, "research", added);
+    added = autoAddMarkers(cl, p2[p2.length - 1].content, "research");
     // merged context: both independent reads, for the Reasoner to reconcile
     let conv: ChatMsg[] = [
       { role: "user", content: defaultPrompt(cl) },
@@ -2421,14 +2476,14 @@ function ClusterStage({
       if (autoAbort.current) return;
       conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
       let rc = conv[conv.length - 1].content;
-      added = autoAddMarkers(cl, rc, "reason", added);
+      added = autoAddMarkers(cl, rc, "reason");
       let concl = splitConclude(rc).conclude;
       let dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       if (!concl && dispatches.length === 0) {
         // neither concluded nor dispatched → nudge once
         conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason");
         rc = conv[conv.length - 1].content;
-        added = autoAddMarkers(cl, rc, "reason", added);
+        added = autoAddMarkers(cl, rc, "reason");
         concl = splitConclude(rc).conclude;
         dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       }
@@ -2442,7 +2497,7 @@ function ClusterStage({
       for (const d of dispatches) {
         if (autoAbort.current) return;
         conv = await autoStream(cl, [...conv, { role: "user", content: d.prompt }], d.to);
-        added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to, added);
+        added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to);
       }
     }
     // ran out of rounds — accept best-effort so the loop keeps moving
@@ -2474,6 +2529,19 @@ function ClusterStage({
       await sleep(80); // let the per-cluster reset effect settle before streaming
       try {
         await runOneCluster(c);
+        // CELEBRATE the completed four-tier call: glow the TIER CONFIDENCE box and
+        // hold the highlighted germ-layer/tissue/broad/sub outcomes before moving on
+        if (!autoAbort.current) {
+          setCelebrateId(c.id);
+          await sleep(3300);
+          setCelebrateId(null);
+          // then expand the world map + a subtle shift as it re-focuses the next cluster
+          if (i < queue.length - 1) {
+            setWmPulse(true);
+            await sleep(800);
+            setWmPulse(false);
+          }
+        }
       } catch {
         failed.push(c.id); // errored after retry — record it and keep going
       }
@@ -2509,6 +2577,9 @@ function ClusterStage({
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
         @keyframes kflash{0%{box-shadow:0 0 0 0 rgba(67,56,202,.5)}100%{box-shadow:0 0 0 14px rgba(67,56,202,0)}}
         @keyframes kpop{0%{transform:scale(.9);opacity:0}100%{transform:scale(1);opacity:1}}
+        @keyframes kcelebrate{0%,100%{box-shadow:0 0 0 1px #15803d55,0 2px 14px rgba(21,128,61,.18)}50%{box-shadow:0 0 0 2px #15803d99,0 4px 22px rgba(21,128,61,.45)}}
+        @keyframes kexpand{0%{transform:scale(1)}40%{transform:scale(1.06)}100%{transform:scale(1)}}
+        @keyframes krowglow{0%{background:rgba(21,128,61,0)}30%{background:rgba(21,128,61,.14)}100%{background:rgba(21,128,61,.06)}}
       `}</style>
 
       {/* top bar */}
@@ -2552,8 +2623,8 @@ function ClusterStage({
 
           {layout && (
             <>
-              {/* world map — draggable + resizable */}
-              <DraggablePanel title="WORLD MAP" accent="#999" box={layout.wm.box} minW={150} minH={120} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
+              {/* world map — draggable + resizable; pulses/expands as auto-pilot re-focuses */}
+              <DraggablePanel title="WORLD MAP" accent="#999" box={layout.wm.box} minW={150} minH={120} effect={wmPulse ? "pulse" : null} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
                 {(w, h) => <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
               </DraggablePanel>
 
@@ -2576,18 +2647,19 @@ function ClusterStage({
               {/* TIER CONFIDENCE — always visible HUD; its four numbers tween up/down
                   every turn. Grows with content but stays on-screen below Top Markers. */}
               <DraggablePanel
-                title="TIER CONFIDENCE"
+                title={celebrateId === active.id ? "TIER CONFIDENCE · ✓ COMPLETE" : "TIER CONFIDENCE"}
                 accent="#8a847b"
                 box={layout.cf.box}
                 maxH={layout.cf.maxH}
                 minW={230}
                 flash={flash}
                 autoFitHeight
+                effect={celebrateId === active.id ? "celebrate" : null}
                 onMove={(x, y) => moveBox("cf", x, y)}
                 onResize={(w, h) => resizeBox("cf", w, h)}
                 onMeasure={(h) => measureBox("cf", h)}
               >
-                {() => <ConfidenceContent conf={confidence[active.id]} busy={confBusy} />}
+                {() => <ConfidenceContent conf={confidence[active.id]} busy={confBusy} celebrate={celebrateId === active.id} />}
               </DraggablePanel>
             </>
           )}
@@ -3044,6 +3116,7 @@ function DraggablePanel({
   flash = false,
   autoFitHeight = false,
   maxH,
+  effect = null,
   onMove,
   onResize,
   onMeasure,
@@ -3057,6 +3130,7 @@ function DraggablePanel({
   flash?: boolean;
   autoFitHeight?: boolean;
   maxH?: number; // cap the auto-fit height; the body scrolls past it (keeps panels on-screen)
+  effect?: "celebrate" | "pulse" | null; // celebrate = green completion glow; pulse = brief expand
   onMove: (x: number, y: number) => void;
   onResize: (w: number, h: number) => void;
   onMeasure?: (h: number) => void;
@@ -3125,22 +3199,22 @@ function DraggablePanel({
         height: autoFitHeight ? "auto" : box.h,
         maxHeight: capped ? maxH : undefined,
         zIndex: z,
-        background: "rgba(255,253,251,0.96)",
-        border: `1px solid ${accent}44`,
-        borderTop: `2px solid ${accent}`,
+        background: effect === "celebrate" ? "rgba(240,253,244,0.97)" : "rgba(255,253,251,0.96)",
+        border: `1px solid ${effect === "celebrate" ? "#15803d66" : accent + "44"}`,
+        borderTop: `2px solid ${effect === "celebrate" ? "#15803d" : accent}`,
         borderRadius: 10,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.10)",
+        boxShadow: effect === "celebrate" ? "0 0 0 1px #15803d55, 0 2px 18px rgba(21,128,61,0.25)" : "0 2px 10px rgba(0,0,0,0.10)",
         display: "flex",
         flexDirection: "column",
         overflow: "hidden",
-        animation: flash ? "kflash .9s ease-out" : "none",
-        transition: "top .2s ease, left .2s ease, max-height .2s ease",
+        animation: effect === "celebrate" ? "kcelebrate 1.5s ease-in-out infinite" : effect === "pulse" ? "kexpand .8s ease-in-out" : flash ? "kflash .9s ease-out" : "none",
+        transition: "top .25s ease, left .25s ease, width .25s ease, max-height .2s ease",
       }}
     >
       <div onMouseDown={startDrag} style={{ height: HEADER, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, color: accent, userSelect: "none" }}>
         <span style={{ opacity: 0.5 }}>⠿</span> {title}
       </div>
-      <div style={{ flex: autoFitHeight && !capped ? "0 0 auto" : 1, minHeight: 0, overflowY: capped ? "auto" : autoFitHeight ? "visible" : "auto", overflowX: "hidden", padding: "0 8px 6px" }}>
+      <div style={{ flex: autoFitHeight ? "0 0 auto" : 1, minHeight: 0, maxHeight: capped ? Math.max(40, (maxH as number) - HEADER) : undefined, overflowY: capped ? "auto" : autoFitHeight ? "visible" : "auto", overflowX: "hidden", padding: "0 8px 6px" }}>
         <div ref={contentRef}>{children(box.w - 16, autoFitHeight ? 0 : box.h - HEADER - 12)}</div>
       </div>
       <div onMouseDown={startResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 14, height: 14, cursor: "nwse-resize", color: accent, opacity: 0.5, fontSize: 11, lineHeight: "14px", textAlign: "right" }}>◢</div>
@@ -3316,17 +3390,18 @@ function useTween(target: number, duration = 1100): number {
 
 // one tier's prediction + a smoothly-tweened confidence bar (greyscale — colour
 // is reserved for personalities)
-function TierConfRow({ label, pred, pct }: { label: string; pred: string; pct: number }) {
+function TierConfRow({ label, pred, pct, celebrate }: { label: string; pred: string; pct: number; celebrate?: boolean }) {
   const shown = useTween(pct); // easeInOutQuad — accelerates then decelerates toward the new value
+  const barColor = celebrate ? "#15803d" : "#6b6660";
   return (
-    <div style={{ marginBottom: 9 }}>
+    <div style={{ marginBottom: 9, borderRadius: 6, padding: celebrate ? "3px 5px" : 0, margin: celebrate ? "0 -5px 6px" : "0 0 9px", animation: celebrate ? "krowglow 1.6s ease-out forwards" : "none" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 11.5 }}>
-        <span style={{ color: "#999", fontWeight: 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
-        <span style={{ color: "#2b2b2b", flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pred || "—"}</span>
-        <span style={{ color: "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, minWidth: 42, textAlign: "right" }}>{shown.toFixed(0)}%</span>
+        <span style={{ color: celebrate ? "#15803d" : "#999", fontWeight: celebrate ? 700 : 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
+        <span style={{ color: celebrate ? "#14532d" : "#2b2b2b", fontWeight: celebrate ? 700 : 400, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pred || "—"}</span>
+        <span style={{ color: celebrate ? "#15803d" : "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, minWidth: 42, textAlign: "right" }}>{shown.toFixed(0)}%</span>
       </div>
       <div style={{ height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
-        <div style={{ width: `${shown}%`, height: "100%", background: "#6b6660" }} />
+        <div style={{ width: `${shown}%`, height: "100%", background: barColor, transition: "background .3s ease" }} />
       </div>
     </div>
   );
@@ -3334,16 +3409,17 @@ function TierConfRow({ label, pred, pct }: { label: string; pred: string; pct: n
 
 // Always-on TIER CONFIDENCE HUD. Renders the four tiers even before the first
 // assessment (placeholder "—" / 0%), then the numbers tween up/down each turn.
-function ConfidenceContent({ conf, busy }: { conf?: ClusterConf; busy?: boolean }) {
+// `celebrate` lights up the settled four-tier call when an auto-pilot job finishes.
+function ConfidenceContent({ conf, busy, celebrate }: { conf?: ClusterConf; busy?: boolean; celebrate?: boolean }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5, color: busy ? "#6b6660" : "#aaa", marginBottom: 7 }}>
-        {busy && <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6b6660", animation: "kpulse 1.1s infinite", flexShrink: 0 }} />}
-        <span>{busy ? "Re-scoring all four tiers…" : conf ? "Goal: drive every tier's confidence up." : "Awaiting evidence — confidences update every turn."}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5, color: celebrate ? "#15803d" : busy ? "#6b6660" : "#aaa", fontWeight: celebrate ? 700 : 400, marginBottom: 7 }}>
+        {(busy || celebrate) && <span style={{ width: 6, height: 6, borderRadius: 99, background: celebrate ? "#15803d" : "#6b6660", animation: "kpulse 1.1s infinite", flexShrink: 0 }} />}
+        <span>{celebrate ? "✓ Cell type labelled — four-tier call settled." : busy ? "Re-scoring all four tiers…" : conf ? "Goal: drive every tier's confidence up." : "Awaiting evidence — confidences update every turn."}</span>
       </div>
       {CONF_TIERS.map((t) => {
         const tp = conf?.[t.key];
-        return <TierConfRow key={t.key} label={t.label} pred={tp?.prediction ?? ""} pct={tp?.pct ?? 0} />;
+        return <TierConfRow key={t.key} label={t.label} pred={tp?.prediction ?? ""} pct={tp?.pct ?? 0} celebrate={celebrate} />;
       })}
       {conf?.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}>{conf.why}</div>}
     </div>
