@@ -1,0 +1,18 @@
+[Unit]
+Description=daniotype_kasperov persistent auto-pilot worker (drives the labelling loop server-side)
+After=network.target
+
+[Service]
+Type=simple
+User=ssm-user
+WorkingDirectory=/data/zeroshotbio-landingpage/backend/daniotype_autopilot_api
+# CHANGE the token, then keep it in sync with the Vercel KASPEROV_AUTOPILOT_TOKEN env var
+Environment=AUTOPILOT_API_TOKEN=CHANGE_ME_TO_A_LONG_RANDOM_STRING
+# the deployed app the worker drives (agent/score/runs endpoints live here)
+Environment=AUTOPILOT_BASE_URL=https://www.zeroshot.bio
+ExecStart=/data/.venv/bin/uvicorn app:app --host 127.0.0.1 --port 5008
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

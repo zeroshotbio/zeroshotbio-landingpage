@@ -1093,6 +1093,32 @@ function MapStage({
   const unlabelled = clusters.filter((c) => !labels[c.id]);
   const [showScore, setShowScore] = useState(!!score.scoredAt);
   const [showPrev, setShowPrev] = useState(false);
+
+  // persistent server-side auto-pilot (runs on EC2, survives the browser closing)
+  const [serverRun, setServerRun] = useState<{ runId?: string; phase: string; done: number; total: number; msg?: string } | null>(null);
+  async function startServerRun() {
+    if (!window.confirm(`Run the AutoPilot Cluster Labeller on the server for ${dataset.name} with ${model}? It runs independently — you can close this tab and the result will be saved to "Load Previous Run" when done.`)) return;
+    setServerRun({ phase: "starting", done: 0, total: 0 });
+    try {
+      const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", dataset: dataset.id, model }) });
+      if (r.status === 503) return setServerRun({ phase: "not_configured", done: 0, total: 0 });
+      const d = await r.json().catch(() => ({}));
+      setServerRun(d?.runId ? { runId: d.runId, phase: "queued", done: 0, total: 0 } : { phase: "error", done: 0, total: 0, msg: "could not start" });
+    } catch {
+      setServerRun({ phase: "error", done: 0, total: 0, msg: "worker unreachable" });
+    }
+  }
+  useEffect(() => {
+    if (!serverRun?.runId || ["done", "error", "aborted", "not_configured"].includes(serverRun.phase)) return;
+    const id = setInterval(async () => {
+      try {
+        const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "status", runId: serverRun.runId }) });
+        const d = await r.json().catch(() => ({}));
+        setServerRun((s) => (s ? { ...s, phase: d.phase ?? s.phase, done: d.done ?? s.done, total: d.total ?? s.total, msg: d.error } : s));
+      } catch {}
+    }, 4000);
+    return () => clearInterval(id);
+  }, [serverRun?.runId, serverRun?.phase]);
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -1183,6 +1209,13 @@ function MapStage({
                 >
                   🤖 Activate AutoPilot Cluster Labeller →
                 </button>
+                <button
+                  onClick={startServerRun}
+                  title="Runs the whole loop on the server — survives closing this tab; saves to Load Previous Run when done."
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: THEME.reason.color, border: `1px solid ${THEME.reason.color}`, borderRadius: 10, padding: "12px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                >
+                  ☁ Run AutoPilot on server (persistent)
+                </button>
                 {dataset.groundTruthUrl && labelled.length > 0 && (
                   <button
                     onClick={() => setShowScore(true)}
@@ -1201,6 +1234,25 @@ function MapStage({
                 )}
               </div>
               {srvNote && <div style={{ fontSize: 12.5, color: srvNote.includes("✓") ? "#15803d" : "#999", marginBottom: 10 }}>{srvNote}</div>}
+              {serverRun && (
+                <div style={{ fontSize: 12.5, marginBottom: 12, color: serverRun.phase === "error" || serverRun.phase === "not_configured" ? "#b91c1c" : "#2563eb", display: "inline-flex", alignItems: "center", gap: 10, flexWrap: "wrap", justifyContent: "center" }}>
+                  {serverRun.phase === "not_configured" ? (
+                    <span>Server runner not configured yet (set <code>KASPEROV_AUTOPILOT_URL</code> in Vercel env).</span>
+                  ) : serverRun.phase === "error" ? (
+                    <span>Server run failed{serverRun.msg ? `: ${serverRun.msg}` : ""}.</span>
+                  ) : serverRun.phase === "done" ? (
+                    <>
+                      <span style={{ color: "#15803d" }}>✓ Server run complete — saved.</span>
+                      <button onClick={() => setShowPrev(true)} style={{ ...btnGhost, padding: "4px 10px", fontSize: 12.5 }}>☁ Open Load Previous Run</button>
+                    </>
+                  ) : (
+                    <span>
+                      <span style={{ animation: "kpulse 1s infinite" }}>☁</span> Server run · {serverRun.phase}
+                      {serverRun.total ? ` · ${serverRun.done}/${serverRun.total} clusters` : ""} — you can safely close this tab; it keeps running.
+                    </span>
+                  )}
+                </div>
+              )}
               {showPrev && <PreviousRunsModal datasetId={dataset.id} onLoad={onImport} onClose={() => setShowPrev(false)} />}
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
                 Auto-pilot drives the Reasoner across every un-labelled cluster — dispatching the Researcher &amp; Archivist,
