@@ -364,6 +364,7 @@ export default function KasperovClient() {
   // timelapse capture mode (set from ?capture=1&dataset=&model= by the EC2 capturer)
   const capParams = useRef<{ on: boolean; ds: string; model: string } | null>(null);
   const [captureDone, setCaptureDone] = useState(false);
+  const [captureSaved, setCaptureSaved] = useState(false);
   const capStartedRef = useRef(false);
   const capSavedRef = useRef(false);
 
@@ -656,20 +657,28 @@ export default function KasperovClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureMode, dataset, clusters, model]);
 
-  // publish progress for the headless capturer to poll
+  // publish progress for the headless capturer to poll. "done" is only reported
+  // AFTER the run is saved, so the capturer never closes the tab mid-save.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const total = clusters?.length ?? 0;
     const done = clusters ? clusters.filter((c) => labels[c.id]).length : 0;
-    (window as any).__kasperov = { capture: captureMode, phase: !captureMode ? "off" : captureDone ? "done" : capStartedRef.current ? "running" : "loading", done, total };
+    const phase = !captureMode ? "off" : captureSaved ? "done" : captureDone ? "saving" : capStartedRef.current ? "running" : "loading";
+    (window as any).__kasperov = { capture: captureMode, phase, done, total };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [captureMode, clusters, labels, captureDone]);
+  }, [captureMode, clusters, labels, captureDone, captureSaved]);
 
-  // when the filmed autopilot finishes, persist the run to the EBS store (no dialog)
+  // when the filmed autopilot finishes, persist the run to the EBS store (no
+  // dialog) and only THEN mark the capture complete, so "Load Previous Run" has it
   useEffect(() => {
     if (!captureMode || !captureDone || capSavedRef.current) return;
     capSavedRef.current = true;
-    saveRunToServer();
+    (async () => {
+      try {
+        await saveRunToServer();
+      } catch {}
+      setCaptureSaved(true);
+    })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureMode, captureDone]);
 

@@ -17,11 +17,11 @@ Writes <out>/frames/frame_NNNNN.png, <out>/timelapse.gif, and <out>/status.json
 import argparse, json, os, sys, time, traceback
 
 TARGET_SECONDS = 60.0       # final GIF length
-GIF_WIDTH = 900             # downscale width
-GIF_COLORS = 96             # palette size per frame
+GIF_WIDTH = 1100            # downscale width (CLI --gif-width overrides)
+GIF_COLORS = 128            # palette size per frame (CLI --colors overrides)
 MIN_FRAME_MS = 40           # GIF min sane frame duration
 MAX_FRAME_MS = 240
-MAX_GIF_FRAMES = 800        # bound the GIF size (a 2-3h run captures ~1000+ frames)
+MAX_GIF_FRAMES = 800        # bound the GIF size (a multi-hour run captures 1000s of frames)
 
 
 def write_status(out, **kw):
@@ -33,7 +33,7 @@ def write_status(out, **kw):
         pass
 
 
-def assemble_gif(frame_dir, gif_path, status_out):
+def assemble_gif(frame_dir, gif_path, status_out, width=GIF_WIDTH, colors=GIF_COLORS):
     from PIL import Image
     frames = sorted(f for f in os.listdir(frame_dir) if f.endswith(".png"))
     if not frames:
@@ -51,9 +51,9 @@ def assemble_gif(frame_dir, gif_path, status_out):
     for i, name in enumerate(frames):
         try:
             im = Image.open(os.path.join(frame_dir, name)).convert("RGB")
-            if im.width > GIF_WIDTH:
-                im = im.resize((GIF_WIDTH, round(im.height * GIF_WIDTH / im.width)), Image.LANCZOS)
-            imgs.append(im.quantize(colors=GIF_COLORS, method=Image.MEDIANCUT))
+            if im.width > width:
+                im = im.resize((width, round(im.height * width / im.width)), Image.LANCZOS)
+            imgs.append(im.quantize(colors=colors, method=Image.MEDIANCUT))
         except Exception:
             continue
         if i % 50 == 0:
@@ -75,8 +75,12 @@ def main():
     ap.add_argument("--out", required=True)
     ap.add_argument("--interval", type=float, default=10.0)   # seconds between frames
     ap.add_argument("--max-hours", type=float, default=5.0)
-    ap.add_argument("--width", type=int, default=1600)
+    ap.add_argument("--max-clusters", type=int, default=0)    # >0: stop after N clusters (preview)
+    ap.add_argument("--width", type=int, default=1600)        # browser viewport (CSS px)
     ap.add_argument("--height", type=int, default=900)
+    ap.add_argument("--scale", type=float, default=1.5)       # device_scale_factor (crispness)
+    ap.add_argument("--gif-width", type=int, default=GIF_WIDTH)
+    ap.add_argument("--colors", type=int, default=GIF_COLORS)
     a = ap.parse_args()
 
     frame_dir = os.path.join(a.out, "frames")
@@ -92,7 +96,7 @@ def main():
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb"])
-            page = browser.new_page(viewport={"width": a.width, "height": a.height}, device_scale_factor=1)
+            page = browser.new_page(viewport={"width": a.width, "height": a.height}, device_scale_factor=a.scale)
             page.on("dialog", lambda d: d.dismiss())  # never block on a confirm()
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(2500)
@@ -112,7 +116,8 @@ def main():
                     pass
                 if frame_i % 5 == 0:
                     write_status(a.out, phase="capturing", run_phase=last_phase, done=last_done, total=last_total, frames=frame_i, gif=gif_path)
-                if last_phase == "done":
+                reached = last_phase == "done" or (a.max_clusters and last_done >= a.max_clusters)
+                if reached:
                     done_seen += 1
                     if done_seen >= 4:   # ~4 trailing frames showing the finished state
                         break
@@ -121,7 +126,7 @@ def main():
     except Exception as e:
         write_status(a.out, phase="capture_error", error=str(e)[:300], frames=frame_i, traceback=traceback.format_exc()[-800:])
 
-    return assemble_gif(frame_dir, gif_path, a.out)
+    return assemble_gif(frame_dir, gif_path, a.out, width=a.gif_width, colors=a.colors)
 
 
 if __name__ == "__main__":
