@@ -19,19 +19,27 @@ export function isKasperovModel(m: unknown): m is KasperovModel {
   return typeof m === "string" && (KASPEROV_MODELS as readonly string[]).includes(m);
 }
 
-// USD per 1M tokens. Concrete values for the gpt-5 launch tiers; the *.x variants
-// are estimated by tier (nano / mini / base) until confirmed against live OpenAI
-// pricing — the run cost is labelled an ESTIMATE in the UI either way.
+// USD per 1M tokens — confirmed OpenAI pricing (short-context standard rates;
+// our per-cluster prompts sit far below any long-context threshold). Every model
+// in KASPEROV_MODELS is covered, so cost is exact, not estimated.
 const PRICE_TABLE: Record<string, { in: number; out: number }> = {
+  "gpt-5-nano": { in: 0.05, out: 0.4 },
   "gpt-5-mini": { in: 0.25, out: 2.0 },
   "gpt-5": { in: 1.25, out: 10.0 },
+  "gpt-5.1": { in: 1.25, out: 10.0 },
+  "gpt-5.2": { in: 1.75, out: 14.0 },
+  "gpt-5.4-nano": { in: 0.2, out: 1.25 },
+  "gpt-5.4-mini": { in: 0.75, out: 4.5 },
+  "gpt-5.4": { in: 2.5, out: 15.0 },
+  "gpt-5.5": { in: 5.0, out: 30.0 },
 };
 
 export function priceFor(model: string): { in: number; out: number; estimated: boolean } {
   if (PRICE_TABLE[model]) return { ...PRICE_TABLE[model], estimated: false };
-  if (/nano/.test(model)) return { in: 0.05, out: 0.4, estimated: true };
-  if (/mini/.test(model)) return { in: 0.25, out: 2.0, estimated: true };
-  return { in: 1.25, out: 10.0, estimated: true }; // base tier
+  // fallback for any model not in the table (estimated by tier)
+  if (/nano/.test(model)) return { in: 0.2, out: 1.25, estimated: true };
+  if (/mini/.test(model)) return { in: 0.75, out: 4.5, estimated: true };
+  return { in: 2.5, out: 15.0, estimated: true };
 }
 
 // total estimated USD from per-model {in,out} token tallies
