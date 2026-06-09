@@ -1989,6 +1989,149 @@ const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
 
+// ---------------------------------------------------------------------------
+// Live activity pane (right column) — a theatrical "what the agent is doing
+// right now" view: a faux browser while the Researcher searches ZFIN/ZFA/GO,
+// a faux file-explorer while the Archivist parses the dataset. Intentionally
+// stylised; the point is to make the grounded work feel real to a viewer.
+// ---------------------------------------------------------------------------
+const RESEARCH_SITES = [
+  { id: "zfin", name: "ZFIN", host: "zfin.org", accent: "#15803d" },
+  { id: "zfa", name: "ZFA · EBI OLS", host: "ebi.ac.uk/ols", accent: "#0e7490" },
+  { id: "go", name: "GO · QuickGO", host: "ebi.ac.uk/QuickGO", accent: "#7c3aed" },
+  { id: "ncbi", name: "NCBI Gene", host: "ncbi.nlm.nih.gov/gene", accent: "#b45309" },
+];
+const ANAT_TERMS = ["epidermis", "periderm", "neural tube", "somite", "pharyngeal arch", "lateral plate mesoderm", "retina", "hematopoietic system", "notochord", "fin bud", "hindbrain", "pronephros"];
+const GO_TERMS = ["epithelial cell differentiation", "anatomical structure morphogenesis", "regulation of transcription", "cell adhesion", "ion transport", "signal transduction", "tissue development"];
+
+function ActivityPane({ mode, status, streaming, routing, cluster, datasetName }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; datasetName: string }) {
+  const genes = cluster.degsUp ?? [];
+  const [tick, setTick] = useState(0);
+  useEffect(() => {
+    if (!streaming) return;
+    const id = setInterval(() => setTick((t) => t + 1), 1600);
+    return () => clearInterval(id);
+  }, [streaming]);
+
+  const gene = genes.length ? genes[tick % genes.length] : "—";
+  const qMatch = status.match(/[“”"']([^“”"']{2,})[“”"']/);
+  const query = qMatch ? qMatch[1] : `${gene} expression in vivo`;
+  const site = RESEARCH_SITES[tick % RESEARCH_SITES.length];
+  const anat = ANAT_TERMS.slice((tick * 2) % ANAT_TERMS.length, ((tick * 2) % ANAT_TERMS.length) + 3);
+  const go = GO_TERMS.slice(tick % GO_TERMS.length, (tick % GO_TERMS.length) + 2);
+  const marker = (cluster.markers ?? []).find((m) => m.g === gene);
+
+  const live = streaming;
+  const chrome = mode === "archivist" ? "#a16207" : THEME[mode]?.color ?? "#0e7490";
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9" }}>
+      <style>{`
+        @keyframes apscroll{0%{transform:translateY(0)}100%{transform:translateY(-46%)}}
+        @keyframes aphl{0%,100%{background:#fff6c2}50%{background:#ffe98a}}
+        @keyframes apspin{to{transform:rotate(360deg)}}
+        @keyframes apopen{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+      `}</style>
+
+      {/* pane header */}
+      <div style={{ padding: "10px 14px 8px", borderBottom: "1px solid #e2ddd5", display: "flex", alignItems: "center", gap: 8 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 99, background: live ? "#dc2626" : "#bbb", boxShadow: live ? "0 0 0 0 rgba(220,38,38,.5)" : "none", animation: live ? "kpulse 1.2s infinite" : "none" }} />
+        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: "#666" }}>Live activity</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : mode === "archivist" ? "Archivist" : mode === "reason" ? "Reasoner" : "Researcher"}</span>
+      </div>
+
+      <div style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 12 }}>
+        {routing ? (
+          <Centered2>Choosing a specialist…</Centered2>
+        ) : mode === "reason" ? (
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#555", gap: 14 }}>
+            <div style={{ fontSize: 34, animation: live ? "kpulse 1.4s infinite" : "none" }}>🧠</div>
+            <div style={{ fontSize: 13.5, fontWeight: 600, color: THEME.reason.color }}>Synthesising across the evidence</div>
+            <div style={{ display: "flex", gap: 8 }}>
+              {["Researcher", "Archivist", "two reads"].map((x) => (
+                <span key={x} style={{ fontSize: 11, color: "#777", background: "#fff", border: "1px solid #e5e1dc", borderRadius: 99, padding: "3px 9px" }}>✓ {x}</span>
+              ))}
+            </div>
+            <div style={{ fontSize: 12, color: "#999", maxWidth: 240 }}>Weighing markers → in-vivo expression → anatomy to settle the four-tier call.</div>
+          </div>
+        ) : mode === "archivist" ? (
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
+            <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 8, padding: "10px 12px", lineHeight: 1.9, color: "#444" }}>
+              <div>📂 {datasetName}/</div>
+              <div style={{ paddingLeft: 16 }}>📂 archivist/</div>
+              <div style={{ paddingLeft: 32 }}>📂 cluster_{cluster.id}/</div>
+              <div style={{ paddingLeft: 48, color: "#15803d" }}>✓ markers_up.tsv</div>
+              <div style={{ paddingLeft: 48, color: "#15803d" }}>✓ gene_matrix.json</div>
+              <div key={gene} style={{ paddingLeft: 48, color: chrome, animation: "apopen .3s ease" }}>
+                {live ? <span style={{ display: "inline-block", animation: "apspin .8s linear infinite" }}>⟳</span> : "·"} {gene}.json
+              </div>
+            </div>
+            <div style={{ marginTop: 10, background: "#1f2937", color: "#d1fae5", borderRadius: 8, padding: "10px 12px", flex: 1, overflow: "hidden", lineHeight: 1.7 }}>
+              <div style={{ color: "#94a3b8" }}>{"// parsing "}{gene} from {datasetName}…</div>
+              {marker ? (
+                <>
+                  <div>gene: <span style={{ color: "#fde68a" }}>{gene}</span></div>
+                  <div>log2FC: <span style={{ color: "#fde68a" }}>{marker.l2fc ?? "—"}</span></div>
+                  <div>pct_in: <span style={{ color: "#fde68a" }}>{marker.p1 ?? "—"}</span> · pct_out: <span style={{ color: "#fde68a" }}>{marker.p2 ?? "—"}</span></div>
+                </>
+              ) : (
+                <div style={{ color: "#94a3b8" }}>{gene}: scanning gene × cluster matrix…</div>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div style={{ height: "100%", display: "flex", flexDirection: "column", background: "#fff", border: "1px solid #d8d3cd", borderRadius: 10, overflow: "hidden" }}>
+            <div style={{ display: "flex", gap: 4, padding: "6px 8px 0", background: "#ece7df" }}>
+              {RESEARCH_SITES.map((s) => (
+                <div key={s.id} style={{ fontSize: 10.5, fontWeight: 600, padding: "5px 9px", borderRadius: "7px 7px 0 0", background: s.id === site.id ? "#fff" : "#e2ddd5", color: s.id === site.id ? s.accent : "#888" }}>{s.name}</div>
+              ))}
+            </div>
+            <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
+              <span>🔒</span>
+              <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>https://{site.host}/search?q={encodeURIComponent(query)}</span>
+              {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${site.accent}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
+            </div>
+            <div style={{ flex: 1, overflow: "hidden", position: "relative" }}>
+              <div style={{ padding: "12px 14px", animation: live ? "apscroll 9s ease-in-out infinite alternate" : "none" }}>
+                <div style={{ fontSize: 15, fontWeight: 700, color: site.accent }}>{gene}</div>
+                <div style={{ fontSize: 11, color: "#888", marginBottom: 8 }}>Danio rerio · {site.name} record</div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#555", marginTop: 8 }}>In-vivo expression</div>
+                <div style={{ fontSize: 12, color: "#444", lineHeight: 1.6 }}>
+                  Expressed in{" "}
+                  {anat.map((a, i) => (
+                    <span key={a}>
+                      <span style={{ animation: live ? "aphl 2.2s ease-in-out infinite" : "none", borderRadius: 3, padding: "0 2px" }}>{a}</span>
+                      {i < anat.length - 1 ? ", " : ""}
+                    </span>
+                  ))}{" "}during segmentation / pharyngula stages.
+                </div>
+                <div style={{ fontSize: 11.5, fontWeight: 700, color: "#555", marginTop: 10 }}>Gene Ontology</div>
+                <div style={{ fontSize: 12, color: "#444", lineHeight: 1.6 }}>{go.join("; ")}.</div>
+                <div style={{ display: "flex", gap: 6, marginTop: 12 }}>
+                  {[0, 1, 2].map((i) => (
+                    <div key={i} style={{ flex: 1, height: 54, background: `linear-gradient(135deg, ${site.accent}22, ${site.accent}0a)`, border: "1px solid #eee", borderRadius: 6 }} />
+                  ))}
+                </div>
+                <div style={{ fontSize: 10.5, color: "#aaa", marginTop: 6 }}>Fig. in-situ hybridisation, lateral views.</div>
+                <div style={{ height: 60 }} />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* real status line at the bottom */}
+      <div style={{ padding: "8px 14px", borderTop: "1px solid #e2ddd5", fontSize: 11, color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+        {status || (live ? "working…" : "idle — open a cluster and run the agent to watch it work")}
+      </div>
+    </div>
+  );
+}
+
+function Centered2({ children }: { children: React.ReactNode }) {
+  return <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 13 }}>{children}</div>;
+}
+
 function ClusterStage({
   dataset,
   model,
@@ -2502,8 +2645,8 @@ function ClusterStage({
       </div>
 
       <div style={{ flex: 1, display: "flex", minHeight: 0 }}>
-        {/* LEFT — zoom map + HUD */}
-        <div ref={leftRef} style={{ flex: "1.25 1 0", position: "relative", minWidth: 0, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)" }}>
+        {/* LEFT — focused cluster + floating HUD panels */}
+        <div ref={leftRef} style={{ flex: "1 1 0", position: "relative", minWidth: 260, display: "flex", alignItems: "center", justifyContent: "center", background: "radial-gradient(circle at 50% 40%, #fffefc, #f1ede8)" }}>
           <div style={{ position: "absolute", top: 14, left: "50%", transform: "translateX(-50%)", fontSize: 12, color: "#bbb", textTransform: "uppercase", letterSpacing: 1, pointerEvents: "none" }}>Focused cluster</div>
           <UmapCanvas clusters={clusters} mode="zoom" colored activeId={active.id} validated={validated} width={zoomW} height={Math.round(zoomW * 0.8)} />
 
@@ -2548,17 +2691,11 @@ function ClusterStage({
           )}
         </div>
 
-        {/* draggable splitter */}
-        <div
-          onMouseDown={startDrag}
-          title="Drag to resize"
-          style={{ width: 7, flexShrink: 0, cursor: "col-resize", background: "#e5e1dc", display: "flex", alignItems: "center", justifyContent: "center" }}
-        >
-          <div style={{ width: 2, height: 34, borderRadius: 2, background: "#bdb6ae" }} />
-        </div>
+        {/* divider */}
+        <div style={{ width: 1, flexShrink: 0, background: "#e2ddd5" }} />
 
-        {/* RIGHT — GPT-5-Mini research panel (resizable) */}
-        <aside style={{ width: panelW, flexShrink: 0, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
+        {/* CENTER — the agent chat (Reasoner / Researcher / Archivist) */}
+        <aside style={{ flex: "1.3 1 0", minWidth: 320, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
             <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "#555", fontWeight: 600 }}>{model}</div>
             <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
@@ -2759,6 +2896,14 @@ function ClusterStage({
             </div>
           )}
         </aside>
+
+        {/* divider */}
+        <div style={{ width: 1, flexShrink: 0, background: "#e2ddd5" }} />
+
+        {/* RIGHT — live activity preview (Researcher browser / Archivist explorer) */}
+        <div style={{ flex: "1 1 0", minWidth: 260, minHeight: 0 }}>
+          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} datasetName={dataset.name} />
+        </div>
       </div>
     </div>
   );

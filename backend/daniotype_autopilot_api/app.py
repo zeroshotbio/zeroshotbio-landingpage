@@ -239,6 +239,30 @@ def _agent(base, dataset_id, model, cluster, messages, mode, usage):
     return text
 
 
+def get_confidence(base, dataset_id, model, cluster, conv, usage):
+    """Per-tier characterization (germ_layer/tissue/broad/sub: prediction+pct)."""
+    try:
+        r = requests.post(
+            f"{base}/api/kasperov_confidence",
+            json={"dataset": dataset_id, "model": model, "cluster": {"id": cluster["id"], "label": cluster["label"]}, "messages": conv},
+            timeout=60,
+        )
+        if not r.ok:
+            return None
+        d = r.json()
+        u = d.get("usage")
+        if u:
+            mu = usage.setdefault(u.get("model", model), {"in": 0, "out": 0})
+            mu["in"] += u.get("in", 0) or 0
+            mu["out"] += u.get("out", 0) or 0
+        t = d.get("tiers")
+        if t and t.get("germ_layer"):
+            return {**t, "why": d.get("why", "")}
+    except Exception:
+        pass
+    return None
+
+
 def run_one_cluster(base, dataset_id, model, cluster, usage):
     p1 = _agent(base, dataset_id, model, cluster, [{"role": "user", "content": default_prompt(cluster)}], "research", usage)
     p2 = _agent(base, dataset_id, model, cluster, [{"role": "user", "content": second_opinion_prompt(cluster)}], "research", usage)
@@ -268,8 +292,11 @@ def score_clusters(base, dataset_id, model, labelled, gt, usage):
     items = []
     for c in labelled:
         rec = (gt or {}).get(c["id"], {})
+        cc = c.get("confidence") or {}
+        preds = {k: ((cc.get(k) or {}).get("prediction") or c["finalLabel"]) for k in SCORE_TIERS} if cc else None
         items.append({
             "id": c["id"], "ourLabel": c["finalLabel"], "markers": c.get("degsUp", []),
+            "predictions": preds,
             "gt": {k: (rec.get(k) or {}).get("label") for k in SCORE_TIERS},
         })
     for i in range(0, len(items), 10):
@@ -344,9 +371,11 @@ def _run(run_id, dataset_id, model, base):
                 return
             st.update(current=c["id"], done=i)
             try:
-                label, _conv = run_one_cluster(base, dataset_id, model, c, usage)
+                label, conv = run_one_cluster(base, dataset_id, model, c, usage)
+                c["confidence"] = get_confidence(base, dataset_id, model, c, conv, usage)
             except Exception as e:  # noqa: BLE001
                 label = "(error — skipped)"
+                c["confidence"] = None
                 st.setdefault("errors", []).append(f"{c['id']}: {e}")
             c["finalLabel"] = label
         st.update(done=len(clusters))
@@ -373,7 +402,7 @@ def _run(run_id, dataset_id, model, base):
             "source": "server",
             "clusters": [
                 {"id": c["id"], "label": c["label"], "validated": True, "finalLabel": c.get("finalLabel"),
-                 "confidence": None, "addedMarkers": [], "transcript": []}
+                 "confidence": c.get("confidence"), "addedMarkers": [], "transcript": []}
                 for c in clusters
             ],
             "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts} if gt else None),
