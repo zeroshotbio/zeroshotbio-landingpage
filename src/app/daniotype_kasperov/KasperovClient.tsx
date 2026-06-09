@@ -107,7 +107,10 @@ const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Reco
 
 type Pt = { x: number; y: number };
 type Box = { x: number; y: number; w: number; h: number };
-type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string; via?: AgentMode; dir?: "up" | "down" };
+// `notes` snowballs one short tagged annotation PER personality (Researcher /
+// Archivist / Reasoner) as each contributes to the gene across turns. `note`/`via`
+// keep the latest single contribution for back-compat.
+type Marker = { g: string; l2fc?: number; p1?: number; p2?: number; note?: string; via?: AgentMode; dir?: "up" | "down"; notes?: { via: AgentMode; text: string }[] };
 interface Cluster {
   id: string;
   label: string;
@@ -1968,7 +1971,12 @@ function secondOpinionPrompt(c: Cluster): string {
 function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
   const byGene = new Map(cur.map((m) => [m.g.toLowerCase(), m]));
   add.forEach((m) => {
-    const merged: Marker = { ...byGene.get(m.g.toLowerCase()), ...m, via };
+    const ex = byGene.get(m.g.toLowerCase());
+    // snowball: keep one tagged note PER personality (this turn's note replaces
+    // only this personality's prior note, so each gene accrues up to three tags)
+    const notes = (ex?.notes ?? []).filter((n) => n.via !== via);
+    if (m.note) notes.push({ via, text: m.note });
+    const merged: Marker = { ...ex, ...m, via, note: m.note ?? ex?.note, notes };
     merged.dir = merged.dir ?? (merged.l2fc != null ? (merged.l2fc >= 1 ? "up" : merged.l2fc <= -1 ? "down" : undefined) : undefined);
     byGene.set(m.g.toLowerCase(), merged);
   });
@@ -2215,8 +2223,8 @@ function ClusterStage({
     if (manualRef.current) return;
     const added = augmented[active.id] ?? [];
     const why = confidence[active.id]?.why ?? "";
-    const longestNote = added.reduce((mx, m) => Math.max(mx, m.note?.length ?? 0), 0);
-    const mkW = Math.min(380, Math.max(250, 250 + (longestNote > 38 ? 105 : longestNote > 0 ? 45 : 0) + (added.length > 3 ? 25 : 0)));
+    const longestNote = added.reduce((mx, m) => Math.max(mx, ...markerNotes(m).map((n) => n.text.length), 0), 0);
+    const mkW = Math.min(400, Math.max(250, 250 + (longestNote > 38 ? 120 : longestNote > 0 ? 55 : 0) + (added.length > 3 ? 25 : 0)));
     const cfW = Math.min(380, Math.max(250, 250 + Math.floor(why.length / 5)));
     setPb((p) => {
       if (!p || (p.mk.w === mkW && p.cf.w === cfW)) return p;
@@ -2342,7 +2350,9 @@ function ClusterStage({
       const byGene = new Map(next.map((m) => [m.g.toLowerCase(), m]));
       for (const p of promotes) {
         const ex = byGene.get(p.gene.toLowerCase());
-        byGene.set(p.gene.toLowerCase(), { ...(ex ?? { g: p.gene }), g: ex?.g ?? p.gene, dir: p.dir, note: p.note ?? ex?.note, via });
+        const notes = (ex?.notes ?? []).filter((n) => n.via !== via);
+        if (p.note) notes.push({ via, text: p.note });
+        byGene.set(p.gene.toLowerCase(), { ...(ex ?? { g: p.gene }), g: ex?.g ?? p.gene, dir: p.dir, note: p.note ?? ex?.note, via, notes });
       }
       next = Array.from(byGene.values());
     }
@@ -3093,13 +3103,33 @@ function DraggablePanel({
   );
 }
 
-// one chat-contributed annotation, shown inline beneath its gene's row
-function Annot({ m }: { m: Marker }) {
-  const th = THEME[m.via ?? "research"];
+// the per-personality tagged notes that have snowballed on a gene
+function markerNotes(m: Marker): { via: AgentMode; text: string }[] {
+  if (m.notes?.length) return m.notes;
+  return m.note ? [{ via: m.via ?? "research", text: m.note }] : [];
+}
+
+// one tagged note line: a coloured personality chip + its ≤8-word contribution
+function NoteLine({ via, text }: { via: AgentMode; text: string }) {
+  const th = THEME[via] ?? THEME.research;
   return (
-    <div style={{ marginLeft: 76, marginTop: 1, marginBottom: 3, borderLeft: `2px solid ${th.color}`, paddingLeft: 7, fontSize: 10.5, color: "#666", lineHeight: 1.35 }}>
+    <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 7, fontSize: 10.5, color: "#555", lineHeight: 1.35 }}>
       <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 4px", textTransform: "uppercase", marginRight: 5 }}>{th.name}</span>
-      {m.note}
+      {text}
+    </div>
+  );
+}
+
+// chat-contributed annotations, snowballed inline beneath a gene's row — one
+// tagged line per personality that has weighed in on the gene
+function Annot({ m }: { m: Marker }) {
+  const notes = markerNotes(m);
+  if (!notes.length) return null;
+  return (
+    <div style={{ marginLeft: 76, marginTop: 1, marginBottom: 3, display: "flex", flexDirection: "column", gap: 2 }}>
+      {notes.map((n, i) => (
+        <NoteLine key={i} via={n.via} text={n.text} />
+      ))}
     </div>
   );
 }
@@ -3128,7 +3158,13 @@ function AddedRow({ m, max, color }: { m: Marker; max: number; color: string }) 
         </div>
         <span style={{ fontSize: 8, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase" }}>✦{th.name[0]}</span>
       </div>
-      {m.note && <div style={{ fontSize: 10, color: "#777", marginLeft: 8, lineHeight: 1.3 }}>{m.note}</div>}
+      {markerNotes(m).length > 0 && (
+        <div style={{ marginLeft: 8, marginTop: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+          {markerNotes(m).map((n, i) => (
+            <NoteLine key={i} via={n.via} text={n.text} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -3183,16 +3219,21 @@ function MarkersContent({ cluster, added }: { cluster: Cluster; added: Marker[] 
         <>
           <div style={{ fontSize: 10, fontWeight: 700, color: "#555", margin: "9px 0 3px" }}>✦ ALSO DISCUSSED (not yet placed)</div>
           <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-            {extra.map((m) => {
-              const th = THEME[m.via ?? "research"];
-              return (
-                <div key={m.g} style={{ fontSize: 11, borderLeft: `2px solid ${th.color}`, paddingLeft: 7 }}>
+            {extra.map((m) => (
+              <div key={m.g} style={{ fontSize: 11 }}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
                   <span style={{ fontFamily: "ui-monospace, monospace", fontWeight: 700 }}>{m.g}</span>
-                  {m.l2fc != null && <span style={{ color: "#888" }}> · log2FC {m.l2fc}</span>}
-                  {m.note && <span style={{ color: "#666" }}> — {m.note}</span>}
+                  {m.l2fc != null && <span style={{ color: "#888", fontSize: 10 }}>log2FC {m.l2fc}</span>}
                 </div>
-              );
-            })}
+                {markerNotes(m).length > 0 && (
+                  <div style={{ marginTop: 1, display: "flex", flexDirection: "column", gap: 2 }}>
+                    {markerNotes(m).map((n, i) => (
+                      <NoteLine key={i} via={n.via} text={n.text} />
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
           </div>
         </>
       )}
