@@ -52,8 +52,11 @@ export async function POST(req: Request) {
       headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
       body: JSON.stringify({
         model,
-        reasoning: { effort: "minimal" },
-        max_output_tokens: 1200,
+        // "low" is the only effort accepted across the whole gpt-5 series — gpt-5.1+
+        // reject "minimal" with a 400, which silently broke this whole endpoint
+        // (and the live TIER CONFIDENCE box) whenever a .x model was selected.
+        reasoning: { effort: "low" },
+        max_output_tokens: 2000,
         instructions,
         input: [{ role: "user", content: `Cluster: ${cluster?.label ?? cluster?.id ?? "?"}\n\nConversation:\n${convo}${added ? `\n\nEvidence added to Top Markers panel:\n${added}` : ""}` }],
         text: {

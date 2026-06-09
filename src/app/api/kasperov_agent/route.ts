@@ -480,6 +480,12 @@ async function streamOnce(
   const reader = r.body.getReader();
   const dec = new TextDecoder();
   let buf = "";
+  // reasoning-summary formatting: the model emits the trace as discrete "parts"
+  // (each a short title line + body) with NO separator between them, so they run
+  // together ("…information.Searching genetics…"). Insert a blank line between
+  // parts, and end each part's title line with an ellipsis on its own line.
+  let anyReasoning = false; // have we emitted any reasoning text yet this stream?
+  let titleDone = false; // has the current part's title line been closed?
   while (true) {
     const { value, done } = await reader.read();
     if (done) break;
@@ -503,8 +509,25 @@ async function streamOnce(
         usageOut = evt.response.usage.output_tokens ?? usageOut;
       }
       switch (evt.type) {
+        case "response.reasoning_summary_part.added":
+          // a new reasoning section begins — separate it from the previous one
+          if (anyReasoning) sse(controller, enc, { t: "thinking", v: "\n\n" });
+          titleDone = false;
+          break;
         case "response.reasoning_summary_text.delta":
-          if (evt.delta) sse(controller, enc, { t: "thinking", v: evt.delta });
+          if (evt.delta) {
+            anyReasoning = true;
+            let v: string = evt.delta;
+            // the first newline of a part closes its title line → end it with "…"
+            if (!titleDone) {
+              const nl = v.indexOf("\n");
+              if (nl >= 0) {
+                v = v.slice(0, nl) + "…" + v.slice(nl);
+                titleDone = true;
+              }
+            }
+            sse(controller, enc, { t: "thinking", v });
+          }
           break;
         case "response.output_text.delta":
           if (evt.delta) {
@@ -597,7 +620,9 @@ export async function POST(req: Request) {
             model,
             stream: true,
             store: true,
-            reasoning: { effort: mode === "archivist" ? "minimal" : "low", summary: "auto" },
+            // "low" is the only effort the whole gpt-5 series accepts — gpt-5.1+
+            // reject "minimal" with a 400 (would break archivist on those models).
+            reasoning: { effort: "low", summary: "auto" },
             max_output_tokens: 9000,
             input: nextInput,
             ...(prevId ? { previous_response_id: prevId } : { instructions }),

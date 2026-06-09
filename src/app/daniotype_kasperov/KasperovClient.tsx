@@ -1982,166 +1982,6 @@ const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
 
-// ---------------------------------------------------------------------------
-// Live activity pane (right column) — a real "what the agent is doing right
-// now" view, themed to the ACTIVE personality's colour (accent follows whoever
-// is speaking):
-//   • Reasoner   → the live reasoning trace streams here; only the settled
-//     answer lands in the middle chat.
-//   • Researcher → the ACTUAL cited page (proxied, scrolled + highlighted).
-//   • Archivist  → a visual of the whole dataset (UMAP with the cluster lit up)
-//     plus the real per-gene stats terminal.
-// ---------------------------------------------------------------------------
-function ActivityPane({ mode, status, live, working, routing, cluster, clusters, validated, datasetName, researchText }: { mode: AgentMode; status: string; live: boolean; working: boolean; routing: boolean; cluster: Cluster; clusters: Cluster[]; validated: Set<string>; datasetName: string; researchText: string }) {
-  // `live` = the agent is doing something (incl. the Reasoner, whose reasoning
-  // shows in the centre chat). `working` = the personality DISPLAYED here is the
-  // one actually working — while the Reasoner runs we keep the last Researcher /
-  // Archivist artefact up, so spinners/ticks pause but the evidence stays visible.
-  const genes = cluster.degsUp ?? [];
-  const [tick, setTick] = useState(0);
-  useEffect(() => {
-    if (!working) return;
-    const id = setInterval(() => setTick((t) => t + 1), 1600);
-    return () => clearInterval(id);
-  }, [working]);
-
-  const gene = genes.length ? genes[tick % genes.length] : "—";
-  const marker = (cluster.markers ?? []).find((m) => m.g === gene);
-
-  // measure the pane so the Archivist's dataset-viz canvas fills the width
-  const paneRef = useRef<HTMLDivElement | null>(null);
-  const [paneW, setPaneW] = useState(280);
-  useEffect(() => {
-    const el = paneRef.current;
-    if (!el || typeof ResizeObserver === "undefined") return;
-    const ro = new ResizeObserver(() => setPaneW(el.clientWidth));
-    ro.observe(el);
-    setPaneW(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
-
-  // the real page the Researcher is citing — pull (gene, url) pairs out of the
-  // latest Research Log text, preferring ZFIN / Wikipedia (they render well in
-  // the proxied frame); show the most recent one.
-  const chosen = useMemo(() => {
-    const links: { gene?: string; url: string }[] = [];
-    const re = /\*\*([^*\n]{1,40})\*\*[^\n[]{0,90}?\[[^\]]*\]\((https?:\/\/[^)\s]+)\)/g;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(researchText))) links.push({ gene: m[1].trim(), url: m[2] });
-    if (!links.length) {
-      const ure = /(https?:\/\/[^)\s\]]+)/g;
-      let u: RegExpExecArray | null;
-      while ((u = ure.exec(researchText))) links.push({ url: u[1].replace(/[.,;]+$/, "") });
-    }
-    if (links.length) {
-      const prefer = [...links].reverse().find((l) => {
-        try {
-          const h = new URL(l.url).hostname;
-          return h.endsWith("zfin.org") || h.endsWith("wikipedia.org");
-        } catch {
-          return false;
-        }
-      });
-      return prefer ?? links[links.length - 1];
-    }
-    // no cited source yet → show a real page for the cluster's top marker so the
-    // pane is never empty (a zebrafish-scoped Wikipedia search, which always renders)
-    const g = genes[0];
-    if (g) return { gene: g, url: `https://en.wikipedia.org/w/index.php?fulltext=1&title=Special:Search&search=${encodeURIComponent(g + " zebrafish gene")}` };
-    return null;
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [researchText, genes[0]]);
-
-  const theme = THEME[mode] ?? THEME.research;
-  const chrome = theme.color;
-  let chosenHost = "";
-  try {
-    chosenHost = chosen ? new URL(chosen.url).hostname.replace(/^www\./, "") : "";
-  } catch {}
-  const proxySrc = chosen ? `/api/kasperov_proxy?url=${encodeURIComponent(chosen.url)}&highlight=${encodeURIComponent(chosen.gene || gene || "")}` : "";
-  const cited = /https?:\/\//.test(researchText);
-  const vizW = Math.max(160, paneW - 24);
-  // the Reasoner is running (its trace shows in the centre chat) but we're still
-  // displaying the last Researcher/Archivist artefact here
-  const reasoning = live && !working && !routing;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9", borderTop: `3px solid ${chrome}`, transition: "border-color .45s ease" }}>
-      <style>{`@keyframes apspin{to{transform:rotate(360deg)}}`}</style>
-
-      {/* pane header — accent + tint follow the active personality */}
-      <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${chrome}22`, background: theme.bg, display: "flex", alignItems: "center", gap: 8, transition: "background .45s ease, border-color .45s ease" }}>
-        <span style={{ width: 8, height: 8, borderRadius: 99, background: live ? "#dc2626" : "#bbb", boxShadow: live ? "0 0 0 0 rgba(220,38,38,.5)" : "none", animation: live ? "kpulse 1.2s infinite" : "none" }} />
-        <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: chrome }}>Live activity</span>
-        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : reasoning ? `🧠 Reasoner thinking · ${theme.name} kept` : theme.name}</span>
-      </div>
-
-      <div ref={paneRef} style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 12, display: "flex", flexDirection: "column" }}>
-        {routing ? (
-          <Centered2>Choosing a specialist…</Centered2>
-        ) : mode === "archivist" ? (
-          <>
-            {/* visual representation of the whole dataset, the cluster lit up */}
-            <div style={{ flexShrink: 0, border: `1px solid ${chrome}33`, borderRadius: 10, overflow: "hidden", background: "#fffdfb", marginBottom: 10 }}>
-              <div style={{ padding: "5px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: chrome, borderBottom: `1px solid ${chrome}22` }}>{datasetName} atlas · cluster {cluster.id}{working && <span style={{ display: "inline-block", marginLeft: 7, animation: "apspin .8s linear infinite" }}>⟳</span>}</div>
-              <UmapCanvas clusters={clusters} mode="global" colored activeId={cluster.id} validated={validated} width={vizW} height={Math.round(vizW * 0.5)} showFocus />
-            </div>
-            {/* real per-gene stats terminal */}
-            <div style={{ background: "#1f2937", color: "#d1fae5", borderRadius: 8, padding: "10px 12px", flex: 1, minHeight: 0, overflow: "auto", lineHeight: 1.7, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
-              <div style={{ color: "#94a3b8" }}>{"// querying "}{datasetName} for {gene}…</div>
-              {marker ? (
-                <>
-                  <div>gene: <span style={{ color: "#fde68a" }}>{gene}</span></div>
-                  <div>log2FC: <span style={{ color: "#fde68a" }}>{marker.l2fc ?? "—"}</span></div>
-                  <div>pct_in: <span style={{ color: "#fde68a" }}>{marker.p1 ?? "—"}</span> · pct_out: <span style={{ color: "#fde68a" }}>{marker.p2 ?? "—"}</span></div>
-                </>
-              ) : (
-                <div style={{ color: "#94a3b8" }}>{gene}: scanning gene × cluster matrix…</div>
-              )}
-            </div>
-          </>
-        ) : chosen ? (
-          // Researcher — the ACTUAL cited page, proxied + scrolled/highlighted to the gene
-          <>
-            <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#fff", border: `1px solid ${chrome}44`, borderRadius: 10, overflow: "hidden" }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
-                <span style={{ fontWeight: 700, color: chrome, flexShrink: 0 }}>{chosenHost}</span>
-                <span>🔒</span>
-                <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chosen.url}</span>
-                {working && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${chrome}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
-              </div>
-              <iframe
-                key={proxySrc}
-                src={proxySrc}
-                title="Researcher source"
-                sandbox="allow-scripts allow-popups allow-forms"
-                referrerPolicy="no-referrer"
-                style={{ border: 0, width: "100%", flex: 1, background: "#fff" }}
-              />
-              <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>{cited ? `Cited source — scrolled to ${chosen.gene || gene}.` : `Pre-loading ${chosen.gene || gene} — the Researcher's cited pages appear here as it works.`} Some sites (NCBI/EBI) may block embedding.</div>
-            </div>
-          </>
-        ) : (
-          // no cited source yet
-          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
-            <div style={{ fontSize: 30, animation: working ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
-            <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
-            <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
-          </div>
-        )}
-      </div>
-
-      {/* real status line at the bottom */}
-      <div style={{ padding: "8px 14px", borderTop: `1px solid ${chrome}22`, fontSize: 11, color: "#888", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-        {status || (live ? "working…" : "idle — open a cluster and run the agent to watch it work")}
-      </div>
-    </div>
-  );
-}
-
-function Centered2({ children }: { children: React.ReactNode }) {
-  return <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: "#999", fontSize: 13 }}>{children}</div>;
-}
 
 function ClusterStage({
   dataset,
@@ -2300,27 +2140,6 @@ function ClusterStage({
 
   const msgs = transcripts[active.id] ?? [];
   const started = msgs.length > 0 || streaming;
-
-  // the latest Researcher text (live while streaming, else the last research turn)
-  // — drives the live-activity pane's real page view
-  const researchText = useMemo(() => {
-    if (streaming && sMode === "research" && sText) return sText;
-    for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].role === "assistant" && msgs[i].mode === "research") return msgs[i].content;
-    }
-    return "";
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [msgs, streaming, sMode, sText]);
-
-  // Live Activity shows the last Researcher/Archivist artefact. The Reasoner has
-  // no artefact of its own (its trace lives in the centre chat), so while it runs
-  // we keep the previous one up and only swap when another Researcher/Archivist
-  // turn comes back. `activityWorking` = the displayed personality is the one
-  // actually streaming (drives spinners); the header still reads "live".
-  const lastActivityModeRef = useRef<AgentMode>("research");
-  if (sMode === "research" || sMode === "archivist") lastActivityModeRef.current = sMode;
-  const activityMode: AgentMode = lastActivityModeRef.current;
-  const activityWorking = streaming && sMode === activityMode;
 
   useEffect(() => {
     setPrompt(defaultPrompt(active));
@@ -2765,11 +2584,17 @@ function ClusterStage({
           )}
         </div>
 
-        {/* divider */}
-        <div style={{ width: 1, flexShrink: 0, background: "#e2ddd5" }} />
+        {/* draggable splitter — resize the focused-cluster view vs the chat */}
+        <div
+          onMouseDown={startDrag}
+          title="Drag to resize"
+          style={{ width: 7, flexShrink: 0, cursor: "col-resize", background: "#e2ddd5", display: "flex", alignItems: "center", justifyContent: "center", position: "relative" }}
+        >
+          <div style={{ width: 2, height: 30, borderRadius: 2, background: "#bdb6ae" }} />
+        </div>
 
-        {/* CENTER — the agent chat (Reasoner / Researcher / Archivist) */}
-        <aside style={{ flex: "1.3 1 0", minWidth: 320, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
+        {/* CHAT — the agent chat (Reasoner / Researcher / Archivist), resizable */}
+        <aside style={{ width: panelW, flexShrink: 0, minWidth: 320, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
             <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "#555", fontWeight: 600 }}>{model}</div>
             <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
@@ -2857,10 +2682,7 @@ function ClusterStage({
                   {m.role === "user" ? (
                     <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
                   ) : (
-                    <>
-                      {m.thinking && <ThinkingTrace thinking={m.thinking} mode={m.mode ?? "reason"} collapsed />}
-                      <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} />
-                    </>
+                    <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} thinking={m.thinking} />
                   )}
                 </div>
               );
@@ -2921,12 +2743,20 @@ function ClusterStage({
                 <div style={{ fontSize: 12.5, color: THEME[sMode].color, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>
                   {THEME[sMode].icon} {sStatus || THEME[sMode].verb}
                 </div>
-                {/* reasoning trace — a dropdown that stays open and grows while
-                    the model is thinking, then collapses to one line once the
-                    settled answer starts streaming. Re-expandable. */}
-                {sThinking && <ThinkingTrace thinking={sThinking} mode={sMode} collapsed={!!sText} />}
-                {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
+                {/* the live bubble — the reasoning trace (e.g. RESEARCH LOG) sits
+                    INSIDE it: open and growing while thinking, collapsing to one
+                    line once the settled answer streams in below it */}
+                {sThinking || sText ? (
+                  <AgentMessage
+                    content={sText ? splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean : ""}
+                    mode={sMode}
+                    thinking={sThinking}
+                    thinkingCollapsed={!!sText}
+                    pending={!sText}
+                  />
+                ) : (
+                  <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>
+                )}
               </div>
             )}
           </div>
@@ -2951,14 +2781,6 @@ function ClusterStage({
             </div>
           )}
         </aside>
-
-        {/* divider */}
-        <div style={{ width: 1, flexShrink: 0, background: "#e2ddd5" }} />
-
-        {/* RIGHT — live activity preview (Researcher browser / Archivist explorer) */}
-        <div style={{ flex: "1 1 0", minWidth: 260, minHeight: 0 }}>
-          <ActivityPane mode={activityMode} status={sStatus} live={streaming} working={activityWorking} routing={routing} cluster={active} clusters={clusters} validated={validated} datasetName={dataset.name} researchText={researchText} />
-        </div>
       </div>
     </div>
   );
@@ -3100,7 +2922,7 @@ const traceMD = {
   code: (p: any) => <code style={{ background: "#eee", padding: "0 3px", borderRadius: 3 }}>{p.children}</code>,
 };
 
-function AgentMessage({ content, mode = "research", actions }: { content: string; mode?: AgentMode; actions?: React.ReactNode }) {
+function AgentMessage({ content, mode = "research", actions, thinking, thinkingCollapsed = true, pending = false }: { content: string; mode?: AgentMode; actions?: React.ReactNode; thinking?: string; thinkingCollapsed?: boolean; pending?: boolean }) {
   const m = content.match(/\*\*Verdict:\*\*\s*(.+)$/im);
   const verdict = m ? m[1].trim() : null;
   const body = (m ? content.slice(0, m.index) : content).trim();
@@ -3108,7 +2930,7 @@ function AgentMessage({ content, mode = "research", actions }: { content: string
   const confLabel = verdict ? (/high/i.test(verdict) ? "high" : /med/i.test(verdict) ? "medium" : /low/i.test(verdict) ? "low" : null) : null;
   const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
   const th = THEME[mode];
-  const badge = { label: `${th.name} · ${th.blurb}`, icon: th.icon, color: th.color, bg: th.bg };
+  const badge = { color: th.color };
   const isArchivist = mode === "archivist";
   return (
     <div
@@ -3123,19 +2945,21 @@ function AgentMessage({ content, mode = "research", actions }: { content: string
         padding: "8px 10px",
       }}
     >
-      <div style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.4, textTransform: "uppercase", color: badge.color, background: badge.bg, border: `1px solid ${badge.color}33`, borderRadius: 99, padding: "2px 9px", marginBottom: 8 }}>
-        <span>{badge.icon}</span> {badge.label}
-      </div>
+      {/* the personality's reasoning trace (e.g. RESEARCH LOG) lives INSIDE its
+          own bubble, at the top — collapsed to one line once the answer is here */}
+      {thinking && <ThinkingTrace thinking={thinking} mode={mode} collapsed={thinkingCollapsed} />}
       {isArchivist && (
         <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontStyle: "italic" }}>
           Values under “Raw facts” are read directly from the dataset; anything under “Read” is the model&apos;s inference.
         </div>
       )}
-      {body && (
+      {body ? (
         <ReactMarkdown remarkPlugins={[remarkGfm]} components={mdFor(mode)}>
           {body}
         </ReactMarkdown>
-      )}
+      ) : pending ? (
+        <div style={{ fontSize: 12.5, color: "#999", fontStyle: "italic" }}>{th.icon} drafting the answer…</div>
+      ) : null}
       {verdict && (
         <div style={{ marginTop: 8, border: `1px solid ${badge.color}`, borderLeft: `3px solid ${badge.color}`, borderRadius: 10, background: "#fffdfb", overflow: "hidden" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "9px 12px" }}>
