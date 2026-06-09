@@ -2013,17 +2013,24 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
       let u: RegExpExecArray | null;
       while ((u = ure.exec(researchText))) links.push({ url: u[1].replace(/[.,;]+$/, "") });
     }
-    if (!links.length) return null;
-    const prefer = [...links].reverse().find((l) => {
-      try {
-        const h = new URL(l.url).hostname;
-        return h.endsWith("zfin.org") || h.endsWith("wikipedia.org");
-      } catch {
-        return false;
-      }
-    });
-    return prefer ?? links[links.length - 1];
-  }, [researchText]);
+    if (links.length) {
+      const prefer = [...links].reverse().find((l) => {
+        try {
+          const h = new URL(l.url).hostname;
+          return h.endsWith("zfin.org") || h.endsWith("wikipedia.org");
+        } catch {
+          return false;
+        }
+      });
+      return prefer ?? links[links.length - 1];
+    }
+    // no cited source yet → show a real page for the cluster's top marker so the
+    // pane is never empty (a zebrafish-scoped Wikipedia search, which always renders)
+    const g = genes[0];
+    if (g) return { gene: g, url: `https://en.wikipedia.org/w/index.php?fulltext=1&title=Special:Search&search=${encodeURIComponent(g + " zebrafish gene")}` };
+    return null;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [researchText, genes[0]]);
 
   const live = streaming;
   const chrome = mode === "archivist" ? "#a16207" : THEME[mode]?.color ?? "#0e7490";
@@ -2032,6 +2039,7 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
     chosenHost = chosen ? new URL(chosen.url).hostname.replace(/^www\./, "") : "";
   } catch {}
   const proxySrc = chosen ? `/api/kasperov_proxy?url=${encodeURIComponent(chosen.url)}&highlight=${encodeURIComponent(chosen.gene || gene || "")}` : "";
+  const cited = /https?:\/\//.test(researchText);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9" }}>
@@ -2105,7 +2113,7 @@ function ActivityPane({ mode, status, streaming, routing, cluster, datasetName, 
               referrerPolicy="no-referrer"
               style={{ border: 0, width: "100%", flex: 1, background: "#fff" }}
             />
-            <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>Live source — scrolled to {chosen.gene || gene}. Some sites (NCBI/EBI) may block embedding.</div>
+            <div style={{ fontSize: 10, color: "#aaa", padding: "4px 10px", borderTop: "1px solid #eee" }}>{cited ? `Cited source — scrolled to ${chosen.gene || gene}.` : `Pre-loading ${chosen.gene || gene} — the Researcher's cited pages appear here as it works.`} Some sites (NCBI/EBI) may block embedding.</div>
           </div>
         ) : (
           // no cited source yet

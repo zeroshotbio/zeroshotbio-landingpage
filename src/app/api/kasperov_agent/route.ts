@@ -19,7 +19,8 @@
 
 import "server-only";
 export const runtime = "nodejs";
-export const maxDuration = 60;
+// up to 300s on Vercel Pro (heavy models need it); silently capped at 60s on Hobby.
+export const maxDuration = 300;
 
 // Server-side richer per-dataset extract the Archivist queries (full up +
 // computed down markers + dataset cell counts per cluster). Bundled at build.
@@ -580,7 +581,7 @@ export async function POST(req: Request) {
       const tools = mode === "research" ? [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }] : mode === "archivist" ? [QUERY_TOOL] : undefined;
 
       const ctrl = new AbortController();
-      const timer = setTimeout(() => ctrl.abort(), 56000);
+      const timer = setTimeout(() => ctrl.abort(), 295000);
       let usageIn = 0;
       let usageOut = 0;
       let anyProduced = false;
@@ -644,7 +645,7 @@ export async function POST(req: Request) {
         done();
       } catch {
         if (!anyProduced)
-          sse(controller, enc, { t: "text", v: `_(**${model}** didn't respond within the 60-second limit — heavier models (gpt-5.4 / gpt-5.5) often time out in the interactive wizard. Use gpt-5-mini or gpt-5 here, or run the heavy model via the persistent server auto-pilot.)_` });
+          sse(controller, enc, { t: "text", v: `_(**${model}** didn't respond within the request time limit — heavier models (gpt-5.4 / gpt-5.5) can time out, especially on Vercel Hobby's 60s cap. Use gpt-5-mini or gpt-5 here, or the persistent server auto-pilot.)_` });
         else sse(controller, enc, { t: "status", v: "Agent stopped (time limit) — partial result above." });
         sse(controller, enc, { t: "usage", v: { model, in: usageIn, out: usageOut } });
         done();
