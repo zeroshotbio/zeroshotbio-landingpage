@@ -14,6 +14,49 @@ import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models"
 
 const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 
+// Datasets with a published label set: the four-tier predictions are constrained
+// to the EXACT labels that exist in that dataset's ground truth (so we never
+// invent a label the atlas doesn't use, and predictions are directly comparable).
+const GT_URL: Record<string, string> = {
+  zscape: "/daniotype_kasperov/datasets/zscape/groundtruth.json",
+  chemfish: "/daniotype_kasperov/datasets/chemfish/groundtruth.json",
+};
+type TierVocab = { germ_layer: string[]; tissue: string[]; cell_type_broad: string[]; cell_type_sub: string[] };
+const VOCAB_KEYS: (keyof TierVocab)[] = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
+const vocabCache: Record<string, TierVocab | null> = {};
+async function getTierVocab(origin: string, datasetId: string): Promise<TierVocab | null> {
+  if (datasetId in vocabCache) return vocabCache[datasetId];
+  const path = GT_URL[datasetId];
+  if (!path) {
+    vocabCache[datasetId] = null;
+    return null;
+  }
+  try {
+    const r = await fetch(origin + path);
+    if (!r.ok) throw new Error(String(r.status));
+    const gt = await r.json();
+    const sets: Record<keyof TierVocab, Set<string>> = { germ_layer: new Set(), tissue: new Set(), cell_type_broad: new Set(), cell_type_sub: new Set() };
+    for (const id of Object.keys(gt?.clusters ?? {})) {
+      const rec = gt.clusters[id] ?? {};
+      for (const k of VOCAB_KEYS) {
+        const lab = rec?.[k]?.label;
+        if (typeof lab === "string" && lab.trim()) sets[k].add(lab.trim());
+      }
+    }
+    const out = {
+      germ_layer: Array.from(sets.germ_layer).sort(),
+      tissue: Array.from(sets.tissue).sort(),
+      cell_type_broad: Array.from(sets.cell_type_broad).sort(),
+      cell_type_sub: Array.from(sets.cell_type_sub).sort(),
+    } as TierVocab;
+    vocabCache[datasetId] = VOCAB_KEYS.every((k) => out[k].length > 0) ? out : null;
+    return vocabCache[datasetId];
+  } catch {
+    vocabCache[datasetId] = null;
+    return null;
+  }
+}
+
 export async function POST(req: Request) {
   let body: any;
   try {
@@ -28,20 +71,30 @@ export async function POST(req: Request) {
   if (!key) return NextResponse.json({ error: "no_key" }, { status: 503 });
   if (messages.length === 0) return NextResponse.json({ error: "no_messages" }, { status: 400 });
 
+  const origin = new URL(req.url).origin;
+  const vocab = await getTierVocab(origin, String(body?.dataset ?? ""));
+
   const convo = messages.map((m) => `${m.role === "user" ? "Curator" : "Agent"}: ${m.content}`).join("\n\n").slice(0, 8000);
   const added = typeof body?.addedMarkers === "string" ? body.addedMarkers.slice(0, 1200) : "";
   const instructions =
     "You characterize a zebrafish single-cell cluster at FOUR nested ontology tiers — germ layer → tissue → cell type (broad) → cell type (sub) — using ONLY the conversation and the evidence added to the Top Markers panel. " +
     "For EACH tier give: prediction (your single best short label for that tier, e.g. germ_layer 'ectoderm', tissue 'epidermis', cell_type_broad 'periderm', cell_type_sub 'periderm (outer)'; if genuinely unestablished, your best provisional guess) and confidence_pct (0-100, ONE decimal, granular — e.g. 84.3 not 85). " +
     "Confidence is grounded in the evidence actually discussed (cited markers, in-vivo expression, anatomy) — generally highest at the coarse germ-layer tier and lower at the fine sub-type tier; if a tier is barely supported, score it low. The GOAL of the cluster's work is to drive all four tier confidences up. " +
-    "Also give a `why` of 60 words or fewer: the single strongest support and the main remaining uncertainty across the tiers. No preamble.";
+    "Also give a `why` of 60 words or fewer: the single strongest support and the main remaining uncertainty across the tiers. No preamble." +
+    (vocab
+      ? " CONSTRAINED LABEL SET: this dataset uses a FIXED published vocabulary. For EACH tier, `prediction` MUST be EXACTLY one of that tier's allowed labels listed below — choose the single closest existing label to your read; never invent a new label, synonym, or suffix. " +
+        VOCAB_KEYS.map((k) => `${k}: [ ${vocab[k].join(" | ")} ]`).join("  ·  ")
+      : "");
 
-  const TIER = {
+  const tierSchema = (allowed?: string[]) => ({
     type: "object",
-    properties: { prediction: { type: "string" }, confidence_pct: { type: "number", minimum: 0, maximum: 100 } },
+    properties: {
+      prediction: allowed && allowed.length ? { type: "string", enum: allowed } : { type: "string" },
+      confidence_pct: { type: "number", minimum: 0, maximum: 100 },
+    },
     required: ["prediction", "confidence_pct"],
     additionalProperties: false,
-  };
+  });
 
   try {
     const ctrl = new AbortController();
@@ -66,7 +119,13 @@ export async function POST(req: Request) {
             strict: true,
             schema: {
               type: "object",
-              properties: { germ_layer: TIER, tissue: TIER, cell_type_broad: TIER, cell_type_sub: TIER, why: { type: "string" } },
+              properties: {
+                germ_layer: tierSchema(vocab?.germ_layer),
+                tissue: tierSchema(vocab?.tissue),
+                cell_type_broad: tierSchema(vocab?.cell_type_broad),
+                cell_type_sub: tierSchema(vocab?.cell_type_sub),
+                why: { type: "string" },
+              },
               required: ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub", "why"],
               additionalProperties: false,
             },

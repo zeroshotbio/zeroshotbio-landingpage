@@ -3265,13 +3265,40 @@ function markerNotes(m: Marker): { via: AgentMode; text: string }[] {
   return m.note ? [{ via: m.via ?? "research", text: m.note }] : [];
 }
 
+// Reveals text one character at a time, left-to-right, whenever it CHANGES — so
+// every live update to a Top Markers note / Tier prediction reads in fluidly.
+// The whole reveal is capped to ~0.42s so frequent live edits stay snappy.
+function Typewriter({ text, style }: { text: string; style?: React.CSSProperties }) {
+  const [shown, setShown] = useState("");
+  const prev = useRef<string | null>(null);
+  useEffect(() => {
+    if (prev.current === text) return;
+    prev.current = text;
+    if (typeof window === "undefined" || !text) {
+      setShown(text);
+      return;
+    }
+    const total = text.length;
+    const step = Math.max(6, Math.min(24, Math.round(420 / Math.max(1, total))));
+    let i = 0;
+    setShown("");
+    const id = setInterval(() => {
+      i++;
+      setShown(text.slice(0, i));
+      if (i >= total) clearInterval(id);
+    }, step);
+    return () => clearInterval(id);
+  }, [text]);
+  return <span style={style}>{shown}</span>;
+}
+
 // one tagged note line: a coloured personality chip + its ≤8-word contribution
 function NoteLine({ via, text, scale = 1 }: { via: AgentMode; text: string; scale?: number }) {
   const th = THEME[via] ?? THEME.research;
   return (
     <div style={{ borderLeft: `2px solid ${th.color}`, paddingLeft: 6, fontSize: 10 * scale, color: "#555", lineHeight: 1.28 }}>
       <span style={{ fontSize: 7.5 * scale, fontWeight: 800, color: th.color, border: `1px solid ${th.color}66`, borderRadius: 4, padding: "0 3px", textTransform: "uppercase", marginRight: 4 }}>{th.name}</span>
-      {text}
+      <Typewriter text={text} />
     </div>
   );
 }
@@ -3442,7 +3469,7 @@ function TierConfRow({ label, pred, pct, celebrate }: { label: string; pred: str
     <div style={{ marginBottom: 9, borderRadius: 6, padding: celebrate ? "3px 5px" : 0, margin: celebrate ? "0 -5px 6px" : "0 0 9px", animation: celebrate ? "krowglow 1.6s ease-out forwards" : "none" }}>
       <div style={{ display: "flex", alignItems: "baseline", gap: 6, fontSize: 11.5 }}>
         <span style={{ color: celebrate ? "#15803d" : "#999", fontWeight: celebrate ? 700 : 600, flexShrink: 0, minWidth: 96, textTransform: "uppercase", letterSpacing: 0.3, fontSize: 10 }}>{label}</span>
-        <span style={{ color: celebrate ? "#14532d" : "#2b2b2b", fontWeight: celebrate ? 700 : 400, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{pred || "—"}</span>
+        <Typewriter text={pred || "—"} style={{ color: celebrate ? "#14532d" : "#2b2b2b", fontWeight: celebrate ? 700 : 400, flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} />
         <span style={{ color: celebrate ? "#15803d" : "#2b2b2b", fontWeight: 800, fontVariantNumeric: "tabular-nums", flexShrink: 0, fontSize: 14, minWidth: 42, textAlign: "right" }}>{shown.toFixed(0)}%</span>
       </div>
       <div style={{ height: 7, background: "#e8e4df", borderRadius: 99, overflow: "hidden", marginTop: 3 }}>
@@ -3466,7 +3493,7 @@ function ConfidenceContent({ conf, busy, celebrate }: { conf?: ClusterConf; busy
         const tp = conf?.[t.key];
         return <TierConfRow key={t.key} label={t.label} pred={tp?.prediction ?? ""} pct={tp?.pct ?? 0} celebrate={celebrate} />;
       })}
-      {conf?.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}>{conf.why}</div>}
+      {conf?.why && <div style={{ fontSize: 11.5, color: "#555", lineHeight: 1.45, marginTop: 4 }}><Typewriter text={conf.why} /></div>}
     </div>
   );
 }
