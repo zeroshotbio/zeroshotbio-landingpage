@@ -361,6 +361,11 @@ export default function KasperovClient() {
   const autoConsumedRef = useRef(0);
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
+  // timelapse capture mode (set from ?capture=1&dataset=&model= by the EC2 capturer)
+  const capParams = useRef<{ on: boolean; ds: string; model: string } | null>(null);
+  const [captureDone, setCaptureDone] = useState(false);
+  const capStartedRef = useRef(false);
+  const capSavedRef = useRef(false);
 
   // chat state lives HERE (not in ClusterStage) so it survives map↔cluster
   // navigation — ClusterStage unmounts when you return to the map.
@@ -620,6 +625,54 @@ export default function KasperovClient() {
     });
   }
 
+  // ---- timelapse capture mode (driven by a headless browser on the EC2 box) ----
+  // ?capture=1&dataset=<id>&model=<m> auto-runs the in-browser autopilot so the
+  // whole sweep can be filmed; window.__kasperov exposes progress to the capturer.
+  if (capParams.current === null && typeof window !== "undefined") {
+    const q = new URLSearchParams(window.location.search);
+    capParams.current = { on: q.get("capture") === "1", ds: q.get("dataset") ?? "", model: q.get("model") ?? "" };
+  }
+  const captureMode = !!capParams.current?.on;
+
+  useEffect(() => {
+    if (!captureMode) return;
+    if (!dataset) {
+      const d = DATASETS.find((x) => x.id === capParams.current!.ds);
+      if (d) setDataset(d);
+      return;
+    }
+    if (!clusters) return;
+    const wantModel = capParams.current!.model;
+    if (wantModel && (KASPEROV_MODELS as readonly string[]).includes(wantModel) && model !== wantModel) {
+      setModel(wantModel as KasperovModel);
+      return;
+    }
+    if (!capStartedRef.current) {
+      capStartedRef.current = true;
+      setRevealed(true);
+      setPersonasSeen(true);
+      setTimeout(() => startAutopilot(), 2200); // let the map paint before the sweep
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captureMode, dataset, clusters, model]);
+
+  // publish progress for the headless capturer to poll
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const total = clusters?.length ?? 0;
+    const done = clusters ? clusters.filter((c) => labels[c.id]).length : 0;
+    (window as any).__kasperov = { capture: captureMode, phase: !captureMode ? "off" : captureDone ? "done" : capStartedRef.current ? "running" : "loading", done, total };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captureMode, clusters, labels, captureDone]);
+
+  // when the filmed autopilot finishes, persist the run to the EBS store (no dialog)
+  useEffect(() => {
+    if (!captureMode || !captureDone || capSavedRef.current) return;
+    capSavedRef.current = true;
+    saveRunToServer();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [captureMode, captureDone]);
+
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
   if (stage === "model")
@@ -688,6 +741,7 @@ export default function KasperovClient() {
       goToCluster={setActiveId}
       autoStart={autoStart}
       autoConsumedRef={autoConsumedRef}
+      onAutoDone={() => setCaptureDone(true)}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -2071,6 +2125,7 @@ function ClusterStage({
   goToCluster,
   autoStart,
   autoConsumedRef,
+  onAutoDone,
   labels,
   onLabel,
   transcripts,
@@ -2092,6 +2147,7 @@ function ClusterStage({
   onValidate: (id: string, yes: boolean) => void;
   goToCluster: (id: string) => void;
   autoConsumedRef: React.MutableRefObject<number>;
+  onAutoDone?: () => void;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2595,6 +2651,7 @@ function ClusterStage({
     if (!autoAbort.current) {
       setAutoReport({ already: alreadyLabelled, failed });
       if (failed.length) console.warn("[auto-pilot] could not finish clusters:", failed.join(", "));
+      onAutoDone?.(); // signal the timelapse capturer that the sweep finished
     }
   }
   function stopAutopilot() {
