@@ -1333,7 +1333,9 @@ function MapStage({
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
               </p>
 
-              {/* single cluster grid — cell type + confidence (heat-tinted) + ✓ validated */}
+              {/* run-summary cluster grid — only when there's no ground-truth
+                  scorecard to merge the per-cluster list into (e.g. MiniFin) */}
+              {!dataset.groundTruthUrl && (
               <div style={{ marginTop: 8, textAlign: "left" }}>
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600 }}>
@@ -1380,6 +1382,7 @@ function MapStage({
                   })}
                 </div>
               </div>
+              )}
 
               {/* surface the gap — clusters that completed the run without a cell-type label */}
               {labelled.length > 0 && unlabelled.length > 0 && (
@@ -1398,6 +1401,8 @@ function MapStage({
                     clusters={clusters}
                     labels={labels}
                     confidence={confidence}
+                    validated={validated}
+                    onPick={onPick}
                     model={model}
                     addUsage={addUsage}
                     score={score}
@@ -1446,6 +1451,8 @@ function Scorecard({
   clusters,
   labels,
   confidence,
+  validated,
+  onPick,
   model,
   addUsage,
   score,
@@ -1458,6 +1465,8 @@ function Scorecard({
   clusters: Cluster[];
   labels: Record<string, string>;
   confidence: Record<string, { pct: number; why: string }>;
+  validated?: Set<string>;
+  onPick?: (id: string) => void;
   model: string;
   addUsage: (model: string, inT: number, outT: number) => void;
   score: RunScore;
@@ -1664,7 +1673,7 @@ function Scorecard({
             <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#888", background: "#faf7f3" }}>
-                  <th style={{ padding: "9px 12px", fontWeight: 700 }}>Cluster · our label</th>
+                  <th style={{ padding: "9px 12px", fontWeight: 700 }}>Cluster · our label · conf</th>
                   {SCORE_TIERS.map((t) => (
                     <th key={t.key} style={{ padding: "9px 12px", fontWeight: 700, whiteSpace: "nowrap" }}>{t.label}</th>
                   ))}
@@ -1676,13 +1685,25 @@ function Scorecard({
                   const refs = gtTiersFor(c.id);
                   const conf = confidence[c.id]?.pct;
                   const hasLabel = !!labels[c.id];
+                  const isVal = validated?.has(c.id);
+                  const heat = typeof conf === "number" ? confColor(conf) : null;
                   return (
-                    <tr key={c.id} style={{ borderTop: "1px solid #eee7df", opacity: hasLabel ? 1 : 0.6 }}>
-                      <td style={{ padding: "9px 12px", minWidth: 220, verticalAlign: "top" }}>
+                    <tr
+                      key={c.id}
+                      onClick={() => onPick?.(c.id)}
+                      title={hasLabel ? `${c.label}: ${labels[c.id]} — click to open` : `${c.label} — not yet labelled`}
+                      style={{ borderTop: "1px solid #eee7df", opacity: hasLabel ? 1 : 0.6, cursor: onPick ? "pointer" : "default" }}
+                    >
+                      <td style={{ padding: "9px 12px", minWidth: 240, verticalAlign: "top" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
                           <strong>{c.label}</strong>
-                          {typeof conf === "number" && <span style={{ fontSize: 11, color: "#aaa" }}>· {conf.toFixed(0)}%</span>}
+                          {isVal && <span style={{ color: "#15803d", fontWeight: 800, fontSize: 11.5 }} title="validated">✓</span>}
+                          {typeof conf === "number" && heat && (
+                            <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: heat.fg, background: heat.bg, border: `1px solid ${heat.fg}22`, borderRadius: 99, padding: "1px 6px" }}>
+                              {conf.toFixed(0)}%
+                            </span>
+                          )}
                         </div>
                         <div style={{ color: hasLabel ? "#555" : "#b3ada5", fontStyle: hasLabel ? "normal" : "italic", marginTop: 2 }}>{hasLabel ? labels[c.id] : "not yet labelled"}</div>
                       </td>
@@ -1692,10 +1713,16 @@ function Scorecard({
                         const ok = tv?.match;
                         return (
                           <td key={t.key} style={{ padding: "9px 12px", verticalAlign: "top", minWidth: 150 }} title={tv?.note || ""}>
-                            <div style={{ display: "flex", alignItems: "center", gap: 5 }}>
-                              <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800 }}>{!tv ? "·" : ok ? "✓" : "✗"}</span>
-                              <span style={{ color: "#444" }}>{ref ?? "—"}</span>
-                            </div>
+                            {!tv ? (
+                              // un-filled until the comparison is run
+                              <span style={{ color: "#cbc5be" }}>·</span>
+                            ) : (
+                              <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
+                                <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800, flexShrink: 0 }}>{ok ? "✓" : "✗"}</span>
+                                {/* the corrected ZSCAPE label — subtle red when our call was wrong */}
+                                {ref && <span style={{ color: ok ? "#9a948c" : "#dc7a5a", fontSize: ok ? 11.5 : 12 }}>{ref}</span>}
+                              </div>
+                            )}
                           </td>
                         );
                       })}
