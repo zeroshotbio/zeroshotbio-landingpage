@@ -54,3 +54,11 @@ export function projectRunCost(model: string, nClusters: number): number {
   const p = priceFor(model);
   return Math.max(0, nClusters) * ((EST_TOKENS_PER_CLUSTER.in / 1e6) * p.in + (EST_TOKENS_PER_CLUSTER.out / 1e6) * p.out);
 }
+
+// tier + a one-line strength summary for the model picker. Specs for the newer
+// .x revisions aren't pinned here, so the blurb is by tier with a recency note.
+export function modelInfo(model: string): { tier: "nano" | "mini" | "base"; tierLabel: string; strength: string } {
+  if (/nano/.test(model)) return { tier: "nano", tierLabel: "fastest · cheapest", strength: "Fastest and cheapest, lighter reasoning — good for a quick first pass or a cost-capped sweep." };
+  if (/mini/.test(model)) return { tier: "mini", tierLabel: "balanced", strength: "Balanced cost and quality — the everyday workhorse and the default for this tool." };
+  return { tier: "base", tierLabel: "strongest", strength: "Strongest reasoning and label quality, deepest cite-discipline — the most defensible calls, at higher cost." };
+}

@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, type KasperovModel } from "./models";
+import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo, type KasperovModel } from "./models";
 
 const MODEL_KEY = "daniotype_kasperov_model"; // selected model persists globally
 type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
@@ -35,6 +35,7 @@ interface DatasetDef {
   archivistBase: string; // dir holding <cluster>.json + gene_matrix.json
   groundTruthUrl: string | null; // published-label benchmark, or null
   status: "ready" | "soon";
+  approxClusters: number; // for the model picker's cost projection (before the atlas loads)
 }
 const DATASETS: DatasetDef[] = [
   {
@@ -47,6 +48,7 @@ const DATASETS: DatasetDef[] = [
     archivistBase: "/daniotype_kasperov/archivist",
     groundTruthUrl: null,
     status: "ready",
+    approxClusters: 47,
   },
   {
     id: "zscape",
@@ -58,6 +60,7 @@ const DATASETS: DatasetDef[] = [
     archivistBase: "/daniotype_kasperov/datasets/zscape/archivist",
     groundTruthUrl: "/daniotype_kasperov/datasets/zscape/groundtruth.json",
     status: "ready",
+    approxClusters: 55,
   },
   {
     id: "chemfish",
@@ -69,6 +72,7 @@ const DATASETS: DatasetDef[] = [
     archivistBase: "/daniotype_kasperov/datasets/chemfish/archivist",
     groundTruthUrl: "/daniotype_kasperov/datasets/chemfish/groundtruth.json",
     status: "soon",
+    approxClusters: 60,
   },
   {
     id: "megafin",
@@ -80,6 +84,7 @@ const DATASETS: DatasetDef[] = [
     archivistBase: "/daniotype_kasperov/datasets/megafin/archivist",
     groundTruthUrl: null,
     status: "soon",
+    approxClusters: 60,
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
@@ -320,7 +325,7 @@ function UmapCanvas({
 }
 
 // ---------------------------------------------------------------------------
-type Stage = "intro" | "map" | "personas" | "cluster" | "scorecard";
+type Stage = "model" | "intro" | "map" | "personas" | "cluster" | "scorecard";
 
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
@@ -385,7 +390,7 @@ export default function KasperovClient() {
     setIncorporated(new Set());
     setRevealed(false);
     setActiveId(null);
-    setStage("intro");
+    setStage("model"); // dataset chosen → pick a model next, then the intro/map
     setUsage({});
     setScore({ verdicts: {}, scoredAt: null, agg: [] });
     try {
@@ -598,6 +603,9 @@ export default function KasperovClient() {
 
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
+  if (stage === "model")
+    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("intro"); }} onBack={() => setDataset(null)} />;
+
   if (stage === "intro")
     return <Intro dataset={dataset} meta={meta} onStart={() => setStage("map")} onSwitch={() => setDataset(null)} />;
 
@@ -641,6 +649,7 @@ export default function KasperovClient() {
   if (stage === "personas")
     return (
       <Personas
+        model={model}
         onContinue={() => {
           setPersonasSeen(true);
           setStage("cluster");
@@ -865,6 +874,66 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
 }
 
 // ---------------------------------------------------------------------------
+// Model picker — second setup screen (after the dataset): choose which model
+// drives the whole run, with a strength summary + projected full-run cost.
+// ---------------------------------------------------------------------------
+function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef; current: KasperovModel; onPick: (m: KasperovModel) => void; onBack: () => void }) {
+  const n = dataset.approxClusters;
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
+      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← Datasets</button>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a model</h1>
+        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
+          The model drives every personality and the ground-truth scoring for this run, and is recorded in the saved JSON. Cost is a rough projection for
+          labelling all <strong>~{n}</strong> {dataset.name} clusters — you can also switch models later on the world map.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+          {KASPEROV_MODELS.map((m) => {
+            const info = modelInfo(m);
+            const cost = projectRunCost(m, n);
+            const selected = m === current;
+            const tierColor = info.tier === "base" ? "#15803d" : info.tier === "mini" ? ACCENT : "#a16207";
+            return (
+              <button
+                key={m}
+                onClick={() => onPick(m)}
+                style={{
+                  textAlign: "left",
+                  background: selected ? "#eef7f9" : "#fffdfb",
+                  border: `1px solid ${selected ? ACCENT : "#e5e1dc"}`,
+                  borderTop: `3px solid ${tierColor}`,
+                  borderRadius: 12,
+                  padding: "16px 18px 18px",
+                  cursor: "pointer",
+                  color: INK,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 7,
+                  minHeight: 184,
+                }}
+              >
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 18, fontWeight: 700 }}>{m}</span>
+                  {selected && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>selected</span>}
+                  <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: tierColor, background: `${tierColor}1a`, borderRadius: 99, padding: "2px 8px" }}>{info.tierLabel}</span>
+                </div>
+                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>{info.strength}</div>
+                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 22, fontWeight: 800, color: tierColor, fontVariantNumeric: "tabular-nums" }}>~${cost.toFixed(2)}</span>
+                  <span style={{ fontSize: 12, color: "#999" }}>est. full run ({n} clusters)</span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
 function Intro({ onStart, meta, dataset, onSwitch }: { onStart: () => void; meta: AtlasMeta | null; dataset: DatasetDef; onSwitch: () => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
@@ -951,7 +1020,7 @@ const PIX_REASONER = [
   "....ooo.....",
 ];
 
-function Personas({ onContinue }: { onContinue: () => void }) {
+function Personas({ onContinue, model }: { onContinue: () => void; model: string }) {
   const cards = [
     { mode: "reason" as AgentMode, pix: PIX_REASONER, blurb: "Your partner. Synthesises everything, judges when you're done, and offers one-click prompts to send the other two." },
     { mode: "research" as AgentMode, pix: PIX_RESEARCHER, blurb: "Searches ZFIN, ZFA & GO for grounded, cited evidence." },
@@ -961,7 +1030,7 @@ function Personas({ onContinue }: { onContinue: () => void }) {
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 880, padding: "60px 28px", textAlign: "center" }}>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: "#999", fontWeight: 600 }}>Your three specialists</div>
-        <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One GPT-5-Mini, three personalities</h1>
+        <h1 style={{ fontSize: 32, fontWeight: 700, margin: "8px 0 4px" }}>One {model}, three personalities</h1>
         <p style={{ fontSize: 15, color: "#666", maxWidth: 700, margin: "0 auto 26px", lineHeight: 1.55 }}>
           Each specialist has its own input line below the chat — ask any of them directly, any time. Lean on the{" "}
           <strong style={{ color: THEME.reason.color }}>Reasoner</strong> as your partner: it reads the evidence, judges when you&apos;re
@@ -2432,7 +2501,7 @@ function ClusterStage({
         {/* RIGHT — GPT-5-Mini research panel (resizable) */}
         <aside style={{ width: panelW, flexShrink: 0, background: "#fffdfb", display: "flex", flexDirection: "column", minHeight: 0 }}>
           <div style={{ padding: "14px 16px 8px", borderBottom: "1px solid #f0ece7" }}>
-            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "#555", fontWeight: 600 }}>GPT-5-Mini</div>
+            <div style={{ fontSize: 12, letterSpacing: 1, textTransform: "uppercase", color: "#555", fontWeight: 600 }}>{model}</div>
             <div style={{ fontSize: 12.5, color: "#888", marginTop: 2 }}>Searches ZFIN · ZFA · GO for this cluster&apos;s markers. You judge the result.</div>
           </div>
 
@@ -2526,7 +2595,7 @@ function ClusterStage({
               return (
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : THEME[m.mode ?? "research"].color, fontWeight: 600, marginBottom: 3 }}>
-                    {m.role === "user" ? "You asked" : `GPT-5-Mini${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
+                    {m.role === "user" ? "You asked" : `${model}${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
                   </div>
                   {m.role === "user" ? (
                     <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
@@ -2768,7 +2837,7 @@ function AgentMessage({ content, mode = "research", actions }: { content: string
       </div>
       {isArchivist && (
         <div style={{ fontSize: 11, color: "#888", marginBottom: 6, fontStyle: "italic" }}>
-          Values under “Raw facts” are read directly from the MiniFin dataset; anything under “Read” is GPT-5-Mini&apos;s inference.
+          Values under “Raw facts” are read directly from the dataset; anything under “Read” is the model&apos;s inference.
         </div>
       )}
       {body && (
