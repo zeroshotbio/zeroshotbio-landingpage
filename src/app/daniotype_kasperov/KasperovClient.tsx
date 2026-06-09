@@ -1761,7 +1761,7 @@ function Scorecard({
 
 // ---------------------------------------------------------------------------
 type AgentMode = "research" | "archivist" | "reason";
-type ChatMsg = { role: "user" | "assistant"; content: string; mode?: AgentMode };
+type ChatMsg = { role: "user" | "assistant"; content: string; mode?: AgentMode; thinking?: string };
 
 // per-personality theming for badges, router cards, and loading views
 // Global personality colour code: green = Researcher, yellow = Archivist, blue = Reasoner.
@@ -1992,14 +1992,18 @@ const AUTO_MAX_ROUNDS = 4;
 //   • Archivist  → a visual of the whole dataset (UMAP with the cluster lit up)
 //     plus the real per-gene stats terminal.
 // ---------------------------------------------------------------------------
-function ActivityPane({ mode, status, streaming, routing, cluster, clusters, validated, datasetName, researchText, thinking }: { mode: AgentMode; status: string; streaming: boolean; routing: boolean; cluster: Cluster; clusters: Cluster[]; validated: Set<string>; datasetName: string; researchText: string; thinking: string }) {
+function ActivityPane({ mode, status, live, working, routing, cluster, clusters, validated, datasetName, researchText }: { mode: AgentMode; status: string; live: boolean; working: boolean; routing: boolean; cluster: Cluster; clusters: Cluster[]; validated: Set<string>; datasetName: string; researchText: string }) {
+  // `live` = the agent is doing something (incl. the Reasoner, whose reasoning
+  // shows in the centre chat). `working` = the personality DISPLAYED here is the
+  // one actually working — while the Reasoner runs we keep the last Researcher /
+  // Archivist artefact up, so spinners/ticks pause but the evidence stays visible.
   const genes = cluster.degsUp ?? [];
   const [tick, setTick] = useState(0);
   useEffect(() => {
-    if (!streaming) return;
+    if (!working) return;
     const id = setInterval(() => setTick((t) => t + 1), 1600);
     return () => clearInterval(id);
-  }, [streaming]);
+  }, [working]);
 
   const gene = genes.length ? genes[tick % genes.length] : "—";
   const marker = (cluster.markers ?? []).find((m) => m.g === gene);
@@ -2015,12 +2019,6 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
     setPaneW(el.clientWidth);
     return () => ro.disconnect();
   }, []);
-
-  // keep the reasoning trace pinned to its latest line as it streams
-  const traceRef = useRef<HTMLDivElement | null>(null);
-  useEffect(() => {
-    traceRef.current?.scrollTo({ top: traceRef.current.scrollHeight });
-  }, [thinking]);
 
   // the real page the Researcher is citing — pull (gene, url) pairs out of the
   // latest Research Log text, preferring ZFIN / Wikipedia (they render well in
@@ -2054,7 +2052,6 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [researchText, genes[0]]);
 
-  const live = streaming;
   const theme = THEME[mode] ?? THEME.research;
   const chrome = theme.color;
   let chosenHost = "";
@@ -2064,21 +2061,9 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
   const proxySrc = chosen ? `/api/kasperov_proxy?url=${encodeURIComponent(chosen.url)}&highlight=${encodeURIComponent(chosen.gene || gene || "")}` : "";
   const cited = /https?:\/\//.test(researchText);
   const vizW = Math.max(160, paneW - 24);
-
-  // the live reasoning trace — `big` makes it the primary view (Reasoner); the
-  // compact strip rides above the Researcher's page / Archivist's data so the
-  // model's thinking is always visible without crowding the main artefact.
-  const traceBox = (big: boolean) => (
-    <div style={{ border: `1px solid ${chrome}33`, borderLeft: `3px solid ${chrome}`, borderRadius: 8, background: theme.bg, overflow: "hidden", display: "flex", flexDirection: "column", ...(big ? { flex: 1, minHeight: 0 } : { flexShrink: 0, marginBottom: 10 }) }}>
-      <div style={{ padding: "6px 10px", fontSize: 10, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: chrome, display: "flex", alignItems: "center", gap: 6, borderBottom: `1px solid ${chrome}22` }}>
-        {live && <span style={{ width: 6, height: 6, borderRadius: 99, background: chrome, animation: "kpulse 1.1s infinite" }} />}
-        <span>{theme.icon} {theme.trace}{big ? " — live" : ""}</span>
-      </div>
-      <div ref={traceRef} style={{ overflowY: "auto", padding: "8px 10px", fontSize: 11.5, color: "#777", lineHeight: 1.5, ...(big ? { flex: 1 } : { maxHeight: 70 }) }}>
-        {thinking ? <ReactMarkdown remarkPlugins={[remarkGfm]} components={traceMD}>{thinking}</ReactMarkdown> : <span style={{ color: "#aaa", fontStyle: "italic" }}>{live ? theme.verb : "—"}</span>}
-      </div>
-    </div>
-  );
+  // the Reasoner is running (its trace shows in the centre chat) but we're still
+  // displaying the last Researcher/Archivist artefact here
+  const reasoning = live && !working && !routing;
 
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", minHeight: 0, background: "#f3efe9", borderTop: `3px solid ${chrome}`, transition: "border-color .45s ease" }}>
@@ -2088,23 +2073,19 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
       <div style={{ padding: "10px 14px 8px", borderBottom: `1px solid ${chrome}22`, background: theme.bg, display: "flex", alignItems: "center", gap: 8, transition: "background .45s ease, border-color .45s ease" }}>
         <span style={{ width: 8, height: 8, borderRadius: 99, background: live ? "#dc2626" : "#bbb", boxShadow: live ? "0 0 0 0 rgba(220,38,38,.5)" : "none", animation: live ? "kpulse 1.2s infinite" : "none" }} />
         <span style={{ fontSize: 11, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: chrome }}>Live activity</span>
-        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : theme.name}</span>
+        <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: chrome }}>{routing ? "routing…" : reasoning ? `🧠 Reasoner thinking · ${theme.name} kept` : theme.name}</span>
       </div>
 
       <div ref={paneRef} style={{ flex: 1, minHeight: 0, overflow: "hidden", padding: 12, display: "flex", flexDirection: "column" }}>
         {routing ? (
           <Centered2>Choosing a specialist…</Centered2>
-        ) : mode === "reason" ? (
-          // Reasoner — the live reasoning trace is the star
-          traceBox(true)
         ) : mode === "archivist" ? (
           <>
             {/* visual representation of the whole dataset, the cluster lit up */}
             <div style={{ flexShrink: 0, border: `1px solid ${chrome}33`, borderRadius: 10, overflow: "hidden", background: "#fffdfb", marginBottom: 10 }}>
-              <div style={{ padding: "5px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: chrome, borderBottom: `1px solid ${chrome}22` }}>{datasetName} atlas · cluster {cluster.id}{live && <span style={{ display: "inline-block", marginLeft: 7, animation: "apspin .8s linear infinite" }}>⟳</span>}</div>
+              <div style={{ padding: "5px 10px", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: chrome, borderBottom: `1px solid ${chrome}22` }}>{datasetName} atlas · cluster {cluster.id}{working && <span style={{ display: "inline-block", marginLeft: 7, animation: "apspin .8s linear infinite" }}>⟳</span>}</div>
               <UmapCanvas clusters={clusters} mode="global" colored activeId={cluster.id} validated={validated} width={vizW} height={Math.round(vizW * 0.5)} showFocus />
             </div>
-            {thinking && traceBox(false)}
             {/* real per-gene stats terminal */}
             <div style={{ background: "#1f2937", color: "#d1fae5", borderRadius: 8, padding: "10px 12px", flex: 1, minHeight: 0, overflow: "auto", lineHeight: 1.7, fontFamily: "ui-monospace, Menlo, monospace", fontSize: 12 }}>
               <div style={{ color: "#94a3b8" }}>{"// querying "}{datasetName} for {gene}…</div>
@@ -2122,13 +2103,12 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
         ) : chosen ? (
           // Researcher — the ACTUAL cited page, proxied + scrolled/highlighted to the gene
           <>
-            {thinking && traceBox(false)}
             <div style={{ flex: 1, minHeight: 0, display: "flex", flexDirection: "column", background: "#fff", border: `1px solid ${chrome}44`, borderRadius: 10, overflow: "hidden" }}>
               <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "7px 10px", borderBottom: "1px solid #eee", background: "#faf8f5", fontSize: 11, color: "#555" }}>
                 <span style={{ fontWeight: 700, color: chrome, flexShrink: 0 }}>{chosenHost}</span>
                 <span>🔒</span>
                 <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{chosen.url}</span>
-                {live && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${chrome}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
+                {working && <span style={{ marginLeft: "auto", width: 12, height: 12, border: `2px solid ${chrome}`, borderTopColor: "transparent", borderRadius: 99, animation: "apspin .7s linear infinite", flexShrink: 0 }} />}
               </div>
               <iframe
                 key={proxySrc}
@@ -2143,14 +2123,11 @@ function ActivityPane({ mode, status, streaming, routing, cluster, clusters, val
           </>
         ) : (
           // no cited source yet
-          <>
-            {thinking && traceBox(false)}
-            <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
-              <div style={{ fontSize: 30, animation: live ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
-              <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
-              <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
-            </div>
-          </>
+          <div style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", textAlign: "center", color: "#999", gap: 12, padding: 20 }}>
+            <div style={{ fontSize: 30, animation: working ? "kpulse 1.4s infinite" : "none" }}>🔬</div>
+            <div style={{ fontSize: 13, color: "#777" }}>Searching ZFIN · ZFA · GO…</div>
+            <div style={{ fontSize: 12, maxWidth: 240 }}>The page the Researcher cites will load here — scrolled to the gene it&apos;s reading.</div>
+          </div>
         )}
       </div>
 
@@ -2291,23 +2268,34 @@ function ClusterStage({
     refreshConfidence(transcripts[active.id] ?? [], active.id, addedText(next));
   }
 
-  // live confidence box (appears once there's a conversation to assess) — state in parent
+  // TIER CONFIDENCE refresh — runs at the end of every turn (and whenever
+  // markers change), re-scoring all four tiers from the conversation + the
+  // evidence now folded into Top Markers. `confBusy` drives the "updating…" pulse.
+  const [confBusy, setConfBusy] = useState(false);
   async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
+    setConfBusy(true);
     try {
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ dataset: dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmented[clusterId] ?? []) }),
       });
-      if (!r.ok) return;
+      if (!r.ok) {
+        console.warn("[kasperov] confidence refresh failed:", r.status, await r.text().catch(() => ""));
+        return;
+      }
       const d = await r.json();
       if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
       if (d.tiers && d.tiers.germ_layer) {
         const cc: ClusterConf = { ...d.tiers, why: d.why || "" };
         setConfidence((c) => ({ ...c, [clusterId]: cc }));
       }
-    } catch {}
+    } catch (e) {
+      console.warn("[kasperov] confidence refresh error:", e);
+    } finally {
+      setConfBusy(false);
+    }
   }
 
   const msgs = transcripts[active.id] ?? [];
@@ -2323,6 +2311,16 @@ function ClusterStage({
     return "";
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [msgs, streaming, sMode, sText]);
+
+  // Live Activity shows the last Researcher/Archivist artefact. The Reasoner has
+  // no artefact of its own (its trace lives in the centre chat), so while it runs
+  // we keep the previous one up and only swap when another Researcher/Archivist
+  // turn comes back. `activityWorking` = the displayed personality is the one
+  // actually streaming (drives spinners); the header still reads "live".
+  const lastActivityModeRef = useRef<AgentMode>("research");
+  if (sMode === "research" || sMode === "archivist") lastActivityModeRef.current = sMode;
+  const activityMode: AgentMode = lastActivityModeRef.current;
+  const activityWorking = streaming && sMode === activityMode;
 
   useEffect(() => {
     setPrompt(defaultPrompt(active));
@@ -2427,6 +2425,7 @@ function ClusterStage({
     if (timerRef.current) clearInterval(timerRef.current);
     timerRef.current = setInterval(() => setElapsed(Math.min(60, (Date.now() - startedAt) / 1000)), 250);
     let acc = "";
+    let think = ""; // full reasoning trace for this turn (stored on the message)
     let mode: AgentMode = forceMode ?? "research";
     // hard timeout so a hung request can't stall the whole auto-pilot sweep
     const ctrl = new AbortController();
@@ -2474,7 +2473,10 @@ function ClusterStage({
               setTimeout(() => setRouting(false), wait);
             }
           } else if (evt.t === "status") setStatus(evt.v);
-          else if (evt.t === "thinking") setThinking((p) => p + evt.v);
+          else if (evt.t === "thinking") {
+            think += evt.v;
+            setThinking((p) => p + evt.v);
+          }
           else if (evt.t === "usage") addUsage(evt.v?.model ?? model, evt.v?.in ?? 0, evt.v?.out ?? 0);
           else if (evt.t === "text") {
             acc += evt.v;
@@ -2499,10 +2501,38 @@ function ClusterStage({
       setText("");
       setThinking("");
     }
-    const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode }];
+    const finalMsgs: ChatMsg[] = [...nextMsgs, { role: "assistant", content: acc || "_(no response)_", mode, ...(think.trim() ? { thinking: think.slice(0, 6000) } : {}) }];
     setTranscripts((t) => ({ ...t, [cl.id]: finalMsgs }));
-    refreshConfidence(finalMsgs, cl.id);
+    // automatically fold this turn's conclusions (markers + promotes) into Top
+    // Markers, then refresh TIER CONFIDENCE with the richer evidence — no button.
+    const mergedMk = autoIncorporate(cl, acc, mode);
+    refreshConfidence(finalMsgs, cl.id, addedText(mergedMk));
     return finalMsgs;
+  }
+
+  // Merge a turn's structured conclusions (kasperov-markers + kasperov-promote)
+  // into the cluster's Top Markers automatically. Returns the merged list so the
+  // confidence refresh can include it immediately (state update is async).
+  function autoIncorporate(cl: Cluster, content: string, via: AgentMode): Marker[] {
+    const cur = augmented[cl.id] ?? [];
+    const mk = splitMarkerBlock(content).markers;
+    const promotes = splitPromote(content).promotes;
+    let next = cur;
+    if (mk.length) next = mergeMarkers(next, mk, via);
+    if (promotes.length) {
+      const byGene = new Map(next.map((m) => [m.g.toLowerCase(), m]));
+      for (const p of promotes) {
+        const ex = byGene.get(p.gene.toLowerCase());
+        byGene.set(p.gene.toLowerCase(), { ...(ex ?? { g: p.gene }), g: ex?.g ?? p.gene, dir: p.dir, note: p.note ?? ex?.note, via });
+      }
+      next = Array.from(byGene.values());
+    }
+    if (next !== cur) {
+      setAugmented((a) => ({ ...a, [cl.id]: next }));
+      setFlash(true);
+      setTimeout(() => setFlash(false), 800);
+    }
+    return next;
   }
 
   function runResearch() {
@@ -2729,7 +2759,7 @@ function ClusterStage({
                 onResize={(w, h) => resizeBox("cf", w, h)}
                 onMeasure={(h) => measureBox("cf", h)}
               >
-                {() => <ConfidenceContent conf={confidence[active.id]} live={streaming} />}
+                {() => <ConfidenceContent conf={confidence[active.id]} busy={confBusy} />}
               </DraggablePanel>
             </>
           )}
@@ -2780,27 +2810,14 @@ function ClusterStage({
                         {validated.has(active.id) ? "✓ Accepted" : grounded.decision === "abstain" ? "⤴ Accept (abstain/roll-up)" : "✓ Accept identity"}: {grounded.label}
                       </button>
                     )}
-                    {canAdd && (
-                      <button
-                        onClick={() => incorporate(key, parsed.markers, m.mode ?? "research")}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 7, background: "#fff", border: `1px solid ${THEME[m.mode ?? "research"].color}66`, color: THEME[m.mode ?? "research"].color, borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-                      >
-                        ➕ Add {parsed.markers.length} {THEME[m.mode ?? "research"].name} insight{parsed.markers.length === 1 ? "" : "s"} to Top Markers →
-                      </button>
+                    {/* markers + promotes are now folded into Top Markers / TIER
+                        CONFIDENCE automatically at the end of each turn — no button.
+                        Show a quiet receipt of what this turn contributed. */}
+                    {(parsed.markers.length > 0 || pr.promotes.length > 0) && (
+                      <span style={{ fontSize: 11, color: "#999", fontWeight: 600, alignSelf: "center", display: "inline-flex", alignItems: "center", gap: 5 }}>
+                        <span style={{ color: THEME[m.mode ?? "research"].color }}>✓</span> folded {parsed.markers.length + pr.promotes.length} insight{parsed.markers.length + pr.promotes.length === 1 ? "" : "s"} into Top Markers
+                      </span>
                     )}
-                    {parsed.markers.length > 0 && incorporated.has(key) && (
-                      <span style={{ fontSize: 11.5, color: "#888", fontWeight: 600, alignSelf: "center" }}>✓ added to Top Markers</span>
-                    )}
-                    {pr.promotes.map((p, pi) => (
-                      <button
-                        key={`pr${pi}`}
-                        onClick={() => promote(p.gene, p.dir, p.note, m.mode ?? "reason")}
-                        title={p.note}
-                        style={{ display: "inline-flex", alignItems: "center", gap: 6, background: "#fff", border: `1px solid #8a847b`, color: "#555", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 600, cursor: "pointer" }}
-                      >
-                        {p.dir === "up" ? "▲" : "▼"} Promote {p.gene} to {p.dir.toUpperCase()}-regulated →
-                      </button>
-                    ))}
                     {dp.dispatches.map((d, di) => (
                       <button
                         key={di}
@@ -2840,7 +2857,10 @@ function ClusterStage({
                   {m.role === "user" ? (
                     <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
                   ) : (
-                    <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} />
+                    <>
+                      {m.thinking && <ThinkingTrace thinking={m.thinking} mode={m.mode ?? "reason"} collapsed />}
+                      <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} />
+                    </>
                   )}
                 </div>
               );
@@ -2901,10 +2921,12 @@ function ClusterStage({
                 <div style={{ fontSize: 12.5, color: THEME[sMode].color, marginBottom: 8, animation: "kpulse 1.6s ease-in-out infinite" }}>
                   {THEME[sMode].icon} {sStatus || THEME[sMode].verb}
                 </div>
-                {/* reasoning trace now streams in the Live Activity pane (right);
-                    the middle pane shows only the settled output */}
+                {/* reasoning trace — a dropdown that stays open and grows while
+                    the model is thinking, then collapses to one line once the
+                    settled answer starts streaming. Re-expandable. */}
+                {sThinking && <ThinkingTrace thinking={sThinking} mode={sMode} collapsed={!!sText} />}
                 {/* streamed answer (marker block stripped during streaming) */}
-                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{sThinking ? "🧠 thinking in Live activity → settling the answer…" : THEME[sMode].verb}</div>}
+                {sText ? <AgentMessage content={splitConclude(splitPromote(splitDispatch(splitMarkerBlock(sText).clean).clean).clean).clean} mode={sMode} /> : !sThinking && <div style={{ fontSize: 13, color: "#999", fontStyle: "italic" }}>{THEME[sMode].verb}</div>}
               </div>
             )}
           </div>
@@ -2935,7 +2957,7 @@ function ClusterStage({
 
         {/* RIGHT — live activity preview (Researcher browser / Archivist explorer) */}
         <div style={{ flex: "1 1 0", minWidth: 260, minHeight: 0 }}>
-          <ActivityPane mode={sMode} status={sStatus} streaming={streaming} routing={routing} cluster={active} clusters={clusters} validated={validated} datasetName={dataset.name} researchText={researchText} thinking={sThinking} />
+          <ActivityPane mode={activityMode} status={sStatus} live={streaming} working={activityWorking} routing={routing} cluster={active} clusters={clusters} validated={validated} datasetName={dataset.name} researchText={researchText} />
         </div>
       </div>
     </div>
@@ -3031,6 +3053,38 @@ function mdFor(mode: AgentMode) {
       );
     },
   };
+}
+
+// Reasoning-trace dropdown shown in the CENTER chat. While the model is
+// thinking (`collapsed=false`) it stays open and grows as the trace streams in;
+// once the settled answer starts (`collapsed=true`) it compresses to a single
+// line (with a teaser of the last thought) — re-expandable by clicking.
+function ThinkingTrace({ thinking, mode, collapsed }: { thinking: string; mode: AgentMode; collapsed: boolean }) {
+  const th = THEME[mode] ?? THEME.reason;
+  const [override, setOverride] = useState<boolean | null>(null);
+  const open = override ?? !collapsed;
+  const bodyRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    if (open) bodyRef.current?.scrollTo({ top: bodyRef.current.scrollHeight });
+  }, [thinking, open]);
+  const lastLine = thinking.replace(/\s+/g, " ").trim().slice(-140);
+  return (
+    <div style={{ marginBottom: 10, border: `1px solid ${th.color}33`, borderRadius: 8, background: th.bg, overflow: "hidden" }}>
+      <button
+        onClick={() => setOverride(!open)}
+        style={{ width: "100%", textAlign: "left", border: "none", background: "transparent", padding: "7px 10px", fontSize: 11, color: th.color, textTransform: "uppercase", letterSpacing: 0.5, cursor: "pointer", fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}
+      >
+        <span>{open ? "▾" : "▸"}</span>
+        <span style={{ flexShrink: 0 }}>{th.icon} {th.trace}</span>
+        {!open && lastLine && <span style={{ textTransform: "none", letterSpacing: 0, fontWeight: 400, color: "#999", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", flex: 1, minWidth: 0 }}>· {lastLine}</span>}
+      </button>
+      {open && (
+        <div ref={bodyRef} style={{ maxHeight: 220, overflowY: "auto", padding: "0 10px 8px", fontSize: 11.5, color: "#888", lineHeight: 1.45 }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]} components={traceMD}>{thinking}</ReactMarkdown>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // Compact, grey, markdown-rendered reasoning trace.
@@ -3370,12 +3424,12 @@ function TierConfRow({ label, pred, pct }: { label: string; pred: string; pct: n
 
 // Always-on TIER CONFIDENCE HUD. Renders the four tiers even before the first
 // assessment (placeholder "—" / 0%), then the numbers tween up/down each turn.
-function ConfidenceContent({ conf, live }: { conf?: ClusterConf; live?: boolean }) {
+function ConfidenceContent({ conf, busy }: { conf?: ClusterConf; busy?: boolean }) {
   return (
     <div>
-      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5, color: "#aaa", marginBottom: 7 }}>
-        {live && <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6b6660", animation: "kpulse 1.1s infinite", flexShrink: 0 }} />}
-        <span>{conf ? "Goal: drive every tier's confidence up." : "Awaiting evidence — confidences update every turn."}</span>
+      <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5, color: busy ? "#6b6660" : "#aaa", marginBottom: 7 }}>
+        {busy && <span style={{ width: 6, height: 6, borderRadius: 99, background: "#6b6660", animation: "kpulse 1.1s infinite", flexShrink: 0 }} />}
+        <span>{busy ? "Re-scoring all four tiers…" : conf ? "Goal: drive every tier's confidence up." : "Awaiting evidence — confidences update every turn."}</span>
       </div>
       {CONF_TIERS.map((t) => {
         const tp = conf?.[t.key];
