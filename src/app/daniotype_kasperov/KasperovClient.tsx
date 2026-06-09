@@ -347,6 +347,7 @@ export default function KasperovClient() {
   const [model, setModel] = useState<KasperovModel>(DEFAULT_MODEL);
   const [usage, setUsage] = useState<Usage>({});
   const [score, setScore] = useState<RunScore>({ verdicts: {}, scoredAt: null, agg: [] });
+  const [srvNote, setSrvNote] = useState(""); // transient "Saved to server ✓" message
   const addUsage = useCallback((m: string, inT: number, outT: number) => {
     if (!inT && !outT) return;
     setUsage((u) => ({ ...u, [m]: { in: (u[m]?.in ?? 0) + (inT || 0), out: (u[m]?.out ?? 0) + (outT || 0) } }));
@@ -463,7 +464,28 @@ export default function KasperovClient() {
     };
   }
 
-  // download the combined run JSON
+  // save the combined run to the server store (S3 + DynamoDB index)
+  async function saveRunToServer() {
+    if (!dataset) return;
+    setSrvNote("Saving to server…");
+    try {
+      const r = await fetch("/api/kasperov_runs", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ ...buildRunJSON(), source: "browser" }),
+      });
+      if (r.status === 503) setSrvNote("Server store not configured");
+      else {
+        const d = await r.json().catch(() => ({}));
+        setSrvNote(d?.ok ? "Saved to server ✓ (Load Previous Run)" : "Server save failed");
+      }
+    } catch {
+      setSrvNote("Server save failed");
+    }
+    setTimeout(() => setSrvNote(""), 5000);
+  }
+
+  // download the combined run JSON — and also persist it to the server store
   function exportResults() {
     const blob = new Blob([JSON.stringify(buildRunJSON(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
@@ -472,6 +494,7 @@ export default function KasperovClient() {
     a.download = `daniotype_kasperov_${dataset?.id ?? "run"}_results.json`;
     a.click();
     URL.revokeObjectURL(url);
+    saveRunToServer();
   }
 
   // re-load a previously exported run (the exportResults shape) into state for
@@ -599,6 +622,7 @@ export default function KasperovClient() {
         score={score}
         setScore={setScore}
         addUsage={addUsage}
+        srvNote={srvNote}
       />
     );
 
@@ -679,6 +703,94 @@ function ImportButton({ onImport, label, style }: { onImport: (data: unknown) =>
         {label}
       </button>
     </>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Previous-runs browser — lists server-saved runs for a dataset (model · cost ·
+// date · #labelled) and loads any one back in. Backed by /api/kasperov_runs.
+// ---------------------------------------------------------------------------
+function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; onLoad: (data: unknown) => void; onClose: () => void }) {
+  const [runs, setRuns] = useState<any[] | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "notconfigured" | "error">("loading");
+  const [err, setErr] = useState("");
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(datasetId)}`)
+      .then(async (r) => {
+        if (r.status === 503) {
+          if (alive) setStatus("notconfigured");
+          return;
+        }
+        if (!r.ok) throw new Error(`list ${r.status}`);
+        const d = await r.json();
+        if (alive) {
+          setRuns(d.runs ?? []);
+          setStatus("ready");
+        }
+      })
+      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
+    return () => {
+      alive = false;
+    };
+  }, [datasetId]);
+
+  async function load(runId: string) {
+    setLoadingId(runId);
+    try {
+      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(datasetId)}&id=${encodeURIComponent(runId)}`);
+      if (!r.ok) throw new Error();
+      const json = await r.json();
+      onLoad(json);
+      onClose();
+    } catch {
+      window.alert("Couldn't load that run.");
+      setLoadingId(null);
+    }
+  }
+
+  const money = (v: number) => (v < 1 ? v.toFixed(3) : v.toFixed(2));
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 680, width: "100%", maxHeight: "80vh", overflow: "auto", padding: "20px 22px", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
+          <strong style={{ fontSize: 16 }}>Previous runs · {datasetId}</strong>
+          <button onClick={onClose} style={{ marginLeft: "auto", ...btnGhost, padding: "5px 11px", fontSize: 13 }}>Close</button>
+        </div>
+        {status === "loading" && <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>}
+        {status === "notconfigured" && (
+          <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
+            The server run store isn&apos;t configured yet (set <code>KASPEROV_RUNS_BUCKET</code> in Vercel env). Exported runs still download locally, and you can re-load them with <strong>Import results</strong>.
+          </div>
+        )}
+        {status === "error" && <div style={{ color: "#b91c1c", fontSize: 14 }}>Failed to list runs: {err}</div>}
+        {status === "ready" && runs && runs.length === 0 && <div style={{ color: "#888", fontSize: 14 }}>No saved runs for this dataset yet — export a run (or run the server auto-pilot) to save one.</div>}
+        {status === "ready" &&
+          runs &&
+          runs.map((m) => (
+            <button
+              key={m.runId}
+              onClick={() => load(m.runId)}
+              disabled={!!loadingId}
+              style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 10, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: loadingId ? "default" : "pointer", color: INK }}
+            >
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
+                <span style={{ fontSize: 12.5, color: "#666" }}>
+                  {" "}· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
+                </span>
+                <div style={{ fontSize: 12, color: "#999" }}>
+                  {new Date(m.exportedAt).toLocaleString()} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
+                </div>
+              </span>
+              <span style={{ fontSize: 12.5, color: ACCENT, fontWeight: 700, flexShrink: 0 }}>{loadingId === m.runId ? "Loading…" : "Load →"}</span>
+            </button>
+          ))}
+      </div>
+    </div>
   );
 }
 
@@ -953,6 +1065,7 @@ function MapStage({
   score,
   setScore,
   addUsage,
+  srvNote,
 }: {
   dataset: DatasetDef;
   clusters: Cluster[];
@@ -974,10 +1087,12 @@ function MapStage({
   score: RunScore;
   setScore: React.Dispatch<React.SetStateAction<RunScore>>;
   addUsage: (model: string, inT: number, outT: number) => void;
+  srvNote: string;
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
   const [showScore, setShowScore] = useState(!!score.scoredAt);
+  const [showPrev, setShowPrev] = useState(false);
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -1076,12 +1191,17 @@ function MapStage({
                     🎯 Score vs ground truth ↓
                   </button>
                 )}
-                <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON)</button>
+                <div style={{ display: "inline-flex", flexDirection: "column", gap: 6, alignItems: "stretch" }}>
+                  <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON) + save to server</button>
+                  <button onClick={() => setShowPrev(true)} style={{ ...btnGhost, padding: "9px 18px", fontSize: 13 }}>☁ Load Previous Run…</button>
+                </div>
                 <ImportButton onImport={onImport} label="⬆ Import results (JSON)" />
                 {(labelled.length > 0 || validated.size > 0) && (
                   <button onClick={onReset} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, color: "#b91c1c", borderColor: "#e7c3c3" }}>↺ Reset run</button>
                 )}
               </div>
+              {srvNote && <div style={{ fontSize: 12.5, color: srvNote.includes("✓") ? "#15803d" : "#999", marginBottom: 10 }}>{srvNote}</div>}
+              {showPrev && <PreviousRunsModal datasetId={dataset.id} onLoad={onImport} onClose={() => setShowPrev(false)} />}
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
                 Auto-pilot drives the Reasoner across every un-labelled cluster — dispatching the Researcher &amp; Archivist,
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
