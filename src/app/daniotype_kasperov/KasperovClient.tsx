@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, type KasperovModel } from "./models";
+import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, type KasperovModel } from "./models";
 
 const MODEL_KEY = "daniotype_kasperov_model"; // selected model persists globally
 type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
@@ -487,6 +487,12 @@ export default function KasperovClient() {
 
   // download the combined run JSON — and also persist it to the server store
   function exportResults() {
+    // keep saved runs complete: if the dataset has ground truth and we've labelled
+    // but not scored, steer the user to run the comparison first.
+    const labelledN = (clusters ?? []).filter((c) => labels[c.id]).length;
+    if (dataset?.groundTruthUrl && labelledN > 0 && !score.scoredAt) {
+      if (!window.confirm(`This ${dataset.name} run hasn't been compared to the published ground truth yet — the saved file would be incomplete.\n\nFirst, run "Compare to ${dataset.name} ground truth" (the green button below the run summary). Export labels-only anyway?`)) return;
+    }
     const blob = new Blob([JSON.stringify(buildRunJSON(), null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -763,7 +769,7 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
         {status === "loading" && <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>}
         {status === "notconfigured" && (
           <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
-            The server run store isn&apos;t configured yet (set <code>KASPEROV_RUNS_BUCKET</code> in Vercel env). Exported runs still download locally, and you can re-load them with <strong>Import results</strong>.
+            The server run store isn&apos;t configured yet (set <code>KASPEROV_AUTOPILOT_URL</code> in Vercel env + deploy the EC2 worker). Exported runs still download locally, and you can re-load them with <strong>Import results</strong>.
           </div>
         )}
         {status === "error" && <div style={{ color: "#b91c1c", fontSize: 14 }}>Failed to list runs: {err}</div>}
@@ -1091,7 +1097,6 @@ function MapStage({
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
-  const [showScore, setShowScore] = useState(!!score.scoredAt);
   const [showPrev, setShowPrev] = useState(false);
 
   // persistent server-side auto-pilot (runs on EC2, survives the browser closing)
@@ -1119,6 +1124,13 @@ function MapStage({
     }, 4000);
     return () => clearInterval(id);
   }, [serverRun?.runId, serverRun?.phase]);
+
+  // projected full-run cost for the selected model — tweened (accel/decel) so it
+  // rolls up/down as the model changes.
+  const projectedCost = useTween(projectRunCost(model, clusters.length));
+  const spent = estimateCost(usage).usd;
+  const fmtUsd = (v: number) => `$${v.toFixed(2)}`;
+
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -1179,15 +1191,11 @@ function MapStage({
               ))}
             </select>
           </label>
-          {(() => {
-            const c = estimateCost(usage);
-            return (
-              <span style={{ color: "#999" }} title={c.estimated ? "Includes tier-estimated pricing for newer models." : "From confirmed OpenAI pricing."}>
-                ~${c.usd < 1 ? c.usd.toFixed(3) : c.usd.toFixed(2)} est. spend{c.estimated ? "*" : ""}
-                {score.scoredAt ? ` · scored ${new Date(score.scoredAt).toLocaleDateString()}` : ""}
-              </span>
-            );
-          })()}
+          <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price. The number rolls as you change models.">
+            ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters with <strong>{model}</strong>
+          </span>
+          {spent > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
+          {score.scoredAt && <span style={{ color: "#aaa" }}>· scored {new Date(score.scoredAt).toLocaleDateString()}</span>}
         </div>
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
@@ -1216,14 +1224,6 @@ function MapStage({
                 >
                   ☁ Run AutoPilot on server (persistent)
                 </button>
-                {dataset.groundTruthUrl && labelled.length > 0 && (
-                  <button
-                    onClick={() => setShowScore(true)}
-                    style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "12px 20px", fontSize: 15, fontWeight: 700, cursor: "pointer" }}
-                  >
-                    🎯 Score vs ground truth ↓
-                  </button>
-                )}
                 <div style={{ display: "inline-flex", flexDirection: "column", gap: 6, alignItems: "stretch" }}>
                   <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON) + save to server</button>
                   <button onClick={() => setShowPrev(true)} style={{ ...btnGhost, padding: "9px 18px", fontSize: 13 }}>☁ Load Previous Run…</button>
@@ -1314,8 +1314,9 @@ function MapStage({
                 </div>
               )}
 
-              {/* ground-truth scoring, inline under the run summary */}
-              {dataset.groundTruthUrl && showScore && labelled.length > 0 && (
+              {/* ground-truth scoring, always inline under the run summary —
+                  un-filled until you press the button (once all clusters are labelled) */}
+              {dataset.groundTruthUrl && (
                 <div style={{ marginTop: 28 }}>
                   <Scorecard
                     embedded
@@ -1396,10 +1397,10 @@ function Scorecard({
   const verdicts = score.verdicts; // controlled by the parent (so export sees it)
 
   const [gt, setGt] = useState<GroundTruth | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "scoring" | "done" | "error">("loading");
+  const [status, setStatus] = useState<"loading" | "idle" | "scoring" | "done" | "error">("loading");
   const [progress, setProgress] = useState({ done: 0, total: 0 });
   const [err, setErr] = useState("");
-  const ranRef = useRef(false);
+  const allLabelled = clusters.length > 0 && clusters.every((c) => labels[c.id]);
 
   const gtTiersFor = useCallback(
     (id: string) => {
@@ -1434,7 +1435,6 @@ function Scorecard({
 
   // load ground truth; decide whether the stored score already covers this label set
   useEffect(() => {
-    ranRef.current = false; // a new label-set (incl. an import) re-arms auto-scoring
     if (!dataset.groundTruthUrl) {
       setErr("This dataset has no published ground truth.");
       setStatus("error");
@@ -1443,7 +1443,8 @@ function Scorecard({
     let alive = true;
     const decide = () => {
       const need = labelled.some((c) => !score.verdicts[c.id]);
-      setStatus(score.scoredAt && !need ? "done" : "ready");
+      // "idle" = structure shown but un-filled; the user presses the button to fill it
+      setStatus(score.scoredAt && !need ? "done" : "idle");
     };
     if (gt) {
       decide();
@@ -1510,14 +1511,6 @@ function Scorecard({
     [gt, labelled, labels, gtTiersFor, computeAgg, dataset.id, model, addUsage, score.verdicts, setScore]
   );
 
-  // auto-run once when ready
-  useEffect(() => {
-    if (status === "ready" && !ranRef.current) {
-      ranRef.current = true;
-      runScoring();
-    }
-  }, [status, runScoring]);
-
   const agg = computeAgg(verdicts);
   const scoredCount = labelled.filter((c) => verdicts[c.id]).length;
 
@@ -1549,8 +1542,8 @@ function Scorecard({
           </div>
         )}
 
-        {/* tier agreement bars */}
-        {(status === "done" || (status === "scoring" && scoredCount > 0)) && (
+        {/* tier agreement bars — shown un-filled (—) until the comparison is run */}
+        {status !== "loading" && status !== "error" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
             {agg.map((t) => {
               const heat = confColor(t.pct);
@@ -1570,18 +1563,29 @@ function Scorecard({
           </div>
         )}
 
-        {/* re-run control */}
-        <div style={{ display: "flex", gap: 10, margin: "14px 0 18px", alignItems: "center", flexWrap: "wrap" }}>
-          {status === "done" && (
-            <button onClick={() => { ranRef.current = true; runScoring(true); }} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run scoring</button>
+        {/* the trigger — fills the comparison in once all clusters are labelled */}
+        <div style={{ display: "flex", gap: 12, margin: "14px 0 18px", alignItems: "center", flexWrap: "wrap" }}>
+          {(status === "idle" || status === "scoring") && (
+            <button
+              onClick={() => runScoring(true)}
+              disabled={!allLabelled || status === "scoring"}
+              title={allLabelled ? "" : "Label every cluster first"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 8, background: allLabelled && status !== "scoring" ? "#15803d" : "#cdd5cf", color: "#fff", border: "none", borderRadius: 10, padding: "11px 20px", fontSize: 14.5, fontWeight: 700, cursor: allLabelled && status !== "scoring" ? "pointer" : "default" }}
+            >
+              🎯 {status === "scoring" ? `Comparing… ${progress.done}/${progress.total}` : `Compare to ${dataset.name} ground truth`}
+            </button>
+          )}
+          {status === "done" && <button onClick={() => runScoring(true)} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run comparison</button>}
+          {status === "idle" && !allLabelled && (
+            <span style={{ fontSize: 12.5, color: "#92400e" }}>Label all {clusters.length} clusters to enable the comparison.</span>
           )}
           <span style={{ fontSize: 12, color: "#aaa" }}>
             Reference: {dataset.name} published labels{gt?.clusteredCells ? ` · ${gt.clusteredCells.toLocaleString()} cells clustered` : ""} · model {model}. Numeric sub-type suffixes (e.g. &ldquo;periderm 10&rdquo;) are matched on the biological stem.
           </span>
         </div>
 
-        {/* per-cluster detail */}
-        {scoredCount > 0 && (
+        {/* per-cluster detail — the full set of clusters with their tier cells (un-filled until scored) */}
+        {clusters.length > 0 && (
           <div style={{ overflowX: "auto", border: "1px solid #e5e1dc", borderRadius: 12, background: "#fffdfb" }}>
             <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
               <thead>
@@ -1593,19 +1597,20 @@ function Scorecard({
                 </tr>
               </thead>
               <tbody>
-                {labelled.map((c) => {
+                {clusters.map((c) => {
                   const v = verdicts[c.id];
                   const refs = gtTiersFor(c.id);
                   const conf = confidence[c.id]?.pct;
+                  const hasLabel = !!labels[c.id];
                   return (
-                    <tr key={c.id} style={{ borderTop: "1px solid #eee7df" }}>
+                    <tr key={c.id} style={{ borderTop: "1px solid #eee7df", opacity: hasLabel ? 1 : 0.6 }}>
                       <td style={{ padding: "9px 12px", minWidth: 220, verticalAlign: "top" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
                           <strong>{c.label}</strong>
                           {typeof conf === "number" && <span style={{ fontSize: 11, color: "#aaa" }}>· {conf.toFixed(0)}%</span>}
                         </div>
-                        <div style={{ color: "#555", marginTop: 2 }}>{labels[c.id]}</div>
+                        <div style={{ color: hasLabel ? "#555" : "#b3ada5", fontStyle: hasLabel ? "normal" : "italic", marginTop: 2 }}>{hasLabel ? labels[c.id] : "not yet labelled"}</div>
                       </td>
                       {SCORE_TIERS.map((t) => {
                         const ref = refs[t.gtKey as keyof typeof refs];

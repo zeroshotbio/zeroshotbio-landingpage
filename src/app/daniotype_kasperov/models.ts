@@ -45,3 +45,12 @@ export function estimateCost(usage: Record<string, { in: number; out: number }>)
   }
   return { usd, estimated };
 }
+
+// Rough token footprint of one full auto-pilot cluster pass (2 Researcher
+// proposers + a few Reasoner rounds incl. reasoning tokens + its share of
+// scoring). Used to PROJECT what a full run of N clusters costs per model.
+const EST_TOKENS_PER_CLUSTER = { in: 14000, out: 7000 };
+export function projectRunCost(model: string, nClusters: number): number {
+  const p = priceFor(model);
+  return Math.max(0, nClusters) * ((EST_TOKENS_PER_CLUSTER.in / 1e6) * p.in + (EST_TOKENS_PER_CLUSTER.out / 1e6) * p.out);
+}

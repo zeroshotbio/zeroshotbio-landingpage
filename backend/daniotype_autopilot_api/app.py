@@ -20,11 +20,14 @@ from datetime import datetime, timezone
 from typing import Optional
 
 import requests
-from fastapi import FastAPI, Header, HTTPException
+from fastapi import Body, FastAPI, Header, HTTPException
 from pydantic import BaseModel
 
 TOKEN = os.environ.get("AUTOPILOT_API_TOKEN", "")
 DEFAULT_BASE = os.environ.get("AUTOPILOT_BASE_URL", "https://www.zeroshot.bio").rstrip("/")
+# completed runs are stored on the EC2 EBS volume (no S3 needed for the POC)
+RUNS_DIR = os.environ.get("AUTOPILOT_RUNS_DIR", "/data/daniotype_runs")
+_index_lock = threading.Lock()
 AUTO_MAX_ROUNDS = 4
 SCORE_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"]
 PRICES = {"gpt-5-mini": (0.25, 2.0), "gpt-5": (1.25, 10.0)}
@@ -59,6 +62,67 @@ def _est_cost(usage):
         usd += u.get("in", 0) / 1e6 * pin + u.get("out", 0) / 1e6 * pout
         est = est or e
     return round(usd, 4), est
+
+
+# --- disk-backed run store (EBS volume) ------------------------------------
+def _safe(s):
+    return re.sub(r"[^a-zA-Z0-9_.-]", "_", str(s or "unknown"))
+
+
+def _ds_dir(dataset):
+    d = os.path.join(RUNS_DIR, _safe(dataset))
+    os.makedirs(d, exist_ok=True)
+    return d
+
+
+def _meta_from(run, run_id):
+    cost = run.get("cost") or {}
+    return {
+        "runId": run_id,
+        "dataset": run.get("dataset", run.get("datasetId")),
+        "datasetId": run.get("datasetId"),
+        "model": run.get("model", "?"),
+        "costUsd": float(cost.get("usd", 0) or 0),
+        "costEstimated": bool(cost.get("estimated")),
+        "exportedAt": run.get("exportedAt"),
+        "scoredAt": run.get("scoredAt"),
+        "nLabelled": int(run.get("nLabelled", 0) or 0),
+        "nValidated": int(run.get("nValidated", 0) or 0),
+        "hasGroundTruth": bool(run.get("groundTruth")),
+        "source": run.get("source", "server"),
+    }
+
+
+def save_run(run):
+    dataset = run.get("datasetId") or "unknown"
+    run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
+    d = _ds_dir(dataset)
+    with open(os.path.join(d, run_id + ".json"), "w") as f:
+        json.dump(run, f)
+    idx_path = os.path.join(d, "_index.json")
+    with _index_lock:
+        try:
+            idx = json.load(open(idx_path)) if os.path.exists(idx_path) else []
+        except Exception:
+            idx = []
+        idx.insert(0, _meta_from(run, run_id))
+        json.dump(idx[:500], open(idx_path, "w"))
+    return run_id
+
+
+def list_runs(dataset):
+    idx_path = os.path.join(_ds_dir(dataset), "_index.json")
+    try:
+        return json.load(open(idx_path)) if os.path.exists(idx_path) else []
+    except Exception:
+        return []
+
+
+def get_run(dataset, run_id):
+    p = os.path.join(_ds_dir(dataset), _safe(run_id) + ".json")
+    if not os.path.exists(p):
+        return None
+    return json.load(open(p))
 
 
 # --- prompts (ported from KasperovClient.tsx) ------------------------------
@@ -314,8 +378,8 @@ def _run(run_id, dataset_id, model, base):
             ],
             "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts} if gt else None),
         }
-        save = requests.post(f"{base}/api/kasperov_runs", json=run_json, timeout=60)
-        st.update(phase="done", saved=save.ok, runSaved=(save.json().get("runId") if save.ok else None), cost=usd)
+        rid = save_run(run_json)
+        st.update(phase="done", saved=True, runSaved=rid, cost=usd)
     except Exception as e:  # noqa: BLE001
         st.update(phase="error", error=str(e)[:300])
 
@@ -329,6 +393,30 @@ class StartReq(BaseModel):
 @app.get("/health")
 def health():
     return {"ok": True, "active": sum(1 for r in RUNS.values() if r.get("phase") in ("labelling", "scoring", "saving", "loading"))}
+
+
+# --- run store (browser save / Load Previous Run go through these) ----------
+@app.post("/runs")
+def runs_save(run: dict = Body(...), x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    if not run.get("datasetId") or not isinstance(run.get("clusters"), list):
+        raise HTTPException(status_code=400, detail="bad run")
+    return {"ok": True, "runId": save_run(run)}
+
+
+@app.get("/runs")
+def runs_list(dataset: str, x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    return {"runs": list_runs(dataset)}
+
+
+@app.get("/runs/{dataset}/{run_id}")
+def runs_get(dataset: str, run_id: str, x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    r = get_run(dataset, run_id)
+    if r is None:
+        raise HTTPException(status_code=404, detail="no run")
+    return r
 
 
 @app.post("/start")

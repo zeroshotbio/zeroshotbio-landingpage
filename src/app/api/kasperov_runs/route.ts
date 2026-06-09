@@ -1,124 +1,56 @@
 // src/app/api/kasperov_runs/route.ts
 //
-// Server-side store for completed daniotype_kasperov runs, so a finished run
-// (labels + ground-truth scores + metadata) can be reloaded later — across
-// devices/browsers — for compare-and-contrast across models.
-//
-// Storage: the full run JSON goes to S3 (no 400KB item limit); a small metadata
-// row per dataset is kept in the existing DynamoDB table for fast listing.
-//   - POST  body=<run JSON>            → save (S3 put + index update) → {runId}
+// Server-side store for completed daniotype_kasperov runs (labels + ground-truth
+// scores + metadata), so a finished run can be reloaded later for compare/
+// contrast across models. For the POC this proxies to the EC2 worker, which
+// stores run JSONs on its EBS volume — no S3 bucket to provision.
+//   - POST  body=<run JSON>            → save → {runId}
 //   - GET   ?dataset=<id>              → list run metadata (newest first)
-//   - GET   ?dataset=<id>&id=<runId>   → the full run JSON from S3
+//   - GET   ?dataset=<id>&id=<runId>   → the full run JSON
 //
-// Requires KASPEROV_RUNS_BUCKET (+ the AWS_* creds the app already uses).
-// Degrades to {error:"not_configured"} when the bucket env var is unset.
+// Uses the same worker as the persistent auto-pilot (KASPEROV_AUTOPILOT_URL +
+// _TOKEN). Degrades to {error:"not_configured"} (503) when unset.
 
 import { NextRequest, NextResponse } from "next/server";
-import { DynamoDBClient, GetItemCommand, PutItemCommand } from "@aws-sdk/client-dynamodb";
-import { marshall, unmarshall } from "@aws-sdk/util-dynamodb";
-import { S3Client, PutObjectCommand, GetObjectCommand } from "@aws-sdk/client-s3";
 
 export const runtime = "nodejs";
 
-const REGION = process.env.AWS_REGION;
-const TABLE_NAME = process.env.AWS_DYNAMODB_TABLE_NAME || "zeroshot_dataroom_visitor_tracking";
-const BUCKET = process.env.KASPEROV_RUNS_BUCKET || "";
-
-const ddb = new DynamoDBClient({
-  region: REGION,
-  credentials: { accessKeyId: process.env.AWS_ACCESS_KEY_ID!, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY! },
-});
-const s3 = new S3Client({
-  region: REGION,
-  credentials: { accessKeyId: process.env.AWS_ACCESS_KEY_ID!, secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY! },
-});
-
-const indexId = (datasetId: string) => `daniotype_runs::${datasetId}`;
-const s3Key = (datasetId: string, runId: string) => `daniotype/${datasetId}/${runId}.json`;
-const MAX_INDEX = 200; // cap the per-dataset index (newest kept)
-
-type RunMeta = {
-  runId: string;
-  dataset: string;
-  datasetId: string;
-  model: string;
-  costUsd: number;
-  costEstimated: boolean;
-  exportedAt: string;
-  scoredAt: string | null;
-  nLabelled: number;
-  nValidated: number;
-  hasGroundTruth: boolean;
-  s3Key: string;
-  source?: string; // "browser" | "server"
-};
-
-async function readIndex(datasetId: string): Promise<RunMeta[]> {
-  const resp = await ddb.send(new GetItemCommand({ TableName: TABLE_NAME, Key: marshall({ id: indexId(datasetId) }) }));
-  if (!resp.Item) return [];
-  const it = unmarshall(resp.Item);
-  return Array.isArray(it.runs) ? (it.runs as RunMeta[]) : [];
-}
-
-async function writeIndex(datasetId: string, runs: RunMeta[]) {
-  await ddb.send(new PutItemCommand({ TableName: TABLE_NAME, Item: marshall({ id: indexId(datasetId), runs, updated_at: Date.now() }, { removeUndefinedValues: true }) }));
-}
+const URL_BASE = (process.env.KASPEROV_AUTOPILOT_URL || "").replace(/\/$/, "");
+const TOKEN = process.env.KASPEROV_AUTOPILOT_TOKEN || "";
+const HEADERS = { "content-type": "application/json", "x-api-token": TOKEN };
 
 export async function POST(req: NextRequest) {
-  if (!BUCKET) return NextResponse.json({ error: "not_configured" }, { status: 503 });
+  if (!URL_BASE) return NextResponse.json({ error: "not_configured" }, { status: 503 });
   let run: any;
   try {
     run = await req.json();
   } catch {
     return NextResponse.json({ error: "bad_json" }, { status: 400 });
   }
-  const datasetId = String(run?.datasetId || "");
-  if (!datasetId || !Array.isArray(run?.clusters)) return NextResponse.json({ error: "bad_run" }, { status: 400 });
-
-  const runId = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-  const key = s3Key(datasetId, runId);
+  if (!run?.datasetId || !Array.isArray(run?.clusters)) return NextResponse.json({ error: "bad_run" }, { status: 400 });
   try {
-    await s3.send(new PutObjectCommand({ Bucket: BUCKET, Key: key, Body: JSON.stringify(run), ContentType: "application/json" }));
-    const meta: RunMeta = {
-      runId,
-      dataset: String(run.dataset || datasetId),
-      datasetId,
-      model: String(run.model || "?"),
-      costUsd: Number(run?.cost?.usd ?? 0),
-      costEstimated: !!run?.cost?.estimated,
-      exportedAt: String(run.exportedAt || new Date().toISOString()),
-      scoredAt: run.scoredAt ?? null,
-      nLabelled: Number(run.nLabelled ?? 0),
-      nValidated: Number(run.nValidated ?? 0),
-      hasGroundTruth: !!run.groundTruth,
-      s3Key: key,
-      source: typeof run.source === "string" ? run.source : "browser",
-    };
-    const runs = await readIndex(datasetId);
-    runs.unshift(meta); // newest first
-    await writeIndex(datasetId, runs.slice(0, MAX_INDEX));
-    return NextResponse.json({ ok: true, runId });
+    const r = await fetch(`${URL_BASE}/runs`, { method: "POST", headers: HEADERS, body: JSON.stringify(run) });
+    return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
   } catch (e: any) {
-    return NextResponse.json({ error: "save_failed", detail: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+    return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }
 }
 
 export async function GET(req: NextRequest) {
-  if (!BUCKET) return NextResponse.json({ error: "not_configured" }, { status: 503 });
+  if (!URL_BASE) return NextResponse.json({ error: "not_configured" }, { status: 503 });
   const url = new URL(req.url);
-  const datasetId = url.searchParams.get("dataset") || "";
+  const dataset = url.searchParams.get("dataset") || "";
   const id = url.searchParams.get("id");
-  if (!datasetId) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
-
+  if (!dataset) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
   try {
     if (id) {
-      const obj = await s3.send(new GetObjectCommand({ Bucket: BUCKET, Key: s3Key(datasetId, id) }));
-      const body = await obj.Body!.transformToString();
-      return new NextResponse(body, { status: 200, headers: { "content-type": "application/json" } });
+      const r = await fetch(`${URL_BASE}/runs/${encodeURIComponent(dataset)}/${encodeURIComponent(id)}`, { headers: HEADERS });
+      const body = await r.text();
+      return new NextResponse(body, { status: r.status, headers: { "content-type": "application/json" } });
     }
-    const runs = await readIndex(datasetId);
-    return NextResponse.json({ runs });
+    const r = await fetch(`${URL_BASE}/runs?dataset=${encodeURIComponent(dataset)}`, { headers: HEADERS });
+    return NextResponse.json(await r.json().catch(() => ({ runs: [] })), { status: r.status });
   } catch (e: any) {
-    return NextResponse.json({ error: "read_failed", detail: String(e?.message ?? e).slice(0, 200) }, { status: 502 });
+    return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }
 }
