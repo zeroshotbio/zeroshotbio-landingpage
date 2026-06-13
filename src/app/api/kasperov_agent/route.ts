@@ -343,12 +343,14 @@ const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
 // default). Guard so a MegaFin/ZSCAPE run never receives the wrong dataset's
 // real-looking numbers; the anti-fabrication rule can't catch that (numbers are
 // genuine, just from the wrong dataset).
-const SERVICE_DATASET = (process.env.STATS_SERVICE_DATASET || "minifin").toLowerCase();
+const STATS_SERVICE_DATASETS = new Set(
+  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
+);
 async function callService(kind: string, clusterId: string, genes: string[], ds: DatasetCfg): Promise<any> {
   if (!SERVICE_URL)
     return { error: "the live stats service (p-values / co-expression) is not configured for this deployment — report log2FC, percentages and specificity instead, and tell the curator p-values/co-expression need that service." };
-  if (ds.id.toLowerCase() !== SERVICE_DATASET)
-    return { error: `the live stats service (p-values / co-expression) is configured for the '${SERVICE_DATASET}' dataset only, not ${ds.name} — report ${ds.name}'s log2FC, percentages and specificity from the profile instead, and tell the curator p-values/co-expression aren't available for ${ds.name}.` };
+  if (!STATS_SERVICE_DATASETS.has(ds.id.toLowerCase()))
+    return { error: `the live stats service (p-values / co-expression) is not configured for ${ds.name} — report ${ds.name}'s log2FC, percentages and specificity from the profile instead, and tell the curator p-values/co-expression aren't available for ${ds.name}.` };
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 35000);
