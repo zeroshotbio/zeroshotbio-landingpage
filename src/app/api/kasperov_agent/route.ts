@@ -18,7 +18,10 @@
 //   {t:"done"}                                    stream complete
 
 import "server-only";
+import { readFile } from "fs/promises";
+import path from "path";
 export const runtime = "nodejs";
+const DATA_DIR = path.join(process.cwd(), "daniotype_data");
 // up to 300s on Vercel Pro (heavy models need it); silently capped at 60s on Hobby.
 export const maxDuration = 300;
 
@@ -31,11 +34,13 @@ import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models"
 
 // One agent route serves every dataset; the body's `dataset` id selects which
 // archivist extract + static-asset base + display name to use.
-type DatasetCfg = { id: string; name: string; base: string; archivist: any };
+// dataDir = subdir under daniotype_data/ holding this dataset's profiles (read off
+// disk server-side). base = the client-facing (auth-gated) asset URL, for reference.
+type DatasetCfg = { id: string; name: string; base: string; dataDir: string; archivist: any };
 const DATASET_CFG: Record<string, DatasetCfg> = {
-  minifin: { id: "minifin", name: "MiniFin", base: "/daniotype_kasperov/archivist", archivist: MINIFIN_ARCHIVIST as any },
-  zscape: { id: "zscape", name: "ZSCAPE", base: "/daniotype_kasperov/datasets/zscape/archivist", archivist: ZSCAPE_ARCHIVIST as any },
-  megafin: { id: "megafin", name: "MegaFin", base: "/daniotype_kasperov/datasets/megafin/archivist", archivist: MEGAFIN_ARCHIVIST as any },
+  minifin: { id: "minifin", name: "MiniFin", base: "/api/kasperov_asset/minifin/archivist", dataDir: "minifin", archivist: MINIFIN_ARCHIVIST as any },
+  zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
+  megafin: { id: "megafin", name: "MegaFin", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_ARCHIVIST as any },
 };
 const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
@@ -303,14 +308,16 @@ const QUERY_TOOL = {
 
 type Profile = { id: string; nCells: number; datasetCells: number; nGenes: number; genes: StatMarker[] };
 const profileCache = new Map<string, Profile | null>(); // keyed by `${ds.id}:${clusterId}`
-async function getProfile(clusterId: string, origin: string, ds: DatasetCfg): Promise<Profile | null> {
+async function getProfile(clusterId: string, _origin: string, ds: DatasetCfg): Promise<Profile | null> {
   const key = `${ds.id}:${clusterId}`;
   if (profileCache.has(key)) return profileCache.get(key)!;
   let prof: Profile | null = null;
-  try {
-    const r = await fetch(`${origin}${ds.base}/${clusterId}.json`);
-    if (r.ok) prof = (await r.json()) as Profile;
-  } catch {}
+  // read off disk (server-side); the gated asset route is for the browser only
+  if (/^[A-Za-z0-9._-]+$/.test(clusterId)) {
+    try {
+      prof = JSON.parse(await readFile(path.join(DATA_DIR, ds.dataDir, "archivist", `${clusterId}.json`), "utf8")) as Profile;
+    } catch {}
+  }
   profileCache.set(key, prof);
   return prof;
 }
@@ -318,12 +325,11 @@ async function getProfile(clusterId: string, origin: string, ds: DatasetCfg): Pr
 // gene × cluster matrix (mean + pct per cluster) for cross-cluster / specificity queries
 type GeneMatrix = { clusters: string[]; clusterSizes: number[]; datasetCells: number; nGenes: number; genes: Record<string, { m: number[]; p: number[] }> };
 const matrixCache = new Map<string, GeneMatrix | null>(); // keyed by ds.id
-async function getMatrix(origin: string, ds: DatasetCfg): Promise<GeneMatrix | null> {
+async function getMatrix(_origin: string, ds: DatasetCfg): Promise<GeneMatrix | null> {
   if (matrixCache.has(ds.id)) return matrixCache.get(ds.id)!;
   let mx: GeneMatrix | null = null;
   try {
-    const r = await fetch(`${origin}${ds.base}/gene_matrix.json`);
-    if (r.ok) mx = (await r.json()) as GeneMatrix;
+    mx = JSON.parse(await readFile(path.join(DATA_DIR, ds.dataDir, "archivist", "gene_matrix.json"), "utf8")) as GeneMatrix;
   } catch {}
   matrixCache.set(ds.id, mx);
   return mx;

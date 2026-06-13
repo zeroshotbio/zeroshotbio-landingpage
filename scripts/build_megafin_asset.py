@@ -27,7 +27,7 @@ ARGS = ap.parse_args()
 H5AD = "/scratch/bench/parse_megafin1.h5ad"
 GENE_MAP = "/scratch/bench/characterization/ensdarg_symbol_map.csv"  # ensembl_id,symbol,...
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-OUT_DIR = os.path.join(ROOT, "public", "daniotype_kasperov", "datasets", "megafin")
+OUT_DIR = os.path.join(ROOT, "daniotype_data", "megafin")  # non-public (gated via /api/kasperov_asset)
 PROFILE_DIR = os.path.join(OUT_DIR, "archivist")
 SRV_OUT = os.path.join(ROOT, "src", "app", "api", "kasperov_agent", "megafin_archivist.json")
 SEED=7; TARGET_POINTS=12000; MIN_PER_CLUSTER=30; MAX_PER_CLUSTER=450

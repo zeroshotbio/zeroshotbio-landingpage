@@ -6,8 +6,11 @@
 // cheap; called after each agent turn to keep the confidence box live.
 
 import "server-only";
+import { readFile } from "fs/promises";
+import nodePath from "path";
 export const runtime = "nodejs";
 export const maxDuration = 120;
+const DATA_DIR = nodePath.join(process.cwd(), "daniotype_data");
 
 import { NextResponse } from "next/server";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
@@ -17,24 +20,20 @@ const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 // Datasets with a published label set: the four-tier predictions are constrained
 // to the EXACT labels that exist in that dataset's ground truth (so we never
 // invent a label the atlas doesn't use, and predictions are directly comparable).
-const GT_URL: Record<string, string> = {
-  zscape: "/daniotype_kasperov/datasets/zscape/groundtruth.json",
-  chemfish: "/daniotype_kasperov/datasets/chemfish/groundtruth.json",
-};
+// datasets that ship a published-label groundtruth.json under daniotype_data/<id>/
+const GT_DATASETS = new Set<string>(["zscape", "chemfish"]);
 type TierVocab = { germ_layer: string[]; tissue: string[]; cell_type_broad: string[]; cell_type_sub: string[] };
 const VOCAB_KEYS: (keyof TierVocab)[] = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
 const vocabCache: Record<string, TierVocab | null> = {};
-async function getTierVocab(origin: string, datasetId: string): Promise<TierVocab | null> {
+async function getTierVocab(_origin: string, datasetId: string): Promise<TierVocab | null> {
   if (datasetId in vocabCache) return vocabCache[datasetId];
-  const path = GT_URL[datasetId];
-  if (!path) {
+  if (!GT_DATASETS.has(datasetId)) {
     vocabCache[datasetId] = null;
     return null;
   }
   try {
-    const r = await fetch(origin + path);
-    if (!r.ok) throw new Error(String(r.status));
-    const gt = await r.json();
+    // read off disk (server-side); the gated asset route is for the browser only
+    const gt = JSON.parse(await readFile(nodePath.join(DATA_DIR, datasetId, "groundtruth.json"), "utf8"));
     const sets: Record<keyof TierVocab, Set<string>> = { germ_layer: new Set(), tissue: new Set(), cell_type_broad: new Set(), cell_type_sub: new Set() };
     for (const id of Object.keys(gt?.clusters ?? {})) {
       const rec = gt.clusters[id] ?? {};
