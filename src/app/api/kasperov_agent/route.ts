@@ -31,6 +31,7 @@ import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
 import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
 import MEGAFIN_ARCHIVIST from "./megafin_archivist.json";
 import CHEMFISH_ARCHIVIST from "./chemfish_archivist.json";
+import DANIOCELL_ARCHIVIST from "./daniocell_archivist.json";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
 // One agent route serves every dataset; the body's `dataset` id selects which
@@ -43,6 +44,7 @@ const DATASET_CFG: Record<string, DatasetCfg> = {
   zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
   megafin: { id: "megafin", name: "MegaFin Part 1", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_ARCHIVIST as any },
   chemfish: { id: "chemfish", name: "ChemFish", base: "/api/kasperov_asset/chemfish/archivist", dataDir: "chemfish", archivist: CHEMFISH_ARCHIVIST as any },
+  daniocell: { id: "daniocell", name: "DanioCell", base: "/api/kasperov_asset/daniocell/archivist", dataDir: "daniocell", archivist: DANIOCELL_ARCHIVIST as any },
 };
 const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
@@ -346,7 +348,7 @@ const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
 // real-looking numbers; the anti-fabrication rule can't catch that (numbers are
 // genuine, just from the wrong dataset).
 const STATS_SERVICE_DATASETS = new Set(
-  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin,zscape,chemfish").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
+  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin,zscape,chemfish,daniocell").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
 );
 async function callService(kind: string, clusterId: string, genes: string[], ds: DatasetCfg): Promise<any> {
   if (!SERVICE_URL)

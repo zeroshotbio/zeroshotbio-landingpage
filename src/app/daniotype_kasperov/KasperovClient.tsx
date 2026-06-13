@@ -45,7 +45,7 @@ const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
 // ZSCAPE / CHEMFISH carry published cell-type labels (ground truth) we score
 // our de-novo names against; MiniFin and MegaFin Part 1 have no published labels.
 // ---------------------------------------------------------------------------
-type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin";
+type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin" | "daniocell";
 interface DatasetDef {
   id: DatasetId;
   name: string;
@@ -105,6 +105,18 @@ const DATASETS: DatasetDef[] = [
     groundTruthUrl: "/api/kasperov_asset/chemfish/groundtruth.json",
     status: "ready",
     approxClusters: 78,
+  },
+  {
+    id: "daniocell",
+    name: "DanioCell",
+    tagline: "Sur et al. (Farrell/NICHD) · 36–72 hpf · 77 de-novo clusters",
+    blurb:
+      "Independent dense-development atlas (Sur et al., Farrell lab / NICHD). We re-cluster the 36–72 hpf window de-novo (HVG→PCA→Harmony on stage → Leiden res 2.0, 77 clusters) and score against the published labels. Independent-lab CROSS-PLATFORM check: 10X droplet (vs ZSCAPE 10X / ChemFish sci-RNA-seq3 / MiniFin·MegaFin Parse) — a lower score reflects platform/domain shift, not necessarily worse labelling. Strength: DanioCell populations are in-situ-hybridization (ISH) validated. GT tiers: cell_type_sub (clust) + cell_type_broad (tissue.figure) + tissue (tissue.name) are native Farrell labels; germ_layer is an anatomical projection.",
+    dataUrl: "/api/kasperov_asset/daniocell/umap.json",
+    archivistBase: "/api/kasperov_asset/daniocell/archivist",
+    groundTruthUrl: "/api/kasperov_asset/daniocell/groundtruth.json",
+    status: "ready",
+    approxClusters: 77,
   },
   {
     id: "megafin",

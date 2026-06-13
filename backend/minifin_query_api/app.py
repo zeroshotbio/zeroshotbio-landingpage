@@ -77,6 +77,18 @@ def _registry() -> dict:
             map_id_col=os.environ.get("CHEMFISH_MAP_ID_COL", "ensembl_id"),
             map_sym_col=os.environ.get("CHEMFISH_MAP_SYM_COL", "symbol"),
         )
+    if os.environ.get("DANIOCELL_H5AD"):
+        # DanioCell = de-novo leaf partition (36-72hpf clustered subset) from build_daniocell_asset.py.
+        # var_names ENSDARG (canonical copy); canonical map keyed by var_name.
+        reg["daniocell"] = dict(
+            h5ad=os.environ["DANIOCELL_H5AD"],
+            assign=os.environ.get("DANIOCELL_ASSIGN", ""),
+            bc_col=os.environ.get("DANIOCELL_BC_COL", "cell_id"),
+            cluster_col=os.environ.get("DANIOCELL_CLUSTER_COL", "leaf"),
+            symbol_map=os.environ.get("DANIOCELL_SYMBOL_MAP", ""),
+            map_id_col=os.environ.get("DANIOCELL_MAP_ID_COL", "ensembl_id"),
+            map_sym_col=os.environ.get("DANIOCELL_MAP_SYM_COL", "symbol"),
+        )
     return reg
 
 

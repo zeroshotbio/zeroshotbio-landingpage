@@ -23,7 +23,7 @@ const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 // datasets that ship a published-label groundtruth.json under daniotype_data/<id>/
 // GT datasets ship a published-label groundtruth.json under daniotype_data/<id>/ -> the
 // four-tier predictions are constrained to that dataset's exact label vocabulary.
-const GT_DATASETS = new Set<string>(["zscape", "chemfish"]);
+const GT_DATASETS = new Set<string>(["zscape", "chemfish", "daniocell"]);
 type TierVocab = { germ_layer: string[]; tissue: string[]; cell_type_broad: string[]; cell_type_sub: string[] };
 const VOCAB_KEYS: (keyof TierVocab)[] = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
 const vocabCache: Record<string, TierVocab | null> = {};
