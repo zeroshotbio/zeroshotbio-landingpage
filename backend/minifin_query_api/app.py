@@ -65,6 +65,18 @@ def _registry() -> dict:
             map_id_col=os.environ.get("ZSCAPE_MAP_ID_COL", "ensembl_id"),
             map_sym_col=os.environ.get("ZSCAPE_MAP_SYM_COL", "symbol"),
         )
+    if os.environ.get("CHEMFISH_H5AD"):
+        # ChemFish = de-novo leaf partition (48hpf clustered subset) from build_chemfish_asset.py.
+        # var_names ENSDARG; canonical map keyed by var_name (ensembl_id col holds var_name).
+        reg["chemfish"] = dict(
+            h5ad=os.environ["CHEMFISH_H5AD"],
+            assign=os.environ.get("CHEMFISH_ASSIGN", ""),
+            bc_col=os.environ.get("CHEMFISH_BC_COL", "cell_id"),
+            cluster_col=os.environ.get("CHEMFISH_CLUSTER_COL", "leaf"),
+            symbol_map=os.environ.get("CHEMFISH_SYMBOL_MAP", ""),
+            map_id_col=os.environ.get("CHEMFISH_MAP_ID_COL", "ensembl_id"),
+            map_sym_col=os.environ.get("CHEMFISH_MAP_SYM_COL", "symbol"),
+        )
     return reg
 
 

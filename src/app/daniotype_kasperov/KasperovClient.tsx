@@ -97,14 +97,14 @@ const DATASETS: DatasetDef[] = [
   {
     id: "chemfish",
     name: "ChemFish",
-    tagline: "Barkan et al. · 2.1M cells · published cell_type (~348)",
+    tagline: "Barkan et al. · 48 hpf subset · 78 de-novo clusters",
     blurb:
-      "Chemical-screen zebrafish atlas with published cell-type labels. Clustering + asset prep is the next dataset we wire up.",
+      "Barkan et al. chemical-screen atlas (CHEM10 DSP + CHEM11 BS3). We re-cluster the 48 hpf subset de-novo (HVG→PCA→Harmony on experiment → Leiden res 3.0, 78 clusters) and score against the published labels. GT caveat: ChemFish ships only cell_type + tissue, so the four tiers are projected — cell_type_sub + tissue are native; cell_type_broad is derived (marker-qualifier strip) and germ_layer is an anatomical projection from tissue — not an independent four-tier set.",
     dataUrl: "/api/kasperov_asset/chemfish/umap.json",
     archivistBase: "/api/kasperov_asset/chemfish/archivist",
     groundTruthUrl: "/api/kasperov_asset/chemfish/groundtruth.json",
-    status: "soon",
-    approxClusters: 60,
+    status: "ready",
+    approxClusters: 78,
   },
   {
     id: "megafin",
