@@ -31,7 +31,8 @@ import scanpy as sc
 # --------------------------------------------------------------------------- config
 H5AD = "/data/datasets/raw_datasets/ZSCAPE/zscape_perturb_reference_merged_dedubled.h5ad"
 ROOT = os.path.join(os.path.dirname(__file__), "..")
-OUT_DIR = os.path.join(ROOT, "public", "daniotype_kasperov", "datasets", "zscape")
+OUT_DIR = os.path.join(ROOT, "daniotype_data", "zscape")  # gated asset dir (was stale public/ path)
+SCRATCH = "/data/scratch/bench"  # :5007 sidecars live here (NOT in the deployed bundle)
 PROFILE_DIR = os.path.join(OUT_DIR, "archivist")
 SRV_OUT = os.path.join(ROOT, "src", "app", "api", "kasperov_agent", "zscape_archivist.json")
 
@@ -232,6 +233,18 @@ log("wrote umap.json", f"({os.path.getsize(os.path.join(OUT_DIR,'umap.json'))/10
 with open(os.path.join(OUT_DIR, "groundtruth.json"), "w") as f:
     json.dump({"tiers": TIERS, "fullDatasetCells": int(n_full), "clusteredCells": int(N), "clusters": gt}, f, separators=(",", ":"))
 log("wrote groundtruth.json")
+
+# --- sidecars for the live :5007 co-expression service (the de-novo leaf partition was
+# previously in-memory only; persist it so the Archivist can serve p-values/co-expression
+# on ZSCAPE on the SAME cluster ids the deployed assets use) ---
+os.makedirs(SCRATCH, exist_ok=True)
+leaf_str = [str(x) for x in adata.obs["leaf"]]
+pd.DataFrame({"cell_id": list(adata.obs_names), "leaf": leaf_str}).to_csv(os.path.join(SCRATCH, "zscape_leaf_labels.csv"), index=False)
+pd.DataFrame({"ensembl_id": list(adata.var_names), "symbol": [str(s) for s in genes]}).to_csv(os.path.join(SCRATCH, "zscape_ensdarg_symbol.csv"), index=False)
+# write the clustered-subset h5ad (RAW counts) so :5007 loads only the ~250k labelled cells, not the full 3.2M
+sub = ad.AnnData(X=raw, obs=pd.DataFrame({"leaf": leaf_str}, index=list(adata.obs_names)), var=pd.DataFrame(index=list(adata.var_names)))
+sub.write_h5ad(os.path.join(SCRATCH, "zscape_clustered_subset.h5ad"))
+log("wrote :5007 sidecars: zscape_leaf_labels.csv, zscape_ensdarg_symbol.csv, zscape_clustered_subset.h5ad")
 
 # per-cluster full profiles + gene matrix (Archivist tool)
 log("writing archivist profiles…")

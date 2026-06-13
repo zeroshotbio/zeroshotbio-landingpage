@@ -344,7 +344,7 @@ const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
 // real-looking numbers; the anti-fabrication rule can't catch that (numbers are
 // genuine, just from the wrong dataset).
 const STATS_SERVICE_DATASETS = new Set(
-  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
+  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin,zscape").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
 );
 async function callService(kind: string, clusterId: string, genes: string[], ds: DatasetCfg): Promise<any> {
   if (!SERVICE_URL)

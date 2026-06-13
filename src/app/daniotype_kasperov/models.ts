@@ -13,7 +13,10 @@ export const KASPEROV_MODELS = [
   "gpt-5.5",
 ] as const;
 export type KasperovModel = (typeof KASPEROV_MODELS)[number];
-export const DEFAULT_MODEL: KasperovModel = "gpt-5-mini";
+// Pinned to gpt-5.5 — the benchmark/labeling model held constant across every dataset
+// for valid cross-dataset comparison. (Was gpt-5-mini; routes/worker should never
+// silently fall back to a cheaper model.)
+export const DEFAULT_MODEL: KasperovModel = "gpt-5.5";
 
 export function isKasperovModel(m: unknown): m is KasperovModel {
   return typeof m === "string" && (KASPEROV_MODELS as readonly string[]).includes(m);

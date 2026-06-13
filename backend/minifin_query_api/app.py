@@ -53,6 +53,18 @@ def _registry() -> dict:
             map_id_col=os.environ.get("MEGAFIN_MAP_ID_COL", "ensembl_id"),
             map_sym_col=os.environ.get("MEGAFIN_MAP_SYM_COL", "symbol"),
         )
+    if os.environ.get("ZSCAPE_H5AD"):
+        # ZSCAPE = the de-novo leaf partition (clustered-subset h5ad + persisted cell_id->leaf
+        # from build_zscape_asset.py). var_names are ENSDARG -> gene_short_name map.
+        reg["zscape"] = dict(
+            h5ad=os.environ["ZSCAPE_H5AD"],
+            assign=os.environ.get("ZSCAPE_ASSIGN", ""),
+            bc_col=os.environ.get("ZSCAPE_BC_COL", "cell_id"),
+            cluster_col=os.environ.get("ZSCAPE_CLUSTER_COL", "leaf"),
+            symbol_map=os.environ.get("ZSCAPE_SYMBOL_MAP", ""),
+            map_id_col=os.environ.get("ZSCAPE_MAP_ID_COL", "ensembl_id"),
+            map_sym_col=os.environ.get("ZSCAPE_MAP_SYM_COL", "symbol"),
+        )
     return reg
 
 

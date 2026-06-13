@@ -21,7 +21,9 @@ const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 // to the EXACT labels that exist in that dataset's ground truth (so we never
 // invent a label the atlas doesn't use, and predictions are directly comparable).
 // datasets that ship a published-label groundtruth.json under daniotype_data/<id>/
-const GT_DATASETS = new Set<string>(["zscape", "chemfish"]);
+// ChemFish gated out until its assets + groundtruth.json are actually built — it ships
+// no published-label file, so vocab-enum/scoring would silently fall back. Re-add when built.
+const GT_DATASETS = new Set<string>(["zscape"]);
 type TierVocab = { germ_layer: string[]; tissue: string[]; cell_type_broad: string[]; cell_type_sub: string[] };
 const VOCAB_KEYS: (keyof TierVocab)[] = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
 const vocabCache: Record<string, TierVocab | null> = {};

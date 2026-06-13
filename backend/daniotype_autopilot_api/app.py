@@ -189,12 +189,16 @@ def second_opinion_prompt(c):
     )
 
 
+# Byte-for-byte the browser's AUTO_REASON_PROMPT (KasperovClient.tsx) — archivist-aware.
 AUTO_REASON_PROMPT = (
-    "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read). "
-    "Reconcile them: where they agree, that's strong; where they disagree, resolve it with the evidence. If the specialists are "
-    "exhausted and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in "
-    "THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. "
-    "Otherwise dispatch the single most useful next query (kasperov-dispatch)."
+    "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read) "
+    "AND the Archivist's raw ground-truth stats for the top markers. Reconcile the literature reads AGAINST the raw numbers: "
+    "where they agree, that's strong; where they disagree, resolve it with the Archivist's stats (which marker is actually the "
+    "most enriched / most specific?). If a discussed gene's DEG score still matters and the Archivist hasn't reported it, dispatch "
+    "the Archivist for it. If the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, "
+    "conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground "
+    "a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most "
+    "useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing."
 )
 AUTO_NUDGE_PROMPT = (
     "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's "
@@ -232,6 +236,54 @@ def parse_conclude(text):
     if isinstance(o.get("label"), str):  # legacy
         return {"identity": o["label"], "decision": "assign", "done": o.get("done", True), "cited_markers": []}
     return None
+
+
+# --- dispatch parsing (mirrors extractTagged + splitDispatch in KasperovClient.tsx) ---
+def _extract_tagged(text, keyword):
+    m = re.search(r"(?:```)?\s*" + re.escape(keyword) + r"\s*", text, re.I)
+    if not m:
+        return None
+    after = m.end()
+    ai = text.find("[", after)
+    oi = text.find("{", after)
+    if ai != -1 and (oi == -1 or ai < oi):
+        start, open_, close = ai, "[", "]"
+    elif oi != -1:
+        start, open_, close = oi, "{", "}"
+    else:
+        return None
+    depth = 0
+    for i in range(start, len(text)):
+        if text[i] == open_:
+            depth += 1
+        elif text[i] == close:
+            depth -= 1
+            if depth == 0:
+                try:
+                    return json.loads(text[start : i + 1])
+                except Exception:
+                    return None
+    return None
+
+
+def parse_dispatch(text):
+    raw = _extract_tagged(text, "kasperov-dispatch")
+    if raw is None:
+        return []
+    arr = raw if isinstance(raw, list) else [raw]
+    seen, out = set(), []
+    for x in arr:
+        if not isinstance(x, dict) or not isinstance(x.get("prompt"), str):
+            continue
+        to = "archivist" if x.get("to") == "archivist" else "research"
+        k = to + ":" + x["prompt"]
+        if k in seen:
+            continue
+        seen.add(k)
+        out.append({"to": to, "prompt": x["prompt"]})
+        if len(out) >= 2:  # never flood (matches client .slice(0,2))
+            break
+    return out
 
 
 def format_label(c):
@@ -309,26 +361,44 @@ def get_confidence(base, dataset_id, model, cluster, conv, usage):
 
 
 def run_one_cluster(base, dataset_id, model, cluster, usage):
+    # FULL pipeline — byte-for-byte the browser runOneCluster: K=2 independent Researcher
+    # proposers, then a one-shot ARCHIVIST verification pass (raw DEG stats), then the
+    # Reasoner-orchestrated rounds that adjudicate AND execute kasperov-dispatch follow-ups.
     p1 = _agent(base, dataset_id, model, cluster, [{"role": "user", "content": default_prompt(cluster)}], "research", usage)
     p2 = _agent(base, dataset_id, model, cluster, [{"role": "user", "content": second_opinion_prompt(cluster)}], "research", usage)
+    # Archivist verification pass — pull this cluster's raw numbers for the top markers
+    top = ", ".join((cluster.get("degsUp") or [])[:6]) or ", ".join((m.get("g") or "") for m in (cluster.get("markers") or [])[:6])
+    arch_prompt = (
+        f"Pull this cluster's raw DEG stats for its top markers ({top}): exact log2FC, %in/out, "
+        "BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can "
+        "confirm which are the strongest, most specific markers."
+    )
+    arch = _agent(base, dataset_id, model, cluster, [{"role": "user", "content": arch_prompt}], "archivist", usage)
     conv = [
         {"role": "user", "content": default_prompt(cluster)},
         {"role": "assistant", "content": p1},
         {"role": "user", "content": "Independent second read (alternative-hypothesis pass) for the same cluster:"},
         {"role": "assistant", "content": p2},
+        {"role": "user", "content": "Archivist raw-data verification of the top markers (ground-truth stats):"},
+        {"role": "assistant", "content": arch},
     ]
     for _ in range(AUTO_MAX_ROUNDS):
         conv = conv + [{"role": "user", "content": AUTO_REASON_PROMPT}]
         rc = _agent(base, dataset_id, model, cluster, conv, "reason", usage)
         conv = conv + [{"role": "assistant", "content": rc}]
         concl = parse_conclude(rc)
-        if not concl:
+        dispatches = parse_dispatch(rc)
+        if not concl and not dispatches:
             conv = conv + [{"role": "user", "content": AUTO_NUDGE_PROMPT}]
             rc = _agent(base, dataset_id, model, cluster, conv, "reason", usage)
             conv = conv + [{"role": "assistant", "content": rc}]
             concl = parse_conclude(rc)
+            dispatches = parse_dispatch(rc)
         if concl and concl.get("done", True):
             return enforce_cite(concl, cluster), conv
+        for d in dispatches:  # execute the Reasoner's follow-up queries (Archivist / Researcher)
+            rc2 = _agent(base, dataset_id, model, cluster, conv + [{"role": "user", "content": d["prompt"]}], d["to"], usage)
+            conv = conv + [{"role": "user", "content": d["prompt"]}, {"role": "assistant", "content": rc2}]
     return "(unresolved — review)", conv
 
 
@@ -509,7 +579,7 @@ def _run(run_id, dataset_id, model, base):
 
 class StartReq(BaseModel):
     datasetId: str
-    model: str = "gpt-5-mini"
+    model: str = "gpt-5.5"  # pinned benchmark model (held constant across datasets)
     baseUrl: Optional[str] = None
 
 
@@ -578,7 +648,7 @@ GIFS_DIR = os.path.join(RUNS_DIR, "gifs")
 
 class CaptureReq(BaseModel):
     datasetId: str
-    model: str = "gpt-5-mini"
+    model: str = "gpt-5.5"  # pinned benchmark model
     baseUrl: Optional[str] = None
 
 
