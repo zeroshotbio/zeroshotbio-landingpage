@@ -42,6 +42,38 @@ RUNS_DIR = os.environ.get("AUTOPILOT_RUNS_DIR", "/data/daniotype_runs")
 _index_lock = threading.Lock()
 AUTO_MAX_ROUNDS = 4
 SCORE_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"]
+TIER_LABELS = {"germ_layer": "Germ layer", "tissue": "Tissue", "cell_type_broad": "Cell type — broad", "cell_type_sub": "Cell type — sub"}
+
+
+# --- driver-scoring helpers (benchmark scores the kasperov-conclude label, NOT the
+# confidence side-channel; abstention is credited at the tier reached) ----------
+def _norm_tier(s):
+    s = (s or "").lower().strip()
+    if "germ" in s: return 0
+    if "tissue" in s: return 1
+    if "broad" in s: return 2
+    if "sub" in s: return 3
+    if "cell type" in s or "cell_type" in s: return 2  # bare "cell type" -> broad
+    return None
+
+
+def _parse_driver(final_label):
+    """The kasperov-conclude label that gets persisted as the assignment ->
+    (identity, reached_idx, kind). reached_idx 0..3 = deepest tier the driver stands
+    behind; -1 = incomplete. kind = assign | abstain | unresolved. Pure string parse;
+    does NOT touch the reasoning loop."""
+    fl = (final_label or "").strip()
+    m = re.search(r"\(abstain(?:ed)?\s*[·:\-]\s*([^)]+)\)", fl, re.I)
+    if m:
+        idx = _norm_tier(m.group(1))
+        return fl[:m.start()].strip(), (idx if idx is not None else 1), "abstain"
+    if not fl or "unresolved" in fl.lower():
+        return "", -1, "unresolved"
+    return fl, 3, "assign"
+
+
+def _attempted(reached_idx, kind, tier_idx):
+    return False if kind == "unresolved" else tier_idx <= reached_idx
 PRICES = {"gpt-5-mini": (0.25, 2.0), "gpt-5": (1.25, 10.0)}
 
 app = FastAPI(title="daniotype-autopilot")
@@ -301,15 +333,22 @@ def run_one_cluster(base, dataset_id, model, cluster, usage):
 
 
 def score_clusters(base, dataset_id, model, labelled, gt, usage):
+    # DRIVER-SCORING: judge the kasperov-conclude identity (the label actually persisted
+    # as the cluster's assignment) at each tier — NOT the confidence side-channel. The
+    # single driver identity is sent for every tier; the LLM judge decides equivalence at
+    # each tier's granularity. Abstention is credited at the tier reached: tiers finer than
+    # the driver's stand are NOT-ATTEMPTED (dropped from the denominator, never a miss).
     verdicts = {}
+    drv = {}  # id -> (identity, reached_idx, kind)
     items = []
     for c in labelled:
         rec = (gt or {}).get(c["id"], {})
-        cc = c.get("confidence") or {}
-        preds = {k: ((cc.get(k) or {}).get("prediction") or c["finalLabel"]) for k in SCORE_TIERS} if cc else None
+        ident, reached, kind = _parse_driver(c.get("finalLabel"))
+        drv[c["id"]] = (ident, reached, kind)
+        pred = ident or (c.get("finalLabel") or "")
         items.append({
-            "id": c["id"], "ourLabel": c["finalLabel"], "markers": c.get("degsUp", []),
-            "predictions": preds,
+            "id": c["id"], "ourLabel": c.get("finalLabel"), "markers": c.get("degsUp", []),
+            "predictions": {k: pred for k in SCORE_TIERS},  # the one driver identity, judged per tier
             "gt": {k: (rec.get(k) or {}).get("label") for k in SCORE_TIERS},
         })
     for i in range(0, len(items), 10):
@@ -328,21 +367,66 @@ def score_clusters(base, dataset_id, model, labelled, gt, usage):
                     verdicts[res["id"]] = res
         except Exception:
             pass
-    # per-tier aggregate
+
+    def _ref(cid, k):
+        return ((gt or {}).get(cid, {}).get(k) or {}).get("label")
+
+    def _frac(cid, k):
+        return float(((gt or {}).get(cid, {}).get(k) or {}).get("frac") or 0)
+
+    # per-tier aggregate, abstention-credited denominators
     agg = []
-    for k in SCORE_TIERS:
+    for ti, k in enumerate(SCORE_TIERS):
         matched = total = 0
         for c in labelled:
-            v = verdicts.get(c["id"])
-            ref = ((gt or {}).get(c["id"], {}).get(k) or {}).get("label")
-            if not v or not ref:
+            v = verdicts.get(c["id"]); _, reached, kind = drv[c["id"]]
+            if not v or not _ref(c["id"], k) or not _attempted(reached, kind, ti):
                 continue
             total += 1
             if v.get(k, {}).get("match"):
                 matched += 1
-        label = {"germ_layer": "Germ layer", "tissue": "Tissue", "cell_type_broad": "Cell type — broad", "cell_type_sub": "Cell type — sub"}[k]
-        agg.append({"key": k, "label": label, "matched": matched, "total": total, "pct": (100 * matched / total) if total else 0})
-    return verdicts, agg
+        agg.append({"key": k, "label": TIER_LABELS[k], "matched": matched, "total": total, "pct": (100 * matched / total) if total else 0})
+
+    # purity-stratified cell_type_sub (attempted-sub only); headline = high-purity
+    hi = lo = hin = lon = 0; wnum = wden = 0.0
+    for c in labelled:
+        v = verdicts.get(c["id"]); _, reached, kind = drv[c["id"]]
+        if not v or not _attempted(reached, kind, 3) or not _ref(c["id"], "cell_type_sub"):
+            continue
+        f = _frac(c["id"], "cell_type_sub")
+        m = 1 if v.get("cell_type_sub", {}).get("match") else 0
+        wnum += m * f; wden += f
+        if f >= 0.5: hin += 1; hi += m
+        else: lon += 1; lo += m
+    sub_strat = {
+        "headline": "high_purity",
+        "high": {"matched": hi, "total": hin, "pct": (100 * hi / hin) if hin else 0},
+        "low": {"matched": lo, "total": lon, "pct": (100 * lo / lon) if lon else 0},
+        "raw": {"matched": hi + lo, "total": hin + lon, "pct": (100 * (hi + lo) / (hin + lon)) if (hin + lon) else 0},
+        "weighted_pct": (100 * wnum / wden) if wden else 0,
+    }
+
+    # abstention precision: among abstained clusters, fraction whose FORCED sub-call would
+    # have failed (driver identity judged at sub = miss), vs the same on assigned clusters.
+    def _forced_fail(kindsel):
+        fail = tot = 0
+        for c in labelled:
+            v = verdicts.get(c["id"]); _, _, kind = drv[c["id"]]
+            if kind != kindsel or not v or not _ref(c["id"], "cell_type_sub"):
+                continue
+            tot += 1
+            if not v.get("cell_type_sub", {}).get("match"):
+                fail += 1
+        return {"fail": fail, "total": tot, "pct": (100 * fail / tot) if tot else 0}
+
+    abstention = {
+        "n_assign": sum(1 for c in labelled if drv[c["id"]][2] == "assign"),
+        "n_abstain": sum(1 for c in labelled if drv[c["id"]][2] == "abstain"),
+        "n_unresolved": sum(1 for c in labelled if drv[c["id"]][2] == "unresolved"),
+        "abstained_forced_sub_fail": _forced_fail("abstain"),
+        "assigned_forced_sub_fail": _forced_fail("assign"),
+    }
+    return verdicts, agg, sub_strat, abstention
 
 
 # Wizard data is served from the auth-gated asset route (moved out of public/).
@@ -390,10 +474,10 @@ def _run(run_id, dataset_id, model, base):
         st.update(done=len(clusters))
 
         labelled = [c for c in clusters if c.get("finalLabel") and "error" not in c["finalLabel"]]
-        verdicts, agg, scored_at = {}, [], None
+        verdicts, agg, sub_strat, abstention, scored_at = {}, [], None, None, None
         if gt:
             st.update(phase="scoring")
-            verdicts, agg = score_clusters(base, dataset_id, model, labelled, gt, usage)
+            verdicts, agg, sub_strat, abstention = score_clusters(base, dataset_id, model, labelled, gt, usage)
             scored_at = _now()
 
         st.update(phase="saving")
@@ -414,7 +498,8 @@ def _run(run_id, dataset_id, model, base):
                  "confidence": c.get("confidence"), "addedMarkers": [], "transcript": []}
                 for c in clusters
             ],
-            "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts} if gt else None),
+            "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts,
+                             "subStratified": sub_strat, "abstention": abstention, "scoring": "driver/v2"} if gt else None),
         }
         rid = save_run(run_json)
         st.update(phase="done", saved=True, runSaved=rid, cost=usd)

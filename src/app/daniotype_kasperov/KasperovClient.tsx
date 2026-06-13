@@ -8,7 +8,11 @@ import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo
 const MODEL_KEY = "daniotype_kasperov_model"; // selected model persists globally
 type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
 type TierAgg = { key: string; label: string; matched: number; total: number; pct: number };
-type RunScore = { verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[] };
+type PctCount = { matched: number; total: number; pct: number };
+type SubStrat = { headline: string; high: PctCount; low: PctCount; raw: PctCount; weighted_pct: number };
+type FailCount = { fail: number; total: number; pct: number };
+type AbstentionStat = { n_assign: number; n_abstain: number; n_unresolved: number; abstained_forced_sub_fail: FailCount; assigned_forced_sub_fail: FailCount };
+type RunScore = { verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[]; subStrat?: SubStrat | null; abstention?: AbstentionStat | null };
 
 // Per-cluster characterization: a prediction + confidence at each of the four
 // ontology tiers — the goal of a cluster's work is to drive these confidences up.
@@ -41,7 +45,7 @@ const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
 // ZSCAPE / CHEMFISH carry published cell-type labels (ground truth) we score
 // our de-novo names against; MiniFin and MegaFin Part 1 have no published labels.
 // ---------------------------------------------------------------------------
-type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin";
+type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin";
 interface DatasetDef {
   id: DatasetId;
   name: string;
@@ -54,6 +58,18 @@ interface DatasetDef {
   approxClusters: number; // for the model picker's cost projection (before the atlas loads)
 }
 const DATASETS: DatasetDef[] = [
+  {
+    id: "zscape_v2",
+    name: "ZSCAPE V2",
+    tagline: "Saunders et al. · next-gen pipeline — coming soon",
+    blurb:
+      "ZSCAPE V2 — the next iteration of the ZSCAPE ground-truth benchmark (re-clustering + scoring to be wired up). Stub registered; assets and scoring not built yet. Use ZSCAPE Classic for the current GT pipeline.",
+    dataUrl: "/api/kasperov_asset/zscape_v2/umap.json",
+    archivistBase: "/api/kasperov_asset/zscape_v2/archivist",
+    groundTruthUrl: null,
+    status: "soon",
+    approxClusters: 0,
+  },
   {
     id: "minifin",
     name: "MiniFin",
@@ -68,7 +84,7 @@ const DATASETS: DatasetDef[] = [
   },
   {
     id: "zscape",
-    name: "ZSCAPE",
+    name: "ZSCAPE Classic",
     tagline: "Saunders et al. · 3.2M cells · 55 de-novo clusters",
     blurb:
       "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
@@ -426,7 +442,7 @@ export default function KasperovClient() {
         if (p.augmented) setAugmented(p.augmented);
         if (p.confidence) setConfidence(p.confidence);
         if (p.usage) setUsage(p.usage);
-        if (p.score) setScore({ verdicts: p.score.verdicts ?? {}, scoredAt: p.score.scoredAt ?? null, agg: p.score.agg ?? [] });
+        if (p.score) setScore({ verdicts: p.score.verdicts ?? {}, scoredAt: p.score.scoredAt ?? null, agg: p.score.agg ?? [], subStrat: p.score.subStrat ?? null, abstention: p.score.abstention ?? null });
       }
     } catch {}
     try {
@@ -494,7 +510,7 @@ export default function KasperovClient() {
         addedMarkers: augmented[c.id] ?? [],
         transcript: transcripts[c.id] ?? [],
       })),
-      groundTruth: score.scoredAt ? { scoredAt: score.scoredAt, aggregate: score.agg, verdicts: score.verdicts } : null,
+      groundTruth: score.scoredAt ? { scoredAt: score.scoredAt, aggregate: score.agg, verdicts: score.verdicts, subStratified: score.subStrat ?? null, abstention: score.abstention ?? null, scoring: "driver/v2" } : null,
     };
   }
 
@@ -580,7 +596,7 @@ export default function KasperovClient() {
     else setUsage({});
     if ((KASPEROV_MODELS as readonly string[]).includes(data.model)) setModel(data.model as KasperovModel);
     if (data.groundTruth && Array.isArray(data.groundTruth.aggregate)) {
-      setScore({ verdicts: data.groundTruth.verdicts ?? {}, scoredAt: data.groundTruth.scoredAt ?? null, agg: data.groundTruth.aggregate });
+      setScore({ verdicts: data.groundTruth.verdicts ?? {}, scoredAt: data.groundTruth.scoredAt ?? null, agg: data.groundTruth.aggregate, subStrat: data.groundTruth.subStratified ?? null, abstention: data.groundTruth.abstention ?? null });
     } else {
       setScore({ verdicts: {}, scoredAt: null, agg: [] });
     }
@@ -1562,6 +1578,32 @@ const SCORE_TIERS: { key: keyof Omit<ClusterVerdict, "id">; gtKey: string; label
   { key: "cell_type_sub", gtKey: "cell_type_sub", label: "Cell type — sub" },
 ];
 
+// --- driver-scoring: parse the kasperov-conclude label that's actually persisted as the
+// assignment (NOT the confidence side-channel). Abstention credited at the tier reached.
+// Mirrors _parse_driver/_attempted in backend/daniotype_autopilot_api/app.py.
+function normTierIdx(s: string): number | null {
+  const x = (s || "").toLowerCase().trim();
+  if (x.includes("germ")) return 0;
+  if (x.includes("tissue")) return 1;
+  if (x.includes("broad")) return 2;
+  if (x.includes("sub")) return 3;
+  if (x.includes("cell type") || x.includes("cell_type")) return 2;
+  return null;
+}
+function parseDriverLabel(finalLabel: string): { identity: string; reached: number; kind: "assign" | "abstain" | "unresolved" } {
+  const fl = (finalLabel || "").trim();
+  const m = fl.match(/\(abstain(?:ed)?\s*[·:-]\s*([^)]+)\)/i);
+  if (m && m.index != null) {
+    const idx = normTierIdx(m[1]);
+    return { identity: fl.slice(0, m.index).trim(), reached: idx == null ? 1 : idx, kind: "abstain" };
+  }
+  if (!fl || fl.toLowerCase().includes("unresolved")) return { identity: "", reached: -1, kind: "unresolved" };
+  return { identity: fl, reached: 3, kind: "assign" };
+}
+function attemptedTier(reached: number, kind: string, tierIdx: number): boolean {
+  return kind === "unresolved" ? false : tierIdx <= reached;
+}
+
 function ScorecardEmbedWrap({ children }: { children: React.ReactNode }) {
   return <div style={{ textAlign: "left" }}>{children}</div>;
 }
@@ -1625,22 +1667,66 @@ function Scorecard({
     [gt]
   );
 
-  // per-tier agreement over clusters that have a verdict + a reference label
+  const subFracFor = useCallback((id: string) => gt?.clusters?.[id]?.cell_type_sub?.frac ?? 0, [gt]);
+
+  // DRIVER-SCORING aggregate: per-tier agreement over clusters that have a verdict + a
+  // reference label AND that attempted the tier (abstention is credited at the tier
+  // reached — finer tiers are not-attempted, never counted as a miss).
   const computeAgg = useCallback(
     (verds: Record<string, ClusterVerdict>): TierAgg[] =>
-      SCORE_TIERS.map((t) => {
+      SCORE_TIERS.map((t, ti) => {
         let matched = 0;
         let total = 0;
         for (const c of labelled) {
           const v = verds[c.id];
           const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
-          if (!v || !ref) continue;
+          const drv = parseDriverLabel(labels[c.id] || "");
+          if (!v || !ref || !attemptedTier(drv.reached, drv.kind, ti)) continue;
           total++;
           if (v[t.key].match) matched++;
         }
         return { key: t.key, label: t.label, matched, total, pct: total ? (100 * matched) / total : 0 };
       }),
-    [labelled, gtTiersFor]
+    [labelled, gtTiersFor, labels]
+  );
+
+  // purity-stratified sub (headline = high-purity frac>=0.5) + abstention precision
+  const computeExtras = useCallback(
+    (verds: Record<string, ClusterVerdict>): { subStrat: SubStrat; abstention: AbstentionStat } => {
+      let hi = 0, hin = 0, lo = 0, lon = 0, wnum = 0, wden = 0;
+      for (const c of labelled) {
+        const v = verds[c.id];
+        const drv = parseDriverLabel(labels[c.id] || "");
+        if (!v || !attemptedTier(drv.reached, drv.kind, 3) || !gtTiersFor(c.id).cell_type_sub) continue;
+        const f = subFracFor(c.id);
+        const m = v.cell_type_sub.match ? 1 : 0;
+        wnum += m * f; wden += f;
+        if (f >= 0.5) { hin++; hi += m; } else { lon++; lo += m; }
+      }
+      const pc = (mt: number, tt: number): PctCount => ({ matched: mt, total: tt, pct: tt ? (100 * mt) / tt : 0 });
+      const subStrat: SubStrat = { headline: "high_purity", high: pc(hi, hin), low: pc(lo, lon), raw: pc(hi + lo, hin + lon), weighted_pct: wden ? (100 * wnum) / wden : 0 };
+      const forcedFail = (kindsel: string): FailCount => {
+        let fail = 0, tot = 0;
+        for (const c of labelled) {
+          const v = verds[c.id];
+          const drv = parseDriverLabel(labels[c.id] || "");
+          if (drv.kind !== kindsel || !v || !gtTiersFor(c.id).cell_type_sub) continue;
+          tot++;
+          if (!v.cell_type_sub.match) fail++;
+        }
+        return { fail, total: tot, pct: tot ? (100 * fail) / tot : 0 };
+      };
+      const kindOf = (id: string) => parseDriverLabel(labels[id] || "").kind;
+      const abstention: AbstentionStat = {
+        n_assign: labelled.filter((c) => kindOf(c.id) === "assign").length,
+        n_abstain: labelled.filter((c) => kindOf(c.id) === "abstain").length,
+        n_unresolved: labelled.filter((c) => kindOf(c.id) === "unresolved").length,
+        abstained_forced_sub_fail: forcedFail("abstain"),
+        assigned_forced_sub_fail: forcedFail("assign"),
+      };
+      return { subStrat, abstention };
+    },
+    [labelled, gtTiersFor, labels, subFracFor]
   );
 
   // load ground truth; decide whether the stored score already covers this label set
@@ -1686,14 +1772,11 @@ function Scorecard({
       const targets = full ? labelled : labelled.filter((c) => !score.verdicts[c.id]);
       const toScore = targets.length ? targets : labelled;
       const items = toScore.map((c) => {
-        const cc = confidence[c.id];
-        const fallback = labels[c.id] || "";
-        const predictions = {
-          germ_layer: cc?.germ_layer?.prediction || fallback,
-          tissue: cc?.tissue?.prediction || fallback,
-          cell_type_broad: cc?.cell_type_broad?.prediction || fallback,
-          cell_type_sub: cc?.cell_type_sub?.prediction || fallback,
-        };
+        // DRIVER-SCORING: judge the persisted kasperov-conclude identity at every tier,
+        // not the confidence side-channel. (Abstention crediting happens in aggregation.)
+        const drv = parseDriverLabel(labels[c.id] || "");
+        const pred = drv.identity || labels[c.id] || "";
+        const predictions = { germ_layer: pred, tissue: pred, cell_type_broad: pred, cell_type_sub: pred };
         return { id: c.id, ourLabel: labels[c.id], predictions, markers: c.degsUp, gt: gtTiersFor(c.id) };
       });
       const BATCH = 10;
@@ -1725,10 +1808,11 @@ function Scorecard({
         }
       }
       await Promise.all(Array.from({ length: Math.min(3, batches.length) }, worker));
-      setScore({ verdicts: acc, scoredAt: new Date().toISOString(), agg: computeAgg(acc) });
+      const extras = computeExtras(acc);
+      setScore({ verdicts: acc, scoredAt: new Date().toISOString(), agg: computeAgg(acc), subStrat: extras.subStrat, abstention: extras.abstention });
       setStatus("done");
     },
-    [gt, labelled, labels, confidence, gtTiersFor, computeAgg, dataset.id, model, addUsage, score.verdicts, setScore]
+    [gt, labelled, labels, gtTiersFor, computeAgg, computeExtras, dataset.id, model, addUsage, score.verdicts, setScore]
   );
 
   const agg = computeAgg(verdicts);
@@ -1780,6 +1864,29 @@ function Scorecard({
                 </div>
               );
             })}
+          </div>
+        )}
+
+        {/* driver-scoring extras: purity-stratified sub headline + abstention precision */}
+        {status === "done" && score.subStrat && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 12, margin: "4px 0 8px" }}>
+            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 12, padding: "12px 16px" }}>
+              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", fontWeight: 700 }}>Sub-type — headline (high-purity)</div>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 4px" }}>
+                <span style={{ fontSize: 30, fontWeight: 800, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>{score.subStrat.high.total ? score.subStrat.high.pct.toFixed(0) : "—"}{score.subStrat.high.total ? "%" : ""}</span>
+                <span style={{ fontSize: 12.5, color: "#666" }}>{score.subStrat.high.matched}/{score.subStrat.high.total} on pure clusters (frac≥0.5)</span>
+              </div>
+              <div style={{ fontSize: 12, color: "#888" }}>raw {score.subStrat.raw.pct.toFixed(0)}% ({score.subStrat.raw.matched}/{score.subStrat.raw.total}) · weighted {score.subStrat.weighted_pct.toFixed(0)}% · low-purity {score.subStrat.low.total ? score.subStrat.low.pct.toFixed(0) + "%" : "—"} ({score.subStrat.low.matched}/{score.subStrat.low.total})</div>
+            </div>
+            {score.abstention && (
+              <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 12, padding: "12px 16px" }}>
+                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#a16207", fontWeight: 700 }}>Abstention precision</div>
+                <div style={{ fontSize: 13.5, color: "#444", margin: "6px 0 4px", lineHeight: 1.5 }}>
+                  Forced sub-call would-fail: <b style={{ color: "#a16207" }}>{score.abstention.abstained_forced_sub_fail.total ? score.abstention.abstained_forced_sub_fail.pct.toFixed(0) + "%" : "—"}</b> on abstained ({score.abstention.abstained_forced_sub_fail.fail}/{score.abstention.abstained_forced_sub_fail.total}) vs {score.abstention.assigned_forced_sub_fail.total ? score.abstention.assigned_forced_sub_fail.pct.toFixed(0) + "%" : "—"} on assigned. A higher abstained rate means abstention declines precisely where a forced call fails.
+                </div>
+                <div style={{ fontSize: 12, color: "#888" }}>assign {score.abstention.n_assign} · abstain {score.abstention.n_abstain} · unresolved {score.abstention.n_unresolved}</div>
+              </div>
+            )}
           </div>
         )}
 
