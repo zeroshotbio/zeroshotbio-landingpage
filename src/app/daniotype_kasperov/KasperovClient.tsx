@@ -390,6 +390,10 @@ export default function KasperovClient() {
   const [augmented, setAugmented] = useState<Record<string, Marker[]>>({});
   const [confidence, setConfidence] = useState<Record<string, ClusterConf>>({});
   const [incorporated, setIncorporated] = useState<Set<string>>(new Set());
+  // optional free-text note for the NEXT browser autopilot run ("what's special about this run?")
+  const [runNote, setRunNote] = useState("");
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [loadedNote, setLoadedNote] = useState<string | null>(null); // note of a loaded previous run
   const hydratedRef = useRef<string | null>(null);
 
   // selected model (global), accumulated token usage per model (per-dataset), and
@@ -501,6 +505,7 @@ export default function KasperovClient() {
       scoredAt: score.scoredAt,
       nLabelled: labelledN,
       nValidated: validated.size,
+      note: runNote.trim() || null,
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
         label: c.label,
@@ -591,6 +596,7 @@ export default function KasperovClient() {
     setAugmented(nAug);
     setTranscripts(nTrans);
     setIncorporated(new Set());
+    setLoadedNote(typeof data.note === "string" && data.note.trim() ? data.note.trim() : null);
     // restore run metadata (model, cost/usage, ground-truth scores) when present
     if (data.cost?.usage && typeof data.cost.usage === "object") setUsage(data.cost.usage);
     else setUsage({});
@@ -606,6 +612,10 @@ export default function KasperovClient() {
 
   function startAutopilot() {
     if (!clusters) return;
+    // optional, skippable "what's special about this run?" popup — non-blocking: the
+    // sweep kicks off below regardless; the note folds into buildRunJSON at save time.
+    // Skip in capture mode (headless filming has no human to prompt).
+    if (!captureMode) { setRunNote(""); setNoteOpen(true); }
     // "done" == has a cell-type label (NOT merely validated — a cluster can be
     // validated by hand without a label). Land on the first unlabelled cluster.
     const first = clusters.find((c) => !labels[c.id]) ?? clusters[0];
@@ -729,6 +739,7 @@ export default function KasperovClient() {
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
         onImport={importResults}
+        loadedNote={loadedNote}
         labels={labels}
         confidence={confidence}
         model={model}
@@ -754,6 +765,8 @@ export default function KasperovClient() {
       />
     );
   return (
+    <>
+      {noteOpen && <RunNoteModal initial={runNote} onSubmit={(t) => { setRunNote(t); setNoteOpen(false); }} onSkip={() => setNoteOpen(false)} />}
     <ClusterStage
       dataset={dataset}
       model={model}
@@ -778,6 +791,7 @@ export default function KasperovClient() {
       incorporated={incorporated}
       setIncorporated={setIncorporated}
     />
+    </>
   );
 }
 
@@ -889,13 +903,11 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
         {status === "ready" &&
           runs &&
           runs.map((m) => (
-            <button
+            <div
               key={m.runId}
-              onClick={() => load(m.runId)}
-              disabled={!!loadingId}
-              style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 10, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 10, padding: "10px 12px", marginBottom: 8, cursor: loadingId ? "default" : "pointer", color: INK }}
+              style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 10, padding: "10px 12px", marginBottom: 8, color: INK }}
             >
-              <span style={{ flex: 1, minWidth: 0 }}>
+              <span onClick={() => !loadingId && load(m.runId)} style={{ flex: 1, minWidth: 0, cursor: loadingId ? "default" : "pointer" }}>
                 <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
                 <span style={{ fontSize: 12.5, color: "#666" }}>
                   {" "}· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
@@ -903,9 +915,24 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
                 <div style={{ fontSize: 12, color: "#999" }}>
                   {new Date(m.exportedAt).toLocaleString()} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
                 </div>
+                {m.note ? (
+                  <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div>
+                ) : null}
               </span>
-              <span style={{ fontSize: 12.5, color: ACCENT, fontWeight: 700, flexShrink: 0 }}>{loadingId === m.runId ? "Loading…" : "Load →"}</span>
-            </button>
+              <button
+                title={m.note ? "Edit note" : "Add note"}
+                onClick={async () => {
+                  const next = window.prompt("Note for this run (what's special about it?):", m.note || "");
+                  if (next === null) return; // cancelled
+                  await postRunNote(m.runId, next.trim(), datasetId);
+                  setRuns((rs) => (rs || []).map((x) => (x.runId === m.runId ? { ...x, note: next.trim() || null } : x)));
+                }}
+                style={{ ...btnGhost, padding: "4px 9px", fontSize: 12, flexShrink: 0 }}
+              >
+                {m.note ? "✎" : "📝 note"}
+              </button>
+              <span onClick={() => !loadingId && load(m.runId)} style={{ fontSize: 12.5, color: ACCENT, fontWeight: 700, flexShrink: 0, cursor: loadingId ? "default" : "pointer" }}>{loadingId === m.runId ? "Loading…" : "Load →"}</span>
+            </div>
           ))}
       </div>
     </div>
@@ -1222,6 +1249,33 @@ function AskLine({
 }
 
 // ---------------------------------------------------------------------------
+// Optional, skippable "what's special about this run?" popup. Non-blocking: the run
+// is already underway; this just attaches a free-text note (or skips). Shared by the
+// browser AutoPilot button and the server persistent button.
+function RunNoteModal({ initial, onSubmit, onSkip, title }: { initial?: string; onSubmit: (note: string) => void; onSkip: () => void; title?: string }) {
+  const [v, setV] = useState(initial ?? "");
+  return (
+    <div onClick={onSkip} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 480, width: "100%", padding: "20px 22px", textAlign: "left" }}>
+        <strong style={{ fontSize: 16 }}>{title ?? "What's special about this run?"}</strong>
+        <div style={{ fontSize: 13, color: "#666", margin: "6px 0 10px", lineHeight: 1.5 }}>Optional — the run is already underway. Note what to remember it by (a hypothesis, a model/partition tweak, etc.), or skip.</div>
+        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={4} placeholder="e.g. first full-loop run on the new 54-cluster partition" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, resize: "vertical", fontFamily: "inherit" }} />
+        <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
+          <button onClick={onSkip} style={{ ...btnGhost, padding: "8px 14px", fontSize: 13 }}>Skip</button>
+          <button onClick={() => onSubmit(v.trim())} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>Attach note</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// POST a note onto a run (in-flight by runId, or a saved run by runId+dataset).
+async function postRunNote(runId: string, note: string, dataset?: string) {
+  try {
+    await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "setNote", runId, note, dataset }) });
+  } catch {}
+}
+
 function MapStage({
   dataset,
   clusters,
@@ -1235,6 +1289,7 @@ function MapStage({
   onReset,
   onSwitchDataset,
   onImport,
+  loadedNote,
   labels = {},
   confidence = {},
   model,
@@ -1257,6 +1312,7 @@ function MapStage({
   onReset: () => void;
   onSwitchDataset: () => void;
   onImport: (data: unknown) => void;
+  loadedNote?: string | null;
   labels?: Record<string, string>;
   confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
@@ -1270,6 +1326,7 @@ function MapStage({
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
   const [showPrev, setShowPrev] = useState(false);
+  const [srvNoteFor, setSrvNoteFor] = useState<string | null>(null); // server run awaiting its optional note
 
   // persistent server-side auto-pilot (runs on EC2, survives the browser closing)
   const [serverRun, setServerRun] = useState<{ runId?: string; phase: string; done: number; total: number; msg?: string } | null>(null);
@@ -1298,6 +1355,7 @@ function MapStage({
       if (r.status === 503) return setServerRun({ phase: "not_configured", done: 0, total: 0 });
       const d = await r.json().catch(() => ({}));
       setServerRun(d?.runId ? { runId: d.runId, phase: "queued", done: 0, total: 0 } : { phase: "error", done: 0, total: 0, msg: "could not start" });
+      if (d?.runId) setSrvNoteFor(d.runId); // non-blocking: run is churning; offer the optional note now
     } catch {
       setServerRun({ phase: "error", done: 0, total: 0, msg: "worker unreachable" });
     }
@@ -1396,6 +1454,11 @@ function MapStage({
           <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
 
+        {loadedNote && (
+          <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>
+            <strong>📝 Run note:</strong> {loadedNote}
+          </div>
+        )}
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
             <button onClick={onReveal} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
@@ -1471,6 +1534,7 @@ function MapStage({
                 </div>
               )}
               {showPrev && <PreviousRunsModal datasetId={dataset.id} onLoad={onImport} onClose={() => setShowPrev(false)} />}
+              {srvNoteFor && <RunNoteModal onSubmit={(t) => { postRunNote(srvNoteFor, t); setSrvNoteFor(null); }} onSkip={() => setSrvNoteFor(null)} />}
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
                 Auto-pilot drives the Reasoner across every un-labelled cluster — dispatching the Researcher &amp; Archivist,
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)

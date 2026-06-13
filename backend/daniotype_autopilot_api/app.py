@@ -134,6 +134,7 @@ def _meta_from(run, run_id):
         "nValidated": int(run.get("nValidated", 0) or 0),
         "hasGroundTruth": bool(run.get("groundTruth")),
         "source": run.get("source", "server"),
+        "note": run.get("note") or None,  # free-text "what's special about this run"
     }
 
 
@@ -563,6 +564,7 @@ def _run(run_id, dataset_id, model, base):
             "nLabelled": len(labelled),
             "nValidated": len(labelled),
             "source": "server",
+            "note": st.get("note") or None,  # optional free-text note attached after kickoff
             "clusters": [
                 {"id": c["id"], "label": c["label"], "validated": True, "finalLabel": c.get("finalLabel"),
                  "confidence": c.get("confidence"), "addedMarkers": [], "transcript": []}
@@ -581,6 +583,7 @@ class StartReq(BaseModel):
     datasetId: str
     model: str = "gpt-5.5"  # pinned benchmark model (held constant across datasets)
     baseUrl: Optional[str] = None
+    note: Optional[str] = None  # optional; usually set post-kickoff via /note
 
 
 @app.get("/health")
@@ -616,7 +619,7 @@ def runs_get(dataset: str, run_id: str, x_api_token: str = Header(default="")):
 def start(req: StartReq, x_api_token: str = Header(default="")):
     _auth(x_api_token)
     run_id = uuid.uuid4().hex[:12]
-    RUNS[run_id] = {"runId": run_id, "datasetId": req.datasetId, "model": req.model, "phase": "queued", "done": 0, "total": 0, "startedAt": _now()}
+    RUNS[run_id] = {"runId": run_id, "datasetId": req.datasetId, "model": req.model, "phase": "queued", "done": 0, "total": 0, "startedAt": _now(), "note": req.note or None}
     base = (req.baseUrl or DEFAULT_BASE).rstrip("/")
     threading.Thread(target=_run, args=(run_id, req.datasetId, req.model, base), daemon=True).start()
     return {"runId": run_id}
@@ -637,6 +640,55 @@ def abort(run_id: str, x_api_token: str = Header(default="")):
     if run_id in RUNS:
         RUNS[run_id]["abort"] = True
     return {"ok": True}
+
+
+# --- free-text run note ("what's special about this run") ----------------------
+def _set_saved_note(dataset, run_id, note):
+    """Write a note onto a SAVED run: both the <run_id>.json file and its _index entry."""
+    d = _ds_dir(dataset)
+    p = os.path.join(d, _safe(run_id) + ".json")
+    if not os.path.exists(p):
+        return False
+    run = json.load(open(p))
+    run["note"] = note or None
+    json.dump(run, open(p, "w"))
+    idxp = os.path.join(d, "_index.json")
+    with _index_lock:
+        try:
+            idx = json.load(open(idxp)) if os.path.exists(idxp) else []
+        except Exception:
+            idx = []
+        for e in idx:
+            if e.get("runId") == run_id:
+                e["note"] = note or None
+        json.dump(idx, open(idxp, "w"))
+    return True
+
+
+class NoteReq(BaseModel):
+    runId: str
+    note: Optional[str] = None
+    dataset: Optional[str] = None  # required to edit a SAVED run (in-flight uses RUNS)
+
+
+@app.post("/note")
+def set_note(req: NoteReq, x_api_token: str = Header(default="")):
+    _auth(x_api_token)
+    note = (req.note or "").strip()[:2000] or None
+    out = {"ok": True, "inflight": False, "saved": False}
+    if req.runId in RUNS:  # in-flight run (server kickoff -> note popup); persisted at save_run
+        RUNS[req.runId]["note"] = note
+        out["inflight"] = True
+        sid = RUNS[req.runId].get("runSaved")  # if it already finished, patch the saved copy too
+        if sid:
+            out["saved"] = _set_saved_note(RUNS[req.runId].get("datasetId"), sid, note)
+    elif req.dataset:  # editing an already-saved run from the list
+        out["saved"] = _set_saved_note(req.dataset, req.runId, note)
+        if not out["saved"]:
+            raise HTTPException(status_code=404, detail="no such saved run")
+    else:
+        raise HTTPException(status_code=400, detail="provide dataset for a saved run")
+    return out
 
 
 # --- timelapse GIF capture (headless browser films the in-browser AutoPilot) ---

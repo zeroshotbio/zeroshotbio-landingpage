@@ -49,6 +49,11 @@ export async function POST(req: NextRequest) {
       const r = await fetch(`${URL_BASE}/capture/${encodeURIComponent(String(body?.captureId || ""))}`, { headers });
       return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
     }
+    // attach/edit a free-text note on a run (in-flight by runId, or a saved run by runId+dataset)
+    if (body?.action === "setNote") {
+      const r = await fetch(`${URL_BASE}/note`, { method: "POST", headers, body: JSON.stringify({ runId: String(body?.runId || ""), note: typeof body?.note === "string" ? body.note : "", dataset: body?.dataset ? String(body.dataset) : undefined }) });
+      return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
+    }
     return NextResponse.json({ error: "bad_action" }, { status: 400 });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
