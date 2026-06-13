@@ -40,19 +40,24 @@ adata.X = adata.X.tocsr() if sp.issparse(adata.X) else sp.csr_matrix(adata.X)
 assert np.all(adata.X.data == np.round(adata.X.data)), "X must be raw counts"
 n_full = adata.n_obs
 
-# ENSDARG -> symbol (only ENSDARG-form var_names map; already-symbol names stay as-is).
-# MiniFin's ENSDARG var_names are lowercase while the map's ensembl_id is uppercase,
-# so fold case for the lookup (already-symbol names won't match the ENSDARG index -> kept).
+# SYMBOL RE-MAP: MiniFin's var_names are the Parse/Trailmaker annotation (40% off the
+# ZFIN/Ensembl namespace — aliases like nherf1=slc9a3r1a). Map EVERY gene through its
+# ENSDARG id (var["id"]) -> the shared ensdarg_symbol_map symbol that MegaFin/ZSCAPE use,
+# falling back to the original var_name only if the ENSDARG isn't in the map. No re-cluster.
 m = pd.read_csv(GENE_MAP)
 m["ensembl_id"] = m["ensembl_id"].astype(str).str.upper()
 m = m.set_index("ensembl_id")
-sym_map = m["symbol"].reindex(adata.var_names.astype(str).str.upper())
+ens_ids = adata.var["id"].astype(str).str.upper()
+sym_map = m["symbol"].reindex(ens_ids)
 genes = np.array([s if isinstance(s, str) and s.strip() and s != "nan" else g
                   for s, g in zip(sym_map.values, adata.var_names)])
-n_ens = int(sum(1 for g in adata.var_names if str(g).upper().startswith("ENSDARG")))
-n_mapped = int(sum(1 for s, g in zip(sym_map.values, adata.var_names)
-                   if str(g).upper().startswith("ENSDARG") and isinstance(s, str) and s.strip() and s != "nan"))
-log(f"symbol map: {n_mapped}/{n_ens} ENSDARG-form var_names mapped to symbols")
+n_mapped = int(sum(1 for s in sym_map.values if isinstance(s, str) and s.strip() and s != "nan"))
+log(f"symbol re-map: {n_mapped}/{adata.n_vars} genes mapped to shared ZFIN/Ensembl symbol via ENSDARG id")
+# emit a var_name -> canonical map for the live :5007 service (so its co-expression uses
+# the same tokens as the displayed assets). Columns named for the service's defaults.
+pd.DataFrame({"ensembl_id": list(adata.var_names), "symbol": [str(g) for g in genes]}).to_csv(
+    "/data/scratch/bench/minifin_canonical_map.csv", index=False)
+log("wrote /data/scratch/bench/minifin_canonical_map.csv (var_name -> canonical) for :5007")
 
 # clusters + UMAP from the de-novo sidecar (joined on cell_id == obs_names)
 col = f"leiden_{ARGS.resolution}"
