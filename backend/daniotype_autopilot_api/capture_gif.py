@@ -142,7 +142,14 @@ def main():
     try:
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True, args=["--no-sandbox", "--disable-dev-shm-usage", "--force-color-profile=srgb"])
-            page = browser.new_page(viewport={"width": a.width, "height": a.height}, device_scale_factor=a.scale)
+            # The deployed wizard + its asset/agent routes are Basic-Auth gated; without
+            # credentials the page and atlas fetch 401, so the in-browser autopilot never
+            # leaves "loading" and nothing gets labelled or filmed. Authenticate with the
+            # same shared password the worker uses (inherited via the parent process env).
+            _pw = os.environ.get("KASPEROV_BASIC_PASSWORD", "")
+            _cred = {"username": "autopilot", "password": _pw} if _pw else None
+            page = browser.new_page(viewport={"width": a.width, "height": a.height},
+                                    device_scale_factor=a.scale, http_credentials=_cred)
             page.on("dialog", lambda d: d.dismiss())  # never block on a confirm()
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             page.wait_for_timeout(2500)
