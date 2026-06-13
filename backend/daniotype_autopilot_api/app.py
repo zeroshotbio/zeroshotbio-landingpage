@@ -537,9 +537,11 @@ def _run(run_id, dataset_id, model, base):
             try:
                 label, conv = run_one_cluster(base, dataset_id, model, c, usage)
                 c["confidence"] = get_confidence(base, dataset_id, model, c, conv, usage)
+                c["transcript"] = conv  # FULL per-cluster conversation (proposers/archivist/reason/dispatch)
             except Exception as e:  # noqa: BLE001
                 label = "(error — skipped)"
                 c["confidence"] = None
+                c["transcript"] = c.get("transcript") or []
                 st.setdefault("errors", []).append(f"{c['id']}: {e}")
             c["finalLabel"] = label
         st.update(done=len(clusters))
@@ -565,9 +567,26 @@ def _run(run_id, dataset_id, model, base):
             "nValidated": len(labelled),
             "source": "server",
             "note": st.get("note") or None,  # optional free-text note attached after kickoff
+            # run settings/parameters for future reproducibility ("what went into this run")
+            "provenance": {
+                "pipeline": "full-unified",  # K=2 Researcher proposers -> Archivist verification pass -> Reasoner rounds w/ dispatch
+                "proposers": 2,
+                "autoMaxRounds": AUTO_MAX_ROUNDS,
+                "archivistPass": True,
+                "dispatch": True,
+                "citeDiscipline": True,
+                "reasoningEffort": "low",
+                "scoring": "driver/v2",  # driver-object scored, abstention-credited, high-purity sub headline
+                "model": model,
+                "atlasSource": atlas.get("source"),  # encodes the clustering recipe/partition
+                "nClusters": len(clusters),
+                "statsService": "live :5007 p-values/co-expression" if dataset_id in ("minifin", "megafin", "zscape") else "static only",
+                "baseUrl": base,
+                "startedAt": st.get("startedAt"),
+            },
             "clusters": [
                 {"id": c["id"], "label": c["label"], "validated": True, "finalLabel": c.get("finalLabel"),
-                 "confidence": c.get("confidence"), "addedMarkers": [], "transcript": []}
+                 "confidence": c.get("confidence"), "addedMarkers": [], "transcript": c.get("transcript") or []}
                 for c in clusters
             ],
             "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts,
