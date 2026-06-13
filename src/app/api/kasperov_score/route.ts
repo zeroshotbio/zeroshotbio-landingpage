@@ -39,8 +39,9 @@ const INSTRUCTIONS = [
   "For EACH tier, decide whether OUR PREDICTION at that tier denotes the same biological entity as the REFERENCE at that tier:",
   "- Accept synonyms, ontology parent/child equivalence, and lineage equivalence (e.g. our 'epidermis' vs reference 'Epidermis' → match; our 'ectoderm' vs reference 'ectoderm' → match).",
   "- IGNORE arbitrary numeric suffixes on reference sub labels (e.g. 'periderm 10', 'mature fast muscle 6' — treat as 'periderm', 'mature fast muscle'); match on the biological stem, not the number.",
-  "- Judge each tier on ITS OWN prediction vs ITS OWN reference — do not borrow a coarser tier's correctness for a finer one.",
-  "- If our prediction at a tier is wrong / a different lineage, match=false.",
+  "- ROLL-UP: our prediction is often a SINGLE specific cell-type identity repeated across all four tiers (it is our one final call). CREDIT it at a COARSER tier when that identity IS, or is a subtype / lineage member of, the reference category at that tier — e.g. our 'hepatocyte' vs reference germ_layer 'endoderm' → match; 'chondrocyte' vs 'mesoderm' → match; 'basal epidermal keratinocyte' vs 'ectoderm' → match; 'spinal interneuron' vs 'ectoderm' → match. Do NOT mark a correct fine identity wrong at a coarse tier merely because it names a cell type rather than the germ-layer / tissue word.",
+  "- BUT do NOT roll DOWN: if our prediction is COARSER than the reference at a finer tier (e.g. we only said 'ectoderm' but the reference cell_type_sub is 'periderm 10'), that is match=false at the finer tier — we did not resolve that deep.",
+  "- If our prediction is a genuinely DIFFERENT lineage from the reference at a tier, match=false.",
   "- If our prediction is empty or a reference tier label is missing/empty, match=false with note 'missing'.",
   "Each tier verdict carries a note of 10 words or fewer justifying the call. Return one result object per input cluster, in the same order, keyed by the given id.",
 ].join("\n");
