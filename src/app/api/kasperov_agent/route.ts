@@ -26,6 +26,7 @@ export const maxDuration = 300;
 // computed down markers + dataset cell counts per cluster). Bundled at build.
 import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
 import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
+import MEGAFIN_ARCHIVIST from "./megafin_archivist.json";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
 // One agent route serves every dataset; the body's `dataset` id selects which
@@ -34,6 +35,7 @@ type DatasetCfg = { id: string; name: string; base: string; archivist: any };
 const DATASET_CFG: Record<string, DatasetCfg> = {
   minifin: { id: "minifin", name: "MiniFin", base: "/daniotype_kasperov/archivist", archivist: MINIFIN_ARCHIVIST as any },
   zscape: { id: "zscape", name: "ZSCAPE", base: "/daniotype_kasperov/datasets/zscape/archivist", archivist: ZSCAPE_ARCHIVIST as any },
+  megafin: { id: "megafin", name: "MegaFin", base: "/daniotype_kasperov/datasets/megafin/archivist", archivist: MEGAFIN_ARCHIVIST as any },
 };
 const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
