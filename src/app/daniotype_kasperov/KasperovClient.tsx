@@ -39,7 +39,7 @@ const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
 // ---------------------------------------------------------------------------
 // Dataset registry — each entry points the same wizard at a different atlas.
 // ZSCAPE / CHEMFISH carry published cell-type labels (ground truth) we score
-// our de-novo names against; MiniFin has none; MegaFin isn't sequenced yet.
+// our de-novo names against; MiniFin and MegaFin Part 1 have no published labels.
 // ---------------------------------------------------------------------------
 type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin";
 interface DatasetDef {
@@ -92,7 +92,7 @@ const DATASETS: DatasetDef[] = [
   },
   {
     id: "megafin",
-    name: "MegaFin",
+    name: "MegaFin Part 1",
     tagline: "Parse Evercode · 48 hpf · 540.9k cells · 77 Leiden clusters",
     blurb:
       "MegaFin Part 1 — our large-scale drug-screen atlas (93 samples, 48 hpf TuWT whole cells). Parse-processed object, re-clustered at Leiden res 3.0 (77 cell-type-level clusters) on its Harmony embedding. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional partition — to be regenerated on the STARsolo rebuild with a de-novo + LOKO pipeline.",

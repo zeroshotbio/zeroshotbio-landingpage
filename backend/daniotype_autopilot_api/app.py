@@ -345,20 +345,16 @@ def score_clusters(base, dataset_id, model, labelled, gt, usage):
     return verdicts, agg
 
 
-DATA_URL = {
-    "minifin": "/daniotype_kasperov/minifin_umap.json",
-}
-GT_URL = {}
-
-
+# Wizard data is served from the auth-gated asset route (moved out of public/).
 def data_url(ds):
-    return DATA_URL.get(ds, f"/daniotype_kasperov/datasets/{ds}/umap.json")
+    return f"/api/kasperov_asset/{ds}/umap.json"
 
 
 def gt_url(ds):
-    if ds == "minifin":
+    # datasets without published labels (no groundtruth.json)
+    if ds in ("minifin", "megafin"):
         return None
-    return f"/daniotype_kasperov/datasets/{ds}/groundtruth.json"
+    return f"/api/kasperov_asset/{ds}/groundtruth.json"
 
 
 def _run(run_id, dataset_id, model, base):
@@ -366,14 +362,14 @@ def _run(run_id, dataset_id, model, base):
     usage = {}
     try:
         st.update(phase="loading", message="loading atlas")
-        atlas = requests.get(f"{base}{data_url(dataset_id)}", timeout=60).json()
+        atlas = requests.get(f"{base}{data_url(dataset_id)}", headers=_hdrs(), timeout=60).json()
         clusters = [{"id": c["id"], "label": c["label"], "degsUp": c.get("degsUp", []),
                      "markers": c.get("markers", []), "nCells": c.get("nCells")} for c in atlas["clusters"]]
         gt = None
         gu = gt_url(dataset_id)
         if gu:
             try:
-                gt = requests.get(f"{base}{gu}", timeout=60).json().get("clusters")
+                gt = requests.get(f"{base}{gu}", headers=_hdrs(), timeout=60).json().get("clusters")
             except Exception:
                 gt = None
 

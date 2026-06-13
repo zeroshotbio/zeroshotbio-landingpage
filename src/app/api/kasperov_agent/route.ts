@@ -40,7 +40,7 @@ type DatasetCfg = { id: string; name: string; base: string; dataDir: string; arc
 const DATASET_CFG: Record<string, DatasetCfg> = {
   minifin: { id: "minifin", name: "MiniFin", base: "/api/kasperov_asset/minifin/archivist", dataDir: "minifin", archivist: MINIFIN_ARCHIVIST as any },
   zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
-  megafin: { id: "megafin", name: "MegaFin", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_ARCHIVIST as any },
+  megafin: { id: "megafin", name: "MegaFin Part 1", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_ARCHIVIST as any },
 };
 const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
 
