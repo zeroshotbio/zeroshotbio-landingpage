@@ -80,8 +80,10 @@ def _symbols(var_names, cfg) -> np.ndarray:
     m = {}
     with open(smap, newline="") as f:
         for row in csv.DictReader(f):
-            m[str(row[cfg.get("map_id_col", "ensembl_id")])] = str(row[cfg.get("map_sym_col", "symbol")])
-    return np.array([str(m.get(str(g), g)).lower() for g in var_names])
+            # case-fold the ENSDARG key: MiniFin var_names are lowercase ensdarg,
+            # MegaFin's are uppercase ENSDARG, the map's ids are uppercase.
+            m[str(row[cfg.get("map_id_col", "ensembl_id")]).upper()] = str(row[cfg.get("map_sym_col", "symbol")])
+    return np.array([str(m.get(str(g).upper(), g)).lower() for g in var_names])
 
 
 def _load(ds: str) -> dict:

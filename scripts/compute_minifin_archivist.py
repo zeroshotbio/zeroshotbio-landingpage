@@ -1,16 +1,20 @@
 #!/usr/bin/env python3
-"""Build the richer archivist dataset the Archivist personality queries.
+"""DEPRECATED (2026-06-13) — superseded by build_minifin_asset.py.
 
-For every Leiden cluster:
-  - up   : all split-pipe one-vs-rest up markers (from cluster_diff_exp.csv)
-  - down : top down-regulated genes computed from the h5ad (one-vs-rest, most
-           negative log2FC among genes broadly expressed outside the cluster)
-  - nCells + dataset-wide cell count
+MiniFin is now on a DE-NOVO Harmony+Leiden partition (method-parity with MegaFin),
+not Parse's vendor split-pipe clusters. This script reads Parse's cluster_diff_exp.csv /
+cluster_assignment.csv and writes the stale public/ path. build_minifin_asset.py now
+recomputes ALL markers (up + down + full profiles + gene_matrix) one-vs-rest from the
+h5ad on the de-novo labels, applies the ENSDARG->symbol map, and writes daniotype_data/.
+Use instead:
+    python build_minifin_asset.py --resolution 1.0
+Kept for historical reference only; do not run.
 
-Outputs:
-  - src/app/api/kasperov_agent/minifin_archivist.json  (server-side, full)
-  - merges top-8 down markers into public/daniotype_kasperov/minifin_umap.json
+--- original docstring ---
+Build the richer archivist dataset the Archivist personality queries (up from split-pipe
+csv, down recomputed from h5ad). Outputs minifin_archivist.json + merges down markers.
 """
+import sys; sys.exit("DEPRECATED: use build_minifin_asset.py (see header)")
 import csv, json, os
 from collections import defaultdict
 import numpy as np

@@ -1,12 +1,18 @@
 #!/usr/bin/env python3
-"""Extract a compact real-UMAP world-map asset for the daniotype_kasperov wizard.
+"""DEPRECATED (2026-06-13) — superseded by build_minifin_asset.py.
 
-Reads the MiniFin split-pipe report (per-cell UMAP coords + Leiden cluster, and
-per-cluster differential expression) and emits a small JSON the page loads to
-draw the actual atlas instead of synthetic blobs.
+MiniFin is now on a DE-NOVO Harmony+Leiden partition (method-parity with MegaFin),
+not Parse's vendor split-pipe clusters. This script reads Parse's cluster_assignment.csv
+and writes the stale public/ path — both wrong now. Use instead:
+    python cluster_sweep_minifin.py            # de-novo embedding + Leiden sweep
+    python build_minifin_asset.py --resolution 1.0
+Kept for historical reference only; do not run.
 
-Output: public/daniotype_kasperov/minifin_umap.json
+--- original docstring ---
+Extract a compact real-UMAP world-map asset for the daniotype_kasperov wizard.
+Reads the MiniFin split-pipe report; emits public/daniotype_kasperov/minifin_umap.json.
 """
+import sys; sys.exit("DEPRECATED: use cluster_sweep_minifin.py + build_minifin_asset.py (see header)")
 import csv
 import json
 import os

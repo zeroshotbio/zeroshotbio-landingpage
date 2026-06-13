@@ -57,14 +57,14 @@ const DATASETS: DatasetDef[] = [
   {
     id: "minifin",
     name: "MiniFin",
-    tagline: "Parse Evercode · 48 hpf · 94.6k cells · 47 Leiden clusters",
+    tagline: "Parse Evercode · 48 hpf · 94.6k cells · 54 de-novo clusters",
     blurb:
-      "Our in-house zebrafish reference (Parse Biosciences Evercode). No external cell-type labels — the original sandbox for the labelling wizard.",
+      "Our in-house zebrafish reference (Parse Biosciences Evercode, 43 drug samples). Re-clustered de-novo at Leiden res 1.0 (54 clusters) on a Harmony-integrated embedding (HVG→PCA→Harmony on sample) — same method as MegaFin Part 1, replacing Parse's vendor partition. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild.",
     dataUrl: "/api/kasperov_asset/minifin/umap.json",
     archivistBase: "/api/kasperov_asset/minifin/archivist",
     groundTruthUrl: null,
     status: "ready",
-    approxClusters: 47,
+    approxClusters: 54,
   },
   {
     id: "zscape",
