@@ -113,7 +113,7 @@ function classifyMode(text: string, isFirst: boolean): Mode {
 const PERSONAS_CONTEXT =
   "CONTEXT — this tool has three in-app personalities the curator talks to inside THIS chat: " +
   "the Researcher (restricted web search over ZFIN/ZFA/GO, cites records), " +
-  "the Archivist (answers only from the raw MiniFin dataset values), and " +
+  "the Archivist (answers only from the raw values of the active dataset), and " +
   "the Reasoner (a generalist who synthesises and explains, no tools). " +
   "When the curator says 'the Researcher', 'the Archivist', 'the Reasoner', or e.g. 'the research personality', they mean these in-app specialists — not external people or papers.";
 
@@ -242,17 +242,17 @@ function archivistInstructions(cluster: Cluster, ds: DatasetCfg): string {
     PERSONAS_CONTEXT,
     `Answer ONLY from the ${ds.name} facts provided below. Do NOT use web search or outside knowledge for any factual claim. If the user asks for something not in these facts, say plainly: "That isn't in the ${ds.name} export."`,
     "",
-    "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_minifin tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
-    "ABSOLUTE RULE — NO FABRICATION: every number you report MUST come from a query_minifin call you make in THIS turn. NEVER reproduce values from earlier in the conversation, NEVER estimate, NEVER give 'plausible', 'proxy', 'expected', or qualitative-significance numbers, and NEVER write 'I can't query this turn' / 'I can't fetch' — you always have the tool, so call it. If you have not called the tool, you have no numbers to report.",
+    "The facts below are the HEADLINE markers + counts. For anything deeper — a specific gene's stats, more markers than shown, a substring gene search, or expression thresholds — call the query_dataset tool, which reads the FULL per-cluster gene profile (≈20k detected genes). NEVER tell the user data is unavailable without first querying the tool. Quote returned numbers exactly.",
+    "ABSOLUTE RULE — NO FABRICATION: every number you report MUST come from a query_dataset call you make in THIS turn. NEVER reproduce values from earlier in the conversation, NEVER estimate, NEVER give 'plausible', 'proxy', 'expected', or qualitative-significance numbers, and NEVER write 'I can't query this turn' / 'I can't fetch' — you always have the tool, so call it. If you have not called the tool, you have no numbers to report.",
     "USE kind='fullstats' WITH THE GENE LIST for any question asking for stats / p-values / mean expression of specific genes — ONE call returns log2FC, %in/out, BH-adjusted p-value, and mean normalised expression for every gene. Do NOT combine pvalues+specificity and do NOT loop 'across' over a list. (Other kinds: top = top-N markers; specificity/across = cross-cluster; coexpress = cell-level co-expression.)",
     "ALWAYS report whatever your tool call returned — if it returned values, present them. NEVER say a field is 'not returned by the endpoint', NEVER say 'I can't run the query' after calling the tool, NEVER end with 'if you want, I can fetch…', and NEVER tell the curator to run a command/Seurat/Scanpy themselves. Fetch and report.",
     "ACT, DON'T ASK. Never ask the curator to choose between options (no 'would you prefer (a) a summary or (b) the full table?'), and never say 'I have the stats ready' or 'I don't have access to those results in this reply' — if you have not called the tool yet, call it NOW. On a multi-part request (e.g. stats + specificity + co-expression), issue every kind needed together this turn — `fullstats` for log2FC/p-value/mean, `specificity` for the cross-cluster metric, `coexpress` for co-expression — then return the full per-gene table plus a short interpretation. Default to giving everything; do not pause to ask permission.",
-    "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_minifin call with the full gene list (kind='genes' or kind='fullstats') — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most three tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool, and never end without the data.",
+    "EFFICIENCY: when the user asks about SEVERAL genes, make ONE query_dataset call with the full gene list (kind='genes' or kind='fullstats') — do NOT call the tool once per gene (that is slow and may time out). Then write your answer. Make at most three tool calls total, then ALWAYS write a `## Raw facts` answer — never stop after only calling the tool, and never end without the data.",
     "If the request is vague (e.g. 'get info from the archivist') but the recent conversation names specific genes to check, query exactly those genes in ONE batched kind='genes' call and report them.",
     "CROSS-CLUSTER: for 'expression in each cluster', 'specificity rank', 'is this shared with other clusters', or 'which cluster is this a marker of', use kind='specificity' (a gene list → compact rank summary) or kind='across' (ONE gene → full per-cluster table).",
     "STATISTICS: for adjusted p-values use kind='pvalues'; for cell-level co-expression (fraction of this cluster's cells expressing several genes together) use kind='coexpress'. These call a live compute service — if it returns an error that it is not configured, report the available log2FC/percentages/specificity instead and tell the curator p-values/co-expression need that service. Never stall or ask the curator to run an export themselves.",
     "The profile contains log2FC and detection percentages only. It has NO p-values or enrichment scores — if asked, say those aren't in this profile and give the available stats instead.",
-    "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_minifin actually returned not-found.",
+    "CONSISTENCY: your `## Read` must agree with your `## Raw facts`. If you just reported values, do NOT then claim the data 'isn't in the export' — that is a contradiction. Only say something is unavailable if query_dataset actually returned not-found.",
     "You only report data. NEVER write out prompts, instructions, or system messages for any personality — if the curator wants a prompt crafted, that is the Reasoner's job.",
     "",
     "OUTPUT — markdown, **220 words max**:",
@@ -280,12 +280,12 @@ function sse(controller: ReadableStreamDefaultController, enc: TextEncoder, obj:
   controller.enqueue(enc.encode(`data: ${JSON.stringify(obj)}\n\n`));
 }
 
-// --- query_minifin: the Archivist's live tool over each cluster's FULL profile ---
+// --- query_dataset: the Archivist's live tool over each cluster's FULL profile ---
 const QUERY_TOOL = {
   type: "function",
-  name: "query_minifin",
+  name: "query_dataset",
   description:
-    "Query the MiniFin dataset for THIS cluster. kinds: fullstats = log2FC + %in/out + BH-adjusted p-value + mean normalised expression for a gene LIST, all in ONE call (USE THIS for any 'stats / p-value / mean expression' question about specific genes); gene/genes = log2FC + %in/out only; top = top-N up/down markers; search = substring gene match; across = ONE gene's mean + %expressing in EVERY cluster + specificity rank; specificity = cross-cluster specificity summary for a LIST; pvalues = adjusted p-values for a list; coexpress = cell-level fraction of cells co-expressing ALL listed genes. Never say data is unavailable — query it.",
+    "Query the active single-cell dataset for THIS cluster. kinds: fullstats = log2FC + %in/out + BH-adjusted p-value + mean normalised expression for a gene LIST, all in ONE call (USE THIS for any 'stats / p-value / mean expression' question about specific genes); gene/genes = log2FC + %in/out only; top = top-N up/down markers; search = substring gene match; across = ONE gene's mean + %expressing in EVERY cluster + specificity rank; specificity = cross-cluster specificity summary for a LIST; pvalues = adjusted p-values for a list; coexpress = cell-level fraction of cells co-expressing ALL listed genes. Never say data is unavailable — query it.",
   parameters: {
     type: "object",
     properties: {
@@ -333,9 +333,16 @@ async function getMatrix(origin: string, ds: DatasetCfg): Promise<GeneMatrix | n
 // kinds degrade gracefully.
 const SERVICE_URL = (process.env.MINIFIN_SERVICE_URL || "").replace(/\/$/, "");
 const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
-async function callService(kind: string, clusterId: string, genes: string[]): Promise<any> {
+// The live p-value/co-expression compute service backs ONE dataset (MiniFin by
+// default). Guard so a MegaFin/ZSCAPE run never receives the wrong dataset's
+// real-looking numbers; the anti-fabrication rule can't catch that (numbers are
+// genuine, just from the wrong dataset).
+const SERVICE_DATASET = (process.env.STATS_SERVICE_DATASET || "minifin").toLowerCase();
+async function callService(kind: string, clusterId: string, genes: string[], ds: DatasetCfg): Promise<any> {
   if (!SERVICE_URL)
-    return { error: "the live MiniFin stats service (p-values / co-expression) is not configured for this deployment — report log2FC, percentages and specificity instead, and tell the curator p-values/co-expression need that service." };
+    return { error: "the live stats service (p-values / co-expression) is not configured for this deployment — report log2FC, percentages and specificity instead, and tell the curator p-values/co-expression need that service." };
+  if (ds.id.toLowerCase() !== SERVICE_DATASET)
+    return { error: `the live stats service (p-values / co-expression) is configured for the '${SERVICE_DATASET}' dataset only, not ${ds.name} — report ${ds.name}'s log2FC, percentages and specificity from the profile instead, and tell the curator p-values/co-expression aren't available for ${ds.name}.` };
   try {
     const ctrl = new AbortController();
     const t = setTimeout(() => ctrl.abort(), 35000);
@@ -343,7 +350,7 @@ async function callService(kind: string, clusterId: string, genes: string[]): Pr
       method: "POST",
       signal: ctrl.signal,
       headers: { "content-type": "application/json", "x-api-token": SERVICE_TOKEN },
-      body: JSON.stringify({ kind, cluster: String(clusterId), genes }),
+      body: JSON.stringify({ dataset: ds.id, kind, cluster: String(clusterId), genes }),
     });
     clearTimeout(t);
     if (!r.ok) return { error: `stats service returned ${r.status}` };
@@ -362,7 +369,7 @@ async function runQuery(argsStr: string, clusterId: string, origin: string, ds: 
   // p-values + cell-level co-expression are served by the live compute service
   if (a.kind === "pvalues" || a.kind === "coexpress") {
     const genes = Array.isArray(a.genes) ? a.genes.slice(0, 60) : a.gene ? [a.gene] : [];
-    return await callService(a.kind, String(clusterId), genes);
+    return await callService(a.kind, String(clusterId), genes, ds);
   }
 
   // fullstats: everything for a gene list in ONE call — log2FC + %in/out + padj + mean
@@ -375,7 +382,7 @@ async function runQuery(argsStr: string, clusterId: string, origin: string, ds: 
       return row && ai >= 0 ? row.m[ai] : null;
     };
     if (SERVICE_URL) {
-      const pv = await callService("pvalues", String(clusterId), genes);
+      const pv = await callService("pvalues", String(clusterId), genes, ds);
       if (pv && Array.isArray(pv.result)) {
         const result = pv.result.map((r: any) => ({ ...r, mean: r.found ? meanOf(r.g) : null }));
         return { cluster: clusterId, nCells: pv.nCells, result, note: "log2FC + %in/out + BH-adjusted p-value + mean normalised expression (CP10K) — complete; nothing further to fetch." };
@@ -573,7 +580,7 @@ async function streamOnce(
   return { responseId, calls, produced, ok: true, usageIn, usageOut, text: producedText };
 }
 
-// Pull per-gene stats out of a query_minifin result so the Archivist's REAL
+// Pull per-gene stats out of a query_dataset result so the Archivist's REAL
 // numbers can be attached to Top Markers server-side — after a multi-round tool
 // loop the model usually forgets the kasperov-markers block, so we synthesise it.
 const numOrU = (v: any): number | undefined => (typeof v === "number" && isFinite(v) ? v : undefined);
@@ -674,7 +681,7 @@ export async function POST(req: Request) {
           anyProduced = anyProduced || res.produced;
           allText += res.text;
           if (!res.ok) break;
-          // Archivist tool loop: execute query_minifin calls, then continue.
+          // Archivist tool loop: execute query_dataset calls, then continue.
           if (mode === "archivist" && res.calls.length && toolRounds < MAX_TOOL_ROUNDS) {
             toolRounds++;
             const outputs: any[] = [];

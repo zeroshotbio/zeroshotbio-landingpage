@@ -13,7 +13,16 @@ Outputs:
   src/app/api/kasperov_agent/megafin_archivist.json
 No groundtruth.json (MegaFin has no independent published labels).
 """
-import json, os, numpy as np, pandas as pd, scipy.sparse as sp, anndata as ad
+import json, os, argparse, numpy as np, pandas as pd, scipy.sparse as sp, anndata as ad
+
+ap = argparse.ArgumentParser()
+ap.add_argument("--resolution", type=float, default=None,
+                help="Leiden resolution on the Parse Harmony embedding (X_harmony). "
+                     "Default None = use the Parse seurat_clusters (res 0.8) as-is. "
+                     "Carries to the de-novo rebuild: set e.g. --resolution 2.0 for finer cell-type-level clusters.")
+ap.add_argument("--labels_csv", default="/scratch/bench/megafin_leiden_labels.csv",
+                help="optional sidecar with precomputed leiden_<res> columns (from cluster_sweep_megafin.py)")
+ARGS = ap.parse_args()
 
 H5AD = "/scratch/bench/parse_megafin1.h5ad"
 GENE_MAP = "/scratch/bench/characterization/ensdarg_symbol_map.csv"  # ensembl_id,symbol,...
@@ -36,11 +45,28 @@ m = pd.read_csv(GENE_MAP).set_index("ensembl_id")
 sym_map = m["symbol"].reindex(adata.var_names.astype(str))
 genes = np.array([s if isinstance(s,str) and s.strip() and s!="nan" else g
                   for s,g in zip(sym_map.values, adata.var_names)])
-# clusters: Parse seurat_clusters "Cluster N" -> id "N"
-cl_raw = adata.obs["seurat_clusters"].astype(str).str.replace("Cluster ","",regex=False).values
+# clusters: either Parse seurat_clusters (res 0.8) or de-novo Leiden at --resolution
+if ARGS.resolution is None:
+    cl_raw = adata.obs["seurat_clusters"].astype(str).str.replace("Cluster ","",regex=False).values
+    cluster_src = "Parse/Trailmaker Leiden res 0.8"
+else:
+    R = ARGS.resolution; col = f"leiden_{R}"; used = None
+    if os.path.exists(ARGS.labels_csv):
+        lab = pd.read_csv(ARGS.labels_csv)
+        if col in lab.columns and len(lab) == adata.n_obs:
+            s = lab.set_index("cell_id")[col].reindex(adata.obs_names)
+            if s.notna().all():
+                cl_raw = s.astype(int).astype(str).values; used = f"sidecar:{os.path.basename(ARGS.labels_csv)}"
+    if used is None:
+        import scanpy as sc
+        log(f"computing neighbors on X_harmony + leiden(res={R})…")
+        sc.pp.neighbors(adata, use_rep="X_harmony", n_neighbors=15, random_state=SEED)
+        sc.tl.leiden(adata, resolution=R, key_added=col, flavor="igraph", n_iterations=2, directed=False, random_state=SEED)
+        cl_raw = adata.obs[col].astype(str).values; used = "computed"
+    cluster_src = f"de-novo Leiden res {R} on Parse Harmony embedding ({used})"
 clusters = sorted(set(cl_raw), key=lambda s:int(s))
 cidx = {c:k for k,c in enumerate(clusters)}
-log("clusters:", len(clusters))
+log("cluster source:", cluster_src, "->", len(clusters), "clusters")
 ux, uy = adata.obsm["X_umap"][:,0], adata.obsm["X_umap"][:,1]
 
 # ---- vectorized per-cluster mean/pct/l2fc on CP10k-normalized counts ----
@@ -88,7 +114,7 @@ for k,c in enumerate(clusters):
 _r.shuffle(points)
 
 os.makedirs(PROFILE_DIR, exist_ok=True)
-umap={"source":"MegaFin Part 1 — Parse/Trailmaker processed (Leiden res 0.8, 48 hpf TuWT, 93 drug samples)",
+umap={"source":f"MegaFin Part 1 — 48 hpf TuWT, 93 drug samples — {cluster_src}",
       "totalCells":int(N),"fullDatasetCells":int(n_full),"nClusters":len(clusters),
       "clusters":records,"points":points}
 json.dump(umap, open(os.path.join(OUT_DIR,"umap.json"),"w"), separators=(",",":"))

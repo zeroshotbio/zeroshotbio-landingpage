@@ -93,14 +93,14 @@ const DATASETS: DatasetDef[] = [
   {
     id: "megafin",
     name: "MegaFin",
-    tagline: "Parse Evercode · 48 hpf · 540.9k cells · 37 Leiden clusters",
+    tagline: "Parse Evercode · 48 hpf · 540.9k cells · 77 Leiden clusters",
     blurb:
-      "MegaFin Part 1 — our large-scale drug-screen atlas (93 samples, 48 hpf TuWT whole cells). Parse/Trailmaker-processed object (Leiden res 0.8). No external cell-type labels, so the wizard names de-novo clusters without a ground-truth score.",
+      "MegaFin Part 1 — our large-scale drug-screen atlas (93 samples, 48 hpf TuWT whole cells). Parse-processed object, re-clustered at Leiden res 3.0 (77 cell-type-level clusters) on its Harmony embedding. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional partition — to be regenerated on the STARsolo rebuild with a de-novo + LOKO pipeline.",
     dataUrl: "/daniotype_kasperov/datasets/megafin/umap.json",
     archivistBase: "/daniotype_kasperov/datasets/megafin/archivist",
     groundTruthUrl: null,
     status: "ready",
-    approxClusters: 37,
+    approxClusters: 77,
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
