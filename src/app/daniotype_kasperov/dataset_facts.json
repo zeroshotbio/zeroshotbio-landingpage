@@ -309,7 +309,7 @@
  },
  "megafin": {
   "id": "megafin",
-  "platform": "Parse Evercode (combinatorial split-pool)",
+  "platform": "Parse Evercode \u00b7 manual .h5ad (Lawson)",
   "lab": "Zeroshot (internal)",
   "year": 2026,
   "namespace": "Lawson LL \u2192 ZFIN canonical",
@@ -363,9 +363,8 @@
   ],
   "chosenRes": 2.0,
   "selectionNote": null,
-  "noGtNote": "Internal drug-screen atlas \u2014 no published labels; intuition-building, not a benchmark.",
+  "noGtNote": "Internal drug-screen atlas (Manual build) \u2014 no published labels; intuition-building, not a benchmark.",
   "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos",
-  "supersedes": "interim 77-cluster Parse MegaFin",
   "coherence": 0.929,
   "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) \u2014 this 93-condition drug screen needs the Parse embedding; the standard HVG\u2192PCA\u2192Harmony re-embed was tested and rejected (coherence collapsed to ~0.67).",
   "canonicalPct": 95.6,
@@ -424,5 +423,48 @@
    "cells_moved": 29,
    "renumbered_to_contiguous": true
   }
+ },
+ "megafin_parse": {
+  "id": "megafin_parse",
+  "platform": "Parse Evercode (combinatorial split-pool)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "ENSDARG \u2192 ZFIN canonical",
+  "role": "internal",
+  "resLabel": "3.0",
+  "cells": 540946,
+  "clusters": 77,
+  "fullCells": 540946,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 39,
+    "coherence": 1.0,
+    "minSize": 1184,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 57,
+    "coherence": 1.0,
+    "minSize": 200,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 77,
+    "coherence": 0.974,
+    "minSize": 203,
+    "under50": 0,
+    "chosen": true
+   }
+  ],
+  "chosenRes": 3.0,
+  "selectionNote": null,
+  "noGtNote": "Internal drug-screen atlas (Parse pipeline build) \u2014 no published labels; intuition-building, not a benchmark.",
+  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos"
  }
 }

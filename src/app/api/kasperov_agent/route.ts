@@ -30,7 +30,8 @@ export const maxDuration = 300;
 // computed down markers + dataset cell counts per cluster). Bundled at build.
 import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
 import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
-import MEGAFIN_ARCHIVIST from "./megafin_rebuild_archivist.json";
+import MEGAFIN_ARCHIVIST from "./megafin_rebuild_archivist.json";       // Manual (Lawson) rebuild — id "megafin"
+import MEGAFIN_PARSE_ARCHIVIST from "./megafin_archivist.json";         // Parse interim — id "megafin_parse"
 import CHEMFISH_ARCHIVIST from "./chemfish_archivist.json";
 import DANIOCELL_ARCHIVIST from "./daniocell_archivist.json";
 // NATIVE-schema re-base (staged): units = authors' finest native groups, per-group DEGs.
@@ -47,7 +48,8 @@ type DatasetCfg = { id: string; name: string; base: string; dataDir: string; arc
 const DATASET_CFG: Record<string, DatasetCfg> = {
   minifin: { id: "minifin", name: "MiniFin", base: "/api/kasperov_asset/minifin/archivist", dataDir: "minifin", archivist: MINIFIN_ARCHIVIST as any },
   zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
-  megafin: { id: "megafin", name: "MegaFin Part 1", base: "/api/kasperov_asset/megafin_rebuild/archivist", dataDir: "megafin_rebuild", archivist: MEGAFIN_ARCHIVIST as any },
+  megafin: { id: "megafin", name: "Manual MegaFin Part 1", base: "/api/kasperov_asset/megafin_rebuild/archivist", dataDir: "megafin_rebuild", archivist: MEGAFIN_ARCHIVIST as any },
+  megafin_parse: { id: "megafin_parse", name: "Parse MegaFin Part 1", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_PARSE_ARCHIVIST as any },
   chemfish: { id: "chemfish", name: "ChemFish", base: "/api/kasperov_asset/chemfish/archivist", dataDir: "chemfish", archivist: CHEMFISH_ARCHIVIST as any },
   daniocell: { id: "daniocell", name: "DanioCell", base: "/api/kasperov_asset/daniocell/archivist", dataDir: "daniocell", archivist: DANIOCELL_ARCHIVIST as any },
   // NATIVE-schema re-base (staged benchmark; not surfaced as wizard cards) — native units + native vocab.
@@ -361,7 +363,7 @@ const SERVICE_TOKEN = process.env.MINIFIN_SERVICE_TOKEN || "";
 // real-looking numbers; the anti-fabrication rule can't catch that (numbers are
 // genuine, just from the wrong dataset).
 const STATS_SERVICE_DATASETS = new Set(
-  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin,zscape,chemfish,daniocell,zscape_native,chemfish_native,daniocell_native").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
+  (process.env.STATS_SERVICE_DATASETS || "minifin,megafin,megafin_parse,zscape,chemfish,daniocell,zscape_native,chemfish_native,daniocell_native").toLowerCase().split(",").map((s) => s.trim()).filter(Boolean),
 );
 async function callService(kind: string, clusterId: string, genes: string[], ds: DatasetCfg): Promise<any> {
   if (!SERVICE_URL)

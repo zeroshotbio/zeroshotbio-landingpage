@@ -53,7 +53,7 @@ const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
 // ZSCAPE / CHEMFISH carry published cell-type labels (ground truth) we score
 // our de-novo names against; MiniFin and MegaFin Part 1 have no published labels.
 // ---------------------------------------------------------------------------
-type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin" | "daniocell";
+type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
 interface DatasetDef {
   id: DatasetId;
   name: string;
@@ -127,11 +127,23 @@ const DATASETS: DatasetDef[] = [
     approxClusters: 77,
   },
   {
-    id: "megafin",
-    name: "MegaFin Part 1",
-    tagline: "Parse Evercode · 48 hpf · 537.9k cells · 84 de-novo clusters",
+    id: "megafin_parse",
+    name: "Parse MegaFin Part 1",
+    tagline: "Parse Evercode pipeline · 48 hpf · 540.9k cells · 77 Leiden clusters",
     blurb:
-      "MegaFin Part 1 — our large-scale drug-screen atlas (46 drugs × 2 doses + 4 controls, 48 hpf TuWT whole embryos). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding of the Manual/Lawson denoised object — supersedes the interim 77-cluster Parse partition. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; MegaFin is honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
+      "MegaFin Part 1 — our large-scale drug-screen atlas (46 drugs × 2 doses + 4 controls, 48 hpf TuWT whole embryos), as processed by the Parse/Trailmaker pipeline (ENSDARG namespace). De-novo Leiden res 3.0 (77 clusters) on the Parse Harmony embedding. No external cell-type labels — internal, intuition-building. Compare against the Manual build of the same library.",
+    dataUrl: `${ASSET_BASE}/megafin/umap.json`,
+    archivistBase: `${ASSET_BASE}/megafin/archivist`,
+    groundTruthUrl: null,
+    status: "ready",
+    approxClusters: 77,
+  },
+  {
+    id: "megafin",
+    name: "Manual MegaFin Part 1",
+    tagline: "Manual .h5ad (Lawson) · 48 hpf · 537.9k cells · 84 de-novo clusters",
+    blurb:
+      "MegaFin Part 1 — the same drug-screen library (46 drugs × 2 doses + 4 controls, 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
     dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
     groundTruthUrl: null,
@@ -731,10 +743,8 @@ export default function KasperovClient() {
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
   if (stage === "model")
-    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage(revealed ? "map" : "intro"); }} onBack={() => setDataset(null)} />;
+    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("map"); }} onBack={() => setDataset(null)} />;
 
-  if (stage === "intro")
-    return <Intro dataset={dataset} meta={meta} onStart={() => setStage("map")} onSwitch={() => setDataset(null)} />;
 
   if (!clusters) {
     return (
@@ -1127,28 +1137,6 @@ function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef
 }
 
 // ---------------------------------------------------------------------------
-function Intro({ onStart, meta, dataset, onSwitch }: { onStart: () => void; meta: AtlasMeta | null; dataset: DatasetDef; onSwitch: () => void }) {
-  return (
-    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 720, padding: "84px 28px" }}>
-        <button onClick={onSwitch} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← All datasets</button>
-        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 42, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.08 }}>Label the atlas, together</h1>
-        <p style={{ fontSize: 18, color: "#555", lineHeight: 1.6, marginTop: 14 }}>
-          Kasparov&apos;s wager: the strongest systems are human–AI hybrids. You fly over the real {dataset.name}
-          {" "}single-cell atlas{meta ? (meta.fullDatasetCells && meta.fullDatasetCells > meta.totalCells ? ` (a ${meta.totalCells.toLocaleString()}-cell sample of the ${meta.fullDatasetCells.toLocaleString()}-cell atlas, ${meta.nClusters} de-novo clusters)` : ` (${meta.totalCells.toLocaleString()} cells, ${meta.nClusters} clusters)`) : ""}, drop into any
-          cluster, and a research agent pulls grounded evidence from the canonical zebrafish resources (ZFIN, ZFA, GO)
-          {" "}for that cluster&apos;s top markers — showing its reasoning and searches live. You decide whether its read is
-          on track: accept it, or dig deeper in chat.
-          {dataset.groundTruthUrl ? " When you finish, score our names against the authors' published labels." : ""}
-        </p>
-        <button onClick={onStart} style={{ marginTop: 28, background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "15px 30px", fontSize: 18, fontWeight: 600, cursor: "pointer" }}>
-          Begin the descent →
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Personalities primer (shown once before the chat) + pixel-art icons
@@ -1405,7 +1393,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         </div>
       )}
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
-        Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>View Leiden clusters →</b> below to begin.
+        Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a cluster to investigate →</b> below to begin.
       </p>
     </div>
   );
@@ -1553,13 +1541,13 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : sampled ? "A representative sample of the atlas" : "The whole dataset"}</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : `How we clustered the ${dataset.name} atlas`}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
             : sampled
-            ? `${clusteredCells.toLocaleString()} cells — a representative random sample of the full ${fullCells!.toLocaleString()}-cell ${dataset.name} atlas, sized so de-novo clustering stays interactive. Each dot is one sampled cell — real UMAP. Reveal the clustering to start.`
-            : `${clusteredCells.toLocaleString()} cells, one dot each — real UMAP. Reveal the clustering to start.`}
+            ? `${clusters.length} de-novo Leiden clusters, colored on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas (real UMAP). Here's how we found them — then choose a cluster to label.`
+            : `${clusters.length} de-novo Leiden clusters, colored — ${clusteredCells.toLocaleString()} cells, one dot each (real UMAP). Here's how we found them — then choose a cluster to label.`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
         <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
@@ -1586,7 +1574,7 @@ function MapStage({
         </div>
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
+          <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
         {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
 
@@ -1598,7 +1586,7 @@ function MapStage({
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
             <button onClick={onReveal} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
-              View Leiden clusters →
+              Choose a cluster to investigate →
             </button>
           ) : (
             <>

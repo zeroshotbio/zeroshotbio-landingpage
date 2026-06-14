@@ -50,13 +50,18 @@ META={
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"2.0",
    "caveat":"Independent lab, ISH-validated populations, cross-platform (10X droplet). A lower score reflects platform/domain shift — harder, not worse labeling. The genuinely independent read.",
    "caveatTone":"independent","sweepFile":f"{SCRATCH}/daniocell_res_sweep.csv","chosenRes":2.0},
- "megafin": {"platform":"Parse Evercode (combinatorial split-pool)","lab":"Zeroshot (internal)","year":2026,
+ "megafin": {"platform":"Parse Evercode · manual .h5ad (Lawson)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"Lawson LL → ZFIN canonical","role":"internal","resLabel":"2.0",
-   "noGtNote":"Internal drug-screen atlas — no published labels; intuition-building, not a benchmark.",
+   "noGtNote":"Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
    "design":"46 drugs × 2 doses (1 µM & 5 µM) + 4 controls · 48 hpf TuWT whole embryos",
-   "supersedes":"interim 77-cluster Parse MegaFin",
    "useUmapDir":"megafin_rebuild",
    "sweepFile":f"{SCRATCH}/megafin_rebuild_res_sweep.csv","chosenRes":2.0},
+ "megafin_parse": {"platform":"Parse Evercode (combinatorial split-pool)","lab":"Zeroshot (internal)","year":2026,
+   "namespace":"ENSDARG → ZFIN canonical","role":"internal","resLabel":"3.0",
+   "noGtNote":"Internal drug-screen atlas (Parse pipeline build) — no published labels; intuition-building, not a benchmark.",
+   "design":"46 drugs × 2 doses (1 µM & 5 µM) + 4 controls · 48 hpf TuWT whole embryos",
+   "useUmapDir":"megafin",
+   "sweepFile":f"{SCRATCH}/megafin_res_sweep.csv","chosenRes":3.0},
 }
 
 facts={}
