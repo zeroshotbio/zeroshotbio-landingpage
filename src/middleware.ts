@@ -11,7 +11,6 @@ export const config = {
     "/daniotype_kasperov",
     "/daniotype_kasperov/:path*",
     "/api/kasperov_agent/:path*",
-    "/api/kasperov_asset/:path*",
     "/api/kasperov_confidence/:path*",
     "/api/kasperov_score/:path*",
     "/api/kasperov_runs/:path*",
