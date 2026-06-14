@@ -18,10 +18,11 @@
 //   {t:"done"}                                    stream complete
 
 import "server-only";
-import { readFile } from "fs/promises";
-import path from "path";
 export const runtime = "nodejs";
-const DATA_DIR = path.join(process.cwd(), "daniotype_data");
+// Wizard assets (profiles + gene matrix) are served statically by nginx from
+// daniotype_data/ — NOT bundled into the Vercel function (that exceeded the 250MB
+// serverless cap). These routes fetch them over HTTP so the bundle stays slim.
+const ASSET_HOST = (process.env.DANIOTYPE_ASSET_BASE || "https://zscape.zeroshot.bio/daniotype_data").replace(/\/$/, "");
 // up to 300s on Vercel Pro (heavy models need it); silently capped at 60s on Hobby.
 export const maxDuration = 300;
 
@@ -29,7 +30,7 @@ export const maxDuration = 300;
 // computed down markers + dataset cell counts per cluster). Bundled at build.
 import MINIFIN_ARCHIVIST from "./minifin_archivist.json";
 import ZSCAPE_ARCHIVIST from "./zscape_archivist.json";
-import MEGAFIN_ARCHIVIST from "./megafin_archivist.json";
+import MEGAFIN_ARCHIVIST from "./megafin_rebuild_archivist.json";
 import CHEMFISH_ARCHIVIST from "./chemfish_archivist.json";
 import DANIOCELL_ARCHIVIST from "./daniocell_archivist.json";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
@@ -42,7 +43,7 @@ type DatasetCfg = { id: string; name: string; base: string; dataDir: string; arc
 const DATASET_CFG: Record<string, DatasetCfg> = {
   minifin: { id: "minifin", name: "MiniFin", base: "/api/kasperov_asset/minifin/archivist", dataDir: "minifin", archivist: MINIFIN_ARCHIVIST as any },
   zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
-  megafin: { id: "megafin", name: "MegaFin Part 1", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_ARCHIVIST as any },
+  megafin: { id: "megafin", name: "MegaFin Part 1", base: "/api/kasperov_asset/megafin_rebuild/archivist", dataDir: "megafin_rebuild", archivist: MEGAFIN_ARCHIVIST as any },
   chemfish: { id: "chemfish", name: "ChemFish", base: "/api/kasperov_asset/chemfish/archivist", dataDir: "chemfish", archivist: CHEMFISH_ARCHIVIST as any },
   daniocell: { id: "daniocell", name: "DanioCell", base: "/api/kasperov_asset/daniocell/archivist", dataDir: "daniocell", archivist: DANIOCELL_ARCHIVIST as any },
 };
@@ -316,10 +317,11 @@ async function getProfile(clusterId: string, _origin: string, ds: DatasetCfg): P
   const key = `${ds.id}:${clusterId}`;
   if (profileCache.has(key)) return profileCache.get(key)!;
   let prof: Profile | null = null;
-  // read off disk (server-side); the gated asset route is for the browser only
+  // fetch from nginx (daniotype_data/ served statically); kept out of the Vercel bundle
   if (/^[A-Za-z0-9._-]+$/.test(clusterId)) {
     try {
-      prof = JSON.parse(await readFile(path.join(DATA_DIR, ds.dataDir, "archivist", `${clusterId}.json`), "utf8")) as Profile;
+      const r = await fetch(`${ASSET_HOST}/${ds.dataDir}/archivist/${clusterId}.json`);
+      if (r.ok) prof = (await r.json()) as Profile;
     } catch {}
   }
   profileCache.set(key, prof);
@@ -333,7 +335,8 @@ async function getMatrix(_origin: string, ds: DatasetCfg): Promise<GeneMatrix | 
   if (matrixCache.has(ds.id)) return matrixCache.get(ds.id)!;
   let mx: GeneMatrix | null = null;
   try {
-    mx = JSON.parse(await readFile(path.join(DATA_DIR, ds.dataDir, "archivist", "gene_matrix.json"), "utf8")) as GeneMatrix;
+    const r = await fetch(`${ASSET_HOST}/${ds.dataDir}/archivist/gene_matrix.json`);
+    if (r.ok) mx = (await r.json()) as GeneMatrix;
   } catch {}
   matrixCache.set(ds.id, mx);
   return mx;

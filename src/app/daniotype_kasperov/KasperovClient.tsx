@@ -4,6 +4,14 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo, type KasperovModel } from "./models";
+import DATASET_FACTS from "./dataset_facts.json";
+
+// Wizard assets are served statically by nginx (daniotype_data/), NOT by the gated Vercel
+// asset route — keeps the Vercel function bundle slim. The browser fetches umap/groundtruth
+// cross-origin (nginx sends CORS for www.zeroshot.bio).
+const ASSET_BASE = "https://zscape.zeroshot.bio/daniotype_data";
+// Rich per-dataset facts generated from the real assets/scorecards/sweeps (scripts/gen_dataset_facts.py)
+const FACTS: Record<string, any> = DATASET_FACTS as any;
 
 const MODEL_KEY = "daniotype_kasperov_model"; // selected model persists globally
 type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
@@ -64,8 +72,8 @@ const DATASETS: DatasetDef[] = [
     tagline: "Saunders et al. · next-gen pipeline — coming soon",
     blurb:
       "ZSCAPE V2 — the next iteration of the ZSCAPE ground-truth benchmark (re-clustering + scoring to be wired up). Stub registered; assets and scoring not built yet. Use ZSCAPE Classic for the current GT pipeline.",
-    dataUrl: "/api/kasperov_asset/zscape_v2/umap.json",
-    archivistBase: "/api/kasperov_asset/zscape_v2/archivist",
+    dataUrl: `${ASSET_BASE}/zscape_v2/umap.json`,
+    archivistBase: `${ASSET_BASE}/zscape_v2/archivist`,
     groundTruthUrl: null,
     status: "soon",
     approxClusters: 0,
@@ -76,8 +84,8 @@ const DATASETS: DatasetDef[] = [
     tagline: "Parse Evercode · 48 hpf · 94.6k cells · 54 de-novo clusters",
     blurb:
       "Our in-house zebrafish reference (Parse Biosciences Evercode, 43 drug samples). Re-clustered de-novo at Leiden res 1.0 (54 clusters) on a Harmony-integrated embedding (HVG→PCA→Harmony on sample) — same method as MegaFin Part 1, replacing Parse's vendor partition. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild.",
-    dataUrl: "/api/kasperov_asset/minifin/umap.json",
-    archivistBase: "/api/kasperov_asset/minifin/archivist",
+    dataUrl: `${ASSET_BASE}/minifin/umap.json`,
+    archivistBase: `${ASSET_BASE}/minifin/archivist`,
     groundTruthUrl: null,
     status: "ready",
     approxClusters: 54,
@@ -88,9 +96,9 @@ const DATASETS: DatasetDef[] = [
     tagline: "Saunders et al. · 3.2M cells · 55 de-novo clusters",
     blurb:
       "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
-    dataUrl: "/api/kasperov_asset/zscape/umap.json",
-    archivistBase: "/api/kasperov_asset/zscape/archivist",
-    groundTruthUrl: "/api/kasperov_asset/zscape/groundtruth.json",
+    dataUrl: `${ASSET_BASE}/zscape/umap.json`,
+    archivistBase: `${ASSET_BASE}/zscape/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/zscape/groundtruth.json`,
     status: "ready",
     approxClusters: 55,
   },
@@ -100,9 +108,9 @@ const DATASETS: DatasetDef[] = [
     tagline: "Barkan et al. · 48 hpf subset · 78 de-novo clusters",
     blurb:
       "Barkan et al. chemical-screen atlas (CHEM10 DSP + CHEM11 BS3). We re-cluster the 48 hpf subset de-novo (HVG→PCA→Harmony on experiment → Leiden res 3.0, 78 clusters) and score against the published labels. GT caveat: ChemFish ships only cell_type + tissue, so the four tiers are projected — cell_type_sub + tissue are native; cell_type_broad is derived (marker-qualifier strip) and germ_layer is an anatomical projection from tissue — not an independent four-tier set.",
-    dataUrl: "/api/kasperov_asset/chemfish/umap.json",
-    archivistBase: "/api/kasperov_asset/chemfish/archivist",
-    groundTruthUrl: "/api/kasperov_asset/chemfish/groundtruth.json",
+    dataUrl: `${ASSET_BASE}/chemfish/umap.json`,
+    archivistBase: `${ASSET_BASE}/chemfish/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/chemfish/groundtruth.json`,
     status: "ready",
     approxClusters: 78,
   },
@@ -112,23 +120,23 @@ const DATASETS: DatasetDef[] = [
     tagline: "Sur et al. (Farrell/NICHD) · 36–72 hpf · 77 de-novo clusters",
     blurb:
       "Independent dense-development atlas (Sur et al., Farrell lab / NICHD). We re-cluster the 36–72 hpf window de-novo (HVG→PCA→Harmony on stage → Leiden res 2.0, 77 clusters) and score against the published labels. Independent-lab CROSS-PLATFORM check: 10X droplet (vs ZSCAPE 10X / ChemFish sci-RNA-seq3 / MiniFin·MegaFin Parse) — a lower score reflects platform/domain shift, not necessarily worse labelling. Strength: DanioCell populations are in-situ-hybridization (ISH) validated. GT tiers: cell_type_sub (clust) + cell_type_broad (tissue.figure) + tissue (tissue.name) are native Farrell labels; germ_layer is an anatomical projection.",
-    dataUrl: "/api/kasperov_asset/daniocell/umap.json",
-    archivistBase: "/api/kasperov_asset/daniocell/archivist",
-    groundTruthUrl: "/api/kasperov_asset/daniocell/groundtruth.json",
+    dataUrl: `${ASSET_BASE}/daniocell/umap.json`,
+    archivistBase: `${ASSET_BASE}/daniocell/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/daniocell/groundtruth.json`,
     status: "ready",
     approxClusters: 77,
   },
   {
     id: "megafin",
     name: "MegaFin Part 1",
-    tagline: "Parse Evercode · 48 hpf · 540.9k cells · 77 Leiden clusters",
+    tagline: "Parse Evercode · 48 hpf · 537.9k cells · 84 de-novo clusters",
     blurb:
-      "MegaFin Part 1 — our large-scale drug-screen atlas (93 samples, 48 hpf TuWT whole cells). Parse-processed object, re-clustered at Leiden res 3.0 (77 cell-type-level clusters) on its Harmony embedding. No external cell-type labels, so the wizard names clusters without a ground-truth score. Provisional partition — to be regenerated on the STARsolo rebuild with a de-novo + LOKO pipeline.",
-    dataUrl: "/api/kasperov_asset/megafin/umap.json",
-    archivistBase: "/api/kasperov_asset/megafin/archivist",
+      "MegaFin Part 1 — our large-scale drug-screen atlas (46 drugs × 2 doses + 4 controls, 48 hpf TuWT whole embryos). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding of the Manual/Lawson denoised object — supersedes the interim 77-cluster Parse partition. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; MegaFin is honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
+    dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`,
+    archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
     groundTruthUrl: null,
     status: "ready",
-    approxClusters: 77,
+    approxClusters: 84,
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
@@ -968,6 +976,15 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
           {DATASETS.map((d) => {
             const ready = d.status === "ready";
+            const f: any = FACTS[d.id];
+            const isGt = f?.role === "gt";
+            const toneColor: Record<string, string> = { baseline: "#15803d", projected: "#b45309", independent: "#7c3aed" };
+            const fmtCells = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n));
+            const ident = f ? [
+              [`${(f.cells as number).toLocaleString()} cells`, `${f.clusters} clusters · res ${f.resLabel}`],
+              [f.platform, `${f.lab}${f.year ? " · " + f.year : ""}`],
+              ["genes", f.namespace],
+            ] : null;
             return (
               <button
                 key={d.id}
@@ -977,30 +994,69 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   textAlign: "left",
                   background: ready ? "#fffdfb" : "#f3f0ec",
                   border: `1px solid ${ready ? "#e5e1dc" : "#e9e5df"}`,
-                  borderTop: `3px solid ${ready ? ACCENT : "#cfcac4"}`,
+                  borderTop: `3px solid ${ready ? (isGt ? "#15803d" : ACCENT) : "#cfcac4"}`,
                   borderRadius: 12,
-                  padding: "18px 18px 20px",
+                  padding: "16px 16px 18px",
                   cursor: ready ? "pointer" : "default",
                   opacity: ready ? 1 : 0.7,
                   color: INK,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 7,
+                  gap: 8,
                   minHeight: 188,
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 19, fontWeight: 700 }}>{d.name}</span>
-                  {!ready && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
-                  {d.groundTruthUrl && (
-                    <span title="Has published cell-type labels to score against" style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "2px 8px" }}>
-                      ✓ ground truth
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
+                  {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
+                  {f && (
+                    <span title={isGt ? "Scored against published cell-type labels" : "No published labels — intuition-building, not a benchmark"} style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>
+                      {isGt ? "✓ GT benchmark" : "internal"}
                     </span>
                   )}
                 </div>
-                <div style={{ fontSize: 12, color: "#888", fontWeight: 600 }}>{d.tagline}</div>
-                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5, marginTop: 2 }}>{d.blurb}</div>
-                {ready && <div style={{ marginTop: "auto", paddingTop: 10, fontSize: 13.5, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
+
+                {ident && (
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 10px", fontSize: 11.5, color: "#555", lineHeight: 1.45 }}>
+                    {ident.map(([a, b], i) => (
+                      <React.Fragment key={i}>
+                        <span style={{ fontWeight: 700, color: "#3f3a34" }}>{a}</span>
+                        <span style={{ color: "#7a746c", textAlign: "right" }}>{b}</span>
+                      </React.Fragment>
+                    ))}
+                  </div>
+                )}
+
+                {isGt && f.scorecard && (
+                  <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
+                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Driver-scored accuracy</div>
+                    {f.scorecard.tiers.map((t: any) => (
+                      <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
+                        <span style={{ width: 64, color: "#6b655d", flexShrink: 0 }}>{t.label.replace("Cell type — ", "")}</span>
+                        <span style={{ flex: 1, height: 6, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}>
+                          <span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: t.pct >= 70 ? "#15803d" : t.pct >= 45 ? "#ca8a04" : "#dc2626", borderRadius: 99 }} />
+                        </span>
+                        <span style={{ width: 34, textAlign: "right", fontWeight: 700, color: "#3f3a34", flexShrink: 0 }}>{t.pct}%</span>
+                      </div>
+                    ))}
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1, fontSize: 11 }}>
+                      <span style={{ fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "1px 7px" }}>abstention precision {f.scorecard.abstentionPrecision}%</span>
+                      <span style={{ color: "#9a948c" }}>{f.scorecard.nAbstain}/{f.clusters} declined</span>
+                    </div>
+                    <div style={{ fontSize: 11, color: toneColor[f.caveatTone] || "#7a746c", lineHeight: 1.45, marginTop: 1 }}>⚠ {f.caveat}</div>
+                  </div>
+                )}
+
+                {f && !isGt && (
+                  <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#6b655d", lineHeight: 1.5 }}>
+                    {f.design && <div><b style={{ color: "#3f3a34" }}>Design:</b> {f.design}</div>}
+                    {f.coherenceNote ? <div style={{ marginTop: 3, color: "#b45309" }}>⚠ {f.coherenceNote}</div> : <div style={{ marginTop: 3 }}>{f.noGtNote}</div>}
+                    {f.supersedes && <div style={{ marginTop: 3, color: "#9a948c", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
+                  </div>
+                )}
+
+                {!f && <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
+                {ready && <div style={{ marginTop: "auto", paddingTop: 8, fontSize: 13, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
               </button>
             );
           })}
@@ -1288,6 +1344,73 @@ async function postRunNote(runId: string, note: string, dataset?: string) {
   } catch {}
 }
 
+// "Show your work": the resolution sweep, selection rule, chosen resolution, and the
+// coherence curve behind this dataset's de-novo partition — shown when the clustering is
+// revealed, before handing off to the three-personality labeling interface.
+function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nClusters: number }) {
+  const f: any = FACTS[datasetId];
+  if (!f) return null;
+  const sweep: any[] | null = f.sweep ?? null;
+  const card: React.CSSProperties = { maxWidth: 720, margin: "20px auto 0", textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
+  const th: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", padding: "2px 8px", textAlign: "right" };
+  const renderSweep = (rows: any[], compact = false) => (
+    <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
+      <thead>
+        <tr>
+          <th style={{ ...th, textAlign: "left" }}>res</th><th style={th}>clusters</th>
+          <th style={{ ...th, textAlign: "left", paddingLeft: 14 }}>coherence</th><th style={th}>min size</th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((s) => (
+          <tr key={s.res} style={{ background: s.chosen ? "#ecfdf3" : "transparent", color: s.chosen ? "#15803d" : "#4a443d", fontWeight: s.chosen ? 700 : 400 }}>
+            <td style={{ padding: "3px 8px" }}>{s.res.toFixed(1)}{s.chosen ? " ★" : ""}</td>
+            <td style={{ padding: "3px 8px", textAlign: "right" }}>{s.clusters}</td>
+            <td style={{ padding: "3px 8px 3px 14px" }}>
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: compact ? 70 : 110, height: 6, background: "#ece8e2", borderRadius: 99, overflow: "hidden", display: "inline-block" }}>
+                  <span style={{ display: "block", height: "100%", width: `${s.coherence * 100}%`, background: s.coherence >= 0.95 ? "#15803d" : s.coherence >= 0.8 ? "#ca8a04" : "#dc2626", borderRadius: 99 }} />
+                </span>
+                <span>{s.coherence.toFixed(3)}</span>
+              </span>
+            </td>
+            <td style={{ padding: "3px 8px", textAlign: "right", color: s.minSize < 30 ? "#b45309" : "inherit" }}>{s.minSize}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+  return (
+    <div style={card}>
+      <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT, marginBottom: 6 }}>How we found these {nClusters} clusters</div>
+      {sweep ? (
+        <>
+          <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
+            De-novo Leiden resolution sweep. Selection rule: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 12 }}>{f.selectionRule}</code> — we take the finest resolution that still holds together. Chosen: <b style={{ color: "#15803d" }}>res {f.chosenRes} → {f.clusters} clusters</b>.
+          </p>
+          {renderSweep(sweep)}
+        </>
+      ) : f.selectionNote ? (
+        <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
+      ) : null}
+      {f.coherenceNote && (
+        <div style={{ marginTop: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: "9px 12px", fontSize: 12.5, color: "#92400e", lineHeight: 1.5 }}>
+          <b>MegaFin&rsquo;s real story.</b> {f.coherenceNote}
+          {f.rejectedReembed?.sweep && (
+            <div style={{ marginTop: 8 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#b45309", marginBottom: 2 }}>Rejected: standard HVG→PCA→Harmony re-embed</div>
+              {renderSweep(f.rejectedReembed.sweep, true)}
+            </div>
+          )}
+        </div>
+      )}
+      <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
+        Now watch the three personalities — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each cluster and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats — label all {nClusters} clusters below.
+      </p>
+    </div>
+  );
+}
+
 function MapStage({
   dataset,
   clusters,
@@ -1465,6 +1588,7 @@ function MapStage({
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
+        {revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
 
         {loadedNote && (
           <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>

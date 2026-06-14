@@ -512,19 +512,36 @@ def gt_url(ds):
     return f"/api/kasperov_asset/{ds}/groundtruth.json"
 
 
+# Atlas/GT assets are normally fetched from the deployed asset route, but
+# daniotype_data exceeded Vercel's 250MB function-bundle cap so the newest
+# datasets 404 there. When AUTOPILOT_ASSET_DIR is set, read these JSON assets
+# from the local filesystem (this box has daniotype_data/ on disk) and fall
+# back to the deployed asset route otherwise.
+ASSET_DIR = os.environ.get("AUTOPILOT_ASSET_DIR", "")
+
+
+def _get_asset(base, ds, fname):
+    if ASSET_DIR:
+        p = os.path.join(ASSET_DIR, ds, fname)
+        if os.path.exists(p):
+            with open(p) as f:
+                return json.load(f)
+    return requests.get(f"{base}/api/kasperov_asset/{ds}/{fname}", headers=_hdrs(), timeout=60).json()
+
+
 def _run(run_id, dataset_id, model, base):
     st = RUNS[run_id]
     usage = {}
     try:
         st.update(phase="loading", message="loading atlas")
-        atlas = requests.get(f"{base}{data_url(dataset_id)}", headers=_hdrs(), timeout=60).json()
+        atlas = _get_asset(base, dataset_id, "umap.json")
         clusters = [{"id": c["id"], "label": c["label"], "degsUp": c.get("degsUp", []),
                      "markers": c.get("markers", []), "nCells": c.get("nCells")} for c in atlas["clusters"]]
         gt = None
         gu = gt_url(dataset_id)
         if gu:
             try:
-                gt = requests.get(f"{base}{gu}", headers=_hdrs(), timeout=60).json().get("clusters")
+                gt = _get_asset(base, dataset_id, "groundtruth.json").get("clusters")
             except Exception:
                 gt = None
 

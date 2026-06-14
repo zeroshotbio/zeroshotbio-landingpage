@@ -6,11 +6,10 @@
 // cheap; called after each agent turn to keep the confidence box live.
 
 import "server-only";
-import { readFile } from "fs/promises";
-import nodePath from "path";
 export const runtime = "nodejs";
 export const maxDuration = 120;
-const DATA_DIR = nodePath.join(process.cwd(), "daniotype_data");
+// groundtruth.json is served by nginx (daniotype_data/), not bundled into the function.
+const ASSET_HOST = (process.env.DANIOTYPE_ASSET_BASE || "https://zscape.zeroshot.bio/daniotype_data").replace(/\/$/, "");
 
 import { NextResponse } from "next/server";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
@@ -34,8 +33,9 @@ async function getTierVocab(_origin: string, datasetId: string): Promise<TierVoc
     return null;
   }
   try {
-    // read off disk (server-side); the gated asset route is for the browser only
-    const gt = JSON.parse(await readFile(nodePath.join(DATA_DIR, datasetId, "groundtruth.json"), "utf8"));
+    // fetch from nginx (daniotype_data/ served statically); kept out of the Vercel bundle
+    const r = await fetch(`${ASSET_HOST}/${datasetId}/groundtruth.json`);
+    const gt = r.ok ? await r.json() : {};
     const sets: Record<keyof TierVocab, Set<string>> = { germ_layer: new Set(), tissue: new Set(), cell_type_broad: new Set(), cell_type_sub: new Set() };
     for (const id of Object.keys(gt?.clusters ?? {})) {
       const rec = gt.clusters[id] ?? {};

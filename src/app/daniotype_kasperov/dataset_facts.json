@@ -1,0 +1,428 @@
+{
+ "minifin": {
+  "id": "minifin",
+  "platform": "Parse Evercode (combinatorial split-pool)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "ENSDARG \u2192 ZFIN canonical",
+  "role": "internal",
+  "resLabel": "1.0",
+  "cells": 94616,
+  "clusters": 54,
+  "fullCells": 94616,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 54,
+    "coherence": 0.981,
+    "minSize": 180,
+    "under50": 0,
+    "chosen": true
+   },
+   {
+    "res": 2.0,
+    "clusters": 74,
+    "coherence": 1.0,
+    "minSize": 39,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 82,
+    "coherence": 0.988,
+    "minSize": 16,
+    "under50": 2,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 104,
+    "coherence": 1.0,
+    "minSize": 17,
+    "under50": 2,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 115,
+    "coherence": 1.0,
+    "minSize": 10,
+    "under50": 3,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 1.0,
+  "selectionNote": null,
+  "noGtNote": "Internal reference \u2014 no published labels; intuition-building, not a benchmark."
+ },
+ "zscape": {
+  "id": "zscape",
+  "platform": "10X droplet",
+  "lab": "Saunders/Trapnell et al.",
+  "year": 2023,
+  "namespace": "ENSDARG \u2192 ZFIN canonical",
+  "role": "gt",
+  "resLabel": "silhouette-gated sub-Leiden",
+  "cells": 250000,
+  "clusters": 55,
+  "fullCells": 3231733,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": null,
+  "chosenRes": null,
+  "selectionNote": "ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
+  "scorecard": {
+   "runId": "20260613-230719-15e201",
+   "tiers": [
+    {
+     "key": "germ_layer",
+     "label": "Germ layer",
+     "pct": 96.4,
+     "matched": 53,
+     "total": 55
+    },
+    {
+     "key": "tissue",
+     "label": "Tissue",
+     "pct": 87.3,
+     "matched": 48,
+     "total": 55
+    },
+    {
+     "key": "cell_type_broad",
+     "label": "Cell type \u2014 broad",
+     "pct": 75.5,
+     "matched": 37,
+     "total": 49
+    },
+    {
+     "key": "cell_type_sub",
+     "label": "Cell type \u2014 sub",
+     "pct": 69.4,
+     "matched": 34,
+     "total": 49
+    }
+   ],
+   "highPuritySub": 80.0,
+   "abstentionPrecision": 33.3,
+   "nAbstain": 6,
+   "nAssign": 49,
+   "costUsd": 9.87
+  },
+  "caveat": "In-paradigm baseline \u2014 the reference standard (authors' own 10X atlas, native 4-tier labels).",
+  "caveatTone": "baseline"
+ },
+ "chemfish": {
+  "id": "chemfish",
+  "platform": "sci-RNA-seq3",
+  "lab": "Barkan et al.",
+  "year": null,
+  "namespace": "ENSDARG \u2192 ZFIN canonical",
+  "role": "gt",
+  "resLabel": "3.0",
+  "cells": 250000,
+  "clusters": 78,
+  "fullCells": 1579675,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 46,
+    "coherence": 0.978,
+    "minSize": 156,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 69,
+    "coherence": 0.986,
+    "minSize": 40,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 78,
+    "coherence": 1.0,
+    "minSize": 40,
+    "under50": 1,
+    "chosen": true
+   },
+   {
+    "res": 4.0,
+    "clusters": 93,
+    "coherence": 0.989,
+    "minSize": 27,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 107,
+    "coherence": 0.991,
+    "minSize": 12,
+    "under50": 3,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 3.0,
+  "selectionNote": null,
+  "scorecard": {
+   "runId": "20260614-071106-ba32de",
+   "tiers": [
+    {
+     "key": "germ_layer",
+     "label": "Germ layer",
+     "pct": 51.3,
+     "matched": 40,
+     "total": 78
+    },
+    {
+     "key": "tissue",
+     "label": "Tissue",
+     "pct": 30.7,
+     "matched": 23,
+     "total": 75
+    },
+    {
+     "key": "cell_type_broad",
+     "label": "Cell type \u2014 broad",
+     "pct": 21.4,
+     "matched": 6,
+     "total": 28
+    },
+    {
+     "key": "cell_type_sub",
+     "label": "Cell type \u2014 sub",
+     "pct": 27.3,
+     "matched": 6,
+     "total": 22
+    }
+   ],
+   "highPuritySub": 33.3,
+   "abstentionPrecision": 96.4,
+   "nAbstain": 56,
+   "nAssign": 22,
+   "costUsd": 15.92
+  },
+  "caveat": "Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
+  "caveatTone": "projected"
+ },
+ "daniocell": {
+  "id": "daniocell",
+  "platform": "10X droplet",
+  "lab": "Sur et al. (Farrell / NICHD)",
+  "year": 2023,
+  "namespace": "ENSDARG \u2192 ZFIN canonical",
+  "role": "gt",
+  "resLabel": "2.0",
+  "cells": 191832,
+  "clusters": 77,
+  "fullCells": 191832,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 55,
+    "coherence": 1.0,
+    "minSize": 188,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 77,
+    "coherence": 1.0,
+    "minSize": 188,
+    "under50": 0,
+    "chosen": true
+   },
+   {
+    "res": 3.0,
+    "clusters": 99,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 117,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 4,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 133,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 4,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 2.0,
+  "selectionNote": null,
+  "scorecard": {
+   "runId": "20260614-070625-de91d5",
+   "tiers": [
+    {
+     "key": "germ_layer",
+     "label": "Germ layer",
+     "pct": 53.2,
+     "matched": 41,
+     "total": 77
+    },
+    {
+     "key": "tissue",
+     "label": "Tissue",
+     "pct": 40.0,
+     "matched": 30,
+     "total": 75
+    },
+    {
+     "key": "cell_type_broad",
+     "label": "Cell type \u2014 broad",
+     "pct": 39.3,
+     "matched": 11,
+     "total": 28
+    },
+    {
+     "key": "cell_type_sub",
+     "label": "Cell type \u2014 sub",
+     "pct": 20.0,
+     "matched": 3,
+     "total": 15
+    }
+   ],
+   "highPuritySub": 25.0,
+   "abstentionPrecision": 95.2,
+   "nAbstain": 62,
+   "nAssign": 15,
+   "costUsd": 15.67
+  },
+  "caveat": "Independent lab, ISH-validated populations, cross-platform (10X droplet). A lower score reflects platform/domain shift \u2014 harder, not worse labeling. The genuinely independent read.",
+  "caveatTone": "independent"
+ },
+ "megafin": {
+  "id": "megafin",
+  "platform": "Parse Evercode (combinatorial split-pool)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "Lawson LL \u2192 ZFIN canonical",
+  "role": "internal",
+  "resLabel": "2.0",
+  "cells": 537959,
+  "clusters": 84,
+  "fullCells": 537959,
+  "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 60,
+    "coherence": 0.867,
+    "minSize": 10,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 85,
+    "coherence": 0.929,
+    "minSize": 9,
+    "under50": 3,
+    "chosen": true
+   },
+   {
+    "res": 3.0,
+    "clusters": 107,
+    "coherence": 0.925,
+    "minSize": 20,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 128,
+    "coherence": 0.938,
+    "minSize": 10,
+    "under50": 4,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 147,
+    "coherence": 0.925,
+    "minSize": 10,
+    "under50": 6,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 2.0,
+  "selectionNote": null,
+  "noGtNote": "Internal drug-screen atlas \u2014 no published labels; intuition-building, not a benchmark.",
+  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos",
+  "supersedes": "interim 77-cluster Parse MegaFin",
+  "coherence": 0.929,
+  "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) \u2014 this 93-condition drug screen needs the Parse embedding; the standard HVG\u2192PCA\u2192Harmony re-embed was tested and rejected (coherence collapsed to ~0.67).",
+  "canonicalPct": 95.6,
+  "groundingNote": "100.0% of markers queryable on :5007; 95.6% under canonical ZFIN names (thinner than the ENSDARG-native sets, but key cell-type markers ground fine).",
+  "rejectedReembed": {
+   "sweep": [
+    {
+     "res": 1.0,
+     "clusters": 118,
+     "coherence": 0.475,
+     "minSize": 7,
+     "under50": 57,
+     "chosen": false
+    },
+    {
+     "res": 2.0,
+     "clusters": 143,
+     "coherence": 0.573,
+     "minSize": 7,
+     "under50": 56,
+     "chosen": false
+    },
+    {
+     "res": 3.0,
+     "clusters": 179,
+     "coherence": 0.62,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    },
+    {
+     "res": 4.0,
+     "clusters": 197,
+     "coherence": 0.65,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    },
+    {
+     "res": 5.0,
+     "clusters": 210,
+     "coherence": 0.667,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    }
+   ],
+   "note": "Standard re-embed (HVG\u2192PCA\u2192Harmony\u2192neighbors): coherence collapsed to 0.475\u20130.667 with 56\u201363 micro-clusters \u2014 worse than the Parse embedding. Rejected."
+  },
+  "sizeMin": 9,
+  "sizeMedian": 4552,
+  "sizeMax": 19798,
+  "merged": {
+   "from": 67,
+   "into": 61,
+   "cells_moved": 29,
+   "renumbered_to_contiguous": true
+  }
+ }
+}

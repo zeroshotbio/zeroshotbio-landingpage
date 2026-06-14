@@ -1,13 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // The wizard data lives in daniotype_data/ (out of public/). Force-bundle it into
-  // the serverless functions that read it from disk at runtime (Vercel only traces
-  // statically-referenced files otherwise).
-  outputFileTracingIncludes: {
-    "/api/kasperov_asset/[...slug]": ["./daniotype_data/**/*"],
-    "/api/kasperov_agent": ["./daniotype_data/**/*"],
-    "/api/kasperov_confidence": ["./daniotype_data/**/*"],
-  },
+  // Wizard data (daniotype_data/, ~340MB+) is served statically by nginx and fetched
+  // over HTTP by the kasperov_agent/confidence routes + the browser — it is NO LONGER
+  // bundled into the serverless functions (that exceeded Vercel's 250MB function cap and
+  // dropped the newest datasets). See DANIOTYPE_ASSET_BASE in the kasperov routes.
 }
 
 module.exports = nextConfig
