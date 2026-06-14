@@ -214,7 +214,9 @@
    "costUsd": 15.92
   },
   "caveat": "Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
-  "caveatTone": "projected"
+  "caveatTone": "projected",
+  "scorecardStale": true,
+  "scorecardCaveat": "These scores came from run ba32de, which grounded on a misaligned :5007 (it served MiniFin's stats for ChemFish). Suppressed pending a re-run on corrected grounding."
  },
  "daniocell": {
   "id": "daniocell",

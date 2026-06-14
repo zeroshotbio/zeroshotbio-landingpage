@@ -1040,7 +1040,13 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   </div>
                 )}
 
-                {isGt && f.scorecard && (
+                {isGt && f.scorecardStale && (
+                  <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#92400e", lineHeight: 1.45 }}>
+                    <div style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, fontSize: 10, marginBottom: 2 }}>⚠ Scorecard withheld</div>
+                    {f.scorecardCaveat}
+                  </div>
+                )}
+                {isGt && f.scorecard && !f.scorecardStale && (
                   <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
                     <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Driver-scored accuracy</div>
                     {f.scorecard.tiers.map((t: any) => (

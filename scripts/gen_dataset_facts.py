@@ -105,6 +105,13 @@ facts["megafin"].update({
   "merged":fs.get("merge"),
 })
 
+# ChemFish scorecard contaminated: run ba32de grounded on a misaligned :5007 (served MiniFin's
+# 54-cluster stats). Suppress the numbers in the card until a re-run on corrected grounding.
+if facts.get("chemfish",{}).get("scorecard"):
+    facts["chemfish"]["scorecardStale"]=True
+    facts["chemfish"]["scorecardCaveat"]=("These scores came from run ba32de, which grounded on a misaligned :5007 "
+        "(it served MiniFin's stats for ChemFish). Suppressed pending a re-run on corrected grounding.")
+
 OUT=os.path.join(ROOT,"src","app","daniotype_kasperov","dataset_facts.json")
 json.dump(facts, open(OUT,"w"), indent=1)
 print("wrote", OUT)
