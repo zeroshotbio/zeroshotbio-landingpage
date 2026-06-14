@@ -1405,7 +1405,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         </div>
       )}
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
-        Now watch the three personalities — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each cluster and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats — label all {nClusters} clusters below.
+        Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>View Leiden clusters →</b> below to begin.
       </p>
     </div>
   );
@@ -1588,7 +1588,7 @@ function MapStage({
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <UmapCanvas clusters={clusters} mode="global" colored={revealed} activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
         </div>
-        {revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
+        {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
 
         {loadedNote && (
           <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>
