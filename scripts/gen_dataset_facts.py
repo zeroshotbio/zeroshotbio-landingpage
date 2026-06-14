@@ -64,6 +64,14 @@ META={
    "sweepFile":f"{SCRATCH}/megafin_res_sweep.csv","chosenRes":3.0},
 }
 
+RECIPE={
+ "minifin":"HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
+ "zscape":"silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
+ "chemfish":"HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
+ "daniocell":"HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+ "megafin":"HVG → PCA → carried Harmony(sample) embedding → kNN graph → Leiden sweep",
+ "megafin_parse":"Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
+}
 facts={}
 for ds,m in META.items():
     udir=m.get("useUmapDir",ds)
@@ -71,6 +79,7 @@ for ds,m in META.items():
     entry={"id":ds,"platform":m["platform"],"lab":m["lab"],"year":m.get("year"),
            "namespace":m["namespace"],"role":m["role"],"resLabel":m["resLabel"],
            "cells":uf["cells"],"clusters":uf["clusters"],"fullCells":uf["fullCells"],
+           "source":uf.get("source_str"),"recipe":RECIPE.get(ds),
            "selectionRule":"coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
            "sweep":sweep(m["sweepFile"],m.get("chosenRes")),"chosenRes":m.get("chosenRes"),
            "selectionNote":m.get("selectionNote")}

@@ -152,6 +152,9 @@ const DATASETS: DatasetDef[] = [
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
+// Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin, then the V2 stub.
+const DATASET_ORDER: DatasetId[] = ["zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin", "zscape_v2"];
+const ORDERED_DATASETS: DatasetDef[] = DATASET_ORDER.map((id) => DATASET_BY_ID[id]).filter(Boolean);
 
 type Pt = { x: number; y: number };
 type Box = { x: number; y: number; w: number; h: number };
@@ -984,7 +987,7 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
           completes.
         </p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-          {DATASETS.map((d) => {
+          {ORDERED_DATASETS.map((d) => {
             const ready = d.status === "ready";
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
@@ -1368,19 +1371,55 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
       </tbody>
     </table>
   );
+  const name = DATASET_BY_ID[datasetId as DatasetId]?.name ?? datasetId;
+  const isGt = f.role === "gt";
+  const ident: [string, string][] = [
+    ["cells", `${(f.cells as number).toLocaleString()}${f.fullCells && f.fullCells > f.cells ? ` (of ${(f.fullCells as number).toLocaleString()})` : ""}`],
+    ["platform", f.platform],
+    ["source", `${f.lab}${f.year ? " · " + f.year : ""}`],
+    ["gene namespace", f.namespace],
+  ];
   return (
     <div style={card}>
-      <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT, marginBottom: 6 }}>How we found these {nClusters} clusters</div>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
+        <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>How we found these {nClusters} clusters</div>
+        <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>{isGt ? "✓ GT benchmark" : "internal"}</span>
+      </div>
+
+      {/* identity strip */}
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "2px 12px", fontSize: 11.5, color: "#555", lineHeight: 1.5, marginBottom: 10 }}>
+        {ident.map(([a, b], i) => (
+          <React.Fragment key={i}>
+            <span style={{ fontWeight: 700, color: "#3f3a34" }}>{a}</span>
+            <span style={{ color: "#6b655d" }}>{b}</span>
+          </React.Fragment>
+        ))}
+      </div>
+
+      {/* method */}
+      <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
+        We re-cluster {name} <b>de-novo</b>{isGt ? " — the authors' published cell-type labels are held out, so after labeling we score our calls against them" : ""}. Pipeline: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.recipe}</code>.
+      </p>
+
       {sweep ? (
         <>
-          <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
-            De-novo Leiden resolution sweep. Selection rule: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 12 }}>{f.selectionRule}</code> — we take the finest resolution that still holds together. Chosen: <b style={{ color: "#15803d" }}>res {f.chosenRes} → {f.clusters} clusters</b>.
+          <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 8px" }}>
+            We sweep the Leiden resolution and score each one for <b>coherence</b> — the fraction of clusters carrying at least one strongly-enriched, cluster-specific marker — and minimum cluster size. The rule picks the <b>finest resolution that still holds together</b>: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.selectionRule}</code> → <b style={{ color: "#15803d" }}>res {f.chosenRes}, {f.clusters} clusters</b>.
           </p>
           {renderSweep(sweep)}
         </>
       ) : f.selectionNote ? (
-        <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
+        <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
       ) : null}
+
+      {/* GT scoring caveat */}
+      {isGt && f.caveat && (
+        <div style={{ marginTop: 12, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "9px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.5 }}>
+          <b>Reading the score:</b> {f.caveat}
+        </div>
+      )}
+
+      {/* MegaFin (Manual) embedding story */}
       {f.coherenceNote && (
         <div style={{ marginTop: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: "9px 12px", fontSize: 12.5, color: "#92400e", lineHeight: 1.5 }}>
           <b>MegaFin&rsquo;s real story.</b> {f.coherenceNote}
@@ -1392,6 +1431,10 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
           )}
         </div>
       )}
+      {f.groundingNote && !f.coherenceNote && (
+        <div style={{ marginTop: 10, fontSize: 11.5, color: "#9a948c", lineHeight: 1.5 }}>{f.groundingNote}</div>
+      )}
+
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
         Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a cluster to investigate →</b> below to begin.
       </p>

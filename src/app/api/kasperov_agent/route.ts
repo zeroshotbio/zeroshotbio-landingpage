@@ -57,7 +57,12 @@ const DATASET_CFG: Record<string, DatasetCfg> = {
   chemfish_native: { id: "chemfish_native", name: "ChemFish (native)", base: "", dataDir: "chemfish_native", archivist: CHEMFISH_NATIVE_ARCHIVIST as any },
   daniocell_native: { id: "daniocell_native", name: "DanioCell (native)", base: "", dataDir: "daniocell_native", archivist: DANIOCELL_NATIVE_ARCHIVIST as any },
 };
-const dsOf = (id: unknown): DatasetCfg => DATASET_CFG[String(id)] ?? DATASET_CFG.minifin;
+// Look up a dataset config. Returns undefined for an unregistered id — we deliberately do
+// NOT fall back to a default dataset: a silent fallback (id -> minifin) is what served MiniFin's
+// stats for ChemFish during run ba32de (chemfish absent from a stale deploy's DATASET_CFG ->
+// dsOf -> minifin -> getProfile/getMatrix/:5007 all returned MiniFin's 54-cluster data). An
+// unknown id must now fail loudly instead of grounding on the wrong atlas.
+const dsOf = (id: unknown): DatasetCfg | undefined => DATASET_CFG[String(id)];
 
 const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 
@@ -250,7 +255,7 @@ function reasonInstructions(cluster: Cluster, ds: DatasetCfg): string {
     "```",
     "REQUIRE-EVIDENCE-TO-NAME (enforced): cited_markers MUST be genes drawn from THIS cluster's marker list (its up-regulated markers, or genes promoted into the panel) — never a gene you merely know is canonical but that isn't in this cluster's list. A decision of \"assign\" must cite at least one such marker. If you cannot ground a specific cell type in this cluster's own markers plus a looked-up ZFIN/ZFA/GO fact, set decision \"abstain\" and ROLL UP: put the deepest tier you CAN defend (e.g. a germ layer or tissue) in identity, with state \"none\". State applies ONLY at the cell-type tier; use \"none\" at coarser tiers.",
     "GESTALT FROM CONFIRMED POSITIVES ONLY: a single marker's conflicting curated tissue tag does NOT veto an otherwise-coherent read — BUT the gestalt you weigh against that tag must be built ONLY from markers the Archivist has CONFIRMED enriched in THIS unit, plus their functional annotations. A marker the Archivist showed non-enriched or depleted is NOT evidence for an identity, however strong its literature association — drop it from the call entirely and do NOT place it in cited_markers. cited_markers must contain ONLY Archivist-confirmed positive markers of this unit (and a 'state' such as cycling/progenitor must rest on confirmed-enriched markers too — never assert a state the stats don't support). Curated tissue tags on a confirmed-enriched marker are often incomplete, so flag-but-don't-anchor on a lone conflicting tag — this is still grounding-first, not literature-over-stats.",
-    "ASSIGN AT THE DEPTH THE EVIDENCE SUPPORTS — WITH A COVERAGE CHECK: do NOT abstain merely because the terminal subtype is unresolved; if a coarser regional/developmental/lineage identity is confidently grounded, ASSIGN at the deepest defensible tier (decision \"assign\", state \"none\" when the terminal state is unresolved). COVERAGE GUARD (enforced): before assigning, the cited program must be shown by the Archivist to COVER the unit — adequate %in-cluster AND cell-level co-expression across the population — not merely a coherent signal in a sub-fraction. If the strongest program covers only a minority of the unit's cells, or two+ competing programs each cover only part of it, the unit is HETEROGENEOUS → abstain and roll up to the deepest tier that IS covered. GUARD AGAINST OVER-CORRECTION: when one program clearly covers the population, still ASSIGN at the supported depth — a clean, well-covered regional/tissue identity is an assign, not an abstain. Reserve abstain for genuinely insufficient, contradictory, or low-coverage/mixed grounding.",
+    "ASSIGN AT THE DEPTH THE EVIDENCE SUPPORTS — WITH A MANDATORY COVERAGE CHECK: do NOT abstain merely because the terminal subtype is unresolved; if a coarser regional/developmental/lineage identity is confidently grounded, ASSIGN at the deepest defensible tier (decision \"assign\", state \"none\" when the terminal state is unresolved). COVERAGE GUARD (ENFORCED — you must run it before ANY assign): a unit-level identity requires the defining program to COVER the population, not just enrich individually. Individual %in-cluster is NOT enough — two unrelated programs can each enrich on different subsets of a mixed unit. Before concluding 'assign', you MUST have dispatched an Archivist `coexpress` query on the candidate program's top markers and seen that they CO-EXPRESS in a substantial fraction of the unit's cells (the program co-occurs across the population, not in a minority). If you have not run that co-expression check yet, dispatch it and do NOT conclude. If the full program co-occurs in only a minority of cells, or two+ competing programs each cover only part of the unit → the unit is HETEROGENEOUS → abstain and roll up to the deepest tier that IS covered. GUARD AGAINST OVER-CORRECTION: when the co-expression check shows one program covering the population, ASSIGN at the supported depth — a clean, well-covered regional/tissue identity is an assign, not an abstain. Reserve abstain for genuinely insufficient, contradictory, or low-coverage/mixed grounding.",
     "Emit the block ONLY when settled. If a useful query remains, dispatch that instead and do NOT conclude. You may include a one-line wrap-up sentence before the block.",
     "",
     `CLUSTER: ${cluster.label ?? cluster.id} — top up-regulated markers: ${up || "(none provided)"}.`,
@@ -640,6 +645,7 @@ export async function POST(req: Request) {
   }
 
   const ds = dsOf(body?.dataset);
+  if (!ds) return new Response(JSON.stringify({ error: "unknown_dataset", dataset: String(body?.dataset ?? "") }), { status: 400, headers: { "content-type": "application/json" } });
   const model = isKasperovModel(body?.model) ? body.model : DEFAULT;
   const cluster: Cluster = body?.cluster ?? { id: String(body?.clusterId ?? "?") };
   const messages: ChatMessage[] = Array.isArray(body?.messages)

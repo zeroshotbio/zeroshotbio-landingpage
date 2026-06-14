@@ -27,6 +27,11 @@ from pydantic import BaseModel
 
 TOKEN = os.environ.get("AUTOPILOT_API_TOKEN", "")
 DEFAULT_BASE = os.environ.get("AUTOPILOT_BASE_URL", "https://www.zeroshot.bio").rstrip("/")
+# Misalignment guard: before a run grounds on :5007 for a dataset, assert the service serves
+# THAT dataset (not another's) — count bound + each sampled cluster's own top marker enriched in
+# that cluster. Catches the ba32de failure mode (ChemFish served MiniFin's 54-cluster stats).
+STATS_VERIFY_URL = os.environ.get("STATS_VERIFY_URL", "http://127.0.0.1:5007").rstrip("/")
+STATS_VERIFY_TOKEN = os.environ.get("STATS_VERIFY_TOKEN", "")
 # The wizard's Next routes are Basic-Auth gated; this worker authenticates with the
 # same shared password (KASPEROV_BASIC_PASSWORD) so its server-to-server calls pass.
 import base64 as _b64
@@ -529,6 +534,50 @@ def _get_asset(base, ds, fname):
     return requests.get(f"{base}/api/kasperov_asset/{ds}/{fname}", headers=_hdrs(), timeout=60).json()
 
 
+def verify_grounding(dataset_id, clusters):
+    """Assert :5007 serves THIS dataset before we trust it (misalignment guard). Returns
+    (ok, detail). Checks: (a) each of a few sampled clusters has its OWN top asset-marker
+    enriched in that cluster on :5007 — a swapped dataset (e.g. minifin-for-chemfish) fails
+    this; (b) cluster-count bound — an id one past the atlas max must NOT exist on :5007."""
+    if not STATS_VERIFY_TOKEN:
+        return (False, "grounding guard not configured (STATS_VERIFY_TOKEN unset) — refusing to run blind")
+    hdr = {"x-api-token": STATS_VERIFY_TOKEN, "content-type": "application/json"}
+    def pv(cid, gene):
+        r = requests.post(f"{STATS_VERIFY_URL}/query", headers=hdr,
+                          json={"dataset": dataset_id, "cluster": str(cid), "kind": "pvalues", "genes": [gene]}, timeout=60)
+        return r.status_code, (r.json() if r.headers.get("content-type", "").startswith("application/json") else {})
+    n = len(clusters)
+    idxs = sorted(set([0, n // 2, n - 1]))
+    fails = []
+    for i in idxs:
+        c = clusters[i]; gene = (c.get("degsUp") or [None])[0]
+        if not gene:
+            continue
+        try:
+            code, d = pv(c["id"], gene)
+            if code != 200:
+                fails.append(f"c{c['id']} HTTP {code}"); continue
+            res = (d.get("result") or [{}])[0]
+            l2 = res.get("log2FC"); p = res.get("padj")
+            if not res.get("found") or l2 is None or l2 < 0.5 or p is None or p > 0.05:
+                fails.append(f"c{c['id']} own top marker {gene} NOT enriched on :5007 (log2FC={l2}, padj={p}) — wrong dataset?")
+        except Exception as e:
+            fails.append(f"c{c['id']} probe error {str(e)[:50]}")
+    # count bound: integer cluster ids 0..max → id max+1 must not exist
+    try:
+        ids = sorted(int(c["id"]) for c in clusters if str(c["id"]).isdigit())
+        if ids:
+            anchor = (clusters[0].get("degsUp") or ["pcna"])[0]
+            code, d = pv(max(ids) + 1, anchor)
+            if code == 200 and (d.get("nCells") or 0) > 0:
+                fails.append(f"count mismatch: :5007 returned a cluster {max(ids)+1} beyond the atlas's {len(ids)} units")
+    except Exception:
+        pass
+    if fails:
+        return (False, "; ".join(fails))
+    return (True, f"verified: {len(idxs)} sampled clusters' own markers enriched on :5007, count bounded to {n} units")
+
+
 def _run(run_id, dataset_id, model, base):
     st = RUNS[run_id]
     usage = {}
@@ -544,6 +593,14 @@ def _run(run_id, dataset_id, model, base):
                 gt = _get_asset(base, dataset_id, "groundtruth.json").get("clusters")
             except Exception:
                 gt = None
+
+        # Misalignment guard — verify :5007 serves THIS dataset before grounding/spending.
+        st.update(phase="verifying", message="grounding guard")
+        ok, detail = verify_grounding(dataset_id, clusters)
+        if not ok:
+            st.update(phase="error", error=f"GROUNDING GUARD FAILED ({dataset_id}): {detail}")
+            return
+        st.update(message=f"grounding ok — {detail}")
 
         st.update(phase="labelling", total=len(clusters), done=0)
         for i, c in enumerate(clusters):

@@ -10,6 +10,8 @@
   "cells": 94616,
   "clusters": 54,
   "fullCells": 94616,
+  "source": "MiniFin \u2014 48 hpf, Parse Evercode, 43 drug samples \u2014 de-novo Leiden res 1.0 on Harmony embedding (HVG->PCA->Harmony[sample])",
+  "recipe": "HVG \u2192 PCA \u2192 Harmony(sample) \u2192 kNN graph \u2192 Leiden resolution sweep",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
    {
@@ -68,6 +70,8 @@
   "cells": 250000,
   "clusters": 55,
   "fullCells": 3231733,
+  "source": "ZSCAPE Saunders et al. (de-novo leiden + silhouette-gated sub-split)",
+  "recipe": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": null,
   "chosenRes": null,
@@ -124,6 +128,8 @@
   "cells": 250000,
   "clusters": 78,
   "fullCells": 1579675,
+  "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) \u2014 48 hpf subset, de-novo Leiden res 3.0 on Harmony(expt) embedding",
+  "recipe": "HVG \u2192 PCA \u2192 Harmony(experiment) \u2192 kNN graph \u2192 Leiden resolution sweep",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
    {
@@ -221,6 +227,8 @@
   "cells": 191832,
   "clusters": 77,
   "fullCells": 191832,
+  "source": "DanioCell Sur et al. (Farrell/NICHD) \u2014 36-72hpf window, de-novo Leiden res 2.0 on Harmony(stage) embedding",
+  "recipe": "HVG \u2192 PCA \u2192 Harmony(stage) \u2192 kNN graph \u2192 Leiden resolution sweep",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
    {
@@ -318,6 +326,8 @@
   "cells": 537959,
   "clusters": 84,
   "fullCells": 537959,
+  "source": "MegaFin Part 1 REBUILD \u2014 48 hpf TuWT, 93 drug samples (Manual/Lawson object) \u2014 de-novo Leiden res 2.0 (84 clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
+  "recipe": "HVG \u2192 PCA \u2192 carried Harmony(sample) embedding \u2192 kNN graph \u2192 Leiden sweep",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
    {
@@ -435,6 +445,8 @@
   "cells": 540946,
   "clusters": 77,
   "fullCells": 540946,
+  "source": "MegaFin Part 1 \u2014 48 hpf TuWT, 93 drug samples \u2014 de-novo Leiden res 3.0 on Parse Harmony embedding (sidecar:megafin_leiden_labels.csv)",
+  "recipe": "Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
    {

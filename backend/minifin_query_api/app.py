@@ -53,6 +53,17 @@ def _registry() -> dict:
             map_id_col=os.environ.get("MEGAFIN_MAP_ID_COL", "ensembl_id"),
             map_sym_col=os.environ.get("MEGAFIN_MAP_SYM_COL", "symbol"),
         )
+    if os.environ.get("MEGAFIN_PARSE_H5AD"):
+        # Parse/Trailmaker interim MegaFin (id "megafin_parse"); var_names ENSDARG.
+        reg["megafin_parse"] = dict(
+            h5ad=os.environ["MEGAFIN_PARSE_H5AD"],
+            assign=os.environ.get("MEGAFIN_PARSE_ASSIGN", ""),
+            bc_col=os.environ.get("MEGAFIN_PARSE_BC_COL", "cell_id"),
+            cluster_col=os.environ.get("MEGAFIN_PARSE_CLUSTER_COL", "leiden_3.0"),
+            symbol_map=os.environ.get("MEGAFIN_PARSE_SYMBOL_MAP", ""),
+            map_id_col=os.environ.get("MEGAFIN_PARSE_MAP_ID_COL", "ensembl_id"),
+            map_sym_col=os.environ.get("MEGAFIN_PARSE_MAP_SYM_COL", "symbol"),
+        )
     if os.environ.get("ZSCAPE_H5AD"):
         # ZSCAPE = the de-novo leaf partition (clustered-subset h5ad + persisted cell_id->leaf
         # from build_zscape_asset.py). var_names are ENSDARG -> gene_short_name map.
