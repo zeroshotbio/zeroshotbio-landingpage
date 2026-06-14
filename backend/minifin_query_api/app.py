@@ -89,6 +89,20 @@ def _registry() -> dict:
             map_id_col=os.environ.get("DANIOCELL_MAP_ID_COL", "ensembl_id"),
             map_sym_col=os.environ.get("DANIOCELL_MAP_SYM_COL", "symbol"),
         )
+    # NATIVE-schema re-base datasets (staged): units = authors' finest native groups.
+    # var_names ENSDARG; canonical map keyed by var_name; assignment col = native_unit.
+    for nid in ("zscape_native", "chemfish_native", "daniocell_native"):
+        pre = nid.upper()
+        if os.environ.get(f"{pre}_H5AD"):
+            reg[nid] = dict(
+                h5ad=os.environ[f"{pre}_H5AD"],
+                assign=os.environ.get(f"{pre}_ASSIGN", ""),
+                bc_col=os.environ.get(f"{pre}_BC_COL", "cell_id"),
+                cluster_col=os.environ.get(f"{pre}_CLUSTER_COL", "native_unit"),
+                symbol_map=os.environ.get(f"{pre}_SYMBOL_MAP", ""),
+                map_id_col=os.environ.get(f"{pre}_MAP_ID_COL", "ensembl_id"),
+                map_sym_col=os.environ.get(f"{pre}_MAP_SYM_COL", "symbol"),
+            )
     return reg
 
 

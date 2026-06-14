@@ -22,7 +22,7 @@ const DEFAULT = process.env.KASPEROV_OPENAI_MODEL || DEFAULT_MODEL;
 // datasets that ship a published-label groundtruth.json under daniotype_data/<id>/
 // GT datasets ship a published-label groundtruth.json under daniotype_data/<id>/ -> the
 // four-tier predictions are constrained to that dataset's exact label vocabulary.
-const GT_DATASETS = new Set<string>(["zscape", "chemfish", "daniocell"]);
+const GT_DATASETS = new Set<string>(["zscape", "chemfish", "daniocell", "zscape_native", "chemfish_native", "daniocell_native"]);
 type TierVocab = { germ_layer: string[]; tissue: string[]; cell_type_broad: string[]; cell_type_sub: string[] };
 const VOCAB_KEYS: (keyof TierVocab)[] = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
 const vocabCache: Record<string, TierVocab | null> = {};
@@ -50,7 +50,10 @@ async function getTierVocab(_origin: string, datasetId: string): Promise<TierVoc
       cell_type_broad: Array.from(sets.cell_type_broad).sort(),
       cell_type_sub: Array.from(sets.cell_type_sub).sort(),
     } as TierVocab;
-    vocabCache[datasetId] = VOCAB_KEYS.every((k) => out[k].length > 0) ? out : null;
+    // Keep the vocab if ANY tier is populated (native re-base datasets publish only the
+    // tiers the authors used — e.g. ChemFish=tissue+sub, DanioCell=tissue+broad+sub — so
+    // germ/broad may be legitimately empty and must not null out the whole constraint).
+    vocabCache[datasetId] = VOCAB_KEYS.some((k) => out[k].length > 0) ? out : null;
     return vocabCache[datasetId];
   } catch {
     vocabCache[datasetId] = null;
@@ -83,8 +86,8 @@ export async function POST(req: Request) {
     "Confidence is grounded in the evidence actually discussed (cited markers, in-vivo expression, anatomy) — generally highest at the coarse germ-layer tier and lower at the fine sub-type tier; if a tier is barely supported, score it low. The GOAL of the cluster's work is to drive all four tier confidences up. " +
     "Also give a `why` of 60 words or fewer: the single strongest support and the main remaining uncertainty across the tiers. No preamble." +
     (vocab
-      ? " CONSTRAINED LABEL SET: this dataset uses a FIXED published vocabulary. For EACH tier, `prediction` MUST be EXACTLY one of that tier's allowed labels listed below — choose the single closest existing label to your read; never invent a new label, synonym, or suffix. " +
-        VOCAB_KEYS.map((k) => `${k}: [ ${vocab[k].join(" | ")} ]`).join("  ·  ")
+      ? " CONSTRAINED LABEL SET: this dataset uses a FIXED published vocabulary. For each tier listed below, `prediction` MUST be EXACTLY one of that tier's allowed labels — choose the single closest existing label to your read; never invent a new label, synonym, or suffix. (Tiers not listed are not part of this dataset's native schema — give your best free-text read there.) " +
+        VOCAB_KEYS.filter((k) => vocab[k].length > 0).map((k) => `${k}: [ ${vocab[k].join(" | ")} ]`).join("  ·  ")
       : "");
 
   const tierSchema = (allowed?: string[]) => ({
