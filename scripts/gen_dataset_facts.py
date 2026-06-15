@@ -52,22 +52,22 @@ META={
    "noGtNote":"Internal reference — no published labels; intuition-building, not a benchmark.",
    "designFacts":{"kit":"Evercode (Parse)","samples":"43 drug samples","stage":"48 hpf · TU WT","purpose":"internal reference (intuition)"},
    "sweepFile":f"{SCRATCH}/minifin_res_sweep.csv","chosenRes":1.0},
+ # GT benchmarks are NATIVE-schema: the authors' own published cell groups, labelled as-is (not re-clustered).
  "zscape": {"platform":"sci-RNA-seq3","lab":"Saunders/Trapnell et al.","year":2023,
-   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"silhouette-gated sub-Leiden",
+   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"native ontology","nativeSchema":True,
    "caveat":"In-paradigm baseline — the reference standard (authors' own 10X atlas, native 4-tier labels).",
-   "caveatTone":"baseline","sweepFile":None,"chosenRes":None,
-   "subsample":"Uniform random 250,000-cell sample of the full 3,231,733-cell perturbation reference — spanning every condition (drug-treated and control alike), not a control-only or biological subset; a tractable cross-section to cluster de-novo.",
-   "selectionNote":"ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
-   "subSplitNote":"Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented."},
+   "caveatTone":"baseline","useUmapDir":"zscape_native","sweepFile":None,"chosenRes":None,
+   "selectionNote":"Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — no de-novo clustering or resolution sweep."},
  "chemfish": {"platform":"sci-RNA-seq3","lab":"Barkan et al.","year":None,
-   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"3.0",
-   "caveat":"Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
-   "caveatTone":"projected","subsample":"Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
-   "sweepFile":f"{SCRATCH}/chemfish_res_sweep.csv","chosenRes":3.0},
+   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"native ontology","nativeSchema":True,
+   "caveat":"Scored in ChemFish's native ontology. ChemFish natively publishes tissue + cell_type only (germ-layer + broad are projections), so only tissue + cell_type are scored.",
+   "caveatTone":"projected","useUmapDir":"chemfish_native","sweepFile":None,"chosenRes":None,
+   "selectionNote":"Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — no de-novo clustering or resolution sweep."},
  "daniocell": {"platform":"10X droplet","lab":"Sur et al. (Farrell / NICHD)","year":2023,
-   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"2.0",
+   "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"native ontology","nativeSchema":True,
    "caveat":"Independent lab, ISH-validated populations, cross-platform (10X droplet). A lower score reflects platform/domain shift — harder, not worse labeling. The genuinely independent read.",
-   "caveatTone":"independent","sweepFile":f"{SCRATCH}/daniocell_res_sweep.csv","chosenRes":2.0},
+   "caveatTone":"independent","useUmapDir":"daniocell_native","sweepFile":None,"chosenRes":None,
+   "selectionNote":"Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — no de-novo clustering or resolution sweep."},
  "megafin": {"platform":"Parse Evercode · manual .h5ad (Lawson)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"Lawson LL → ZFIN canonical","role":"internal","resLabel":"2.0",
    "noGtNote":"Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
@@ -86,9 +86,9 @@ META={
 
 RECIPE={
  "minifin":"HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
- "zscape":"silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
- "chemfish":"HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
- "daniocell":"HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+ "zscape":"Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
+ "chemfish":"Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
+ "daniocell":"Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
  "megafin":"HVG → PCA → carried Harmony(sample) embedding → kNN graph → Leiden sweep",
  "megafin_parse":"Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
 }
@@ -107,7 +107,7 @@ for ds,m in META.items():
         entry["scorecard"]=scorecard(ds); entry["caveat"]=m["caveat"]; entry["caveatTone"]=m["caveatTone"]
     else:
         entry["noGtNote"]=m["noGtNote"]
-    for k in ("design","designFacts","supersedes","subsample","subSplitNote"):
+    for k in ("design","designFacts","supersedes","subsample","subSplitNote","nativeSchema"):
         if k in m: entry[k]=m[k]
     facts[ds]=entry
 

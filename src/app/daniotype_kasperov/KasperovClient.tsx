@@ -96,38 +96,38 @@ const DATASETS: DatasetDef[] = [
   {
     id: "zscape",
     name: "ZSCAPE Classic",
-    tagline: "Saunders et al. · 3.2M cells · 55 de-novo clusters",
+    tagline: "Saunders et al. · 3.2M cells · 156 native cell groups",
     blurb:
-      "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
-    dataUrl: `${ASSET_BASE}/zscape/umap.json`,
-    archivistBase: `${ASSET_BASE}/zscape/archivist`,
-    groundTruthUrl: `${ASSET_BASE}/zscape/groundtruth.json`,
+      "The Trapnell-lab whole-embryo atlas, scored in the authors' OWN native ontology: we label each of their published cell groups across germ-layer → tissue → broad → sub — this is NOT a de-novo re-clustering. The benchmark measures whether we recover the biology the original study named.",
+    dataUrl: `${ASSET_BASE}/zscape_native/umap.json`,
+    archivistBase: `${ASSET_BASE}/zscape_native/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/zscape_native/groundtruth.json`,
     status: "ready",
-    approxClusters: 55,
+    approxClusters: 156,
   },
   {
     id: "chemfish",
     name: "ChemFish",
-    tagline: "Barkan et al. · 48 hpf subset · 78 de-novo clusters",
+    tagline: "Barkan et al. · 48 hpf · 341 native cell groups",
     blurb:
-      "Barkan et al. chemical-screen atlas (CHEM10 DSP + CHEM11 BS3). We re-cluster the 48 hpf subset de-novo (HVG→PCA→Harmony on experiment → Leiden res 3.0, 78 clusters) and score against the published labels. GT caveat: ChemFish ships only cell_type + tissue, so the four tiers are projected — cell_type_sub + tissue are native; cell_type_broad is derived (marker-qualifier strip) and germ_layer is an anatomical projection from tissue — not an independent four-tier set.",
-    dataUrl: `${ASSET_BASE}/chemfish/umap.json`,
-    archivistBase: `${ASSET_BASE}/chemfish/archivist`,
-    groundTruthUrl: `${ASSET_BASE}/chemfish/groundtruth.json`,
+      "Barkan et al. chemical-screen atlas (CHEM10 DSP + CHEM11 BS3), scored in its native ontology: we label the authors' own published cell groups — NOT a de-novo re-clustering. ChemFish natively publishes tissue + cell_type only (germ-layer and broad are projections), so the benchmark scores tissue + cell_type in the authors' schema.",
+    dataUrl: `${ASSET_BASE}/chemfish_native/umap.json`,
+    archivistBase: `${ASSET_BASE}/chemfish_native/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/chemfish_native/groundtruth.json`,
     status: "ready",
-    approxClusters: 78,
+    approxClusters: 341,
   },
   {
     id: "daniocell",
     name: "DanioCell",
-    tagline: "Sur et al. (Farrell/NICHD) · 36–72 hpf · 77 de-novo clusters",
+    tagline: "Sur et al. (Farrell/NICHD) · 36–72 hpf · 470 native cell groups",
     blurb:
-      "Independent dense-development atlas (Sur et al., Farrell lab / NICHD). We re-cluster the 36–72 hpf window de-novo (HVG→PCA→Harmony on stage → Leiden res 2.0, 77 clusters) and score against the published labels. Independent-lab CROSS-PLATFORM check: 10X droplet (vs ZSCAPE 10X / ChemFish sci-RNA-seq3 / MiniFin·MegaFin Parse) — a lower score reflects platform/domain shift, not necessarily worse labelling. Strength: DanioCell populations are in-situ-hybridization (ISH) validated. GT tiers: cell_type_sub (clust) + cell_type_broad (tissue.figure) + tissue (tissue.name) are native Farrell labels; germ_layer is an anatomical projection.",
-    dataUrl: `${ASSET_BASE}/daniocell/umap.json`,
-    archivistBase: `${ASSET_BASE}/daniocell/archivist`,
-    groundTruthUrl: `${ASSET_BASE}/daniocell/groundtruth.json`,
+      "Independent dense-development atlas (Sur et al., Farrell lab / NICHD), scored in its native ontology: we label the authors' own published cell groups — NOT a de-novo re-clustering. Genuinely independent / cross-platform (10X droplet) — a lower score reflects platform/domain shift, not worse labelling. ISH-validated populations. Native tiers scored: tissue + cell_type (broad).",
+    dataUrl: `${ASSET_BASE}/daniocell_native/umap.json`,
+    archivistBase: `${ASSET_BASE}/daniocell_native/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/daniocell_native/groundtruth.json`,
     status: "ready",
-    approxClusters: 77,
+    approxClusters: 470,
   },
   {
     id: "megafin_parse",
@@ -1702,6 +1702,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
   );
   const name = DATASET_BY_ID[datasetId as DatasetId]?.name ?? datasetId;
   const isGt = f.role === "gt";
+  const native = !!f.nativeSchema;  // GT benchmarks: authors' published cell groups, not re-clustered
   const ident: [string, string][] = [
     ["cells", `${(f.cells as number).toLocaleString()}${f.fullCells && f.fullCells > f.cells ? ` (of ${(f.fullCells as number).toLocaleString()})` : ""}`],
     ["platform", f.platform],
@@ -1711,7 +1712,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>How we found these {nClusters} clusters</div>
+        <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>{native ? `About the ${name} benchmark` : `How we found these ${nClusters} clusters`}</div>
         <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>{isGt ? "✓ GT benchmark" : "internal"}</span>
       </div>
 
@@ -1725,27 +1726,38 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         ))}
       </div>
 
-      {/* method */}
-      <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
-        We re-cluster {name} <b>de-novo</b>{isGt ? " — the authors' published cell-type labels are held out, so after labeling we score our calls against them" : ""}. Pipeline: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.recipe}</code>.
-      </p>
-
-      {sweep ? (
+      {native ? (
         <>
-          <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 8px" }}>
-            We sweep the Leiden resolution and score each one for <b>coherence</b> — the fraction of clusters carrying at least one strongly-enriched, cluster-specific marker — and minimum cluster size. The rule picks the <b>finest resolution that still holds together</b>: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.selectionRule}</code> → <b style={{ color: "#15803d" }}>res {f.chosenRes}, {f.clusters} clusters</b>.
+          {/* native-schema GT: not re-clustered — the authors' own published groups */}
+          <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
+            These are the original authors&rsquo; <b>published cell groups</b>, in their own native ontology — <b>not a de-novo re-clustering</b>. There is no Leiden resolution sweep: we label each of the {nClusters} groups the study itself defined, then score our calls against the authors&rsquo; labels in their own schema.
           </p>
-          {renderSweep(sweep)}
+          <div style={{ marginTop: 4, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "10px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.55 }}>
+            <b>What the score means.</b> Agreement is judged by a semantic LLM judge (synonym / ontology parent–child / lineage equivalence), not string match, against the dataset&rsquo;s <b>native tiers</b>. {f.caveat || "Coarser tiers that the dataset does not publish natively are not scored."}
+          </div>
         </>
-      ) : f.selectionNote ? (
-        <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
-      ) : null}
-
-      {/* why we trust each cluster — the coherence + min-size + silhouette criteria */}
-      <div style={{ marginTop: 12, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "10px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.55 }}>
-        <b>Why we trust each cluster.</b> A cluster counts as <b>coherent</b> when it carries at least one marker gene that is both <b>strongly enriched</b> (≥2×, log<sub>2</sub>FC ≥ 1) and <b>specific</b> — expressed in ≥25% of its cells and ≥15 percentage-points more than the rest of the atlas. The resolution we keep is the finest one where <b>≥95%</b> of clusters clear that bar and none falls below <b>30 cells</b> — coarse enough to trust, fine enough to be useful.
-        {f.subSplitNote && <div style={{ marginTop: 6 }}>{f.subSplitNote}</div>}
-      </div>
+      ) : (
+        <>
+          {/* method (de-novo, no-GT atlases) */}
+          <p style={{ fontSize: 13, color: "#555", lineHeight: 1.55, margin: "0 0 10px" }}>
+            We re-cluster {name} <b>de-novo</b>. Pipeline: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.recipe}</code>.
+          </p>
+          {sweep ? (
+            <>
+              <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 8px" }}>
+                We sweep the Leiden resolution and score each one for <b>coherence</b> — the fraction of clusters carrying at least one strongly-enriched, cluster-specific marker — and minimum cluster size. The rule picks the <b>finest resolution that still holds together</b>: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{f.selectionRule}</code> → <b style={{ color: "#15803d" }}>res {f.chosenRes}, {f.clusters} clusters</b>.
+              </p>
+              {renderSweep(sweep)}
+            </>
+          ) : f.selectionNote ? (
+            <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
+          ) : null}
+          <div style={{ marginTop: 12, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "10px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.55 }}>
+            <b>Why we trust each cluster.</b> A cluster counts as <b>coherent</b> when it carries at least one marker gene that is both <b>strongly enriched</b> (≥2×, log<sub>2</sub>FC ≥ 1) and <b>specific</b> — expressed in ≥25% of its cells and ≥15 percentage-points more than the rest of the atlas. The resolution we keep is the finest one where <b>≥95%</b> of clusters clear that bar and none falls below <b>30 cells</b> — coarse enough to trust, fine enough to be useful.
+            {f.subSplitNote && <div style={{ marginTop: 6 }}>{f.subSplitNote}</div>}
+          </div>
+        </>
+      )}
 
       {/* MegaFin (Manual) embedding story */}
       {f.coherenceNote && (
@@ -1912,6 +1924,7 @@ function MapStage({
   const fullCells = meta?.fullDatasetCells;
   const clusteredCells = meta?.totalCells ?? 0;
   const sampled = !!(fullCells && fullCells > clusteredCells);
+  const native = !!(FACTS as any)[dataset.id]?.nativeSchema;  // GT benchmark: authors' own cell groups, not re-clustered
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
@@ -1920,22 +1933,23 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : `How we clustered the ${dataset.name} atlas`}</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : native ? `The ${dataset.name} benchmark — native cell groups` : `How we clustered the ${dataset.name} atlas`}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
-            ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            ? `${clusters.length} ${native ? "native cell groups" : "de-novo clusters"} · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            : native
+            ? `${clusters.length} of the authors' own published cell groups, colored on the real UMAP — not re-clustered. Here's how this benchmark is scored — then choose a model to label with.`
             : sampled
             ? `${clusters.length} de-novo Leiden clusters, colored on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas (real UMAP). Here's how we found them — then choose a model to label with.`
             : `${clusters.length} de-novo Leiden clusters, colored — ${clusteredCells.toLocaleString()} cells, one dot each (real UMAP). Here's how we found them — then choose a model to label with.`}
         </p>
-        {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
+        {/* methodology note */}
         <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
-          {sampled
-            ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.`
-            : ""}
-          {dataset.groundTruthUrl
-            ? ` We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward.`
-            : ""}
+          {native
+            ? `These are the original authors' published cell groups in their native ontology — we label each one as-is and score against the authors' own labels. No de-novo clustering.`
+            : (sampled
+              ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.`
+              : "") + (dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : "")}
         </p>
 
         {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous */}

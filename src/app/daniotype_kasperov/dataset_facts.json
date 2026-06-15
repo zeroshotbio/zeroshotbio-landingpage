@@ -97,18 +97,16 @@
   "year": 2023,
   "namespace": "ENSDARG → ZFIN canonical",
   "role": "gt",
-  "resLabel": "silhouette-gated sub-Leiden",
-  "cells": 250000,
-  "clusters": 55,
+  "resLabel": "native ontology",
+  "cells": 3231733,
+  "clusters": 156,
   "fullCells": 3231733,
-  "source": "ZSCAPE Saunders et al. (de-novo leiden + silhouette-gated sub-split)",
-  "subsample": "Uniform random 250,000-cell sample of the full 3,231,733-cell perturbation reference — spanning every condition (drug-treated and control alike), not a control-only or biological subset; a tractable cross-section to cluster de-novo.",
-  "recipe": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
+  "source": "ZSCAPE Saunders et al. — scored in the authors' NATIVE ontology: units are their own published germ-layer→tissue→broad→sub cell groups, labelled as-is (NOT re-clustered).",
+  "recipe": "Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
   "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
   "sweep": null,
   "chosenRes": null,
-  "selectionNote": "ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
-  "subSplitNote": "Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented.",
+  "selectionNote": "Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — there is no de-novo clustering or resolution sweep.",
   "scorecard": {
    "schema": "native",
    "platform_class": "in-paradigm",
@@ -144,7 +142,8 @@
     "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space — home-turf, not generalization."
    ],
    "harnessVersion": "v1.1"
-  }
+  },
+  "nativeSchema": true
  },
  "chemfish": {
   "id": "chemfish",
@@ -153,58 +152,16 @@
   "year": null,
   "namespace": "ENSDARG → ZFIN canonical",
   "role": "gt",
-  "resLabel": "3.0",
-  "cells": 250000,
-  "clusters": 78,
-  "fullCells": 1579675,
-  "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) — 48 hpf subset, de-novo Leiden res 3.0 on Harmony(expt) embedding",
-  "subsample": "Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
-  "recipe": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
+  "resLabel": "native ontology",
+  "cells": 1579283,
+  "clusters": 341,
+  "fullCells": 1579283,
+  "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) — scored in the authors' NATIVE ontology: units are their own published cell groups, labelled as-is (NOT re-clustered).",
+  "recipe": "Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
   "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-  "sweep": [
-   {
-    "res": 1.0,
-    "clusters": 46,
-    "coherence": 0.978,
-    "minSize": 156,
-    "under50": 0,
-    "chosen": false
-   },
-   {
-    "res": 2.0,
-    "clusters": 69,
-    "coherence": 0.986,
-    "minSize": 40,
-    "under50": 1,
-    "chosen": false
-   },
-   {
-    "res": 3.0,
-    "clusters": 78,
-    "coherence": 1.0,
-    "minSize": 40,
-    "under50": 1,
-    "chosen": true
-   },
-   {
-    "res": 4.0,
-    "clusters": 93,
-    "coherence": 0.989,
-    "minSize": 27,
-    "under50": 3,
-    "chosen": false
-   },
-   {
-    "res": 5.0,
-    "clusters": 107,
-    "coherence": 0.991,
-    "minSize": 12,
-    "under50": 3,
-    "chosen": false
-   }
-  ],
-  "chosenRes": 3.0,
-  "selectionNote": null,
+  "sweep": null,
+  "chosenRes": null,
+  "selectionNote": "Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — there is no de-novo clustering or resolution sweep.",
   "scorecard": {
    "schema": "native",
    "platform_class": "in-paradigm",
@@ -233,7 +190,8 @@
     "Correction: 87.7% tissue supersedes the earlier withheld 31% — that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
    ],
    "harnessVersion": "v1.1"
-  }
+  },
+  "nativeSchema": true
  },
  "daniocell": {
   "id": "daniocell",
@@ -242,57 +200,16 @@
   "year": 2023,
   "namespace": "ENSDARG → ZFIN canonical",
   "role": "gt",
-  "resLabel": "2.0",
+  "resLabel": "native ontology",
   "cells": 191832,
-  "clusters": 77,
+  "clusters": 470,
   "fullCells": 191832,
-  "source": "DanioCell Sur et al. (Farrell/NICHD) — 36-72hpf window, de-novo Leiden res 2.0 on Harmony(stage) embedding",
-  "recipe": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+  "source": "DanioCell Sur et al. (Farrell/NICHD), 10X droplet — scored in the authors' NATIVE ontology: units are their own published cell groups, labelled as-is (NOT re-clustered).",
+  "recipe": "Authors' published cell groups in their native ontology — labelled directly, not re-clustered (no de-novo Leiden).",
   "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-  "sweep": [
-   {
-    "res": 1.0,
-    "clusters": 55,
-    "coherence": 1.0,
-    "minSize": 188,
-    "under50": 0,
-    "chosen": false
-   },
-   {
-    "res": 2.0,
-    "clusters": 77,
-    "coherence": 1.0,
-    "minSize": 188,
-    "under50": 0,
-    "chosen": true
-   },
-   {
-    "res": 3.0,
-    "clusters": 99,
-    "coherence": 1.0,
-    "minSize": 22,
-    "under50": 1,
-    "chosen": false
-   },
-   {
-    "res": 4.0,
-    "clusters": 117,
-    "coherence": 1.0,
-    "minSize": 22,
-    "under50": 4,
-    "chosen": false
-   },
-   {
-    "res": 5.0,
-    "clusters": 133,
-    "coherence": 1.0,
-    "minSize": 22,
-    "under50": 4,
-    "chosen": false
-   }
-  ],
-  "chosenRes": 2.0,
-  "selectionNote": null,
+  "sweep": null,
+  "chosenRes": null,
+  "selectionNote": "Native-schema benchmark: the authors' own finest published cell groups, scored in their ontology — there is no de-novo clustering or resolution sweep.",
   "scorecard": {
    "schema": "native",
    "platform_class": "independent",
@@ -321,7 +238,8 @@
     "Coarse: scored on tissue + broad only (≤43-level; numeric clust-codes are not a nameable vocabulary, excluded) — coarse-resolution generalization, not fine."
    ],
    "harnessVersion": "v1.1"
-  }
+  },
+  "nativeSchema": true
  },
  "megafin": {
   "id": "megafin",

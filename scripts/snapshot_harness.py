@@ -68,10 +68,14 @@ EVIDENTIARY={
   "note":"These native-benchmark artifacts — NOT any de-novo wizard run — are the basis of the GT scores above.",
 }
 COST_LEDGER={
-  "note":"Runs paid for. SEPARATE from evidence: contaminated runs are archived and are never evidentiary.",
-  "v1_0_labeling_usd":77.52,
-  "v1_1_delta_usd":6.2,
-  "v1_1_delta_note":"v1.1 was a judge-only paired re-score of the already-stored clean native labels — no relabeling.",
+  "note":"Runs paid for. SEPARATE from evidence; contaminated runs are archived, never evidentiary. RECONCILED 2026-06-15: the GT scores come from the native benchmark (~$600.5). The earlier $77.52 was the DE-NOVO wizard runs — a different set, superseded for the GT benchmarks.",
+  "gtNativeBenchmark_usd":600.5,
+  "gtNativeBenchmark_breakdown_usd":{"chemfish":217.37,"zscape":93.04,"daniocell":290.09},
+  "gtNativeBenchmark_note":"EVIDENTIARY: the labeling that produced the v1.1 GT scores (89.1M in / 5.16M out tokens, gpt-5.5). Equals the per-run costUsd on each GT loadable run — records and ledger agree.",
+  "v1_1_judge_rescore_usd":6.2,
+  "v1_1_judge_rescore_note":"Judge-only paired re-score (v1.0 vs v1.1) over the already-stored native labels + teeth arm — no relabeling.",
+  "denovoRuns_usd":77.52,
+  "denovoRuns_note":"De-novo wizard runs — superseded for the GT benchmarks; still the basis for the no-GT MegaFin/MiniFin loadable runs. Includes the two contaminated GT runs now archived.",
   "archivedContaminated":[
     {"dataset":"chemfish","runId":"20260614-071106-ba32de","reason":"MiniFin :5007 grounding during labeling (~94% abstained); archived out of the loadable index — NOT evidentiary"},
     {"dataset":"daniocell","runId":"20260614-070625-de91d5","reason":"MiniFin :5007 grounding during labeling; archived out of the loadable index — NOT evidentiary"},

@@ -6,8 +6,8 @@
    "name": "native-validated \u00b7 roll-up/superset judge",
    "version": "1.1",
    "supersedes": "v1.0",
-   "stampedAt": "2026-06-15T20:41:57+00:00",
-   "gitCommit": "dc6eff4e",
+   "stampedAt": "2026-06-15T21:14:51+00:00",
+   "gitCommit": "87005893",
    "model": "gpt-5.5",
    "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist. v1.1: the semantic judge now credits lineage roll-up + superset/multi-name predictions + benefit-of-doubt for nested anatomy (audited: 94 wrong\u2192right vs 1 right\u2192wrong across the 3 GT benchmarks; teeth arm 16/16 \u2014 still fails clearly-different lineages).",
    "design": [
@@ -226,10 +226,18 @@
       "note": "These native-benchmark artifacts \u2014 NOT any de-novo wizard run \u2014 are the basis of the GT scores above."
      },
      "costLedger": {
-      "note": "Runs paid for. SEPARATE from evidence: contaminated runs are archived and are never evidentiary.",
-      "v1_0_labeling_usd": 77.52,
-      "v1_1_delta_usd": 6.2,
-      "v1_1_delta_note": "v1.1 was a judge-only paired re-score of the already-stored clean native labels \u2014 no relabeling.",
+      "note": "Runs paid for. SEPARATE from evidence; contaminated runs are archived, never evidentiary. RECONCILED 2026-06-15: the GT scores come from the native benchmark (~$600.5). The earlier $77.52 was the DE-NOVO wizard runs \u2014 a different set, superseded for the GT benchmarks.",
+      "gtNativeBenchmark_usd": 600.5,
+      "gtNativeBenchmark_breakdown_usd": {
+       "chemfish": 217.37,
+       "zscape": 93.04,
+       "daniocell": 290.09
+      },
+      "gtNativeBenchmark_note": "EVIDENTIARY: the labeling that produced the v1.1 GT scores (89.1M in / 5.16M out tokens, gpt-5.5). Equals the per-run costUsd on each GT loadable run \u2014 records and ledger agree.",
+      "v1_1_judge_rescore_usd": 6.2,
+      "v1_1_judge_rescore_note": "Judge-only paired re-score (v1.0 vs v1.1) over the already-stored native labels + teeth arm \u2014 no relabeling.",
+      "denovoRuns_usd": 77.52,
+      "denovoRuns_note": "De-novo wizard runs \u2014 superseded for the GT benchmarks; still the basis for the no-GT MegaFin/MiniFin loadable runs. Includes the two contaminated GT runs now archived.",
       "archivedContaminated": [
        {
         "dataset": "chemfish",
