@@ -1892,6 +1892,25 @@ function MapStage({
   })();
   const runDate = loadedRun?.exportedAt || loadedRun?.scoredAt || score.scoredAt || null;
 
+  // reconcile the (localStorage-cached) loaded run against the SERVER index, so the banner
+  // never implies a run is saved/loadable when it isn't (e.g. an archived/contaminated run
+  // still cached in this browser). null = checking; true = on server; false = local-only.
+  const [loadedOnServer, setLoadedOnServer] = useState<boolean | null>(null);
+  useEffect(() => {
+    if (!loadedRun) { setLoadedOnServer(null); return; }
+    let alive = true;
+    fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dataset.id)}`)
+      .then((r) => (r.ok ? r.json() : { runs: [] }))
+      .then((d: any) => {
+        if (!alive) return;
+        const runs: any[] = d.runs || [];
+        const hit = runs.some((r) => r.exportedAt === loadedRun.exportedAt || (r.model === loadedRun.model && r.nLabelled === loadedRun.nLabelled && r.scoredAt === loadedRun.scoredAt));
+        setLoadedOnServer(hit);
+      })
+      .catch(() => alive && setLoadedOnServer(false));
+    return () => { alive = false; };
+  }, [dataset.id, loadedRun]);
+
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -1938,14 +1957,20 @@ function MapStage({
             : ""}
         </p>
 
-        {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous */}
-        {revealed && runTitle && (
-          <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 12, background: "#eef7f9", border: `1px solid ${ACCENT}33`, borderRadius: 99, padding: "6px 16px", fontSize: 13 }}>
-            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT }}>Viewing run</span>
-            <strong style={{ color: "#2b2b2b" }}>{runTitle}</strong>
-            {runDate && <span style={{ color: "#8a847c", fontSize: 12 }}>· {new Date(runDate).toLocaleString()}</span>}
-          </div>
-        )}
+        {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous.
+            If the cached run isn't on the server (e.g. an archived/contaminated run still in
+            this browser), say so plainly instead of implying it's loadable. */}
+        {revealed && runTitle && (() => {
+          const stale = !!loadedRun && loadedOnServer === false;
+          return (
+            <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 12, background: stale ? "#fffbeb" : "#eef7f9", border: `1px solid ${stale ? "#fde68a" : ACCENT + "33"}`, borderRadius: 99, padding: "6px 16px", fontSize: 13 }}>
+              <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: stale ? "#b45309" : ACCENT }}>{stale ? "⚠ Local cache" : "Viewing run"}</span>
+              <strong style={{ color: "#2b2b2b" }}>{runTitle}</strong>
+              {runDate && <span style={{ color: "#8a847c", fontSize: 12 }}>· {new Date(runDate).toLocaleString()}</span>}
+              {stale && <span style={{ fontSize: 11.5, color: "#92400e" }}>· not on the server (not in Load Previous Run) — use ↺ Reset run to clear, or Export to save it</span>}
+            </div>
+          );
+        })()}
 
         {/* run info bar — model + projected cost + spend. This is about the LABELLING
             run, not the clustering, so it only appears after reveal; the "How we
