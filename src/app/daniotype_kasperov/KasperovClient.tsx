@@ -991,85 +991,126 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
 // Dataset picker — the entry screen: choose which atlas to run the wizard on.
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-// Standardized body for the internal (no-GT) dataset cards. Sections the info
-// into a fixed order — Coverage & grounding · Experimental design · Clustering ·
-// Consistency — rendered identically for Manual MegaFin, Parse MegaFin and
-// MiniFin; each section self-hides when its data is absent. Replaces the older
-// single cramped block so the three cards read the same way.
+// Small uppercase section label shared by the horizontal card bodies.
+const CARD_SECLABEL: React.CSSProperties = { fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#a59f96" };
+
+// Body for the GROUND-TRUTH dataset cards — laid out horizontally: tier-accuracy
+// bars | by-size strata + abstention | notes. Fills the content area to the right
+// of the card's identity rail.
+function GtBody({ sc }: { sc: any }) {
+  const indep = sc.platform_class === "independent";
+  return (
+    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 13px", display: "flex", flexDirection: "column", gap: 9 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Native-schema benchmark</span>
+        <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 10 }}>
+        <div style={{ flex: "2 1 240px", minWidth: 210, display: "flex", flexDirection: "column", gap: 5, paddingRight: 14 }}>
+          <div style={CARD_SECLABEL}>Tier accuracy</div>
+          {sc.tiers.map((t: any, i: number) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11 }}>
+              <span style={{ width: 64, color: "#6b655d", flexShrink: 0 }}>{t.label.replace("Cell type — ", "")}</span>
+              <span style={{ flex: 1, height: 6, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}>
+                <span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: t.pct >= 70 ? "#15803d" : t.pct >= 45 ? "#ca8a04" : "#dc2626", borderRadius: 99 }} />
+              </span>
+              <span style={{ width: 32, textAlign: "right", fontWeight: 700, color: "#3f3a34", flexShrink: 0 }}>{t.pct}%</span>
+            </div>
+          ))}
+        </div>
+        <div style={{ flex: "1 1 130px", minWidth: 120, display: "flex", flexDirection: "column", gap: 4, borderLeft: "1px solid #ece8e2", paddingLeft: 14, paddingRight: 14 }}>
+          <div style={CARD_SECLABEL}>By cluster size</div>
+          <div style={{ fontSize: 10.5, color: "#7a746c" }}>≥100 <b style={{ color: "#3f3a34" }}>{sc.strata.ge100}%</b></div>
+          <div style={{ fontSize: 10.5, color: "#7a746c" }}>≥30 {sc.strata.ge30}% · all {sc.strata.all}%</div>
+          <div style={{ fontSize: 10.5, color: "#9a948c", marginTop: 2 }}>abstained {sc.abstention.n}/{sc.abstention.total}</div>
+          {sc.abstention.precision ? <span style={{ alignSelf: "flex-start", fontSize: 10, fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "1px 7px" }}>{sc.abstention.precision}% precision</span> : null}
+        </div>
+        {(sc.notes || []).length > 0 && (
+          <div style={{ flex: "2 1 210px", minWidth: 185, display: "flex", flexDirection: "column", gap: 4, borderLeft: "1px solid #ece8e2", paddingLeft: 14 }}>
+            <div style={CARD_SECLABEL}>Notes</div>
+            {(sc.notes || []).map((n: string, i: number) => (
+              <div key={i} style={{ fontSize: 9.5, color: i < 2 ? "#5a544c" : "#9a948c", lineHeight: 1.4 }}>• {n}</div>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Body for the internal (no-GT) dataset cards. Same fixed section set —
+// Coverage & grounding · Experimental design · Clustering · Consistency — but
+// laid out as horizontal columns (each self-hides when its data is absent), so
+// Manual MegaFin, Parse MegaFin and MiniFin all read the same way left-to-right.
 // ---------------------------------------------------------------------------
 function NoGtBody({ f }: { f: any }) {
   const ng = f.noGtScorecard;
   const cs = ng?.consistency;
   const pcs = ng?.processingConsistency;
-  const sec = (label: string, children: React.ReactNode, first = false) => (
-    <div style={{ borderTop: first ? "none" : "1px solid #ece8e2", marginTop: first ? 0 : 9, paddingTop: first ? 0 : 9, display: "flex", flexDirection: "column", gap: 5 }}>
-      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#a59f96" }}>{label}</div>
-      {children}
-    </div>
-  );
+  const chosen = (f.sweep || []).find((s: any) => s.chosen);
+  const coh = typeof f.coherence === "number" ? f.coherence : chosen?.coherence;
   const stat = (v: string, sub: string, accent = false) => (
-    <div style={{ flex: 1, background: accent ? "#f0fdf4" : "#fff", border: `1px solid ${accent ? "#d6e8db" : "#ece8e2"}`, borderRadius: 7, padding: "6px 9px" }}>
-      <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1, color: accent ? "#15803d" : "#3f3a34" }}>{v}</div>
+    <div style={{ flex: 1, background: accent ? "#f0fdf4" : "#fff", border: `1px solid ${accent ? "#d6e8db" : "#ece8e2"}`, borderRadius: 7, padding: "6px 8px" }}>
+      <div style={{ fontSize: 16, fontWeight: 800, lineHeight: 1, color: accent ? "#15803d" : "#3f3a34" }}>{v}</div>
       <div style={{ fontSize: 9, color: "#9a948c", marginTop: 3 }}>{sub}</div>
     </div>
   );
-  return (
-    <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", color: "#6b655d", display: "flex", flexDirection: "column" }}>
-      {ng && sec("Coverage & grounding", (
-        <>
-          <div style={{ display: "flex", gap: 7 }}>
-            {stat(`${ng.coverage.assigned_pct}%`, `assigned · ${ng.coverage.abstained} abstained`)}
-            {stat(`${ng.grounding_pct}%`, "marker grounding", true)}
-          </div>
-          <div style={{ fontSize: 10.5, color: "#7a746c" }}>tier depth <b style={{ color: "#3f3a34" }}>{ng.tier_depth.cell_type}</b> cell-type · {ng.tier_depth.tissue} tissue</div>
-          {ng.abstentionNote && <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{ng.abstentionNote}</div>}
-        </>
-      ), true)}
+  const sections = [
+    ng && { label: "Coverage & grounding", node: (
+      <>
+        <div style={{ display: "flex", gap: 6 }}>
+          {stat(`${ng.coverage.assigned_pct}%`, `assigned · ${ng.coverage.abstained} abst`)}
+          {stat(`${ng.grounding_pct}%`, "grounded", true)}
+        </div>
+        <div style={{ fontSize: 10.5, color: "#7a746c" }}>tier depth <b style={{ color: "#3f3a34" }}>{ng.tier_depth.cell_type}</b> cell-type · {ng.tier_depth.tissue} tissue</div>
+        {ng.abstentionNote && <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{ng.abstentionNote}</div>}
+      </>
+    ) },
+    f.designFacts && { label: "Experimental design", node: (
+      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 8px", fontSize: 10, lineHeight: 1.4 }}>
+        {Object.entries(f.designFacts).map(([k, v]: any, i: number) => (
+          <React.Fragment key={i}>
+            <span style={{ color: "#a59f96" }}>{k}</span>
+            <span style={{ color: "#5a544c" }}>{v as string}</span>
+          </React.Fragment>
+        ))}
+      </div>
+    ) },
+    { label: "Clustering", node: (
+      <>
+        <div style={{ fontSize: 9.5, color: "#a59f96", lineHeight: 1.4 }}>{f.recipe}</div>
+        {typeof coh === "number" && <div style={{ fontSize: 10.5, color: "#7a746c" }}>coherence <b style={{ color: coh >= 0.95 ? "#15803d" : "#b45309" }}>{coh.toFixed(3)}</b> · res {f.chosenRes}</div>}
+        {f.coherenceNote
+          ? <div style={{ fontSize: 9.5, color: "#b45309", lineHeight: 1.45 }}>⚠ Kept the carried Parse embedding; standard re-embed rejected. Full sweep on the map screen.</div>
+          : f.noGtNote ? <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{f.noGtNote}</div> : null}
+      </>
+    ) },
+    cs && { label: "Consistency vs prior annotation", node: (
+      <>
+        <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{cs.headlinePct}%</b> lineage <span style={{ color: "#9a948c" }}>· {cs.celltypePct}% cell-type</span></div>
+        <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{cs.framing}</div>
+        <div style={{ fontSize: 10, color: "#5a544c" }}>7 hardest: <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-err</b> · {cs.adjudication.labeler_error} labeler-err · {cs.adjudication.ambiguous} amb</div>
+      </>
+    ) },
+    pcs && { label: "Manual ↔ Parse processing-consistency", node: (
+      <>
+        <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{pcs.headlinePct}%</b> aligned <span style={{ color: "#9a948c" }}>· {pcs.cellWeightedPct}% cell-wtd · {pcs.allClusterPct}% all</span></div>
+        <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{pcs.framing}</div>
+        <div style={{ fontSize: 10, color: "#5a544c" }}>7 conflicts: <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse</b> · {pcs.adjudication.manual_better} Manual · {pcs.adjudication.marker_ceiling} amb</div>
+      </>
+    ) },
+  ].filter(Boolean) as { label: string; node: React.ReactNode }[];
 
-      {f.designFacts && sec("Experimental design", (
-        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 10px", fontSize: 10.5, lineHeight: 1.4 }}>
-          {Object.entries(f.designFacts).map(([k, v]: any, i: number) => (
-            <React.Fragment key={i}>
-              <span style={{ color: "#a59f96" }}>{k}</span>
-              <span style={{ color: "#5a544c" }}>{v as string}</span>
-            </React.Fragment>
-          ))}
+  return (
+    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 13px", color: "#6b655d", display: "flex", flexWrap: "wrap", rowGap: 12 }}>
+      {sections.map((s, i) => (
+        <div key={i} style={{ flex: "1 1 175px", minWidth: 158, borderLeft: i === 0 ? "none" : "1px solid #ece8e2", paddingLeft: i === 0 ? 0 : 13, paddingRight: 13, display: "flex", flexDirection: "column", gap: 5 }}>
+          <div style={CARD_SECLABEL}>{s.label}</div>
+          {s.node}
         </div>
       ))}
-
-      {(() => {
-        const chosen = (f.sweep || []).find((s: any) => s.chosen);
-        const coh = typeof f.coherence === "number" ? f.coherence : chosen?.coherence;
-        return sec("Clustering", (
-        <>
-          <div style={{ fontSize: 10, color: "#a59f96", lineHeight: 1.4 }}>{f.recipe}</div>
-          {typeof coh === "number" && (
-            <div style={{ fontSize: 10.5, color: "#7a746c" }}>coherence <b style={{ color: coh >= 0.95 ? "#15803d" : "#b45309" }}>{coh.toFixed(3)}</b> at chosen res {f.chosenRes}</div>
-          )}
-          {f.coherenceNote
-            ? <div style={{ fontSize: 9.5, color: "#b45309", lineHeight: 1.45 }}>⚠ Kept the carried Parse embedding; a standard re-embed was tested &amp; rejected. Full sweep on the map screen.</div>
-            : f.noGtNote ? <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{f.noGtNote}</div> : null}
-        </>
-        ));
-      })()}
-
-      {cs && sec("Consistency vs prior annotation", (
-        <>
-          <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{cs.headlinePct}%</b> lineage <span style={{ color: "#9a948c" }}>· {cs.celltypePct}% cell-type</span></div>
-          <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{cs.framing}</div>
-          <div style={{ fontSize: 10, color: "#5a544c" }}>7 hardest conflicts <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-error</b> · {cs.adjudication.labeler_error} labeler-error · {cs.adjudication.ambiguous} ambiguous</div>
-        </>
-      ))}
-
-      {pcs && sec("Manual ↔ Parse processing-consistency", (
-        <>
-          <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{pcs.headlinePct}%</b> aligned <span style={{ color: "#9a948c" }}>· {pcs.cellWeightedPct}% cell-weighted · {pcs.allClusterPct}% all-cluster</span></div>
-          <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{pcs.framing}</div>
-          <div style={{ fontSize: 10, color: "#5a544c" }}>7 high-purity conflicts <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse-better</b> · {pcs.adjudication.manual_better} Manual-better · {pcs.adjudication.marker_ceiling} ambiguous</div>
-        </>
-      ))}
-
-      {f.supersedes && <div style={{ marginTop: 9, fontSize: 9.5, color: "#a59f96", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
+      {f.supersedes && <div style={{ flexBasis: "100%", fontSize: 9.5, color: "#a59f96", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
     </div>
   );
 }
@@ -1077,7 +1118,7 @@ function NoGtBody({ f }: { f: any }) {
 function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
+      <div style={{ maxWidth: 1120, padding: "72px 28px 60px", width: "100%" }}>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov</div>
         <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a dataset to label</h1>
         <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
@@ -1090,8 +1131,6 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
             const ready = d.status === "ready";
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
-            const toneColor: Record<string, string> = { baseline: "#15803d", projected: "#b45309", independent: "#7c3aed" };
-            const fmtCells = (n: number) => (n >= 1e6 ? (n / 1e6).toFixed(1) + "M" : n >= 1e3 ? Math.round(n / 1e3) + "k" : String(n));
             const ident = f ? [
               [`${(f.cells as number).toLocaleString()} cells`, `${f.clusters} clusters · res ${f.resLabel}`],
               [f.platform, `${f.lab}${f.year ? " · " + f.year : ""}`],
@@ -1106,72 +1145,47 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   textAlign: "left",
                   background: ready ? "#fffdfb" : "#f3f0ec",
                   border: `1px solid ${ready ? "#e5e1dc" : "#e9e5df"}`,
-                  borderTop: `3px solid ${ready ? (isGt ? "#15803d" : ACCENT) : "#cfcac4"}`,
+                  borderLeft: `3px solid ${ready ? (isGt ? "#15803d" : ACCENT) : "#cfcac4"}`,
                   borderRadius: 12,
-                  padding: "16px 16px 18px",
+                  padding: "15px 17px",
                   cursor: ready ? "pointer" : "default",
                   opacity: ready ? 1 : 0.7,
                   color: INK,
                   display: "flex",
-                  flexDirection: "column",
-                  gap: 8,
-                  minHeight: 188,
+                  flexDirection: "row",
+                  alignItems: "stretch",
+                  gap: 16,
+                  width: "100%",
                 }}
               >
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
-                  {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
-                  {f && (
-                    <span title={isGt ? "Scored against published cell-type labels" : "No published labels — intuition-building, not a benchmark"} style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>
-                      {isGt ? "✓ GT benchmark" : "internal"}
-                    </span>
+                {/* identity rail */}
+                <div style={{ width: 224, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
+                    {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
+                    {f && (
+                      <span title={isGt ? "Scored against published cell-type labels" : "No published labels — intuition-building, not a benchmark"} style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>
+                        {isGt ? "✓ GT benchmark" : "internal"}
+                      </span>
+                    )}
+                  </div>
+                  {ident && (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 10px", fontSize: 11, color: "#555", lineHeight: 1.45 }}>
+                      {ident.map(([a, b], i) => (
+                        <React.Fragment key={i}>
+                          <span style={{ fontWeight: 700, color: "#3f3a34" }}>{a}</span>
+                          <span style={{ color: "#7a746c", textAlign: "right" }}>{b}</span>
+                        </React.Fragment>
+                      ))}
+                    </div>
                   )}
+                  {ready && <div style={{ marginTop: "auto", paddingTop: 8, fontSize: 13, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
                 </div>
 
-                {ident && (
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "3px 10px", fontSize: 11.5, color: "#555", lineHeight: 1.45 }}>
-                    {ident.map(([a, b], i) => (
-                      <React.Fragment key={i}>
-                        <span style={{ fontWeight: 700, color: "#3f3a34" }}>{a}</span>
-                        <span style={{ color: "#7a746c", textAlign: "right" }}>{b}</span>
-                      </React.Fragment>
-                    ))}
-                  </div>
-                )}
-
-                {isGt && f.scorecard && (() => {
-                  const sc = f.scorecard; const indep = sc.platform_class === "independent";
-                  return (
-                  <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Native-schema benchmark</span>
-                      <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span>
-                    </div>
-                    {sc.tiers.map((t: any, i: number) => (
-                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
-                        <span style={{ width: 64, color: "#6b655d", flexShrink: 0 }}>{t.label.replace("Cell type — ", "")}</span>
-                        <span style={{ flex: 1, height: 6, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}>
-                          <span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: t.pct >= 70 ? "#15803d" : t.pct >= 45 ? "#ca8a04" : "#dc2626", borderRadius: 99 }} />
-                        </span>
-                        <span style={{ width: 34, textAlign: "right", fontWeight: 700, color: "#3f3a34", flexShrink: 0 }}>{t.pct}%</span>
-                      </div>
-                    ))}
-                    <div style={{ fontSize: 10.5, color: "#7a746c" }}>by size: ≥100 <b>{sc.strata.ge100}%</b> · ≥30 {sc.strata.ge30}% · all {sc.strata.all}%</div>
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5 }}>
-                      <span style={{ color: "#9a948c" }}>abstained {sc.abstention.n}/{sc.abstention.total}</span>
-                      {sc.abstention.precision ? <span style={{ fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "1px 7px" }}>{sc.abstention.precision}% precision</span> : null}
-                    </div>
-                    {(sc.notes || []).map((n: string, i: number) => (
-                      <div key={i} style={{ fontSize: 10, color: i < 2 ? "#5a544c" : "#9a948c", lineHeight: 1.4 }}>• {n}</div>
-                    ))}
-                  </div>
-                  );
-                })()}
-
+                {/* content area */}
+                {isGt && f.scorecard && <GtBody sc={f.scorecard} />}
                 {f && !isGt && <NoGtBody f={f} />}
-
-                {!f && <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
-                {ready && <div style={{ marginTop: "auto", paddingTop: 8, fontSize: 13, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
+                {!f && <div style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
               </button>
             );
           };
@@ -1179,7 +1193,7 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
           const order = ["megafin", "megafin_parse", "minifin"];
           const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt")
             .sort((a, b) => ((order.indexOf(a.id) + 1) || 99) - ((order.indexOf(b.id) + 1) || 99));
-          const gridStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 } as const;
+          const gridStyle = { display: "flex", flexDirection: "column", gap: 14 } as const;
           const hdr = { fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#3f3a34", fontWeight: 700, margin: "8px 0 12px" };
           return (
             <>
