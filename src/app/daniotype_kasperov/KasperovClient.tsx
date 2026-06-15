@@ -432,6 +432,8 @@ export default function KasperovClient() {
   const [runNote, setRunNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
   const [loadedNote, setLoadedNote] = useState<string | null>(null); // note of a loaded previous run
+  // identity of the run currently being viewed (so the map says WHICH run), titled like Load Previous Run
+  const [loadedRun, setLoadedRun] = useState<{ model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null>(null);
   const hydratedRef = useRef<string | null>(null);
 
   // selected model (global), accumulated token usage per model (per-dataset), and
@@ -478,6 +480,8 @@ export default function KasperovClient() {
     setIncorporated(new Set());
     setRevealed(false);
     setActiveId(null);
+    setLoadedNote(null);
+    setLoadedRun(null);
     setStage("map"); // dataset chosen → show "How we clustered" first, then model → harness → chat
     setUsage({});
     setScore({ verdicts: {}, scoredAt: null, agg: [] });
@@ -490,6 +494,7 @@ export default function KasperovClient() {
         if (p.confidence) setConfidence(p.confidence);
         if (p.usage) setUsage(p.usage);
         if (p.score) setScore({ verdicts: p.score.verdicts ?? {}, scoredAt: p.score.scoredAt ?? null, agg: p.score.agg ?? [], subStrat: p.score.subStrat ?? null, abstention: p.score.abstention ?? null });
+        if (p.runMeta) setLoadedRun(p.runMeta);
       }
     } catch {}
     try {
@@ -511,15 +516,15 @@ export default function KasperovClient() {
     if (!dataset || hydratedRef.current !== dataset.id) return;
     const id = setTimeout(() => {
       try {
-        localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ transcripts, augmented, confidence, usage, score }));
+        localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ transcripts, augmented, confidence, usage, score, runMeta: loadedRun }));
       } catch {
         try {
-          localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ augmented, confidence, usage, score }));
+          localStorage.setItem(resultsKey(dataset.id), JSON.stringify({ augmented, confidence, usage, score, runMeta: loadedRun }));
         } catch {}
       }
     }, 800);
     return () => clearTimeout(id);
-  }, [transcripts, augmented, confidence, usage, score, dataset]);
+  }, [transcripts, augmented, confidence, usage, score, dataset, loadedRun]);
 
   useEffect(() => {
     if (!dataset || !loaded || hydratedRef.current !== dataset.id) return;
@@ -641,6 +646,7 @@ export default function KasperovClient() {
     setTranscripts(nTrans);
     setIncorporated(new Set());
     setLoadedNote(typeof data.note === "string" && data.note.trim() ? data.note.trim() : null);
+    setLoadedRun({ model: data.model, nLabelled: data.nLabelled, scoredAt: data.groundTruth?.scoredAt ?? data.scoredAt ?? null, exportedAt: data.exportedAt ?? null, note: (typeof data.note === "string" && data.note.trim()) ? data.note.trim() : null });
     // restore run metadata (model, cost/usage, ground-truth scores) when present
     if (data.cost?.usage && typeof data.cost.usage === "object") setUsage(data.cost.usage);
     else setUsage({});
@@ -784,6 +790,7 @@ export default function KasperovClient() {
         onSwitchDataset={() => setDataset(null)}
         onImport={importResults}
         loadedNote={loadedNote}
+        loadedRun={loadedRun}
         labels={labels}
         confidence={confidence}
         model={model}
@@ -1762,6 +1769,7 @@ function MapStage({
   onSwitchDataset,
   onImport,
   loadedNote,
+  loadedRun,
   labels = {},
   confidence = {},
   model,
@@ -1784,6 +1792,7 @@ function MapStage({
   onSwitchDataset: () => void;
   onImport: (data: unknown) => void;
   loadedNote?: string | null;
+  loadedRun?: { model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null;
   labels?: Record<string, string>;
   confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
@@ -1861,6 +1870,18 @@ function MapStage({
   const spent = estimateCost(usage).usd;
   const fmtUsd = (v: number) => `$${v.toFixed(2)}`;
 
+  // which run is being viewed — titled exactly like the "Load Previous Run…" list
+  const runTitle = (() => {
+    if (loadedRun && (loadedRun.model || loadedRun.nLabelled != null)) {
+      let t = `${loadedRun.model ?? model} · ${loadedRun.nLabelled ?? labelled.length} labelled`;
+      if (loadedRun.scoredAt) t += " · scored";
+      return t;
+    }
+    if (labelled.length > 0) return `${model} · ${labelled.length} labelled${score.scoredAt ? " · scored" : ""} · local run`;
+    return null;
+  })();
+  const runDate = loadedRun?.exportedAt || loadedRun?.scoredAt || score.scoredAt || null;
+
   const trim15 = (s: string) => {
     const w = s.trim().split(/\s+/);
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
@@ -1884,7 +1905,7 @@ function MapStage({
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
+      <div style={{ maxWidth: 1056, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, position: "relative" }}>
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
@@ -1906,6 +1927,15 @@ function MapStage({
             ? ` We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward.`
             : ""}
         </p>
+
+        {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous */}
+        {revealed && runTitle && (
+          <div style={{ display: "inline-flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", justifyContent: "center", marginBottom: 12, background: "#eef7f9", border: `1px solid ${ACCENT}33`, borderRadius: 99, padding: "6px 16px", fontSize: 13 }}>
+            <span style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT }}>Viewing run</span>
+            <strong style={{ color: "#2b2b2b" }}>{runTitle}</strong>
+            {runDate && <span style={{ color: "#8a847c", fontSize: 12 }}>· {new Date(runDate).toLocaleString()}</span>}
+          </div>
+        )}
 
         {/* run info bar — model + projected cost + spend. This is about the LABELLING
             run, not the clustering, so it only appears after reveal; the "How we
