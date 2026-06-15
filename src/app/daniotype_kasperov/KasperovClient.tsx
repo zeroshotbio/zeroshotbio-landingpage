@@ -1040,17 +1040,16 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   </div>
                 )}
 
-                {isGt && f.scorecardStale && (
-                  <div style={{ background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#92400e", lineHeight: 1.45 }}>
-                    <div style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, fontSize: 10, marginBottom: 2 }}>⚠ Scorecard withheld</div>
-                    {f.scorecardCaveat}
-                  </div>
-                )}
-                {isGt && f.scorecard && !f.scorecardStale && (
+                {isGt && f.scorecard && (() => {
+                  const sc = f.scorecard; const indep = sc.platform_class === "independent";
+                  return (
                   <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", display: "flex", flexDirection: "column", gap: 5 }}>
-                    <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Driver-scored accuracy</div>
-                    {f.scorecard.tiers.map((t: any) => (
-                      <div key={t.key} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Native-schema benchmark</span>
+                      <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span>
+                    </div>
+                    {sc.tiers.map((t: any, i: number) => (
+                      <div key={i} style={{ display: "flex", alignItems: "center", gap: 7, fontSize: 11.5 }}>
                         <span style={{ width: 64, color: "#6b655d", flexShrink: 0 }}>{t.label.replace("Cell type — ", "")}</span>
                         <span style={{ flex: 1, height: 6, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}>
                           <span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: t.pct >= 70 ? "#15803d" : t.pct >= 45 ? "#ca8a04" : "#dc2626", borderRadius: 99 }} />
@@ -1058,13 +1057,17 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                         <span style={{ width: 34, textAlign: "right", fontWeight: 700, color: "#3f3a34", flexShrink: 0 }}>{t.pct}%</span>
                       </div>
                     ))}
-                    <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 1, fontSize: 11 }}>
-                      <span style={{ fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "1px 7px" }}>abstention precision {f.scorecard.abstentionPrecision}%</span>
-                      <span style={{ color: "#9a948c" }}>{f.scorecard.nAbstain}/{f.clusters} declined</span>
+                    <div style={{ fontSize: 10.5, color: "#7a746c" }}>by size: ≥100 <b>{sc.strata.ge100}%</b> · ≥30 {sc.strata.ge30}% · all {sc.strata.all}%</div>
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 10.5 }}>
+                      <span style={{ color: "#9a948c" }}>abstained {sc.abstention.n}/{sc.abstention.total}</span>
+                      {sc.abstention.precision ? <span style={{ fontWeight: 700, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "1px 7px" }}>{sc.abstention.precision}% precision</span> : null}
                     </div>
-                    <div style={{ fontSize: 11, color: toneColor[f.caveatTone] || "#7a746c", lineHeight: 1.45, marginTop: 1 }}>⚠ {f.caveat}</div>
+                    {(sc.notes || []).map((n: string, i: number) => (
+                      <div key={i} style={{ fontSize: 10, color: i < 2 ? "#5a544c" : "#9a948c", lineHeight: 1.4 }}>• {n}</div>
+                    ))}
                   </div>
-                )}
+                  );
+                })()}
 
                 {f && !isGt && (
                   <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#6b655d", lineHeight: 1.5 }}>

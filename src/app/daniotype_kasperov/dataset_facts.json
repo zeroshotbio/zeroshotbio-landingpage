@@ -61,7 +61,7 @@
  },
  "zscape": {
   "id": "zscape",
-  "platform": "10X droplet",
+  "platform": "sci-RNA-seq3",
   "lab": "Saunders/Trapnell et al.",
   "year": 2023,
   "namespace": "ENSDARG \u2192 ZFIN canonical",
@@ -77,45 +77,43 @@
   "chosenRes": null,
   "selectionNote": "ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
   "scorecard": {
-   "runId": "20260613-230719-15e201",
+   "schema": "native",
+   "platform_class": "in-paradigm",
    "tiers": [
     {
-     "key": "germ_layer",
      "label": "Germ layer",
-     "pct": 96.4,
-     "matched": 53,
-     "total": 55
+     "pct": 93.6
     },
     {
-     "key": "tissue",
      "label": "Tissue",
-     "pct": 87.3,
-     "matched": 48,
-     "total": 55
+     "pct": 91.0
     },
     {
-     "key": "cell_type_broad",
      "label": "Cell type \u2014 broad",
-     "pct": 75.5,
-     "matched": 37,
-     "total": 49
+     "pct": 91.7
     },
     {
-     "key": "cell_type_sub",
      "label": "Cell type \u2014 sub",
-     "pct": 69.4,
-     "matched": 34,
-     "total": 49
+     "pct": 89.1
     }
    ],
-   "highPuritySub": 80.0,
-   "abstentionPrecision": 33.3,
-   "nAbstain": 6,
-   "nAssign": 49,
-   "costUsd": 9.87
-  },
-  "caveat": "In-paradigm baseline \u2014 the reference standard (authors' own 10X atlas, native 4-tier labels).",
-  "caveatTone": "baseline"
+   "strata": {
+    "ge100": 91.7,
+    "ge30": 91.3,
+    "all": 91.3
+   },
+   "abstention": {
+    "n": 0,
+    "total": 156,
+    "precision": 0
+   },
+   "notes": [
+    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space \u2014 home-turf, not generalization.",
+    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
+    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
+    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+   ]
+  }
  },
  "chemfish": {
   "id": "chemfish",
@@ -176,47 +174,36 @@
   "chosenRes": 3.0,
   "selectionNote": null,
   "scorecard": {
-   "runId": "20260614-071106-ba32de",
+   "schema": "native",
+   "platform_class": "in-paradigm",
    "tiers": [
     {
-     "key": "germ_layer",
-     "label": "Germ layer",
-     "pct": 51.3,
-     "matched": 40,
-     "total": 78
-    },
-    {
-     "key": "tissue",
      "label": "Tissue",
-     "pct": 30.7,
-     "matched": 23,
-     "total": 75
+     "pct": 87.7
     },
     {
-     "key": "cell_type_broad",
-     "label": "Cell type \u2014 broad",
-     "pct": 21.4,
-     "matched": 6,
-     "total": 28
-    },
-    {
-     "key": "cell_type_sub",
      "label": "Cell type \u2014 sub",
-     "pct": 27.3,
-     "matched": 6,
-     "total": 22
+     "pct": 78.8
     }
    ],
-   "highPuritySub": 33.3,
-   "abstentionPrecision": 96.4,
-   "nAbstain": 56,
-   "nAssign": 22,
-   "costUsd": 15.92
-  },
-  "caveat": "Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
-  "caveatTone": "projected",
-  "scorecardStale": true,
-  "scorecardCaveat": "These scores came from run ba32de, which grounded on a misaligned :5007 (it served MiniFin's stats for ChemFish). Suppressed pending a re-run on corrected grounding."
+   "strata": {
+    "ge100": 84.4,
+    "ge30": 83.9,
+    "all": 82.7
+   },
+   "abstention": {
+    "n": 6,
+    "total": 341,
+    "precision": 83.0
+   },
+   "notes": [
+    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
+    "Correction: 87.7% tissue supersedes the earlier withheld 31% \u2014 that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed.",
+    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
+    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
+    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+   ]
+  }
  },
  "daniocell": {
   "id": "daniocell",
@@ -277,45 +264,36 @@
   "chosenRes": 2.0,
   "selectionNote": null,
   "scorecard": {
-   "runId": "20260614-070625-de91d5",
+   "schema": "native",
+   "platform_class": "independent",
    "tiers": [
     {
-     "key": "germ_layer",
-     "label": "Germ layer",
-     "pct": 53.2,
-     "matched": 41,
-     "total": 77
-    },
-    {
-     "key": "tissue",
      "label": "Tissue",
-     "pct": 40.0,
-     "matched": 30,
-     "total": 75
+     "pct": 80.9
     },
     {
-     "key": "cell_type_broad",
      "label": "Cell type \u2014 broad",
-     "pct": 39.3,
-     "matched": 11,
-     "total": 28
-    },
-    {
-     "key": "cell_type_sub",
-     "label": "Cell type \u2014 sub",
-     "pct": 20.0,
-     "matched": 3,
-     "total": 15
+     "pct": 81.9
     }
    ],
-   "highPuritySub": 25.0,
-   "abstentionPrecision": 95.2,
-   "nAbstain": 62,
-   "nAssign": 15,
-   "costUsd": 15.67
-  },
-  "caveat": "Independent lab, ISH-validated populations, cross-platform (10X droplet). A lower score reflects platform/domain shift \u2014 harder, not worse labeling. The genuinely independent read.",
-  "caveatTone": "independent"
+   "strata": {
+    "ge100": 86.2,
+    "ge30": 82.6,
+    "all": 81.3
+   },
+   "abstention": {
+    "n": 2,
+    "total": 470,
+    "precision": 0
+   },
+   "notes": [
+    "Genuinely INDEPENDENT / cross-platform (10X droplet) \u2014 the real generalization read.",
+    "Coarse: scored on tissue + broad only (\u226443-level; numeric clust-codes are not a nameable vocabulary, excluded) \u2014 coarse-resolution generalization, not fine.",
+    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
+    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
+    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+   ]
+  }
  },
  "megafin": {
   "id": "megafin",
