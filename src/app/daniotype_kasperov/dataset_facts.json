@@ -57,7 +57,32 @@
   ],
   "chosenRes": 1.0,
   "selectionNote": null,
-  "noGtNote": "Internal reference \u2014 no published labels; intuition-building, not a benchmark."
+  "noGtNote": "Internal reference \u2014 no published labels; intuition-building, not a benchmark.",
+  "noGtScorecard": {
+   "units": 54,
+   "coverage": {
+    "assigned_pct": 100.0,
+    "abstained": 0
+   },
+   "grounding_pct": 98.5,
+   "tier_depth": {
+    "cell_type": 50,
+    "tissue": 4
+   },
+   "badge": "No-GT",
+   "consistency": {
+    "headlinePct": 72,
+    "celltypePct": 51.9,
+    "framing": "Consistency, not accuracy \u2014 the prior is an automated internal annotation, not ground truth.",
+    "celltypeNote": "Cell-type differences are mostly granularity (the labeler stays coarse where it won't guess an ungroundable subtype) plus prior-annotation errors.",
+    "adjudication": {
+     "prior_error": 4,
+     "labeler_error": 1,
+     "ambiguous": 2,
+     "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's \u2014 including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
+    }
+   }
+  }
  },
  "zscape": {
   "id": "zscape",
@@ -108,10 +133,7 @@
     "precision": 0
    },
    "notes": [
-    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space \u2014 home-turf, not generalization.",
-    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
-    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
-    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space \u2014 home-turf, not generalization."
    ]
   }
  },
@@ -198,10 +220,7 @@
    },
    "notes": [
     "In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
-    "Correction: 87.7% tissue supersedes the earlier withheld 31% \u2014 that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed.",
-    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
-    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
-    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+    "Correction: 87.7% tissue supersedes the earlier withheld 31% \u2014 that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
    ]
   }
  },
@@ -288,10 +307,7 @@
    },
    "notes": [
     "Genuinely INDEPENDENT / cross-platform (10X droplet) \u2014 the real generalization read.",
-    "Coarse: scored on tissue + broad only (\u226443-level; numeric clust-codes are not a nameable vocabulary, excluded) \u2014 coarse-resolution generalization, not fine.",
-    "Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
-    "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
-    "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+    "Coarse: scored on tissue + broad only (\u226443-level; numeric clust-codes are not a nameable vocabulary, excluded) \u2014 coarse-resolution generalization, not fine."
    ]
   }
  },
@@ -412,6 +428,20 @@
    "into": 61,
    "cells_moved": 29,
    "renumbered_to_contiguous": true
+  },
+  "noGtScorecard": {
+   "units": 84,
+   "coverage": {
+    "assigned_pct": 95.2,
+    "abstained": 4
+   },
+   "grounding_pct": 98.6,
+   "tier_depth": {
+    "cell_type": 70,
+    "tissue": 10
+   },
+   "badge": "No published labels \u2014 not an accuracy benchmark",
+   "abstentionNote": "All 4 abstentions justified \u2014 and it declined c23, a 4,131-cell cluster, because it is a ribosome-high / low-complexity technical artifact, not a size call. It knows the difference between a cell type it can't resolve and a cluster it shouldn't label."
   }
  },
  "megafin_parse": {
@@ -458,5 +488,12 @@
   "selectionNote": null,
   "noGtNote": "Internal drug-screen atlas (Parse pipeline build) \u2014 no published labels; intuition-building, not a benchmark.",
   "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos"
+ },
+ "_suite": {
+  "notes": [
+   "Scored in each dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
+   "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
+   "Abstains only on under-powered or technical-artifact clusters, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."
+  ]
  }
 }

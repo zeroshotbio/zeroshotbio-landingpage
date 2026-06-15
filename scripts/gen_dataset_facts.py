@@ -111,9 +111,11 @@ import os as _os
 SCJ="/data/scratch/bench/native_run/SCORING.json"
 if _os.path.exists(SCJ):
     sc=json.load(open(SCJ))
-    COMMON=["Scored in this dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
+    # Three shared notes are now lifted to ONE suite-level line (rendered once under the grid),
+    # not repeated per card.
+    COMMON=["Scored in each dataset's own native schema \u2014 not cross-dataset comparable; no head-to-head ranking.",
             "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher \u2014 especially ChemFish sub.",
-            "Abstains only on under-powered tiny units, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."]
+            "Abstains only on under-powered or technical-artifact clusters, never reliable ones, and flags likely reference errors \u2014 it knows what it doesn't know."]
     EXTRA={"zscape":["In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space \u2014 home-turf, not generalization."],
            "chemfish":["In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
                        "Correction: 87.7% tissue supersedes the earlier withheld 31% \u2014 that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."],
@@ -130,12 +132,51 @@ if _os.path.exists(SCJ):
             "schema":"native","platform_class":CLASS[ds],"tiers":tiers,
             "strata":{"ge100":st["ge100"]["tier_acc"],"ge30":st["ge30"]["tier_acc"],"all":st["all"]["tier_acc"]},
             "abstention":{"n":ab.get("n_abstain"),"total":d["units_scored"],"precision":round((ab.get("abstained_forced_sub_fail") or {}).get("pct",0),0) if ab.get("abstained_forced_sub_fail") else None},
-            "notes":EXTRA[ds]+COMMON}
+            "notes":EXTRA[ds]}
         facts[ds].pop("scorecardStale",None); facts[ds].pop("scorecardCaveat",None); facts[ds].pop("caveat",None); facts[ds].pop("caveatTone",None)
+    # suite-level shared notes (rendered once under the grid, applies to GT + no-GT)
+    facts["_suite"]={"notes":COMMON}
+
+# ---------------------------------------------------------------------------
+# NO-GT scorecards (MegaFin + MiniFin, the no-published-label assets). Coverage/grounding
+# from the open-vocab labeling run; numbers read from nogt_run/ANALYSIS.json (no hand-typing).
+# MiniFin also carries a carefully-framed consistency block vs its prior INTERNAL annotation
+# (automated, not GT) + the 7-conflict grounded adjudication tally.
+ANJ="/data/scratch/bench/nogt_run/ANALYSIS.json"
+if _os.path.exists(ANJ):
+    an=json.load(open(ANJ))
+    def _nogt(ds):
+        a=an[ds]; td=a["tier_depth"]
+        return {"units":a["units"],
+                "coverage":{"assigned_pct":a["coverage"]["assign_pct"],"abstained":a["coverage"]["abstained"]},
+                "grounding_pct":a["grounding"]["enriched_pct"],
+                "tier_depth":{"cell_type":td.get("cell type",0),"tissue":td.get("tissue",0)}}
+    if "megafin" in an:
+        m=_nogt("megafin")
+        m["badge"]="No published labels — not an accuracy benchmark"
+        m["abstentionNote"]="All 4 abstentions justified — and it declined c23, a 4,131-cell cluster, because it is a ribosome-high / low-complexity technical artifact, not a size call. It knows the difference between a cell type it can't resolve and a cluster it shouldn't label."
+        facts["megafin"]["noGtScorecard"]=m
+    if "minifin" in an:
+        m=_nogt("minifin")
+        m["badge"]="No-GT"
+        mc=an["minifin_consistency"]
+        adj=json.load(open("/data/scratch/bench/nogt_run/minifin_adjudication.json"))["tally"]
+        m["consistency"]={
+            "headlinePct":round(mc["agreement_tissue_pct"]),          # lineage/tissue agreement = the headline
+            "celltypePct":round(mc["agreement_celltype_pct"],1),       # shown as context, never bare
+            "framing":"Consistency, not accuracy — the prior is an automated internal annotation, not ground truth.",
+            "celltypeNote":"Cell-type differences are mostly granularity (the labeler stays coarse where it won't guess an ungroundable subtype) plus prior-annotation errors.",
+            "adjudication":{"prior_error":adj["prior_error"],"labeler_error":adj["labeler_error"],"ambiguous":adj["ambiguous"],
+                "note":"On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."}}
+        facts["minifin"]["noGtScorecard"]=m
 
 OUT=os.path.join(ROOT,"src","app","daniotype_kasperov","dataset_facts.json")
 json.dump(facts, open(OUT,"w"), indent=1)
 print("wrote", OUT)
 for ds,e in facts.items():
-    sc=e.get("scorecard")
-    print(f"  {ds}: {e['cells']} cells, {e['clusters']} clusters, role={e['role']}" + (f", germ {sc['tiers'][0]['pct']}% abst-prec {sc['abstentionPrecision']}%" if sc else ""))
+    if ds.startswith("_"): continue
+    sc=e.get("scorecard"); ng=e.get("noGtScorecard")
+    line=f"  {ds}: {e['cells']} cells, {e['clusters']} clusters, role={e['role']}"
+    if sc: line+=f" | GT tiers {[t['pct'] for t in sc['tiers']]} abst {sc['abstention']['n']}/{sc['abstention']['total']}"
+    if ng: line+=f" | no-GT assign {ng['coverage']['assigned_pct']}% ground {ng['grounding_pct']}% depth {ng['tier_depth']}"+(f" consist {ng['consistency']['headlinePct']}%/{ng['consistency']['celltypePct']}%" if ng.get('consistency') else "")
+    print(line)

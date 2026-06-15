@@ -1073,6 +1073,28 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#6b655d", lineHeight: 1.5 }}>
                     {f.design && <div><b style={{ color: "#3f3a34" }}>Design:</b> {f.design}</div>}
                     {f.coherenceNote ? <div style={{ marginTop: 3, color: "#b45309" }}>⚠ {f.coherenceNote}</div> : <div style={{ marginTop: 3 }}>{f.noGtNote}</div>}
+                    {f.noGtScorecard && (() => {
+                      const ng = f.noGtScorecard; const cs = ng.consistency;
+                      return (
+                        <div style={{ borderTop: "1px solid #ece8e2", marginTop: 7, paddingTop: 7, display: "flex", flexDirection: "column", gap: 5 }}>
+                          <span style={{ alignSelf: "flex-start", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>{ng.badge}</span>
+                          <div style={{ fontSize: 11.5 }}>
+                            <span style={{ color: "#6b655d" }}>coverage </span><b style={{ color: "#3f3a34" }}>{ng.coverage.assigned_pct}%</b><span style={{ color: "#6b655d" }}> assigned ({ng.coverage.abstained} abstained) · grounding </span><b style={{ color: "#15803d" }}>{ng.grounding_pct}%</b>
+                          </div>
+                          <div style={{ fontSize: 10.5, color: "#7a746c" }}>tier depth: {ng.tier_depth.cell_type} cell-type · {ng.tier_depth.tissue} tissue</div>
+                          {ng.abstentionNote && <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>• {ng.abstentionNote}</div>}
+                          {cs && (
+                            <div style={{ marginTop: 2, display: "flex", flexDirection: "column", gap: 4 }}>
+                              <div style={{ fontSize: 11.5 }}><span style={{ color: "#6b655d" }}>consistency vs prior internal annotation: </span><b style={{ color: "#3f3a34" }}>{cs.headlinePct}% lineage agreement</b></div>
+                              <div style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", lineHeight: 1.4 }}>{cs.framing}</div>
+                              <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>{cs.celltypeNote} (cell-type {cs.celltypePct}%)</div>
+                              <div style={{ fontSize: 10.5, color: "#3f3a34" }}>7 hardest conflicts: <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-error</b> · {cs.adjudication.labeler_error} labeler-error · {cs.adjudication.ambiguous} ambiguous</div>
+                              <div style={{ fontSize: 10, color: "#9a948c", lineHeight: 1.4 }}>{cs.adjudication.note}</div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                     {f.supersedes && <div style={{ marginTop: 3, color: "#9a948c", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
                   </div>
                 )}
@@ -1083,6 +1105,12 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
             );
           })}
         </div>
+        {(DATASET_FACTS as any)._suite?.notes && (
+          <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #ece8e2", fontSize: 11, color: "#9a948c", lineHeight: 1.55 }}>
+            <span style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7a746c" }}>Reading the benchmarks · </span>
+            {((DATASET_FACTS as any)._suite.notes as string[]).join("  ·  ")}
+          </div>
+        )}
       </div>
     </div>
   );

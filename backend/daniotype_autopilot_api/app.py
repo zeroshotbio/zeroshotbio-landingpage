@@ -558,9 +558,15 @@ def verify_grounding(dataset_id, clusters):
             if code != 200:
                 fails.append(f"c{c['id']} HTTP {code}"); continue
             res = (d.get("result") or [{}])[0]
-            l2 = res.get("log2FC"); p = res.get("padj")
-            if not res.get("found") or l2 is None or l2 < 0.5 or p is None or p > 0.05:
-                fails.append(f"c{c['id']} own top marker {gene} NOT enriched on :5007 (log2FC={l2}, padj={p}) — wrong dataset?")
+            l2 = res.get("log2FC"); p = res.get("padj"); nC = c.get("nCells") or 0
+            # Alignment is shown by strong enrichment DIRECTION: a swapped dataset's "own" marker
+            # lands near 0/negative (e.g. the ba32de minifin-for-chemfish artifact: log2FC=-0.669),
+            # never log2FC>=1.0. padj significance is unreliable for tiny units (n<50 underpowered),
+            # so require it only where there is power; below that, trust direction alone.
+            enriched = bool(res.get("found")) and l2 is not None and l2 >= 1.0
+            sig_ok = (p is not None and p <= 0.05) or nC < 50
+            if not (enriched and sig_ok):
+                fails.append(f"c{c['id']} (n={nC}) own top marker {gene} NOT enriched on :5007 (log2FC={l2}, padj={p}) — wrong dataset?")
         except Exception as e:
             fails.append(f"c{c['id']} probe error {str(e)[:50]}")
     # count bound: integer cluster ids 0..max → id max+1 must not exist
