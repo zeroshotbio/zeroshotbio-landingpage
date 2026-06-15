@@ -132,7 +132,7 @@ const DATASETS: DatasetDef[] = [
     name: "Parse MegaFin Part 1",
     tagline: "Parse Evercode pipeline · 48 hpf · 540.9k cells · 77 Leiden clusters",
     blurb:
-      "MegaFin Part 1 — our large-scale drug-screen atlas (46 drugs × 2 doses + 4 controls, 48 hpf TuWT whole embryos), as processed by the Parse/Trailmaker pipeline (ENSDARG namespace). De-novo Leiden res 3.0 (77 clusters) on the Parse Harmony embedding. No external cell-type labels — internal, intuition-building. Compare against the Manual build of the same library.",
+      "MegaFin Part 1 — our large-scale drug-screen atlas (96 conditions: 45 small molecules + Sorafenib positive control, each at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT whole embryos, 6 embryos/well, treated 24→48 hpf), as processed by the Parse/Trailmaker pipeline (ENSDARG namespace). De-novo Leiden res 3.0 (77 clusters) on the Parse Harmony embedding. No external cell-type labels — internal, intuition-building. Compare against the Manual build of the same library.",
     dataUrl: `${ASSET_BASE}/megafin/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin/archivist`,
     groundTruthUrl: null,
@@ -144,7 +144,7 @@ const DATASETS: DatasetDef[] = [
     name: "Manual MegaFin Part 1",
     tagline: "Manual .h5ad (Lawson) · 48 hpf · 537.9k cells · 84 de-novo clusters",
     blurb:
-      "MegaFin Part 1 — the same drug-screen library (46 drugs × 2 doses + 4 controls, 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
+      "MegaFin Part 1 — the same drug-screen library (96 conditions: 45 small molecules + Sorafenib positive control at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
     dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
     groundTruthUrl: null,

@@ -53,13 +53,13 @@ META={
  "megafin": {"platform":"Parse Evercode · manual .h5ad (Lawson)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"Lawson LL → ZFIN canonical","role":"internal","resLabel":"2.0",
    "noGtNote":"Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
-   "design":"46 drugs × 2 doses (1 µM & 5 µM) + 4 controls · 48 hpf TuWT whole embryos",
+   "design":"Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
    "useUmapDir":"megafin_rebuild",
    "sweepFile":f"{SCRATCH}/megafin_rebuild_res_sweep.csv","chosenRes":2.0},
  "megafin_parse": {"platform":"Parse Evercode (combinatorial split-pool)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"ENSDARG → ZFIN canonical","role":"internal","resLabel":"3.0",
    "noGtNote":"Internal drug-screen atlas (Parse pipeline build) — no published labels; intuition-building, not a benchmark.",
-   "design":"46 drugs × 2 doses (1 µM & 5 µM) + 4 controls · 48 hpf TuWT whole embryos",
+   "design":"Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
    "useUmapDir":"megafin",
    "sweepFile":f"{SCRATCH}/megafin_res_sweep.csv","chosenRes":3.0},
 }
@@ -96,7 +96,7 @@ fs=json.load(open(f"{SCRATCH}/megafin_rebuild_FINAL_STATUS.json"))
 g=fs.get("s5007_grounding",{})
 facts["megafin"].update({
   "coherence":fs.get("coherent_frac_at_pick",0.929),
-  "coherenceNote":"Less coherent (0.929) than the GT partitions (~1.0) — this 93-condition drug screen needs the Parse embedding; the standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed to ~0.67).",
+  "coherenceNote":"Less coherent (0.929) than the GT partitions (~1.0) — this 96-condition drug screen (93 samples after QC) keeps the carried Parse Harmony embedding; a standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed to 0.47–0.67 with 56–63 micro-clusters).",
   "canonicalPct":g.get("canonical_pct"),
   "groundingNote":f"{g.get('queryable_pct','~100')}% of markers queryable on :5007; {g.get('canonical_pct')}% under canonical ZFIN names (thinner than the ENSDARG-native sets, but key cell-type markers ground fine).",
   "rejectedReembed":{"sweep":sweep(f"{SCRATCH}/megafin_rebuild_v2_res_sweep.csv"),

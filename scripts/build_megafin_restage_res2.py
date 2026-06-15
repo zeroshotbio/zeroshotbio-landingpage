@@ -6,7 +6,7 @@ Leiden res 2.0 = 85 clusters (coherence 0.929). Decision record:
   v2 (standard HVG->PCA->Harmony):  coherence 0.475-0.667, 56-63 micro-clusters <- WORSE, rejected
 
 Re-embedding with the DanioType-standard recipe made coherence collapse, so the Parse-box
-X_harmony is the right basis for this 93-condition drug screen. Per the branch-3 rule we accept
+X_harmony is the right basis for this 96-condition (93-sample) drug screen. Per the branch-3 rule we accept
 a sensible relaxed pick (~85, comparable to ChemFish 78 / DanioCell 77) and flag MegaFin as
 less coherent than the other partitions (0.929 vs ~1.0). Builds the asset from the existing v1
 sidecars (exact scored partition; NO re-cluster). STAGED to daniotype_data/megafin_rebuild/.
@@ -70,7 +70,7 @@ _r.shuffle(points)
 # clear stale archivist (v1 had 128 files) then rewrite
 for f in glob.glob(os.path.join(PROFILE_DIR,"*.json")): os.remove(f)
 os.makedirs(PROFILE_DIR,exist_ok=True)
-json.dump({"source":f"MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 drug samples (Manual/Lawson object) — de-novo Leiden res {CHOSEN} ({len(clusters)} clusters) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (collapsed coherence); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
+json.dump({"source":f"MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) (Manual/Lawson object) — de-novo Leiden res {CHOSEN} ({len(clusters)} clusters) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (collapsed coherence); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
            "totalCells":int(N),"fullDatasetCells":int(N),"nClusters":len(clusters),"clusters":records,"points":points},
           open(os.path.join(OUT_DIR,"umap.json"),"w"),separators=(",",":"))
 for k,c in enumerate(clusters):

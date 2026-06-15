@@ -322,7 +322,7 @@
   "cells": 537959,
   "clusters": 84,
   "fullCells": 537959,
-  "source": "MegaFin Part 1 REBUILD \u2014 48 hpf TuWT, 93 drug samples (Manual/Lawson object) \u2014 de-novo Leiden res 2.0 (84 clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
+  "source": "MegaFin Part 1 REBUILD \u2014 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) (Manual/Lawson object) \u2014 de-novo Leiden res 2.0 (84 clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
   "recipe": "HVG \u2192 PCA \u2192 carried Harmony(sample) embedding \u2192 kNN graph \u2192 Leiden sweep",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
@@ -370,9 +370,9 @@
   "chosenRes": 2.0,
   "selectionNote": null,
   "noGtNote": "Internal drug-screen atlas (Manual build) \u2014 no published labels; intuition-building, not a benchmark.",
-  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos",
+  "design": "Evercode WT Mega \u00b7 96 conditions designed (0 replicates): 45 test small molecules \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + Sorafenib positive control (1 & 5 \u00b5M) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1\u00b5M/B11, Romidepsin 5\u00b5M/C3, Dinaciclib 5\u00b5M/E3) \u2192 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24\u219248 hpf, fixed at 48 hpf. Negative/vehicle controls \u2248 3% of cells; 45 test compounds \u2248 94% (Sorafenib pos-control \u2248 2%).",
   "coherence": 0.929,
-  "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) \u2014 this 93-condition drug screen needs the Parse embedding; the standard HVG\u2192PCA\u2192Harmony re-embed was tested and rejected (coherence collapsed to ~0.67).",
+  "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) \u2014 this 96-condition drug screen (93 samples after QC) keeps the carried Parse Harmony embedding; a standard HVG\u2192PCA\u2192Harmony re-embed was tested and rejected (coherence collapsed to 0.47\u20130.67 with 56\u201363 micro-clusters).",
   "canonicalPct": 95.6,
   "groundingNote": "100.0% of markers queryable on :5007; 95.6% under canonical ZFIN names (thinner than the ENSDARG-native sets, but key cell-type markers ground fine).",
   "rejectedReembed": {
@@ -455,7 +455,7 @@
   "cells": 540946,
   "clusters": 77,
   "fullCells": 540946,
-  "source": "MegaFin Part 1 \u2014 48 hpf TuWT, 93 drug samples \u2014 de-novo Leiden res 3.0 on Parse Harmony embedding (sidecar:megafin_leiden_labels.csv)",
+  "source": "MegaFin Part 1 \u2014 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) \u2014 de-novo Leiden res 3.0 on Parse Harmony embedding (sidecar:megafin_leiden_labels.csv)",
   "recipe": "Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
   "selectionRule": "coherent_frac \u2265 0.95 & min_size \u2265 30 (finest qualifying)",
   "sweep": [
@@ -487,7 +487,7 @@
   "chosenRes": 3.0,
   "selectionNote": null,
   "noGtNote": "Internal drug-screen atlas (Parse pipeline build) \u2014 no published labels; intuition-building, not a benchmark.",
-  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos",
+  "design": "Evercode WT Mega \u00b7 96 conditions designed (0 replicates): 45 test small molecules \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + Sorafenib positive control (1 & 5 \u00b5M) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1\u00b5M/B11, Romidepsin 5\u00b5M/C3, Dinaciclib 5\u00b5M/E3) \u2192 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24\u219248 hpf, fixed at 48 hpf. Negative/vehicle controls \u2248 3% of cells; 45 test compounds \u2248 94% (Sorafenib pos-control \u2248 2%).",
   "noGtScorecard": {
    "units": 77,
    "coverage": {

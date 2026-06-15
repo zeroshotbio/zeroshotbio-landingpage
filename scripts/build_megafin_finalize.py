@@ -66,7 +66,7 @@ for k,c in enumerate(clusters):
 _r.shuffle(points)
 for f in glob.glob(os.path.join(PROFILE_DIR,"*.json")): os.remove(f)
 os.makedirs(PROFILE_DIR,exist_ok=True)
-json.dump({"source":f"MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 drug samples (Manual/Lawson object) — de-novo Leiden res 2.0 ({len(clusters)} clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
+json.dump({"source":f"MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) (Manual/Lawson object) — de-novo Leiden res 2.0 ({len(clusters)} clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
            "totalCells":int(N),"fullDatasetCells":int(N),"nClusters":len(clusters),"clusters":records,"points":points},
           open(os.path.join(OUT_DIR,"umap.json"),"w"),separators=(",",":"))
 for k,c in enumerate(clusters):

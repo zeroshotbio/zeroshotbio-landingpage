@@ -114,7 +114,7 @@ for k,c in enumerate(clusters):
 _r.shuffle(points)
 
 os.makedirs(PROFILE_DIR, exist_ok=True)
-umap={"source":f"MegaFin Part 1 — 48 hpf TuWT, 93 drug samples — {cluster_src}",
+umap={"source":f"MegaFin Part 1 — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) — {cluster_src}",
       "totalCells":int(N),"fullDatasetCells":int(n_full),"nClusters":len(clusters),
       "clusters":records,"points":points}
 json.dump(umap, open(os.path.join(OUT_DIR,"umap.json"),"w"), separators=(",",":"))
