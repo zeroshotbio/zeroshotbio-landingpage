@@ -48,6 +48,8 @@ const RESULTS_BASE = "daniotype_kasperov_results"; // full run history: transcri
 // per-dataset storage so each dataset's run is independent
 const storageKey = (d: string) => `${STORAGE_BASE}:${d}`;
 const resultsKey = (d: string) => `${RESULTS_BASE}:${d}`;
+// stable empty set so the pre-reveal "How we clustered" UMAP shows no validation checkmarks
+const EMPTY_VALIDATED: Set<string> = new Set();
 
 // ---------------------------------------------------------------------------
 // Dataset registry — each entry points the same wizard at a different atlas.
@@ -1241,13 +1243,14 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
             const ready = d.status === "ready";
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
-            const ident = f ? [
-              [`${(f.cells as number).toLocaleString()} cells`, `${f.clusters} clusters · res ${f.resLabel}`],
-              [f.platform, `${f.lab}${f.year ? " · " + f.year : ""}`],
-              ["genes", f.namespace],
+            const cellsTip = f?.subsample ? `${TIPS.cells} ${f.subsample}` : TIPS.cells;
+            const hasFull = !!(f && f.fullCells && f.fullCells > f.cells);
+            const ident: { a: string; b: string; aTip?: string; bTip?: string }[] | null = f ? [
+              { a: `${(f.cells as number).toLocaleString()} cells`, b: hasFull ? `of ${(f.fullCells as number).toLocaleString()} total` : `${f.clusters} clusters · res ${f.resLabel}`, aTip: cellsTip, bTip: hasFull ? cellsTip : TIPS.clusters },
+              ...(hasFull ? [{ a: `${f.clusters} clusters`, b: `res ${f.resLabel}`, aTip: TIPS.clusters }] : []),
+              { a: f.platform, b: `${f.lab}${f.year ? " · " + f.year : ""}`, aTip: TIPS.platform, bTip: TIPS.source },
+              { a: "genes", b: f.namespace, aTip: TIPS.genes, bTip: TIPS.genes },
             ] : null;
-            const idTipsA = [f?.subsample ? `${TIPS.cells} ${f.subsample}` : TIPS.cells, TIPS.platform, TIPS.genes];
-            const idTipsB = [TIPS.clusters, TIPS.source, undefined];
             return (
               <div
                 key={d.id}
@@ -1282,12 +1285,12 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   </div>
                   {ident && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", fontSize: 11, color: "#555", lineHeight: 1.45 }}>
-                      {ident.map(([a, b], i) => (
+                      {ident.map((r, i) => (
                         <React.Fragment key={i}>
-                          <Tip text={idTipsA[i]} style={{ justifySelf: "start" }}><span style={{ fontWeight: 700, color: "#3f3a34", borderBottom: idTipsA[i] ? "1px dotted #cfc8bf" : "none" }}>{a}</span></Tip>
-                          {idTipsB[i]
-                            ? <Tip text={idTipsB[i]} style={{ justifySelf: "end" }}><span style={{ color: "#7a746c", textAlign: "right", borderBottom: "1px dotted #d8d2c9" }}>{b}</span></Tip>
-                            : <span style={{ color: "#7a746c", textAlign: "right", justifySelf: "end" }}>{b}</span>}
+                          <Tip text={r.aTip} style={{ justifySelf: "start" }}><span style={{ fontWeight: 700, color: "#3f3a34", borderBottom: r.aTip ? "1px dotted #cfc8bf" : "none" }}>{r.a}</span></Tip>
+                          {r.bTip
+                            ? <Tip text={r.bTip} style={{ justifySelf: "end" }}><span style={{ color: "#7a746c", textAlign: "right", borderBottom: "1px dotted #d8d2c9" }}>{r.b}</span></Tip>
+                            : <span style={{ color: "#7a746c", textAlign: "right", justifySelf: "end" }}>{r.b}</span>}
                         </React.Fragment>
                       ))}
                     </div>
@@ -1306,8 +1309,11 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
             );
           };
           const gtDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role === "gt");
+          // the "coming soon" stub (no FACTS) belongs at the end of the GT benchmarks, under DanioCell
+          const v2 = ORDERED_DATASETS.find((d) => d.id === "zscape_v2");
+          if (v2) gtDs.push(v2);
           const order = ["megafin", "megafin_parse", "minifin"];
-          const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt")
+          const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt" && d.id !== "zscape_v2")
             .sort((a, b) => ((order.indexOf(a.id) + 1) || 99) - ((order.indexOf(b.id) + 1) || 99));
           const gridStyle = { display: "flex", flexDirection: "column", gap: 14 } as const;
           const hdr = { fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#3f3a34", fontWeight: 700, margin: "8px 0 12px" };
@@ -1719,12 +1725,11 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 6px" }}>{f.selectionNote}</p>
       ) : null}
 
-      {/* GT scoring caveat */}
-      {isGt && f.caveat && (
-        <div style={{ marginTop: 12, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "9px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.5 }}>
-          <b>Reading the score:</b> {f.caveat}
-        </div>
-      )}
+      {/* why we trust each cluster — the coherence + min-size + silhouette criteria */}
+      <div style={{ marginTop: 12, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "10px 12px", fontSize: 12, color: "#3f5a47", lineHeight: 1.55 }}>
+        <b>Why we trust each cluster.</b> A cluster counts as <b>coherent</b> when it carries at least one marker gene that is both <b>strongly enriched</b> (≥2×, log<sub>2</sub>FC ≥ 1) and <b>specific</b> — expressed in ≥25% of its cells and ≥15 percentage-points more than the rest of the atlas. The resolution we keep is the finest one where <b>≥95%</b> of clusters clear that bar and none falls below <b>30 cells</b> — coarse enough to trust, fine enough to be useful.
+        {f.subSplitNote && <div style={{ marginTop: 6 }}>{f.subSplitNote}</div>}
+      </div>
 
       {/* MegaFin (Manual) embedding story */}
       {f.coherenceNote && (
@@ -1738,10 +1743,6 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
           )}
         </div>
       )}
-      {f.groundingNote && !f.coherenceNote && (
-        <div style={{ marginTop: 10, fontSize: 11.5, color: "#9a948c", lineHeight: 1.5 }}>{f.groundingNote}</div>
-      )}
-
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
         Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a cluster to investigate →</b> below to begin.
       </p>
@@ -1909,22 +1910,25 @@ function MapStage({
             : ""}
         </p>
 
-        {/* run info bar — model (chosen on the previous screen) + projected cost.
-            "spent so far" shows only once a run actually has labelled clusters. */}
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-          <span style={{ color: "#555" }}>
-            Model <strong>{model}</strong>{" "}
-            <button onClick={onChangeModel} style={{ background: "none", border: "none", color: ACCENT, cursor: "pointer", fontSize: 12.5, textDecoration: "underline", padding: 0 }}>change</button>
-          </span>
-          <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price.">
-            ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters
-          </span>
-          {spent > 0 && labelled.length > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
-          {score.scoredAt && <span style={{ color: "#aaa" }}>· scored {new Date(score.scoredAt).toLocaleDateString()}</span>}
-        </div>
+        {/* run info bar — model + projected cost + spend. This is about the LABELLING
+            run, not the clustering, so it only appears after reveal; the "How we
+            clustered" page stays purely about how the clusters were derived. */}
+        {revealed && (
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
+            <span style={{ color: "#555" }}>
+              Model <strong>{model}</strong>{" "}
+              <button onClick={onChangeModel} style={{ background: "none", border: "none", color: ACCENT, cursor: "pointer", fontSize: 12.5, textDecoration: "underline", padding: 0 }}>change</button>
+            </span>
+            <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price.">
+              ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters
+            </span>
+            {spent > 0 && labelled.length > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
+            {score.scoredAt && <span style={{ color: "#aaa" }}>· scored {new Date(score.scoredAt).toLocaleDateString()}</span>}
+          </div>
+        )}
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={validated} width={size.w} height={size.h} onPick={onPick} />
+          <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={size.w} height={size.h} onPick={onPick} />
         </div>
         {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
 

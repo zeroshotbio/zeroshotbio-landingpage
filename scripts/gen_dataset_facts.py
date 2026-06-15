@@ -57,7 +57,8 @@ META={
    "caveat":"In-paradigm baseline — the reference standard (authors' own 10X atlas, native 4-tier labels).",
    "caveatTone":"baseline","sweepFile":None,"chosenRes":None,
    "subsample":"Uniform random 250,000-cell sample of the full 3,231,733-cell perturbation reference — spanning every condition (drug-treated and control alike), not a control-only or biological subset; a tractable cross-section to cluster de-novo.",
-   "selectionNote":"ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep."},
+   "selectionNote":"ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
+   "subSplitNote":"Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented."},
  "chemfish": {"platform":"sci-RNA-seq3","lab":"Barkan et al.","year":None,
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"3.0",
    "caveat":"Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
@@ -106,7 +107,7 @@ for ds,m in META.items():
         entry["scorecard"]=scorecard(ds); entry["caveat"]=m["caveat"]; entry["caveatTone"]=m["caveatTone"]
     else:
         entry["noGtNote"]=m["noGtNote"]
-    for k in ("design","designFacts","supersedes","subsample"):
+    for k in ("design","designFacts","supersedes","subsample","subSplitNote"):
         if k in m: entry[k]=m[k]
     facts[ds]=entry
 

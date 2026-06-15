@@ -108,6 +108,7 @@
   "sweep": null,
   "chosenRes": null,
   "selectionNote": "ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
+  "subSplitNote": "Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented.",
   "scorecard": {
    "schema": "native",
    "platform_class": "in-paradigm",
