@@ -2137,7 +2137,7 @@ function MapStage({
 // via an LLM semantic judge. Depth-stratified: coarse tiers should agree more.
 // ---------------------------------------------------------------------------
 type GTTier = { label: string | null; frac: number; n: number };
-type GroundTruth = { tiers: string[]; fullDatasetCells?: number; clusteredCells?: number; clusters: Record<string, Record<string, GTTier>> };
+type GroundTruth = { tiers: string[]; fullDatasetCells?: number; clusteredCells?: number; clusters: Record<string, Record<string, GTTier>>; provenance?: any };
 type TierVerdict = { match: boolean; note: string };
 type ClusterVerdict = { id: string; germ_layer: TierVerdict; tissue: TierVerdict; cell_type_broad: TierVerdict; cell_type_sub: TierVerdict };
 const SCORE_TIERS: { key: keyof Omit<ClusterVerdict, "id">; gtKey: string; label: string }[] = [
@@ -2146,6 +2146,15 @@ const SCORE_TIERS: { key: keyof Omit<ClusterVerdict, "id">; gtKey: string; label
   { key: "cell_type_broad", gtKey: "cell_type_broad", label: "Cell type — broad" },
   { key: "cell_type_sub", gtKey: "cell_type_sub", label: "Cell type — sub" },
 ];
+// Tiers NATIVE to each dataset's own published schema (verified from each groundtruth.json
+// provenance). ChemFish ships only tissue + cell_type — germ_layer & cell_type_broad are
+// projections, so they are NOT shown in the per-cluster comparison. Used as the reliable
+// source even if the deployed groundtruth.json lacks a provenance.native_tiers field.
+const NATIVE_TIERS_BY_DATASET: Record<string, string[]> = {
+  zscape: ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"],
+  chemfish: ["tissue", "cell_type_sub"],
+  daniocell: ["tissue", "cell_type_broad"],
+};
 
 // --- driver-scoring: parse the kasperov-conclude label that's actually persisted as the
 // assignment (NOT the confidence side-channel). Abstention credited at the tier reached.
@@ -2237,6 +2246,28 @@ function Scorecard({
   );
 
   const subFracFor = useCallback((id: string) => gt?.clusters?.[id]?.cell_type_sub?.frac ?? 0, [gt]);
+
+  // tiers that are NATIVE to this dataset's own schema (e.g. ChemFish = tissue + cell_type;
+  // germ_layer / cell_type_broad are projections, not native). The per-cluster comparison
+  // chart shows only these, so it reflects the dataset's real label scheme.
+  const nativeTiers = useMemo(() => {
+    const prov: any = (gt as any)?.provenance;
+    const keys: string[] | null =
+      NATIVE_TIERS_BY_DATASET[dataset.id] ||
+      (Array.isArray(prov?.native_tiers) ? prov.native_tiers
+        : prov?.native_tier_columns ? Object.keys(prov.native_tier_columns) : null);
+    return SCORE_TIERS.filter((t) =>
+      keys ? keys.includes(t.gtKey) : labelled.some((c) => !!gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>])
+    );
+  }, [gt, labelled, gtTiersFor, dataset.id]);
+  const nativeKeys = nativeTiers.map((t) => t.gtKey);
+  const tierColLabel = (t: { gtKey: string; label: string }) =>
+    t.gtKey === "cell_type_sub" ? (nativeKeys.includes("cell_type_broad") ? "Cell type (sub)" : "Cell type")
+    : t.gtKey === "cell_type_broad" ? "Cell type (broad)"
+    : t.label;
+  const nativeTierKeys = new Set(nativeTiers.map((t) => t.key as string));
+  const firstColW = nativeTiers.length <= 2 ? 30 : 22;
+  const tierColW = nativeTiers.length ? (100 - firstColW) / nativeTiers.length : 50;
 
   // DRIVER-SCORING aggregate: per-tier agreement over clusters that have a verdict + a
   // reference label AND that attempted the tier (abstention is credited at the tier
@@ -2418,11 +2449,11 @@ function Scorecard({
         {/* tier agreement bars — shown un-filled (—) until the comparison is run */}
         {status !== "loading" && status !== "error" && (
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
-            {agg.map((t) => {
+            {agg.filter((t) => nativeTierKeys.has(t.key)).map((t) => {
               const heat = confColor(t.pct);
               return (
                 <div key={t.key} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" }}>
-                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
+                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{tierColLabel({ gtKey: t.key, label: t.label })}</div>
                   <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
                     <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct.toFixed(0) : "—"}{t.total ? "%" : ""}</span>
                     <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
@@ -2486,9 +2517,9 @@ function Scorecard({
             <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11.5, tableLayout: "fixed" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#888", background: "#faf7f3" }}>
-                  <th style={{ padding: "7px 10px", fontWeight: 700, width: "26%" }}>Cluster · our label</th>
-                  {SCORE_TIERS.map((t) => (
-                    <th key={t.key} style={{ padding: "7px 9px", fontWeight: 700, width: "18.5%" }}>{t.label.replace("Cell type — ", "CT ")}</th>
+                  <th style={{ padding: "7px 10px", fontWeight: 700, width: `${firstColW}%` }}>Cluster · our final call</th>
+                  {nativeTiers.map((t) => (
+                    <th key={t.key} style={{ padding: "7px 9px", fontWeight: 700, width: `${tierColW}%` }}>{tierColLabel(t)}<div style={{ fontWeight: 400, fontSize: 9.5, color: "#b3ada5", textTransform: "none" }}>ours · {dataset.name}</div></th>
                   ))}
                 </tr>
               </thead>
@@ -2522,27 +2553,28 @@ function Scorecard({
                         </div>
                         <div style={{ color: hasLabel ? "#555" : "#b3ada5", fontStyle: hasLabel ? "normal" : "italic", marginTop: 2 }}>{hasLabel ? labels[c.id] : "not yet labelled"}</div>
                       </td>
-                      {SCORE_TIERS.map((t, ti) => {
+                      {nativeTiers.map((t) => {
+                        const ti = SCORE_TIERS.findIndex((s) => s.key === t.key);
                         const ref = refs[t.gtKey as keyof typeof refs];
                         const tv = v ? v[t.key] : null;
-                        const ok = tv?.match;
-                        // driver-scoring: a tier finer than our concluded depth is "not attempted",
-                        // never a miss (mirrors the aggregate). The verdict + reference shown here are
-                        // for OUR ONE concluded identity (col 1), judged at this tier's reference.
+                        // driver-scoring: a tier finer than our concluded depth is "not attempted", never a miss.
                         const attempted = attemptedTier(drv.reached, drv.kind, ti);
+                        const matched = !!(tv && tv.match && attempted);
+                        // what the chat predicted for THIS tier (per-tier read), falling back to the concluded call
+                        const tp = cc ? (cc[t.key as keyof Omit<ClusterConf, "why">] as TierPred | undefined) : undefined;
+                        const pred = (tp?.prediction && tp.prediction.trim()) ? tp.prediction.trim() : (drv.identity || labels[c.id] || "");
                         return (
-                          <td key={t.key} style={{ padding: "7px 9px", verticalAlign: "top", wordBreak: "break-word" }} title={tv?.note || (ref ? `reference: ${ref}` : "")}>
-                            {!ref ? (
-                              <span style={{ color: "#cbc5be" }}>·</span>
-                            ) : !tv ? (
-                              <span style={{ color: "#9a948c" }}>{ref}</span>
-                            ) : !attempted ? (
-                              <div style={{ color: "#b9b3ab" }}><span style={{ fontWeight: 700 }}>—</span> {ref}<div style={{ fontSize: 9.5, fontStyle: "italic" }}>deeper than our call</div></div>
-                            ) : ok ? (
-                              <div style={{ color: "#15803d" }}><span style={{ fontWeight: 800 }}>✓</span> <span style={{ color: "#3f6b4f" }}>{ref}</span></div>
-                            ) : (
-                              <div><span style={{ color: "#c2410c", fontWeight: 800 }}>✗</span> <span style={{ color: "#c2410c" }}>→ {ref}</span></div>
-                            )}
+                          <td key={t.key} style={{ padding: "7px 9px", verticalAlign: "top", wordBreak: "break-word", background: matched ? "#f0fdf4" : "transparent" }} title={tv?.note || ""}>
+                            {/* our prediction (chat) */}
+                            <div style={{ display: "flex", gap: 5, alignItems: "baseline" }}>
+                              {matched && <span style={{ color: "#15803d", fontWeight: 800, flexShrink: 0 }} title="matches the reference">✓</span>}
+                              <span style={{ color: hasLabel ? "#2b2b2b" : "#cbc5be", fontWeight: 600 }}>{hasLabel ? (pred || "—") : "·"}</span>
+                            </div>
+                            {/* the dataset's own (native) ground-truth label */}
+                            <div style={{ fontSize: 10.5, color: matched ? "#3f6b4f" : "#9a948c", marginTop: 2 }}>
+                              <span style={{ color: "#b3ada5" }}>{dataset.name}:</span> {ref || "—"}
+                            </div>
+                            {tv && !attempted && <div style={{ fontSize: 9.5, fontStyle: "italic", color: "#b9b3ab", marginTop: 1 }}>not attempted (deeper than our call)</div>}
                           </td>
                         );
                       })}
