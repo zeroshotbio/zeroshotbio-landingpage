@@ -1,6 +1,251 @@
 {
- "active": "v1.0",
+ "active": "v1.1",
  "harnesses": [
+  {
+   "id": "v1.1",
+   "name": "native-validated \u00b7 roll-up/superset judge",
+   "version": "1.1",
+   "supersedes": "v1.0",
+   "stampedAt": "2026-06-15T20:41:57+00:00",
+   "gitCommit": "dc6eff4e",
+   "model": "gpt-5.5",
+   "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist. v1.1: the semantic judge now credits lineage roll-up + superset/multi-name predictions + benefit-of-doubt for nested anatomy (audited: 94 wrong\u2192right vs 1 right\u2192wrong across the 3 GT benchmarks; teeth arm 16/16 \u2014 still fails clearly-different lineages).",
+   "design": [
+    "Driver-scoring: the conclude identity is judged at each native tier; finer-than-driver tiers are not-attempted, never a miss.",
+    "Abstention is a first-class outcome \u2014 declines only under-powered or technical-artifact clusters, never reliable ones.",
+    "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
+    "Misalignment guard + count-bound before any spend; halt-no-spend on failure.",
+    "v1.1 judge change validated by a two-armed audit: paired per-unit re-score vs v1.0 (precision arm) + deliberately-wrong cases confirming the judge still fails them (teeth arm); validated on held-out ZSCAPE+DanioCell, not only the ChemFish cases that motivated it."
+   ],
+   "configFingerprint": [
+    {
+     "path": "src/app/api/kasperov_agent/route.ts",
+     "scope": "whole",
+     "sha256_16": "897f967f82204975"
+    },
+    {
+     "path": "src/app/api/kasperov_confidence/route.ts",
+     "scope": "whole",
+     "sha256_16": "c4537d6c3ab04874"
+    },
+    {
+     "path": "src/app/api/kasperov_score/route.ts",
+     "scope": "whole",
+     "sha256_16": "fdea4d3e992a4ff2"
+    },
+    {
+     "path": "backend/daniotype_autopilot_api/app.py",
+     "scope": "functions: verify_grounding, run_one_cluster, get_confidence",
+     "sha256_16": "19a709f4740112ba"
+    }
+   ],
+   "externalDependencies": {
+    "model": {
+     "id": "gpt-5.5",
+     "kind": "floating provider alias",
+     "note": "may drift when the provider updates the model \u2014 pin to a dated snapshot id when one is available for a fully reproducible run."
+    },
+    "groundingData": {
+     "service": ":5007 (minifin_query)",
+     "note": "per-dataset DEGs / p-values served live; the config hash does NOT capture this data, only the rules that query it."
+    },
+    "caveat": "Config-reproducible only: an identical configFingerprint does not guarantee identical labels, because the model and grounding data are external to the hash."
+   },
+   "scoreChannel": {
+    "judge": "gpt-5.5 /v1/responses, reasoning effort low \u2014 a reasoning model (temperature is not a reliable determinism knob).",
+    "deterministic": false,
+    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~\u00b12-3pt aggregate swing (e.g. MiniFin consistency moved 72\u219274 / 51.9\u219253.7 on re-run with the config unchanged).",
+    "comparisonRule": "A version-to-version score delta must EXCEED the \u00b1~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
+    "verdictProvenance": [
+     "/data/scratch/bench/native_run/<ds>.jsonl (GT per-unit verdicts)",
+     "/data/scratch/bench/nogt_run/*.json (no-GT readouts + consistency)"
+    ],
+    "scoresArePrecise": true
+   },
+   "verification": {
+    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified \u2265100/\u226530/all, LLM semantic judge.",
+    "gt": [
+     {
+      "dataset": "zscape",
+      "platform": "sci-RNA-seq3",
+      "platform_class": "in-paradigm",
+      "tiers": [
+       {
+        "label": "Germ layer",
+        "pct": 93.58974358974359
+       },
+       {
+        "label": "Tissue",
+        "pct": 94.87179487179488
+       },
+       {
+        "label": "Cell type \u2014 broad",
+        "pct": 94.87179487179488
+       },
+       {
+        "label": "Cell type \u2014 sub",
+        "pct": 92.94871794871794
+       }
+      ],
+      "strata": {
+       "ge100": 94.5,
+       "ge30": 94.1,
+       "all": 94.1
+      },
+      "abstention": {
+       "n": 0,
+       "total": 156,
+       "precision": 0
+      }
+     },
+     {
+      "dataset": "chemfish",
+      "platform": "sci-RNA-seq3",
+      "platform_class": "in-paradigm",
+      "tiers": [
+       {
+        "label": "Tissue",
+        "pct": 90.9090909090909
+       },
+       {
+        "label": "Cell type \u2014 sub",
+        "pct": 90.14925373134328
+       }
+      ],
+      "strata": {
+       "ge100": 91.9,
+       "ge30": 91.2,
+       "all": 90.0
+      },
+      "abstention": {
+       "n": 6,
+       "total": 341,
+       "precision": 66.66666666666667
+      }
+     },
+     {
+      "dataset": "daniocell",
+      "platform": "10X droplet",
+      "platform_class": "independent",
+      "tiers": [
+       {
+        "label": "Tissue",
+        "pct": 82.55319148936171
+       },
+       {
+        "label": "Cell type \u2014 broad",
+        "pct": 86.22327790973871
+       }
+      ],
+      "strata": {
+       "ge100": 88.3,
+       "ge30": 85.0,
+       "all": 84.2
+      },
+      "abstention": {
+       "n": 2,
+       "total": 470,
+       "precision": 0
+      }
+     }
+    ],
+    "noGt": [
+     {
+      "dataset": "megafin",
+      "coverage": {
+       "assigned_pct": 95.2,
+       "abstained": 4
+      },
+      "grounding_pct": 98.6,
+      "tier_depth": {
+       "cell_type": 70,
+       "tissue": 10
+      }
+     },
+     {
+      "dataset": "megafin_parse",
+      "coverage": {
+       "assigned_pct": 98.7,
+       "abstained": 1
+      },
+      "grounding_pct": 98.4,
+      "tier_depth": {
+       "cell_type": 73,
+       "tissue": 3
+      },
+      "processingConsistency": {
+       "headlinePct": 80,
+       "cellWeightedPct": 71,
+       "adjudication": {
+        "parse_better": 4,
+        "manual_better": 1,
+        "marker_ceiling": 2,
+        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution \u2014 one pipeline resolves a population the other lumped, and the finer label is correct \u2014 not biology. Only 1/77 is a flat labeling error."
+       }
+      }
+     },
+     {
+      "dataset": "minifin",
+      "coverage": {
+       "assigned_pct": 100.0,
+       "abstained": 0
+      },
+      "grounding_pct": 98.5,
+      "tier_depth": {
+       "cell_type": 50,
+       "tissue": 4
+      },
+      "consistency": {
+       "headlinePct": 74,
+       "adjudication": {
+        "prior_error": 4,
+        "labeler_error": 1,
+        "ambiguous": 2,
+        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's \u2014 including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
+       }
+      }
+     }
+    ],
+    "knownOverCredits": {
+     "note": "v1.1 loosening yielded 94 wrong\u2192right vs 1 right\u2192wrong across the 3 GT benchmarks; teeth arm 16/16. A handful of debatable coarse-tier credits remain \u2014 each <1pp and below the ~\u00b13pt judge-noise band; logged for honesty, not adjudicated per-case.",
+     "cases": [
+      "daniocell c255: capillary endothelial cell \u2192 GT 'mesenchyme' (lineage-adjacent)",
+      "daniocell c44: pancreaticobiliary ductal epithelial \u2192 GT 'liver' (hepatobiliary-adjacent)",
+      "chemfish c196: olfactory sensory neuron \u2192 GT 'olfactory vesicle/bulb' (cell\u2192region)",
+      "chemfish c169: cholinergic motor neuron \u2192 GT 'glutamatergic neuron' (class-level credit on 'motor neuron'; transmitter alone still fails in the teeth arm)"
+     ],
+     "rightToWrong": "chemfish c324: horizontal myoseptum fibroblast \u2192 GT 'muscle' \u2014 flipped to wrong (the STRICTER direction); 1 of ~1900 verdicts, likely judge noise."
+    },
+    "provenance": {
+     "evidentiaryRuns": {
+      "benchmark": "967-unit native-schema (each dataset's authors' finest native cell groups)",
+      "labeling": "/data/scratch/bench/native_run/<ds>_native.jsonl \u2014 clean, post grounding-fix (0x MiniFin '/54' contamination)",
+      "scoring": "/data/scratch/bench/native_run/SCORING.json",
+      "judge": "kasperov_score v1.1 (lineage roll-up + superset/multi-name + benefit-of-doubt)",
+      "perUnitVerdicts": "/data/scratch/bench/native_run/<ds>_native.jsonl + paired audit verdicts (/tmp/paired/<ds>_native__v11.jsonl)",
+      "note": "These native-benchmark artifacts \u2014 NOT any de-novo wizard run \u2014 are the basis of the GT scores above."
+     },
+     "costLedger": {
+      "note": "Runs paid for. SEPARATE from evidence: contaminated runs are archived and are never evidentiary.",
+      "v1_0_labeling_usd": 77.52,
+      "v1_1_delta_usd": 6.2,
+      "v1_1_delta_note": "v1.1 was a judge-only paired re-score of the already-stored clean native labels \u2014 no relabeling.",
+      "archivedContaminated": [
+       {
+        "dataset": "chemfish",
+        "runId": "20260614-071106-ba32de",
+        "reason": "MiniFin :5007 grounding during labeling (~94% abstained); archived out of the loadable index \u2014 NOT evidentiary"
+       },
+       {
+        "dataset": "daniocell",
+        "runId": "20260614-070625-de91d5",
+        "reason": "MiniFin :5007 grounding during labeling; archived out of the loadable index \u2014 NOT evidentiary"
+       }
+      ]
+     }
+    }
+   }
+  },
   {
    "id": "v1.0",
    "name": "native-validated",

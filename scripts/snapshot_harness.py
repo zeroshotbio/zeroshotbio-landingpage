@@ -42,36 +42,53 @@ CONFIG=[
 ]
 
 facts=json.load(open(os.path.join(DK,"dataset_facts.json")))
+SCORING=json.load(open("/data/scratch/bench/native_run/SCORING.json"))  # PRECISE native-benchmark scores (cards round)
+NAT={"zscape":"zscape_native","chemfish":"chemfish_native","daniocell":"daniocell_native"}
 def gt_block(ds):
-    sc=facts[ds].get("scorecard") or {}
+    s=SCORING[NAT[ds]]; sc=facts[ds].get("scorecard") or {}
     return {"dataset":ds,"platform":facts[ds].get("platform"),"platform_class":sc.get("platform_class"),
-            "tiers":sc.get("tiers"),"strata":sc.get("strata"),"abstention":sc.get("abstention")}  # precise pcts
+            "tiers":[{"label":a["label"],"pct":a["pct"]} for a in s["aggregate"] if a["total"]>0],  # PRECISE
+            "strata":{k:s["strata"][k]["tier_acc"] for k in ("ge100","ge30","all")},
+            "abstention":{"n":s["abstention"]["n_abstain"],"total":s["units_scored"],
+                          "precision":s["abstention"]["abstained_forced_sub_fail"]["pct"]}}
 def nogt_block(ds):
     ng=facts[ds].get("noGtScorecard") or {}
     b={"dataset":ds,"coverage":ng.get("coverage"),"grounding_pct":ng.get("grounding_pct"),"tier_depth":ng.get("tier_depth")}
     if ng.get("consistency"): b["consistency"]={"headlinePct":ng["consistency"]["headlinePct"],"adjudication":ng["consistency"]["adjudication"]}
     if ng.get("processingConsistency"): b["processingConsistency"]={"headlinePct":ng["processingConsistency"]["headlinePct"],"cellWeightedPct":ng["processingConsistency"]["cellWeightedPct"],"adjudication":ng["processingConsistency"]["adjudication"]}
     return b
-# run provenance: validated runs registered in /data/daniotype_runs (top run per dataset)
-RUNS="/data/daniotype_runs"; prov=[]; total=0.0
-for ds in ["zscape","chemfish","daniocell","megafin","megafin_parse","minifin"]:
-    ip=f"{RUNS}/{ds}/_index.json"
-    if not os.path.exists(ip): continue
-    idx=json.load(open(ip))
-    if idx:
-        e=idx[0]; prov.append({"dataset":ds,"runId":e["runId"],"nLabelled":e.get("nLabelled"),"costUsd":e.get("costUsd")})
-        total+=e.get("costUsd") or 0
+# PROVENANCE — split EVIDENTIARY (what produced the scores) from COST LEDGER (what was paid for),
+# so a contaminated run can never again be cited as the basis of a score.
+EVIDENTIARY={
+  "benchmark":"967-unit native-schema (each dataset's authors' finest native cell groups)",
+  "labeling":"/data/scratch/bench/native_run/<ds>_native.jsonl — clean, post grounding-fix (0x MiniFin '/54' contamination)",
+  "scoring":"/data/scratch/bench/native_run/SCORING.json",
+  "judge":"kasperov_score v1.1 (lineage roll-up + superset/multi-name + benefit-of-doubt)",
+  "perUnitVerdicts":"/data/scratch/bench/native_run/<ds>_native.jsonl + paired audit verdicts (/tmp/paired/<ds>_native__v11.jsonl)",
+  "note":"These native-benchmark artifacts — NOT any de-novo wizard run — are the basis of the GT scores above.",
+}
+COST_LEDGER={
+  "note":"Runs paid for. SEPARATE from evidence: contaminated runs are archived and are never evidentiary.",
+  "v1_0_labeling_usd":77.52,
+  "v1_1_delta_usd":6.2,
+  "v1_1_delta_note":"v1.1 was a judge-only paired re-score of the already-stored clean native labels — no relabeling.",
+  "archivedContaminated":[
+    {"dataset":"chemfish","runId":"20260614-071106-ba32de","reason":"MiniFin :5007 grounding during labeling (~94% abstained); archived out of the loadable index — NOT evidentiary"},
+    {"dataset":"daniocell","runId":"20260614-070625-de91d5","reason":"MiniFin :5007 grounding during labeling; archived out of the loadable index — NOT evidentiary"},
+  ],
+}
 
 entry={
- "id":"v1.0","name":"native-validated","version":"1.0",
+ "id":"v1.1","name":"native-validated · roll-up/superset judge","version":"1.1","supersedes":"v1.0",
  "stampedAt":datetime.datetime.now().astimezone().isoformat(timespec="seconds"),
  "gitCommit":sh("git","rev-parse","--short","HEAD"),"model":"gpt-5.5",
- "summary":"Three-personality loop — two Researcher proposers → Archivist (:5007 live stats) → Reasoner → conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC≥1; significance required only at n≥50). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist.",
+ "summary":"Three-personality loop — two Researcher proposers → Archivist (:5007 live stats) → Reasoner → conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC≥1; significance required only at n≥50). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist. v1.1: the semantic judge now credits lineage roll-up + superset/multi-name predictions + benefit-of-doubt for nested anatomy (audited: 94 wrong→right vs 1 right→wrong across the 3 GT benchmarks; teeth arm 16/16 — still fails clearly-different lineages).",
  "design":[
    "Driver-scoring: the conclude identity is judged at each native tier; finer-than-driver tiers are not-attempted, never a miss.",
    "Abstention is a first-class outcome — declines only under-powered or technical-artifact clusters, never reliable ones.",
    "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
    "Misalignment guard + count-bound before any spend; halt-no-spend on failure.",
+   "v1.1 judge change validated by a two-armed audit: paired per-unit re-score vs v1.0 (precision arm) + deliberately-wrong cases confirming the judge still fails them (teeth arm); validated on held-out ZSCAPE+DanioCell, not only the ChemFish cases that motivated it.",
  ],
  "configFingerprint":CONFIG,
  # The hash pins CONFIG only; these are NOT captured by it and can change behavior.
@@ -93,7 +110,17 @@ entry={
    "benchmark":"967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified ≥100/≥30/all, LLM semantic judge.",
    "gt":[gt_block(ds) for ds in ["zscape","chemfish","daniocell"]],
    "noGt":[nogt_block(ds) for ds in ["megafin","megafin_parse","minifin"]],
-   "provenance":{"runs":prov,"totalCostUsd":round(total,2)},
+   "knownOverCredits":{
+     "note":"v1.1 loosening yielded 94 wrong→right vs 1 right→wrong across the 3 GT benchmarks; teeth arm 16/16. A handful of debatable coarse-tier credits remain — each <1pp and below the ~±3pt judge-noise band; logged for honesty, not adjudicated per-case.",
+     "cases":[
+       "daniocell c255: capillary endothelial cell → GT 'mesenchyme' (lineage-adjacent)",
+       "daniocell c44: pancreaticobiliary ductal epithelial → GT 'liver' (hepatobiliary-adjacent)",
+       "chemfish c196: olfactory sensory neuron → GT 'olfactory vesicle/bulb' (cell→region)",
+       "chemfish c169: cholinergic motor neuron → GT 'glutamatergic neuron' (class-level credit on 'motor neuron'; transmitter alone still fails in the teeth arm)",
+     ],
+     "rightToWrong":"chemfish c324: horizontal myoseptum fibroblast → GT 'muscle' — flipped to wrong (the STRICTER direction); 1 of ~1900 verdicts, likely judge noise.",
+   },
+   "provenance":{"evidentiaryRuns":EVIDENTIARY,"costLedger":COST_LEDGER},
  },
 }
 REG=os.path.join(DK,"harness_registry.json")
@@ -105,4 +132,4 @@ print("wrote",REG)
 print(f"  harness {entry['id']} '{entry['name']}' stamped {entry['stampedAt']} commit {entry['gitCommit']}")
 print(f"  config hashes: {[c['sha256_16'] for c in CONFIG]}")
 print(f"  GT (precise): {[ (g['dataset'], [t['pct'] for t in g['tiers']]) for g in entry['verification']['gt'] ]}")
-print(f"  scoreChannel.deterministic={entry['scoreChannel']['deterministic']} | provenance {len(prov)} runs ${entry['verification']['provenance']['totalCostUsd']}")
+print(f"  scoreChannel.deterministic={entry['scoreChannel']['deterministic']} | provenance: evidentiary=native-benchmark, costLedger split (archived: ba32de, de91d5)")

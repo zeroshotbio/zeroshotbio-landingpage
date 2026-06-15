@@ -119,21 +119,21 @@
     },
     {
      "label": "Tissue",
-     "pct": 91.0
+     "pct": 94.9
     },
     {
      "label": "Cell type — broad",
-     "pct": 91.7
+     "pct": 94.9
     },
     {
      "label": "Cell type — sub",
-     "pct": 89.1
+     "pct": 92.9
     }
    ],
    "strata": {
-    "ge100": 91.7,
-    "ge30": 91.3,
-    "all": 91.3
+    "ge100": 94.5,
+    "ge30": 94.1,
+    "all": 94.1
    },
    "abstention": {
     "n": 0,
@@ -142,7 +142,8 @@
    },
    "notes": [
     "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space — home-turf, not generalization."
-   ]
+   ],
+   "harnessVersion": "v1.1"
   }
  },
  "chemfish": {
@@ -210,27 +211,28 @@
    "tiers": [
     {
      "label": "Tissue",
-     "pct": 87.7
+     "pct": 90.9
     },
     {
      "label": "Cell type — sub",
-     "pct": 78.8
+     "pct": 90.1
     }
    ],
    "strata": {
-    "ge100": 84.4,
-    "ge30": 83.9,
-    "all": 82.7
+    "ge100": 91.9,
+    "ge30": 91.2,
+    "all": 90.0
    },
    "abstention": {
     "n": 6,
     "total": 341,
-    "precision": 83.0
+    "precision": 67.0
    },
    "notes": [
     "In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
     "Correction: 87.7% tissue supersedes the earlier withheld 31% — that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
-   ]
+   ],
+   "harnessVersion": "v1.1"
   }
  },
  "daniocell": {
@@ -297,17 +299,17 @@
    "tiers": [
     {
      "label": "Tissue",
-     "pct": 80.9
+     "pct": 82.6
     },
     {
      "label": "Cell type — broad",
-     "pct": 81.9
+     "pct": 86.2
     }
    ],
    "strata": {
-    "ge100": 86.2,
-    "ge30": 82.6,
-    "all": 81.3
+    "ge100": 88.3,
+    "ge30": 85.0,
+    "all": 84.2
    },
    "abstention": {
     "n": 2,
@@ -317,7 +319,8 @@
    "notes": [
     "Genuinely INDEPENDENT / cross-platform (10X droplet) — the real generalization read.",
     "Coarse: scored on tissue + broad only (≤43-level; numeric clust-codes are not a nameable vocabulary, excluded) — coarse-resolution generalization, not fine."
-   ]
+   ],
+   "harnessVersion": "v1.1"
   }
  },
  "megafin": {
