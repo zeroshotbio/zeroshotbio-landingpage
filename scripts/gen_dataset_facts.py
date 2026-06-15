@@ -31,11 +31,26 @@ def sweep(path, chosen=None):
     return [{"res":float(r.resolution),"clusters":int(r.n_clusters),"coherence":round(float(r.coherent_frac),3),
              "minSize":int(r.min_size),"under50":int(r.n_under50),"chosen":(chosen is not None and abs(float(r.resolution)-chosen)<1e-9)} for r in df.itertuples()]
 
+# Shared structured design facts for the two MegaFin Part 1 builds (same library).
+# Rendered as a compact key→value grid on the internal cards (the long `design`
+# prose stays in data for the README; the card uses this).
+MEGA_DESIGN_FACTS={
+ "kit":"Evercode WT Mega",
+ "conditions":"96 designed → 93 sequenced",
+ "compounds":"45 small molecules + Sorafenib (pos. ctrl)",
+ "doses":"1 µM & 5 µM",
+ "controls":"2 DMSO vehicle · 2 egg-water",
+ "rearing":"TU WT · 6 embryos/well · 24→48 hpf",
+ "composition":"≈3% control · ≈97% drug-exposed cells",
+ "qc":"3 wells dropped (UMAP explosion)",
+}
+
 # curated metadata (memory) — numbers below come from files
 META={
  "minifin": {"platform":"Parse Evercode (combinatorial split-pool)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"ENSDARG → ZFIN canonical","role":"internal","resLabel":"1.0",
    "noGtNote":"Internal reference — no published labels; intuition-building, not a benchmark.",
+   "designFacts":{"kit":"Evercode (Parse)","samples":"43 drug samples","stage":"48 hpf · TU WT","purpose":"internal reference (intuition)"},
    "sweepFile":f"{SCRATCH}/minifin_res_sweep.csv","chosenRes":1.0},
  "zscape": {"platform":"sci-RNA-seq3","lab":"Saunders/Trapnell et al.","year":2023,
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"silhouette-gated sub-Leiden",
@@ -54,12 +69,14 @@ META={
    "namespace":"Lawson LL → ZFIN canonical","role":"internal","resLabel":"2.0",
    "noGtNote":"Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
    "design":"Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
+   "designFacts":MEGA_DESIGN_FACTS,
    "useUmapDir":"megafin_rebuild",
    "sweepFile":f"{SCRATCH}/megafin_rebuild_res_sweep.csv","chosenRes":2.0},
  "megafin_parse": {"platform":"Parse Evercode (combinatorial split-pool)","lab":"Zeroshot (internal)","year":2026,
    "namespace":"ENSDARG → ZFIN canonical","role":"internal","resLabel":"3.0",
    "noGtNote":"Internal drug-screen atlas (Parse pipeline build) — no published labels; intuition-building, not a benchmark.",
    "design":"Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
+   "designFacts":dict(MEGA_DESIGN_FACTS),
    "useUmapDir":"megafin",
    "sweepFile":f"{SCRATCH}/megafin_res_sweep.csv","chosenRes":3.0},
 }
@@ -87,7 +104,7 @@ for ds,m in META.items():
         entry["scorecard"]=scorecard(ds); entry["caveat"]=m["caveat"]; entry["caveatTone"]=m["caveatTone"]
     else:
         entry["noGtNote"]=m["noGtNote"]
-    for k in ("design","supersedes"):
+    for k in ("design","designFacts","supersedes"):
         if k in m: entry[k]=m[k]
     facts[ds]=entry
 

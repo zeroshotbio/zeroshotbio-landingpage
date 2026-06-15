@@ -990,6 +990,90 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
 // ---------------------------------------------------------------------------
 // Dataset picker — the entry screen: choose which atlas to run the wizard on.
 // ---------------------------------------------------------------------------
+// ---------------------------------------------------------------------------
+// Standardized body for the internal (no-GT) dataset cards. Sections the info
+// into a fixed order — Coverage & grounding · Experimental design · Clustering ·
+// Consistency — rendered identically for Manual MegaFin, Parse MegaFin and
+// MiniFin; each section self-hides when its data is absent. Replaces the older
+// single cramped block so the three cards read the same way.
+// ---------------------------------------------------------------------------
+function NoGtBody({ f }: { f: any }) {
+  const ng = f.noGtScorecard;
+  const cs = ng?.consistency;
+  const pcs = ng?.processingConsistency;
+  const sec = (label: string, children: React.ReactNode, first = false) => (
+    <div style={{ borderTop: first ? "none" : "1px solid #ece8e2", marginTop: first ? 0 : 9, paddingTop: first ? 0 : 9, display: "flex", flexDirection: "column", gap: 5 }}>
+      <div style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#a59f96" }}>{label}</div>
+      {children}
+    </div>
+  );
+  const stat = (v: string, sub: string, accent = false) => (
+    <div style={{ flex: 1, background: accent ? "#f0fdf4" : "#fff", border: `1px solid ${accent ? "#d6e8db" : "#ece8e2"}`, borderRadius: 7, padding: "6px 9px" }}>
+      <div style={{ fontSize: 17, fontWeight: 800, lineHeight: 1, color: accent ? "#15803d" : "#3f3a34" }}>{v}</div>
+      <div style={{ fontSize: 9, color: "#9a948c", marginTop: 3 }}>{sub}</div>
+    </div>
+  );
+  return (
+    <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", color: "#6b655d", display: "flex", flexDirection: "column" }}>
+      {ng && sec("Coverage & grounding", (
+        <>
+          <div style={{ display: "flex", gap: 7 }}>
+            {stat(`${ng.coverage.assigned_pct}%`, `assigned · ${ng.coverage.abstained} abstained`)}
+            {stat(`${ng.grounding_pct}%`, "marker grounding", true)}
+          </div>
+          <div style={{ fontSize: 10.5, color: "#7a746c" }}>tier depth <b style={{ color: "#3f3a34" }}>{ng.tier_depth.cell_type}</b> cell-type · {ng.tier_depth.tissue} tissue</div>
+          {ng.abstentionNote && <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{ng.abstentionNote}</div>}
+        </>
+      ), true)}
+
+      {f.designFacts && sec("Experimental design", (
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 10px", fontSize: 10.5, lineHeight: 1.4 }}>
+          {Object.entries(f.designFacts).map(([k, v]: any, i: number) => (
+            <React.Fragment key={i}>
+              <span style={{ color: "#a59f96" }}>{k}</span>
+              <span style={{ color: "#5a544c" }}>{v as string}</span>
+            </React.Fragment>
+          ))}
+        </div>
+      ))}
+
+      {(() => {
+        const chosen = (f.sweep || []).find((s: any) => s.chosen);
+        const coh = typeof f.coherence === "number" ? f.coherence : chosen?.coherence;
+        return sec("Clustering", (
+        <>
+          <div style={{ fontSize: 10, color: "#a59f96", lineHeight: 1.4 }}>{f.recipe}</div>
+          {typeof coh === "number" && (
+            <div style={{ fontSize: 10.5, color: "#7a746c" }}>coherence <b style={{ color: coh >= 0.95 ? "#15803d" : "#b45309" }}>{coh.toFixed(3)}</b> at chosen res {f.chosenRes}</div>
+          )}
+          {f.coherenceNote
+            ? <div style={{ fontSize: 9.5, color: "#b45309", lineHeight: 1.45 }}>⚠ Kept the carried Parse embedding; a standard re-embed was tested &amp; rejected. Full sweep on the map screen.</div>
+            : f.noGtNote ? <div style={{ fontSize: 9.5, color: "#8a847c", lineHeight: 1.45 }}>{f.noGtNote}</div> : null}
+        </>
+        ));
+      })()}
+
+      {cs && sec("Consistency vs prior annotation", (
+        <>
+          <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{cs.headlinePct}%</b> lineage <span style={{ color: "#9a948c" }}>· {cs.celltypePct}% cell-type</span></div>
+          <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{cs.framing}</div>
+          <div style={{ fontSize: 10, color: "#5a544c" }}>7 hardest conflicts <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-error</b> · {cs.adjudication.labeler_error} labeler-error · {cs.adjudication.ambiguous} ambiguous</div>
+        </>
+      ))}
+
+      {pcs && sec("Manual ↔ Parse processing-consistency", (
+        <>
+          <div style={{ fontSize: 11 }}><b style={{ color: "#3f3a34" }}>{pcs.headlinePct}%</b> aligned <span style={{ color: "#9a948c" }}>· {pcs.cellWeightedPct}% cell-weighted · {pcs.allClusterPct}% all-cluster</span></div>
+          <div style={{ fontSize: 9.5, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{pcs.framing}</div>
+          <div style={{ fontSize: 10, color: "#5a544c" }}>7 high-purity conflicts <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse-better</b> · {pcs.adjudication.manual_better} Manual-better · {pcs.adjudication.marker_ceiling} ambiguous</div>
+        </>
+      ))}
+
+      {f.supersedes && <div style={{ marginTop: 9, fontSize: 9.5, color: "#a59f96", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
+    </div>
+  );
+}
+
 function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
@@ -1084,46 +1168,7 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                   );
                 })()}
 
-                {f && !isGt && (
-                  <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "9px 10px", fontSize: 11.5, color: "#6b655d", lineHeight: 1.5 }}>
-                    {f.design && <div><b style={{ color: "#3f3a34" }}>Design:</b> {f.design}</div>}
-                    {f.coherenceNote ? <div style={{ marginTop: 3, color: "#b45309" }}>⚠ {f.coherenceNote}</div> : <div style={{ marginTop: 3 }}>{f.noGtNote}</div>}
-                    {f.noGtScorecard && (() => {
-                      const ng = f.noGtScorecard; const cs = ng.consistency;
-                      return (
-                        <div style={{ borderTop: "1px solid #ece8e2", marginTop: 7, paddingTop: 7, display: "flex", flexDirection: "column", gap: 5 }}>
-                          <span style={{ alignSelf: "flex-start", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>{ng.badge}</span>
-                          <div style={{ fontSize: 11.5 }}>
-                            <span style={{ color: "#6b655d" }}>coverage </span><b style={{ color: "#3f3a34" }}>{ng.coverage.assigned_pct}%</b><span style={{ color: "#6b655d" }}> assigned ({ng.coverage.abstained} abstained) · grounding </span><b style={{ color: "#15803d" }}>{ng.grounding_pct}%</b>
-                          </div>
-                          <div style={{ fontSize: 10.5, color: "#7a746c" }}>tier depth: {ng.tier_depth.cell_type} cell-type · {ng.tier_depth.tissue} tissue</div>
-                          {ng.abstentionNote && <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>• {ng.abstentionNote}</div>}
-                          {cs && (
-                            <div style={{ marginTop: 2, display: "flex", flexDirection: "column", gap: 4 }}>
-                              <div style={{ fontSize: 11.5 }}><span style={{ color: "#6b655d" }}>consistency vs prior internal annotation: </span><b style={{ color: "#3f3a34" }}>{cs.headlinePct}% lineage agreement</b></div>
-                              <div style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", lineHeight: 1.4 }}>{cs.framing}</div>
-                              <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>{cs.celltypeNote} (cell-type {cs.celltypePct}%)</div>
-                              <div style={{ fontSize: 10.5, color: "#3f3a34" }}>7 hardest conflicts: <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-error</b> · {cs.adjudication.labeler_error} labeler-error · {cs.adjudication.ambiguous} ambiguous</div>
-                              <div style={{ fontSize: 10, color: "#9a948c", lineHeight: 1.4 }}>{cs.adjudication.note}</div>
-                            </div>
-                          )}
-                          {ng.processingConsistency && (() => { const pcs = ng.processingConsistency; return (
-                            <div style={{ marginTop: 2, display: "flex", flexDirection: "column", gap: 4 }}>
-                              <div style={{ fontSize: 11.5 }}><span style={{ color: "#6b655d" }}>Manual-vs-Parse processing-consistency: </span><b style={{ color: "#3f3a34" }}>{pcs.headlinePct}% on aligned partitions</b></div>
-                              <div style={{ fontSize: 10.5, color: "#7a746c" }}>{pcs.cellWeightedPct}% cell-weighted · {pcs.allClusterPct}% all-cluster</div>
-                              <div style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", lineHeight: 1.4 }}>{pcs.framing}</div>
-                              <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>{pcs.decompNote}</div>
-                              <div style={{ fontSize: 10.5, color: "#3f3a34" }}>7 high-purity conflicts: <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse-better</b> · {pcs.adjudication.manual_better} Manual-better · {pcs.adjudication.marker_ceiling} ambiguous</div>
-                              <div style={{ fontSize: 10, color: "#9a948c", lineHeight: 1.4 }}>{pcs.adjudication.note}</div>
-                              <div style={{ fontSize: 9.5, color: "#9a948c", lineHeight: 1.4 }}>{pcs.crosswalkNote}</div>
-                            </div>
-                          ); })()}
-                        </div>
-                      );
-                    })()}
-                    {f.supersedes && <div style={{ marginTop: 3, color: "#9a948c", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
-                  </div>
-                )}
+                {f && !isGt && <NoGtBody f={f} />}
 
                 {!f && <div style={{ fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
                 {ready && <div style={{ marginTop: "auto", paddingTop: 8, fontSize: 13, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
