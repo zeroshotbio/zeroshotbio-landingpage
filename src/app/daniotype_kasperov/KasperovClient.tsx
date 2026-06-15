@@ -509,6 +509,34 @@ export default function KasperovClient() {
     } catch {}
     hydratedRef.current = dataset.id;
     setLoaded(true);
+
+    // SERVER IS AUTHORITATIVE: load the dataset's latest server run; if the server has none,
+    // drop any (possibly stale/archived) local cache so it never lingers. localStorage above
+    // is just for instant paint — the server overrides it.
+    let cancelled = false;
+    const dsId = dataset.id;
+    (async () => {
+      try {
+        const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dsId)}`);
+        const d = r.ok ? await r.json() : { runs: [] };
+        if (cancelled || hydratedRef.current !== dsId) return;
+        const runs: any[] = Array.isArray(d.runs) ? d.runs : [];
+        if (runs.length) {
+          const latest = runs[0]; // index is newest-first
+          const rr = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dsId)}&id=${encodeURIComponent(latest.runId)}`);
+          if (cancelled || hydratedRef.current !== dsId || !rr.ok) return;
+          const run = await rr.json();
+          if (cancelled || hydratedRef.current !== dsId) return;
+          if (run && Array.isArray(run.clusters)) applyRun(run); // stay on "How we clustered" — no reveal
+        } else {
+          // no server run for this dataset → clear the local cache (kills stale/archived copies)
+          setLabels({}); setValidated(new Set()); setConfidence({}); setTranscripts({}); setAugmented({});
+          setUsage({}); setScore({ verdicts: {}, scoredAt: null, agg: [] }); setLoadedRun(null); setLoadedNote(null);
+          try { localStorage.removeItem(resultsKey(dsId)); localStorage.removeItem(storageKey(dsId)); } catch {}
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
   }, [dataset]);
 
   // persist the full run (debounced); on quota overflow, fall back to markers+confidence only
@@ -607,20 +635,9 @@ export default function KasperovClient() {
     saveRunToServer();
   }
 
-  // re-load a previously exported run (the exportResults shape) into state for
-  // THIS dataset — restores labels, validations, confidence, markers, transcripts.
-  function importResults(data: any) {
-    if (!dataset) return;
-    if (!data || !Array.isArray(data.clusters)) {
-      window.alert("That doesn't look like a daniotype run export (no `clusters` array).");
-      return;
-    }
-    if (data.dataset && String(data.dataset).toLowerCase() !== dataset.name.toLowerCase()) {
-      if (!window.confirm(`This file was exported from "${data.dataset}", but you're on ${dataset.name}. Import anyway? Cluster ids may not line up.`)) return;
-    }
-    const hasWork = Object.keys(labels).length > 0 || validated.size > 0;
-    if (hasWork && !window.confirm(`Replace the current ${dataset.name} run with the imported one? Your current labels for this dataset will be overwritten.`)) return;
-
+  // Core apply of a run JSON (export/server shape) into THIS dataset's state — no prompts,
+  // no alert, no reveal. Used by importResults (interactive) and the server auto-load.
+  function applyRun(data: any): number {
     const nLabels: Record<string, string> = {};
     const nConf: Record<string, ClusterConf> = {};
     const nAug: Record<string, Marker[]> = {};
@@ -656,6 +673,23 @@ export default function KasperovClient() {
     } else {
       setScore({ verdicts: {}, scoredAt: null, agg: [] });
     }
+    return loaded;
+  }
+
+  // re-load a previously exported run (the exportResults shape) into state for THIS
+  // dataset — interactive (prompts + reveal + alert).
+  function importResults(data: any) {
+    if (!dataset) return;
+    if (!data || !Array.isArray(data.clusters)) {
+      window.alert("That doesn't look like a daniotype run export (no `clusters` array).");
+      return;
+    }
+    if (data.dataset && String(data.dataset).toLowerCase() !== dataset.name.toLowerCase()) {
+      if (!window.confirm(`This file was exported from "${data.dataset}", but you're on ${dataset.name}. Import anyway? Cluster ids may not line up.`)) return;
+    }
+    const hasWork = Object.keys(labels).length > 0 || validated.size > 0;
+    if (hasWork && !window.confirm(`Replace the current ${dataset.name} run with the imported one? Your current labels for this dataset will be overwritten.`)) return;
+    const loaded = applyRun(data);
     setRevealed(true); // so the cluster grid is visible immediately
     window.alert(`Imported ${loaded} labelled cluster${loaded === 1 ? "" : "s"} into the ${dataset.name} run.`);
   }
