@@ -478,7 +478,7 @@ export default function KasperovClient() {
     setIncorporated(new Set());
     setRevealed(false);
     setActiveId(null);
-    setStage("model"); // dataset chosen → pick a model next, then the intro/map
+    setStage("map"); // dataset chosen → show "How we clustered" first, then model → harness → chat
     setUsage({});
     setScore({ verdicts: {}, scoredAt: null, agg: [] });
     try {
@@ -755,10 +755,10 @@ export default function KasperovClient() {
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
   if (stage === "model")
-    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("harness"); }} onBack={() => setDataset(null)} />;
+    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("harness"); }} onBack={() => setStage("map")} />;
 
   if (stage === "harness")
-    return <HarnessPicker dataset={dataset} registry={HARNESS_REGISTRY as any} current={activeHarness} onPick={(h: any) => { setActiveHarness(h); setStage("map"); }} onBack={() => setStage("model")} />;
+    return <HarnessPicker dataset={dataset} registry={HARNESS_REGISTRY as any} current={activeHarness} onPick={(h: any) => { setActiveHarness(h); setRevealed(true); setStage("map"); }} onBack={() => setStage("model")} />;
 
 
   if (!clusters) {
@@ -776,7 +776,6 @@ export default function KasperovClient() {
         clusters={clusters}
         meta={meta}
         revealed={revealed}
-        onReveal={() => setRevealed(true)}
         validated={validated}
         onPick={openCluster}
         onAuto={startAutopilot}
@@ -1401,7 +1400,7 @@ function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
-        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← Datasets</button>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← How we clustered</button>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
         <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a model</h1>
         <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
@@ -1744,7 +1743,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         </div>
       )}
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
-        Next: enter the <b>World Map</b> to label these {nClusters} clusters — two <b style={{ color: THEME.research.color }}>Proposers</b> debate each one and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a cluster to investigate →</b> below to begin.
+        Next: <b style={{ color: ACCENT }}>choose a model</b>, then a <b>harness</b> — then two <b style={{ color: THEME.research.color }}>Proposers</b> debate each of these {nClusters} clusters and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a model →</b> below to begin.
       </p>
     </div>
   );
@@ -1755,7 +1754,6 @@ function MapStage({
   clusters,
   meta,
   revealed,
-  onReveal,
   validated,
   onPick,
   onAuto,
@@ -1778,7 +1776,6 @@ function MapStage({
   clusters: Cluster[];
   meta: AtlasMeta | null;
   revealed: boolean;
-  onReveal: () => void;
   validated: Set<string>;
   onPick: (id: string) => void;
   onAuto: () => void;
@@ -1897,8 +1894,8 @@ function MapStage({
           {revealed
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
             : sampled
-            ? `${clusters.length} de-novo Leiden clusters, colored on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas (real UMAP). Here's how we found them — then choose a cluster to label.`
-            : `${clusters.length} de-novo Leiden clusters, colored — ${clusteredCells.toLocaleString()} cells, one dot each (real UMAP). Here's how we found them — then choose a cluster to label.`}
+            ? `${clusters.length} de-novo Leiden clusters, colored on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas (real UMAP). Here's how we found them — then choose a model to label with.`
+            : `${clusters.length} de-novo Leiden clusters, colored — ${clusteredCells.toLocaleString()} cells, one dot each (real UMAP). Here's how we found them — then choose a model to label with.`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
         <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
@@ -1939,8 +1936,8 @@ function MapStage({
         )}
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
-            <button onClick={onReveal} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
-              Choose a cluster to investigate →
+            <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+              Choose a model →
             </button>
           ) : (
             <>
