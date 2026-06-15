@@ -2271,23 +2271,28 @@ function Scorecard({
 
   // DRIVER-SCORING aggregate: per-tier agreement over clusters that have a verdict + a
   // reference label AND that attempted the tier (abstention is credited at the tier
-  // reached — finer tiers are not-attempted, never counted as a miss).
+  // reached — finer tiers are not-attempted, never counted as a miss). Only the dataset's
+  // NATIVE tiers are aggregated, so a saved/exported run never records projected-tier
+  // scores (e.g. ChemFish germ_layer / cell_type_broad are projections, not native).
   const computeAgg = useCallback(
     (verds: Record<string, ClusterVerdict>): TierAgg[] =>
-      SCORE_TIERS.map((t, ti) => {
-        let matched = 0;
-        let total = 0;
-        for (const c of labelled) {
-          const v = verds[c.id];
-          const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
-          const drv = parseDriverLabel(labels[c.id] || "");
-          if (!v || !ref || !attemptedTier(drv.reached, drv.kind, ti)) continue;
-          total++;
-          if (v[t.key].match) matched++;
-        }
-        return { key: t.key, label: t.label, matched, total, pct: total ? (100 * matched) / total : 0 };
-      }),
-    [labelled, gtTiersFor, labels]
+      SCORE_TIERS
+        .map((t, ti) => ({ t, ti }))
+        .filter(({ t }) => nativeTiers.some((n) => n.key === t.key))
+        .map(({ t, ti }) => {
+          let matched = 0;
+          let total = 0;
+          for (const c of labelled) {
+            const v = verds[c.id];
+            const ref = gtTiersFor(c.id)[t.gtKey as keyof ReturnType<typeof gtTiersFor>];
+            const drv = parseDriverLabel(labels[c.id] || "");
+            if (!v || !ref || !attemptedTier(drv.reached, drv.kind, ti)) continue;
+            total++;
+            if (v[t.key].match) matched++;
+          }
+          return { key: t.key, label: t.label, matched, total, pct: total ? (100 * matched) / total : 0 };
+        }),
+    [labelled, gtTiersFor, labels, nativeTiers]
   );
 
   // purity-stratified sub (headline = high-purity frac>=0.5) + abstention precision
