@@ -967,8 +967,18 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
                   <span title={m.harness.gitCommit ? `commit ${m.harness.gitCommit}` : undefined} style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>
                     harness v{m.harness.version}{m.harness.name ? ` · ${m.harness.name}` : ""}
                   </span>
-                ) : null}
-                <div style={{ fontSize: 12, color: "#999" }}>
+                ) : (
+                  <span title="Saved before the harness registry existed — labelling config not versioned." style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>
+                    harness · unversioned
+                  </span>
+                )}
+                {/* which clustering this run was labelled on — the per-run source string (leiden res, embedding) */}
+                {(() => {
+                  const f: any = (FACTS as any)[datasetId];
+                  const clustering = m.dataset || (f ? `${f.platform} · ${f.clusters} clusters` : null);
+                  return clustering ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 2, lineHeight: 1.4 }}>🧬 {clustering}</div> : null;
+                })()}
+                <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
                   {m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
                 </div>
                 {m.note ? (
