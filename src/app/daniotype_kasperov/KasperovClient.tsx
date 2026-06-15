@@ -986,8 +986,8 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
           published their own cell-type labels, you can score our de-novo names against that ground truth when the run
           completes.
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
-          {ORDERED_DATASETS.map((d) => {
+        {(() => {
+          const renderCard = (d: DatasetDef) => {
             const ready = d.status === "ready";
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
@@ -1092,6 +1092,17 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                               <div style={{ fontSize: 10, color: "#9a948c", lineHeight: 1.4 }}>{cs.adjudication.note}</div>
                             </div>
                           )}
+                          {ng.processingConsistency && (() => { const pcs = ng.processingConsistency; return (
+                            <div style={{ marginTop: 2, display: "flex", flexDirection: "column", gap: 4 }}>
+                              <div style={{ fontSize: 11.5 }}><span style={{ color: "#6b655d" }}>Manual-vs-Parse processing-consistency: </span><b style={{ color: "#3f3a34" }}>{pcs.headlinePct}% on aligned partitions</b></div>
+                              <div style={{ fontSize: 10.5, color: "#7a746c" }}>{pcs.cellWeightedPct}% cell-weighted · {pcs.allClusterPct}% all-cluster</div>
+                              <div style={{ fontSize: 10, color: "#b45309", fontStyle: "italic", lineHeight: 1.4 }}>{pcs.framing}</div>
+                              <div style={{ fontSize: 10, color: "#5a544c", lineHeight: 1.4 }}>{pcs.decompNote}</div>
+                              <div style={{ fontSize: 10.5, color: "#3f3a34" }}>7 high-purity conflicts: <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse-better</b> · {pcs.adjudication.manual_better} Manual-better · {pcs.adjudication.marker_ceiling} ambiguous</div>
+                              <div style={{ fontSize: 10, color: "#9a948c", lineHeight: 1.4 }}>{pcs.adjudication.note}</div>
+                              <div style={{ fontSize: 9.5, color: "#9a948c", lineHeight: 1.4 }}>{pcs.crosswalkNote}</div>
+                            </div>
+                          ); })()}
                         </div>
                       );
                     })()}
@@ -1103,14 +1114,29 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                 {ready && <div style={{ marginTop: "auto", paddingTop: 8, fontSize: 13, fontWeight: 700, color: ACCENT }}>Open wizard →</div>}
               </button>
             );
-          })}
-        </div>
-        {(DATASET_FACTS as any)._suite?.notes && (
-          <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid #ece8e2", fontSize: 11, color: "#9a948c", lineHeight: 1.55 }}>
-            <span style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7a746c" }}>Reading the benchmarks · </span>
-            {((DATASET_FACTS as any)._suite.notes as string[]).join("  ·  ")}
-          </div>
-        )}
+          };
+          const gtDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role === "gt");
+          const order = ["megafin", "megafin_parse", "minifin"];
+          const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt")
+            .sort((a, b) => ((order.indexOf(a.id) + 1) || 99) - ((order.indexOf(b.id) + 1) || 99));
+          const gridStyle = { display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 } as const;
+          const hdr = { fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#3f3a34", fontWeight: 700, margin: "8px 0 12px" };
+          return (
+            <>
+              <div style={hdr}>Ground-truth benchmarks</div>
+              <div style={gridStyle}>{gtDs.map(renderCard)}</div>
+              {(DATASET_FACTS as any)._suite?.notes && (
+                <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #ece8e2", fontSize: 11, color: "#9a948c", lineHeight: 1.55 }}>
+                  <span style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7a746c" }}>Reading the benchmarks · </span>
+                  {((DATASET_FACTS as any)._suite.notes as string[]).join("  ·  ")}
+                </div>
+              )}
+              <div style={{ ...hdr, marginTop: 38 }}>Internal atlases — coverage &amp; grounding (no GT)</div>
+              <div style={{ fontSize: 12, color: "#7a746c", margin: "-4px 0 14px", lineHeight: 1.5, maxWidth: 720 }}>Coverage and grounding readouts — not accuracy, not comparable to the benchmark figures above.</div>
+              <div style={gridStyle}>{internalDs.map(renderCard)}</div>
+            </>
+          );
+        })()}
       </div>
     </div>
   );

@@ -169,6 +169,30 @@ if _os.path.exists(ANJ):
             "adjudication":{"prior_error":adj["prior_error"],"labeler_error":adj["labeler_error"],"ambiguous":adj["ambiguous"],
                 "note":"On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."}}
         facts["minifin"]["noGtScorecard"]=m
+    if "megafin_parse" in an:
+        m=_nogt("megafin_parse")
+        m["badge"]="No-GT"
+        m["abstentionNote"]="1 abstention (P7, ~4.8k cells) — a biosynthetic/growth-associated translational artifact, not a cell type; the same kind of cluster Manual declined at c23."
+        # Manual-vs-Parse PROCESSING-consistency (decomposed). Stratify by how cleanly the two
+        # partitions align (mapping purity) — read from parse_consistency.json (no hand-typing).
+        pc=json.load(open("/data/scratch/bench/nogt_run/parse_consistency.json"))["per_cluster"]
+        padj=json.load(open("/data/scratch/bench/nogt_run/parse_adjudication.json"))["tally"]
+        def _agr(rows):
+            a=[r for r in rows if r["agree_identity"] is not None]
+            return (sum(1 for r in a if r["agree_identity"]), len(a))
+        aln=[r for r in pc if r["map_purity"]>=0.70]; am,at=_agr(aln); allm,alln=_agr(pc)
+        tot=sum(r["n_matched"] for r in pc); cwk=sum(r["n_matched"] for r in pc if r["agree_identity"])
+        m["processingConsistency"]={
+            "headlinePct":round(100*am/at) if at else None,        # aligned partitions = the fair number
+            "alignedN":at,
+            "cellWeightedPct":round(100*cwk/tot) if tot else None,
+            "allClusterPct":round(100*allm/alln) if alln else None,
+            "framing":"Processing-consistency, not accuracy — neither pipeline is ground truth; this measures whether the annotation survives the upstream processing choice.",
+            "decompNote":"Headline = agreement where the two partitions align (mapping purity ≥0.70). The all-cluster figure is lower only because the two pipelines cut the neural continuum at different resolutions — partition granularity, not labels disagreeing on the same cells.",
+            "crosswalkNote":"Aligned via a barcode crosswalk validated at 100% drug-sample concordance and 0.994 expression correlation on matched pairs — the same physical cells.",
+            "adjudication":{"parse_better":padj["parse_better"],"manual_better":padj["manual_better"],"marker_ceiling":padj["marker_ceiling"],
+                "note":"7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."}}
+        facts["megafin_parse"]["noGtScorecard"]=m
 
 OUT=os.path.join(ROOT,"src","app","daniotype_kasperov","dataset_facts.json")
 json.dump(facts, open(OUT,"w"), indent=1)

@@ -71,8 +71,8 @@
    },
    "badge": "No-GT",
    "consistency": {
-    "headlinePct": 72,
-    "celltypePct": 51.9,
+    "headlinePct": 74,
+    "celltypePct": 53.7,
     "framing": "Consistency, not accuracy \u2014 the prior is an automated internal annotation, not ground truth.",
     "celltypeNote": "Cell-type differences are mostly granularity (the labeler stays coarse where it won't guess an ungroundable subtype) plus prior-annotation errors.",
     "adjudication": {
@@ -487,7 +487,36 @@
   "chosenRes": 3.0,
   "selectionNote": null,
   "noGtNote": "Internal drug-screen atlas (Parse pipeline build) \u2014 no published labels; intuition-building, not a benchmark.",
-  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos"
+  "design": "46 drugs \u00d7 2 doses (1 \u00b5M & 5 \u00b5M) + 4 controls \u00b7 48 hpf TuWT whole embryos",
+  "noGtScorecard": {
+   "units": 77,
+   "coverage": {
+    "assigned_pct": 98.7,
+    "abstained": 1
+   },
+   "grounding_pct": 98.4,
+   "tier_depth": {
+    "cell_type": 73,
+    "tissue": 3
+   },
+   "badge": "No-GT",
+   "abstentionNote": "1 abstention (P7, ~4.8k cells) \u2014 a biosynthetic/growth-associated translational artifact, not a cell type; the same kind of cluster Manual declined at c23.",
+   "processingConsistency": {
+    "headlinePct": 80,
+    "alignedN": 35,
+    "cellWeightedPct": 71,
+    "allClusterPct": 66,
+    "framing": "Processing-consistency, not accuracy \u2014 neither pipeline is ground truth; this measures whether the annotation survives the upstream processing choice.",
+    "decompNote": "Headline = agreement where the two partitions align (mapping purity \u22650.70). The all-cluster figure is lower only because the two pipelines cut the neural continuum at different resolutions \u2014 partition granularity, not labels disagreeing on the same cells.",
+    "crosswalkNote": "Aligned via a barcode crosswalk validated at 100% drug-sample concordance and 0.994 expression correlation on matched pairs \u2014 the same physical cells.",
+    "adjudication": {
+     "parse_better": 4,
+     "manual_better": 1,
+     "marker_ceiling": 2,
+     "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution \u2014 one pipeline resolves a population the other lumped, and the finer label is correct \u2014 not biology. Only 1/77 is a flat labeling error."
+    }
+   }
+  }
  },
  "_suite": {
   "notes": [
