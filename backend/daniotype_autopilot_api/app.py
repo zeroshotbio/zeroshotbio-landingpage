@@ -134,6 +134,7 @@ def _meta_from(run, run_id):
         "costUsd": float(cost.get("usd", 0) or 0),
         "costEstimated": bool(cost.get("estimated")),
         "exportedAt": run.get("exportedAt"),
+        "harness": run.get("harness"),
         "scoredAt": run.get("scoredAt"),
         "nLabelled": int(run.get("nLabelled", 0) or 0),
         "nValidated": int(run.get("nValidated", 0) or 0),

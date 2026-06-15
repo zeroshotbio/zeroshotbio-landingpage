@@ -5,8 +5,8 @@
    "id": "v1.0",
    "name": "native-validated",
    "version": "1.0",
-   "stampedAt": "2026-06-15T05:06:02+00:00",
-   "gitCommit": "ecef07d3",
+   "stampedAt": "2026-06-15T05:20:01+00:00",
+   "gitCommit": "f5278022",
    "model": "gpt-5.5",
    "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist.",
    "design": [
@@ -15,24 +15,51 @@
     "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
     "Misalignment guard + count-bound before any spend; halt-no-spend on failure."
    ],
-   "configFiles": [
+   "configFingerprint": [
     {
      "path": "src/app/api/kasperov_agent/route.ts",
+     "scope": "whole",
      "sha256_16": "897f967f82204975"
     },
     {
      "path": "src/app/api/kasperov_confidence/route.ts",
+     "scope": "whole",
      "sha256_16": "c4537d6c3ab04874"
     },
     {
      "path": "src/app/api/kasperov_score/route.ts",
+     "scope": "whole",
      "sha256_16": "58bd7a89c060aa36"
     },
     {
      "path": "backend/daniotype_autopilot_api/app.py",
-     "sha256_16": "ea661795cd17eccf"
+     "scope": "functions: verify_grounding, run_one_cluster, get_confidence",
+     "sha256_16": "19a709f4740112ba"
     }
    ],
+   "externalDependencies": {
+    "model": {
+     "id": "gpt-5.5",
+     "kind": "floating provider alias",
+     "note": "may drift when the provider updates the model \u2014 pin to a dated snapshot id when one is available for a fully reproducible run."
+    },
+    "groundingData": {
+     "service": ":5007 (minifin_query)",
+     "note": "per-dataset DEGs / p-values served live; the config hash does NOT capture this data, only the rules that query it."
+    },
+    "caveat": "Config-reproducible only: an identical configFingerprint does not guarantee identical labels, because the model and grounding data are external to the hash."
+   },
+   "scoreChannel": {
+    "judge": "gpt-5.5 /v1/responses, reasoning effort low \u2014 a reasoning model (temperature is not a reliable determinism knob).",
+    "deterministic": false,
+    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~\u00b12-3pt aggregate swing (e.g. MiniFin consistency moved 72\u219274 / 51.9\u219253.7 on re-run with the config unchanged).",
+    "comparisonRule": "A version-to-version score delta must EXCEED the \u00b1~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
+    "verdictProvenance": [
+     "/data/scratch/bench/native_run/<ds>.jsonl (GT per-unit verdicts)",
+     "/data/scratch/bench/nogt_run/*.json (no-GT readouts + consistency)"
+    ],
+    "scoresArePrecise": true
+   },
    "verification": {
     "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified \u2265100/\u226530/all, LLM semantic judge.",
     "gt": [

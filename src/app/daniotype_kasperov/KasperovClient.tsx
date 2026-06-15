@@ -955,8 +955,13 @@ function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; 
                 <span style={{ fontSize: 12.5, color: "#666" }}>
                   {" "}· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
                 </span>
+                {m.harness ? (
+                  <span title={m.harness.gitCommit ? `commit ${m.harness.gitCommit}` : undefined} style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>
+                    harness v{m.harness.version}{m.harness.name ? ` · ${m.harness.name}` : ""}
+                  </span>
+                ) : null}
                 <div style={{ fontSize: 12, color: "#999" }}>
-                  {new Date(m.exportedAt).toLocaleString()} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
+                  {m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
                 </div>
                 {m.note ? (
                   <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div>
