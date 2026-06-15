@@ -1,0 +1,224 @@
+{
+ "active": "v1.0",
+ "harnesses": [
+  {
+   "id": "v1.0",
+   "name": "native-validated",
+   "version": "1.0",
+   "stampedAt": "2026-06-15T05:06:02+00:00",
+   "gitCommit": "ecef07d3",
+   "model": "gpt-5.5",
+   "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist.",
+   "design": [
+    "Driver-scoring: the conclude identity is judged at each native tier; finer-than-driver tiers are not-attempted, never a miss.",
+    "Abstention is a first-class outcome \u2014 declines only under-powered or technical-artifact clusters, never reliable ones.",
+    "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
+    "Misalignment guard + count-bound before any spend; halt-no-spend on failure."
+   ],
+   "configFiles": [
+    {
+     "path": "src/app/api/kasperov_agent/route.ts",
+     "sha256_16": "897f967f82204975"
+    },
+    {
+     "path": "src/app/api/kasperov_confidence/route.ts",
+     "sha256_16": "c4537d6c3ab04874"
+    },
+    {
+     "path": "src/app/api/kasperov_score/route.ts",
+     "sha256_16": "58bd7a89c060aa36"
+    },
+    {
+     "path": "backend/daniotype_autopilot_api/app.py",
+     "sha256_16": "ea661795cd17eccf"
+    }
+   ],
+   "verification": {
+    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified \u2265100/\u226530/all, LLM semantic judge.",
+    "gt": [
+     {
+      "dataset": "zscape",
+      "platform": "sci-RNA-seq3",
+      "platform_class": "in-paradigm",
+      "tiers": [
+       {
+        "label": "Germ layer",
+        "pct": 93.6
+       },
+       {
+        "label": "Tissue",
+        "pct": 91.0
+       },
+       {
+        "label": "Cell type \u2014 broad",
+        "pct": 91.7
+       },
+       {
+        "label": "Cell type \u2014 sub",
+        "pct": 89.1
+       }
+      ],
+      "strata": {
+       "ge100": 91.7,
+       "ge30": 91.3,
+       "all": 91.3
+      },
+      "abstention": {
+       "n": 0,
+       "total": 156,
+       "precision": 0
+      }
+     },
+     {
+      "dataset": "chemfish",
+      "platform": "sci-RNA-seq3",
+      "platform_class": "in-paradigm",
+      "tiers": [
+       {
+        "label": "Tissue",
+        "pct": 87.7
+       },
+       {
+        "label": "Cell type \u2014 sub",
+        "pct": 78.8
+       }
+      ],
+      "strata": {
+       "ge100": 84.4,
+       "ge30": 83.9,
+       "all": 82.7
+      },
+      "abstention": {
+       "n": 6,
+       "total": 341,
+       "precision": 83.0
+      }
+     },
+     {
+      "dataset": "daniocell",
+      "platform": "10X droplet",
+      "platform_class": "independent",
+      "tiers": [
+       {
+        "label": "Tissue",
+        "pct": 80.9
+       },
+       {
+        "label": "Cell type \u2014 broad",
+        "pct": 81.9
+       }
+      ],
+      "strata": {
+       "ge100": 86.2,
+       "ge30": 82.6,
+       "all": 81.3
+      },
+      "abstention": {
+       "n": 2,
+       "total": 470,
+       "precision": 0
+      }
+     }
+    ],
+    "noGt": [
+     {
+      "dataset": "megafin",
+      "coverage": {
+       "assigned_pct": 95.2,
+       "abstained": 4
+      },
+      "grounding_pct": 98.6,
+      "tier_depth": {
+       "cell_type": 70,
+       "tissue": 10
+      }
+     },
+     {
+      "dataset": "megafin_parse",
+      "coverage": {
+       "assigned_pct": 98.7,
+       "abstained": 1
+      },
+      "grounding_pct": 98.4,
+      "tier_depth": {
+       "cell_type": 73,
+       "tissue": 3
+      },
+      "processingConsistency": {
+       "headlinePct": 80,
+       "cellWeightedPct": 71,
+       "adjudication": {
+        "parse_better": 4,
+        "manual_better": 1,
+        "marker_ceiling": 2,
+        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution \u2014 one pipeline resolves a population the other lumped, and the finer label is correct \u2014 not biology. Only 1/77 is a flat labeling error."
+       }
+      }
+     },
+     {
+      "dataset": "minifin",
+      "coverage": {
+       "assigned_pct": 100.0,
+       "abstained": 0
+      },
+      "grounding_pct": 98.5,
+      "tier_depth": {
+       "cell_type": 50,
+       "tissue": 4
+      },
+      "consistency": {
+       "headlinePct": 74,
+       "adjudication": {
+        "prior_error": 4,
+        "labeler_error": 1,
+        "ambiguous": 2,
+        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's \u2014 including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
+       }
+      }
+     }
+    ],
+    "provenance": {
+     "runs": [
+      {
+       "dataset": "zscape",
+       "runId": "20260613-230719-15e201",
+       "nLabelled": 55,
+       "costUsd": 9.8662
+      },
+      {
+       "dataset": "chemfish",
+       "runId": "20260614-071106-ba32de",
+       "nLabelled": 78,
+       "costUsd": 15.9192
+      },
+      {
+       "dataset": "daniocell",
+       "runId": "20260614-070625-de91d5",
+       "nLabelled": 77,
+       "costUsd": 15.6656
+      },
+      {
+       "dataset": "megafin",
+       "runId": "20260615-042324-3a15a2",
+       "nLabelled": 84,
+       "costUsd": 14.1505
+      },
+      {
+       "dataset": "megafin_parse",
+       "runId": "20260615-043737-1afa19",
+       "nLabelled": 77,
+       "costUsd": 12.8727
+      },
+      {
+       "dataset": "minifin",
+       "runId": "20260615-042324-472be7",
+       "nLabelled": 54,
+       "costUsd": 9.0465
+      }
+     ],
+     "totalCostUsd": 77.52
+    }
+   }
+  }
+ ]
+}

@@ -5,6 +5,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo, type KasperovModel } from "./models";
 import DATASET_FACTS from "./dataset_facts.json";
+import HARNESS_REGISTRY from "./harness_registry.json";
 
 // Wizard assets are served statically by nginx (daniotype_data/), NOT by the gated Vercel
 // asset route — keeps the Vercel function bundle slim. The browser fetches umap/groundtruth
@@ -395,7 +396,7 @@ function UmapCanvas({
 }
 
 // ---------------------------------------------------------------------------
-type Stage = "model" | "intro" | "map" | "personas" | "cluster" | "scorecard";
+type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard";
 
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
@@ -434,6 +435,11 @@ export default function KasperovClient() {
   // selected model (global), accumulated token usage per model (per-dataset), and
   // the latest ground-truth scoring (per-dataset) — all carried into the export.
   const [model, setModel] = useState<KasperovModel>(DEFAULT_MODEL);
+  // active labelling harness (the loop + grounding rules) — selected after the model.
+  // Default to the registry's active version. Recorded in run provenance.
+  const [activeHarness, setActiveHarness] = useState<any>(() => {
+    const r: any = HARNESS_REGISTRY; return (r.harnesses || []).find((h: any) => h.id === r.active) || (r.harnesses || [])[0] || null;
+  });
   const [usage, setUsage] = useState<Usage>({});
   const [score, setScore] = useState<RunScore>({ verdicts: {}, scoredAt: null, agg: [] });
   const [srvNote, setSrvNote] = useState(""); // transient "Saved to server ✓" message
@@ -541,6 +547,7 @@ export default function KasperovClient() {
       nLabelled: labelledN,
       nValidated: validated.size,
       note: runNote.trim() || null,
+      harness: activeHarness ? { id: activeHarness.id, version: activeHarness.version, name: activeHarness.name, gitCommit: activeHarness.gitCommit, stampedAt: activeHarness.stampedAt } : null,
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
         label: c.label,
@@ -746,7 +753,10 @@ export default function KasperovClient() {
   if (!dataset) return <DatasetPicker onPick={setDataset} />;
 
   if (stage === "model")
-    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("map"); }} onBack={() => setDataset(null)} />;
+    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("harness"); }} onBack={() => setDataset(null)} />;
+
+  if (stage === "harness")
+    return <HarnessPicker dataset={dataset} registry={HARNESS_REGISTRY as any} current={activeHarness} onPick={(h: any) => { setActiveHarness(h); setStage("map"); }} onBack={() => setStage("model")} />;
 
 
   if (!clusters) {
@@ -1137,6 +1147,60 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
             </>
           );
         })()}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Harness picker — third setup screen (after the model): choose which labelling
+// HARNESS (the proposer→archivist→reasoner loop + grounding rules) drives the
+// run. Each version is stamped + carries its verification history (the scores it
+// produced on the ground-truth atlases). One harness today; the registry + the
+// run-provenance stamp make adding/comparing versions a drop-in later.
+// ---------------------------------------------------------------------------
+function HarnessPicker({ dataset, registry, current, onPick, onBack }: { dataset: DatasetDef; registry: any; current: any; onPick: (h: any) => void; onBack: () => void }) {
+  const harnesses: any[] = registry?.harnesses || [];
+  const tierShort = (l: string) => l.replace("Cell type — ", "").replace("Germ layer", "germ").replace("Tissue", "tissue").toLowerCase();
+  return (
+    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
+      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← Model</button>
+        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a harness</h1>
+        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
+          The harness is the labelling loop and grounding rules — the configuration that produces the labels. Each version is
+          stamped and carries its verification history: the scores it earned on the ground-truth atlases.
+        </p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+          {harnesses.map((h) => {
+            const sel = current?.id === h.id; const v = h.verification || {}; const prov = v.provenance || {};
+            return (
+              <div key={h.id} style={{ background: "#fffdfb", border: `1px solid ${sel ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${ACCENT}`, borderRadius: 12, padding: "16px 16px 18px", display: "flex", flexDirection: "column", gap: 9, boxShadow: sel ? `0 0 0 2px ${ACCENT}22` : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700 }}>Harness v{h.version}</span>
+                  <span style={{ fontSize: 13, color: "#7a746c" }}>· {h.name}</span>
+                  {registry.active === h.id && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "2px 8px" }}>✓ active</span>}
+                </div>
+                <div style={{ fontSize: 11, color: "#9a948c", fontFamily: "monospace" }}>stamped {String(h.stampedAt).slice(0, 10)} · commit {h.gitCommit} · {h.model}</div>
+                <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.5 }}>{h.summary}</div>
+                <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Verified on {(v.gt || []).length} ground-truth atlases</div>
+                  {(v.gt || []).map((g: any, i: number) => (
+                    <div key={i} style={{ fontSize: 11, display: "flex", gap: 6 }}>
+                      <span style={{ fontWeight: 700, color: "#3f3a34", width: 70, flexShrink: 0, textTransform: "capitalize" }}>{g.dataset}</span>
+                      <span style={{ color: "#6b655d" }}>{(g.tiers || []).map((t: any) => `${tierShort(t.label)} ${Math.round(t.pct)}`).join(" · ")}</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 10, color: "#7a746c", marginTop: 1 }}>{v.benchmark}</div>
+                  <div style={{ fontSize: 10, color: "#7a746c" }}>+ {(v.noGt || []).map((n: any) => n.dataset).join(" / ")} no-GT (coverage/grounding{(v.noGt || []).some((n: any) => n.processingConsistency) ? " + processing-consistency" : ""})</div>
+                  <div style={{ fontSize: 10, color: "#9a948c" }}>provenance: {(prov.runs || []).length} labelled runs · ${prov.totalCostUsd}</div>
+                </div>
+                <button onClick={() => onPick(h)} style={{ marginTop: 2, background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Use this harness →</button>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
