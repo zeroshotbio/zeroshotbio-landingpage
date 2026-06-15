@@ -56,11 +56,13 @@ META={
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"silhouette-gated sub-Leiden",
    "caveat":"In-paradigm baseline — the reference standard (authors' own 10X atlas, native 4-tier labels).",
    "caveatTone":"baseline","sweepFile":None,"chosenRes":None,
+   "subsample":"Uniform random 250,000-cell sample of the full 3,231,733-cell perturbation reference — spanning every condition (drug-treated and control alike), not a control-only or biological subset; a tractable cross-section to cluster de-novo.",
    "selectionNote":"ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep."},
  "chemfish": {"platform":"sci-RNA-seq3","lab":"Barkan et al.","year":None,
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"3.0",
    "caveat":"Labels projected from the ZSCAPE reference; germ_layer + broad are derived, not native. Weight tissue + sub; the projected GT itself may be noisy (even germ_layer is near coin-flip).",
-   "caveatTone":"projected","sweepFile":f"{SCRATCH}/chemfish_res_sweep.csv","chosenRes":3.0},
+   "caveatTone":"projected","subsample":"Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
+   "sweepFile":f"{SCRATCH}/chemfish_res_sweep.csv","chosenRes":3.0},
  "daniocell": {"platform":"10X droplet","lab":"Sur et al. (Farrell / NICHD)","year":2023,
    "namespace":"ENSDARG → ZFIN canonical","role":"gt","resLabel":"2.0",
    "caveat":"Independent lab, ISH-validated populations, cross-platform (10X droplet). A lower score reflects platform/domain shift — harder, not worse labeling. The genuinely independent read.",
@@ -104,7 +106,7 @@ for ds,m in META.items():
         entry["scorecard"]=scorecard(ds); entry["caveat"]=m["caveat"]; entry["caveatTone"]=m["caveatTone"]
     else:
         entry["noGtNote"]=m["noGtNote"]
-    for k in ("design","designFacts","supersedes"):
+    for k in ("design","designFacts","supersedes","subsample"):
         if k in m: entry[k]=m[k]
     facts[ds]=entry
 

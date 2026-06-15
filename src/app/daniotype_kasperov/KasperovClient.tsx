@@ -1049,8 +1049,7 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
   );
 }
 
-// Boxed, itemized stat tile with its own hover explanation — the building block
-// for every figure on a card (coverage, grounding, tier accuracy, coherence, …).
+// Tone palette shared by the stat readouts.
 const TILE_TONE: Record<string, { fg: string; bg: string; bd: string }> = {
   neutral: { fg: "#3f3a34", bg: "#ffffff", bd: "#ece8e2" },
   good: { fg: "#15803d", bg: "#f0fdf4", bd: "#d6e8db" },
@@ -1058,15 +1057,18 @@ const TILE_TONE: Record<string, { fg: string; bg: string; bd: string }> = {
   bad: { fg: "#dc2626", bg: "#fef2f2", bd: "#fecaca" },
   accent: { fg: "#0e7490", bg: "#ecfeff", bd: "#cbeef4" },
 };
-function StatTile({ value, sub, info, tone = "neutral", grow = "1 1 82px" }: { value: string; sub: string; info?: string; tone?: string; grow?: string }) {
+
+// One itemized stat, listed vertically: a large prominent value + a label, with
+// its own hover explanation. The building block for the card readouts.
+function StatRow({ value, label, info, tone = "neutral", valueWidth = 58 }: { value: string; label: string; info?: string; tone?: string; valueWidth?: number }) {
   const [show, setShow] = useState(false);
   const c = TILE_TONE[tone] || TILE_TONE.neutral;
   return (
-    <div onMouseEnter={() => info && setShow(true)} onMouseLeave={() => setShow(false)} style={{ position: "relative", flex: grow, minWidth: 70, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 7, padding: "6px 9px", cursor: info ? "help" : "default" }}>
-      <div style={{ fontSize: 15.5, fontWeight: 800, lineHeight: 1, color: c.fg }}>{value}</div>
-      <div style={{ fontSize: 8.5, color: "#9a948c", marginTop: 3, lineHeight: 1.25 }}>{sub}</div>
+    <div onMouseEnter={() => info && setShow(true)} onMouseLeave={() => setShow(false)} style={{ position: "relative", display: "flex", alignItems: "baseline", gap: 9, padding: "3px 0", borderBottom: "1px solid #efeae3", cursor: info ? "help" : "default" }}>
+      <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.05, color: c.fg, minWidth: valueWidth, flexShrink: 0 }}>{value}</span>
+      <span style={{ fontSize: 10.5, color: "#6b655d", lineHeight: 1.25, borderBottom: info ? "1px dotted #d8d2c9" : "none" }}>{label}</span>
       {info && show && (
-        <span style={{ position: "absolute", bottom: "calc(100% + 7px)", left: "50%", transform: "translateX(-50%)", zIndex: 60, width: 232, background: "#1f2937", color: "#eef1f4", fontSize: 11, fontWeight: 400, lineHeight: 1.5, textAlign: "left", padding: "9px 11px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.28)", pointerEvents: "none" }}>{info}</span>
+        <span style={{ position: "absolute", bottom: "calc(100% + 7px)", left: 0, zIndex: 60, width: 232, background: "#1f2937", color: "#eef1f4", fontSize: 11, fontWeight: 400, lineHeight: 1.5, textAlign: "left", padding: "9px 11px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.28)", pointerEvents: "none" }}>{info}</span>
       )}
     </div>
   );
@@ -1081,39 +1083,58 @@ function SecLabel({ children, info }: { children: React.ReactNode; info?: string
   );
 }
 
-// Body for the GROUND-TRUTH dataset cards — boxed, itemized tiles laid out
-// horizontally: accuracy-by-tier · by-size + abstention · notes. Every tile and
-// label explains itself on hover.
+// Body for the GROUND-TRUTH dataset cards: a prominent vertical accuracy-by-tier
+// list · a by-cluster-size mini bar chart + abstention · notes. Every figure
+// explains itself on hover.
 function GtBody({ sc }: { sc: any }) {
   const indep = sc.platform_class === "independent";
   const tierTone = (p: number) => (p >= 70 ? "good" : p >= 45 ? "warn" : "bad");
+  const prettyTier = (l: string) => l.replace("Cell type — ", "Cell type · ");
   return (
-    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 13px", display: "flex", flexDirection: "column", gap: 9 }}>
+    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
         <Tip text={TIPS.benchmark}><span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", borderBottom: "1px dotted #cfc8bf" }}>Native-schema benchmark</span></Tip>
         <Tip text={indep ? TIPS.independent : TIPS.inParadigm} style={{ marginLeft: "auto" }}><span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span></Tip>
       </div>
-      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 10 }}>
-        <div style={{ flex: "2 1 250px", minWidth: 228, display: "flex", flexDirection: "column", gap: 5, paddingRight: 14 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 12 }}>
+        {/* accuracy by tier — vertical, prominent titles */}
+        <div style={{ flex: "2 1 290px", minWidth: 256, display: "flex", flexDirection: "column", gap: 8, paddingRight: 16 }}>
           <SecLabel info={TIPS.tierAccuracy}>Accuracy by tier</SecLabel>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            {sc.tiers.map((t: any, i: number) => (
-              <StatTile key={i} value={`${t.pct}%`} sub={t.label.replace("Cell type — ", "")} tone={tierTone(t.pct)} info={tierTip(t.label)} grow="1 1 70px" />
+          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
+            {sc.tiers.map((t: any, i: number) => {
+              const c = TILE_TONE[tierTone(t.pct)];
+              return (
+                <Tip key={i} text={tierTip(t.label)} block style={{ width: "100%" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
+                    <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: "#2b2b2b", letterSpacing: 0.2 }}>{prettyTier(t.label)}</span>
+                    <span style={{ width: 72, height: 8, background: "#ece8e2", borderRadius: 99, overflow: "hidden", flexShrink: 0 }}><span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: c.fg, borderRadius: 99 }} /></span>
+                    <span style={{ width: 48, textAlign: "right", fontSize: 17, fontWeight: 800, color: c.fg, flexShrink: 0 }}>{t.pct}%</span>
+                  </div>
+                </Tip>
+              );
+            })}
+          </div>
+        </div>
+        {/* by cluster size — mini bar chart + abstention */}
+        <div style={{ flex: "1 1 180px", minWidth: 164, display: "flex", flexDirection: "column", gap: 6, borderLeft: "1px solid #ece8e2", paddingLeft: 16, paddingRight: 14 }}>
+          <SecLabel info={TIPS.bySize}>Accuracy by cluster size</SecLabel>
+          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+            {([["≥100", sc.strata.ge100], ["≥30", sc.strata.ge30], ["all", sc.strata.all]] as [string, number][]).map(([lab, v]) => (
+              <div key={lab} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 28, fontSize: 9.5, color: "#6b655d", flexShrink: 0 }}>{lab}</span>
+                <span style={{ flex: 1, height: 7, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${v}%`, background: "#0e7490", borderRadius: 99 }} /></span>
+                <span style={{ width: 34, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: "#3f3a34", flexShrink: 0 }}>{v}%</span>
+              </div>
             ))}
           </div>
-        </div>
-        <div style={{ flex: "1 1 160px", minWidth: 150, display: "flex", flexDirection: "column", gap: 5, borderLeft: "1px solid #ece8e2", paddingLeft: 14, paddingRight: 14 }}>
-          <SecLabel info={TIPS.bySize}>By cluster size</SecLabel>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <StatTile value={`${sc.strata.ge100}%`} sub="≥100 cells" info={TIPS.bySize} grow="1 1 56px" />
-            <StatTile value={`${sc.strata.ge30}%`} sub="≥30 cells" info={TIPS.bySize} grow="1 1 56px" />
-            <StatTile value={`${sc.strata.all}%`} sub="all" info={TIPS.bySize} grow="1 1 56px" />
-            <StatTile value={`${sc.abstention.n}/${sc.abstention.total}`} sub="abstained" info={TIPS.abstain} grow="1 1 56px" />
-            {sc.abstention.precision ? <StatTile value={`${sc.abstention.precision}%`} sub="abstain precision" tone="good" info={TIPS.precision} grow="1 1 56px" /> : null}
+          <div style={{ marginTop: 3 }}>
+            <StatRow value={`${sc.abstention.n}/${sc.abstention.total}`} label="abstained" info={TIPS.abstain} valueWidth={50} />
+            {sc.abstention.precision ? <StatRow value={`${sc.abstention.precision}%`} label="abstain precision" tone="good" info={TIPS.precision} valueWidth={50} /> : null}
           </div>
         </div>
+        {/* notes */}
         {(sc.notes || []).length > 0 && (
-          <div style={{ flex: "2 1 210px", minWidth: 185, display: "flex", flexDirection: "column", gap: 4, borderLeft: "1px solid #ece8e2", paddingLeft: 14 }}>
+          <div style={{ flex: "2 1 200px", minWidth: 180, display: "flex", flexDirection: "column", gap: 4, borderLeft: "1px solid #ece8e2", paddingLeft: 16 }}>
             <SecLabel>Notes</SecLabel>
             {(sc.notes || []).map((n: string, i: number) => (
               <div key={i} style={{ fontSize: 9.5, color: i < 2 ? "#5a544c" : "#9a948c", lineHeight: 1.4 }}>• {n}</div>
@@ -1127,9 +1148,10 @@ function GtBody({ sc }: { sc: any }) {
 
 // ---------------------------------------------------------------------------
 // Body for the internal (no-GT) dataset cards. Same fixed section set —
-// Coverage & grounding · Experimental design · Clustering · Consistency — laid
-// out as horizontal columns of boxed tiles (each self-hides when its data is
-// absent), so Manual MegaFin, Parse MegaFin and MiniFin read the same way.
+// Coverage & grounding · Experimental design · Clustering · Consistency — as
+// horizontal columns, with the figures listed vertically as prominent StatRows
+// (each section self-hides when its data is absent), so Manual MegaFin, Parse
+// MegaFin and MiniFin read the same way.
 // ---------------------------------------------------------------------------
 function NoGtBody({ f }: { f: any }) {
   const ng = f.noGtScorecard;
@@ -1139,14 +1161,14 @@ function NoGtBody({ f }: { f: any }) {
   const coh = typeof f.coherence === "number" ? f.coherence : chosen?.coherence;
   const sections = [
     ng && { label: "Coverage & grounding", info: TIPS.coverageSection, node: (
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-        <StatTile value={`${ng.coverage.assigned_pct}%`} sub="assigned" info={TIPS.coverage} grow="1 1 60px" />
-        <StatTile value={`${ng.coverage.abstained}`} sub="abstained" info={TIPS.abstain} grow="1 1 48px" />
-        <StatTile value={`${ng.grounding_pct}%`} sub="grounded" tone="accent" info={TIPS.grounded} grow="1 1 60px" />
-        <StatTile value={`${ng.tier_depth.cell_type}`} sub="cell-type calls" info={TIPS.tierDepth} grow="1 1 60px" />
-        <StatTile value={`${ng.tier_depth.tissue}`} sub="tissue-only" info={TIPS.tierDepth} grow="1 1 56px" />
+      <div style={{ display: "flex", flexDirection: "column" }}>
+        <StatRow value={`${ng.coverage.assigned_pct}%`} label="assigned" info={TIPS.coverage} />
+        <StatRow value={`${ng.coverage.abstained}`} label="abstained" info={TIPS.abstain} />
+        <StatRow value={`${ng.grounding_pct}%`} label="grounded" tone="accent" info={TIPS.grounded} />
+        <StatRow value={`${ng.tier_depth.cell_type}`} label="cell-type calls" info={TIPS.tierDepth} />
+        <StatRow value={`${ng.tier_depth.tissue}`} label="tissue-only calls" info={TIPS.tierDepth} />
       </div>
-    ), extra: ng.abstentionNote ? <div style={{ fontSize: 9, color: "#8a847c", lineHeight: 1.45, marginTop: 4 }}>{ng.abstentionNote}</div> : null },
+    ), extra: ng.abstentionNote ? <div style={{ fontSize: 9, color: "#8a847c", lineHeight: 1.45, marginTop: 5 }}>{ng.abstentionNote}</div> : null },
     f.designFacts && { label: "Experimental design", info: TIPS.design, node: (
       <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 8px", fontSize: 10, lineHeight: 1.4 }}>
         {Object.entries(f.designFacts).map(([k, v]: any, i: number) => (
@@ -1159,11 +1181,7 @@ function NoGtBody({ f }: { f: any }) {
     ) },
     { label: "Clustering", info: TIPS.recipe, node: (
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {typeof coh === "number" && (
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-            <StatTile value={coh.toFixed(3)} sub={`coherence · res ${f.chosenRes}`} tone={coh >= 0.95 ? "good" : "warn"} info={TIPS.coherence} grow="1 1 96px" />
-          </div>
-        )}
+        {typeof coh === "number" && <StatRow value={coh.toFixed(3)} label={`coherence · res ${f.chosenRes}`} tone={coh >= 0.95 ? "good" : "warn"} info={TIPS.coherence} valueWidth={62} />}
         <div style={{ fontSize: 9, color: "#a59f96", lineHeight: 1.4 }}>{f.recipe}</div>
         {f.coherenceNote
           ? <div style={{ fontSize: 9, color: "#b45309", lineHeight: 1.45 }}>⚠ Kept the carried Parse embedding; standard re-embed rejected. Full sweep on the map screen.</div>
@@ -1172,9 +1190,9 @@ function NoGtBody({ f }: { f: any }) {
     ) },
     cs && { label: "Consistency vs prior annotation", info: TIPS.consistencyPrior, node: (
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          <StatTile value={`${cs.headlinePct}%`} sub="lineage agree" info={TIPS.consistencyPrior} grow="1 1 60px" />
-          <StatTile value={`${cs.celltypePct}%`} sub="cell-type agree" info={TIPS.consistencyCelltype} grow="1 1 60px" />
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <StatRow value={`${cs.headlinePct}%`} label="lineage agree" info={TIPS.consistencyPrior} />
+          <StatRow value={`${cs.celltypePct}%`} label="cell-type agree" info={TIPS.consistencyCelltype} />
         </div>
         <div style={{ fontSize: 9, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{cs.framing}</div>
         <Tip text={TIPS.adjudicationPrior} block><span style={{ fontSize: 9.5, color: "#5a544c", borderBottom: "1px dotted #d8d2c9" }}>7 hardest: <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-err</b> · {cs.adjudication.labeler_error} labeler-err · {cs.adjudication.ambiguous} amb</span></Tip>
@@ -1182,10 +1200,10 @@ function NoGtBody({ f }: { f: any }) {
     ) },
     pcs && { label: "Manual ↔ Parse processing-consistency", info: TIPS.processingAligned, node: (
       <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
-          <StatTile value={`${pcs.headlinePct}%`} sub="aligned" info={TIPS.processingAligned} grow="1 1 52px" />
-          <StatTile value={`${pcs.cellWeightedPct}%`} sub="cell-wtd" info={TIPS.processingWeighted} grow="1 1 52px" />
-          <StatTile value={`${pcs.allClusterPct}%`} sub="all-cluster" info={TIPS.processingWeighted} grow="1 1 52px" />
+        <div style={{ display: "flex", flexDirection: "column" }}>
+          <StatRow value={`${pcs.headlinePct}%`} label="aligned" info={TIPS.processingAligned} />
+          <StatRow value={`${pcs.cellWeightedPct}%`} label="cell-weighted" info={TIPS.processingWeighted} />
+          <StatRow value={`${pcs.allClusterPct}%`} label="all-cluster" info={TIPS.processingWeighted} />
         </div>
         <div style={{ fontSize: 9, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{pcs.framing}</div>
         <Tip text={TIPS.adjudicationProc} block><span style={{ fontSize: 9.5, color: "#5a544c", borderBottom: "1px dotted #d8d2c9" }}>7 conflicts: <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse</b> · {pcs.adjudication.manual_better} Manual · {pcs.adjudication.marker_ceiling} amb</span></Tip>
@@ -1194,9 +1212,9 @@ function NoGtBody({ f }: { f: any }) {
   ].filter(Boolean) as { label: string; info?: string; node: React.ReactNode; extra?: React.ReactNode }[];
 
   return (
-    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 13px", color: "#6b655d", display: "flex", flexWrap: "wrap", rowGap: 12 }}>
+    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 14px", color: "#6b655d", display: "flex", flexWrap: "wrap", rowGap: 12 }}>
       {sections.map((s, i) => (
-        <div key={i} style={{ flex: "1 1 188px", minWidth: 166, borderLeft: i === 0 ? "none" : "1px solid #ece8e2", paddingLeft: i === 0 ? 0 : 13, paddingRight: 13, display: "flex", flexDirection: "column", gap: 5 }}>
+        <div key={i} style={{ flex: "1 1 190px", minWidth: 168, borderLeft: i === 0 ? "none" : "1px solid #ece8e2", paddingLeft: i === 0 ? 0 : 14, paddingRight: 14, display: "flex", flexDirection: "column", gap: 6 }}>
           <SecLabel info={s.info}>{s.label}</SecLabel>
           {s.node}
           {s.extra}
@@ -1228,7 +1246,7 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
               [f.platform, `${f.lab}${f.year ? " · " + f.year : ""}`],
               ["genes", f.namespace],
             ] : null;
-            const idTipsA = [TIPS.cells, TIPS.platform, TIPS.genes];
+            const idTipsA = [f?.subsample ? `${TIPS.cells} ${f.subsample}` : TIPS.cells, TIPS.platform, TIPS.genes];
             const idTipsB = [TIPS.clusters, TIPS.source, undefined];
             return (
               <div
@@ -1274,19 +1292,16 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                       ))}
                     </div>
                   )}
+                  {/* GO lives under the identity, so hovering the card for tooltips never navigates */}
+                  {ready && (
+                    <button onClick={() => onPick(d)} title={`Open the ${d.name} wizard`} style={{ marginTop: "auto", alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, cursor: "pointer" }}>GO</button>
+                  )}
                 </div>
 
                 {/* content area */}
                 {isGt && f.scorecard && <GtBody sc={f.scorecard} />}
                 {f && !isGt && <NoGtBody f={f} />}
                 {!f && <div style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
-
-                {/* GO rail — navigation lives here, so hovering the card for tooltips never navigates */}
-                <div style={{ width: 58, flexShrink: 0, display: "flex", flexDirection: "column", justifyContent: "flex-end", alignItems: "center" }}>
-                  {ready && (
-                    <button onClick={() => onPick(d)} title={`Open the ${d.name} wizard`} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "11px 0", width: "100%", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, cursor: "pointer" }}>GO</button>
-                  )}
-                </div>
               </div>
             );
           };

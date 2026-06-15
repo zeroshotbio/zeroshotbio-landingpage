@@ -102,6 +102,7 @@
   "clusters": 55,
   "fullCells": 3231733,
   "source": "ZSCAPE Saunders et al. (de-novo leiden + silhouette-gated sub-split)",
+  "subsample": "Uniform random 250,000-cell sample of the full 3,231,733-cell perturbation reference — spanning every condition (drug-treated and control alike), not a control-only or biological subset; a tractable cross-section to cluster de-novo.",
   "recipe": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
   "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
   "sweep": null,
@@ -155,6 +156,7 @@
   "clusters": 78,
   "fullCells": 1579675,
   "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) — 48 hpf subset, de-novo Leiden res 3.0 on Harmony(expt) embedding",
+  "subsample": "Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
   "recipe": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
   "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
   "sweep": [
