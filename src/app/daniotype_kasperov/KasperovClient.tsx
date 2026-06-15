@@ -2453,18 +2453,19 @@ function Scorecard({
         {/* per-cluster detail — the full set of clusters with their tier cells (un-filled until scored) */}
         {clusters.length > 0 && (
           <div style={{ overflowX: "auto", border: "1px solid #e5e1dc", borderRadius: 12, background: "#fffdfb" }}>
-            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 12.5 }}>
+            <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11.5, tableLayout: "fixed" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#888", background: "#faf7f3" }}>
-                  <th style={{ padding: "9px 12px", fontWeight: 700 }}>Cluster · our label · conf</th>
+                  <th style={{ padding: "7px 10px", fontWeight: 700, width: "26%" }}>Cluster · our label</th>
                   {SCORE_TIERS.map((t) => (
-                    <th key={t.key} style={{ padding: "9px 12px", fontWeight: 700, whiteSpace: "nowrap" }}>{t.label}</th>
+                    <th key={t.key} style={{ padding: "7px 9px", fontWeight: 700, width: "18.5%" }}>{t.label.replace("Cell type — ", "CT ")}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
                 {clusters.map((c) => {
                   const v = verdicts[c.id];
+                  const drv = parseDriverLabel(labels[c.id] || "");
                   const refs = gtTiersFor(c.id);
                   const cc = confidence[c.id];
                   const conf = overallConf(cc);
@@ -2478,7 +2479,7 @@ function Scorecard({
                       title={hasLabel ? `${c.label}: ${labels[c.id]} — click to open` : `${c.label} — not yet labelled`}
                       style={{ borderTop: "1px solid #eee7df", opacity: hasLabel ? 1 : 0.6, cursor: onPick ? "pointer" : "default" }}
                     >
-                      <td style={{ padding: "9px 12px", minWidth: 240, verticalAlign: "top" }}>
+                      <td style={{ padding: "7px 10px", verticalAlign: "top", wordBreak: "break-word" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
                           <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
                           <strong>{c.label}</strong>
@@ -2491,24 +2492,27 @@ function Scorecard({
                         </div>
                         <div style={{ color: hasLabel ? "#555" : "#b3ada5", fontStyle: hasLabel ? "normal" : "italic", marginTop: 2 }}>{hasLabel ? labels[c.id] : "not yet labelled"}</div>
                       </td>
-                      {SCORE_TIERS.map((t) => {
+                      {SCORE_TIERS.map((t, ti) => {
                         const ref = refs[t.gtKey as keyof typeof refs];
                         const tv = v ? v[t.key] : null;
                         const ok = tv?.match;
-                        const tp = cc ? (cc[t.key as keyof Omit<ClusterConf, "why">] as TierPred | undefined) : undefined;
-                        const tHeat = tp && typeof tp.pct === "number" ? confColor(tp.pct) : null;
+                        // driver-scoring: a tier finer than our concluded depth is "not attempted",
+                        // never a miss (mirrors the aggregate). The verdict + reference shown here are
+                        // for OUR ONE concluded identity (col 1), judged at this tier's reference.
+                        const attempted = attemptedTier(drv.reached, drv.kind, ti);
                         return (
-                          <td key={t.key} style={{ padding: "9px 12px", verticalAlign: "top", minWidth: 160 }} title={tv?.note || ""}>
-                            {/* OUR prediction + per-tier confidence (shown as we work the cluster) */}
-                            <div style={{ display: "flex", alignItems: "baseline", gap: 5 }}>
-                              {tv && <span style={{ color: ok ? "#15803d" : "#c2410c", fontWeight: 800, flexShrink: 0 }}>{ok ? "✓" : "✗"}</span>}
-                              <span style={{ color: tp ? "#333" : "#cbc5be", minWidth: 0 }}>{tp?.prediction || "·"}</span>
-                              {tp && tHeat && typeof tp.pct === "number" && (
-                                <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 10.5, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: tHeat.fg, background: tHeat.bg, borderRadius: 99, padding: "0px 5px" }}>{tp.pct.toFixed(0)}%</span>
-                              )}
-                            </div>
-                            {/* the corrected ZSCAPE label — subtle red — only after scoring + only when wrong */}
-                            {tv && !ok && ref && <div style={{ color: "#dc7a5a", fontSize: 11.5, marginTop: 2 }}>→ {ref}</div>}
+                          <td key={t.key} style={{ padding: "7px 9px", verticalAlign: "top", wordBreak: "break-word" }} title={tv?.note || (ref ? `reference: ${ref}` : "")}>
+                            {!ref ? (
+                              <span style={{ color: "#cbc5be" }}>·</span>
+                            ) : !tv ? (
+                              <span style={{ color: "#9a948c" }}>{ref}</span>
+                            ) : !attempted ? (
+                              <div style={{ color: "#b9b3ab" }}><span style={{ fontWeight: 700 }}>—</span> {ref}<div style={{ fontSize: 9.5, fontStyle: "italic" }}>deeper than our call</div></div>
+                            ) : ok ? (
+                              <div style={{ color: "#15803d" }}><span style={{ fontWeight: 800 }}>✓</span> <span style={{ color: "#3f6b4f" }}>{ref}</span></div>
+                            ) : (
+                              <div><span style={{ color: "#c2410c", fontWeight: 800 }}>✗</span> <span style={{ color: "#c2410c" }}>→ {ref}</span></div>
+                            )}
                           </td>
                         );
                       })}
