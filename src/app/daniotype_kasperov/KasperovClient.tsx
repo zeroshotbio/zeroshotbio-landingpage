@@ -2517,22 +2517,19 @@ function Scorecard({
             <table style={{ borderCollapse: "collapse", width: "100%", fontSize: 11.5, tableLayout: "fixed" }}>
               <thead>
                 <tr style={{ textAlign: "left", color: "#888", background: "#faf7f3" }}>
-                  <th style={{ padding: "7px 10px", fontWeight: 700, width: `${firstColW}%` }}>Cluster · our final call</th>
+                  <th style={{ padding: "7px 10px", fontWeight: 700, width: `${firstColW}%` }}>Cluster</th>
                   {nativeTiers.map((t) => (
-                    <th key={t.key} style={{ padding: "7px 9px", fontWeight: 700, width: `${tierColW}%` }}>{tierColLabel(t)}<div style={{ fontWeight: 400, fontSize: 9.5, color: "#b3ada5", textTransform: "none" }}>ours · {dataset.name}</div></th>
+                    <th key={t.key} style={{ padding: "7px 9px", fontWeight: 700, width: `${tierColW}%` }}>{tierColLabel(t)}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {clusters.map((c) => {
+                {clusters.map((c, i) => {
                   const v = verdicts[c.id];
                   const drv = parseDriverLabel(labels[c.id] || "");
                   const refs = gtTiersFor(c.id);
                   const cc = confidence[c.id];
-                  const conf = overallConf(cc);
                   const hasLabel = !!labels[c.id];
-                  const isVal = validated?.has(c.id);
-                  const heat = typeof conf === "number" ? confColor(conf) : null;
                   return (
                     <tr
                       key={c.id}
@@ -2540,41 +2537,46 @@ function Scorecard({
                       title={hasLabel ? `${c.label}: ${labels[c.id]} — click to open` : `${c.label} — not yet labelled`}
                       style={{ borderTop: "1px solid #eee7df", opacity: hasLabel ? 1 : 0.6, cursor: onPick ? "pointer" : "default" }}
                     >
-                      <td style={{ padding: "7px 10px", verticalAlign: "top", wordBreak: "break-word" }}>
+                      <td style={{ padding: "8px 10px", verticalAlign: "top" }}>
                         <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
-                          <span style={{ width: 9, height: 9, borderRadius: 99, background: c.color, flexShrink: 0 }} />
-                          <strong>{c.label}</strong>
-                          {isVal && <span style={{ color: "#15803d", fontWeight: 800, fontSize: 11.5 }} title="validated">✓</span>}
-                          {typeof conf === "number" && heat && (
-                            <span style={{ marginLeft: "auto", flexShrink: 0, fontSize: 11, fontWeight: 700, fontVariantNumeric: "tabular-nums", color: heat.fg, background: heat.bg, border: `1px solid ${heat.fg}22`, borderRadius: 99, padding: "1px 6px" }}>
-                              {conf.toFixed(0)}%
-                            </span>
-                          )}
+                          <span style={{ width: 10, height: 10, borderRadius: 99, background: c.color, flexShrink: 0 }} />
+                          <strong>Cluster {i + 1}</strong>
                         </div>
-                        <div style={{ color: hasLabel ? "#555" : "#b3ada5", fontStyle: hasLabel ? "normal" : "italic", marginTop: 2 }}>{hasLabel ? labels[c.id] : "not yet labelled"}</div>
                       </td>
                       {nativeTiers.map((t) => {
                         const ti = SCORE_TIERS.findIndex((s) => s.key === t.key);
                         const ref = refs[t.gtKey as keyof typeof refs];
                         const tv = v ? v[t.key] : null;
-                        // driver-scoring: a tier finer than our concluded depth is "not attempted", never a miss.
+                        // driver-scoring: a tier finer than our concluded depth is "not attempted" = abstained at this depth.
                         const attempted = attemptedTier(drv.reached, drv.kind, ti);
-                        const matched = !!(tv && tv.match && attempted);
-                        // what the chat predicted for THIS tier (per-tier read), falling back to the concluded call
+                        const scored = !!tv;
+                        const matched = scored && !!tv!.match && attempted;   // green
+                        const wrong = scored && attempted && !tv!.match;      // red
+                        const abstained = scored && !attempted;               // yellow
+                        // what Daniotype predicted for THIS tier (per-tier read), falling back to the concluded call
                         const tp = cc ? (cc[t.key as keyof Omit<ClusterConf, "why">] as TierPred | undefined) : undefined;
                         const pred = (tp?.prediction && tp.prediction.trim()) ? tp.prediction.trim() : (drv.identity || labels[c.id] || "");
+                        const box = matched ? { bg: "#f0fdf4", bd: "#bbf7d0" }
+                          : wrong ? { bg: "#fef2f2", bd: "#fecaca" }
+                          : abstained ? { bg: "#fefce8", bd: "#fde68a" }
+                          : { bg: "transparent", bd: "transparent" };
                         return (
-                          <td key={t.key} style={{ padding: "7px 9px", verticalAlign: "top", wordBreak: "break-word", background: matched ? "#f0fdf4" : "transparent" }} title={tv?.note || ""}>
-                            {/* our prediction (chat) */}
-                            <div style={{ display: "flex", gap: 5, alignItems: "baseline" }}>
-                              {matched && <span style={{ color: "#15803d", fontWeight: 800, flexShrink: 0 }} title="matches the reference">✓</span>}
-                              <span style={{ color: hasLabel ? "#2b2b2b" : "#cbc5be", fontWeight: 600 }}>{hasLabel ? (pred || "—") : "·"}</span>
+                          <td key={t.key} style={{ padding: "5px 6px", verticalAlign: "top" }} title={tv?.note || ""}>
+                            <div style={{ background: box.bg, border: `1px solid ${box.bd}`, borderRadius: 8, padding: "6px 8px", wordBreak: "break-word", minHeight: 34 }}>
+                              {/* Daniotype prediction + per-tier confidence */}
+                              <div style={{ display: "flex", gap: 5, alignItems: "baseline" }}>
+                                {matched && <span style={{ color: "#15803d", fontWeight: 800, flexShrink: 0 }} title="matches the reference">✓</span>}
+                                {abstained && <span style={{ color: "#a16207", fontWeight: 800, flexShrink: 0, fontSize: 10.5 }} title="abstained at this tier">⊘</span>}
+                                <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "#a59f96", flexShrink: 0 }}>Daniotype</span>
+                                {tp && typeof tp.pct === "number" && <span style={{ fontSize: 9.5, fontWeight: 700, color: "#8a847c", flexShrink: 0 }}>{tp.pct.toFixed(0)}%</span>}
+                              </div>
+                              <div style={{ color: hasLabel ? "#2b2b2b" : "#cbc5be", fontWeight: 600, marginTop: 1 }}>{hasLabel ? (pred || "—") : "·"}</div>
+                              {/* the dataset's own (native) ground-truth label */}
+                              <div style={{ fontSize: 10.5, color: "#6b655d", marginTop: 4, borderTop: "1px solid #00000010", paddingTop: 3 }}>
+                                <span style={{ fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "#a59f96" }}>{dataset.name} GT</span>
+                                <div style={{ marginTop: 1 }}>{ref || "—"}</div>
+                              </div>
                             </div>
-                            {/* the dataset's own (native) ground-truth label */}
-                            <div style={{ fontSize: 10.5, color: matched ? "#3f6b4f" : "#9a948c", marginTop: 2 }}>
-                              <span style={{ color: "#b3ada5" }}>{dataset.name}:</span> {ref || "—"}
-                            </div>
-                            {tv && !attempted && <div style={{ fontSize: 9.5, fontStyle: "italic", color: "#b9b3ab", marginTop: 1 }}>not attempted (deeper than our call)</div>}
                           </td>
                         );
                       })}
