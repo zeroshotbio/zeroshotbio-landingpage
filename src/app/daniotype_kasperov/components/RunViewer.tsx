@@ -47,6 +47,24 @@ const CARD: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e
 const SEC: React.CSSProperties = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#9a948c", fontWeight: 800, margin: "0 0 8px" };
 const notRecorded = (what: string) => <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic" }}>{what} — not recorded in this run.</div>;
 
+// stable empty set so the Clustering-tab map shows no per-cluster validation
+// checkmarks (that tab is about the partition, not the labelling pass).
+const NO_CHECKS: Set<string> = new Set();
+
+// Friendly run-date headline, e.g. "June 15th, 2:02 PM".
+function fmtRunDate(iso?: string | null): string | null {
+  if (!iso) return null;
+  const d = new Date(iso);
+  if (isNaN(d.getTime())) return null;
+  const ord = (n: number) => {
+    const s = ["th", "st", "nd", "rd"], v = n % 100;
+    return n + (s[(v - 20) % 10] || s[v] || s[0]);
+  };
+  const month = d.toLocaleString("en-US", { month: "long" });
+  const time = d.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" });
+  return `${month} ${ord(d.getDate())}, ${time}`;
+}
+
 const ARCHIVE_BADGE: Record<string, { bg: string; fg: string; label: string }> = {
   quarantined: { bg: "#fef2f2", fg: "#b91c1c", label: "⚠ quarantined · contaminated" },
   superseded: { bg: "#eef2f6", fg: "#475569", label: "superseded" },
@@ -57,21 +75,21 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
   // A run labelled on a dataset's NATIVE published partition (schemaBasis
   // "native-schema") carries cluster ids in the *_native asset space — not the
   // registered de-novo atlas. The de-novo groundtruth.json has no matching ids,
-  // so every GT label would render "—". Resolve such a run's atlas + ground
-  // truth to its own _native asset so the labels line up. The predicate is
-  // EXACTLY schemaBasis === "native-schema" (de-novo runs lack the field) —
-  // never promotedFrom, never back-filled from dataset_facts. Only the two URLs
-  // are overridden; dataset.id is preserved so native-tier maps still resolve.
+  // so every GT label would render "—". Resolve such a run's GROUND TRUTH to its
+  // own _native asset so the labels line up. The predicate is EXACTLY
+  // schemaBasis === "native-schema" (de-novo runs lack the field) — never
+  // promotedFrom, never back-filled from dataset_facts. Only groundTruthUrl is
+  // overridden; dataset.id is preserved so native-tier maps still resolve.
+  // NOTE: dataUrl is deliberately NOT overridden — the *_native umap.json assets
+  // carry cluster metadata but no scatter points, so loading them blanks the
+  // Clustering-tab map. The de-novo atlas (with points) stays as the illustrative
+  // map; only the per-cluster GT label strings come from the native asset.
   const viewDataset = useMemo<DatasetDef>(() => {
-    if (run?.schemaBasis !== "native-schema") return dataset;
+    if (run?.schemaBasis !== "native-schema" || !dataset.groundTruthUrl) return dataset;
     const toNative = (u: string) => u.replace(`/${dataset.id}/`, `/${dataset.id}_native/`);
-    return {
-      ...dataset,
-      dataUrl: toNative(dataset.dataUrl),
-      groundTruthUrl: dataset.groundTruthUrl ? toNative(dataset.groundTruthUrl) : dataset.groundTruthUrl,
-    };
+    return { ...dataset, groundTruthUrl: toNative(dataset.groundTruthUrl) };
   }, [run, dataset]);
-  const { clusters, error } = useAtlas(viewDataset.dataUrl);
+  const { clusters, error } = useAtlas(dataset.dataUrl);
   const profile = useMemo(() => computeCompletenessProfile(run, meta), [run, meta]);
   const runClusters: any[] = Array.isArray(run?.clusters) ? run.clusters : [];
   const byId = useMemo(() => {
@@ -142,11 +160,12 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
         {/* metadata header */}
         <div style={{ ...CARD, marginBottom: 12 }}>
           <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-            <span style={{ fontSize: 18, fontWeight: 800 }}>{run?.model ?? "?"}</span>
+            <span style={{ fontSize: 18, fontWeight: 800 }}>{fmtRunDate(run?.exportedAt ?? run?.scoredAt) ?? (run?.model ?? "?")}</span>
             <span style={{ fontSize: 12.5, color: "#666" }}>
+              {run?.model ? <span style={{ fontWeight: 600, color: "#555" }}>{run.model}</span> : null}
+              {run?.model ? " · " : ""}
               {profile.labelledClusters}/{profile.nClusters} labelled
               {profile.scored ? " · scored" : ""}
-              {run?.exportedAt ? ` · ${new Date(run.exportedAt).toLocaleString()}` : ""}
               {run?.cost?.usd != null ? ` · ~$${money(Number(run.cost.usd))}${run?.cost?.estimated ? "*" : ""}` : ""}
             </span>
             {run?.harness ? (
@@ -191,13 +210,14 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
         {/* 1. CLUSTERING — the atlas map + how it was clustered */}
         {tab === "clustering" && (
           <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ ...CARD, padding: 10, textAlign: "center" }}>
+            <div style={{ ...CARD, padding: 10 }}>
               {clusters ? (
-                <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={validated} width={560} height={420} />
+                <div style={{ display: "flex", justifyContent: "center" }}>
+                  <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={NO_CHECKS} width={560} height={420} />
+                </div>
               ) : (
                 <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>
               )}
-              <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>green ✓ = validated cluster</div>
             </div>
             <div style={CARD}>
               <div style={SEC}>This run</div>
