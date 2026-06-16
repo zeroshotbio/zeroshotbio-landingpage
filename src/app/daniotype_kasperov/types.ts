@@ -46,6 +46,14 @@ export function overallConf(cc?: ClusterConf): number | undefined {
 
 export type SourceKey = "ZFIN" | "ZFA" | "GO" | "NCBI" | "UniProt";
 
+export interface AtlasMeta {
+  source: string;
+  totalCells: number; // cells actually clustered (may be a sample of the full atlas)
+  nClusters: number;
+  fullDatasetCells?: number; // full atlas size, when totalCells is a sample
+  pointsShown?: number; // dots plotted on the map (a downsample of totalCells)
+}
+
 // --- dataset registry + run-scoring shapes (shared with the Scorecard) ------
 export type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
 export interface DatasetDef {

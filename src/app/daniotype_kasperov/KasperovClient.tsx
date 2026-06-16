@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo, type KasperovModel } from "./models";
 import DATASET_FACTS from "./dataset_facts.json";
 import HARNESS_REGISTRY from "./harness_registry.json";
-import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type ClusterConf, type DatasetId, type DatasetDef, type Usage, type TierAgg, type PctCount, type SubStrat, type FailCount, type AbstentionStat, type ClusterVerdict, type RunScore, CONF_TIERS, overallConf } from "./types";
+import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type ClusterConf, type AtlasMeta, type DatasetId, type DatasetDef, type Usage, type TierAgg, type PctCount, type SubStrat, type FailCount, type AbstentionStat, type ClusterVerdict, type RunScore, CONF_TIERS, overallConf } from "./types";
 import { PAPER, INK, ACCENT, THEME, confColor, btnPrimary, btnGhost } from "./theme";
 import { ImportButton } from "./components/ImportButton";
 // Presentational components shared with the Phase 2 read-only run viewer.
@@ -15,7 +15,9 @@ import { AgentMessage } from "./components/ChatMessage";
 import { MarkersContent } from "./components/MarkersPanel";
 import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
+import { RunViewer } from "./components/RunViewer";
 import { useTween } from "./useTween";
+import { useAtlas } from "./useAtlas";
 
 // Wizard assets are served statically by nginx (daniotype_data/), NOT by the gated Vercel
 // asset route — keeps the Vercel function bundle slim. The browser fetches umap/groundtruth
@@ -138,78 +140,6 @@ const ORDERED_DATASETS: DatasetDef[] = DATASET_ORDER.map((id) => DATASET_BY_ID[i
 type Box = { x: number; y: number; w: number; h: number };
 // Pt, Marker, Cluster → ./types
 
-interface AtlasMeta {
-  source: string;
-  totalCells: number; // cells actually clustered (may be a sample of the full atlas)
-  nClusters: number;
-  fullDatasetCells?: number; // full atlas size, when totalCells is a sample
-  pointsShown?: number; // dots plotted on the map (a downsample of totalCells)
-}
-
-function paletteColor(i: number, n: number) {
-  const h = Math.round((i * 360) / n + (i % 2 ? 180 / n : 0)) % 360;
-  const s = 60 + (i % 3) * 9;
-  const l = 46 + (i % 2) * 9;
-  return `hsl(${h} ${s}% ${l}%)`;
-}
-
-// confColor → ./theme
-
-// ---------------------------------------------------------------------------
-// Load + shape the real MiniFin atlas asset
-// ---------------------------------------------------------------------------
-function useAtlas(dataUrl: string | null) {
-  const [clusters, setClusters] = useState<Cluster[] | null>(null);
-  const [meta, setMeta] = useState<AtlasMeta | null>(null);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!dataUrl) return;
-    setClusters(null);
-    setMeta(null);
-    setError(null);
-    let alive = true;
-    fetch(dataUrl)
-      .then((r) => {
-        if (!r.ok) throw new Error(`asset ${r.status}`);
-        return r.json();
-      })
-      .then((d: any) => {
-        if (!alive) return;
-        const n = d.clusters.length;
-        const cs: Cluster[] = d.clusters.map((c: any, i: number) => ({
-          id: c.id,
-          label: c.label,
-          nCells: c.nCells,
-          color: paletteColor(i, n),
-          cx: c.cx,
-          cy: c.cy,
-          degsUp: c.degsUp ?? [],
-          markers: c.markers ?? [],
-          markersDown: c.markersDown ?? [],
-          points: [],
-          bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
-        }));
-        for (const [x, y, ci] of d.points as [number, number, number][]) {
-          const c = cs[ci];
-          if (!c) continue;
-          c.points.push({ x, y });
-          if (x < c.bounds.minx) c.bounds.minx = x;
-          if (x > c.bounds.maxx) c.bounds.maxx = x;
-          if (y < c.bounds.miny) c.bounds.miny = y;
-          if (y > c.bounds.maxy) c.bounds.maxy = y;
-        }
-        setClusters(cs);
-        setMeta({ source: d.source, totalCells: d.totalCells, nClusters: n, fullDatasetCells: d.fullDatasetCells, pointsShown: Array.isArray(d.points) ? d.points.length : undefined });
-      })
-      .catch((e) => alive && setError(String(e?.message ?? e)));
-    return () => {
-      alive = false;
-    };
-  }, [dataUrl]);
-
-  return { clusters, meta, error };
-}
 
 // ---------------------------------------------------------------------------
 // UMAP canvas — global (world map / HUD) and zoom (focused cluster)
@@ -219,6 +149,10 @@ type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "s
 
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
+  // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
+  // a dataset whose run list is open, and a loaded run being viewed.
+  const [viewRunsFor, setViewRunsFor] = useState<DatasetDef | null>(null);
+  const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef } | null>(null);
   const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
@@ -609,7 +543,22 @@ export default function KasperovClient() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [captureMode, captureDone]);
 
-  if (!dataset) return <DatasetPicker onPick={setDataset} />;
+  if (viewingRun)
+    return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} onBack={() => setViewingRun(null)} />;
+
+  if (!dataset)
+    return (
+      <>
+        <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} />
+        {viewRunsFor && (
+          <RunListModal
+            dataset={viewRunsFor}
+            onView={(run, m) => { setViewingRun({ run, meta: m, dataset: viewRunsFor }); setViewRunsFor(null); }}
+            onClose={() => setViewRunsFor(null)}
+          />
+        )}
+      </>
+    );
 
   if (stage === "model")
     return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("harness"); }} onBack={() => setStage("map")} />;
@@ -861,6 +810,101 @@ const TIPS: Record<string, string> = {
   processingWeighted: "The same agreement, weighted by cell count and across all clusters. It is lower than the aligned figure mainly because the two pipelines cut the cell continuum at different granularities — partition differences, not labels conflicting on the same cells.",
   adjudicationProc: "For the cross-lineage conflicts we adjudicated on the shared cells' markers. 'Parse'/'Manual' = which build's label was better-supported; 'amb' = markers cannot decide. Only 1 of 77 was a flat labeling error — labels are robust to the pipeline.",
 };
+
+// View-mode run list (Phase 2b): lists every saved run for ONE dataset and opens
+// the chosen one in the read-only RunViewer. Archived runs are off by default,
+// revealed by a toggle and badged by reason (quarantined / superseded / other).
+function RunListModal({ dataset, onView, onClose }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void }) {
+  const [runs, setRuns] = useState<any[] | null>(null);
+  const [status, setStatus] = useState<"loading" | "ready" | "notconfigured" | "error">("loading");
+  const [err, setErr] = useState("");
+  const [showArchived, setShowArchived] = useState(false);
+  const [loadingId, setLoadingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    let alive = true;
+    setStatus("loading");
+    const q = `/api/kasperov_runs?dataset=${encodeURIComponent(dataset.id)}${showArchived ? "&include=archived" : ""}`;
+    fetch(q)
+      .then(async (r) => {
+        if (r.status === 503) { if (alive) setStatus("notconfigured"); return; }
+        if (!r.ok) throw new Error(`list ${r.status}`);
+        const d = await r.json();
+        if (alive) { setRuns(d.runs ?? []); setStatus("ready"); }
+      })
+      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
+    return () => { alive = false; };
+  }, [dataset.id, showArchived]);
+
+  async function open(m: any) {
+    setLoadingId(m.runId);
+    try {
+      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dataset.id)}&id=${encodeURIComponent(m.runId)}`);
+      if (!r.ok) throw new Error();
+      onView(await r.json(), m);
+    } catch {
+      window.alert("Couldn't load that run.");
+      setLoadingId(null);
+    }
+  }
+
+  const money = (v: number) => (v < 1 ? v.toFixed(3) : v.toFixed(2));
+  const ARCH: Record<string, { bg: string; fg: string; label: string }> = {
+    quarantined: { bg: "#fef2f2", fg: "#b91c1c", label: "⚠ quarantined · contaminated" },
+    superseded: { bg: "#eef2f6", fg: "#475569", label: "superseded" },
+    other: { bg: "#f1ede8", fg: "#7a746c", label: "archived" },
+  };
+  const archivedCount = (runs || []).filter((m) => m.archived).length;
+
+  return (
+    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 720, width: "100%", maxHeight: "82vh", overflow: "auto", padding: "20px 22px", textAlign: "left" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
+          <strong style={{ fontSize: 16 }}>Completed runs · {dataset.name}</strong>
+          <button onClick={onClose} style={{ marginLeft: "auto", ...btnGhost, padding: "5px 11px", fontSize: 13 }}>Close</button>
+        </div>
+        <div style={{ fontSize: 12.5, color: "#888", marginBottom: 12 }}>Click a run to view it read-only — its map, labels, scorecard, and saved transcripts.</div>
+
+        {status === "loading" && <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>}
+        {status === "notconfigured" && (
+          <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
+            The server run store isn&apos;t configured (set <code>KASPEROV_AUTOPILOT_URL</code>).
+          </div>
+        )}
+        {status === "error" && <div style={{ color: "#b91c1c", fontSize: 14 }}>Failed to list runs: {err}</div>}
+        {status === "ready" && runs && runs.length === 0 && <div style={{ color: "#888", fontSize: 14 }}>No saved runs for this dataset yet.</div>}
+
+        {status === "ready" && runs && runs.map((m) => {
+          const cat = m.archiveCategory || "other";
+          return (
+            <div key={m.runId} onClick={() => !loadingId && open(m)} style={{ cursor: loadingId ? "default" : "pointer", background: "#fff", border: `1px solid ${m.archived ? ARCH[cat].fg + "44" : "#e5e1dc"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
+                <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
+                {m.harness ? <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
+                {m.schemaBasis ? <span title={m.basisNote || ""} style={{ fontSize: 10.5, fontWeight: 700, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
+                {m.archived ? <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCH[cat].fg, background: ARCH[cat].bg, borderRadius: 99, padding: "1px 7px", border: `1px solid ${ARCH[cat].fg}33` }}>{ARCH[cat].label}</span> : null}
+                <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
+              </div>
+              {m.dataset ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 3, lineHeight: 1.4 }}>🧬 {m.dataset}</div> : null}
+              <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.</div>
+              {m.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div> : null}
+              {m.archived && cat === "quarantined" ? <div style={{ fontSize: 11.5, color: "#b91c1c", marginTop: 3, lineHeight: 1.4 }}>{m.archivedReason}</div> : null}
+            </div>
+          );
+        })}
+
+        {status === "ready" && (
+          <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12.5, color: "#666", cursor: "pointer" }}>
+            <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
+            Show archived runs{!showArchived ? " (superseded / quarantined / other)" : archivedCount ? ` — ${archivedCount} shown, badged` : " — none"}
+          </label>
+        )}
+      </div>
+    </div>
+  );
+}
+
 function tierTip(label: string): string {
   const t = label.toLowerCase();
   const base = " The % is how often our blind label agrees with the authors' published label at this tier, judged by meaning (synonyms, ontology parent–child and lineage equivalence all count), not exact text.";
@@ -1061,7 +1105,7 @@ function NoGtBody({ f }: { f: any }) {
   );
 }
 
-function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
+function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 1120, padding: "72px 28px 60px", width: "100%" }}>
@@ -1129,9 +1173,12 @@ function DatasetPicker({ onPick }: { onPick: (d: DatasetDef) => void }) {
                       ))}
                     </div>
                   )}
-                  {/* GO lives under the identity, so hovering the card for tooltips never navigates */}
+                  {/* two paths live under the identity, so hovering the card for tooltips never navigates */}
                   {ready && (
-                    <button onClick={() => onPick(d)} title={`Open the ${d.name} wizard`} style={{ marginTop: "auto", alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 14, fontWeight: 800, letterSpacing: 1.5, cursor: "pointer" }}>GO</button>
+                    <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                      <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
+                      <button onClick={() => onViewRuns(d)} title={`Browse completed ${d.name} runs (read-only)`} style={{ alignSelf: "stretch", background: "#fff", color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>▤ VIEW COMPLETED RUNS</button>
+                    </div>
                   )}
                 </div>
 
