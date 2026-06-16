@@ -8,7 +8,6 @@ import DATASET_FACTS from "./dataset_facts.json";
 import HARNESS_REGISTRY from "./harness_registry.json";
 import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type ClusterConf, type AtlasMeta, type DatasetId, type DatasetDef, type Usage, type TierAgg, type PctCount, type SubStrat, type FailCount, type AbstentionStat, type ClusterVerdict, type RunScore, CONF_TIERS, overallConf } from "./types";
 import { PAPER, INK, ACCENT, THEME, confColor, btnPrimary, btnGhost } from "./theme";
-import { ImportButton } from "./components/ImportButton";
 // Presentational components shared with the Phase 2 read-only run viewer.
 import { UmapCanvas } from "./components/UmapCanvas";
 import { AgentMessage } from "./components/ChatMessage";
@@ -608,122 +607,6 @@ function Centered({ children }: { children: React.ReactNode }) {
 }
 
 // ---------------------------------------------------------------------------
-// Import button — reads a previously exported run JSON and hands it to onImport.
-// Shared by the World Map controls and the scorecard.
-// Previous-runs browser — lists server-saved runs for a dataset (model · cost ·
-// date · #labelled) and loads any one back in. Backed by /api/kasperov_runs.
-// ---------------------------------------------------------------------------
-function PreviousRunsModal({ datasetId, onLoad, onClose }: { datasetId: string; onLoad: (data: unknown) => void; onClose: () => void }) {
-  const [runs, setRuns] = useState<any[] | null>(null);
-  const [status, setStatus] = useState<"loading" | "ready" | "notconfigured" | "error">("loading");
-  const [err, setErr] = useState("");
-  const [loadingId, setLoadingId] = useState<string | null>(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(datasetId)}`)
-      .then(async (r) => {
-        if (r.status === 503) {
-          if (alive) setStatus("notconfigured");
-          return;
-        }
-        if (!r.ok) throw new Error(`list ${r.status}`);
-        const d = await r.json();
-        if (alive) {
-          setRuns(d.runs ?? []);
-          setStatus("ready");
-        }
-      })
-      .catch((e) => alive && (setErr(String(e?.message ?? e)), setStatus("error")));
-    return () => {
-      alive = false;
-    };
-  }, [datasetId]);
-
-  async function load(runId: string) {
-    setLoadingId(runId);
-    try {
-      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(datasetId)}&id=${encodeURIComponent(runId)}`);
-      if (!r.ok) throw new Error();
-      const json = await r.json();
-      onLoad(json);
-      onClose();
-    } catch {
-      window.alert("Couldn't load that run.");
-      setLoadingId(null);
-    }
-  }
-
-  const money = (v: number) => (v < 1 ? v.toFixed(3) : v.toFixed(2));
-
-  return (
-    <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 680, width: "100%", maxHeight: "80vh", overflow: "auto", padding: "20px 22px", textAlign: "left" }}>
-        <div style={{ display: "flex", alignItems: "center", marginBottom: 12 }}>
-          <strong style={{ fontSize: 16 }}>Previous runs · {datasetId}</strong>
-          <button onClick={onClose} style={{ marginLeft: "auto", ...btnGhost, padding: "5px 11px", fontSize: 13 }}>Close</button>
-        </div>
-        {status === "loading" && <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>}
-        {status === "notconfigured" && (
-          <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>
-            The server run store isn&apos;t configured yet (set <code>KASPEROV_AUTOPILOT_URL</code> in Vercel env + deploy the EC2 worker). Exported runs still download locally, and you can re-load them with <strong>Import results</strong>.
-          </div>
-        )}
-        {status === "error" && <div style={{ color: "#b91c1c", fontSize: 14 }}>Failed to list runs: {err}</div>}
-        {status === "ready" && runs && runs.length === 0 && <div style={{ color: "#888", fontSize: 14 }}>No saved runs for this dataset yet — export a run (or run the server auto-pilot) to save one.</div>}
-        {status === "ready" &&
-          runs &&
-          runs.map((m) => (
-            <div
-              key={m.runId}
-              style={{ display: "flex", width: "100%", textAlign: "left", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 10, padding: "10px 12px", marginBottom: 8, color: INK }}
-            >
-              <span onClick={() => !loadingId && load(m.runId)} style={{ flex: 1, minWidth: 0, cursor: loadingId ? "default" : "pointer" }}>
-                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
-                <span style={{ fontSize: 12.5, color: "#666" }}>
-                  {" "}· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
-                </span>
-                {m.harness ? (
-                  <span title={m.harness.gitCommit ? `commit ${m.harness.gitCommit}` : undefined} style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>
-                    harness v{m.harness.version}{m.harness.name ? ` · ${m.harness.name}` : ""}
-                  </span>
-                ) : (
-                  <span title="Saved before the harness registry existed — labelling config not versioned." style={{ marginLeft: 6, fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>
-                    harness · unversioned
-                  </span>
-                )}
-                {/* which clustering this run was labelled on — the per-run source string (leiden res, embedding) */}
-                {(() => {
-                  const f: any = (FACTS as any)[datasetId];
-                  const clustering = m.dataset || (f ? `${f.platform} · ${f.clusters} clusters` : null);
-                  return clustering ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 2, lineHeight: 1.4 }}>🧬 {clustering}</div> : null;
-                })()}
-                <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>
-                  {m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · ~${money(Number(m.costUsd || 0))}{m.costEstimated ? "*" : ""} est.
-                </div>
-                {m.note ? (
-                  <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div>
-                ) : null}
-              </span>
-              <button
-                title={m.note ? "Edit note" : "Add note"}
-                onClick={async () => {
-                  const next = window.prompt("Note for this run (what's special about it?):", m.note || "");
-                  if (next === null) return; // cancelled
-                  await postRunNote(m.runId, next.trim(), datasetId);
-                  setRuns((rs) => (rs || []).map((x) => (x.runId === m.runId ? { ...x, note: next.trim() || null } : x)));
-                }}
-                style={{ ...btnGhost, padding: "4px 9px", fontSize: 12, flexShrink: 0 }}
-              >
-                {m.note ? "✎" : "📝 note"}
-              </button>
-              <span onClick={() => !loadingId && load(m.runId)} style={{ fontSize: 12.5, color: ACCENT, fontWeight: 700, flexShrink: 0, cursor: loadingId ? "default" : "pointer" }}>{loadingId === m.runId ? "Loading…" : "Load →"}</span>
-            </div>
-          ))}
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
 // Dataset picker — the entry screen: choose which atlas to run the wizard on.
@@ -1638,8 +1521,17 @@ function MapStage({
 }) {
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
-  const [showPrev, setShowPrev] = useState(false);
   const [srvNoteFor, setSrvNoteFor] = useState<string | null>(null); // server run awaiting its optional note
+  // completeness gate for saving: every cluster must be labelled + have tier
+  // confidence, and (on GT datasets) the ground-truth comparison must have run.
+  const confN = clusters.filter((c) => confidence[c.id]).length;
+  const needsGt = !!dataset.groundTruthUrl;
+  const saveChecks = [
+    { ok: clusters.length > 0 && labelled.length === clusters.length, label: `Every cluster labelled (${labelled.length}/${clusters.length})` },
+    { ok: clusters.length > 0 && confN === clusters.length, label: `Tier confidence on every cluster (${confN}/${clusters.length})` },
+    ...(needsGt ? [{ ok: !!score.scoredAt, label: `Compared to ${dataset.name} ground truth` }] : []),
+  ];
+  const saveReady = saveChecks.every((c) => c.ok);
 
   // persistent server-side auto-pilot (runs on EC2, survives the browser closing)
   const [serverRun, setServerRun] = useState<{ runId?: string; phase: string; done: number; total: number; msg?: string } | null>(null);
@@ -1844,11 +1736,9 @@ function MapStage({
                 >
                   ☁ Run AutoPilot on server (persistent)
                 </button>
-                <div style={{ display: "inline-flex", flexDirection: "column", gap: 6, alignItems: "stretch" }}>
-                  <button onClick={onExport} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14 }}>⬇ Export results (JSON) + save to server</button>
-                  <button onClick={() => setShowPrev(true)} style={{ ...btnGhost, padding: "9px 18px", fontSize: 13 }}>☁ Load Previous Run…</button>
-                </div>
-                <ImportButton onImport={onImport} label="⬆ Import results (JSON)" />
+                {/* No load/import here — this page manages the NEW run only.
+                    Saving lives at the very bottom (gated on a completeness check).
+                    Viewing past runs is the separate "View Completed Runs" path. */}
                 {(labelled.length > 0 || validated.size > 0) && (
                   <button onClick={onReset} style={{ ...btnGhost, padding: "12px 18px", fontSize: 14, color: "#b91c1c", borderColor: "#e7c3c3" }}>↺ Reset run</button>
                 )}
@@ -1861,10 +1751,7 @@ function MapStage({
                   ) : serverRun.phase === "error" ? (
                     <span>Server run failed{serverRun.msg ? `: ${serverRun.msg}` : ""}.</span>
                   ) : serverRun.phase === "done" ? (
-                    <>
-                      <span style={{ color: "#15803d" }}>✓ Server run complete — saved.</span>
-                      <button onClick={() => setShowPrev(true)} style={{ ...btnGhost, padding: "4px 10px", fontSize: 12.5 }}>☁ Open Load Previous Run</button>
-                    </>
+                    <span style={{ color: "#15803d" }}>✓ Server run complete — saved. Find it under &ldquo;View Completed Runs&rdquo; on the dataset card.</span>
                   ) : (
                     <span>
                       <span style={{ animation: "kpulse 1s infinite" }}>☁</span> Server run · {serverRun.phase}
@@ -1896,7 +1783,6 @@ function MapStage({
                   )}
                 </div>
               )}
-              {showPrev && <PreviousRunsModal datasetId={dataset.id} onLoad={onImport} onClose={() => setShowPrev(false)} />}
               {srvNoteFor && <RunNoteModal onSubmit={(t) => { postRunNote(srvNoteFor, t); setSrvNoteFor(null); }} onSkip={() => setSrvNoteFor(null)} />}
               <p style={{ color: "#999", fontSize: 12.5, margin: "0 auto 14px", maxWidth: 560 }}>
                 Auto-pilot drives the Reasoner across every un-labelled cluster — dispatching the Researcher &amp; Archivist,
@@ -1981,6 +1867,29 @@ function MapStage({
                   />
                 </div>
               )}
+
+              {/* Save lives at the very bottom — gated on a completeness check so
+                  an incomplete run (incl. an un-scored GT run) can't be saved. */}
+              <div style={{ marginTop: 36, borderTop: "1px solid #e5e1dc", paddingTop: 22, maxWidth: 640, marginLeft: "auto", marginRight: "auto", textAlign: "left" }}>
+                <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1.2, color: "#999", fontWeight: 700, marginBottom: 10 }}>Finish &amp; save this run</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 5, marginBottom: 14 }}>
+                  {saveChecks.map((c, i) => (
+                    <div key={i} style={{ fontSize: 13, color: c.ok ? "#15803d" : "#92400e", display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontWeight: 800 }}>{c.ok ? "✓" : "○"}</span> {c.label}
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={onExport}
+                  disabled={!saveReady}
+                  title={saveReady ? "Download the run JSON and save it to the server" : "Complete every check above before saving"}
+                  style={{ background: saveReady ? "#15803d" : "#cdd5cf", color: "#fff", border: "none", borderRadius: 10, padding: "13px 22px", fontSize: 15, fontWeight: 700, cursor: saveReady ? "pointer" : "not-allowed" }}
+                >
+                  ⬇ Export results (JSON) + save to server
+                </button>
+                {!saveReady && <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 8 }}>Saving unlocks once every item above is checked{needsGt ? ", including the ground-truth comparison" : ""}.</div>}
+                {srvNote && <div style={{ fontSize: 12.5, color: srvNote.includes("✓") ? "#15803d" : "#999", marginTop: 8 }}>{srvNote}</div>}
+              </div>
             </>
           )}
         </div>

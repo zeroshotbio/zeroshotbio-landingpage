@@ -299,7 +299,8 @@ export function Scorecard({
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 6 }}>
           {!embedded && onBack && <button onClick={onBack} style={btnGhost}>← World map</button>}
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>{dataset.name} · ground-truth scorecard</div>
-          <ImportButton onImport={onImport} label="⬆ Import run (JSON)" style={{ marginLeft: "auto", padding: "8px 14px", fontSize: 13 }} />
+          {/* Import is only for the standalone scorecard; the embedded (new-run) view manages a fresh run only. */}
+          {!embedded && <ImportButton onImport={onImport} label="⬆ Import run (JSON)" style={{ marginLeft: "auto", padding: "8px 14px", fontSize: 13 }} />}
         </div>
         <h2 style={{ fontSize: embedded ? 22 : 26, fontWeight: 700, margin: "4px 0 2px" }}>Our de-novo labels vs the published atlas</h2>
         <p style={{ color: "#666", fontSize: 14.5, margin: "0 0 18px", lineHeight: 1.5 }}>
