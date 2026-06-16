@@ -147,6 +147,12 @@ type Box = { x: number; y: number; w: number; h: number };
 // ---------------------------------------------------------------------------
 type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard";
 
+// the registry's active harness — the from-scratch default for a NEW run's harness step
+function defaultHarness() {
+  const r: any = HARNESS_REGISTRY;
+  return (r.harnesses || []).find((h: any) => h.id === r.active) || (r.harnesses || [])[0] || null;
+}
+
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
@@ -192,9 +198,7 @@ export default function KasperovClient() {
   const [model, setModel] = useState<KasperovModel>(DEFAULT_MODEL);
   // active labelling harness (the loop + grounding rules) — selected after the model.
   // Default to the registry's active version. Recorded in run provenance.
-  const [activeHarness, setActiveHarness] = useState<any>(() => {
-    const r: any = HARNESS_REGISTRY; return (r.harnesses || []).find((h: any) => h.id === r.active) || (r.harnesses || [])[0] || null;
-  });
+  const [activeHarness, setActiveHarness] = useState<any>(defaultHarness);
   const [usage, setUsage] = useState<Usage>({});
   const [score, setScore] = useState<RunScore>({ verdicts: {}, scoredAt: null, agg: [] });
   const [srvNote, setSrvNote] = useState(""); // transient "Saved to server ✓" message
@@ -203,22 +207,17 @@ export default function KasperovClient() {
     setUsage((u) => ({ ...u, [m]: { in: (u[m]?.in ?? 0) + (inT || 0), out: (u[m]?.out ?? 0) + (outT || 0) } }));
   }, []);
 
-  // restore the globally-selected model once
-  useEffect(() => {
-    try {
-      const m = localStorage.getItem(MODEL_KEY);
-      if (m && (KASPEROV_MODELS as readonly string[]).includes(m)) setModel(m as KasperovModel);
-    } catch {}
-  }, []);
   useEffect(() => {
     try {
       localStorage.setItem(MODEL_KEY, model);
     } catch {}
   }, [model]);
 
-  // When a dataset is chosen, clear any prior dataset's run state and hydrate this
-  // dataset's saved run (validated/labels + transcripts/markers/confidence). Each
-  // dataset persists under its own keys so runs never collide.
+  // NEW RUN = a naked, from-scratch setup. Picking a dataset clears ALL prior
+  // state AND config, and pre-loads NOTHING — no localStorage cache, no server
+  // run, no carried model/harness. Every step (clustering → model → harness →
+  // chat) starts empty. (Viewing past runs is the separate read-only
+  // "View Completed Runs" path; loading one into the wizard is an explicit click.)
   useEffect(() => {
     if (!dataset) return;
     setLoaded(false);
@@ -236,58 +235,12 @@ export default function KasperovClient() {
     setStage("map"); // dataset chosen → show "How we clustered" first, then model → harness → chat
     setUsage({});
     setScore({ verdicts: {}, scoredAt: null, agg: [] });
-    try {
-      const raw = localStorage.getItem(resultsKey(dataset.id));
-      if (raw) {
-        const p = JSON.parse(raw);
-        if (p.transcripts) setTranscripts(p.transcripts);
-        if (p.augmented) setAugmented(p.augmented);
-        if (p.confidence) setConfidence(p.confidence);
-        if (p.usage) setUsage(p.usage);
-        if (p.score) setScore({ verdicts: p.score.verdicts ?? {}, scoredAt: p.score.scoredAt ?? null, agg: p.score.agg ?? [], subStrat: p.score.subStrat ?? null, abstention: p.score.abstention ?? null });
-        if (p.runMeta) setLoadedRun(p.runMeta);
-      }
-    } catch {}
-    try {
-      const raw = localStorage.getItem(storageKey(dataset.id));
-      if (raw) {
-        const p = JSON.parse(raw);
-        if (Array.isArray(p.validated)) setValidated(new Set(p.validated));
-        if (p.labels && typeof p.labels === "object") setLabels(p.labels);
-        // personasSeen is intentionally NOT persisted — the primer shows once per
-        // page load (reliably present each visit, not nagging within a session).
-      }
-    } catch {}
+    setModel(DEFAULT_MODEL);          // model step starts fresh — never carried from a prior run/session
+    setActiveHarness(defaultHarness()); // harness step starts fresh at the registry's active version
+    // wipe any lingering per-dataset cache so nothing from a previous session repopulates a step
+    try { localStorage.removeItem(resultsKey(dataset.id)); localStorage.removeItem(storageKey(dataset.id)); } catch {}
     hydratedRef.current = dataset.id;
     setLoaded(true);
-
-    // SERVER IS AUTHORITATIVE: load the dataset's latest server run; if the server has none,
-    // drop any (possibly stale/archived) local cache so it never lingers. localStorage above
-    // is just for instant paint — the server overrides it.
-    let cancelled = false;
-    const dsId = dataset.id;
-    (async () => {
-      try {
-        const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dsId)}`);
-        const d = r.ok ? await r.json() : { runs: [] };
-        if (cancelled || hydratedRef.current !== dsId) return;
-        const runs: any[] = Array.isArray(d.runs) ? d.runs : [];
-        if (runs.length) {
-          const latest = runs[0]; // index is newest-first
-          const rr = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(dsId)}&id=${encodeURIComponent(latest.runId)}`);
-          if (cancelled || hydratedRef.current !== dsId || !rr.ok) return;
-          const run = await rr.json();
-          if (cancelled || hydratedRef.current !== dsId) return;
-          if (run && Array.isArray(run.clusters)) applyRun(run); // stay on "How we clustered" — no reveal
-        } else {
-          // no server run for this dataset → clear the local cache (kills stale/archived copies)
-          setLabels({}); setValidated(new Set()); setConfidence({}); setTranscripts({}); setAugmented({});
-          setUsage({}); setScore({ verdicts: {}, scoredAt: null, agg: [] }); setLoadedRun(null); setLoadedNote(null);
-          try { localStorage.removeItem(resultsKey(dsId)); localStorage.removeItem(storageKey(dsId)); } catch {}
-        }
-      } catch {}
-    })();
-    return () => { cancelled = true; };
   }, [dataset]);
 
   // persist the full run (debounced); on quota overflow, fall back to markers+confidence only
@@ -976,6 +929,11 @@ function GtBody({ sc }: { sc: any }) {
         <Tip text={TIPS.benchmark}><span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", borderBottom: "1px dotted #cfc8bf" }}>Native-schema benchmark</span></Tip>
         <Tip text={indep ? TIPS.independent : TIPS.inParadigm} style={{ marginLeft: "auto" }}><span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span></Tip>
       </div>
+      {sc.evidentiaryRunId ? (
+        <div style={{ fontSize: 10.5, color: "#9a948c", marginTop: -4, lineHeight: 1.4 }}>
+          📍 numbers from run <span style={{ fontFamily: "ui-monospace, monospace", color: "#7a746c" }}>{sc.evidentiaryRunId}</span> — open it under <b>View Completed Runs</b>
+        </div>
+      ) : null}
       <div style={{ display: "flex", flexWrap: "wrap", rowGap: 12 }}>
         {/* accuracy by tier — vertical, prominent titles */}
         <div style={{ flex: "2 1 290px", minWidth: 256, display: "flex", flexDirection: "column", gap: 8, paddingRight: 16 }}>
