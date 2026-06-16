@@ -14,6 +14,8 @@ import { UmapCanvas } from "./UmapCanvas";
 import { AgentMessage } from "./ChatMessage";
 import { MarkersContent } from "./MarkersPanel";
 import { ConfidenceContent } from "./ConfidencePanel";
+import { ClusteringProvenance } from "./ClusteringProvenance";
+import { HarnessDetail } from "./HarnessDetail";
 
 // Strip the hidden ```kasperov-*``` control blocks the live loop embeds in
 // assistant turns, so the saved transcript reads as clean prose. Best-effort
@@ -60,18 +62,40 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
     return m;
   }, [run]);
   const validated = useMemo(() => new Set(runClusters.filter((c) => c.validated).map((c) => String(c.id))), [run]);
-  const labelledIds = useMemo(() => runClusters.filter((c) => c.finalLabel).map((c) => String(c.id)), [run]);
 
-  const [activeId, setActiveId] = useState<string | null>(null);
   const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels">("clustering");
-  const active = activeId ?? labelledIds[0] ?? clusters?.[0]?.id ?? null;
-  const atlasActive = clusters?.find((c) => c.id === active) || null;
-  const runActive = active ? byId.get(active) : null;
+  // Cell Labelling is a master→detail: openCluster=null shows the per-tier
+  // summary + per-cluster breakdown; setting it drills into that cluster's chat.
+  const [openCluster, setOpenCluster] = useState<string | null>(null);
 
   const gt = run?.groundTruth;
   const archived = !!meta?.archived;
   const archiveCat = profile.archive.category || "other";
   const money = (v: number) => (v == null ? "?" : v < 1 ? v.toFixed(3) : v.toFixed(2));
+
+  // --- Cell Labelling helpers ---
+  // 1-indexed cluster number by position (so it starts at "Cluster 1", never 0)
+  const numOf = (id: string) => {
+    const i = runClusters.findIndex((c) => String(c.id) === id);
+    return i >= 0 ? i + 1 : id;
+  };
+  const verdicts: Record<string, any> = gt?.verdicts || {};
+  // schema-aware native tiers (4 for ZSCAPE, 2 for ChemFish/DanioCell) — the GT
+  // aggregate carries a row per native tier; projected tiers come through as total=0.
+  const nativeAgg: any[] = (Array.isArray(gt?.aggregate) ? gt.aggregate : []).filter((t: any) => t.total > 0);
+  const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell — broad", cell_type_sub: "Cell — sub" };
+  const CONF_KEYS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
+  // for no-GT runs, the "final per-tier confidence" = mean model confidence per tier
+  const meanConf = CONF_KEYS.map((k) => {
+    const vals = runClusters.map((c) => c?.confidence?.[k]?.pct).filter((x: any) => typeof x === "number");
+    return { key: k, label: TIER_LABEL[k], pct: vals.length ? vals.reduce((a: number, b: number) => a + b, 0) / vals.length : 0, n: vals.length };
+  }).filter((t) => t.n > 0);
+  const clusterMeanConf = (c: any): number | null => {
+    const vals = CONF_KEYS.map((k) => c?.confidence?.[k]?.pct).filter((x: any) => typeof x === "number");
+    return vals.length ? Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length) : null;
+  };
+  const ocRun = openCluster ? byId.get(openCluster) : null;
+  const ocAtlas = openCluster ? clusters?.find((c) => c.id === openCluster) || null : null;
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
@@ -144,10 +168,12 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>green ✓ = validated cluster</div>
             </div>
             <div style={CARD}>
-              <div style={SEC}>Clustering</div>
+              <div style={SEC}>This run</div>
               <div style={{ fontSize: 13.5, color: "#444" }}>{runClusters.length} clusters · {profile.validatedClusters} validated</div>
               {run?.dataset ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 5 }}>🧬 {run.dataset}</div> : notRecorded("Clustering recipe")}
             </div>
+            {/* how the optimal cluster count was found — sweep / silhouette criteria */}
+            <ClusteringProvenance datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
           </div>
         )}
 
@@ -168,6 +194,8 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
                 </>
               ) : notRecorded("Harness")}
             </div>
+            {/* the personalities + loop this harness runs */}
+            <HarnessDetail harness={run?.harness} />
             <div style={CARD}>
               <div style={SEC}>Run provenance</div>
               {run?.provenance && typeof run.provenance === "object" ? (
@@ -184,153 +212,100 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
           </div>
         )}
 
-        {/* 3. CELL LABELLING — per-cluster labels/confidence/markers/transcript + GT scorecard */}
-        {tab === "labels" && (
-          <>
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 320px) 1fr", gap: 14, alignItems: "start" }}>
-            {/* left: cluster list */}
-            <div style={{ ...CARD, maxHeight: 520, overflow: "auto", padding: 8 }}>
-              <div style={SEC}>Clusters ({runClusters.length})</div>
-              {runClusters.map((c) => {
-                const id = String(c.id);
-                const isA = id === active;
-                return (
-                  <div key={id} onClick={() => setActiveId(id)} style={{ cursor: "pointer", padding: "5px 7px", borderRadius: 7, background: isA ? "#eef2f6" : "transparent", marginBottom: 2 }}>
-                    <span style={{ fontWeight: 700, fontSize: 12.5 }}>#{id}</span>
-                    {c.validated ? <span style={{ color: "#15803d", marginLeft: 5 }}>✓</span> : null}
-                    <div style={{ fontSize: 12, color: c.finalLabel ? "#444" : "#b0a89e", lineHeight: 1.3 }}>{c.finalLabel || "not labelled"}</div>
-                  </div>
-                );
-              })}
+        {/* 3. CELL LABELLING — final per-tier summary + per-cluster breakdown → drill into a cluster's chat */}
+        {tab === "labels" && (openCluster && ocRun ? (
+          /* ---- drill-in: one cluster's full chat history ---- */
+          <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+            <div><button onClick={() => setOpenCluster(null)} style={btnGhost}>← Back to clusters</button></div>
+            <div style={CARD}>
+              <div style={{ fontSize: 11, color: "#9a948c", fontWeight: 700 }}>CLUSTER {numOf(openCluster)}{ocRun.label ? ` · ${ocRun.label}` : ""}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2, color: ocRun.finalLabel ? INK : "#b0a89e" }}>
+                {ocRun.finalLabel || "not labelled in this run"}
+                {ocRun.validated ? <span style={{ fontSize: 12, color: "#15803d", marginLeft: 8, fontWeight: 700 }}>✓ validated</span> : null}
+              </div>
             </div>
-
-            {/* right: active cluster detail */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              {!runActive ? (
-                <div style={CARD}>{notRecorded("This cluster")}</div>
-              ) : (
-                <>
-                  <div style={CARD}>
-                    <div style={{ fontSize: 11, color: "#9a948c", fontWeight: 700 }}>CLUSTER #{active}{runActive.label ? ` · ${runActive.label}` : ""}</div>
-                    <div style={{ fontSize: 18, fontWeight: 800, marginTop: 2, color: runActive.finalLabel ? INK : "#b0a89e" }}>
-                      {runActive.finalLabel || "not labelled in this run"}
-                      {runActive.validated ? <span style={{ fontSize: 12, color: "#15803d", marginLeft: 8, fontWeight: 700 }}>✓ validated</span> : null}
-                    </div>
-                  </div>
-
-                  <div style={CARD}>
-                    <div style={SEC}>Tier confidence</div>
-                    {runActive.confidence?.germ_layer ? <ConfidenceContent conf={runActive.confidence as ClusterConf} /> : notRecorded("Tier confidence")}
-                  </div>
-
-                  <div style={CARD}>
-                    <div style={SEC}>Top markers</div>
-                    {atlasActive ? <MarkersContent cluster={atlasActive} added={Array.isArray(runActive.addedMarkers) ? runActive.addedMarkers : []} /> : <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>}
-                  </div>
-
-                  <div style={CARD}>
-                    <div style={SEC}>Transcript</div>
-                    {Array.isArray(runActive.transcript) && runActive.transcript.length ? (
-                      <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                        {runActive.transcript.map((t: any, i: number) =>
-                          t.role === "user" ? (
-                            <div key={i} style={{ alignSelf: "flex-end", maxWidth: "85%", background: "#eef2f6", border: "1px solid #dfe6ee", borderRadius: 10, padding: "8px 11px", fontSize: 12.5, color: "#334", lineHeight: 1.5 }}>
-                              {stripControlBlocks(t.content)}
-                            </div>
-                          ) : (
-                            <AgentMessage key={i} content={stripControlBlocks(t.content)} mode={t.mode} thinking={t.thinking} />
-                          )
-                        )}
-                      </div>
+            <div style={CARD}>
+              <div style={SEC}>Tier confidence</div>
+              {ocRun.confidence?.germ_layer ? <ConfidenceContent conf={ocRun.confidence as ClusterConf} /> : notRecorded("Tier confidence")}
+            </div>
+            <div style={CARD}>
+              <div style={SEC}>Top markers</div>
+              {ocAtlas ? <MarkersContent cluster={ocAtlas} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} /> : <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>}
+            </div>
+            <div style={CARD}>
+              <div style={SEC}>Chat history — how this cluster was decided</div>
+              {Array.isArray(ocRun.transcript) && ocRun.transcript.length ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                  {ocRun.transcript.map((t: any, i: number) =>
+                    t.role === "user" ? (
+                      <div key={i} style={{ alignSelf: "flex-end", maxWidth: "85%", background: "#eef2f6", border: "1px solid #dfe6ee", borderRadius: 10, padding: "8px 11px", fontSize: 12.5, color: "#334", lineHeight: 1.5 }}>{stripControlBlocks(t.content)}</div>
                     ) : (
-                      notRecorded("Transcript")
-                    )}
-                  </div>
-                </>
-              )}
+                      <AgentMessage key={i} content={stripControlBlocks(t.content)} mode={t.mode} thinking={t.thinking} />
+                    )
+                  )}
+                </div>
+              ) : notRecorded("Chat history")}
             </div>
           </div>
-          {/* GT scorecard sits under the labels — it scores those labels */}
-          {profile.hasGroundTruth && (
-            <div style={{ marginTop: 20 }}>
-              <div style={{ ...SEC, fontSize: 13, marginBottom: 10 }}>Ground-truth scorecard</div>
-              <ScorecardSummary gt={gt} clustersById={byId} datasetName={dataset.name} />
+        ) : (
+          /* ---- overview: final per-tier summary + per-cluster breakdown ---- */
+          <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div>
+              <div style={{ ...SEC, marginBottom: 8 }}>{gt ? "Final accuracy by tier vs ground truth" : "Final mean confidence by tier"}</div>
+              {((gt
+                ? nativeAgg.map((t: any) => ({ key: t.key, label: TIER_LABEL[t.key] || t.label, pct: t.pct, sub: `${t.matched}/${t.total} agree` }))
+                : meanConf.map((t) => ({ key: t.key, label: t.label, pct: t.pct, sub: `mean of ${t.n} clusters` })))).length ? (
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                  {(gt
+                    ? nativeAgg.map((t: any) => ({ key: t.key, label: TIER_LABEL[t.key] || t.label, pct: t.pct, sub: `${t.matched}/${t.total} agree` }))
+                    : meanConf.map((t) => ({ key: t.key, label: t.label, pct: t.pct, sub: `mean of ${t.n} clusters` }))).map((t) => {
+                    const heat = confColor(t.pct ?? 0);
+                    return (
+                      <div key={t.key} style={CARD}>
+                        <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+                          <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{(t.pct ?? 0).toFixed(0)}%</span>
+                          <span style={{ fontSize: 12, color: "#999" }}>{t.sub}</span>
+                        </div>
+                        <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ width: `${t.pct ?? 0}%`, height: "100%", background: heat.fg }} />
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : notRecorded(gt ? "Ground-truth tiers" : "Tier confidence")}
             </div>
-          )}
-          </>
-        )}
-      </div>
-    </div>
-  );
-}
 
-// Lean, read-only ground-truth summary rendered straight from the saved
-// run.groundTruth (aggregate + stratified + abstention + per-cluster verdicts).
-// Deliberately NOT the interactive Scorecard — no re-scoring, no fetch.
-function ScorecardSummary({ gt, clustersById, datasetName }: { gt: any; clustersById: Map<string, any>; datasetName: string }) {
-  if (!gt) return <div style={CARD}>{notRecorded("Ground-truth comparison")}</div>;
-  const agg: any[] = Array.isArray(gt.aggregate) ? gt.aggregate : [];
-  const verdicts: Record<string, any> = gt.verdicts || {};
-  const TIERS = [
-    { key: "germ_layer", label: "Germ layer" },
-    { key: "tissue", label: "Tissue" },
-    { key: "cell_type_broad", label: "Cell — broad" },
-    { key: "cell_type_sub", label: "Cell — sub" },
-  ];
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 12 }}>
-        {agg.map((t) => {
-          const heat = confColor(t.pct ?? 0);
-          return (
-            <div key={t.key} style={CARD}>
-              <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
-                <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? (t.pct ?? 0).toFixed(0) : "—"}{t.total ? "%" : ""}</span>
-                <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
-              </div>
-              <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
-                <div style={{ width: `${t.pct ?? 0}%`, height: "100%", background: heat.fg }} />
-              </div>
-            </div>
-          );
-        })}
-      </div>
-
-      {gt.subStratified && (
-        <div style={CARD}>
-          <div style={SEC}>Sub-type — purity stratified</div>
-          <div style={{ fontSize: 13, color: "#444", lineHeight: 1.5 }}>
-            high-purity <b style={{ color: "#15803d" }}>{gt.subStratified.high?.total ? gt.subStratified.high.pct.toFixed(0) + "%" : "—"}</b> ({gt.subStratified.high?.matched}/{gt.subStratified.high?.total}) · raw {gt.subStratified.raw?.pct?.toFixed(0)}% · weighted {gt.subStratified.weighted_pct?.toFixed(0)}%
-          </div>
-        </div>
-      )}
-      {gt.abstention && (
-        <div style={CARD}>
-          <div style={SEC}>Abstention</div>
-          <div style={{ fontSize: 13, color: "#444" }}>assign {gt.abstention.n_assign} · abstain {gt.abstention.n_abstain} · unresolved {gt.abstention.n_unresolved}</div>
-        </div>
-      )}
-
-      <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
-        <div style={{ ...SEC, padding: "12px 14px 0" }}>Per-cluster verdicts</div>
-        <div style={{ maxHeight: 420, overflow: "auto", padding: "8px 14px 14px" }}>
-          {Object.keys(verdicts).length === 0 && <div style={{ fontSize: 12.5, color: "#aaa" }}>No per-cluster verdicts saved.</div>}
-          {Object.entries(verdicts).map(([id, v]: [string, any]) => {
-            const c = clustersById.get(String(id));
-            return (
-              <div key={id} style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0", borderBottom: "1px solid #f3f0ec", fontSize: 12.5 }}>
-                <span style={{ width: 34, fontWeight: 700, color: "#666" }}>#{id}</span>
-                <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={c?.finalLabel || ""}>{c?.finalLabel || "—"}</span>
-                {TIERS.map((t) => {
-                  const tv = v[t.key];
-                  if (!tv) return <span key={t.key} style={{ width: 16, textAlign: "center", color: "#ccc" }}>·</span>;
-                  return <span key={t.key} title={t.label} style={{ width: 16, textAlign: "center", color: tv.match ? "#15803d" : "#dc2626", fontWeight: 800 }}>{tv.match ? "✓" : "✗"}</span>;
+            <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
+              <div style={{ ...SEC, padding: "14px 16px 0" }}>Per-cluster breakdown — click a cluster to see how it was decided</div>
+              <div style={{ overflow: "auto" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", fontWeight: 700, borderBottom: "1px solid #efece7" }}>
+                  <span style={{ width: 64, flexShrink: 0 }}>Cluster</span>
+                  <span style={{ flex: 1, minWidth: 0 }}>Predicted label</span>
+                  {gt ? nativeAgg.map((t: any) => <span key={t.key} style={{ width: 58, textAlign: "center", flexShrink: 0 }} title={`predicted vs GT · ${TIER_LABEL[t.key] || t.label}`}>{(TIER_LABEL[t.key] || t.label).replace("Cell — ", "")}</span>) : <span style={{ width: 70, textAlign: "center", flexShrink: 0 }}>conf</span>}
+                  <span style={{ width: 14, flexShrink: 0 }} />
+                </div>
+                {runClusters.map((c) => {
+                  const id = String(c.id);
+                  const v = verdicts[id];
+                  const mc = clusterMeanConf(c);
+                  return (
+                    <div key={id} onClick={() => setOpenCluster(id)} style={{ display: "flex", alignItems: "center", gap: 8, padding: "7px 16px", borderBottom: "1px solid #f3f0ec", cursor: "pointer", fontSize: 12.5 }}>
+                      <span style={{ width: 64, flexShrink: 0, fontWeight: 700, color: "#555" }}>{numOf(id)}{c.validated ? " ✓" : ""}</span>
+                      <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: c.finalLabel ? "#333" : "#b0a89e" }} title={c.finalLabel || ""}>{c.finalLabel || "not labelled"}</span>
+                      {gt ? nativeAgg.map((t: any) => {
+                        const tv = v?.[t.key];
+                        return <span key={t.key} style={{ width: 58, textAlign: "center", flexShrink: 0, fontWeight: 800, color: !tv ? "#ccc" : tv.match ? "#15803d" : "#dc2626" }}>{!tv ? "·" : tv.match ? "✓" : "✗"}</span>;
+                      }) : <span style={{ width: 70, textAlign: "center", flexShrink: 0, color: "#777", fontVariantNumeric: "tabular-nums" }}>{mc != null ? `${mc}%` : "—"}</span>}
+                      <span style={{ width: 14, flexShrink: 0, color: ACCENT, fontWeight: 700, textAlign: "right" }}>›</span>
+                    </div>
+                  );
                 })}
               </div>
-            );
-          })}
-        </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );
