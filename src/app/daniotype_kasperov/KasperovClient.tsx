@@ -161,6 +161,9 @@ export default function KasperovClient() {
   const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
+  // step 1 (Clustering): the UMAP starts grey; confirming the clustering colours
+  // it in and unlocks "Choose a model →". Reset per dataset (fresh new run).
+  const [clusteringConfirmed, setClusteringConfirmed] = useState(false);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -228,6 +231,7 @@ export default function KasperovClient() {
     setConfidence({});
     setIncorporated(new Set());
     setRevealed(false);
+    setClusteringConfirmed(false);
     setActiveId(null);
     setLoadedNote(null);
     setLoadedRun(null);
@@ -547,6 +551,8 @@ export default function KasperovClient() {
         confidence={confidence}
         model={model}
         onChangeModel={() => setStage("model")}
+        clusteringConfirmed={clusteringConfirmed}
+        onConfirmClustering={() => setClusteringConfirmed(true)}
         usage={usage}
         score={score}
         setScore={setScore}
@@ -1073,9 +1079,9 @@ function HarnessPicker({ dataset, registry, current, onPick, onBack }: { dataset
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
-        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← Model</button>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← 2. Choose a model</button>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a harness</h1>
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>3. Choose a harness</h1>
         <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
           The harness is the labelling loop and grounding rules — the configuration that produces the labels. Each version is
           stamped and carries its verification history: the scores it earned on the ground-truth atlases.
@@ -1123,9 +1129,9 @@ function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
-        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← How we clustered</button>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← 1. Clustering</button>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>Choose a model</h1>
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>2. Choose a model</h1>
         <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
           The model drives every personality and the ground-truth scoring for this run, and is recorded in the saved JSON. Cost is a rough projection for
           labelling all <strong>~{n}</strong> {dataset.name} clusters — you can also switch models later on the world map.
@@ -1417,7 +1423,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
   return (
     <div style={card}>
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
-        <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>How we found these {nClusters} clusters</div>
+        <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>How the clustering is decided · {nClusters} clusters</div>
         <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>{isGt ? "✓ GT benchmark" : "internal"}</span>
       </div>
 
@@ -1466,7 +1472,7 @@ function ClusteringProvenance({ datasetId, nClusters }: { datasetId: string; nCl
         </div>
       )}
       <p style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.55, margin: "12px 0 0", borderTop: "1px solid #efece7", paddingTop: 10 }}>
-        Next: <b style={{ color: ACCENT }}>choose a model</b>, then a <b>harness</b> — then two <b style={{ color: THEME.research.color }}>Proposers</b> debate each of these {nClusters} clusters and the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats. Click <b style={{ color: ACCENT }}>Choose a model →</b> below to begin.
+        Good to proceed? <b style={{ color: THEME.research.color }}>Apply this clustering</b> to colour the map in, then <b style={{ color: ACCENT }}>choose a model</b> and a <b>harness</b> — and two <b style={{ color: THEME.research.color }}>Proposers</b> debate each of these {nClusters} clusters while the <b style={{ color: THEME.reason.color }}>Archivist</b> grounds the call in real marker stats.
       </p>
     </div>
   );
@@ -1490,6 +1496,8 @@ function MapStage({
   confidence = {},
   model,
   onChangeModel,
+  clusteringConfirmed,
+  onConfirmClustering,
   usage,
   score,
   setScore,
@@ -1513,6 +1521,8 @@ function MapStage({
   confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
   onChangeModel: () => void;
+  clusteringConfirmed: boolean;
+  onConfirmClustering: () => void;
   usage: Usage;
   score: RunScore;
   setScore: React.Dispatch<React.SetStateAction<RunScore>>;
@@ -1654,13 +1664,13 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "Choose a cluster to investigate" : `How we clustered the ${dataset.name} atlas`}</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "4. Daniotype Kasperov Chat Interface" : "1. Clustering"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
-            : sampled
-            ? `${clusters.length} de-novo Leiden clusters, colored on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas (real UMAP). Here's how we found them — then choose a model to label with.`
-            : `${clusters.length} de-novo Leiden clusters, colored — ${clusteredCells.toLocaleString()} cells, one dot each (real UMAP). Here's how we found them — then choose a model to label with.`}
+            : clusteringConfirmed
+            ? `Clustering applied — ${clusters.length} de-novo Leiden clusters${sampled ? ` on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas` : `, ${clusteredCells.toLocaleString()} cells`} (real UMAP). Good to proceed — choose a model to label with.`
+            : `Coming at ${dataset.name} fresh: here's how the de-novo clustering is decided. Review the approach below — good to proceed?`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
         <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
@@ -1705,7 +1715,7 @@ function MapStage({
         )}
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={size.w} height={size.h} onPick={onPick} />
+          <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={size.w} height={size.h} onPick={revealed ? onPick : undefined} />
         </div>
         {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} />}
 
@@ -1716,9 +1726,15 @@ function MapStage({
         )}
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
-            <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
-              Choose a model →
-            </button>
+            clusteringConfirmed ? (
+              <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+                Choose a model →
+              </button>
+            ) : (
+              <button onClick={onConfirmClustering} style={{ background: THEME.research.color, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
+                Good to proceed — apply this clustering →
+              </button>
+            )
           ) : (
             <>
               {/* run-itself controls */}
