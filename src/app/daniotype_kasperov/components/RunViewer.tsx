@@ -63,7 +63,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
   const labelledIds = useMemo(() => runClusters.filter((c) => c.finalLabel).map((c) => String(c.id)), [run]);
 
   const [activeId, setActiveId] = useState<string | null>(null);
-  const [tab, setTab] = useState<"clusters" | "scorecard">("clusters");
+  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels">("clustering");
   const active = activeId ?? labelledIds[0] ?? clusters?.[0]?.id ?? null;
   const atlasActive = clusters?.find((c) => c.id === active) || null;
   const runActive = active ? byId.get(active) : null;
@@ -123,42 +123,85 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
           </div>
         </div>
 
-        {/* tabs */}
-        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-          <button onClick={() => setTab("clusters")} style={{ ...btnGhost, fontWeight: 700, ...(tab === "clusters" ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>Map &amp; clusters</button>
-          {profile.hasGroundTruth && (
-            <button onClick={() => setTab("scorecard")} style={{ ...btnGhost, fontWeight: 700, ...(tab === "scorecard" ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>Scorecard</button>
-          )}
+        {/* tabs — mirror the new-run steps */}
+        <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
+          {([["clustering", "1. Clustering"], ["modelHarness", "2. Model & Harness"], ["labels", "3. Cell Labelling"]] as const).map(([k, label]) => (
+            <button key={k} onClick={() => setTab(k)} style={{ ...btnGhost, fontWeight: 700, ...(tab === k ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>{label}</button>
+          ))}
         </div>
 
         {error && <div style={{ ...CARD, color: "#b91c1c" }}>Failed to load the atlas: {error}</div>}
 
-        {tab === "clusters" && (
-          <div style={{ display: "grid", gridTemplateColumns: "minmax(300px, 360px) 1fr", gap: 14, alignItems: "start" }}>
-            {/* left: map + cluster list */}
-            <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-              <div style={{ ...CARD, padding: 8 }}>
-                {clusters ? (
-                  <UmapCanvas clusters={clusters} mode="global" colored activeId={active} validated={validated} width={336} height={300} onPick={setActiveId} />
-                ) : (
-                  <div style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>
-                )}
-                <div style={{ fontSize: 11, color: "#999", textAlign: "center", marginTop: 4 }}>green ✓ = validated · click a cluster</div>
-              </div>
-              <div style={{ ...CARD, maxHeight: 360, overflow: "auto", padding: 8 }}>
-                <div style={SEC}>Clusters ({runClusters.length})</div>
-                {runClusters.map((c) => {
-                  const id = String(c.id);
-                  const isA = id === active;
-                  return (
-                    <div key={id} onClick={() => setActiveId(id)} style={{ cursor: "pointer", padding: "5px 7px", borderRadius: 7, background: isA ? "#eef2f6" : "transparent", marginBottom: 2 }}>
-                      <span style={{ fontWeight: 700, fontSize: 12.5 }}>#{id}</span>
-                      {c.validated ? <span style={{ color: "#15803d", marginLeft: 5 }}>✓</span> : null}
-                      <div style={{ fontSize: 12, color: c.finalLabel ? "#444" : "#b0a89e", lineHeight: 1.3 }}>{c.finalLabel || "not labelled"}</div>
+        {/* 1. CLUSTERING — the atlas map + how it was clustered */}
+        {tab === "clustering" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={{ ...CARD, padding: 10, textAlign: "center" }}>
+              {clusters ? (
+                <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={validated} width={560} height={420} />
+              ) : (
+                <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>
+              )}
+              <div style={{ fontSize: 11, color: "#999", marginTop: 6 }}>green ✓ = validated cluster</div>
+            </div>
+            <div style={CARD}>
+              <div style={SEC}>Clustering</div>
+              <div style={{ fontSize: 13.5, color: "#444" }}>{runClusters.length} clusters · {profile.validatedClusters} validated</div>
+              {run?.dataset ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 5 }}>🧬 {run.dataset}</div> : notRecorded("Clustering recipe")}
+            </div>
+          </div>
+        )}
+
+        {/* 2. MODEL & HARNESS — run config */}
+        {tab === "modelHarness" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+            <div style={CARD}>
+              <div style={SEC}>Model</div>
+              <div style={{ fontSize: 18, fontWeight: 800 }}>{run?.model ?? "?"}</div>
+              {run?.cost?.usd != null ? <div style={{ fontSize: 12.5, color: "#666", marginTop: 2 }}>~${money(Number(run.cost.usd))}{run?.cost?.estimated ? " (est.)" : ""} total cost</div> : null}
+            </div>
+            <div style={CARD}>
+              <div style={SEC}>Harness</div>
+              {run?.harness ? (
+                <>
+                  <div style={{ fontSize: 16, fontWeight: 700 }}>v{run.harness.version}{run.harness.name ? ` · ${run.harness.name}` : ""}</div>
+                  <div style={{ fontSize: 11.5, color: "#9a948c", fontFamily: "ui-monospace, monospace", marginTop: 3 }}>{run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""}{run.harness.stampedAt ? ` · stamped ${String(run.harness.stampedAt).slice(0, 10)}` : ""}</div>
+                </>
+              ) : notRecorded("Harness")}
+            </div>
+            <div style={CARD}>
+              <div style={SEC}>Run provenance</div>
+              {run?.provenance && typeof run.provenance === "object" ? (
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {Object.entries(run.provenance).map(([k, v]) => (
+                    <div key={k} style={{ fontSize: 12, display: "flex", gap: 8, lineHeight: 1.4 }}>
+                      <span style={{ width: 150, flexShrink: 0, color: "#9a948c", fontWeight: 700 }}>{k}</span>
+                      <span style={{ color: "#444", wordBreak: "break-word" }}>{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
                     </div>
-                  );
-                })}
-              </div>
+                  ))}
+                </div>
+              ) : notRecorded("Run provenance")}
+            </div>
+          </div>
+        )}
+
+        {/* 3. CELL LABELLING — per-cluster labels/confidence/markers/transcript + GT scorecard */}
+        {tab === "labels" && (
+          <>
+          <div style={{ display: "grid", gridTemplateColumns: "minmax(260px, 320px) 1fr", gap: 14, alignItems: "start" }}>
+            {/* left: cluster list */}
+            <div style={{ ...CARD, maxHeight: 520, overflow: "auto", padding: 8 }}>
+              <div style={SEC}>Clusters ({runClusters.length})</div>
+              {runClusters.map((c) => {
+                const id = String(c.id);
+                const isA = id === active;
+                return (
+                  <div key={id} onClick={() => setActiveId(id)} style={{ cursor: "pointer", padding: "5px 7px", borderRadius: 7, background: isA ? "#eef2f6" : "transparent", marginBottom: 2 }}>
+                    <span style={{ fontWeight: 700, fontSize: 12.5 }}>#{id}</span>
+                    {c.validated ? <span style={{ color: "#15803d", marginLeft: 5 }}>✓</span> : null}
+                    <div style={{ fontSize: 12, color: c.finalLabel ? "#444" : "#b0a89e", lineHeight: 1.3 }}>{c.finalLabel || "not labelled"}</div>
+                  </div>
+                );
+              })}
             </div>
 
             {/* right: active cluster detail */}
@@ -207,10 +250,14 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               )}
             </div>
           </div>
-        )}
-
-        {tab === "scorecard" && (
-          <ScorecardSummary gt={gt} clustersById={byId} datasetName={dataset.name} />
+          {/* GT scorecard sits under the labels — it scores those labels */}
+          {profile.hasGroundTruth && (
+            <div style={{ marginTop: 20 }}>
+              <div style={{ ...SEC, fontSize: 13, marginBottom: 10 }}>Ground-truth scorecard</div>
+              <ScorecardSummary gt={gt} clustersById={byId} datasetName={dataset.name} />
+            </div>
+          )}
+          </>
         )}
       </div>
     </div>

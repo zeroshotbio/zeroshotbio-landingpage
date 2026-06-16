@@ -516,11 +516,17 @@ export default function KasperovClient() {
       </>
     );
 
-  if (stage === "model")
-    return <ModelPicker dataset={dataset} current={model} onPick={(m) => { setModel(m); setStage("harness"); }} onBack={() => setStage("map")} />;
-
-  if (stage === "harness")
-    return <HarnessPicker dataset={dataset} registry={HARNESS_REGISTRY as any} current={activeHarness} onPick={(h: any) => { setActiveHarness(h); setRevealed(true); setStage("map"); }} onBack={() => setStage("model")} />;
+  if (stage === "model" || stage === "harness")
+    return (
+      <ModelHarnessPicker
+        dataset={dataset}
+        registry={HARNESS_REGISTRY as any}
+        currentModel={model}
+        currentHarness={activeHarness}
+        onProceed={(m, h) => { setModel(m); setActiveHarness(h); setRevealed(true); setStage("map"); }}
+        onBack={() => setStage("map")}
+      />
+    );
 
 
   if (!clusters) {
@@ -1066,101 +1072,38 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
   );
 }
 
-// ---------------------------------------------------------------------------
-// Harness picker — third setup screen (after the model): choose which labelling
-// HARNESS (the proposer→archivist→reasoner loop + grounding rules) drives the
-// run. Each version is stamped + carries its verification history (the scores it
-// produced on the ground-truth atlases). One harness today; the registry + the
-// run-provenance stamp make adding/comparing versions a drop-in later.
-// ---------------------------------------------------------------------------
-function HarnessPicker({ dataset, registry, current, onPick, onBack }: { dataset: DatasetDef; registry: any; current: any; onPick: (h: any) => void; onBack: () => void }) {
-  const harnesses: any[] = registry?.harnesses || [];
-  const tierShort = (l: string) => l.replace("Cell type — ", "").replace("Germ layer", "germ").replace("Tissue", "tissue").toLowerCase();
-  return (
-    <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
-        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← 2. Choose a model</button>
-        <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>3. Choose a harness</h1>
-        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
-          The harness is the labelling loop and grounding rules — the configuration that produces the labels. Each version is
-          stamped and carries its verification history: the scores it earned on the ground-truth atlases.
-        </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
-          {harnesses.map((h) => {
-            const sel = current?.id === h.id; const v = h.verification || {}; const prov = v.provenance || {};
-            return (
-              <div key={h.id} style={{ background: "#fffdfb", border: `1px solid ${sel ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${ACCENT}`, borderRadius: 12, padding: "16px 16px 18px", display: "flex", flexDirection: "column", gap: 9, boxShadow: sel ? `0 0 0 2px ${ACCENT}22` : "none" }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 18, fontWeight: 700 }}>Harness v{h.version}</span>
-                  <span style={{ fontSize: 13, color: "#7a746c" }}>· {h.name}</span>
-                  {registry.active === h.id && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "2px 8px" }}>✓ active</span>}
-                </div>
-                <div style={{ fontSize: 11, color: "#9a948c", fontFamily: "monospace" }}>stamped {String(h.stampedAt).slice(0, 10)} · commit {h.gitCommit} · {h.model}</div>
-                <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.5 }}>{h.summary}</div>
-                <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 5 }}>
-                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Verified on {(v.gt || []).length} ground-truth atlases</div>
-                  {(v.gt || []).map((g: any, i: number) => (
-                    <div key={i} style={{ fontSize: 11, display: "flex", gap: 6 }}>
-                      <span style={{ fontWeight: 700, color: "#3f3a34", width: 70, flexShrink: 0, textTransform: "capitalize" }}>{g.dataset}</span>
-                      <span style={{ color: "#6b655d" }}>{(g.tiers || []).map((t: any) => `${tierShort(t.label)} ${Math.round(t.pct)}`).join(" · ")}</span>
-                    </div>
-                  ))}
-                  <div style={{ fontSize: 10, color: "#7a746c", marginTop: 1 }}>{v.benchmark}</div>
-                  <div style={{ fontSize: 10, color: "#7a746c" }}>+ {(v.noGt || []).map((n: any) => n.dataset).join(" / ")} no-GT (coverage/grounding{(v.noGt || []).some((n: any) => n.processingConsistency) ? " + processing-consistency" : ""})</div>
-                  <div style={{ fontSize: 10, color: "#9a948c" }}>provenance: {(prov.runs || []).length} labelled runs · ${prov.totalCostUsd}</div>
-                </div>
-                <button onClick={() => onPick(h)} style={{ marginTop: 2, background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 14px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}>Use this harness →</button>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 // ---------------------------------------------------------------------------
-// Model picker — second setup screen (after the dataset): choose which model
-// drives the whole run, with a strength summary + projected full-run cost.
+
 // ---------------------------------------------------------------------------
-function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef; current: KasperovModel; onPick: (m: KasperovModel) => void; onBack: () => void }) {
+// Model & Harness picker — STEP 2 of the new run: pick the model AND the
+// labelling harness on one page, then proceed to cell labelling.
+// ---------------------------------------------------------------------------
+function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, onProceed, onBack }: { dataset: DatasetDef; registry: any; currentModel: KasperovModel; currentHarness: any; onProceed: (m: KasperovModel, h: any) => void; onBack: () => void }) {
+  const [model, setModel] = useState<KasperovModel>(currentModel);
+  const [harness, setHarness] = useState<any>(currentHarness);
   const n = dataset.approxClusters;
+  const harnesses: any[] = registry?.harnesses || [];
+  const tierShort = (l: string) => l.replace("Cell type — ", "").replace("Germ layer", "germ").replace("Tissue", "tissue").toLowerCase();
+  const secHead: React.CSSProperties = { fontSize: 22, fontWeight: 700, margin: "8px 0 4px" };
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
         <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← 1. Clustering</button>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>2. Choose a model</h1>
-        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 30px", maxWidth: 720 }}>
-          The model drives every personality and the ground-truth scoring for this run, and is recorded in the saved JSON. Cost is a rough projection for
-          labelling all <strong>~{n}</strong> {dataset.name} clusters — you can also switch models later on the world map.
+        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>2. Model &amp; Harness</h1>
+        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 26px", maxWidth: 720 }}>
+          Choose the <strong>model</strong> that drives every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules. Both are recorded in the saved run. Then proceed to cell labelling.
         </p>
+
+        <h2 style={secHead}>Model</h2>
+        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>Cost is a rough projection for labelling all ~{n} {dataset.name} clusters; you can switch models later on the world map.</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
           {KASPEROV_MODELS.map((m) => {
-            const info = modelInfo(m);
-            const cost = projectRunCost(m, n);
-            const selected = m === current;
+            const info = modelInfo(m); const cost = projectRunCost(m, n); const selected = m === model;
             const tierColor = info.tier === "base" ? "#15803d" : info.tier === "mini" ? ACCENT : "#a16207";
             return (
-              <button
-                key={m}
-                onClick={() => onPick(m)}
-                style={{
-                  textAlign: "left",
-                  background: selected ? "#eef7f9" : "#fffdfb",
-                  border: `1px solid ${selected ? ACCENT : "#e5e1dc"}`,
-                  borderTop: `3px solid ${tierColor}`,
-                  borderRadius: 12,
-                  padding: "16px 18px 18px",
-                  cursor: "pointer",
-                  color: INK,
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: 7,
-                  minHeight: 184,
-                }}
-              >
+              <button key={m} onClick={() => setModel(m)} style={{ textAlign: "left", background: selected ? "#eef7f9" : "#fffdfb", border: `1px solid ${selected ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${tierColor}`, borderRadius: 12, padding: "16px 18px 18px", cursor: "pointer", color: INK, display: "flex", flexDirection: "column", gap: 7, minHeight: 184 }}>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <span style={{ fontSize: 18, fontWeight: 700 }}>{m}</span>
                   {selected && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>selected</span>}
@@ -1175,12 +1118,48 @@ function ModelPicker({ dataset, current, onPick, onBack }: { dataset: DatasetDef
             );
           })}
         </div>
+
+        <h2 style={{ ...secHead, marginTop: 34 }}>Harness</h2>
+        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>The labelling loop + grounding rules. Each version is stamped and carries its verification history on the ground-truth atlases.</p>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+          {harnesses.map((h) => {
+            const sel = harness?.id === h.id; const v = h.verification || {}; const prov = v.provenance || {};
+            return (
+              <button key={h.id} onClick={() => setHarness(h)} style={{ textAlign: "left", background: sel ? "#eef7f9" : "#fffdfb", border: `1px solid ${sel ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${ACCENT}`, borderRadius: 12, padding: "16px 16px 18px", display: "flex", flexDirection: "column", gap: 9, cursor: "pointer", color: INK, boxShadow: sel ? `0 0 0 2px ${ACCENT}22` : "none" }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 18, fontWeight: 700 }}>Harness v{h.version}</span>
+                  <span style={{ fontSize: 13, color: "#7a746c" }}>· {h.name}</span>
+                  {sel && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>selected</span>}
+                  {registry.active === h.id && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "2px 8px" }}>✓ active</span>}
+                </div>
+                <div style={{ fontSize: 11, color: "#9a948c", fontFamily: "monospace" }}>stamped {String(h.stampedAt).slice(0, 10)} · commit {h.gitCommit} · {h.model}</div>
+                <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.5 }}>{h.summary}</div>
+                <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 5 }}>
+                  <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Verified on {(v.gt || []).length} ground-truth atlases</div>
+                  {(v.gt || []).map((g: any, i: number) => (
+                    <div key={i} style={{ fontSize: 11, display: "flex", gap: 6 }}>
+                      <span style={{ fontWeight: 700, color: "#3f3a34", width: 70, flexShrink: 0, textTransform: "capitalize" }}>{g.dataset}</span>
+                      <span style={{ color: "#6b655d" }}>{(g.tiers || []).map((t: any) => `${tierShort(t.label)} ${Math.round(t.pct)}`).join(" · ")}</span>
+                    </div>
+                  ))}
+                  <div style={{ fontSize: 10, color: "#7a746c", marginTop: 1 }}>{v.benchmark}</div>
+                  <div style={{ fontSize: 10, color: "#7a746c" }}>+ {(v.noGt || []).map((nn: any) => nn.dataset).join(" / ")} no-GT (coverage/grounding{(v.noGt || []).some((nn: any) => nn.processingConsistency) ? " + processing-consistency" : ""})</div>
+                  <div style={{ fontSize: 10, color: "#9a948c" }}>provenance: {(prov.runs || []).length} labelled runs · ${prov.totalCostUsd}</div>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        <div style={{ marginTop: 32 }}>
+          <button onClick={() => model && harness && onProceed(model, harness)} disabled={!model || !harness} style={{ background: model && harness ? ACCENT : "#cdd5cf", color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 700, cursor: model && harness ? "pointer" : "not-allowed" }}>
+            Proceed to 3. Cell Labelling →
+          </button>
+        </div>
       </div>
     </div>
   );
 }
-
-// ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
 // Personalities primer (shown once before the chat) + pixel-art icons
@@ -1664,12 +1643,12 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "4. Daniotype Kasperov Chat Interface" : "1. Clustering"}</h2>
+        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "3. Cell Labelling" : "1. Clustering"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
             : clusteringConfirmed
-            ? `Clustering applied — ${clusters.length} de-novo Leiden clusters${sampled ? ` on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas` : `, ${clusteredCells.toLocaleString()} cells`} (real UMAP). Good to proceed — choose a model to label with.`
+            ? `Clustering applied — ${clusters.length} de-novo Leiden clusters${sampled ? ` on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas` : `, ${clusteredCells.toLocaleString()} cells`} (real UMAP). Good to proceed — set up the model & harness next.`
             : `Coming at ${dataset.name} fresh: here's how the de-novo clustering is decided. Review the approach below — good to proceed?`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
@@ -1728,7 +1707,7 @@ function MapStage({
           {!revealed ? (
             clusteringConfirmed ? (
               <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
-                Choose a model →
+                Set up model &amp; harness →
               </button>
             ) : (
               <button onClick={onConfirmClustering} style={{ background: THEME.research.color, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
