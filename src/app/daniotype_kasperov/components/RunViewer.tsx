@@ -54,7 +54,24 @@ const ARCHIVE_BADGE: Record<string, { bg: string; fg: string; label: string }> =
 };
 
 export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any; dataset: DatasetDef; onBack: () => void }) {
-  const { clusters, error } = useAtlas(dataset.dataUrl);
+  // A run labelled on a dataset's NATIVE published partition (schemaBasis
+  // "native-schema") carries cluster ids in the *_native asset space — not the
+  // registered de-novo atlas. The de-novo groundtruth.json has no matching ids,
+  // so every GT label would render "—". Resolve such a run's atlas + ground
+  // truth to its own _native asset so the labels line up. The predicate is
+  // EXACTLY schemaBasis === "native-schema" (de-novo runs lack the field) —
+  // never promotedFrom, never back-filled from dataset_facts. Only the two URLs
+  // are overridden; dataset.id is preserved so native-tier maps still resolve.
+  const viewDataset = useMemo<DatasetDef>(() => {
+    if (run?.schemaBasis !== "native-schema") return dataset;
+    const toNative = (u: string) => u.replace(`/${dataset.id}/`, `/${dataset.id}_native/`);
+    return {
+      ...dataset,
+      dataUrl: toNative(dataset.dataUrl),
+      groundTruthUrl: dataset.groundTruthUrl ? toNative(dataset.groundTruthUrl) : dataset.groundTruthUrl,
+    };
+  }, [run, dataset]);
+  const { clusters, error } = useAtlas(viewDataset.dataUrl);
   const profile = useMemo(() => computeCompletenessProfile(run, meta), [run, meta]);
   const runClusters: any[] = Array.isArray(run?.clusters) ? run.clusters : [];
   const byId = useMemo(() => {
@@ -262,10 +279,10 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               ) : notRecorded("Chat history")}
             </div>
           </div>
-        ) : dataset.groundTruthUrl ? (
+        ) : viewDataset.groundTruthUrl ? (
           /* ---- GT datasets: the exact per-cluster breakdown from the new-run page (read-only) ---- */
           <div style={{ fontSize: 12.5, color: "#888", marginBottom: -4 }}>
-            <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labelsMap} confidence={confMap} validated={validated} onPick={setOpenCluster} model={run?.model ?? "?"} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
+            <Scorecard embedded readOnly dataset={viewDataset} clusters={viewerClusters} labels={labelsMap} confidence={confMap} validated={validated} onPick={setOpenCluster} model={run?.model ?? "?"} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
             <div style={{ marginTop: 8, fontStyle: "italic" }}>Click any cluster row above to see how it was decided.</div>
           </div>
         ) : (
