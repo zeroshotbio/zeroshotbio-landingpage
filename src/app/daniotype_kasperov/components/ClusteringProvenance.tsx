@@ -15,7 +15,7 @@ export function ClusteringProvenance({ datasetId, nClusters, datasetName, showPr
   const f: any = FACTS[datasetId];
   if (!f) return null;
   const sweep: any[] | null = f.sweep ?? null;
-  const card: React.CSSProperties = { maxWidth: 720, margin: "20px auto 0", textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
+  const card: React.CSSProperties = { width: "100%", margin: "20px auto 0", textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
   const th: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", padding: "2px 8px", textAlign: "right" };
   const renderSweep = (rows: any[], compact = false) => (
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
@@ -57,6 +57,19 @@ export function ClusteringProvenance({ datasetId, nClusters, datasetName, showPr
       <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 8, flexWrap: "wrap" }}>
         <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>How the clustering is decided · {nClusters} clusters</div>
         <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>{isGt ? "✓ GT benchmark" : "internal"}</span>
+      </div>
+
+      {/* decision at a glance — the outcome + the one variable that drives it */}
+      <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: "#ecfdf3", border: "1px solid #bbf7d0", borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+        <div>
+          <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#15803d" }}>Chosen</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: "#14532d", lineHeight: 1.1 }}>{sweep ? `res ${f.chosenRes}` : "silhouette-gated"} → {f.clusters} clusters</div>
+        </div>
+        <div style={{ flex: 1, minWidth: 220, fontSize: 12, color: "#3f5a47", lineHeight: 1.45 }}>
+          {sweep
+            ? "the finest Leiden resolution where ≥95% of clusters carry a strong, specific marker and none drops below 30 cells — coarse enough to trust, fine enough to be useful."
+            : "adaptive per-branch sub-splitting: a cluster splits further only when the split is geometrically clean (mean silhouette ≥ 0.05) and every leaf keeps enough cells."}
+        </div>
       </div>
 
       {/* identity strip */}

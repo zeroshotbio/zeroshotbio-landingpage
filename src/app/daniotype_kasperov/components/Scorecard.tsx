@@ -76,6 +76,7 @@ export function Scorecard({
   onImport,
   embedded,
   onBack,
+  readOnly,
 }: {
   dataset: DatasetDef;
   clusters: Cluster[];
@@ -90,6 +91,7 @@ export function Scorecard({
   onImport: (data: unknown) => void;
   embedded?: boolean;
   onBack?: () => void;
+  readOnly?: boolean; // viewer mode: render saved score, hide all mutating controls
 }) {
   const labelled = useMemo(() => clusters.filter((c) => labels[c.id]), [clusters, labels]);
   const fingerprint = useMemo(() => JSON.stringify(labelled.map((c) => [c.id, labels[c.id]]).sort()), [labelled, labels]);
@@ -367,7 +369,7 @@ export function Scorecard({
 
         {/* the trigger — fills the comparison in once all clusters are labelled */}
         <div style={{ display: "flex", gap: 12, margin: "14px 0 18px", alignItems: "center", flexWrap: "wrap" }}>
-          {(status === "idle" || status === "scoring") && (
+          {!readOnly && (status === "idle" || status === "scoring") && (
             <button
               onClick={() => runScoring(true)}
               disabled={!allLabelled || status === "scoring"}
@@ -377,8 +379,8 @@ export function Scorecard({
               🎯 {status === "scoring" ? `Comparing… ${progress.done}/${progress.total}` : `Compare to ${dataset.name} ground truth`}
             </button>
           )}
-          {status === "done" && <button onClick={() => runScoring(true)} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run comparison</button>}
-          {status === "idle" && !allLabelled && (
+          {!readOnly && status === "done" && <button onClick={() => runScoring(true)} style={{ ...btnGhost, fontSize: 13.5 }}>↻ Re-run comparison</button>}
+          {!readOnly && status === "idle" && !allLabelled && (
             <span style={{ fontSize: 12.5, color: "#92400e" }}>Label all {clusters.length} clusters to enable the comparison.</span>
           )}
           <span style={{ fontSize: 12, color: "#aaa" }}>

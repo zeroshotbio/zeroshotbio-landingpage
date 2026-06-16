@@ -16,6 +16,7 @@ import { MarkersContent } from "./MarkersPanel";
 import { ConfidenceContent } from "./ConfidencePanel";
 import { ClusteringProvenance } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
+import { Scorecard } from "./Scorecard";
 
 // Strip the hidden ```kasperov-*``` control blocks the live loop embeds in
 // assistant turns, so the saved transcript reads as clean prose. Best-effort
@@ -96,6 +97,20 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
   };
   const ocRun = openCluster ? byId.get(openCluster) : null;
   const ocAtlas = openCluster ? clusters?.find((c) => c.id === openCluster) || null : null;
+  // for the read-only Scorecard (the per-cluster Daniotype-vs-GT breakdown the
+  // new-run page shows) — rebuilt from the saved run.
+  const labelsMap = useMemo(() => { const m: Record<string, string> = {}; for (const c of runClusters) if (c.finalLabel) m[String(c.id)] = String(c.finalLabel); return m; }, [run]);
+  const confMap = useMemo(() => { const m: Record<string, any> = {}; for (const c of runClusters) if (c?.confidence?.germ_layer) m[String(c.id)] = c.confidence; return m; }, [run]);
+  const savedScore: any = { verdicts: gt?.verdicts || {}, scoredAt: gt?.scoredAt || null, agg: Array.isArray(gt?.aggregate) ? gt.aggregate : [], subStrat: gt?.subStratified || null, abstention: gt?.abstention || null };
+  const noop: any = () => {};
+  // feed the Scorecard the RUN's own clusters (not the live atlas) so labels +
+  // verdicts always line up — including for runs whose clustering differs from
+  // the currently-registered atlas (e.g. the parked native-schema runs).
+  const viewerClusters: any = useMemo(() => runClusters.map((c) => ({
+    id: String(c.id), label: c.label || `Cluster ${c.id}`,
+    color: clusters?.find((a) => a.id === String(c.id))?.color || "#9aa0a6",
+    nCells: 0, cx: 0, cy: 0, degsUp: [], markers: [], markersDown: [], points: [], bounds: { minx: 0, maxx: 0, miny: 0, maxy: 0 },
+  })), [run, clusters]);
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
@@ -247,8 +262,14 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               ) : notRecorded("Chat history")}
             </div>
           </div>
+        ) : dataset.groundTruthUrl ? (
+          /* ---- GT datasets: the exact per-cluster breakdown from the new-run page (read-only) ---- */
+          <div style={{ fontSize: 12.5, color: "#888", marginBottom: -4 }}>
+            <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labelsMap} confidence={confMap} validated={validated} onPick={setOpenCluster} model={run?.model ?? "?"} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
+            <div style={{ marginTop: 8, fontStyle: "italic" }}>Click any cluster row above to see how it was decided.</div>
+          </div>
         ) : (
-          /* ---- overview: final per-tier summary + per-cluster breakdown ---- */
+          /* ---- no-GT datasets: final mean confidence + per-cluster breakdown ---- */
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div>
               <div style={{ ...SEC, marginBottom: 8 }}>{gt ? "Final accuracy by tier vs ground truth" : "Final mean confidence by tier"}</div>
