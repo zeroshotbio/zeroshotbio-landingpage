@@ -161,12 +161,37 @@ def save_run(run):
     return run_id
 
 
-def list_runs(dataset):
-    idx_path = os.path.join(_ds_dir(dataset), "_index.json")
+def _archive_category(reason):
+    """Classify a free-text archivedReason into a viewer badge category.
+    Contamination MUST win over everything else (a quarantined run must never
+    read as evidence). Mirrors classifyArchiveReason() in completeness.ts."""
+    r = (reason or "").strip().lower()
+    if not r:
+        return "other"
+    if re.search(r"contaminat|quarantin|leak|poison|corrupt|invalid|tainted", r):
+        return "quarantined"
+    if re.search(r"supersed|parked|revert|replaced|preserved|stale|deprecat|superseding", r):
+        return "superseded"
+    return "other"
+
+
+def _read_index(path):
     try:
-        return json.load(open(idx_path)) if os.path.exists(idx_path) else []
+        return json.load(open(path)) if os.path.exists(path) else []
     except Exception:
         return []
+
+
+def list_runs(dataset, include_archived=False):
+    d = _ds_dir(dataset)
+    runs = list(_read_index(os.path.join(d, "_index.json")))
+    if include_archived:
+        for e in _read_index(os.path.join(d, "_archive.json")):
+            e = dict(e)
+            e["archived"] = True
+            e["archiveCategory"] = _archive_category(e.get("archivedReason"))
+            runs.append(e)
+    return runs
 
 
 def get_run(dataset, run_id):
@@ -701,9 +726,24 @@ def runs_save(run: dict = Body(...), x_api_token: str = Header(default="")):
 
 
 @app.get("/runs")
-def runs_list(dataset: str, x_api_token: str = Header(default="")):
+def runs_list(dataset: str, include: str = "", x_api_token: str = Header(default="")):
     _auth(x_api_token)
-    return {"runs": list_runs(dataset)}
+    return {"runs": list_runs(dataset, include_archived=(include == "archived"))}
+
+
+@app.get("/runs/all")
+def runs_all(include: str = "", x_api_token: str = Header(default="")):
+    """Cross-dataset run list: merge every dataset dir's index (+ archive when
+    include=archived). Skips the gifs/ asset folder."""
+    _auth(x_api_token)
+    inc = include == "archived"
+    out = []
+    if os.path.isdir(RUNS_DIR):
+        for name in sorted(os.listdir(RUNS_DIR)):
+            if name == "gifs" or not os.path.isdir(os.path.join(RUNS_DIR, name)):
+                continue
+            out.extend(list_runs(name, include_archived=inc))
+    return {"runs": out}
 
 
 @app.get("/runs/{dataset}/{run_id}")

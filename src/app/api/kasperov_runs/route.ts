@@ -41,6 +41,9 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const dataset = url.searchParams.get("dataset") || "";
   const id = url.searchParams.get("id");
+  // archived runs are surfaced only when explicitly asked for (default off, so
+  // existing callers see no behavior change).
+  const include = url.searchParams.get("include") === "archived" ? "&include=archived" : "";
   if (!dataset) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
   try {
     if (id) {
@@ -48,7 +51,7 @@ export async function GET(req: NextRequest) {
       const body = await r.text();
       return new NextResponse(body, { status: r.status, headers: { "content-type": "application/json" } });
     }
-    const r = await fetch(`${URL_BASE}/runs?dataset=${encodeURIComponent(dataset)}`, { headers: HEADERS });
+    const r = await fetch(`${URL_BASE}/runs?dataset=${encodeURIComponent(dataset)}${include}`, { headers: HEADERS });
     return NextResponse.json(await r.json().catch(() => ({ runs: [] })), { status: r.status });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
