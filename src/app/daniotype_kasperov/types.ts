@@ -55,7 +55,7 @@ export interface AtlasMeta {
 }
 
 // --- dataset registry + run-scoring shapes (shared with the Scorecard) ------
-export type DatasetId = "minifin" | "zscape" | "zscape_v2" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
+export type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
 export interface DatasetDef {
   id: DatasetId;
   name: string;

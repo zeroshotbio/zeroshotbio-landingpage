@@ -23,7 +23,7 @@ import { useAtlas } from "./useAtlas";
 // Wizard assets are served statically by nginx (daniotype_data/), NOT by the gated Vercel
 // asset route — keeps the Vercel function bundle slim. The browser fetches umap/groundtruth
 // cross-origin (nginx sends CORS for www.zeroshot.bio).
-const ASSET_BASE = "https://zscape.zeroshot.bio/daniotype_data";
+const ASSET_BASE = "https://daniotype.zeroshot.bio/daniotype_data";
 // Rich per-dataset facts generated from the real assets/scorecards/sweeps (scripts/gen_dataset_facts.py)
 const FACTS: Record<string, any> = DATASET_FACTS as any;
 
@@ -48,18 +48,6 @@ const EMPTY_VALIDATED: Set<string> = new Set();
 // ---------------------------------------------------------------------------
 // DatasetId, DatasetDef → ./types
 const DATASETS: DatasetDef[] = [
-  {
-    id: "zscape_v2",
-    name: "ZSCAPE V2",
-    tagline: "Saunders et al. · next-gen pipeline — coming soon",
-    blurb:
-      "ZSCAPE V2 — the next iteration of the ZSCAPE ground-truth benchmark (re-clustering + scoring to be wired up). Stub registered; assets and scoring not built yet. Use ZSCAPE Classic for the current GT pipeline.",
-    dataUrl: `${ASSET_BASE}/zscape_v2/umap.json`,
-    archivistBase: `${ASSET_BASE}/zscape_v2/archivist`,
-    groundTruthUrl: null,
-    status: "soon",
-    approxClusters: 0,
-  },
   {
     id: "minifin",
     name: "MiniFin",
@@ -134,8 +122,8 @@ const DATASETS: DatasetDef[] = [
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
-// Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin, then the V2 stub.
-const DATASET_ORDER: DatasetId[] = ["zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin", "zscape_v2"];
+// Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
+const DATASET_ORDER: DatasetId[] = ["zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"];
 const ORDERED_DATASETS: DatasetDef[] = DATASET_ORDER.map((id) => DATASET_BY_ID[id]).filter(Boolean);
 
 type Box = { x: number; y: number; w: number; h: number };
@@ -1045,11 +1033,8 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
             );
           };
           const gtDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role === "gt");
-          // the "coming soon" stub (no FACTS) belongs at the end of the GT benchmarks, under DanioCell
-          const v2 = ORDERED_DATASETS.find((d) => d.id === "zscape_v2");
-          if (v2) gtDs.push(v2);
           const order = ["megafin", "megafin_parse", "minifin"];
-          const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt" && d.id !== "zscape_v2")
+          const internalDs = ORDERED_DATASETS.filter((d) => (FACTS[d.id] as any)?.role !== "gt")
             .sort((a, b) => ((order.indexOf(a.id) + 1) || 99) - ((order.indexOf(b.id) + 1) || 99));
           const gridStyle = { display: "flex", flexDirection: "column", gap: 14 } as const;
           const hdr = { fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#3f3a34", fontWeight: 700, margin: "8px 0 12px" };
