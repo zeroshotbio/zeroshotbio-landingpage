@@ -610,6 +610,18 @@ def verify_grounding(dataset_id, clusters):
     return (True, f"verified: {len(idxs)} sampled clusters' own markers enriched on :5007, count bounded to {n} units")
 
 
+def _active_harness():
+    """Stamp the run with the active harness (version + config commit) for provenance."""
+    try:
+        reg = json.load(open(os.path.join(os.path.dirname(__file__), "..", "..", "src", "app", "daniotype_kasperov", "harness_registry.json")))
+        h = next((x for x in reg.get("harnesses", []) if x.get("id") == reg.get("active")), None)
+        if h:
+            return {"id": h["id"], "version": h["version"], "name": h.get("name"), "gitCommit": h.get("gitCommit"), "stampedAt": h.get("stampedAt")}
+    except Exception:
+        pass
+    return None
+
+
 def _run(run_id, dataset_id, model, base):
     st = RUNS[run_id]
     usage = {}
@@ -673,6 +685,7 @@ def _run(run_id, dataset_id, model, base):
             "nValidated": len(labelled),
             "source": "server",
             "note": st.get("note") or None,  # optional free-text note attached after kickoff
+            "harness": _active_harness(),  # which harness (judge/config version + commit) produced this run
             # run settings/parameters for future reproducibility ("what went into this run")
             "provenance": {
                 "pipeline": "full-unified",  # K=2 Researcher proposers -> Archivist verification pass -> Reasoner rounds w/ dispatch
@@ -686,7 +699,8 @@ def _run(run_id, dataset_id, model, base):
                 "model": model,
                 "atlasSource": atlas.get("source"),  # encodes the clustering recipe/partition
                 "nClusters": len(clusters),
-                "statsService": "live :5007 p-values/co-expression" if dataset_id in ("minifin", "megafin", "zscape") else "static only",
+                # PROOF this run grounded on the RIGHT dataset's :5007 stats (the misalignment guard's pass record)
+                "groundingGuard": {"verified": True, "detail": detail, "statsService": STATS_VERIFY_URL},
                 "baseUrl": base,
                 "startedAt": st.get("startedAt"),
             },
