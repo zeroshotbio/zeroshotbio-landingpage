@@ -14,7 +14,7 @@ import { UmapCanvas } from "./UmapCanvas";
 import { AgentMessage } from "./ChatMessage";
 import { MarkersContent } from "./MarkersPanel";
 import { ConfidenceContent } from "./ConfidencePanel";
-import { ClusteringProvenance } from "./ClusteringProvenance";
+import { ClusteringProvenance, BackfillBadge } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
 import { Scorecard } from "./Scorecard";
 
@@ -46,6 +46,109 @@ function Chip({ on, label, off }: { on: boolean; label: string; off?: string }) 
 const CARD: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" };
 const SEC: React.CSSProperties = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#9a948c", fontWeight: 800, margin: "0 0 8px" };
 const notRecorded = (what: string) => <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic" }}>{what} — not recorded in this run.</div>;
+
+const SHA = (h: any) => String(h ?? "").slice(0, 12);
+const Row = ({ k, v, mono }: { k: string; v: React.ReactNode; mono?: boolean }) => (
+  <div style={{ fontSize: 12, display: "flex", gap: 10, lineHeight: 1.5 }}>
+    <span style={{ width: 132, flexShrink: 0, color: "#9a948c", fontWeight: 700 }}>{k}</span>
+    <span style={{ color: "#444", wordBreak: "break-word", fontFamily: mono ? "ui-monospace, monospace" : undefined, fontSize: mono ? 11.5 : undefined }}>{v}</span>
+  </div>
+);
+
+// Structured Grounding panel — reads ONLY the run's own provenance.grounding (never a service).
+// Un-buries the evidence-anchored cleanliness story + the self-attestation warning.
+function GroundingPanel({ provenance }: { provenance: any }) {
+  if (!provenance || typeof provenance !== "object") return notRecorded("Run provenance");
+  const g = provenance.grounding && typeof provenance.grounding === "object" ? provenance.grounding : null;
+  const denom = g?.denominatorCheck;
+  const enrich: any[] = Array.isArray(g?.sampledEnrichment) ? g.sampledEnrichment : [];
+  const dist = g?.distinctness;
+  const refs: any[] = Array.isArray(provenance.evidenceRefs) ? provenance.evidenceRefs : [];
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 12.5, fontWeight: 700, color: "#15803d" }}>Grounding</span>
+        {provenance.source ? <span style={{ fontSize: 11, color: "#888" }}>source: {String(provenance.source)}</span> : null}
+        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+          {provenance.modelSnapshot === "unrecoverable" ? (
+            <span title="floating gpt-5.5 alias; dated snapshot not recoverable — pin is a forward-runs-only fix" style={{ fontSize: 10, fontWeight: 700, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>model snapshot · unrecoverable</span>
+          ) : null}
+          {provenance.backfilled ? <BackfillBadge at={provenance.backfillAt} sources={refs} /> : null}
+        </span>
+      </div>
+      {provenance.harnessNote ? <div style={{ fontSize: 11.5, color: "#7a746c", lineHeight: 1.45 }}>{provenance.harnessNote}</div> : null}
+      {g ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4, background: "#f6faf7", border: "1px solid #d6e8db", borderRadius: 9, padding: "10px 12px" }}>
+          {g.servedDataset ? <Row k="served dataset" v={String(g.servedDataset)} mono /> : null}
+          {g.guardResult ? <Row k="guard" v={String(g.guardResult)} /> : null}
+          {g.guardDetail ? <Row k="guard detail" v={String(g.guardDetail)} /> : null}
+          {typeof g.abstentionRate === "number" ? <Row k="abstention" v={`${(g.abstentionRate * 100).toFixed(1)}%`} /> : null}
+          {denom ? <Row k="denominator" v={`✓ ${denom.correct ?? ""}  ·  ${denom.contaminant ?? ""}`} /> : null}
+          {enrich.length ? (
+            <Row k="sampled enrichment" v={
+              <table style={{ borderCollapse: "collapse", fontSize: 11.5, fontVariantNumeric: "tabular-nums" }}>
+                <tbody>
+                  {enrich.map((e, i) => (
+                    <tr key={i}>
+                      <td style={{ padding: "1px 8px 1px 0", color: "#555" }}>c{e.cluster}</td>
+                      <td style={{ padding: "1px 8px", fontFamily: "ui-monospace, monospace" }}>{e.gene}</td>
+                      <td style={{ padding: "1px 8px", color: (Number(e.log2FC) >= 1 ? "#15803d" : "#b45309") }}>log2FC {e.log2FC}</td>
+                      <td style={{ padding: "1px 8px", color: "#888" }}>padj {e.padj}{e.note ? ` · ${e.note}` : ""}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            } />
+          ) : null}
+          {dist ? <Row k="distinctness" v={`${dist.gene} c${dist.cluster}: parse ${dist.megafin_parse} vs megafin ${dist.megafin} vs minifin ${dist.minifin} — ${dist.note ?? ""}`} /> : null}
+          {g.scanNote ? <Row k="scan note" v={String(g.scanNote)} /> : null}
+          {g.selfAttestationWarning ? <div style={{ fontSize: 11, color: "#9a3412", fontStyle: "italic", marginTop: 2 }}>⚠ {String(g.selfAttestationWarning)}</div> : null}
+        </div>
+      ) : notRecorded("Grounding")}
+      {refs.length ? (
+        <div>
+          <div style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", margin: "2px 0 4px" }}>Evidence ({refs.length})</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+            {refs.map((r, i) => (
+              <div key={i} style={{ fontSize: 11, display: "flex", gap: 8, alignItems: "baseline" }}>
+                <span style={{ fontFamily: "ui-monospace, monospace", color: "#475569" }}>{r.path}</span>
+                <span style={{ fontFamily: "ui-monospace, monospace", color: "#94a3b8" }}>{SHA(r.sha256)}</span>
+                {r.role ? <span style={{ color: "#9a948c" }}>· {r.role}</span> : null}
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// Build QC (RAW→h5ad) — run-owned; explicit "unrecoverable" when the run says so.
+function BuildQCCard({ run }: { run: any }) {
+  const q = run?.buildQC;
+  const note = run?._buildQC_note;
+  const skip = new Set(["backfilled", "backfillAt", "backfillSources", "rawToH5adQC"]);
+  return (
+    <div style={CARD}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <div style={SEC}>Build QC · RAW→h5ad</div>
+        {q?.backfilled ? <span style={{ marginLeft: "auto" }}><BackfillBadge at={q.backfillAt} sources={q.backfillSources} /></span> : null}
+      </div>
+      {q && typeof q === "object" ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+          {Object.entries(q).filter(([k]) => !skip.has(k)).map(([k, v]) => (
+            <Row key={k} k={k} v={typeof v === "object" ? JSON.stringify(v) : String(v)} />
+          ))}
+          {q.rawToH5adQC ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 4, lineHeight: 1.45 }}>{String(q.rawToH5adQC)}</div> : null}
+        </div>
+      ) : note ? (
+        <div style={{ fontSize: 12.5, color: "#9a3412", lineHeight: 1.45 }}>
+          <b>RAW→h5ad QC: unrecoverable.</b> <span style={{ color: "#7a746c" }}>{String(note)}</span>
+        </div>
+      ) : notRecorded("Build QC")}
+    </div>
+  );
+}
 
 // stable empty set so the Clustering-tab map shows no per-cluster validation
 // checkmarks (that tab is about the partition, not the labelling pass).
@@ -224,8 +327,9 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               <div style={{ fontSize: 13.5, color: "#444" }}>{runClusters.length} clusters · {profile.validatedClusters} validated</div>
               {run?.dataset ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 5 }}>🧬 {run.dataset}</div> : notRecorded("Clustering recipe")}
             </div>
-            {/* how the optimal cluster count was found — sweep / silhouette criteria */}
-            <ClusteringProvenance datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
+            {/* how this run clustered — the RUN's own snapshot (never live FACTS) */}
+            <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
+            <BuildQCCard run={run} />
           </div>
         )}
 
@@ -250,16 +354,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
             <HarnessDetail harness={run?.harness} />
             <div style={CARD}>
               <div style={SEC}>Run provenance</div>
-              {run?.provenance && typeof run.provenance === "object" ? (
-                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {Object.entries(run.provenance).map(([k, v]) => (
-                    <div key={k} style={{ fontSize: 12, display: "flex", gap: 8, lineHeight: 1.4 }}>
-                      <span style={{ width: 150, flexShrink: 0, color: "#9a948c", fontWeight: 700 }}>{k}</span>
-                      <span style={{ color: "#444", wordBreak: "break-word" }}>{typeof v === "object" ? JSON.stringify(v) : String(v)}</span>
-                    </div>
-                  ))}
-                </div>
-              ) : notRecorded("Run provenance")}
+              <GroundingPanel provenance={run?.provenance} />
             </div>
           </div>
         )}

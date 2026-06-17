@@ -1,28 +1,48 @@
 "use client";
-// ClusteringProvenance — "how the clustering is decided" panel: identity strip,
-// de-novo recipe, the Leiden resolution sweep (res/clusters/coherence/min-size,
-// chosen row highlighted) OR silhouette-gating note, and the coherence/min-size
-// criteria. Extracted from KasperovClient.tsx so the new-run step 1 AND the
-// read-only run viewer's Clustering tab share it. `showProceedHint` adds the
-// new-run "good to proceed?" footer (off in the viewer).
+// ClusteringProvenance — "how the clustering is decided" panel.
+//
+// TWO MODES:
+//   * mode="wizard" (default) — the LIVE New Run step 1. It is actively clustering and has
+//     no saved run, so it reads live dataset_facts.json (FACTS). UNCHANGED behaviour.
+//   * mode="viewer" — the read-only run viewer. It renders the RUN's OWN
+//     `clusteringStrategy` snapshot and NEVER falls back to live FACTS. If the run has no
+//     strategy, it says so explicitly ("not recorded in this run") rather than showing live
+//     data — otherwise the drift bug survives for un-back-filled runs.
+//
+// The mode gate is wizard-vs-viewer, NOT field-presence.
 import React from "react";
 import DATASET_FACTS from "../dataset_facts.json";
 import { ACCENT, THEME } from "../theme";
 
 const FACTS: Record<string, any> = DATASET_FACTS as any;
 
-export function ClusteringProvenance({ datasetId, nClusters, datasetName, showProceedHint = false }: { datasetId: string; nClusters: number; datasetName: string; showProceedHint?: boolean }) {
-  const f: any = FACTS[datasetId];
-  if (!f) return null;
-  const sweep: any[] | null = f.sweep ?? null;
-  const card: React.CSSProperties = { width: "100%", margin: "20px auto 0", textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
-  const th: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", padding: "2px 8px", textAlign: "right" };
-  const renderSweep = (rows: any[], compact = false) => (
+const PCARD: React.CSSProperties = { width: "100%", margin: "20px auto 0", textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
+const PTH: React.CSSProperties = { fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", padding: "2px 8px", textAlign: "right" };
+
+// A "reconstructed · backfilled <date>" badge — visually DISTINCT from a native-capture ✓
+// (slate/indigo dashed), so the viewer never presents reconstructed provenance as captured
+// at run time. Tooltip lists the backfillSources paths + short hashes.
+export function BackfillBadge({ at, sources }: { at?: string | null; sources?: any[] }) {
+  const title = (Array.isArray(sources) ? sources : [])
+    .map((s) => `${s?.path ?? "?"}  ${String(s?.sha256 ?? "").slice(0, 12)}`)
+    .join("\n");
+  return (
+    <span
+      title={title || undefined}
+      style={{ fontSize: 10, fontWeight: 700, color: "#4338ca", background: "#eef2ff", border: "1px dashed #a5b4fc", borderRadius: 99, padding: "1px 8px", whiteSpace: "nowrap", letterSpacing: 0.2 }}
+    >
+      ⟲ reconstructed{at ? ` · ${String(at).slice(0, 10)}` : ""}
+    </span>
+  );
+}
+
+function renderSweep(rows: any[], compact = false) {
+  return (
     <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, fontVariantNumeric: "tabular-nums" }}>
       <thead>
         <tr>
-          <th style={{ ...th, textAlign: "left" }}>res</th><th style={th}>clusters</th>
-          <th style={{ ...th, textAlign: "left", paddingLeft: 14 }}>coherence</th><th style={th}>min size</th>
+          <th style={{ ...PTH, textAlign: "left" }}>res</th><th style={PTH}>clusters</th>
+          <th style={{ ...PTH, textAlign: "left", paddingLeft: 14 }}>coherence</th><th style={PTH}>min size</th>
         </tr>
       </thead>
       <tbody>
@@ -44,6 +64,116 @@ export function ClusteringProvenance({ datasetId, nClusters, datasetName, showPr
       </tbody>
     </table>
   );
+}
+
+// ---- VIEWER MODE: render the run's own clusteringStrategy snapshot, never live FACTS ----
+function ViewerClusteringProvenance({ strategy, nClusters }: { strategy: any; nClusters: number }) {
+  const hdr = (
+    <div style={{ fontSize: 12, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: ACCENT }}>
+      How this run clustered · {nClusters} clusters
+    </div>
+  );
+  if (!strategy || typeof strategy !== "object") {
+    return (
+      <div style={PCARD}>
+        {hdr}
+        <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic", marginTop: 8 }}>Clustering strategy — not recorded in this run.</div>
+      </div>
+    );
+  }
+  const s = strategy;
+  const native = s.basis === "native-schema";
+  const label: React.CSSProperties = { fontWeight: 700, color: "#3f3a34" };
+  const val: React.CSSProperties = { color: "#6b655d" };
+
+  return (
+    <div style={PCARD}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 10, flexWrap: "wrap" }}>
+        {hdr}
+        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: native ? "#7c3aed" : "#475569", background: native ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>
+          {native ? "native-schema basis" : "de-novo"}
+        </span>
+        <span style={{ marginLeft: "auto", display: "inline-flex", gap: 6 }}>
+          {s.backfilled ? <BackfillBadge at={s.backfillAt} sources={s.backfillSources} /> : null}
+        </span>
+      </div>
+
+      {native ? (
+        <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 12px", fontSize: 12, lineHeight: 1.5 }}>
+          <span style={label}>basis</span><span style={val}>native-schema — {s.derivation || "authors' published finest cell groups"}</span>
+          {s.nGroups != null ? (<><span style={label}>groups</span><span style={val}>{s.nGroups}</span></>) : null}
+          {s.referenceAsset ? (<><span style={label}>reference asset</span><span style={{ ...val, fontFamily: "ui-monospace, monospace", fontSize: 11.5, wordBreak: "break-all" }}>{s.referenceAsset}</span></>) : null}
+          {s.nativeTiers && typeof s.nativeTiers === "object" ? (
+            <><span style={label}>native tiers</span><span style={val}>{Object.entries(s.nativeTiers).map(([k, v]) => `${k}: ${v}`).join(" · ")}</span></>
+          ) : null}
+          {s.lab ? (<><span style={label}>lab</span><span style={val}>{s.lab}</span></>) : null}
+          {s.note ? (<><span style={label}>note</span><span style={val}>{s.note}</span></>) : null}
+        </div>
+      ) : (
+        <>
+          {/* decision at a glance — from the RUN's own numbers */}
+          <div style={{ display: "flex", alignItems: "center", gap: 14, flexWrap: "wrap", background: s.nonStandard ? "#fffbeb" : "#ecfdf3", border: `1px solid ${s.nonStandard ? "#fde68a" : "#bbf7d0"}`, borderRadius: 10, padding: "10px 14px", marginBottom: 12 }}>
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: s.nonStandard ? "#b45309" : "#15803d" }}>Chosen</div>
+              <div style={{ fontSize: 19, fontWeight: 800, color: s.nonStandard ? "#92400e" : "#14532d", lineHeight: 1.1 }}>
+                res {s.chosenRes}{" → "}
+                {s.merged && s.rawSweepClusters ? `${s.rawSweepClusters} raw → ${s.nClusters ?? nClusters} after merge` : `${s.nClusters ?? nClusters} clusters`}
+              </div>
+            </div>
+            {s.minClusterSize != null ? <div style={{ fontSize: 12, color: "#3f5a47" }}>min cluster size {s.minClusterSize}</div> : null}
+          </div>
+
+          {/* NON-STANDARD selection banner — the manual-override + merge story */}
+          {s.nonStandard ? (
+            <div style={{ marginBottom: 12, background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "10px 13px", fontSize: 12.5, color: "#92400e", lineHeight: 1.5 }}>
+              <div style={{ fontWeight: 800, marginBottom: 4 }}>⚠ Non-standard selection</div>
+              {s.selectionNote ? <div style={{ marginBottom: 6 }}>{s.selectionNote}</div> : null}
+              {s.merged ? (
+                <div style={{ marginBottom: 6 }}>
+                  <b>Merge:</b> cluster {s.merged.from} → {s.merged.into}
+                  {s.merged.cells_moved != null ? ` (${s.merged.cells_moved} cells)` : ""}
+                  {s.rawSweepClusters ? ` — raw sweep ${s.rawSweepClusters} → ${s.nClusters ?? nClusters} clusters` : ""}
+                  {s.merged.renumbered_to_contiguous ? ", renumbered contiguous" : ""}.
+                </div>
+              ) : null}
+              {s.gate ? <div style={{ fontFamily: "ui-monospace, monospace", fontSize: 11.5 }}>{s.gate}</div> : null}
+            </div>
+          ) : null}
+
+          {s.recipe ? (
+            <p style={{ fontSize: 12.5, color: "#555", lineHeight: 1.55, margin: "0 0 8px" }}>
+              Pipeline: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{s.recipe}</code>
+            </p>
+          ) : null}
+          {s.embedding ? <p style={{ fontSize: 12, color: "#6b655d", lineHeight: 1.5, margin: "0 0 8px" }}>{s.embedding}</p> : null}
+          {s.selectionRule && !s.nonStandard ? (
+            <p style={{ fontSize: 12.5, color: "#6b655d", lineHeight: 1.55, margin: "0 0 8px" }}>
+              Selection rule: <code style={{ background: "#f3f0ec", padding: "1px 5px", borderRadius: 4, fontSize: 11.5 }}>{s.selectionRule}</code>
+            </p>
+          ) : null}
+
+          {Array.isArray(s.sweep) && s.sweep.length ? renderSweep(s.sweep) : null}
+
+          {s.gate && !s.nonStandard ? (
+            <div style={{ marginTop: 10, fontSize: 11.5, color: "#15803d", fontFamily: "ui-monospace, monospace" }}>{s.gate}</div>
+          ) : null}
+        </>
+      )}
+    </div>
+  );
+}
+
+export function ClusteringProvenance({
+  datasetId, nClusters, datasetName, showProceedHint = false, mode = "wizard", strategy = null,
+}: { datasetId: string; nClusters: number; datasetName: string; showProceedHint?: boolean; mode?: "wizard" | "viewer"; strategy?: any }) {
+  // VIEWER: run-owned snapshot only, never live FACTS.
+  if (mode === "viewer") return <ViewerClusteringProvenance strategy={strategy} nClusters={nClusters} />;
+
+  // WIZARD (live New Run): FACTS-driven — actively clustering, no saved run. UNCHANGED.
+  const f: any = FACTS[datasetId];
+  if (!f) return null;
+  const sweep: any[] | null = f.sweep ?? null;
+  const card = PCARD;
   const name = datasetName;
   const isGt = f.role === "gt";
   const ident: [string, string][] = [
