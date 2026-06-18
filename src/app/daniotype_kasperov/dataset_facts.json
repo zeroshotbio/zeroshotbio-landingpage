@@ -570,7 +570,7 @@
     "ZFA",
     "GO"
    ],
-   "partitionId": "TODO — umap.json not yet stamped",
+   "partitionId": "33e60eb5c5105df62ff8ba65b8e2a13d7ea2ff6c85b104f3b97b66c56d01a72f",
    "caveats": [
     "No external cell-type labels — internal, intuition-building.",
     "Less coherent (0.929) than the GT partitions."
@@ -677,7 +677,7 @@
     "ZFA",
     "GO"
    ],
-   "partitionId": "TODO — umap.json not yet stamped",
+   "partitionId": "f093170b0c47bc41d4b1c73a01b8c0e5eb6b6f27cb09166054fa08c2aaaf8a06",
    "caveats": [
     "A second processing of the same MegaFin Part 1 library — Parse/Trailmaker (540.9k, ENSDARG) vs the Manual Lawson denoise (537.9k); the two builds share no cell barcodes.",
     "Difference from Manual is the Leiden resolution (3.0/77 vs 2.0/84), ~88% concordant in expression space — see the consistency panel."
