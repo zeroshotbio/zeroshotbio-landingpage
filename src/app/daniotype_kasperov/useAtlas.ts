@@ -23,17 +23,27 @@ export function useAtlas(dataUrl: string | null) {
     setMeta(null);
     setError(null);
     let alive = true;
-    fetch(dataUrl)
-      .then((r) => {
+    const namesUrl = dataUrl.replace(/umap\.json($|\?)/, "names.json$1");
+    // names.json is optional + best-effort; a miss must never break atlas load.
+    Promise.all([
+      fetch(dataUrl).then((r) => {
         if (!r.ok) throw new Error(`asset ${r.status}`);
         return r.json();
-      })
-      .then((d: any) => {
+      }),
+      fetch(namesUrl).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+    ])
+      .then(([d, names]: [any, any]) => {
         if (!alive) return;
+        // GUARD: overlay names ONLY when the names artifact is bound to THIS exact
+        // partition (partitionId === assignmentSha256). Mismatch/absence -> generic
+        // labels, surface nothing — never decorate the wrong clustering.
+        const atlasPid = d.partitionId ?? null;
+        const namesPid = names?.partitionId ?? null;
+        const namesOk = !!names && !!atlasPid && !!namesPid && namesPid === atlasPid && !!names.names;
         const n = d.clusters.length;
         const cs: Cluster[] = d.clusters.map((c: any, i: number) => ({
           id: c.id,
-          label: c.label,
+          label: namesOk && names.names[c.id] ? names.names[c.id] : c.label,
           nCells: c.nCells,
           color: paletteColor(i, n),
           cx: c.cx,
@@ -54,7 +64,14 @@ export function useAtlas(dataUrl: string | null) {
           if (y > c.bounds.maxy) c.bounds.maxy = y;
         }
         setClusters(cs);
-        setMeta({ source: d.source, totalCells: d.totalCells, nClusters: n, fullDatasetCells: d.fullDatasetCells, pointsShown: Array.isArray(d.points) ? d.points.length : undefined });
+        setMeta({
+          source: d.source, totalCells: d.totalCells, nClusters: n,
+          fullDatasetCells: d.fullDatasetCells,
+          pointsShown: Array.isArray(d.points) ? d.points.length : undefined,
+          partitionId: atlasPid,
+          namesApplied: namesOk,
+          namesRunId: namesOk ? names?.source?.runId ?? null : null,
+        });
       })
       .catch((e) => alive && setError(String(e?.message ?? e)));
     return () => {

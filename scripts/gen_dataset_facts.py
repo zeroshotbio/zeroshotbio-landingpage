@@ -143,16 +143,21 @@ if _os.path.exists(SCJ):
                         "Coarse: scored on tissue + broad only (\u226443-level; numeric clust-codes are not a nameable vocabulary, excluded) \u2014 coarse-resolution generalization, not fine."]}
     CLASS={"zscape":"in-paradigm","chemfish":"in-paradigm","daniocell":"independent"}
     NID={"zscape":"zscape_native","chemfish":"chemfish_native","daniocell":"daniocell_native"}
+    # evidentiary run id from the single canonical map; basis carries the curated parked/promote note.
+    _can=json.load(open(os.path.join(os.path.dirname(__file__),"canonical_runs.json")))
+    NATIVE_BASIS="native-schema · parked-on-de-novo-revert; promoted from archive"
     for ds in ["zscape","chemfish","daniocell"]:
-        d=sc.get(NID[ds]); 
+        d=sc.get(NID[ds]);
         if not d: continue
         tiers=[{"label":a["label"],"pct":round(a["pct"],1)} for a in d["aggregate"] if a["total"]>0]
         st=d["strata"]; ab=d["abstention"]
+        _h=(json.load(open(f"{RUNS}/{ds}/{_can[ds]}.json")).get("harness") or {}).get("version")
         facts[ds]["scorecard"]={
+            "evidentiaryRunId":_can[ds],"evidentiaryRunBasis":NATIVE_BASIS,
             "schema":"native","platform_class":CLASS[ds],"tiers":tiers,
             "strata":{"ge100":st["ge100"]["tier_acc"],"ge30":st["ge30"]["tier_acc"],"all":st["all"]["tier_acc"]},
             "abstention":{"n":ab.get("n_abstain"),"total":d["units_scored"],"precision":round((ab.get("abstained_forced_sub_fail") or {}).get("pct",0),0) if ab.get("abstained_forced_sub_fail") else None},
-            "notes":EXTRA[ds]}
+            "notes":EXTRA[ds],"harnessVersion":(f"v{_h}" if _h else None)}
         facts[ds].pop("scorecardStale",None); facts[ds].pop("scorecardCaveat",None); facts[ds].pop("caveat",None); facts[ds].pop("caveatTone",None)
     # suite-level shared notes (rendered once under the grid, applies to GT + no-GT)
     facts["_suite"]={"notes":COMMON}
@@ -214,8 +219,49 @@ if _os.path.exists(ANJ):
                 "note":"7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."}}
         facts["megafin_parse"]["noGtScorecard"]=m
 
+# ---------------------------------------------------------------------------
+# PROVENANCE BLOCKS — additive, per carded dataset. Run-binding from the single
+# committed map (scripts/canonical_runs.json); partitionId read from umap.json so
+# FACTS.partitionId == umap.partitionId by construction; honest TODOs preserved.
+# ---------------------------------------------------------------------------
+_CANON=json.load(open(os.path.join(os.path.dirname(__file__),"canonical_runs.json")))
+GROUNDING_ONTOLOGIES=["ZFIN","ZFA","GO"]   # route.ts grounding chain (NCBI/UniProt corroborate)
+PROV_STATIC={
+ "chemfish":      {"clusteringOrigin":"our embedding · our Leiden res 3.0","originTip":"provOwnEmbed"},
+ "daniocell":     {"clusteringOrigin":"our embedding · our Leiden res 2.0","originTip":"provOwnEmbed"},
+ "minifin":       {"clusteringOrigin":"our embedding · our Leiden res 1.0","originTip":"provOwnEmbed",
+                   "caveats":["Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild."]},
+ "zscape":        {"clusteringOrigin":"our sub-Leiden · authors' embedding","originTip":"provCarriedEmbed"},
+ "megafin":       {"clusteringOrigin":"our Leiden res 2.0 · our Harmony embedding","originTip":"provOwnEmbed",
+                   "embeddingSource":"our Harmony(sample), computed in the manual-denoise step and carried into the asset build; standard in-build re-embed tested & rejected (coherence 0.93->0.67)",
+                   "caveats":["No external cell-type labels — internal, intuition-building.",
+                              "Less coherent (0.929) than the GT partitions."]},
+ "megafin_parse": {"clusteringOrigin":"our Leiden res 3.0 · carried Parse embedding","originTip":"provCarriedEmbed",
+                   "embeddingSource":"Parse/Trailmaker Harmony(sample), genuinely carried from parse_megafin1.h5ad; our Leiden res-3.0 sweep on it",
+                   "caveats":["A second processing of the same MegaFin Part 1 library — Parse/Trailmaker (540.9k, ENSDARG) vs the Manual Lawson denoise (537.9k); the two builds share no cell barcodes.",
+                              "Difference from Manual is the Leiden resolution (3.0/77 vs 2.0/84), ~88% concordant in expression space — see the consistency panel."]},
+}
+def _run_stamp(ds):
+    rid=_CANON[ds]; d=json.load(open(f"{RUNS}/{ds}/{rid}.json")); h=d.get("harness") or {}
+    return {"labellingRunId":rid,"model":d.get("model"),
+            "harness":({"version":h.get("version"),"name":h.get("name"),"gitCommit":h.get("gitCommit")} if h.get("version") else "TODO — run predates harness stamping"),
+            "scoredBasis":(d.get("clusteringStrategy") or {}).get("basis")}
+def _umap_partition_id(udir):
+    return json.load(open(os.path.join(DD,udir,"umap.json"))).get("partitionId")
+for ds in ["zscape","chemfish","daniocell","megafin","megafin_parse","minifin"]:
+    udir=META[ds].get("useUmapDir",ds)
+    st=_run_stamp(ds); static=PROV_STATIC[ds]; pid=_umap_partition_id(udir)
+    facts[ds]["provenance"]={
+        "clusteringOrigin":static["clusteringOrigin"],"originTip":static["originTip"],
+        "embeddingSource":static.get("embeddingSource",facts[ds].get("recipe")),
+        "labellingRunId":st["labellingRunId"],"model":st["model"],"harness":st["harness"],
+        "scoredBasis":st["scoredBasis"],"groundingOntologies":GROUNDING_ONTOLOGIES,
+        "partitionId":pid or "TODO — umap.json not yet stamped",
+        "caveats":static.get("caveats",[]),
+    }
+
 OUT=os.path.join(ROOT,"src","app","daniotype_kasperov","dataset_facts.json")
-json.dump(facts, open(OUT,"w"), indent=1)
+json.dump(facts, open(OUT,"w"), indent=1, ensure_ascii=False)
 print("wrote", OUT)
 for ds,e in facts.items():
     if ds.startswith("_"): continue
