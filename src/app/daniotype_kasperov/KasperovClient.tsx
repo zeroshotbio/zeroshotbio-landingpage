@@ -645,6 +645,15 @@ const TIPS: Record<string, string> = {
   consistencyCelltype: "Agreement at the fine cell-type level versus the prior automated annotation. It is lower than lineage mainly because the labeler deliberately stays coarse when it cannot ground a specific subtype — a granularity gap, not a wrong call.",
   adjudicationPrior: "For the hardest disagreements we re-checked each cluster's actual marker genes. 'prior-err' = the old annotation was wrong; 'labeler-err' = the new call was wrong; 'amb' = the markers cannot decide. The new labeler was better-supported on most.",
   processingAligned: "Manual and Parse are two processing pipelines run on the SAME cells. Where their clusters line up cleanly (mapping purity ≥0.70), this is how often the labels agree — a test of whether a label survives the processing choice, not of accuracy.",
+  // --- provenance explainers (reusable across cards) ---
+  provOwnEmbed: "Our embedding and our clustering — HVG → PCA → Harmony → Leiden, built from the counts up. Both the coordinate space and the grouping are ours.",
+  provCarriedEmbed: "Our Leiden clustering, but on a carried embedding — we ran our own partition in a coordinate space someone else built (the vendor's or the authors'). The grouping is ours; the space isn't.",
+  provVendorPartition: "The provider's own clustering, read as delivered on their embedding — a same-cells, same-space comparison to our own Leiden build.",
+  provGtScores: "Accuracy from a separate native-schema run — the wizard labeled the authors' own partition blind, then those names were scored against the authors' published labels. The atlas shown above is a de-novo re-clustering for visualization, not the partition these scores were computed on.",
+  provNoGtScores: "No published labels exist here, so there is nothing to score accuracy against — these are coverage + grounding read-outs, not accuracy, and are not comparable to the benchmark cards.",
+  provLabelsAreEval: "The names came from a blind labelling run; the published labels (where they exist) were held out and used only to score afterward — evaluation, never supervision.",
+  provPartitionId: "partitionId is a fingerprint of the exact clustering these names describe (a hash of the per-cell assignments). Shown for provenance only — this card does not re-verify the hash.",
+  provRun: "The labelling run, model and harness that produced these numbers. Open it under View Completed Runs for the full per-cluster transcript and grounding evidence.",
   processingWeighted: "The same agreement, weighted by cell count and across all clusters. It is lower than the aligned figure mainly because the two pipelines cut the cell continuum at different granularities — partition differences, not labels conflicting on the same cells.",
   adjudicationProc: "For the cross-lineage conflicts we adjudicated on the shared cells' markers. 'Parse'/'Manual' = which build's label was better-supported; 'amb' = markers cannot decide. Only 1 of 77 was a flat labeling error — labels are robust to the pipeline.",
 };
@@ -804,7 +813,30 @@ function SecLabel({ children, info }: { children: React.ReactNode; info?: string
 // Body for the GROUND-TRUTH dataset cards: a prominent vertical accuracy-by-tier
 // list · a by-cluster-size mini bar chart + abstention · notes. Every figure
 // explains itself on hover.
-function GtBody({ sc }: { sc: any }) {
+// Provenance footer — compact stamp line + ⓘ explainer, driven by f.provenance.
+// Self-hides when absent; partitionId chip only renders for a real (non-TODO) hash;
+// copy never claims the card verified the hash.
+function ProvFooter({ f, gt }: { f?: any; gt?: boolean }) {
+  const p = f?.provenance;
+  if (!p) return null;
+  const isTodoRun = String(p.labellingRunId || "").startsWith("TODO");
+  const hv = p.harness && typeof p.harness === "object" ? `harness v${p.harness.version}` : null;
+  const pid = typeof p.partitionId === "string" && !p.partitionId.startsWith("TODO") ? p.partitionId : null;
+  return (
+    <div style={{ flexBasis: "100%", borderTop: "1px solid #ece8e2", marginTop: 4, paddingTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 10, color: "#8a847c" }}>
+      <Tip text={TIPS.provRun}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>
+        {isTodoRun ? "run · not recorded" : <>run <span style={{ fontFamily: "ui-monospace, monospace", color: "#7a746c" }}>{p.labellingRunId}</span></>}
+        {p.model ? ` · ${p.model}` : ""}{hv ? ` · ${hv}` : ""}
+      </span></Tip>
+      <Tip text={TIPS[p.originTip] ?? TIPS.provOwnEmbed}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>{p.clusteringOrigin}</span></Tip>
+      {Array.isArray(p.groundingOntologies) && p.groundingOntologies.length ? <span>grounded via {p.groundingOntologies.join(" · ")}</span> : null}
+      <Tip text={gt ? TIPS.provGtScores : TIPS.provNoGtScores}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>ⓘ how to read</span></Tip>
+      {pid ? <Tip text={TIPS.provPartitionId}><span style={{ fontFamily: "ui-monospace, monospace", color: "#b0a89e", borderBottom: "1px dotted #cfc8bf" }}>partition {pid.slice(0, 12)}…</span></Tip> : null}
+    </div>
+  );
+}
+
+function GtBody({ sc, f }: { sc: any; f?: any }) {
   const indep = sc.platform_class === "independent";
   const tierTone = (p: number) => (p >= 70 ? "good" : p >= 45 ? "warn" : "bad");
   const prettyTier = (l: string) => l.replace("Cell type — ", "Cell type · ");
@@ -864,6 +896,7 @@ function GtBody({ sc }: { sc: any }) {
             ))}
           </div>
         )}
+        <ProvFooter f={f} gt />
       </div>
     </div>
   );
@@ -944,6 +977,7 @@ function NoGtBody({ f }: { f: any }) {
         </div>
       ))}
       {f.supersedes && <div style={{ flexBasis: "100%", fontSize: 9.5, color: "#a59f96", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
+      <ProvFooter f={f} />
     </div>
   );
 }
@@ -1026,7 +1060,7 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
                 </div>
 
                 {/* content area */}
-                {isGt && f.scorecard && <GtBody sc={f.scorecard} />}
+                {isGt && f.scorecard && <GtBody sc={f.scorecard} f={f} />}
                 {f && !isGt && <NoGtBody f={f} />}
                 {!f && <div style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
               </div>
@@ -1536,6 +1570,22 @@ function MapStage({
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
         </div>
+        {/* cluster-naming provenance — honest badge from the partitionId-guarded overlay.
+            No-ops when meta is null or the atlas carries no partitionId (pre-stamp). */}
+        {meta && meta.partitionId ? (
+          <div style={{ marginTop: 6 }}>
+            <span
+              title={meta.namesApplied
+                ? `Names overlaid from labelling run ${meta.namesRunId ?? "?"} — partitionId-matched to this clustering`
+                : "No partition-matched names.json for this clustering — showing generic cluster ids"}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, letterSpacing: 0.3, borderRadius: 99, padding: "2px 10px",
+                color: meta.namesApplied ? "#15803d" : "#6b7280", background: meta.namesApplied ? "#ecfdf5" : "#f3f4f6", border: `1px solid ${meta.namesApplied ? "#86efac" : "#e5e7eb"}` }}
+            >
+              <span aria-hidden style={{ fontSize: 9 }}>{meta.namesApplied ? "●" : "○"}</span>
+              {meta.namesApplied ? `Named · run ${meta.namesRunId ?? "—"}` : "Unnamed clusters"}
+            </span>
+          </div>
+        ) : null}
         <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "3. Cell Labelling" : "1. Clustering"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed

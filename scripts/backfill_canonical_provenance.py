@@ -65,14 +65,10 @@ ARTIFACTS = {
     f"{BENCH}/megafin1_processing_settings.txt": "d81fe849d61eec92",
 }
 
-RUNS = {
-    "zscape":        f"{RUNSTORE}/zscape/20260615-211010-c4d306.json",
-    "chemfish":      f"{RUNSTORE}/chemfish/20260615-211010-e4aafa.json",
-    "daniocell":     f"{RUNSTORE}/daniocell/20260615-211010-b39045.json",
-    "minifin":       f"{RUNSTORE}/minifin/20260615-042324-472be7.json",
-    "megafin":       f"{RUNSTORE}/megafin/20260615-042324-3a15a2.json",
-    "megafin_parse": f"{RUNSTORE}/megafin_parse/20260615-043737-1afa19.json",
-}
+# Run-binding sourced from the single committed map (scripts/canonical_runs.json).
+_CANON = json.load(open(os.path.join(os.path.dirname(__file__), "canonical_runs.json")))
+RUNS = {ds: f"{RUNSTORE}/{ds}/{rid}.json"
+        for ds, rid in _CANON.items() if not ds.startswith("_")}
 NATIVE = {"zscape", "chemfish", "daniocell"}
 
 # sampled enrichment captured during the round-2 live :5007 verification (audit), recorded as

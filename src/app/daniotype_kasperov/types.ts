@@ -52,6 +52,9 @@ export interface AtlasMeta {
   nClusters: number;
   fullDatasetCells?: number; // full atlas size, when totalCells is a sample
   pointsShown?: number; // dots plotted on the map (a downsample of totalCells)
+  partitionId?: string | null; // from umap.json; fingerprint of THIS clustering
+  namesApplied?: boolean; // true only when names.partitionId === atlas partitionId
+  namesRunId?: string | null; // provenance of the overlaid names, when applied
 }
 
 // --- dataset registry + run-scoring shapes (shared with the Scorecard) ------

@@ -88,6 +88,28 @@
      "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
     }
    }
+  },
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 1.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-042324-472be7",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": [
+    "Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild."
+   ]
   }
  },
  "zscape": {
@@ -146,6 +168,26 @@
     "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space — home-turf, not generalization."
    ],
    "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our sub-Leiden · authors' embedding",
+   "originTip": "provCarriedEmbed",
+   "embeddingSource": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
+   "labellingRunId": "20260615-211010-c4d306",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
   }
  },
  "chemfish": {
@@ -237,6 +279,26 @@
     "Correction: 87.7% tissue supersedes the earlier withheld 31% — that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
    ],
    "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 3.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-211010-e4aafa",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
   }
  },
  "daniocell": {
@@ -327,6 +389,26 @@
     "Coarse: scored on tissue + broad only (≤43-level; numeric clust-codes are not a nameable vocabulary, excluded) — coarse-resolution generalization, not fine."
    ],
    "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 2.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-211010-b39045",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
   }
  },
  "megafin": {
@@ -470,6 +552,29 @@
    },
    "badge": "No published labels — not an accuracy benchmark",
    "abstentionNote": "All 4 abstentions justified — and it declined c23, a 4,131-cell cluster, because it is a ribosome-high / low-complexity technical artifact, not a size call. It knows the difference between a cell type it can't resolve and a cluster it shouldn't label."
+  },
+  "provenance": {
+   "clusteringOrigin": "our Leiden res 2.0 · our Harmony embedding",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "our Harmony(sample), computed in the manual-denoise step and carried into the asset build; standard in-build re-embed tested & rejected (coherence 0.93->0.67)",
+   "labellingRunId": "20260615-042324-3a15a2",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": [
+    "No external cell-type labels — internal, intuition-building.",
+    "Less coherent (0.929) than the GT partitions."
+   ]
   }
  },
  "megafin_parse": {
@@ -554,6 +659,29 @@
      "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."
     }
    }
+  },
+  "provenance": {
+   "clusteringOrigin": "our Leiden res 3.0 · carried Parse embedding",
+   "originTip": "provCarriedEmbed",
+   "embeddingSource": "Parse/Trailmaker Harmony(sample), genuinely carried from parse_megafin1.h5ad; our Leiden res-3.0 sweep on it",
+   "labellingRunId": "20260615-043737-1afa19",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": [
+    "A second processing of the same MegaFin Part 1 library — Parse/Trailmaker (540.9k, ENSDARG) vs the Manual Lawson denoise (537.9k); the two builds share no cell barcodes.",
+    "Difference from Manual is the Leiden resolution (3.0/77 vs 2.0/84), ~88% concordant in expression space — see the consistency panel."
+   ]
   }
  },
  "_suite": {

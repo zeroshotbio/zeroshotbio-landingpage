@@ -281,6 +281,11 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
                 {run?.schemaBasis || meta?.schemaBasis}{run?.promotedFrom || meta?.promotedFrom ? " · promoted" : ""}
               </span>
             ) : null}
+            {run?.clusteringStrategy?.partitionId ? (
+              <span title={`partitionId — fingerprint of this run's clustering: ${run.clusteringStrategy.partitionId}`} style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#f1f5f9", borderRadius: 99, padding: "1px 8px", fontFamily: "ui-monospace, monospace" }}>
+                partition {String(run.clusteringStrategy.partitionId).slice(0, 12)}…
+              </span>
+            ) : null}
             {archived ? (
               <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCHIVE_BADGE[archiveCat].fg, background: ARCHIVE_BADGE[archiveCat].bg, borderRadius: 99, padding: "1px 8px", border: `1px solid ${ARCHIVE_BADGE[archiveCat].fg}33` }}>
                 {ARCHIVE_BADGE[archiveCat].label}
@@ -300,6 +305,17 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
             <Chip on={profile.hasClusteringStrategy} label="clustering strategy" />
           </div>
         </div>
+
+        {/* How to read this run — the labelling method, stated once. Static copy. */}
+        <details style={{ ...CARD, marginBottom: 12 }}>
+          <summary style={{ cursor: "pointer", fontSize: 12.5, fontWeight: 800, color: "#475569" }}>How to read this run</summary>
+          <ol style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#5a544c", lineHeight: 1.55 }}>
+            <li><b>Three-personality loop</b> — two Researcher proposers debate the cluster, an Archivist checks every claim against live :5007 stats, a Reasoner concludes.</li>
+            <li><b>Grounded proposals</b> — each name is anchored in cited markers → in-vivo expression (ZFIN) → ZFA anatomy → GO function; uncited names roll up to an abstention.</li>
+            <li><b>Confidence tiers</b> — the call is placed at the depth the evidence supports (germ-layer → tissue → cell-type); the per-tier confidence shows how far it could defensibly go.</li>
+            <li><b>Evaluation, not supervision</b> — where published labels exist they were <i>held out</i> and used only to score afterward; the labeler never saw them.</li>
+          </ol>
+        </details>
 
         {/* tabs — mirror the new-run steps */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
