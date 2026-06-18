@@ -25,7 +25,7 @@ np.random.seed(SEED)
 CFG={
  "daniocell":{"src":"/data/datasets/raw_datasets/DanioCell_h5ad/daniocell_canonical_all.h5ad",
    "window":("stage.integer",36,72),"finest":"cell_type_fine",
-   "slots":{"tissue":"cell_type","cell_type_broad":"tissue.figure","cell_type_sub":"cell_type_fine"},
+   "slots":{"tissue":"cell_type","cell_type_broad":"tissue.figure"},  # clust/cell_type_fine are codes, not nameable -> dropped from scoring
    "source_name":"DanioCell Sur et al. (Farrell/NICHD)","platform":"10X droplet"},
  "chemfish":{"src":"/data/datasets/processed/chemfish/chemfish.h5ad",
    "window":("timepoint","==","48"),"finest":"cell_type",

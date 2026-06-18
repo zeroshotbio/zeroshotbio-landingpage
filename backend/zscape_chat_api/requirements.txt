@@ -3,3 +3,7 @@ flask_cors==5.0.1
 anthropic>=0.40.0
 numpy>=1.26.0
 scikit-learn>=1.4.0
+# Required for /api/predict local Jina v3 embedding (lazy-loaded at first request)
+torch
+sentence_transformers
+einops
