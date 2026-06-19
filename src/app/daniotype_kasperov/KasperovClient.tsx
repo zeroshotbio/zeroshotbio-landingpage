@@ -1104,7 +1104,9 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
   const [model, setModel] = useState<KasperovModel>(currentModel);
   const [harness, setHarness] = useState<any>(currentHarness);
   const n = dataset.approxClusters;
-  const harnesses: any[] = registry?.harnesses || [];
+  // dataset-scoped: a harness with `appliesTo` shows only for those datasets (e.g. the
+  // DanioCell-specific two-tier harness); generic harnesses (no appliesTo) show everywhere.
+  const harnesses: any[] = (registry?.harnesses || []).filter((h: any) => !h.appliesTo || h.appliesTo.includes(dataset.id));
   const tierShort = (l: string) => l.replace("Cell type — ", "").replace("Germ layer", "germ").replace("Tissue", "tissue").toLowerCase();
   const secHead: React.CSSProperties = { fontSize: 22, fontWeight: 700, margin: "8px 0 4px" };
   return (

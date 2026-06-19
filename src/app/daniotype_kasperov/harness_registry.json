@@ -3,16 +3,16 @@
  "harnesses": [
   {
    "id": "v1.1",
-   "name": "native-validated \u00b7 roll-up/superset judge",
+   "name": "native-validated · roll-up/superset judge",
    "version": "1.1",
    "supersedes": "v1.0",
    "stampedAt": "2026-06-15T21:14:51+00:00",
    "gitCommit": "87005893",
    "model": "gpt-5.5",
-   "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist. v1.1: the semantic judge now credits lineage roll-up + superset/multi-name predictions + benefit-of-doubt for nested anatomy (audited: 94 wrong\u2192right vs 1 right\u2192wrong across the 3 GT benchmarks; teeth arm 16/16 \u2014 still fails clearly-different lineages).",
+   "summary": "Three-personality loop — two Researcher proposers → Archivist (:5007 live stats) → Reasoner → conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC≥1; significance required only at n≥50). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist. v1.1: the semantic judge now credits lineage roll-up + superset/multi-name predictions + benefit-of-doubt for nested anatomy (audited: 94 wrong→right vs 1 right→wrong across the 3 GT benchmarks; teeth arm 16/16 — still fails clearly-different lineages).",
    "design": [
     "Driver-scoring: the conclude identity is judged at each native tier; finer-than-driver tiers are not-attempted, never a miss.",
-    "Abstention is a first-class outcome \u2014 declines only under-powered or technical-artifact clusters, never reliable ones.",
+    "Abstention is a first-class outcome — declines only under-powered or technical-artifact clusters, never reliable ones.",
     "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
     "Misalignment guard + count-bound before any spend; halt-no-spend on failure.",
     "v1.1 judge change validated by a two-armed audit: paired per-unit re-score vs v1.0 (precision arm) + deliberately-wrong cases confirming the judge still fails them (teeth arm); validated on held-out ZSCAPE+DanioCell, not only the ChemFish cases that motivated it."
@@ -43,7 +43,7 @@
     "model": {
      "id": "gpt-5.5",
      "kind": "floating provider alias",
-     "note": "may drift when the provider updates the model \u2014 pin to a dated snapshot id when one is available for a fully reproducible run."
+     "note": "may drift when the provider updates the model — pin to a dated snapshot id when one is available for a fully reproducible run."
     },
     "groundingData": {
      "service": ":5007 (minifin_query)",
@@ -52,10 +52,10 @@
     "caveat": "Config-reproducible only: an identical configFingerprint does not guarantee identical labels, because the model and grounding data are external to the hash."
    },
    "scoreChannel": {
-    "judge": "gpt-5.5 /v1/responses, reasoning effort low \u2014 a reasoning model (temperature is not a reliable determinism knob).",
+    "judge": "gpt-5.5 /v1/responses, reasoning effort low — a reasoning model (temperature is not a reliable determinism knob).",
     "deterministic": false,
-    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~\u00b12-3pt aggregate swing (e.g. MiniFin consistency moved 72\u219274 / 51.9\u219253.7 on re-run with the config unchanged).",
-    "comparisonRule": "A version-to-version score delta must EXCEED the \u00b1~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
+    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~±2-3pt aggregate swing (e.g. MiniFin consistency moved 72→74 / 51.9→53.7 on re-run with the config unchanged).",
+    "comparisonRule": "A version-to-version score delta must EXCEED the ±~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
     "verdictProvenance": [
      "/data/scratch/bench/native_run/<ds>.jsonl (GT per-unit verdicts)",
      "/data/scratch/bench/nogt_run/*.json (no-GT readouts + consistency)"
@@ -63,7 +63,7 @@
     "scoresArePrecise": true
    },
    "verification": {
-    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified \u2265100/\u226530/all, LLM semantic judge.",
+    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified ≥100/≥30/all, LLM semantic judge.",
     "gt": [
      {
       "dataset": "zscape",
@@ -79,11 +79,11 @@
         "pct": 94.87179487179488
        },
        {
-        "label": "Cell type \u2014 broad",
+        "label": "Cell type — broad",
         "pct": 94.87179487179488
        },
        {
-        "label": "Cell type \u2014 sub",
+        "label": "Cell type — sub",
         "pct": 92.94871794871794
        }
       ],
@@ -108,7 +108,7 @@
         "pct": 90.9090909090909
        },
        {
-        "label": "Cell type \u2014 sub",
+        "label": "Cell type — sub",
         "pct": 90.14925373134328
        }
       ],
@@ -133,7 +133,7 @@
         "pct": 82.55319148936171
        },
        {
-        "label": "Cell type \u2014 broad",
+        "label": "Cell type — broad",
         "pct": 86.22327790973871
        }
       ],
@@ -180,7 +180,7 @@
         "parse_better": 4,
         "manual_better": 1,
         "marker_ceiling": 2,
-        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution \u2014 one pipeline resolves a population the other lumped, and the finer label is correct \u2014 not biology. Only 1/77 is a flat labeling error."
+        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."
        }
       }
      },
@@ -201,53 +201,53 @@
         "prior_error": 4,
         "labeler_error": 1,
         "ambiguous": 2,
-        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's \u2014 including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
+        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
        }
       }
      }
     ],
     "knownOverCredits": {
-     "note": "v1.1 loosening yielded 94 wrong\u2192right vs 1 right\u2192wrong across the 3 GT benchmarks; teeth arm 16/16. A handful of debatable coarse-tier credits remain \u2014 each <1pp and below the ~\u00b13pt judge-noise band; logged for honesty, not adjudicated per-case.",
+     "note": "v1.1 loosening yielded 94 wrong→right vs 1 right→wrong across the 3 GT benchmarks; teeth arm 16/16. A handful of debatable coarse-tier credits remain — each <1pp and below the ~±3pt judge-noise band; logged for honesty, not adjudicated per-case.",
      "cases": [
-      "daniocell c255: capillary endothelial cell \u2192 GT 'mesenchyme' (lineage-adjacent)",
-      "daniocell c44: pancreaticobiliary ductal epithelial \u2192 GT 'liver' (hepatobiliary-adjacent)",
-      "chemfish c196: olfactory sensory neuron \u2192 GT 'olfactory vesicle/bulb' (cell\u2192region)",
-      "chemfish c169: cholinergic motor neuron \u2192 GT 'glutamatergic neuron' (class-level credit on 'motor neuron'; transmitter alone still fails in the teeth arm)"
+      "daniocell c255: capillary endothelial cell → GT 'mesenchyme' (lineage-adjacent)",
+      "daniocell c44: pancreaticobiliary ductal epithelial → GT 'liver' (hepatobiliary-adjacent)",
+      "chemfish c196: olfactory sensory neuron → GT 'olfactory vesicle/bulb' (cell→region)",
+      "chemfish c169: cholinergic motor neuron → GT 'glutamatergic neuron' (class-level credit on 'motor neuron'; transmitter alone still fails in the teeth arm)"
      ],
-     "rightToWrong": "chemfish c324: horizontal myoseptum fibroblast \u2192 GT 'muscle' \u2014 flipped to wrong (the STRICTER direction); 1 of ~1900 verdicts, likely judge noise."
+     "rightToWrong": "chemfish c324: horizontal myoseptum fibroblast → GT 'muscle' — flipped to wrong (the STRICTER direction); 1 of ~1900 verdicts, likely judge noise."
     },
     "provenance": {
      "evidentiaryRuns": {
       "benchmark": "967-unit native-schema (each dataset's authors' finest native cell groups)",
-      "labeling": "/data/scratch/bench/native_run/<ds>_native.jsonl \u2014 clean, post grounding-fix (0x MiniFin '/54' contamination)",
+      "labeling": "/data/scratch/bench/native_run/<ds>_native.jsonl — clean, post grounding-fix (0x MiniFin '/54' contamination)",
       "scoring": "/data/scratch/bench/native_run/SCORING.json",
       "judge": "kasperov_score v1.1 (lineage roll-up + superset/multi-name + benefit-of-doubt)",
       "perUnitVerdicts": "/data/scratch/bench/native_run/<ds>_native.jsonl + paired audit verdicts (/tmp/paired/<ds>_native__v11.jsonl)",
-      "note": "These native-benchmark artifacts \u2014 NOT any de-novo wizard run \u2014 are the basis of the GT scores above."
+      "note": "These native-benchmark artifacts — NOT any de-novo wizard run — are the basis of the GT scores above."
      },
      "costLedger": {
-      "note": "Runs paid for. SEPARATE from evidence; contaminated runs are archived, never evidentiary. RECONCILED 2026-06-15: the GT scores come from the native benchmark (~$600.5). The earlier $77.52 was the DE-NOVO wizard runs \u2014 a different set, superseded for the GT benchmarks.",
+      "note": "Runs paid for. SEPARATE from evidence; contaminated runs are archived, never evidentiary. RECONCILED 2026-06-15: the GT scores come from the native benchmark (~$600.5). The earlier $77.52 was the DE-NOVO wizard runs — a different set, superseded for the GT benchmarks.",
       "gtNativeBenchmark_usd": 600.5,
       "gtNativeBenchmark_breakdown_usd": {
        "chemfish": 217.37,
        "zscape": 93.04,
        "daniocell": 290.09
       },
-      "gtNativeBenchmark_note": "EVIDENTIARY: the labeling that produced the v1.1 GT scores (89.1M in / 5.16M out tokens, gpt-5.5). Equals the per-run costUsd on each GT loadable run \u2014 records and ledger agree.",
+      "gtNativeBenchmark_note": "EVIDENTIARY: the labeling that produced the v1.1 GT scores (89.1M in / 5.16M out tokens, gpt-5.5). Equals the per-run costUsd on each GT loadable run — records and ledger agree.",
       "v1_1_judge_rescore_usd": 6.2,
-      "v1_1_judge_rescore_note": "Judge-only paired re-score (v1.0 vs v1.1) over the already-stored native labels + teeth arm \u2014 no relabeling.",
+      "v1_1_judge_rescore_note": "Judge-only paired re-score (v1.0 vs v1.1) over the already-stored native labels + teeth arm — no relabeling.",
       "denovoRuns_usd": 77.52,
-      "denovoRuns_note": "De-novo wizard runs \u2014 superseded for the GT benchmarks; still the basis for the no-GT MegaFin/MiniFin loadable runs. Includes the two contaminated GT runs now archived.",
+      "denovoRuns_note": "De-novo wizard runs — superseded for the GT benchmarks; still the basis for the no-GT MegaFin/MiniFin loadable runs. Includes the two contaminated GT runs now archived.",
       "archivedContaminated": [
        {
         "dataset": "chemfish",
         "runId": "20260614-071106-ba32de",
-        "reason": "MiniFin :5007 grounding during labeling (~94% abstained); archived out of the loadable index \u2014 NOT evidentiary"
+        "reason": "MiniFin :5007 grounding during labeling (~94% abstained); archived out of the loadable index — NOT evidentiary"
        },
        {
         "dataset": "daniocell",
         "runId": "20260614-070625-de91d5",
-        "reason": "MiniFin :5007 grounding during labeling; archived out of the loadable index \u2014 NOT evidentiary"
+        "reason": "MiniFin :5007 grounding during labeling; archived out of the loadable index — NOT evidentiary"
        }
       ]
      }
@@ -261,10 +261,10 @@
    "stampedAt": "2026-06-15T05:20:01+00:00",
    "gitCommit": "f5278022",
    "model": "gpt-5.5",
-   "summary": "Three-personality loop \u2014 two Researcher proposers \u2192 Archivist (:5007 live stats) \u2192 Reasoner \u2192 conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC\u22651; significance required only at n\u226550). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist.",
+   "summary": "Three-personality loop — two Researcher proposers → Archivist (:5007 live stats) → Reasoner → conclude. Cite-only-confirmed-positives + assign-at-the-depth-the-evidence-supports. Grounding guard verifies :5007 alignment by enrichment direction (log2FC≥1; significance required only at n≥50). Fail-loud dataset routing (no silent fallback). Open-vocabulary where no published labels exist.",
    "design": [
     "Driver-scoring: the conclude identity is judged at each native tier; finer-than-driver tiers are not-attempted, never a miss.",
-    "Abstention is a first-class outcome \u2014 declines only under-powered or technical-artifact clusters, never reliable ones.",
+    "Abstention is a first-class outcome — declines only under-powered or technical-artifact clusters, never reliable ones.",
     "Semantic judge (synonym/ontology/lineage equivalence), not exact-string matching.",
     "Misalignment guard + count-bound before any spend; halt-no-spend on failure."
    ],
@@ -294,7 +294,7 @@
     "model": {
      "id": "gpt-5.5",
      "kind": "floating provider alias",
-     "note": "may drift when the provider updates the model \u2014 pin to a dated snapshot id when one is available for a fully reproducible run."
+     "note": "may drift when the provider updates the model — pin to a dated snapshot id when one is available for a fully reproducible run."
     },
     "groundingData": {
      "service": ":5007 (minifin_query)",
@@ -303,10 +303,10 @@
     "caveat": "Config-reproducible only: an identical configFingerprint does not guarantee identical labels, because the model and grounding data are external to the hash."
    },
    "scoreChannel": {
-    "judge": "gpt-5.5 /v1/responses, reasoning effort low \u2014 a reasoning model (temperature is not a reliable determinism knob).",
+    "judge": "gpt-5.5 /v1/responses, reasoning effort low — a reasoning model (temperature is not a reliable determinism knob).",
     "deterministic": false,
-    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~\u00b12-3pt aggregate swing (e.g. MiniFin consistency moved 72\u219274 / 51.9\u219253.7 on re-run with the config unchanged).",
-    "comparisonRule": "A version-to-version score delta must EXCEED the \u00b1~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
+    "observedVariance": "~10% of borderline per-unit verdicts flip across identical re-scores; ~±2-3pt aggregate swing (e.g. MiniFin consistency moved 72→74 / 51.9→53.7 on re-run with the config unchanged).",
+    "comparisonRule": "A version-to-version score delta must EXCEED the ±~3pt judge band to count as a real improvement, not noise. Preferred: re-score BOTH versions in one paired judge pass rather than comparing stored numbers across passes.",
     "verdictProvenance": [
      "/data/scratch/bench/native_run/<ds>.jsonl (GT per-unit verdicts)",
      "/data/scratch/bench/nogt_run/*.json (no-GT readouts + consistency)"
@@ -314,7 +314,7 @@
     "scoresArePrecise": true
    },
    "verification": {
-    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified \u2265100/\u226530/all, LLM semantic judge.",
+    "benchmark": "967-unit native-schema benchmark (each dataset's own finest native cell groups), size-stratified ≥100/≥30/all, LLM semantic judge.",
     "gt": [
      {
       "dataset": "zscape",
@@ -330,11 +330,11 @@
         "pct": 91.0
        },
        {
-        "label": "Cell type \u2014 broad",
+        "label": "Cell type — broad",
         "pct": 91.7
        },
        {
-        "label": "Cell type \u2014 sub",
+        "label": "Cell type — sub",
         "pct": 89.1
        }
       ],
@@ -359,7 +359,7 @@
         "pct": 87.7
        },
        {
-        "label": "Cell type \u2014 sub",
+        "label": "Cell type — sub",
         "pct": 78.8
        }
       ],
@@ -384,7 +384,7 @@
         "pct": 80.9
        },
        {
-        "label": "Cell type \u2014 broad",
+        "label": "Cell type — broad",
         "pct": 81.9
        }
       ],
@@ -431,7 +431,7 @@
         "parse_better": 4,
         "manual_better": 1,
         "marker_ceiling": 2,
-        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution \u2014 one pipeline resolves a population the other lumped, and the finer label is correct \u2014 not biology. Only 1/77 is a flat labeling error."
+        "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."
        }
       }
      },
@@ -452,7 +452,7 @@
         "prior_error": 4,
         "labeler_error": 1,
         "ambiguous": 2,
-        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's \u2014 including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
+        "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
        }
       }
      }
@@ -497,6 +497,63 @@
       }
      ],
      "totalCostUsd": 77.52
+    }
+   }
+  },
+  {
+   "id": "daniocell-sanity/v1.0",
+   "name": "DanioCell de-novo → menu-bin (two-tier)",
+   "version": "1.0-dc",
+   "appliesTo": [
+    "daniocell",
+    "daniocell_native"
+   ],
+   "supersedes": null,
+   "stampedAt": "2026-06-19T23:12:00+00:00",
+   "gitCommit": "02a8a0e",
+   "model": "gpt-5.5",
+   "summary": "DanioCell-specific two-stage harness: (1) open-vocab, markers-only de-novo call grounded ZFIN→ZFA→GO, frozen; (2) the frozen call is binned into DanioCell's two native menus (tissue 19-vocab; cell type 43-vocab). De-leak enforced (true tissue/cell-type never in any injected prompt) with hard halts. Two unblended channels: de-novo-semantic (driver/v2 judge) + menu-exact (string). germ_layer & cell_type_sub are null in DanioCell — two tiers only, never fabricated.",
+   "design": [
+    "Two-stage order: the de-novo identity is FROZEN before the menu is constructed; the menu never enters phase-1.",
+    "De-leak: the cluster's true tissue + cell type appear in no injected prompt (asserted per cluster; halt on violation). Clust-code labels (mese.5 / eye.18) replaced with 'Cluster {id}'.",
+    "Two native tiers only — tissue (tissue.name, 19) + cell type (cell_type_broad / tissue.figure, 43); germ_layer & cell_type_sub are null and are NOT fabricated.",
+    "Channels never blended: menu-exact (closed-vocab string) reported beside de-novo-semantic (driver/v2 judge), each with explicit denominators; a correct abstain is credited at the deepest defensible tier."
+   ],
+   "scoreChannel": {
+    "judge": "gpt-5.5 — de-novo-semantic (driver/v2) + menu-exact (string)",
+    "deterministic": false,
+    "comparisonRule": "Report de-novo-semantic and menu-exact separately; never average them.",
+    "scoresArePrecise": true
+   },
+   "verification": {
+    "benchmark": "10-cluster sanity (seed 31337), two-tier, de-leaked — runs/daniocell_sanity_2026-06-19/",
+    "gt": [
+     {
+      "dataset": "daniocell",
+      "platform": "10X droplet",
+      "platform_class": "independent",
+      "tiers": [
+       {
+        "label": "Tissue",
+        "pct": 80.0
+       },
+       {
+        "label": "Cell type",
+        "pct": 77.8
+       }
+      ],
+      "note": "de-novo-semantic (driver/v2); menu-exact tissue 60% / cell 55.6% reported separately"
+     }
+    ],
+    "noGt": [],
+    "provenance": {
+     "runs": [
+      {
+       "runId": "20260619-231859-f985a5",
+       "dataset": "daniocell"
+      }
+     ],
+     "totalCostUsd": 1.71
     }
    }
   }
