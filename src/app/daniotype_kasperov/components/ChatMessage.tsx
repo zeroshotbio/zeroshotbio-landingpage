@@ -65,7 +65,7 @@ const baseMD = {
 // Markdown components for a personality. Every colour in an agent message is the
 // PERSONALITY colour (headings, links, evidence); plain text stays neutral.
 export function mdFor(mode: AgentMode) {
-  const th = THEME[mode];
+  const th = THEME[mode] ?? THEME.reason;
   const heading = (p: any) => <div style={{ ...mdH, color: th.color }}>{p.children}</div>;
   const base: any = {
     ...baseMD,
@@ -147,7 +147,7 @@ export function AgentMessage({ content, mode = "research", actions, thinking, th
   // confidence level is shown greyscale — colour encodes personality only
   const confLabel = verdict ? (/high/i.test(verdict) ? "high" : /med/i.test(verdict) ? "medium" : /low/i.test(verdict) ? "low" : null) : null;
   const verdictName = verdict ? verdict.replace(/—?\s*confidence\s+\w+\.?$/i, "").trim() : "";
-  const th = THEME[mode];
+  const th = THEME[mode] ?? THEME.reason;
   const badge = { color: th.color };
   const isArchivist = mode === "archivist";
   return (

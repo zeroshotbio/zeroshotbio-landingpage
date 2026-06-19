@@ -168,8 +168,10 @@ for i, cid in enumerate(SAMPLE):
                 "abstain": abstain,
                 "why": parsed.get("why"),
                 "rolledTiers": (None if abstain else rollup(ml))}
+        # mode MUST be a THEME-known agent mode ('reason') or the viewer's THEME[mode] lookup
+        # crashes; the menu-select nature is recorded in the non-rendered "phase" key + clusters[].menu.
         transcript = conv + [{"role": "user", "content": menu_prompt(deNovo, conf)},
-                             {"role": "assistant", "content": mturn, "mode": "menu-select"}]
+                             {"role": "assistant", "content": mturn, "mode": "reason", "phase": "menu-select"}]
     except Exception as e:
         print(f"[{i+1}/{len(SAMPLE)}] zscape:{cid} ERROR {e}")
         deNovo = {"label": "(error)", "confidence": None}; menu = {"abstain": True}; transcript = c.get("transcript") or []
