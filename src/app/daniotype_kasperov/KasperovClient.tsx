@@ -6,7 +6,7 @@ import remarkGfm from "remark-gfm";
 import { KASPEROV_MODELS, DEFAULT_MODEL, estimateCost, projectRunCost, modelInfo, type KasperovModel } from "./models";
 import DATASET_FACTS from "./dataset_facts.json";
 import HARNESS_REGISTRY from "./harness_registry.json";
-import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type ClusterConf, type AtlasMeta, type DatasetId, type DatasetDef, type Usage, type TierAgg, type PctCount, type SubStrat, type FailCount, type AbstentionStat, type ClusterVerdict, type RunScore, CONF_TIERS, overallConf } from "./types";
+import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type ClusterConf, type AtlasMeta, type DatasetId, type DatasetDef, type DatasetPartition, type Usage, type TierAgg, type PctCount, type SubStrat, type FailCount, type AbstentionStat, type ClusterVerdict, type RunScore, CONF_TIERS, overallConf } from "./types";
 import { PAPER, INK, ACCENT, THEME, confColor, btnPrimary, btnGhost } from "./theme";
 // Presentational components shared with the Phase 2 read-only run viewer.
 import { UmapCanvas } from "./components/UmapCanvas";
@@ -95,6 +95,18 @@ const DATASETS: DatasetDef[] = [
     groundTruthUrl: `${ASSET_BASE}/daniocell/groundtruth.json`,
     status: "ready",
     approxClusters: 77,
+    serveId: "daniocell",
+    partitionKey: "denovo",
+    partitions: [
+      { key: "denovo", label: "De-novo Leiden · 77 clusters", serveId: "daniocell",
+        dataUrl: `${ASSET_BASE}/daniocell/umap.json`, groundTruthUrl: `${ASSET_BASE}/daniocell/groundtruth.json`,
+        approxClusters: 77, tagline: "Sur et al. · 36–72 hpf · 77 de-novo clusters",
+        blurb: "We re-cluster the 36–72 hpf cells from scratch — HVG → PCA → Harmony(stage) → Leiden (res 2.0) → 77 clusters — then label those and score against the authors' held-out published labels. An honest from-zero test: the model never sees the published grouping." },
+      { key: "native", label: "Authors' native groups · 470 clusters", serveId: "daniocell_native",
+        dataUrl: `${ASSET_BASE}/daniocell_native/umap.json`, groundTruthUrl: `${ASSET_BASE}/daniocell_native/groundtruth.json`,
+        approxClusters: 470, tagline: "Sur et al. · authors' 470 published cell groups", schemaBasis: "native-schema",
+        blurb: "We adopt the authors' own published cell groups as the clusters (their 470 finest 'clust' units) and label those directly — a finer-grained, like-for-like check against the authors' exact schema. Two native tiers: tissue (19) + cell type (43)." },
+    ],
   },
   {
     id: "megafin_parse",
@@ -144,6 +156,13 @@ function defaultHarness() {
 
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
+  // Swap the active clustering partition (e.g. DanioCell de-novo-77 <-> native-470). The run is
+  // still STORED under dataset.id; only the SERVED assets/grounding/agent key (serveId) changes.
+  // Only offered before labelling starts, so there are no labels to invalidate.
+  const choosePartition = (p: DatasetPartition) => {
+    setDataset((d) => d ? ({ ...d, dataUrl: p.dataUrl, groundTruthUrl: p.groundTruthUrl, approxClusters: p.approxClusters, serveId: p.serveId, tagline: p.tagline ?? d.tagline, schemaBasis: p.schemaBasis, partitionKey: p.key }) : d);
+    setClusteringConfirmed(false);
+  };
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
   // a dataset whose run list is open, and a loaded run being viewed.
   const [viewRunsFor, setViewRunsFor] = useState<DatasetDef | null>(null);
@@ -540,6 +559,7 @@ export default function KasperovClient() {
         onExport={exportResults}
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
+        onChoosePartition={choosePartition}
         onImport={importResults}
         loadedNote={loadedNote}
         loadedRun={loadedRun}
@@ -1397,6 +1417,7 @@ function MapStage({
   onExport,
   onReset,
   onSwitchDataset,
+  onChoosePartition,
   onImport,
   loadedNote,
   loadedRun,
@@ -1422,6 +1443,7 @@ function MapStage({
   onExport: () => void;
   onReset: () => void;
   onSwitchDataset: () => void;
+  onChoosePartition: (p: DatasetPartition) => void;
   onImport: (data: unknown) => void;
   loadedNote?: string | null;
   loadedRun?: { model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null;
@@ -1474,7 +1496,7 @@ function MapStage({
     }
     setServerRun({ phase: "starting", done: 0, total: 0 });
     try {
-      const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", dataset: dataset.id, model }) });
+      const r = await fetch("/api/kasperov_autopilot", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "start", dataset: dataset.id, serveDataset: dataset.serveId, model }) });
       if (r.status === 503) return setServerRun({ phase: "not_configured", done: 0, total: 0 });
       const d = await r.json().catch(() => ({}));
       setServerRun(d?.runId ? { runId: d.runId, phase: "queued", done: 0, total: 0 } : { phase: "error", done: 0, total: 0, msg: "could not start" });
@@ -1641,6 +1663,25 @@ function MapStage({
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
           <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={size.w} height={size.h} onPick={revealed ? onPick : undefined} />
         </div>
+        {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
+          <div style={{ maxWidth: 720, margin: "4px auto 14px", textAlign: "left" }}>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c", marginBottom: 8, textAlign: "center" }}>Choose clustering partition</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
+              {dataset.partitions.map((p) => {
+                const sel = (dataset.partitionKey ?? dataset.partitions![0].key) === p.key;
+                return (
+                  <button key={p.key} onClick={() => onChoosePartition(p)} style={{ textAlign: "left", background: sel ? "#eef7f9" : "#fffdfb", border: `1px solid ${sel ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${sel ? ACCENT : "#cbd5cf"}`, borderRadius: 12, padding: "13px 15px", cursor: "pointer", color: INK, display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                      <span style={{ fontSize: 14.5, fontWeight: 800 }}>{p.label}</span>
+                      {sel && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>active</span>}
+                    </div>
+                    <div style={{ fontSize: 12, color: "#5a544c", lineHeight: 1.5 }}>{p.blurb}</div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
         {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} datasetName={dataset.name} showProceedHint />}
 
         {loadedNote && (
@@ -2282,7 +2323,7 @@ function ClusterStage({
       const r = await fetch("/api/kasperov_confidence", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ dataset: dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmentedRef.current[clusterId] ?? []) }),
+        body: JSON.stringify({ dataset: dataset.serveId ?? dataset.id, model, cluster: { id: clusterId, label: active.label }, messages: msgs, addedMarkers: added ?? addedText(augmentedRef.current[clusterId] ?? []) }),
       });
       if (!r.ok) {
         console.warn("[kasperov] confidence refresh failed:", r.status, await r.text().catch(() => ""));
@@ -2424,7 +2465,7 @@ function ClusterStage({
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
-          dataset: dataset.id,
+          dataset: dataset.serveId ?? dataset.id,
           model,
           cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, markersDown: cl.markersDown, nCells: cl.nCells },
           messages: nextMsgs,

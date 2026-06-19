@@ -27,7 +27,9 @@ export async function POST(req: NextRequest) {
   try {
     if (body?.action === "start") {
       const model = isKasperovModel(body?.model) ? body.model : DEFAULT_MODEL;
-      const r = await fetch(`${URL_BASE}/start`, { method: "POST", headers, body: JSON.stringify({ datasetId: String(body?.dataset || ""), model }) });
+      // serveDataset (optional): the partition to LABEL (e.g. daniocell_native) when it differs from
+      // the store key `dataset` (e.g. daniocell). The worker defaults serveDataset -> datasetId.
+      const r = await fetch(`${URL_BASE}/start`, { method: "POST", headers, body: JSON.stringify({ datasetId: String(body?.dataset || ""), serveDataset: body?.serveDataset ? String(body.serveDataset) : undefined, model }) });
       return NextResponse.json(await r.json().catch(() => ({})), { status: r.status });
     }
     if (body?.action === "status") {

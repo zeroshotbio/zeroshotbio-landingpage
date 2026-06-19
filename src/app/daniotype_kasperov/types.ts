@@ -59,6 +59,21 @@ export interface AtlasMeta {
 
 // --- dataset registry + run-scoring shapes (shared with the Scorecard) ------
 export type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
+// A selectable clustering partition of a dataset (e.g. DanioCell de-novo-77 vs native-470).
+// `serveId` is the asset/grounding/worker key; the run is still STORED under the dataset's id,
+// so all partitions of a dataset share one "Load Previous Run" list.
+export interface DatasetPartition {
+  key: string; // "denovo" | "native"
+  label: string; // short card title
+  blurb: string; // plain-language "how it's derived"
+  serveId: string; // asset/grounding/agent key (e.g. daniocell or daniocell_native)
+  dataUrl: string; // umap.json for this partition
+  groundTruthUrl: string | null;
+  approxClusters: number;
+  tagline?: string;
+  schemaBasis?: string; // "native-schema" for native partitions
+}
+
 export interface DatasetDef {
   id: DatasetId;
   name: string;
@@ -69,6 +84,10 @@ export interface DatasetDef {
   groundTruthUrl: string | null; // published-label benchmark, or null
   status: "ready" | "soon";
   approxClusters: number; // for the model picker's cost projection (before the atlas loads)
+  serveId?: string; // asset/grounding/agent key when it differs from id (a sibling partition); defaults to id
+  schemaBasis?: string; // stamped onto runs of a non-default partition (e.g. native-schema)
+  partitionKey?: string; // which partition is currently active
+  partitions?: DatasetPartition[]; // selectable clustering partitions (chooser in the "1. Clustering" screen)
 }
 
 export type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id

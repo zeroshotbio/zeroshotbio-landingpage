@@ -622,7 +622,11 @@ def _active_harness():
     return None
 
 
-def _run(run_id, dataset_id, model, base):
+def _run(run_id, store_id, serve_id, model, base):
+    # serve_id = the partition we LABEL (assets / :5007 grounding / agent calls, e.g. daniocell_native);
+    # store_id = where the finished run is SAVED + listed (e.g. daniocell). They differ only when a run
+    # is served from a sibling partition; otherwise store_id == serve_id (the default).
+    dataset_id = serve_id
     st = RUNS[run_id]
     usage = {}
     try:
@@ -675,8 +679,8 @@ def _run(run_id, dataset_id, model, base):
         usd, est = _est_cost(usage)
         run_json = {
             "schema": "daniotype_kasperov_run/v1",
-            "dataset": atlas.get("source", dataset_id),
-            "datasetId": dataset_id,
+            "dataset": atlas.get("source", store_id),
+            "datasetId": store_id,
             "model": model,
             "cost": {"usd": usd, "estimated": est, "usage": usage},
             "exportedAt": _now(),
@@ -701,6 +705,7 @@ def _run(run_id, dataset_id, model, base):
                 "nClusters": len(clusters),
                 # PROOF this run grounded on the RIGHT dataset's :5007 stats (the misalignment guard's pass record)
                 "groundingGuard": {"verified": True, "detail": detail, "statsService": STATS_VERIFY_URL},
+                "servedDataset": serve_id,  # partition actually labelled (may differ from datasetId/store)
                 "baseUrl": base,
                 "startedAt": st.get("startedAt"),
             },
@@ -712,6 +717,10 @@ def _run(run_id, dataset_id, model, base):
             "groundTruth": ({"scoredAt": scored_at, "aggregate": agg, "verdicts": verdicts,
                              "subStratified": sub_strat, "abstention": abstention, "scoring": "driver/v2"} if gt else None),
         }
+        if serve_id != store_id:
+            # served from a sibling partition (e.g. daniocell_native) but stored under store_id;
+            # stamp native-schema so the read-only viewer resolves GT against the served partition.
+            run_json["schemaBasis"] = "native-schema"
         rid = save_run(run_json)
         st.update(phase="done", saved=True, runSaved=rid, cost=usd)
     except Exception as e:  # noqa: BLE001
@@ -720,6 +729,7 @@ def _run(run_id, dataset_id, model, base):
 
 class StartReq(BaseModel):
     datasetId: str
+    serveDataset: Optional[str] = None  # partition to LABEL (assets/grounding/agent); defaults to datasetId.
     model: str = "gpt-5.5"  # pinned benchmark model (held constant across datasets)
     baseUrl: Optional[str] = None
     note: Optional[str] = None  # optional; usually set post-kickoff via /note
@@ -773,9 +783,10 @@ def runs_get(dataset: str, run_id: str, x_api_token: str = Header(default="")):
 def start(req: StartReq, x_api_token: str = Header(default="")):
     _auth(x_api_token)
     run_id = uuid.uuid4().hex[:12]
-    RUNS[run_id] = {"runId": run_id, "datasetId": req.datasetId, "model": req.model, "phase": "queued", "done": 0, "total": 0, "startedAt": _now(), "note": req.note or None}
+    serve_id = req.serveDataset or req.datasetId
+    RUNS[run_id] = {"runId": run_id, "datasetId": req.datasetId, "serveDataset": serve_id, "model": req.model, "phase": "queued", "done": 0, "total": 0, "startedAt": _now(), "note": req.note or None}
     base = (req.baseUrl or DEFAULT_BASE).rstrip("/")
-    threading.Thread(target=_run, args=(run_id, req.datasetId, req.model, base), daemon=True).start()
+    threading.Thread(target=_run, args=(run_id, req.datasetId, serve_id, req.model, base), daemon=True).start()
     return {"runId": run_id}
 
 
