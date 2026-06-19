@@ -201,9 +201,22 @@ run = {
     "note": f"ZSCAPE De-Novo & Menu-Select {HARNESS_ID} sample — {len(bundled)} clusters, seed {SEED} — NOT scored / NOT promoted",
     "harness": {"id": HARNESS_ID, "version": "1.0", "name": "ZSCAPE De-Novo & Menu-Select",
                 "basis": "de-leaked tri-personality flow", "menuSha": MENU_SHA},
+    "schemaBasis": "native-schema",
+    "clusteringStrategy": {
+        "basis": "native-schema", "derivation": "authors' published finest cell groups (NOT de-novo re-clustered)",
+        "referenceAsset": f"zeroshotbio-landingpage/daniotype_data/{SERVE}/groundtruth.json", "nGroups": len(MENU),
+        "nativeTiers": {"germ_layer": 7, "tissue": 34, "cell_type_broad": 99, "cell_type_sub": len(MENU)},
+        "lab": "Saunders/Trapnell et al.",
+        "evalSample": f"labelled {len(bundled)} of {len(MENU)} native groups (seed {SEED}) — sampled eval, not the full partition",
+        "note": f"Asset-level provenance of the served {SERVE} partition; this eval run labelled a {len(bundled)}-cluster sample."},
+    "buildQC": {
+        "cellsWindow": ATLAS.get("fullDatasetCells") or ATLAS.get("totalCells"), "nUnits": len(MENU), "nLabelledThisRun": len(bundled),
+        "rawToH5adQC": "UPSTREAM — source authors' published pipeline (Saunders/Trapnell et al.); native build sub-selects published finest groups.",
+        "note": f"Build QC of the served {SERVE} partition; this run labelled a {len(bundled)}-cluster sample."},
     "provenance": {"pipeline": "denovo+menuSelect", "qc": True, "deLeaked": True, "servedDataset": SERVE,
                    "menuVersion": MENU_SHA, "menuEntries": len(MENU), "ceiling": CEIL,
-                   "promoted": False, "scored": False, "baseUrl": BASE, "sampleSeed": SEED},
+                   "promoted": False, "scored": False, "baseUrl": BASE, "sampleSeed": SEED,
+                   "grounding": {"servedDataset": SERVE, "guardResult": "OK", "guardDetail": detail}},
     "clusters": bundled,
     "groundTruth": None,
 }
