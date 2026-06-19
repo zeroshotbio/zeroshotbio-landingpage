@@ -142,7 +142,7 @@ if not ok:
     sys.exit(3)
 print(f"[grounding ok] {SERVE}: {detail}")
 
-usage, results = {}, []
+usage, results, bundled = {}, [], []
 
 def build_cluster(cid):
     src = next((c for c in ATLAS["clusters"] if str(c["id"]) == cid), None)
@@ -174,36 +174,43 @@ for i, cid in enumerate(SAMPLE):
         print(f"[{i+1}/{len(SAMPLE)}] zscape:{cid} ERROR {e}")
         deNovo = {"label": "(error)", "confidence": None}; menu = {"abstain": True}; transcript = c.get("transcript") or []
 
-    usd, est = app._est_cost(usage)
-    run = {
-        "schema": "daniotype_kasperov_run/v1", "dataset": ATLAS.get("source", DATASET), "datasetId": DATASET,
-        "model": MODEL, "cost": {"usd": usd, "estimated": est, "usage": {m: dict(u) for m, u in usage.items()}},
-        "exportedAt": app._now(), "scoredAt": None, "nLabelled": 1, "nValidated": 1, "source": "server",
-        "note": f"ZSCAPE De-Novo & Menu-Select {HARNESS_ID} sample, seed {SEED} — NOT scored / NOT promoted",
-        "harness": {"id": HARNESS_ID, "version": "1.0", "name": "ZSCAPE De-Novo & Menu-Select",
-                    "basis": "de-leaked tri-personality flow", "menuSha": MENU_SHA},
-        "provenance": {"pipeline": "denovo+menuSelect", "qc": True, "deLeaked": True, "servedDataset": SERVE,
-                       "menuVersion": MENU_SHA, "menuEntries": len(MENU), "ceiling": CEIL,
-                       "promoted": False, "scored": False, "baseUrl": BASE, "sampleSeed": SEED},
-        "clusters": [{"id": c["id"], "label": c["label"], "validated": True,
-                      "finalLabel": deNovo.get("label"),          # deNovo = the displayed final call
-                      "deNovo": deNovo, "menu": menu,
-                      "confidence": deNovo.get("confidence"), "addedMarkers": [], "transcript": transcript}],
-        "groundTruth": None,
-    }
-    rid = app.save_run(run)
+    # accumulate the cluster — ONE bundled run is saved after the loop (no per-cluster fragments)
+    bundled.append({"id": c["id"], "label": c["label"], "validated": True,
+                    "finalLabel": deNovo.get("label"),          # deNovo = the displayed final call
+                    "deNovo": deNovo, "menu": menu,
+                    "confidence": deNovo.get("confidence"), "addedMarkers": [], "transcript": transcript})
     gt_sub = (GT.get(cid, {}).get("cell_type_sub") or {}).get("label")
     hit = (not menu.get("abstain")) and menu.get("menuLabel") == gt_sub
-    results.append({"cluster": cid, "runId": rid, "deNovoLabel": deNovo.get("label"),
+    results.append({"cluster": cid, "deNovoLabel": deNovo.get("label"),
                     "menuLabel": menu.get("menuLabel"), "abstain": menu.get("abstain"),
                     "gtSub": gt_sub, "menuExactHit": hit})
     cum = app._est_cost(usage)[0]
-    print(f"[{i+1}/{len(SAMPLE)}] zscape:{cid} -> {rid} | deNovo={str(deNovo.get('label'))[:34]!r} | "
+    print(f"[{i+1}/{len(SAMPLE)}] zscape:{cid} | deNovo={str(deNovo.get('label'))[:34]!r} | "
           f"menu={str(menu.get('menuLabel'))[:30]!r} abst={menu.get('abstain')} | GTsub={str(gt_sub)[:28]!r} "
           f"hit={hit} | cum ${cum:.3f}", flush=True)
     if cum >= ABORT_USD:
         print(f"[ABORT] cumulative ${cum:.2f} >= ${ABORT_USD:.2f} — stopping before next cluster.")
         break
+
+# ---- save ONE bundled run (all sampled clusters) — renders as a single "N labelled" run ----
+usd, est = app._est_cost(usage)
+run = {
+    "schema": "daniotype_kasperov_run/v1", "dataset": ATLAS.get("source", DATASET), "datasetId": DATASET,
+    "model": MODEL, "cost": {"usd": usd, "estimated": est, "usage": {m: dict(u) for m, u in usage.items()}},
+    "exportedAt": app._now(), "scoredAt": None, "nLabelled": len(bundled), "nValidated": len(bundled), "source": "server",
+    "note": f"ZSCAPE De-Novo & Menu-Select {HARNESS_ID} sample — {len(bundled)} clusters, seed {SEED} — NOT scored / NOT promoted",
+    "harness": {"id": HARNESS_ID, "version": "1.0", "name": "ZSCAPE De-Novo & Menu-Select",
+                "basis": "de-leaked tri-personality flow", "menuSha": MENU_SHA},
+    "provenance": {"pipeline": "denovo+menuSelect", "qc": True, "deLeaked": True, "servedDataset": SERVE,
+                   "menuVersion": MENU_SHA, "menuEntries": len(MENU), "ceiling": CEIL,
+                   "promoted": False, "scored": False, "baseUrl": BASE, "sampleSeed": SEED},
+    "clusters": bundled,
+    "groundTruth": None,
+}
+bundled_run_id = app.save_run(run)
+for r in results:
+    r["runId"] = bundled_run_id
+print(f"[saved] bundled run {bundled_run_id} — {len(bundled)} clusters, ${usd:.3f}", flush=True)
 
 # ---- summary (two distinct numbers, never blended; scored against the ceiling) ----
 scored = [r for r in results if not r["abstain"]]
@@ -211,7 +218,7 @@ abst   = [r for r in results if r["abstain"]]
 hits   = [r for r in scored if r["menuExactHit"]]
 cum = app._est_cost(usage)[0]
 man = {"harness": HARNESS_ID, "seed": SEED, "menuSha": MENU_SHA, "ceiling": CEIL,
-       "totalSpendUsd": round(cum, 4), "n": len(results),
+       "bundledRunId": bundled_run_id, "totalSpendUsd": round(cum, 4), "n": len(results),
        "menuSelect": {"exactHits": len(hits), "scored": len(scored), "abstained": len(abst),
                       "exact_pct_of_scored": round(100 * len(hits) / len(scored), 1) if scored else None,
                       "exact_pct_all": round(100 * len(hits) / len(results), 1) if results else None,
