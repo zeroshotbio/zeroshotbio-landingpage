@@ -1,0 +1,210 @@
+{
+  "provenance": {
+    "harness": "daniocell-sanity/v1.0",
+    "judge": "driver/v2",
+    "servedDataset": "daniocell_native",
+    "seed": 31337,
+    "partitionFile": "/data/scratch/bench/daniocell_native_labels.csv",
+    "partitionSha": "4ce6087667d38f57",
+    "gtLabelSha": "0e6779403c07b18c",
+    "menuSha": "849f36bf06ca3a42",
+    "tissueVocab": 19,
+    "cellTypeVocab": 43
+  },
+  "aggregate": {
+    "tissue": {
+      "menu_exact": {
+        "hits": 6,
+        "attempted": 10,
+        "abstained": 0,
+        "gt_present": 10,
+        "total": 10,
+        "pct_of_attempted": 60.0,
+        "pct_of_gt_present": 60.0
+      },
+      "denovo_semantic": {
+        "matched": 8,
+        "total": 10,
+        "pct": 80.0
+      }
+    },
+    "cell_type": {
+      "menu_exact": {
+        "hits": 5,
+        "attempted": 9,
+        "abstained": 0,
+        "gt_present": 9,
+        "total": 10,
+        "pct_of_attempted": 55.6,
+        "pct_of_gt_present": 55.6
+      },
+      "denovo_semantic": {
+        "matched": 7,
+        "total": 9,
+        "pct": 77.8
+      }
+    }
+  },
+  "rows": [
+    {
+      "id": "28",
+      "deNovo": "intestinal enteroendocrine cell \u00b7 mature",
+      "tissue": {
+        "bin": "endoderm",
+        "abstain": false,
+        "gt": "endoderm",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "gut",
+        "abstain": false,
+        "gt": "endocrine pancreas",
+        "exact": false
+      }
+    },
+    {
+      "id": "87",
+      "deNovo": "retinal neuroblast / retinal progenitor cell \u00b7 cycling",
+      "tissue": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      }
+    },
+    {
+      "id": "92",
+      "deNovo": "retinal pigmented epithelium \u00b7 mature",
+      "tissue": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      }
+    },
+    {
+      "id": "104",
+      "deNovo": "lens fiber cell \u00b7 mature",
+      "tissue": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "eye",
+        "abstain": false,
+        "gt": "eye",
+        "exact": true
+      }
+    },
+    {
+      "id": "154",
+      "deNovo": "ventral neural tube / floor-plate-like cells",
+      "tissue": {
+        "bin": "neural",
+        "abstain": false,
+        "gt": "glial",
+        "exact": false
+      },
+      "cellType": {
+        "bin": "spinal cord",
+        "abstain": false,
+        "gt": "spinal cord",
+        "exact": true
+      }
+    },
+    {
+      "id": "161",
+      "deNovo": "forebrain/CNS neural tissue",
+      "tissue": {
+        "bin": "neural",
+        "abstain": false,
+        "gt": "glial",
+        "exact": false
+      },
+      "cellType": {
+        "bin": "neural",
+        "abstain": false,
+        "gt": "glial",
+        "exact": false
+      }
+    },
+    {
+      "id": "258",
+      "deNovo": "fibroblast-like mesenchymal connective tissue cell \u00b7 mature",
+      "tissue": {
+        "bin": "mesenchyme",
+        "abstain": false,
+        "gt": "mesenchyme",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "mesenchyme",
+        "abstain": false,
+        "gt": "mesenchyme",
+        "exact": true
+      }
+    },
+    {
+      "id": "304",
+      "deNovo": "presomitic/paraxial mesoderm",
+      "tissue": {
+        "bin": "mesenchyme",
+        "abstain": false,
+        "gt": "muscle",
+        "exact": false
+      },
+      "cellType": {
+        "bin": "presomitic mesoderm",
+        "abstain": false,
+        "gt": "somites",
+        "exact": false
+      }
+    },
+    {
+      "id": "348",
+      "deNovo": "mechanosensory hair cell lineage progenitor \u00b7 progenitor",
+      "tissue": {
+        "bin": "otic",
+        "abstain": false,
+        "gt": "neural",
+        "exact": false
+      },
+      "cellType": {
+        "bin": "otic",
+        "abstain": false,
+        "gt": "neural",
+        "exact": false
+      }
+    },
+    {
+      "id": "423",
+      "deNovo": "melanocyte / melanophore \u00b7 mature",
+      "tissue": {
+        "bin": "pigment",
+        "abstain": false,
+        "gt": "pigment",
+        "exact": true
+      },
+      "cellType": {
+        "bin": "melanocytes",
+        "abstain": false,
+        "gt": null,
+        "exact": false
+      }
+    }
+  ]
+}

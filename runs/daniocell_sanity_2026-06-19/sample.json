@@ -1,0 +1,26 @@
+{
+  "harness": "daniocell-sanity/v1.0",
+  "judge": "driver/v2",
+  "servedDataset": "daniocell_native",
+  "seed": 31337,
+  "partitionFile": "/data/scratch/bench/daniocell_native_labels.csv",
+  "partitionSha": "4ce6087667d38f57",
+  "gtLabelSha": "0e6779403c07b18c",
+  "menuSha": "849f36bf06ca3a42",
+  "tissueVocab": 19,
+  "cellTypeVocab": 43,
+  "sample": [
+    "28",
+    "87",
+    "92",
+    "104",
+    "154",
+    "161",
+    "258",
+    "304",
+    "348",
+    "423"
+  ],
+  "n": 10,
+  "date": "2026-06-19"
+}
