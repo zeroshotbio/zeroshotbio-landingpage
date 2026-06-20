@@ -15,7 +15,6 @@ import { MarkersContent } from "./components/MarkersPanel";
 import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
 import { RunViewer } from "./components/RunViewer";
-import { ClusteringProvenance } from "./components/ClusteringProvenance";
 import { HarnessDetail } from "./components/HarnessDetail";
 import { useTween } from "./useTween";
 import { useAtlas } from "./useAtlas";
@@ -96,7 +95,6 @@ const DATASETS: DatasetDef[] = [
     status: "ready",
     approxClusters: 77,
     serveId: "daniocell",
-    partitionKey: "denovo",
     partitions: [
       { key: "denovo", label: "De-novo Leiden · 77 clusters", serveId: "daniocell",
         dataUrl: `${ASSET_BASE}/daniocell/umap.json`, groundTruthUrl: `${ASSET_BASE}/daniocell/groundtruth.json`,
@@ -161,7 +159,7 @@ export default function KasperovClient() {
   // Only offered before labelling starts, so there are no labels to invalidate.
   const choosePartition = (p: DatasetPartition) => {
     setDataset((d) => d ? ({ ...d, dataUrl: p.dataUrl, groundTruthUrl: p.groundTruthUrl, approxClusters: p.approxClusters, serveId: p.serveId, tagline: p.tagline ?? d.tagline, schemaBasis: p.schemaBasis, partitionKey: p.key }) : d);
-    setClusteringConfirmed(false);
+    setClusteringConfirmed(true); // picking a partition IS confirming the clustering — colors the map + enables proceed
   };
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
   // a dataset whose run list is open, and a loaded run being viewed.
@@ -1406,6 +1404,51 @@ async function postRunNote(runId: string, note: string, dataset?: string) {
 // coherence curve behind this dataset's de-novo partition — shown when the clustering is
 // revealed, before handing off to the three-personality labeling interface.
 
+// The "1. Clustering" explainer — the two knobs behind every Leiden clustering, in plain
+// language with a tiny visual each. Replaces the dense methodology dump on the new-run screen.
+function ClusteringExplainer() {
+  const card: React.CSSProperties = { flex: "1 1 300px", minWidth: 270, background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" };
+  const head: React.CSSProperties = { fontSize: 15, fontWeight: 800, margin: "0 0 2px", color: "#2b2b2b" };
+  const body: React.CSSProperties = { fontSize: 12.5, color: "#5a544c", lineHeight: 1.55, margin: 0 };
+  return (
+    <div style={{ maxWidth: 760, margin: "10px auto 2px" }}>
+      <p style={{ textAlign: "center", fontSize: 13.5, color: "#777", margin: "0 0 14px", lineHeight: 1.5 }}>
+        Grouping cells into clusters comes down to two knobs. We tune them so each cluster is a real cell population — fine enough to be specific, clean enough to trust.
+      </p>
+      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+        <div style={card}>
+          <div style={head}>Resolution — how finely we split</div>
+          <svg viewBox="0 0 280 64" width="100%" height="60" style={{ margin: "6px 0 6px" }} aria-hidden="true">
+            <text x="55" y="10" fontSize="8.5" fill="#9a948c" textAnchor="middle">LOW · few broad groups</text>
+            <circle cx="34" cy="40" r="16" fill="#15803d" opacity="0.5" />
+            <circle cx="76" cy="42" r="14" fill="#2563eb" opacity="0.5" />
+            <text x="140" y="44" fontSize="15" fill="#b0a89e" textAnchor="middle">→</text>
+            <text x="224" y="10" fontSize="8.5" fill="#9a948c" textAnchor="middle">HIGH · many fine groups</text>
+            <circle cx="190" cy="34" r="7" fill="#15803d" opacity="0.7" />
+            <circle cx="210" cy="48" r="7" fill="#16a34a" opacity="0.7" />
+            <circle cx="228" cy="33" r="7" fill="#2563eb" opacity="0.7" />
+            <circle cx="248" cy="46" r="7" fill="#7c3aed" opacity="0.7" />
+            <circle cx="206" cy="28" r="7" fill="#a16207" opacity="0.7" />
+            <circle cx="246" cy="29" r="7" fill="#0e7490" opacity="0.7" />
+          </svg>
+          <p style={body}>Turn it low → a few broad groups; turn it high → the same cells split into many fine ones. We raise it until clusters are specific, then stop before real populations start fracturing into noise.</p>
+        </div>
+        <div style={card}>
+          <div style={head}>Coherence — how clean each cluster is</div>
+          <svg viewBox="0 0 280 64" width="100%" height="60" style={{ margin: "6px 0 6px" }} aria-hidden="true">
+            <text x="60" y="10" fontSize="8.5" fill="#15803d" textAnchor="middle">COHERENT · tight + separated</text>
+            <g fill="#15803d" opacity="0.75"><circle cx="30" cy="38" r="3.4" /><circle cx="38" cy="44" r="3.4" /><circle cx="34" cy="50" r="3.4" /><circle cx="43" cy="39" r="3.4" /><circle cx="26" cy="45" r="3.4" /></g>
+            <g fill="#2563eb" opacity="0.75"><circle cx="86" cy="36" r="3.4" /><circle cx="94" cy="43" r="3.4" /><circle cx="90" cy="50" r="3.4" /><circle cx="99" cy="38" r="3.4" /><circle cx="82" cy="44" r="3.4" /></g>
+            <text x="222" y="10" fontSize="8.5" fill="#b45309" textAnchor="middle">INCOHERENT · smeared</text>
+            <g opacity="0.65"><circle cx="184" cy="44" r="3.4" fill="#15803d" /><circle cx="200" cy="38" r="3.4" fill="#2563eb" /><circle cx="194" cy="50" r="3.4" fill="#15803d" /><circle cx="210" cy="45" r="3.4" fill="#2563eb" /><circle cx="219" cy="39" r="3.4" fill="#15803d" /><circle cx="205" cy="52" r="3.4" fill="#2563eb" /><circle cx="229" cy="47" r="3.4" fill="#15803d" /><circle cx="236" cy="41" r="3.4" fill="#2563eb" /></g>
+          </svg>
+          <p style={body}>Coherence asks whether a cluster's cells truly belong together — tight and well-separated (good) or smeared into their neighbours (bad). We keep the resolution that maximises coherence, so every group is one population, not a blur of several.</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function MapStage({
   dataset,
   clusters,
@@ -1616,7 +1659,7 @@ function MapStage({
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
             : clusteringConfirmed
             ? `Clustering applied — ${clusters.length} de-novo Leiden clusters${sampled ? ` on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas` : `, ${clusteredCells.toLocaleString()} cells`} (real UMAP). Good to proceed — set up the model & harness next.`
-            : `Coming at ${dataset.name} fresh: here's how the de-novo clustering is decided. Review the approach below — good to proceed?`}
+            : `Coming at ${dataset.name} fresh — here's how the cells get grouped into clusters.`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
         <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
@@ -1665,24 +1708,32 @@ function MapStage({
         </div>
         {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
           <div style={{ maxWidth: 720, margin: "4px auto 14px", textAlign: "left" }}>
-            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c", marginBottom: 8, textAlign: "center" }}>Choose clustering partition</div>
+            <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c", marginBottom: 8, textAlign: "center" }}>Choose a clustering to colour the map</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
               {dataset.partitions.map((p) => {
-                const sel = (dataset.partitionKey ?? dataset.partitions![0].key) === p.key;
+                const sel = dataset.partitionKey === p.key;
                 return (
                   <button key={p.key} onClick={() => onChoosePartition(p)} style={{ textAlign: "left", background: sel ? "#eef7f9" : "#fffdfb", border: `1px solid ${sel ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${sel ? ACCENT : "#cbd5cf"}`, borderRadius: 12, padding: "13px 15px", cursor: "pointer", color: INK, display: "flex", flexDirection: "column", gap: 6 }}>
                     <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                       <span style={{ fontSize: 14.5, fontWeight: 800 }}>{p.label}</span>
-                      {sel && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>active</span>}
+                      {sel && <span style={{ marginLeft: "auto", fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>selected</span>}
                     </div>
                     <div style={{ fontSize: 12, color: "#5a544c", lineHeight: 1.5 }}>{p.blurb}</div>
                   </button>
                 );
               })}
             </div>
+            {/* proceed — lights up only once a clustering is picked (which colours the map above) */}
+            <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
+              <button onClick={onChangeModel} disabled={!clusteringConfirmed}
+                title={clusteringConfirmed ? "" : "Pick a clustering above first"}
+                style={{ background: clusteringConfirmed ? ACCENT : "#d8d3cc", color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: clusteringConfirmed ? "pointer" : "not-allowed" }}>
+                Set up model &amp; harness →
+              </button>
+            </div>
           </div>
         )}
-        {!revealed && <ClusteringProvenance datasetId={dataset.id} nClusters={clusters.length} datasetName={dataset.name} showProceedHint />}
+        {!revealed && <ClusteringExplainer />}
 
         {loadedNote && (
           <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>
@@ -1691,7 +1742,7 @@ function MapStage({
         )}
         <div style={{ marginTop: 20 }}>
           {!revealed ? (
-            clusteringConfirmed ? (
+            dataset.partitions ? null : clusteringConfirmed ? (
               <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
                 Set up model &amp; harness →
               </button>

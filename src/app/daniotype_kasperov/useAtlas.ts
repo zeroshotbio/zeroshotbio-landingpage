@@ -54,7 +54,7 @@ export function useAtlas(dataUrl: string | null) {
           points: [],
           bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
         }));
-        for (const [x, y, ci] of d.points as [number, number, number][]) {
+        for (const [x, y, ci] of (Array.isArray(d.points) ? d.points : []) as [number, number, number][]) {
           const c = cs[ci];
           if (!c) continue;
           c.points.push({ x, y });
@@ -62,6 +62,16 @@ export function useAtlas(dataUrl: string | null) {
           if (x > c.bounds.maxx) c.bounds.maxx = x;
           if (y < c.bounds.miny) c.bounds.miny = y;
           if (y > c.bounds.maxy) c.bounds.maxy = y;
+        }
+        // Partitions that ship only cluster centroids (no per-cell point cloud, e.g. daniocell_native):
+        // render one dot per cluster at its centroid so the map reflects the clustering instead of blanking.
+        if (!Array.isArray(d.points) || d.points.length === 0) {
+          for (const c of cs) {
+            if (typeof c.cx === "number" && typeof c.cy === "number") {
+              c.points.push({ x: c.cx, y: c.cy });
+              c.bounds = { minx: c.cx, maxx: c.cx, miny: c.cy, maxy: c.cy };
+            }
+          }
         }
         setClusters(cs);
         setMeta({
