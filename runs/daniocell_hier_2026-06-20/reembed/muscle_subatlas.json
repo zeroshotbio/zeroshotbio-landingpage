@@ -1,0 +1,349 @@
+{
+ "tissue": "muscle",
+ "resolution": 1.0,
+ "silhouette": 0.088,
+ "nSubclusters": 20,
+ "harmonyNote": "no batch covariate in obs \u2014 re-embedded without Harmony (single integrated source)",
+ "subclusters": [
+  {
+   "id": "muscle.s0",
+   "nCells": 475,
+   "degsUp": [
+    "ptmab",
+    "ptmaa",
+    "hmgn6",
+    "si:ch211-222l21.1",
+    "gpm6aa",
+    "nova2",
+    "tuba1c",
+    "elavl3"
+   ],
+   "gtFine": "likely doublets",
+   "gtFineFrac": 0.518,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s1",
+   "nCells": 178,
+   "degsUp": [
+    "hoxc13a",
+    "crabp1b",
+    "crabp2a",
+    "hoxc13b",
+    "rarga",
+    "fbln1",
+    "col1a1a",
+    "c1qtnf5"
+   ],
+   "gtFine": "tail",
+   "gtFineFrac": 0.949,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s2",
+   "nCells": 721,
+   "degsUp": [
+    "tgfbi",
+    "pmp22a",
+    "tnc",
+    "tnn",
+    "si:ch211-286o17.1",
+    "matn4",
+    "cd82a",
+    "cthrc1a"
+   ],
+   "gtFine": "sclerotome",
+   "gtFineFrac": 0.85,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s3",
+   "nCells": 475,
+   "degsUp": [
+    "thbs4b",
+    "fabp3",
+    "pax7a",
+    "cdon",
+    "alcama",
+    "mdka",
+    "myf5",
+    "wnt2"
+   ],
+   "gtFine": "satellite cells",
+   "gtFineFrac": 0.878,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s4",
+   "nCells": 235,
+   "degsUp": [
+    "si:ch211-286o17.1",
+    "tpm4a",
+    "rbp5",
+    "si:dkey-261h17.1",
+    "cnn3a",
+    "pmp22a",
+    "zgc:153867",
+    "cdh11"
+   ],
+   "gtFine": "sclerotome",
+   "gtFineFrac": 0.932,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s5",
+   "nCells": 726,
+   "degsUp": [
+    "mdka",
+    "vwde",
+    "col6a2",
+    "pdgfrl",
+    "fabp3",
+    "postnb",
+    "fmoda",
+    "col5a1"
+   ],
+   "gtFine": "satellite cells",
+   "gtFineFrac": 0.961,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s6",
+   "nCells": 271,
+   "degsUp": [
+    "hmgb2a",
+    "tubb4b",
+    "mki67",
+    "hmgn2",
+    "hmga1a",
+    "tuba8l4",
+    "tuba8l",
+    "hmgb2b"
+   ],
+   "gtFine": "satellite cells",
+   "gtFineFrac": 0.661,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s7",
+   "nCells": 294,
+   "degsUp": [
+    "tnni2b.1",
+    "hspb1",
+    "hsp90aa1.1",
+    "txlnbb",
+    "desma",
+    "fxr2",
+    "myhz2",
+    "cav3"
+   ],
+   "gtFine": "fast muscle cell",
+   "gtFineFrac": 0.714,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s8",
+   "nCells": 853,
+   "degsUp": [
+    "myhz2",
+    "tnni2a.4",
+    "myhz1.3",
+    "tnnt3a",
+    "actc1b",
+    "mylz3",
+    "mylpfa",
+    "ak1"
+   ],
+   "gtFine": "fast muscle cell",
+   "gtFineFrac": 0.954,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s9",
+   "nCells": 485,
+   "degsUp": [
+    "myhz1.2",
+    "pvalb2",
+    "tnni2b.2",
+    "si:ch73-367p23.2",
+    "pvalb1",
+    "mylpfb",
+    "tnnt3b",
+    "myoz1b"
+   ],
+   "gtFine": "fast muscle cell",
+   "gtFineFrac": 0.959,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s10",
+   "nCells": 187,
+   "degsUp": [
+    "tnnt2c",
+    "tnni1c",
+    "acta1a",
+    "myl13",
+    "tpm2",
+    "myl10",
+    "pdlim5b",
+    "tnnc1b"
+   ],
+   "gtFine": "slow muscle",
+   "gtFineFrac": 0.904,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s11",
+   "nCells": 633,
+   "degsUp": [
+    "tnni4b.2",
+    "tnnc1b",
+    "pvalb4",
+    "smyhc1",
+    "tpm3",
+    "tnnt2d",
+    "myl13",
+    "myl10"
+   ],
+   "gtFine": "slow muscle",
+   "gtFineFrac": 0.979,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s12",
+   "nCells": 486,
+   "degsUp": [
+    "tmsb",
+    "myog",
+    "rbm24a",
+    "hsp90aa1.1",
+    "hspe1",
+    "qkia",
+    "jam2a",
+    "mef2d"
+   ],
+   "gtFine": "satellite cells",
+   "gtFineFrac": 0.428,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s13",
+   "nCells": 443,
+   "degsUp": [
+    "mylpfb",
+    "pvalb2",
+    "pvalb1",
+    "tnni2a.4",
+    "tnnt3b",
+    "tpma",
+    "tnnc2",
+    "si:ch73-367p23.2"
+   ],
+   "gtFine": "fast muscle cell",
+   "gtFineFrac": 0.964,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s14",
+   "nCells": 34,
+   "degsUp": [
+    "cmlc1",
+    "myl7",
+    "tnnt2a",
+    "fhl2a",
+    "tmsb4x",
+    "tpm4a",
+    "tnni1b",
+    "tnnc1a"
+   ],
+   "gtFine": "cardiac muscle",
+   "gtFineFrac": 0.882,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s15",
+   "nCells": 152,
+   "degsUp": [
+    "pitx2",
+    "ptk7a",
+    "qkia",
+    "tuba8l3",
+    "tmsb",
+    "lhfpl2a",
+    "aif1l",
+    "lhx1a"
+   ],
+   "gtFine": "cephalic muscles",
+   "gtFineFrac": 0.947,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s16",
+   "nCells": 106,
+   "degsUp": [
+    "tmsb4x",
+    "tmem88b",
+    "pcolcea",
+    "rhag",
+    "actb2",
+    "cavin2b",
+    "actb1",
+    "ftr82"
+   ],
+   "gtFine": "mixed signature",
+   "gtFineFrac": 0.943,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s17",
+   "nCells": 254,
+   "degsUp": [
+    "gfra3",
+    "tbx1",
+    "hnrnpabb",
+    "cirbpa",
+    "npm1a",
+    "setb",
+    "ran",
+    "hsp90ab1"
+   ],
+   "gtFine": "cephalic muscles",
+   "gtFineFrac": 0.965,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s18",
+   "nCells": 122,
+   "degsUp": [
+    "postnb",
+    "vwde",
+    "tnn",
+    "cilp",
+    "tgfbi",
+    "matn4",
+    "tmem119b",
+    "sparc"
+   ],
+   "gtFine": "sclerotome",
+   "gtFineFrac": 0.984,
+   "gtTissue": "muscle"
+  },
+  {
+   "id": "muscle.s19",
+   "nCells": 63,
+   "degsUp": [
+    "lbx1a",
+    "hspd1",
+    "calm1b",
+    "hspe1",
+    "phlda2",
+    "c1qbp",
+    "pitx2",
+    "lbx1b"
+   ],
+   "gtFine": "migratory muscle precursors",
+   "gtFineFrac": 0.889,
+   "gtTissue": "muscle"
+  }
+ ]
+}

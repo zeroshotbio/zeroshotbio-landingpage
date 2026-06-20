@@ -1,0 +1,655 @@
+{
+ "tissue": "glial",
+ "resolution": 1.0,
+ "silhouette": 0.079,
+ "nSubclusters": 38,
+ "harmonyNote": "no batch covariate in obs \u2014 re-embedded without Harmony (single integrated source)",
+ "subclusters": [
+  {
+   "id": "glial.s0",
+   "nCells": 491,
+   "degsUp": [
+    "en1b",
+    "foxd3",
+    "slc32a1",
+    "pax2a",
+    "slc6a5",
+    "ube2ql1",
+    "stxbp1a",
+    "atp6v0cb"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s1",
+   "nCells": 352,
+   "degsUp": [
+    "clu",
+    "ntn1b",
+    "spon1b",
+    "slit1b",
+    "sparc",
+    "shha",
+    "slit2",
+    "shhb"
+   ],
+   "gtFine": "floor plate",
+   "gtFineFrac": 0.997,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s2",
+   "nCells": 608,
+   "degsUp": [
+    "phox2bb",
+    "hoxb5b",
+    "slit3",
+    "phox2a",
+    "tenm3",
+    "onecut1",
+    "nrp1a",
+    "gap43"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.944,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s3",
+   "nCells": 961,
+   "degsUp": [
+    "ntn1b",
+    "ntn1a",
+    "CU634008.1",
+    "shha",
+    "nkx2.2b",
+    "lrrn1",
+    "metrnla",
+    "spon1b"
+   ],
+   "gtFine": "floor plate",
+   "gtFineFrac": 0.883,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s4",
+   "nCells": 712,
+   "degsUp": [
+    "phox2bb",
+    "phox2a",
+    "tubb5",
+    "slit3",
+    "tbx20",
+    "stmn1b",
+    "tmsb",
+    "lmo4b"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.997,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s5",
+   "nCells": 474,
+   "degsUp": [
+    "dlb",
+    "tuba8l3",
+    "si:ch211-222l21.1",
+    "neurod4",
+    "vim",
+    "gadd45gb.1",
+    "ebf2",
+    "alcama"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.954,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s6",
+   "nCells": 1194,
+   "degsUp": [
+    "islr2",
+    "tmsb",
+    "slc18a3a",
+    "isl2a",
+    "elavl3",
+    "isl1",
+    "ptmaa",
+    "stmn1b"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.987,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s7",
+   "nCells": 1204,
+   "degsUp": [
+    "gfap",
+    "mdka",
+    "slc6a9",
+    "slc1a3a",
+    "tes",
+    "gas1b",
+    "rpsa",
+    "her12"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.831,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s8",
+   "nCells": 167,
+   "degsUp": [
+    "slc1a3a",
+    "dla",
+    "tfap2e",
+    "gsx1",
+    "pax3a",
+    "lfng",
+    "fabp3",
+    "si:ch73-21g5.7"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.425,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s9",
+   "nCells": 1076,
+   "degsUp": [
+    "slc1a3a",
+    "olig3",
+    "pax3a",
+    "gdf10a",
+    "mdkb",
+    "msx1b",
+    "si:ch211-251b21.1",
+    "si:ch211-57n23.4"
+   ],
+   "gtFine": "sensory neurons",
+   "gtFineFrac": 0.593,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s10",
+   "nCells": 779,
+   "degsUp": [
+    "gfap",
+    "rpsa",
+    "si:ch73-265d7.2",
+    "vim",
+    "hmgb2a",
+    "hmgb2b",
+    "rplp2l",
+    "rpl21"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.917,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s11",
+   "nCells": 299,
+   "degsUp": [
+    "si:dkeyp-110a12.4",
+    "krt18a.1",
+    "hoxb13a",
+    "krt8",
+    "hoxc13a",
+    "hoxc13b",
+    "smkr1",
+    "rarga"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.793,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s12",
+   "nCells": 614,
+   "degsUp": [
+    "dla",
+    "neurod4",
+    "si:ch211-222l21.1",
+    "gadd45gb.1",
+    "dlb",
+    "rtca",
+    "fstl1a",
+    "notch1a"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.606,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s13",
+   "nCells": 622,
+   "degsUp": [
+    "hmgb2a",
+    "mki67",
+    "cdc20",
+    "cenpf",
+    "si:ch211-69g19.2",
+    "tuba8l",
+    "hmgn2",
+    "ccnb1"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.986,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s14",
+   "nCells": 246,
+   "degsUp": [
+    "slc18a3a",
+    "cplx2l",
+    "chga",
+    "ache",
+    "atp2b2",
+    "slc5a7a",
+    "atp6v0cb",
+    "tac1"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s15",
+   "nCells": 464,
+   "degsUp": [
+    "si:ch73-265d7.2",
+    "wnt4b",
+    "zgc:113531",
+    "col4a6",
+    "col4a5",
+    "ntn1b",
+    "pleca",
+    "nkx2.2b"
+   ],
+   "gtFine": "oligodendrocytes",
+   "gtFineFrac": 0.659,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s16",
+   "nCells": 966,
+   "degsUp": [
+    "si:dkey-151g10.6",
+    "rpl38",
+    "rplp1",
+    "rpl39",
+    "rps29",
+    "zic1",
+    "rpl29",
+    "rpl36a"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.831,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s17",
+   "nCells": 244,
+   "degsUp": [
+    "nkx2.4b",
+    "nkx2.4a",
+    "prdx1",
+    "shha",
+    "pitx2",
+    "id3",
+    "nell2a",
+    "marcksl1a"
+   ],
+   "gtFine": "floor plate",
+   "gtFineFrac": 0.615,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s18",
+   "nCells": 753,
+   "degsUp": [
+    "fabp7a",
+    "slc1a2b",
+    "atp1a1b",
+    "slc6a1b",
+    "mdkb",
+    "ppap2d",
+    "ptn",
+    "atp1b4"
+   ],
+   "gtFine": "radial glia (+ some floor plate)",
+   "gtFineFrac": 0.83,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s19",
+   "nCells": 1347,
+   "degsUp": [
+    "fabp7a",
+    "CU467822.1",
+    "CU634008.1",
+    "CR848047.1",
+    "plp1a",
+    "nfia",
+    "notch3",
+    "slc1a2b"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.86,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s20",
+   "nCells": 40,
+   "degsUp": [
+    "gata3",
+    "tbx20",
+    "nxph1",
+    "syt1a",
+    "stmn2a",
+    "si:dkey-85n7.6",
+    "tubb5",
+    "slc18a3a"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s21",
+   "nCells": 98,
+   "degsUp": [
+    "sst1.1",
+    "pkd2l1",
+    "nppc",
+    "pkd1l2a",
+    "egr4",
+    "txn",
+    "gad1b",
+    "msi2b"
+   ],
+   "gtFine": "Kolmer-Agduhr / CSF-contacting neurons",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s22",
+   "nCells": 342,
+   "degsUp": [
+    "dbx1a",
+    "dlb",
+    "ebf2",
+    "scrt2",
+    "gadd45gb.1",
+    "hes6",
+    "si:ch211-222l21.1",
+    "neurod4"
+   ],
+   "gtFine": "motor neurons",
+   "gtFineFrac": 0.547,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s23",
+   "nCells": 842,
+   "degsUp": [
+    "slc32a1",
+    "lhx1a",
+    "stx1b",
+    "pax2a",
+    "stxbp1a",
+    "slc6a5",
+    "sncgb",
+    "calm1a"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.999,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s24",
+   "nCells": 241,
+   "degsUp": [
+    "krt8",
+    "krt18a.1",
+    "mdka",
+    "pmp22a",
+    "col4a6",
+    "col4a5",
+    "igfbp7",
+    "gfap"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.983,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s25",
+   "nCells": 501,
+   "degsUp": [
+    "nrn1a",
+    "stx1b",
+    "stxbp1a",
+    "tuba1c",
+    "lhx1a",
+    "atp6v0cb",
+    "sncb",
+    "vamp2"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.992,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s26",
+   "nCells": 439,
+   "degsUp": [
+    "hmx3a",
+    "tfap2a",
+    "stmn1b",
+    "lhx1a",
+    "pou4f1",
+    "zfhx3",
+    "nrn1a",
+    "zc4h2"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s27",
+   "nCells": 734,
+   "degsUp": [
+    "slc1a3b",
+    "foxg1a",
+    "fabp7a",
+    "slc1a2b",
+    "si:ch211-156b7.4",
+    "CU467822.1",
+    "cd82a",
+    "atp1a1b"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.902,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s28",
+   "nCells": 262,
+   "degsUp": [
+    "olig2",
+    "qkia",
+    "cd82a",
+    "zcchc24",
+    "sox10",
+    "tuba8l3",
+    "celf2",
+    "sox6"
+   ],
+   "gtFine": "oligodendrocytes",
+   "gtFineFrac": 0.977,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s29",
+   "nCells": 638,
+   "degsUp": [
+    "prss35",
+    "CR848047.1",
+    "fabp7a",
+    "CU467822.1",
+    "mdka",
+    "mdkb",
+    "CU634008.1",
+    "lbx1b"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.889,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s30",
+   "nCells": 343,
+   "degsUp": [
+    "tlx2",
+    "hoxb9a",
+    "tmeff1b",
+    "elavl3",
+    "si:ch73-386h18.1",
+    "hoxb8a",
+    "tmsb",
+    "nrn1a"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.988,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s31",
+   "nCells": 251,
+   "degsUp": [
+    "tal1",
+    "gata3",
+    "nkx1.2lb",
+    "ptmaa",
+    "slc32a1",
+    "gata2a",
+    "stxbp1a",
+    "pbx1a"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.968,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s32",
+   "nCells": 272,
+   "degsUp": [
+    "sox14",
+    "vsx2",
+    "nrn1a",
+    "elavl4",
+    "lhx4",
+    "snap25a",
+    "gap43",
+    "atp6v0cb"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 0.989,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s33",
+   "nCells": 69,
+   "degsUp": [
+    "si:ch1073-70f20.1",
+    "urp1",
+    "nppc",
+    "pkd2l1",
+    "urp2",
+    "pkd1l2a",
+    "tal2",
+    "slc32a1"
+   ],
+   "gtFine": "Kolmer-Agduhr / CSF-contacting neurons",
+   "gtFineFrac": 0.986,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s34",
+   "nCells": 175,
+   "degsUp": [
+    "zwi",
+    "tuba8l3",
+    "cldn19",
+    "mbpb",
+    "qki2",
+    "zgc:112994",
+    "sox10",
+    "myo10l3"
+   ],
+   "gtFine": "oligodendrocytes",
+   "gtFineFrac": 0.983,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s35",
+   "nCells": 213,
+   "degsUp": [
+    "barhl2",
+    "lhx9",
+    "nrn1a",
+    "ptmaa",
+    "hoxb9a",
+    "ppdpfb",
+    "stmn1b",
+    "sox11b"
+   ],
+   "gtFine": "spinal cord",
+   "gtFineFrac": 1.0,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s36",
+   "nCells": 346,
+   "degsUp": [
+    "gfap",
+    "cldn7a",
+    "atp1a1b",
+    "plecb",
+    "pleca",
+    "col4a5",
+    "slc1a2b",
+    "cav1"
+   ],
+   "gtFine": "radial glia",
+   "gtFineFrac": 0.633,
+   "gtTissue": "glial"
+  },
+  {
+   "id": "glial.s37",
+   "nCells": 147,
+   "degsUp": [
+    "rlbp1a",
+    "fabp7a",
+    "acbd7",
+    "cotl1",
+    "crabp1a",
+    "ckbb",
+    "cldn5b",
+    "efhd1"
+   ],
+   "gtFine": "retina",
+   "gtFineFrac": 0.986,
+   "gtTissue": "glial"
+  }
+ ]
+}

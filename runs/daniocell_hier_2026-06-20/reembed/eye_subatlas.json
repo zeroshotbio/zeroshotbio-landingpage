@@ -1,0 +1,553 @@
+{
+ "tissue": "eye",
+ "resolution": 1.0,
+ "silhouette": 0.09,
+ "nSubclusters": 32,
+ "harmonyNote": "no batch covariate in obs \u2014 re-embedded without Harmony (single integrated source)",
+ "subclusters": [
+  {
+   "id": "eye.s0",
+   "nCells": 39,
+   "degsUp": [
+    "zgc:114181",
+    "wls",
+    "atp1b3a",
+    "sparc",
+    "cldn5a",
+    "fabp7b",
+    "sdc4",
+    "metrnla"
+   ],
+   "gtFine": "epiphysis photoreceptor cells",
+   "gtFineFrac": 1.0,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s1",
+   "nCells": 3152,
+   "degsUp": [
+    "si:ch211-222l21.1",
+    "insm1a",
+    "hmga1a",
+    "hmgb2b",
+    "hmgb2a",
+    "hes6",
+    "hmgn2",
+    "cldn5a"
+   ],
+   "gtFine": "retinal progenitors",
+   "gtFineFrac": 0.497,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s2",
+   "nCells": 1796,
+   "degsUp": [
+    "mdka",
+    "hmgn2",
+    "hmgb1a",
+    "im:7152348",
+    "si:ch211-222l21.1",
+    "hmgb2b",
+    "hmga1a",
+    "rorb"
+   ],
+   "gtFine": "retinal progenitors",
+   "gtFineFrac": 0.808,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s3",
+   "nCells": 1500,
+   "degsUp": [
+    "pcna",
+    "si:dkey-151g10.6",
+    "rplp1",
+    "her15.1",
+    "mcm7",
+    "rps15a",
+    "stmn1a",
+    "rplp2l"
+   ],
+   "gtFine": "retinal progenitors",
+   "gtFineFrac": 0.921,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s4",
+   "nCells": 1282,
+   "degsUp": [
+    "nme2b.1",
+    "npm1a",
+    "snu13b",
+    "dkc1",
+    "nop58",
+    "fbl",
+    "ranbp1",
+    "nop56"
+   ],
+   "gtFine": "optic primordia",
+   "gtFineFrac": 0.681,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s5",
+   "nCells": 2521,
+   "degsUp": [
+    "her4.1",
+    "her12",
+    "id1",
+    "her15.1",
+    "pcna",
+    "rrm1",
+    "ccnd1",
+    "notch3"
+   ],
+   "gtFine": "retinal progenitors",
+   "gtFineFrac": 0.87,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s6",
+   "nCells": 281,
+   "degsUp": [
+    "aldh1a3",
+    "rdh10a",
+    "smoc1",
+    "foxp4",
+    "cyp27c1",
+    "rgmd",
+    "nme2b.1",
+    "mdka"
+   ],
+   "gtFine": "optic cup",
+   "gtFineFrac": 0.765,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s7",
+   "nCells": 644,
+   "degsUp": [
+    "crabp1a",
+    "CU467822.1",
+    "CU634008.1",
+    "olig2",
+    "cldn5b",
+    "fabp7a",
+    "si:ch73-21g5.7",
+    "lfng"
+   ],
+   "gtFine": "retinal progenitors",
+   "gtFineFrac": 0.738,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s8",
+   "nCells": 375,
+   "degsUp": [
+    "cryba1b",
+    "crybb1",
+    "cryba4",
+    "cryba2a",
+    "cryba2b",
+    "crygn2",
+    "cryba1l1",
+    "lim2.4"
+   ],
+   "gtFine": "lens",
+   "gtFineFrac": 0.979,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s9",
+   "nCells": 441,
+   "degsUp": [
+    "fabp11a",
+    "sparcl1",
+    "si:dkey-16p21.8",
+    "slc3a2a",
+    "pitx3",
+    "tgfb3",
+    "atp1b1a",
+    "s100a10b"
+   ],
+   "gtFine": "lens",
+   "gtFineFrac": 0.986,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s10",
+   "nCells": 889,
+   "degsUp": [
+    "cxcr4b",
+    "zgc:158291",
+    "sox11b",
+    "fabp3",
+    "elavl3",
+    "dag1",
+    "scrt2",
+    "atoh7"
+   ],
+   "gtFine": "retinal ganglion cells",
+   "gtFineFrac": 0.827,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s11",
+   "nCells": 1556,
+   "degsUp": [
+    "rbpms2b",
+    "tuba1c",
+    "rbpms2a",
+    "tmsb",
+    "tubb5",
+    "elavl3",
+    "islr2",
+    "tmsb4x"
+   ],
+   "gtFine": "retinal ganglion cells",
+   "gtFineFrac": 0.997,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s12",
+   "nCells": 812,
+   "degsUp": [
+    "thrb",
+    "rxrga",
+    "six7",
+    "samd7",
+    "msi1",
+    "gngt2a",
+    "otx5",
+    "hsp90aa1.2"
+   ],
+   "gtFine": "photoreceptors",
+   "gtFineFrac": 0.995,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s13",
+   "nCells": 2436,
+   "degsUp": [
+    "otx5",
+    "msi1",
+    "pde6gb",
+    "neurod1",
+    "gngt2a",
+    "fabp7a",
+    "si:dkey-21o19.2",
+    "crx"
+   ],
+   "gtFine": "photoreceptors",
+   "gtFineFrac": 0.975,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s14",
+   "nCells": 1393,
+   "degsUp": [
+    "tmsb4x",
+    "tmsb",
+    "elavl3",
+    "rpl38",
+    "pabpc1a",
+    "rps29",
+    "si:ch211-222l21.1",
+    "si:dkey-151g10.6"
+   ],
+   "gtFine": "retinal ganglion cells",
+   "gtFineFrac": 0.466,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s15",
+   "nCells": 1312,
+   "degsUp": [
+    "pax10",
+    "elavl3",
+    "tfap2a",
+    "slc32a1",
+    "stmn1b",
+    "zc4h2",
+    "stxbp1a",
+    "hmgb3a"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.958,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s16",
+   "nCells": 930,
+   "degsUp": [
+    "fabp3",
+    "scrt1a",
+    "s1pr1",
+    "pax6b",
+    "pax6a",
+    "mab21l1",
+    "barhl2",
+    "cirbpb"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.877,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s17",
+   "nCells": 1091,
+   "degsUp": [
+    "gngt2b",
+    "rcvrn2",
+    "ckmt2a",
+    "tulp1a",
+    "rbp4l",
+    "elovl4b",
+    "tmx3a",
+    "arl3l1"
+   ],
+   "gtFine": "photoreceptors",
+   "gtFineFrac": 0.993,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s18",
+   "nCells": 714,
+   "degsUp": [
+    "pmela",
+    "dct",
+    "tyrp1b",
+    "gstp1",
+    "sparc",
+    "tspan36",
+    "pmelb",
+    "slc45a2"
+   ],
+   "gtFine": "retinal pigmented epithelium",
+   "gtFineFrac": 0.989,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s19",
+   "nCells": 1559,
+   "degsUp": [
+    "gnb3a",
+    "gng13b",
+    "mdkb",
+    "vsx1",
+    "syt5b",
+    "pcp4l1",
+    "isl1",
+    "btg1"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.952,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s20",
+   "nCells": 972,
+   "degsUp": [
+    "zfhx4",
+    "marcksl1a",
+    "vsx1",
+    "CR383676.1",
+    "syt5b",
+    "hmgn6",
+    "pcp4l1",
+    "ndrg4"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.984,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s21",
+   "nCells": 66,
+   "degsUp": [
+    "bsx",
+    "rdh5",
+    "rbp5",
+    "eno1b",
+    "rdh8a",
+    "rcvrna",
+    "rlbp1b",
+    "bsg"
+   ],
+   "gtFine": "epiphysis photoreceptor cells",
+   "gtFineFrac": 0.5,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s22",
+   "nCells": 272,
+   "degsUp": [
+    "pde6gb",
+    "elovl4b",
+    "sagb",
+    "si:ch211-113d22.2",
+    "hsp90aa1.2",
+    "faimb",
+    "canx",
+    "tmx3a"
+   ],
+   "gtFine": "photoreceptors",
+   "gtFineFrac": 0.978,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s23",
+   "nCells": 639,
+   "degsUp": [
+    "onecut2",
+    "pde6gb",
+    "CR361564.1",
+    "rem1",
+    "tmsb4x",
+    "cotl1",
+    "prox1a",
+    "si:ch211-56a11.2"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.956,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s24",
+   "nCells": 1022,
+   "degsUp": [
+    "gnb3a",
+    "gng13b",
+    "gnao1b",
+    "isl1",
+    "rs1a",
+    "calb2b",
+    "CR383676.1",
+    "ndrg4"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.995,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s25",
+   "nCells": 413,
+   "degsUp": [
+    "nhlh2",
+    "slc6a9",
+    "pax6b",
+    "syt1a",
+    "ndrg2",
+    "slc32a1",
+    "gpm6aa",
+    "prdm13"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.988,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s26",
+   "nCells": 415,
+   "degsUp": [
+    "sox2",
+    "ppdpfb",
+    "mdkb",
+    "tiam1a",
+    "pcdh19",
+    "gnb1a",
+    "pax6b",
+    "isl1"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.957,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s27",
+   "nCells": 1145,
+   "degsUp": [
+    "fezf2",
+    "syt5b",
+    "neurod4",
+    "CR383676.1",
+    "calb2b",
+    "mpp6b",
+    "vsx1",
+    "nova2"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.98,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s28",
+   "nCells": 286,
+   "degsUp": [
+    "bhlhe22",
+    "bhlhe23",
+    "pax10",
+    "si:dkeyp-41f9.4",
+    "pbx1a",
+    "tox",
+    "pax6a",
+    "pcbp3"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.962,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s29",
+   "nCells": 64,
+   "degsUp": [
+    "snx8b",
+    "si:ch211-56a11.2",
+    "syt5b",
+    "calm1a",
+    "ca10a",
+    "gng13b",
+    "lhx4",
+    "nrn1lb"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.984,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s30",
+   "nCells": 214,
+   "degsUp": [
+    "lmo4b",
+    "neurod1",
+    "syt5b",
+    "gnb3a",
+    "marcksl1a",
+    "CR383676.1",
+    "id2a",
+    "ppp1r1b"
+   ],
+   "gtFine": "retinal bipolar cells",
+   "gtFineFrac": 0.991,
+   "gtTissue": "eye"
+  },
+  {
+   "id": "eye.s31",
+   "nCells": 209,
+   "degsUp": [
+    "neurod1",
+    "neurod2",
+    "tfap2a",
+    "tfap2b",
+    "rnd1b",
+    "pax6b",
+    "si:ch211-248l17.3",
+    "pax6a"
+   ],
+   "gtFine": "retinal interneurons",
+   "gtFineFrac": 0.99,
+   "gtTissue": "eye"
+  }
+ ]
+}

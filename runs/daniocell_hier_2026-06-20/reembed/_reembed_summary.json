@@ -1,0 +1,20 @@
+{
+ "eye": {
+  "cells": 30440,
+  "res": 1.0,
+  "nSub": 32,
+  "silhouette": 0.09
+ },
+ "muscle": {
+  "cells": 7193,
+  "res": 1.0,
+  "nSub": 20,
+  "silhouette": 0.088
+ },
+ "glial": {
+  "cells": 19526,
+  "res": 1.0,
+  "nSub": 38,
+  "silhouette": 0.079
+ }
+}
