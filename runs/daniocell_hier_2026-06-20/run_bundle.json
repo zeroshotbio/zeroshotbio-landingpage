@@ -18,7 +18,7 @@
  "nLabelled": 90,
  "nValidated": 90,
  "source": "server",
- "note": "DanioCell HIERARCHICAL pilot daniocell-hier/v1.0 \u2014 eye/muscle/glial, two-level de-novo->menu, SCORED (driver/v2); isolated eval, not promoted",
+ "note": "KILL \u2014 dropped from the re-mint. Headline deltas are NOT a clean hierarchy-vs-flat comparison \u2014 three confounds biased against hierarchy: cell tier graded against the finer identity.super (144) while flat used cell_type_broad (43); Harmony skipped; over-split ~2.4x (90 sub-clusters vs ~38 fine types). The one clean signal is top-down propagation: glial cascaded 47%\u219211% tissue\u2192cell at 31.6% escalation. \u2502 HIERARCHICAL / two-level pilot (tissue\u2192cell type), eye/muscle/glial \u2014 NOT like-for-like with the flat run. Reference baseline = the flat 10-cluster DanioCell sanity run (daniocell-sanity/v1.0, runId 20260619-231859-f985a5). Channels kept separate, never blended: de-novo-semantic vs menu-exact (see the run's aggregate.json). SCORED (driver/v2, GT identity.super); not promoted. prov: gt 2278d043c64f7adf \u00b7 partition 4ce6087667d38f57 \u00b7 harness daniocell-hier/v1.0 \u00b7 judge driver/v2.",
  "harness": {
   "id": "daniocell-hier/v1.0",
   "version": "1.0",
