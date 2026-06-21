@@ -174,6 +174,51 @@ const ARCHIVE_BADGE: Record<string, { bg: string; fg: string; label: string }> =
   other: { bg: "#f1ede8", fg: "#7a746c", label: "archived" },
 };
 
+// Tissue-only labelling view — for runs that predicted a SINGLE tissue tier
+// (run.provenance.tissueOnly). Shows exactly: de-novo call (what the chat arrived at) →
+// binned tissue → ground-truth tissue, per cluster. No germ-layer / cell-type-broad / sub.
+function TissueOnlyLabels({ clusters, numOf, onPick }: { clusters: any[]; numOf: (id: string) => React.ReactNode; onPick: (id: string) => void }) {
+  const norm = (s: any) => String(s ?? "").trim().toLowerCase();
+  const rows = clusters.map((c) => {
+    const denovo = (c?.deNovo && c.deNovo.label) || c?.finalLabel || null;
+    const bin = (c?.menu && (c.menu.tissueConsensus || c.menu.tissue)) || null;
+    const gt = c?.gtTissue || null;
+    const match = bin && gt ? norm(bin) === norm(gt) : null;
+    return { id: String(c.id), denovo, bin, gt, match };
+  });
+  const scored = rows.filter((r) => r.gt && r.bin);
+  const hits = scored.filter((r) => r.match).length;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <div style={CARD}>
+        <div style={SEC}>Tissue labelling — de-novo → binned → ground truth</div>
+        <div style={{ fontSize: 12.5, color: "#555", lineHeight: 1.5 }}>
+          Single tissue tier (no germ-layer / cell-type). Menu-exact tissue agreement:{" "}
+          <b>{hits}/{scored.length}</b>{scored.length ? ` (${Math.round((100 * hits) / scored.length)}%)` : ""} over clusters with both a bin and a ground-truth tissue. Click a row to see how it was decided.
+        </div>
+      </div>
+      <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
+        <div style={{ display: "flex", gap: 8, padding: "8px 16px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", fontWeight: 700, borderBottom: "1px solid #efece7" }}>
+          <span style={{ width: 56, flexShrink: 0 }}>Cluster</span>
+          <span style={{ flex: 1, minWidth: 0 }}>De-novo call (chat)</span>
+          <span style={{ flex: 1, minWidth: 0 }}>Binned tissue</span>
+          <span style={{ flex: 1, minWidth: 0 }}>Ground-truth tissue</span>
+          <span style={{ width: 36, textAlign: "center", flexShrink: 0 }}>=</span>
+        </div>
+        {rows.map((r) => (
+          <div key={r.id} onClick={() => onPick(r.id)} style={{ display: "flex", gap: 8, padding: "7px 16px", borderBottom: "1px solid #f3f0ec", cursor: "pointer", fontSize: 12.5, alignItems: "center" }}>
+            <span style={{ width: 56, flexShrink: 0, fontWeight: 700, color: "#555" }}>{numOf(r.id)}</span>
+            <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", color: r.denovo ? "#333" : "#b0a89e" }} title={r.denovo || ""}>{r.denovo || "—"}</span>
+            <span style={{ flex: 1, minWidth: 0, color: r.bin ? "#333" : "#b0a89e" }}>{r.bin || "abstain"}</span>
+            <span style={{ flex: 1, minWidth: 0, color: r.gt ? "#444" : "#b0a89e" }}>{r.gt || "—"}</span>
+            <span style={{ width: 36, textAlign: "center", flexShrink: 0, fontWeight: 800, color: r.match == null ? "#ccc" : r.match ? "#15803d" : "#dc2626" }}>{r.match == null ? "·" : r.match ? "✓" : "✗"}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any; dataset: DatasetDef; onBack: () => void }) {
   // A run labelled on a dataset's NATIVE published partition (schemaBasis
   // "native-schema") carries cluster ids in the *_native asset space — not the
@@ -410,6 +455,9 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               ) : notRecorded("Chat history")}
             </div>
           </div>
+        ) : run?.provenance?.tissueOnly ? (
+          /* ---- tissue-only runs: de-novo → bin → GT tissue (no germ/broad/sub) ---- */
+          <TissueOnlyLabels clusters={runClusters} numOf={numOf} onPick={setOpenCluster} />
         ) : viewDataset.groundTruthUrl ? (
           /* ---- GT datasets: the exact per-cluster breakdown from the new-run page (read-only) ---- */
           <div style={{ fontSize: 12.5, color: "#888", marginBottom: -4 }}>

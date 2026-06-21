@@ -28,7 +28,7 @@ const PERSONAS: { mode: AgentMode; tagline: string }[] = [
 function PersonaNode({ mode, tagline }: { mode: AgentMode; tagline: string }) {
   const th = THEME[mode];
   return (
-    <details style={{ flex: "1 1 220px", minWidth: 220, border: `1px solid ${th.color}55`, borderTop: `3px solid ${th.color}`, background: th.bg, borderRadius: 10, padding: "10px 12px" }}>
+    <details open style={{ flex: "1 1 220px", minWidth: 220, border: `1px solid ${th.color}55`, borderTop: `3px solid ${th.color}`, background: th.bg, borderRadius: 10, padding: "10px 12px" }}>
       <summary style={{ cursor: "pointer", listStyle: "none", display: "flex", alignItems: "center", gap: 7 }}>
         <span style={{ fontSize: 18 }}>{th.icon}</span>
         <span style={{ fontWeight: 800, color: th.color, fontSize: 14 }}>{th.name}</span>
