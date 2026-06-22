@@ -102,7 +102,9 @@ def _registry() -> dict:
         )
     # NATIVE-schema re-base datasets (staged): units = authors' finest native groups.
     # var_names ENSDARG; canonical map keyed by var_name; assignment col = native_unit.
-    for nid in ("zscape_native", "chemfish_native", "daniocell_native"):
+    # zscape_v2: de-novo recursive fresh-local-HVG leaf partition (99 leaves, GT-blind asset);
+    # cluster_col=leaf, bc_col=cell — set via the ZSCAPE_V2_* drop-in.
+    for nid in ("zscape_native", "chemfish_native", "daniocell_native", "zscape_v2"):
         pre = nid.upper()
         if os.environ.get(f"{pre}_H5AD"):
             reg[nid] = dict(
