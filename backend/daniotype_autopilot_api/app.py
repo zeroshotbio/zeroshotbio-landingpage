@@ -491,20 +491,33 @@ _REASONER_PROTOCOL = (
     "ZSCAPE 48 hpf. The distinctiveness gate committed this leaf to a CELL-TYPE (fine) call. "
     "You have the leaf's GT-blind context and the Researcher's stage-aware evidence package. "
     "You may consult the Archivist — a GT-blind raw-stats tool over the live single-cell data — "
-    "to resolve ambiguity, ESPECIALLY to probe discriminating markers that fall below the top-8 "
-    "in the context. Stage rule: absent ADULT markers do NOT lower confidence at 48 hpf.\n"
+    "to resolve ambiguity, ESPECIALLY to probe discriminating markers that fall below the top-8.\n"
+    "STAGE RULE: absent ADULT markers do NOT lower confidence at 48 hpf.\n"
+    "CONCLUSION RULES (apply at decision time — do NOT blend markers holistically):\n"
+    " R1 DISCRIMINATING-MARKER DOMINANCE. For a contested call between candidate lineages, the "
+    "deciding evidence is a marker that is SPECIFIC to ONE candidate (%out->0 in this leaf) AND not "
+    "expressed in the rival lineage. A lineage master regulator that is specific-positive here is "
+    "DECISIVE (e.g. cdx1b is gut/intestine-exclusive and is NOT a hepatocyte gene — its specific-"
+    "positive presence settles liver-vs-gut for gut). Markers SHARED across the rival lineages are "
+    "NOT discriminating and are evidence for NEITHER side (e.g. nr5a2 and c3a.1 are endoderm-broad — "
+    "expressed in BOTH liver AND gut — so they cannot vote liver over gut). Never let shared or merely "
+    "abundant markers outvote a specific discriminating one.\n"
+    " R2 HYPOTHESIS-NOT-DEFAULT. The Researcher's candidate is a HYPOTHESIS to test, not a prior to "
+    "confirm. If the Archivist surfaces a discriminating marker that contradicts the standing "
+    "hypothesis, OVERTURN the hypothesis — do not hedge the contradiction into the existing call.\n"
+    "AMBIGUITY RULE: if static markers are shared between lineages (e.g. cyp1a/dpydb point to BOTH "
+    "liver and gut), you MUST probe discriminating markers before concluding.\n"
     "Archivist tools (one per turn):\n"
-    '  probe_markers {"genes":[...]}  -> log2FC/%in/%out for named genes in THIS leaf '
-    "(use to test a lineage hypothesis: gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; pancreas=prss1,ins).\n"
-    '  coexpress {"genes":[...]}      -> do the genes co-occur in the SAME cells (one program) vs separate subsets.\n'
-    '  specificity_ranked {"genes":[...]} -> re-rank a provided set by specificity.\n'
-    '  across {"gene":"..."}          -> is this gene unique to this leaf or shared across leaves.\n'
-    "RULE: if the static markers are ambiguous between lineages (e.g. shared metabolic genes like "
-    "cyp1a/dpydb point to BOTH liver and gut), you MUST probe discriminating markers before concluding.\n"
+    '  probe_markers {"genes":[...]}  -> log2FC/%in/%out in THIS leaf (gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; pancreas=prss1,ins).\n'
+    '  coexpress {"genes":[...]} -> same-cell co-occurrence;  specificity_ranked {"genes":[...]};  across {"gene":"..."}.\n'
     "Each turn respond with ONLY one JSON object:\n"
     '  to use a tool:  {"action":"probe","tool":"probe_markers","genes":["cdx1b","vil1"],"reason":"..."}\n'
-    '  to finish:      {"action":"conclude","identity":"<cell type>","decision":"assign",'
-    '"why":"..."}  (or "decision":"abstain","abstain_tier":"tissue"|"germ layer")\n')
+    '  to finish (identity = the cell type the DISCRIMINATING markers point to, per R1/R2):\n'
+    '     {"action":"conclude","identity":"<cell type>","decision":"assign",'
+    '"scorecard":[{"gene":"cdx1b","specific_to":"intestine","discriminating":true},'
+    '{"gene":"nr5a2","specific_to":"endoderm-broad (liver+gut)","discriminating":false}],'
+    '"decided_by":["<the discriminating genes that settled it>"],"why":"..."}\n'
+    '     (or "decision":"abstain","abstain_tier":"tissue"|"germ layer" only if NO discriminating marker resolves it)\n')
 
 REASONER_MAX_ROUNDS = 5
 
@@ -555,7 +568,8 @@ def reason_with_archivist(cluster, dataset_id, researcher_pkg, llm, budget, leaf
                 driver = identity
             return {"driver_string": driver, "identity": identity, "decision": decision,
                     "rounds": rnd + 1, "trace": trace, "cost": round(budget.spent, 4),
-                    "why": obj.get("why")}
+                    "why": obj.get("why"), "scorecard": obj.get("scorecard"),
+                    "decided_by": obj.get("decided_by")}
     return {"driver_string": (researcher_pkg.get("candidate_identity") or "").strip(),
             "identity": researcher_pkg.get("candidate_identity"), "decision": "assign",
             "rounds": REASONER_MAX_ROUNDS, "trace": trace, "cost": round(budget.spent, 4)}
