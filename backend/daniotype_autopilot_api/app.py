@@ -346,6 +346,62 @@ def reason_gate(cluster, dataset_id, llm):
             "identity": identity, "driver_string": driver, "usage": usage}
 
 
+# === v2 harness rewrite — Step 3: stage-aware Researcher =====================
+# For leaves the gate routes to a fine (cell_type) call, the Researcher gathers
+# STAGE-APPROPRIATE marker evidence. Core rule learned from the recursion work:
+# at an early stage the EARLY program is the right evidence, and absence of adult/
+# mature canonical markers is NOT evidence against an identity.
+def _json_obj(text):
+    """Extract the first balanced {...} JSON object from an LLM reply."""
+    s = text or ""
+    i = s.find("{")
+    while i != -1:
+        depth = 0
+        for j in range(i, len(s)):
+            if s[j] == "{": depth += 1
+            elif s[j] == "}":
+                depth -= 1
+                if depth == 0:
+                    try:
+                        return json.loads(s[i:j + 1])
+                    except Exception:
+                        break
+        i = s.find("{", i + 1)
+    return {}
+
+
+def _researcher_prompt(ctx, stage):
+    return (
+        "You are the Researcher in a ground-truth-BLIND zebrafish (Danio rerio) cell-type labeller. "
+        f"This cluster is from ZSCAPE at {stage} — an EARLY developmental stage. Identify which "
+        "zebrafish cell type expresses these markers AT THIS STAGE, favoring the stage-appropriate "
+        "EARLY expression program over adult/mature marker panels.\n"
+        "CRITICAL RULE (stage-aware, absence-tolerant): at this early stage many canonical adult/"
+        "mature markers are not yet expressed. If a candidate identity's EARLY markers are present "
+        "and specific, the ABSENCE of its mature/adult markers MUST NOT lower confidence — early-"
+        "stage absence of adult markers is expected, never evidence against the identity. (e.g. an "
+        "early hepatocyte shows tfa/nr5a2/cyp1a/c3 before fabp10a/apolipoproteins; an early "
+        "enterocyte shows cdx1b/villin before fabp2/slc15a1b.)\n"
+        "From the MARKERS ONLY (infer biology; never ask for a label), output ONLY JSON:\n"
+        '{"candidate_identity":"<zebrafish cell type>",'
+        '"supporting_stage_markers":["<gene present in THIS cluster supporting it>", "..."],'
+        '"absent_adult_markers":["<canonical adult marker you would NOT expect yet at this stage>", "..."],'
+        '"absence_penalized":false,'
+        '"confidence_note":"<one sentence; must state that absent adult markers do not lower confidence at this stage>"}\n\n'
+        + ctx)
+
+
+def research_identity(cluster, dataset_id, llm):
+    """Stage-aware Researcher: assembled-context in -> evidence package the Reasoner
+    consumes. `llm(prompt)->(text,usage)` injected."""
+    ctx = assemble_leaf_context(cluster, dataset_id)
+    stage = DATASET_STAGE.get(dataset_id, "unknown stage")
+    text, usage = llm(_researcher_prompt(ctx, stage))
+    pkg = _json_obj(text)
+    pkg["usage"] = usage
+    return pkg
+
+
 # --- conclude parsing + cite-discipline (ported) ---------------------------
 def parse_conclude(text):
     m = re.search(r"(?:```)?\s*kasperov-conclude\s*", text, re.I)
