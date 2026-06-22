@@ -287,6 +287,65 @@ def assemble_leaf_context(cluster, dataset_id):
     return "\n".join(lines)
 
 
+# === v2 harness rewrite — Step 2: Reasoner distinctiveness gate ==============
+# Distinctiveness gates BEFORE identity. The gate reads only GT-blind context fields
+# (n_enriched_markers, low_n) to decide how DEEP to commit; identity is then resolved
+# only at the committed depth. Low distinctiveness is positive evidence to abstain
+# shallow — not a failure.
+GATE_CONT_THRESH = 15          # n_enriched_markers <= this => low-distinctiveness / continuum
+_TIER_WORD = {"cell_type": "cell type", "tissue": "tissue", "germ_layer": "germ layer"}
+
+
+def _route_depth(cluster):
+    """GT-blind routing: (commit_depth, abstain_reason|None). low_n takes precedence
+    over distinctiveness (a 6-cell sliver with strong markers is still untrustworthy)."""
+    if cluster.get("low_n"):
+        return "tissue", "n_limited"
+    if (cluster.get("n_enriched_markers") or 0) <= GATE_CONT_THRESH:
+        return "tissue", "continuum"
+    return "cell_type", None
+
+
+def _gate_prompt(ctx, tier_word, reason):
+    pre = (
+        "You are the Reasoner in a ground-truth-BLIND zebrafish cell-type labeller. "
+        "Below is one single-cell cluster's GT-blind context (markers + within-compartment "
+        "distinctiveness + size). Distinctiveness has ALREADY gated the commit depth to "
+        f"{tier_word.upper()} — do not go deeper.\n"
+    )
+    if reason == "continuum":
+        pre += ("This cluster has near-zero within-compartment distinctiveness (n_enriched_markers≈0): "
+                "it sits on a continuum with its compartment neighbours, so a shallow call is CORRECT, not a failure.\n")
+    elif reason == "n_limited":
+        pre += ("This cluster has <30 cells: its fine statistics are untrustworthy. Do NOT make a fine call "
+                "no matter how strong the markers look — commit only at the gated depth.\n")
+    return (pre +
+            f"From the MARKERS ONLY, infer the single most defensible zebrafish identity at EXACTLY the "
+            f"{tier_word} level (no deeper). Reply with ONLY JSON: "
+            f'{{"identity":"<name at {tier_word} level>"}}.\n\n' + ctx)
+
+
+def _parse_identity(text):
+    m = re.search(r'\{[^{}]*"identity"\s*:\s*"([^"]+)"[^{}]*\}', text or "", re.S)
+    if m:
+        return m.group(1).strip()
+    return (text or "").strip().splitlines()[-1].strip() if text else ""
+
+
+def reason_gate(cluster, dataset_id, llm):
+    """Focused Reasoner step: assembled-context in -> {commit_depth, abstain_reason,
+    driver_string, identity}. `llm(prompt)->(text, usage)` is injected. Driver is emitted
+    in the exact form _parse_driver expects (assign = bare identity; abstain = '<id> (abstain · <tier>)')."""
+    ctx = assemble_leaf_context(cluster, dataset_id)
+    depth, reason = _route_depth(cluster)
+    tier_word = _TIER_WORD[depth]
+    text, usage = llm(_gate_prompt(ctx, tier_word, reason))
+    identity = _parse_identity(text)
+    driver = identity if reason is None else f"{identity} (abstain · {tier_word})"
+    return {"commit_depth": depth, "abstain_reason": reason,
+            "identity": identity, "driver_string": driver, "usage": usage}
+
+
 # --- conclude parsing + cite-discipline (ported) ---------------------------
 def parse_conclude(text):
     m = re.search(r"(?:```)?\s*kasperov-conclude\s*", text, re.I)
