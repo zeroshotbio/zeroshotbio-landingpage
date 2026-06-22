@@ -402,6 +402,165 @@ def research_identity(cluster, dataset_id, llm):
     return pkg
 
 
+# === v2 harness rewrite — Step 4: Archivist (:5007 tool) + agentic Reasoner ==
+# The Archivist is a GT-BLIND, deterministic tool over :5007 — it only ever sends
+# (gene names + leaf id) and receives stats; it never sees or returns a GT identity.
+# :5007 implements pvalues + coexpress; across is built by looping pvalues.
+def _stats_query(dataset_id, leaf_id, kind, genes):
+    url = os.environ.get("STATS_VERIFY_URL", "http://127.0.0.1:5007").rstrip("/")
+    tok = os.environ.get("STATS_VERIFY_TOKEN", "")
+    try:
+        r = requests.post(f"{url}/query",
+                          headers={"x-api-token": tok, "content-type": "application/json"},
+                          json={"dataset": dataset_id, "cluster": str(leaf_id), "kind": kind,
+                                "genes": [str(g) for g in (genes or [])][:60]}, timeout=60)
+        if r.status_code != 200:
+            return {"error": f"HTTP {r.status_code}", "nCells": None}
+        return r.json()
+    except Exception as e:  # noqa: BLE001
+        return {"error": str(e)[:80]}
+
+
+def _verdict(g):
+    if not g.get("found"):
+        return "absent (not measured)"
+    l2, pi, po = g.get("log2FC"), g.get("pct_in"), g.get("pct_out")
+    if pi is not None and pi < 0.02:
+        return f"absent here (%in {pi})"
+    if l2 is not None and l2 >= 1 and po is not None and po <= 0.02:
+        return f"SPECIFIC+ (log2FC {l2}, %in {pi}, %out {po})"
+    if l2 is not None and l2 >= 1:
+        return f"enriched-but-shared (log2FC {l2}, %in {pi}, %out {po})"
+    return f"non-specific (log2FC {l2}, %in {pi}, %out {po})"
+
+
+def archivist_probe(dataset_id, leaf_id, genes):
+    d = _stats_query(dataset_id, leaf_id, "pvalues", genes)
+    if d.get("error"):
+        return f"Archivist error: {d['error']}", []
+    rows = [{**g, "verdict": _verdict(g)} for g in d.get("result", [])]
+    spec = [r["g"] for r in rows if r["verdict"].startswith("SPECIFIC")]
+    digest = f"[probe leaf {leaf_id}, {d.get('nCells')} cells] " + "; ".join(
+        f"{r['g']}: {r['verdict']}" for r in rows)
+    if spec:
+        digest += f"  >> SPECIFIC-POSITIVE here: {spec}"
+    return digest, rows
+
+
+def archivist_coexpress(dataset_id, leaf_id, genes):
+    d = _stats_query(dataset_id, leaf_id, "coexpress", genes)
+    if d.get("error"):
+        return f"Archivist error: {d['error']}", []
+    pw = d.get("pairwise", [])
+    digest = f"[coexpress leaf {leaf_id}] all-of {d.get('coexpressingAll', {}).get('genes')}: " \
+             f"{d.get('coexpressingAll', {}).get('fraction')} of cells. " + "; ".join(
+        f"{p['a']}+{p['b']} enrichment {p['enrichment']} ({'same cells' if (p['enrichment'] or 0) > 1 else 'mostly exclusive'})"
+        for p in pw)
+    return digest, pw
+
+
+def archivist_specificity(dataset_id, leaf_id, genes):
+    # Re-rank a PROVIDED gene set by specificity (%out->0 at meaningful %in). No service-side
+    # all-gene scan exists on :5007, so this cannot surface unknown low-prevalence genes —
+    # the discriminating probe (by lineage knowledge) is the way to reach those.
+    d = _stats_query(dataset_id, leaf_id, "pvalues", genes)
+    if d.get("error"):
+        return f"Archivist error: {d['error']}", []
+    rows = [g for g in d.get("result", []) if g.get("found")]
+    rows.sort(key=lambda g: ((g.get("pct_in") or 0) * (1 - (g.get("pct_out") or 0))), reverse=True)
+    digest = f"[specificity leaf {leaf_id}] " + "; ".join(
+        f"{g['g']} (%in {g.get('pct_in')}, %out {g.get('pct_out')})" for g in rows)
+    return digest, rows
+
+
+def archivist_across(dataset_id, gene, leaf_ids):
+    hits = []
+    for lid in leaf_ids:
+        d = _stats_query(dataset_id, lid, "pvalues", [gene])
+        res = (d.get("result") or [{}])[0]
+        if res.get("found") and (res.get("log2FC") or 0) >= 1:
+            hits.append((lid, res.get("log2FC"), res.get("pct_in"), res.get("pct_out")))
+    hits.sort(key=lambda t: -(t[1] or 0))
+    digest = f"[across] {gene} enriched (log2FC>=1) in {len(hits)}/{len(leaf_ids)} leaves; " \
+             f"top: {', '.join(f'leaf {h[0]}({h[1]})' for h in hits[:6])}"
+    return digest, hits
+
+
+_REASONER_PROTOCOL = (
+    "You are the Reasoner in a ground-truth-BLIND zebrafish (Danio rerio) cell-type labeller, "
+    "ZSCAPE 48 hpf. The distinctiveness gate committed this leaf to a CELL-TYPE (fine) call. "
+    "You have the leaf's GT-blind context and the Researcher's stage-aware evidence package. "
+    "You may consult the Archivist — a GT-blind raw-stats tool over the live single-cell data — "
+    "to resolve ambiguity, ESPECIALLY to probe discriminating markers that fall below the top-8 "
+    "in the context. Stage rule: absent ADULT markers do NOT lower confidence at 48 hpf.\n"
+    "Archivist tools (one per turn):\n"
+    '  probe_markers {"genes":[...]}  -> log2FC/%in/%out for named genes in THIS leaf '
+    "(use to test a lineage hypothesis: gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; pancreas=prss1,ins).\n"
+    '  coexpress {"genes":[...]}      -> do the genes co-occur in the SAME cells (one program) vs separate subsets.\n'
+    '  specificity_ranked {"genes":[...]} -> re-rank a provided set by specificity.\n'
+    '  across {"gene":"..."}          -> is this gene unique to this leaf or shared across leaves.\n'
+    "RULE: if the static markers are ambiguous between lineages (e.g. shared metabolic genes like "
+    "cyp1a/dpydb point to BOTH liver and gut), you MUST probe discriminating markers before concluding.\n"
+    "Each turn respond with ONLY one JSON object:\n"
+    '  to use a tool:  {"action":"probe","tool":"probe_markers","genes":["cdx1b","vil1"],"reason":"..."}\n'
+    '  to finish:      {"action":"conclude","identity":"<cell type>","decision":"assign",'
+    '"why":"..."}  (or "decision":"abstain","abstain_tier":"tissue"|"germ layer")\n')
+
+REASONER_MAX_ROUNDS = 5
+
+
+class _Budget:
+    def __init__(self, soft=0.75, hard=1.50):
+        self.spent = 0.0; self.soft = soft; self.hard = hard
+    def add(self, usage):
+        self.spent += usage.get("in", 0) / 1e6 * 5.0 + usage.get("out", 0) / 1e6 * 30.0
+
+
+def reason_with_archivist(cluster, dataset_id, researcher_pkg, llm, budget, leaf_ids=None):
+    """Agentic Reasoner: consumes the Researcher package, may dispatch the Archivist
+    (:5007) mid-reasoning, and concludes with a driver string. Cost accrues to `budget`."""
+    ctx = assemble_leaf_context(cluster, dataset_id)
+    lid = cluster["id"]
+    convo = (_REASONER_PROTOCOL + "\n=== LEAF CONTEXT ===\n" + ctx +
+             "\n=== RESEARCHER EVIDENCE ===\n" + json.dumps(
+                 {k: researcher_pkg.get(k) for k in
+                  ("candidate_identity", "supporting_stage_markers", "absent_adult_markers", "confidence_note")}))
+    trace = []
+    tools = {"probe_markers": lambda g: archivist_probe(dataset_id, lid, g),
+             "coexpress": lambda g: archivist_coexpress(dataset_id, lid, g),
+             "specificity_ranked": lambda g: archivist_specificity(dataset_id, lid, g),
+             "across": lambda g: archivist_across(dataset_id, (g or [""])[0], leaf_ids or [lid])}
+    for rnd in range(REASONER_MAX_ROUNDS):
+        force = budget.spent >= budget.hard or rnd == REASONER_MAX_ROUNDS - 1
+        ask = convo + ("\n\nBUDGET/ROUND LIMIT REACHED — you MUST conclude now (action=conclude)."
+                       if force else "\n\nYour turn (one JSON object):")
+        text, usage = llm(ask); budget.add(usage)
+        obj = _json_obj(text)
+        if obj.get("action") == "probe" and not force:
+            tool = obj.get("tool", "probe_markers")
+            genes = obj.get("genes") or ([obj["gene"]] if obj.get("gene") else [])
+            fn = tools.get(tool, tools["probe_markers"])
+            digest, raw = fn(genes)
+            trace.append({"round": rnd, "ask": {"tool": tool, "genes": genes, "reason": obj.get("reason")},
+                          "archivist": digest})
+            convo += f"\n\nYou dispatched {tool}({genes}): {obj.get('reason','')}\nArchivist: {digest}"
+            continue
+        if obj.get("action") == "conclude" or force:
+            identity = (obj.get("identity") or researcher_pkg.get("candidate_identity") or "").strip()
+            decision = obj.get("decision", "assign")
+            if decision == "abstain":
+                tier = obj.get("abstain_tier", "tissue")
+                driver = f"{identity} (abstain · {tier})"
+            else:
+                driver = identity
+            return {"driver_string": driver, "identity": identity, "decision": decision,
+                    "rounds": rnd + 1, "trace": trace, "cost": round(budget.spent, 4),
+                    "why": obj.get("why")}
+    return {"driver_string": (researcher_pkg.get("candidate_identity") or "").strip(),
+            "identity": researcher_pkg.get("candidate_identity"), "decision": "assign",
+            "rounds": REASONER_MAX_ROUNDS, "trace": trace, "cost": round(budget.spent, 4)}
+
+
 # --- conclude parsing + cite-discipline (ported) ---------------------------
 def parse_conclude(text):
     m = re.search(r"(?:```)?\s*kasperov-conclude\s*", text, re.I)
