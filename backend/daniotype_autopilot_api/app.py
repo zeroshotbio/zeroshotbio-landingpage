@@ -507,8 +507,28 @@ _REASONER_PROTOCOL = (
     "hypothesis, OVERTURN the hypothesis — do not hedge the contradiction into the existing call.\n"
     "AMBIGUITY RULE: if static markers are shared between lineages (e.g. cyp1a/dpydb point to BOTH "
     "liver and gut), you MUST probe discriminating markers before concluding.\n"
+    " R3 STRUCTURAL-PROGRAM COLLISION FLAG. A shared STRUCTURAL program (collagen, melanin/pigment, "
+    "generic mesenchyme) is NOT lineage-specific — distinct lineages share it. If your provisional call "
+    "rests on such shared structural markers, treat it as PROVISIONAL and probe the relevant discriminator "
+    "panel BEFORE concluding (same discipline as cdx1b for liver-vs-gut). Collision panels:\n"
+    "  - COLLAGEN (col2a1a/col9a1b/col11a/col1a1) is shared by NOTOCHORD, CARTILAGE/chondrocyte, OSTEOBLAST, "
+    "fibroblast/CT. Discriminators: MATURE 48 hpf notochord = tbxta, ngs, col8a1a, shha (the EARLY "
+    "specification TFs noto/ta are OFF by 48 hpf — do NOT rely on their absence); chondrocyte = sox9a, sox9b; "
+    "osteoblast = sp7, runx2, bglap; fibroblast/CT = pdgfra, lum (no skeletal master TF). "
+    "48 hpf NOTOCHORD-vs-CARTILAGE RULE (both are col2a1a+/shha-near): shha+ with sox9a/sox9b LOW or ABSENT "
+    "(and ngs/col8a1a present) => NOTOCHORD; shha+ with sox9a/sox9b HIGH/specific => CARTILAGE/chondrocyte.\n"
+    "  - NGS TRIGGER: ngs is a 48 hpf notochord marker. If the leaf's markers include ngs (even WITHOUT the "
+    "collagen program — e.g. an lmx1ba/ngs profile), you MUST run the notochord check (probe tbxta/ngs/col8a1a/"
+    "shha and sox9a/sox9b) before concluding any other identity.\n"
+    "  - MELANIN/PIGMENT shared by pigment subtypes. Discriminators: melanophore = tyr, dct, mlana; "
+    "iridophore = pnp4a, gpnmb, ltk; xanthophore = aox5, gch2 (RPE is eye-neuroepithelial, not a melanophore).\n"
+    "  - GENERIC MESENCHYME (prrx1a/prrx1b/col1a) shared across fibroblast/mesenchymal types — probe lineage TFs.\n"
+    "  - TUBULE/EPITHELIAL: pronephros = pax2a, pax8, slc20a1a; floor plate/neural = foxa2, shha. A lone "
+    "transport/tubule gene is NOT enough to call pronephros — probe the lineage TF and rule out notochord/neural.\n"
     "Archivist tools (one per turn):\n"
-    '  probe_markers {"genes":[...]}  -> log2FC/%in/%out in THIS leaf (gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; pancreas=prss1,ins).\n'
+    '  probe_markers {"genes":[...]}  -> log2FC/%in/%out in THIS leaf. Panels: gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; '
+    'pancreas=prss1,ins; notochord(48hpf)=tbxta,ngs,col8a1a,shha; chondrocyte=sox9a,sox9b; osteoblast=sp7,runx2,bglap; '
+    'melanophore=tyr,dct,mlana; iridophore=pnp4a,gpnmb,ltk; xanthophore=aox5,gch2; pronephros=pax2a,pax8,slc20a1a.\n'
     '  coexpress {"genes":[...]} -> same-cell co-occurrence;  specificity_ranked {"genes":[...]};  across {"gene":"..."}.\n'
     "Each turn respond with ONLY one JSON object:\n"
     '  to use a tool:  {"action":"probe","tool":"probe_markers","genes":["cdx1b","vil1"],"reason":"..."}\n'
