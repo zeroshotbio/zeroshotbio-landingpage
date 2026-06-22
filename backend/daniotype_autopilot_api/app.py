@@ -238,6 +238,55 @@ AUTO_NUDGE_PROMPT = (
 )
 
 
+# === v2 harness rewrite — Step 1: GT-blind per-leaf context assembly =========
+# CONTEXT_FIELDS is the ONLY set of cluster keys the roles may see: pipeline-derived
+# markers / size / compartment / distinctiveness. GT-derived keys (label, tissue,
+# cell_type*, germ_layer, frac, purity, recall, F1, flag) are excluded STRUCTURALLY —
+# assemble_leaf_context() projects the cluster onto CONTEXT_FIELDS and never reads any
+# other key, so a leak cannot occur by construction (not a conditional blank).
+CONTEXT_FIELDS = ("id", "nCells", "compartment", "base_rate",
+                  "n_enriched_markers", "low_n", "degsUp", "markers", "markersDown")
+_GT_KEYS = {"label", "tissue", "cell_type", "cell_type_broad", "cell_type_sub",
+            "germ_layer", "frac", "purity", "recall", "F1", "flag", "name", "annotation", "gt"}
+DATASET_STAGE = {"zscape_v2": "48 hpf"}
+
+
+def assemble_leaf_context(cluster, dataset_id):
+    """Build the role-facing, GT-blind context text for one v2 leaf.
+
+    Reads ONLY the whitelisted pipeline fields (markers, size, parent compartment,
+    within-compartment distinctiveness, low-n flag) plus the dataset developmental
+    stage. It never touches label/tissue/cell_type/germ_layer or any GT field —
+    the projection `s` below is the structural leak wall (id stays as the neutral
+    display name "Cluster {id}"; it is not a GT label)."""
+    s = {k: cluster.get(k) for k in CONTEXT_FIELDS}          # <- structural leak wall
+    assert not (set(s) & _GT_KEYS), "leak wall breached: GT key entered context projection"
+    stage = DATASET_STAGE.get(dataset_id, "unknown stage")
+    up = s.get("degsUp") or []
+    mk = s.get("markers") or []
+    dn = s.get("markersDown") or []
+
+    def _tbl(rows):
+        return "; ".join(
+            f"{m.get('g')} (log2FC {m.get('l2fc')}, %in {m.get('p1')}, %out {m.get('p2')})"
+            for m in rows
+        ) or "(none)"
+
+    lines = [
+        f"Cluster {s['id']} — de-novo recursive leaf, ZSCAPE {stage}.",
+        f"Size: {s['nCells']} cells. Parent compartment: {s['compartment']}. "
+        f"Fraction within that compartment (base rate): {s['base_rate']}.",
+        f"Within-compartment distinctiveness — n_enriched_markers "
+        f"(genes with log2FC>=1 & %in>=0.25 vs rest of compartment): {s['n_enriched_markers']}."
+        + ("  [LOW-N: <30 cells — statistics are unreliable; weak evidence to name.]"
+           if s.get("low_n") else ""),
+        f"Top up-regulated markers: {', '.join(up) if up else '(none)'}.",
+        f"Up-marker stats: {_tbl(mk)}.",
+        f"Top down-regulated markers: {_tbl(dn)}.",
+    ]
+    return "\n".join(lines)
+
+
 # --- conclude parsing + cite-discipline (ported) ---------------------------
 def parse_conclude(text):
     m = re.search(r"(?:```)?\s*kasperov-conclude\s*", text, re.I)
