@@ -771,6 +771,26 @@ def run_one_cluster(base, dataset_id, model, cluster, usage):
     return "(unresolved — review)", conv
 
 
+# === v2 harness rewrite — top-level per-leaf orchestrator ====================
+def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids):
+    """Integrates steps 1-5: distinctiveness gate -> (abstain: gate concludes shallow |
+    fine: stage-aware Researcher -> agentic Reasoner+Archivist with discriminating-marker
+    conclusion logic). No ledger. Returns the per-leaf record incl. driver finalLabel."""
+    depth, reason = _route_depth(cluster)
+    if reason is not None:                      # continuum / n_limited -> shallow abstain
+        g = reason_gate(cluster, dataset_id, llm)
+        budget.add(g.get("usage", {}))
+        return {"finalLabel": g["driver_string"], "route": [depth, reason], "identity": g["identity"],
+                "decision": "abstain", "abstain_reason": reason, "trace": [],
+                "cost": round(budget.spent, 4), "researcher": None, "scorecard": None}
+    pkg = research_identity(cluster, dataset_id, llm)
+    budget.add(pkg.get("usage", {}))
+    res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids)
+    return {"finalLabel": res["driver_string"], "route": [depth, reason], "identity": res["identity"],
+            "decision": res["decision"], "abstain_reason": None, "trace": res["trace"],
+            "cost": res["cost"], "researcher": pkg.get("candidate_identity"), "scorecard": res.get("scorecard")}
+
+
 def score_clusters(base, dataset_id, model, labelled, gt, usage):
     # DRIVER-SCORING: judge the kasperov-conclude identity (the label actually persisted
     # as the cluster's assignment) at each tier — NOT the confidence side-channel. The
