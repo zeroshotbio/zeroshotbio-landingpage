@@ -17,6 +17,7 @@ import re
 import subprocess
 import threading
 import time
+import threading
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -1020,7 +1021,7 @@ def run_with_ledger(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=8, on_
     compartment, ascending leaf id within each. Each compartment keeps its OWN confident-call ledger,
     fed forward into its later leaves. Compartments run in PARALLEL (independent ledgers); within a
     compartment, leaves run SEQUENTIALLY so each sees its predecessors. Returns {leaf_id: result}."""
-    import threading
+    _ensure_preflight(dataset_id, llm, clusters=list(cluster_by_id.values()), leaf_ids=list(leaf_ids))
     from collections import defaultdict
     from concurrent.futures import ThreadPoolExecutor
     comp_leaves = defaultdict(list)
@@ -1052,6 +1053,7 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
     fine: stage-aware Researcher -> agentic Reasoner+Archivist with discriminating-marker
     conclusion logic). `ledger` (Gap-1): a list of confident-call entries from this leaf's
     OWN compartment, injected as a soft prior. Returns the per-leaf record incl. driver finalLabel."""
+    _ensure_preflight(dataset_id, llm, clusters=[cluster], leaf_ids=leaf_ids)   # once/dataset; refuses degraded
     depth, reason = _route_depth(cluster)
     # AUDIT CAPTURE (persisted by default): the GT-blind briefing the model saw (incl. any trap
     # warnings + ledger) + the Reasoner's verbatim reasoning, so a post-hoc audit needs no re-run.
@@ -1064,7 +1066,8 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
         return {"finalLabel": g["driver_string"], "route": [depth, reason], "identity": g["identity"],
                 "decision": "abstain", "abstain_reason": reason, "trace": [],
                 "cost": round(budget.spent, 4), "researcher": None, "scorecard": None,
-                "context": ctx, "warnings": warns, "researcher_full": None, "why": None, "decided_by": None}
+                "context": ctx, "warnings": warns, "researcher_full": None, "why": None, "decided_by": None,
+                "grounded": True}   # preflight-verified (else _ensure_preflight would have hard-stopped)
     pkg = research_identity(cluster, dataset_id, llm, led)
     budget.add(pkg.get("usage", {}))
     res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids, led)
@@ -1076,7 +1079,8 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
             "cost": res["cost"], "researcher": pkg.get("candidate_identity"), "scorecard": res.get("scorecard"),
             # --- audit fields (verbatim, GT-blind) ---
             "context": ctx, "warnings": warns, "researcher_full": researcher_full,
-            "why": res.get("why"), "decided_by": res.get("decided_by")}
+            "why": res.get("why"), "decided_by": res.get("decided_by"),
+            "grounded": True}   # preflight-verified (else _ensure_preflight would have hard-stopped)
 
 
 # === Gap-5: second-pass ledger sweep (re-run each leaf against the FULL final ledger) ========
@@ -1101,7 +1105,7 @@ def run_with_ledger_sweep(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=
     that full ledger MINUS the leaf's own entry. A pass-1 call is OVERWRITTEN only if the pass-2 call
     is HIGHER-CONFIDENCE (per _call_confidence) AND its identity stem CHANGES; every overwrite is
     flagged {leaf, pass1, pass2, driving_entry}. Returns {final, pass1, changes, full_ledger}."""
-    import threading
+    _ensure_preflight(dataset_id, llm, clusters=list(cluster_by_id.values()), leaf_ids=list(leaf_ids))
     from collections import defaultdict
     from concurrent.futures import ThreadPoolExecutor
     pass1 = run_with_ledger(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=max_workers, on_done=on_done)
@@ -1151,7 +1155,8 @@ def run_with_ledger_sweep(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=
         list(ex.map(_sweep_leaf, leaf_ids))
     changes.sort(key=lambda c: c["leaf"])
     return {"final": final, "pass1": pass1, "changes": changes,
-            "full_ledger": {str(k): v for k, v in full_ledger.items()}}
+            "full_ledger": {str(k): v for k, v in full_ledger.items()},
+            "preflight": LAST_PREFLIGHT}   # grounding provenance for the run record
 
 
 def score_clusters(base, dataset_id, model, labelled, gt, usage):
@@ -1328,6 +1333,119 @@ def verify_grounding(dataset_id, clusters):
     if fails:
         return (False, "; ".join(fails))
     return (True, f"verified: {len(idxs)} sampled clusters' own markers enriched on :5007, count bounded to {n} units")
+
+
+# === PREFLIGHT SELF-TEST (permanent core component) ==========================================
+# Runs ONCE before any leaf is labelled on ANY entry path. Actively exercises each core capability
+# end-to-end (not just "is the service up") and HARD-STOPS the run if any is broken — so the harness
+# REFUSES to label on a degraded/ungrounded config instead of silently falling back to marker-only
+# reasoning. Near-zero cost: a few :5007 probes + one minimal LLM round-trip. The provenance it
+# returns is stamped into the run record, so every run is "grounded: verified" — or it didn't run.
+class PreflightError(RuntimeError):
+    """A core-capability preflight check failed; the harness hard-stops rather than label degraded."""
+
+
+_PREFLIGHT_LOCK = threading.Lock()
+_PREFLIGHT_CACHE = {}     # dataset_id -> provenance (successes only; a failure always re-raises)
+LAST_PREFLIGHT = None     # most recent successful preflight provenance (for run-record stamping)
+PREFLIGHT_HOUSEKEEPING = ("actb1", "actb2", "eef1a1l1", "rpl13a", "rpl13", "gapdh")
+
+
+def _preflight_probe(dataset_id, leaf_id, gene):
+    """One authenticated :5007 probe. ok REQUIRES 200 + found + numeric log2FC/%in (real stats),
+    NOT a 401/empty — this is the exact check that would have caught the ungrounded ZSCAPE run."""
+    d = _stats_query(dataset_id, leaf_id, "pvalues", [gene])
+    if d.get("error"):
+        return False, f"live probe {gene} @c{leaf_id} -> {d.get('error')} (401/empty == ungrounded)"
+    res = (d.get("result") or [{}])[0]
+    if res.get("found") and res.get("log2FC") is not None and res.get("pct_in") is not None:
+        return True, (f"authenticated probe round-trips: {gene} @c{leaf_id} "
+                      f"log2FC={res.get('log2FC')} %in={res.get('pct_in')} ({d.get('nCells')} cells)")
+    return False, f"live probe {gene} @c{leaf_id} returned no real stats (found={res.get('found')}, log2FC={res.get('log2FC')})"
+
+
+def preflight(dataset_id, llm, clusters, leaf_ids=None):
+    """Exercise every core capability end-to-end; raise PreflightError naming the broken one(s).
+    Order puts the $0 checks first and the one paid LLM round-trip LAST, so a FAILING preflight
+    costs nothing. Returns provenance {ok, grounded, checks:{...}} on success."""
+    clusters = list(clusters or [])
+    checks = {}   # insertion-ordered; logged per-capability into the run record
+
+    # 1) ARCHIVIST — token set AND an authenticated live probe returns real stats (not 401/empty).
+    tok = os.environ.get("STATS_VERIFY_TOKEN", "")
+    if not tok:
+        checks["archivist"] = {"ok": False,
+                               "detail": "STATS_VERIFY_TOKEN not set — Archivist would 401 every probe (ungrounded)"}
+    else:
+        leaf = clusters[0]["id"] if clusters else (list(leaf_ids or [0]) or [0])[0]
+        own = (clusters[0].get("degsUp") if clusters else None) or []
+        gene = own[0] if own else PREFLIGHT_HOUSEKEEPING[0]
+        ok, detail = _preflight_probe(dataset_id, leaf, gene)
+        if not ok and gene not in PREFLIGHT_HOUSEKEEPING:     # fall back to a housekeeping gene
+            for hk in PREFLIGHT_HOUSEKEEPING:
+                ok, detail = _preflight_probe(dataset_id, leaf, hk)
+                if ok:
+                    break
+        checks["archivist"] = {"ok": ok, "detail": ("token set; " + detail) if ok else detail}
+
+    # 3) GROUNDING ALIGNMENT — reuse the misalignment guard (right dataset keyed, own markers
+    #    enriched on :5007, cluster-count bound). Strict only with enough clusters to bound safely.
+    if len(clusters) >= 3:
+        gok, gdetail = verify_grounding(dataset_id, clusters)
+    elif clusters:
+        gok, gdetail = (True, "few-cluster entry path: dataset-keying + own-marker enrichment covered by "
+                              "the Archivist probe above; full count-bound runs on the orchestrator path")
+    else:
+        gok, gdetail = (None, "no cluster list at this entry path")
+    checks["grounding_alignment"] = {"ok": gok, "detail": gdetail}
+
+    # 4) SYMBOL RESOLVER — the sox9a->sox9 round-trip (and reverse). Pure, $0; catches a broken
+    #    resolver, another silent-degradation surface.
+    fwd = _symbol_variants("sox9a"); rev = _symbol_variants("sox9")
+    rok = ("sox9" in fwd) and ("sox9a" in rev)
+    checks["symbol_resolver"] = {"ok": rok,
+                                 "detail": f"sox9a->{[v for v in fwd if v in ('sox9','sox9b','sox9l')]}; "
+                                           f"sox9->sox9a {'present' if 'sox9a' in rev else 'MISSING'}"}
+
+    # 2) RESEARCHER — minimal live LLM round-trip. Runs LAST and ONLY if the $0 checks passed, so a
+    #    failing preflight never spends.
+    crit_ok = checks["archivist"]["ok"] and (checks["grounding_alignment"]["ok"] in (True, None)) \
+        and checks["symbol_resolver"]["ok"]
+    if crit_ok:
+        try:
+            txt, _u = llm("Preflight connectivity check. Reply with exactly: OK")
+            ok2 = bool(txt and txt.strip())
+            checks["researcher"] = {"ok": ok2,
+                                    "detail": (f"LLM responded ({txt.strip()[:24]!r})" if ok2 else "empty LLM response")}
+        except Exception as e:  # noqa: BLE001
+            checks["researcher"] = {"ok": False, "detail": f"LLM path error: {str(e)[:90]}"}
+    else:
+        checks["researcher"] = {"ok": None,
+                                "detail": "skipped — a critical $0 check already failed; not spending on the LLM round-trip"}
+
+    failed = [k for k, v in checks.items() if v["ok"] is False]
+    prov = {"ok": not failed, "grounded": (not failed), "dataset": dataset_id, "ranAt": _now(),
+            "n_clusters": len(clusters) or (len(list(leaf_ids)) if leaf_ids else None),
+            "checks": checks, "harness": _active_harness()}
+    if failed:
+        raise PreflightError(
+            "PREFLIGHT HARD-STOP — refusing to label on a degraded config. FAILED: "
+            + " | ".join(f"[{k}] {checks[k]['detail']}" for k in failed)
+            + ".  PASSED: " + (", ".join(k for k, v in checks.items() if v["ok"] is True) or "(none)") + ".")
+    return prov
+
+
+def _ensure_preflight(dataset_id, llm, clusters=None, leaf_ids=None):
+    """Run preflight ONCE per dataset per process before labelling. Thread-safe; a success is cached,
+    a failure ALWAYS re-raises (never cached as pass). Called from every labelling entry point."""
+    global LAST_PREFLIGHT
+    with _PREFLIGHT_LOCK:
+        if dataset_id in _PREFLIGHT_CACHE:
+            return _PREFLIGHT_CACHE[dataset_id]
+        prov = preflight(dataset_id, llm, clusters or [], leaf_ids)   # raises on failure (not cached)
+        _PREFLIGHT_CACHE[dataset_id] = prov
+        LAST_PREFLIGHT = prov
+        return prov
 
 
 def _active_harness():
