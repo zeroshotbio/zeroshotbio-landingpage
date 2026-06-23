@@ -953,17 +953,49 @@ def run_one_cluster(base, dataset_id, model, cluster, usage):
 
 # === v2 harness rewrite — top-level per-leaf orchestrator ====================
 # === Gap-1: within-run confident-call ledger (the snowball feedback loop) ====================
+def _normalize_label(label):
+    """Coarsen a call to a cell-type STEM for the ledger: drop the model's invented marker-suffixed
+    qualifiers ('Adarb2/Trhde-positive ...'), stage/process modifiers, parentheticals, '-derived'
+    accents — so near-duplicates collapse and by-elimination contrast sharpens."""
+    import re
+    s = (label or "").lower().strip()
+    s = re.sub(r"\([^)]*\)", " ", s)                                 # drop parentheticals
+    s = re.sub(r"\b[\w./+-]*-positive\b", " ", s)                    # drop "<gene(s)>-positive"
+    s = re.sub(r"\b[\w./+-]*-derived\b", " ", s)                     # drop "<x>-derived"
+    s = re.sub(r"\b(early|late|immature|mature|developing|differentiating|differentiated|"
+               r"post-?mitotic|primitive|embryonic)\b", " ", s)     # drop stage/process modifiers
+    s = s.split(" / ")[0].split(" or ")[0]                           # multi-name -> first
+    s = re.sub(r"[\s/,]+", " ", s).strip(" -/,")
+    return s or (label or "").lower().strip()
+
+
 def _ledger_entry(cluster, result):
-    """A confident ASSIGN anchored on present specific-positive markers (R4) -> a ledger entry.
-    GT-blind: built from the system's OWN call, never groundtruth. Uncertain calls (abstain, or
-    assign with no present anchor) do NOT enter — only confident calls propagate."""
+    """A confident ASSIGN anchored on present specific-positive markers (R4) -> a ledger entry
+    (coarsened to a cell-type stem). GT-blind: built from the system's OWN call, never groundtruth.
+    Uncertain calls (abstain, or assign with no present anchor) do NOT enter."""
     if result.get("decision") != "assign":
         return None
     db = result.get("decided_by") or []
     if not db:                                  # no present specific-positive anchor -> not confident
         return None
-    return {"compartment": cluster.get("compartment"), "label": result.get("identity"),
-            "markers": db[:4], "leaf": cluster.get("id")}
+    return {"compartment": cluster.get("compartment"), "stem": _normalize_label(result.get("identity")),
+            "markers": list(db[:4]), "leaves": [cluster.get("id")]}
+
+
+def _ledger_add(ledger, entry):
+    """Append an entry, COLLAPSING near-duplicates: same stem -> merge into the existing entry
+    (extend its cluster list + markers) instead of adding a redundant line."""
+    if not entry:
+        return ledger
+    for e in ledger:
+        if e["stem"] == entry["stem"]:
+            e["leaves"].extend(entry["leaves"])
+            for m in entry["markers"]:
+                if m not in e["markers"] and len(e["markers"]) < 6:
+                    e["markers"].append(m)
+            return ledger
+    ledger.append(dict(entry))
+    return ledger
 
 
 def _ledger_block(entries):
@@ -971,9 +1003,10 @@ def _ledger_block(entries):
     if not entries:
         return ""
     items = "; ".join(
-        f"Cluster {e['leaf']}={e['label']} (markers: {', '.join((e.get('markers') or [])[:3])})"
+        f"{e['stem']} (markers: {', '.join((e.get('markers') or [])[:3])}; "
+        f"clusters {','.join(str(x) for x in e.get('leaves', []))})"
         for e in entries)
-    return ("\n--- COMPARTMENT LEDGER (confident calls already made in THIS compartment this run) ---\n"
+    return ("\n--- COMPARTMENT LEDGER (distinct confident cell types already called in THIS compartment) ---\n"
             f"{items}\n"
             "Use as a SOFT prior: by-elimination (these identities are likely already taken in this "
             "compartment) + a within-dataset marker reference. It is NOT a constraint — strong "
@@ -1006,9 +1039,7 @@ def run_with_ledger(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=8, on_
                 results[lid] = r
                 if on_done:
                     on_done(lid, r)
-            e = _ledger_entry(c, r)
-            if e:
-                ledger.append(e)                # later leaves of this compartment see it
+            _ledger_add(ledger, _ledger_entry(c, r))   # collapse near-dupes; later leaves see it
         return comp
 
     with ThreadPoolExecutor(max_workers=max_workers) as ex:
