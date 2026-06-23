@@ -649,18 +649,30 @@ _REASONER_PROTOCOL = (
     "osteoblast = sp7, runx2, bglap; fibroblast/CT = pdgfra, lum (no skeletal master TF). "
     "48 hpf NOTOCHORD-vs-CARTILAGE RULE (both are col2a1a+/shha-near): shha+ with sox9a/sox9b LOW or ABSENT "
     "(and ngs/col8a1a present) => NOTOCHORD; shha+ with sox9a/sox9b HIGH/specific => CARTILAGE/chondrocyte.\n"
+    "  - CROSS-LINEAGE NOTOCHORD-vs-HYPOCHORD (col8a1a is SHARED by the notochord AND the hypochord, a "
+    "distinct ventral rod): when the structural-rod shape fires you MUST dispatch the rod panel "
+    "(tbxta, ngs, col8a1a, angpt1, npr3). RULE: tbxta AND ngs present (with col8a1a) => NOTOCHORD; "
+    "col8a1a present but tbxta/ngs ABSENT with a ventral-rod accent (angpt1/npr3) => HYPOCHORD, NOT notochord. "
+    "Resolving to notochord on col8a1a alone with tbxta absent is the hypochord trap.\n"
     "  - NGS TRIGGER: ngs is a 48 hpf notochord marker. If the leaf's markers include ngs (even WITHOUT the "
     "collagen program — e.g. an lmx1ba/ngs profile), you MUST run the notochord check (probe tbxta/ngs/col8a1a/"
     "shha and sox9a/sox9b) before concluding any other identity.\n"
-    "  - MELANIN/PIGMENT shared by pigment subtypes. Discriminators: melanophore = tyr, dct, mlana; "
-    "iridophore = pnp4a, gpnmb, ltk; xanthophore = aox5, gch2 (RPE is eye-neuroepithelial, not a melanophore).\n"
+    "  - MELANIN/PIGMENT within-subtype: melanophore = tyr, dct, mlana; iridophore = pnp4a, gpnmb, ltk; "
+    "xanthophore = aox5, gch2.\n"
+    "  - CROSS-LINEAGE EYE-vs-NEURAL-CREST (melanin tyr/dct is SHARED by neural-crest melanophore AND "
+    "retinal pigmented epithelium (RPE), an eye/neuroepithelial cell — the within-subtype pigment panel "
+    "does NOT separate them): when the pigment shape fires you MUST dispatch the EYE-vs-NC panel "
+    "(eye/RPE = rx1, rx2, otx2, tfec, rpe65a; neural-crest = sox10, mitfa, tfap2a, pax3). RULE: melanin-"
+    "positive WITH eye context (rx1/rx2/otx2/tfec present) AND sox10 ABSENT => RPE; melanin-positive WITH "
+    "sox10 PRESENT => neural-crest MELANOPHORE. Never decide a pigment subtype on melanin enzymes alone.\n"
     "  - GENERIC MESENCHYME (prrx1a/prrx1b/col1a) shared across fibroblast/mesenchymal types — probe lineage TFs.\n"
     "  - TUBULE/EPITHELIAL: pronephros = pax2a, pax8, slc20a1a; floor plate/neural = foxa2, shha. A lone "
     "transport/tubule gene is NOT enough to call pronephros — probe the lineage TF and rule out notochord/neural.\n"
     "Archivist tools (one per turn):\n"
     '  probe_markers {"genes":[...]}  -> log2FC/%in/%out in THIS leaf. Panels: gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; '
     'pancreas=prss1,ins; notochord(48hpf)=tbxta,ngs,col8a1a,shha; chondrocyte=sox9a,sox9b; osteoblast=sp7,runx2,bglap; '
-    'melanophore=tyr,dct,mlana; iridophore=pnp4a,gpnmb,ltk; xanthophore=aox5,gch2; pronephros=pax2a,pax8,slc20a1a.\n'
+    'melanophore=tyr,dct,mlana; iridophore=pnp4a,gpnmb,ltk; xanthophore=aox5,gch2; pronephros=pax2a,pax8,slc20a1a; '
+    'eye/RPE=rx1,rx2,otx2,tfec,rpe65a; nc_pigment=sox10,mitfa,tfap2a,pax3; hypochord=col8a1a,angpt1,npr3(+tbxta/ngs absent).\n'
     '  coexpress {"genes":[...]} -> same-cell co-occurrence;  specificity_ranked {"genes":[...]};  across {"gene":"..."}.\n'
     " R4 POSITIVE-ANCHOR FLOOR (an ASSIGN needs present support). To ASSIGN identity X you MUST cite at "
     "least ONE marker that is PRESENT and specific-positive in THIS leaf (confirmed by the Archivist as "
