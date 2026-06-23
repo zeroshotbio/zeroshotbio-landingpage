@@ -342,6 +342,31 @@ def _route_depth(cluster):
     return "cell_type", None
 
 
+# Collision-flag structural/pigment programs: the SHARED programs the R3 collision gate
+# disambiguates (skeletal/rod collagens + melanin/pigment). When a leaf's DOMINANT markers are one
+# of these, LOW within-compartment distinctiveness is the COLLISION SIGNATURE (its siblings share
+# the program), NOT a genuine continuum — exactly when a discriminator probe is most needed. So such
+# a leaf earns one Archivist probe before the continuum gate may abstain it (see run_leaf_v2 bypass).
+# Deliberately EXCLUDES generic col1/col4/col5 (secondary matrix of muscle / basement membrane /
+# epidermis / fin) so the bypass fires ONLY on real collisions, not every collagen-bearing leaf.
+_COLLISION_ROD = {"col2a1a", "col2a1b", "col9a1a", "col9a1b", "col9a2", "col11a1a", "col11a1b",
+                  "col11a2", "col8a1a", "matn4", "col10a1a"}
+_COLLISION_PIG = {"oca2", "tyr", "dct", "tyrp1a", "tyrp1b", "pmela", "pmelb", "mlana", "trpm1b",
+                  "pnp4a", "gpnmb", "ltk", "aox5", "gch2"}
+
+
+def _collision_shape(cluster):
+    """'' if the leaf is not a collision shape, else a short label naming the shared program found
+    among its DOMINANT (top-8 degsUp) markers. Used to bypass the continuum gate for probe-resolvable
+    structural/pigment collisions (e.g. notochord hiding in a collagen compartment)."""
+    top = {str(g).lower() for g in (cluster.get("degsUp") or [])[:8]}
+    if top & _COLLISION_ROD:
+        return "collagen-rod (notochord/cartilage/osteoblast collision)"
+    if top & _COLLISION_PIG:
+        return "melanin/pigment (RPE/melanophore/xanthophore collision)"
+    return ""
+
+
 def _gate_prompt(ctx, tier_word, reason):
     pre = (
         "You are the Reasoner in a ground-truth-BLIND zebrafish cell-type labeller. "
@@ -356,9 +381,15 @@ def _gate_prompt(ctx, tier_word, reason):
         pre += ("This cluster has <30 cells: its fine statistics are untrustworthy. Do NOT make a fine call "
                 "no matter how strong the markers look — commit only at the gated depth.\n")
     return (pre +
-            f"From the MARKERS ONLY, infer the single most defensible zebrafish identity at EXACTLY the "
-            f"{tier_word} level (no deeper). Reply with ONLY JSON: "
-            f'{{"identity":"<name at {tier_word} level>"}}.\n\n' + ctx)
+            f"You have NOT probed any discriminating marker. From the MARKERS ONLY, give the single most "
+            f"defensible identity at EXACTLY the {tier_word} level — and ONLY as a SAFE PARENT category the "
+            f"markers directly support. ABSTENTION PRECISION: if the markers are a SHARED program (skeletal/"
+            f"collagen, pigment/melanin, pan-neuronal, generic epithelium), name the PROGRAM-LEVEL PARENT with "
+            f"'…, unresolved subtype' (e.g. 'structural/connective tissue, unresolved'; 'pigment cell, "
+            f"unresolved subtype'; 'neuron, unresolved region'). NEVER name a specific sibling type (cartilage, "
+            f"notochord, melanophore, a named neuron, etc.) you did not verify — a wrong confident sibling "
+            f"violates abstention precision; an honest parent-level label does not. Reply with ONLY JSON: "
+            f'{{"identity":"<safe parent at {tier_word} level>"}}.\n\n' + ctx)
 
 
 def _parse_identity(text):
@@ -1055,6 +1086,15 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
     OWN compartment, injected as a soft prior. Returns the per-leaf record incl. driver finalLabel."""
     _ensure_preflight(dataset_id, llm, clusters=[cluster], leaf_ids=leaf_ids)   # once/dataset; refuses degraded
     depth, reason = _route_depth(cluster)
+    # COLLISION-SHAPE BYPASS: a low-distinctiveness leaf whose DOMINANT markers are a shared
+    # structural/pigment program is the collision signature, not a genuine continuum — route it into
+    # the full Researcher+Archivist path so R3 dispatches a discriminator probe (tbxta -> notochord,
+    # rpe65a -> RPE, ...) BEFORE any abstain. The low-n gate is NOT bypassed (<30 cells stay untrustworthy).
+    bypass = ""
+    if reason == "continuum":
+        bypass = _collision_shape(cluster)
+        if bypass:
+            depth, reason = "cell_type", None
     # AUDIT CAPTURE (persisted by default): the GT-blind briefing the model saw (incl. any trap
     # warnings + ledger) + the Reasoner's verbatim reasoning, so a post-hoc audit needs no re-run.
     led = _ledger_block(ledger)
@@ -1067,7 +1107,7 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
                 "decision": "abstain", "abstain_reason": reason, "trace": [],
                 "cost": round(budget.spent, 4), "researcher": None, "scorecard": None,
                 "context": ctx, "warnings": warns, "researcher_full": None, "why": None, "decided_by": None,
-                "grounded": True}   # preflight-verified (else _ensure_preflight would have hard-stopped)
+                "grounded": True, "bypass": bypass or None}   # preflight-verified; bypass None (genuine continuum/n-limited)
     pkg = research_identity(cluster, dataset_id, llm, led)
     budget.add(pkg.get("usage", {}))
     res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids, led)
@@ -1080,7 +1120,7 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
             # --- audit fields (verbatim, GT-blind) ---
             "context": ctx, "warnings": warns, "researcher_full": researcher_full,
             "why": res.get("why"), "decided_by": res.get("decided_by"),
-            "grounded": True}   # preflight-verified (else _ensure_preflight would have hard-stopped)
+            "grounded": True, "bypass": bypass or None}   # bypass = collision-shape that earned a probe past the continuum gate
 
 
 # === Gap-5: second-pass ledger sweep (re-run each leaf against the FULL final ledger) ========
