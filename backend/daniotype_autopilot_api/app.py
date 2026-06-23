@@ -276,7 +276,7 @@ def trap_warnings(c):
     return W
 
 
-def assemble_leaf_context(cluster, dataset_id):
+def assemble_leaf_context(cluster, dataset_id, extra_briefing=""):
     """Build the role-facing, GT-blind context text for one v2 leaf.
 
     Reads ONLY the whitelisted pipeline fields (markers, size, parent compartment,
@@ -317,6 +317,8 @@ def assemble_leaf_context(cluster, dataset_id):
     if W:
         text += ("\n--- DOUBLE-CHECK WARNINGS (verify before committing; advisory, not bans) ---\n"
                  + "\n".join(f"* {w}" for w in W))
+    if extra_briefing:                      # within-run confident-call ledger (Gap-1 snowball)
+        text += extra_briefing
     return text
 
 
@@ -424,10 +426,10 @@ def _researcher_prompt(ctx, stage):
         + ctx)
 
 
-def research_identity(cluster, dataset_id, llm):
+def research_identity(cluster, dataset_id, llm, extra_briefing=""):
     """Stage-aware Researcher: assembled-context in -> evidence package the Reasoner
     consumes. `llm(prompt)->(text,usage)` injected."""
-    ctx = assemble_leaf_context(cluster, dataset_id)
+    ctx = assemble_leaf_context(cluster, dataset_id, extra_briefing)
     stage = DATASET_STAGE.get(dataset_id, "unknown stage")
     text, usage = llm(_researcher_prompt(ctx, stage))
     pkg = _json_obj(text)
@@ -707,10 +709,10 @@ class _Budget:
         self.spent += usage.get("in", 0) / 1e6 * 5.0 + usage.get("out", 0) / 1e6 * 30.0
 
 
-def reason_with_archivist(cluster, dataset_id, researcher_pkg, llm, budget, leaf_ids=None):
+def reason_with_archivist(cluster, dataset_id, researcher_pkg, llm, budget, leaf_ids=None, extra_briefing=""):
     """Agentic Reasoner: consumes the Researcher package, may dispatch the Archivist
     (:5007) mid-reasoning, and concludes with a driver string. Cost accrues to `budget`."""
-    ctx = assemble_leaf_context(cluster, dataset_id)
+    ctx = assemble_leaf_context(cluster, dataset_id, extra_briefing)
     lid = cluster["id"]
     convo = (_REASONER_PROTOCOL + "\n=== LEAF CONTEXT ===\n" + ctx +
              "\n=== RESEARCHER EVIDENCE ===\n" + json.dumps(
@@ -950,14 +952,80 @@ def run_one_cluster(base, dataset_id, model, cluster, usage):
 
 
 # === v2 harness rewrite — top-level per-leaf orchestrator ====================
-def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids):
+# === Gap-1: within-run confident-call ledger (the snowball feedback loop) ====================
+def _ledger_entry(cluster, result):
+    """A confident ASSIGN anchored on present specific-positive markers (R4) -> a ledger entry.
+    GT-blind: built from the system's OWN call, never groundtruth. Uncertain calls (abstain, or
+    assign with no present anchor) do NOT enter — only confident calls propagate."""
+    if result.get("decision") != "assign":
+        return None
+    db = result.get("decided_by") or []
+    if not db:                                  # no present specific-positive anchor -> not confident
+        return None
+    return {"compartment": cluster.get("compartment"), "label": result.get("identity"),
+            "markers": db[:4], "leaf": cluster.get("id")}
+
+
+def _ledger_block(entries):
+    """Render a compartment-scoped ledger slice as a SOFT-prior briefing block (not a constraint)."""
+    if not entries:
+        return ""
+    items = "; ".join(
+        f"Cluster {e['leaf']}={e['label']} (markers: {', '.join((e.get('markers') or [])[:3])})"
+        for e in entries)
+    return ("\n--- COMPARTMENT LEDGER (confident calls already made in THIS compartment this run) ---\n"
+            f"{items}\n"
+            "Use as a SOFT prior: by-elimination (these identities are likely already taken in this "
+            "compartment) + a within-dataset marker reference. It is NOT a constraint — strong "
+            "discriminating evidence for THIS leaf overrides it. If your conclusion conflicts with a "
+            "confident neighbour above, SAY SO explicitly in 'why' (a stronger claim flags the conflict, "
+            "it does not silently defer).")
+
+
+def run_with_ledger(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=8, on_done=None):
+    """Within-run snowball orchestrator. Leaves run in a CANONICAL, reproducible order: grouped by
+    compartment, ascending leaf id within each. Each compartment keeps its OWN confident-call ledger,
+    fed forward into its later leaves. Compartments run in PARALLEL (independent ledgers); within a
+    compartment, leaves run SEQUENTIALLY so each sees its predecessors. Returns {leaf_id: result}."""
+    import threading
+    from collections import defaultdict
+    from concurrent.futures import ThreadPoolExecutor
+    comp_leaves = defaultdict(list)
+    for lid in leaf_ids:
+        comp_leaves[cluster_by_id[lid].get("compartment")].append(lid)
+    for comp in comp_leaves:
+        comp_leaves[comp].sort()                # canonical within-compartment order
+    results, lock = {}, threading.Lock()
+
+    def _run_compartment(comp):
+        ledger = []                             # this compartment's confident calls so far (revisable list)
+        for lid in comp_leaves[comp]:
+            c = cluster_by_id[lid]
+            r = run_leaf_v2(c, dataset_id, llm, _Budget(), leaf_ids, ledger=list(ledger))
+            with lock:
+                results[lid] = r
+                if on_done:
+                    on_done(lid, r)
+            e = _ledger_entry(c, r)
+            if e:
+                ledger.append(e)                # later leaves of this compartment see it
+        return comp
+
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        list(ex.map(_run_compartment, sorted(comp_leaves)))
+    return results
+
+
+def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
     """Integrates steps 1-5: distinctiveness gate -> (abstain: gate concludes shallow |
     fine: stage-aware Researcher -> agentic Reasoner+Archivist with discriminating-marker
-    conclusion logic). No ledger. Returns the per-leaf record incl. driver finalLabel."""
+    conclusion logic). `ledger` (Gap-1): a list of confident-call entries from this leaf's
+    OWN compartment, injected as a soft prior. Returns the per-leaf record incl. driver finalLabel."""
     depth, reason = _route_depth(cluster)
     # AUDIT CAPTURE (persisted by default): the GT-blind briefing the model saw (incl. any trap
-    # warnings) + the Reasoner's verbatim reasoning, so a post-hoc audit needs no re-run.
-    ctx = assemble_leaf_context(cluster, dataset_id)   # GT-blind by construction (leak-wall assert)
+    # warnings + ledger) + the Reasoner's verbatim reasoning, so a post-hoc audit needs no re-run.
+    led = _ledger_block(ledger)
+    ctx = assemble_leaf_context(cluster, dataset_id, led)   # GT-blind by construction (leak-wall assert)
     warns = trap_warnings(cluster)
     if reason is not None:                      # continuum / n_limited -> shallow abstain
         g = reason_gate(cluster, dataset_id, llm)
@@ -966,9 +1034,9 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids):
                 "decision": "abstain", "abstain_reason": reason, "trace": [],
                 "cost": round(budget.spent, 4), "researcher": None, "scorecard": None,
                 "context": ctx, "warnings": warns, "researcher_full": None, "why": None, "decided_by": None}
-    pkg = research_identity(cluster, dataset_id, llm)
+    pkg = research_identity(cluster, dataset_id, llm, led)
     budget.add(pkg.get("usage", {}))
-    res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids)
+    res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids, led)
     researcher_full = {k: pkg.get(k) for k in
                        ("candidate_identity", "supporting_stage_markers", "absent_adult_markers",
                         "absence_penalized", "confidence_note")}
