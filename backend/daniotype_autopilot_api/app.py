@@ -251,6 +251,31 @@ _GT_KEYS = {"label", "tissue", "cell_type", "cell_type_broad", "cell_type_sub",
 DATASET_STAGE = {"zscape_v2": "48 hpf"}
 
 
+# === Trap-library briefing layer (7 ZSCAPE-mined shapes; 6 are entry-shape-detectable; the
+# 7th — hypothesis-lock-in — is handled by R4/R5 in the conclusion logic, not an entry warning).
+# Fires on degsUp marker-presence; advisory double-check warnings, never hard bans. Verbatim
+# from the A/B-validated scratch injector. =====================================================
+def trap_warnings(c):
+    deg = [g.lower() for g in c.get("degsUp", [])]
+    W = []
+    def has(*g):  # noqa: E306
+        return any(x in deg for x in g)
+    ncol = sum(g.startswith(("col1", "col5", "col12")) or g == "fn1b" for g in deg)
+    if has("oca2", "tyr", "dct", "tyrp1b", "pmela", "pmelb", "trpm1b", "mlana", "oca2"):
+        W.append("PIGMENT/melanin markers present: this could be retinal pigmented epithelium (EYE/neuroepithelial) — NOT a neural-crest pigment cell. The pigment panel does not separate RPE from melanophore; check eye context (rx1/rx2/otx2/tfec) vs NC (sox10) before committing to a pigment-cell subtype.")
+    if has("col2a1a", "col8a1a", "matn4", "col9a1b") and has("col2a1a", "col8a1a", "col9a1b"):
+        W.append("COLLAGEN-ROD program: if resolving toward notochord, REQUIRE the notochord master tbxta present (col8a1a alone is shared); also consider HYPOCHORD/CARTILAGE siblings (col2a1a+ but tbxta-absent).")
+    if ncol >= 2:
+        W.append("STRONG COLLAGEN/ECM program may be a SECONDARY matrix signature of a specific cell (muscle, basal epidermis, fin, cartilage) — find a tissue-specific master before defaulting to generic fibroblast/connective-tissue/mesenchyme.")
+    if has("elavl3", "elavl4", "nrxn1a", "nrxn2a", "ntm", "cntn4", "ebf1b", "cadm1a", "chl1b", "nlgn3a", "syt1a"):
+        W.append("PAN-NEURONAL markers identify a neuron but NOT its region/lineage. Before a generic 'differentiating neuron', probe regional/lineage TFs (olfactory, cranial neural crest=sox10/foxd3, hindbrain hox) so the specific identity is not lost.")
+    if has("cdh17"):
+        W.append("cdh17 is PROMISCUOUS (shared by gut AND pronephros) — it cannot decide alone; require the organ master (cdx1b=intestine; pax2a/pax8=pronephros).")
+    if has("cps1", "pitx3", "tkt", "fabp4a"):
+        W.append("cps1/pitx3/tkt/fabp4a are LENS-FIBER metabolic markers (pitx3 is a lens master) — NOT pigment/retinal markers. Strongly consider LENS before hypothesizing a pigment cell or retinal progenitor.")
+    return W
+
+
 def assemble_leaf_context(cluster, dataset_id):
     """Build the role-facing, GT-blind context text for one v2 leaf.
 
@@ -284,7 +309,15 @@ def assemble_leaf_context(cluster, dataset_id):
         f"Up-marker stats: {_tbl(mk)}.",
         f"Top down-regulated markers: {_tbl(dn)}.",
     ]
-    return "\n".join(lines)
+    text = "\n".join(lines)
+    # ZSCAPE-derived trap-library briefing layer (advisory double-check warnings, not bans).
+    # Byte-equivalent to the A/B-validated scratch injector: appended AFTER the full marker
+    # context, fires only when the leaf's entry-shape (degsUp) matches a known trap shape.
+    W = trap_warnings(cluster)
+    if W:
+        text += ("\n--- DOUBLE-CHECK WARNINGS (verify before committing; advisory, not bans) ---\n"
+                 + "\n".join(f"* {w}" for w in W))
+    return text
 
 
 # === v2 harness rewrite — Step 2: Reasoner distinctiveness gate ==============
