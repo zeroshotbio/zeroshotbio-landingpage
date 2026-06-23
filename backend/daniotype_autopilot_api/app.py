@@ -273,7 +273,7 @@ def assemble_leaf_context(cluster, dataset_id):
         ) or "(none)"
 
     lines = [
-        f"Cluster {s['id']} — de-novo recursive leaf, ZSCAPE {stage}.",
+        f"Cluster {s['id']} — de-novo recursive leaf, {dataset_id.replace('_v2','').upper()} {stage}.",
         f"Size: {s['nCells']} cells. Parent compartment: {s['compartment']}. "
         f"Fraction within that compartment (base rate): {s['base_rate']}.",
         f"Within-compartment distinctiveness — n_enriched_markers "
@@ -629,14 +629,28 @@ _REASONER_PROTOCOL = (
     'pancreas=prss1,ins; notochord(48hpf)=tbxta,ngs,col8a1a,shha; chondrocyte=sox9a,sox9b; osteoblast=sp7,runx2,bglap; '
     'melanophore=tyr,dct,mlana; iridophore=pnp4a,gpnmb,ltk; xanthophore=aox5,gch2; pronephros=pax2a,pax8,slc20a1a.\n'
     '  coexpress {"genes":[...]} -> same-cell co-occurrence;  specificity_ranked {"genes":[...]};  across {"gene":"..."}.\n'
+    " R4 POSITIVE-ANCHOR FLOOR (an ASSIGN needs present support). To ASSIGN identity X you MUST cite at "
+    "least ONE marker that is PRESENT and specific-positive in THIS leaf (confirmed by the Archivist as "
+    "SPECIFIC+ or sitting in this cluster's own top markers) AND that is canonically specific to X. If, "
+    "after probing, NONE of X's own positive markers are present, you may NOT assign X — reject the "
+    "hypothesis and either test the next most likely identity or ABSTAIN at the deepest tier you can "
+    "defend. Do NOT back-rationalize the leaf's generic/own top markers into X's program to manufacture "
+    "support (e.g. lens cps1/pitx3/tkt are NOT xanthophore markers; claiming notochord with tbxta/ngs "
+    "ABSENT is forbidden).\n"
+    " R5 SCORECARD HYGIENE. A marker that was probed and came back ABSENT or non-specific may NOT be "
+    "listed as a 'discriminating':true / decided_by support for the call. Absent markers can only RULE "
+    "OUT a rival lineage; they are never evidence FOR the chosen identity. decided_by must contain ONLY "
+    "present, specific-positive markers.\n"
+    " (Absence-tolerance still holds for its real purpose: missing MATURE/ADULT markers do not refute an "
+    "identity whose EARLY markers are present. R4 bites ONLY when NONE of X's positive markers are present.)\n"
     "Each turn respond with ONLY one JSON object:\n"
     '  to use a tool:  {"action":"probe","tool":"probe_markers","genes":["cdx1b","vil1"],"reason":"..."}\n'
-    '  to finish (identity = the cell type the DISCRIMINATING markers point to, per R1/R2):\n'
+    '  to finish (identity = the cell type with a PRESENT specific-positive anchor, per R1/R2/R4):\n'
     '     {"action":"conclude","identity":"<cell type>","decision":"assign",'
-    '"scorecard":[{"gene":"cdx1b","specific_to":"intestine","discriminating":true},'
+    '"scorecard":[{"gene":"cdx1b","specific_to":"intestine","discriminating":true,"status":"specific-positive"},'
     '{"gene":"nr5a2","specific_to":"endoderm-broad (liver+gut)","discriminating":false}],'
-    '"decided_by":["<the discriminating genes that settled it>"],"why":"..."}\n'
-    '     (or "decision":"abstain","abstain_tier":"tissue"|"germ layer" only if NO discriminating marker resolves it)\n')
+    '"decided_by":["<PRESENT specific-positive genes that settled it — never an absent marker>"],"why":"..."}\n'
+    '     (or "decision":"abstain","abstain_tier":"tissue"|"germ layer" when NO present specific-positive marker anchors any identity)\n')
 
 REASONER_MAX_ROUNDS = 5
 
