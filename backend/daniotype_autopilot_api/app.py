@@ -1079,6 +1079,81 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids, ledger=None):
             "why": res.get("why"), "decided_by": res.get("decided_by")}
 
 
+# === Gap-5: second-pass ledger sweep (re-run each leaf against the FULL final ledger) ========
+def _call_confidence(r):
+    """Structural confidence proxy for a leaf call (the sweep needs an ordering without invoking
+    the separate confidence model): an R4-anchored ASSIGN with MORE present specific-positive
+    anchors (decided_by), reaching a DEEPER tier, with more discriminating scorecard entries, is
+    more confident. Returns a comparable tuple — higher is more confident; abstain/empty sort low."""
+    if not r:
+        return (0, 0, -1, 0)
+    assign = 1 if r.get("decision") == "assign" else 0
+    db = r.get("decided_by") or []
+    sc = r.get("scorecard") or []
+    disc = sum(1 for s in sc if isinstance(s, dict) and s.get("discriminating"))
+    _, reached, _ = _parse_driver(r.get("finalLabel"))
+    return (assign, len(db), reached, disc)
+
+
+def run_with_ledger_sweep(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=8, on_done=None):
+    """Gap-5 two-pass snowball. PASS 1 = run_with_ledger (each compartment's NORMALIZED ledger is
+    filled feed-forward). Then build each compartment's FULL FINAL ledger and re-run EVERY leaf with
+    that full ledger MINUS the leaf's own entry. A pass-1 call is OVERWRITTEN only if the pass-2 call
+    is HIGHER-CONFIDENCE (per _call_confidence) AND its identity stem CHANGES; every overwrite is
+    flagged {leaf, pass1, pass2, driving_entry}. Returns {final, pass1, changes, full_ledger}."""
+    import threading
+    from collections import defaultdict
+    from concurrent.futures import ThreadPoolExecutor
+    pass1 = run_with_ledger(cluster_by_id, dataset_id, llm, leaf_ids, max_workers=max_workers, on_done=on_done)
+    # full final ledger per compartment, collapsing near-dupes exactly as the live loop does
+    comp_leaves = defaultdict(list)
+    for lid in leaf_ids:
+        comp_leaves[cluster_by_id[lid].get("compartment")].append(lid)
+    full_ledger = {}
+    for comp, lids in comp_leaves.items():
+        led = []
+        for lid in sorted(lids):
+            _ledger_add(led, _ledger_entry(cluster_by_id[lid], pass1[lid]))
+        full_ledger[comp] = led
+
+    def _ledger_minus(comp, lid):
+        """Full final compartment ledger with THIS leaf's own contribution removed (an entry that
+        existed only because of this leaf drops out; one shared with other leaves stays, re-attributed)."""
+        out = []
+        for e in full_ledger[comp]:
+            leaves = [x for x in e["leaves"] if x != lid]
+            if leaves:
+                out.append({**e, "leaves": leaves})
+        return out
+
+    final, changes, lock = dict(pass1), [], threading.Lock()
+
+    def _sweep_leaf(lid):
+        comp = cluster_by_id[lid].get("compartment")
+        led = _ledger_minus(comp, lid)
+        p1 = pass1[lid]
+        p2 = run_leaf_v2(cluster_by_id[lid], dataset_id, llm, _Budget(), leaf_ids, ledger=led)
+        changed = _normalize_label(p2.get("identity")) != _normalize_label(p1.get("identity"))
+        higher = _call_confidence(p2) > _call_confidence(p1)
+        if changed and higher:
+            stem2 = _normalize_label(p2.get("identity"))
+            driving = next((e for e in led if e["stem"] == stem2), None)
+            with lock:
+                final[lid] = p2
+                changes.append({"leaf": lid, "pass1": p1.get("identity"), "pass2": p2.get("identity"),
+                                "pass1_conf": list(_call_confidence(p1)), "pass2_conf": list(_call_confidence(p2)),
+                                "driving_entry": driving, "why": p2.get("why")})
+                if on_done:
+                    on_done(lid, p2)
+        return lid
+
+    with ThreadPoolExecutor(max_workers=max_workers) as ex:
+        list(ex.map(_sweep_leaf, leaf_ids))
+    changes.sort(key=lambda c: c["leaf"])
+    return {"final": final, "pass1": pass1, "changes": changes,
+            "full_ledger": {str(k): v for k, v in full_ledger.items()}}
+
+
 def score_clusters(base, dataset_id, model, labelled, gt, usage):
     # DRIVER-SCORING: judge the kasperov-conclude identity (the label actually persisted
     # as the cluster's assignment) at each tier — NOT the confidence side-channel. The
