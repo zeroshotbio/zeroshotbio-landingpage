@@ -434,16 +434,109 @@ def _verdict(g):
     return f"non-specific (log2FC {l2}, %in {pi}, %out {po})"
 
 
-def archivist_probe(dataset_id, leaf_id, genes):
+# --- symbol resolver: convention-aware (Parse drops/adds zebrafish paralog suffixes a/b/l and
+# uses numbered variants) + ENSDARG-id fallback. Fires ONLY when a panel/probe symbol is not-found
+# on :5007, so it never alters a direct hit and never touches the asset's own markers. Generalises
+# across Parse datasets (minifin/megafin) — algorithmic, not a hardcoded per-dataset table.
+SYMBOL_RESOLVER_REF = os.environ.get(
+    "SYMBOL_RESOLVER_REF", "/data/datasets/raw_datasets/ZSCAPE/zscape_perturb_reference_merged_dedubled.h5ad")
+DATASET_H5AD = {"minifin_v2": "/data/datasets/raw_datasets/MiniFin/minifin_filtered.h5ad"}
+_canon_s2e = None
+_ds_e2s = {}
+
+
+def _symbol_variants(g):
+    g = str(g).strip().lower()
+    out, base = [g], g
+    if len(g) >= 4 and g[-1] in "abl" and g[-2].isalnum():
+        base = g[:-1]; out.append(base)                       # strip paralog suffix: sox9a->sox9
+    for stem in (g, base):
+        for suf in ("a", "b", "l"):
+            if not stem.endswith(suf):
+                out.append(stem + suf)                        # add suffix (opposite convention)
+        out += [stem + "-1", stem + ".1", stem + "1"]         # Parse numbered variants
+    seen = set()
+    return [x for x in out if x and not (x in seen or seen.add(x))]
+
+
+def _ensdarg_bridge(dataset_id, gene):
+    """canonical symbol -> ENSDARG (reference) -> this dataset's own symbol (var['id']<->var_name)."""
+    global _canon_s2e
+    try:
+        import anndata as ad
+        if _canon_s2e is None:
+            Z = ad.read_h5ad(SYMBOL_RESOLVER_REF, backed='r')
+            _canon_s2e = {str(s).lower(): str(e) for e, s in
+                          zip(Z.var_names.astype(str), Z.var["gene_short_name"].astype(str))}
+        ens = _canon_s2e.get(str(gene).lower())
+        if not ens:
+            return None
+        if dataset_id not in _ds_e2s:
+            p = DATASET_H5AD.get(dataset_id)
+            if not p:
+                _ds_e2s[dataset_id] = {}
+            else:
+                A = ad.read_h5ad(p, backed='r')
+                idc = "id" if "id" in A.var.columns else None
+                _ds_e2s[dataset_id] = ({str(i).upper(): str(s).lower()
+                                        for i, s in zip(A.var[idc].astype(str), A.var_names.astype(str))}
+                                       if idc else {})
+        return _ds_e2s[dataset_id].get(ens.upper())
+    except Exception:
+        return None
+
+
+def _resolve_probe(dataset_id, leaf_id, genes):
+    """Probe :5007; for not-found panel symbols retry suffix variants (batched) then the ENSDARG
+    bridge. Returns (rows, resolution, raw) — resolution[g] in {direct, alias:X, ensdarg:X, MISSING}."""
     d = _stats_query(dataset_id, leaf_id, "pvalues", genes)
     if d.get("error"):
-        return f"Archivist error: {d['error']}", []
-    rows = [{**g, "verdict": _verdict(g)} for g in d.get("result", [])]
+        return None, {g: "error" for g in genes}, d
+    res = {r["g"]: r for r in d.get("result", [])}
+    resolution, nfound = {}, []
+    for g in genes:
+        if res.get(g, {}).get("found"):
+            resolution[g] = "direct"
+        else:
+            nfound.append(g)
+    if nfound:
+        cand = {}
+        for g in nfound:
+            vs = _symbol_variants(g)[1:]
+            b = _ensdarg_bridge(dataset_id, g)
+            if b and b not in vs:
+                vs.append(b)
+            cand[g] = vs
+        flat = sorted({v for vs in cand.values() for v in vs})
+        dv = _stats_query(dataset_id, leaf_id, "pvalues", flat) if flat else {"result": []}
+        vres = {r["g"]: r for r in dv.get("result", [])}
+        for g in nfound:
+            hit = next((v for v in cand[g] if vres.get(v, {}).get("found")), None)
+            if hit:
+                res[g] = {**vres[hit], "g": g, "resolved_as": hit}
+                resolution[g] = f"ensdarg:{hit}" if hit == _ensdarg_bridge(dataset_id, g) else f"alias:{hit}"
+            else:
+                resolution[g] = "MISSING"
+    return [res.get(g, {"g": g, "found": False}) for g in genes], resolution, d
+
+
+def archivist_probe(dataset_id, leaf_id, genes):
+    rows_raw, resolution, d = _resolve_probe(dataset_id, leaf_id, genes)
+    if rows_raw is None:
+        return f"Archivist error: {d.get('error')}", []
+    rows = [{**g, "verdict": _verdict(g)} for g in rows_raw]
     spec = [r["g"] for r in rows if r["verdict"].startswith("SPECIFIC")]
+
+    def _tag(name):
+        r = resolution.get(name, "")
+        return f" (via {r})" if r.startswith(("alias:", "ensdarg:")) else (" (UNRESOLVED)" if r == "MISSING" else "")
     digest = f"[probe leaf {leaf_id}, {d.get('nCells')} cells] " + "; ".join(
-        f"{r['g']}: {r['verdict']}" for r in rows)
+        f"{r['g']}{_tag(r['g'])}: {r['verdict']}" for r in rows)
     if spec:
         digest += f"  >> SPECIFIC-POSITIVE here: {spec}"
+    miss = [g for g, r in resolution.items() if r == "MISSING"]
+    if miss:
+        digest += f"  >> NOTE: not measured under any alias in this dataset: {miss}"
     return digest, rows
 
 
