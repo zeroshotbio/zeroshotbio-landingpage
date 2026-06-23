@@ -943,18 +943,29 @@ def run_leaf_v2(cluster, dataset_id, llm, budget, leaf_ids):
     fine: stage-aware Researcher -> agentic Reasoner+Archivist with discriminating-marker
     conclusion logic). No ledger. Returns the per-leaf record incl. driver finalLabel."""
     depth, reason = _route_depth(cluster)
+    # AUDIT CAPTURE (persisted by default): the GT-blind briefing the model saw (incl. any trap
+    # warnings) + the Reasoner's verbatim reasoning, so a post-hoc audit needs no re-run.
+    ctx = assemble_leaf_context(cluster, dataset_id)   # GT-blind by construction (leak-wall assert)
+    warns = trap_warnings(cluster)
     if reason is not None:                      # continuum / n_limited -> shallow abstain
         g = reason_gate(cluster, dataset_id, llm)
         budget.add(g.get("usage", {}))
         return {"finalLabel": g["driver_string"], "route": [depth, reason], "identity": g["identity"],
                 "decision": "abstain", "abstain_reason": reason, "trace": [],
-                "cost": round(budget.spent, 4), "researcher": None, "scorecard": None}
+                "cost": round(budget.spent, 4), "researcher": None, "scorecard": None,
+                "context": ctx, "warnings": warns, "researcher_full": None, "why": None, "decided_by": None}
     pkg = research_identity(cluster, dataset_id, llm)
     budget.add(pkg.get("usage", {}))
     res = reason_with_archivist(cluster, dataset_id, pkg, llm, budget, leaf_ids)
+    researcher_full = {k: pkg.get(k) for k in
+                       ("candidate_identity", "supporting_stage_markers", "absent_adult_markers",
+                        "absence_penalized", "confidence_note")}
     return {"finalLabel": res["driver_string"], "route": [depth, reason], "identity": res["identity"],
             "decision": res["decision"], "abstain_reason": None, "trace": res["trace"],
-            "cost": res["cost"], "researcher": pkg.get("candidate_identity"), "scorecard": res.get("scorecard")}
+            "cost": res["cost"], "researcher": pkg.get("candidate_identity"), "scorecard": res.get("scorecard"),
+            # --- audit fields (verbatim, GT-blind) ---
+            "context": ctx, "warnings": warns, "researcher_full": researcher_full,
+            "why": res.get("why"), "decided_by": res.get("decided_by")}
 
 
 def score_clusters(base, dataset_id, model, labelled, gt, usage):
