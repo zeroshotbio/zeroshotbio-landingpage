@@ -37,6 +37,16 @@ const BINS: { value: 1 | 2 | 3 | 4 | 5; short: string; emoji: string; color: str
   { value: 4, short: "Barely", emoji: "😬", color: "#ea580c" },
   { value: 5, short: "Different", emoji: "❌", color: "#dc2626" },
 ];
+// Circular arena geometry. Bins sit on a circle around the central card (which renders
+// UNDERNEATH them). Tissue = top semicircle, cell type = bottom; in each, DIFFERENT is on the
+// left and SAME on the right. Bins are placed at i=0..4 (i=0 leftmost = value 5 "different").
+const ARENA = 320, CX = 160, CY = 160, R = 132, BINW = 56, BINH = 56;
+const CARDW = 200;
+function binPos(rung: "tissue" | "celltype", i: number) {
+  const aDeg = rung === "tissue" ? 160 - 35 * i : 200 + 35 * i; // top arc 160→20, bottom 200→340
+  const a = (aDeg * Math.PI) / 180;
+  return { left: CX + R * Math.cos(a) - BINW / 2, top: CY - R * Math.sin(a) - BINH / 2 };
+}
 const binOf = (v: Rating | null | undefined) =>
   typeof v === "number" ? BINS.find((b) => b.value === v) : undefined;
 const ratingLabel = (v: Rating | null | undefined) =>
@@ -80,7 +90,6 @@ export default function TinderClient() {
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [verdicts, setVerdicts] = useState<VerdictMap>({});
   const [idx, setIdx] = useState(0);
-  const [note, setNote] = useState("");
   const [tissue, setTissue] = useState<Rating | null>(null);
   const [celltype, setCelltype] = useState<Rating | null>(null);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle");
@@ -161,7 +170,6 @@ export default function TinderClient() {
     const v = cur ? verdicts[cur.pair_id] : undefined;
     setTissue((v?.tissue as Rating) ?? null);
     setCelltype((v?.celltype as Rating) ?? null);
-    setNote(v?.note || "");
     setDrag(null); setArmed(null);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [idx, cur?.pair_id]);
@@ -176,7 +184,6 @@ export default function TinderClient() {
     const entry: Verdict = {
       tissue: nt ?? undefined,
       celltype: nc ?? undefined,
-      note: note.trim() || undefined,
       ts: Date.now(),
       ...(old?.bucket != null ? { legacy_bucket: old.bucket } : old?.legacy_bucket != null ? { legacy_bucket: old.legacy_bucket } : {}),
     };
@@ -188,14 +195,17 @@ export default function TinderClient() {
       setFlash({ tissue: nt, celltype: nc });
       window.setTimeout(() => { setFlash(null); setIdx((i) => i + 1); }, 1300);
     }
-  }, [cur, flash, tissue, celltype, note, verdicts, persist]);
+  }, [cur, flash, tissue, celltype, verdicts, persist]);
 
   const goBack = useCallback(() => {
     if (flash) return;
     setIdx((i) => Math.max(0, i - 1));
   }, [flash]);
 
-  // ---- drag: up arms TISSUE (upper arc), down arms CELL TYPE (lower arc) ----
+  // Rungs are answered in order: TISSUE first, then CELL TYPE.
+  const activeRung: "tissue" | "celltype" = tissue == null ? "tissue" : "celltype";
+
+  // ---- drag the card toward the ACTIVE rung's bins; nearest arms ----
   const nearest = (x: number, y: number, refs: (HTMLDivElement | null)[]): Rating | null => {
     let best: Rating | null = null, bestD = Infinity;
     refs.forEach((el, i) => {
@@ -215,9 +225,10 @@ export default function TinderClient() {
     if (!startRef.current) return;
     const dx = x - startRef.current.x, dy = y - startRef.current.y;
     setDrag({ dx, dy });
-    if (dy < -35) { const v = nearest(x, y, tissueRefs.current); setArmed(v ? { rung: "tissue", val: v } : null); }
-    else if (dy > 35) { const v = nearest(x, y, celltypeRefs.current); setArmed(v ? { rung: "celltype", val: v } : null); }
-    else setArmed(null);
+    if (Math.hypot(dx, dy) < 30) { setArmed(null); return; }
+    const refs = activeRung === "tissue" ? tissueRefs.current : celltypeRefs.current;
+    const v = nearest(x, y, refs);
+    setArmed(v ? { rung: activeRung, val: v } : null);
   };
   const onUp = () => {
     if (!startRef.current) return;
@@ -279,127 +290,149 @@ export default function TinderClient() {
 
   return (
     <Shell>
-      {/* top bar */}
+      {/* top bar: Go Back (prev pair) + your character (tap to switch rater) */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 }}>
-        <button onClick={goBack} disabled={idx === 0} style={backBtn(idx === 0)}>‹ Back</button>
-        <div style={{ fontSize: 13, color: "#64748b", textAlign: "right" }}>
-          <div><b style={{ color: "#0f172a" }}>{idx + 1}</b> / {total} · {decided} done</div>
-          <div style={{ color: saveState === "error" ? "#dc2626" : "#16a34a" }}>
-            {saveState === "saving" ? "saving…" : saveState === "error" ? "⚠ retry" : "✓ saved"}
-          </div>
-        </div>
+        <button onClick={goBack} disabled={idx === 0} style={backBtn(idx === 0)}>‹ Go Back</button>
+        <button onClick={() => setRater(null)} title="switch rater" style={charChip}>
+          <PixelAvatar name={rater} px={4} />
+          <span style={{ fontWeight: 700, color: "#0f172a", fontSize: 14 }}>{rater}</span>
+          <span style={{ color: "#94a3b8", fontSize: 13 }}>⇄</span>
+        </button>
       </div>
-      <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, marginBottom: 8 }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", fontSize: 12, color: "#64748b", marginBottom: 6 }}>
+        <span><b style={{ color: "#0f172a" }}>{idx + 1}</b> / {total} · {decided} done</span>
+        <span style={{ color: saveState === "error" ? "#dc2626" : "#16a34a" }}>
+          {saveState === "saving" ? "saving…" : saveState === "error" ? "⚠ retry" : "✓ saved"}
+        </span>
+      </div>
+      <div style={{ height: 6, background: "#e2e8f0", borderRadius: 3, marginBottom: 6 }}>
         <div style={{ height: 6, width: `${(decided / total) * 100}%`, background: "#0ea5e9", borderRadius: 3, transition: "width .3s" }} />
       </div>
 
-      {/* TISSUE rung label + unsure */}
-      <RungHeader title="TISSUE" hint="swipe ↑" value={tissue} onUnsure={() => writeRung("tissue", "unsure")} armed={armed?.rung === "tissue"} />
+      {/* TISSUE header (bright while it's this rung's turn) */}
+      <RungHeader title="TISSUE" active={activeRung === "tissue"} done={tissue != null} value={tissue}
+        color="#0ea5e9" onUnsure={() => writeRung("tissue", "unsure")} onReopen={() => setTissue(null)} />
 
-      {/* upper semicircle (tissue) */}
-      <Arc which="tissue" refs={tissueRefs} armed={armed} upper onPick={(v) => writeRung("tissue", v)} />
-
-      {/* CENTER CARD */}
-      <div style={{ position: "relative", height: 208 }}>
-        {flash ? (
-          <FlashCard tissue={flash.tissue} celltype={flash.celltype} />
-        ) : (
+      {/* CIRCULAR ARENA: bins around a central card; card renders UNDERNEATH the bins */}
+      <div style={{ position: "relative", width: ARENA, height: ARENA, margin: "2px auto" }}>
+        {/* central card (zIndex 1, under the bins); auto-height so long labels never clip */}
+        {!flash && (
           <div
             onPointerDown={(e) => onDown(e.clientX, e.clientY, e.currentTarget, e.pointerId)}
             onPointerMove={(e) => onMove(e.clientX, e.clientY)}
             onPointerUp={onUp}
             onPointerCancel={onUp}
             style={{
-              position: "absolute", inset: 0, background: "#fff", border: "1px solid #e2e8f0",
-              borderRadius: 18, boxShadow: "0 10px 30px rgba(2,8,23,.10)", padding: "14px 14px",
-              transform: `translate(${drag?.dx ?? 0}px, ${drag?.dy ?? 0}px) rotate(${tilt}deg)`,
+              position: "absolute", left: CX, top: CY, width: CARDW,
+              background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, boxShadow: "0 10px 30px rgba(2,8,23,.10)",
+              padding: "12px", transform: `translate(calc(-50% + ${drag?.dx ?? 0}px), calc(-50% + ${drag?.dy ?? 0}px)) rotate(${tilt}deg)`,
               transition: drag ? "none" : "transform .2s cubic-bezier(.2,.8,.3,1)",
-              touchAction: "none", userSelect: "none", cursor: "grab", zIndex: 5,
+              touchAction: "none", userSelect: "none", cursor: "grab", zIndex: 1,
             }}
           >
-            <div style={{ textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#94a3b8", textTransform: "uppercase" }}>
-              compare both identities · rate each rung
-            </div>
-            <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "stretch" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
               <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} />
               <div style={{ display: "flex", alignItems: "center", color: "#e11d48", fontWeight: 800, fontSize: 13 }}>vs</div>
               <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} />
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
               <Chip label="Tissue" value={tissue} />
-              <Chip label="Cell type" value={celltype} />
+              <Chip label="Cell" value={celltype} />
             </div>
           </div>
         )}
+        {/* confirmation flash overlay (zIndex 5, above the bins) */}
+        {flash && (
+          <div style={{ position: "absolute", left: CX, top: CY, width: CARDW, transform: "translate(-50%,-50%)", zIndex: 6 }}>
+            <FlashCard tissue={flash.tissue} celltype={flash.celltype} />
+          </div>
+        )}
+        {/* bins (zIndex 3, above the card) */}
+        <Arc rung="tissue" refs={tissueRefs} armed={armed} active={activeRung === "tissue"} onPick={(v) => writeRung("tissue", v)} />
+        <Arc rung="celltype" refs={celltypeRefs} armed={armed} active={activeRung === "celltype"} onPick={(v) => writeRung("celltype", v)} />
       </div>
 
-      {/* lower semicircle (cell type) */}
-      <Arc which="celltype" refs={celltypeRefs} armed={armed} onPick={(v) => writeRung("celltype", v)} />
+      {/* CELL TYPE header (greyed until tissue is done, then bright) */}
+      <RungHeader title="CELL TYPE" active={activeRung === "celltype"} done={celltype != null} value={celltype}
+        color="#a855f7" onUnsure={() => writeRung("celltype", "unsure")} onReopen={() => setCelltype(null)} />
 
-      {/* CELL TYPE rung label + unsure */}
-      <RungHeader title="CELL TYPE" hint="swipe ↓" value={celltype} onUnsure={() => writeRung("celltype", "unsure")} armed={armed?.rung === "celltype"} />
-
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="optional note…"
-        style={{ width: "100%", marginTop: 10, padding: "10px 12px", border: "1px solid #e2e8f0", borderRadius: 10, fontSize: 15 }} />
-      <div style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", marginTop: 8 }}>
-        swipe ↑ tissue · ↓ cell type · or tap a bin · both rungs → next
+      <div style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
+        ⬅ different · same ➡ — drag the card into a bin, or tap. tissue first, then cell type.
       </div>
     </Shell>
   );
 }
 
-// 5-bin semicircle. upper=true => arc above the card (∩, ends near card); else below (∪).
-function Arc({ which, refs, armed, upper, onPick }: {
-  which: "tissue" | "celltype";
+// 5 bins on the arena circle for one rung. Greyed + non-interactive until it's this rung's turn.
+function Arc({ rung, refs, armed, active, onPick }: {
+  rung: "tissue" | "celltype";
   refs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   armed: { rung: "tissue" | "celltype"; val: Rating } | null;
-  upper?: boolean;
+  active: boolean;
   onPick: (v: 1 | 2 | 3 | 4 | 5) => void;
 }) {
-  const H = 120, R = 96;
   return (
-    <div style={{ position: "relative", height: H, margin: upper ? "2px 0 4px" : "4px 0 2px" }}>
+    <>
       {BINS.map((b, i) => {
-        const ang = (180 - i * 45) * (Math.PI / 180);
-        const cx = 50 + Math.cos(ang) * 40;          // % width
-        const s = Math.sin(ang) * R;                  // px from the diameter edge
-        const top = upper ? H - s - 52 : s + 4;       // upper: cap near top; lower: cup near bottom
-        const isArmed = armed?.rung === which && armed.val === b.value;
+        const val = (5 - i) as 1 | 2 | 3 | 4 | 5;   // i=0 leftmost = 5 "different"; i=4 rightmost = 1 "same"
+        const bin = BINS.find((x) => x.value === val)!;
+        const pos = binPos(rung, i);
+        const isArmed = active && armed?.rung === rung && armed.val === val;
+        const col = active ? bin.color : "#cbd5e1";
         return (
           <div
-            key={b.value}
+            key={val}
             ref={(el) => { refs.current[i] = el; }}
-            onClick={() => onPick(b.value)}
+            onClick={active ? () => onPick(val) : undefined}
             style={{
-              position: "absolute", left: `${cx}%`, top, marginLeft: -32, width: 64,
-              transform: `scale(${isArmed ? 1.22 : 1})`, transition: "transform .12s, box-shadow .12s",
-              textAlign: "center", cursor: "pointer",
-              background: isArmed ? b.color : "#fff", color: isArmed ? "#fff" : b.color,
-              border: `2px solid ${b.color}`, borderRadius: 12, padding: "6px 2px",
-              boxShadow: isArmed ? `0 0 0 4px ${b.color}33, 0 8px 18px ${b.color}55` : "0 2px 5px rgba(2,8,23,.06)",
-              fontWeight: 700, zIndex: isArmed ? 4 : 2,
+              position: "absolute", left: pos.left, top: pos.top, width: BINW, height: BINH,
+              transform: `scale(${isArmed ? 1.28 : 1})`, transition: "transform .12s, box-shadow .12s, opacity .2s",
+              display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
+              textAlign: "center", cursor: active ? "pointer" : "default", pointerEvents: active ? "auto" : "none",
+              opacity: active ? 1 : 0.4,
+              background: isArmed ? col : "#fff", color: isArmed ? "#fff" : col,
+              border: `2px solid ${col}`, borderRadius: 12,
+              boxShadow: isArmed ? `0 0 0 4px ${col}44, 0 8px 18px ${col}66` : "0 2px 5px rgba(2,8,23,.06)",
+              fontWeight: 700, zIndex: isArmed ? 4 : 3,
             }}
           >
-            <div style={{ fontSize: 15 }}>{b.emoji}</div>
-            <div style={{ fontSize: 14, fontWeight: 800 }}>{b.value}</div>
-            <div style={{ fontSize: 9, lineHeight: 1 }}>{b.short}</div>
+            <div style={{ fontSize: 14 }}>{bin.emoji}</div>
+            <div style={{ fontSize: 13, fontWeight: 800 }}>{val}</div>
+            <div style={{ fontSize: 8, lineHeight: 1 }}>{bin.short}</div>
           </div>
         );
       })}
-    </div>
+    </>
   );
 }
 
-function RungHeader({ title, hint, value, onUnsure, armed }: {
-  title: string; hint: string; value: Rating | null; onUnsure: () => void; armed?: boolean;
+// Rung label + unsure button. Bright when it's this rung's turn; greyed otherwise.
+// Tapping a DONE rung's label re-opens it for correction.
+function RungHeader({ title, active, done, value, color, onUnsure, onReopen }: {
+  title: string; active: boolean; done: boolean; value: Rating | null; color: string;
+  onUnsure: () => void; onReopen: () => void;
 }) {
+  const b = binOf(value);
   return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "2px 0" }}>
-      <div style={{ fontSize: 12, fontWeight: 800, letterSpacing: 1, color: armed ? "#0ea5e9" : "#334155" }}>
-        {title} <span style={{ color: "#94a3b8", fontWeight: 600 }}>{hint}</span>
+    <div style={{
+      display: "flex", alignItems: "center", justifyContent: "space-between", margin: "4px 0",
+      padding: "6px 12px", borderRadius: 12, transition: "all .2s",
+      background: active ? `${color}1a` : "transparent",
+      border: active ? `2px solid ${color}` : "2px solid transparent",
+      opacity: active ? 1 : 0.5,
+    }}>
+      <div onClick={done && !active ? onReopen : undefined}
+        style={{ fontSize: 14, fontWeight: 800, letterSpacing: 1, color: active ? color : "#94a3b8", cursor: done && !active ? "pointer" : "default" }}>
+        {title}
+        {done && <span style={{ marginLeft: 8, fontSize: 12, color: "#16a34a" }}>
+          ✓ {value === "unsure" ? "unsure" : `${value} ${b?.short}`}
+        </span>}
+        {done && !active && <span style={{ marginLeft: 6, fontSize: 11, color: "#94a3b8" }}>✎ edit</span>}
+        {active && !done && <span style={{ marginLeft: 8, fontSize: 11, color: "#64748b", fontWeight: 600 }}>← your turn</span>}
       </div>
-      <button onClick={onUnsure} style={{
-        ...unsureBtn, ...(value === "unsure" ? { background: "#475569", color: "#fff", borderStyle: "solid" } : {}),
+      <button onClick={active ? onUnsure : undefined} disabled={!active} style={{
+        ...unsureBtn, cursor: active ? "pointer" : "default", opacity: active ? 1 : 0.5,
+        ...(value === "unsure" ? { background: "#475569", color: "#fff", borderStyle: "solid" } : {}),
       }}>🤷 unsure</button>
     </div>
   );
@@ -424,9 +457,9 @@ function FlashCard({ tissue, celltype }: { tissue: Rating; celltype: Rating }) {
   const tb = binOf(tissue), cb = binOf(celltype);
   return (
     <div style={{
-      position: "absolute", inset: 0, borderRadius: 18, background: "#0f172a", color: "#fff",
+      position: "relative", minHeight: 150, borderRadius: 18, background: "#0f172a", color: "#fff",
       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
-      boxShadow: "0 10px 40px rgba(2,8,23,.5)", animation: "tinderPop .25s ease", zIndex: 6, overflow: "hidden",
+      boxShadow: "0 10px 40px rgba(2,8,23,.5)", animation: "tinderPop .25s ease", overflow: "hidden",
     }}>
       <div style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
         {["💕", "✨", "🔥", "💖", "⭐"].map((e, i) => (
@@ -504,4 +537,8 @@ const backBtn = (disabled: boolean): React.CSSProperties => ({
 const unsureBtn: React.CSSProperties = {
   background: "#fff", color: "#475569", border: "2px dashed #94a3b8", borderRadius: 999,
   padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .12s",
+};
+const charChip: React.CSSProperties = {
+  display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e2e8f0",
+  borderRadius: 999, padding: "4px 12px 4px 6px", cursor: "pointer", boxShadow: "0 2px 6px rgba(2,8,23,.06)",
 };
