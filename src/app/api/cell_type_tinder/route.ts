@@ -32,8 +32,23 @@ const idFor = (user: string) => `tinder::${user.toLowerCase()}`;
 const isAllowedUser = (u: string | null) =>
   !!u && USERS.includes(u.toLowerCase());
 
-type Verdict = { bucket: number | "unsure"; note?: string; ts: number };
+// Two-rung verdict: tissue + cell-type ratings (1-5 | "unsure").
+// `bucket` / `legacy_bucket` are the pre-migration single-scale rating, preserved verbatim
+// so already-collected data is never lost (see export). A pair is "complete" only when BOTH
+// tissue and celltype are set.
+type Rating = number | "unsure" | null | undefined;
+type Verdict = {
+  tissue?: Rating;
+  celltype?: Rating;
+  bucket?: number | "unsure"; // legacy single-scale (pre two-rung)
+  legacy_bucket?: number | "unsure";
+  note?: string;
+  ts: number;
+};
 type VerdictMap = Record<string, Verdict>;
+
+const isComplete = (v: Verdict) =>
+  v.tissue != null && v.tissue !== undefined && v.celltype != null && v.celltype !== undefined;
 
 async function loadUser(user: string): Promise<{
   verdicts: VerdictMap;
@@ -54,9 +69,11 @@ async function loadUser(user: string): Promise<{
       verdicts = JSON.parse(String(it.state_json));
     } catch {}
   }
+  // Progress counts only fully two-rung-rated pairs (legacy single-scale entries don't count
+  // as done — they resurface for re-rating, but stay preserved for export).
   return {
     verdicts,
-    n_decided: Object.keys(verdicts).length,
+    n_decided: Object.values(verdicts).filter(isComplete).length,
     updated_at: it.updated_at ? Number(it.updated_at) : null,
   };
 }
@@ -81,13 +98,20 @@ export async function GET(request: NextRequest) {
     }
 
     if (action === "export") {
-      const rows: string[] = ["pair_id,rater,bucket,note,timestamp"];
+      // Two-rung schema; legacy single-scale rating preserved in its own column so no
+      // already-collected data is lost.
+      const rows: string[] = [
+        "pair_id,rater,tissue_rating,celltype_rating,note,timestamp,legacy_bucket",
+      ];
       for (const u of USERS) {
         const { verdicts } = await loadUser(u);
         for (const [pid, v] of Object.entries(verdicts)) {
           const note = (v.note || "").replace(/"/g, '""');
           const ts = new Date(v.ts).toISOString();
-          rows.push(`${pid},${u},${v.bucket},"${note}",${ts}`);
+          const tissue = v.tissue ?? "";
+          const celltype = v.celltype ?? "";
+          const legacy = v.bucket ?? v.legacy_bucket ?? "";
+          rows.push(`${pid},${u},${tissue},${celltype},"${note}",${ts},${legacy}`);
         }
       }
       return new NextResponse(rows.join("\n") + "\n", {
