@@ -2,19 +2,24 @@
 
 Live: **https://www.zeroshot.bio/cell_type_tinder** (mobile-first).
 
-Patrick and Harsha bin 334 blinded predicted↔GT cell-type label pairs on a 5-point
-same↔different spectrum. Their verdicts are the calibration anchor for the standardized judge.
+Patrick, Harsha (and Steven, for testing) bin 334 blinded predicted↔GT cell-type label pairs on
+a 5-point same↔different spectrum. Their verdicts are the calibration anchor for the standardized
+judge.
 
 ## What it does
+- **Landing:** each rater is a pixel-art character with a live progress bar (fetched from
+  `?action=progress`). Tap your character to start/resume.
 - One pair per screen: two neutral label cards (`label_A` / `label_B`) + minimal context
   (tier, tissue area). **Blinded** — which label is the model prediction vs ground truth is
   never shown, and the machine's original verdict is never loaded.
 - Bin into: **1 Exactly the same · 2 Basically the same · 3 Partially related · 4 Barely
   related · 5 Totally different**, plus an explicit **Unsure / genuinely ambiguous**.
-- Mobile: **swipe** →/← to bin (position across the screen maps to bucket 1–5), swipe **↑**
-  for unsure, or **tap** a button. Desktop: keys `1`–`5` / `u`. Optional free-text note per pair.
+- **Interaction:** drag the card down into a semicircle of 5 bins — the nearest bin lights up
+  as you approach; on release a ~1.4s confirmation flashes (emoji burst), then auto-advances.
+  Swipe **up** (or tap the pill) = unsure; tapping a bin also works. Desktop: keys `1`–`5` / `u`,
+  `⌫` back. Obvious **Back** button, top-left. Optional free-text note per pair.
 - Progress (`47 / 334`), resumable — each rater self-identifies and resumes at their first
-  un-binned pair. Both raters bin the **same full set** independently (inter-rater agreement).
+  un-binned pair. All raters bin the **same full set** independently (inter-rater agreement).
 
 ## Stack & where things live
 - Next.js 15 App Router on Vercel (same deployment as `/POC_workflow`; that route is untouched).
@@ -26,9 +31,12 @@ same↔different spectrum. Their verdicts are the calibration anchor for the sta
 ## Where verdicts persist
 - DynamoDB table **`zeroshot_dataroom_visitor_tracking`** (the existing site table; AWS creds
   already configured in Vercel — same as `/api/visitors` and `/api/minifin_annotation`).
-- One row per rater: `id = "tinder::patrick"` / `"tinder::harsha"`, with `state_json` holding
-  the full `{pair_id: {bucket, note, ts}}` map. The client POSTs the full map after **every**
-  verdict, so a stop/resume or refresh never loses data. No browser-only storage.
+- One row per rater: `id = "tinder::<rater>"` (patrick / harsha / steven), with `state_json`
+  holding the full `{pair_id: {bucket, note, ts}}` map. The client POSTs the full map after
+  **every** verdict. As a belt-and-suspenders backup it also mirrors verdicts to `localStorage`
+  and, on resume, merges any local-only/newer verdicts back to the server — so navigate-away,
+  refresh, or a brief offline patch never loses data. The store is the source of truth (not
+  browser-only). The last rater is remembered locally for one-tap resume.
 
 ## Export (`expert_verdicts.csv`)
 ```
