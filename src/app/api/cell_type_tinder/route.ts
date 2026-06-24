@@ -25,9 +25,8 @@ const ddbClient = new DynamoDBClient({
 const TABLE_NAME =
   process.env.AWS_DYNAMODB_TABLE_NAME || "zeroshot_dataroom_visitor_tracking";
 
-// Both experts rate the SAME pairs independently — inter-rater agreement is the point.
-// "steven" is included so the set-up can be tested end-to-end.
-const USERS = ["patrick", "harsha", "steven"];
+// All raters bin the SAME pairs independently — inter-rater agreement is the point.
+const USERS = ["patrick", "harsha", "steven", "creighton", "darien"];
 const idFor = (user: string) => `tinder::${user.toLowerCase()}`;
 const isAllowedUser = (u: string | null) =>
   !!u && USERS.includes(u.toLowerCase());

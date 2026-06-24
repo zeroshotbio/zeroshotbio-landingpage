@@ -33,7 +33,7 @@ type Verdict = {
 };
 type VerdictMap = Record<string, Verdict>;
 
-const RATERS = ["Patrick", "Harsha", "Steven"];
+const RATERS = ["Patrick", "Harsha", "Steven", "Creighton", "Darien"];
 const TOTAL = 334;
 const BINS: { value: 1 | 2 | 3 | 4 | 5; short: string; emoji: string; color: string }[] = [
   { value: 1, short: "Same", emoji: "💚", color: "#16a34a" },
@@ -123,6 +123,42 @@ const CHARACTERS: Record<string, Char> = {
       ".TT..TT...",
     ],
     pal: { G: "#15803d", S: "#fcd9b6", E: "#1f2937", T: "#a16207", B: "#7c3a0e", b: "#cbd5e1" },
+  },
+  // KING — gold crown with gems, ermine collar, red royal robe, scepter with an orb
+  Creighton: {
+    grid: [
+      "..Y.Y.Y...",
+      "..YYYYY...",
+      "..YgYgY...",
+      "...SSSS...",
+      "...SEES...",
+      "...SSSS...",
+      "..CCCCCC..",
+      "..RRRRRR.O",
+      ".RRRRRRR.T",
+      ".R.RR.R.RT",
+      ".RR..RR..T",
+      ".RR..RR...",
+    ],
+    pal: { Y: "#fbbf24", g: "#dc2626", S: "#fcd9b6", E: "#1f2937", C: "#f1f5f9", R: "#b91c1c", O: "#fbbf24", T: "#a16207" },
+  },
+  // VIKING — horned helmet, brown beard, fur armor, battle-axe on the right
+  Darien: {
+    grid: [
+      "h........h",
+      ".h......h.",
+      ".hMMMMMMh.",
+      "..MMMMMM..",
+      "..MMMMMM..",
+      "...SSSS...",
+      "...SEES...",
+      "...SbbS...",
+      "..FFFFFF.X",
+      ".FFFFFFFXX",
+      ".F.FF.F.TX",
+      ".FF..FF.T.",
+    ],
+    pal: { h: "#9ca3af", M: "#6b7280", S: "#fcd9b6", E: "#1f2937", b: "#92400e", F: "#78350f", X: "#cbd5e1", T: "#a16207" },
   },
 };
 function PixelAvatar({ name, px = 7 }: { name: string; px?: number }) {
