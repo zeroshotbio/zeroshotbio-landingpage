@@ -15,7 +15,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 type Ladder = { germ_layer: string; tissue: string; cell_type: string };
 type Pair = {
   pair_id: string; label_A: string; label_B: string; tier: string; tissue_area: string;
-  A_ladder?: Ladder; B_ladder?: Ladder; // full germ→tissue→cell-type ladder per side (blinded)
+  A_ladder?: Ladder; B_ladder?: Ladder; // full germ→tissue→cell-type ladder per side
+  A_is?: "predicted" | "gt";            // which side is the Cell Type Labeller vs Ground truth
+};
+const SRC = {
+  labeller: { label: "Cell Type Labeller", short: "🤖 Labeller", color: "#6366f1" },
+  gt: { label: "Ground truth", short: "🎯 Ground truth", color: "#059669" },
 };
 type Rating = 1 | 2 | 3 | 4 | 5 | "unsure";
 type Verdict = {
@@ -137,6 +142,7 @@ const isComplete = (v?: Verdict) => !!v && v.tissue != null && v.celltype != nul
 
 export default function TinderClient() {
   const [rater, setRater] = useState<string | null>(null);
+  const [showIntro, setShowIntro] = useState(false); // reminder screen shown after picking a rater
   const [pairs, setPairs] = useState<Pair[]>([]);
   const [verdicts, setVerdicts] = useState<VerdictMap>({});
   const [idx, setIdx] = useState(0);
@@ -195,8 +201,9 @@ export default function TinderClient() {
     } catch { setSaveState("error"); }
   }, [rater]);
 
-  const pickRater = useCallback(async (name: string) => {
+  const pickRater = useCallback(async (name: string, fromSelection = false) => {
     setRater(name);
+    setShowIntro(fromSelection); // remind what the judge does only when picked from the selection screen
     if (typeof window !== "undefined") localStorage.setItem("tinder_last_rater", name);
     let server: VerdictMap = {};
     try {
@@ -313,7 +320,7 @@ export default function TinderClient() {
         {RATERS.map((n) => {
           const pct = Math.round(((progressAll[n.toLowerCase()] || 0) / TOTAL) * 100);
           return (
-            <button key={n} onClick={() => pickRater(n)} style={charCard}>
+            <button key={n} onClick={() => pickRater(n, true)} style={charCard}>
               <PixelAvatar name={n} />
               <div style={{ flex: 1, textAlign: "left", marginLeft: 14 }}>
                 <div style={{ fontSize: 19, fontWeight: 700, color: "#0f172a" }}>{n}</div>
@@ -333,6 +340,11 @@ export default function TinderClient() {
   }
 
   if (total === 0) return <Shell><p style={{ color: "#475569" }}>Loading pairs… 💘</p></Shell>;
+
+  // ---------------- INTRO / REMINDER (after picking a rater from the selection screen) ----------------
+  if (showIntro) {
+    return <IntroScreen rater={rater} onStart={() => setShowIntro(false)} onBack={() => { setRater(null); setShowIntro(false); }} />;
+  }
 
   // ---------------- DONE ----------------
   if (done) {
@@ -399,9 +411,9 @@ export default function TinderClient() {
             }}
           >
             <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-              <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} />
+              <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} source={cur.A_is === "predicted" ? "labeller" : cur.A_is === "gt" ? "gt" : undefined} />
               <div style={{ display: "flex", alignItems: "center", color: "#e11d48", fontWeight: 800, fontSize: 13 }}>vs</div>
-              <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} />
+              <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} source={cur.A_is === "predicted" ? "gt" : cur.A_is === "gt" ? "labeller" : undefined} />
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
               <Chip label="Tissue" value={tissue} />
@@ -560,10 +572,11 @@ function RungResult({ title, rating, color }: { title: string; rating: Rating; c
   );
 }
 
-// One identity shown as a germ layer → tissue → cell-type ladder (cell type emphasized).
-// Falls back to a bare cell-type string if a pair predates ladder enrichment.
-function LadderCard({ ladder, fallback }: { ladder?: Ladder; fallback: string }) {
+// One identity shown as a germ layer → tissue → cell-type ladder (cell type emphasized),
+// topped by a source pill (Cell Type Labeller vs Ground truth). Falls back to a bare string.
+function LadderCard({ ladder, fallback, source }: { ladder?: Ladder; fallback: string; source?: "labeller" | "gt" }) {
   const l = ladder || { germ_layer: "", tissue: "", cell_type: fallback };
+  const s = source ? SRC[source] : null;
   const Rung = ({ k, v, strong }: { k: string; v: string; strong?: boolean }) => (
     <div style={{ padding: strong ? "6px 8px" : "3px 8px", borderTop: strong ? "1px solid #e2e8f0" : "none" }}>
       <div style={{ fontSize: 8, letterSpacing: 0.5, color: "#94a3b8", textTransform: "uppercase" }}>{k}</div>
@@ -574,10 +587,71 @@ function LadderCard({ ladder, fallback }: { ladder?: Ladder; fallback: string })
   );
   return (
     <div style={{ flex: 1, background: "#f1f5f9", borderRadius: 12, overflow: "hidden", textAlign: "center" }}>
+      {s && (
+        <div style={{ background: s.color, color: "#fff", fontSize: 9.5, fontWeight: 800, letterSpacing: 0.3, padding: "3px 4px", lineHeight: 1.2 }}>
+          {s.short}
+        </div>
+      )}
       <Rung k="germ layer" v={l.germ_layer} />
       <Rung k="tissue" v={l.tissue} />
       <Rung k="cell type" v={l.cell_type} strong />
     </div>
+  );
+}
+
+// Reminder screen shown after picking a rater from the selection screen.
+function IntroScreen({ rater, onStart, onBack }: { rater: string; onStart: () => void; onBack: () => void }) {
+  const step = (emoji: string, title: string, sub: string, bg: string) => (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%", background: bg, borderRadius: 12, padding: "9px 12px" }}>
+      <span style={{ fontSize: 20 }}>{emoji}</span>
+      <div style={{ textAlign: "left" }}>
+        <div style={{ fontSize: 13, fontWeight: 800, color: "#0f172a" }}>{title}</div>
+        <div style={{ fontSize: 11, color: "#64748b" }}>{sub}</div>
+      </div>
+    </div>
+  );
+  const arrow = <div style={{ color: "#cbd5e1", fontSize: 16, lineHeight: 1 }}>↓</div>;
+  return (
+    <Shell>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 6 }}>
+        <button onClick={onBack} style={backBtn(false)}>‹ Go Back</button>
+        <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
+          <PixelAvatar name={rater} px={4} />
+          <span style={{ fontWeight: 700, fontSize: 14, color: "#0f172a" }}>{rater}</span>
+        </span>
+      </div>
+
+      <h2 style={{ fontSize: 22, fontWeight: 800, textAlign: "center", margin: "6px 0 4px" }}>You&apos;re calibrating the judge ⚖️</h2>
+      <p style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.5, textAlign: "center", margin: "0 0 14px" }}>
+        For each cluster, the <b>Cell Type Labeller</b> reads its marker genes and reasons out a predicted
+        identity. The <b>judge</b> compares that prediction to the trusted <b>ground-truth</b> label and
+        scores how well they match — at two levels, <b>tissue</b> and <b>cell type</b>. Your job: decide how
+        close each pair really is, from <i>exactly the same</i> to <i>totally different</i>. Your calls teach
+        the judge where &quot;right&quot; ends and &quot;wrong&quot; begins, so it can grade thousands of
+        clusters the way an expert would.
+      </p>
+
+      <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#94a3b8", textAlign: "center", marginBottom: 8 }}>
+        HOW THE LABELLER GETS ITS ANSWER
+      </div>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
+        {step("🧫", "Cluster marker genes", "e.g. krt4, cyt1, evpla…", "#eef2ff")}
+        {arrow}
+        {step("🔬", "Researcher", "which cell type expresses them, at this stage", "#eef2ff")}
+        {arrow}
+        {step("🧠", "Reasoner + 📚 Archivist", "cross-checks ZFIN / ZFA ontology + atlas", "#eef2ff")}
+        {arrow}
+        {step("🏷️", "Predicted label", "germ layer › tissue › cell type", "#e0e7ff")}
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, margin: "12px 0 4px", fontSize: 13, fontWeight: 700 }}>
+        <span style={{ color: SRC.labeller.color }}>🤖 prediction</span>
+        <span style={{ color: "#94a3b8" }}>vs</span>
+        <span style={{ color: SRC.gt.color }}>🎯 ground truth</span>
+        <span style={{ color: "#94a3b8" }}>→ you score the match</span>
+      </div>
+
+      <button onClick={onStart} style={{ ...primaryBtn, marginTop: 14 }}>Start binning →</button>
+    </Shell>
   );
 }
 
@@ -607,6 +681,10 @@ const backBtn = (disabled: boolean): React.CSSProperties => ({
 const unsureBtn: React.CSSProperties = {
   background: "#fff", color: "#475569", border: "2px dashed #94a3b8", borderRadius: 999,
   padding: "4px 12px", fontSize: 12, fontWeight: 600, cursor: "pointer", transition: "all .12s",
+};
+const primaryBtn: React.CSSProperties = {
+  width: "100%", padding: "14px", fontSize: 17, fontWeight: 800, color: "#fff",
+  background: "#0ea5e9", border: "none", borderRadius: 12, cursor: "pointer",
 };
 const charChip: React.CSSProperties = {
   display: "flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e2e8f0",
