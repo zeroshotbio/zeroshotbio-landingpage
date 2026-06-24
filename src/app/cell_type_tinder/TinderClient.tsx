@@ -19,7 +19,7 @@ type Pair = {
   A_is?: "predicted" | "gt";            // which side is the Cell Type Labeller vs Ground truth
 };
 const SRC = {
-  labeller: { label: "Cell Type Labeller", short: "🤖 Labeller", color: "#6366f1" },
+  labeller: { label: "AI Cell Type Labeller", short: "🤖 AI Labeller", color: "#6366f1" },
   gt: { label: "Ground truth", short: "🎯 Ground truth", color: "#059669" },
 };
 type Rating = 1 | 2 | 3 | 4 | 5 | "unsure";
@@ -51,7 +51,9 @@ const BINW = 58, BINH = 58;
 // horizontal so the left/right "different/same" bins sit above/below the card, not on its text.
 type Geo = { cx: number; cy: number; rx: number; ry: number; cardw: number };
 function binPos(rung: "tissue" | "celltype", i: number, g: Geo) {
-  const aDeg = rung === "tissue" ? 150 - 30 * i : 210 + 30 * i; // top arc 150→30, bottom 210→330
+  // Narrower span (135→45 top, 225→315 bottom) = flatter arc: the end bins ("different"/"same")
+  // ride higher/lower, clear of the wide central card instead of overlapping its sides.
+  const aDeg = rung === "tissue" ? 135 - 22.5 * i : 225 + 22.5 * i;
   const a = (aDeg * Math.PI) / 180;
   return { left: g.cx + g.rx * Math.cos(a) - BINW / 2, top: g.cy - g.ry * Math.sin(a) - BINH / 2 };
 }
@@ -369,7 +371,7 @@ export default function TinderClient() {
   // Geometry from the measured width. Arena is taller than wide (uses vertical space): the card
   // is wide & centered lower; bins ride an ellipse so the wide card doesn't cover them.
   const AW = arenaW;
-  const AH = Math.round(AW * 1.32);
+  const AH = Math.round(AW * 1.28);
   const geo: Geo = { cx: AW / 2, cy: AH / 2, rx: AW / 2 - BINW / 2 - 2, ry: AH / 2 - BINH / 2 - 2, cardw: Math.min(AW * 0.92, 400) };
 
   return (
@@ -416,9 +418,12 @@ export default function TinderClient() {
             }}
           >
             <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
-              <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} source={cur.A_is === "predicted" ? "labeller" : cur.A_is === "gt" ? "gt" : undefined} />
+              {/* Always: AI Labeller on the LEFT, Ground truth on the RIGHT. */}
+              <LadderCard ladder={cur.A_is === "predicted" ? cur.A_ladder : cur.B_ladder}
+                fallback={cur.A_is === "predicted" ? cur.label_A : cur.label_B} source="labeller" />
               <div style={{ display: "flex", alignItems: "center", color: "#e11d48", fontWeight: 800, fontSize: 13 }}>vs</div>
-              <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} source={cur.A_is === "predicted" ? "gt" : cur.A_is === "gt" ? "labeller" : undefined} />
+              <LadderCard ladder={cur.A_is === "predicted" ? cur.B_ladder : cur.A_ladder}
+                fallback={cur.A_is === "predicted" ? cur.label_B : cur.label_A} source="gt" />
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
               <Chip label="Tissue" value={tissue} />
@@ -631,18 +636,18 @@ function IntroScreen({ rater, onStart, onBack }: { rater: string; onStart: () =>
         </span>
       </div>
 
-      <h2 style={{ fontSize: 22, fontWeight: 800, textAlign: "center", margin: "6px 0 4px" }}>You&apos;re calibrating the judge ⚖️</h2>
+      <h2 style={{ fontSize: 22, fontWeight: 800, textAlign: "center", margin: "6px 0 4px" }}>You&apos;re calibrating the AI Judge ⚖️</h2>
       <p style={{ fontSize: 13.5, color: "#475569", lineHeight: 1.5, textAlign: "center", margin: "0 0 14px" }}>
-        For each cluster, the <b>Cell Type Labeller</b> reads its marker genes and reasons out a predicted
-        identity. The <b>judge</b> compares that prediction to the trusted <b>ground-truth</b> label and
+        For each cluster, the <b>AI Cell Type Labeller</b> reads its marker genes and reasons out a predicted
+        identity. The <b>AI judge</b> compares that prediction to the trusted <b>ground-truth</b> label and
         scores how well they match — at two levels, <b>tissue</b> and <b>cell type</b>. Your job: decide how
         close each pair really is, from <i>exactly the same</i> to <i>totally different</i>. Your calls teach
-        the judge where &quot;right&quot; ends and &quot;wrong&quot; begins, so it can grade thousands of
+        the AI judge where &quot;right&quot; ends and &quot;wrong&quot; begins, so it can grade thousands of
         clusters the way an expert would.
       </p>
 
       <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1, color: "#94a3b8", textAlign: "center", marginBottom: 8 }}>
-        HOW THE LABELLER GETS ITS ANSWER
+        HOW THE AI LABELLER GETS ITS ANSWER
       </div>
       <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 5 }}>
         {step("🧫", "Cluster marker genes", "e.g. krt4, cyt1, evpla…", "#eef2ff")}
