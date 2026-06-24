@@ -12,7 +12,11 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 
-type Pair = { pair_id: string; label_A: string; label_B: string; tier: string; tissue_area: string };
+type Ladder = { germ_layer: string; tissue: string; cell_type: string };
+type Pair = {
+  pair_id: string; label_A: string; label_B: string; tier: string; tissue_area: string;
+  A_ladder?: Ladder; B_ladder?: Ladder; // full germ→tissue→cell-type ladder per side (blinded)
+};
 type Rating = 1 | 2 | 3 | 4 | 5 | "unsure";
 type Verdict = {
   tissue?: Rating | null;
@@ -296,7 +300,7 @@ export default function TinderClient() {
       <Arc which="tissue" refs={tissueRefs} armed={armed} upper onPick={(v) => writeRung("tissue", v)} />
 
       {/* CENTER CARD */}
-      <div style={{ position: "relative", height: 168 }}>
+      <div style={{ position: "relative", height: 208 }}>
         {flash ? (
           <FlashCard tissue={flash.tissue} celltype={flash.celltype} />
         ) : (
@@ -313,13 +317,13 @@ export default function TinderClient() {
               touchAction: "none", userSelect: "none", cursor: "grab", zIndex: 5,
             }}
           >
-            <div style={{ textAlign: "center", fontSize: 11, letterSpacing: 1, color: "#94a3b8", textTransform: "uppercase" }}>
-              {TIER_LABEL[cur.tier] || cur.tier} · {cur.tissue_area || "—"}
+            <div style={{ textAlign: "center", fontSize: 10, letterSpacing: 1, color: "#94a3b8", textTransform: "uppercase" }}>
+              compare both identities · rate each rung
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 8 }}>
-              <LabelCard text={cur.label_A} />
-              <div style={{ textAlign: "center", color: "#e11d48", fontWeight: 800, fontSize: 12 }}>💕 vs 💔</div>
-              <LabelCard text={cur.label_B} />
+            <div style={{ display: "flex", gap: 8, marginTop: 6, alignItems: "stretch" }}>
+              <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} />
+              <div style={{ display: "flex", alignItems: "center", color: "#e11d48", fontWeight: 800, fontSize: 13 }}>vs</div>
+              <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} />
             </div>
             <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
               <Chip label="Tissue" value={tissue} />
@@ -453,10 +457,23 @@ function RungResult({ title, rating, color }: { title: string; rating: Rating; c
   );
 }
 
-function LabelCard({ text }: { text: string }) {
+// One identity shown as a germ layer → tissue → cell-type ladder (cell type emphasized).
+// Falls back to a bare cell-type string if a pair predates ladder enrichment.
+function LadderCard({ ladder, fallback }: { ladder?: Ladder; fallback: string }) {
+  const l = ladder || { germ_layer: "", tissue: "", cell_type: fallback };
+  const Rung = ({ k, v, strong }: { k: string; v: string; strong?: boolean }) => (
+    <div style={{ padding: strong ? "6px 8px" : "3px 8px", borderTop: strong ? "1px solid #e2e8f0" : "none" }}>
+      <div style={{ fontSize: 8, letterSpacing: 0.5, color: "#94a3b8", textTransform: "uppercase" }}>{k}</div>
+      <div style={{ fontSize: strong ? 15 : 12, fontWeight: strong ? 700 : 500, color: strong ? "#0f172a" : "#475569", lineHeight: 1.15 }}>
+        {v || "—"}
+      </div>
+    </div>
+  );
   return (
-    <div style={{ background: "#f1f5f9", borderRadius: 12, padding: "11px 12px", textAlign: "center", fontSize: 17, fontWeight: 600, color: "#0f172a" }}>
-      {text}
+    <div style={{ flex: 1, background: "#f1f5f9", borderRadius: 12, overflow: "hidden", textAlign: "center" }}>
+      <Rung k="germ layer" v={l.germ_layer} />
+      <Rung k="tissue" v={l.tissue} />
+      <Rung k="cell type" v={l.cell_type} strong />
     </div>
   );
 }
