@@ -40,12 +40,12 @@ const BINS: { value: 1 | 2 | 3 | 4 | 5; short: string; emoji: string; color: str
 // Circular arena geometry. Bins sit on a circle around the central card (which renders
 // UNDERNEATH them). Tissue = top semicircle, cell type = bottom; in each, DIFFERENT is on the
 // left and SAME on the right. Bins are placed at i=0..4 (i=0 leftmost = value 5 "different").
-const ARENA = 320, CX = 160, CY = 160, R = 132, BINW = 56, BINH = 56;
-const CARDW = 200;
-function binPos(rung: "tissue" | "celltype", i: number) {
+const BINW = 58, BINH = 58;
+type Geo = { cx: number; cy: number; r: number; cardw: number };
+function binPos(rung: "tissue" | "celltype", i: number, g: Geo) {
   const aDeg = rung === "tissue" ? 160 - 35 * i : 200 + 35 * i; // top arc 160→20, bottom 200→340
   const a = (aDeg * Math.PI) / 180;
-  return { left: CX + R * Math.cos(a) - BINW / 2, top: CY - R * Math.sin(a) - BINH / 2 };
+  return { left: g.cx + g.r * Math.cos(a) - BINW / 2, top: g.cy - g.r * Math.sin(a) - BINH / 2 };
 }
 const binOf = (v: Rating | null | undefined) =>
   typeof v === "number" ? BINS.find((b) => b.value === v) : undefined;
@@ -56,27 +56,77 @@ const TIER_LABEL: Record<string, string> = {
   cell_type_broad: "cell type — broad", cell_type_sub: "cell type — fine",
 };
 
-// ---- pixel-art characters ----
-const FACE = [
-  "..HHHHHH..", ".HHHHHHHH.", ".HHHHHHHH.", ".HSSSSSSH.", ".SSSSSSSS.",
-  ".SeSSSSeS.", ".SSSSSSSS.", ".SSmmmmSS.", ".SSSSSSSS.", "..aaaaaa..", ".aaaaaaaa.",
-];
-const PALETTES: Record<string, Record<string, string>> = {
-  Patrick: { H: "#2563eb", S: "#fcd9b6", e: "#1f2937", m: "#b91c1c", a: "#0d9488" },
-  Harsha: { H: "#7c3aed", S: "#e8b98f", e: "#1f2937", m: "#b91c1c", a: "#ea580c" },
-  Steven: { H: "#15803d", S: "#fcd9b6", e: "#1f2937", m: "#b91c1c", a: "#ca8a04" },
+// ---- pixel-art characters (medieval: wizard / swordsman / archer) ----
+// Each is a distinct 10-wide grid + its own palette (letters mean different things per char).
+type Char = { grid: string[]; pal: Record<string, string> };
+const CHARACTERS: Record<string, Char> = {
+  // WIZARD — pointy hat + star, white beard, blue robe, staff with a gold orb
+  Patrick: {
+    grid: [
+      "....Y.....",
+      "...PPP....",
+      "..PPPPP...",
+      ".PPPPPPP..",
+      "PPPPPPPPP.",
+      "...SSSS..O",
+      "...SEES..T",
+      "..WWWWWW.T",
+      "..RRRRRRRT",
+      ".RRRRRRR.T",
+      ".R.RR.RR.T",
+      ".RR..RR..T",
+    ],
+    pal: { P: "#7c3aed", S: "#fcd9b6", E: "#1f2937", W: "#e5e7eb", R: "#2563eb", Y: "#fbbf24", O: "#fbbf24", T: "#92400e" },
+  },
+  // SWORDSMAN — steel helmet + visor slit, plate armor, sword on the right
+  Harsha: {
+    grid: [
+      "..MMMMMM..",
+      ".MMMMMMMM.",
+      ".MMMMMMMM.",
+      ".M.MMMM.M.",
+      ".DDDDDDDD.",
+      ".MMMMMMMM.",
+      "..MMMMMM.W",
+      "..AAAAAAGW",
+      ".AAAAAAAHW",
+      ".A.AAAA..W",
+      ".AA..AA..W",
+      ".AA..AA...",
+    ],
+    pal: { M: "#94a3b8", D: "#1f2937", A: "#475569", W: "#e5e7eb", G: "#fbbf24", H: "#92400e" },
+  },
+  // ARCHER — green hood, bow + string on the right, brown tunic
+  Steven: {
+    grid: [
+      "..GGGG....",
+      ".GGGGGG.B.",
+      ".GGSSGG.Bb",
+      ".GSEESG.Bb",
+      ".GSSSSG.Bb",
+      "..GGGG..Bb",
+      "..TTTT..Bb",
+      ".TTTTTT.Bb",
+      ".T.TT.T.Bb",
+      ".TTTTTT.B.",
+      ".TT..TT...",
+      ".TT..TT...",
+    ],
+    pal: { G: "#15803d", S: "#fcd9b6", E: "#1f2937", T: "#a16207", B: "#7c3a0e", b: "#cbd5e1" },
+  },
 };
 function PixelAvatar({ name, px = 7 }: { name: string; px?: number }) {
-  const pal = PALETTES[name] || PALETTES.Patrick;
+  const c = CHARACTERS[name] || CHARACTERS.Patrick;
   const rects: React.ReactNode[] = [];
-  FACE.forEach((row, y) =>
+  c.grid.forEach((row, y) =>
     row.split("").forEach((ch, x) => {
       if (ch === ".") return;
-      rects.push(<rect key={`${x}-${y}`} x={x * px} y={y * px} width={px} height={px} fill={pal[ch] || "#000"} />);
+      rects.push(<rect key={`${x}-${y}`} x={x * px} y={y * px} width={px} height={px} fill={c.pal[ch] || "#000"} />);
     })
   );
+  const w = Math.max(...c.grid.map((r) => r.length));
   return (
-    <svg width={10 * px} height={11 * px} shapeRendering="crispEdges" style={{ imageRendering: "pixelated" }}>
+    <svg width={w * px} height={c.grid.length * px} shapeRendering="crispEdges" style={{ imageRendering: "pixelated" }}>
       {rects}
     </svg>
   );
@@ -101,6 +151,18 @@ export default function TinderClient() {
   const tissueRefs = useRef<(HTMLDivElement | null)[]>([]);
   const celltypeRefs = useRef<(HTMLDivElement | null)[]>([]);
   const pairsRef = useRef<Pair[]>([]);
+  // Arena sizes to the available width so the bins spread to the edges (less center scrunch).
+  const arenaWrapRef = useRef<HTMLDivElement>(null);
+  const [arenaW, setArenaW] = useState(340);
+  useEffect(() => {
+    const measure = () => {
+      if (arenaWrapRef.current) setArenaW(Math.max(280, Math.min(460, arenaWrapRef.current.clientWidth)));
+    };
+    measure();
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rater]);
 
   useEffect(() => {
     fetch("/cell_type_tinder/pairs.json").then((r) => r.json()).then((p: Pair[]) => setPairs(p)).catch(() => {});
@@ -212,7 +274,9 @@ export default function TinderClient() {
       if (!el) return;
       const r = el.getBoundingClientRect();
       const d = Math.hypot(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
-      if (d < bestD) { bestD = d; best = BINS[i].value; }
+      // refs are stored by position index i (0 = leftmost); Arc renders value (5 - i) there,
+      // so the value at ref index i is (5 - i). (Was BINS[i].value, which mirrored the arc.)
+      if (d < bestD) { bestD = d; best = (5 - i) as Rating; }
     });
     return best;
   };
@@ -287,6 +351,9 @@ export default function TinderClient() {
   }
 
   const tilt = drag ? Math.max(-12, Math.min(12, drag.dx / 12)) : 0;
+  // Geometry from the measured width: bins ride a circle near the edge; card is wide & centered.
+  const AW = arenaW;
+  const geo: Geo = { cx: AW / 2, cy: AW / 2, r: AW / 2 - BINW / 2 - 6, cardw: Math.min(AW * 0.6, 260) };
 
   return (
     <Shell>
@@ -314,7 +381,8 @@ export default function TinderClient() {
         color="#0ea5e9" onUnsure={() => writeRung("tissue", "unsure")} onReopen={() => setTissue(null)} />
 
       {/* CIRCULAR ARENA: bins around a central card; card renders UNDERNEATH the bins */}
-      <div style={{ position: "relative", width: ARENA, height: ARENA, margin: "2px auto" }}>
+      <div ref={arenaWrapRef} style={{ width: "100%" }}>
+       <div style={{ position: "relative", width: AW, height: AW, margin: "2px auto" }}>
         {/* central card (zIndex 1, under the bins); auto-height so long labels never clip */}
         {!flash && (
           <div
@@ -323,33 +391,34 @@ export default function TinderClient() {
             onPointerUp={onUp}
             onPointerCancel={onUp}
             style={{
-              position: "absolute", left: CX, top: CY, width: CARDW,
+              position: "absolute", left: geo.cx, top: geo.cy, width: geo.cardw,
               background: "#fff", border: "1px solid #e2e8f0", borderRadius: 18, boxShadow: "0 10px 30px rgba(2,8,23,.10)",
-              padding: "12px", transform: `translate(calc(-50% + ${drag?.dx ?? 0}px), calc(-50% + ${drag?.dy ?? 0}px)) rotate(${tilt}deg)`,
+              padding: "14px", transform: `translate(calc(-50% + ${drag?.dx ?? 0}px), calc(-50% + ${drag?.dy ?? 0}px)) rotate(${tilt}deg)`,
               transition: drag ? "none" : "transform .2s cubic-bezier(.2,.8,.3,1)",
               touchAction: "none", userSelect: "none", cursor: "grab", zIndex: 1,
             }}
           >
-            <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+            <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
               <LadderCard ladder={cur.A_ladder} fallback={cur.label_A} />
               <div style={{ display: "flex", alignItems: "center", color: "#e11d48", fontWeight: 800, fontSize: 13 }}>vs</div>
               <LadderCard ladder={cur.B_ladder} fallback={cur.label_B} />
             </div>
-            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 8 }}>
+            <div style={{ display: "flex", justifyContent: "center", gap: 8, marginTop: 10 }}>
               <Chip label="Tissue" value={tissue} />
               <Chip label="Cell" value={celltype} />
             </div>
           </div>
         )}
-        {/* confirmation flash overlay (zIndex 5, above the bins) */}
+        {/* confirmation flash overlay (above the bins) */}
         {flash && (
-          <div style={{ position: "absolute", left: CX, top: CY, width: CARDW, transform: "translate(-50%,-50%)", zIndex: 6 }}>
+          <div style={{ position: "absolute", left: geo.cx, top: geo.cy, width: geo.cardw, transform: "translate(-50%,-50%)", zIndex: 6 }}>
             <FlashCard tissue={flash.tissue} celltype={flash.celltype} />
           </div>
         )}
         {/* bins (zIndex 3, above the card) */}
-        <Arc rung="tissue" refs={tissueRefs} armed={armed} active={activeRung === "tissue"} onPick={(v) => writeRung("tissue", v)} />
-        <Arc rung="celltype" refs={celltypeRefs} armed={armed} active={activeRung === "celltype"} onPick={(v) => writeRung("celltype", v)} />
+        <Arc rung="tissue" refs={tissueRefs} armed={armed} active={activeRung === "tissue"} geo={geo} onPick={(v) => writeRung("tissue", v)} />
+        <Arc rung="celltype" refs={celltypeRefs} armed={armed} active={activeRung === "celltype"} geo={geo} onPick={(v) => writeRung("celltype", v)} />
+       </div>
       </div>
 
       {/* CELL TYPE header (greyed until tissue is done, then bright) */}
@@ -364,11 +433,12 @@ export default function TinderClient() {
 }
 
 // 5 bins on the arena circle for one rung. Greyed + non-interactive until it's this rung's turn.
-function Arc({ rung, refs, armed, active, onPick }: {
+function Arc({ rung, refs, armed, active, geo, onPick }: {
   rung: "tissue" | "celltype";
   refs: React.MutableRefObject<(HTMLDivElement | null)[]>;
   armed: { rung: "tissue" | "celltype"; val: Rating } | null;
   active: boolean;
+  geo: Geo;
   onPick: (v: 1 | 2 | 3 | 4 | 5) => void;
 }) {
   return (
@@ -376,7 +446,7 @@ function Arc({ rung, refs, armed, active, onPick }: {
       {BINS.map((b, i) => {
         const val = (5 - i) as 1 | 2 | 3 | 4 | 5;   // i=0 leftmost = 5 "different"; i=4 rightmost = 1 "same"
         const bin = BINS.find((x) => x.value === val)!;
-        const pos = binPos(rung, i);
+        const pos = binPos(rung, i, geo);
         const isArmed = active && armed?.rung === rung && armed.val === val;
         const col = active ? bin.color : "#cbd5e1";
         return (
