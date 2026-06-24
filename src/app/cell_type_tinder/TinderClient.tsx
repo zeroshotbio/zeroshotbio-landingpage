@@ -46,11 +46,14 @@ const BINS: { value: 1 | 2 | 3 | 4 | 5; short: string; emoji: string; color: str
 // UNDERNEATH them). Tissue = top semicircle, cell type = bottom; in each, DIFFERENT is on the
 // left and SAME on the right. Bins are placed at i=0..4 (i=0 leftmost = value 5 "different").
 const BINW = 58, BINH = 58;
-type Geo = { cx: number; cy: number; r: number; cardw: number };
+// Bins ride an ELLIPSE (wide card needs horizontal room, so we spend the extra space
+// vertically): tissue on the upper arc, cell type on the lower. Angles avoid the pure
+// horizontal so the left/right "different/same" bins sit above/below the card, not on its text.
+type Geo = { cx: number; cy: number; rx: number; ry: number; cardw: number };
 function binPos(rung: "tissue" | "celltype", i: number, g: Geo) {
-  const aDeg = rung === "tissue" ? 160 - 35 * i : 200 + 35 * i; // top arc 160→20, bottom 200→340
+  const aDeg = rung === "tissue" ? 150 - 30 * i : 210 + 30 * i; // top arc 150→30, bottom 210→330
   const a = (aDeg * Math.PI) / 180;
-  return { left: g.cx + g.r * Math.cos(a) - BINW / 2, top: g.cy - g.r * Math.sin(a) - BINH / 2 };
+  return { left: g.cx + g.rx * Math.cos(a) - BINW / 2, top: g.cy - g.ry * Math.sin(a) - BINH / 2 };
 }
 const binOf = (v: Rating | null | undefined) =>
   typeof v === "number" ? BINS.find((b) => b.value === v) : undefined;
@@ -363,9 +366,11 @@ export default function TinderClient() {
   }
 
   const tilt = drag ? Math.max(-12, Math.min(12, drag.dx / 12)) : 0;
-  // Geometry from the measured width: bins ride a circle near the edge; card is wide & centered.
+  // Geometry from the measured width. Arena is taller than wide (uses vertical space): the card
+  // is wide & centered lower; bins ride an ellipse so the wide card doesn't cover them.
   const AW = arenaW;
-  const geo: Geo = { cx: AW / 2, cy: AW / 2, r: AW / 2 - BINW / 2 - 6, cardw: Math.min(AW * 0.6, 260) };
+  const AH = Math.round(AW * 1.32);
+  const geo: Geo = { cx: AW / 2, cy: AH / 2, rx: AW / 2 - BINW / 2 - 2, ry: AH / 2 - BINH / 2 - 2, cardw: Math.min(AW * 0.92, 400) };
 
   return (
     <Shell>
@@ -394,7 +399,7 @@ export default function TinderClient() {
 
       {/* CIRCULAR ARENA: bins around a central card; card renders UNDERNEATH the bins */}
       <div ref={arenaWrapRef} style={{ width: "100%" }}>
-       <div style={{ position: "relative", width: AW, height: AW, margin: "2px auto" }}>
+       <div style={{ position: "relative", width: AW, height: AH, margin: "2px auto" }}>
         {/* central card (zIndex 1, under the bins); auto-height so long labels never clip */}
         {!flash && (
           <div
@@ -436,10 +441,6 @@ export default function TinderClient() {
       {/* CELL TYPE header (greyed until tissue is done, then bright) */}
       <RungHeader title="CELL TYPE" active={activeRung === "celltype"} done={celltype != null} value={celltype}
         color="#a855f7" onUnsure={() => writeRung("celltype", "unsure")} onReopen={() => setCelltype(null)} />
-
-      <div style={{ textAlign: "center", fontSize: 11, color: "#94a3b8", marginTop: 10 }}>
-        ⬅ different · same ➡ — drag the card into a bin, or tap. tissue first, then cell type.
-      </div>
     </Shell>
   );
 }
@@ -577,10 +578,19 @@ function RungResult({ title, rating, color }: { title: string; rating: Rating; c
 function LadderCard({ ladder, fallback, source }: { ladder?: Ladder; fallback: string; source?: "labeller" | "gt" }) {
   const l = ladder || { germ_layer: "", tissue: "", cell_type: fallback };
   const s = source ? SRC[source] : null;
+  // Font shrinks with text length so even very long tissue / cell-type names always fit.
+  const fontFor = (text: string, strong?: boolean) => {
+    const n = (text || "").length;
+    if (strong) return n > 46 ? 10 : n > 34 ? 11.5 : n > 22 ? 13 : 15;
+    return n > 34 ? 9 : n > 22 ? 10.5 : 12;
+  };
   const Rung = ({ k, v, strong }: { k: string; v: string; strong?: boolean }) => (
-    <div style={{ padding: strong ? "6px 8px" : "3px 8px", borderTop: strong ? "1px solid #e2e8f0" : "none" }}>
+    <div style={{ padding: strong ? "6px 7px" : "3px 7px", borderTop: strong ? "1px solid #e2e8f0" : "none" }}>
       <div style={{ fontSize: 8, letterSpacing: 0.5, color: "#94a3b8", textTransform: "uppercase" }}>{k}</div>
-      <div style={{ fontSize: strong ? 15 : 12, fontWeight: strong ? 700 : 500, color: strong ? "#0f172a" : "#475569", lineHeight: 1.15 }}>
+      <div style={{
+        fontSize: fontFor(v, strong), fontWeight: strong ? 700 : 500, color: strong ? "#0f172a" : "#475569",
+        lineHeight: 1.15, overflowWrap: "anywhere", wordBreak: "break-word", hyphens: "auto",
+      }}>
         {v || "—"}
       </div>
     </div>
