@@ -700,13 +700,27 @@ _REASONER_PROTOCOL = (
     "positive WITH eye context (rx1/rx2/otx2/tfec present) AND sox10 ABSENT => RPE; melanin-positive WITH "
     "sox10 PRESENT => neural-crest MELANOPHORE. Never decide a pigment subtype on melanin enzymes alone.\n"
     "  - GENERIC MESENCHYME (prrx1a/prrx1b/col1a) shared across fibroblast/mesenchymal types — probe lineage TFs.\n"
+    "  - CRANIAL/PHARYNGEAL-ARCH ECTOMESENCHYME. A cranial/head mesenchymal leaf whose SKELETAL discriminators "
+    "(sclerotome pax1a/pax9, chondrocyte sox9a/sox9b, osteoblast sp7/runx2, notochord tbxta/ngs) ALL come back ABSENT "
+    "and that anchors ONLY on a generic-mesenchyme marker (pdgfra/lum/prrx1) is NOT necessarily a generic fibroblast — "
+    "pharyngeal-arch ectomesenchyme shares the pdgfra+ program. Before defaulting to fibroblast/connective-tissue you "
+    "MUST dispatch the arch panel (dlx2a, dlx5a, dlx6a, hand2, barx1, tbx1). RULE: a PRESENT specific-positive arch "
+    "master (dlx2a/dlx5a/dlx6a/hand2/barx1/tbx1) => pharyngeal-arch ectomesenchyme. If ALL arch masters are ABSENT, the "
+    "pdgfra anchor stands and the call REMAINS generic fibroblast/connective-tissue — do NOT call arch without a present "
+    "arch master (absence of a skeletal panel is not evidence FOR arch).\n"
     "  - TUBULE/EPITHELIAL: pronephros = pax2a, pax8, slc20a1a; floor plate/neural = foxa2, shha. A lone "
     "transport/tubule gene is NOT enough to call pronephros — probe the lineage TF and rule out notochord/neural.\n"
+    "  - HATCHING GLAND (polster / anterior axial secretory epithelium) is easily mistaken for gut, generic epidermis, "
+    "or mucous/goblet epithelium. When an epithelial/secretory leaf resists gut (cdx1b/vil1 absent) and generic-epidermal "
+    "(krt4/cyt1) assignment, dispatch the hatching-gland panel (he1a, he1.1, ctslb). RULE: PRESENT specific-positive "
+    "he1a/he1.1 => hatching gland; if absent, the call STAYS the best-supported epithelial identity (no hatching gland "
+    "without a present he1a/he1.1 anchor).\n"
     "Archivist tools (one per turn):\n"
     '  probe_markers {"genes":[...]}  -> log2FC/%in/%out in THIS leaf. Panels: gut=cdx1b,vil1,cdh17; liver=tfa,nr5a2,c3a.1; '
     'pancreas=prss1,ins; notochord(48hpf)=tbxta,ngs,col8a1a,shha; chondrocyte=sox9a,sox9b; osteoblast=sp7,runx2,bglap; '
     'melanophore=tyr,dct,mlana; iridophore=pnp4a,gpnmb,ltk; xanthophore=aox5,gch2; pronephros=pax2a,pax8,slc20a1a; '
-    'eye/RPE=rx1,rx2,otx2,tfec,rpe65a; nc_pigment=sox10,mitfa,tfap2a,pax3; hypochord=col8a1a,angpt1,npr3(+tbxta/ngs absent).\n'
+    'eye/RPE=rx1,rx2,otx2,tfec,rpe65a; nc_pigment=sox10,mitfa,tfap2a,pax3; hypochord=col8a1a,angpt1,npr3(+tbxta/ngs absent); '
+    'pharyngeal_arch=dlx2a,dlx5a,dlx6a,hand2,barx1,tbx1; hatching_gland=he1a,he1.1,ctslb.\n'
     '  coexpress {"genes":[...]} -> same-cell co-occurrence;  specificity_ranked {"genes":[...]};  across {"gene":"..."}.\n'
     " R4 POSITIVE-ANCHOR FLOOR (an ASSIGN needs present support). To ASSIGN identity X you MUST cite at "
     "least ONE marker that is PRESENT and specific-positive in THIS leaf (confirmed by the Archivist as "
