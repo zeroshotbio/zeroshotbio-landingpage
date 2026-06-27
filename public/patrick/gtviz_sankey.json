@@ -1,0 +1,1342 @@
+{
+ "collapseVersion": "8eff3b8d",
+ "minLink": 5,
+ "links": [
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS",
+   "outcome": "hit",
+   "value": 8236
+  },
+  {
+   "gt": "Superficial Epidermis",
+   "pred": "Epidermis:Superficial",
+   "outcome": "hit",
+   "value": 6505
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Mesenchyme",
+   "outcome": "no_gt",
+   "value": 6135
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 5387
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:Forebrain",
+   "outcome": "GT-too-coarse",
+   "value": 4737
+  },
+  {
+   "gt": "Erythrocytes",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "hit",
+   "value": 4083
+  },
+  {
+   "gt": "CNS",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 3502
+  },
+  {
+   "gt": "MHB",
+   "pred": "CNS",
+   "outcome": "hit",
+   "value": 3497
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "Muscle:Fast",
+   "outcome": "hit",
+   "value": 3072
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 2964
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 2576
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS",
+   "outcome": "no_gt",
+   "value": 2350
+  },
+  {
+   "gt": "MHB",
+   "pred": "CNS:Forebrain",
+   "outcome": "hit",
+   "value": 2320
+  },
+  {
+   "gt": "Erythrocytes",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 1777
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 1729
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Epidermis:Basal",
+   "outcome": "hit",
+   "value": 1618
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "CNS",
+   "outcome": "hit",
+   "value": 1358
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "(abstained)",
+   "outcome": "no_gt",
+   "value": 1346
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Mesenchyme:Pericyte",
+   "outcome": "no_gt",
+   "value": 1311
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Mesenchyme",
+   "outcome": "miss",
+   "value": 1208
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Muscle:Fast",
+   "outcome": "no_gt",
+   "value": 1205
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "CNS:Forebrain",
+   "outcome": "hit",
+   "value": 1081
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Mesenchyme:Ectomesenchyme",
+   "outcome": "no_gt",
+   "value": 1005
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:MHB",
+   "outcome": "hit",
+   "value": 1000
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:Forebrain",
+   "outcome": "hit",
+   "value": 934
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Epidermis:Basal",
+   "outcome": "no_gt",
+   "value": 838
+  },
+  {
+   "gt": "Vascular Endothelial Cells",
+   "pred": "Vascular:Endothelial",
+   "outcome": "hit",
+   "value": 815
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "CNS:Hindbrain",
+   "outcome": "GT-too-coarse",
+   "value": 801
+  },
+  {
+   "gt": "CNS",
+   "pred": "Retina:Interneuron",
+   "outcome": "miss",
+   "value": 747
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "Pigment:Melanophore",
+   "outcome": "hit",
+   "value": 697
+  },
+  {
+   "gt": "CNS",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 660
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:Hindbrain",
+   "outcome": "GT-too-coarse",
+   "value": 636
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:Hindbrain",
+   "outcome": "hit",
+   "value": 614
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 530
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Mesenchyme:FinBud",
+   "outcome": "no_gt",
+   "value": 523
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS:FloorPlate",
+   "outcome": "hit",
+   "value": 515
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 515
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Muscle:Slow",
+   "outcome": "no_gt",
+   "value": 494
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Epidermis:Superficial",
+   "outcome": "no_gt",
+   "value": 490
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "NC:CranialNC",
+   "outcome": "no_gt",
+   "value": 443
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "no_gt",
+   "value": 433
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Notochord:Notochord",
+   "outcome": "hit",
+   "value": 419
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Muscle:Myoblast",
+   "outcome": "no_gt",
+   "value": 387
+  },
+  {
+   "gt": "Schwann Cell Precursors",
+   "pred": "PNS_glia:Schwann",
+   "outcome": "hit",
+   "value": 385
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Epidermis:Ionocyte",
+   "outcome": "no_gt",
+   "value": 384
+  },
+  {
+   "gt": "Slow-Twitch Muscle",
+   "pred": "Muscle:Slow",
+   "outcome": "hit",
+   "value": 363
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:Hindbrain",
+   "outcome": "no_gt",
+   "value": 359
+  },
+  {
+   "gt": "MHB",
+   "pred": "Retina:Interneuron",
+   "outcome": "miss",
+   "value": 330
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:Forebrain",
+   "outcome": "no_gt",
+   "value": 322
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:FloorPlate",
+   "outcome": "hit",
+   "value": 320
+  },
+  {
+   "gt": "Goblet Cells",
+   "pred": "Epidermis:Goblet",
+   "outcome": "hit",
+   "value": 320
+  },
+  {
+   "gt": "Ionocytes",
+   "pred": "Epidermis:Ionocyte",
+   "outcome": "hit",
+   "value": 317
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "CNS:Hindbrain",
+   "outcome": "hit",
+   "value": 312
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "CNS:Forebrain",
+   "outcome": "GT-too-coarse",
+   "value": 308
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS",
+   "outcome": "hit",
+   "value": 308
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Pigment:Iridophore",
+   "outcome": "no_gt",
+   "value": 297
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:SpinalCord",
+   "outcome": "GT-too-coarse",
+   "value": 290
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Notochord:Notochord",
+   "outcome": "no_gt",
+   "value": 288
+  },
+  {
+   "gt": "Macrophages",
+   "pred": "Immune:Macrophage",
+   "outcome": "hit",
+   "value": 277
+  },
+  {
+   "gt": "Liver",
+   "pred": "Endoderm:Intestine",
+   "outcome": "GT-too-coarse",
+   "value": 269
+  },
+  {
+   "gt": "Slow-Twitch Muscle",
+   "pred": "Muscle:Fast",
+   "outcome": "hit",
+   "value": 263
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Stress",
+   "outcome": "miss",
+   "value": 260
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Endoderm:Enteroendocrine",
+   "outcome": "no_gt",
+   "value": 257
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Endoderm:PharyngealPouch",
+   "outcome": "no_gt",
+   "value": 247
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Pigment:Melanophore",
+   "outcome": "no_gt",
+   "value": 231
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Retina:Photoreceptor",
+   "outcome": "no_gt",
+   "value": 226
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Retina:Progenitor",
+   "outcome": "no_gt",
+   "value": 214
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "Pigment:Xanthophore",
+   "outcome": "hit",
+   "value": 200
+  },
+  {
+   "gt": "Anterior Lens Epithelium",
+   "pred": "Lens:LensFiber",
+   "outcome": "hit",
+   "value": 197
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Endoderm:Intestine",
+   "outcome": "no_gt",
+   "value": 192
+  },
+  {
+   "gt": "Kidney/Pronephros",
+   "pred": "Kidney:Pronephros",
+   "outcome": "hit",
+   "value": 170
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "HatchingGland:HatchingGland",
+   "outcome": "no_gt",
+   "value": 165
+  },
+  {
+   "gt": "Floor Plate + Spinal Cord",
+   "pred": "CNS:Hindbrain",
+   "outcome": "GT-too-coarse",
+   "value": 131
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:FloorPlate",
+   "outcome": "no_gt",
+   "value": 121
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Vascular:Endothelial",
+   "outcome": "no_gt",
+   "value": 120
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Immune:Macrophage",
+   "outcome": "no_gt",
+   "value": 119
+  },
+  {
+   "gt": "MHB",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 116
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "PNS_neuron:CranialSensory",
+   "outcome": "no_gt",
+   "value": 113
+  },
+  {
+   "gt": "Neutrophils",
+   "pred": "Immune:Neutrophil",
+   "outcome": "hit",
+   "value": 108
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:RoofPlate",
+   "outcome": "GT-too-coarse",
+   "value": 104
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:SpinalCord",
+   "outcome": "no_gt",
+   "value": 100
+  },
+  {
+   "gt": "CNS",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 97
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 95
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "PNS_glia:Schwann",
+   "outcome": "no_gt",
+   "value": 94
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "CNS",
+   "outcome": "hit",
+   "value": 94
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "PNS_neuron:Enteric",
+   "outcome": "no_gt",
+   "value": 93
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Kidney:Pronephros",
+   "outcome": "no_gt",
+   "value": 93
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 88
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 83
+  },
+  {
+   "gt": "Schwann Cell Precursors",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 82
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Epidermis:Superficial",
+   "outcome": "hit",
+   "value": 76
+  },
+  {
+   "gt": "Lens Fiber Cells",
+   "pred": "Lens:LensFiber",
+   "outcome": "hit",
+   "value": 73
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Lens:LensFiber",
+   "outcome": "no_gt",
+   "value": 70
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "CNS:MHB",
+   "outcome": "GT-too-coarse",
+   "value": 69
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:MHB",
+   "outcome": "no_gt",
+   "value": 63
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:RoofPlate",
+   "outcome": "no_gt",
+   "value": 62
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:MHB",
+   "outcome": "GT-too-coarse",
+   "value": 59
+  },
+  {
+   "gt": "Vascular Endothelial Cells",
+   "pred": "Epidermis:Superficial",
+   "outcome": "miss",
+   "value": 58
+  },
+  {
+   "gt": "MHB",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 58
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "CNS:SpinalCord",
+   "outcome": "hit",
+   "value": 56
+  },
+  {
+   "gt": "Floor Plate + Midbrain (Optic Tectum)",
+   "pred": "CNS:FloorPlate",
+   "outcome": "GT-too-coarse",
+   "value": 56
+  },
+  {
+   "gt": "Floor Plate + Midbrain (Optic Tectum)",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 55
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS:Forebrain",
+   "outcome": "hit",
+   "value": 54
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Ear:HairCell",
+   "outcome": "no_gt",
+   "value": 51
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Cartilage:Chondrocyte",
+   "outcome": "no_gt",
+   "value": 49
+  },
+  {
+   "gt": "Notochord",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 48
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "Hypochord:Hypochord",
+   "outcome": "miss",
+   "value": 47
+  },
+  {
+   "gt": "Muscle",
+   "pred": "Muscle:Myoblast",
+   "outcome": "GT-too-coarse",
+   "value": 46
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 45
+  },
+  {
+   "gt": "Floor Plate + Spinal Cord",
+   "pred": "CNS:RoofPlate",
+   "outcome": "GT-too-coarse",
+   "value": 44
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Epidermis:Goblet",
+   "outcome": "no_gt",
+   "value": 44
+  },
+  {
+   "gt": "Possible bipotent myoblast (myhc1+ and myl1+)",
+   "pred": "Muscle:Fast",
+   "outcome": "hit",
+   "value": 42
+  },
+  {
+   "gt": "Ionocytes",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 41
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Retina:Interneuron",
+   "outcome": "miss",
+   "value": 40
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Retina:Interneuron",
+   "outcome": "no_gt",
+   "value": 40
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:FloorPlate",
+   "outcome": "GT-too-coarse",
+   "value": 38
+  },
+  {
+   "gt": "Cardiomyocytes",
+   "pred": "Heart:Cardiomyocyte",
+   "outcome": "hit",
+   "value": 38
+  },
+  {
+   "gt": "Forebrain (Telencephalon) + Midbrain (Optic Tectum)",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 37
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS:Hindbrain",
+   "outcome": "hit",
+   "value": 36
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Epidermis:Superficial",
+   "outcome": "miss",
+   "value": 36
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 35
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 34
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 33
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Hypochord:Hypochord",
+   "outcome": "miss",
+   "value": 33
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "Stress",
+   "outcome": "miss",
+   "value": 31
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "Retina:Interneuron",
+   "outcome": "miss",
+   "value": 31
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Epidermis:Goblet",
+   "outcome": "hit",
+   "value": 30
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "CNS:FloorPlate",
+   "outcome": "hit",
+   "value": 29
+  },
+  {
+   "gt": "Fast-Twitch Muscle + Possible bipotent myoblast (myhc1+ and myl1+)",
+   "pred": "Muscle:Fast",
+   "outcome": "GT-too-coarse",
+   "value": 25
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Endoderm:Hepatocyte",
+   "outcome": "no_gt",
+   "value": 24
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 24
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 23
+  },
+  {
+   "gt": "Floor Plate + Spinal Cord",
+   "pred": "CNS:FloorPlate",
+   "outcome": "GT-too-coarse",
+   "value": 23
+  },
+  {
+   "gt": "CNS",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "miss",
+   "value": 23
+  },
+  {
+   "gt": "Floor Plate + Spinal Cord",
+   "pred": "CNS",
+   "outcome": "GT-too-coarse",
+   "value": 22
+  },
+  {
+   "gt": "Liver",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 21
+  },
+  {
+   "gt": "Kidney/Pronephros",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 20
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "CNS:Glia",
+   "outcome": "hit",
+   "value": 20
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS:MHB",
+   "outcome": "hit",
+   "value": 19
+  },
+  {
+   "gt": "Floor Plate + Spinal Cord",
+   "pred": "Hypochord:Hypochord",
+   "outcome": "miss",
+   "value": 19
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:Glia",
+   "outcome": "hit",
+   "value": 19
+  },
+  {
+   "gt": "CNS",
+   "pred": "CNS:Glia",
+   "outcome": "GT-too-coarse",
+   "value": 19
+  },
+  {
+   "gt": "CNS",
+   "pred": "Stress",
+   "outcome": "miss",
+   "value": 18
+  },
+  {
+   "gt": "Neutrophils",
+   "pred": "Immune:Macrophage",
+   "outcome": "hit",
+   "value": 18
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Hypochord:Hypochord",
+   "outcome": "no_gt",
+   "value": 17
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Stress",
+   "outcome": "no_gt",
+   "value": 17
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "Stress",
+   "outcome": "miss",
+   "value": 17
+  },
+  {
+   "gt": "CNS",
+   "pred": "Mesenchyme",
+   "outcome": "miss",
+   "value": 16
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "CNS:Hindbrain",
+   "outcome": "hit",
+   "value": 16
+  },
+  {
+   "gt": "Floor Plate + Midbrain (Optic Tectum)",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 15
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "CNS:FloorPlate",
+   "outcome": "GT-too-coarse",
+   "value": 15
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "miss",
+   "value": 15
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Notochord:Notochord",
+   "outcome": "miss",
+   "value": 15
+  },
+  {
+   "gt": "Ionocytes",
+   "pred": "Endoderm:Intestine",
+   "outcome": "miss",
+   "value": 15
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Heart:Cardiomyocyte",
+   "outcome": "no_gt",
+   "value": 15
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 15
+  },
+  {
+   "gt": "CNS",
+   "pred": "Mesenchyme:Pericyte",
+   "outcome": "miss",
+   "value": 14
+  },
+  {
+   "gt": "Goblet Cells",
+   "pred": "Endoderm:Intestine",
+   "outcome": "miss",
+   "value": 14
+  },
+  {
+   "gt": "MHB",
+   "pred": "CNS:MHB",
+   "outcome": "hit",
+   "value": 14
+  },
+  {
+   "gt": "Slow-Twitch Muscle",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 14
+  },
+  {
+   "gt": "Kidney/Pronephros",
+   "pred": "Endoderm:Intestine",
+   "outcome": "miss",
+   "value": 14
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Mesenchyme:Pericyte",
+   "outcome": "miss",
+   "value": 14
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 13
+  },
+  {
+   "gt": "Liver",
+   "pred": "Endoderm:Hepatocyte",
+   "outcome": "GT-too-coarse",
+   "value": 13
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 13
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 11
+  },
+  {
+   "gt": "Schwann Cell Precursors",
+   "pred": "CNS:Glia",
+   "outcome": "miss",
+   "value": 11
+  },
+  {
+   "gt": "Vascular Endothelial Cells",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 11
+  },
+  {
+   "gt": "Erythrocytes",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 11
+  },
+  {
+   "gt": "CNS",
+   "pred": "Epidermis:Superficial",
+   "outcome": "miss",
+   "value": 10
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "CNS:SpinalCord",
+   "outcome": "hit",
+   "value": 10
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "CNS:Glia",
+   "outcome": "no_gt",
+   "value": 10
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "PNS_glia:Schwann",
+   "outcome": "miss",
+   "value": 10
+  },
+  {
+   "gt": "Possible bipotent myoblast (myhc1+ and myl1+) + Slow-Twitch Muscle",
+   "pred": "Muscle:Fast",
+   "outcome": "GT-too-coarse",
+   "value": 10
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "CNS:RoofPlate",
+   "outcome": "hit",
+   "value": 10
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "HatchingGland:HatchingGland",
+   "outcome": "miss",
+   "value": 9
+  },
+  {
+   "gt": "Slow-Twitch Muscle",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 9
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Muscle:Fast",
+   "outcome": "miss",
+   "value": 9
+  },
+  {
+   "gt": "Vascular Endothelial Cells",
+   "pred": "CNS",
+   "outcome": "miss",
+   "value": 9
+  },
+  {
+   "gt": "MHB + Midbrain (Optic Tectum)",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "Ionocytes",
+   "pred": "Epidermis:Superficial",
+   "outcome": "hit",
+   "value": 8
+  },
+  {
+   "gt": "Possible bipotent myoblast (myhc1+ and myl1+) + Slow-Twitch Muscle",
+   "pred": "Muscle:Slow",
+   "outcome": "GT-too-coarse",
+   "value": 8
+  },
+  {
+   "gt": "Vascular Endothelial Cells",
+   "pred": "Notochord:Notochord",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "CNS:Forebrain",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "PNS_glia:Schwann",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "MHB",
+   "pred": "CNS:Hindbrain",
+   "outcome": "hit",
+   "value": 8
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "Stress",
+   "outcome": "miss",
+   "value": 8
+  },
+  {
+   "gt": "Forebrain (Telencephalon) + Midbrain (Optic Tectum)",
+   "pred": "CNS:Forebrain",
+   "outcome": "GT-too-coarse",
+   "value": 8
+  },
+  {
+   "gt": "Possible bipotent myoblast (myhc1+ and myl1+)",
+   "pred": "Muscle:Slow",
+   "outcome": "hit",
+   "value": 7
+  },
+  {
+   "gt": "Midbrain (Optic Tectum)",
+   "pred": "Mesenchyme",
+   "outcome": "miss",
+   "value": 7
+  },
+  {
+   "gt": "Anterior Lens Epithelium",
+   "pred": "(abstained)",
+   "outcome": "abstain",
+   "value": 7
+  },
+  {
+   "gt": "(no GT)",
+   "pred": "Pigment:Xanthophore",
+   "outcome": "no_gt",
+   "value": 7
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "CNS:Hindbrain",
+   "outcome": "miss",
+   "value": 7
+  },
+  {
+   "gt": "Floor Plate + Midbrain (Optic Tectum)",
+   "pred": "CNS:Hindbrain",
+   "outcome": "GT-too-coarse",
+   "value": 7
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "Retina:Interneuron",
+   "outcome": "miss",
+   "value": 7
+  },
+  {
+   "gt": "Fast-Twitch Muscle",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 7
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "CNS:SpinalCord",
+   "outcome": "GT-too-coarse",
+   "value": 6
+  },
+  {
+   "gt": "Slow-Twitch Muscle",
+   "pred": "Muscle:Myoblast",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Midbrain (Optic Tectum) + Spinal Cord",
+   "pred": "CNS:Glia",
+   "outcome": "GT-too-coarse",
+   "value": 6
+  },
+  {
+   "gt": "Floor Plate",
+   "pred": "CNS:Glia",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Goblet Cells",
+   "pred": "Epidermis:Ionocyte",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Liver",
+   "pred": "Epidermis:Basal",
+   "outcome": "miss",
+   "value": 6
+  },
+  {
+   "gt": "MHB",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 6
+  },
+  {
+   "gt": "Goblet Cells",
+   "pred": "Epidermis:Superficial",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "CNS:Hindbrain",
+   "outcome": "miss",
+   "value": 6
+  },
+  {
+   "gt": "MHB",
+   "pred": "CNS:FloorPlate",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Ionocytes",
+   "pred": "Epidermis:Goblet",
+   "outcome": "hit",
+   "value": 6
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "Muscle:Fast",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Basal Epidermis",
+   "pred": "Blood:Erythrocyte",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "Mesenchyme",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Erythrocytes",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Possible bipotent myoblast (myhc1+ and myl1+)",
+   "pred": "Muscle:Myoblast",
+   "outcome": "hit",
+   "value": 5
+  },
+  {
+   "gt": "Forebrain (Telencephalon)",
+   "pred": "Vascular:Endothelial",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Notochord",
+   "pred": "Mesenchyme",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "CNS:Forebrain",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Spinal Cord",
+   "pred": "Epidermis:Superficial",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "Melanocytes",
+   "pred": "Retina:Progenitor",
+   "outcome": "miss",
+   "value": 5
+  },
+  {
+   "gt": "CNS",
+   "pred": "Pigment:Melanophore",
+   "outcome": "miss",
+   "value": 5
+  }
+ ],
+ "prunedLinks": 218,
+ "prunedCells": 369,
+ "liverSplit": {
+  "Endoderm:Intestine": 269,
+  "CNS": 1,
+  "Endoderm:Hepatocyte": 13,
+  "(abstained)": 21,
+  "Epidermis:Basal": 6,
+  "CNS:Hindbrain": 2,
+  "CNS:FloorPlate": 2,
+  "Mesenchyme:Ectomesenchyme": 1,
+  "Muscle:Myoblast": 1,
+  "Pigment:Melanophore": 1
+ },
+ "outcomeColors": {
+  "hit": "#22c55e",
+  "GT-too-coarse": "#eab308",
+  "miss": "#ef4444",
+  "abstain": "#38bdf8",
+  "no_gt": "#52525b"
+ },
+ "note": "links with <5 cells pruned from the diagram for legibility (218 links / 369 cells); full counts in gtviz_meta."
+}

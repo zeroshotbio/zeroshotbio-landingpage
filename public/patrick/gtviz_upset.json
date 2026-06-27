@@ -1,0 +1,302 @@
+{
+ "collapseVersion": "8eff3b8d",
+ "multiLabelledCells": 34822,
+ "totalLabelledCells": 73149,
+ "sets": [
+  {
+   "label": "CNS",
+   "size": 46918,
+   "tissue": "CNS"
+  },
+  {
+   "label": "Midbrain (Optic Tectum)",
+   "size": 19838,
+   "tissue": "CNS"
+  },
+  {
+   "label": "MHB",
+   "size": 7482,
+   "tissue": "CNS"
+  },
+  {
+   "label": "Muscle",
+   "size": 4029,
+   "tissue": "Muscle"
+  },
+  {
+   "label": "Fast-Twitch Muscle",
+   "size": 3224,
+   "tissue": "Muscle"
+  },
+  {
+   "label": "Forebrain (Telencephalon)",
+   "size": 2600,
+   "tissue": "CNS"
+  },
+  {
+   "label": "Spinal Cord",
+   "size": 1765,
+   "tissue": "CNS"
+  },
+  {
+   "label": "Floor Plate",
+   "size": 1389,
+   "tissue": "CNS"
+  },
+  {
+   "label": "Slow-Twitch Muscle",
+   "size": 701,
+   "tissue": "Muscle"
+  },
+  {
+   "label": "Lens",
+   "size": 303,
+   "tissue": "Lens"
+  },
+  {
+   "label": "Macrophages",
+   "size": 288,
+   "tissue": "Immune"
+  },
+  {
+   "label": "Anterior Lens Epithelium",
+   "size": 213,
+   "tissue": "Lens"
+  },
+  {
+   "label": "Neutrophils",
+   "size": 132,
+   "tissue": "Immune"
+  },
+  {
+   "label": "Possible bipotent myoblast (myhc1+ and myl1+)",
+   "size": 102,
+   "tissue": "Muscle"
+  },
+  {
+   "label": "Lens Fiber Cells",
+   "size": 89,
+   "tissue": "Lens"
+  }
+ ],
+ "intersections": [
+  {
+   "labels": [
+    "CNS",
+    "Midbrain (Optic Tectum)"
+   ],
+   "count": 17557,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "MHB"
+   ],
+   "count": 6359,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Fast-Twitch Muscle",
+    "Muscle"
+   ],
+   "count": 3198,
+   "tissues": [
+    "Muscle"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Forebrain (Telencephalon)"
+   ],
+   "count": 2549,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "MHB",
+    "Midbrain (Optic Tectum)"
+   ],
+   "count": 1123,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Floor Plate"
+   ],
+   "count": 994,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Midbrain (Optic Tectum)",
+    "Spinal Cord"
+   ],
+   "count": 965,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Muscle",
+    "Slow-Twitch Muscle"
+   ],
+   "count": 681,
+   "tissues": [
+    "Muscle"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Spinal Cord"
+   ],
+   "count": 547,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Floor Plate",
+    "Spinal Cord"
+   ],
+   "count": 253,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Anterior Lens Epithelium",
+    "Lens"
+   ],
+   "count": 210,
+   "tissues": [
+    "Lens"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Floor Plate",
+    "Midbrain (Optic Tectum)"
+   ],
+   "count": 142,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Lens",
+    "Lens Fiber Cells"
+   ],
+   "count": 86,
+   "tissues": [
+    "Lens"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Muscle",
+    "Possible bipotent myoblast (myhc1+ and myl1+)"
+   ],
+   "count": 56,
+   "tissues": [
+    "Muscle"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "CNS",
+    "Forebrain (Telencephalon)",
+    "Midbrain (Optic Tectum)"
+   ],
+   "count": 51,
+   "tissues": [
+    "CNS"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Fast-Twitch Muscle",
+    "Muscle",
+    "Possible bipotent myoblast (myhc1+ and myl1+)"
+   ],
+   "count": 26,
+   "tissues": [
+    "Muscle"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Muscle",
+    "Possible bipotent myoblast (myhc1+ and myl1+)",
+    "Slow-Twitch Muscle"
+   ],
+   "count": 20,
+   "tissues": [
+    "Muscle"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Anterior Lens Epithelium",
+    "Lens",
+    "Lens Fiber Cells"
+   ],
+   "count": 3,
+   "tissues": [
+    "Lens"
+   ],
+   "crossTissue": false
+  },
+  {
+   "labels": [
+    "Macrophages",
+    "Neutrophils"
+   ],
+   "count": 2,
+   "tissues": [
+    "Immune"
+   ],
+   "crossTissue": false
+  }
+ ],
+ "note": "intersection = exact set of raw Patrick labels a cell carries (pre-collapse). crossTissue=True flags cross-umbrella ambiguity (Decision B exclusion)."
+}

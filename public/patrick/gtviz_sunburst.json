@@ -1,0 +1,214 @@
+{
+ "name": "MiniFin 94,616 cells",
+ "collapseVersion": "8eff3b8d",
+ "children": [
+  {
+   "name": "CNS",
+   "tissue": "CNS",
+   "children": [
+    {
+     "name": "(umbrella / no subtype)",
+     "value": 18912
+    },
+    {
+     "name": "Midbrain",
+     "value": 17557
+    },
+    {
+     "name": "MHB",
+     "value": 6359
+    },
+    {
+     "name": "Forebrain",
+     "value": 2549
+    },
+    {
+     "name": "FloorPlate",
+     "value": 994
+    },
+    {
+     "name": "SpinalCord",
+     "value": 547
+    }
+   ],
+   "value": 46918
+  },
+  {
+   "name": "PNS_glia",
+   "tissue": "PNS_glia",
+   "children": [
+    {
+     "name": "Schwann",
+     "value": 482
+    }
+   ],
+   "value": 482
+  },
+  {
+   "name": "Vascular",
+   "tissue": "Vascular",
+   "children": [
+    {
+     "name": "Endothelial",
+     "value": 930
+    }
+   ],
+   "value": 930
+  },
+  {
+   "name": "Blood",
+   "tissue": "Blood",
+   "children": [
+    {
+     "name": "Erythrocyte",
+     "value": 5886
+    }
+   ],
+   "value": 5886
+  },
+  {
+   "name": "Immune",
+   "tissue": "Immune",
+   "children": [
+    {
+     "name": "Macrophage",
+     "value": 286
+    },
+    {
+     "name": "Neutrophil",
+     "value": 130
+    },
+    {
+     "name": "(umbrella / no subtype)",
+     "value": 2
+    }
+   ],
+   "value": 418
+  },
+  {
+   "name": "Muscle",
+   "tissue": "Muscle",
+   "children": [
+    {
+     "name": "Fast",
+     "value": 3198
+    },
+    {
+     "name": "Slow",
+     "value": 681
+    },
+    {
+     "name": "(umbrella / no subtype)",
+     "value": 94
+    },
+    {
+     "name": "Myoblast",
+     "value": 56
+    }
+   ],
+   "value": 4029
+  },
+  {
+   "name": "Heart",
+   "tissue": "Heart",
+   "children": [
+    {
+     "name": "Cardiomyocyte",
+     "value": 46
+    }
+   ],
+   "value": 46
+  },
+  {
+   "name": "Epidermis",
+   "tissue": "Epidermis",
+   "children": [
+    {
+     "name": "Superficial",
+     "value": 6511
+    },
+    {
+     "name": "Basal",
+     "value": 4731
+    },
+    {
+     "name": "Ionocyte",
+     "value": 404
+    },
+    {
+     "name": "Goblet",
+     "value": 348
+    }
+   ],
+   "value": 11994
+  },
+  {
+   "name": "Pigment",
+   "tissue": "Pigment",
+   "children": [
+    {
+     "name": "Melanophore",
+     "value": 1022
+    }
+   ],
+   "value": 1022
+  },
+  {
+   "name": "Endoderm",
+   "tissue": "Endoderm",
+   "children": [
+    {
+     "name": "(umbrella / no subtype)",
+     "value": 317
+    }
+   ],
+   "value": 317
+  },
+  {
+   "name": "Kidney",
+   "tissue": "Kidney",
+   "children": [
+    {
+     "name": "Pronephros",
+     "value": 233
+    }
+   ],
+   "value": 233
+  },
+  {
+   "name": "Notochord",
+   "tissue": "Notochord",
+   "children": [
+    {
+     "name": "Notochord",
+     "value": 571
+    }
+   ],
+   "value": 571
+  },
+  {
+   "name": "Lens",
+   "tissue": "Lens",
+   "children": [
+    {
+     "name": "LensEpithelium",
+     "value": 210
+    },
+    {
+     "name": "LensFiber",
+     "value": 86
+    },
+    {
+     "name": "(umbrella / no subtype)",
+     "value": 7
+    }
+   ],
+   "value": 303
+  },
+  {
+   "name": "Unlabelled (no GT)",
+   "tissue": "_unlabelled",
+   "value": 21467
+  }
+ ]
+}

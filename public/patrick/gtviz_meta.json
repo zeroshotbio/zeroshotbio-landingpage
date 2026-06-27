@@ -1,0 +1,41 @@
+{
+ "generatedAt": "2026-06-27T04:24:05.152308Z",
+ "collapseVersion": "8eff3b8d",
+ "decisions": "A=Pronephros one-concept; B=cross-tissue flag&exclude; C=hepatocyte tissue-hit/ct-too-coarse + gut-blind log; D=uniform weight.",
+ "nCells": 94616,
+ "buckets": {
+  "no_gt_assigned": 20121,
+  "gt_assigned_scorable": 65892,
+  "gt_abstained_declined": 7257,
+  "no_gt_abstained": 1346
+ },
+ "ctGrades": {
+  "hit": 20931,
+  "gt_too_coarse": 13866,
+  "miss": 5574,
+  "pred_not_committed": 13493,
+  "pred_region_absent_in_gt": 1043
+ },
+ "tissueAccuracy": {
+  "hits": 54907,
+  "scorable": 65892,
+  "pct": 83.3
+ },
+ "multiLabelledCells": 34822,
+ "crosswalk": {
+  "patSets": 27,
+  "leaves": 130
+ },
+ "crossCheck": {
+  "passed": true,
+  "discrepancies": []
+ },
+ "sources": {
+  "run": "/data/scratch/v2_minifin_run_20260626/deployment_label_table.json",
+  "scorecard": "/data/scratch/v2_minifin_run_20260626/scorecard_vs_patrick.json",
+  "crosswalk": "/data/scratch/score_minifin_patrick.py",
+  "patrickGT": "/data/experiments/patrick_minifin_labels/patrick_minifin_labels.csv",
+  "assign": "/data/scratch/v2_minifin/minifin_v2_leaf_assign.csv",
+  "umap": "/data/zeroshotbio-landingpage/public/patrick/cells.json"
+ }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import GTViz from "./GTViz";
 
 /* ============================ proposal (our pre-filled baseline) ============================ */
 type Tag = "constitutive" | "guidance";
@@ -83,6 +84,7 @@ export default function PatrickClient() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [contra, setContra] = useState<string[]>([]);
   const [screen, setScreen] = useState(1);
+  const [section, setSection] = useState<"decisions" | "gtviz">("decisions");
 
   // decision state (initialised from proposal once data has shape)
   const [tags, setTags] = useState<Record<string, Record<string, Tag>>>(() => {
@@ -144,40 +146,52 @@ export default function PatrickClient() {
       <style>{CSS}</style>
       <header style={S.header}>
         <div>
-          <div style={{ fontSize: 20, fontWeight: 700 }}>R4b · constitutive-anchor decision dashboard</div>
+          <div style={{ fontSize: 20, fontWeight: 700 }}>
+            {section === "decisions" ? "R4b · constitutive-anchor decision dashboard" : "Patrick GT × prediction · visual review"}
+          </div>
           <div style={{ fontSize: 12, opacity: 0.6 }}>
             MiniFin recursive v2 · 94,616 cells / 151 leaves · {stats ? `:5007 stats pulled ${stats.pulledAt.slice(0, 16).replace("T", " ")}Z` : "loading…"}
           </div>
         </div>
-        <div style={{ fontSize: 11, opacity: 0.5, textAlign: "right" }}>prototype · noindex<br />approve / edit, don&apos;t fill blanks</div>
+        <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+          <button onClick={() => setSection("decisions")} style={{ ...S.sectionBtn, ...(section === "decisions" ? S.sectionOn : {}) }}>R4b decisions</button>
+          <button onClick={() => setSection("gtviz")} style={{ ...S.sectionBtn, ...(section === "gtviz" ? S.sectionOn : {}) }}>GT × prediction (6 views)</button>
+          <div style={{ fontSize: 11, opacity: 0.5, textAlign: "right", marginLeft: 10 }}>prototype · noindex<br />real data only — don&apos;t fill blanks</div>
+        </div>
       </header>
 
-      <nav style={S.nav}>
-        {["Overview", "The error", "Panels", "Edge markers", "Implementation", "Review & export"].map((t, i) => (
-          <button key={t} onClick={() => setScreen(i + 1)} style={{ ...S.step, ...(screen === i + 1 ? S.stepOn : {}) }}>
-            <span style={S.stepN}>{i + 1}</span> {t}
-          </button>
-        ))}
-      </nav>
+      {section === "decisions" ? (
+        <>
+          <nav style={S.nav}>
+            {["Overview", "The error", "Panels", "Edge markers", "Implementation", "Review & export"].map((t, i) => (
+              <button key={t} onClick={() => setScreen(i + 1)} style={{ ...S.step, ...(screen === i + 1 ? S.stepOn : {}) }}>
+                <span style={S.stepN}>{i + 1}</span> {t}
+              </button>
+            ))}
+          </nav>
 
-      <main style={S.main}>
-        {screen === 1 && <Overview cells={cells} />}
-        {screen === 2 && <TheError stats={stats} />}
-        {screen === 3 && <Panels tags={tags} flip={flip} stats={stats} />}
-        {screen === 4 && <Edge flt4={flt4} setFlt4={setFlt4} etv2={etv2} setEtv2={setEtv2} stats={stats} />}
-        {screen === 5 && <Impl impl={impl} setImpl={setImpl} />}
-        {screen === 6 && <Review json={exportJSON} overrides={overrides} contra={contra} notes={notes} setNotes={setNotes} />}
-      </main>
+          <main style={S.main}>
+            {screen === 1 && <Overview cells={cells} />}
+            {screen === 2 && <TheError stats={stats} />}
+            {screen === 3 && <Panels tags={tags} flip={flip} stats={stats} />}
+            {screen === 4 && <Edge flt4={flt4} setFlt4={setFlt4} etv2={etv2} setEtv2={setEtv2} stats={stats} />}
+            {screen === 5 && <Impl impl={impl} setImpl={setImpl} />}
+            {screen === 6 && <Review json={exportJSON} overrides={overrides} contra={contra} notes={notes} setNotes={setNotes} />}
+          </main>
 
-      <footer style={S.footer}>
-        <button style={S.navBtn} disabled={screen === 1} onClick={() => setScreen((s) => Math.max(1, s - 1))}>← back</button>
-        <div style={{ fontSize: 11, opacity: 0.5 }}>
-          {overrides.length === 0 ? "no overrides yet — all proposal tags accepted" : `${overrides.length} override(s) from proposal`}
-        </div>
-        <button style={{ ...S.navBtn, ...S.navBtnPrimary }} disabled={screen === 6} onClick={() => setScreen((s) => Math.min(6, s + 1))}>
-          {screen === 5 ? "review →" : "next →"}
-        </button>
-      </footer>
+          <footer style={S.footer}>
+            <button style={S.navBtn} disabled={screen === 1} onClick={() => setScreen((s) => Math.max(1, s - 1))}>← back</button>
+            <div style={{ fontSize: 11, opacity: 0.5 }}>
+              {overrides.length === 0 ? "no overrides yet — all proposal tags accepted" : `${overrides.length} override(s) from proposal`}
+            </div>
+            <button style={{ ...S.navBtn, ...S.navBtnPrimary }} disabled={screen === 6} onClick={() => setScreen((s) => Math.min(6, s + 1))}>
+              {screen === 5 ? "review →" : "next →"}
+            </button>
+          </footer>
+        </>
+      ) : (
+        <main style={S.main}><GTViz /></main>
+      )}
     </div>
   );
 }
@@ -451,6 +465,8 @@ const S: Record<string, React.CSSProperties> = {
   footer: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 22px", borderTop: "1px solid #1c1c24" },
   navBtn: { padding: "9px 18px", borderRadius: 8, border: "1px solid #2c2c36", background: "#16161d", color: "#e7e7ea", fontSize: 13, cursor: "pointer" },
   navBtnPrimary: { background: "#0d9488", border: "1px solid #0d9488", color: "#fff", fontWeight: 600 },
+  sectionBtn: { padding: "7px 13px", borderRadius: 8, border: "1px solid #2c2c36", background: "transparent", color: "#9a9aa3", fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" },
+  sectionOn: { background: "#0d948822", border: "1px solid #0d9488", color: "#fff", fontWeight: 600 },
   cardTitle: { fontSize: 13, fontWeight: 700, textTransform: "capitalize", marginBottom: 10, letterSpacing: 0.3 },
   chip: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "9px 11px", marginBottom: 7, borderRadius: 8, border: "1px solid #2c2c36", color: "#e7e7ea", fontSize: 13, cursor: "pointer" },
   focusBox: { marginTop: 8, padding: 10, borderRadius: 8, background: "#16161d", fontSize: 12, lineHeight: 1.5 },
