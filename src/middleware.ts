@@ -1,11 +1,12 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Gate ONLY the DanioType wizard — its page, its API routes, and its data-asset
-// route — behind HTTP Basic Auth. Every other route on the site stays public.
-// One shared password, env-var'd (KASPEROV_BASIC_PASSWORD). After one browser
-// login the same URL works normally; the public can reach neither the page nor
-// the JSONs. The autopilot worker authenticates with the same Basic password.
+// Gate the DanioType wizard AND the /patrick R4b decision dashboard — their pages,
+// API routes, and data-asset routes — behind HTTP Basic Auth. Every other route on
+// the site stays public. One shared password, env-var'd (KASPEROV_BASIC_PASSWORD);
+// the username is ignored (leave it blank). After one browser login the same URL
+// works normally; the public can reach neither the pages nor their JSONs. The
+// autopilot worker authenticates with the same Basic password.
 export const config = {
   matcher: [
     "/daniotype_kasperov",
@@ -15,6 +16,8 @@ export const config = {
     "/api/kasperov_score/:path*",
     "/api/kasperov_runs/:path*",
     "/api/kasperov_autopilot/:path*",
+    "/patrick",
+    "/patrick/:path*",
   ],
 };
 
