@@ -1,0 +1,22 @@
+{
+ "contradictions": [
+  "[endothelial] CONSTITUTIVE 'fli1a' not robustly present in clean control leaf 93: no :5007 data",
+  "[endothelial] GUIDANCE 'dll4' is specifically high in control leaf 93: pct_in=0.388 log2FC=1.649 (worth Patrick's eye)",
+  "[mural] CONSTITUTIVE 'rgs5a' not robustly present in clean control leaf 0: no :5007 data",
+  "[mural] CONSTITUTIVE 'kcnj8' not robustly present in clean control leaf 0: pct_in=0.003 log2FC=0.021",
+  "[mural] CONSTITUTIVE 'abcc9' not robustly present in clean control leaf 0: pct_in=0.021 log2FC=-0.093",
+  "[mural] GUIDANCE 'cspg4' is specifically high in control leaf 0: pct_in=0.776 log2FC=2.561 (worth Patrick's eye)",
+  "[mural] GUIDANCE 'pdgfra' is specifically high in control leaf 0: pct_in=0.83 log2FC=2.23 (worth Patrick's eye)",
+  "[intestinal] CONSTITUTIVE 'vil1' not robustly present in clean control leaf 120: pct_in=0.035 log2FC=0.02",
+  "[intestinal] CONSTITUTIVE 'fabp2' not robustly present in clean control leaf 120: pct_in=0.058 log2FC=0.096",
+  "[intestinal] GUIDANCE 'epcam' is specifically high in control leaf 120: pct_in=0.883 log2FC=1.303 (worth Patrick's eye)",
+  "[intestinal] GUIDANCE 'cdh1' is specifically high in control leaf 120: pct_in=0.953 log2FC=2.129 (worth Patrick's eye)",
+  "[intestinal] GUIDANCE 'foxa3' is specifically high in control leaf 120: pct_in=0.77 log2FC=2.026 (worth Patrick's eye)"
+ ],
+ "controls": {
+  "endothelial": "93",
+  "mural": "0",
+  "intestinal": "120"
+ },
+ "note": "mural control=leaf 0 is the BORDERLINE pericyte case (no clean pericyte leaf exists in MiniFin) \u2014 its flags are the substantive finding, not noise."
+}
