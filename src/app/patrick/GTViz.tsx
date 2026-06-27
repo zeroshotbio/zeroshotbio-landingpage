@@ -9,6 +9,16 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import * as d3 from "d3";
 import { sankey as d3sankey, sankeyLinkHorizontal, sankeyJustify } from "d3-sankey";
+import { PAPER, INK, ACCENT } from "../daniotype_kasperov/theme";
+
+/* ---- paper-theme chrome tokens (matches /daniotype_kasperov) ---- */
+const CARD = "#fffdfb";      // card / canvas surface
+const BORDER = "#e5e1dc";    // card borders
+const HAIRLINE = "#ece8e2";  // dividers / grid
+const MUTED = "#6f685f";     // secondary text
+const FAINT = "#9a948c";     // tertiary text
+const ACCENT_BG = "#eef7f9"; // selected tint
+const SOFT = "#f0ede9";      // subtle panel / empty cell
 
 /* ---- shared palettes (tissue palette matches the R4b dashboard) ---- */
 const TISSUE_COLOR: Record<string, string> = {
@@ -18,11 +28,11 @@ const TISSUE_COLOR: Record<string, string> = {
   NC: "#ec4899", Hypochord: "#64748b", Stress: "#94a3b8", HatchingGland: "#84cc16", Ear: "#22d3ee",
   PNS_neuron: "#38bdf8", Cartilage: "#d6d3d1", AMB: "#a855f7",
 };
-const tcolor = (t: string) => TISSUE_COLOR[t] || "#52525b";
-const GRAY = "#3f3f46"; // unlabelled / no-GT — visible, never dropped
+const tcolor = (t: string) => TISSUE_COLOR[t] || "#9a948c";
+const GRAY = "#c7c0b6"; // unlabelled / no-GT — warm gray, visible on paper, never dropped
 const OUTCOME_COLOR: Record<string, string> = {
-  agree: "#22c55e", gt_too_coarse: "#eab308", disagree: "#ef4444",
-  abstained: "#38bdf8", no_gt_assigned: "#6b7280", no_gt_abstained: "#27272e", ambiguous: "#a855f7",
+  agree: "#16a34a", gt_too_coarse: "#ca8a04", disagree: "#dc2626",
+  abstained: "#0e7490", no_gt_assigned: "#a89e92", no_gt_abstained: "#cdc6bb", ambiguous: "#9333ea",
 };
 const OUTCOME_LABEL: Record<string, string> = {
   agree: "agree (tissue hit)", gt_too_coarse: "GT-too-coarse", disagree: "disagree (tissue miss)",
@@ -72,16 +82,16 @@ export default function GTViz() {
       {/* provenance / collapse-version banner (honest: which collapse rendered + join health) */}
       <div style={ST.banner}>
         <div>
-          <b style={{ color: "#e7e7ea" }}>Patrick GT × prediction</b> · 94,616 cells · 151 leaves
+          <b style={{ color: INK }}>Patrick GT × prediction</b> · 94,616 cells · 151 leaves
           {meta && <> · collapse <code style={ST.code}>{meta.collapseVersion}</code></>}
         </div>
         <div style={{ display: "flex", gap: 14, alignItems: "center" }}>
           {meta && (
-            <span style={{ color: meta.crossCheck.passed ? "#22c55e" : "#ef4444" }}>
+            <span style={{ color: meta.crossCheck.passed ? "#16a34a" : "#dc2626", fontWeight: 600 }}>
               {meta.crossCheck.passed ? "✓ join verified vs scorecard" : `✗ ${meta.crossCheck.discrepancies.length} join discrepancies`}
             </span>
           )}
-          {meta && <span style={{ opacity: 0.5 }}>tissue acc {meta.tissueAccuracy.pct}% · built {meta.generatedAt.slice(0, 10)}</span>}
+          {meta && <span style={{ color: FAINT }}>tissue acc {meta.tissueAccuracy.pct}% · built {meta.generatedAt.slice(0, 10)}</span>}
         </div>
       </div>
       {meta && meta.decisions && <div style={ST.decisions}>collapse decisions: {meta.decisions}</div>}
@@ -135,12 +145,12 @@ function Sunburst({ data }: { data: any }) {
         .innerRadius((d) => d.y0).outerRadius((d) => d.y1).padAngle(0.004);
       const g = svg.append("g").attr("transform", `translate(${W / 2},${H / 2})`);
       g.selectAll("path").data(root.descendants().filter((d: any) => d.depth)).join("path")
-        .attr("d", arc as any).attr("fill", colorOf).attr("fill-opacity", (d: any) => (d.depth === 1 ? 0.95 : 0.7))
-        .attr("stroke", "#08070d").attr("stroke-width", 0.6).style("cursor", "pointer")
+        .attr("d", arc as any).attr("fill", colorOf).attr("fill-opacity", (d: any) => (d.depth === 1 ? 0.92 : 0.62))
+        .attr("stroke", CARD).attr("stroke-width", 1).style("cursor", "pointer")
         .on("mousemove", showTip).on("mouseleave", () => setTip(null));
-      g.append("text").attr("text-anchor", "middle").attr("dy", "-0.2em").attr("fill", "#e7e7ea")
-        .attr("font-size", 13).text("MiniFin GT");
-      g.append("text").attr("text-anchor", "middle").attr("dy", "1.1em").attr("fill", "#9a9aa3")
+      g.append("text").attr("text-anchor", "middle").attr("dy", "-0.2em").attr("fill", INK)
+        .attr("font-size", 13).attr("font-weight", 600).text("MiniFin GT");
+      g.append("text").attr("text-anchor", "middle").attr("dy", "1.1em").attr("fill", FAINT)
         .attr("font-size", 11).text(`${fmt(total)} cells`);
     } else {
       d3.partition().size([H, W])(root);
@@ -148,12 +158,12 @@ function Sunburst({ data }: { data: any }) {
       g.selectAll("rect").data(root.descendants().filter((d: any) => d.depth)).join("rect")
         .attr("x", (d: any) => d.y0).attr("y", (d: any) => d.x0)
         .attr("width", (d: any) => d.y1 - d.y0).attr("height", (d: any) => Math.max(0, d.x1 - d.x0 - 1))
-        .attr("fill", colorOf).attr("fill-opacity", (d: any) => (d.depth === 1 ? 0.95 : 0.7))
-        .attr("stroke", "#08070d").style("cursor", "pointer")
+        .attr("fill", colorOf).attr("fill-opacity", (d: any) => (d.depth === 1 ? 0.92 : 0.62))
+        .attr("stroke", CARD).style("cursor", "pointer")
         .on("mousemove", showTip).on("mouseleave", () => setTip(null));
       g.selectAll("text").data(root.descendants().filter((d: any) => d.depth && d.x1 - d.x0 > 13)).join("text")
         .attr("x", (d: any) => d.y0 + 4).attr("y", (d: any) => (d.x0 + d.x1) / 2).attr("dy", "0.35em")
-        .attr("fill", "#0b0a12").attr("font-size", 10).attr("font-weight", 600)
+        .attr("fill", "#3a352e").attr("font-size", 10).attr("font-weight", 600)
         .text((d: any) => `${d.data.name} ${fmt(d.value)}`);
     }
   }, [data, icicle]);
@@ -195,22 +205,22 @@ function UpSet({ data }: { data: any }) {
     inter.forEach((it, j) => {
       svg.append("rect").attr("x", cx(j) - 9).attr("y", topH - 18 - yBar(it.count))
         .attr("width", 18).attr("height", yBar(it.count))
-        .attr("fill", it.crossTissue ? "#ef4444" : "#6366f1").attr("rx", 2)
+        .attr("fill", it.crossTissue ? "#dc2626" : ACCENT).attr("rx", 2)
         .style("cursor", "pointer")
         .on("mousemove", (e) => setTip({ x: e.clientX, y: e.clientY,
           html: `<b>${it.labels.join(" ∩ ")}</b><br/>${fmt(it.count)} cells · ${it.crossTissue ? "⚠ cross-umbrella (ambiguous)" : "hierarchy-consistent"}<br/>tissues: ${it.tissues.join(", ")}` }))
         .on("mouseleave", () => setTip(null));
       svg.append("text").attr("x", cx(j)).attr("y", topH - 22 - yBar(it.count)).attr("text-anchor", "middle")
-        .attr("fill", "#9a9aa3").attr("font-size", 9).text(it.count >= 1000 ? `${Math.round(it.count / 1000)}k` : it.count);
+        .attr("fill", MUTED).attr("font-size", 9).text(it.count >= 1000 ? `${Math.round(it.count / 1000)}k` : it.count);
     });
 
     // set-size bars (left) + labels
     sets.forEach((s, i) => {
       svg.append("rect").attr("x", ML - 8 - xSet(s.size)).attr("y", cy(i) - 7)
         .attr("width", xSet(s.size)).attr("height", 14).attr("fill", tcolor(s.tissue)).attr("fill-opacity", 0.55).attr("rx", 2);
-      svg.append("text").attr("x", 2).attr("y", cy(i)).attr("dy", "0.32em").attr("fill", "#cfcfd6").attr("font-size", 10)
+      svg.append("text").attr("x", 2).attr("y", cy(i)).attr("dy", "0.32em").attr("fill", INK).attr("font-size", 10)
         .text(`${s.label.length > 26 ? s.label.slice(0, 24) + "…" : s.label}`);
-      svg.append("line").attr("x1", ML + 4).attr("x2", W).attr("y1", cy(i)).attr("y2", cy(i)).attr("stroke", "#1a1a22");
+      svg.append("line").attr("x1", ML + 4).attr("x2", W).attr("y1", cy(i)).attr("y2", cy(i)).attr("stroke", HAIRLINE);
     });
 
     // dot matrix
@@ -218,10 +228,10 @@ function UpSet({ data }: { data: any }) {
       const rows = it.labels.map((l) => setIdx.get(l)!).filter((v) => v !== undefined).sort((a, b) => a - b);
       if (rows.length > 1)
         svg.append("line").attr("x1", cx(j)).attr("x2", cx(j)).attr("y1", cy(rows[0])).attr("y2", cy(rows[rows.length - 1]))
-          .attr("stroke", it.crossTissue ? "#ef4444" : "#6366f1").attr("stroke-width", 2);
+          .attr("stroke", it.crossTissue ? "#dc2626" : ACCENT).attr("stroke-width", 2);
       sets.forEach((_, i) => {
         svg.append("circle").attr("cx", cx(j)).attr("cy", cy(i)).attr("r", dotR)
-          .attr("fill", rows.includes(i) ? (it.crossTissue ? "#ef4444" : "#6366f1") : "#26262e");
+          .attr("fill", rows.includes(i) ? (it.crossTissue ? "#dc2626" : ACCENT) : "#ddd6cc");
       });
     });
   }, [data]);
@@ -259,7 +269,7 @@ function UmapPaint({ cells, paint, mode }: { cells: Cells; paint: Paint; mode: "
     const dpr = Math.min(2, window.devicePixelRatio || 1);
     cv.width = W * dpr; cv.height = H * dpr;
     const ctx = cv.getContext("2d")!; ctx.scale(dpr, dpr);
-    ctx.fillStyle = "#0b0a12"; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = CARD; ctx.fillRect(0, 0, W, H);
     const { x, y } = cells, n = cells.n;
     let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
     for (let i = 0; i < n; i++) { if (x[i] < minx) minx = x[i]; if (x[i] > maxx) maxx = x[i]; if (y[i] < miny) miny = y[i]; if (y[i] > maxy) maxy = y[i]; }
@@ -284,7 +294,7 @@ function UmapPaint({ cells, paint, mode }: { cells: Cells; paint: Paint; mode: "
         const isBg = bg(i);
         if (pass === 0 ? !isBg : isBg) continue;
         const col = colorFor(i); if (!col) continue;
-        ctx.fillStyle = col; ctx.globalAlpha = isBg ? 0.4 : 0.7;
+        ctx.fillStyle = col; ctx.globalAlpha = isBg ? 0.5 : 0.82;
         const px = pad + (x[i] - minx) * sx, py = H - (pad + (y[i] - miny) * sy);
         ctx.fillRect(px, py, 1.7, 1.7);
       }
@@ -334,12 +344,12 @@ function Confusion({ data }: { data: any }) {
   const W = lab + cols.length * cell + 20, H = top + rows.length * cell + 30;
   const maxRaw = Math.max(...rows.flatMap((r) => cols.map((c) => M[r][c] || 0)));
   const color = (r: string, c: string) => {
-    const v = M[r][c] || 0; if (!v) return "#101019";
+    const v = M[r][c] || 0; if (!v) return SOFT;
     const isAbst = c === data.abstainCol, isNoGt = r === data.noGtRow;
     const t = recall ? v / (rowTotal(r) || 1) : v / maxRaw;
     const inten = recall ? t : Math.sqrt(t); // sqrt so small off-diagonal cells are visible
-    const base = isAbst ? "56,189,248" : isNoGt ? "107,114,128" : "99,102,241";
-    return `rgba(${base},${0.12 + 0.85 * inten})`;
+    const base = isAbst ? "14,116,144" : isNoGt ? "168,158,146" : "37,99,160"; // teal / warm-gray / indigo on paper
+    return `rgba(${base},${0.08 + 0.9 * inten})`;
   };
   return (
     <div>
@@ -350,18 +360,18 @@ function Confusion({ data }: { data: any }) {
         <svg width={W} height={H} style={ST.svg}>
           {cols.map((c, j) => (
             <text key={c} x={lab + j * cell + cell / 2} y={top - 6} transform={`rotate(-55 ${lab + j * cell + cell / 2} ${top - 6})`}
-              fill={c === data.abstainCol ? "#38bdf8" : "#9a9aa3"} fontSize={10} textAnchor="start">{c}</text>
+              fill={c === data.abstainCol ? ACCENT : MUTED} fontSize={10} textAnchor="start">{c}</text>
           ))}
           {rows.map((r, i) => (
             <g key={r}>
               <text x={lab - 6} y={top + i * cell + cell / 2} dy="0.32em" textAnchor="end"
-                fill={r === data.noGtRow ? "#9ca3af" : "#cfcfd6"} fontSize={10}>{r}</text>
+                fill={r === data.noGtRow ? FAINT : INK} fontSize={10}>{r}</text>
               {cols.map((c, j) => {
                 const v = M[r][c] || 0;
                 const diag = r === c;
                 return (
                   <rect key={c} x={lab + j * cell} y={top + i * cell} width={cell - 1.5} height={cell - 1.5}
-                    fill={color(r, c)} stroke={diag ? "#22c55e" : "#08070d"} strokeWidth={diag ? 1.4 : 0.5}
+                    fill={color(r, c)} stroke={diag ? "#16a34a" : CARD} strokeWidth={diag ? 1.6 : 0.5}
                     style={{ cursor: v ? "pointer" : "default" }}
                     onMouseMove={(e) => v && setTip({ x: e.clientX, y: e.clientY,
                       html: `<b>GT ${r} → pred ${c}</b><br/>${fmt(v)} cells${recall ? `<br/>${(100 * v / (rowTotal(r) || 1)).toFixed(1)}% of GT ${r}` : ""}` })}
@@ -371,11 +381,11 @@ function Confusion({ data }: { data: any }) {
             </g>
           ))}
           {/* divider before abstained column */}
-          <line x1={lab + (cols.length - 1) * cell - 1} x2={lab + (cols.length - 1) * cell - 1} y1={top - 2} y2={top + rows.length * cell} stroke="#38bdf8" strokeOpacity={0.4} />
-          <line x1={lab - 2} x2={lab + cols.length * cell} y1={top + (rows.length - 1) * cell - 1} y2={top + (rows.length - 1) * cell - 1} stroke="#6b7280" strokeOpacity={0.5} />
+          <line x1={lab + (cols.length - 1) * cell - 1} x2={lab + (cols.length - 1) * cell - 1} y1={top - 2} y2={top + rows.length * cell} stroke={ACCENT} strokeOpacity={0.5} />
+          <line x1={lab - 2} x2={lab + cols.length * cell} y1={top + (rows.length - 1) * cell - 1} y2={top + (rows.length - 1) * cell - 1} stroke="#b8b0a6" strokeOpacity={0.7} />
         </svg>
       </div>
-      <div style={{ fontSize: 11, opacity: 0.55, marginTop: 6 }}>green outline = diagonal (correct tissue). Blue col = declined. Gray row = no-GT.</div>
+      <div style={{ fontSize: 11, color: FAINT, marginTop: 6 }}>green outline = diagonal (correct tissue). Teal col = declined. Gray row = no-GT.</div>
       <Tip tip={tip} />
     </div>
   );
@@ -418,10 +428,11 @@ function SankeyView({ data }: { data: any }) {
     const sk = d3sankey().nodeWidth(12).nodePadding(7).nodeAlign(sankeyJustify)
       .extent([[140, 10], [W - 150, H - 10]]);
     const graph = sk({ nodes: nodes.map((d: any) => ({ ...d })), links: L.map((d: any) => ({ ...d })) } as any);
-    const lc = (o: string) => data.outcomeColors[o] || "#52525b";
+    const PAPER_OUT: Record<string, string> = { hit: "#16a34a", "GT-too-coarse": "#ca8a04", miss: "#dc2626", abstain: "#0e7490", no_gt: "#a89e92" };
+    const lc = (o: string) => PAPER_OUT[o] || "#a89e92";
     svg.append("g").attr("fill", "none").selectAll("path").data((graph.links as any)).join("path")
       .attr("d", sankeyLinkHorizontal() as any).attr("stroke", (d: any) => lc(d.outcome))
-      .attr("stroke-opacity", 0.42).attr("stroke-width", (d: any) => Math.max(1, d.width))
+      .attr("stroke-opacity", 0.5).attr("stroke-width", (d: any) => Math.max(1, d.width))
       .style("cursor", "pointer")
       .on("mousemove", (e: any, d: any) => setTip({ x: e.clientX, y: e.clientY,
         html: `<b>${nameOf(d.source.id)} → ${nameOf(d.target.id)}</b><br/>${fmt(d.value)} cells · ${d.outcome}` }))
@@ -429,11 +440,11 @@ function SankeyView({ data }: { data: any }) {
     const node = svg.append("g").selectAll("g").data((graph.nodes as any)).join("g");
     node.append("rect").attr("x", (d: any) => d.x0).attr("y", (d: any) => d.y0)
       .attr("width", (d: any) => d.x1 - d.x0).attr("height", (d: any) => Math.max(1, d.y1 - d.y0))
-      .attr("fill", (d: any) => colOf(d.id) === 2 ? lc(nameOf(d.id)) : "#8a8a96").attr("rx", 1);
+      .attr("fill", (d: any) => colOf(d.id) === 2 ? lc(nameOf(d.id)) : "#b3a99c").attr("rx", 1);
     node.append("text").attr("x", (d: any) => colOf(d.id) === 0 ? d.x0 - 6 : d.x1 + 6)
       .attr("y", (d: any) => (d.y0 + d.y1) / 2).attr("dy", "0.32em")
       .attr("text-anchor", (d: any) => colOf(d.id) === 0 ? "end" : "start")
-      .attr("fill", "#cfcfd6").attr("font-size", 9.5)
+      .attr("fill", INK).attr("font-size", 9.5)
       .text((d: any) => `${nameOf(d.id)}`);
   }, [data, filter]);
 
@@ -466,8 +477,8 @@ function SankeyView({ data }: { data: any }) {
 function ViewHead({ title, sub }: { title: string; sub: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
-      <div style={{ fontSize: 16, fontWeight: 700 }}>{title}</div>
-      <div style={{ fontSize: 12.5, opacity: 0.6, marginTop: 3, maxWidth: 880, lineHeight: 1.5 }}>{sub}</div>
+      <div style={{ fontSize: 16.5, fontWeight: 700, color: INK }}>{title}</div>
+      <div style={{ fontSize: 12.5, color: MUTED, marginTop: 4, maxWidth: 880, lineHeight: 1.55 }}>{sub}</div>
     </div>
   );
 }
@@ -478,24 +489,25 @@ function Tip({ tip }: { tip: { x: number; y: number; html: string } | null }) {
 
 const ST: Record<string, React.CSSProperties> = {
   banner: { display: "flex", justifyContent: "space-between", alignItems: "center", flexWrap: "wrap", gap: 8,
-    padding: "10px 14px", borderRadius: 10, background: "#101019", border: "1px solid #1f1f29", fontSize: 12.5 },
-  decisions: { fontSize: 11.5, opacity: 0.55, marginTop: 6, fontFamily: "monospace" },
-  code: { background: "#1f1f29", padding: "1px 5px", borderRadius: 4, fontSize: 11 },
-  tabs: { display: "flex", gap: 4, marginTop: 14, flexWrap: "wrap" },
-  tab: { padding: "8px 13px", borderRadius: 8, border: "1px solid #2c2c36", background: "transparent",
-    color: "#9a9aa3", fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" },
-  tabOn: { background: "#16161d", color: "#fff", border: "1px solid #0d9488" },
-  svg: { borderRadius: 10, border: "1px solid #26262e", background: "#0b0a12" },
-  toggle: { padding: "6px 12px", borderRadius: 7, border: "1px solid #2c2c36", background: "#16161d",
-    color: "#e7e7ea", fontSize: 12, cursor: "pointer", marginBottom: 10, marginRight: 8 },
-  select: { padding: "6px 10px", borderRadius: 7, border: "1px solid #2c2c36", background: "#16161d",
-    color: "#e7e7ea", fontSize: 12 },
-  legendTitle: { fontSize: 12.5, fontWeight: 700, marginBottom: 8 },
-  legendRow: { display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "5px 8px",
-    marginBottom: 3, borderRadius: 6, border: "1px solid #1f1f29", background: "transparent", color: "#e7e7ea",
+    padding: "12px 16px", borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`,
+    borderTop: `3px solid ${ACCENT}`, fontSize: 12.5, color: MUTED },
+  decisions: { fontSize: 11.5, color: FAINT, marginTop: 6, fontFamily: "ui-monospace, monospace" },
+  code: { background: SOFT, padding: "1px 5px", borderRadius: 4, fontSize: 11, fontFamily: "ui-monospace, monospace" },
+  tabs: { display: "flex", gap: 6, marginTop: 16, flexWrap: "wrap" },
+  tab: { padding: "8px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD,
+    color: MUTED, fontSize: 12.5, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  tabOn: { background: ACCENT_BG, color: ACCENT, border: `1px solid ${ACCENT}`, fontWeight: 600 },
+  svg: { borderRadius: 12, border: `1px solid ${BORDER}`, background: CARD },
+  toggle: { padding: "7px 13px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD,
+    color: INK, fontSize: 12.5, fontWeight: 500, cursor: "pointer", marginBottom: 10, marginRight: 8 },
+  select: { padding: "7px 11px", borderRadius: 8, border: `1px solid #d8d3cd`, background: "#fff",
+    color: INK, fontSize: 12.5 },
+  legendTitle: { fontSize: 12.5, fontWeight: 700, marginBottom: 8, color: INK },
+  legendRow: { display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "6px 9px",
+    marginBottom: 4, borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD, color: INK,
     fontSize: 12, cursor: "pointer" },
-  loading: { padding: 40, opacity: 0.5, fontSize: 13 },
-  tip: { position: "fixed", zIndex: 50, pointerEvents: "none", background: "#16161d", border: "1px solid #2c2c36",
-    borderRadius: 7, padding: "7px 10px", fontSize: 11.5, color: "#e7e7ea", maxWidth: 320, lineHeight: 1.5,
-    boxShadow: "0 4px 18px rgba(0,0,0,0.5)" },
+  loading: { padding: 40, color: FAINT, fontSize: 13 },
+  tip: { position: "fixed", zIndex: 50, pointerEvents: "none", background: "#fffefc", border: `1px solid ${BORDER}`,
+    borderRadius: 8, padding: "8px 11px", fontSize: 11.5, color: INK, maxWidth: 320, lineHeight: 1.5,
+    boxShadow: "0 6px 20px rgba(70,60,45,0.18)" },
 };

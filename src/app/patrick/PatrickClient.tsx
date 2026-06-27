@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import GTViz from "./GTViz";
+import { PAPER, INK, ACCENT } from "../daniotype_kasperov/theme";
+
+/* ---- paper-theme chrome tokens (matches /daniotype_kasperov) ---- */
+const CARD = "#fffdfb";
+const BORDER = "#e5e1dc";
+const HAIRLINE = "#ece8e2";
+const MUTED = "#6f685f";
+const FAINT = "#9a948c";
+const ACCENT_BG = "#eef7f9";
+const SOFT = "#f0ede9";
 
 /* ============================ proposal (our pre-filled baseline) ============================ */
 type Tag = "constitutive" | "guidance";
@@ -204,7 +214,7 @@ function Overview({ cells }: { cells: Cells | null }) {
   useEffect(() => {
     const cv = ref.current; if (!cv || !cells) return;
     const W = cv.width, H = cv.height, ctx = cv.getContext("2d")!;
-    ctx.clearRect(0, 0, W, H); ctx.fillStyle = "#0b0a12"; ctx.fillRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, H); ctx.fillStyle = CARD; ctx.fillRect(0, 0, W, H);
     const xs = cells.x, ys = cells.y, lf = cells.leaf, n = cells.n;
     let minx = Infinity, maxx = -Infinity, miny = Infinity, maxy = -Infinity;
     for (let i = 0; i < n; i++) { if (xs[i] < minx) minx = xs[i]; if (xs[i] > maxx) maxx = xs[i]; if (ys[i] < miny) miny = ys[i]; if (ys[i] > maxy) maxy = ys[i]; }
@@ -213,9 +223,9 @@ function Overview({ cells }: { cells: Cells | null }) {
     for (let i = 0; i < n; i++) {
       const px = pad + (xs[i] - minx) * sx, py = H - (pad + (ys[i] - miny) * sy);
       const t = cells.leafTissue[String(lf[i])] || "Other";
-      if (fl === -2) { ctx.fillStyle = tcolor(t); ctx.globalAlpha = 0.55; ctx.fillRect(px, py, 1.6, 1.6); }
+      if (fl === -2) { ctx.fillStyle = tcolor(t); ctx.globalAlpha = 0.7; ctx.fillRect(px, py, 1.6, 1.6); }
       else if (lf[i] === fl) { ctx.fillStyle = tcolor(t); ctx.globalAlpha = 1; ctx.fillRect(px - 1, py - 1, 3, 3); }
-      else { ctx.fillStyle = "#3a3a44"; ctx.globalAlpha = 0.18; ctx.fillRect(px, py, 1.2, 1.2); }
+      else { ctx.fillStyle = "#cfc8bf"; ctx.globalAlpha = 0.5; ctx.fillRect(px, py, 1.2, 1.2); }
     }
     ctx.globalAlpha = 1;
   }, [cells, focus]);
@@ -231,17 +241,17 @@ function Overview({ cells }: { cells: Cells | null }) {
       <H title="S1 · MiniFin recursive v2 overview" sub="Every cell coloured by tissue family. Click a flagged leaf to highlight its cells in place — these are the clusters the R4b decision is about." />
       <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
         <div style={{ position: "relative" }}>
-          <canvas ref={ref} width={620} height={460} style={{ borderRadius: 10, border: "1px solid #26262e", background: "#0b0a12" }} />
+          <canvas ref={ref} width={620} height={460} style={{ borderRadius: 12, border: `1px solid ${BORDER}`, background: CARD }} />
           {!cells && <div style={S.loading}>rendering 94,616 cells…</div>}
         </div>
         <div style={{ flex: 1, minWidth: 240 }}>
           <div style={S.cardTitle}>flagged leaves</div>
           {CONFUSION.map((c) => (
             <button key={c.leaf} onClick={() => setFocus(focus === c.leaf ? null : c.leaf)}
-              style={{ ...S.chip, borderColor: focus === c.leaf ? c.tone : "#2c2c36", background: focus === c.leaf ? c.tone + "22" : "transparent" }}>
+              style={{ ...S.chip, borderColor: focus === c.leaf ? c.tone : BORDER, background: focus === c.leaf ? c.tone + "1f" : CARD }}>
               <span style={{ width: 9, height: 9, borderRadius: 9, background: c.tone, display: "inline-block" }} />
               <span style={{ flex: 1, textAlign: "left" }}>{c.label}</span>
-              <span style={{ opacity: 0.5, fontSize: 11 }}>{cells ? `${cells.leafN[c.leaf]?.toLocaleString()} cells` : ""}</span>
+              <span style={{ color: FAINT, fontSize: 11 }}>{cells ? `${cells.leafN[c.leaf]?.toLocaleString()} cells` : ""}</span>
             </button>
           ))}
           {focus && cells && (
@@ -270,13 +280,13 @@ function TheError({ stats }: { stats: Stats | null }) {
   const order = [...panel.constitutive, ...panel.guidance, ...stats.neural.filter((g) => !panel.constitutive.includes(g) && !panel.guidance.includes(g))];
   const classOf = (g: string) =>
     panel.constitutive.includes(g) ? "constitutive" : panel.guidance.includes(g) ? "guidance" : "neural";
-  const barColor = { constitutive: "#2dd4bf", guidance: "#f59e0b", neural: "#a78bfa" } as Record<string, string>;
+  const barColor = { constitutive: ACCENT, guidance: "#d97706", neural: "#7c3aed" } as Record<string, string>;
 
   const Stack = ({ leaf, title, tone }: { leaf: string; title: string; tone: string }) => (
     <div style={{ flex: 1, minWidth: 300 }}>
       <div style={{ fontWeight: 700, color: tone, marginBottom: 2 }}>{title}</div>
       <div style={{ fontSize: 11, opacity: 0.6, marginBottom: 8 }}>leaf {leaf} · n={stats.leaves[leaf] ? "" : ""}{/* */}</div>
-      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 180, borderBottom: "1px solid #33333d", paddingBottom: 0 }}>
+      <div style={{ display: "flex", alignItems: "flex-end", gap: 4, height: 180, borderBottom: `1px solid ${BORDER}`, paddingBottom: 0 }}>
         {order.map((g) => {
           const s = stats.leaves[leaf]?.[g];
           const h = s ? Math.max(2, s.pct_in * 170) : 0;
@@ -302,12 +312,12 @@ function TheError({ stats }: { stats: Stats | null }) {
     <div>
       <H title="S2 · The worked error — why R4b" sub="Each bar = fraction of the leaf's cells expressing that marker (live :5007). Teal = constitutive endothelial · amber = guidance/promiscuous · violet = neural." />
       <div style={{ display: "flex", gap: 28, flexWrap: "wrap" }}>
-        <Stack leaf="18" title="leaf 18 — labelled 'vascular endothelial'" tone="#ef4444" />
-        <Stack leaf="93" title="leaf 93 — clean vascular control ✓" tone="#22c55e" />
+        <Stack leaf="18" title="leaf 18 — labelled 'vascular endothelial'" tone="#dc2626" />
+        <Stack leaf="93" title="leaf 93 — clean vascular control ✓" tone="#16a34a" />
       </div>
       <div style={S.ruleBox}>
-        <b>The rule this motivates (R4b):</b> leaf 18 has every <span style={{ color: "#2dd4bf" }}>constitutive</span> bar flat (~0%) and one lone
-        {" "}<span style={{ color: "#f59e0b" }}>guidance</span> bar tall (robo4) with <span style={{ color: "#a78bfa" }}>neural</span> markers high →
+        <b>The rule this motivates (R4b):</b> leaf 18 has every <span style={{ color: ACCENT, fontWeight: 600 }}>constitutive</span> bar flat (~0%) and one lone
+        {" "}<span style={{ color: "#d97706", fontWeight: 600 }}>guidance</span> bar tall (robo4) with <span style={{ color: "#7c3aed", fontWeight: 600 }}>neural</span> markers high →
         it was mislabelled vascular on a promiscuous marker. Leaf 93 has every constitutive bar tall → real endothelium.
         <b> A positive call must rest on ≥1 constitutive marker; a guidance marker can corroborate but never satisfy the floor alone.</b>
       </div>
@@ -331,7 +341,7 @@ function Panels({ tags, flip, stats }: { tags: Record<string, Record<string, Tag
               const s = stats?.leaves[ctrl]?.[g];
               return (
                 <div key={g} style={S.markerRow}>
-                  <button onClick={() => flip(pn, g)} style={{ ...S.tagBtn, background: tag === "constitutive" ? "#0d9488" : "#b45309" }}>
+                  <button onClick={() => flip(pn, g)} style={{ ...S.tagBtn, background: tag === "constitutive" ? ACCENT : "#b45309" }}>
                     {tag === "constitutive" ? "constitutive" : "guidance"}
                   </button>
                   <div style={{ flex: 1 }}>
@@ -446,7 +456,7 @@ function Radio({ value, set, opts }: { value: string; set: (v: any) => void; opt
     <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
       {opts.map(([v, label]) => (
         <button key={v} onClick={() => set(v)} style={{ ...S.radio, ...(value === v ? S.radioOn : {}) }}>
-          <span style={{ ...S.radioDot, ...(value === v ? { background: "#2dd4bf", borderColor: "#2dd4bf" } : {}) }} />{label}
+          <span style={{ ...S.radioDot, ...(value === v ? { background: ACCENT, borderColor: ACCENT } : {}) }} />{label}
         </button>
       ))}
     </div>
@@ -455,33 +465,33 @@ function Radio({ value, set, opts }: { value: string; set: (v: any) => void; opt
 
 /* ============================ styles ============================ */
 const S: Record<string, React.CSSProperties> = {
-  page: { position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: "#08070d", color: "#e7e7ea", fontFamily: "system-ui, sans-serif" },
-  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "14px 22px", borderBottom: "1px solid #1c1c24" },
-  nav: { display: "flex", gap: 4, padding: "10px 18px", borderBottom: "1px solid #1c1c24", overflowX: "auto" },
-  step: { display: "flex", alignItems: "center", gap: 7, padding: "7px 12px", borderRadius: 8, border: "1px solid transparent", background: "transparent", color: "#9a9aa3", fontSize: 13, cursor: "pointer", whiteSpace: "nowrap" },
-  stepOn: { background: "#16161d", color: "#fff", border: "1px solid #2c2c36" },
-  stepN: { display: "inline-flex", width: 18, height: 18, borderRadius: 18, background: "#2c2c36", color: "#cfcfd6", fontSize: 11, alignItems: "center", justifyContent: "center" },
-  main: { flex: 1, overflow: "auto", padding: "24px 26px" },
-  footer: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 22px", borderTop: "1px solid #1c1c24" },
-  navBtn: { padding: "9px 18px", borderRadius: 8, border: "1px solid #2c2c36", background: "#16161d", color: "#e7e7ea", fontSize: 13, cursor: "pointer" },
-  navBtnPrimary: { background: "#0d9488", border: "1px solid #0d9488", color: "#fff", fontWeight: 600 },
-  sectionBtn: { padding: "7px 13px", borderRadius: 8, border: "1px solid #2c2c36", background: "transparent", color: "#9a9aa3", fontSize: 12.5, cursor: "pointer", whiteSpace: "nowrap" },
-  sectionOn: { background: "#0d948822", border: "1px solid #0d9488", color: "#fff", fontWeight: 600 },
-  cardTitle: { fontSize: 13, fontWeight: 700, textTransform: "capitalize", marginBottom: 10, letterSpacing: 0.3 },
-  chip: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "9px 11px", marginBottom: 7, borderRadius: 8, border: "1px solid #2c2c36", color: "#e7e7ea", fontSize: 13, cursor: "pointer" },
-  focusBox: { marginTop: 8, padding: 10, borderRadius: 8, background: "#16161d", fontSize: 12, lineHeight: 1.5 },
-  legend: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, opacity: 0.8 },
-  loading: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", opacity: 0.5, fontSize: 13 },
-  ruleBox: { marginTop: 22, padding: "14px 16px", borderRadius: 10, background: "#101019", border: "1px solid #26263a", fontSize: 13.5, lineHeight: 1.6 },
-  panelCard: { padding: "14px 16px", borderRadius: 10, background: "#101019", border: "1px solid #1f1f29", marginBottom: 14 },
-  markerRow: { display: "flex", alignItems: "center", gap: 12, padding: "7px 0", borderTop: "1px solid #1a1a22" },
+  page: { position: "fixed", inset: 0, display: "flex", flexDirection: "column", background: PAPER, color: INK, fontFamily: "system-ui, -apple-system, 'Segoe UI', sans-serif" },
+  header: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 26px", background: CARD, borderBottom: `1px solid ${BORDER}` },
+  nav: { display: "flex", gap: 6, padding: "11px 22px", background: PAPER, borderBottom: `1px solid ${BORDER}`, overflowX: "auto" },
+  step: { display: "flex", alignItems: "center", gap: 7, padding: "7px 13px", borderRadius: 8, border: "1px solid transparent", background: "transparent", color: MUTED, fontSize: 13, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  stepOn: { background: CARD, color: ACCENT, border: `1px solid ${ACCENT}`, fontWeight: 600 },
+  stepN: { display: "inline-flex", width: 18, height: 18, borderRadius: 18, background: SOFT, color: MUTED, fontSize: 11, alignItems: "center", justifyContent: "center" },
+  main: { flex: 1, overflowY: "auto", width: "100%", maxWidth: 1180, alignSelf: "center", padding: "30px 28px 56px" },
+  footer: { display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 26px", background: CARD, borderTop: `1px solid ${BORDER}` },
+  navBtn: { padding: "9px 18px", borderRadius: 8, border: `1px solid #d8d3cd`, background: CARD, color: INK, fontSize: 13.5, fontWeight: 500, cursor: "pointer" },
+  navBtnPrimary: { background: ACCENT, border: `1px solid ${ACCENT}`, color: "#fff", fontWeight: 600 },
+  sectionBtn: { padding: "8px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD, color: MUTED, fontSize: 12.5, fontWeight: 500, cursor: "pointer", whiteSpace: "nowrap" },
+  sectionOn: { background: ACCENT_BG, border: `1px solid ${ACCENT}`, color: ACCENT, fontWeight: 600 },
+  cardTitle: { fontSize: 13, fontWeight: 700, textTransform: "capitalize", marginBottom: 10, letterSpacing: 0.2, color: INK },
+  chip: { display: "flex", alignItems: "center", gap: 9, width: "100%", padding: "9px 11px", marginBottom: 7, borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD, color: INK, fontSize: 13, cursor: "pointer" },
+  focusBox: { marginTop: 8, padding: 11, borderRadius: 10, background: SOFT, border: `1px solid ${BORDER}`, fontSize: 12, lineHeight: 1.5 },
+  legend: { display: "inline-flex", alignItems: "center", gap: 5, fontSize: 11, color: MUTED },
+  loading: { position: "absolute", inset: 0, display: "flex", alignItems: "center", justifyContent: "center", color: FAINT, fontSize: 13 },
+  ruleBox: { marginTop: 22, padding: "15px 17px", borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`, borderLeft: `3px solid ${ACCENT}`, fontSize: 13.5, lineHeight: 1.6 },
+  panelCard: { padding: "16px 18px", borderRadius: 12, background: CARD, border: `1px solid ${BORDER}`, marginBottom: 14 },
+  markerRow: { display: "flex", alignItems: "center", gap: 12, padding: "8px 0", borderTop: `1px solid ${HAIRLINE}` },
   tagBtn: { width: 104, padding: "5px 0", borderRadius: 6, border: "none", color: "#fff", fontSize: 11.5, fontWeight: 600, cursor: "pointer" },
-  edgeP: { fontSize: 13, lineHeight: 1.6, opacity: 0.85, margin: "4px 0 12px" },
-  radio: { display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 8, border: "1px solid #2c2c36", background: "transparent", color: "#e7e7ea", fontSize: 13, cursor: "pointer", textAlign: "left" },
-  radioOn: { background: "#0d948822", border: "1px solid #0d9488" },
-  radioDot: { width: 13, height: 13, borderRadius: 13, border: "2px solid #555", display: "inline-block" },
-  contraBox: { padding: "12px 14px", borderRadius: 10, background: "#2a1c0a", border: "1px solid #facc1544", marginBottom: 16, fontSize: 13 },
-  textarea: { width: "100%", minHeight: 80, background: "#0b0a12", border: "1px solid #2c2c36", borderRadius: 8, color: "#e7e7ea", padding: 10, fontSize: 13, fontFamily: "inherit", resize: "vertical" },
-  jsonBox: { flex: 1, minWidth: 320, maxHeight: 460, overflow: "auto", background: "#0b0a12", border: "1px solid #1f1f29", borderRadius: 10, padding: 14, fontSize: 11.5, fontFamily: "monospace", whiteSpace: "pre-wrap" },
+  edgeP: { fontSize: 13, lineHeight: 1.6, color: MUTED, margin: "4px 0 12px" },
+  radio: { display: "flex", alignItems: "center", gap: 10, padding: "11px 13px", borderRadius: 8, border: `1px solid ${BORDER}`, background: CARD, color: INK, fontSize: 13, cursor: "pointer", textAlign: "left" },
+  radioOn: { background: ACCENT_BG, border: `1px solid ${ACCENT}` },
+  radioDot: { width: 13, height: 13, borderRadius: 13, border: "2px solid #c9c2b8", display: "inline-block" },
+  contraBox: { padding: "12px 14px", borderRadius: 12, background: "#fef9c3", border: "1px solid #fde68a", marginBottom: 16, fontSize: 13, color: "#713f12" },
+  textarea: { width: "100%", minHeight: 80, background: "#fff", border: `1px solid #d8d3cd`, borderRadius: 8, color: INK, padding: 10, fontSize: 13, fontFamily: "inherit", resize: "vertical" },
+  jsonBox: { flex: 1, minWidth: 320, maxHeight: 460, overflow: "auto", background: "#fbfaf8", border: `1px solid ${BORDER}`, borderRadius: 12, padding: 14, fontSize: 11.5, fontFamily: "ui-monospace, monospace", color: "#3a352e", whiteSpace: "pre-wrap" },
 };
-const CSS = `button:hover{filter:brightness(1.15)} ::-webkit-scrollbar{height:8px;width:8px} ::-webkit-scrollbar-thumb{background:#2c2c36;border-radius:8px}`;
+const CSS = `button:hover{filter:brightness(0.98)} ::-webkit-scrollbar{height:9px;width:9px} ::-webkit-scrollbar-thumb{background:#d8d3cd;border-radius:8px} ::-webkit-scrollbar-track{background:transparent}`;
