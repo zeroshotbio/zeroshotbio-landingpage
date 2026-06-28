@@ -131,6 +131,39 @@
   "chosenRes": null,
   "selectionNote": "ZSCAPE uses silhouette-gated sub-Leiden (adaptive per-branch), not a flat resolution sweep.",
   "subSplitNote": "Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented.",
+  "clusteringViz": {
+    "headline": "Not a flat resolution sweep — a silhouette-gated recursive sub-split on the authors' own embedding.",
+    "pipeline": [
+      { "icon": "📦", "title": "Sample", "stat": "250k / 3.23M cells", "detail": "Uniform random draw across every condition (drug-treated and control alike) — a tractable cross-section of the full perturbation reference." },
+      { "icon": "🧬", "title": "Features → PCA", "stat": "2,000 HVG · PCA(50)", "detail": "Highly-variable genes (seurat_v3) on raw counts, then 50 principal components. No Harmony — the published sci-RNA-seq3 embedding is already integrated." },
+      { "icon": "🕸️", "title": "Global Leiden", "stat": "res 2.0", "detail": "A 15-nearest-neighbour graph, then one global Leiden pass at resolution 2.0 — the coarse starting partition." },
+      { "icon": "✂️", "title": "Silhouette-gated sub-split", "stat": "recursive", "detail": "Each large cluster is tentatively re-clustered and the split is kept only if it is geometrically real (the gate below). This is what makes ZSCAPE different." },
+      { "icon": "🎯", "title": "Leaf clusters", "stat": "55 leaves · 4 tiers", "detail": "The accepted leaves span the authors' germ-layer → tissue → cell-type-broad → cell-type-sub ontology." }
+    ],
+    "gate": {
+      "trigger": "cluster ≥ 4,000 cells",
+      "tentative": "re-Leiden the cluster at resolution 1.0",
+      "checks": [
+        "≥ 2 sub-clusters result",
+        "each sub-cluster keeps ≥ 600 cells",
+        "mean silhouette of the split ≥ 0.05"
+      ],
+      "accept": "all three pass → keep the finer split",
+      "rollback": "any check fails → roll back, stays one cluster",
+      "why": "A sub-cluster survives only if it is geometrically separated in PCA space — never merely over-fragmented. Silhouette gating is what lets us trust each leaf."
+    },
+    "tierOutcome": {
+      "total": 55,
+      "germLayers": [
+        { "label": "ectoderm", "n": 29, "color": "#4ea1ff" },
+        { "label": "mesoderm", "n": 17, "color": "#d29922" },
+        { "label": "neural crest", "n": 3, "color": "#a371f7" },
+        { "label": "mixed lineage", "n": 5, "color": "#8b97a7" },
+        { "label": "endoderm", "n": 1, "color": "#3fb950" }
+      ],
+      "note": "Majority published germ-layer of each de-novo leaf (groundtruth.json) — the partition resolves cleanly onto the authors' ontology."
+    }
+  },
   "scorecard": {
    "evidentiaryRunId": "20260615-211010-c4d306",
    "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
