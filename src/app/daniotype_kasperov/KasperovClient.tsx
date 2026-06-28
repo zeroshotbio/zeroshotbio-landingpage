@@ -152,6 +152,20 @@ function defaultHarness() {
   return (r.harnesses || []).find((h: any) => h.id === r.active) || (r.harnesses || [])[0] || null;
 }
 
+// ⚖️ Judgement mode — a "New Run + judgement notes" sweep step-gates after EVERY
+// personality turn (Researcher/Archivist/Reasoner) and pops a note box. Each typed
+// note becomes a self-contained record logged onto the run JSON (mined later by a
+// SEPARATE gated harness pass — nothing here touches the harness).
+type Judgement = {
+  cluster_id: string;
+  cluster_label: string;
+  step_index: number; // ordinal of the gated step within this cluster's sweep
+  mode: AgentMode | null; // which personality produced the step
+  content_excerpt: string; // first chars of what the step produced (self-contained)
+  note: string;
+  ts: string;
+};
+
 export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
   // Swap the active clustering partition (e.g. DanioCell de-novo-77 <-> native-470). The run is
@@ -179,6 +193,10 @@ export default function KasperovClient() {
   // lives in the PARENT so a plain cluster click (which remounts ClusterStage)
   // can't be mistaken for a fresh auto-pilot trigger.
   const autoConsumedRef = useRef(0);
+  // ⚖️ judgement mode: chosen at "New Run", step-gates the sweep + collects notes
+  const [judgementMode, setJudgementMode] = useState(false);
+  const [judgements, setJudgements] = useState<Judgement[]>([]);
+  const [newRunOpen, setNewRunOpen] = useState(false); // New Run chooser modal
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
   // timelapse capture mode (set from ?capture=1&dataset=&model= by the EC2 capturer)
@@ -296,6 +314,9 @@ export default function KasperovClient() {
       nLabelled: labelledN,
       nValidated: validated.size,
       note: runNote.trim() || null,
+      judgementMode,
+      judgements,                 // ⚖️ per-step critique notes (self-contained)
+      hasJudgement: judgements.length > 0,
       harness: activeHarness ? { id: activeHarness.id, version: activeHarness.version, name: activeHarness.name, gitCommit: activeHarness.gitCommit, stampedAt: activeHarness.stampedAt } : null,
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
@@ -376,6 +397,8 @@ export default function KasperovClient() {
     setAugmented(nAug);
     setTranscripts(nTrans);
     setIncorporated(new Set());
+    setJudgements(Array.isArray(data.judgements) ? data.judgements : []);
+    setJudgementMode(!!data.judgementMode || (Array.isArray(data.judgements) && data.judgements.length > 0));
     setLoadedNote(typeof data.note === "string" && data.note.trim() ? data.note.trim() : null);
     setLoadedRun({ model: data.model, nLabelled: data.nLabelled, scoredAt: data.groundTruth?.scoredAt ?? data.scoredAt ?? null, exportedAt: data.exportedAt ?? null, note: (typeof data.note === "string" && data.note.trim()) ? data.note.trim() : null });
     // restore run metadata (model, cost/usage, ground-truth scores) when present
@@ -408,8 +431,11 @@ export default function KasperovClient() {
     window.alert(`Imported ${loaded} labelled cluster${loaded === 1 ? "" : "s"} into the ${dataset.name} run.`);
   }
 
-  function startAutopilot() {
+  function startAutopilot(withJudgement = false) {
     if (!clusters) return;
+    // judgement mode is chosen fresh per New Run; clear any prior notes.
+    setJudgementMode(withJudgement);
+    if (withJudgement) setJudgements([]);
     // optional, skippable "what's special about this run?" popup — non-blocking: the
     // sweep kicks off below regardless; the note folds into buildRunJSON at save time.
     // Skip in capture mode (headless filming has no human to prompt).
@@ -430,6 +456,8 @@ export default function KasperovClient() {
     setAugmented({});
     setConfidence({});
     setIncorporated(new Set());
+    setJudgements([]);
+    setJudgementMode(false);
     try {
       if (dataset) localStorage.removeItem(resultsKey(dataset.id));
     } catch {}
@@ -546,6 +574,14 @@ export default function KasperovClient() {
 
   if (stage === "map")
     return (
+      <>
+      {newRunOpen && (
+        <NewRunModal
+          onNormal={() => { setNewRunOpen(false); startAutopilot(false); }}
+          onJudgement={() => { setNewRunOpen(false); startAutopilot(true); }}
+          onCancel={() => setNewRunOpen(false)}
+        />
+      )}
       <MapStage
         dataset={dataset}
         clusters={clusters}
@@ -553,7 +589,7 @@ export default function KasperovClient() {
         revealed={revealed}
         validated={validated}
         onPick={openCluster}
-        onAuto={startAutopilot}
+        onAuto={() => setNewRunOpen(true)}
         onExport={exportResults}
         onReset={resetRun}
         onSwitchDataset={() => setDataset(null)}
@@ -573,6 +609,7 @@ export default function KasperovClient() {
         addUsage={addUsage}
         srvNote={srvNote}
       />
+      </>
     );
 
   const active = clusters.find((c) => c.id === activeId)!;
@@ -603,6 +640,8 @@ export default function KasperovClient() {
       autoStart={autoStart}
       autoConsumedRef={autoConsumedRef}
       onAutoDone={() => setCaptureDone(true)}
+      judgementMode={judgementMode}
+      addJudgement={(j: Judgement) => setJudgements((prev) => [...prev, j])}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -747,6 +786,7 @@ function RunListModal({ dataset, onView, onClose }: { dataset: DatasetDef; onVie
                 <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
                 <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
                 {m.harness ? <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
+                {m.hasJudgement ? <span title={`${m.nJudgements ?? ""} step critique note${m.nJudgements === 1 ? "" : "s"}`} style={{ fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>⚖️ judgement{m.nJudgements ? ` · ${m.nJudgements}` : ""}</span> : null}
                 {m.schemaBasis ? <span title={m.basisNote || ""} style={{ fontSize: 10.5, fontWeight: 700, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
                 {m.archived ? <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCH[cat].fg, background: ARCH[cat].bg, borderRadius: 99, padding: "1px 7px", border: `1px solid ${ARCH[cat].fg}33` }}>{ARCH[cat].label}</span> : null}
                 <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
@@ -1387,6 +1427,54 @@ function RunNoteModal({ initial, onSubmit, onSkip, title }: { initial?: string; 
         <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
           <button onClick={onSkip} style={{ ...btnGhost, padding: "8px 14px", fontSize: 13 }}>Skip</button>
           <button onClick={() => onSubmit(v.trim())} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: "pointer" }}>Attach note</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// New Run chooser — normal vs ⚖️ judgement (step-gated critique-note capture).
+function NewRunModal({ onNormal, onJudgement, onCancel }: { onNormal: () => void; onJudgement: () => void; onCancel: () => void }) {
+  const card: React.CSSProperties = { textAlign: "left", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px", cursor: "pointer", background: "#fffdfb", flex: 1, minWidth: 220 };
+  return (
+    <div onClick={onCancel} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1100, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 600, width: "100%", padding: "20px 22px" }}>
+        <strong style={{ fontSize: 17 }}>Start a New Run</strong>
+        <div style={{ fontSize: 13, color: "#666", margin: "6px 0 14px", lineHeight: 1.5 }}>Both run the same AutoPilot labeller across every cluster. Judgement mode pauses after every personality step so you can log a critique note.</div>
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          <div onClick={onNormal} style={card} onMouseEnter={(e) => (e.currentTarget.style.borderColor = THEME.reason.color)} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e1dc")}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: THEME.reason.color }}>🤖 New Run (normal)</div>
+            <div style={{ fontSize: 12.5, color: "#5a544c", lineHeight: 1.5, marginTop: 4 }}>The standard AutoPilot sweep — runs straight through and labels every cluster.</div>
+          </div>
+          <div onClick={onJudgement} style={card} onMouseEnter={(e) => (e.currentTarget.style.borderColor = "#7c3aed")} onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e1dc")}>
+            <div style={{ fontSize: 15, fontWeight: 800, color: "#7c3aed" }}>⚖️ New Run + judgement notes</div>
+            <div style={{ fontSize: 12.5, color: "#5a544c", lineHeight: 1.5, marginTop: 4 }}>Same sweep, but it <b>pauses after every step</b> (Researcher / Archivist / Reasoner) so you can hit OK or type a critique note. Notes are saved on the run and marked with a ⚖️ pill.</div>
+          </div>
+        </div>
+        <div style={{ display: "flex", justifyContent: "flex-end", marginTop: 14 }}>
+          <button onClick={onCancel} style={{ ...btnGhost, padding: "8px 14px", fontSize: 13 }}>Cancel</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ⚖️ The per-step pause popup shown in judgement mode after every personality turn.
+function JudgePopup({ pending, onResolve }: { pending: { clusterLabel: string; stepIndex: number; mode: AgentMode | null; excerpt: string }; onResolve: (note: string) => void }) {
+  const [v, setV] = useState("");
+  const who = pending.mode ? THEME[pending.mode].name : "Step";
+  const icon = pending.mode ? THEME[pending.mode].icon : "⚖️";
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 560, width: "100%", padding: "20px 22px", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>⚖️ Judgement · {pending.clusterLabel} · step {pending.stepIndex}</div>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: "10px 0 2px" }}>{icon} {who} just finished</div>
+        <div style={{ fontSize: 12.5, color: "#666", margin: "0 0 8px", lineHeight: 1.5 }}>Add a critique note for this step, or just continue.</div>
+        {pending.excerpt ? <div style={{ fontSize: 12, color: "#5a544c", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "7px 9px", margin: "0 0 10px", maxHeight: 120, overflow: "auto", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{pending.excerpt}{pending.excerpt.length >= 600 ? "…" : ""}</div> : null}
+        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={3} placeholder="Optional — what's right/wrong about this step? (leave blank and click OK to continue)" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, resize: "vertical", fontFamily: "inherit" }} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }} />
+        <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
+          <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5 }}>OK</button>
+          <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
         </div>
       </div>
     </div>
@@ -2238,6 +2326,8 @@ function ClusterStage({
   autoStart,
   autoConsumedRef,
   onAutoDone,
+  judgementMode,
+  addJudgement,
   labels,
   onLabel,
   transcripts,
@@ -2260,6 +2350,8 @@ function ClusterStage({
   goToCluster: (id: string) => void;
   autoConsumedRef: React.MutableRefObject<number>;
   onAutoDone?: () => void;
+  judgementMode: boolean;
+  addJudgement: (j: Judgement) => void;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2316,6 +2408,34 @@ function ClusterStage({
   // auto-pilot run state
   const [auto, setAuto] = useState<{ running: boolean; current: string | null; done: number; total: number }>({ running: false, current: null, done: 0, total: 0 });
   const autoAbort = useRef(false);
+  // ⚖️ judgement gate: in judgement mode the sweep pauses after every personality
+  // step and waits for the curator to hit OK or type a note + Submit + Continue.
+  const judgeModeRef = useRef(judgementMode);
+  useEffect(() => { judgeModeRef.current = judgementMode; }, [judgementMode]);
+  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | null; excerpt: string } | null>(null);
+  const judgeResolve = useRef<(() => void) | null>(null);
+  const judgeStepRef = useRef<Record<string, number>>({}); // gated-step ordinal per cluster
+  // pause after a step; resolves when OK / Submit+Continue is clicked (or the sweep aborts).
+  function judgeGate(cl: Cluster, mode: AgentMode, content: string): Promise<void> {
+    if (!judgeModeRef.current) return Promise.resolve();
+    const stepIndex = (judgeStepRef.current[cl.id] = (judgeStepRef.current[cl.id] ?? -1) + 1);
+    const excerpt = (content || "").replace(/```[\s\S]*?```/g, " ").replace(/\s+/g, " ").trim().slice(0, 600);
+    return new Promise<void>((resolve) => {
+      judgeResolve.current = resolve;
+      setPendingJudge({ clusterId: cl.id, clusterLabel: cl.label, stepIndex, mode, excerpt });
+    });
+  }
+  // submit (with optional note) or skip — close the popup and let the sweep continue.
+  function resolveJudge(note: string) {
+    const pj = pendingJudge;
+    if (pj && note.trim()) {
+      addJudgement({ cluster_id: pj.clusterId, cluster_label: pj.clusterLabel, step_index: pj.stepIndex, mode: pj.mode, content_excerpt: pj.excerpt, note: note.trim(), ts: new Date().toISOString() });
+    }
+    setPendingJudge(null);
+    const r = judgeResolve.current;
+    judgeResolve.current = null;
+    if (r) r();
+  }
   // live mirror of `labels` so the running loop can skip clusters that got labelled
   // mid-sweep (a prior pass) without rebuilding its closure. "done" is keyed off
   // labels, not `validated` — a cluster can be validated by hand without a label.
@@ -2665,9 +2785,11 @@ function ClusterStage({
     //    anchor on each other. The Reasoner then adjudicates the two.
     const p1 = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
     added = autoAddMarkers(cl, p1[p1.length - 1].content, "research");
+    await judgeGate(cl, "research", p1[p1.length - 1].content);
     if (autoAbort.current) return;
     const p2 = await autoStream(cl, [{ role: "user", content: secondOpinionPrompt(cl) }], "research");
     added = autoAddMarkers(cl, p2[p2.length - 1].content, "research");
+    await judgeGate(cl, "research", p2[p2.length - 1].content);
     if (autoAbort.current) return;
     // 1b) ARCHIVIST verification — at least once per cluster, pull the cluster's
     //     ground-truth numbers (log2FC, %in/out, p-values, specificity) for the
@@ -2675,6 +2797,8 @@ function ClusterStage({
     const topG = (cl.degsUp ?? []).slice(0, 6).join(", ") || (cl.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
     const arch = await autoStream(cl, [{ role: "user", content: `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.` }], "archivist");
     added = autoAddMarkers(cl, arch[arch.length - 1].content, "archivist");
+    await judgeGate(cl, "archivist", arch[arch.length - 1].content);
+    if (autoAbort.current) return;
     // merged context: both independent reads + the Archivist's raw stats, for the Reasoner to reconcile
     let conv: ChatMsg[] = [
       { role: "user", content: defaultPrompt(cl) },
@@ -2690,6 +2814,8 @@ function ClusterStage({
       conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
       let rc = conv[conv.length - 1].content;
       added = autoAddMarkers(cl, rc, "reason");
+      await judgeGate(cl, "reason", rc);
+      if (autoAbort.current) return;
       let concl = splitConclude(rc).conclude;
       let dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       if (!concl && dispatches.length === 0) {
@@ -2697,6 +2823,8 @@ function ClusterStage({
         conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason");
         rc = conv[conv.length - 1].content;
         added = autoAddMarkers(cl, rc, "reason");
+        await judgeGate(cl, "reason", rc);
+        if (autoAbort.current) return;
         concl = splitConclude(rc).conclude;
         dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       }
@@ -2711,6 +2839,8 @@ function ClusterStage({
         if (autoAbort.current) return;
         conv = await autoStream(cl, [...conv, { role: "user", content: d.prompt }], d.to);
         added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to);
+        await judgeGate(cl, d.to, conv[conv.length - 1].content);
+        if (autoAbort.current) return;
       }
     }
     // ran out of rounds — accept best-effort so the loop keeps moving
@@ -2721,6 +2851,7 @@ function ClusterStage({
   async function runAutopilot() {
     if (auto.running) return;
     autoAbort.current = false;
+    judgeStepRef.current = {}; // fresh gated-step ordinals for this sweep
     setAutoReport(null);
     // auto-detect & skip clusters that already have a cell-type label (= done).
     // NB: keyed off labels, not `validated` — a cluster can be validated by hand
@@ -2769,6 +2900,8 @@ function ClusterStage({
   function stopAutopilot() {
     autoAbort.current = true;
     setAuto((a) => ({ ...a, running: false }));
+    // unblock any open judgement gate so the (now-aborting) sweep can unwind
+    if (pendingJudge) { setPendingJudge(null); const r = judgeResolve.current; judgeResolve.current = null; if (r) r(); }
   }
 
   // kick off ONLY when the world-map auto-pilot button bumps autoStart. The
@@ -2786,6 +2919,7 @@ function ClusterStage({
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
+      {pendingJudge && <JudgePopup pending={pendingJudge} onResolve={resolveJudge} />}
       <style>{`
         @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}

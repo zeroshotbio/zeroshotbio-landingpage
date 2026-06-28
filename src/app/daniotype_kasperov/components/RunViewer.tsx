@@ -326,6 +326,9 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
                 {run?.schemaBasis || meta?.schemaBasis}{run?.promotedFrom || meta?.promotedFrom ? " · promoted" : ""}
               </span>
             ) : null}
+            {Array.isArray(run?.judgements) && run.judgements.length ? (
+              <span style={{ fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 8px" }}>⚖️ judgement · {run.judgements.length}</span>
+            ) : null}
             {run?.clusteringStrategy?.partitionId ? (
               <span title={`partitionId — fingerprint of this run's clustering: ${run.clusteringStrategy.partitionId}`} style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#f1f5f9", borderRadius: 99, padding: "1px 8px", fontFamily: "ui-monospace, monospace" }}>
                 partition {String(run.clusteringStrategy.partitionId).slice(0, 12)}…
@@ -339,6 +342,19 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
           </div>
           {run?.dataset ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 6 }}>🧬 {run.dataset}</div> : null}
           {run?.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 5, lineHeight: 1.45 }}>📝 {run.note}</div> : null}
+          {Array.isArray(run?.judgements) && run.judgements.length ? (
+            <details style={{ marginTop: 8 }}>
+              <summary style={{ fontSize: 12.5, fontWeight: 700, color: "#7c3aed", cursor: "pointer" }}>⚖️ {run.judgements.length} step critique note{run.judgements.length === 1 ? "" : "s"}</summary>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6, marginTop: 8 }}>
+                {run.judgements.map((j: any, i: number) => (
+                  <div key={i} style={{ fontSize: 12.5, color: "#4a4540", background: "#faf7ff", border: "1px solid #ece2fb", borderLeft: "3px solid #7c3aed", borderRadius: 6, padding: "6px 9px", lineHeight: 1.45 }}>
+                    <span style={{ fontWeight: 700, color: "#7c3aed" }}>{j.cluster_label || `Cluster ${j.cluster_id}`}{j.mode ? ` · ${j.mode}` : ""}{typeof j.step_index === "number" ? ` · step ${j.step_index}` : ""}</span>
+                    <div>{j.note}</div>
+                  </div>
+                ))}
+              </div>
+            </details>
+          ) : null}
           {/* completeness chips — what this run actually captured */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
             <Chip on={profile.hasLabels} label={`labels ${profile.labelledClusters}/${profile.nClusters}`} />

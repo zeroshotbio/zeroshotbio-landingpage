@@ -18,8 +18,6 @@ export const config = {
     "/api/kasperov_autopilot/:path*",
     "/patrick",
     "/patrick/:path*",
-    "/steven_judgement",
-    "/steven_judgement/:path*",
   ],
 };
 
@@ -39,13 +37,7 @@ function safeEqual(a: string, b: string): boolean {
 }
 
 export function middleware(req: NextRequest) {
-  // /steven_judgement (the step-critique tool, proxied to the EC2 service) has its OWN
-  // password, separate from the DanioType/patrick gate. Defaulted so it works on deploy
-  // without a new Vercel env var; override with STEVEN_JUDGEMENT_PASSWORD if desired.
-  const isSJ = req.nextUrl.pathname.startsWith("/steven_judgement");
-  const expected = isSJ
-    ? (process.env.STEVEN_JUDGEMENT_PASSWORD || "danio_lover")
-    : (process.env.KASPEROV_BASIC_PASSWORD || "");
+  const expected = process.env.KASPEROV_BASIC_PASSWORD || "";
   // Fail closed: with no password configured the wizard is fully locked.
   if (!expected) return unauthorized();
   const header = req.headers.get("authorization") || "";

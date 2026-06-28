@@ -142,6 +142,8 @@ def _meta_from(run, run_id):
         "hasGroundTruth": bool(run.get("groundTruth")),
         "source": run.get("source", "server"),
         "note": run.get("note") or None,  # free-text "what's special about this run"
+        "hasJudgement": bool(run.get("judgements")),  # ⚖️ step-critique notes attached
+        "nJudgements": len(run.get("judgements") or []),
     }
 
 
