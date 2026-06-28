@@ -94,6 +94,7 @@ export function HarnessDetail({ harness: raw }: { harness: any }) {
       {sc ? (
         <div style={{ ...CARD, borderLeft: "3px solid #a16207" }}>
           <div style={{ ...SEC, color: "#a16207" }}>The judge · ground-truth scoring</div>
+          <div style={{ fontSize: 11.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 8, fontStyle: "italic" }}>This is the offline ground-truth re-scoring judge (kasperov_score) — distinct from the two runtime confidence numbers (the Reasoner&apos;s inline conclude confidence and the assessor&apos;s 4-tier score), which the run viewer shows.</div>
           {sc.judge ? <div style={{ fontSize: 12.5, color: "#444", lineHeight: 1.55, marginBottom: 8 }}>{sc.judge}</div> : null}
           <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "6px 12px", fontSize: 11.5, lineHeight: 1.5 }}>
             {sc.deterministic != null && (<><span style={{ fontWeight: 700, color: "#9a948c" }}>deterministic</span><span style={{ color: "#555" }}>{sc.deterministic ? "yes" : "no — a reasoning model; verdicts can vary slightly across identical re-scores"}</span></>)}

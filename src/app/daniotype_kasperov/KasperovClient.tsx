@@ -62,7 +62,7 @@ const DATASETS: DatasetDef[] = [
   {
     id: "zscape",
     name: "ZSCAPE Classic",
-    tagline: "Saunders et al. · 3.2M cells · 55 de-novo clusters",
+    tagline: "Saunders et al. · 3.2M cells · de-novo clusters (partition being re-cut)",
     blurb:
       "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
     dataUrl: `${ASSET_BASE}/zscape/umap.json`,
@@ -146,10 +146,18 @@ type Box = { x: number; y: number; w: number; h: number };
 // ---------------------------------------------------------------------------
 type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard";
 
-// the registry's active harness — the from-scratch default for a NEW run's harness step
-function defaultHarness() {
+// the from-scratch default for a NEW run's harness step. Defaults to the registry's
+// global `active`, EXCEPT where a dataset is pinned below. ZSCAPE new-runs serve
+// run_one_cluster (= v1.1's configFingerprint), NOT the headless run_leaf_v2 path that
+// the current global active (v1.2) describes — so ZSCAPE defaults to v1.1, the harness
+// whose config IS the served path. Global `active` is left untouched (v1.2 stays the
+// headless recursive-leaf harness for other contexts).
+const HARNESS_DEFAULT_BY_DATASET: Record<string, string> = { zscape: "v1.1" };
+function defaultHarness(datasetId?: string) {
   const r: any = HARNESS_REGISTRY;
-  return (r.harnesses || []).find((h: any) => h.id === r.active) || (r.harnesses || [])[0] || null;
+  const hs: any[] = r.harnesses || [];
+  const wantId = (datasetId && HARNESS_DEFAULT_BY_DATASET[datasetId]) || r.active;
+  return hs.find((h: any) => h.id === wantId) || hs.find((h: any) => h.id === r.active) || hs[0] || null;
 }
 
 // ⚖️ Judgement mode — a "New Run + judgement notes" sweep step-gates after EVERY
@@ -264,7 +272,7 @@ export default function KasperovClient() {
     setUsage({});
     setScore({ verdicts: {}, scoredAt: null, agg: [] });
     setModel(DEFAULT_MODEL);          // model step starts fresh — never carried from a prior run/session
-    setActiveHarness(defaultHarness()); // harness step starts fresh at the registry's active version
+    setActiveHarness(defaultHarness(dataset.id)); // harness step starts fresh at this dataset's default (ZSCAPE→v1.1, else global active)
     // wipe any lingering per-dataset cache so nothing from a previous session repopulates a step
     try { localStorage.removeItem(resultsKey(dataset.id)); localStorage.removeItem(storageKey(dataset.id)); } catch {}
     hydratedRef.current = dataset.id;
@@ -1174,11 +1182,13 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
         <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>2. Model &amp; Harness</h1>
         <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 26px", maxWidth: 720 }}>
-          Choose the <strong>model</strong> that drives every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules. Both are recorded in the saved run. Then proceed to cell labelling.
+          Choose the <strong>model</strong> that drives every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules. Both are recorded in the saved run.
         </p>
 
         <h2 style={secHead}>Model</h2>
-        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>Cost is a rough projection for labelling all ~{n} {dataset.name} clusters; you can switch models later on the world map.</p>
+        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>{dataset.id === "zscape"
+          ? <>Cost is a rough projection across the current {dataset.name} partition (~{n} clusters); the partition is being re-cut, so this will shift. You can switch models later on the world map.</>
+          : <>Cost is a rough projection for labelling all ~{n} {dataset.name} clusters; you can switch models later on the world map.</>}</p>
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
           {KASPEROV_MODELS.map((m) => {
             const info = modelInfo(m); const cost = projectRunCost(m, n); const selected = m === model;
@@ -1215,6 +1225,7 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
                 </div>
                 <div style={{ fontSize: 11, color: "#9a948c", fontFamily: "monospace" }}>stamped {String(h.stampedAt).slice(0, 10)} · commit {h.gitCommit} · {h.model}</div>
                 <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.5 }}>{h.summary}</div>
+                {(v.gt?.length || v.benchmark) ? (
                 <div style={{ background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "10px 11px", display: "flex", flexDirection: "column", gap: 5 }}>
                   <div style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c" }}>Verified on {(v.gt || []).length} ground-truth atlases</div>
                   {(v.gt || []).map((g: any, i: number) => (
@@ -1223,10 +1234,14 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
                       <span style={{ color: "#6b655d" }}>{(g.tiers || []).map((t: any) => `${tierShort(t.label)} ${Math.round(t.pct)}`).join(" · ")}</span>
                     </div>
                   ))}
-                  <div style={{ fontSize: 10, color: "#7a746c", marginTop: 1 }}>{v.benchmark}</div>
-                  <div style={{ fontSize: 10, color: "#7a746c" }}>+ {(v.noGt || []).map((nn: any) => nn.dataset).join(" / ")} no-GT (coverage/grounding{(v.noGt || []).some((nn: any) => nn.processingConsistency) ? " + processing-consistency" : ""})</div>
-                  <div style={{ fontSize: 10, color: "#9a948c" }}>provenance: {(prov.runs || []).length} labelled runs · ${prov.totalCostUsd}</div>
+                  {(v.gt?.length) ? <div style={{ fontSize: 9.5, color: "#9a948c", fontStyle: "italic" }}>single draw · ±~3pt judge band (see judge note below)</div> : null}
+                  {v.benchmark ? <div style={{ fontSize: 10, color: "#7a746c", marginTop: 1 }}>{v.benchmark}</div> : null}
+                  {(v.noGt || []).length ? <div style={{ fontSize: 10, color: "#7a746c" }}>+ {(v.noGt || []).map((nn: any) => nn.dataset).join(" / ")} no-GT (coverage/grounding{(v.noGt || []).some((nn: any) => nn.processingConsistency) ? " + processing-consistency" : ""})</div> : null}
+                  {(prov.runs || prov.totalCostUsd != null) ? <div style={{ fontSize: 10, color: "#9a948c" }}>provenance: {(prov.runs || []).length} labelled runs{prov.totalCostUsd != null ? ` · $${prov.totalCostUsd}` : ""}</div> : null}
                 </div>
+                ) : (
+                  <div style={{ fontSize: 10.5, color: "#9a948c", fontStyle: "italic", padding: "2px 1px" }}>No ground-truth scorecard on this harness version.</div>
+                )}
               </button>
             );
           })}
