@@ -976,7 +976,7 @@ function ProvFooter({ f, gt }: { f?: any; gt?: boolean }) {
   );
 }
 
-function GtBody({ sc, f }: { sc: any; f?: any }) {
+function GtBody({ sc }: { sc: any }) {
   const indep = sc.platform_class === "independent";
   const tierTone = (p: number) => (p >= 70 ? "good" : p >= 45 ? "warn" : "bad");
   const prettyTier = (l: string) => l.replace("Cell type — ", "Cell type · ");
@@ -986,58 +986,21 @@ function GtBody({ sc, f }: { sc: any; f?: any }) {
         <Tip text={TIPS.benchmark}><span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", borderBottom: "1px dotted #cfc8bf" }}>Native-schema benchmark</span></Tip>
         <Tip text={indep ? TIPS.independent : TIPS.inParadigm} style={{ marginLeft: "auto" }}><span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span></Tip>
       </div>
-      {sc.evidentiaryRunId ? (
-        <div style={{ fontSize: 10.5, color: "#9a948c", marginTop: -4, lineHeight: 1.4 }}>
-          📍 numbers from run <span style={{ fontFamily: "ui-monospace, monospace", color: "#7a746c" }}>{sc.evidentiaryRunId}</span> — open it under <b>View Completed Runs</b>
-        </div>
-      ) : null}
-      <div style={{ display: "flex", flexWrap: "wrap", rowGap: 12 }}>
-        {/* accuracy by tier — vertical, prominent titles */}
-        <div style={{ flex: "2 1 290px", minWidth: 256, display: "flex", flexDirection: "column", gap: 8, paddingRight: 16 }}>
-          <SecLabel info={TIPS.tierAccuracy}>Accuracy by tier</SecLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 9 }}>
-            {sc.tiers.map((t: any, i: number) => {
-              const c = TILE_TONE[tierTone(t.pct)];
-              return (
-                <Tip key={i} text={tierTip(t.label)} block style={{ width: "100%" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: 10, width: "100%" }}>
-                    <span style={{ flex: 1, fontSize: 13.5, fontWeight: 800, color: "#2b2b2b", letterSpacing: 0.2 }}>{prettyTier(t.label)}</span>
-                    <span style={{ width: 72, height: 8, background: "#ece8e2", borderRadius: 99, overflow: "hidden", flexShrink: 0 }}><span style={{ display: "block", height: "100%", width: `${t.pct}%`, background: c.fg, borderRadius: 99 }} /></span>
-                    <span style={{ width: 48, textAlign: "right", fontSize: 17, fontWeight: 800, color: c.fg, flexShrink: 0 }}>{t.pct}%</span>
-                  </div>
-                </Tip>
-              );
-            })}
-          </div>
-        </div>
-        {/* by cluster size — mini bar chart + abstention */}
-        <div style={{ flex: "1 1 180px", minWidth: 164, display: "flex", flexDirection: "column", gap: 6, borderLeft: "1px solid #ece8e2", paddingLeft: 16, paddingRight: 14 }}>
-          <SecLabel info={TIPS.bySize}>Accuracy by cluster size</SecLabel>
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {([["≥100", sc.strata.ge100], ["≥30", sc.strata.ge30], ["all", sc.strata.all]] as [string, number][]).map(([lab, v]) => (
-              <div key={lab} style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <span style={{ width: 28, fontSize: 9.5, color: "#6b655d", flexShrink: 0 }}>{lab}</span>
-                <span style={{ flex: 1, height: 7, background: "#ece8e2", borderRadius: 99, overflow: "hidden" }}><span style={{ display: "block", height: "100%", width: `${v}%`, background: "#0e7490", borderRadius: 99 }} /></span>
-                <span style={{ width: 34, textAlign: "right", fontSize: 11.5, fontWeight: 800, color: "#3f3a34", flexShrink: 0 }}>{v}%</span>
+      {/* bare essentials — accuracy per native tier (latest scored run) */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 22, rowGap: 8 }}>
+        {sc.tiers.map((t: any, i: number) => {
+          const c = TILE_TONE[tierTone(t.pct)];
+          return (
+            <Tip key={i} text={tierTip(t.label)}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
+                <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "#9a948c" }}>{prettyTier(t.label)}</span>
+                <span style={{ fontSize: 22, fontWeight: 800, color: c.fg, lineHeight: 1 }}>{t.pct}%</span>
               </div>
-            ))}
-          </div>
-          <div style={{ marginTop: 3 }}>
-            <StatRow value={`${sc.abstention.n}/${sc.abstention.total}`} label="abstained" info={TIPS.abstain} valueWidth={50} />
-            {sc.abstention.precision ? <StatRow value={`${sc.abstention.precision}%`} label="abstain precision" tone="good" info={TIPS.precision} valueWidth={50} /> : null}
-          </div>
-        </div>
-        {/* notes */}
-        {(sc.notes || []).length > 0 && (
-          <div style={{ flex: "2 1 200px", minWidth: 180, display: "flex", flexDirection: "column", gap: 4, borderLeft: "1px solid #ece8e2", paddingLeft: 16 }}>
-            <SecLabel>Notes</SecLabel>
-            {(sc.notes || []).map((n: string, i: number) => (
-              <div key={i} style={{ fontSize: 9.5, color: i < 2 ? "#5a544c" : "#9a948c", lineHeight: 1.4 }}>• {n}</div>
-            ))}
-          </div>
-        )}
-        <ProvFooter f={f} gt />
+            </Tip>
+          );
+        })}
       </div>
+      <div style={{ fontSize: 10.5, color: "#9a948c", lineHeight: 1.4 }}>Our blind labels scored against the authors&apos; published labels{sc.abstention?.n ? ` · ${sc.abstention.n} abstained` : ""}.</div>
     </div>
   );
 }
@@ -1200,7 +1163,7 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
                 </div>
 
                 {/* content area */}
-                {isGt && f.scorecard && <GtBody sc={f.scorecard} f={f} />}
+                {isGt && f.scorecard && <GtBody sc={f.scorecard} />}
                 {f && !isGt && <NoGtBody f={f} />}
                 {!f && <div style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
               </div>
