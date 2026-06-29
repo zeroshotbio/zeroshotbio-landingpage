@@ -2,6 +2,33 @@
  "active": "v1.1",
  "harnesses": [
   {
+   "id": "v2.0",
+   "name": "multi-level top-down expectation-guided recursion (MVP)",
+   "version": "2.0",
+   "supersedes": null,
+   "appliesTo": [
+    "zscape",
+    "zscape_recursive"
+   ],
+   "stampedAt": "2026-06-29T00:00:00+00:00",
+   "gitCommit": null,
+   "model": "gpt-5.5",
+   "status": "DESIGN-STAGE MVP — selectable here; runs as the v2 orchestrator (backend/v2_harness) reusing the served gpt-5.5 three-personality machinery unchanged. NOT GT-scored, NOT the served default. Selecting it opens the multi-level run trace to walk in judgement mode.",
+   "summary": "Coarse-first labelling → expected-TISSUE checklist → GATED descent (only where the parent call was confident AND the checklist still lists something expected-and-unfound in that branch — targeted-deep, not exhaustive-deep) → sub-leaf labelling with the confirmed parent umbrella injected top-down + an expected-CELL-TYPE checklist + layer-appropriate experiential hints → cell-type checklist gap. Escape hatch: a sub-leaf whose markers are a specific lineage anchor contradicting its parent may be re-homed outside it rather than forced. GT-blind; pre-computed v2 leaves.",
+   "design": [
+    "Multi-level gated descent: the gap check repeats per layer — TISSUE checklist at the coarse layer, CELL-TYPE checklist within each found tissue. Descend a branch only if (a) the parent call was confident AND (b) something expected-and-unfound remains in that branch.",
+    "Top-down context: the confirmed parent umbrella (the labeller's OWN prior call, not GT) is injected into each sub-leaf call ('confirmed X — which subtype?').",
+    "Layer-appropriate experiential knowledge: attempt the easy/expected types; pre-warn on hard continuum/shared-program blends (endoderm entanglement, muscle continuum) where abstain is acceptable — don't force a call.",
+    "Escape hatch: at a sub-leaf, a strong, specific lineage anchor (R4b-style, not a promiscuous gene) contradicting the parent lets the Reasoner re-home it outside the parent.",
+    "Guardrails: GT-blind discipline preserved; abstention/roll-up to the deepest defensible tier preserved; expectation-bias risk mitigated by the unchanged evidentiary bar + control-vote audit (offline)."
+   ],
+   "verification": {
+    "status": "NONE YET — design-stage MVP; not GT-scored.",
+    "gt": [],
+    "noGt": []
+   }
+  },
+  {
    "id": "v1.1",
    "name": "native-validated · roll-up/superset judge",
    "version": "1.1",
@@ -115,7 +142,7 @@
       "strata": {
        "ge100": 91.9,
        "ge30": 91.2,
-       "all": 90.0
+       "all": 90
       },
       "abstention": {
        "n": 6,
@@ -139,7 +166,7 @@
       ],
       "strata": {
        "ge100": 88.3,
-       "ge30": 85.0,
+       "ge30": 85,
        "all": 84.2
       },
       "abstention": {
@@ -187,7 +214,7 @@
      {
       "dataset": "minifin",
       "coverage": {
-       "assigned_pct": 100.0,
+       "assigned_pct": 100,
        "abstained": 0
       },
       "grounding_pct": 98.5,
@@ -327,7 +354,7 @@
        },
        {
         "label": "Tissue",
-        "pct": 91.0
+        "pct": 91
        },
        {
         "label": "Cell type — broad",
@@ -371,7 +398,7 @@
       "abstention": {
        "n": 6,
        "total": 341,
-       "precision": 83.0
+       "precision": 83
       }
      },
      {
@@ -438,7 +465,7 @@
      {
       "dataset": "minifin",
       "coverage": {
-       "assigned_pct": 100.0,
+       "assigned_pct": 100,
        "abstained": 0
       },
       "grounding_pct": 98.5,
@@ -535,7 +562,7 @@
       "tiers": [
        {
         "label": "Tissue",
-        "pct": 80.0
+        "pct": 80
        },
        {
         "label": "Cell type",

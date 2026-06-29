@@ -39,8 +39,29 @@ export const ROUTING_RULES = {
 
 // The handful of coarse compartments to run for the MVP trace, and recursion caps.
 export const RUN_PLAN = {
-  coarseCompartments: ["comp:1", "comp:3", "comp:5", "comp:12"], // epidermis(endoderm/blood-bearing), muscle, CNS, heart
-  recurseLeafCap: 10,          // label the N largest sub-leaves of the recursed compartment
-  maxRecurseCompartments: 1,   // MVP: execute the primary chosen compartment; others recorded in routing
+  // comp:1 epidermis (descend: epidermis cell types + hunt hidden endoderm/blood),
+  // comp:5 CNS (descend: CNS cell types + escape-hatch on hidden eye leaves),
+  // comp:9 notochord (GATE SKIP: confident but no checklist + no routed-unfound → not descended).
+  coarseCompartments: ["comp:1", "comp:5", "comp:9"],
+  recurseLeafCap: 5,           // label the N largest sub-leaves of each descended compartment
   reasonerRounds: 2,
+};
+
+
+// Level-1 cell-type checklist — per found tissue, the expected cell types to resolve.
+// easy = clear-marker types the descent should MAKE SURE to attempt; hard =
+// transitioning/continuum/shared-program blends where ABSTAIN is acceptable (don't force).
+export const CELLTYPE_CHECKLIST = {
+  epidermis: { easy: ["periderm / EVL", "basal keratinocyte", "ionocyte"], hard: ["goblet/mucous cell", "epidermis↔endoderm blend (entangled)"] },
+  muscle:    { easy: ["fast (white) muscle", "slow (red) muscle"], hard: ["muscle continuum / transitioning myocyte"] },
+  CNS:       { easy: ["neuron", "neural progenitor", "radial glia"], hard: ["differentiating neuron (continuum)", "CNS↔eye/PNS boundary"] },
+  heart:     { easy: ["cardiomyocyte"], hard: ["pacemaker/conduction (rare)"] },
+  eye:       { easy: ["retinal neuron", "RPE", "lens"], hard: ["retinal progenitor (continuum)"] },
+  endothelial:{ easy: ["vascular endothelium"], hard: ["angioblast (progenitor)"] },
+  // unfound/entangled tissues hunted at level 1 — all flagged hard (endoderm entanglement):
+  intestine: { easy: ["enterocyte"], hard: ["endoderm blend (entangled at 48 hpf)"] },
+  liver:     { easy: ["hepatocyte"], hard: ["endoderm blend (entangled at 48 hpf)"] },
+  pancreas:  { easy: ["pancreatic endocrine (islet)"], hard: ["endoderm blend (entangled at 48 hpf)"] },
+  blood:     { easy: ["erythroid", "macrophage"], hard: ["primitive↔definitive transition"] },
+  kidney:    { easy: ["pronephros tubule"], hard: ["podocyte (rare)"] },
 };

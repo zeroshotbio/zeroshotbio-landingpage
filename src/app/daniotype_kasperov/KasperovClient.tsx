@@ -16,6 +16,7 @@ import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
 import { RunViewer } from "./components/RunViewer";
 import { HarnessDetail } from "./components/HarnessDetail";
+import { V2TraceViewer } from "./components/V2TraceViewer";
 import { useTween } from "./useTween";
 import { useAtlas } from "./useAtlas";
 
@@ -145,7 +146,7 @@ type Box = { x: number; y: number; w: number; h: number };
 // UMAP canvas — global (world map / HUD) and zoom (focused cluster)
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard";
+type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard" | "v2trace";
 
 // the from-scratch default for a NEW run's harness step. Defaults to the registry's
 // global `active`, EXCEPT where a dataset is pinned below. ZSCAPE new-runs serve
@@ -629,10 +630,13 @@ export default function KasperovClient() {
         registry={HARNESS_REGISTRY as any}
         currentModel={model}
         currentHarness={activeHarness}
-        onProceed={(m, h) => { setModel(m); setActiveHarness(h); setRevealed(true); setStage("map"); }}
+        onProceed={(m, h) => { setModel(m); setActiveHarness(h); setRevealed(true); setStage(h?.id === "v2.0" ? "v2trace" : "map"); }}
         onBack={() => setStage("map")}
       />
     );
+  // v2.0 harness selected → walk its multi-level run trace (the v2 orchestrator output)
+  if (stage === "v2trace")
+    return <V2TraceViewer onBack={() => setStage("harness")} />;
 
 
   if (!clusters) {
