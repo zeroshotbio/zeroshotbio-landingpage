@@ -229,7 +229,7 @@ export default function KasperovClient() {
   // Researcher + a judgement note). The sweep only kicks off on the Inputs popup's
   // Submit + Continue. pendingFirstCluster holds the cluster whose inputs to show.
   const [pendingFirstCluster, setPendingFirstCluster] = useState<Cluster | null>(null);
-  const [inputsModal, setInputsModal] = useState<{ clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string; secondPrompt: string; archivistPrompt: string } | null>(null);
+  const [inputsModal, setInputsModal] = useState<{ clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string } | null>(null);
   const [loadedNote, setLoadedNote] = useState<string | null>(null); // note of a loaded previous run
   // identity of the run currently being viewed (so the map says WHICH run), titled like Load Previous Run
   const [loadedRun, setLoadedRun] = useState<{ model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null>(null);
@@ -482,8 +482,7 @@ export default function KasperovClient() {
   // ⚖️ fetch + assemble the full inputs (real server-side system instructions +
   // briefing + the literal first prompts) and show them in a blocking popup.
   async function openInputsModal(cl: Cluster) {
-    const firstPrompt = defaultPrompt(cl), secondPrompt = secondOpinionPrompt(cl), archivistPrompt = archivistVerifyPrompt(cl);
-    setInputsModal({ clusterId: cl.id, clusterLabel: cl.label, loading: true, data: null, firstPrompt, secondPrompt, archivistPrompt });
+    setInputsModal({ clusterId: cl.id, clusterLabel: cl.label, loading: true, data: null, firstPrompt: defaultPrompt(cl) });
     try {
       const r = await fetch("/api/kasperov_agent", {
         method: "POST",
@@ -502,16 +501,20 @@ export default function KasperovClient() {
     }
   }
 
-  // ⚖️ Inputs popup resolved → log up to TWO judgement records (the first question and
-  // the system prompt are judged individually), then START the sweep (the only place
+  // ⚖️ Inputs popup resolved → log the first-question judgement + ONE judgement PER
+  // personality system prompt the curator critiqued, then START the sweep (the only place
   // the judgement run kicks off).
-  function resolveInputs(notes: { question: string; system: string }) {
+  function resolveInputs(notes: { question: string; sys: { research: string; reason: string; archivist: string } }) {
     const im = inputsModal;
     if (im) {
       const recs: Judgement[] = [];
       const ts = new Date().toISOString();
+      const I = im.data?.instructions ?? {};
       if (notes.question.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "first_prompt", content_excerpt: im.firstPrompt.slice(0, 600), note: notes.question.trim(), ts });
-      if (notes.system.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: (im.data?.instructions?.research ?? "").slice(0, 600), note: notes.system.trim(), ts });
+      ([["research", "Researcher"], ["reason", "Reasoner"], ["archivist", "Archivist"]] as const).forEach(([k, who]) => {
+        const n = notes.sys[k]?.trim();
+        if (n) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: `[${who} system prompt] ` + String(I[k] ?? "").slice(0, 560), note: n, ts });
+      });
       if (recs.length) setJudgements((prev) => [...prev, ...recs]);
     }
     setInputsModal(null);
@@ -714,6 +717,8 @@ export default function KasperovClient() {
       onAutoDone={() => setCaptureDone(true)}
       judgementMode={judgementMode}
       addJudgement={(j: Judgement) => setJudgements((prev) => [...prev, j])}
+      nJudgements={judgements.length}
+      onLogJudgements={saveRunToServer}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -1639,22 +1644,25 @@ function SystemPromptDisclosure({ datasetId, model, cluster }: { datasetId: stri
 // literal first question ("You asked"), and (2) the system prompt + briefing it always
 // carries — organised into collapsible, rich-text sections. The sweep starts only on a
 // button click.
-function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string; secondPrompt: string; archivistPrompt: string }; onResolve: (notes: { question: string; system: string }) => void }) {
+function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string }; onResolve: (notes: { question: string; sys: { research: string; reason: string; archivist: string } }) => void }) {
   const [qNote, setQNote] = useState("");
-  const [sNote, setSNote] = useState("");
+  const [sys, setSys] = useState({ research: "", reason: "", archivist: "" });
+  const setSysNote = (k: "research" | "reason" | "archivist", v: string) => setSys((s) => ({ ...s, [k]: v }));
   const d = modal.data;
   const I = d?.instructions ?? {};
   const cl = d?.cluster ?? {};
   const tools = d?.tools ?? {};
   const len = (s?: string) => (s ? `${s.length.toLocaleString()} chars` : undefined);
+  const anyNote = qNote.trim() || sys.research.trim() || sys.reason.trim() || sys.archivist.trim();
+  const summary = [qNote.trim() && "first question", sys.research.trim() && "Researcher", sys.reason.trim() && "Reasoner", sys.archivist.trim() && "Archivist"].filter(Boolean).join(" + ");
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 860, width: "100%", maxHeight: "90vh", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
         {/* fixed header */}
         <div style={{ padding: "18px 22px 12px", borderBottom: "1px solid #eee7df" }}>
-          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs · {modal.clusterLabel} · before first prompt</div>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs — Before First Prompt</div>
           <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 2px" }}>Review the inputs the Researcher will receive</div>
-          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>Two separate things go to the model: <b>your first question</b> and a <b>system prompt + briefing</b> it always carries. Read each below and judge them individually. <b>The run starts only when you click a button at the bottom.</b></div>
+          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>Two separate things go to the model: <b>your first question</b> and a <b>system prompt + briefing</b> it always carries. Read each below and judge them individually — the system prompt can be judged <b>per personality</b>. <b>The run starts only when you click a button at the bottom.</b></div>
         </div>
 
         {/* scrollable body */}
@@ -1671,12 +1679,21 @@ function InputsModal({ modal, onResolve }: { modal: { clusterId: string; cluster
           <div style={inputsQuote}>{modal.firstPrompt}</div>
           <NoteField label="⚖️ Judge the first question" hint="Is this the right question to open with? Anything leading, missing, or worth rephrasing?" value={qNote} onChange={setQNote} />
 
-          {/* ── Part 2: system prompt + briefing ── */}
+          {/* ── Part 2: system prompt + briefing (per-personality) ── */}
           <SectionHeader>2 · System prompt &amp; briefing — carried with every turn (separate from your question)</SectionHeader>
-          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>The model never sees these in the chat, but they shape every answer. Expand each to read the real, verbatim text.</div>
-          <Collapsible title="🔬 Researcher — system prompt" badge={len(I.research)} defaultOpen accent={THEME.research.color}><RichMD mode="research">{I.research ?? "(unavailable)"}</RichMD></Collapsible>
-          <Collapsible title="🧠 Reasoner — system prompt" badge={len(I.reason)} accent={THEME.reason.color}><RichMD mode="reason">{I.reason ?? "(unavailable)"}</RichMD></Collapsible>
-          <Collapsible title="📚 Archivist — system prompt" badge={len(I.archivist)} accent={THEME.archivist.color}><RichMD mode="archivist">{I.archivist ?? "(unavailable)"}</RichMD></Collapsible>
+          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>The model never sees these in the chat, but they shape every answer. Expand each personality to read its real, verbatim prompt — and judge it on its own.</div>
+          <Collapsible title="🔬 Researcher — system prompt" badge={len(I.research)} accent={THEME.research.color}>
+            <RichMD mode="research">{I.research ?? "(unavailable)"}</RichMD>
+            <NoteField label="⚖️ Judge the Researcher system prompt" hint="Anything in the Researcher's instructions that would bias or mislead its grounding?" value={sys.research} onChange={(v) => setSysNote("research", v)} />
+          </Collapsible>
+          <Collapsible title="🧠 Reasoner — system prompt" badge={len(I.reason)} accent={THEME.reason.color}>
+            <RichMD mode="reason">{I.reason ?? "(unavailable)"}</RichMD>
+            <NoteField label="⚖️ Judge the Reasoner system prompt" hint="Anything in the Reasoner's instructions (synthesis, conclude/abstain rules) you'd change?" value={sys.reason} onChange={(v) => setSysNote("reason", v)} />
+          </Collapsible>
+          <Collapsible title="📚 Archivist — system prompt" badge={len(I.archivist)} accent={THEME.archivist.color}>
+            <RichMD mode="archivist">{I.archivist ?? "(unavailable)"}</RichMD>
+            <NoteField label="⚖️ Judge the Archivist system prompt" hint="Anything in the Archivist's instructions (raw-data discipline) you'd change?" value={sys.archivist} onChange={(v) => setSysNote("archivist", v)} />
+          </Collapsible>
           <Collapsible title="🧾 Briefing &amp; background (markers, cluster object, raw facts, tools)">
             <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "2px 0 5px" }}>Personas context (prepended to every personality)</div>
             <div style={{ ...inputsQuote, fontSize: 12.5 }}>{d?.personasContext ?? "(unavailable)"}</div>
@@ -1700,22 +1717,13 @@ function InputsModal({ modal, onResolve }: { modal: { clusterId: string; cluster
               ...(d?.notExposed ? [["not exposed", String(d.notExposed)] as [string, React.ReactNode]] : []),
             ]} />
           </Collapsible>
-          <NoteField label="⚖️ Judge the system prompt & briefing" hint="Are the instructions / grounding rules / briefing right? Anything that would bias or mislead the labelling?" value={sNote} onChange={setSNote} />
-
-          {/* other prompts the sweep will send next */}
-          <Collapsible title="↪ Other prompts auto-pilot will send next (this cluster)" accent="#8a847b">
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "2px 0 5px" }}>Independent second-opinion prompt (Researcher #2)</div>
-            <div style={{ ...inputsQuote, fontSize: 12.5 }}>{modal.secondPrompt}</div>
-            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "12px 0 5px" }}>Archivist verification prompt</div>
-            <div style={{ ...inputsQuote, fontSize: 12.5 }}>{modal.archivistPrompt}</div>
-          </Collapsible>
         </div>
 
         {/* fixed footer */}
         <div style={{ display: "flex", gap: 10, padding: "12px 22px", borderTop: "1px solid #eee7df", justifyContent: "flex-end", alignItems: "center" }}>
-          <div style={{ fontSize: 11, color: "#9a938a", marginRight: "auto" }}>{[qNote.trim() && "first question", sNote.trim() && "system prompt"].filter(Boolean).join(" + ") || "no notes yet"}</div>
-          <button onClick={() => onResolve({ question: "", system: "" })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
-          <button onClick={() => onResolve({ question: qNote, system: sNote })} disabled={modal.loading || (!qNote.trim() && !sNote.trim())} style={{ background: !modal.loading && (qNote.trim() || sNote.trim()) ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && (qNote.trim() || sNote.trim()) ? "pointer" : "default" }}>Add notes + continue →</button>
+          <div style={{ fontSize: 11, color: "#9a938a", marginRight: "auto" }}>{summary || "no notes yet"}</div>
+          <button onClick={() => onResolve({ question: "", sys: { research: "", reason: "", archivist: "" } })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
+          <button onClick={() => onResolve({ question: qNote, sys })} disabled={modal.loading || !anyNote} style={{ background: !modal.loading && anyNote ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && anyNote ? "pointer" : "default" }}>Add notes + continue →</button>
         </div>
       </div>
     </div>
@@ -1738,6 +1746,8 @@ function JudgePanelContent({
   autoRunning,
   nLogged,
   onResolve,
+  onEndAndLog,
+  logged,
 }: {
   pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null;
   liveMode: AgentMode;
@@ -1745,6 +1755,8 @@ function JudgePanelContent({
   autoRunning: boolean;
   nLogged: number;
   onResolve: (note: string) => void;
+  onEndAndLog: () => void;
+  logged: number | null;
 }) {
   const [v, setV] = useState("");
   // reset the note whenever the gated step changes, so a note never bleeds across steps
@@ -1753,51 +1765,64 @@ function JudgePanelContent({
 
   const tagBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" };
 
-  if (!pending) {
-    // idle between gates — still present, showing what's happening
-    const live = judgeStepMeta(liveMode);
+  // ── after "End run & log judgements" — the clear confirmation ──
+  if (logged != null) {
     return (
-      <div style={{ fontSize: 12.5, color: "#5a544c", lineHeight: 1.5, paddingTop: 4 }}>
-        <div style={tagBase}>⚖️ Judgement · standing by</div>
-        <div style={{ marginTop: 10 }}>
-          {autoRunning || streaming
-            ? <>The sweep is running{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This box will pause on the next step so you can leave a note.</>
-            : <>No step is waiting. It updates through Researcher → Researcher 2nd → Archivist → Reasoner → conclude, pausing at each.</>}
+      <div style={{ paddingTop: 4 }}>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "3px 11px" }}>✓ Judgements logged</div>
+        <div style={{ marginTop: 12, fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5, fontWeight: 700 }}>Steven has been notified.</div>
+        <div style={{ marginTop: 8, fontSize: 12.5, color: "#4a443c", lineHeight: 1.6 }}>
+          Your <b>{logged} judgement{logged === 1 ? "" : "s"}</b> have been saved and will be <b>integrated to refine the behaviour of the three-personality chat</b> for future runs. Thank you — this is exactly the signal that improves the system.
         </div>
-        <div style={{ marginTop: 12, fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
       </div>
     );
   }
 
-  const { who, icon } = judgeStepMeta(pending.mode);
-  const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
-  const renderMode: AgentMode = pending.mode && (THEME as any)[pending.mode] ? (pending.mode as AgentMode) : "reason";
+  let body: React.ReactNode;
+  if (!pending) {
+    const live = judgeStepMeta(liveMode);
+    body = (
+      <div style={{ fontSize: 12.5, color: "#5a544c", lineHeight: 1.5 }}>
+        <div style={tagBase}>⚖️ Judgement · standing by</div>
+        <div style={{ marginTop: 10 }}>
+          {autoRunning || streaming
+            ? <>The run is going{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This box will pause on the next step so you can leave a note.</>
+            : <>No step is waiting. It updates through Researcher → Reasoner → conclude (the Archivist runs on demand), pausing at each.</>}
+        </div>
+        <div style={{ marginTop: 12, fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
+      </div>
+    );
+  } else {
+    const { who, icon } = judgeStepMeta(pending.mode);
+    const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
+    const renderMode: AgentMode = pending.mode && (THEME as any)[pending.mode] ? (pending.mode as AgentMode) : "reason";
+    body = (
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+          <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{icon} {who} · step {pending.stepIndex}</span>
+          <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: "#666" }}>Critique what {who} produced, or continue.</div>
+        <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", maxHeight: 280, overflow: "auto" }}>
+          <RichMD mode={renderMode}>{stripFences(pending.full) || pending.excerpt}</RichMD>
+        </div>
+        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={4} placeholder="What's right/wrong about this step? (optional)"
+          style={{ width: "100%", boxSizing: "border-box", minHeight: 76, border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
+          onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }} />
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+          <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 12px", fontSize: 12 }}>Continue without adding notes</button>
+          <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
+        </div>
+        <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
+      </div>
+    );
+  }
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, minHeight: 0 }}>
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-        {/* destination tag for THIS step */}
-        <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{icon} {who} · step {pending.stepIndex}</span>
-        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
-      </div>
-      <div style={{ fontSize: 11.5, color: "#666" }}>Critique what {who} produced, or continue.</div>
-      {/* the step content — rendered as rich markdown (tables, headings, links), scrollable */}
-      <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", maxHeight: 280, overflow: "auto" }}>
-        <RichMD mode={renderMode}>{stripFences(pending.full) || pending.excerpt}</RichMD>
-      </div>
-      <textarea
-        value={v}
-        onChange={(e) => setV(e.target.value)}
-        autoFocus
-        rows={4}
-        placeholder="What's right/wrong about this step? (optional)"
-        style={{ width: "100%", boxSizing: "border-box", minHeight: 76, border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
-        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }}
-      />
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
-        <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 12px", fontSize: 12 }}>Continue without adding notes</button>
-        <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
-      </div>
-      <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4 }}>
+      {body}
+      {/* always available — end the run at any point and log every judgement so far */}
+      <button onClick={onEndAndLog} style={{ background: "#fff", border: "1.5px solid #15803d", color: "#15803d", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>■ End run &amp; log judgements</button>
     </div>
   );
 }
@@ -2560,25 +2585,6 @@ function defaultPrompt(c: Cluster): string {
   );
 }
 
-// the K=2 second proposer for auto-pilot — an independent, alternative-hypothesis
-// read so the Reasoner has two grounded opinions to adjudicate, not one.
-function secondOpinionPrompt(c: Cluster): string {
-  const upList = c.degsUp.slice(0, 8).join(", ");
-  return (
-    `Independent second opinion for ${c.label}. Its top up-regulated markers are: ${upList || "(none)"}. ` +
-    `Assume NO prior conclusion. Name at least one ALTERNATIVE cell-type hypothesis besides the most obvious one and weigh them ` +
-    `against each other using ZFIN curated expression, ZFA anatomy, and GO, citing a record for each claim. ` +
-    `If the markers are ambiguous between identities, say which and why, and which tier (germ layer / tissue / cell type) is the deepest you can defend.`
-  );
-}
-
-// the literal Archivist raw-stats verification prompt the auto-pilot fires once per
-// cluster — shared by runOneCluster and the judgement Inputs-step preview so the two
-// can never drift.
-function archivistVerifyPrompt(c: Cluster): string {
-  const topG = (c.degsUp ?? []).slice(0, 6).join(", ") || (c.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
-  return `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.`;
-}
 
 // pure marker merge (gene-keyed; classifies up/down by log2FC) — shared by the
 // manual "Add to Top Markers" button and the auto-pilot.
@@ -2663,7 +2669,7 @@ function augSig(list: Marker[]): string {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 const AUTO_REASON_PROMPT =
-  "You have TWO independent Researcher reads of this cluster above (a default read and an alternative-hypothesis read) AND the Archivist's raw ground-truth stats for the top markers. Reconcile the literature reads AGAINST the raw numbers: where they agree, that's strong; where they disagree, resolve it with the Archivist's stats (which marker is actually the most enriched / most specific?). If a discussed gene's DEG score still matters and the Archivist hasn't reported it, dispatch the Archivist for it. If the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing.";
+  "You have the Researcher's literature read of this cluster above. The Archivist has NOT run yet — before you conclude, you should normally dispatch the Archivist to confirm the raw ground-truth stats (log2FC / %in-out / specificity) of the top cited markers, and reconcile the literature read AGAINST those numbers (which marker is actually the most enriched / most specific?). If a discussed gene's DEG score matters and the Archivist hasn't reported it, dispatch the Archivist for it. Once the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing.";
 const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
 const AUTO_MAX_ROUNDS = 4;
@@ -2688,6 +2694,8 @@ function ClusterStage({
   onAutoDone,
   judgementMode,
   addJudgement,
+  nJudgements,
+  onLogJudgements,
   labels,
   onLabel,
   transcripts,
@@ -2712,6 +2720,8 @@ function ClusterStage({
   onAutoDone?: () => void;
   judgementMode: boolean;
   addJudgement: (j: Judgement) => void;
+  nJudgements: number;
+  onLogJudgements: () => Promise<void> | void;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2793,6 +2803,7 @@ function ClusterStage({
 
   // submit (with optional note) or skip — close the popup and let the sweep continue.
   const [judgeLogged, setJudgeLogged] = useState(0); // notes logged this sweep (panel footer)
+  const [judgeDone, setJudgeDone] = useState<number | null>(null); // set after "End run & log judgements" (# judgements logged)
   function resolveJudge(note: string) {
     const pj = pendingJudge;
     if (pj && note.trim()) {
@@ -3154,32 +3165,16 @@ function ClusterStage({
 
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
-    // 1) K=2 INDEPENDENT identity proposers (Researcher) — a default read and an
-    //    alternative-hypothesis read, each from a fresh context so they can't
-    //    anchor on each other. The Reasoner then adjudicates the two.
+    // 1) Researcher — a single grounded identity proposal. (The independent second
+    //    opinion + the unconditional Archivist verification were removed; the Reasoner
+    //    dispatches the Archivist/Researcher on demand instead.)
     const p1 = await autoStream(cl, [{ role: "user", content: defaultPrompt(cl) }], "research");
     added = autoAddMarkers(cl, p1[p1.length - 1].content, "research");
     await judgeGate(cl, "research", p1[p1.length - 1].content);
     if (autoAbort.current) return;
-    const p2 = await autoStream(cl, [{ role: "user", content: secondOpinionPrompt(cl) }], "research");
-    added = autoAddMarkers(cl, p2[p2.length - 1].content, "research");
-    await judgeGate(cl, "research", p2[p2.length - 1].content);
-    if (autoAbort.current) return;
-    // 1b) ARCHIVIST verification — at least once per cluster, pull the cluster's
-    //     ground-truth numbers (log2FC, %in/out, p-values, specificity) for the
-    //     top markers, so the Reasoner adjudicates against raw data, not just lit.
-    const arch = await autoStream(cl, [{ role: "user", content: archivistVerifyPrompt(cl) }], "archivist");
-    added = autoAddMarkers(cl, arch[arch.length - 1].content, "archivist");
-    await judgeGate(cl, "archivist", arch[arch.length - 1].content);
-    if (autoAbort.current) return;
-    // merged context: both independent reads + the Archivist's raw stats, for the Reasoner to reconcile
     let conv: ChatMsg[] = [
       { role: "user", content: defaultPrompt(cl) },
       p1[p1.length - 1],
-      { role: "user", content: "Independent second read (alternative-hypothesis pass) for the same cluster:" },
-      p2[p2.length - 1],
-      { role: "user", content: "Archivist raw-data verification of the top markers (ground-truth stats):" },
-      arch[arch.length - 1],
     ];
     // 2) Reasoner-orchestrated rounds — adjudicate, dispatch follow-ups, conclude
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
@@ -3226,6 +3221,7 @@ function ClusterStage({
     autoAbort.current = false;
     judgeStepRef.current = {}; // fresh gated-step ordinals for this sweep
     setJudgeLogged(0);
+    setJudgeDone(null); // clear any prior "logged" confirmation for the fresh run
     setAutoReport(null);
     // auto-detect & skip clusters that already have a cell-type label (= done).
     // NB: keyed off labels, not `validated` — a cluster can be validated by hand
@@ -3276,6 +3272,15 @@ function ClusterStage({
     setAuto((a) => ({ ...a, running: false }));
     // unblock any open judgement gate so the (now-aborting) sweep can unwind
     if (pendingJudge) { setPendingJudge(null); const r = judgeResolve.current; judgeResolve.current = null; if (r) r(); }
+  }
+
+  // ⚖️ End run & log judgements — stop the sweep AND persist the run (with all judgements
+  // so far) to the server store, then show the clear "logged / Steven notified" confirmation.
+  async function endRunAndLog() {
+    const n = nJudgements;
+    stopAutopilot();
+    try { await onLogJudgements(); } catch (e) { console.warn("[judgement] log failed:", e); }
+    setJudgeDone(n);
   }
 
   // kick off ONLY when the world-map auto-pilot button bumps autoStart. The
@@ -3392,7 +3397,7 @@ function ClusterStage({
               to the current step (Researcher → Researcher 2nd → Archivist → Reasoner rounds
               → conclude), pausing for a note at each. The pre-run Inputs popup is separate. */}
           {judgementMode && (
-            <DraggablePanel title="⚖️ JUDGEMENT" accent="#7c3aed" box={jb} minW={250} minH={170} onMove={moveJudge} onResize={resizeJudge}>
+            <DraggablePanel title="⚖️ JUDGEMENT" accent="#7c3aed" box={jb} minW={250} minH={170} pinTop onMove={moveJudge} onResize={resizeJudge}>
               {(w, h) => (
                 <JudgePanelContent
                   pending={pendingJudge}
@@ -3401,6 +3406,8 @@ function ClusterStage({
                   autoRunning={auto.running}
                   nLogged={judgeLogged}
                   onResolve={resolveJudge}
+                  onEndAndLog={endRunAndLog}
+                  logged={judgeDone}
                 />
               )}
             </DraggablePanel>
@@ -3673,6 +3680,7 @@ function DraggablePanel({
   autoFitHeight = false,
   maxH,
   effect = null,
+  pinTop = false,
   onMove,
   onResize,
   onMeasure,
@@ -3687,13 +3695,14 @@ function DraggablePanel({
   autoFitHeight?: boolean;
   maxH?: number; // cap the auto-fit height; the body scrolls past it (keeps panels on-screen)
   effect?: "celebrate" | "pulse" | null; // celebrate = green completion glow; pulse = brief expand
+  pinTop?: boolean; // always sit above the other panels (the JUDGEMENT box)
   onMove: (x: number, y: number) => void;
   onResize: (w: number, h: number) => void;
   onMeasure?: (h: number) => void;
   children: (w: number, h: number) => React.ReactNode;
 }) {
   const [z, setZ] = useState(() => ++zTop);
-  const raise = () => setZ(++zTop);
+  const raise = () => { if (!pinTop) setZ(++zTop); };
   const HEADER = 24;
   const rootRef = useRef<HTMLDivElement | null>(null);
   const contentRef = useRef<HTMLDivElement | null>(null);
@@ -3754,7 +3763,7 @@ function DraggablePanel({
         width: box.w,
         height: autoFitHeight ? "auto" : box.h,
         maxHeight: capped ? maxH : undefined,
-        zIndex: z,
+        zIndex: pinTop ? 990 : z, // above the other HUD panels (zTop range), below the modals (≥1000)
         background: effect === "celebrate" ? "rgba(240,253,244,0.97)" : "rgba(255,253,251,0.96)",
         border: `1px solid ${effect === "celebrate" ? "#15803d66" : accent + "44"}`,
         borderTop: `2px solid ${effect === "celebrate" ? "#15803d" : accent}`,

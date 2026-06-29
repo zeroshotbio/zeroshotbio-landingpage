@@ -5,6 +5,15 @@
 import { useEffect, useState } from "react";
 import type { Cluster, AtlasMeta } from "./types";
 
+// Cluster labels are 1-indexed for display (there is never a "Cluster 0"). The cluster
+// `id` stays as the data provides it (used for grounding/asset lookup); only the human
+// label is shifted. Named labels (tissue names from names.json) are left untouched.
+export function oneIndexLabel(label: unknown): string {
+  const s = String(label ?? "");
+  const m = s.match(/^(?:cluster\s+)?(\d+)$/i);
+  return m ? `Cluster ${Number(m[1]) + 1}` : s;
+}
+
 export function paletteColor(i: number, n: number) {
   const h = Math.round((i * 360) / n + (i % 2 ? 180 / n : 0)) % 360;
   const s = 60 + (i % 3) * 9;
@@ -43,7 +52,7 @@ export function useAtlas(dataUrl: string | null) {
         const n = d.clusters.length;
         const cs: Cluster[] = d.clusters.map((c: any, i: number) => ({
           id: c.id,
-          label: namesOk && names.names[c.id] ? names.names[c.id] : c.label,
+          label: namesOk && names.names[c.id] ? names.names[c.id] : oneIndexLabel(c.label),
           nCells: c.nCells,
           color: paletteColor(i, n),
           cx: c.cx,
