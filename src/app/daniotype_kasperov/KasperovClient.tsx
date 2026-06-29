@@ -16,7 +16,6 @@ import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
 import { RunViewer } from "./components/RunViewer";
 import { HarnessDetail } from "./components/HarnessDetail";
-import { V2TraceViewer } from "./components/V2TraceViewer";
 import { useTween } from "./useTween";
 import { useAtlas } from "./useAtlas";
 
@@ -146,7 +145,7 @@ type Box = { x: number; y: number; w: number; h: number };
 // UMAP canvas — global (world map / HUD) and zoom (focused cluster)
 // ---------------------------------------------------------------------------
 // ---------------------------------------------------------------------------
-type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard" | "v2trace";
+type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "scorecard";
 
 // the from-scratch default for a NEW run's harness step. Defaults to the registry's
 // global `active`, EXCEPT where a dataset is pinned below. ZSCAPE new-runs serve
@@ -154,7 +153,7 @@ type Stage = "model" | "harness" | "intro" | "map" | "personas" | "cluster" | "s
 // the current global active (v1.2) describes — so ZSCAPE defaults to v1.1, the harness
 // whose config IS the served path. Global `active` is left untouched (v1.2 stays the
 // headless recursive-leaf harness for other contexts).
-const HARNESS_DEFAULT_BY_DATASET: Record<string, string> = { zscape: "v1.1" };
+const HARNESS_DEFAULT_BY_DATASET: Record<string, string> = { zscape: "v2.0" };
 function defaultHarness(datasetId?: string) {
   const r: any = HARNESS_REGISTRY;
   const hs: any[] = r.harnesses || [];
@@ -630,13 +629,10 @@ export default function KasperovClient() {
         registry={HARNESS_REGISTRY as any}
         currentModel={model}
         currentHarness={activeHarness}
-        onProceed={(m, h) => { setModel(m); setActiveHarness(h); setRevealed(true); setStage(h?.id === "v2.0" ? "v2trace" : "map"); }}
+        onProceed={(m, h) => { setModel(m); setActiveHarness(h); setRevealed(true); setStage("map"); }}
         onBack={() => setStage("map")}
       />
     );
-  // v2.0 harness selected → walk its multi-level run trace (the v2 orchestrator output)
-  if (stage === "v2trace")
-    return <V2TraceViewer onBack={() => setStage("harness")} />;
 
 
   if (!clusters) {
@@ -1881,9 +1877,13 @@ function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
         <b>Every cell is used to build the clusters.</b> Each resulting cluster is then given its tissue name by a{" "}
         <b>vote that counts only the non-perturbed control cells</b>, so drug-induced shifts don&apos;t bias the labels —{" "}
         to be explicit: <i>all cells are clustered; only control cells vote on the names.</i> The result is{" "}
-        <b>{n} fine clusters</b> spanning the embedding. One honest limit: blood, pancreas, and intestine come out cleanly{" "}
-        and liver is named, but at 48 hpf <b>liver, gut, and pancreas still share a strong common endoderm program</b>,{" "}
-        so they remain partly blended — the liver cluster is a <b>plurality call</b>, not a pure one.
+        <b>{n} fine clusters</b> spanning the embedding. This two-stage structure — broad{" "}
+        <b>compartments</b> that each contain finer <b>leaf clusters</b> — is exactly what the new{" "}
+        <b>v2.0 labelling harness descends top-down</b>: it names each compartment&apos;s umbrella first, then dives only{" "}
+        into the branches where an expected tissue or cell type is still missing. One honest limit: blood, pancreas,{" "}
+        and intestine come out cleanly and liver is named, but at 48 hpf{" "}
+        <b>liver, gut, and pancreas still share a strong common endoderm program</b>, so they remain partly blended —{" "}
+        the liver cluster is a <b>plurality call</b>, not a pure one.
       </p>
     </div>
   );
