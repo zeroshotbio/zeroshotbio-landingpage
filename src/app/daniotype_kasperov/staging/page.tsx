@@ -12,12 +12,15 @@
 
 import KasperovClient from "../KasperovClient";
 
+// The judgement workflow (pre-run Inputs popup + persistent draggable JUDGEMENT box)
+// is now promoted to the live New Run, so this route is just an alias of the live
+// wizard — kept so existing /staging links still resolve.
 export const metadata = {
-  title: "daniotype · kasperov — STAGING (judgement workflow review)",
+  title: "daniotype · kasperov — human-in-the-loop cell-type labelling",
   description:
-    "Staging preview of the judgement workflow: the Inputs step + the persistent draggable JUDGEMENT panel. Not the live New Run.",
+    "Alias of the live wizard. The judgement workflow now ships on the live New Run.",
 };
 
 export default function DaniotypeKasperovStagingPage() {
-  return <KasperovClient staging />;
+  return <KasperovClient />;
 }

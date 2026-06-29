@@ -175,7 +175,7 @@ type Judgement = {
   ts: string;
 };
 
-export default function KasperovClient({ staging = false }: { staging?: boolean } = {}) {
+export default function KasperovClient() {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
   // Swap the active clustering partition (e.g. DanioCell de-novo-77 <-> native-470). The run is
   // still STORED under dataset.id; only the SERVED assets/grounding/agent key (serveId) changes.
@@ -224,6 +224,12 @@ export default function KasperovClient({ staging = false }: { staging?: boolean 
   // optional free-text note for the NEXT browser autopilot run ("what's special about this run?")
   const [runNote, setRunNote] = useState("");
   const [noteOpen, setNoteOpen] = useState(false);
+  // ⚖️ judgement New Run is gated behind two blocking popups BEFORE the sweep starts:
+  // (1) the run-note popup, then (2) the Inputs popup (the full first prompt to the
+  // Researcher + a judgement note). The sweep only kicks off on the Inputs popup's
+  // Submit + Continue. pendingFirstCluster holds the cluster whose inputs to show.
+  const [pendingFirstCluster, setPendingFirstCluster] = useState<Cluster | null>(null);
+  const [inputsModal, setInputsModal] = useState<{ clusterId: string; clusterLabel: string; doc: string; loading: boolean } | null>(null);
   const [loadedNote, setLoadedNote] = useState<string | null>(null); // note of a loaded previous run
   // identity of the run currently being viewed (so the map says WHICH run), titled like Load Previous Run
   const [loadedRun, setLoadedRun] = useState<{ model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null>(null);
@@ -445,16 +451,68 @@ export default function KasperovClient({ staging = false }: { staging?: boolean 
     // judgement mode is chosen fresh per New Run; clear any prior notes.
     setJudgementMode(withJudgement);
     if (withJudgement) setJudgements([]);
-    // optional, skippable "what's special about this run?" popup — non-blocking: the
-    // sweep kicks off below regardless; the note folds into buildRunJSON at save time.
-    // Skip in capture mode (headless filming has no human to prompt).
-    if (!captureMode) { setRunNote(""); setNoteOpen(true); }
     // "done" == has a cell-type label (NOT merely validated — a cluster can be
     // validated by hand without a label). Land on the first unlabelled cluster.
     const first = clusters.find((c) => !labels[c.id]) ?? clusters[0];
     setActiveId(first.id);
     setStage("cluster");
+    // ⚖️ JUDGEMENT run: do NOT start the sweep yet. Gate it behind the run-note
+    // popup, then the Inputs popup; the sweep begins only on Submit + Continue
+    // (resolveInputs bumps autoStart). Skip the gating in headless capture mode.
+    if (withJudgement && !captureMode) {
+      setRunNote("");
+      setPendingFirstCluster(first); // which cluster's inputs the Inputs popup shows
+      setNoteOpen(true); // step 1 — blocking
+      return; // step 2 (Inputs) + the sweep follow from afterRunNote → resolveInputs
+    }
+    // normal (or capture) New Run: the optional, skippable note is non-blocking and
+    // the sweep starts immediately — unchanged behaviour.
+    if (!captureMode) { setRunNote(""); setNoteOpen(true); }
     setAutoStart((n) => n + 1);
+  }
+
+  // ⚖️ run-note popup resolved (judgement run) → open the Inputs popup. For a normal
+  // run pendingFirstCluster is null, so this just records the note (sweep already running).
+  function afterRunNote(noteText: string | null) {
+    if (noteText != null) setRunNote(noteText.trim());
+    setNoteOpen(false);
+    if (pendingFirstCluster) openInputsModal(pendingFirstCluster);
+  }
+
+  // ⚖️ fetch + assemble the full inputs (real server-side system instructions +
+  // briefing + the literal first prompts) and show them in a blocking popup.
+  async function openInputsModal(cl: Cluster) {
+    setInputsModal({ clusterId: cl.id, clusterLabel: cl.label, doc: "", loading: true });
+    let doc: string;
+    try {
+      const r = await fetch("/api/kasperov_agent", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "inputs",
+          dataset: dataset?.serveId ?? dataset?.id,
+          model,
+          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, markersDown: cl.markersDown, nCells: cl.nCells },
+        }),
+      });
+      const d = await r.json();
+      doc = assembleInputsDoc(d, cl);
+    } catch (e) {
+      doc = `(Could not load the full inputs preview: ${String((e as any)?.message ?? e)}.)\n\nThe live values are server-assembled by route.ts. The literal first prompt the Researcher will receive:\n\n${defaultPrompt(cl)}`;
+    }
+    setInputsModal((m) => (m && m.clusterId === cl.id ? { ...m, doc, loading: false } : m));
+  }
+
+  // ⚖️ Inputs popup resolved → log the inputs judgement (step 0) if a note was left,
+  // then START the sweep (this is the only place the judgement run kicks off).
+  function resolveInputs(note: string) {
+    const im = inputsModal;
+    if (im && note.trim()) {
+      setJudgements((prev) => [...prev, { cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: im.doc.slice(0, 600), note: note.trim(), ts: new Date().toISOString() }]);
+    }
+    setInputsModal(null);
+    setPendingFirstCluster(null);
+    setAutoStart((n) => n + 1); // NOW the Researcher receives the first prompt
   }
 
   function resetRun() {
@@ -635,7 +693,8 @@ export default function KasperovClient({ staging = false }: { staging?: boolean 
     );
   return (
     <>
-      {noteOpen && <RunNoteModal initial={runNote} onSubmit={(t) => { setRunNote(t); setNoteOpen(false); }} onSkip={() => setNoteOpen(false)} />}
+      {noteOpen && <RunNoteModal initial={runNote} onSubmit={(t) => afterRunNote(t)} onSkip={() => afterRunNote(null)} />}
+      {inputsModal && <InputsModal modal={inputsModal} onResolve={resolveInputs} />}
     <ClusterStage
       dataset={dataset}
       model={model}
@@ -651,7 +710,6 @@ export default function KasperovClient({ staging = false }: { staging?: boolean 
       onAutoDone={() => setCaptureDone(true)}
       judgementMode={judgementMode}
       addJudgement={(j: Judgement) => setJudgements((prev) => [...prev, j])}
-      staging={staging}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -1476,30 +1534,30 @@ function NewRunModal({ onNormal, onJudgement, onCancel }: { onNormal: () => void
   );
 }
 
-// ⚖️ The per-step pause popup shown in judgement mode after every personality turn.
-function JudgePopup({ pending, onResolve }: { pending: { clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full?: string }; onResolve: (note: string) => void }) {
+// ⚖️ Pre-run INPUTS popup (judgement runs) — the SECOND blocking popup, after the
+// run-note popup. Shows the full set of inputs the Researcher will receive as the first
+// step (real system instructions + briefing + literal first prompt) and captures a
+// judgement note. The sweep starts only when one of these buttons is clicked.
+function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; doc: string; loading: boolean }; onResolve: (note: string) => void }) {
   const [v, setV] = useState("");
-  const meta = judgeStepMeta(pending.mode);
-  const who = meta.who;
-  const icon = meta.icon;
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 560, width: "100%", padding: "20px 22px", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>⚖️ Judgement · {pending.clusterLabel} · step {pending.stepIndex}</div>
-        <div style={{ fontSize: 15, fontWeight: 800, margin: "10px 0 2px" }}>{icon} {who} just finished</div>
-        <div style={{ fontSize: 12.5, color: "#666", margin: "0 0 8px", lineHeight: 1.5 }}>Add a critique note for this step, or just continue.</div>
-        {pending.excerpt ? <div style={{ fontSize: 12, color: "#5a544c", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "7px 9px", margin: "0 0 10px", maxHeight: 120, overflow: "auto", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{pending.excerpt}{pending.excerpt.length >= 600 ? "…" : ""}</div> : null}
-        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={3} placeholder="Optional — what's right/wrong about this step? (leave blank and click OK to continue)" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, resize: "vertical", fontFamily: "inherit" }} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }} />
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 760, width: "100%", maxHeight: "88vh", padding: "20px 22px", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
+        <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs · {modal.clusterLabel} · before first prompt</div>
+        <div style={{ fontSize: 15, fontWeight: 800, margin: "10px 0 2px" }}>Review the inputs the Researcher will receive</div>
+        <div style={{ fontSize: 12.5, color: "#666", margin: "0 0 8px", lineHeight: 1.5 }}>Everything that goes into the chat for the first cluster — the real system instructions, the briefing, and the literal first prompt. Add a judgement note, or just continue. <b>The run starts only when you click below.</b></div>
+        <div style={{ flex: 1, minHeight: 140, fontSize: 11.5, color: "#3f3a33", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 10px", overflow: "auto", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{modal.loading ? "Loading the assembled inputs…" : modal.doc}</div>
+        <textarea value={v} onChange={(e) => setV(e.target.value)} rows={3} placeholder="Optional — judgement note on these inputs / the first prompt (leave blank and continue to start the run)" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, resize: "vertical", fontFamily: "inherit", marginTop: 10 }} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !modal.loading) onResolve(v); }} />
         <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
-          <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5 }}>OK</button>
-          <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
+          <button onClick={() => onResolve("")} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Start without a note</button>
+          <button onClick={() => onResolve(v)} disabled={modal.loading || !v.trim()} style={{ background: !modal.loading && v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ⚖️ Persistent judgement-panel body (staging). Same gate as the popup — pendingJudge
+// ⚖️ Persistent judgement-panel body. Same gate as before — pendingJudge
 // + onResolve — but rendered as a live HUD panel that stays put across the whole sweep,
 // updating its destination tag + content as the conversation turns personality to
 // personality, starting with the Inputs step. Note box + OK / Submit + Continue, logged
@@ -2511,7 +2569,6 @@ function ClusterStage({
   onAutoDone,
   judgementMode,
   addJudgement,
-  staging,
   labels,
   onLabel,
   transcripts,
@@ -2536,7 +2593,6 @@ function ClusterStage({
   onAutoDone?: () => void;
   judgementMode: boolean;
   addJudgement: (j: Judgement) => void;
-  staging: boolean;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2597,7 +2653,7 @@ function ClusterStage({
   // step and waits for the curator to hit OK or type a note + Submit + Continue.
   const judgeModeRef = useRef(judgementMode);
   useEffect(() => { judgeModeRef.current = judgementMode; }, [judgementMode]);
-  // `full` carries the complete step content for the persistent panel (staging) to
+  // `full` carries the complete step content for the persistent panel to
   // display + scroll; `excerpt` is the trimmed copy stored on the logged record.
   const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null>(null);
   const judgeResolve = useRef<(() => void) | null>(null);
@@ -2616,32 +2672,6 @@ function ClusterStage({
     });
   }
 
-  // ⚖️ Change 1 (staging): assemble the FULL set of inputs for a cluster — the real
-  // server-side system instructions (route.ts builders), the briefing/background, and
-  // the literal first user prompts — into one critiquable document, then gate on it
-  // as step 0 BEFORE the first personality is called. Read-only: hits the additive
-  // action:"inputs" endpoint, which returns the assembled text without calling the model.
-  async function inputsGate(cl: Cluster): Promise<void> {
-    if (!judgeModeRef.current || !staging) return;
-    let doc: string;
-    try {
-      const r = await fetch("/api/kasperov_agent", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          action: "inputs",
-          dataset: dataset.serveId ?? dataset.id,
-          model,
-          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, markersDown: cl.markersDown, nCells: cl.nCells },
-        }),
-      });
-      const d = await r.json();
-      doc = assembleInputsDoc(d, cl);
-    } catch (e) {
-      doc = `(Could not load the inputs preview: ${String((e as any)?.message ?? e)}.)\n\nThe live values are server-assembled by route.ts (researchInstructions / reasonInstructions / archivistInstructions). Critique the first prompt below.\n\n— FIRST USER PROMPT (Researcher) —\n${defaultPrompt(cl)}`;
-    }
-    await judgeGate(cl, "inputs", doc);
-  }
   // submit (with optional note) or skip — close the popup and let the sweep continue.
   const [judgeLogged, setJudgeLogged] = useState(0); // notes logged this sweep (panel footer)
   function resolveJudge(note: string) {
@@ -2778,7 +2808,7 @@ function ClusterStage({
     });
   }, [containerSize, pb]);
 
-  // ⚖️ persistent judgement panel (staging) — its own draggable box, independent of
+  // ⚖️ persistent judgement panel — its own draggable box, independent of
   // the auto-fit world-map / markers / confidence stack so it never reshuffles them.
   const [jb, setJb] = useState<Box>({ x: 16, y: 250, w: 360, h: 320 });
   const moveJudge = useCallback((x: number, y: number) => setJb((b) => ({ ...b, x, y })), []);
@@ -3005,10 +3035,6 @@ function ClusterStage({
 
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
-    // 0) ⚖️ INPUTS step (staging judgement mode only) — surface the full server-side
-    //    instructions + briefing + first prompt as a critiquable step BEFORE any call.
-    await inputsGate(cl);
-    if (autoAbort.current) return;
     // 1) K=2 INDEPENDENT identity proposers (Researcher) — a default read and an
     //    alternative-hypothesis read, each from a fresh context so they can't
     //    anchor on each other. The Reasoner then adjudicates the two.
@@ -3148,8 +3174,8 @@ function ClusterStage({
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
-      {/* live keeps the per-step modal; staging replaces it with the persistent JUDGEMENT panel below */}
-      {pendingJudge && !staging && <JudgePopup pending={pendingJudge} onResolve={resolveJudge} />}
+      {/* per-step critique is captured in the persistent draggable JUDGEMENT box (below),
+          not a modal — the box live-updates and pauses at each personality's turn. */}
       <style>{`
         @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
@@ -3242,10 +3268,11 @@ function ClusterStage({
             </>
           )}
 
-          {/* ⚖️ JUDGEMENT — persistent, draggable critique panel (staging). Replaces the
-              per-step popup: it stays present through the sweep and live-updates to the
-              current step (Inputs → Researcher → Researcher 2nd → Archivist → Reasoner). */}
-          {staging && (
+          {/* ⚖️ JUDGEMENT — persistent, draggable critique box (judgement runs). Replaces
+              the per-step modal popup: it stays present through the sweep and live-updates
+              to the current step (Researcher → Researcher 2nd → Archivist → Reasoner rounds
+              → conclude), pausing for a note at each. The pre-run Inputs popup is separate. */}
+          {judgementMode && (
             <DraggablePanel title="⚖️ JUDGEMENT" accent="#7c3aed" box={jb} minW={250} minH={170} onMove={moveJudge} onResize={resizeJudge}>
               {(w, h) => (
                 <JudgePanelContent
