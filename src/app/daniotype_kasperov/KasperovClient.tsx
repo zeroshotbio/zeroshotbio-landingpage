@@ -10,7 +10,7 @@ import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type
 import { PAPER, INK, ACCENT, THEME, confColor, btnPrimary, btnGhost } from "./theme";
 // Presentational components shared with the Phase 2 read-only run viewer.
 import { UmapCanvas } from "./components/UmapCanvas";
-import { AgentMessage } from "./components/ChatMessage";
+import { AgentMessage, mdFor } from "./components/ChatMessage";
 import { MarkersContent } from "./components/MarkersPanel";
 import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
@@ -169,7 +169,7 @@ type Judgement = {
   cluster_id: string;
   cluster_label: string;
   step_index: number; // ordinal of the gated step within this cluster's sweep
-  mode: AgentMode | "inputs" | null; // which personality produced the step ("inputs" = the pre-prompt Inputs step)
+  mode: AgentMode | "inputs" | "first_prompt" | null; // step source ("inputs" = system prompt + briefing; "first_prompt" = the literal first question)
   content_excerpt: string; // first chars of what the step produced (self-contained)
   note: string;
   ts: string;
@@ -229,7 +229,7 @@ export default function KasperovClient() {
   // Researcher + a judgement note). The sweep only kicks off on the Inputs popup's
   // Submit + Continue. pendingFirstCluster holds the cluster whose inputs to show.
   const [pendingFirstCluster, setPendingFirstCluster] = useState<Cluster | null>(null);
-  const [inputsModal, setInputsModal] = useState<{ clusterId: string; clusterLabel: string; doc: string; loading: boolean } | null>(null);
+  const [inputsModal, setInputsModal] = useState<{ clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string; secondPrompt: string; archivistPrompt: string } | null>(null);
   const [loadedNote, setLoadedNote] = useState<string | null>(null); // note of a loaded previous run
   // identity of the run currently being viewed (so the map says WHICH run), titled like Load Previous Run
   const [loadedRun, setLoadedRun] = useState<{ model?: string; nLabelled?: number; scoredAt?: string | null; exportedAt?: string | null; note?: string | null } | null>(null);
@@ -482,8 +482,8 @@ export default function KasperovClient() {
   // ⚖️ fetch + assemble the full inputs (real server-side system instructions +
   // briefing + the literal first prompts) and show them in a blocking popup.
   async function openInputsModal(cl: Cluster) {
-    setInputsModal({ clusterId: cl.id, clusterLabel: cl.label, doc: "", loading: true });
-    let doc: string;
+    const firstPrompt = defaultPrompt(cl), secondPrompt = secondOpinionPrompt(cl), archivistPrompt = archivistVerifyPrompt(cl);
+    setInputsModal({ clusterId: cl.id, clusterLabel: cl.label, loading: true, data: null, firstPrompt, secondPrompt, archivistPrompt });
     try {
       const r = await fetch("/api/kasperov_agent", {
         method: "POST",
@@ -496,19 +496,23 @@ export default function KasperovClient() {
         }),
       });
       const d = await r.json();
-      doc = assembleInputsDoc(d, cl);
+      setInputsModal((m) => (m && m.clusterId === cl.id ? { ...m, data: d, loading: false } : m));
     } catch (e) {
-      doc = `(Could not load the full inputs preview: ${String((e as any)?.message ?? e)}.)\n\nThe live values are server-assembled by route.ts. The literal first prompt the Researcher will receive:\n\n${defaultPrompt(cl)}`;
+      setInputsModal((m) => (m && m.clusterId === cl.id ? { ...m, data: { error: String((e as any)?.message ?? e) }, loading: false } : m));
     }
-    setInputsModal((m) => (m && m.clusterId === cl.id ? { ...m, doc, loading: false } : m));
   }
 
-  // ⚖️ Inputs popup resolved → log the inputs judgement (step 0) if a note was left,
-  // then START the sweep (this is the only place the judgement run kicks off).
-  function resolveInputs(note: string) {
+  // ⚖️ Inputs popup resolved → log up to TWO judgement records (the first question and
+  // the system prompt are judged individually), then START the sweep (the only place
+  // the judgement run kicks off).
+  function resolveInputs(notes: { question: string; system: string }) {
     const im = inputsModal;
-    if (im && note.trim()) {
-      setJudgements((prev) => [...prev, { cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: im.doc.slice(0, 600), note: note.trim(), ts: new Date().toISOString() }]);
+    if (im) {
+      const recs: Judgement[] = [];
+      const ts = new Date().toISOString();
+      if (notes.question.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "first_prompt", content_excerpt: im.firstPrompt.slice(0, 600), note: notes.question.trim(), ts });
+      if (notes.system.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: (im.data?.instructions?.research ?? "").slice(0, 600), note: notes.system.trim(), ts });
+      if (recs.length) setJudgements((prev) => [...prev, ...recs]);
     }
     setInputsModal(null);
     setPendingFirstCluster(null);
@@ -1534,36 +1538,196 @@ function NewRunModal({ onNormal, onJudgement, onCancel }: { onNormal: () => void
   );
 }
 
-// ⚖️ Pre-run INPUTS popup (judgement runs) — the SECOND blocking popup, after the
-// run-note popup. Shows the full set of inputs the Researcher will receive as the first
-// step (real system instructions + briefing + literal first prompt) and captures a
-// judgement note. The sweep starts only when one of these buttons is clicked.
-function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; doc: string; loading: boolean }; onResolve: (note: string) => void }) {
-  const [v, setV] = useState("");
+// ── shared judgement-UI helpers ───────────────────────────────────────────────
+// rich markdown (tables, headings, links) using the same renderer as the chat
+function RichMD({ children, mode = "reason" }: { children: string; mode?: AgentMode }) {
+  return <div style={{ fontSize: 12.5, color: "#3f3a33", lineHeight: 1.55 }}><ReactMarkdown remarkPlugins={[remarkGfm]} components={mdFor(mode) as any}>{children || "_(empty)_"}</ReactMarkdown></div>;
+}
+// drop the hidden ```kasperov-*``` fences so step content reads as prose + tables
+const stripFences = (s: string) => (s || "").replace(/```[\s\S]*?```/g, "").replace(/\n{3,}/g, "\n\n").trim();
+
+function Collapsible({ title, badge, defaultOpen = false, accent = "#8a847b", children }: { title: React.ReactNode; badge?: string; defaultOpen?: boolean; accent?: string; children: React.ReactNode }) {
+  const [open, setOpen] = useState(defaultOpen);
+  return (
+    <div style={{ border: "1px solid #e8e3dd", borderRadius: 10, marginBottom: 8, overflow: "hidden", background: "#fff" }}>
+      <button onClick={() => setOpen((o) => !o)} style={{ width: "100%", display: "flex", alignItems: "center", gap: 8, padding: "9px 12px", background: open ? "#faf8f6" : "#fff", border: "none", cursor: "pointer", textAlign: "left", font: "inherit" }}>
+        <span style={{ fontSize: 10, color: accent, transform: open ? "rotate(90deg)" : "none", display: "inline-block", transition: "transform .15s" }}>▶</span>
+        <span style={{ fontWeight: 700, fontSize: 13, color: "#2a2620" }}>{title}</span>
+        {badge ? <span style={{ fontSize: 10.5, color: "#9a938a", marginLeft: "auto" }}>{badge}</span> : null}
+      </button>
+      {open ? <div style={{ padding: "8px 14px 12px", borderTop: "1px solid #f0ece7" }}>{children}</div> : null}
+    </div>
+  );
+}
+
+function NoteField({ label, hint, value, onChange }: { label: string; hint: string; value: string; onChange: (v: string) => void }) {
+  return (
+    <div style={{ marginTop: 12 }}>
+      <div style={{ fontSize: 12.5, fontWeight: 800, color: "#7c3aed", marginBottom: 5 }}>{label}</div>
+      <textarea value={value} onChange={(e) => onChange(e.target.value)} placeholder={hint} style={{ width: "100%", boxSizing: "border-box", minHeight: 90, border: "1px solid #e5e1dc", borderRadius: 8, padding: "11px 13px", fontSize: 13.5, lineHeight: 1.55, resize: "vertical", fontFamily: "inherit" }} />
+    </div>
+  );
+}
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return <div style={{ fontSize: 13.5, fontWeight: 800, color: "#2b2b2b", margin: "16px 0 8px", paddingBottom: 5, borderBottom: "2px solid #7c3aed33" }}>{children}</div>;
+}
+
+// small key/value table for the GT-blind cluster object + tools/model params
+function KVTable({ rows }: { rows: [string, React.ReactNode][] }) {
+  return (
+    <div style={{ border: "1px solid #e2ded8", borderRadius: 8, overflow: "hidden" }}>
+      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+        <tbody>
+          {rows.map(([k, v], i) => (
+            <tr key={i} style={{ borderTop: i ? "1px solid #f0ece7" : "none" }}>
+              <td style={{ padding: "6px 10px", color: "#7a736a", fontWeight: 600, whiteSpace: "nowrap", verticalAlign: "top", width: 130, background: "#faf8f6" }}>{k}</td>
+              <td style={{ padding: "6px 10px", color: "#2a2620", lineHeight: 1.5 }}>{v}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+const inputsQuote: React.CSSProperties = { fontSize: 13.5, color: "#2a2620", background: "rgba(124,58,237,0.05)", borderLeft: "3px solid #7c3aed", borderRadius: 6, padding: "11px 13px", lineHeight: 1.6 };
+
+// In-chat disclosure on the FIRST "You asked" message: makes it obvious the model also
+// carries a separate system prompt + briefing (not shown in the chat), and lets you read
+// the real verbatim text on demand (lazy-fetched from the action:"inputs" endpoint).
+function SystemPromptDisclosure({ datasetId, model, cluster }: { datasetId: string; model: string; cluster: Cluster }) {
+  const [open, setOpen] = useState(false);
+  const [data, setData] = useState<any | null>(null);
+  const [loading, setLoading] = useState(false);
+  async function load() {
+    if (data || loading) return;
+    setLoading(true);
+    try {
+      const r = await fetch("/api/kasperov_agent", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ action: "inputs", dataset: datasetId, model, cluster: { id: cluster.id, label: cluster.label, degsUp: cluster.degsUp, markers: cluster.markers, markersDown: cluster.markersDown, nCells: cluster.nCells } }) });
+      setData(await r.json());
+    } catch (e) {
+      setData({ error: String((e as any)?.message ?? e) });
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <div style={{ marginTop: 6 }}>
+      <button onClick={() => { setOpen((o) => !o); load(); }} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 11, fontWeight: 700, color: "#7c3aed", background: "#f3e8ff", border: "1px solid #e6d8fb", borderRadius: 99, padding: "3px 11px", cursor: "pointer" }}>
+        🔧 {open ? "Hide" : "Show"} the system prompt the model also received
+      </button>
+      {open ? (
+        <div style={{ marginTop: 8, border: "1px solid #e8e3dd", borderRadius: 10, padding: "10px 12px", background: "#fffdfb" }}>
+          <div style={{ fontSize: 11.5, color: "#777", marginBottom: 8, lineHeight: 1.5 }}>The text above (“You asked”) is your <b>question</b>. Separately, the model carries this <b>system prompt</b> + briefing on every turn — it’s not shown in the chat. (You already reviewed and judged these at the start.)</div>
+          {loading ? <div style={{ fontSize: 12, color: "#9a938a" }}>Loading…</div> : data?.error ? <div style={{ fontSize: 12, color: "#8a5a00" }}>Couldn’t load ({String(data.error)}).</div> : data ? (
+            <>
+              <Collapsible title="🔬 Researcher — system prompt" defaultOpen accent={THEME.research.color}><RichMD mode="research">{data.instructions?.research ?? "(unavailable)"}</RichMD></Collapsible>
+              <Collapsible title="🧠 Reasoner — system prompt" accent={THEME.reason.color}><RichMD mode="reason">{data.instructions?.reason ?? "(unavailable)"}</RichMD></Collapsible>
+              <Collapsible title="📚 Archivist — system prompt" accent={THEME.archivist.color}><RichMD mode="archivist">{data.instructions?.archivist ?? "(unavailable)"}</RichMD></Collapsible>
+              <Collapsible title="🧾 Briefing & raw facts" accent="#8a847b"><RichMD mode="archivist">{data.rawFacts ?? "(unavailable)"}</RichMD></Collapsible>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+// ⚖️ Pre-run INPUTS popup — the SECOND blocking popup, after the run-note popup. The two
+// things the model receives are shown as DISTINCT, individually-judgeable parts: (1) the
+// literal first question ("You asked"), and (2) the system prompt + briefing it always
+// carries — organised into collapsible, rich-text sections. The sweep starts only on a
+// button click.
+function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string; secondPrompt: string; archivistPrompt: string }; onResolve: (notes: { question: string; system: string }) => void }) {
+  const [qNote, setQNote] = useState("");
+  const [sNote, setSNote] = useState("");
+  const d = modal.data;
+  const I = d?.instructions ?? {};
+  const cl = d?.cluster ?? {};
+  const tools = d?.tools ?? {};
+  const len = (s?: string) => (s ? `${s.length.toLocaleString()} chars` : undefined);
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
-      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 760, width: "100%", maxHeight: "88vh", padding: "20px 22px", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
-        <div style={{ display: "inline-flex", alignSelf: "flex-start", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs · {modal.clusterLabel} · before first prompt</div>
-        <div style={{ fontSize: 15, fontWeight: 800, margin: "10px 0 2px" }}>Review the inputs the Researcher will receive</div>
-        <div style={{ fontSize: 12.5, color: "#666", margin: "0 0 8px", lineHeight: 1.5 }}>Everything that goes into the chat for the first cluster — the real system instructions, the briefing, and the literal first prompt. Add a judgement note, or just continue. <b>The run starts only when you click below.</b></div>
-        <div style={{ flex: 1, minHeight: 140, fontSize: 11.5, color: "#3f3a33", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 10px", overflow: "auto", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{modal.loading ? "Loading the assembled inputs…" : modal.doc}</div>
-        <textarea value={v} onChange={(e) => setV(e.target.value)} rows={3} placeholder="Optional — judgement note on these inputs / the first prompt (leave blank and continue to start the run)" style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13.5, resize: "vertical", fontFamily: "inherit", marginTop: 10 }} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && !modal.loading) onResolve(v); }} />
-        <div style={{ display: "flex", gap: 10, marginTop: 12, justifyContent: "flex-end" }}>
-          <button onClick={() => onResolve("")} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Start without a note</button>
-          <button onClick={() => onResolve(v)} disabled={modal.loading || !v.trim()} style={{ background: !modal.loading && v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
+      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 860, width: "100%", maxHeight: "90vh", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
+        {/* fixed header */}
+        <div style={{ padding: "18px 22px 12px", borderBottom: "1px solid #eee7df" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs · {modal.clusterLabel} · before first prompt</div>
+          <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 2px" }}>Review the inputs the Researcher will receive</div>
+          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>Two separate things go to the model: <b>your first question</b> and a <b>system prompt + briefing</b> it always carries. Read each below and judge them individually. <b>The run starts only when you click a button at the bottom.</b></div>
+        </div>
+
+        {/* scrollable body */}
+        <div style={{ flex: 1, overflow: "auto", padding: "8px 22px 16px" }}>
+          {modal.loading ? (
+            <div style={{ padding: "30px 0", textAlign: "center", color: "#9a938a", fontSize: 13 }}>Loading the assembled inputs…</div>
+          ) : d?.error ? (
+            <div style={{ fontSize: 12.5, color: "#8a5a00", background: "#fff7e6", border: "1px solid #f0dca8", borderRadius: 8, padding: "10px 12px", lineHeight: 1.5 }}>Couldn’t load the full server-side inputs ({String(d.error)}). The literal first question below is still accurate.</div>
+          ) : null}
+
+          {/* ── Part 1: the first question ── */}
+          <SectionHeader>1 · Your first question — what “You asked” shows in the chat</SectionHeader>
+          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>This exact text is the first user message the Researcher answers. It is <b>not</b> the system prompt — it’s the question.</div>
+          <div style={inputsQuote}>{modal.firstPrompt}</div>
+          <NoteField label="⚖️ Judge the first question" hint="Is this the right question to open with? Anything leading, missing, or worth rephrasing?" value={qNote} onChange={setQNote} />
+
+          {/* ── Part 2: system prompt + briefing ── */}
+          <SectionHeader>2 · System prompt &amp; briefing — carried with every turn (separate from your question)</SectionHeader>
+          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>The model never sees these in the chat, but they shape every answer. Expand each to read the real, verbatim text.</div>
+          <Collapsible title="🔬 Researcher — system prompt" badge={len(I.research)} defaultOpen accent={THEME.research.color}><RichMD mode="research">{I.research ?? "(unavailable)"}</RichMD></Collapsible>
+          <Collapsible title="🧠 Reasoner — system prompt" badge={len(I.reason)} accent={THEME.reason.color}><RichMD mode="reason">{I.reason ?? "(unavailable)"}</RichMD></Collapsible>
+          <Collapsible title="📚 Archivist — system prompt" badge={len(I.archivist)} accent={THEME.archivist.color}><RichMD mode="archivist">{I.archivist ?? "(unavailable)"}</RichMD></Collapsible>
+          <Collapsible title="🧾 Briefing &amp; background (markers, cluster object, raw facts, tools)">
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "2px 0 5px" }}>Personas context (prepended to every personality)</div>
+            <div style={{ ...inputsQuote, fontSize: 12.5 }}>{d?.personasContext ?? "(unavailable)"}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "12px 0 5px" }}>GT-blind cluster object (what the server sees — no published labels)</div>
+            <KVTable rows={[
+              ["cluster id", String(cl.id ?? modal.clusterId)],
+              ["label", String(cl.label ?? "—")],
+              ["cells", cl.nCells != null ? Number(cl.nCells).toLocaleString() : "—"],
+              ["up markers", (cl.degsUp ?? []).length ? (cl.degsUp as string[]).join(", ") : "—"],
+              ["down markers", (cl.markersDown ?? []).length ? (cl.markersDown as any[]).map((m) => m?.g ?? m).join(", ") : "—"],
+            ]} />
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "12px 0 5px" }}>Raw-facts block (authoritative values the Archivist quotes)</div>
+            <RichMD mode="archivist">{d?.rawFacts ?? "(unavailable)"}</RichMD>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "12px 0 5px" }}>Tools &amp; model</div>
+            <KVTable rows={[
+              ["model", String(d?.model ?? "—")],
+              ["Researcher tools", `web_search · ${(tools.research?.web_search?.allowed_domains ?? []).join(", ") || "—"}`],
+              ["Archivist tools", String(tools.archivist?.tool ?? "—") + " (live :5007 grounding)"],
+              ["Reasoner tools", "none"],
+              ["model params", JSON.stringify(d?.modelParams ?? {})],
+              ...(d?.notExposed ? [["not exposed", String(d.notExposed)] as [string, React.ReactNode]] : []),
+            ]} />
+          </Collapsible>
+          <NoteField label="⚖️ Judge the system prompt & briefing" hint="Are the instructions / grounding rules / briefing right? Anything that would bias or mislead the labelling?" value={sNote} onChange={setSNote} />
+
+          {/* other prompts the sweep will send next */}
+          <Collapsible title="↪ Other prompts auto-pilot will send next (this cluster)" accent="#8a847b">
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "2px 0 5px" }}>Independent second-opinion prompt (Researcher #2)</div>
+            <div style={{ ...inputsQuote, fontSize: 12.5 }}>{modal.secondPrompt}</div>
+            <div style={{ fontSize: 12, fontWeight: 700, color: "#7a736a", margin: "12px 0 5px" }}>Archivist verification prompt</div>
+            <div style={{ ...inputsQuote, fontSize: 12.5 }}>{modal.archivistPrompt}</div>
+          </Collapsible>
+        </div>
+
+        {/* fixed footer */}
+        <div style={{ display: "flex", gap: 10, padding: "12px 22px", borderTop: "1px solid #eee7df", justifyContent: "flex-end", alignItems: "center" }}>
+          <div style={{ fontSize: 11, color: "#9a938a", marginRight: "auto" }}>{[qNote.trim() && "first question", sNote.trim() && "system prompt"].filter(Boolean).join(" + ") || "no notes yet"}</div>
+          <button onClick={() => onResolve({ question: "", system: "" })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
+          <button onClick={() => onResolve({ question: qNote, system: sNote })} disabled={modal.loading || (!qNote.trim() && !sNote.trim())} style={{ background: !modal.loading && (qNote.trim() || sNote.trim()) ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && (qNote.trim() || sNote.trim()) ? "pointer" : "default" }}>Add notes + continue →</button>
         </div>
       </div>
     </div>
   );
 }
 
-// ⚖️ Persistent judgement-panel body. Same gate as before — pendingJudge
-// + onResolve — but rendered as a live HUD panel that stays put across the whole sweep,
-// updating its destination tag + content as the conversation turns personality to
-// personality, starting with the Inputs step. Note box + OK / Submit + Continue, logged
-// to the same judgements[] (JSONL) as the popup.
-function judgeStepMeta(mode: AgentMode | "inputs" | null): { who: string; icon: string } {
-  if (mode === "inputs") return { who: "Inputs", icon: "📥" };
+// ⚖️ Persistent judgement-panel body — a live HUD box that stays put across the sweep,
+// updating its destination tag + rich content as the conversation turns personality to
+// personality. Note box + Continue / Add notes + continue, logged to judgements[].
+function judgeStepMeta(mode: AgentMode | "inputs" | "first_prompt" | null): { who: string; icon: string } {
+  if (mode === "inputs") return { who: "System prompt", icon: "📥" };
+  if (mode === "first_prompt") return { who: "First question", icon: "❓" };
   if (mode && (THEME as any)[mode]) return { who: THEME[mode].name, icon: THEME[mode].icon };
   return { who: "Step", icon: "⚖️" };
 }
@@ -1597,8 +1761,8 @@ function JudgePanelContent({
         <div style={tagBase}>⚖️ Judgement · standing by</div>
         <div style={{ marginTop: 10 }}>
           {autoRunning || streaming
-            ? <>The sweep is running{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This panel will pause on the next step so you can leave a note.</>
-            : <>No step is waiting. Start a judgement run — this panel opens on the <b>Inputs</b> step, then updates through Researcher → Researcher 2nd → Archivist → Reasoner → conclude.</>}
+            ? <>The sweep is running{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This box will pause on the next step so you can leave a note.</>
+            : <>No step is waiting. It updates through Researcher → Researcher 2nd → Archivist → Reasoner → conclude, pausing at each.</>}
         </div>
         <div style={{ marginTop: 12, fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
       </div>
@@ -1607,6 +1771,7 @@ function JudgePanelContent({
 
   const { who, icon } = judgeStepMeta(pending.mode);
   const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
+  const renderMode: AgentMode = pending.mode && (THEME as any)[pending.mode] ? (pending.mode as AgentMode) : "reason";
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, minHeight: 0 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
@@ -1614,21 +1779,23 @@ function JudgePanelContent({
         <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{icon} {who} · step {pending.stepIndex}</span>
         <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
       </div>
-      <div style={{ fontSize: 11.5, color: "#666" }}>{pending.mode === "inputs" ? "Critique the inputs before the first prompt is sent, or continue." : `Critique what ${who} produced, or continue.`}</div>
-      {/* the full step content — scrollable */}
-      <div style={{ fontSize: 11.5, color: "#3f3a33", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 10px", maxHeight: 260, overflow: "auto", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: pending.mode === "inputs" ? "ui-monospace, SFMono-Regular, Menlo, monospace" : "inherit" }}>{pending.full || pending.excerpt}</div>
+      <div style={{ fontSize: 11.5, color: "#666" }}>Critique what {who} produced, or continue.</div>
+      {/* the step content — rendered as rich markdown (tables, headings, links), scrollable */}
+      <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", maxHeight: 280, overflow: "auto" }}>
+        <RichMD mode={renderMode}>{stripFences(pending.full) || pending.excerpt}</RichMD>
+      </div>
       <textarea
         value={v}
         onChange={(e) => setV(e.target.value)}
         autoFocus
-        rows={3}
-        placeholder={pending.mode === "inputs" ? "What's right/wrong about these inputs? (leave blank + OK to send the first prompt)" : "What's right/wrong about this step? (leave blank + OK to continue)"}
-        style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "vertical", fontFamily: "inherit" }}
+        rows={4}
+        placeholder="What's right/wrong about this step? (optional)"
+        style={{ width: "100%", boxSizing: "border-box", minHeight: 76, border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
         onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }}
       />
-      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-        <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 14px", fontSize: 12.5 }}>OK</button>
-        <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 12px", fontSize: 12 }}>Continue without adding notes</button>
+        <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
       </div>
       <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
     </div>
@@ -2407,58 +2574,6 @@ function secondOpinionPrompt(c: Cluster): string {
 function archivistVerifyPrompt(c: Cluster): string {
   const topG = (c.degsUp ?? []).slice(0, 6).join(", ") || (c.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
   return `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.`;
-}
-
-// ⚖️ Assemble the route.ts action:"inputs" payload (the REAL server-side system
-// instructions + briefing) together with the client-built literal first prompts into
-// one readable, critiquable document for the judgement "Inputs" step.
-function assembleInputsDoc(d: any, c: Cluster): string {
-  const I = d?.instructions ?? {};
-  const tools = d?.tools ?? {};
-  const L: string[] = [];
-  L.push(`══════ INPUTS — everything that goes into the chat for ${c.label} ══════`);
-  L.push(`(read-only preview of the REAL assembled inputs, before the first prompt is sent)`);
-  L.push(`dataset: ${d?.datasetName ?? d?.dataset ?? "?"}   ·   model: ${d?.model ?? "?"}   ·   cluster id: ${c.id}`);
-  L.push("");
-  L.push("──────── SYSTEM INSTRUCTIONS (server-assembled by route.ts, sent verbatim) ────────");
-  L.push("");
-  L.push("【 RESEARCHER mode — the first personality called 】");
-  L.push(I.research ?? "(unavailable — server did not return it)");
-  L.push("");
-  L.push("【 REASONER mode 】");
-  L.push(I.reason ?? "(unavailable)");
-  L.push("");
-  L.push("【 ARCHIVIST mode 】");
-  L.push(I.archivist ?? "(unavailable)");
-  L.push("");
-  L.push("──────── BRIEFING / BACKGROUND (context assembled into the chat) ────────");
-  L.push("");
-  L.push("• Personas context (prepended to every personality):");
-  L.push(d?.personasContext ?? "(unavailable)");
-  L.push("");
-  L.push("• GT-blind cluster object (what the server sees — no published labels):");
-  L.push(JSON.stringify(d?.cluster ?? { id: c.id, label: c.label, degsUp: c.degsUp, markers: c.markers, markersDown: c.markersDown, nCells: c.nCells }, null, 2));
-  L.push("");
-  L.push("• Raw-facts block (authoritative dataset values the Archivist quotes):");
-  L.push(d?.rawFacts ?? "(unavailable)");
-  L.push("");
-  L.push("• Tools wired per mode:");
-  L.push(`   Researcher → web_search over ${(tools.research?.web_search?.allowed_domains ?? []).join(", ") || "(n/a)"}`);
-  L.push(`   Archivist  → ${tools.archivist?.tool ?? "(n/a)"} (live :5007 grounding)`);
-  L.push(`   Reasoner   → no tools`);
-  L.push(`• Model params: ${JSON.stringify(d?.modelParams ?? {})}`);
-  if (d?.notExposed) L.push(`• NOT exposed: ${d.notExposed}`);
-  L.push("");
-  L.push("──────── FIRST USER PROMPT (literal — sent to the first Researcher) ────────");
-  L.push(defaultPrompt(c));
-  L.push("");
-  L.push("──────── auto-pilot then sends, in order ────────");
-  L.push("• Independent second-opinion prompt (Researcher #2):");
-  L.push(secondOpinionPrompt(c));
-  L.push("");
-  L.push("• Archivist verification prompt:");
-  L.push(archivistVerifyPrompt(c));
-  return L.join("\n");
 }
 
 // pure marker merge (gene-keyed; classifies up/down by log2FC) — shared by the
@@ -3381,10 +3496,14 @@ function ClusterStage({
               return (
                 <div key={i} style={{ marginBottom: 14 }}>
                   <div style={{ fontSize: 11, textTransform: "uppercase", letterSpacing: 0.5, color: m.role === "user" ? "#999" : THEME[m.mode ?? "research"].color, fontWeight: 600, marginBottom: 3 }}>
-                    {m.role === "user" ? "You asked" : `${model}${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
+                    {m.role === "user" ? (i === 0 ? "You asked — the first question" : "You asked") : `${model}${m.mode ? ` · ${THEME[m.mode].name}` : ""}`}
                   </div>
                   {m.role === "user" ? (
-                    <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
+                    <>
+                      <div style={{ fontSize: 13.5, color: "#555", lineHeight: 1.5, border: "1px solid #e2ded8", borderLeft: "3px solid #b0a99f", borderRadius: 8, background: "#faf8f6", padding: "8px 10px" }}>{m.content}</div>
+                      {/* make it obvious the (separate) system prompt + briefing is also in play */}
+                      {i === 0 && dataset && <SystemPromptDisclosure datasetId={dataset.serveId ?? dataset.id} model={model} cluster={active} />}
+                    </>
                   ) : (
                     <AgentMessage content={parsed.clean} mode={m.mode} actions={actions} thinking={m.thinking} />
                   )}
