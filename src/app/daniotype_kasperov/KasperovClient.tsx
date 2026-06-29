@@ -244,6 +244,9 @@ export default function KasperovClient() {
   const [usage, setUsage] = useState<Usage>({});
   const [score, setScore] = useState<RunScore>({ verdicts: {}, scoredAt: null, agg: [] });
   const [srvNote, setSrvNote] = useState(""); // transient "Saved to server ✓" message
+  // every stage transition should start at the top of the page (fixes landing
+  // mid-way down "3. Cell Labelling" after Proceed when the picker was scrolled).
+  useEffect(() => { if (typeof window !== "undefined") window.scrollTo(0, 0); }, [stage]);
   const addUsage = useCallback((m: string, inT: number, outT: number) => {
     if (!inT && !outT) return;
     setUsage((u) => ({ ...u, [m]: { in: (u[m]?.in ?? 0) + (inT || 0), out: (u[m]?.out ?? 0) + (outT || 0) } }));
@@ -504,16 +507,17 @@ export default function KasperovClient() {
   // ⚖️ Inputs popup resolved → log the first-question judgement + ONE judgement PER
   // personality system prompt the curator critiqued, then START the sweep (the only place
   // the judgement run kicks off).
-  function resolveInputs(notes: { question: string; sys: { research: string; reason: string; archivist: string } }) {
+  function resolveInputs(notes: { question: string; sys: { research: string; reason: string; archivist: string; briefing: string } }) {
     const im = inputsModal;
     if (im) {
       const recs: Judgement[] = [];
       const ts = new Date().toISOString();
       const I = im.data?.instructions ?? {};
+      const excerptFor: Record<string, string> = { research: `[Researcher system prompt] ` + String(I.research ?? "").slice(0, 560), reason: `[Reasoner system prompt] ` + String(I.reason ?? "").slice(0, 560), archivist: `[Archivist system prompt] ` + String(I.archivist ?? "").slice(0, 560), briefing: `[Briefing & background] ` + String(im.data?.rawFacts ?? im.data?.personasContext ?? "").slice(0, 560) };
       if (notes.question.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "first_prompt", content_excerpt: im.firstPrompt.slice(0, 600), note: notes.question.trim(), ts });
-      ([["research", "Researcher"], ["reason", "Reasoner"], ["archivist", "Archivist"]] as const).forEach(([k, who]) => {
+      (["research", "reason", "archivist", "briefing"] as const).forEach((k) => {
         const n = notes.sys[k]?.trim();
-        if (n) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: `[${who} system prompt] ` + String(I[k] ?? "").slice(0, 560), note: n, ts });
+        if (n) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: excerptFor[k], note: n, ts });
       });
       if (recs.length) setJudgements((prev) => [...prev, ...recs]);
     }
@@ -718,6 +722,7 @@ export default function KasperovClient() {
       judgementMode={judgementMode}
       addJudgement={(j: Judgement) => setJudgements((prev) => [...prev, j])}
       nJudgements={judgements.length}
+      judgements={judgements}
       onLogJudgements={saveRunToServer}
       labels={labels}
       onLabel={setLabel}
@@ -1246,42 +1251,44 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
   const secHead: React.CSSProperties = { fontSize: 22, fontWeight: 700, margin: "8px 0 4px" };
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
-      <div style={{ maxWidth: 920, padding: "72px 28px 60px", width: "100%" }}>
-        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 20, padding: "7px 13px", fontSize: 13 }}>← 1. Clustering</button>
+      <div style={{ maxWidth: 1160, padding: "56px 28px 56px", width: "100%" }}>
+        <button onClick={onBack} style={{ ...btnGhost, marginBottom: 16, padding: "7px 13px", fontSize: 13 }}>← 1. Clustering</button>
         <div style={{ fontSize: 13, letterSpacing: 2, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>daniotype · kasperov · {dataset.name}</div>
-        <h1 style={{ fontSize: 38, fontWeight: 700, margin: "10px 0 6px", lineHeight: 1.1 }}>2. Model &amp; Harness</h1>
-        <p style={{ fontSize: 16.5, color: "#555", lineHeight: 1.55, margin: "0 0 26px", maxWidth: 720 }}>
+        <h1 style={{ fontSize: 34, fontWeight: 700, margin: "8px 0 4px", lineHeight: 1.1 }}>2. Model &amp; Harness</h1>
+        <p style={{ fontSize: 15.5, color: "#555", lineHeight: 1.5, margin: "0 0 20px", maxWidth: 760 }}>
           Choose the <strong>model</strong> that drives every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules. Both are recorded in the saved run.
         </p>
 
         <h2 style={secHead}>Model</h2>
-        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>{dataset.id === "zscape"
+        <p style={{ fontSize: 13, color: "#777", margin: "0 0 10px" }}>{dataset.id === "zscape"
           ? <>Cost is a rough projection across the current {dataset.name} partition (~{n} clusters); the partition is being re-cut, so this will shift. You can switch models later on the world map.</>
           : <>Cost is a rough projection for labelling all ~{n} {dataset.name} clusters; you can switch models later on the world map.</>}</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(260px, 1fr))", gap: 14 }}>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 12 }}>
           {KASPEROV_MODELS.map((m) => {
             const info = modelInfo(m); const cost = projectRunCost(m, n); const selected = m === model;
             const tierColor = info.tier === "base" ? "#15803d" : info.tier === "mini" ? ACCENT : "#a16207";
             return (
-              <button key={m} onClick={() => setModel(m)} style={{ textAlign: "left", background: selected ? "#eef7f9" : "#fffdfb", border: `1px solid ${selected ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${tierColor}`, borderRadius: 12, padding: "16px 18px 18px", cursor: "pointer", color: INK, display: "flex", flexDirection: "column", gap: 7, minHeight: 184 }}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 18, fontWeight: 700 }}>{m}</span>
-                  {selected && <span style={{ fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "2px 8px" }}>selected</span>}
-                  <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: tierColor, background: `${tierColor}1a`, borderRadius: 99, padding: "2px 8px" }}>{info.tierLabel}</span>
+              <button key={m} onClick={() => setModel(m)} style={{ textAlign: "left", background: selected ? "#eef7f9" : "#fffdfb", border: `1px solid ${selected ? ACCENT : "#e5e1dc"}`, borderTop: `3px solid ${tierColor}`, borderRadius: 11, padding: "11px 14px 12px", cursor: "pointer", color: INK, display: "flex", flexDirection: "column", gap: 4, minHeight: 124 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+                  <span style={{ fontSize: 15.5, fontWeight: 700 }}>{m}</span>
+                  {selected && <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: ACCENT, background: "#dbeef2", borderRadius: 99, padding: "1px 7px" }}>selected</span>}
+                  <span style={{ marginLeft: "auto", fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: tierColor, background: `${tierColor}1a`, borderRadius: 99, padding: "1px 7px" }}>{info.tierLabel}</span>
                 </div>
-                <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>{info.strength}</div>
-                <div style={{ marginTop: "auto", paddingTop: 8, display: "flex", alignItems: "baseline", gap: 6 }}>
-                  <span style={{ fontSize: 22, fontWeight: 800, color: tierColor, fontVariantNumeric: "tabular-nums" }}>~${cost.toFixed(2)}</span>
-                  <span style={{ fontSize: 12, color: "#999" }}>est. full run ({n} clusters)</span>
+                <div style={{ fontSize: 12, color: "#555", lineHeight: 1.45 }}>{info.strength}</div>
+                <div style={{ marginTop: "auto", paddingTop: 5, display: "flex", alignItems: "baseline", gap: 6 }}>
+                  <span style={{ fontSize: 17, fontWeight: 800, color: tierColor, fontVariantNumeric: "tabular-nums" }}>~${cost.toFixed(2)}</span>
+                  <span style={{ fontSize: 11, color: "#999" }}>est. full run ({n})</span>
                 </div>
               </button>
             );
           })}
         </div>
 
-        <h2 style={{ ...secHead, marginTop: 34 }}>Harness</h2>
-        <p style={{ fontSize: 13.5, color: "#777", margin: "0 0 14px" }}>The labelling loop + grounding rules. Each version is stamped and carries its verification history on the ground-truth atlases.</p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 16 }}>
+        <h2 style={{ ...secHead, marginTop: 24 }}>Harness</h2>
+        <p style={{ fontSize: 13, color: "#777", margin: "0 0 12px" }}>Pick the labelling loop on the left; its three personalities are on the right. Each version is stamped and carries its verification history.</p>
+        <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+          {/* LEFT — harness options as a column */}
+          <div style={{ flex: "1 1 320px", minWidth: 300, maxWidth: 420, display: "flex", flexDirection: "column", gap: 12 }}>
           {harnesses.map((h) => {
             const sel = harness?.id === h.id; const v = h.verification || {}; const prov = v.provenance || {};
             return (
@@ -1314,13 +1321,14 @@ function ModelHarnessPicker({ dataset, registry, currentModel, currentHarness, o
               </button>
             );
           })}
+          </div>
+          {/* RIGHT — the three personalities of the selected harness */}
+          <div style={{ flex: "1 1 480px", minWidth: 320 }}>
+            <HarnessDetail harness={harness} />
+          </div>
         </div>
 
-        <div style={{ marginTop: 18 }}>
-          <HarnessDetail harness={harness} />
-        </div>
-
-        <div style={{ marginTop: 32 }}>
+        <div style={{ marginTop: 28 }}>
           <button onClick={() => model && harness && onProceed(model, harness)} disabled={!model || !harness} style={{ background: model && harness ? ACCENT : "#cdd5cf", color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 700, cursor: model && harness ? "pointer" : "not-allowed" }}>
             Proceed to 3. Cell Labelling →
           </button>
@@ -1644,17 +1652,17 @@ function SystemPromptDisclosure({ datasetId, model, cluster }: { datasetId: stri
 // literal first question ("You asked"), and (2) the system prompt + briefing it always
 // carries — organised into collapsible, rich-text sections. The sweep starts only on a
 // button click.
-function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string }; onResolve: (notes: { question: string; sys: { research: string; reason: string; archivist: string } }) => void }) {
+function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string }; onResolve: (notes: { question: string; sys: { research: string; reason: string; archivist: string; briefing: string } }) => void }) {
   const [qNote, setQNote] = useState("");
-  const [sys, setSys] = useState({ research: "", reason: "", archivist: "" });
-  const setSysNote = (k: "research" | "reason" | "archivist", v: string) => setSys((s) => ({ ...s, [k]: v }));
+  const [sys, setSys] = useState({ research: "", reason: "", archivist: "", briefing: "" });
+  const setSysNote = (k: "research" | "reason" | "archivist" | "briefing", v: string) => setSys((s) => ({ ...s, [k]: v }));
   const d = modal.data;
   const I = d?.instructions ?? {};
   const cl = d?.cluster ?? {};
   const tools = d?.tools ?? {};
   const len = (s?: string) => (s ? `${s.length.toLocaleString()} chars` : undefined);
-  const anyNote = qNote.trim() || sys.research.trim() || sys.reason.trim() || sys.archivist.trim();
-  const summary = [qNote.trim() && "first question", sys.research.trim() && "Researcher", sys.reason.trim() && "Reasoner", sys.archivist.trim() && "Archivist"].filter(Boolean).join(" + ");
+  const anyNote = qNote.trim() || sys.research.trim() || sys.reason.trim() || sys.archivist.trim() || sys.briefing.trim();
+  const summary = [qNote.trim() && "first question", sys.research.trim() && "Researcher", sys.reason.trim() && "Reasoner", sys.archivist.trim() && "Archivist", sys.briefing.trim() && "Briefing"].filter(Boolean).join(" + ");
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 860, width: "100%", maxHeight: "90vh", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
@@ -1716,13 +1724,14 @@ function InputsModal({ modal, onResolve }: { modal: { clusterId: string; cluster
               ["model params", JSON.stringify(d?.modelParams ?? {})],
               ...(d?.notExposed ? [["not exposed", String(d.notExposed)] as [string, React.ReactNode]] : []),
             ]} />
+            <NoteField label="⚖️ Judge the briefing & background" hint="Anything in the markers / cluster object / raw facts / tools that's wrong, missing, or would mislead?" value={sys.briefing} onChange={(v) => setSysNote("briefing", v)} />
           </Collapsible>
         </div>
 
         {/* fixed footer */}
         <div style={{ display: "flex", gap: 10, padding: "12px 22px", borderTop: "1px solid #eee7df", justifyContent: "flex-end", alignItems: "center" }}>
           <div style={{ fontSize: 11, color: "#9a938a", marginRight: "auto" }}>{summary || "no notes yet"}</div>
-          <button onClick={() => onResolve({ question: "", sys: { research: "", reason: "", archivist: "" } })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
+          <button onClick={() => onResolve({ question: "", sys: { research: "", reason: "", archivist: "", briefing: "" } })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
           <button onClick={() => onResolve({ question: qNote, sys })} disabled={modal.loading || !anyNote} style={{ background: !modal.loading && anyNote ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && anyNote ? "pointer" : "default" }}>Add notes + continue →</button>
         </div>
       </div>
@@ -1747,16 +1756,20 @@ function JudgePanelContent({
   nLogged,
   onResolve,
   onEndAndLog,
+  onHome,
   logged,
+  height,
 }: {
-  pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null;
+  pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null;
   liveMode: AgentMode;
   streaming: boolean;
   autoRunning: boolean;
   nLogged: number;
   onResolve: (note: string) => void;
   onEndAndLog: () => void;
+  onHome: () => void;
   logged: number | null;
+  height?: number;
 }) {
   const [v, setV] = useState("");
   // reset the note whenever the gated step changes, so a note never bleeds across steps
@@ -1765,7 +1778,7 @@ function JudgePanelContent({
 
   const tagBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" };
 
-  // ── after "End run & log judgements" — the clear confirmation ──
+  // ── after "Submit judgements & finish" — the clear confirmation + exit ──
   if (logged != null) {
     return (
       <div style={{ paddingTop: 4 }}>
@@ -1774,6 +1787,7 @@ function JudgePanelContent({
         <div style={{ marginTop: 8, fontSize: 12.5, color: "#4a443c", lineHeight: 1.6 }}>
           Your <b>{logged} judgement{logged === 1 ? "" : "s"}</b> have been saved and will be <b>integrated to refine the behaviour of the three-personality chat</b> for future runs. Thank you — this is exactly the signal that improves the system.
         </div>
+        <button onClick={onHome} style={{ marginTop: 16, background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>← Back to home</button>
       </div>
     );
   }
@@ -1787,7 +1801,7 @@ function JudgePanelContent({
         <div style={{ marginTop: 10 }}>
           {autoRunning || streaming
             ? <>The run is going{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This box will pause on the next step so you can leave a note.</>
-            : <>No step is waiting. It updates through Researcher → Reasoner → conclude (the Archivist runs on demand), pausing at each.</>}
+            : <>No step is waiting. It updates through each prompt + Researcher → Reasoner → conclude (the Archivist runs on demand), pausing at each.</>}
         </div>
         <div style={{ marginTop: 12, fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
       </div>
@@ -1796,33 +1810,75 @@ function JudgePanelContent({
     const { who, icon } = judgeStepMeta(pending.mode);
     const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
     const renderMode: AgentMode = pending.mode && (THEME as any)[pending.mode] ? (pending.mode as AgentMode) : "reason";
+    const isPrompt = pending.kind === "prompt";
     body = (
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{icon} {who} · step {pending.stepIndex}</span>
+          <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{isPrompt ? `↳ prompt → ${who}` : `${icon} ${who}`} · step {pending.stepIndex}</span>
           <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
         </div>
-        <div style={{ fontSize: 11.5, color: "#666" }}>Critique what {who} produced, or continue.</div>
-        <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", maxHeight: 280, overflow: "auto" }}>
-          <RichMD mode={renderMode}>{stripFences(pending.full) || pending.excerpt}</RichMD>
+        <div style={{ fontSize: 11.5, color: "#666" }}>{isPrompt ? `Critique the prompt about to be sent to the ${who}, or continue.` : `Critique what the ${who} produced, or continue.`}</div>
+        <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", flex: 1, minHeight: 60, overflow: "auto" }}>
+          <RichMD mode={renderMode}>{(isPrompt ? pending.full : stripFences(pending.full)) || pending.excerpt}</RichMD>
         </div>
-        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={4} placeholder="What's right/wrong about this step? (optional)"
-          style={{ width: "100%", boxSizing: "border-box", minHeight: 76, border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit" }}
+        <textarea value={v} onChange={(e) => setV(e.target.value)} autoFocus rows={3} placeholder={isPrompt ? "What's right/wrong about this prompt? (optional)" : "What's right/wrong about this step? (optional)"}
+          style={{ width: "100%", boxSizing: "border-box", minHeight: 60, border: "1px solid #e5e1dc", borderRadius: 8, padding: "9px 11px", fontSize: 13, lineHeight: 1.5, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }}
           onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }} />
-        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 8, justifyContent: "flex-end", flexWrap: "wrap", flexShrink: 0 }}>
           <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 12px", fontSize: 12 }}>Continue without adding notes</button>
           <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 12px", fontSize: 12, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
         </div>
-        <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
+        <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right", flexShrink: 0 }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
       </div>
     );
   }
 
+  // content expands to fill the box (vertical + horizontal) as the user resizes it
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4 }}>
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, paddingTop: 4, height: height && height > 40 ? height : undefined, minHeight: 0 }}>
       {body}
-      {/* always available — end the run at any point and log every judgement so far */}
-      <button onClick={onEndAndLog} style={{ background: "#fff", border: "1.5px solid #15803d", color: "#15803d", borderRadius: 8, padding: "8px 12px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>■ End run &amp; log judgements</button>
+      {/* always available — end the run at any point. Red/dangerous, not full-width. */}
+      <div style={{ flexShrink: 0 }}>
+        <button onClick={onEndAndLog} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 8, padding: "8px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>■ End run &amp; log judgements</button>
+      </div>
+    </div>
+  );
+}
+
+// ⚖️ Review-before-submit popup for the judgement run — summarises every judgement logged
+// so far, with the choice to go back to the editor or submit + finish.
+function JudgeSummaryModal({ judgements, onBack, onSubmit }: { judgements: Judgement[]; onBack: () => void; onSubmit: () => void }) {
+  const n = judgements.length;
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+      <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 680, width: "100%", maxHeight: "88vh", display: "flex", flexDirection: "column", boxShadow: "0 10px 40px rgba(0,0,0,0.3)" }}>
+        <div style={{ padding: "18px 22px 12px", borderBottom: "1px solid #eee7df" }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>⚖️ Review judgements before submitting</div>
+          <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 2px" }}>{n} judgement{n === 1 ? "" : "s"} to submit</div>
+          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>These are the notes you've logged this run. <b>Submitting ends the run</b> and sends them to Steven to refine the three-personality chat. Or go back and keep editing.</div>
+        </div>
+        <div style={{ flex: 1, overflow: "auto", padding: "10px 22px 14px" }}>
+          {n === 0 ? (
+            <div style={{ color: "#9a938a", fontSize: 13, padding: "20px 0", textAlign: "center" }}>No judgement notes logged yet — go back to add some, or submit an empty run.</div>
+          ) : judgements.map((j, i) => {
+            const meta = judgeStepMeta(j.mode);
+            return (
+              <div key={i} style={{ border: "1px solid #eee7df", borderRadius: 9, padding: "9px 11px", marginBottom: 8, background: "#fff" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap", fontSize: 11 }}>
+                  <span style={{ fontWeight: 800, color: "#7c3aed" }}>{meta.icon} {meta.who}</span>
+                  <span style={{ color: "#9a938a" }}>{j.cluster_label} · step {j.step_index}</span>
+                </div>
+                {j.content_excerpt ? <div style={{ fontSize: 10.5, color: "#9a938a", margin: "4px 0 0", fontStyle: "italic" }}>re: {j.content_excerpt.slice(0, 120)}{j.content_excerpt.length > 120 ? "…" : ""}</div> : null}
+                <div style={{ fontSize: 12.5, color: "#2a2620", lineHeight: 1.5, whiteSpace: "pre-wrap", marginTop: 4 }}>{j.note}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div style={{ display: "flex", gap: 10, padding: "12px 22px", borderTop: "1px solid #eee7df", justifyContent: "flex-end" }}>
+          <button onClick={onBack} style={{ ...btnGhost, padding: "9px 18px", fontSize: 13.5 }}>← Back to editor</button>
+          <button onClick={onSubmit} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>Submit judgements &amp; finish →</button>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1892,8 +1948,8 @@ function ClusteringExplainer() {
 function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
   const n = nLeaves && nLeaves > 0 ? nLeaves : 250;
   return (
-    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px", maxWidth: 760, margin: "12px auto 0", textAlign: "left" }}>
-      <p style={{ fontSize: 15.5, lineHeight: 1.7, color: "#33312e", margin: 0 }}>
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "11px 16px", maxWidth: 820, margin: "8px auto 0", textAlign: "left" }}>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#33312e", margin: 0 }}>
         ZSCAPE is clustered in <b>two recursive stages</b>. First, all <b>~813,000 cells from the 48-hour stage</b>{" "}
         (a single developmental age, so young and old cells are never blended) are grouped into a handful of broad{" "}
         <b>compartments</b>. Then the method goes <b>inside each compartment and recomputes which genes vary most locally</b>{" "}
@@ -2097,7 +2153,7 @@ function MapStage({
 
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK }}>
-      <div style={{ maxWidth: 1056, margin: "0 auto", padding: "28px 24px 60px", textAlign: "center" }}>
+      <div style={{ maxWidth: 1056, margin: "0 auto", padding: revealed ? "28px 24px 60px" : "16px 24px 24px", textAlign: "center" }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, position: "relative" }}>
           <button onClick={onSwitchDataset} style={{ ...btnGhost, position: "absolute", left: 0, padding: "6px 12px", fontSize: 12.5 }}>← Datasets</button>
           <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
@@ -2118,7 +2174,7 @@ function MapStage({
             </span>
           </div>
         ) : null}
-        <h2 style={{ fontSize: 26, fontWeight: 700, margin: "6px 0 2px" }}>{revealed ? "3. Cell Labelling" : "1. Clustering"}</h2>
+        <h2 style={{ fontSize: revealed ? 26 : 23, fontWeight: 700, margin: revealed ? "6px 0 2px" : "2px 0 2px" }}>{revealed ? "3. Cell Labelling" : "1. Clustering"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
             ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
@@ -2127,7 +2183,7 @@ function MapStage({
             : `Coming at ${dataset.name} fresh — here's how the cells get grouped into clusters.`}
         </p>
         {/* methodology note — why this many cells, and that the clustering is ours, not the authors' */}
-        <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: 18, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
+        <p style={{ color: "#9a948c", fontSize: 12.5, marginTop: 0, marginBottom: revealed ? 18 : 8, lineHeight: 1.5, maxWidth: 720, marginLeft: "auto", marginRight: "auto" }}>
           {sampled
             ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.`
             : ""}
@@ -2169,7 +2225,7 @@ function MapStage({
         )}
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={size.w} height={size.h} onPick={revealed ? onPick : undefined} />
+          <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
         </div>
         {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
           <div style={{ maxWidth: 720, margin: "4px auto 14px", textAlign: "left" }}>
@@ -2205,14 +2261,14 @@ function MapStage({
             <strong>📝 Run note:</strong> {loadedNote}
           </div>
         )}
-        <div style={{ marginTop: 20 }}>
+        <div style={{ marginTop: revealed ? 20 : 12 }}>
           {!revealed ? (
             dataset.partitions ? null : clusteringConfirmed ? (
-              <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: "pointer" }}>
+              <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 600, cursor: "pointer" }}>
                 Set up model &amp; harness →
               </button>
             ) : (
-              <button onClick={onConfirmClustering} style={{ background: THEME.research.color, color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 700, cursor: "pointer" }}>
+              <button onClick={onConfirmClustering} style={{ background: THEME.research.color, color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>
                 Good to proceed — apply this clustering →
               </button>
             )
@@ -2695,6 +2751,7 @@ function ClusterStage({
   judgementMode,
   addJudgement,
   nJudgements,
+  judgements,
   onLogJudgements,
   labels,
   onLabel,
@@ -2721,6 +2778,7 @@ function ClusterStage({
   judgementMode: boolean;
   addJudgement: (j: Judgement) => void;
   nJudgements: number;
+  judgements: Judgement[];
   onLogJudgements: () => Promise<void> | void;
   autoStart: number;
   labels: Record<string, string>;
@@ -2784,30 +2842,33 @@ function ClusterStage({
   useEffect(() => { judgeModeRef.current = judgementMode; }, [judgementMode]);
   // `full` carries the complete step content for the persistent panel to
   // display + scroll; `excerpt` is the trimmed copy stored on the logged record.
-  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null>(null);
+  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null>(null);
   const judgeResolve = useRef<(() => void) | null>(null);
   const judgeStepRef = useRef<Record<string, number>>({}); // gated-step ordinal per cluster
   // pause after a step; resolves when OK / Submit+Continue is clicked (or the sweep aborts).
-  function judgeGate(cl: Cluster, mode: AgentMode | "inputs", content: string): Promise<void> {
+  function judgeGate(cl: Cluster, mode: AgentMode | "inputs", content: string, kind: "output" | "prompt" = "output"): Promise<void> {
     if (!judgeModeRef.current) return Promise.resolve();
     const stepIndex = (judgeStepRef.current[cl.id] = (judgeStepRef.current[cl.id] ?? -1) + 1);
     const full = (content || "").trim();
-    // for personality steps, strip fenced blocks from the logged excerpt (as before);
-    // for the Inputs step the content IS the assembled prompts, so keep it intact.
-    const excerpt = (mode === "inputs" ? full : full.replace(/```[\s\S]*?```/g, " ").replace(/\s+/g, " ").trim()).slice(0, 600);
+    // for personality OUTPUTS strip fenced blocks from the logged excerpt; for a prompt
+    // step (a "You asked" message) or the Inputs step the content is the prompt itself, keep it.
+    const excerpt = (mode === "inputs" || kind === "prompt" ? full : full.replace(/```[\s\S]*?```/g, " ").replace(/\s+/g, " ").trim()).slice(0, 600);
     return new Promise<void>((resolve) => {
       judgeResolve.current = resolve;
-      setPendingJudge({ clusterId: cl.id, clusterLabel: cl.label, stepIndex, mode, excerpt, full });
+      setPendingJudge({ clusterId: cl.id, clusterLabel: cl.label, stepIndex, mode, excerpt, full, kind });
     });
   }
 
   // submit (with optional note) or skip — close the popup and let the sweep continue.
   const [judgeLogged, setJudgeLogged] = useState(0); // notes logged this sweep (panel footer)
-  const [judgeDone, setJudgeDone] = useState<number | null>(null); // set after "End run & log judgements" (# judgements logged)
+  const [judgeDone, setJudgeDone] = useState<number | null>(null); // set after submit (# judgements logged)
+  const [judgeSummaryOpen, setJudgeSummaryOpen] = useState(false); // the "review before submit" popup
   function resolveJudge(note: string) {
     const pj = pendingJudge;
     if (pj && note.trim()) {
-      addJudgement({ cluster_id: pj.clusterId, cluster_label: pj.clusterLabel, step_index: pj.stepIndex, mode: pj.mode, content_excerpt: pj.excerpt, note: note.trim(), ts: new Date().toISOString() });
+      const who = judgeStepMeta(pj.mode).who;
+      const excerpt = pj.kind === "prompt" ? `[prompt to ${who}] ${pj.excerpt}` : pj.excerpt;
+      addJudgement({ cluster_id: pj.clusterId, cluster_label: pj.clusterLabel, step_index: pj.stepIndex, mode: pj.mode, content_excerpt: excerpt, note: note.trim(), ts: new Date().toISOString() });
       setJudgeLogged((n) => n + 1);
     }
     setPendingJudge(null);
@@ -3205,8 +3266,12 @@ function ClusterStage({
       }
       for (const d of dispatches) {
         if (autoAbort.current) return;
+        // gate the "You asked" follow-up PROMPT before it's sent (a judgeable step of its own)…
+        await judgeGate(cl, d.to, d.prompt, "prompt");
+        if (autoAbort.current) return;
         conv = await autoStream(cl, [...conv, { role: "user", content: d.prompt }], d.to);
         added = autoAddMarkers(cl, conv[conv.length - 1].content, d.to);
+        // …then gate the personality's OUTPUT.
         await judgeGate(cl, d.to, conv[conv.length - 1].content);
         if (autoAbort.current) return;
       }
@@ -3222,6 +3287,7 @@ function ClusterStage({
     judgeStepRef.current = {}; // fresh gated-step ordinals for this sweep
     setJudgeLogged(0);
     setJudgeDone(null); // clear any prior "logged" confirmation for the fresh run
+    setJudgeSummaryOpen(false);
     setAutoReport(null);
     // auto-detect & skip clusters that already have a cell-type label (= done).
     // NB: keyed off labels, not `validated` — a cluster can be validated by hand
@@ -3274,10 +3340,12 @@ function ClusterStage({
     if (pendingJudge) { setPendingJudge(null); const r = judgeResolve.current; judgeResolve.current = null; if (r) r(); }
   }
 
-  // ⚖️ End run & log judgements — stop the sweep AND persist the run (with all judgements
-  // so far) to the server store, then show the clear "logged / Steven notified" confirmation.
+  // ⚖️ Submit judgements & finish — confirmed from the review popup: stop the sweep,
+  // persist the run (with all judgements) to the server store, then show the clear
+  // "logged / Steven notified" confirmation with the back-to-home exit.
   async function endRunAndLog() {
     const n = nJudgements;
+    setJudgeSummaryOpen(false);
     stopAutopilot();
     try { await onLogJudgements(); } catch (e) { console.warn("[judgement] log failed:", e); }
     setJudgeDone(n);
@@ -3300,6 +3368,7 @@ function ClusterStage({
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
       {/* per-step critique is captured in the persistent draggable JUDGEMENT box (below),
           not a modal — the box live-updates and pauses at each personality's turn. */}
+      {judgeSummaryOpen && <JudgeSummaryModal judgements={judgements} onBack={() => setJudgeSummaryOpen(false)} onSubmit={endRunAndLog} />}
       <style>{`
         @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
@@ -3406,8 +3475,10 @@ function ClusterStage({
                   autoRunning={auto.running}
                   nLogged={judgeLogged}
                   onResolve={resolveJudge}
-                  onEndAndLog={endRunAndLog}
+                  onEndAndLog={() => setJudgeSummaryOpen(true)}
+                  onHome={onBack}
                   logged={judgeDone}
+                  height={h}
                 />
               )}
             </DraggablePanel>
