@@ -1855,7 +1855,7 @@ function JudgeSummaryModal({ judgements, onBack, onSubmit }: { judgements: Judge
         <div style={{ padding: "18px 22px 12px", borderBottom: "1px solid #eee7df" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>⚖️ Review judgements before submitting</div>
           <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 2px" }}>{n} judgement{n === 1 ? "" : "s"} to submit</div>
-          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>These are the notes you've logged this run. <b>Submitting ends the run</b> and sends them to Steven to refine the three-personality chat. Or go back and keep editing.</div>
+          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>These are the notes you&apos;ve logged this run. <b>Submitting ends the run</b> and sends them to Steven to refine the three-personality chat. Or go back and keep editing.</div>
         </div>
         <div style={{ flex: 1, overflow: "auto", padding: "10px 22px 14px" }}>
           {n === 0 ? (
