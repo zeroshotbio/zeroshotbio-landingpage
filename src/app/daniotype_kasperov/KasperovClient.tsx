@@ -892,16 +892,6 @@ function RunListModal({ dataset, onView, onClose }: { dataset: DatasetDef; onVie
   );
 }
 
-function tierTip(label: string): string {
-  const t = label.toLowerCase();
-  const base = " The % is how often our blind label agrees with the authors' published label at this tier, judged by meaning (synonyms, ontology parent–child and lineage equivalence all count), not exact text.";
-  if (t.includes("germ")) return "Germ layer is the coarsest identity — ectoderm, mesoderm or endoderm, the embryo's three founding lineages." + base;
-  if (t.includes("tissue")) return "Tissue is a mid-level identity such as muscle, blood or neural." + base;
-  if (t.includes("broad")) return "Cell type (broad) is a coarse cell-type name like 'neuron' or 'muscle cell'." + base;
-  if (t.includes("sub")) return "Cell type (sub) is the finest tier — a specific subtype like 'fast muscle cell', the hardest tier." + base;
-  return base.trim();
-}
-
 // Hover tooltip wrapper — wraps any inline element and shows its explanation on hover.
 function Tip({ text, children, style, block }: { text?: string; children: React.ReactNode; style?: React.CSSProperties; block?: boolean }) {
   const [show, setShow] = useState(false);
@@ -916,174 +906,6 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
   );
 }
 
-// Tone palette shared by the stat readouts.
-const TILE_TONE: Record<string, { fg: string; bg: string; bd: string }> = {
-  neutral: { fg: "#3f3a34", bg: "#ffffff", bd: "#ece8e2" },
-  good: { fg: "#15803d", bg: "#f0fdf4", bd: "#d6e8db" },
-  warn: { fg: "#b45309", bg: "#fffbeb", bd: "#fde68a" },
-  bad: { fg: "#dc2626", bg: "#fef2f2", bd: "#fecaca" },
-  accent: { fg: "#0e7490", bg: "#ecfeff", bd: "#cbeef4" },
-};
-
-// One itemized stat, listed vertically: a large prominent value + a label, with
-// its own hover explanation. The building block for the card readouts.
-function StatRow({ value, label, info, tone = "neutral", valueWidth = 58 }: { value: string; label: string; info?: string; tone?: string; valueWidth?: number }) {
-  const [show, setShow] = useState(false);
-  const c = TILE_TONE[tone] || TILE_TONE.neutral;
-  return (
-    <div onMouseEnter={() => info && setShow(true)} onMouseLeave={() => setShow(false)} style={{ position: "relative", display: "flex", alignItems: "baseline", gap: 9, padding: "3px 0", borderBottom: "1px solid #efeae3", cursor: info ? "help" : "default" }}>
-      <span style={{ fontSize: 18, fontWeight: 800, lineHeight: 1.05, color: c.fg, minWidth: valueWidth, flexShrink: 0 }}>{value}</span>
-      <span style={{ fontSize: 10.5, color: "#6b655d", lineHeight: 1.25, borderBottom: info ? "1px dotted #d8d2c9" : "none" }}>{label}</span>
-      {info && show && (
-        <span style={{ position: "absolute", bottom: "calc(100% + 7px)", left: 0, zIndex: 60, width: 232, background: "#1f2937", color: "#eef1f4", fontSize: 11, fontWeight: 400, lineHeight: 1.5, textAlign: "left", padding: "9px 11px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.28)", pointerEvents: "none" }}>{info}</span>
-      )}
-    </div>
-  );
-}
-
-// Section label that carries its own hover explanation (dotted underline hints it).
-function SecLabel({ children, info }: { children: React.ReactNode; info?: string }) {
-  return (
-    <Tip text={info} style={{ alignSelf: "flex-start" }}>
-      <span style={{ ...CARD_SECLABEL, borderBottom: info ? "1px dotted #cfc8bf" : "none" }}>{children}</span>
-    </Tip>
-  );
-}
-
-// Body for the GROUND-TRUTH dataset cards: a prominent vertical accuracy-by-tier
-// list · a by-cluster-size mini bar chart + abstention · notes. Every figure
-// explains itself on hover.
-// Provenance footer — compact stamp line + ⓘ explainer, driven by f.provenance.
-// Self-hides when absent; partitionId chip only renders for a real (non-TODO) hash;
-// copy never claims the card verified the hash.
-function ProvFooter({ f, gt }: { f?: any; gt?: boolean }) {
-  const p = f?.provenance;
-  if (!p) return null;
-  const isTodoRun = String(p.labellingRunId || "").startsWith("TODO");
-  const hv = p.harness && typeof p.harness === "object" ? `harness v${p.harness.version}` : null;
-  const pid = typeof p.partitionId === "string" && !p.partitionId.startsWith("TODO") ? p.partitionId : null;
-  return (
-    <div style={{ flexBasis: "100%", borderTop: "1px solid #ece8e2", marginTop: 4, paddingTop: 8, display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", fontSize: 10, color: "#8a847c" }}>
-      <Tip text={TIPS.provRun}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>
-        {isTodoRun ? "run · not recorded" : <>run <span style={{ fontFamily: "ui-monospace, monospace", color: "#7a746c" }}>{p.labellingRunId}</span></>}
-        {p.model ? ` · ${p.model}` : ""}{hv ? ` · ${hv}` : ""}
-      </span></Tip>
-      <Tip text={TIPS[p.originTip] ?? TIPS.provOwnEmbed}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>{p.clusteringOrigin}</span></Tip>
-      {Array.isArray(p.groundingOntologies) && p.groundingOntologies.length ? <span>grounded via {p.groundingOntologies.join(" · ")}</span> : null}
-      <Tip text={gt ? TIPS.provGtScores : TIPS.provNoGtScores}><span style={{ borderBottom: "1px dotted #cfc8bf" }}>ⓘ how to read</span></Tip>
-      {pid ? <Tip text={TIPS.provPartitionId}><span style={{ fontFamily: "ui-monospace, monospace", color: "#b0a89e", borderBottom: "1px dotted #cfc8bf" }}>partition {pid.slice(0, 12)}…</span></Tip> : null}
-    </div>
-  );
-}
-
-function GtBody({ sc }: { sc: any }) {
-  const indep = sc.platform_class === "independent";
-  const tierTone = (p: number) => (p >= 70 ? "good" : p >= 45 ? "warn" : "bad");
-  const prettyTier = (l: string) => l.replace("Cell type — ", "Cell type · ");
-  return (
-    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 14px", display: "flex", flexDirection: "column", gap: 10 }}>
-      <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <Tip text={TIPS.benchmark}><span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", borderBottom: "1px dotted #cfc8bf" }}>Native-schema benchmark</span></Tip>
-        <Tip text={indep ? TIPS.independent : TIPS.inParadigm} style={{ marginLeft: "auto" }}><span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: indep ? "#7c3aed" : "#475569", background: indep ? "#f3e8ff" : "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>{indep ? "independent · cross-platform" : "in-paradigm"}</span></Tip>
-      </div>
-      {/* bare essentials — accuracy per native tier (latest scored run) */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 22, rowGap: 8 }}>
-        {sc.tiers.map((t: any, i: number) => {
-          const c = TILE_TONE[tierTone(t.pct)];
-          return (
-            <Tip key={i} text={tierTip(t.label)}>
-              <div style={{ display: "flex", flexDirection: "column", gap: 2 }}>
-                <span style={{ fontSize: 9.5, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: "#9a948c" }}>{prettyTier(t.label)}</span>
-                <span style={{ fontSize: 22, fontWeight: 800, color: c.fg, lineHeight: 1 }}>{t.pct}%</span>
-              </div>
-            </Tip>
-          );
-        })}
-      </div>
-      <div style={{ fontSize: 10.5, color: "#9a948c", lineHeight: 1.4 }}>Our blind labels scored against the authors&apos; published labels{sc.abstention?.n ? ` · ${sc.abstention.n} abstained` : ""}.</div>
-    </div>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Body for the internal (no-GT) dataset cards. Same fixed section set —
-// Coverage & grounding · Experimental design · Clustering · Consistency — as
-// horizontal columns, with the figures listed vertically as prominent StatRows
-// (each section self-hides when its data is absent), so Manual MegaFin, Parse
-// MegaFin and MiniFin read the same way.
-// ---------------------------------------------------------------------------
-function NoGtBody({ f }: { f: any }) {
-  const ng = f.noGtScorecard;
-  const cs = ng?.consistency;
-  const pcs = ng?.processingConsistency;
-  const chosen = (f.sweep || []).find((s: any) => s.chosen);
-  const coh = typeof f.coherence === "number" ? f.coherence : chosen?.coherence;
-  const sections = [
-    ng && { label: "Coverage & grounding", info: TIPS.coverageSection, node: (
-      <div style={{ display: "flex", flexDirection: "column" }}>
-        <StatRow value={`${ng.coverage.assigned_pct}%`} label="assigned" info={TIPS.coverage} />
-        <StatRow value={`${ng.coverage.abstained}`} label="abstained" info={TIPS.abstain} />
-        <StatRow value={`${ng.grounding_pct}%`} label="grounded" tone="accent" info={TIPS.grounded} />
-        <StatRow value={`${ng.tier_depth.cell_type}`} label="cell-type calls" info={TIPS.tierDepth} />
-        <StatRow value={`${ng.tier_depth.tissue}`} label="tissue-only calls" info={TIPS.tierDepth} />
-      </div>
-    ), extra: ng.abstentionNote ? <div style={{ fontSize: 9, color: "#8a847c", lineHeight: 1.45, marginTop: 5 }}>{ng.abstentionNote}</div> : null },
-    f.designFacts && { label: "Experimental design", info: TIPS.design, node: (
-      <div style={{ display: "grid", gridTemplateColumns: "auto 1fr", gap: "3px 8px", fontSize: 10, lineHeight: 1.4 }}>
-        {Object.entries(f.designFacts).map(([k, v]: any, i: number) => (
-          <React.Fragment key={i}>
-            <span style={{ color: "#a59f96" }}>{k}</span>
-            <span style={{ color: "#5a544c" }}>{v as string}</span>
-          </React.Fragment>
-        ))}
-      </div>
-    ) },
-    { label: "Clustering", info: TIPS.recipe, node: (
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        {typeof coh === "number" && <StatRow value={coh.toFixed(3)} label={`coherence · res ${f.chosenRes}`} tone={coh >= 0.95 ? "good" : "warn"} info={TIPS.coherence} valueWidth={62} />}
-        <div style={{ fontSize: 9, color: "#a59f96", lineHeight: 1.4 }}>{f.recipe}</div>
-        {f.coherenceNote
-          ? <div style={{ fontSize: 9, color: "#b45309", lineHeight: 1.45 }}>⚠ Kept the carried Parse embedding; standard re-embed rejected. Full sweep on the map screen.</div>
-          : f.noGtNote ? <div style={{ fontSize: 9, color: "#8a847c", lineHeight: 1.45 }}>{f.noGtNote}</div> : null}
-      </div>
-    ) },
-    cs && { label: "Consistency vs prior annotation", info: TIPS.consistencyPrior, node: (
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <StatRow value={`${cs.headlinePct}%`} label="lineage agree" info={TIPS.consistencyPrior} />
-          <StatRow value={`${cs.celltypePct}%`} label="cell-type agree" info={TIPS.consistencyCelltype} />
-        </div>
-        <div style={{ fontSize: 9, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{cs.framing}</div>
-        <Tip text={TIPS.adjudicationPrior} block><span style={{ fontSize: 9.5, color: "#5a544c", borderBottom: "1px dotted #d8d2c9" }}>7 hardest: <b style={{ color: "#15803d" }}>{cs.adjudication.prior_error} prior-err</b> · {cs.adjudication.labeler_error} labeler-err · {cs.adjudication.ambiguous} amb</span></Tip>
-      </div>
-    ) },
-    pcs && { label: "Manual ↔ Parse processing-consistency", info: TIPS.processingAligned, node: (
-      <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-        <div style={{ display: "flex", flexDirection: "column" }}>
-          <StatRow value={`${pcs.headlinePct}%`} label="aligned" info={TIPS.processingAligned} />
-          <StatRow value={`${pcs.cellWeightedPct}%`} label="cell-weighted" info={TIPS.processingWeighted} />
-          <StatRow value={`${pcs.allClusterPct}%`} label="all-cluster" info={TIPS.processingWeighted} />
-        </div>
-        <div style={{ fontSize: 9, color: "#b45309", fontStyle: "italic", lineHeight: 1.45 }}>{pcs.framing}</div>
-        <Tip text={TIPS.adjudicationProc} block><span style={{ fontSize: 9.5, color: "#5a544c", borderBottom: "1px dotted #d8d2c9" }}>7 conflicts: <b style={{ color: "#15803d" }}>{pcs.adjudication.parse_better} Parse</b> · {pcs.adjudication.manual_better} Manual · {pcs.adjudication.marker_ceiling} amb</span></Tip>
-      </div>
-    ) },
-  ].filter(Boolean) as { label: string; info?: string; node: React.ReactNode; extra?: React.ReactNode }[];
-
-  return (
-    <div style={{ flex: 1, background: "#faf8f5", border: "1px solid #ece8e2", borderRadius: 9, padding: "11px 14px", color: "#6b655d", display: "flex", flexWrap: "wrap", rowGap: 12 }}>
-      {sections.map((s, i) => (
-        <div key={i} style={{ flex: "1 1 190px", minWidth: 168, borderLeft: i === 0 ? "none" : "1px solid #ece8e2", paddingLeft: i === 0 ? 0 : 14, paddingRight: 14, display: "flex", flexDirection: "column", gap: 6 }}>
-          <SecLabel info={s.info}>{s.label}</SecLabel>
-          {s.node}
-          {s.extra}
-        </div>
-      ))}
-      {f.supersedes && <div style={{ flexBasis: "100%", fontSize: 9.5, color: "#a59f96", fontStyle: "italic" }}>Supersedes the {f.supersedes}.</div>}
-      <ProvFooter f={f} />
-    </div>
-  );
-}
 
 function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void }) {
   return (
@@ -1133,13 +955,6 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
                     {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
-                    {f && (
-                      <Tip text={isGt ? TIPS.gtBadge : TIPS.internalBadge}>
-                        <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: isGt ? "#15803d" : "#475569", background: isGt ? "#dcfce7" : "#eef2f6", borderRadius: 99, padding: "2px 8px" }}>
-                          {isGt ? "✓ GT benchmark" : "internal"}
-                        </span>
-                      </Tip>
-                    )}
                   </div>
                   {ident && (
                     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", fontSize: 11, color: "#555", lineHeight: 1.45 }}>
@@ -1162,10 +977,8 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
                   )}
                 </div>
 
-                {/* content area */}
-                {isGt && f.scorecard && <GtBody sc={f.scorecard} />}
-                {f && !isGt && <NoGtBody f={f} />}
-                {!f && <div style={{ flex: 1, alignSelf: "center", fontSize: 12.5, color: "#777", lineHeight: 1.5 }}>{d.blurb}</div>}
+                {/* content area — a plain high-level summary for every dataset */}
+                <div style={{ flex: 1, alignSelf: "center", fontSize: 13, color: "#5a544c", lineHeight: 1.6 }}>{d.blurb}</div>
               </div>
             );
           };
@@ -1177,16 +990,9 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
           const hdr = { fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase" as const, color: "#3f3a34", fontWeight: 700, margin: "8px 0 12px" };
           return (
             <>
-              <div style={hdr}>Ground-truth benchmarks</div>
+              <div style={hdr}>Atlases with published labels</div>
               <div style={gridStyle}>{gtDs.map(renderCard)}</div>
-              {(DATASET_FACTS as any)._suite?.notes && (
-                <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #ece8e2", fontSize: 11, color: "#9a948c", lineHeight: 1.55 }}>
-                  <span style={{ fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#7a746c" }}>Reading the benchmarks · </span>
-                  {((DATASET_FACTS as any)._suite.notes as string[]).join("  ·  ")}
-                </div>
-              )}
-              <div style={{ ...hdr, marginTop: 38 }}>Internal atlases — coverage &amp; grounding (no GT)</div>
-              <div style={{ fontSize: 12, color: "#7a746c", margin: "-4px 0 14px", lineHeight: 1.5, maxWidth: 720 }}>Coverage and grounding readouts — not accuracy, not comparable to the benchmark figures above.</div>
+              <div style={{ ...hdr, marginTop: 34 }}>Internal atlases</div>
               <div style={gridStyle}>{internalDs.map(renderCard)}</div>
             </>
           );
