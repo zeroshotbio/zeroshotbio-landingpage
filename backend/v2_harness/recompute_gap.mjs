@@ -1,0 +1,14 @@
+import fs from "node:fs";
+import { EXPECTED_TISSUES, ROUTING_RULES } from "./v2_config.mjs";
+const P = "/data/scratch/bench/v2_mvp/zscape_v2_trace.json";
+const t = JSON.parse(fs.readFileSync(P, "utf8"));
+const match = (id) => { const s = (id||"").toLowerCase(); for (const x of EXPECTED_TISSUES) if (x.syn.some(k=>s.includes(k))) return x.tissue; return null; };
+for (const c of t.coarse) c.matchedTissue = match(c.call.identity);
+for (const r of (t.recursion||[])) for (const l of (r.leaves||[])) l.matchedTissue = match(l.call.identity);
+const fm = {}; for (const c of t.coarse) if (c.matchedTissue) (fm[c.matchedTissue] ??= []).push(c.compartmentId);
+t.gap = { found: Object.entries(fm).map(([tissue,comps])=>({tissue,comps})), unfound: EXPECTED_TISSUES.map(x=>x.tissue).filter(x=>!fm[x]) };
+t.meta.gapRecomputed = "matchedTissue + gap recomputed post-run with broadened synonyms (no new inference; LLM calls unchanged).";
+fs.writeFileSync(P, JSON.stringify(t, null, 1));
+console.log("recomputed gap:");
+console.log("  found:", t.gap.found.map(f=>f.tissue+"←"+f.comps.join("/")).join(", "));
+console.log("  unfound:", t.gap.unfound.join(", "));

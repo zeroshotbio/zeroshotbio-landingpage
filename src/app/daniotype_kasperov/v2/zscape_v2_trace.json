@@ -1,0 +1,837 @@
+{
+ "meta": {
+  "dataset": "zscape_recursive (v2 substrate)",
+  "model": "gpt-5.5",
+  "harness": "v2.0 — top-down expectation-guided recursion (MVP)",
+  "note": "Inference via prod gpt-5.5 machinery (Researcher→Archivist→Reasoner) unchanged; only the control flow is new. Coarse markers derived from leaf-marker frequency (MVP). Archivist grounds on provided markers (v2 substrate not in :5007). GT-blind.",
+  "recursionNote": "Routing selected comp:1, comp:5; this bounded MVP executed comp:1 (largest 10 sub-leaves). Others are recorded in routing, not executed.",
+  "finishedAt": "(stamped post-run)",
+  "gapRecomputed": "matchedTissue + gap recomputed post-run with broadened synonyms (no new inference; LLM calls unchanged)."
+ },
+ "expectedTissues": [
+  "epidermis",
+  "muscle",
+  "CNS",
+  "eye",
+  "notochord",
+  "endothelial",
+  "heart",
+  "pharyngeal arch",
+  "liver",
+  "pancreas",
+  "intestine",
+  "blood",
+  "kidney"
+ ],
+ "coarse": [
+  {
+   "compartmentId": "comp:1",
+   "nCells": 26249,
+   "nLeaves": 22,
+   "markers": [
+    "krt4",
+    "cyt1",
+    "cyt1l",
+    "znf185",
+    "si:ch211-125o16.4",
+    "evpla",
+    "CABZ01048956.1",
+    "ppl",
+    "si:ch211-195b11.3",
+    "krtt1c19e",
+    "abca12",
+    "si:cabz01007794.1",
+    "LO017718.1",
+    "krt5"
+   ],
+   "leafIds": [
+    "1.0",
+    "1.1",
+    "1.2",
+    "1.3",
+    "1.4",
+    "1.5",
+    "1.6",
+    "1.7",
+    "1.8",
+    "1.9",
+    "1.10",
+    "1.11",
+    "1.12",
+    "1.13",
+    "1.14",
+    "1.15",
+    "1.16",
+    "1.17",
+    "1.18",
+    "1.19",
+    "1.20",
+    "1.21"
+   ],
+   "turns": [
+    {
+     "mode": "research",
+     "prompt": "TOP-DOWN RECURSIVE LABELLING — COARSE PASS. This is a BROAD coarse compartment (umbrella-level cluster) from the ZSCAPE zebrafish 48 hpf whole-embryo atlas; it likely contains several finer cell types. Name the BROAD germ-layer / tissue UMBRELLA this compartment represents — NOT a fine subtype yet. Top compartment markers: krt4, cyt1, cyt1l, znf185, si:ch211-125o16.4, evpla, CABZ01048956.1, ppl, si:ch211-195b11.3, krtt1c19e, abca12, si:cabz01007794.1, LO017718.1, krt5. Ground each claim (ZFIN/ZFA/GO); if genuinely ambiguous give the deepest defensible umbrella, else abstain.",
+     "text": "**Ectodermal epidermal/skin epithelium umbrella — dominated by embryonic periderm/EVL and basal keratinocyte programs.**\n\n## Evidence\n- **krt4** — keratin/skin-epidermis structural gene; expressed in ectoderm, integument, digestive tract, and periderm-enriched records [record](https://zfin.org/ZDB-GENE-000607-83).\n- **cyt1** — “type I cytokeratin, enveloping layer”; expressed in EVL, epidermis, epithelium, and periderm [record](https://zfin.org/ZDB-GENE-991008-6).\n- **cyt1l** — “type I cytokeratin, enveloping layer, like,” supporting EVL/periderm keratin identity [record](https://zfin.org/ZDB-GENE-061026-4).\n- **krt5** — skin-epidermis structural keratin; expressed in EVL, epidermal cell, integument, oral region, and periderm [record](https://zfin.org/ZDB-GENE-991110-23).\n- **evpla** — plakin/cornified-envelope-associated structural molecule; expressed in EVL, epidermis, and periderm [record](https://zfin.org/ZDB-GENE-030829-19).\n- **ppl** — periplakin; expressed in EVL and periderm, with periderm among top anatomy-associated genes [record](https://zfin.org/ZDB-GENE-041008-196).\n- **abca12** — epidermal morphogenesis/lipid-trafficking gene; expression annotated in EVL and perturbation causes epidermis morphology defects [record](https://zfin.org/ZDB-FIG-111215-44).\n- **krtt1c19e** — expressed in basal epidermal keratinocytes beneath EVL, indicating this broad compartment includes basal epidermis as well as periderm [record](https://www.zfin.org/ZDB-FIG-140403-25).\n- **periderm/EVL anatomy** — periderm is the embryonic outer epidermal layer derived from EVL; EVL is the outer monolayer that gives rise to periderm [record](https://zfin.org/ZFA:0001185), [record](https://zfin.org/ZFA:0000086).\n- **keratin filament GO term** — keratin filaments are epithelial intermediate filaments with characteristic keratin combinations by epithelium [record](https://amigo.geneontology.org/amigo/term/GO:0045095).\n\n## Caveats\n- Coarse cluster likely mixes periderm/EVL and basal epidermal keratinocytes; not a single fine subtype.\n\n**Verdict:** epidermal/skin epithelium, mature — confidence high**\n\n```kasperov-markers\n[{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL cytokeratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like cytokeratin\"},{\"g\":\"krt5\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm plakin\"},{\"g\":\"ppl\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm plakin\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal morphogenesis\"},{\"g\":\"krtt1c19e\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"basal keratinocyte\"}]\n```"
+    },
+    {
+     "mode": "archivist",
+     "prompt": "Report the raw stats you have for this compartment's top markers (krt4, cyt1, cyt1l, znf185, si:ch211-125o16.4, evpla, CABZ01048956.1, ppl, si:ch211-195b11.3, krtt1c19e, abca12, si:cabz01007794.1, LO017718.1, krt5).",
+     "text": "I tried to query the active dataset for the requested marker stats, but the active cluster profile returned an error: **“profile unavailable for this cluster.”**\n\nSo I can’t truthfully report raw log2FC / % in-cluster / % out-cluster values for these markers from the dataset in this session."
+    },
+    {
+     "mode": "reason",
+     "prompt": "Reconcile the reads and CONCLUDE this COARSE pass with a kasperov-conclude block at the UMBRELLA tier (germ layer or tissue; state \"none\"). Assign the umbrella if grounded; abstain only if the markers are genuinely incoherent.",
+     "text": "The reads are coherent at the coarse level despite the missing raw-stat pull: the marker panel is dominated by epithelial keratins and epidermal/periderm structural genes. **cyt1/cyt1l** point strongly to enveloping layer/periderm, **krt4** and **krt5** support epidermal keratinocytes, and **evpla**, **ppl**, and **abca12** fit epidermal barrier/cornified-envelope biology. The presence of **krtt1c19e** suggests the umbrella may include basal epidermal keratinocytes as well as EVL/periderm, so a fine subtype call would be premature. For this coarse recursive pass, the deepest defensible umbrella is therefore **epidermal / skin epithelium**, an ectodermal tissue compartment, with no specific cell state assigned.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[\"krt4\",\"cyt1\",\"cyt1l\",\"krt5\",\"evpla\",\"ppl\",\"abca12\",\"krtt1c19e\"],\"decision\":\"assign\",\"confidence\":90,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"krt5\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal plakin\"},{\"g\":\"ppl\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm plakin\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal barrier\"},{\"g\":\"krtt1c19e\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"basal keratinocyte\"}]\n```"
+    }
+   ],
+   "call": {
+    "identity": "epidermal / skin epithelium",
+    "tier": "tissue",
+    "decision": "assign",
+    "confidence": 90
+   },
+   "matchedTissue": "epidermis"
+  },
+  {
+   "compartmentId": "comp:3",
+   "nCells": 1904,
+   "nLeaves": 8,
+   "markers": [
+    "smyhc1",
+    "ryr1a",
+    "myl10",
+    "tnnt2d",
+    "tpm2",
+    "myh7bb",
+    "mybpc3",
+    "myl13",
+    "pvalb4",
+    "tnnt2e",
+    "tnni4b.2",
+    "CU633479.2",
+    "notum2",
+    "smyhc2"
+   ],
+   "leafIds": [
+    "3.0",
+    "3.1",
+    "3.2",
+    "3.3",
+    "3.4",
+    "3.5",
+    "3.6",
+    "3.7"
+   ],
+   "turns": [
+    {
+     "mode": "research",
+     "prompt": "TOP-DOWN RECURSIVE LABELLING — COARSE PASS. This is a BROAD coarse compartment (umbrella-level cluster) from the ZSCAPE zebrafish 48 hpf whole-embryo atlas; it likely contains several finer cell types. Name the BROAD germ-layer / tissue UMBRELLA this compartment represents — NOT a fine subtype yet. Top compartment markers: smyhc1, ryr1a, myl10, tnnt2d, tpm2, myh7bb, mybpc3, myl13, pvalb4, tnnt2e, tnni4b.2, CU633479.2, notum2, smyhc2. Ground each claim (ZFIN/ZFA/GO); if genuinely ambiguous give the deepest defensible umbrella, else abstain.",
+     "text": "**Broad identity: mesodermal musculature / striated muscle compartment, with strong skeletal–slow-muscle signal and some cardiac-muscle representation.**\n\n## Evidence\n- **smyhc1** — slow myosin heavy chain; expressed in musculature system, paraxial mesoderm, somite, and cardiovascular system; supports broad muscle/mesoderm umbrella [record](https://zfin.org/ZDB-GENE-030131-271).\n- **ryr1a** — skeletal ryanodine receptor; expressed in adaxial cell, slow muscle cell, somite, trunk musculature; involved in skeletal muscle contraction/development [record](https://zfin.org/ZDB-GENE-020108-2).\n- **tpm2** — tropomyosin; located in striated muscle thin filament, expressed in musculature system/somite/cardiovascular system, involved in muscle contraction [record](https://zfin.org/ZDB-GENE-040625-114).\n- **myh7bb** — cardiac beta myosin heavy chain; expressed in atrium, cardiac ventricle, and heart, indicating cardiac muscle is likely included within this coarse compartment [record](https://zfin.org/ZDB-GENE-090311-5).\n- **mybpc3** — cardiac myosin-binding protein; perturbation affects atrium, cardiac ventricle, myocardium, and heart contraction, again supporting cardiac-muscle contribution [record](https://zfin.org/action/fish/phenotype-summary?fishID=ZDB-FISH-231129-13&page=6068).\n- **GO support** — marker functions converge on muscle contraction, defined as actin/myosin force generation in muscle tissue [record](https://amigo.geneontology.org/amigo/term/GO%3A0006936).\n\n## Caveats\n- Mixed skeletal/slow-muscle and cardiac markers argue for a **coarse musculature umbrella**, not a fine subtype.\n\n**Verdict:** mesodermal musculature / striated muscle compartment — confidence high\n\n```kasperov-markers\n[{\"g\":\"smyhc1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"slow skeletal muscle\"},{\"g\":\"ryr1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"skeletal calcium channel\"},{\"g\":\"tpm2\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"striated thin filament\"},{\"g\":\"myh7bb\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin\"},{\"g\":\"mybpc3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac sarcomere\"}]\n```"
+    },
+    {
+     "mode": "archivist",
+     "prompt": "Report the raw stats you have for this compartment's top markers (smyhc1, ryr1a, myl10, tnnt2d, tpm2, myh7bb, mybpc3, myl13, pvalb4, tnnt2e, tnni4b.2, CU633479.2, notum2, smyhc2).",
+     "text": "Raw stats query for **comp:3** returned the following for the requested top markers:\n\n| gene | found |\n|---|---:|\n| smyhc1 | false |\n| ryr1a | false |\n| myl10 | false |\n| tnnt2d | false |\n| tpm2 | false |\n| myh7bb | false |\n| mybpc3 | false |\n| myl13 | false |\n| pvalb4 | false |\n| tnnt2e | false |\n| tnni4b.2 | false |\n| CU633479.2 | false |\n| notum2 | false |\n| smyhc2 | false |\n\nDataset response note: **“mean + %in from the matrix; p-values require the live stats service.”**"
+    },
+    {
+     "mode": "reason",
+     "prompt": "Reconcile the reads and CONCLUDE this COARSE pass with a kasperov-conclude block at the UMBRELLA tier (germ layer or tissue; state \"none\"). Assign the umbrella if grounded; abstain only if the markers are genuinely incoherent.",
+     "text": "The reads are coherent at the umbrella level. The Archivist check did not return usable per-gene statistics, but it also did not show depletion or contradictory enrichment; it simply failed to find those genes in that raw query path. The marker set provided for the compartment is nevertheless internally very consistent: **smyhc1, ryr1a, tpm2, smyhc2, tnnt2d/tnnt2e, tnni4b.2, myl10/myl13, myh7bb, and mybpc3** are overwhelmingly sarcomeric, contractile, or excitation–contraction genes. Some are more skeletal/slow-muscle leaning, while **myh7bb** and **mybpc3** point toward cardiac muscle, so the right coarse label is not a fine subtype but a broad **musculature / striated muscle tissue** umbrella. Developmentally this is mesoderm-derived, but “musculature” is the deeper defensible tissue-level umbrella.\n\n```kasperov-conclude\n{\"identity\":\"musculature system / striated muscle\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[\"smyhc1\",\"ryr1a\",\"tpm2\",\"myh7bb\",\"mybpc3\"],\"decision\":\"assign\",\"confidence\":90,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"smyhc1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"slow muscle myosin\"},{\"g\":\"ryr1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"skeletal excitation-contraction\"},{\"g\":\"tpm2\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"striated thin filament\"},{\"g\":\"myh7bb\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin signal\"},{\"g\":\"mybpc3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac sarcomere protein\"}]\n```"
+    }
+   ],
+   "call": {
+    "identity": "musculature system / striated muscle",
+    "tier": "tissue",
+    "decision": "assign",
+    "confidence": 90
+   },
+   "matchedTissue": "muscle"
+  },
+  {
+   "compartmentId": "comp:5",
+   "nCells": 23373,
+   "nLeaves": 23,
+   "markers": [
+    "nrxn1a",
+    "nrxn3a",
+    "si:ch73-215f7.1",
+    "robo3",
+    "BX465834.1",
+    "dscaml1",
+    "KCNB2",
+    "qkib",
+    "grid1b",
+    "CU467822.2",
+    "NPAS3",
+    "ptprua",
+    "lmx1al",
+    "ebf1b"
+   ],
+   "leafIds": [
+    "5.0",
+    "5.1",
+    "5.2",
+    "5.3",
+    "5.4",
+    "5.5",
+    "5.6",
+    "5.7",
+    "5.8",
+    "5.9",
+    "5.10",
+    "5.11",
+    "5.12",
+    "5.13",
+    "5.14",
+    "5.15",
+    "5.16",
+    "5.17",
+    "5.18",
+    "5.19",
+    "5.20",
+    "5.21",
+    "5.22"
+   ],
+   "turns": [
+    {
+     "mode": "research",
+     "prompt": "TOP-DOWN RECURSIVE LABELLING — COARSE PASS. This is a BROAD coarse compartment (umbrella-level cluster) from the ZSCAPE zebrafish 48 hpf whole-embryo atlas; it likely contains several finer cell types. Name the BROAD germ-layer / tissue UMBRELLA this compartment represents — NOT a fine subtype yet. Top compartment markers: nrxn1a, nrxn3a, si:ch73-215f7.1, robo3, BX465834.1, dscaml1, KCNB2, qkib, grid1b, CU467822.2, NPAS3, ptprua, lmx1al, ebf1b. Ground each claim (ZFIN/ZFA/GO); if genuinely ambiguous give the deepest defensible umbrella, else abstain.",
+     "text": "**Broad umbrella: nervous system / neural ectoderm compartment, likely mixed neuronal + neural progenitor/glial-lineage cells.**\n\n## Evidence\n- **nrxn1a** — neurexin; expressed in diencephalon, hindbrain, spinal cord, telencephalon, supporting neural tissue [record](https://zfin.org/ZDB-GENE-070206-1). ([zfin.org](https://zfin.org/ZDB-GENE-070206-1?utm_source=openai))\n- **nrxn3a** — neurexin; involved in synapse maturation and expressed in hair cell/lateral line sensory-neural contexts [record](https://zfin.org/ZDB-GENE-070206-9). ([zfin.org](https://zfin.org/ZDB-GENE-070206-9?utm_source=openai))\n- **robo3** — axon-guidance receptor; acts in axonogenesis and is expressed in nervous system/neural tube [record](https://zfin.org/ZDB-GENE-000209-4). ([zfin.org](https://zfin.org/ZDB-GENE-000209-4?utm_source=openai))\n- **dscaml1** — neural adhesion molecule; involved in nervous system development, synapse/axon localization, expressed in brain and retinal neural layers [record](https://zfin.org/ZDB-GENE-110601-1). ([zfin.org](https://www.zfin.org/ZDB-GENE-110601-1?utm_source=openai))\n- **grid1b** — glutamate receptor subunit; predicted postsynaptic membrane/dendritic spine activity and glutamatergic synaptic transmission [record](https://zfin.org/ZDB-GENE-121214-84). ([zfin.org](https://zfin.org/ZDB-GENE-121214-84?utm_source=openai))\n- **qkib** — expressed in hindbrain/midbrain neural rod and nervous system [record](https://zfin.org/ZDB-GENE-081028-54). ([zfin.org](https://zfin.org/ZDB-GENE-081028-54?utm_source=openai))\n- **ZFA/ontology support** — nervous system is an organ system dominated by neurons and glia [record](https://www.ebi.ac.uk/ols4/ontologies/uberon/entities/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001016). ([ebi.ac.uk](https://www.ebi.ac.uk/ols4/ontologies/uberon/entities/http%253A%252F%252Fpurl.obolibrary.org%252Fobo%252FUBERON_0001016?utm_source=openai))\n\n## Caveats\n- Marker set is broad neural, not enough for CNS vs PNS vs retina subdivision.\n\n**Verdict:** nervous system / neural ectoderm — confidence high\n\n```kasperov-markers\n[{\"g\":\"nrxn1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"brain/spinal neural expression\"},{\"g\":\"nrxn3a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"synapse maturation; sensory neural\"},{\"g\":\"robo3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"axonogenesis; neural tube\"},{\"g\":\"dscaml1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural adhesion; synapse/axon\"},{\"g\":\"grid1b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"postsynaptic glutamate receptor\"},{\"g\":\"qkib\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural rod/nervous system\"}]\n```"
+    },
+    {
+     "mode": "archivist",
+     "prompt": "Report the raw stats you have for this compartment's top markers (nrxn1a, nrxn3a, si:ch73-215f7.1, robo3, BX465834.1, dscaml1, KCNB2, qkib, grid1b, CU467822.2, NPAS3, ptprua, lmx1al, ebf1b).",
+     "text": "Raw stats query for **comp:5** using the requested marker list:\n\n| gene | found in stats table |\n|---|---:|\n| nrxn1a | false |\n| nrxn3a | false |\n| si:ch73-215f7.1 | false |\n| robo3 | false |\n| BX465834.1 | false |\n| dscaml1 | false |\n| KCNB2 | false |\n| qkib | false |\n| grid1b | false |\n| CU467822.2 | false |\n| NPAS3 | false |\n| ptprua | false |\n| lmx1al | false |\n| ebf1b | false |\n\nNo log2FC / %in / %out / adjusted p-value / mean-expression values were returned for these exact gene symbols in the active compartment query."
+    },
+    {
+     "mode": "reason",
+     "prompt": "Reconcile the reads and CONCLUDE this COARSE pass with a kasperov-conclude block at the UMBRELLA tier (germ layer or tissue; state \"none\"). Assign the umbrella if grounded; abstain only if the markers are genuinely incoherent.",
+     "text": "The reads reconcile cleanly at the biological level. The Archivist result is not evidence against enrichment; it says the exact symbols were not found in that stats table/query, so it cannot calibrate log2FC or specificity. The marker panel itself is nevertheless highly coherent: **nrxn1a/nrxn3a**, **robo3**, **dscaml1**, **grid1b**, **qkib**, **NPAS3**, **lmx1al**, and **ebf1b** all point to neural development, axon/synapse biology, or CNS neuronal/progenitor contexts rather than mesoderm, endoderm, epidermis, or blood. At this coarse recursive level, the defensible umbrella is therefore **nervous system / neural ectoderm**; finer CNS regional or neuronal subtype labels should wait for subclustering.\n\n```kasperov-conclude\n{\"identity\":\"nervous system\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[\"nrxn1a\",\"nrxn3a\",\"robo3\",\"dscaml1\",\"grid1b\",\"qkib\",\"NPAS3\",\"lmx1al\",\"ebf1b\"],\"decision\":\"assign\",\"confidence\":88,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"nrxn1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural synaptic adhesion\"},{\"g\":\"nrxn3a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural synapse marker\"},{\"g\":\"robo3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"axon guidance receptor\"},{\"g\":\"dscaml1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural adhesion molecule\"},{\"g\":\"grid1b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"glutamate receptor\"},{\"g\":\"qkib\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural development associated\"},{\"g\":\"NPAS3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural transcription factor\"},{\"g\":\"lmx1al\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural patterning factor\"},{\"g\":\"ebf1b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neuronal differentiation factor\"}]\n```"
+    }
+   ],
+   "call": {
+    "identity": "nervous system",
+    "tier": "tissue",
+    "decision": "assign",
+    "confidence": 88
+   },
+   "matchedTissue": "CNS"
+  },
+  {
+   "compartmentId": "comp:12",
+   "nCells": 409,
+   "nLeaves": 1,
+   "markers": [
+    "myh7l",
+    "myh7",
+    "slc8a1a",
+    "myh6",
+    "myl7",
+    "tnni1b",
+    "nppa",
+    "mybpc3",
+    "tnnt2a",
+    "cacna1g",
+    "cmlc1",
+    "ryr2b"
+   ],
+   "leafIds": [
+    "12.0"
+   ],
+   "turns": [
+    {
+     "mode": "research",
+     "prompt": "TOP-DOWN RECURSIVE LABELLING — COARSE PASS. This is a BROAD coarse compartment (umbrella-level cluster) from the ZSCAPE zebrafish 48 hpf whole-embryo atlas; it likely contains several finer cell types. Name the BROAD germ-layer / tissue UMBRELLA this compartment represents — NOT a fine subtype yet. Top compartment markers: myh7l, myh7, slc8a1a, myh6, myl7, tnni1b, nppa, mybpc3, tnnt2a, cacna1g, cmlc1, ryr2b. Ground each claim (ZFIN/ZFA/GO); if genuinely ambiguous give the deepest defensible umbrella, else abstain.",
+     "text": "**Cardiovascular mesoderm / cardiac muscle (myocardium) umbrella, not a fine atrial/ventricular subtype yet.**\n\n## Evidence\n- **myl7** — expressed in cardiac muscle myoblast, heart primordium/rudiment, mesoderm; functions in heart contraction/myofibril assembly [record](https://zfin.org/ZDB-GENE-991019-3). ([zfin.org](https://zfin.org/ZDB-GENE-991019-3?utm_source=openai))\n- **tnnt2a** — cardiac troponin T; expressed in cardiac muscle/cardiovascular system/mesoderm and part of troponin complex [record](https://zfin.org/ZDB-GENE-000626-1). ([zfin.org](https://zfin.org/ZDB-GENE-000626-1?utm_source=openai))\n- **myh6** — cardiac α-myosin heavy chain; expressed in cardiac muscle, heart primordium/rudiment; involved in heart contraction/development [record](https://zfin.org/ZDB-GENE-031112-1). ([zfin.org](https://zfin.org/ZDB-GENE-031112-1?utm_source=openai))\n- **myh7 / myh7l** — ventricular/cardiac sarcomeric myosins; ZFIN records/phenotypes point to cardiac ventricle, myocardium and sarcomere defects [record](https://zfin.org/action/marker/ZDB-GENE-061027-393/phenotype-summary). ([zfin.org](https://zfin.org/action/expression/fish-expression-figure-summary?fishID=ZDB-FISH-221209-11&imagesOnly=false&utm_source=openai))\n- **nppa** — in-vivo expression includes heart and presumptive atrium/ventricle heart-tube regions [record](https://zfin.org/ZDB-GENE-030131-95/expression). ([zfin.org](https://zfin.org/ZDB-GENE-030131-95/expression?utm_source=openai))\n- **ZFA/UBERON anatomy** — heart is the blood-pumping organ; myocardium is heart muscle, mainly striated cardiac muscle fibers [record](https://zfin.org/ZFA%3A0000114), [record](https://zfin.org/action/ontology/term/UBERON%3A0002349). ([zfin.org](https://zfin.org/ZFA%3A0000114?utm_source=openai))\n- **GO support** — “cardiac muscle contraction” is contraction of cardiac muscle tissue, part of heart contraction [record](https://amigo.geneontology.org/amigo/term/GO%3A0060048). ([amigo.geneontology.org](https://amigo.geneontology.org/amigo/term/GO%3A0060048?utm_source=openai))\n\n**Verdict:** cardiac muscle / myocardium — confidence high\n\n```kasperov-markers\n[{\"g\":\"myl7\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"heart primordium marker\"},{\"g\":\"tnnt2a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac troponin\"},{\"g\":\"myh6\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin\"},{\"g\":\"myh7\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"ventricular myosin\"},{\"g\":\"myh7l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac sarcomere\"},{\"g\":\"nppa\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"heart tube expression\"}]\n```"
+    },
+    {
+     "mode": "archivist",
+     "prompt": "Report the raw stats you have for this compartment's top markers (myh7l, myh7, slc8a1a, myh6, myl7, tnni1b, nppa, mybpc3, tnnt2a, cacna1g, cmlc1, ryr2b).",
+     "text": "I’m sorry, but the active dataset profile for this compartment is currently unavailable, so I can’t retrieve the raw log2FC / % expressing stats for these markers."
+    },
+    {
+     "mode": "reason",
+     "prompt": "Reconcile the reads and CONCLUDE this COARSE pass with a kasperov-conclude block at the UMBRELLA tier (germ layer or tissue; state \"none\"). Assign the umbrella if grounded; abstain only if the markers are genuinely incoherent.",
+     "text": "The compartment is coherent: the top up-regulated panel is dominated by cardiac sarcomeric and excitation–contraction genes, including **myl7**, **tnnt2a**, **myh6**, **myh7/myh7l**, **mybpc3**, **ryr2b**, **slc8a1a**, and **nppa**. These collectively support a broad **cardiac muscle / myocardium** umbrella rather than a mixed or ambiguous mesodermal compartment. At this coarse-pass level, I would not split atrial versus ventricular or conduction-like identities yet; the defensible umbrella is tissue-level myocardium, with state set to none.\n\n```kasperov-conclude\n{\"identity\":\"myocardium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[\"myl7\",\"tnnt2a\",\"myh6\",\"myh7\",\"myh7l\",\"nppa\"],\"decision\":\"assign\",\"confidence\":96,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"myl7\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac muscle marker\"},{\"g\":\"tnnt2a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac troponin\"},{\"g\":\"myh6\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin\"},{\"g\":\"myh7\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin\"},{\"g\":\"myh7l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cardiac myosin-like\"},{\"g\":\"nppa\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"heart-associated peptide\"}]\n```"
+    }
+   ],
+   "call": {
+    "identity": "myocardium",
+    "tier": "tissue",
+    "decision": "assign",
+    "confidence": 96
+   },
+   "matchedTissue": "heart"
+  }
+ ],
+ "gap": {
+  "found": [
+   {
+    "tissue": "epidermis",
+    "comps": [
+     "comp:1"
+    ]
+   },
+   {
+    "tissue": "muscle",
+    "comps": [
+     "comp:3"
+    ]
+   },
+   {
+    "tissue": "CNS",
+    "comps": [
+     "comp:5"
+    ]
+   },
+   {
+    "tissue": "heart",
+    "comps": [
+     "comp:12"
+    ]
+   }
+  ],
+  "unfound": [
+   "eye",
+   "notochord",
+   "endothelial",
+   "pharyngeal arch",
+   "liver",
+   "pancreas",
+   "intestine",
+   "blood",
+   "kidney"
+  ]
+ },
+ "routing": [
+  {
+   "tissue": "liver",
+   "ruleUmbrella": [
+    "epidermis",
+    "epithel",
+    "endoderm"
+   ],
+   "chosen": [
+    "comp:1"
+   ],
+   "rationale": "coarse call(s) match umbrella [\"epidermis\",\"epithel\",\"endoderm\"]",
+   "hints": [
+    "endoderm_entanglement",
+    "adult_markers_off"
+   ],
+   "lookFor": "liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr)"
+  },
+  {
+   "tissue": "pancreas",
+   "ruleUmbrella": [
+    "CNS",
+    "neural",
+    "nervous",
+    "endoderm"
+   ],
+   "chosen": [
+    "comp:5"
+   ],
+   "rationale": "coarse call(s) match umbrella [\"CNS\",\"neural\",\"nervous\",\"endoderm\"]",
+   "hints": [
+    "endoderm_entanglement",
+    "adult_markers_off"
+   ],
+   "lookFor": "pancreas — ins, gcga, sst2, prss1, nkx6.1"
+  },
+  {
+   "tissue": "intestine",
+   "ruleUmbrella": [
+    "epidermis",
+    "epithel",
+    "endoderm"
+   ],
+   "chosen": [
+    "comp:1"
+   ],
+   "rationale": "coarse call(s) match umbrella [\"epidermis\",\"epithel\",\"endoderm\"]",
+   "hints": [
+    "endoderm_entanglement",
+    "adult_markers_off"
+   ],
+   "lookFor": "intestine — fabp2, vil1, cdx1b, anxa4, agr2"
+  },
+  {
+   "tissue": "blood",
+   "ruleUmbrella": [
+    "epidermis",
+    "epithel"
+   ],
+   "chosen": [
+    "comp:1"
+   ],
+   "rationale": "coarse call(s) match umbrella [\"epidermis\",\"epithel\"]",
+   "hints": [
+    "adult_markers_off",
+    "robo4_r4b"
+   ],
+   "lookFor": "blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a"
+  },
+  {
+   "tissue": "kidney",
+   "ruleUmbrella": [
+    "CNS",
+    "neural",
+    "nervous",
+    "mesoderm"
+   ],
+   "chosen": [
+    "comp:5"
+   ],
+   "rationale": "coarse call(s) match umbrella [\"CNS\",\"neural\",\"nervous\",\"mesoderm\"]",
+   "hints": [
+    "adult_markers_off"
+   ],
+   "lookFor": "pronephros/kidney — slc20a1a, cdh17, pax2a, atp1a1a.4"
+  }
+ ],
+ "recursion": [
+  {
+   "compartmentId": "comp:1",
+   "umbrella": "epidermal / skin epithelium",
+   "targetedFor": [
+    "liver",
+    "intestine",
+    "blood"
+   ],
+   "hintKeys": [
+    "endoderm_entanglement",
+    "adult_markers_off",
+    "robo4_r4b"
+   ],
+   "lookFor": [
+    "liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr)",
+    "intestine — fabp2, vil1, cdx1b, anxa4, agr2",
+    "blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a"
+   ],
+   "leaves": [
+    {
+     "leafId": "1.0",
+     "nCells": 5814,
+     "markers": [
+      "CABZ01048956.1",
+      "krtt1c19e",
+      "cyt1",
+      "cyt1l",
+      "krt4",
+      "krt5",
+      "krt17",
+      "si:dkey-202l22.6",
+      "si:ch211-195b11.3",
+      "abca12",
+      "znf185",
+      "LO017718.1"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: CABZ01048956.1, krtt1c19e, cyt1, cyt1l, krt4, krt5, krt17, si:dkey-202l22.6, si:ch211-195b11.3, abca12, znf185, LO017718.1. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Superficial epidermal keratinocyte, EVL/periderm-like — not liver/intestine/blood.**\n\n## Evidence\n- **cyt1** — “type I cytokeratin, enveloping layer”; described as expressed in the outer enveloping layer, a strong superficial epidermal anchor [record](https://zfin.org/ZDB-GENE-991008-6). ([zfin.org](https://zfin.org/ZDB-GENE-991008-6?utm_source=openai))\n- **cyt1l** — “type I cytokeratin, enveloping layer, like”; predicted structural skin-epidermis constituent and keratin-filament component [record](https://zfin.org/ZDB-GENE-061026-4). ([zfin.org](https://zfin.org/ZDB-GENE-061026-4?utm_source=openai))\n- **krt4** — epidermal/periderm-associated keratin; ZFIN epidermis term lists krt4 among genes with expression figures, and periderm term also lists krt4 [record](https://zfin.org/ZDB-GENE-000607-83). ([zfin.org](https://zfin.org/ZDB-GENE-000607-83?utm_source=openai))\n- **krt5 / krt17** — EVL keratins in early embryos; krt17 is predicted structural constituent of skin epidermis and expressed in EVL/trunk [record](https://zfin.org/ZDB-GENE-060503-86). ([zfin.org](https://zfin.org/ZFA%3A0000086?utm_source=openai))\n- **abca12** — acts within epidermis morphogenesis, supporting skin-epithelial identity rather than hidden endoderm/blood [record](https://zfin.org/ZDB-GENE-030131-9790). ([zfin.org](https://zfin.org/ZDB-GENE-030131-9790?utm_source=openai))\n- **GO:0030280** — “structural constituent of skin epidermis,” matching the keratin/cytokeratin program [record](https://amigo.geneontology.org/amigo/term/GO%3A0030280/). ([amigo.geneontology.org](https://amigo.geneontology.org/amigo/term/GO%3A0030280/?q=KRT10&utm_source=openai))\n\n## Caveats\n- **krt1-19e** can label basal keratinocytes by 5 dpf, so this may include basal/superficial epidermal transition rather than pure periderm. ([zfin.org](https://zfin.org/action/publication/ZDB-PUB-210421-6/all-figures?utm_source=openai))\n\n**Verdict:** superficial epidermal keratinocyte / EVL-periderm-like, mature — confidence medium**\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"enveloping layer cytokeratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"skin epidermis keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm-associated keratin\"},{\"g\":\"krt17\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/skin keratin\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermis morphogenesis\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (CABZ01048956.1, krtt1c19e, cyt1, cyt1l, krt4, krt5, krt17, si:dkey-202l22.6, si:ch211-195b11.3, abca12, znf185, LO017718.1).",
+       "text": "Raw stats query for this leaf returned **cluster 1.0**, but none of the requested top-marker symbols were matched in the active dataset index:\n\n| gene | found |\n|---|---:|\n| CABZ01048956.1 | false |\n| krtt1c19e | false |\n| cyt1 | false |\n| cyt1l | false |\n| krt4 | false |\n| krt5 | false |\n| krt17 | false |\n| si:dkey-202l22.6 | false |\n| si:ch211-195b11.3 | false |\n| abca12 | false |\n| znf185 | false |\n| LO017718.1 | false |\n\nNote from query: **mean + %in come from the matrix; p-values require the live stats service, which is not configured.**"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "Given the leaf’s own marker list is dominated by epidermal keratinization and EVL/periderm-associated genes (**cyt1, cyt1l, krt4, krt5, krt17, abca12**), the best-supported subtype is a superficial epidermal keratinocyte / EVL-periderm-like population. The hidden liver, intestine, and erythroid anchors named in the prompt are not present among this leaf’s markers, so there is no basis to reassign it away from epidermis. The Archivist could not recover raw numeric matches for these symbols in the active index, but the marker identities themselves are coherent enough for a subtype-level assignment from the provided leaf markers.\n\n```kasperov-conclude\n{\"identity\":\"superficial epidermal keratinocyte / EVL-periderm-like cell\",\"tier\":\"cell type\",\"state\":\"mature\",\"cited_markers\":[\"cyt1\",\"cyt1l\",\"krt4\",\"krt5\",\"krt17\",\"abca12\"],\"decision\":\"assign\",\"confidence\":82,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL cytokeratin marker\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like cytokeratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm keratin\"},{\"g\":\"krt5\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"krt17\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermis morphogenesis\"}]\n```"
+      }
+     ],
+     "call": {
+      "identity": "superficial epidermal keratinocyte / EVL-periderm-like cell",
+      "tier": "cell type",
+      "decision": "assign",
+      "confidence": 82
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.1",
+     "nCells": 4056,
+     "markers": [
+      "CR926130.2",
+      "krt97",
+      "im:7150988",
+      "krt8",
+      "si:dkey-248g15.3",
+      "krt96",
+      "si:ch211-125o16.4",
+      "si:ch211-217k17.9",
+      "zgc:123217",
+      "icn",
+      "evpla",
+      "si:cabz01007794.1"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: CR926130.2, krt97, im:7150988, krt8, si:dkey-248g15.3, krt96, si:ch211-125o16.4, si:ch211-217k17.9, zgc:123217, icn, evpla, si:cabz01007794.1. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Superficial epidermal / periderm-like keratinocyte, mature epithelial state.**\n\n## Evidence\n- **krt8** — keratin expressed in EVL/integument; publication summary says embryonic expression is in the surface envelope-cell layer, supporting superficial epidermal identity. [record](https://zfin.org/ZDB-GENE-030411-5) ([zfin.org](https://zfin.org/ZDB-GENE-030411-5?utm_source=openai))\n- **krt97** — keratin predicted as structural constituent of skin epidermis, active in keratin filament, expressed in EVL and integument. [record](https://zfin.org/ZDB-GENE-040718-78) ([zfin.org](https://zfin.org/ZDB-GENE-040718-78?utm_source=openai))\n- **evpla** — envoplakin/plakin structural gene; expressed in EVL, epidermis, and periderm, with GO-linked intermediate-filament/cell-junction biology. [record](https://zfin.org/ZDB-GENE-030829-19) ([zfin.org](https://zfin.org/ZDB-GENE-030829-19?utm_source=openai))\n- **icn** — calcium-binding/S100-family-like gene expressed in integument among other tissues; supportive but not specific alone. [record](https://zfin.org/ZDB-GENE-030131-8599) ([zfin.org](https://zfin.org/ZDB-GENE-030131-8599?utm_source=openai))\n- **ZFA periderm/EVL** — periderm is the outermost embryonic epidermal layer, synonymous with/derived from EVL; its gene list includes krt97, evpla, and krt8. [record](https://zfin.org/ZFA:0001185) ([zfin.org](https://zfin.org/ZFA%3A0001185?utm_source=openai))\n\n## Caveats\n- No liver, intestine, or erythroid positive-anchor markers from the prompt are present, so I would not call a hidden endoderm/blood population.\n- “Periderm” timing is ontology-sensitive; at 48 hpf, “superficial epidermal/periderm-like” is safer than forcing a strict periderm term.\n\n**Verdict:** superficial epidermal / periderm-like keratinocyte, mature — confidence high\n\n```kasperov-markers\n[{\"g\":\"krt8\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/surface epidermal keratin\"},{\"g\":\"krt97\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/integument keratin\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm junction/plakin\"},{\"g\":\"icn\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"integument calcium-binding support\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (CR926130.2, krt97, im:7150988, krt8, si:dkey-248g15.3, krt96, si:ch211-125o16.4, si:ch211-217k17.9, zgc:123217, icn, evpla, si:cabz01007794.1).",
+       "text": "Raw stats query for leaf **cluster 1.1**:\n\n| gene | found in dataset stats |\n|---|---:|\n| CR926130.2 | false |\n| krt97 | false |\n| im:7150988 | false |\n| krt8 | false |\n| si:dkey-248g15.3 | false |\n| krt96 | false |\n| si:ch211-125o16.4 | false |\n| si:ch211-217k17.9 | false |\n| zgc:123217 | false |\n| icn | false |\n| evpla | false |\n| si:cabz01007794.1 | false |\n\nNote from stats service: mean and % expressing are derived from the matrix; p-values require the live stats service."
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "Because the raw-data check did not confirm enrichment statistics for any of this leaf’s listed markers, I cannot ground a subtype assignment under the rule that the final identity must rest on Archivist-confirmed positive markers from this leaf. The marker names are strongly suggestive of superficial epidermal/periderm-like keratinocytes, especially **krt8**, **krt97**, and **evpla**, and there is no positive anchor for liver, intestine, or erythroid identity. However, without confirmed positive enrichment in this specific leaf, the defensible action is to abstain from the subtype call and roll up to the prior compartment.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":60,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"krt8\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive epidermal keratin\"},{\"g\":\"krt97\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive EVL keratin\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive periderm structural\"}]\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 60
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.2",
+     "nCells": 3980,
+     "markers": [
+      "krt4",
+      "cyt1",
+      "cyt1l",
+      "ppl",
+      "si:ch211-125o16.4",
+      "si:ch211-195b11.3",
+      "krt5",
+      "znf185",
+      "evpla",
+      "si:cabz01007794.1",
+      "abca12",
+      "cldne"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: krt4, cyt1, cyt1l, ppl, si:ch211-125o16.4, si:ch211-195b11.3, krt5, znf185, evpla, si:cabz01007794.1, abca12, cldne. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Superficial epidermal keratinocyte / periderm–EVL-like epithelial cell, mature barrier state.**\n\n## Evidence\n- **cyt1** — “type I cytokeratin, enveloping layer”; expressed in EVL, epidermis, epithelium and periderm, and predicted structural skin-epidermis keratin [record](https://zfin.org/ZDB-GENE-991008-6).\n- **cyt1l** — EVL-like type I cytokeratin; predicted structural constituent of skin epidermis and active in keratin filament [record](https://zfin.org/ZDB-GENE-061026-4).\n- **krt4** — keratin with epidermal/integrument expression; figure evidence reports embryonic krt4 and epidermal layer expression, supporting epidermal keratinocyte identity [record](https://zfin.org/ZDB-GENE-000607-83), [record](https://zfin.org/ZDB-FIG-240221-2).\n- **krt5** — keratin 5 expressed in EVL, epidermal cell, integument and periderm; supports keratinocyte/periderm identity [record](https://zfin.org/ZDB-GENE-991110-23).\n- **abca12** — lipid transporter acting in epidermis morphogenesis and expressed in EVL/integument; consistent with skin-barrier epithelial maturation [record](https://zfin.org/ZDB-GENE-030131-9790).\n- **epidermis** — ZFA defines zebrafish epidermis as a cellular multilayered ectoderm-derived epithelium, appearing from 24 hpf [record](https://zfin.org/ZFA%3A0000105).\n- **keratin program** — GO terms “structural constituent of skin epidermis” and “keratin filament” match the dominant keratin/cytokeratin markers [record](https://amigo.geneontology.org/amigo/term/GO%3A0030280), [record](https://amigo.geneontology.org/amigo/term/GO%3A0045095).\n\n## Caveats\n- No provided liver, intestine, or erythroid positive-anchor markers are present.\n\n**Verdict:** superficial epidermal keratinocyte / periderm–EVL-like, mature — confidence high\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"embryonic epidermal keratin\"},{\"g\":\"krt5\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm expression\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal barrier morphogenesis\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (krt4, cyt1, cyt1l, ppl, si:ch211-125o16.4, si:ch211-195b11.3, krt5, znf185, evpla, si:cabz01007794.1, abca12, cldne).",
+       "text": "I’m unable to retrieve the raw marker statistics for this leaf because the active dataset query returned:\n\n```json\n{\"error\":\"profile unavailable for this cluster\"}\n```\n\nRequested markers were:\n\n| gene |\n|---|\n| krt4 |\n| cyt1 |\n| cyt1l |\n| ppl |\n| si:ch211-125o16.4 |\n| si:ch211-195b11.3 |\n| krt5 |\n| znf185 |\n| evpla |\n| si:cabz01007794.1 |\n| abca12 |\n| cldne |"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The call is still grounded by this leaf’s own marker panel: the dominant positives are keratin/barrier epithelial genes, especially **cyt1**, **cyt1l**, **krt4**, **krt5**, and **abca12**, which coherently support a superficial epidermal/periderm-like keratinocyte subtype. I would not assign hidden liver, intestine, or erythroid identity because none of the requested positive-anchor markers for those lineages appear in this leaf’s marker list.\n\n```kasperov-conclude\n{\"identity\":\"superficial epidermal keratinocyte / periderm-like epithelium\",\"tier\":\"cell type\",\"state\":\"mature\",\"cited_markers\":[\"cyt1\",\"cyt1l\",\"krt4\",\"krt5\",\"abca12\"],\"decision\":\"assign\",\"confidence\":88,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal keratin\"},{\"g\":\"krt5\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm/epidermal keratin\"},{\"g\":\"abca12\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermal barrier gene\"}]\n```"
+      }
+     ],
+     "call": {
+      "identity": "superficial epidermal keratinocyte / periderm-like epithelium",
+      "tier": "cell type",
+      "decision": "assign",
+      "confidence": 88
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.3",
+     "nCells": 2773,
+     "markers": [
+      "evpla",
+      "ppl",
+      "si:ch211-125o16.4",
+      "cyt1l",
+      "krt4",
+      "znf185",
+      "cyt1",
+      "si:cabz01007794.1",
+      "nos1",
+      "cldne",
+      "capn9",
+      "si:ch211-195b11.3"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: evpla, ppl, si:ch211-125o16.4, cyt1l, krt4, znf185, cyt1, si:cabz01007794.1, nos1, cldne, capn9, si:ch211-195b11.3. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Periderm / superficial epidermal keratinocyte, mature — not hidden liver/intestine/blood.**\n\n## Evidence\n- **evpla** — envoplakin; expressed in EVL, epidermis and periderm; predicted structural/intermediate-filament junction role, fitting superficial epidermal barrier cells [record](https://zfin.org/ZDB-GENE-030829-19). ([zfin.org](https://zfin.org/ZDB-GENE-030829-19?utm_source=openai))\n- **ppl** — periplakin; expressed in EVL/periderm and linked to peridermal microridge cytoskeleton organization, a superficial epidermal specialization [record](https://zfin.org/ZDB-GENE-041008-196). ([zfin.org](https://zfin.org/ZDB-GENE-041008-196?utm_source=openai))\n- **krt4** — keratin 4; predicted structural constituent of skin epidermis and expressed in integument/ectoderm/digestive system, supporting epithelial keratinocyte identity [record](https://zfin.org/ZDB-GENE-000607-83). ([zfin.org](https://zfin.org/ZDB-GENE-000607-83?utm_source=openai))\n- **cyt1l** — “type I cytokeratin, enveloping layer-like”; directly points to EVL/periderm-type keratin program [record](https://zfin.org/ZDB-GENE-061026-4). ([zfin.org](https://zfin.org/ZDB-GENE-061026-4?utm_source=openai))\n- **cldne** — claudin; in situ shows EVL expression and later faint skin expression, consistent with epithelial tight-junction/periderm cells [record](https://zfin.org/ZDB-IMAGE-100209-5). ([zfin.org](https://zfin.org/ZDB-IMAGE-100209-5?utm_source=openai))\n- **periderm** — ZFA defines it as the outermost embryonic epidermal layer, derived from EVL; ppl and krt4 are listed among genes with periderm figures [record](https://zfin.org/ZFA%3A0001185). ([zfin.org](https://zfin.org/ZFA%3A0001185?utm_source=openai))\n\n## Caveats\n- No provided liver, intestine, or erythroid positive anchors are present.\n- nos1 is not enough to override the strong epidermal/periderm program.\n\n**Verdict:** periderm / superficial epidermal keratinocyte, mature — confidence high**\n\n```kasperov-markers\n[{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm plakin\"},{\"g\":\"ppl\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm microridges\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"skin epidermis keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like cytokeratin\"},{\"g\":\"cldne\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/skin claudin\"},{\"g\":\"nos1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"nonspecific here\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (evpla, ppl, si:ch211-125o16.4, cyt1l, krt4, znf185, cyt1, si:cabz01007794.1, nos1, cldne, capn9, si:ch211-195b11.3).",
+       "text": "Raw stats query for leaf **cluster 1.3** returned the following for the requested top markers:\n\n| gene | found in stats |\n|---|---:|\n| evpla | false |\n| ppl | false |\n| si:ch211-125o16.4 | false |\n| cyt1l | false |\n| krt4 | false |\n| znf185 | false |\n| cyt1 | false |\n| si:cabz01007794.1 | false |\n| nos1 | false |\n| cldne | false |\n| capn9 | false |\n| si:ch211-195b11.3 | false |\n\nNote from dataset query: **mean + %in are from the matrix; p-values require the live stats service, which is not configured.**"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The marker names strongly suggest a periderm / superficial epidermal keratinocyte program, especially **evpla**, **ppl**, **cyt1l**, **krt4**, and **cldne**. However, the raw-data check did not confirm any of these as enriched positives for this leaf, so under the “confirmed positives only” rule I should not assign the subtype. I therefore roll up to the prior-compatible compartment rather than calling hidden liver, intestine, blood, or periderm subtype.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":60,\"done\":true}\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 60
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.4",
+     "nCells": 1858,
+     "markers": [
+      "ptprfa",
+      "plch2a",
+      "bcam",
+      "frem2b",
+      "lima1a",
+      "nrg2a",
+      "fras1",
+      "col14a1a",
+      "ntn1a",
+      "foxo1b",
+      "tiam1b",
+      "nab1b"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: ptprfa, plch2a, bcam, frem2b, lima1a, nrg2a, fras1, col14a1a, ntn1a, foxo1b, tiam1b, nab1b. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Median fin-fold / basal epidermal epithelium, ECM–basement-membrane-associated.**\n\n## Evidence\n- **nrg2a** — expressed in epidermis and median fin fold; acts in skin epidermis development, supporting an epidermal/fin-fold subtype rather than hidden liver/intestine/blood [record](https://zfin.org/ZDB-GENE-070615-10).\n- **fras1** — expressed in median fin fold and integument-associated structures; annotated upstream of basement membrane organization and epithelial structure maintenance [record](https://zfin.org/ZDB-GENE-060526-68).\n- **col14a1a** — expressed in integument and median fin fold; located in basement membrane and acts in basement membrane assembly [record](https://zfin.org/ZDB-GENE-030131-9889).\n- **frem2b** — extracellular-matrix Fraser-complex paralog expressed in median fin fold/pronephric duct, reinforcing a fin-fold/epithelial basement-membrane program but not a definitive epidermal subtype alone [record](https://zfin.org/ZDB-GENE-081119-4).\n- **median fin fold** — ZFA term is a transient larval surface structure appearing ~22–24 hpf and present through early larval stages, matching 48 hpf context [record](https://zfin.org/ZDB-TERM-100331-38).\n- **basement membrane organization** — GO biological process describes assembly/arrangement/disassembly of basement membrane, consistent with the fras1/col14a1a signal [record](https://amigo.geneontology.org/amigo/term/GO%3A0071711).\n\n## Caveats\n- No provided positive anchors for liver, intestine, or erythroid lineages.\n- Markers support fin-fold/basal-ECM epidermal identity, not a cleaner named periderm/keratinocyte subtype.\n\n**Verdict:** median fin-fold basal epidermal epithelium, mature — confidence medium**\n\n```kasperov-markers\n[{\"g\":\"nrg2a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epidermis/fin-fold development\"},{\"g\":\"fras1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epithelial basement membrane\"},{\"g\":\"col14a1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"basement membrane assembly\"},{\"g\":\"frem2b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"fin-fold ECM paralog\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (ptprfa, plch2a, bcam, frem2b, lima1a, nrg2a, fras1, col14a1a, ntn1a, foxo1b, tiam1b, nab1b).",
+       "text": "Raw stats query for this leaf / cluster **1.4** returned no matching gene records for the requested top markers:\n\n| gene | found |\n|---|---:|\n| ptprfa | false |\n| plch2a | false |\n| bcam | false |\n| frem2b | false |\n| lima1a | false |\n| nrg2a | false |\n| fras1 | false |\n| col14a1a | false |\n| ntn1a | false |\n| foxo1b | false |\n| tiam1b | false |\n| nab1b | false |\n\nTool note: mean expression and %in are derived from the matrix; p-values require the live stats service, which is not configured."
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "Given the raw-data check did not confirm enrichment statistics for this leaf’s marker genes, I would not make a subtype assignment from the literature associations alone. The marker set is suggestive of epidermal/fin-fold basement-membrane epithelium, but under the “confirmed positives only” rule it is not sufficiently grounded for a subtype call. I would therefore roll up to the prior compartment and abstain at subtype level.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":55,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"frem2b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive epithelial ECM\"},{\"g\":\"nrg2a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive epidermal marker\"},{\"g\":\"fras1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive basement membrane\"},{\"g\":\"col14a1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"suggestive ECM marker\"}]\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 55
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.5",
+     "nCells": 1480,
+     "markers": [
+      "cadm3",
+      "ncam1a",
+      "fat3a",
+      "ctdp1",
+      "tenm4",
+      "diaph3",
+      "immp2l",
+      "sdk1b",
+      "stat3",
+      "fgfrl1a",
+      "plagl2",
+      "epha3"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: cadm3, ncam1a, fat3a, ctdp1, tenm4, diaph3, immp2l, sdk1b, stat3, fgfrl1a, plagl2, epha3. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Abstain: this leaf does not support a skin-epithelial subtype or hidden liver/intestine/blood population; it looks neural-adhesive, so roll up to epidermal / skin epithelium only if constrained.**\n\n## Evidence\n- **cadm3** — expressed in nervous system/radial glial cell/trigeminal placode; predicted homophilic adhesion, not epidermal/endodermal anchor [record](https://zfin.org/ZDB-GENE-060512-196). ([zfin.org](https://zfin.org/ZDB-GENE-060512-196?utm_source=openai))\n- **ncam1a** — neural cell adhesion molecule; expressed in nervous system, anterior neural keel, optic vesicle, myotome [record](https://zfin.org/ZDB-GENE-990415-31). ([zfin.org](https://zfin.org/ZDB-GENE-990415-31?utm_source=openai))\n- **tenm4** — expressed in brain/neural tube/retina; implicated upstream of axon guidance [record](https://zfin.org/ZDB-GENE-990714-20). ([zfin.org](https://zfin.org/ZDB-GENE-990714-20?utm_source=openai))\n- **sdk1b** — retinal-layer expression; predicted axon guidance, brain development, cell-cell adhesion [record](https://zfin.org/ZDB-GENE-090311-17). ([zfin.org](https://zfin.org/ZDB-GENE-090311-17?utm_source=openai))\n- **stat3** — broad but includes epidermal superficial stratum and nervous system; not specific enough to subtype skin [record](https://zfin.org/ZDB-GENE-980526-68). ([zfin.org](https://zfin.org/ZDB-GENE-980526-68?utm_source=openai))\n- ZFA **nervous system** is neurons + neuroglia; this matches the neural-marker direction better than ZFA epidermis, but the coarse compartment prior conflicts [record](https://zfin.org/ZFA%3A0000396). ([zfin.org](https://zfin.org/ZFA%3A0000396?utm_source=openai))\n\n## Caveats\n- No provided liver, intestine, or erythroid positive anchors are present.\n- I would not force a neural call inside this constrained skin recursion without cluster-level context.\n\n**Verdict:** epidermal / skin epithelium, unspecified — confidence low\n\n```kasperov-markers\n[{\"g\":\"cadm3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural adhesion expression\"},{\"g\":\"ncam1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"neural adhesion molecule\"},{\"g\":\"tenm4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"axon guidance neural\"},{\"g\":\"sdk1b\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"retinal adhesion/axon\"},{\"g\":\"stat3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"broad, not specific\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (cadm3, ncam1a, fat3a, ctdp1, tenm4, diaph3, immp2l, sdk1b, stat3, fgfrl1a, plagl2, epha3).",
+       "text": "Raw stats query for leaf **cluster 1.5**:\n\n| gene | found in stats |\n|---|---:|\n| cadm3 | false |\n| ncam1a | false |\n| fat3a | false |\n| ctdp1 | false |\n| tenm4 | false |\n| diaph3 | false |\n| immp2l | false |\n| sdk1b | false |\n| stat3 | false |\n| fgfrl1a | false |\n| plagl2 | false |\n| epha3 | false |\n\nNote from dataset query: **mean + %in are taken from the matrix; p-values require the live stats service, which is not configured.**"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The leaf’s own listed markers do not ground a specific epidermal subtype, nor do they provide a positive anchor for the prompted hidden liver, intestine, or erythroid populations. Several markers are more suggestive of neural adhesion/axon-guidance biology than skin epithelium, but because the raw-data check could not confirm marker statistics or specificity for this leaf, I would not override the parent prior with a new cell-type call. The defensible decision is therefore to abstain at subtype level and roll up to the prior compartment.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":45,\"done\":true}\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 45
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.6",
+     "nCells": 1111,
+     "markers": [
+      "hsd17b12a",
+      "eppk1",
+      "fa2h",
+      "aspm",
+      "gmds",
+      "mki67",
+      "slc4a10a",
+      "cldne",
+      "tmprss4a",
+      "zgc:153665",
+      "zgc:100868",
+      "ftr83"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: hsd17b12a, eppk1, fa2h, aspm, gmds, mki67, slc4a10a, cldne, tmprss4a, zgc:153665, zgc:100868, ftr83. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Cycling epidermal/peridermal epithelial cells, not a confident hidden liver/intestine/blood leaf.**\n\n## Evidence\n- **eppk1** — epithelial structural/plakin marker; expressed in EVL, epidermis and periderm; GO supports keratin-filament binding/intermediate-filament organization [record](https://zfin.org/ZDB-GENE-030416-1). ([zfin.org](https://zfin.org/ZDB-GENE-030416-1?utm_source=openai))\n- **cldne** — claudin/tight-junction epithelial marker; ZFIN perturbation context links it with epithelial regulators, but expression is not subtype-specific enough alone [record](https://zfin.org/action/mapping/detail/ZDB-GENE-010328-5). ([zfin.org](https://zfin.org/action/mapping/detail/ZDB-GENE-010328-5?utm_source=openai))\n- **tmprss4a** — transmembrane serine protease expressed in integument, also liver/pleuroperitoneal structures; supports epithelium but is not a liver-specific anchor [record](https://zfin.org/ZDB-GENE-061103-631). ([zfin.org](https://zfin.org/ZDB-GENE-061103-631?utm_source=openai))\n- **mki67** — proliferation marker; GO includes regulation of mitotic nuclear division/chromosome segregation, supporting a cycling state [record](https://www.ncbi.nlm.nih.gov/gene/564521). ([ncbi.nlm.nih.gov](https://www.ncbi.nlm.nih.gov/gene/564521?utm_source=openai))\n- **aspm** — cell-cycle/neurodevelopment-associated mitotic gene; supports proliferation but not epidermal subtype identity [record](https://zfin.org/ZDB-GENE-050208-620). ([zfin.org](https://zfin.org/ZDB-GENE-050208-620?utm_source=openai))\n- **hsd17b12a** — reported as intestinal epithelial-specific in primitive intestine, but this leaf lacks the requested intestine anchors such as **fabp2/vil1/cdx1b/anxa4/agr2** [record](https://zfin.org/ZDB-PUB-241114-26). ([zfin.org](https://www.zfin.org/ZDB-PUB-241114-26?utm_source=openai))\n- **epidermis** — ZFA defines zebrafish epidermis as ectoderm-derived multilayered epithelium, matching the epithelial/periderm signal [record](https://zfin.org/ZFA%3A0000105). ([zfin.org](https://zfin.org/ZFA%3A0000105?utm_source=openai))\n\n## Caveats\n- One marker (**hsd17b12a**) raises possible primitive intestine contamination, but the required positive intestinal/liver/blood anchors are absent from this marker list.\n- No strong subtype-specific epidermal marker beyond epithelial/peridermal structure plus cycling.\n\n**Verdict:** epidermal / peridermal epithelial cell, cycling — confidence medium\n\n```kasperov-markers\n[{\"g\":\"eppk1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm/epidermis keratin scaffold\"},{\"g\":\"cldne\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"epithelial tight junction\"},{\"g\":\"tmprss4a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"integument epithelial protease\"},{\"g\":\"mki67\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"cycling proliferation marker\"},{\"g\":\"aspm\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"mitotic cycling support\"},{\"g\":\"hsd17b12a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"intestinal caveat only\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (hsd17b12a, eppk1, fa2h, aspm, gmds, mki67, slc4a10a, cldne, tmprss4a, zgc:153665, zgc:100868, ftr83).",
+       "text": "Raw stats query for this leaf returned the following for cluster **1.6**:\n\n| gene | found |\n|---|---:|\n| hsd17b12a | false |\n| eppk1 | false |\n| fa2h | false |\n| aspm | false |\n| gmds | false |\n| mki67 | false |\n| slc4a10a | false |\n| cldne | false |\n| tmprss4a | false |\n| zgc:153665 | false |\n| zgc:100868 | false |\n| ftr83 | false |\n\nNote from query result: mean expression and % expressing are derived from the matrix; adjusted p-values require the live stats service, which is not configured for this call."
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The raw-data check did not confirm any of the listed markers as found/enriched for this leaf, so I cannot ground a subtype assignment in this leaf’s own confirmed positives. I therefore abstain from a specific subtype call and roll up to the prior compartment.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":35,\"done\":true}\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 35
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.7",
+     "nCells": 965,
+     "markers": [
+      "cyp1a",
+      "dpydb",
+      "pcxb",
+      "fa2h",
+      "BX537310.2",
+      "ugt8",
+      "col14a1a",
+      "si:ch73-194h10.2",
+      "sdk1a",
+      "zfpm1",
+      "shank3a",
+      "pard6b"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: cyp1a, dpydb, pcxb, fa2h, BX537310.2, ugt8, col14a1a, si:ch73-194h10.2, sdk1a, zfpm1, shank3a, pard6b. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Epidermal / skin epithelium, not confidently resolved to a finer subtype; no supported hidden liver/intestine/blood call.**\n\n## Evidence\n- **fa2h** — expressed in EVL/ectoderm/digestive system/pronephric duct; GO supports fatty-acid 2-hydroxylase activity and ceramide/lipid biology, compatible with epithelial barrier lipid metabolism but not subtype-specific [record](https://zfin.org/ZDB-GENE-031219-4), [record](https://amigo.geneontology.org/amigo/term/GO%3A0080132).\n- **col14a1a** — expressed in integument and median fin fold; basement-membrane-associated, supporting epithelial/skin-associated matrix rather than liver/intestine/blood [record](https://zfin.org/ZDB-GENE-030131-9889).\n- **cyp1a** — expressed in digestive system, pectoral fin bud, pericardial region, tail bud, and vasculature; acts in cellular response to xenobiotic stimulus, so it suggests epithelial/environmental-response state but is not a specific skin subtype anchor [record](https://zfin.org/ZDB-GENE-011219-1).\n- **dpydb** — expressed in intestinal bulb and liver, so it raises the hidden endoderm possibility; however the requested positive anchors for liver/intestine are absent from this leaf’s marker list, so I would not assign endoderm [record](https://zfin.org/ZDB-GENE-040426-2459).\n- **pcxb** — expressed in liver as well as brain/gill/musculature, adding weak endoderm/metabolic ambiguity but not a specific hepatocyte call [record](https://zfin.org/ZDB-GENE-000831-1).\n\n## Caveats\n- No present fabp10a/apoa/tfa/serpina/ttr, fabp2/vil1/cdx1b/anxa4/agr2, or erythroid anchor.\n- EVL/epidermal support exists, but not enough to name a finer subtype.\n\n**Verdict:** epidermal / skin epithelium — confidence medium\n\n```kasperov-markers\n[{\"g\":\"fa2h\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL lipid enzyme\"},{\"g\":\"col14a1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"integument basement matrix\"},{\"g\":\"cyp1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"xenobiotic response\"},{\"g\":\"dpydb\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"liver/intestine ambiguity\"},{\"g\":\"pcxb\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"weak liver/metabolic signal\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (cyp1a, dpydb, pcxb, fa2h, BX537310.2, ugt8, col14a1a, si:ch73-194h10.2, sdk1a, zfpm1, shank3a, pard6b).",
+       "text": "I tried to query the raw stats for this leaf’s listed markers, but the dataset tool returned:\n\n```text\nprofile unavailable for this cluster\n```\n\nSo I don’t have retrievable raw log2FC / %in / %out values for this specific leaf via the active dataset interface.\n\nRequested genes:\n```text\ncyp1a\ndpydb\npcxb\nfa2h\nBX537310.2\nugt8\ncol14a1a\nsi:ch73-194h10.2\nsdk1a\nzfpm1\nshank3a\npard6b\n```"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The leaf’s own markers do not provide a specific, positive anchor for hidden liver, intestine, or erythroid identity, and the skin/epithelial signal is suggestive rather than subtype-resolving. With raw profiling unavailable, the safest settled call is to abstain from a finer subtype and roll up to the prior compartment.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[\"fa2h\",\"col14a1a\",\"cyp1a\"],\"decision\":\"abstain\",\"confidence\":58,\"done\":true}\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 58
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.8",
+     "nCells": 836,
+     "markers": [
+      "stm",
+      "si:ch211-80h18.1",
+      "lmx1bb",
+      "slc4a11",
+      "lrp2a",
+      "kcnq5a",
+      "ntm",
+      "mgat4b",
+      "otomp",
+      "prom1a",
+      "aldh1a3",
+      "FP326649.1"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: stm, si:ch211-80h18.1, lmx1bb, slc4a11, lrp2a, kcnq5a, ntm, mgat4b, otomp, prom1a, aldh1a3, FP326649.1. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Otic vesicle / inner-ear otolith-associated epithelium, developing — not liver/intestine/blood.**\n\n## Evidence\n- **stm** — starmaker acts in inner-ear/otolith development; strong otolith biomineralization anchor, not epidermal or endodermal [record](https://zfin.org/ZDB-GENE-031112-4).\n- **otomp** — otolith matrix protein; expressed in otic vesicle/vestibuloauditory system and acts within otolith development [record](https://zfin.org/ZDB-GENE-040709-1).\n- **aldh1a3** — expressed in zebrafish inner ear at 48 hpf, including cristae, anterior macula, and endolymphatic/otic epithelium domains [record](https://zfin.org/ZDB-FIG-080225-20).\n- **lmx1bb** — expressed in the otic vesicle; developmental TF consistent with otic rather than skin subtype [record](https://zfin.org/ZDB-GENE-050114-2).\n- **lrp2a** — expressed in otic vesicle, but also gut/pronephros/CNS, so supportive but not specific [record](https://zfin.org/ZDB-GENE-050119-2).\n- **prom1a** — expressed in developing sensory organs including otic vesicle; supportive progenitor/epithelial feature [record](https://zfin.org/ZDB-FIG-100616-2).\n- **otolith development** — GO term fits stm/otomp biology: progression of otolith from formation to mature structure [record](https://zfin.org/GO%3A0048840).\n- **ear/otic vesicle** — ZFA anatomy: otic placode cavitates into otic vesicle, giving rise to inner-ear structures including maculae/otolith-associated sensory patches [record](https://zfin.org/zf_info/anatomy/dict/ear/ear.html).\n\n## Caveats\n- Coarse “epidermal/skin epithelium” prior is likely a mis-binned ectodermal epithelial population.\n- No provided liver, intestine, or erythroid positive anchors.\n\n**Verdict:** otic vesicle / inner-ear otolith-associated epithelium, developing — confidence high**\n\n```kasperov-markers\n[{\"g\":\"stm\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"otolith biomineralization anchor\"},{\"g\":\"otomp\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"otic vesicle otolith matrix\"},{\"g\":\"aldh1a3\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"48hpf inner-ear epithelium\"},{\"g\":\"lmx1bb\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"otic vesicle TF\"},{\"g\":\"lrp2a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"otic vesicle supportive\"},{\"g\":\"prom1a\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"otic sensory organ expression\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (stm, si:ch211-80h18.1, lmx1bb, slc4a11, lrp2a, kcnq5a, ntm, mgat4b, otomp, prom1a, aldh1a3, FP326649.1).",
+       "text": "Raw stats query for this leaf (**cluster 1.8**) returned the following:\n\n| gene | found |\n|---|---:|\n| stm | false |\n| si:ch211-80h18.1 | false |\n| lmx1bb | false |\n| slc4a11 | false |\n| lrp2a | false |\n| kcnq5a | false |\n| ntm | false |\n| mgat4b | false |\n| otomp | false |\n| prom1a | false |\n| aldh1a3 | false |\n| FP326649.1 | false |\n\nNote from query: mean expression and %in are drawn from the matrix; p-values require the live stats service."
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The earlier biological interpretation points toward an otic/otolith-associated population, but the required raw-data check did **not** confirm any of the cited top markers as enriched in this leaf. Under the “confirmed positives only” rule, I cannot ground an otic subtype assignment from this leaf’s own validated marker evidence.\n\nSo the correct decision is to **abstain at subtype level** and roll up to the prior compartment.\n\n```kasperov-conclude\n{\"identity\":\"epidermal / skin epithelium\",\"tier\":\"tissue\",\"state\":\"none\",\"cited_markers\":[],\"decision\":\"abstain\",\"confidence\":35,\"done\":true}\n```"
+      }
+     ],
+     "call": {
+      "identity": "epidermal / skin epithelium",
+      "tier": "tissue",
+      "decision": "abstain",
+      "confidence": 35
+     },
+     "matchedTissue": "epidermis"
+    },
+    {
+     "leafId": "1.9",
+     "nCells": 633,
+     "markers": [
+      "CABZ01048956.1",
+      "cyt1",
+      "cyt1l",
+      "krt4",
+      "znf185",
+      "ppl",
+      "evpla",
+      "si:ch211-125o16.4",
+      "si:ch211-195b11.3",
+      "si:cabz01007794.1",
+      "agr1",
+      "si:dkey-202l22.6"
+     ],
+     "turns": [
+      {
+       "mode": "research",
+       "prompt": "TOP-DOWN RECURSIVE LABELLING — SUB-LEAF. This cluster is a SUB-POPULATION WITHIN a compartment the labeller already called \"epidermal / skin epithelium\" — that is the labeller's OWN prior call from the coarse pass, NOT ground truth (treat it as a strong prior, not a fact). EXPERIENTIAL PRIORS for ZSCAPE 48 hpf (HINTS, not rules):\n• At 48 hpf the endodermal organs (liver, pancreas, intestine) are transcriptionally close and are frequently NOT separated at coarse resolution — they get absorbed into a larger neighbouring compartment. Watch for them hiding inside big epithelial/neural compartments; separating them usually needs this targeted recursion.\n• Many canonical ADULT tissue markers are not yet expressed at 48 hpf, so the ABSENCE of an adult marker is NOT evidence against a tissue. Do not rule a tissue out on absence at this stage.\n• Some markers (e.g. robo4) are promiscuous across lineages — treat low-specificity markers cautiously; require a PRESENT, specific positive anchor before assigning (R4-style positive-anchor floor).\nThis recursion is specifically checking whether a hidden population is here — look for liver — fabp10a, apoa1/apoa2, tfa, serpina, transthyretin (ttr); intestine — fabp2, vil1, cdx1b, anxa4, agr2; blood/erythroid — hbae/hbbe, alas2, gata1a, slc4a1a. ONLY assign it if THIS leaf's own markers support it (a present, specific positive anchor); otherwise do not.\nGiven the compartment is \"epidermal / skin epithelium\", identify the SPECIFIC SUBTYPE of THIS leaf. Top markers: CABZ01048956.1, cyt1, cyt1l, krt4, znf185, ppl, evpla, si:ch211-125o16.4, si:ch211-195b11.3, si:cabz01007794.1, agr1, si:dkey-202l22.6. If the markers don't confidently support a subtype (or the hidden population), ABSTAIN and roll up to \"epidermal / skin epithelium\".",
+       "text": "**Periderm / EVL-like superficial epidermal cell, mature — not hidden liver/intestine/blood.**\n\n## Evidence\n- **cyt1** — type I cytokeratin “enveloping layer”; expressed in EVL, epidermis, epithelium and periderm; supports superficial embryonic epidermis [record](https://zfin.org/ZDB-GENE-991008-6).\n- **cyt1l** — type I cytokeratin, enveloping-layer-like; predicted structural constituent of skin epidermis and keratin filament component [record](https://zfin.org/ZDB-GENE-061026-4).\n- **krt4** — keratin 4; expressed in integument/ectoderm and predicted structural constituent of skin epidermis; krt4 reporter labels ZO-1-positive/ΔNp63-negative EVL cells [record](https://zfin.org/ZDB-GENE-000607-83), [record](https://www.zfin.org/ZDB-FIG-140403-30).\n- **evpla** — envoplakin a; expressed in EVL, epidermis and periderm; plakin/cornified-envelope-associated structural program [record](https://zfin.org/ZDB-GENE-030829-19).\n- **ppl** — periplakin; expressed in EVL and periderm, with desmosome/intermediate-filament localization predicted [record](https://zfin.org/ZDB-GENE-041008-196).\n- **periderm** — ZFA defines this as the outermost embryonic epidermal layer, derived from EVL; its top expressed genes include **ppl**, **krt4**, **evpla** [record](https://zfin.org/ZFA%3A0001185).\n- **GO:0030280** — “structural constituent of skin epidermis” matches the keratin/plakin marker program [record](https://amigo.geneontology.org/amigo/term/GO%3A0030280).\n\n## Caveats\n- No provided positive anchors for liver, intestine, or erythroid identity.\n- “Periderm” term is staged earlier in ZFA, but the marker program is clearly EVL/periderm-like superficial epidermis.\n\n**Verdict:** periderm / EVL-like superficial epidermal cell, mature — confidence high\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"enveloping-layer-like keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/superficial epidermis\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm plakin\"},{\"g\":\"ppl\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm cytolinker\"}]\n```"
+      },
+      {
+       "mode": "archivist",
+       "prompt": "Report the raw stats you have for this leaf's top markers (CABZ01048956.1, cyt1, cyt1l, krt4, znf185, ppl, evpla, si:ch211-125o16.4, si:ch211-195b11.3, si:cabz01007794.1, agr1, si:dkey-202l22.6).",
+       "text": "I attempted to query the raw stats for the requested markers, but the active cluster profile returned:\n\n```text\nprofile unavailable for this cluster\n```\n\nSo I don’t have retrievable per-gene raw stats for this leaf via the dataset tool at the moment.\n\nRequested genes:\n```text\nCABZ01048956.1\ncyt1\ncyt1l\nkrt4\nznf185\nppl\nevpla\nsi:ch211-125o16.4\nsi:ch211-195b11.3\nsi:cabz01007794.1\nagr1\nsi:dkey-202l22.6\n```"
+      },
+      {
+       "mode": "reason",
+       "prompt": "Conclude with a kasperov-conclude block: assign the subtype if grounded in THIS leaf's own markers, else abstain and roll up to \"epidermal / skin epithelium\". Stay GT-blind — the parent \"epidermal / skin epithelium\" is a prior, not ground truth.",
+       "text": "The leaf’s own marker set is strongly coherent for a superficial embryonic epidermal program: **cyt1/cyt1l**, **krt4**, **ppl**, and **evpla** all point to EVL/periderm-like epidermis rather than hidden liver, intestine, or erythroid identity. The raw profile was unavailable, so I cannot cite exact enrichment statistics, but these are listed as this leaf’s top up-regulated markers and are biologically concordant.\n\n```kasperov-conclude\n{\"identity\":\"periderm / EVL-like superficial epidermal cell\",\"tier\":\"cell type\",\"state\":\"mature\",\"cited_markers\":[\"cyt1\",\"cyt1l\",\"krt4\",\"ppl\",\"evpla\"],\"decision\":\"assign\",\"confidence\":88,\"done\":true}\n```\n\n```kasperov-markers\n[{\"g\":\"cyt1\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL/periderm keratin\"},{\"g\":\"cyt1l\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"EVL-like keratin\"},{\"g\":\"krt4\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"superficial epidermal keratin\"},{\"g\":\"ppl\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm cytolinker\"},{\"g\":\"evpla\",\"l2fc\":null,\"p1\":null,\"p2\":null,\"note\":\"periderm plakin\"}]\n```"
+      }
+     ],
+     "call": {
+      "identity": "periderm / EVL-like superficial epidermal cell",
+      "tier": "cell type",
+      "decision": "assign",
+      "confidence": 88
+     },
+     "matchedTissue": "epidermis"
+    }
+   ]
+  }
+ ]
+}
