@@ -650,6 +650,47 @@ export async function POST(req: Request) {
   if (!ds) return new Response(JSON.stringify({ error: "unknown_dataset", dataset: String(body?.dataset ?? "") }), { status: 400, headers: { "content-type": "application/json" } });
   const model = isKasperovModel(body?.model) ? body.model : DEFAULT;
   const cluster: Cluster = body?.cluster ?? { id: String(body?.clusterId ?? "?") };
+
+  // ⚖️ INPUTS PREVIEW (judgement-mode "Inputs" step). Return the REAL server-side
+  // system instructions + briefing assembled for THIS cluster, WITHOUT calling the
+  // model — so the curator can critique everything that goes into the chat before
+  // the first prompt is ever sent. Purely additive + read-only: the live run path
+  // never sends action:"inputs", so this cannot affect normal labelling.
+  if (body?.action === "inputs") {
+    const out = {
+      dataset: ds.id,
+      datasetName: ds.name,
+      model,
+      cluster: {
+        id: cluster.id,
+        label: cluster.label ?? null,
+        degsUp: cluster.degsUp ?? [],
+        markers: cluster.markers ?? [],
+        markersDown: cluster.markersDown ?? [],
+        nCells: cluster.nCells ?? null,
+      },
+      personasContext: PERSONAS_CONTEXT,
+      // the exact per-mode system prompts sent verbatim as the `instructions` field
+      instructions: {
+        research: researchInstructions(cluster),
+        reason: reasonInstructions(cluster, ds),
+        archivist: archivistInstructions(cluster, ds),
+      },
+      // the authoritative ground-truth facts block the Archivist quotes from
+      rawFacts: rawFactsBlock(cluster, ds),
+      // tools wired per mode + the model-call params actually used
+      tools: {
+        research: { web_search: { allowed_domains: ALLOWED_DOMAINS } },
+        archivist: { tool: QUERY_TOOL.name },
+        reason: null,
+      },
+      modelParams: { reasoning: { effort: "low", summary: "auto" }, max_output_tokens: 9000 },
+      // surfaced read-only; flagged as NOT exposed:
+      notExposed: "The OPENAI_API_KEY and the raw OpenAI transport/streaming are server-only and not included here. Everything above is the literal text/config sent into the chat.",
+    };
+    return new Response(JSON.stringify(out), { headers: { "content-type": "application/json" } });
+  }
+
   const messages: ChatMessage[] = Array.isArray(body?.messages)
     ? body.messages
         .filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string")

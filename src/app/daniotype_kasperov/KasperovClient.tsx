@@ -169,13 +169,13 @@ type Judgement = {
   cluster_id: string;
   cluster_label: string;
   step_index: number; // ordinal of the gated step within this cluster's sweep
-  mode: AgentMode | null; // which personality produced the step
+  mode: AgentMode | "inputs" | null; // which personality produced the step ("inputs" = the pre-prompt Inputs step)
   content_excerpt: string; // first chars of what the step produced (self-contained)
   note: string;
   ts: string;
 };
 
-export default function KasperovClient() {
+export default function KasperovClient({ staging = false }: { staging?: boolean } = {}) {
   const [dataset, setDataset] = useState<DatasetDef | null>(null);
   // Swap the active clustering partition (e.g. DanioCell de-novo-77 <-> native-470). The run is
   // still STORED under dataset.id; only the SERVED assets/grounding/agent key (serveId) changes.
@@ -651,6 +651,7 @@ export default function KasperovClient() {
       onAutoDone={() => setCaptureDone(true)}
       judgementMode={judgementMode}
       addJudgement={(j: Judgement) => setJudgements((prev) => [...prev, j])}
+      staging={staging}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -1476,10 +1477,11 @@ function NewRunModal({ onNormal, onJudgement, onCancel }: { onNormal: () => void
 }
 
 // ⚖️ The per-step pause popup shown in judgement mode after every personality turn.
-function JudgePopup({ pending, onResolve }: { pending: { clusterLabel: string; stepIndex: number; mode: AgentMode | null; excerpt: string }; onResolve: (note: string) => void }) {
+function JudgePopup({ pending, onResolve }: { pending: { clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full?: string }; onResolve: (note: string) => void }) {
   const [v, setV] = useState("");
-  const who = pending.mode ? THEME[pending.mode].name : "Step";
-  const icon = pending.mode ? THEME[pending.mode].icon : "⚖️";
+  const meta = judgeStepMeta(pending.mode);
+  const who = meta.who;
+  const icon = meta.icon;
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 1200, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 560, width: "100%", padding: "20px 22px", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.25)" }}>
@@ -1493,6 +1495,84 @@ function JudgePopup({ pending, onResolve }: { pending: { clusterLabel: string; s
           <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ⚖️ Persistent judgement-panel body (staging). Same gate as the popup — pendingJudge
+// + onResolve — but rendered as a live HUD panel that stays put across the whole sweep,
+// updating its destination tag + content as the conversation turns personality to
+// personality, starting with the Inputs step. Note box + OK / Submit + Continue, logged
+// to the same judgements[] (JSONL) as the popup.
+function judgeStepMeta(mode: AgentMode | "inputs" | null): { who: string; icon: string } {
+  if (mode === "inputs") return { who: "Inputs", icon: "📥" };
+  if (mode && (THEME as any)[mode]) return { who: THEME[mode].name, icon: THEME[mode].icon };
+  return { who: "Step", icon: "⚖️" };
+}
+function JudgePanelContent({
+  pending,
+  liveMode,
+  streaming,
+  autoRunning,
+  nLogged,
+  onResolve,
+}: {
+  pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null;
+  liveMode: AgentMode;
+  streaming: boolean;
+  autoRunning: boolean;
+  nLogged: number;
+  onResolve: (note: string) => void;
+}) {
+  const [v, setV] = useState("");
+  // reset the note whenever the gated step changes, so a note never bleeds across steps
+  const stepKey = pending ? `${pending.clusterId}:${pending.stepIndex}` : "";
+  useEffect(() => { setV(""); }, [stepKey]);
+
+  const tagBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" };
+
+  if (!pending) {
+    // idle between gates — still present, showing what's happening
+    const live = judgeStepMeta(liveMode);
+    return (
+      <div style={{ fontSize: 12.5, color: "#5a544c", lineHeight: 1.5, paddingTop: 4 }}>
+        <div style={tagBase}>⚖️ Judgement · standing by</div>
+        <div style={{ marginTop: 10 }}>
+          {autoRunning || streaming
+            ? <>The sweep is running{streaming ? <> — <b style={{ color: THEME[liveMode]?.color }}>{live.icon} {live.who}</b> is thinking</> : null}. This panel will pause on the next step so you can leave a note.</>
+            : <>No step is waiting. Start a judgement run — this panel opens on the <b>Inputs</b> step, then updates through Researcher → Researcher 2nd → Archivist → Reasoner → conclude.</>}
+        </div>
+        <div style={{ marginTop: 12, fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
+      </div>
+    );
+  }
+
+  const { who, icon } = judgeStepMeta(pending.mode);
+  const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8, paddingTop: 4, minHeight: 0 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+        {/* destination tag for THIS step */}
+        <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{icon} {who} · step {pending.stepIndex}</span>
+        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
+      </div>
+      <div style={{ fontSize: 11.5, color: "#666" }}>{pending.mode === "inputs" ? "Critique the inputs before the first prompt is sent, or continue." : `Critique what ${who} produced, or continue.`}</div>
+      {/* the full step content — scrollable */}
+      <div style={{ fontSize: 11.5, color: "#3f3a33", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 10px", maxHeight: 260, overflow: "auto", lineHeight: 1.5, whiteSpace: "pre-wrap", fontFamily: pending.mode === "inputs" ? "ui-monospace, SFMono-Regular, Menlo, monospace" : "inherit" }}>{pending.full || pending.excerpt}</div>
+      <textarea
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        autoFocus
+        rows={3}
+        placeholder={pending.mode === "inputs" ? "What's right/wrong about these inputs? (leave blank + OK to send the first prompt)" : "What's right/wrong about this step? (leave blank + OK to continue)"}
+        style={{ width: "100%", boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "vertical", fontFamily: "inherit" }}
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && v.trim()) onResolve(v); }}
+      />
+      <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
+        <button onClick={() => onResolve("")} style={{ ...btnGhost, padding: "6px 14px", fontSize: 12.5 }}>OK</button>
+        <button onClick={() => onResolve(v)} disabled={!v.trim()} style={{ background: v.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 14px", fontSize: 12.5, fontWeight: 700, cursor: v.trim() ? "pointer" : "default" }}>Submit + Continue →</button>
+      </div>
+      <div style={{ fontSize: 10.5, color: "#9a938a", textAlign: "right" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run</div>
     </div>
   );
 }
@@ -2263,6 +2343,66 @@ function secondOpinionPrompt(c: Cluster): string {
   );
 }
 
+// the literal Archivist raw-stats verification prompt the auto-pilot fires once per
+// cluster — shared by runOneCluster and the judgement Inputs-step preview so the two
+// can never drift.
+function archivistVerifyPrompt(c: Cluster): string {
+  const topG = (c.degsUp ?? []).slice(0, 6).join(", ") || (c.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
+  return `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.`;
+}
+
+// ⚖️ Assemble the route.ts action:"inputs" payload (the REAL server-side system
+// instructions + briefing) together with the client-built literal first prompts into
+// one readable, critiquable document for the judgement "Inputs" step.
+function assembleInputsDoc(d: any, c: Cluster): string {
+  const I = d?.instructions ?? {};
+  const tools = d?.tools ?? {};
+  const L: string[] = [];
+  L.push(`══════ INPUTS — everything that goes into the chat for ${c.label} ══════`);
+  L.push(`(read-only preview of the REAL assembled inputs, before the first prompt is sent)`);
+  L.push(`dataset: ${d?.datasetName ?? d?.dataset ?? "?"}   ·   model: ${d?.model ?? "?"}   ·   cluster id: ${c.id}`);
+  L.push("");
+  L.push("──────── SYSTEM INSTRUCTIONS (server-assembled by route.ts, sent verbatim) ────────");
+  L.push("");
+  L.push("【 RESEARCHER mode — the first personality called 】");
+  L.push(I.research ?? "(unavailable — server did not return it)");
+  L.push("");
+  L.push("【 REASONER mode 】");
+  L.push(I.reason ?? "(unavailable)");
+  L.push("");
+  L.push("【 ARCHIVIST mode 】");
+  L.push(I.archivist ?? "(unavailable)");
+  L.push("");
+  L.push("──────── BRIEFING / BACKGROUND (context assembled into the chat) ────────");
+  L.push("");
+  L.push("• Personas context (prepended to every personality):");
+  L.push(d?.personasContext ?? "(unavailable)");
+  L.push("");
+  L.push("• GT-blind cluster object (what the server sees — no published labels):");
+  L.push(JSON.stringify(d?.cluster ?? { id: c.id, label: c.label, degsUp: c.degsUp, markers: c.markers, markersDown: c.markersDown, nCells: c.nCells }, null, 2));
+  L.push("");
+  L.push("• Raw-facts block (authoritative dataset values the Archivist quotes):");
+  L.push(d?.rawFacts ?? "(unavailable)");
+  L.push("");
+  L.push("• Tools wired per mode:");
+  L.push(`   Researcher → web_search over ${(tools.research?.web_search?.allowed_domains ?? []).join(", ") || "(n/a)"}`);
+  L.push(`   Archivist  → ${tools.archivist?.tool ?? "(n/a)"} (live :5007 grounding)`);
+  L.push(`   Reasoner   → no tools`);
+  L.push(`• Model params: ${JSON.stringify(d?.modelParams ?? {})}`);
+  if (d?.notExposed) L.push(`• NOT exposed: ${d.notExposed}`);
+  L.push("");
+  L.push("──────── FIRST USER PROMPT (literal — sent to the first Researcher) ────────");
+  L.push(defaultPrompt(c));
+  L.push("");
+  L.push("──────── auto-pilot then sends, in order ────────");
+  L.push("• Independent second-opinion prompt (Researcher #2):");
+  L.push(secondOpinionPrompt(c));
+  L.push("");
+  L.push("• Archivist verification prompt:");
+  L.push(archivistVerifyPrompt(c));
+  return L.join("\n");
+}
+
 // pure marker merge (gene-keyed; classifies up/down by log2FC) — shared by the
 // manual "Add to Top Markers" button and the auto-pilot.
 function mergeMarkers(cur: Marker[], add: Marker[], via: AgentMode): Marker[] {
@@ -2371,6 +2511,7 @@ function ClusterStage({
   onAutoDone,
   judgementMode,
   addJudgement,
+  staging,
   labels,
   onLabel,
   transcripts,
@@ -2395,6 +2536,7 @@ function ClusterStage({
   onAutoDone?: () => void;
   judgementMode: boolean;
   addJudgement: (j: Judgement) => void;
+  staging: boolean;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2455,24 +2597,58 @@ function ClusterStage({
   // step and waits for the curator to hit OK or type a note + Submit + Continue.
   const judgeModeRef = useRef(judgementMode);
   useEffect(() => { judgeModeRef.current = judgementMode; }, [judgementMode]);
-  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | null; excerpt: string } | null>(null);
+  // `full` carries the complete step content for the persistent panel (staging) to
+  // display + scroll; `excerpt` is the trimmed copy stored on the logged record.
+  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string } | null>(null);
   const judgeResolve = useRef<(() => void) | null>(null);
   const judgeStepRef = useRef<Record<string, number>>({}); // gated-step ordinal per cluster
   // pause after a step; resolves when OK / Submit+Continue is clicked (or the sweep aborts).
-  function judgeGate(cl: Cluster, mode: AgentMode, content: string): Promise<void> {
+  function judgeGate(cl: Cluster, mode: AgentMode | "inputs", content: string): Promise<void> {
     if (!judgeModeRef.current) return Promise.resolve();
     const stepIndex = (judgeStepRef.current[cl.id] = (judgeStepRef.current[cl.id] ?? -1) + 1);
-    const excerpt = (content || "").replace(/```[\s\S]*?```/g, " ").replace(/\s+/g, " ").trim().slice(0, 600);
+    const full = (content || "").trim();
+    // for personality steps, strip fenced blocks from the logged excerpt (as before);
+    // for the Inputs step the content IS the assembled prompts, so keep it intact.
+    const excerpt = (mode === "inputs" ? full : full.replace(/```[\s\S]*?```/g, " ").replace(/\s+/g, " ").trim()).slice(0, 600);
     return new Promise<void>((resolve) => {
       judgeResolve.current = resolve;
-      setPendingJudge({ clusterId: cl.id, clusterLabel: cl.label, stepIndex, mode, excerpt });
+      setPendingJudge({ clusterId: cl.id, clusterLabel: cl.label, stepIndex, mode, excerpt, full });
     });
   }
+
+  // ⚖️ Change 1 (staging): assemble the FULL set of inputs for a cluster — the real
+  // server-side system instructions (route.ts builders), the briefing/background, and
+  // the literal first user prompts — into one critiquable document, then gate on it
+  // as step 0 BEFORE the first personality is called. Read-only: hits the additive
+  // action:"inputs" endpoint, which returns the assembled text without calling the model.
+  async function inputsGate(cl: Cluster): Promise<void> {
+    if (!judgeModeRef.current || !staging) return;
+    let doc: string;
+    try {
+      const r = await fetch("/api/kasperov_agent", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          action: "inputs",
+          dataset: dataset.serveId ?? dataset.id,
+          model,
+          cluster: { id: cl.id, label: cl.label, degsUp: cl.degsUp, markers: cl.markers, markersDown: cl.markersDown, nCells: cl.nCells },
+        }),
+      });
+      const d = await r.json();
+      doc = assembleInputsDoc(d, cl);
+    } catch (e) {
+      doc = `(Could not load the inputs preview: ${String((e as any)?.message ?? e)}.)\n\nThe live values are server-assembled by route.ts (researchInstructions / reasonInstructions / archivistInstructions). Critique the first prompt below.\n\n— FIRST USER PROMPT (Researcher) —\n${defaultPrompt(cl)}`;
+    }
+    await judgeGate(cl, "inputs", doc);
+  }
   // submit (with optional note) or skip — close the popup and let the sweep continue.
+  const [judgeLogged, setJudgeLogged] = useState(0); // notes logged this sweep (panel footer)
   function resolveJudge(note: string) {
     const pj = pendingJudge;
     if (pj && note.trim()) {
       addJudgement({ cluster_id: pj.clusterId, cluster_label: pj.clusterLabel, step_index: pj.stepIndex, mode: pj.mode, content_excerpt: pj.excerpt, note: note.trim(), ts: new Date().toISOString() });
+      setJudgeLogged((n) => n + 1);
     }
     setPendingJudge(null);
     const r = judgeResolve.current;
@@ -2601,6 +2777,12 @@ function ClusterStage({
       cf: { x: 14, y: 462, w: 252, h: 120 },
     });
   }, [containerSize, pb]);
+
+  // ⚖️ persistent judgement panel (staging) — its own draggable box, independent of
+  // the auto-fit world-map / markers / confidence stack so it never reshuffles them.
+  const [jb, setJb] = useState<Box>({ x: 16, y: 250, w: 360, h: 320 });
+  const moveJudge = useCallback((x: number, y: number) => setJb((b) => ({ ...b, x, y })), []);
+  const resizeJudge = useCallback((w: number, h: number) => setJb((b) => ({ ...b, w, h })), []);
 
   const moveBox = useCallback((k: "wm" | "mk" | "cf", x: number, y: number) => {
     manualRef.current = true;
@@ -2823,6 +3005,10 @@ function ClusterStage({
 
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
+    // 0) ⚖️ INPUTS step (staging judgement mode only) — surface the full server-side
+    //    instructions + briefing + first prompt as a critiquable step BEFORE any call.
+    await inputsGate(cl);
+    if (autoAbort.current) return;
     // 1) K=2 INDEPENDENT identity proposers (Researcher) — a default read and an
     //    alternative-hypothesis read, each from a fresh context so they can't
     //    anchor on each other. The Reasoner then adjudicates the two.
@@ -2837,8 +3023,7 @@ function ClusterStage({
     // 1b) ARCHIVIST verification — at least once per cluster, pull the cluster's
     //     ground-truth numbers (log2FC, %in/out, p-values, specificity) for the
     //     top markers, so the Reasoner adjudicates against raw data, not just lit.
-    const topG = (cl.degsUp ?? []).slice(0, 6).join(", ") || (cl.markers ?? []).slice(0, 6).map((m) => m.g).join(", ");
-    const arch = await autoStream(cl, [{ role: "user", content: `Pull this cluster's raw DEG stats for its top markers (${topG}): exact log2FC, %in/out, BH-adjusted p-value, and cross-cluster specificity. Return the full per-gene table so we can confirm which are the strongest, most specific markers.` }], "archivist");
+    const arch = await autoStream(cl, [{ role: "user", content: archivistVerifyPrompt(cl) }], "archivist");
     added = autoAddMarkers(cl, arch[arch.length - 1].content, "archivist");
     await judgeGate(cl, "archivist", arch[arch.length - 1].content);
     if (autoAbort.current) return;
@@ -2895,6 +3080,7 @@ function ClusterStage({
     if (auto.running) return;
     autoAbort.current = false;
     judgeStepRef.current = {}; // fresh gated-step ordinals for this sweep
+    setJudgeLogged(0);
     setAutoReport(null);
     // auto-detect & skip clusters that already have a cell-type label (= done).
     // NB: keyed off labels, not `validated` — a cluster can be validated by hand
@@ -2962,7 +3148,8 @@ function ClusterStage({
 
   return (
     <div style={{ height: "100vh", display: "flex", flexDirection: "column", background: PAPER, color: INK }}>
-      {pendingJudge && <JudgePopup pending={pendingJudge} onResolve={resolveJudge} />}
+      {/* live keeps the per-step modal; staging replaces it with the persistent JUDGEMENT panel below */}
+      {pendingJudge && !staging && <JudgePopup pending={pendingJudge} onResolve={resolveJudge} />}
       <style>{`
         @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
@@ -3053,6 +3240,24 @@ function ClusterStage({
                 {() => <ConfidenceContent conf={confidence[active.id]} busy={confBusy} celebrate={celebrateId === active.id} />}
               </DraggablePanel>
             </>
+          )}
+
+          {/* ⚖️ JUDGEMENT — persistent, draggable critique panel (staging). Replaces the
+              per-step popup: it stays present through the sweep and live-updates to the
+              current step (Inputs → Researcher → Researcher 2nd → Archivist → Reasoner). */}
+          {staging && (
+            <DraggablePanel title="⚖️ JUDGEMENT" accent="#7c3aed" box={jb} minW={250} minH={170} onMove={moveJudge} onResize={resizeJudge}>
+              {(w, h) => (
+                <JudgePanelContent
+                  pending={pendingJudge}
+                  liveMode={sMode}
+                  streaming={streaming}
+                  autoRunning={auto.running}
+                  nLogged={judgeLogged}
+                  onResolve={resolveJudge}
+                />
+              )}
+            </DraggablePanel>
           )}
         </div>
 
