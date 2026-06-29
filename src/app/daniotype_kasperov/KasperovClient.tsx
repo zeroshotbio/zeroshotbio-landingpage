@@ -507,14 +507,13 @@ export default function KasperovClient() {
   // ⚖️ Inputs popup resolved → log the first-question judgement + ONE judgement PER
   // personality system prompt the curator critiqued, then START the sweep (the only place
   // the judgement run kicks off).
-  function resolveInputs(notes: { question: string; sys: { research: string; reason: string; archivist: string; briefing: string } }) {
+  function resolveInputs(notes: { sys: { research: string; reason: string; archivist: string; briefing: string } }) {
     const im = inputsModal;
     if (im) {
       const recs: Judgement[] = [];
       const ts = new Date().toISOString();
       const I = im.data?.instructions ?? {};
       const excerptFor: Record<string, string> = { research: `[Researcher system prompt] ` + String(I.research ?? "").slice(0, 560), reason: `[Reasoner system prompt] ` + String(I.reason ?? "").slice(0, 560), archivist: `[Archivist system prompt] ` + String(I.archivist ?? "").slice(0, 560), briefing: `[Briefing & background] ` + String(im.data?.rawFacts ?? im.data?.personasContext ?? "").slice(0, 560) };
-      if (notes.question.trim()) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "first_prompt", content_excerpt: im.firstPrompt.slice(0, 600), note: notes.question.trim(), ts });
       (["research", "reason", "archivist", "briefing"] as const).forEach((k) => {
         const n = notes.sys[k]?.trim();
         if (n) recs.push({ cluster_id: im.clusterId, cluster_label: im.clusterLabel, step_index: 0, mode: "inputs", content_excerpt: excerptFor[k], note: n, ts });
@@ -1351,9 +1350,6 @@ function NoteField({ label, hint, value, onChange }: { label: string; hint: stri
   );
 }
 
-function SectionHeader({ children }: { children: React.ReactNode }) {
-  return <div style={{ fontSize: 13.5, fontWeight: 800, color: "#2b2b2b", margin: "16px 0 8px", paddingBottom: 5, borderBottom: "2px solid #7c3aed33" }}>{children}</div>;
-}
 
 // small key/value table for the GT-blind cluster object + tools/model params
 function KVTable({ rows }: { rows: [string, React.ReactNode][] }) {
@@ -1421,8 +1417,7 @@ function SystemPromptDisclosure({ datasetId, model, cluster }: { datasetId: stri
 // literal first question ("You asked"), and (2) the system prompt + briefing it always
 // carries — organised into collapsible, rich-text sections. The sweep starts only on a
 // button click.
-function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string }; onResolve: (notes: { question: string; sys: { research: string; reason: string; archivist: string; briefing: string } }) => void }) {
-  const [qNote, setQNote] = useState("");
+function InputsModal({ modal, onResolve }: { modal: { clusterId: string; clusterLabel: string; loading: boolean; data: any | null; firstPrompt: string }; onResolve: (notes: { sys: { research: string; reason: string; archivist: string; briefing: string } }) => void }) {
   const [sys, setSys] = useState({ research: "", reason: "", archivist: "", briefing: "" });
   const setSysNote = (k: "research" | "reason" | "archivist" | "briefing", v: string) => setSys((s) => ({ ...s, [k]: v }));
   const d = modal.data;
@@ -1430,35 +1425,27 @@ function InputsModal({ modal, onResolve }: { modal: { clusterId: string; cluster
   const cl = d?.cluster ?? {};
   const tools = d?.tools ?? {};
   const len = (s?: string) => (s ? `${s.length.toLocaleString()} chars` : undefined);
-  const anyNote = qNote.trim() || sys.research.trim() || sys.reason.trim() || sys.archivist.trim() || sys.briefing.trim();
-  const summary = [qNote.trim() && "first question", sys.research.trim() && "Researcher", sys.reason.trim() && "Reasoner", sys.archivist.trim() && "Archivist", sys.briefing.trim() && "Briefing"].filter(Boolean).join(" + ");
+  const anyNote = sys.research.trim() || sys.reason.trim() || sys.archivist.trim() || sys.briefing.trim();
+  const summary = [sys.research.trim() && "Researcher", sys.reason.trim() && "Reasoner", sys.archivist.trim() && "Archivist", sys.briefing.trim() && "Briefing"].filter(Boolean).join(" + ");
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", zIndex: 1300, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 860, width: "100%", maxHeight: "90vh", textAlign: "left", boxShadow: "0 10px 40px rgba(0,0,0,0.3)", display: "flex", flexDirection: "column" }}>
         {/* fixed header */}
-        <div style={{ padding: "18px 22px 12px", borderBottom: "1px solid #eee7df" }}>
+        <div style={{ padding: "18px 22px 14px", borderBottom: "1px solid #eee7df" }}>
           <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "3px 10px" }}>📥 Inputs — Before First Prompt</div>
-          <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 2px" }}>Review the inputs the Researcher will receive</div>
-          <div style={{ fontSize: 12.5, color: "#666", lineHeight: 1.55 }}>Two separate things go to the model: <b>your first question</b> and a <b>system prompt + briefing</b> it always carries. Read each below and judge them individually — the system prompt can be judged <b>per personality</b>. <b>The run starts only when you click a button at the bottom.</b></div>
+          <div style={{ fontSize: 16, fontWeight: 800, margin: "10px 0 6px" }}>The system prompt &amp; briefing the labeller carries</div>
+          <div style={{ fontSize: 12.5, color: "#555", lineHeight: 1.55 }}>
+            Every turn of the three-personality chat carries this <b>system prompt</b> — hidden from the conversation, but it shapes how the labeller behaves on every cluster. The <b style={{ color: THEME.research.color }}>Researcher</b> prompt fixes what it grounds in (ZFIN / ZFA / GO) and its cite-discipline; the <b style={{ color: THEME.reason.color }}>Reasoner</b> prompt sets how it synthesises evidence, when it dispatches the other two, and the rules for concluding vs abstaining; the <b style={{ color: THEME.archivist.color }}>Archivist</b> prompt locks it to the dataset&apos;s raw values only. The <b>briefing</b> supplies this cluster&apos;s markers + authoritative stats. These are the levers that steer the system — a change here changes the labeller for every cluster. Read each below and judge it on its own. <i>(Your first question comes next, in the judgement box.)</i>
+          </div>
         </div>
 
         {/* scrollable body */}
-        <div style={{ flex: 1, overflow: "auto", padding: "8px 22px 16px" }}>
+        <div style={{ flex: 1, overflow: "auto", padding: "10px 22px 16px" }}>
           {modal.loading ? (
             <div style={{ padding: "30px 0", textAlign: "center", color: "#9a938a", fontSize: 13 }}>Loading the assembled inputs…</div>
           ) : d?.error ? (
-            <div style={{ fontSize: 12.5, color: "#8a5a00", background: "#fff7e6", border: "1px solid #f0dca8", borderRadius: 8, padding: "10px 12px", lineHeight: 1.5 }}>Couldn’t load the full server-side inputs ({String(d.error)}). The literal first question below is still accurate.</div>
+            <div style={{ fontSize: 12.5, color: "#8a5a00", background: "#fff7e6", border: "1px solid #f0dca8", borderRadius: 8, padding: "10px 12px", lineHeight: 1.5 }}>Couldn’t load the full server-side inputs ({String(d.error)}).</div>
           ) : null}
-
-          {/* ── Part 1: the first question ── */}
-          <SectionHeader>1 · Your first question — what “You asked” shows in the chat</SectionHeader>
-          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>This exact text is the first user message the Researcher answers. It is <b>not</b> the system prompt — it’s the question.</div>
-          <div style={inputsQuote}>{modal.firstPrompt}</div>
-          <NoteField label="⚖️ Judge the first question" hint="Is this the right question to open with? Anything leading, missing, or worth rephrasing?" value={qNote} onChange={setQNote} />
-
-          {/* ── Part 2: system prompt + briefing (per-personality) ── */}
-          <SectionHeader>2 · System prompt &amp; briefing — carried with every turn (separate from your question)</SectionHeader>
-          <div style={{ fontSize: 12, color: "#777", margin: "0 0 8px", lineHeight: 1.5 }}>The model never sees these in the chat, but they shape every answer. Expand each personality to read its real, verbatim prompt — and judge it on its own.</div>
           <Collapsible title="🔬 Researcher — system prompt" badge={len(I.research)} accent={THEME.research.color}>
             <RichMD mode="research">{I.research ?? "(unavailable)"}</RichMD>
             <NoteField label="⚖️ Judge the Researcher system prompt" hint="Anything in the Researcher's instructions that would bias or mislead its grounding?" value={sys.research} onChange={(v) => setSysNote("research", v)} />
@@ -1500,8 +1487,8 @@ function InputsModal({ modal, onResolve }: { modal: { clusterId: string; cluster
         {/* fixed footer */}
         <div style={{ display: "flex", gap: 10, padding: "12px 22px", borderTop: "1px solid #eee7df", justifyContent: "flex-end", alignItems: "center" }}>
           <div style={{ fontSize: 11, color: "#9a938a", marginRight: "auto" }}>{summary || "no notes yet"}</div>
-          <button onClick={() => onResolve({ question: "", sys: { research: "", reason: "", archivist: "", briefing: "" } })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
-          <button onClick={() => onResolve({ question: qNote, sys })} disabled={modal.loading || !anyNote} style={{ background: !modal.loading && anyNote ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && anyNote ? "pointer" : "default" }}>Add notes + continue →</button>
+          <button onClick={() => onResolve({ sys: { research: "", reason: "", archivist: "", briefing: "" } })} disabled={modal.loading} style={{ ...btnGhost, padding: "8px 18px", fontSize: 13.5, opacity: modal.loading ? 0.5 : 1 }}>Continue without adding notes</button>
+          <button onClick={() => onResolve({ sys })} disabled={modal.loading || !anyNote} style={{ background: !modal.loading && anyNote ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "8px 16px", fontSize: 13.5, fontWeight: 700, cursor: !modal.loading && anyNote ? "pointer" : "default" }}>Add notes + continue →</button>
         </div>
       </div>
     </div>
@@ -1529,7 +1516,7 @@ function JudgePanelContent({
   logged,
   height,
 }: {
-  pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null;
+  pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | "first_prompt" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null;
   liveMode: AgentMode;
   streaming: boolean;
   autoRunning: boolean;
@@ -1580,13 +1567,14 @@ function JudgePanelContent({
     const accent = pending.mode && (THEME as any)[pending.mode] ? THEME[pending.mode as AgentMode].color : "#7c3aed";
     const renderMode: AgentMode = pending.mode && (THEME as any)[pending.mode] ? (pending.mode as AgentMode) : "reason";
     const isPrompt = pending.kind === "prompt";
+    const isFirstQ = pending.mode === "first_prompt";
     body = (
       <div style={{ display: "flex", flexDirection: "column", gap: 8, minHeight: 0, flex: 1 }}>
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-          <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{isPrompt ? `↳ prompt → ${who}` : `${icon} ${who}`} · step {pending.stepIndex}</span>
+          <span style={{ ...tagBase, color: accent, background: accent + "1a" }}>{isFirstQ ? "❓ You asked — the first question" : isPrompt ? `↳ prompt → ${who}` : `${icon} ${who}`} · step {pending.stepIndex}</span>
           <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{pending.clusterLabel}</span>
         </div>
-        <div style={{ fontSize: 11.5, color: "#666" }}>{isPrompt ? `Critique the prompt about to be sent to the ${who}, or continue.` : `Critique what the ${who} produced, or continue.`}</div>
+        <div style={{ fontSize: 11.5, color: "#666" }}>{isFirstQ ? "Critique the first question — the opening prompt sent to the Researcher — or continue." : isPrompt ? `Critique the prompt about to be sent to the ${who}, or continue.` : `Critique what the ${who} produced, or continue.`}</div>
         <div style={{ background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: "8px 11px", flex: 1, minHeight: 60, overflow: "auto" }}>
           <RichMD mode={renderMode}>{(isPrompt ? pending.full : stripFences(pending.full)) || pending.excerpt}</RichMD>
         </div>
@@ -2611,11 +2599,11 @@ function ClusterStage({
   useEffect(() => { judgeModeRef.current = judgementMode; }, [judgementMode]);
   // `full` carries the complete step content for the persistent panel to
   // display + scroll; `excerpt` is the trimmed copy stored on the logged record.
-  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null>(null);
+  const [pendingJudge, setPendingJudge] = useState<{ clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | "first_prompt" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null>(null);
   const judgeResolve = useRef<(() => void) | null>(null);
   const judgeStepRef = useRef<Record<string, number>>({}); // gated-step ordinal per cluster
   // pause after a step; resolves when OK / Submit+Continue is clicked (or the sweep aborts).
-  function judgeGate(cl: Cluster, mode: AgentMode | "inputs", content: string, kind: "output" | "prompt" = "output"): Promise<void> {
+  function judgeGate(cl: Cluster, mode: AgentMode | "inputs" | "first_prompt", content: string, kind: "output" | "prompt" = "output"): Promise<void> {
     if (!judgeModeRef.current) return Promise.resolve();
     const stepIndex = (judgeStepRef.current[cl.id] = (judgeStepRef.current[cl.id] ?? -1) + 1);
     const full = (content || "").trim();
@@ -2995,6 +2983,10 @@ function ClusterStage({
 
   async function runOneCluster(cl: Cluster) {
     let added: Marker[] = augmented[cl.id] ?? [];
+    // 0) FIRST QUESTION — the opening "You asked" prompt is judged in the JUDGEMENT box
+    //    (moved out of the Inputs popup) BEFORE the Researcher runs.
+    await judgeGate(cl, "first_prompt", defaultPrompt(cl), "prompt");
+    if (autoAbort.current) return;
     // 1) Researcher — a single grounded identity proposal. (The independent second
     //    opinion + the unconditional Archivist verification were removed; the Reasoner
     //    dispatches the Archivist/Researcher on demand instead.)
