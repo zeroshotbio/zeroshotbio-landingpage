@@ -3240,6 +3240,9 @@ function ClusterStage({
     // 2) Reasoner-orchestrated rounds — adjudicate, dispatch follow-ups, conclude
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
       if (autoAbort.current) return;
+      // gate the Reasoner PROMPT ("You asked") before it's sent, then its output
+      await judgeGate(cl, "reason", AUTO_REASON_PROMPT, "prompt");
+      if (autoAbort.current) return;
       conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
       let rc = conv[conv.length - 1].content;
       added = autoAddMarkers(cl, rc, "reason");
@@ -3248,7 +3251,9 @@ function ClusterStage({
       let concl = splitConclude(rc).conclude;
       let dispatches = splitDispatch(splitMarkerBlock(splitConclude(rc).clean).clean).dispatches;
       if (!concl && dispatches.length === 0) {
-        // neither concluded nor dispatched → nudge once
+        // neither concluded nor dispatched → nudge once (gate the nudge prompt + its output)
+        await judgeGate(cl, "reason", AUTO_NUDGE_PROMPT, "prompt");
+        if (autoAbort.current) return;
         conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_NUDGE_PROMPT }], "reason");
         rc = conv[conv.length - 1].content;
         added = autoAddMarkers(cl, rc, "reason");
