@@ -105,7 +105,7 @@ def _registry() -> dict:
     # zscape_v2 / chemfish_v2 / minifin_v2: de-novo recursive fresh-local-HVG leaf partitions
     # (GT-blind v2 assets); cluster_col=leaf, bc_col=cell — set via the {DS}_V2_* drop-ins.
     # minifin_v2 is DISTINCT from the live flat-Leiden `minifin` slot (which it does not touch).
-    for nid in ("zscape_native", "chemfish_native", "daniocell_native", "zscape_v2", "chemfish_v2", "minifin_v2"):
+    for nid in ("zscape_native", "chemfish_native", "daniocell_native", "zscape_v2", "chemfish_v2", "minifin_v2", "zscape_recursive"):
         pre = nid.upper()
         if os.environ.get(f"{pre}_H5AD"):
             reg[nid] = dict(

@@ -62,14 +62,15 @@ const DATASETS: DatasetDef[] = [
   {
     id: "zscape",
     name: "ZSCAPE Classic",
-    tagline: "Saunders et al. · 3.2M cells · de-novo clusters (partition being re-cut)",
+    tagline: "Saunders et al. · 48 hpf · recursive per-compartment · ~250 leaf-clusters",
     blurb:
-      "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch (silhouette-gated sub-Leiden) and score our names against the authors' published germ-layer → tissue → broad → sub labels.",
-    dataUrl: `${ASSET_BASE}/zscape/umap.json`,
-    archivistBase: `${ASSET_BASE}/zscape/archivist`,
-    groundTruthUrl: `${ASSET_BASE}/zscape/groundtruth.json`,
+      "The Trapnell-lab whole-embryo atlas. We re-cluster from scratch with two-stage recursive per-compartment clustering — recomputing marker genes locally inside each compartment before re-clustering, which surfaces rare tissues a single global pass buries — then name each cluster by a control-cell-only vote, and score against the authors' published germ-layer → tissue → broad → sub labels.",
+    dataUrl: `${ASSET_BASE}/zscape_recursive/umap.json`,
+    archivistBase: `${ASSET_BASE}/zscape_recursive/archivist`,
+    groundTruthUrl: `${ASSET_BASE}/zscape_recursive/groundtruth.json`,
+    serveId: "zscape_recursive",
     status: "ready",
-    approxClusters: 55,
+    approxClusters: 250,
   },
   {
     id: "chemfish",
@@ -1555,73 +1556,26 @@ function ClusteringExplainer() {
 // ZSCAPE-specific "How we clustered" — the REAL recipe (silhouette-gated recursive
 // sub-Leiden on the authors' embedding), not the generic resolution/coherence knobs.
 // Data-driven from dataset_facts.json → zscape.clusteringViz (single source of truth).
-function ZscapeClusteringExplainer() {
-  const cv = (DATASET_FACTS as any)?.zscape?.clusteringViz;
-  if (!cv) return <ClusteringExplainer />;
-  const card: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "12px 14px" };
-  const total: number = cv.tierOutcome?.total || 55;
-  const arrow = <div style={{ alignSelf: "center", color: "#cfc8bf", fontSize: 18 }}>→</div>;
+// ZSCAPE "1. Clustering" — the central viz is the real UMAP (UmapCanvas above, coloured by
+// the v2 recursive partition); this is the single textbook-intro paragraph beneath it. Leaf
+// count is keyed to the live atlas (nLeaves), never a baked literal.
+function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
+  const n = nLeaves && nLeaves > 0 ? nLeaves : 250;
   return (
-    <div style={{ maxWidth: 880, margin: "10px auto 2px", textAlign: "left" }}>
-      <p style={{ textAlign: "center", fontSize: 13.5, color: "#777", margin: "0 0 14px", lineHeight: 1.5 }}>{cv.headline}</p>
-
-      {/* the real pipeline */}
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "stretch", justifyContent: "center" }}>
-        {cv.pipeline.map((s: any, i: number) => (
-          <React.Fragment key={i}>
-            <div style={{ ...card, flex: "1 1 150px", minWidth: 148, maxWidth: 205 }}>
-              <div style={{ fontSize: 20 }}>{s.icon}</div>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#2b2b2b", marginTop: 2 }}>{s.title}</div>
-              <div style={{ fontSize: 12, fontWeight: 700, color: ACCENT, margin: "1px 0 4px" }}>{s.stat}</div>
-              <div style={{ fontSize: 11, color: "#6a645c", lineHeight: 1.45 }}>{s.detail}</div>
-            </div>
-            {i < cv.pipeline.length - 1 ? arrow : null}
-          </React.Fragment>
-        ))}
-      </div>
-
-      {/* the silhouette gate — the distinctive step */}
-      <div style={{ ...card, marginTop: 14, background: "#fbf9ff", borderColor: "#e6ddf7" }}>
-        <div style={{ fontSize: 13.5, fontWeight: 800, color: "#6d28d9", marginBottom: 8 }}>✂️ The silhouette gate — the heart of the ZSCAPE recipe</div>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "stretch" }}>
-          <div style={{ ...card, flex: "1 1 160px", minWidth: 150, background: "#fff" }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", textTransform: "uppercase", letterSpacing: 0.4 }}>Trigger</div>
-            <div style={{ fontSize: 13, color: "#3a3530", marginTop: 3 }}>{cv.gate.trigger}</div>
-            <div style={{ fontSize: 11.5, color: "#6a645c", marginTop: 4 }}>↳ {cv.gate.tentative}</div>
-          </div>
-          {arrow}
-          <div style={{ ...card, flex: "1 1 210px", minWidth: 190, background: "#fff" }}>
-            <div style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 5 }}>Gate — all three must pass</div>
-            {cv.gate.checks.map((c: string, i: number) => (
-              <div key={i} style={{ fontSize: 12, color: "#3a3530", display: "flex", gap: 6, alignItems: "baseline", marginBottom: 2 }}><span style={{ color: "#7c3aed", fontWeight: 700 }}>✓</span>{c}</div>
-            ))}
-          </div>
-          {arrow}
-          <div style={{ display: "flex", flexDirection: "column", gap: 6, flex: "1 1 160px", minWidth: 150 }}>
-            <div style={{ ...card, background: "#f0fdf4", borderColor: "#bbf7d0", padding: "8px 11px" }}><span style={{ color: "#15803d", fontWeight: 700, fontSize: 12.5 }}>✓ Accept</span><div style={{ fontSize: 11.5, color: "#3f6048", lineHeight: 1.4 }}>{cv.gate.accept}</div></div>
-            <div style={{ ...card, background: "#fef2f2", borderColor: "#fecaca", padding: "8px 11px" }}><span style={{ color: "#b91c1c", fontWeight: 700, fontSize: 12.5 }}>↺ Roll back</span><div style={{ fontSize: 11.5, color: "#7f4a4a", lineHeight: 1.4 }}>{cv.gate.rollback}</div></div>
-          </div>
-        </div>
-        <div style={{ fontSize: 11.5, color: "#6d5b8a", marginTop: 9, lineHeight: 1.5, fontStyle: "italic" }}>{cv.gate.why}</div>
-      </div>
-
-      {/* the real outcome — 55 leaves by germ layer (from groundtruth.json) */}
-      {cv.tierOutcome ? (
-        <div style={{ ...card, marginTop: 14 }}>
-          <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 7 }}>🎯 {total} leaf clusters, by germ layer</div>
-          <div style={{ display: "flex", height: 16, borderRadius: 6, overflow: "hidden", border: "1px solid #e5e1dc" }}>
-            {cv.tierOutcome.germLayers.map((g: any, i: number) => (
-              <div key={i} title={`${g.label}: ${g.n}`} style={{ width: `${(100 * g.n) / total}%`, background: g.color }} />
-            ))}
-          </div>
-          <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 8 }}>
-            {cv.tierOutcome.germLayers.map((g: any, i: number) => (
-              <span key={i} style={{ fontSize: 11.5, color: "#5a544c", display: "inline-flex", alignItems: "center", gap: 5 }}><span style={{ width: 9, height: 9, borderRadius: 2, background: g.color, display: "inline-block" }} />{g.label} · {g.n}</span>
-            ))}
-          </div>
-          <div style={{ fontSize: 11, color: "#9a948c", marginTop: 7, lineHeight: 1.45 }}>{cv.tierOutcome.note}</div>
-        </div>
-      ) : null}
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px", maxWidth: 760, margin: "12px auto 0", textAlign: "left" }}>
+      <p style={{ fontSize: 15.5, lineHeight: 1.7, color: "#33312e", margin: 0 }}>
+        ZSCAPE is clustered in <b>two recursive stages</b>. First, all <b>~813,000 cells from the 48-hour stage</b>{" "}
+        (a single developmental age, so young and old cells are never blended) are grouped into a handful of broad{" "}
+        <b>compartments</b>. Then the method goes <b>inside each compartment and recomputes which genes vary most locally</b>{" "}
+        before clustering again — this local re-derivation of marker genes is what lets rare tissues like{" "}
+        <b>blood, pancreas, and liver</b> surface, where a single global pass would bury them under the dominant cell types.{" "}
+        <b>Every cell is used to build the clusters.</b> Each resulting cluster is then given its tissue name by a{" "}
+        <b>vote that counts only the non-perturbed control cells</b>, so drug-induced shifts don&apos;t bias the labels —{" "}
+        to be explicit: <i>all cells are clustered; only control cells vote on the names.</i> The result is{" "}
+        <b>{n} fine clusters</b> spanning the embedding. One honest limit: blood, pancreas, and intestine come out cleanly{" "}
+        and liver is named, but at 48 hpf <b>liver, gut, and pancreas still share a strong common endoderm program</b>,{" "}
+        so they remain partly blended — the liver cluster is a <b>plurality call</b>, not a pure one.
+      </p>
     </div>
   );
 }
@@ -1910,7 +1864,7 @@ function MapStage({
             </div>
           </div>
         )}
-        {!revealed && (dataset.id === "zscape" ? <ZscapeClusteringExplainer /> : <ClusteringExplainer />)}
+        {!revealed && (dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />)}
 
         {loadedNote && (
           <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>
