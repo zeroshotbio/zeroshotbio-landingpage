@@ -2456,10 +2456,13 @@ function splitPromote(content: string): { clean: string; promotes: { gene: strin
 
 function defaultPrompt(c: Cluster): string {
   const upList = c.degsUp.slice(0, 8).join(", ");
+  const downList = (c.markersDown ?? []).slice(0, 8).map((m) => m.g).join(", ");
   return (
-    `${c.label}'s top up-regulated markers are: ${upList || "(none)"}. ` +
-    `Using ZFIN curated expression, ZFA anatomy, and GO, identify the most likely zebrafish cell type ` +
-    `(with state if the markers support it), grounding each claim in a cited record. If the evidence is ambiguous, say so.`
+    `${c.label}'s top UP-regulated markers are: ${upList || "(none)"}. ` +
+    (downList ? `Its top DOWN-regulated (depleted) markers are: ${downList}. ` : "") +
+    `For EACH of these genes — up- and down-regulated — return the cited evidence from ZFIN curated expression, ZFA anatomy, and GO: ` +
+    `which tissues / cell types the gene is associated with (or notably absent from), with a cited record per claim. ` +
+    `Report evidence only — do not propose a cell-type identity, a verdict, or a confidence; the synthesis is the Reasoner's job.`
   );
 }
 
