@@ -345,7 +345,7 @@ export default function KasperovClient() {
         addedMarkers: augmented[c.id] ?? [],
         transcript: transcripts[c.id] ?? [],
       })),
-      groundTruth: score.scoredAt ? { scoredAt: score.scoredAt, aggregate: score.agg, verdicts: score.verdicts, subStratified: score.subStrat ?? null, abstention: score.abstention ?? null, scoring: "driver/v2" } : null,
+      groundTruth: score.scoredAt ? { scoredAt: score.scoredAt, aggregate: score.agg, verdicts: score.verdicts, subStratified: score.subStrat ?? null, abstention: score.abstention ?? null, constrainedAggregate: score.aggConstrained ?? null, constrainedVerdicts: score.verdictsConstrained ?? null, scoring: "driver/v2" } : null,
     };
   }
 
@@ -457,7 +457,7 @@ export default function KasperovClient() {
     else setUsage({});
     if ((KASPEROV_MODELS as readonly string[]).includes(data.model)) setModel(data.model as KasperovModel);
     if (data.groundTruth && Array.isArray(data.groundTruth.aggregate)) {
-      setScore({ verdicts: data.groundTruth.verdicts ?? {}, scoredAt: data.groundTruth.scoredAt ?? null, agg: data.groundTruth.aggregate, subStrat: data.groundTruth.subStratified ?? null, abstention: data.groundTruth.abstention ?? null });
+      setScore({ verdicts: data.groundTruth.verdicts ?? {}, scoredAt: data.groundTruth.scoredAt ?? null, agg: data.groundTruth.aggregate, subStrat: data.groundTruth.subStratified ?? null, abstention: data.groundTruth.abstention ?? null, verdictsConstrained: data.groundTruth.constrainedVerdicts ?? undefined, aggConstrained: data.groundTruth.constrainedAggregate ?? undefined });
     } else {
       setScore({ verdicts: {}, scoredAt: null, agg: [] });
     }

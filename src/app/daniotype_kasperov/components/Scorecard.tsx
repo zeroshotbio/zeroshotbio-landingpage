@@ -286,6 +286,44 @@ export function Scorecard({
       await Promise.all(Array.from({ length: Math.min(3, batches.length) }, worker));
       const extras = computeExtras(acc);
       setScore({ verdicts: acc, scoredAt: new Date().toISOString(), agg: computeAgg(acc), subStrat: extras.subStrat, abstention: extras.abstention });
+
+      // ⚖️ CONSTRAINED pass — additive second score. Fit each de-novo identity onto the
+      // dataset's published GT bins (/api/kasperov_fit), then judge those fitted per-tier
+      // labels. The de-novo numbers above are left exactly as-is; this ONLY adds
+      // verdictsConstrained / aggConstrained. Skips silently for open-vocab datasets.
+      try {
+        const cById: Record<string, Cluster> = {};
+        for (const c of toScore) cById[c.id] = c;
+        const fits: ({ id: string; predictions: Record<string, string> } | null)[] = [];
+        let fi = 0;
+        const fitWorker = async () => {
+          while (fi < toScore.length) {
+            const c = toScore[fi++];
+            const drv = parseDriverLabel(labels[c.id] || "");
+            const identity = drv.identity || labels[c.id] || "";
+            if (!identity) { fits.push(null); continue; }
+            try {
+              const r = await fetch("/api/kasperov_fit", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataset: dataset.id, model, identity, cluster: { label: c.label, markers: (c.degsUp ?? []).slice(0, 8).join(", ") } }) });
+              const d = r.ok ? await r.json() : {};
+              if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
+              fits.push(d.fit ? { id: c.id, predictions: d.fit } : null);
+            } catch { fits.push(null); }
+          }
+        }
+        await Promise.all(Array.from({ length: Math.min(3, toScore.length) }, fitWorker));
+        const citems = fits.filter(Boolean).map((f) => ({ id: f!.id, ourLabel: f!.predictions.cell_type_sub, predictions: f!.predictions, markers: cById[f!.id]?.degsUp, gt: gtTiersFor(f!.id) }));
+        if (citems.length) {
+          const accC: Record<string, ClusterVerdict> = {};
+          for (let i = 0; i < citems.length; i += BATCH) {
+            const b = citems.slice(i, i + BATCH);
+            try {
+              const r = await fetch("/api/kasperov_score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataset: dataset.id, model, items: b }) });
+              if (r.ok) { const d = await r.json(); if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0); for (const res of d.results ?? []) if (res?.id) accC[res.id] = res; }
+            } catch {}
+          }
+          if (Object.keys(accC).length) setScore((s) => ({ ...s, verdictsConstrained: accC, aggConstrained: computeAgg(accC) }));
+        }
+      } catch (e) { console.warn("[kasperov] constrained scoring failed:", e); }
       setStatus("done");
     },
     [gt, labelled, labels, gtTiersFor, computeAgg, computeExtras, dataset.id, model, addUsage, score.verdicts, setScore]
@@ -325,23 +363,49 @@ export function Scorecard({
 
         {/* tier agreement bars — shown un-filled (—) until the comparison is run */}
         {status !== "loading" && status !== "error" && (
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
-            {agg.filter((t) => nativeTierKeys.has(t.key)).map((t) => {
-              const heat = confColor(t.pct);
-              return (
-                <div key={t.key} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" }}>
-                  <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{tierColLabel({ gtKey: t.key, label: t.label })}</div>
-                  <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
-                    <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct.toFixed(0) : "—"}{t.total ? "%" : ""}</span>
-                    <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
+          <>
+            {score.aggConstrained && <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.6, color: "#888", fontWeight: 800, margin: "2px 0 6px" }}>De-novo — open-vocabulary call (lineage roll-up)</div>}
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
+              {agg.filter((t) => nativeTierKeys.has(t.key)).map((t) => {
+                const heat = confColor(t.pct);
+                return (
+                  <div key={t.key} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" }}>
+                    <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{tierColLabel({ gtKey: t.key, label: t.label })}</div>
+                    <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+                      <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct.toFixed(0) : "—"}{t.total ? "%" : ""}</span>
+                      <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
+                    </div>
+                    <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
+                      <div style={{ width: `${t.pct}%`, height: "100%", background: heat.fg }} />
+                    </div>
                   </div>
-                  <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
-                    <div style={{ width: `${t.pct}%`, height: "100%", background: heat.fg }} />
-                  </div>
+                );
+              })}
+            </div>
+            {/* ⚖️ constrained classification — de-novo identity fitted onto the published GT bins, scored in parallel */}
+            {score.aggConstrained && (
+              <>
+                <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.6, color: "#7c3aed", fontWeight: 800, margin: "8px 0 6px" }}>Constrained — de-novo call fitted to the published GT bins</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 12, marginBottom: 8 }}>
+                  {score.aggConstrained.filter((t) => nativeTierKeys.has(t.key)).map((t) => {
+                    const heat = confColor(t.pct);
+                    return (
+                      <div key={t.key} style={{ background: "#faf5ff", border: "1px solid #e9d5ff", borderRadius: 12, padding: "14px 16px" }}>
+                        <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#9333ea", fontWeight: 700 }}>{tierColLabel({ gtKey: t.key, label: t.label })}</div>
+                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+                          <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct.toFixed(0) : "—"}{t.total ? "%" : ""}</span>
+                          <span style={{ fontSize: 12.5, color: "#999" }}>{t.matched}/{t.total} agree</span>
+                        </div>
+                        <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
+                          <div style={{ width: `${t.pct}%`, height: "100%", background: heat.fg }} />
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
-              );
-            })}
-          </div>
+              </>
+            )}
+          </>
         )}
 
         {/* driver-scoring extras: purity-stratified sub headline + abstention precision */}

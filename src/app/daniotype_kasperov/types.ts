@@ -98,7 +98,12 @@ export type FailCount = { fail: number; total: number; pct: number };
 export type AbstentionStat = { n_assign: number; n_abstain: number; n_unresolved: number; abstained_forced_sub_fail: FailCount; assigned_forced_sub_fail: FailCount };
 export type TierVerdict = { match: boolean; note: string };
 export type ClusterVerdict = { id: string; germ_layer: TierVerdict; tissue: TierVerdict; cell_type_broad: TierVerdict; cell_type_sub: TierVerdict };
-export type RunScore = { verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[]; subStrat?: SubStrat | null; abstention?: AbstentionStat | null };
+export type RunScore = {
+  verdicts: Record<string, ClusterVerdict>; scoredAt: string | null; agg: TierAgg[]; subStrat?: SubStrat | null; abstention?: AbstentionStat | null;
+  // ⚖️ optional parallel score of the CONSTRAINED classification (de-novo identity
+  // fitted onto the dataset's published GT bins). Absent for open-vocab datasets.
+  verdictsConstrained?: Record<string, ClusterVerdict>; aggConstrained?: TierAgg[];
+};
 
 // Ground-truth atlas shape (used by the Scorecard).
 export type GTTier = { label: string | null; frac: number; n: number };
