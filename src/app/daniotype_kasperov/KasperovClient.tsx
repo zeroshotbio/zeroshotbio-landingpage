@@ -2553,6 +2553,12 @@ const AUTO_REASON_PROMPT =
   "You have the Researcher's literature read of this cluster above. The Archivist has NOT run yet — before you conclude, you should normally dispatch the Archivist to confirm the raw ground-truth stats (log2FC / %in-out / specificity) of the top cited markers, and reconcile the literature read AGAINST those numbers (which marker is actually the most enriched / most specific?). If a discussed gene's DEG score matters and the Archivist hasn't reported it, dispatch the Archivist for it. Once the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing.";
 const AUTO_NUDGE_PROMPT =
   "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
+// rounds AFTER the first: the specialist(s) the Reasoner dispatched have already
+// replied (their output is in the conversation), so the round-0 priming prompt —
+// which asserts "the Archivist has NOT run yet" — would be both false and redundant.
+// Just hand the new evidence back and let the Reasoner take over and drive.
+const AUTO_REASON_CONT =
+  "The specialist(s) you dispatched have replied above. Take over from here: reconcile the new evidence with what you already have and decide the next step yourself. If the raw stats and literature now agree and the call is settled (across the germ-layer → tissue → cell-type-broad → cell-type-sub stack), conclude with a kasperov-conclude block — citing markers actually in THIS cluster's list, or abstaining at the deepest tier you can defend. Otherwise dispatch the single most useful not-yet-answered query with a kasperov-dispatch block. Do NOT re-ask anything already answered.";
 const AUTO_MAX_ROUNDS = 4;
 // per-personality loading-bar ceiling (seconds). The agent route's maxDuration
 // is 300s on Vercel Pro, shared by all three personalities, so the bar counts
@@ -3072,10 +3078,13 @@ function ClusterStage({
     // 2) Reasoner-orchestrated rounds — adjudicate, dispatch follow-ups, conclude
     for (let round = 0; round < AUTO_MAX_ROUNDS; round++) {
       if (autoAbort.current) return;
-      // gate the Reasoner PROMPT ("You asked") before it's sent, then its output
-      await judgeGate(cl, "reason", AUTO_REASON_PROMPT, "prompt");
+      // gate the Reasoner PROMPT ("You asked") before it's sent, then its output.
+      // Round 0 primes the Archivist dispatch; later rounds the specialists have
+      // already replied, so feed their output back and let the Reasoner drive.
+      const reasonPrompt = round === 0 ? AUTO_REASON_PROMPT : AUTO_REASON_CONT;
+      await judgeGate(cl, "reason", reasonPrompt, "prompt");
       if (autoAbort.current) return;
-      conv = await autoStream(cl, [...conv, { role: "user", content: AUTO_REASON_PROMPT }], "reason");
+      conv = await autoStream(cl, [...conv, { role: "user", content: reasonPrompt }], "reason");
       let rc = conv[conv.length - 1].content;
       added = autoAddMarkers(cl, rc, "reason");
       await judgeGate(cl, "reason", rc);

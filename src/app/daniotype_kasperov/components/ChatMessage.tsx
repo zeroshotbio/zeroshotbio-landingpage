@@ -19,23 +19,24 @@ function classifyHref(href: string): SourceKey | null {
   if (h.includes("ebi.ac.uk")) return "ZFA"; // OLS default → anatomy
   return null;
 }
-// pull the first href + any leading **SOURCE** token from a hast li node
-function liSource(node: any): SourceKey | null {
-  let href: string | null = null;
+// collect EVERY distinct source surfaced in a bullet — one pill per source, in the
+// order found. Sources come from EVERY link in the bullet (classified by host) AND
+// from bare source words named in the prose (so a gene whose ZFA/GO evidence is
+// mentioned but not separately linked still shows those pills).
+function liSources(node: any): SourceKey[] {
+  const out: SourceKey[] = [];
+  const add = (k: SourceKey | null) => { if (k && !out.includes(k)) out.push(k); };
   const walk = (n: any) => {
-    if (!n || href) return;
-    if (n.tagName === "a" && n.properties?.href) href = String(n.properties.href);
+    if (!n) return;
+    if (n.tagName === "a" && n.properties?.href) add(classifyHref(String(n.properties.href)));
     (n.children ?? []).forEach(walk);
   };
   (node?.children ?? []).forEach(walk);
-  if (href) {
-    const k = classifyHref(href);
-    if (k) return k;
-  }
-  // fall back to a leading bold source word
+  // also pick up sources named in the prose (e.g. "GO predicts…", "ZFA term: …");
+  // URLs are lower-case so they don't false-match this upper-case word scan.
   const txt = JSON.stringify(node ?? {});
-  const m = txt.match(/\b(ZFIN|ZFA|GO|NCBI|UniProt)\b/);
-  return (m?.[1] as SourceKey) ?? null;
+  (txt.match(/\b(ZFIN|ZFA|GO|NCBI|UniProt)\b/g) ?? []).forEach((w) => add(w as SourceKey));
+  return out;
 }
 
 const mdH: React.CSSProperties = { fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.6, fontWeight: 700, color: ACCENT, margin: "12px 0 6px", paddingTop: 8, borderTop: "1px solid #f0ece7" };
@@ -83,11 +84,15 @@ export function mdFor(mode: AgentMode) {
     ...base,
     // each evidence item: a small source chip + plain text — no boxed section
     li: (p: any) => {
-      const src = liSource(p.node);
-      if (!src) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
+      const srcs = liSources(p.node);
+      if (!srcs.length) return <li style={{ lineHeight: 1.45, listStyle: "disc", marginLeft: 18 }}>{p.children}</li>;
       return (
         <li style={{ listStyle: "none", display: "flex", gap: 7, alignItems: "flex-start", lineHeight: 1.45, marginBottom: 3 }}>
-          <span style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.4, color: th.color, border: `1px solid ${th.color}55`, borderRadius: 4, padding: "0 4px", marginTop: 2, whiteSpace: "nowrap" }}>{src}</span>
+          <span style={{ display: "inline-flex", gap: 3, flexShrink: 0, marginTop: 2 }}>
+            {srcs.map((s) => (
+              <span key={s} style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.4, color: th.color, border: `1px solid ${th.color}55`, borderRadius: 4, padding: "0 4px", whiteSpace: "nowrap" }}>{s}</span>
+            ))}
+          </span>
           <span>{p.children}</span>
         </li>
       );
