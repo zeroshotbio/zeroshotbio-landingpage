@@ -2336,8 +2336,23 @@ type Conclude = {
   decision?: "assign" | "abstain";
   citedMarkers?: string[];
   confidence?: number;
+  stack?: ClusterConf; // ⚖️ Reasoner-declared 4-tier breakdown (drives the confidence panel)
   done: boolean;
 };
+
+// parse the Reasoner's conclude `stack` (4 tiers × {prediction, confidence 0-100})
+// into a ClusterConf. Returns undefined unless all four tiers are present + numeric.
+function parseConcludeStack(s: any): ClusterConf | undefined {
+  if (!s || typeof s !== "object") return undefined;
+  const tier = (k: string): TierPred | null => {
+    const t = s[k];
+    if (!t || typeof t !== "object" || typeof t.confidence !== "number") return null;
+    return { prediction: String(t.prediction ?? ""), pct: Math.max(0, Math.min(100, t.confidence)) };
+  };
+  const gl = tier("germ_layer"), ti = tier("tissue"), cb = tier("cell_type_broad"), cs = tier("cell_type_sub");
+  if (!gl || !ti || !cb || !cs) return undefined;
+  return { germ_layer: gl, tissue: ti, cell_type_broad: cb, cell_type_sub: cs };
+}
 
 function formatConcludeLabel(c: { identity?: string; state?: string; tier?: string; decision?: "assign" | "abstain" }): string {
   const id = (c.identity ?? "").trim();
@@ -2357,7 +2372,7 @@ function splitConclude(content: string): { clean: string; conclude: Conclude | n
       const base = { identity: String(o.identity), tier: typeof o.tier === "string" ? o.tier : undefined, state, decision };
       return {
         clean,
-        conclude: { ...base, label: formatConcludeLabel(base), citedMarkers, confidence: typeof o.confidence === "number" ? o.confidence : undefined, done: o.done !== false },
+        conclude: { ...base, label: formatConcludeLabel(base), citedMarkers, confidence: typeof o.confidence === "number" ? o.confidence : undefined, stack: parseConcludeStack(o.stack), done: o.done !== false },
       };
     }
     // legacy flat block
@@ -2761,8 +2776,12 @@ function ClusterStage({
   }, [augmented]);
 
   const [confBusy, setConfBusy] = useState(false);
+  // once a cluster's confidence comes from the Reasoner's conclude `stack`, that is
+  // authoritative — the /api/kasperov_confidence side-channel must not overwrite it.
+  const concludeConfRef = useRef<Record<string, boolean>>({});
   async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
+    if (concludeConfRef.current[clusterId]) return; // Reasoner stack already drives this cluster
     setConfBusy(true);
     try {
       const r = await fetch("/api/kasperov_confidence", {
@@ -2776,7 +2795,8 @@ function ClusterStage({
       }
       const d = await r.json();
       if (d.usage) addUsage(d.usage.model ?? model, d.usage.in ?? 0, d.usage.out ?? 0);
-      if (d.tiers && d.tiers.germ_layer) {
+      // a conclude stack may have landed while this request was in flight — don't clobber it
+      if (d.tiers && d.tiers.germ_layer && !concludeConfRef.current[clusterId]) {
         const cc: ClusterConf = { ...d.tiers, why: d.why || "" };
         setConfidence((c) => ({ ...c, [clusterId]: cc }));
       }
@@ -3106,6 +3126,8 @@ function ClusterStage({
       if (concl?.done) {
         // require-evidence-to-name: roll up to abstain if no cited marker is grounded
         const grounded = enforceCiteDiscipline(concl, cl, added);
+        // ⚖️ the Reasoner's declared 4-tier stack drives the confidence panel (authoritative)
+        if (grounded.stack) { concludeConfRef.current[cl.id] = true; setConfidence((c) => ({ ...c, [cl.id]: grounded.stack as ClusterConf })); }
         onLabel(cl.id, grounded.label);
         onValidate(cl.id, true);
         return;
@@ -3389,6 +3411,8 @@ function ClusterStage({
                         onClick={() => {
                           onLabel(active.id, grounded.label);
                           onValidate(active.id, true);
+                          // ⚖️ adopt the Reasoner's declared 4-tier stack as the confidence panel
+                          if (grounded.stack) { concludeConfRef.current[active.id] = true; setConfidence((c) => ({ ...c, [active.id]: grounded.stack as ClusterConf })); }
                         }}
                         title={grounded.decision === "abstain" ? "Require-evidence-to-name: no cited marker was one of this cluster's DEGs, so this rolls up to an abstention." : grounded.citedMarkers?.length ? `Grounded on: ${grounded.citedMarkers.join(", ")}` : undefined}
                         style={{ display: "inline-flex", alignItems: "center", gap: 7, background: validated.has(active.id) ? "#15803d" : "#fff", border: `1px solid ${grounded.decision === "abstain" ? "#a16207" : "#15803d"}`, color: validated.has(active.id) ? "#fff" : grounded.decision === "abstain" ? "#a16207" : "#15803d", borderRadius: 8, padding: "7px 11px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}
