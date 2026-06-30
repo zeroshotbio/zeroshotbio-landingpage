@@ -19,6 +19,14 @@ function classifyHref(href: string): SourceKey | null {
   if (h.includes("ebi.ac.uk")) return "ZFA"; // OLS default → anatomy
   return null;
 }
+// distinct colour per evidence source so ZFIN / ZFA / GO read apart at a glance.
+const SOURCE_COLORS: Record<SourceKey, string> = {
+  ZFIN: "#2563eb", // blue
+  ZFA: "#0d9488",  // teal (anatomy)
+  GO: "#d97706",   // amber (ontology)
+  NCBI: "#475569", // slate
+  UniProt: "#be185d", // rose
+};
 // collect EVERY distinct source surfaced in a bullet — one pill per source, in the
 // order found. Sources come from EVERY link in the bullet (classified by host) AND
 // from bare source words named in the prose (so a gene whose ZFA/GO evidence is
@@ -89,9 +97,10 @@ export function mdFor(mode: AgentMode) {
       return (
         <li style={{ listStyle: "none", display: "flex", gap: 7, alignItems: "flex-start", lineHeight: 1.45, marginBottom: 3 }}>
           <span style={{ display: "inline-flex", gap: 3, flexShrink: 0, marginTop: 2 }}>
-            {srcs.map((s) => (
-              <span key={s} style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.4, color: th.color, border: `1px solid ${th.color}55`, borderRadius: 4, padding: "0 4px", whiteSpace: "nowrap" }}>{s}</span>
-            ))}
+            {srcs.map((s) => {
+              const col = SOURCE_COLORS[s] ?? th.color;
+              return <span key={s} style={{ fontSize: 9, fontWeight: 800, letterSpacing: 0.4, color: col, border: `1px solid ${col}80`, background: `${col}12`, borderRadius: 4, padding: "0 4px", whiteSpace: "nowrap" }}>{s}</span>;
+            })}
           </span>
           <span>{p.children}</span>
         </li>
