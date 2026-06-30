@@ -349,10 +349,14 @@ export default function KasperovClient() {
     };
   }
 
-  // save the combined run to the server store (S3 + DynamoDB index)
-  async function saveRunToServer() {
-    if (!dataset) return;
+  // save the combined run to the server store (EC2 worker → EBS volume). Returns
+  // true ONLY when the worker actually persisted it (HTTP 2xx + {ok:true}); the
+  // judgement confirmation screen relies on this so it can never claim "saved"
+  // when the save 503'd / 502'd / threw.
+  async function saveRunToServer(): Promise<boolean> {
+    if (!dataset) return false;
     setSrvNote("Saving to server…");
+    let ok = false;
     try {
       const r = await fetch("/api/kasperov_runs", {
         method: "POST",
@@ -362,12 +366,41 @@ export default function KasperovClient() {
       if (r.status === 503) setSrvNote("Server store not configured");
       else {
         const d = await r.json().catch(() => ({}));
-        setSrvNote(d?.ok ? "Saved to server ✓ (Load Previous Run)" : "Server save failed");
+        ok = r.ok && !!d?.ok;
+        setSrvNote(ok ? "Saved to server ✓ (Load Previous Run)" : "Server save failed");
       }
     } catch {
       setSrvNote("Server save failed");
     }
     setTimeout(() => setSrvNote(""), 5000);
+    return ok;
+  }
+
+  // ⚖️ let the judge keep their own copy of the judgements + the conversations they
+  // were made against, as a .json — independent of the server save, so the notes are
+  // never lost even if persistence fails.
+  function downloadJudgements() {
+    if (!dataset) return;
+    const run = buildRunJSON();
+    const payload = {
+      schema: "daniotype_kasperov_judgements/v1",
+      dataset: run.dataset,
+      datasetId: run.datasetId,
+      model: run.model,
+      harness: run.harness,
+      exportedAt: run.exportedAt,
+      nLabelled: run.nLabelled,
+      judgements: run.judgements,
+      // full per-cluster transcripts = the conversations the notes were made against
+      clusters: run.clusters,
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `daniotype_kasperov_judgements_${dataset.id}_${(run.exportedAt || "run").replace(/[:.]/g, "-")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
   // download the combined run JSON — and also persist it to the server store
@@ -723,6 +756,7 @@ export default function KasperovClient() {
       nJudgements={judgements.length}
       judgements={judgements}
       onLogJudgements={saveRunToServer}
+      onDownloadJudgements={downloadJudgements}
       labels={labels}
       onLabel={setLabel}
       transcripts={transcripts}
@@ -1514,6 +1548,9 @@ function JudgePanelContent({
   onEndAndLog,
   onHome,
   logged,
+  savedOk,
+  onDownload,
+  onRetry,
   height,
 }: {
   pending: { clusterId: string; clusterLabel: string; stepIndex: number; mode: AgentMode | "inputs" | "first_prompt" | null; excerpt: string; full: string; kind: "output" | "prompt" } | null;
@@ -1525,6 +1562,9 @@ function JudgePanelContent({
   onEndAndLog: () => void;
   onHome: () => void;
   logged: number | null;
+  savedOk: boolean | null;
+  onDownload: () => void;
+  onRetry: () => Promise<void> | void;
   height?: number;
 }) {
   const [v, setV] = useState("");
@@ -1534,16 +1574,41 @@ function JudgePanelContent({
 
   const tagBase: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" };
 
-  // ── after "Submit judgements & finish" — the clear confirmation + exit ──
+  // ── after "Submit judgements & finish" — the confirmation + exit. The headline
+  // reflects the ACTUAL server result (savedOk), so it can never claim "saved" when
+  // the persist failed. A .json download is offered on both paths so the judge can
+  // always keep their own copy. ──
   if (logged != null) {
+    const dlBtn = (
+      <button onClick={onDownload} style={{ background: "#fff", color: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 8, padding: "9px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>⬇ Download judgements (.json)</button>
+    );
+    if (savedOk === false) {
+      return (
+        <div style={{ paddingTop: 4 }}>
+          <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, color: "#b91c1c", background: "#fee2e2", borderRadius: 99, padding: "3px 11px" }}>⚠ Save failed — NOT persisted</div>
+          <div style={{ marginTop: 12, fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5, fontWeight: 700 }}>Your {logged} judgement{logged === 1 ? "" : "s"} could not be saved to the server.</div>
+          <div style={{ marginTop: 8, fontSize: 12.5, color: "#4a443c", lineHeight: 1.6 }}>
+            They were <b>not</b> recorded in the store and won&apos;t appear under <b>Load Previous Run</b>. <b>Download a copy now</b> so nothing is lost, then retry.
+          </div>
+          <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
+            {dlBtn}
+            <button onClick={onRetry} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "9px 14px", fontSize: 12.5, fontWeight: 800, cursor: "pointer" }}>↻ Retry save</button>
+            <button onClick={onHome} style={{ background: "transparent", color: "#6b6b6b", border: "1px solid #d8d2ca", borderRadius: 8, padding: "9px 14px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>← Back to home</button>
+          </div>
+        </div>
+      );
+    }
     return (
       <div style={{ paddingTop: 4 }}>
-        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "3px 11px" }}>✓ Judgements logged</div>
-        <div style={{ marginTop: 12, fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5, fontWeight: 700 }}>Steven has been notified.</div>
+        <div style={{ display: "inline-flex", alignItems: "center", gap: 7, fontSize: 12, fontWeight: 800, color: "#15803d", background: "#dcfce7", borderRadius: 99, padding: "3px 11px" }}>✓ Saved to the run store</div>
+        <div style={{ marginTop: 12, fontSize: 13.5, color: "#1a1a1a", lineHeight: 1.5, fontWeight: 700 }}>Your {logged} judgement{logged === 1 ? "" : "s"} {logged === 1 ? "was" : "were"} saved to the server.</div>
         <div style={{ marginTop: 8, fontSize: 12.5, color: "#4a443c", lineHeight: 1.6 }}>
-          Your <b>{logged} judgement{logged === 1 ? "" : "s"}</b> have been saved and will be <b>integrated to refine the behaviour of the three-personality chat</b> for future runs. Thank you — this is exactly the signal that improves the system.
+          Reload this run any time via <b>Load Previous Run</b>. The notes will be <b>integrated to refine the behaviour of the three-personality chat</b> for future runs. Thank you — this is exactly the signal that improves the system.
         </div>
-        <button onClick={onHome} style={{ marginTop: 16, background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>← Back to home</button>
+        <div style={{ marginTop: 14, display: "flex", gap: 8, flexWrap: "wrap" }}>
+          {dlBtn}
+          <button onClick={onHome} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "9px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>← Back to home</button>
+        </div>
       </div>
     );
   }
@@ -2510,6 +2575,7 @@ function ClusterStage({
   nJudgements,
   judgements,
   onLogJudgements,
+  onDownloadJudgements,
   labels,
   onLabel,
   transcripts,
@@ -2536,7 +2602,8 @@ function ClusterStage({
   addJudgement: (j: Judgement) => void;
   nJudgements: number;
   judgements: Judgement[];
-  onLogJudgements: () => Promise<void> | void;
+  onLogJudgements: () => Promise<boolean> | boolean;
+  onDownloadJudgements: () => void;
   autoStart: number;
   labels: Record<string, string>;
   onLabel: (id: string, label: string) => void;
@@ -2619,6 +2686,7 @@ function ClusterStage({
   // submit (with optional note) or skip — close the popup and let the sweep continue.
   const [judgeLogged, setJudgeLogged] = useState(0); // notes logged this sweep (panel footer)
   const [judgeDone, setJudgeDone] = useState<number | null>(null); // set after submit (# judgements logged)
+  const [judgeSaveOk, setJudgeSaveOk] = useState<boolean | null>(null); // did the post-submit server save actually persist?
   const [judgeSummaryOpen, setJudgeSummaryOpen] = useState(false); // the "review before submit" popup
   function resolveJudge(note: string) {
     const pj = pendingJudge;
@@ -3053,6 +3121,7 @@ function ClusterStage({
     judgeStepRef.current = {}; // fresh gated-step ordinals for this sweep
     setJudgeLogged(0);
     setJudgeDone(null); // clear any prior "logged" confirmation for the fresh run
+    setJudgeSaveOk(null);
     setJudgeSummaryOpen(false);
     setAutoReport(null);
     // auto-detect & skip clusters that already have a cell-type label (= done).
@@ -3113,8 +3182,18 @@ function ClusterStage({
     const n = nJudgements;
     setJudgeSummaryOpen(false);
     stopAutopilot();
-    try { await onLogJudgements(); } catch (e) { console.warn("[judgement] log failed:", e); }
+    let ok = false;
+    try { ok = !!(await onLogJudgements()); } catch (e) { console.warn("[judgement] log failed:", e); }
+    setJudgeSaveOk(ok); // gate the confirmation screen on the ACTUAL save result
     setJudgeDone(n);
+  }
+
+  // ⚖️ retry the server save from the "save failed" confirmation screen, without
+  // re-running the sweep — just re-post and update the success flag.
+  async function retryLogJudgements() {
+    let ok = false;
+    try { ok = !!(await onLogJudgements()); } catch (e) { console.warn("[judgement] retry failed:", e); }
+    setJudgeSaveOk(ok);
   }
 
   // kick off ONLY when the world-map auto-pilot button bumps autoStart. The
@@ -3244,6 +3323,9 @@ function ClusterStage({
                   onEndAndLog={() => setJudgeSummaryOpen(true)}
                   onHome={onBack}
                   logged={judgeDone}
+                  savedOk={judgeSaveOk}
+                  onDownload={onDownloadJudgements}
+                  onRetry={retryLogJudgements}
                   height={h}
                 />
               )}
