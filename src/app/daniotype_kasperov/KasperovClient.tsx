@@ -3418,7 +3418,8 @@ function ClusterStage({
                       </div>
                     )}
                     {wmView === "islands" && hasCompartments(clusters)
-                      ? <CompartmentMap clusters={clusters} activeId={active.id} validated={validated} width={w} height={h} onPick={goToCluster} />
+                      ? <CompartmentMap clusters={clusters} activeId={active.id} validated={validated} width={w} height={h} onPick={goToCluster} dimUnfocused />
+
                       : <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
                   </div>
                 )}

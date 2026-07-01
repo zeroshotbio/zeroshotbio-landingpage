@@ -7,6 +7,7 @@ import React from "react";
 import type { Cluster, ClusterConf } from "../types";
 import { overallConf } from "../types";
 import { ACCENT } from "../theme";
+import { CompartmentMap } from "./CompartmentMap";
 
 type CompRow = {
   index: number;
@@ -99,6 +100,21 @@ export function MetaReasonerStub({
           {buckets.map((b) => (
             <span key={b.name} style={chip("#f5f3f0", b.color)}>{b.name}: {b.n}</span>
           ))}
+        </div>
+
+        {/* compartment islands — spotlight the just-finished (✓) + next-up (→) compartments */}
+        <div style={{ border: "1px solid #e5e1dc", borderRadius: 12, background: "#fffdfb", padding: 8, marginBottom: 14, overflow: "auto" }}>
+          <CompartmentMap
+            clusters={clusters}
+            activeId={null}
+            validated={new Set(clusters.filter((c) => labels[c.id]).map((c) => c.id))}
+            width={Math.min(852, (typeof window !== "undefined" ? window.innerWidth : 900) - 96)}
+            height={300}
+            dimUnfocused
+            focusCompartments={[justFinished, ...(nextUp != null ? [nextUp] : [])]}
+            nextCompartment={nextUp}
+            doneThrough={justFinished}
+          />
         </div>
 
         <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "hidden", marginBottom: 20 }}>

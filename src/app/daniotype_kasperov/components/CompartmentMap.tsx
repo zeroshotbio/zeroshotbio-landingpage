@@ -43,6 +43,10 @@ export function CompartmentMap({
   width,
   height,
   onPick,
+  dimUnfocused,
+  focusCompartments,
+  nextCompartment,
+  doneThrough,
 }: {
   clusters: Cluster[];
   activeId: string | null;
@@ -50,7 +54,15 @@ export function CompartmentMap({
   width: number;
   height: number;
   onPick?: (id: string) => void;
+  // focus/spotlight controls (labelling world map + Meta-Reasoner):
+  dimUnfocused?: boolean; // desaturate + fade non-focused compartments
+  focusCompartments?: number[]; // compartmentIndexes to spotlight (overrides activeId-derived focus)
+  nextCompartment?: number | null; // styled as "next up" (Meta-Reasoner)
+  doneThrough?: number | null; // compartmentIndex ≤ this renders with a "done" tint
 }) {
+  // the active leaf's compartment (world-map focus follows the cluster being labelled)
+  const activeCompIndex = activeId != null ? clusters.find((c) => c.id === activeId)?.compartmentIndex ?? null : null;
+  const focusSet = new Set<number>(focusCompartments ?? (activeCompIndex != null ? [activeCompIndex] : []));
   const layout = useMemo(() => {
     // group leaves by compartmentIndex
     const groups = new Map<number, Cluster[]>();
@@ -108,41 +120,55 @@ export function CompartmentMap({
 
   if (!layout) return <div style={{ width, height, display: "flex", alignItems: "center", justifyContent: "center", color: "#9a938a", fontSize: 13 }}>No compartment topology in this partition.</div>;
 
+  const anyFocus = focusSet.size > 0;
   return (
     <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} style={{ display: "block", background: "#fffdfb", borderRadius: 10 }}>
-      {layout.islands.map((isl) => (
-        <g key={isl.ci}>
-          {/* island halo */}
-          <circle cx={isl.cx} cy={isl.cy} r={isl.islandR * 1.05} fill={`hsl(${isl.hue} 60% 96%)`} stroke={`hsl(${isl.hue} 50% 82%)`} strokeWidth={1} />
-          {/* compartment labels — in the RESERVED band above the island (never over the dots) */}
-          {layout.showLabels && (
-            <>
-              <text x={isl.cx} y={isl.labelTop + 13} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: `hsl(${isl.hue} 45% 36%)` }}>Compartment {isl.ci}</text>
-              <text x={isl.cx} y={isl.labelTop + 25} textAnchor="middle" style={{ fontSize: 9, fill: "#8a847b" }}>{kfmt(isl.compCells)} cells · {isl.nLeaves} leaves</text>
-            </>
-          )}
-          {/* leaf dots */}
-          {isl.dots.map((d) => {
-            const isActive = d.id === activeId;
-            const isVal = validated.has(d.id);
-            return (
-              <circle
-                key={d.id}
-                cx={d.x}
-                cy={d.y}
-                r={isActive ? d.r + 2 : d.r}
-                fill={d.fill}
-                stroke={isActive ? "#111827" : isVal ? "#15803d" : "rgba(255,255,255,0.7)"}
-                strokeWidth={isActive ? 2 : isVal ? 1.5 : 0.6}
-                style={{ cursor: onPick ? "pointer" : "default" }}
-                onClick={onPick ? () => onPick(d.id) : undefined}
-              >
-                <title>{`${d.leaf.compartmentLabel ?? d.leaf.label} · ${d.leaf.nCells.toLocaleString()} cells${isVal ? " · labelled" : ""}`}</title>
-              </circle>
-            );
-          })}
-        </g>
-      ))}
+      {layout.islands.map((isl) => {
+        const isFocus = focusSet.has(isl.ci);
+        const isNext = nextCompartment != null && isl.ci === nextCompartment;
+        const isDone = doneThrough != null && isl.ci <= doneThrough && !isFocus;
+        // dim only the PENDING compartments so the current/next/done ones stand out
+        const dim = dimUnfocused && anyFocus && !isFocus && !isNext && !isDone;
+        const haloStroke = isNext ? "#7c3aed" : isFocus ? `hsl(${isl.hue} 55% 55%)` : isDone ? "#86c99a" : `hsl(${isl.hue} 50% 82%)`;
+        return (
+          <g key={isl.ci} opacity={dim ? 0.22 : 1} style={{ transition: "opacity 240ms" }}>
+            {/* island halo — thicker/coloured ring on the focused or next-up compartment */}
+            <circle cx={isl.cx} cy={isl.cy} r={isl.islandR * 1.05} fill={`hsl(${isl.hue} 60% ${dim ? 97 : 96}%)`} stroke={haloStroke} strokeWidth={isFocus || isNext ? 2.5 : 1} strokeDasharray={isNext && !isFocus ? "5 4" : undefined} />
+            {/* compartment labels — in the RESERVED band above the island (never over the dots) */}
+            {layout.showLabels && (
+              <>
+                <text x={isl.cx} y={isl.labelTop + 13} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: isNext ? "#7c3aed" : `hsl(${isl.hue} 45% 36%)` }}>
+                  Compartment {isl.ci}{isNext ? " →" : isDone ? " ✓" : ""}
+                </text>
+                <text x={isl.cx} y={isl.labelTop + 25} textAnchor="middle" style={{ fontSize: 9, fill: "#8a847b" }}>{kfmt(isl.compCells)} cells · {isl.nLeaves} leaves</text>
+              </>
+            )}
+            {/* leaf dots */}
+            {isl.dots.map((d) => {
+              const isActive = d.id === activeId;
+              const isVal = validated.has(d.id);
+              return (
+                <g key={d.id}>
+                  {/* the active leaf gets an outer glow ring so it pops within its compartment */}
+                  {isActive && <circle cx={d.x} cy={d.y} r={d.r + 5} fill="none" stroke="#111827" strokeWidth={1} opacity={0.35} />}
+                  <circle
+                    cx={d.x}
+                    cy={d.y}
+                    r={isActive ? d.r + 2 : d.r}
+                    fill={d.fill}
+                    stroke={isActive ? "#111827" : isVal ? "#15803d" : "rgba(255,255,255,0.7)"}
+                    strokeWidth={isActive ? 2.5 : isVal ? 1.5 : 0.6}
+                    style={{ cursor: onPick ? "pointer" : "default" }}
+                    onClick={onPick ? () => onPick(d.id) : undefined}
+                  >
+                    <title>{`${d.leaf.compartmentLabel ?? d.leaf.label} · ${d.leaf.nCells.toLocaleString()} cells${isVal ? " · labelled" : ""}`}</title>
+                  </circle>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
     </svg>
   );
 }
