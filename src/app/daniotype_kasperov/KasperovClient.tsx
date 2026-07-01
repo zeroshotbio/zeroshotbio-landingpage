@@ -2487,14 +2487,18 @@ function splitPromote(content: string): { clean: string; promotes: { gene: strin
 }
 
 function defaultPrompt(c: Cluster): string {
-  const upList = c.degsUp.slice(0, 8).join(", ");
-  const downList = (c.markersDown ?? []).slice(0, 8).map((m) => m.g).join(", ");
+  // COST-TRIMMED: fewer markers (top 5 up / top 3 down) + a hard efficiency budget.
+  // A/B-verified to keep ~the same labels at ~half the Researcher cost/time.
+  const upList = c.degsUp.slice(0, 5).join(", ");
+  const downList = (c.markersDown ?? []).slice(0, 3).map((m) => m.g).join(", ");
   return (
-    `${c.label}'s top UP-regulated markers are: ${upList || "(none)"}. ` +
-    (downList ? `Its top DOWN-regulated (depleted) markers are: ${downList}. ` : "") +
-    `For EACH of these genes — up- and down-regulated — return the cited evidence from ZFIN curated expression, ZFA anatomy, and GO: ` +
-    `which tissues / cell types the gene is associated with (or notably absent from), with a cited record per claim. ` +
-    `Report evidence only — do not propose a cell-type identity, a verdict, or a confidence; the synthesis is the Reasoner's job.`
+    `${c.label}'s top UP markers: ${upList || "(none)"}. ` +
+    (downList ? `Depleted (DOWN): ${downList}. ` : "") +
+    `Return cited evidence (ZFIN / ZFA / GO) for what tissue or cell type these markers indicate. ` +
+    `BE FAST AND EFFICIENT — you are strictly time-budgeted (~30s): at MOST one targeted search per marker, ` +
+    `skip ZFA/GO lookups for any marker ZFIN already resolves, and STOP as soon as the tissue picture is clear. ` +
+    `Do NOT exhaustively search every resource for every gene, and do not research markers beyond the ones listed. ` +
+    `Evidence only — no identity call (that is the Reasoner's job).`
   );
 }
 
@@ -2581,16 +2585,19 @@ function augSig(list: Marker[]): string {
 }
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+// COST-TRIMMED (A/B-verified): the cluster's markers + stats are PRECOMPUTED, so
+// conclude by default — gate the Archivist (only if a specific number is genuinely
+// in doubt) and don't routinely double-check.
 const AUTO_REASON_PROMPT =
-  "You have the Researcher's literature read of this cluster above. The Archivist has NOT run yet — before you conclude, you should normally dispatch the Archivist to confirm the raw ground-truth stats (log2FC / %in-out / specificity) of the top cited markers, and reconcile the literature read AGAINST those numbers (which marker is actually the most enriched / most specific?). If a discussed gene's DEG score matters and the Archivist hasn't reported it, dispatch the Archivist for it. Once the specialists are exhausted, the raw stats are confirmed, and the (identity, state) is settled, conclude with a kasperov-conclude block — citing markers that are actually in THIS cluster's marker list; if you cannot ground a specific cell type, set decision \"abstain\" and name the deepest tier you can defend. Otherwise dispatch the single most useful next query (kasperov-dispatch), preferring the Archivist when raw numbers are still missing.";
+  "You have the Researcher's read above. IMPORTANT: this cluster's differential markers + their stats are ALREADY PRECOMPUTED and given to you — trust them. Your DEFAULT action is to CONCLUDE. Do NOT routinely dispatch the Archivist to double-check precomputed numbers — only dispatch it if a SPECIFIC raw stat is genuinely in doubt AND would change your call. When the identity + 4-tier stack are settled — which for a clear marker set is NOW — conclude with a kasperov-conclude block, citing markers that are actually in THIS cluster's marker list (abstain at the deepest defensible tier if you cannot ground a specific type). Only dispatch (kasperov-dispatch) if a single specific query would actually change the call.";
 const AUTO_NUDGE_PROMPT =
-  "Decide now — do not ask me. Either conclude with a kasperov-conclude block (assign if the identity is grounded in this cluster's markers, or abstain at the deepest defensible tier if not) or dispatch the next query with a kasperov-dispatch block.";
+  "Decide now — do not ask me. Prefer to conclude with a kasperov-conclude block (assign if grounded in this cluster's markers, or abstain at the deepest defensible tier). Only dispatch if a specific query would change the call.";
 // rounds AFTER the first: the specialist(s) the Reasoner dispatched have already
 // replied (their output is in the conversation), so the round-0 priming prompt —
 // which asserts "the Archivist has NOT run yet" — would be both false and redundant.
 // Just hand the new evidence back and let the Reasoner take over and drive.
 const AUTO_REASON_CONT =
-  "The specialist(s) you dispatched have replied above. YOU are now driving the flow — decide the next steps yourself. Judge how much good evidence you actually have toward a final call, and on that judgement either dispatch the Researcher (for more literature/ontology) or the Archivist (for raw stats), or conclude. If the raw stats and literature now agree and the call is settled (across the germ-layer → tissue → cell-type-broad → cell-type-sub stack), conclude with a kasperov-conclude block — citing markers actually in THIS cluster's list, or abstaining at the deepest tier you can defend. Otherwise dispatch the single most useful not-yet-answered query with a kasperov-dispatch block (Researcher or Archivist, your choice). Do NOT re-ask anything already answered.";
+  "The specialist(s) replied above. The markers are precomputed — CONCLUDE now unless a specific unanswered query would genuinely change the call. If settled across the germ-layer → tissue → cell-type-broad → cell-type-sub stack, emit a kasperov-conclude block (citing markers in THIS cluster's list, or abstaining at the deepest defensible tier). Do not add routine double-checks. Only dispatch (kasperov-dispatch) a single specific query if it would change the call — and never re-ask anything already answered.";
 // after the first continuation, the Reasoner already knows it's driving — don't re-inject
 // the whole instruction every round; a one-line nudge is enough to hand back the reply.
 const AUTO_REASON_MIN =
@@ -2977,7 +2984,9 @@ function ClusterStage({
       const now = Date.now();
       // re-score confidence often when a human is watching; throttle in auto-pilot
       // (fast) where each cluster fires many sub-streams, to keep token cost sane
-      if (now - lastLiveConf > (fast ? 15000 : 5000)) {
+      // COST-TRIMMED: the live confidence side-channel runs only in the INTERACTIVE
+      // flow (a human is watching). In autopilot (fast) the conclude stack is the source.
+      if (!fast && now - lastLiveConf > 5000) {
         lastLiveConf = now;
         refreshConfidence([...nextMsgs, { role: "assistant", content: log.slice(-4000) }], cl.id, addedText(augmentedRef.current[cl.id] ?? []));
       }
@@ -3113,9 +3122,9 @@ function ClusterStage({
   // the interactive flow uses) and refresh confidence. Returns the full merged
   // list so the loop can ground its cite-discipline check on it.
   function autoAddMarkers(cl: Cluster, content: string, via: AgentMode): Marker[] {
-    const next = incorporateFrom(cl, content, via);
-    refreshConfidence(transcripts[cl.id] ?? [], cl.id, addedText(next));
-    return next;
+    // COST-TRIMMED: no per-turn confidence side-channel in autopilot — the Reasoner's
+    // conclude `stack` fills the 4-tier confidence at the end (A/B: 20→0 calls, no label impact).
+    return incorporateFrom(cl, content, via);
   }
 
   // auto-pilot stream with one retry + a hard timeout, so a hung or failed request
