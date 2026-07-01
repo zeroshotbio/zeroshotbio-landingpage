@@ -204,7 +204,8 @@ function researchInstructions(cluster: Cluster): string {
     "RULES (cite-discipline):",
     "- Use web search against the canonical resources only (ZFIN, ZFA via EBI OLS, GO/QuickGO, NCBI Gene, UniProt). Never assert anatomy/function from unsourced memory — look it up.",
     "- BREADTH — DO NOT rely on ZFIN gene pages alone. For EACH marker, spread your searches across resources and actually run them: (1) ZFIN for in-vivo expression, (2) the GENE ONTOLOGY (geneontology.org / QuickGO, or via NCBI Gene / UniProt) for the molecular function & biological process it implicates, and (3) the ZFA anatomy term (EBI OLS) for the tissue/structure it marks. Aim to cite ZFIN expression AND a ZFA anatomy term AND a GO term for each marker whenever they exist — evidence grounded only in ZFIN is weaker. Issue SEPARATE searches for GO and ZFA; don't assume they'll come up under a gene-page search.",
-    "- A SOURCE ONLY COUNTS WHEN YOU LINK ITS RECORD. A bare prose mention of 'GO' or 'ZFA' is NOT a citation — it must carry an actual link to that resource's page or it does not count. For GO, link the term page (e.g. `https://amigo.geneontology.org/amigo/term/GO:0030280` or QuickGO `https://www.ebi.ac.uk/QuickGO/term/GO:0030280`). For ZFA, link the EBI OLS anatomy term (e.g. `https://www.ebi.ac.uk/ols4/ontologies/zfa/...`). ZFA in particular is being under-cited — actively run an EBI OLS ZFA search per marker and link the term; do not let a marker rest on ZFIN alone when a ZFA anatomy term exists.",
+    "- A SOURCE ONLY COUNTS WHEN YOU LINK ITS RECORD. A bare prose mention of 'GO' or 'ZFA' is NOT a citation — it must carry an actual link to that resource's page or it does not count.",
+    "- USE THE ontology_lookup TOOL for ZFA and GO — do NOT rely on web search for them (web search does not reliably surface ontology pages, which is why ZFA/GO have been missing). For each marker: call ontology_lookup(ontology:'zfa', query:<the anatomy/tissue it marks>) to get the ZFA term, and ontology_lookup(ontology:'go', query:<its molecular function or process>) to get the GO term. Cite the id + url the tool returns. Never write a ZFA or GO claim you did not obtain from this tool (or a real link) — if the tool returns no term, say so rather than inventing one.",
     "- Marker symbols may be human-ortholog-cased (e.g. HOXB13); map to the zebrafish gene.",
     "- CITE-DISCIPLINE: only treat the cluster's PROVIDED marker genes (the UP- and DOWN-regulated lists below) as this cluster's markers. Do NOT introduce other genes (e.g. tfec, nme4, mpeg1.1) as if they were markers of this cluster. You MAY mention a canonical marker for comparison, but you must explicitly say it is NOT in this cluster's marker list and that its expression here is unverified (the Archivist can check it).",
     "- EVIDENCE ONLY — explicitly forbidden: do NOT propose a cell-type identity, do NOT write a 'Verdict', do NOT give a confidence level, and do NOT synthesise across markers or rank candidate identities. Even if asked to 'identify the cluster', answer with per-marker evidence only and leave the call to the Reasoner. State (progenitor/cycling/quiescent/mature/stress) is part of the identity call — it is not yours to assign either.",
@@ -334,6 +335,58 @@ const QUERY_TOOL = {
     additionalProperties: false,
   },
 };
+
+// --- ontology_lookup: the Researcher's live tool for ZFA + GO terms -----------
+// Web search does not reliably surface EBI OLS / QuickGO ontology pages, so the
+// Researcher gets a deterministic lookup against the EBI OLS4 REST API. Returns
+// the top matching terms with a CITABLE url whose host classifies to the right
+// source pill (OLS/ebi.ac.uk → ZFA; QuickGO → GO).
+const ONTOLOGY_TOOL = {
+  type: "function",
+  name: "ontology_lookup",
+  description:
+    "Look up an ontology term by name and get its canonical ID + a citable URL. Use this whenever you want to cite a ZFA (zebrafish anatomy) term or a GO (Gene Ontology) term — plain web search does NOT reliably surface these ontology pages. ontology='zfa' searches the Zebrafish Anatomy Ontology; ontology='go' searches the Gene Ontology. Returns up to 4 matching terms, each with id (e.g. ZFA:0000107 / GO:0008544), label, a citation url, and a short definition. Call it for the anatomy/structure a marker implicates (zfa) and the molecular function / biological process it implicates (go).",
+  parameters: {
+    type: "object",
+    properties: {
+      ontology: { type: "string", enum: ["zfa", "go"], description: "which ontology to search" },
+      query: { type: "string", description: "term or phrase to look up, e.g. 'epidermis', 'keratinization', 'periderm'" },
+    },
+    required: ["ontology", "query"],
+    additionalProperties: false,
+  },
+};
+
+async function runOntology(argsStr: string): Promise<any> {
+  let a: any = {};
+  try { a = JSON.parse(argsStr || "{}"); } catch {}
+  const onto = a.ontology === "go" ? "go" : "zfa";
+  const q = String(a.query ?? "").trim();
+  if (!q) return { error: "no query", ontology: onto };
+  try {
+    const url = `https://www.ebi.ac.uk/ols4/api/search?q=${encodeURIComponent(q)}&ontology=${onto}&rows=4&fieldList=iri,label,obo_id,description`;
+    const ctrl = new AbortController();
+    const t = setTimeout(() => ctrl.abort(), 15000);
+    const r = await fetch(url, { signal: ctrl.signal, headers: { accept: "application/json" } });
+    clearTimeout(t);
+    if (!r.ok) return { error: `OLS ${r.status}`, ontology: onto, query: q };
+    const d = await r.json();
+    const results = (d?.response?.docs ?? []).slice(0, 4).map((x: any) => ({
+      id: x.obo_id ?? null,
+      label: x.label ?? null,
+      // citation url whose host maps to the correct source pill in the UI:
+      //   GO   → QuickGO (host contains 'quickgo' → GO pill)
+      //   ZFA  → EBI OLS4 term page (ebi.ac.uk → ZFA pill)
+      url: onto === "go"
+        ? (x.obo_id ? `https://www.ebi.ac.uk/QuickGO/term/${x.obo_id}` : (x.iri ?? null))
+        : (x.iri ? `https://www.ebi.ac.uk/ols4/ontologies/zfa/classes?iri=${encodeURIComponent(x.iri)}` : null),
+      definition: Array.isArray(x.description) ? (x.description[0] ?? null) : (x.description ?? null),
+    }));
+    return { ontology: onto, query: q, results, note: results.length ? "Cite the id + url of the best match; do not invent a term." : "No term found — do not fabricate one." };
+  } catch (e: any) {
+    return { error: e?.name === "AbortError" ? "timeout" : String(e?.message ?? e).slice(0, 120), ontology: onto, query: q };
+  }
+}
 
 type Profile = { id: string; nCells: number; datasetCells: number; nGenes: number; genes: StatMarker[] };
 const profileCache = new Map<string, Profile | null>(); // keyed by `${ds.id}:${clusterId}`
@@ -726,7 +779,7 @@ export async function POST(req: Request) {
       }
 
       const instructions = mode === "archivist" ? archivistInstructions(cluster, ds) : mode === "reason" ? reasonInstructions(cluster, ds) : researchInstructions(cluster);
-      const tools = mode === "research" ? [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }] : mode === "archivist" ? [QUERY_TOOL] : undefined;
+      const tools = mode === "research" ? [{ type: "web_search", filters: { allowed_domains: ALLOWED_DOMAINS } }, ONTOLOGY_TOOL] : mode === "archivist" ? [QUERY_TOOL] : undefined;
 
       const ctrl = new AbortController();
       const timer = setTimeout(() => ctrl.abort(), 295000);
@@ -742,7 +795,9 @@ export async function POST(req: Request) {
         const MAX_TOOL_ROUNDS = 3;
         for (let iter = 0; iter < 5; iter++) {
           // after the tool-round budget, force a written answer (no more tool calls)
-          const forceAnswer = mode === "archivist" && toolRounds >= MAX_TOOL_ROUNDS;
+          // after the tool-round budget (archivist query_dataset OR research
+          // ontology_lookup), force a written answer — no more tool calls.
+          const forceAnswer = toolRounds >= MAX_TOOL_ROUNDS;
           const payload: any = {
             model,
             stream: true,
@@ -762,11 +817,21 @@ export async function POST(req: Request) {
           anyProduced = anyProduced || res.produced;
           allText += res.text;
           if (!res.ok) break;
-          // Archivist tool loop: execute query_dataset calls, then continue.
-          if (mode === "archivist" && res.calls.length && toolRounds < MAX_TOOL_ROUNDS) {
+          // Tool loop: execute function calls (archivist query_dataset OR research
+          // ontology_lookup), feed the outputs back, then continue.
+          if (res.calls.length && toolRounds < MAX_TOOL_ROUNDS) {
             toolRounds++;
             const outputs: any[] = [];
             for (const c of res.calls) {
+              if (c.name === "ontology_lookup") {
+                let q = "", onto = "zfa";
+                try { const a = JSON.parse(c.args || "{}"); q = String(a.query ?? ""); onto = a.ontology === "go" ? "go" : "zfa"; } catch {}
+                sse(controller, enc, { t: "status", v: `Ontology lookup (${onto.toUpperCase()}): “${q.slice(0, 60)}”…` });
+                const out = await runOntology(c.args);
+                outputs.push({ type: "function_call_output", call_id: c.call_id, output: JSON.stringify(out) });
+                continue;
+              }
+              // query_dataset (Archivist)
               let label = ds.name;
               try {
                 const a = JSON.parse(c.args || "{}");
