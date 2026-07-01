@@ -23,7 +23,12 @@ import { useAtlas } from "./useAtlas";
 // Wizard assets are served statically by nginx (daniotype_data/), NOT by the gated Vercel
 // asset route — keeps the Vercel function bundle slim. The browser fetches umap/groundtruth
 // cross-origin (nginx sends CORS for www.zeroshot.bio).
-const ASSET_BASE = "https://daniotype.zeroshot.bio/daniotype_data";
+// Assets are AUTHORED + patched on this box (zscape.zeroshot.bio, served via nginx
+// Option-1 /daniotype_data/). daniotype.zeroshot.bio is a separate snapshot box that
+// does NOT receive our patches — pointing there silently drops asset updates (e.g.
+// the Meta-Reasoner compartment topology). Verified: this host serves every dataset
+// asset (200) with Access-Control-Allow-Origin for www.zeroshot.bio.
+const ASSET_BASE = "https://zscape.zeroshot.bio/daniotype_data";
 // Rich per-dataset facts generated from the real assets/scorecards/sweeps (scripts/gen_dataset_facts.py)
 const FACTS: Record<string, any> = DATASET_FACTS as any;
 
