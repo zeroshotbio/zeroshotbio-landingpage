@@ -2574,6 +2574,10 @@ const AUTO_NUDGE_PROMPT =
 // Just hand the new evidence back and let the Reasoner take over and drive.
 const AUTO_REASON_CONT =
   "The specialist(s) you dispatched have replied above. YOU are now driving the flow — decide the next steps yourself. Judge how much good evidence you actually have toward a final call, and on that judgement either dispatch the Researcher (for more literature/ontology) or the Archivist (for raw stats), or conclude. If the raw stats and literature now agree and the call is settled (across the germ-layer → tissue → cell-type-broad → cell-type-sub stack), conclude with a kasperov-conclude block — citing markers actually in THIS cluster's list, or abstaining at the deepest tier you can defend. Otherwise dispatch the single most useful not-yet-answered query with a kasperov-dispatch block (Researcher or Archivist, your choice). Do NOT re-ask anything already answered.";
+// after the first continuation, the Reasoner already knows it's driving — don't re-inject
+// the whole instruction every round; a one-line nudge is enough to hand back the reply.
+const AUTO_REASON_MIN =
+  "The specialist(s) replied above. Continue driving: conclude (kasperov-conclude) if it's settled, or dispatch the single most useful not-yet-answered query (kasperov-dispatch). Don't re-ask anything already answered.";
 const AUTO_MAX_ROUNDS = 4;
 // per-personality loading-bar ceiling (seconds). The agent route's maxDuration
 // is 300s on Vercel Pro, shared by all three personalities, so the bar counts
@@ -3115,7 +3119,7 @@ function ClusterStage({
       // gate the Reasoner PROMPT ("You asked") before it's sent, then its output.
       // Round 0 primes the Archivist dispatch; later rounds the specialists have
       // already replied, so feed their output back and let the Reasoner drive.
-      const reasonPrompt = round === 0 ? AUTO_REASON_PROMPT : AUTO_REASON_CONT;
+      const reasonPrompt = round === 0 ? AUTO_REASON_PROMPT : round === 1 ? AUTO_REASON_CONT : AUTO_REASON_MIN;
       await judgeGate(cl, "reason", reasonPrompt, "prompt");
       if (autoAbort.current) return;
       conv = await autoStream(cl, [...conv, { role: "user", content: reasonPrompt }], "reason");
@@ -3156,7 +3160,8 @@ function ClusterStage({
               `Your de-novo call is settled: "${grounded.label}". That de-novo answer is FINAL — do NOT revise it.\n\n` +
               `Now do a SECOND, menu-aware read. Below is the published ZSCAPE label MENU — the ONLY labels the ground truth uses at each tier:\n${menuBlock}\n\n` +
               `Fit your de-novo call to the SINGLE closest existing menu option at EACH tier (germ layer → tissue → cell type broad → cell type sub), each with its own confidence (0-100). Pick ONLY from the menu; never invent a label. ` +
-              `Declare it under a "**Menu-aware binning**" heading as four short lines — "<tier>: <menu option> (<confidence>%)" — then one line on where it diverges from your de-novo stack. Keep it brief; this does NOT change your de-novo answer.`;
+              `Declare it under a "**Menu-aware binning**" heading as four short lines — "<tier>: <menu option> (<confidence>%)". ` +
+              `Then REFLECT: for any tier where the menu-aware bin diverges from your de-novo call, say whether that gap is just a MENU-VOCABULARY ARTIFACT (the menu lacks your finer/better term, so the bin is only the closest available label) or a REAL uncertainty in your call. If it's real uncertainty — not just a vocabulary gap — say whether you'd want more research/thinking before trusting the menu-aware bin, and lower that tier's confidence accordingly. This reflection does NOT change your de-novo answer.`;
             await judgeGate(cl, "reason", binPrompt, "prompt");
             if (!autoAbort.current) {
               const bconv = await autoStream(cl, [...conv, { role: "user", content: binPrompt }], "reason");
