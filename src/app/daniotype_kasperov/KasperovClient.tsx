@@ -10,6 +10,7 @@ import { type AgentMode, type Pt, type Marker, type Cluster, type TierPred, type
 import { PAPER, INK, ACCENT, THEME, confColor, btnPrimary, btnGhost } from "./theme";
 // Presentational components shared with the Phase 2 read-only run viewer.
 import { UmapCanvas } from "./components/UmapCanvas";
+import { CompartmentMap, MapViewSwitch, hasCompartments, type MapView } from "./components/CompartmentMap";
 import { AgentMessage, mdFor } from "./components/ChatMessage";
 import { MarkersContent } from "./components/MarkersPanel";
 import { ConfidenceContent } from "./components/ConfidencePanel";
@@ -1963,6 +1964,7 @@ function MapStage({
     return w.length > 15 ? w.slice(0, 15).join(" ") + "…" : s.trim();
   };
   const [size, setSize] = useState({ w: 760, h: 560 });
+  const [mapView, setMapView] = useState<MapView>(hasCompartments(clusters) ? "islands" : "umap");
   const wrap = useRef<HTMLDivElement | null>(null);
   useEffect(() => {
     function fit() {
@@ -2053,7 +2055,16 @@ function MapStage({
         )}
 
         <div ref={wrap} style={{ display: "inline-block", background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 14, padding: 10, boxShadow: "0 1px 3px rgba(0,0,0,0.04)" }}>
-          <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+          {hasCompartments(clusters) && (
+            <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 6 }}>
+              <MapViewSwitch view={mapView} setView={setMapView} />
+            </div>
+          )}
+          {mapView === "islands" && hasCompartments(clusters) ? (
+            <CompartmentMap clusters={clusters} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+          ) : (
+            <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+          )}
         </div>
         {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
           <div style={{ maxWidth: 720, margin: "4px auto 14px", textAlign: "left" }}>
@@ -2726,6 +2737,8 @@ function ClusterStage({
   // boundary and hands the screen to a full-takeover stub (ledger + Continue). No
   // brain yet — just proves boundary-detection + screen-takeover + ledger-assembly.
   const [metaBoundary, setMetaBoundary] = useState<{ justFinished: number; nextUp: number | null } | null>(null);
+  // world-map view toggle (compartment islands ↔ raw UMAP) for the labelling map
+  const [wmView, setWmView] = useState<MapView>(hasCompartments(clusters) ? "islands" : "umap");
   const metaResolve = useRef<(() => void) | null>(null);
   function metaGate(justFinished: number, nextUp: number | null): Promise<void> {
     return new Promise<void>((resolve) => {
@@ -3397,7 +3410,18 @@ function ClusterStage({
             <>
               {/* world map — draggable + resizable; pulses/expands as auto-pilot re-focuses */}
               <DraggablePanel title="WORLD MAP" accent="#999" box={layout.wm.box} minW={150} minH={120} effect={wmPulse ? "pulse" : null} onMove={(x, y) => moveBox("wm", x, y)} onResize={(w, h) => resizeBox("wm", w, h)}>
-                {(w, h) => <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
+                {(w, h) => (
+                  <div style={{ width: w, height: h, position: "relative" }}>
+                    {hasCompartments(clusters) && (
+                      <div style={{ position: "absolute", top: 2, right: 2, zIndex: 2 }}>
+                        <MapViewSwitch view={wmView} setView={setWmView} compact />
+                      </div>
+                    )}
+                    {wmView === "islands" && hasCompartments(clusters)
+                      ? <CompartmentMap clusters={clusters} activeId={active.id} validated={validated} width={w} height={h} onPick={goToCluster} />
+                      : <UmapCanvas clusters={clusters} mode="global" colored activeId={active.id} validated={validated} width={w} height={h} showFocus />}
+                  </div>
+                )}
               </DraggablePanel>
 
               {/* top markers — grows with content, capped to stay on-screen (scrolls past the cap) */}
