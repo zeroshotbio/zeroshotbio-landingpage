@@ -34,6 +34,7 @@ export function MapViewSwitch({ view, setView, compact }: { view: MapView; setVi
 }
 
 const GOLDEN = 2.399963229728653; // golden angle (rad) for even disc packing
+const kfmt = (n: number) => (n >= 1_000_000 ? (n / 1e6).toFixed(1) + "M" : n >= 1000 ? Math.round(n / 1000) + "k" : String(n)); // compact cell count
 
 export function CompartmentMap({
   clusters,
@@ -67,27 +68,29 @@ export function CompartmentMap({
     const rows = Math.ceil(nComp / cols);
     const cellW = width / cols;
     const cellH = height / rows;
-    const labelH = 18;
-    const islandR = Math.max(10, Math.min(cellW, cellH - labelH) * 0.42);
+    // labels live in a RESERVED band at the top of each cell — never over the dots.
+    // Below a cell size they'd cramp (e.g. the tiny world-map panel), so drop them.
+    const showLabels = cellW >= 78 && cellH >= 66;
+    const labelBand = showLabels ? 30 : 4;
+    const availH = cellH - labelBand; // room for the island below the labels
+    const islandR = Math.max(9, Math.min(cellW, availH) * 0.42);
 
     // global dot-size scale (sqrt of nCells → radius)
-    const cellsArr = clusters.map((c) => c.nCells || 1);
-    const maxCells = Math.max(...cellsArr, 1);
-    const dotR = (n: number) => {
-      const t = Math.sqrt((n || 1) / maxCells); // 0..1
-      return 2.2 + t * (islandR * 0.16);
-    };
+    const maxCells = Math.max(...clusters.map((c) => c.nCells || 1), 1);
+    const dotR = (n: number) => 2.2 + Math.sqrt((n || 1) / maxCells) * (islandR * 0.16);
 
     const islands = comps.map((ci, gi) => {
       const r = Math.floor(gi / cols);
       const c = gi % cols;
       const cx = c * cellW + cellW / 2;
-      const cy = r * cellH + (cellH - labelH) / 2 + labelH;
+      const cy = r * cellH + labelBand + availH / 2; // island centred BELOW the label band
+      const labelTop = r * cellH;
       const leaves = groups.get(ci)!.slice().sort((a, b) => (b.nCells || 0) - (a.nCells || 0));
+      const compCells = leaves.reduce((s, l) => s + (l.nCells || 0), 0);
       const hue = Math.round((gi * 360) / nComp);
       const dots = leaves.map((leaf, i) => {
         // phyllotaxis inside the island disc
-        const rad = islandR * 0.92 * Math.sqrt((i + 0.5) / leaves.length);
+        const rad = islandR * 0.9 * Math.sqrt((i + 0.5) / leaves.length);
         const theta = i * GOLDEN;
         return {
           id: leaf.id,
@@ -98,9 +101,9 @@ export function CompartmentMap({
           leaf,
         };
       });
-      return { ci, cx, cy, islandR, hue, dots };
+      return { ci, cx, cy, labelTop, islandR, hue, nLeaves: leaves.length, compCells, dots };
     });
-    return { islands, cellH, cellW };
+    return { islands, cellH, cellW, showLabels };
   }, [clusters, width, height]);
 
   if (!layout) return <div style={{ width, height, display: "flex", alignItems: "center", justifyContent: "center", color: "#9a938a", fontSize: 13 }}>No compartment topology in this partition.</div>;
@@ -111,13 +114,13 @@ export function CompartmentMap({
         <g key={isl.ci}>
           {/* island halo */}
           <circle cx={isl.cx} cy={isl.cy} r={isl.islandR * 1.05} fill={`hsl(${isl.hue} 60% 96%)`} stroke={`hsl(${isl.hue} 50% 82%)`} strokeWidth={1} />
-          {/* compartment label */}
-          <text x={isl.cx} y={isl.cy - isl.islandR - 4} textAnchor="middle" style={{ fontSize: 10.5, fontWeight: 800, fill: `hsl(${isl.hue} 45% 38%)` }}>
-            Compartment {isl.ci}
-          </text>
-          <text x={isl.cx} y={isl.cy - isl.islandR + 8} textAnchor="middle" style={{ fontSize: 8.5, fill: "#9a938a" }}>
-            {isl.dots.length} leaves
-          </text>
+          {/* compartment labels — in the RESERVED band above the island (never over the dots) */}
+          {layout.showLabels && (
+            <>
+              <text x={isl.cx} y={isl.labelTop + 13} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: `hsl(${isl.hue} 45% 36%)` }}>Compartment {isl.ci}</text>
+              <text x={isl.cx} y={isl.labelTop + 25} textAnchor="middle" style={{ fontSize: 9, fill: "#8a847b" }}>{kfmt(isl.compCells)} cells · {isl.nLeaves} leaves</text>
+            </>
+          )}
           {/* leaf dots */}
           {isl.dots.map((d) => {
             const isActive = d.id === activeId;
