@@ -56,6 +56,14 @@ async function getTierVocab(datasetId: string): Promise<TierVocab | null> {
   }
 }
 
+// GET ?dataset=<id> → { bins } — the published label menu per tier, so the live
+// chat can hand the Reasoner the menu for its in-conversation menu-aware binning.
+export async function GET(req: Request) {
+  const url = new URL(req.url);
+  const bins = await getTierVocab(String(url.searchParams.get("dataset") ?? ""));
+  return NextResponse.json({ bins });
+}
+
 export async function POST(req: Request) {
   let body: any;
   try {

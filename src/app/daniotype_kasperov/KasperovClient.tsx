@@ -2573,7 +2573,7 @@ const AUTO_NUDGE_PROMPT =
 // which asserts "the Archivist has NOT run yet" — would be both false and redundant.
 // Just hand the new evidence back and let the Reasoner take over and drive.
 const AUTO_REASON_CONT =
-  "The specialist(s) you dispatched have replied above. Take over from here: reconcile the new evidence with what you already have and decide the next step yourself. If the raw stats and literature now agree and the call is settled (across the germ-layer → tissue → cell-type-broad → cell-type-sub stack), conclude with a kasperov-conclude block — citing markers actually in THIS cluster's list, or abstaining at the deepest tier you can defend. Otherwise dispatch the single most useful not-yet-answered query with a kasperov-dispatch block. Do NOT re-ask anything already answered.";
+  "The specialist(s) you dispatched have replied above. YOU are now driving the flow — decide the next steps yourself. Judge how much good evidence you actually have toward a final call, and on that judgement either dispatch the Researcher (for more literature/ontology) or the Archivist (for raw stats), or conclude. If the raw stats and literature now agree and the call is settled (across the germ-layer → tissue → cell-type-broad → cell-type-sub stack), conclude with a kasperov-conclude block — citing markers actually in THIS cluster's list, or abstaining at the deepest tier you can defend. Otherwise dispatch the single most useful not-yet-answered query with a kasperov-dispatch block (Researcher or Archivist, your choice). Do NOT re-ask anything already answered.";
 const AUTO_MAX_ROUNDS = 4;
 // per-personality loading-bar ceiling (seconds). The agent route's maxDuration
 // is 300s on Vercel Pro, shared by all three personalities, so the bar counts
@@ -2779,6 +2779,20 @@ function ClusterStage({
   // once a cluster's confidence comes from the Reasoner's conclude `stack`, that is
   // authoritative — the /api/kasperov_confidence side-channel must not overwrite it.
   const concludeConfRef = useRef<Record<string, boolean>>({});
+  // published GT label MENU (bins per tier), fetched once per run for the in-chat
+  // menu-aware binning step. undefined = not fetched; null = open-vocab (no menu).
+  const menuBinsRef = useRef<Record<string, string[]> | null | undefined>(undefined);
+  async function getMenuBins(): Promise<Record<string, string[]> | null> {
+    if (menuBinsRef.current !== undefined) return menuBinsRef.current;
+    try {
+      const r = await fetch(`/api/kasperov_fit?dataset=${encodeURIComponent(dataset.id)}`);
+      const d = r.ok ? await r.json() : {};
+      menuBinsRef.current = d?.bins ?? null;
+    } catch {
+      menuBinsRef.current = null;
+    }
+    return menuBinsRef.current ?? null;
+  }
   async function refreshConfidence(msgs: ChatMsg[], clusterId: string, added?: string) {
     if (!msgs.some((m) => m.role === "assistant")) return;
     if (concludeConfRef.current[clusterId]) return; // Reasoner stack already drives this cluster
@@ -3130,6 +3144,28 @@ function ClusterStage({
         if (grounded.stack) { concludeConfRef.current[cl.id] = true; setConfidence((c) => ({ ...c, [cl.id]: grounded.stack as ClusterConf })); }
         onLabel(cl.id, grounded.label);
         onValidate(cl.id, true);
+        // ⚖️ MENU-AWARE BINNING — after the (uncontaminated) de-novo call is settled, hand the
+        // Reasoner the dataset's published label MENU and have it declare its best fit per tier,
+        // in-chat and judgeable. Best-effort: a binning failure never undoes the settled label.
+        try {
+          const bins = await getMenuBins();
+          const tierKeys = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
+          const menuBlock = bins ? tierKeys.filter((k) => Array.isArray(bins[k]) && bins[k].length).map((k) => `${k}: [ ${bins[k].join(" | ")} ]`).join("\n") : "";
+          if (menuBlock && !autoAbort.current) {
+            const binPrompt =
+              `Your de-novo call is settled: "${grounded.label}". That de-novo answer is FINAL — do NOT revise it.\n\n` +
+              `Now do a SECOND, menu-aware read. Below is the published ZSCAPE label MENU — the ONLY labels the ground truth uses at each tier:\n${menuBlock}\n\n` +
+              `Fit your de-novo call to the SINGLE closest existing menu option at EACH tier (germ layer → tissue → cell type broad → cell type sub), each with its own confidence (0-100). Pick ONLY from the menu; never invent a label. ` +
+              `Declare it under a "**Menu-aware binning**" heading as four short lines — "<tier>: <menu option> (<confidence>%)" — then one line on where it diverges from your de-novo stack. Keep it brief; this does NOT change your de-novo answer.`;
+            await judgeGate(cl, "reason", binPrompt, "prompt");
+            if (!autoAbort.current) {
+              const bconv = await autoStream(cl, [...conv, { role: "user", content: binPrompt }], "reason");
+              await judgeGate(cl, "reason", bconv[bconv.length - 1].content);
+            }
+          }
+        } catch (e) {
+          console.warn("[kasperov] menu-binning step failed:", e);
+        }
         return;
       }
       for (const d of dispatches) {
