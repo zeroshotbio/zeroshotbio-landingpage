@@ -3157,11 +3157,13 @@ function ClusterStage({
           const menuBlock = bins ? tierKeys.filter((k) => Array.isArray(bins[k]) && bins[k].length).map((k) => `${k}: [ ${bins[k].join(" | ")} ]`).join("\n") : "";
           if (menuBlock && !autoAbort.current) {
             const binPrompt =
-              `Your de-novo call is settled: "${grounded.label}". That de-novo answer is FINAL — do NOT revise it.\n\n` +
-              `Now do a SECOND, menu-aware read. Below is the published ZSCAPE label MENU — the ONLY labels the ground truth uses at each tier:\n${menuBlock}\n\n` +
+              `=== MENU-EXPOSED PHASE — ${cl.label} ===\n` +
+              `Your DE-NOVO call is now LOCKED: "${grounded.label}". From here you are in the MENU-EXPOSED phase — do NOT revise the de-novo answer.\n\n` +
+              `Below is the published ZSCAPE label MENU — the ONLY labels the ground truth uses at each tier:\n${menuBlock}\n\n` +
               `Fit your de-novo call to the SINGLE closest existing menu option at EACH tier (germ layer → tissue → cell type broad → cell type sub), each with its own confidence (0-100). Pick ONLY from the menu; never invent a label. ` +
               `Declare it under a "**Menu-aware binning**" heading as four short lines — "<tier>: <menu option> (<confidence>%)". ` +
-              `Then REFLECT: for any tier where the menu-aware bin diverges from your de-novo call, say whether that gap is just a MENU-VOCABULARY ARTIFACT (the menu lacks your finer/better term, so the bin is only the closest available label) or a REAL uncertainty in your call. If it's real uncertainty — not just a vocabulary gap — say whether you'd want more research/thinking before trusting the menu-aware bin, and lower that tier's confidence accordingly. This reflection does NOT change your de-novo answer.`;
+              `Then REFLECT: for any tier where the menu-aware bin diverges from your de-novo call, say whether that gap is just a MENU-VOCABULARY ARTIFACT (the menu lacks your finer/better term, so the bin is only the closest available label) or a REAL uncertainty in your call. If it's real uncertainty — not just a vocabulary gap — say whether you'd want more research/thinking before trusting the menu-aware bin, and lower that tier's confidence accordingly. ` +
+              `FINALLY, end with a clear "### ✅ CLUSTER COMPLETE — ${cl.label}" block that restates BOTH final answers side by side, so it is unambiguous the cluster is finished: a "**De-novo:**" line and a "**Menu-exposed:**" line, each giving germ layer / tissue / cell type broad / cell type sub with their confidences. This step does NOT change your de-novo answer.`;
             await judgeGate(cl, "reason", binPrompt, "prompt");
             if (!autoAbort.current) {
               const bconv = await autoStream(cl, [...conv, { role: "user", content: binPrompt }], "reason");
