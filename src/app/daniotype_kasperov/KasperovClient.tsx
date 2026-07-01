@@ -14,6 +14,7 @@ import { AgentMessage, mdFor } from "./components/ChatMessage";
 import { MarkersContent } from "./components/MarkersPanel";
 import { ConfidenceContent } from "./components/ConfidencePanel";
 import { Scorecard } from "./components/Scorecard";
+import { MetaReasonerStub } from "./components/MetaReasonerStub";
 import { RunViewer } from "./components/RunViewer";
 import { HarnessDetail } from "./components/HarnessDetail";
 import { useTween } from "./useTween";
@@ -2716,6 +2717,23 @@ function ClusterStage({
   const [judgeDone, setJudgeDone] = useState<number | null>(null); // set after submit (# judgements logged)
   const [judgeSaveOk, setJudgeSaveOk] = useState<boolean | null>(null); // did the post-submit server save actually persist?
   const [judgeSummaryOpen, setJudgeSummaryOpen] = useState(false); // the "review before submit" popup
+  // ⚖️🧠 META-REASONER (Phase 1 stub): the autopilot pauses at each compartment
+  // boundary and hands the screen to a full-takeover stub (ledger + Continue). No
+  // brain yet — just proves boundary-detection + screen-takeover + ledger-assembly.
+  const [metaBoundary, setMetaBoundary] = useState<{ justFinished: number; nextUp: number | null } | null>(null);
+  const metaResolve = useRef<(() => void) | null>(null);
+  function metaGate(justFinished: number, nextUp: number | null): Promise<void> {
+    return new Promise<void>((resolve) => {
+      metaResolve.current = resolve;
+      setMetaBoundary({ justFinished, nextUp });
+    });
+  }
+  function resumeFromMeta() {
+    setMetaBoundary(null);
+    const r = metaResolve.current;
+    metaResolve.current = null;
+    if (r) r();
+  }
   function resolveJudge(note: string) {
     const pj = pendingJudge;
     if (pj && note.trim()) {
@@ -3205,7 +3223,12 @@ function ClusterStage({
     // NB: keyed off labels, not `validated` — a cluster can be validated by hand
     // without a label, and those still need the labeller to run.
     const alreadyLabelled = clusters.filter((c) => labels[c.id]).length;
-    const queue = clusters.filter((c) => !labels[c.id]);
+    // STEP 2: walk compartment-by-compartment. Stable sort by compartmentIndex keeps
+    // leaves contiguous within a compartment; flat partitions (no index) are untouched.
+    const queue = clusters
+      .filter((c) => !labels[c.id])
+      .slice()
+      .sort((a, b) => (a.compartmentIndex ?? Infinity) - (b.compartmentIndex ?? Infinity));
     const failed: string[] = [];
     setAuto({ running: true, current: null, done: 0, total: queue.length });
     for (let i = 0; i < queue.length; i++) {
@@ -3234,6 +3257,19 @@ function ClusterStage({
             setWmPulse(false);
           }
         }
+        // STEP 3: HIERARCHY BOUNDARY — fire when the last leaf of a compartment finishes
+        // and another compartment still remains. Triggered by the compartment changing,
+        // NOT a cluster count. STEP 4: pause the sweep on the Meta-Reasoner stub.
+        const next = queue[i + 1];
+        const atBoundary =
+          !autoAbort.current &&
+          typeof c.compartmentIndex === "number" &&
+          !!next &&
+          next.compartmentIndex !== c.compartmentIndex;
+        if (atBoundary) {
+          await metaGate(c.compartmentIndex!, next!.compartmentIndex ?? null);
+          if (autoAbort.current) break;
+        }
       } catch {
         failed.push(c.id); // errored after retry — record it and keep going
       }
@@ -3250,6 +3286,8 @@ function ClusterStage({
     setAuto((a) => ({ ...a, running: false }));
     // unblock any open judgement gate so the (now-aborting) sweep can unwind
     if (pendingJudge) { setPendingJudge(null); const r = judgeResolve.current; judgeResolve.current = null; if (r) r(); }
+    // unblock an open Meta-Reasoner boundary gate too
+    if (metaResolve.current) { setMetaBoundary(null); const r = metaResolve.current; metaResolve.current = null; r(); }
   }
 
   // ⚖️ Submit judgements & finish — confirmed from the review popup: stop the sweep,
@@ -3291,6 +3329,16 @@ function ClusterStage({
       {/* per-step critique is captured in the persistent draggable JUDGEMENT box (below),
           not a modal — the box live-updates and pauses at each personality's turn. */}
       {judgeSummaryOpen && <JudgeSummaryModal judgements={judgements} onBack={() => setJudgeSummaryOpen(false)} onSubmit={endRunAndLog} />}
+      {metaBoundary && (
+        <MetaReasonerStub
+          justFinished={metaBoundary.justFinished}
+          nextUp={metaBoundary.nextUp}
+          clusters={clusters}
+          labels={labels}
+          confidence={confidence}
+          onContinue={resumeFromMeta}
+        />
+      )}
       <style>{`
         @keyframes kpulse{0%,100%{opacity:.45}50%{opacity:1}}
         @keyframes kscan{0%,100%{transform:translateY(0) scale(1);box-shadow:0 0 0 0 rgba(14,116,144,0)}50%{transform:translateY(-3px) scale(1.03);box-shadow:0 6px 16px rgba(0,0,0,.10)}}
@@ -3306,7 +3354,7 @@ function ClusterStage({
         <button onClick={onBack} style={btnGhost}>← World map</button>
         <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
           <span style={{ width: 12, height: 12, borderRadius: 99, background: active.color }} />
-          <strong style={{ fontSize: 16 }}>{active.label}</strong>
+          <strong style={{ fontSize: 16 }}>{active.compartmentLabel ?? active.label}</strong>
         </div>
         <span style={{ fontSize: 13, color: "#888" }}>{active.nCells.toLocaleString()} cells</span>
         {labels[active.id] && <span style={{ fontSize: 12.5, color: THEME.reason.color, fontWeight: 600, background: THEME.reason.bg, padding: "2px 8px", borderRadius: 99 }}>{labels[active.id]}</span>}

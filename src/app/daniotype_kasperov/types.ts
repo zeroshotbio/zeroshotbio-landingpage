@@ -24,6 +24,13 @@ export interface Cluster {
   markersDown: Marker[];
   points: Pt[];
   bounds: { minx: number; maxx: number; miny: number; maxy: number };
+  // hierarchy topology (present on recursive partitions; absent on flat ones).
+  // TOPOLOGY ONLY — never a GT/tissue name. compartmentIndex is 1-based.
+  compartment?: number;
+  compartmentIndex?: number;
+  // DISPLAY-ONLY "Compartment X · Cluster Y" (Y = within-compartment index). Never
+  // sent to the agent — `label` stays the generic id the agent reasons over.
+  compartmentLabel?: string;
 }
 
 // Per-cluster characterization: a prediction + confidence at each of the four

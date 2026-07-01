@@ -60,6 +60,9 @@ export function useAtlas(dataUrl: string | null) {
           degsUp: c.degsUp ?? [],
           markers: c.markers ?? [],
           markersDown: c.markersDown ?? [],
+          // hierarchy topology (recursive partitions only) — pass through as-is
+          compartment: typeof c.compartment === "number" ? c.compartment : undefined,
+          compartmentIndex: typeof c.compartmentIndex === "number" ? c.compartmentIndex : undefined,
           points: [],
           bounds: { minx: Infinity, maxx: -Infinity, miny: Infinity, maxy: -Infinity },
         }));
@@ -81,6 +84,17 @@ export function useAtlas(dataUrl: string | null) {
               c.bounds = { minx: c.cx, maxx: c.cx, miny: c.cy, maxy: c.cy };
             }
           }
+        }
+        // compartment DISPLAY labels (recursive partitions only) — "Compartment X ·
+        // Cluster Y", Y = 1-based within-compartment index. TOPOLOGY ONLY, no GT name.
+        if (cs.some((c) => typeof c.compartmentIndex === "number")) {
+          const byComp = new Map<number, Cluster[]>();
+          for (const c of cs) {
+            if (typeof c.compartmentIndex !== "number") continue;
+            if (!byComp.has(c.compartmentIndex)) byComp.set(c.compartmentIndex, []);
+            byComp.get(c.compartmentIndex)!.push(c);
+          }
+          byComp.forEach((arr, ci) => arr.forEach((c, y) => { c.compartmentLabel = `Compartment ${ci} · Cluster ${y + 1}`; }));
         }
         setClusters(cs);
         setMeta({
