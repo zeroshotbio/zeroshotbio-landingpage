@@ -456,16 +456,21 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
           );
         })()}
 
-        {/* 2. MODEL & HARNESS — run config */}
+        {/* 2. MODEL & HARNESS — the SAME picker stage as New Run, filled in read-only */}
         {tab === "modelHarness" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={CARD}>
-              <div style={SEC}>Model</div>
-              <div style={{ fontSize: 18, fontWeight: 800 }}>{run?.model ?? "?"}</div>
-              {run?.cost?.usd != null ? <div style={{ fontSize: 12.5, color: "#666", marginTop: 2 }}>~${money(Number(run.cost.usd))}{run?.cost?.estimated ? " (est.)" : ""} total cost</div> : null}
+          <div style={{ maxWidth: 760, margin: "0 auto" }}>
+            <h1 style={{ fontSize: 30, fontWeight: 700, margin: "4px 0 4px", lineHeight: 1.1, textAlign: "center" }}>2. Model &amp; Harness</h1>
+            <p style={{ color: "#666", fontSize: 14, textAlign: "center", margin: "0 auto 18px", maxWidth: 620, lineHeight: 1.5 }}>
+              The <strong>model</strong> that drove every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules — as recorded for this run.
+            </p>
+            <h2 style={{ ...SEC, fontSize: 12 }}>Model</h2>
+            <div style={{ ...CARD, border: `2px solid ${ACCENT}`, display: "flex", alignItems: "baseline", gap: 10, marginBottom: 18 }}>
+              <span style={{ fontSize: 20, fontWeight: 800 }}>{run?.model ?? "?"}</span>
+              {run?.cost?.usd != null ? <span style={{ fontSize: 12.5, color: "#666" }}>~${money(Number(run.cost.usd))}{run?.cost?.estimated ? " (est.)" : ""} total</span> : null}
+              <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "#15803d" }}>✓ used this run</span>
             </div>
-            <div style={CARD}>
-              <div style={SEC}>Harness</div>
+            <h2 style={{ ...SEC, fontSize: 12 }}>Harness</h2>
+            <div style={{ ...CARD, border: `2px solid ${ACCENT}`, marginBottom: 12 }}>
               {run?.harness ? (
                 <>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>v{run.harness.version}{run.harness.name ? ` · ${run.harness.name}` : ""}</div>
@@ -473,11 +478,14 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
                 </>
               ) : notRecorded("Harness")}
             </div>
-            {/* the personalities + loop this harness runs */}
+            {/* the three personalities of this harness — the SAME panel New Run shows */}
             <HarnessDetail harness={run?.harness} />
-            <div style={CARD}>
+            <div style={{ ...CARD, marginTop: 12 }}>
               <div style={SEC}>Run provenance</div>
               <GroundingPanel provenance={run?.provenance} />
+            </div>
+            <div style={{ textAlign: "center", marginTop: 16 }}>
+              <button onClick={() => setTab("labels")} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Proceed to 3. Fine Cell Labelling →</button>
             </div>
           </div>
         )}
@@ -522,8 +530,22 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
             </div>
           </div>
         ) : (
-          /* ---- no-GT datasets: final mean confidence + per-cluster breakdown ---- */
+          /* ---- master: the SAME "3. Cell Labelling" map view New Run shows (revealed), filled in ---- */
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+            <div style={{ textAlign: "center" }}>
+              <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px" }}>3. Fine Cell Labelling</h1>
+              <p style={{ color: "#666", fontSize: 14, margin: "0 0 10px" }}>{runClusters.length} de-novo clusters · {profile.validatedClusters} validated. Click a cluster on the map or in the list below to see how it was decided.</p>
+              {clusters ? (
+                <div style={{ ...CARD, padding: 10 }}>
+                  {hasCompartments(clusters) && <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><MapViewSwitch view={mapView} setView={setMapView} /></div>}
+                  <div style={{ display: "flex", justifyContent: "center" }}>
+                    {mapView === "islands" && hasCompartments(clusters)
+                      ? <CompartmentMap clusters={clusters} activeId={null} validated={validated} width={720} height={440} onPick={(id) => setOpenCluster(id)} />
+                      : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={validated} width={560} height={420} />}
+                  </div>
+                </div>
+              ) : null}
+            </div>
             <div>
               <div style={{ ...SEC, marginBottom: 8 }}>{gt ? "Final accuracy by tier vs ground truth" : "Final mean confidence by tier"}</div>
               {((gt
@@ -634,6 +656,7 @@ function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf
   const tierOrder = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>4. Merging &amp; Meta-Reasoning</h1>
       {/* collapse summary */}
       <div style={CARD}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
@@ -697,6 +720,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   const noop: any = () => {};
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
       {sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} /> : (
         <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores (score the step-4 nodes through the fuzzy judge to populate this)")}</div>
       )}
