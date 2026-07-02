@@ -649,18 +649,36 @@ function JudgeBox({ stage, targetId, targetLabel, excerpt, judgements, addJudgem
   );
 }
 
+const stripJsonFence = (s: string) => String(s || "").replace(/```+\s*json[\s\S]*?```+/gi, "").replace(/\n{3,}/g, "\n\n").trim();
+function decisionMd(c: any): string {
+  const lines: string[] = [];
+  (c.merges || []).forEach((m: any) => lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves`));
+  (c.set_aside || []).forEach((s: any) => lines.push(`- ⎇ **set aside** leaf ${s.leaf_id} (kept distinct)`));
+  return lines.length ? "\n\n**→ Decision**\n" + lines.join("\n") : "";
+}
+const userBubble: React.CSSProperties = { alignSelf: "flex-end", maxWidth: "86%", background: "#eef2f6", border: "1px solid #dfe6ee", borderRadius: 10, padding: "8px 11px", fontSize: 12.5, color: "#334", lineHeight: 1.5 };
+
+// STEP 4 as a Meta-Reasoner CHAT REPLAY — the same chat UI as per-cluster labelling,
+// but the agent is the Meta-Reasoner reasoning sequentially through the compartments
+// AFTER the 250 leaves are labelled. Plus a floaty draggable "Add Judgement" box.
 function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf: (id: string) => React.ReactNode; judgements: any[]; addJudgement: (j: any) => void }) {
   const prop = run?.operatorProposal;
+  const [judgeOpen, setJudgeOpen] = useState(false);
   if (!prop) return <div style={CARD}><div style={SEC}>Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (run the fine-then-consolidate operator to populate this)")}</div>;
   const af = prop.after || {}, be = prop.before || {};
   const tierOrder = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
+  const comps = (prop.compartments || []).filter((c: any) => !c.error);
+  const fm = prop.flag_missing;
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>4. Merging &amp; Meta-Reasoning</h1>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px auto", textAlign: "center" }}>4. Merging &amp; Meta-Reasoning</h1>
+        <button onClick={() => setJudgeOpen(true)} style={{ position: "absolute", right: 22, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>⚖️ Add Judgement</button>
+      </div>
       {/* collapse summary */}
       <div style={CARD}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-          <div style={SEC}>Merging & Meta-Reasoning · propose-and-judge</div>
+          <div style={SEC}>Meta-Reasoner · after the 250 leaves are labelled</div>
           <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>proposal only · execution gated OFF</span>
         </div>
         <div style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 2px" }}>{be.leaves ?? "?"} fine leaves → {af.total_nodes ?? "?"} consolidated nodes</div>
@@ -670,46 +688,62 @@ function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf
             <span key={t} style={{ fontSize: 12, background: "#f5f3f0", color: "#555", borderRadius: 99, padding: "2px 10px", fontWeight: 700 }}>{t.replace("cell_type_", "")}: {af.nodes_per_tier?.[t] ?? 0}</span>
           ))}
         </div>
-        {prop.flag_missing?.expected_still_missing?.length ? (
-          <div style={{ marginTop: 10, fontSize: 12.5, color: "#9a3412" }}>
-            <b>flag_missing:</b> {prop.flag_missing.expected_still_missing.join(", ")}
-            <div style={{ fontSize: 12, color: "#7a746c", marginTop: 2 }}>{prop.flag_missing.rationale}</div>
-          </div>
-        ) : null}
       </div>
-      {/* per-compartment merges + set-asides */}
-      {(prop.compartments || []).filter((c: any) => !c.error).map((c: any) => (
-        <div key={c.compartment} style={CARD}>
-          <div style={{ fontSize: 12, fontWeight: 800, color: ACCENT }}>COMPARTMENT {c.compartment} · {c.n_leaves} leaves → {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</div>
-          {(c.merges || []).map((m: any, i: number) => {
-            const k = `C${c.compartment}-m${i}`;
-            return (
-              <div key={k} style={{ marginTop: 10, border: `1px solid ${ACT_STYLE.merge.fg}33`, borderLeft: `3px solid ${ACT_STYLE.merge.fg}`, borderRadius: 8, padding: "8px 11px" }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: ACT_STYLE.merge.fg, background: ACT_STYLE.merge.bg, borderRadius: 99, padding: "2px 9px" }}>⤵ merge [{m.tier?.replace("cell_type_", "")}]</span>
-                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>{m.node_label}</span>
-                  <span style={{ fontSize: 11, color: "#9a948c" }}>← {m.member_leaf_ids?.length} leaves</span>
-                </div>
-                <div style={{ fontSize: 12.5, color: "#555", marginTop: 5, lineHeight: 1.45 }}>{m.rationale}</div>
-                <JudgeBox stage="merging" targetId={k} targetLabel={m.node_label} excerpt={m.rationale} judgements={judgements} addJudgement={addJudgement} />
-              </div>
-            );
-          })}
-          {(c.set_aside || []).map((s: any, i: number) => {
-            const k = `C${c.compartment}-a${i}`;
-            return (
-              <div key={k} style={{ marginTop: 8, border: `1px solid ${ACT_STYLE.set_aside.fg}33`, borderLeft: `3px solid ${ACT_STYLE.set_aside.fg}`, borderRadius: 8, padding: "8px 11px" }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
-                  <span style={{ fontSize: 12, fontWeight: 800, color: ACT_STYLE.set_aside.fg, background: ACT_STYLE.set_aside.bg, borderRadius: 99, padding: "2px 9px" }}>⎇ set aside</span>
-                  <span style={{ fontSize: 12.5, color: "#555" }}>leaf {s.leaf_id} · Cluster {numOf(s.leaf_id)}</span>
-                </div>
-                <div style={{ fontSize: 12.5, color: "#555", marginTop: 5, lineHeight: 1.45 }}>{s.rationale}</div>
-                <JudgeBox stage="merging" targetId={k} targetLabel={`leaf ${s.leaf_id}`} excerpt={s.rationale} judgements={judgements} addJudgement={addJudgement} />
-              </div>
-            );
-          })}
-        </div>
-      ))}
+      {/* the Meta-Reasoner chat — one reasoning turn per compartment, in sequence */}
+      <div style={{ ...CARD, display: "flex", flexDirection: "column", gap: 10 }}>
+        <div style={SEC}>🧠 Meta-Reasoner — reasoning through the compartments</div>
+        {comps.map((c: any) => (
+          <React.Fragment key={c.compartment}>
+            <div style={userBubble}>Compartment {c.compartment} — {c.n_leaves} labelled leaves. Reason over them and consolidate: merge redundant restatements into one node, set aside genuinely distinct leaves.</div>
+            <AgentMessage mode="reason" content={stripJsonFence(c.reasoning) + decisionMd(c)} />
+          </React.Fragment>
+        ))}
+        <div style={userBubble}>Now audit the whole labelled set — which expected 48&nbsp;hpf tissues are still unaccounted for?</div>
+        <AgentMessage mode="reason" content={fm ? (fm.rationale || "") + (fm.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : "") : "No global audit recorded."} />
+      </div>
+      {judgeOpen && (
+        <FloatyJudgeBox
+          judgements={judgements}
+          onClose={() => setJudgeOpen(false)}
+          onAdd={(note: string) => addJudgement({ cluster_id: "meta_reasoner", cluster_label: "Meta-Reasoner chat", mode: "merging", step_index: 0, content_excerpt: `${be.leaves}→${af.total_nodes} consolidation`, note })}
+        />
+      )}
+    </div>
+  );
+}
+
+// floaty, draggable + resizable "Add Judgement" box — mirrors the live wizard's
+// persistent judgement panel behavior (drag header, resize corner), self-contained.
+function FloatyJudgeBox({ judgements, onClose, onAdd }: { judgements: any[]; onClose: () => void; onAdd: (note: string) => void }) {
+  const [box, setBox] = useState({ x: 60, y: 170, w: 360, h: 320 });
+  const [note, setNote] = useState("");
+  const mine = (judgements || []).filter((j) => j.mode === "merging" && j.cluster_id === "meta_reasoner");
+  const startDrag = (e: React.MouseEvent) => {
+    e.preventDefault(); const sx = e.clientX, sy = e.clientY, ox = box.x, oy = box.y;
+    const mv = (ev: MouseEvent) => setBox((b) => ({ ...b, x: Math.max(0, ox + ev.clientX - sx), y: Math.max(0, oy + ev.clientY - sy) }));
+    const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); document.body.style.userSelect = ""; };
+    document.body.style.userSelect = "none"; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up);
+  };
+  const startResize = (e: React.MouseEvent) => {
+    e.preventDefault(); e.stopPropagation(); const sx = e.clientX, sy = e.clientY, ow = box.w, oh = box.h;
+    const mv = (ev: MouseEvent) => setBox((b) => ({ ...b, w: Math.max(250, ow + ev.clientX - sx), h: Math.max(180, oh + ev.clientY - sy) }));
+    const up = () => { window.removeEventListener("mousemove", mv); window.removeEventListener("mouseup", up); document.body.style.userSelect = ""; };
+    document.body.style.userSelect = "none"; window.addEventListener("mousemove", mv); window.addEventListener("mouseup", up);
+  };
+  const submit = () => { if (note.trim()) { onAdd(note.trim()); setNote(""); } };
+  return (
+    <div style={{ position: "fixed", left: box.x, top: box.y, width: box.w, height: box.h, zIndex: 1200, background: "rgba(255,253,251,0.98)", border: "1px solid #7c3aed44", borderTop: "2px solid #7c3aed", borderRadius: 10, boxShadow: "0 4px 18px rgba(0,0,0,0.18)", display: "flex", flexDirection: "column", overflow: "hidden" }}>
+      <div onMouseDown={startDrag} style={{ height: 26, flexShrink: 0, cursor: "move", display: "flex", alignItems: "center", gap: 6, padding: "0 8px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.4, color: "#7c3aed", userSelect: "none" }}>
+        <span style={{ opacity: 0.5 }}>⠿</span> ⚖️ ADD JUDGEMENT · META-REASONER
+        <button onClick={onClose} style={{ marginLeft: "auto", background: "transparent", border: "none", color: "#9a948c", fontSize: 16, lineHeight: 1, cursor: "pointer" }}>×</button>
+      </div>
+      <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "0 9px 8px", display: "flex", flexDirection: "column" }}>
+        {mine.map((j, i) => <div key={i} style={{ fontSize: 12, color: "#4a4540", marginBottom: 5, background: "#faf7ff", borderRadius: 6, padding: "5px 8px" }}>⚖️ {j.note}</div>)}
+        <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Judge the meta-reasoner's reasoning — a merge call, a set-aside, the missing-tissue audit…"
+          style={{ flex: 1, minHeight: 70, boxSizing: "border-box", border: "1px solid #ddd3ee", borderRadius: 6, padding: "8px 10px", fontSize: 13, lineHeight: 1.5, resize: "none", fontFamily: "inherit", background: "#fff", marginTop: mine.length ? 4 : 0 }} />
+        <button onClick={submit} style={{ marginTop: 7, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 7, padding: "8px 12px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>Add ⚖️ judgement</button>
+      </div>
+      <div onMouseDown={startResize} title="Resize" style={{ position: "absolute", right: 1, bottom: 1, width: 15, height: 15, cursor: "nwse-resize", color: "#7c3aed", opacity: 0.55, fontSize: 12, lineHeight: "15px", textAlign: "right" }}>◢</div>
     </div>
   );
 }
