@@ -5,7 +5,7 @@
 // and a ground-truth summary — each shown only when the run actually captured
 // it (progressive disclosure driven by computeCompletenessProfile). Reuses the
 // presentational components extracted in Phase 1.
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useAtlas } from "../useAtlas";
 import { computeCompletenessProfile } from "../completeness";
 import type { ClusterConf, DatasetDef } from "../types";
@@ -268,7 +268,16 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   async function saveJudgements(): Promise<{ ok: boolean; runId?: string; error?: string }> {
     setJSave({ s: "saving" });
     try {
-      const body = { ...run, judgements, judgementMode: true, hasJudgement: judgements.length > 0, exportedAt: new Date().toISOString() };
+      // SLIM the payload — the full run carries 250 chat transcripts + proposal/scores
+      // (multi-MB → 413). A judgement-save only needs labels + the notes; drop the
+      // heavy transcript/proposal blobs (they live on the original run).
+      const slimClusters = (run?.clusters || []).map((c: any) => ({ id: c.id, label: c.label, finalLabel: c.finalLabel, validated: c.validated }));
+      const body = {
+        schema: run?.schema, datasetId: run?.datasetId ?? dataset.id, dataset: run?.dataset, model: run?.model,
+        harness: run?.harness, source: run?.source, fixtureRunId: run?.fixtureRunId, note: run?.note,
+        clusters: slimClusters, metaDecisions: run?.metaDecisions,
+        judgements, judgementMode: true, hasJudgement: judgements.length > 0, exportedAt: new Date().toISOString(),
+      };
       const r = await fetch("/api/kasperov_runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
       const d = await r.json().catch(() => ({}));
       if (!r.ok || d?.error) throw new Error(d?.error || `HTTP ${r.status}`);
@@ -1011,6 +1020,18 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const auditPrompt = "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)";
   const pendingPrompt: string | null = nextComp ? compPrompt : (!globalDone ? auditPrompt : null);
   const pendingKeyId = nextComp ? `C${nextComp.index}` : "meta_global";
+  // the gate shows the Meta-Reasoner's latest OUTPUT (reasoning + decision) once a
+  // step has run, else the next prompt to judge before it's sent.
+  const lastAssistant = messages.filter((m) => m.role === "assistant").slice(-1)[0];
+  const gateContent: string | null = lastAssistant ? lastAssistant.content : pendingPrompt;
+  const gateIsResponse = !!lastAssistant;
+  const gateTargetId = gateIsResponse ? (attention != null ? `C${attention}` : "meta_global") : pendingKeyId;
+  const gateTargetLabel = gateIsResponse ? (attention != null ? `Meta-Reasoner output · Compartment ${attention}` : "Meta-Reasoner audit output") : (nextComp ? `Prompt · Compartment ${nextComp.index}` : "Prompt · audit");
+  const nextLabel = nextComp ? `Compartment ${nextComp.index}` : (!globalDone ? "audit" : null);
+  const nLoggedMeta = (judgements || []).filter((j) => j.mode === "merging").length;
+  const gateTag = gateIsResponse
+    ? (attention != null ? `🧠 Meta-Reasoner · Compartment ${attention}` : "∅ Prejudice-of-Shape · audit")
+    : (Object.keys(decisions).length === 0 && nextComp ? "❓ First prompt → Meta-Reasoner" : nextComp ? `↳ prompt → Compartment ${nextComp.index}` : "∅ audit prompt");
   const post = async (body: any) => {
     const r = await fetch("/api/meta_reasoner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     return r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
@@ -1066,7 +1087,6 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
         <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
-        {endBtn}
       </div>
 
       {/* right chat column with input + self-suggest */}
@@ -1080,7 +1100,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
           {busy ? <div style={{ fontSize: 12, color: "#7c3aed", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div> : null}
         </div>
         <div style={{ flexShrink: 0, borderTop: "1px solid #e5e1dc", padding: 10, display: "flex", flexDirection: "column", gap: 7 }}>
-          <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
+          <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
             🧠 Meta-Reasoner Self-Suggest Next Step {allDone ? (globalDone ? "· done" : "· (audit)") : `· (Compartment ${nextComp?.index})`}
           </button>
           <div style={{ display: "flex", gap: 6 }}>
@@ -1108,13 +1128,19 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
           {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
         </div>) : globalDone ? <div style={{ fontSize: 12.5, color: "#9a3412" }}><b>Still missing:</b> {(globalDone.expected_still_missing || []).join(", ") || "— nothing flagged"}</div> : <div style={{ fontSize: 12, color: "#9a948c" }}>no decision yet</div>}
       </Floaty>
-      <Floaty title="⚖️ ADD JUDGEMENT · gate the next step" accent="#7c3aed" initial={{ x: 250, y: 236, w: 380, h: 300 }} minH={200}>
+      <Floaty title="⚖️ JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 224, w: 420, h: 400 }} minH={260}>
         <StepJudgeGate
-          pendingPrompt={pendingPrompt}
+          content={gateContent}
+          isResponse={gateIsResponse}
+          tag={gateTag}
+          nLogged={nLoggedMeta}
           busy={busy}
-          priorNotes={(judgements || []).filter((j) => j.mode === "merging" && String(j.cluster_id) === pendingKeyId)}
-          onSubmit={(note: string) => { if (note) addJudgement({ cluster_id: pendingKeyId, cluster_label: nextComp ? `Prompt · Compartment ${nextComp.index}` : "Prompt · Prejudice-of-Shape audit", mode: "merging", step_index: processed, content_excerpt: pendingPrompt || "", note }); selfSuggest(); }}
-          onSkip={() => selfSuggest()}
+          nextLabel={nextLabel}
+          stepKey={gateTargetId + ":" + processed}
+          priorNotes={(judgements || []).filter((j) => j.mode === "merging" && String(j.cluster_id) === gateTargetId)}
+          onSubmitNote={(note: string) => addJudgement({ cluster_id: gateTargetId, cluster_label: gateTargetLabel, mode: "merging", step_index: processed, content_excerpt: (gateContent || "").slice(0, 240), note })}
+          onAdvance={() => selfSuggest()}
+          endBtn={endBtn}
         />
       </Floaty>
     </div>
@@ -1184,9 +1210,12 @@ function EndJudgementsButton({ judgements, onSubmit }: { judgements: any[]; onSu
                     ))}
                 </div>
                 {state.s === "err" ? <div style={{ fontSize: 12.5, color: "#b91c1c", marginBottom: 10 }}>{state.msg}</div> : null}
-                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
-                  <button onClick={() => setOpen(false)} disabled={state.s === "saving"} style={btnGhost}>Cancel</button>
-                  <button onClick={submit} disabled={state.s === "saving" || n === 0} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 800, cursor: n === 0 ? "not-allowed" : "pointer", opacity: n === 0 ? 0.5 : 1 }}>{state.s === "saving" ? "Submitting…" : "🛑 Submit judgements"}</button>
+                <div style={{ display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                  <button onClick={() => { const blob = new Blob([JSON.stringify({ schema: "meta_reasoner_judgements/v1", exportedAt: new Date().toISOString(), judgements }, null, 2)], { type: "application/json" }); const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = "meta_reasoner_judgements.json"; a.click(); URL.revokeObjectURL(a.href); }} disabled={n === 0} style={{ ...btnGhost, color: "#7c3aed", borderColor: "#7c3aed", opacity: n === 0 ? 0.5 : 1 }}>⬇ Download (.json)</button>
+                  <div style={{ display: "flex", gap: 10 }}>
+                    <button onClick={() => setOpen(false)} disabled={state.s === "saving"} style={btnGhost}>Cancel</button>
+                    <button onClick={submit} disabled={state.s === "saving" || n === 0} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 800, cursor: n === 0 ? "not-allowed" : "pointer", opacity: n === 0 ? 0.5 : 1 }}>{state.s === "saving" ? "Submitting…" : "🛑 Submit judgements"}</button>
+                  </div>
                 </div>
               </>
             )}
@@ -1300,18 +1329,43 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext, endBtn }: any)
 // step-gate judgement box for the live workbench: shows the exact PROMPT the next
 // step will send, lets you judge/improve it, then either "Submit & continue" (logs
 // the note + advances) or "Skip · auto-flow" (advances with no note).
-function StepJudgeGate({ pendingPrompt, priorNotes, busy, onSubmit, onSkip }: { pendingPrompt: string | null; priorNotes: any[]; busy: boolean; onSubmit: (note: string) => void; onSkip: () => void }) {
+// mirrors the labeller's JudgePanelContent: colored tag + step, instruction line,
+// the step content rendered richly, a note box that RESETS per step, and two
+// advance buttons (Continue / Add notes + continue), a note count, + End & Submit.
+function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, nextLabel, stepKey, onSubmitNote, onAdvance, endBtn }: { content: string | null; isResponse: boolean; tag: string; nLogged: number; priorNotes: any[]; busy: boolean; nextLabel: string | null; stepKey: string; onSubmitNote: (note: string) => void; onAdvance: () => void; endBtn?: React.ReactNode }) {
   const [note, setNote] = useState("");
-  if (!pendingPrompt) return <div style={{ fontSize: 12.5, color: "#15803d", fontWeight: 700 }}>✓ Finalize complete — every compartment consolidated + the missing-tissue audit done.</div>;
+  // reset the note whenever the gated step changes, so a note never bleeds across steps
+  useEffect(() => { setNote(""); }, [stepKey]);
+  const advance = () => { onAdvance(); };
+  const addAndContinue = () => { if (note.trim()) onSubmitNote(note.trim()); onAdvance(); };
+  if (!content) return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 10, height: "100%" }}>
+      <div style={{ fontSize: 12.5, color: "#15803d", fontWeight: 700 }}>✓ Finalize complete — every compartment consolidated + the missing-tissue audit done.</div>
+      <div style={{ fontSize: 11, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} logged this run.</div>
+      <div style={{ marginTop: "auto", display: "flex", justifyContent: "center" }}>{endBtn}</div>
+    </div>
+  );
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 5 }}>
-      <div style={{ fontSize: 10, color: "#9a948c", fontWeight: 800, letterSpacing: 0.3 }}>NEXT PROMPT TO THE META-REASONER — judge it before it&apos;s sent</div>
-      <div style={{ fontSize: 11.5, color: "#4a4540", background: "#f6f4f2", border: "1px solid #e5e1dc", borderRadius: 6, padding: "6px 8px", lineHeight: 1.4, maxHeight: 88, overflow: "auto", flexShrink: 0 }}>{pendingPrompt}</div>
-      {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed" }}>⚖️ {j.note}</div>)}
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Judge / suggest a better prompt for this step…" style={{ flex: 1, minHeight: 40, boxSizing: "border-box", border: "1px solid #ddd3ee", borderRadius: 6, padding: "6px 8px", fontSize: 12.5, resize: "none", fontFamily: "inherit" }} />
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" }}>{tag}</span>
+        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{isResponse ? "output" : "prompt"}</span>
+      </div>
+      <div style={{ fontSize: 11, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
+      <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse ? "2px 6px" : "8px 10px" }}>
+        {isResponse ? <AgentMessage mode="reason" content={content} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
+      </div>
+      {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} autoFocus rows={2} placeholder={isResponse ? "What's right/wrong about this step? (optional)" : "What's right/wrong about this prompt? (optional)"}
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && note.trim()) addAndContinue(); }}
+        style={{ boxSizing: "border-box", minHeight: 48, border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }} />
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button onClick={() => { onSubmit(note.trim()); setNote(""); }} disabled={busy || !note.trim()} title="Log this judgement and run the next step" style={{ flex: 1, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 6, padding: "8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy || !note.trim() ? 0.5 : 1 }}>⚖️ Submit &amp; continue</button>
-        <button onClick={onSkip} disabled={busy} title="Advance without a note" style={{ flex: 1, background: "#fff", color: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 6, padding: "8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>Skip · auto-flow →</button>
+        <button onClick={advance} disabled={busy || !nextLabel} title="Advance without a note" style={{ ...btnGhost, flex: 1, padding: "7px 8px", fontSize: 12, opacity: busy || !nextLabel ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button>
+        <button onClick={addAndContinue} disabled={busy || !note.trim() || !nextLabel} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
+      </div>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, flexShrink: 0 }}>
+        <span style={{ fontSize: 10, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} · next: {nextLabel ?? "—"}</span>
+        {endBtn}
       </div>
     </div>
   );
