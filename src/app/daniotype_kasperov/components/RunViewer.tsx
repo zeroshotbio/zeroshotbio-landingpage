@@ -17,6 +17,8 @@ import { ConfidenceContent } from "./ConfidencePanel";
 import { ClusteringProvenance, BackfillBadge } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
 import { Scorecard } from "./Scorecard";
+import { CompartmentMap, MapViewSwitch, hasCompartments, type MapView } from "./CompartmentMap";
+import { ClusteringExplainer, ZscapeClusteringExplainer } from "./ClusteringExplainer";
 
 // Strip the hidden ```kasperov-*``` control blocks the live loop embeds in
 // assistant turns, so the saved transcript reads as clean prose. Best-effort
@@ -237,7 +239,8 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
     const toNative = (u: string) => u.replace(`/${dataset.id}/`, `/${dataset.id}_native/`);
     return { ...dataset, groundTruthUrl: toNative(dataset.groundTruthUrl) };
   }, [run, dataset]);
-  const { clusters, error } = useAtlas(dataset.dataUrl);
+  const { clusters, meta: atlasMeta, error } = useAtlas(dataset.dataUrl);
+  const [mapView, setMapView] = useState<MapView>("islands");
   const profile = useMemo(() => computeCompletenessProfile(run, meta), [run, meta]);
   const runClusters: any[] = Array.isArray(run?.clusters) ? run.clusters : [];
   const byId = useMemo(() => {
@@ -414,28 +417,44 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
 
         {error && <div style={{ ...CARD, color: "#b91c1c" }}>Failed to load the atlas: {error}</div>}
 
-        {/* 1. CLUSTERING — the atlas map + how it was clustered */}
-        {tab === "clustering" && (
-          <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-            <div style={{ ...CARD, padding: 10 }}>
-              {clusters ? (
-                <div style={{ display: "flex", justifyContent: "center" }}>
-                  <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={NO_CHECKS} width={560} height={420} />
-                </div>
-              ) : (
-                <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>
-              )}
+        {/* 1. CLUSTERING — the SAME "World map" stage the New Run wizard shows, filled in */}
+        {tab === "clustering" && (() => {
+          const clusteredCells = atlasMeta?.totalCells ?? 0;
+          const fullCells = atlasMeta?.fullDatasetCells;
+          const sampled = !!fullCells && fullCells > clusteredCells;
+          const hasComp = hasCompartments(clusters ?? []);
+          return (
+            <div style={{ textAlign: "center" }}>
+              <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
+              <h2 style={{ fontSize: 23, fontWeight: 700, margin: "2px 0 2px" }}>1. Clustering</h2>
+              <p style={{ color: "#666", fontSize: 15, margin: "0 0 8px" }}>Coming at {dataset.name} fresh — here&apos;s how the cells get grouped into clusters.</p>
+              <p style={{ color: "#9a948c", fontSize: 12.5, margin: "0 auto 8px", lineHeight: 1.5, maxWidth: 720 }}>
+                {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
+                {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
+              </p>
+              <div style={{ ...CARD, padding: 10 }}>
+                {clusters ? (
+                  <>
+                    {hasComp && <div style={{ display: "flex", justifyContent: "center", marginBottom: 8 }}><MapViewSwitch view={mapView} setView={setMapView} /></div>}
+                    <div style={{ display: "flex", justifyContent: "center" }}>
+                      {mapView === "islands" && hasComp
+                        ? <CompartmentMap clusters={clusters} activeId={null} validated={NO_CHECKS} width={720} height={460} onPick={(id) => { setOpenCluster(id); setTab("labels"); }} />
+                        : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={NO_CHECKS} width={560} height={420} />}
+                    </div>
+                  </>
+                ) : <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>}
+              </div>
+              {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />}
+              <div style={{ marginTop: 16 }}>
+                <button onClick={() => setTab("modelHarness")} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Good to proceed — model &amp; harness →</button>
+              </div>
+              {/* this run's own clustering provenance — the "filled-in" logged decision, kept below */}
+              <div style={{ marginTop: 16, textAlign: "left" }}>
+                <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
+              </div>
             </div>
-            <div style={CARD}>
-              <div style={SEC}>This run</div>
-              <div style={{ fontSize: 13.5, color: "#444" }}>{runClusters.length} clusters · {profile.validatedClusters} validated</div>
-              {run?.dataset ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 5 }}>🧬 {run.dataset}</div> : notRecorded("Clustering recipe")}
-            </div>
-            {/* how this run clustered — the RUN's own snapshot (never live FACTS) */}
-            <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
-            <BuildQCCard run={run} />
-          </div>
-        )}
+          );
+        })()}
 
         {/* 2. MODEL & HARNESS — run config */}
         {tab === "modelHarness" && (
