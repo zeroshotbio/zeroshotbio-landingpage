@@ -872,8 +872,8 @@ function MetaJudgeInput({ judgements, onAdd, stage, keyId }: { judgements: any[]
 function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, live }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean }) {
   const prop = run?.operatorProposal;
   const [step, setStep] = useState(0);
-  // FINALIZE / LIVE mode — human-driven interactive Meta-Reasoner chat over the run's leaves.
-  if (live) return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} />;
+  // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
+  if (live) return <MetaFinalizeFlow run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} />;
   if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   const comps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
   const N = comps.length + 1; // + the global Prejudice-of-Shape audit
@@ -992,7 +992,6 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
   const [globalDone, setGlobalDone] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
-  const ctx = META_REASONER_CONTEXT;
 
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
@@ -1095,14 +1094,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
           {attComp.labelSet.map((l) => <div key={l.leaf_id} style={{ fontSize: 12, color: "#444", lineHeight: 1.4 }}><span style={{ color: "#9a948c" }}>{l.leaf_id}:</span> {l.label}</div>)}
         </>) : <div style={{ fontSize: 12, color: "#9a948c" }}>{ledger.totalLeaves} leaves across {comps.length} compartments. Self-suggest to begin.</div>}
       </Floaty>
-      <Floaty title="📜 PRE-PROMPT · meta-reasoner rules" accent="#a16207" initial={{ x: 462, y: 64, w: 440, h: 322 }}>
-        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-          {ctx.rules.slice(0, 5).map((r, i) => <div key={i} style={{ fontSize: 11.5, color: "#4a4540", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
-        </div>
-        <div style={{ marginTop: 8, fontSize: 10.5, fontWeight: 800, color: "#15803d" }}>🔒 GT-BLIND</div>
-        {ctx.gtDiscipline.slice(0, 2).map((r, i) => <div key={i} style={{ fontSize: 11, color: "#555", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
-      </Floaty>
-      <Floaty title="🎯 DECISION · latest step" accent="#7c3aed" initial={{ x: 462, y: 398, w: 440, h: 250 }}>
+      <Floaty title="🎯 DECISION · latest step" accent="#7c3aed" initial={{ x: 462, y: 64, w: 440, h: 300 }}>
         {attDec ? (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(attDec.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
           {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
@@ -1122,4 +1114,116 @@ function decisionMdOut(out: any): string {
   (out?.merges || []).forEach((m: any) => lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves`));
   (out?.set_aside || []).forEach((s: any) => lines.push(`- ⎇ **set aside** leaf ${s.leaf_id} (kept distinct)`));
   return lines.length ? "\n\n**→ Decision**\n" + lines.join("\n") : "";
+}
+
+// ===================================================================
+// META-REASONER FINALIZE FLOW — pre-flight before the live chat:
+//   1) Summary of the labelled run we're inheriting (glanceable map + stats)
+//   2) Prep: what the Meta-Reasoner is loaded with (rules/discipline/priors) + its goals
+//   3) the live workbench (LiveMetaWorkbench)
+// Every pre-step is judgement-able (persists to run.judgements[]).
+// ===================================================================
+function MetaFinalizeFlow({ run, clusters, judgements, addJudgement, onBack }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void }) {
+  const [stage, setStage] = useState<"summary" | "prep" | "workbench">("summary");
+  if (stage === "summary") return <FinalizeSummary run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onNext={() => setStage("prep")} />;
+  if (stage === "prep") return <FinalizePrep judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("summary")} onNext={() => setStage("workbench")} />;
+  return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("prep")} />;
+}
+
+const FIN_SHELL: React.CSSProperties = { position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "auto" };
+const FIN_INNER: React.CSSProperties = { maxWidth: 940, margin: "0 auto", padding: "20px 22px 90px" };
+const FIN_BAR: React.CSSProperties = { position: "fixed", left: 0, right: 0, bottom: 0, height: 60, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, background: "#fffdfb", borderTop: "1px solid #e5e1dc", zIndex: 100 };
+
+function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNext }: any) {
+  const nLeaves = (run?.clusters || []).length;
+  const comps = new Set((clusters || []).map((c: any) => c.compartmentIndex).filter((x: any) => typeof x === "number"));
+  const money = (v: number) => (v == null ? "?" : v < 1 ? v.toFixed(3) : v.toFixed(2));
+  return (
+    <div style={FIN_SHELL}>
+      <div style={FIN_INNER}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <button onClick={onBack} style={btnGhost}>← Back to datasets</button>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#7c3aed", fontWeight: 700 }}>Meta-Reasoner Finalize · step 1 of 2</div>
+        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 800, margin: "2px 0 4px" }}>⚖️ Inheriting a labelled run</h1>
+        <p style={{ color: "#666", fontSize: 14, lineHeight: 1.5, margin: "0 0 14px" }}>
+          These clusters are already labelled by the fine per-cell loop. The Meta-Reasoner picks up here — you&apos;ll drive it to consolidate them. A glance at what we&apos;re inheriting:
+        </p>
+        <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginBottom: 14 }}>
+          {[["model", run?.model ?? "?"], ["fine leaves", nLeaves], ["compartments", comps.size], ["cost", run?.cost?.usd != null ? `~$${money(Number(run.cost.usd))}` : "—"], ["harness", run?.harness ? `v${run.harness.version}` : "—"]].map(([k, v]) => (
+            <div key={String(k)} style={{ ...CARD, padding: "8px 14px" }}><div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 700, textTransform: "uppercase" }}>{k}</div><div style={{ fontSize: 17, fontWeight: 800 }}>{v as any}</div></div>
+          ))}
+        </div>
+        <div style={{ ...CARD, padding: 10 }}>
+          <div style={{ ...SEC, textAlign: "center" }}>Clustering & labelling — the fine partition (glanceable)</div>
+          {clusters ? (
+            <div style={{ display: "flex", justifyContent: "center" }}>
+              {hasCompartments(clusters)
+                ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(clusters.map((c: any) => c.id))} width={760} height={440} />
+                : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={new Set()} width={560} height={420} />}
+            </div>
+          ) : <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>Loading atlas…</div>}
+        </div>
+        <div style={{ ...CARD, marginTop: 12 }}>
+          <div style={SEC}>⚖️ Judge this inherited run</div>
+          <JudgeBox stage="finalize_summary" targetId="run_summary" targetLabel="Inherited run summary" excerpt={`${nLeaves} leaves · ${comps.size} compartments`} judgements={judgements} addJudgement={addJudgement} />
+        </div>
+      </div>
+      <div style={FIN_BAR}>
+        <button onClick={onBack} style={btnGhost}>← Back</button>
+        <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Continue → Meta-Reasoner prep</button>
+      </div>
+    </div>
+  );
+}
+
+function FinalizePrep({ judgements, addJudgement, onBack, onNext }: any) {
+  const ctx = META_REASONER_CONTEXT;
+  const cat = (title: string, color: string, items: { title: string; body: string }[]) => (
+    <div style={{ ...CARD, marginBottom: 12 }}>
+      <div style={{ ...SEC, color }}>{title}</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+        {items.map((r, i) => <div key={i} style={{ fontSize: 12.5, color: "#4a4540", lineHeight: 1.5 }}><b style={{ color: "#333" }}>{r.title}.</b> {r.body}</div>)}
+      </div>
+    </div>
+  );
+  return (
+    <div style={FIN_SHELL}>
+      <div style={FIN_INNER}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
+          <button onClick={onBack} style={btnGhost}>← Run summary</button>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#7c3aed", fontWeight: 700 }}>Meta-Reasoner Finalize · step 2 of 2</div>
+        </div>
+        <h1 style={{ fontSize: 28, fontWeight: 800, margin: "2px 0 4px" }}>🧠 Prepping the Meta-Reasoner</h1>
+        <p style={{ color: "#666", fontSize: 14, lineHeight: 1.5, margin: "0 0 14px" }}>What it&apos;s loaded with before it reasons — and what it&apos;s trying to achieve. Refine these over time via system prompting + experiential knowledge.</p>
+
+        {/* GOALS */}
+        <div style={{ ...CARD, marginBottom: 14, borderColor: "#e0d3f7", background: "#fdfbff" }}>
+          <div style={{ ...SEC, color: "#7c3aed" }}>🎯 Goals</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ fontSize: 13, color: "#333" }}><b>Merge redundant clusters</b> — collapse restatements into one node (e.g. fifteen periderm calls → one &quot;epidermis / periderm&quot;).</div>
+            <div style={{ fontSize: 13, color: "#333" }}><b>Spot &quot;Rebel&quot; clusters</b> — isolate a genuinely distinct leaf, and where its markers contradict its compartment, flag it to be re-parented to the branch it actually belongs to.</div>
+            <div style={{ fontSize: 13, color: "#333" }}><b>Land at ~50–80 final labelled clusters</b> — each emitted at the schema tier it can defend (coarse tissue ↔ fine cell type), plus a missing-tissue audit.</div>
+          </div>
+        </div>
+
+        <div style={{ ...SEC, fontSize: 12 }}>What it&apos;s prepped with</div>
+        {cat("Consolidation rules", "#a16207", ctx.rules)}
+        {cat("🔒 GT-blind discipline", "#15803d", ctx.gtDiscipline)}
+        <div style={{ ...CARD, marginBottom: 12 }}>
+          <div style={{ ...SEC, color: "#0e7490" }}>Experiential priors · general biology (a hint, not a mandate)</div>
+          <div style={{ fontSize: 12.5, color: "#555", lineHeight: 1.5 }}>{ctx.expectedTissues.join(", ")}</div>
+        </div>
+
+        <div style={{ ...CARD }}>
+          <div style={SEC}>⚖️ Judge the meta-reasoner&apos;s prep</div>
+          <JudgeBox stage="finalize_prep" targetId="meta_prep" targetLabel="Meta-Reasoner prep (rules + goals)" excerpt="rules/discipline/priors + goals" judgements={judgements} addJudgement={addJudgement} />
+        </div>
+      </div>
+      <div style={FIN_BAR}>
+        <button onClick={onBack} style={btnGhost}>← Back</button>
+        <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Begin finalize → live workbench</button>
+      </div>
+    </div>
+  );
 }
