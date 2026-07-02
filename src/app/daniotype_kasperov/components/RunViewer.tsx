@@ -261,7 +261,9 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   // run.judgements[] via /api/kasperov_runs. Save creates a new run version whose
   // judgements[] carry every prior + newly-added note (append endpoint doesn't
   // exist, so we re-save the whole run — matches the New Run judgement pattern).
-  const [judgements, setJudgements] = useState<any[]>(Array.isArray(run?.judgements) ? run.judgements : []);
+  // A FINALIZE session starts fresh (empty) — the inherited run's own judgements are
+  // history, not re-served into the live gate. View mode keeps showing the run's notes.
+  const [judgements, setJudgements] = useState<any[]>(finalize ? [] : (Array.isArray(run?.judgements) ? run.judgements : []));
   const [dirty, setDirty] = useState(false);
   const [jSave, setJSave] = useState<{ s: "idle" | "saving" | "ok" | "err"; msg?: string }>({ s: "idle" });
   const addJudgement = (j: any) => { setJudgements((p) => [...p, { ...j, ts: new Date().toISOString() }]); setDirty(true); setJSave({ s: "idle" }); };
