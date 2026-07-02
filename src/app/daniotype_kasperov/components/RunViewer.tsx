@@ -1004,6 +1004,12 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
   const processed = Object.keys(decisions).length;
   const nextComp = comps.find((c) => !decisions[c.index]);
   const allDone = !nextComp;
+  // the exact prompt the NEXT step will send — shown in the judgement gate so you
+  // can judge (or improve) it before it's delivered to the Meta-Reasoner.
+  const compPrompt = nextComp ? `[Self-suggested] Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Consolidate: merge redundant restatements, set aside distinct/rebel leaves, assign each node its tier.` : "";
+  const auditPrompt = "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)";
+  const pendingPrompt: string | null = nextComp ? compPrompt : (!globalDone ? auditPrompt : null);
+  const pendingKeyId = nextComp ? `C${nextComp.index}` : "meta_global";
   const post = async (body: any) => {
     const r = await fetch("/api/meta_reasoner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     return r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
@@ -1014,7 +1020,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
     try {
       if (nextComp) {
         setAttention(nextComp.index);
-        setMessages((m) => [...m, { role: "user", content: `[Self-suggested] Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Consolidate: merge redundant restatements, set aside distinct/rebel leaves, assign each node its tier.` }]);
+        setMessages((m) => [...m, { role: "user", content: compPrompt }]);
         const d = await post({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
         if (d.ok) {
           setDecisions((p) => ({ ...p, [nextComp.index]: d.output }));
@@ -1024,7 +1030,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
         }
       } else if (!globalDone) {
         setAttention(null);
-        setMessages((m) => [...m, { role: "user", content: "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)" }]);
+        setMessages((m) => [...m, { role: "user", content: auditPrompt }]);
         const all = comps.flatMap((c) => c.labelSet);
         const d = await post({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
         if (d.ok) {
@@ -1100,9 +1106,14 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
           {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
         </div>) : globalDone ? <div style={{ fontSize: 12.5, color: "#9a3412" }}><b>Still missing:</b> {(globalDone.expected_still_missing || []).join(", ") || "— nothing flagged"}</div> : <div style={{ fontSize: 12, color: "#9a948c" }}>no decision yet</div>}
       </Floaty>
-      <Floaty title="⚖️ ADD JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 236, w: 350, h: 244 }}>
-        <MetaJudgeInput judgements={judgements} stage="merging" keyId={attention != null ? `C${attention}` : "meta_global"}
-          onAdd={(note: string) => addJudgement({ cluster_id: attention != null ? `C${attention}` : "meta_global", cluster_label: attention != null ? `Meta-Reasoner · Compartment ${attention}` : "Meta-Reasoner · audit", mode: "merging", step_index: processed, content_excerpt: "live finalize decision", note })} />
+      <Floaty title="⚖️ ADD JUDGEMENT · gate the next step" accent="#7c3aed" initial={{ x: 250, y: 236, w: 380, h: 300 }} minH={200}>
+        <StepJudgeGate
+          pendingPrompt={pendingPrompt}
+          busy={busy}
+          priorNotes={(judgements || []).filter((j) => j.mode === "merging" && String(j.cluster_id) === pendingKeyId)}
+          onSubmit={(note: string) => { if (note) addJudgement({ cluster_id: pendingKeyId, cluster_label: nextComp ? `Prompt · Compartment ${nextComp.index}` : "Prompt · Prejudice-of-Shape audit", mode: "merging", step_index: processed, content_excerpt: pendingPrompt || "", note }); selfSuggest(); }}
+          onSkip={() => selfSuggest()}
+        />
       </Floaty>
     </div>
   );
@@ -1223,6 +1234,26 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext }: any) {
       <div style={FIN_BAR}>
         <button onClick={onBack} style={btnGhost}>← Back</button>
         <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Begin finalize → live workbench</button>
+      </div>
+    </div>
+  );
+}
+
+// step-gate judgement box for the live workbench: shows the exact PROMPT the next
+// step will send, lets you judge/improve it, then either "Submit & continue" (logs
+// the note + advances) or "Skip · auto-flow" (advances with no note).
+function StepJudgeGate({ pendingPrompt, priorNotes, busy, onSubmit, onSkip }: { pendingPrompt: string | null; priorNotes: any[]; busy: boolean; onSubmit: (note: string) => void; onSkip: () => void }) {
+  const [note, setNote] = useState("");
+  if (!pendingPrompt) return <div style={{ fontSize: 12.5, color: "#15803d", fontWeight: 700 }}>✓ Finalize complete — every compartment consolidated + the missing-tissue audit done.</div>;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 5 }}>
+      <div style={{ fontSize: 10, color: "#9a948c", fontWeight: 800, letterSpacing: 0.3 }}>NEXT PROMPT TO THE META-REASONER — judge it before it&apos;s sent</div>
+      <div style={{ fontSize: 11.5, color: "#4a4540", background: "#f6f4f2", border: "1px solid #e5e1dc", borderRadius: 6, padding: "6px 8px", lineHeight: 1.4, maxHeight: 88, overflow: "auto", flexShrink: 0 }}>{pendingPrompt}</div>
+      {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed" }}>⚖️ {j.note}</div>)}
+      <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Judge / suggest a better prompt for this step…" style={{ flex: 1, minHeight: 40, boxSizing: "border-box", border: "1px solid #ddd3ee", borderRadius: 6, padding: "6px 8px", fontSize: 12.5, resize: "none", fontFamily: "inherit" }} />
+      <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
+        <button onClick={() => { onSubmit(note.trim()); setNote(""); }} disabled={busy || !note.trim()} title="Log this judgement and run the next step" style={{ flex: 1, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 6, padding: "8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy || !note.trim() ? 0.5 : 1 }}>⚖️ Submit &amp; continue</button>
+        <button onClick={onSkip} disabled={busy} title="Advance without a note" style={{ flex: 1, background: "#fff", color: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 6, padding: "8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>Skip · auto-flow →</button>
       </div>
     </div>
   );
