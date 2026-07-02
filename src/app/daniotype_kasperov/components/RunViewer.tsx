@@ -247,7 +247,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
   }, [run]);
   const validated = useMemo(() => new Set(runClusters.filter((c) => c.validated).map((c) => String(c.id))), [run]);
 
-  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels">("clustering");
+  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels" | "merging" | "judge">("clustering");
   // Cell Labelling is a master→detail: openCluster=null shows the per-tier
   // summary + per-cluster breakdown; setting it drills into that cluster's chat.
   const [openCluster, setOpenCluster] = useState<string | null>(null);
@@ -380,7 +380,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
 
         {/* tabs — mirror the new-run steps */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          {([["clustering", "1. Clustering"], ["modelHarness", "2. Model & Harness"], ["labels", "3. Cell Labelling"]] as const).map(([k, label]) => (
+          {([["clustering", "1. Clustering"], ["modelHarness", "2. Model & Harness"], ["labels", "3. Fine Cell Labelling"], ["merging", "4. Merging & Meta-Reasoning"], ["judge", "5. Final Judge"]] as const).map(([k, label]) => (
             <button key={k} onClick={() => setTab(k)} style={{ ...btnGhost, fontWeight: 700, ...(tab === k ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>{label}</button>
           ))}
         </div>
@@ -471,15 +471,6 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
               ) : notRecorded("Chat history")}
             </div>
           </div>
-        ) : run?.provenance?.tissueOnly ? (
-          /* ---- tissue-only runs: de-novo → bin → GT tissue (no germ/broad/sub) ---- */
-          <TissueOnlyLabels clusters={runClusters} numOf={numOf} onPick={setOpenCluster} />
-        ) : viewDataset.groundTruthUrl ? (
-          /* ---- GT datasets: the exact per-cluster breakdown from the new-run page (read-only) ---- */
-          <div style={{ fontSize: 12.5, color: "#888", marginBottom: -4 }}>
-            <Scorecard embedded readOnly dataset={viewDataset} clusters={viewerClusters} labels={labelsMap} confidence={confMap} validated={validated} onPick={setOpenCluster} model={run?.model ?? "?"} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
-            <div style={{ marginTop: 8, fontStyle: "italic" }}>Click any cluster row above to see how it was decided.</div>
-          </div>
         ) : (
           /* ---- no-GT datasets: final mean confidence + per-cluster breakdown ---- */
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
@@ -539,6 +530,164 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
             </div>
           </div>
         ))}
+
+        {/* 4. MERGING & META-REASONING — the operator's propose-and-judge consolidation */}
+        {tab === "merging" && <MergingView run={run} numOf={numOf} />}
+
+        {/* 5. FINAL JUDGE — score the MERGED NODES (fuzzy judge + purity); scorecard relocated here */}
+        {tab === "judge" && (
+          <JudgeView
+            run={run} dataset={viewDataset} viewerClusters={viewerClusters}
+            labels={labelsMap} confidence={confMap} validated={validated}
+            savedScore={savedScore} model={run?.model ?? "?"}
+            onPick={(id: string) => { setOpenCluster(id); setTab("labels"); }}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
+// ---- STEP 4: Merging & Meta-Reasoning — surface the operator proposal (propose-and-judge) ----
+const ACT_STYLE: Record<string, { bg: string; fg: string; icon: string }> = {
+  merge: { bg: "#dcfce7", fg: "#15803d", icon: "⤵" },
+  set_aside: { bg: "#eef2ff", fg: "#4338ca", icon: "⎇" },
+};
+function MergingView({ run, numOf }: { run: any; numOf: (id: string) => React.ReactNode }) {
+  const prop = run?.operatorProposal;
+  const [notes, setNotes] = useState<Record<string, string>>({});
+  if (!prop) return <div style={CARD}><div style={SEC}>Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (run the fine-then-consolidate operator to populate this)")}</div>;
+  const af = prop.after || {}, be = prop.before || {};
+  const tierOrder = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
+  const downloadNotes = () => {
+    const payload = { schema: "meta_reasoner_merge_judgements/v1", fixtureRunId: prop.fixture_runId, exportedAt: new Date().toISOString(), notes };
+    const b = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(b); a.download = "merge_judgements.json"; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const nNotes = Object.values(notes).filter((v) => v.trim()).length;
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      {/* collapse summary */}
+      <div style={CARD}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <div style={SEC}>Merging & Meta-Reasoning · propose-and-judge</div>
+          <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>proposal only · execution gated OFF</span>
+          {nNotes ? <span style={{ marginLeft: "auto", fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 8px" }}>⚖️ {nNotes}</span> : null}
+          <button onClick={downloadNotes} style={{ ...btnGhost, marginLeft: nNotes ? 0 : "auto", padding: "4px 10px", fontSize: 12 }}>⬇ notes</button>
+        </div>
+        <div style={{ fontSize: 22, fontWeight: 800, margin: "6px 0 2px" }}>{be.leaves ?? "?"} fine leaves → {af.total_nodes ?? "?"} consolidated nodes</div>
+        <div style={{ fontSize: 12.5, color: "#666" }}>{af.n_merge_nodes ?? 0} merge-nodes ({af.leaves_in_merges ?? 0} leaves folded) + {af.n_set_aside_nodes ?? 0} set-aside</div>
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          {tierOrder.map((t) => (
+            <span key={t} style={{ fontSize: 12, background: "#f5f3f0", color: "#555", borderRadius: 99, padding: "2px 10px", fontWeight: 700 }}>{t.replace("cell_type_", "")}: {af.nodes_per_tier?.[t] ?? 0}</span>
+          ))}
+        </div>
+        {prop.flag_missing?.expected_still_missing?.length ? (
+          <div style={{ marginTop: 10, fontSize: 12.5, color: "#9a3412" }}>
+            <b>flag_missing:</b> {prop.flag_missing.expected_still_missing.join(", ")}
+            <div style={{ fontSize: 12, color: "#7a746c", marginTop: 2 }}>{prop.flag_missing.rationale}</div>
+          </div>
+        ) : null}
+      </div>
+      {/* per-compartment merges + set-asides */}
+      {(prop.compartments || []).filter((c: any) => !c.error).map((c: any) => (
+        <div key={c.compartment} style={CARD}>
+          <div style={{ fontSize: 12, fontWeight: 800, color: ACCENT }}>COMPARTMENT {c.compartment} · {c.n_leaves} leaves → {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</div>
+          {(c.merges || []).map((m: any, i: number) => {
+            const k = `C${c.compartment}-m${i}`;
+            return (
+              <div key={k} style={{ marginTop: 10, border: `1px solid ${ACT_STYLE.merge.fg}33`, borderLeft: `3px solid ${ACT_STYLE.merge.fg}`, borderRadius: 8, padding: "8px 11px" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: ACT_STYLE.merge.fg, background: ACT_STYLE.merge.bg, borderRadius: 99, padding: "2px 9px" }}>⤵ merge [{m.tier?.replace("cell_type_", "")}]</span>
+                  <span style={{ fontSize: 13.5, fontWeight: 700 }}>{m.node_label}</span>
+                  <span style={{ fontSize: 11, color: "#9a948c" }}>← {m.member_leaf_ids?.length} leaves</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: "#555", marginTop: 5, lineHeight: 1.45 }}>{m.rationale}</div>
+                <NodeNote value={notes[k] || ""} onChange={(v) => setNotes((n) => ({ ...n, [k]: v }))} />
+              </div>
+            );
+          })}
+          {(c.set_aside || []).map((s: any, i: number) => {
+            const k = `C${c.compartment}-a${i}`;
+            return (
+              <div key={k} style={{ marginTop: 8, border: `1px solid ${ACT_STYLE.set_aside.fg}33`, borderLeft: `3px solid ${ACT_STYLE.set_aside.fg}`, borderRadius: 8, padding: "8px 11px" }}>
+                <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: ACT_STYLE.set_aside.fg, background: ACT_STYLE.set_aside.bg, borderRadius: 99, padding: "2px 9px" }}>⎇ set aside</span>
+                  <span style={{ fontSize: 12.5, color: "#555" }}>leaf {s.leaf_id} · Cluster {numOf(s.leaf_id)}</span>
+                </div>
+                <div style={{ fontSize: 12.5, color: "#555", marginTop: 5, lineHeight: 1.45 }}>{s.rationale}</div>
+                <NodeNote value={notes[k] || ""} onChange={(v) => setNotes((n) => ({ ...n, [k]: v }))} />
+              </div>
+            );
+          })}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function NodeNote({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  return (
+    <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="⚖️ judge this decision…"
+      style={{ width: "100%", boxSizing: "border-box", marginTop: 7, border: "1px solid #ece2fb", borderRadius: 6, padding: "5px 9px", fontSize: 12.5, background: "#faf7ff" }} />
+  );
+}
+
+// ---- STEP 5: Final Judge — score the MERGED NODES (own tier · fuzzy agreement · purity) ----
+function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated, savedScore, model, onPick }: any) {
+  const sc = run?.scoredNodes;
+  const noop: any = () => {};
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+      {sc ? <MergedNodesTable sc={sc} /> : (
+        <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores (score the step-4 nodes through the fuzzy judge to populate this)")}</div>
+      )}
+      {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above */}
+      {dataset.groundTruthUrl ? (
+        <details style={CARD}>
+          <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs ZSCAPE Classic (pre-merge, 250 leaves)</summary>
+          <div style={{ marginTop: 10 }}>
+            <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labels} confidence={confidence} validated={validated} onPick={onPick} model={model} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
+          </div>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
+function MergedNodesTable({ sc }: { sc: any }) {
+  const tierOrder = ["tissue", "cell_type_broad", "cell_type_sub"];
+  const rows: any[] = Array.isArray(sc.rows) ? sc.rows : [];
+  return (
+    <div style={CARD}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={SEC}>Final Judge · merged nodes scored at their own tier (fuzzy judge)</div>
+        <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 800 }}>{sc.overall_agree}/{sc.n_nodes} agree</span>
+      </div>
+      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "6px 0 4px" }}>
+        {tierOrder.map((t) => sc.agree_by_tier?.[t] ? (
+          <span key={t} style={{ fontSize: 12, background: "#f5f3f0", color: "#555", borderRadius: 99, padding: "2px 10px", fontWeight: 700 }}>{t.replace("cell_type_", "")}: {sc.agree_by_tier[t].agree}/{sc.agree_by_tier[t].total}</span>
+        ) : null)}
+        <span style={{ fontSize: 11.5, color: "#9a948c", alignSelf: "center" }}>purity = fraction of member GT-cells sharing the dominant GT identity (diagnostic, not a gate)</span>
+      </div>
+      <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto", marginTop: 6 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12 }}>
+          <thead><tr style={{ background: "#f3f0ec", color: "#555", textAlign: "left" }}>
+            {["Node identity", "Tier", "GT @ tier", "Agree", "Purity", "Judge note"].map((h) => <th key={h} style={{ padding: "6px 9px", fontWeight: 700, borderBottom: "1px solid #e5e1dc", whiteSpace: "nowrap" }}>{h}</th>)}
+          </tr></thead>
+          <tbody>
+            {rows.map((r, i) => (
+              <tr key={i} style={{ background: r.agree ? "#fbfffb" : "#fffbfb" }}>
+                <td style={{ padding: "5px 9px", maxWidth: 240 }}>{r.identity}{r.kind === "merge" ? <span style={{ color: "#15803d", fontSize: 10.5, marginLeft: 5 }}>⤵{r.n_leaves}</span> : null}</td>
+                <td style={{ padding: "5px 9px", color: "#777" }}>{String(r.tier).replace("cell_type_", "")}</td>
+                <td style={{ padding: "5px 9px", color: "#777", maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={String(r.gt_at_tier ?? "")}>{r.gt_at_tier ?? "—"}</td>
+                <td style={{ padding: "5px 9px", textAlign: "center", fontWeight: 800, color: r.agree ? "#15803d" : "#dc2626" }}>{r.agree ? "✓" : "✗"}</td>
+                <td style={{ padding: "5px 9px", textAlign: "center", color: (r.purity ?? 1) < 0.75 ? "#9a3412" : "#555", fontVariantNumeric: "tabular-nums" }}>{Math.round((r.purity ?? 0) * 100)}%</td>
+                <td style={{ padding: "5px 9px", color: "#888", fontSize: 11.5 }}>{r.note}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );
