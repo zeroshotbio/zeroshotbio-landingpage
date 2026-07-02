@@ -195,7 +195,8 @@ export default function KasperovClient() {
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
   // a dataset whose run list is open, and a loaded run being viewed.
   const [viewRunsFor, setViewRunsFor] = useState<DatasetDef | null>(null);
-  const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef } | null>(null);
+  const [finalizeFor, setFinalizeFor] = useState<DatasetDef | null>(null); // ⚙ Meta-Reasoner Finalize Run picker
+  const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef; finalize?: boolean } | null>(null);
   const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
@@ -665,17 +666,26 @@ export default function KasperovClient() {
   }, [captureMode, captureDone]);
 
   if (viewingRun)
-    return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} onBack={() => setViewingRun(null)} />;
+    return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} finalize={viewingRun.finalize} onBack={() => setViewingRun(null)} />;
 
   if (!dataset)
     return (
       <>
-        <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} />
+        <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} onFinalize={setFinalizeFor} />
         {viewRunsFor && (
           <RunListModal
             dataset={viewRunsFor}
             onView={(run, m) => { setViewingRun({ run, meta: m, dataset: viewRunsFor }); setViewRunsFor(null); }}
             onClose={() => setViewRunsFor(null)}
+          />
+        )}
+        {finalizeFor && (
+          <RunListModal
+            dataset={finalizeFor}
+            title="⚙ Meta-Reasoner Finalize Run"
+            subtitle="Pick a labelled run to finalize — the Meta-Reasoner will consolidate its leaves live."
+            onView={(run, m) => { setViewingRun({ run, meta: m, dataset: finalizeFor, finalize: true }); setFinalizeFor(null); }}
+            onClose={() => setFinalizeFor(null)}
           />
         )}
       </>
@@ -855,7 +865,7 @@ const TIPS: Record<string, string> = {
 // View-mode run list (Phase 2b): lists every saved run for ONE dataset and opens
 // the chosen one in the read-only RunViewer. Archived runs are off by default,
 // revealed by a toggle and badged by reason (quarantined / superseded / other).
-function RunListModal({ dataset, onView, onClose }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void }) {
+function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void; title?: string; subtitle?: string }) {
   const [runs, setRuns] = useState<any[] | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "notconfigured" | "error">("loading");
   const [err, setErr] = useState("");
@@ -901,7 +911,8 @@ function RunListModal({ dataset, onView, onClose }: { dataset: DatasetDef; onVie
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
       <div onClick={(e) => e.stopPropagation()} style={{ background: "#fffdfb", borderRadius: 14, maxWidth: 720, width: "100%", maxHeight: "82vh", overflow: "auto", padding: "20px 22px", textAlign: "left" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 4 }}>
-          <strong style={{ fontSize: 16 }}>Completed runs · {dataset.name}</strong>
+          <strong style={{ fontSize: 16 }}>{title ? `${title} · ${dataset.name}` : `Completed runs · ${dataset.name}`}</strong>
+          {subtitle ? <div style={{ fontSize: 12, color: "#7a746c", width: "100%", marginTop: 2 }}>{subtitle}</div> : null}
           <button onClick={onClose} style={{ marginLeft: "auto", ...btnGhost, padding: "5px 11px", fontSize: 13 }}>Close</button>
         </div>
         <div style={{ fontSize: 12.5, color: "#888", marginBottom: 12 }}>Click a run to view it read-only — its map, labels, scorecard, and saved transcripts.</div>
@@ -962,7 +973,7 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
 }
 
 
-function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void }) {
+function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void; onFinalize: (d: DatasetDef) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 1120, padding: "72px 28px 60px", width: "100%" }}>
@@ -1028,6 +1039,7 @@ function DatasetPicker({ onPick, onViewRuns }: { onPick: (d: DatasetDef) => void
                     <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                       <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
                       <button onClick={() => onViewRuns(d)} title={`Browse completed ${d.name} runs (read-only)`} style={{ alignSelf: "stretch", background: "#fff", color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>▤ VIEW COMPLETED RUNS</button>
+                      <button onClick={() => onFinalize(d)} title={`Finalize a labelled ${d.name} run — run the Meta-Reasoner live to consolidate its leaves`} style={{ alignSelf: "stretch", background: "#faf7ff", color: "#7c3aed", border: "1px solid #7c3aed", borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>⚙ META-REASONER FINALIZE RUN</button>
                     </div>
                   )}
                 </div>

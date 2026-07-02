@@ -222,7 +222,7 @@ function TissueOnlyLabels({ clusters, numOf, onPick }: { clusters: any[]; numOf:
   );
 }
 
-export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any; dataset: DatasetDef; onBack: () => void }) {
+export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; meta?: any; dataset: DatasetDef; onBack: () => void; finalize?: boolean }) {
   // A run labelled on a dataset's NATIVE published partition (schemaBasis
   // "native-schema") carries cluster ids in the *_native asset space — not the
   // registered de-novo atlas. The de-novo groundtruth.json has no matching ids,
@@ -251,7 +251,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
   }, [run]);
   const validated = useMemo(() => new Set(runClusters.filter((c) => c.validated).map((c) => String(c.id))), [run]);
 
-  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels" | "merging" | "judge">("clustering");
+  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels" | "merging" | "judge">(finalize ? "merging" : "clustering");
   // Cell Labelling is a master→detail: openCluster=null shows the per-tier
   // summary + per-cluster breakdown; setting it drills into that cluster's chat.
   const [openCluster, setOpenCluster] = useState<string | null>(null);
@@ -605,7 +605,7 @@ export function RunViewer({ run, meta, dataset, onBack }: { run: any; meta?: any
         ))}
 
         {/* 4. MERGING & META-REASONING — full-screen Meta-Reasoner workbench (chat + floaty visuals) */}
-        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => setTab("labels")} />}
+        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => (finalize ? onBack() : setTab("labels"))} live={finalize} />}
 
         {/* 5. FINAL JUDGE — score the MERGED NODES (fuzzy judge + purity); scorecard relocated here */}
         {tab === "judge" && (
@@ -869,10 +869,12 @@ function MetaJudgeInput({ judgements, onAdd, stage, keyId }: { judgements: any[]
   );
 }
 
-function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void }) {
+function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, live }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean }) {
   const prop = run?.operatorProposal;
   const [step, setStep] = useState(0);
-  if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (score/consolidate this run to populate the workbench)")}</div>;
+  // FINALIZE / LIVE mode — human-driven interactive Meta-Reasoner chat over the run's leaves.
+  if (live) return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} />;
+  if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   const comps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
   const N = comps.length + 1; // + the global Prejudice-of-Shape audit
   const cur = step < comps.length ? comps[step] : null;
@@ -975,4 +977,149 @@ function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack }: 
       </div>
     </div>
   );
+}
+
+// ===================================================================
+// LIVE / FINALIZE workbench — a human-driven Meta-Reasoner CHAT over a labelled
+// run. You type the next prompt, or (usually) press "Self-Suggest Next Step" and
+// the Meta-Reasoner runs its operator on the next compartment live. Floaties track
+// its attention. Judgements append to run.judgements[] and persist via Save.
+// ===================================================================
+function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void }) {
+  const [messages, setMessages] = useState<any[]>([]);
+  const [decisions, setDecisions] = useState<Record<number, any>>({});
+  const [attention, setAttention] = useState<number | null>(null);
+  const [globalDone, setGlobalDone] = useState<any>(null);
+  const [busy, setBusy] = useState(false);
+  const [input, setInput] = useState("");
+  const ctx = META_REASONER_CONTEXT;
+
+  const leafLabel: Record<string, string> = {};
+  (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
+  const comps = useMemo(() => {
+    const by = new Map<number, string[]>();
+    (clusters || []).forEach((c: any) => { if (typeof c.compartmentIndex === "number") { if (!by.has(c.compartmentIndex)) by.set(c.compartmentIndex, []); by.get(c.compartmentIndex)!.push(String(c.id)); } });
+    return Array.from(by.keys()).sort((a, b) => a - b).map((idx) => ({ index: idx, leafIds: by.get(idx)!, labelSet: by.get(idx)!.map((id) => ({ leaf_id: id, label: leafLabel[id] || "?" })) }));
+  }, [clusters, run]);
+  const ledger = { totalLeaves: (clusters || []).length, totalCompartments: comps.length, compartmentSizes: Object.fromEntries(comps.map((c) => [String(c.index), c.leafIds.length])) };
+  const processed = Object.keys(decisions).length;
+  const nextComp = comps.find((c) => !decisions[c.index]);
+  const allDone = !nextComp;
+  const post = async (body: any) => {
+    const r = await fetch("/api/meta_reasoner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    return r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
+  };
+
+  async function selfSuggest() {
+    if (busy) return; setBusy(true);
+    try {
+      if (nextComp) {
+        setAttention(nextComp.index);
+        setMessages((m) => [...m, { role: "user", content: `[Self-suggested] Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Consolidate: merge redundant restatements, set aside distinct/rebel leaves, assign each node its tier.` }]);
+        const d = await post({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
+        if (d.ok) {
+          setDecisions((p) => ({ ...p, [nextComp.index]: d.output }));
+          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output) }]);
+        } else {
+          setMessages((m) => [...m, { role: "assistant", content: `_(operator error: ${d.error}${d.detail ? " — " + d.detail : ""})_` }]);
+        }
+      } else if (!globalDone) {
+        setAttention(null);
+        setMessages((m) => [...m, { role: "user", content: "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)" }]);
+        const all = comps.flatMap((c) => c.labelSet);
+        const d = await post({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
+        if (d.ok) {
+          setGlobalDone(d.output?.flag_missing || {});
+          const fm = d.output?.flag_missing;
+          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + (fm?.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : "") }]);
+        } else setMessages((m) => [...m, { role: "assistant", content: `_(audit error: ${d.error})_` }]);
+      }
+    } finally { setBusy(false); }
+  }
+
+  async function sendPrompt() {
+    const text = input.trim(); if (!text || busy) return;
+    setInput(""); setBusy(true);
+    const next = [...messages, { role: "user", content: text }];
+    setMessages(next);
+    try {
+      const labelContext = comps.map((c) => `Compartment ${c.index} (${c.leafIds.length}): ${c.labelSet.map((l) => l.label).join("; ")}`).join("\n");
+      const d = await post({ op: "chat", messages: next.map((m) => ({ role: m.role, content: m.content })), labelContext, model: run?.model });
+      setMessages((m) => [...m, { role: "assistant", content: d.ok ? d.reasoning : `_(chat error: ${d.error})_` }]);
+    } finally { setBusy(false); }
+  }
+
+  const attComp = attention != null ? comps.find((c) => c.index === attention) : null;
+  const attDec = attention != null ? decisions[attention] : null;
+  const chip = (bg: string, fg: string): React.CSSProperties => ({ fontSize: 11, fontWeight: 800, color: fg, background: bg, borderRadius: 99, padding: "1px 8px" });
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "hidden" }}>
+      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "#fffdfb", borderBottom: "1px solid #e5e1dc", zIndex: 100 }}>
+        <button onClick={onBack} style={btnGhost}>← Back</button>
+        <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
+        <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
+      </div>
+
+      {/* right chat column with input + self-suggest */}
+      <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: 460, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column" }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 9 }}>
+          <div style={SEC}>🧠 Meta-Reasoner chat — you drive</div>
+          {messages.length === 0 ? <div style={{ fontSize: 12.5, color: "#9a948c", lineHeight: 1.5 }}>The 250 leaves are labelled. Type a prompt to the Meta-Reasoner, or press <b>Self-Suggest Next Step</b> to have it consolidate the next compartment.</div> : null}
+          {messages.map((m, i) => m.role === "user"
+            ? <div key={i} style={userBubble}>{m.content}</div>
+            : <AgentMessage key={i} mode="reason" content={m.content} />)}
+          {busy ? <div style={{ fontSize: 12, color: "#7c3aed", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div> : null}
+        </div>
+        <div style={{ flexShrink: 0, borderTop: "1px solid #e5e1dc", padding: 10, display: "flex", flexDirection: "column", gap: 7 }}>
+          <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
+            🧠 Meta-Reasoner Self-Suggest Next Step {allDone ? (globalDone ? "· done" : "· (audit)") : `· (Compartment ${nextComp?.index})`}
+          </button>
+          <div style={{ display: "flex", gap: 6 }}>
+            <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendPrompt(); } }} placeholder="…or type your own prompt to the Meta-Reasoner" rows={2}
+              style={{ flex: 1, boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "none", fontFamily: "inherit" }} />
+            <button onClick={sendPrompt} disabled={busy || !input.trim()} style={{ ...btnGhost, alignSelf: "stretch", fontWeight: 700, opacity: busy || !input.trim() ? 0.5 : 1 }}>Send</button>
+          </div>
+        </div>
+      </div>
+
+      {/* floaty visuals — track the Meta-Reasoner's current attention */}
+      <Floaty title="🗺 WORLD MAP · attention" accent="#0e7490" initial={{ x: 18, y: 64, w: 430, h: 322 }}>
+        {clusters ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(Object.keys(decisions).flatMap((k) => comps.find((c) => c.index === Number(k))?.leafIds || []))} width={404} height={248} dimUnfocused focusCompartments={attention != null ? [attention] : []} /> : <div style={{ color: "#aaa", fontSize: 12 }}>loading map…</div>}
+        <div style={{ fontSize: 11.5, color: "#666", marginTop: 4 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
+      </Floaty>
+      <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
+        {attComp ? (<>
+          <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 800 }}>PREDICTED LABELS · Compartment {attComp.index} (GT-blind)</div>
+          {attComp.labelSet.map((l) => <div key={l.leaf_id} style={{ fontSize: 12, color: "#444", lineHeight: 1.4 }}><span style={{ color: "#9a948c" }}>{l.leaf_id}:</span> {l.label}</div>)}
+        </>) : <div style={{ fontSize: 12, color: "#9a948c" }}>{ledger.totalLeaves} leaves across {comps.length} compartments. Self-suggest to begin.</div>}
+      </Floaty>
+      <Floaty title="📜 PRE-PROMPT · meta-reasoner rules" accent="#a16207" initial={{ x: 462, y: 64, w: 440, h: 322 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
+          {ctx.rules.slice(0, 5).map((r, i) => <div key={i} style={{ fontSize: 11.5, color: "#4a4540", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
+        </div>
+        <div style={{ marginTop: 8, fontSize: 10.5, fontWeight: 800, color: "#15803d" }}>🔒 GT-BLIND</div>
+        {ctx.gtDiscipline.slice(0, 2).map((r, i) => <div key={i} style={{ fontSize: 11, color: "#555", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
+      </Floaty>
+      <Floaty title="🎯 DECISION · latest step" accent="#7c3aed" initial={{ x: 462, y: 398, w: 440, h: 250 }}>
+        {attDec ? (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+          {(attDec.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
+          {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
+        </div>) : globalDone ? <div style={{ fontSize: 12.5, color: "#9a3412" }}><b>Still missing:</b> {(globalDone.expected_still_missing || []).join(", ") || "— nothing flagged"}</div> : <div style={{ fontSize: 12, color: "#9a948c" }}>no decision yet</div>}
+      </Floaty>
+      <Floaty title="⚖️ ADD JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 236, w: 350, h: 244 }}>
+        <MetaJudgeInput judgements={judgements} stage="merging" keyId={attention != null ? `C${attention}` : "meta_global"}
+          onAdd={(note: string) => addJudgement({ cluster_id: attention != null ? `C${attention}` : "meta_global", cluster_label: attention != null ? `Meta-Reasoner · Compartment ${attention}` : "Meta-Reasoner · audit", mode: "merging", step_index: processed, content_excerpt: "live finalize decision", note })} />
+      </Floaty>
+    </div>
+  );
+}
+
+// decision summary (markdown) from a LIVE operator output object
+function decisionMdOut(out: any): string {
+  const lines: string[] = [];
+  (out?.merges || []).forEach((m: any) => lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves`));
+  (out?.set_aside || []).forEach((s: any) => lines.push(`- ⎇ **set aside** leaf ${s.leaf_id} (kept distinct)`));
+  return lines.length ? "\n\n**→ Decision**\n" + lines.join("\n") : "";
 }

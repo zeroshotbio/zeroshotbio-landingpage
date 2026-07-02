@@ -12,10 +12,33 @@
 // the GT-seal and inputs are inspectable offline (ok:false, error:"no_openai_key").
 import { NextResponse } from "next/server";
 import { assembleBrainInput, assertGtBlind, buildBrainPrompt, parseBrainDecision, enforceCaps, type BrainLedger } from "../../meta_reasoner/brain";
+import { assembleOperatorInput, buildOperatorPrompt, parseOperatorOutput, type OperatorScope, type LabelSetEntry } from "../../meta_reasoner/operator";
+import { META_REASONER_CONTEXT as META_REASONER_CTX } from "../../meta_reasoner/metaReasonerContext";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
 export const runtime = "nodejs";
 export const maxDuration = 120;
+
+// helper: one non-streaming OpenAI Responses call → text + usage
+async function callOpenAI(key: string, model: string, system: string, user: string, maxTokens: number, signal: AbortSignal) {
+  const r = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST", signal,
+    headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({ model, instructions: system, input: [{ role: "user", content: user }], reasoning: { effort: "low" }, max_output_tokens: maxTokens }),
+  });
+  if (!r.ok) throw new Error(`openai ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
+  return r.json();
+}
+// like callOpenAI but takes a full input message array (for multi-turn chat)
+async function callOpenAI2(key: string, model: string, system: string, input: any[], maxTokens: number, signal: AbortSignal) {
+  const r = await fetch("https://api.openai.com/v1/responses", {
+    method: "POST", signal,
+    headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+    body: JSON.stringify({ model, instructions: system, input, reasoning: { effort: "low" }, max_output_tokens: maxTokens }),
+  });
+  if (!r.ok) throw new Error(`openai ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
+  return r.json();
+}
 
 function extractText(resp: any): string {
   // OpenAI Responses API: prefer output_text, else walk output[].content[].text
@@ -29,9 +52,81 @@ function extractText(resp: any): string {
   return parts.join("\n").trim();
 }
 
+// meta-reasoner rules/priors, shared as a system prompt for interactive chat.
+function metaSystemPrompt(): string {
+  const c = META_REASONER_CTX;
+  return [
+    "You are the META-REASONER — a stateless operator that runs AFTER ~250 fine leaf clusters have been labelled, in an INTERACTIVE FINALIZE session driven by a human curator.",
+    "Your four jobs: MERGE redundant leaves into one node; SET-ASIDE / re-home genuinely distinct 'rebel' leaves; PREJUDICE-OF-SHAPE audit (flag expected 48 hpf tissues left unaccounted — a hint, never a licence to invent one; 'expected tissue not found' is a valid outcome); ASSIGN each node the schema tier it can defend.",
+    "You are GT-BLIND: reason only from the labeller's OWN predicted labels, never sealed ground truth. Priors are general biology only.",
+    "This is a conversation: the human moves you forward. Be concise and concrete; when you make a merge/set-aside/tier call, state it plainly with the leaves and the tier. Do not invent a full JSON block unless asked.",
+    "",
+    "RULES:",
+    ...c.rules.map((r: any) => `- ${r.title}: ${r.body}`),
+    "GT-DISCIPLINE:",
+    ...c.gtDiscipline.map((r: any) => `- ${r.title}: ${r.body}`),
+    `EXPECTED TISSUES (prior): ${c.expectedTissues.join(", ")}`,
+  ].join("\n");
+}
+
 export async function POST(req: Request) {
   let body: any;
   try { body = await req.json(); } catch { return NextResponse.json({ ok: false, error: "bad_json" }, { status: 400 }); }
+
+  // ---- INTERACTIVE FINALIZE CHAT (op:"chat") — human-driven meta-reasoner ----
+  if (body?.op === "chat") {
+    const messages = Array.isArray(body?.messages)
+      ? body.messages.filter((m: any) => (m?.role === "user" || m?.role === "assistant") && typeof m?.content === "string").slice(-24)
+      : [];
+    if (!messages.length) return NextResponse.json({ ok: false, error: "no_messages" }, { status: 400 });
+    const chatModel = isKasperovModel(body?.model) ? body.model : DEFAULT_MODEL;
+    const key = process.env.OPENAI_API_KEY;
+    if (!key) return NextResponse.json({ ok: false, error: "no_openai_key" }, { status: 200 });
+    // an optional compact label-set summary (GT-blind) as leading context
+    const ctxNote = typeof body?.labelContext === "string" ? body.labelContext.slice(0, 12000) : "";
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 110000);
+    try {
+      const input = ctxNote ? [{ role: "user", content: `=== CURRENT LABELLED SET (GT-blind, the labeller's own predictions) ===\n${ctxNote}` }, ...messages] : messages;
+      const resp = await callOpenAI2(key, chatModel, metaSystemPrompt(), input, 3000, ctrl.signal);
+      return NextResponse.json({ ok: true, reasoning: extractText(resp), usage: { model: chatModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
+    } catch (e: any) {
+      return NextResponse.json({ ok: false, error: e?.name === "AbortError" ? "timeout" : "chat_failed", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
+    } finally { clearTimeout(timer); }
+  }
+
+  // ---- REDESIGNED OPERATOR: fine-then-consolidate (op:"consolidate") ----
+  if (body?.op === "consolidate") {
+    const scope: OperatorScope = body?.scope === "global" ? "global" : "compartment";
+    const labelSet: LabelSetEntry[] = Array.isArray(body?.labelSet)
+      ? body.labelSet.filter((e: any) => e && (typeof e.leaf_id === "string" || typeof e.leaf_id === "number") && typeof e.label === "string")
+          .map((e: any) => ({ leaf_id: String(e.leaf_id), label: String(e.label) }))
+      : [];
+    if (!labelSet.length) return NextResponse.json({ ok: false, error: "bad_labelSet" }, { status: 400 });
+    const opModel = isKasperovModel(body?.model) ? body.model : DEFAULT_MODEL;
+    let opInput, opPrompt;
+    try {
+      opInput = assembleOperatorInput({ scope, compartment: body?.compartment ?? null, labelSet, ledger: body?.ledger ?? { totalLeaves: labelSet.length, totalCompartments: 0, compartmentSizes: {} } });
+      assertGtBlind({ labelSet, ledger: body?.ledger }); // scan raw inputs too
+      opPrompt = buildOperatorPrompt(opInput);
+    } catch (e: any) {
+      return NextResponse.json({ ok: false, error: "gt_seal_violation", detail: String(e?.message ?? e) }, { status: 422 });
+    }
+    const opKey = process.env.OPENAI_API_KEY;
+    if (!opKey) return NextResponse.json({ ok: false, error: "no_openai_key", input: opInput, prompt: opPrompt, guardrails: { gtBlind: true } }, { status: 200 });
+    const opCtrl = new AbortController();
+    const opTimer = setTimeout(() => opCtrl.abort(), 110000);
+    try {
+      const resp = await callOpenAI(opKey, opModel, opPrompt.system, opPrompt.user, 6000, opCtrl.signal);
+      const reasoning = extractText(resp);
+      const output = parseOperatorOutput(reasoning, scope);
+      return NextResponse.json({ ok: true, input: opInput, prompt: opPrompt, reasoning, output,
+        guardrails: { gtBlind: true }, usage: { model: opModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
+    } catch (e: any) {
+      const aborted = e?.name === "AbortError";
+      return NextResponse.json({ ok: false, error: aborted ? "timeout" : "operator_failed", detail: String(e?.message ?? e).slice(0, 200), input: opInput, prompt: opPrompt }, { status: 502 });
+    } finally { clearTimeout(opTimer); }
+  }
 
   const ledger = body?.ledger as BrainLedger | undefined;
   if (!ledger || !Array.isArray(ledger.compartments)) {
