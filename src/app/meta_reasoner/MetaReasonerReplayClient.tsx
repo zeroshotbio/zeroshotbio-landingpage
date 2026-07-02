@@ -9,13 +9,33 @@
 // Source data: a static replay asset built by scripts/build_meta_reasoner_replay.py
 // (nginx-served alongside the other daniotype_data assets). No streaming, no tools.
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 import type { AgentMode } from "../daniotype_kasperov/types";
 import { PAPER, INK, ACCENT, THEME, btnGhost, btnPrimary } from "../daniotype_kasperov/theme";
 import { AgentMessage } from "../daniotype_kasperov/components/ChatMessage";
 import { META_REASONER_CONTEXT } from "./metaReasonerContext";
+import { ledgerFromReplay } from "./brain";
+import { MetaReasonerBrainPanel, type BrainResult } from "./components/MetaReasonerBrainPanel";
 
 const ASSET_BASE = "https://zscape.zeroshot.bio/daniotype_data";
-const REPLAY_URL = `${ASSET_BASE}/meta_reasoner_replay/trimmed_37.json`;
+const REPLAY_DIR = `${ASSET_BASE}/meta_reasoner_replay`;
+const INDEX_URL = `${REPLAY_DIR}/index.json`;
+
+// one entry in the runs manifest (index.json) shown on the landing page.
+type RunMeta = {
+  id: string; file: string; label: string; date?: string;
+  dataset?: string; model?: string; leaves?: number; compartments?: number;
+  boundaries?: number; cost_usd?: number; metaDecisions?: number; hasBrain?: boolean;
+};
+
+// a recorded Phase-2 meta-reasoner decision (from a run that had the brain).
+type RecordedDecision = {
+  boundary_after_compartmentIndex: number; next_compartmentIndex?: number | null;
+  action?: string; target?: string; rationale?: string; expected_still_missing?: string[];
+  cap_applied?: boolean; gt_blind?: boolean; gt_leak_check?: any; reasoning?: string;
+  usage?: any; cost_usd?: number; model?: string;
+};
 
 // ---- shapes of the replay asset ----
 type ReplayStep = {
@@ -37,7 +57,7 @@ type ReplayAsset = {
   schema: string; source?: string; dataset: string; datasetId: string; model: string;
   started?: string; finished?: string; calls?: number; cost_usd?: number;
   compartments: { index: number; label: string; leafIds: string[] }[];
-  boundaries: Boundary[]; leaves: ReplayLeaf[];
+  boundaries: Boundary[]; leaves: ReplayLeaf[]; metaDecisions?: RecordedDecision[];
 };
 
 // judgement record — matches the live wizard's shape so RunViewer renders it.
@@ -100,20 +120,57 @@ function NoteBox({ value, onChange, saved }: { value: string; onChange: (v: stri
 }
 
 export default function MetaReasonerReplayClient() {
+  const [runs, setRuns] = useState<RunMeta[] | null>(null);
+  const [runsErr, setRunsErr] = useState<string | null>(null);
+  const [selected, setSelected] = useState<RunMeta | null>(null);
   const [asset, setAsset] = useState<ReplayAsset | null>(null);
   const [err, setErr] = useState<string | null>(null);
   const [pos, setPos] = useState(0);
   const [notes, setNotes] = useState<Record<string, string>>({});
+  // ⚖️🧠 Phase-2 brain decisions, keyed by the boundary's just-finished compartmentIndex.
+  const [decisions, setDecisions] = useState<Record<number, BrainResult>>({});
   const [saveState, setSaveState] = useState<{ status: "idle" | "saving" | "ok" | "err"; msg?: string }>({ status: "idle" });
 
+  // descent budget already spent (per expected tissue) by decisions at EARLIER
+  // boundaries — feeds the cap guardrail so a later boundary can't re-descend.
+  function priorAttemptsFor(compIndex: number): Record<string, number> {
+    const acc: Record<string, number> = {};
+    for (const [k, r] of Object.entries(decisions)) {
+      if (Number(k) >= compIndex) continue;
+      const d = r?.decision;
+      if (d?.action === "descend" && d.target) { const key = d.target.trim().toLowerCase(); acc[key] = (acc[key] || 0) + 1; }
+    }
+    return acc;
+  }
+
+  // load the runs manifest once
   useEffect(() => {
     let alive = true;
-    fetch(REPLAY_URL)
+    fetch(INDEX_URL)
+      .then((r) => { if (!r.ok) throw new Error(`index ${r.status}`); return r.json(); })
+      .then((d) => { if (alive) setRuns(Array.isArray(d?.runs) ? d.runs : []); })
+      .catch((e) => { if (alive) setRunsErr(String(e?.message ?? e)); });
+    return () => { alive = false; };
+  }, []);
+
+  // load the selected run's asset (and reset the session)
+  useEffect(() => {
+    if (!selected) { setAsset(null); return; }
+    let alive = true;
+    setAsset(null); setErr(null); setPos(0); setNotes({}); setDecisions({}); setSaveState({ status: "idle" });
+    fetch(`${REPLAY_DIR}/${selected.file}`)
       .then((r) => { if (!r.ok) throw new Error(`asset ${r.status}`); return r.json(); })
       .then((d) => { if (alive) setAsset(d); })
       .catch((e) => { if (alive) setErr(String(e?.message ?? e)); });
     return () => { alive = false; };
-  }, []);
+  }, [selected]);
+
+  // recorded meta-reasoner decisions from the asset, keyed by just-finished compartment
+  const recordedByComp = useMemo(() => {
+    const m = new Map<number, RecordedDecision>();
+    (asset?.metaDecisions ?? []).forEach((d) => m.set(d.boundary_after_compartmentIndex, d));
+    return m;
+  }, [asset]);
 
   // leaf lookup + within-compartment index
   const leafById = useMemo(() => {
@@ -146,6 +203,7 @@ export default function MetaReasonerReplayClient() {
 
   const node = nodes[pos] ?? null;
   const nJudged = Object.values(notes).filter((v) => v.trim()).length;
+  const nDecisions = Object.values(decisions).filter((r) => r?.decision).length;
 
   // keyboard: ← / → step through
   useEffect(() => {
@@ -191,22 +249,56 @@ export default function MetaReasonerReplayClient() {
     return out;
   }
 
+  // structured brain decisions → logged with the run the SAME way judgements are.
+  function buildMetaDecisions() {
+    const ts = new Date().toISOString();
+    return Object.entries(decisions)
+      .filter(([, r]) => r?.decision)
+      .map(([compIndex, r]) => ({
+        boundary_after_compartmentIndex: Number(compIndex),
+        action: r.decision!.action,
+        target: r.decision!.target,
+        rationale: r.decision!.rationale,
+        expected_still_missing: r.decision!.expected_still_missing,
+        cap_applied: !!r.guardrails?.capApplied,
+        cap_note: r.guardrails?.capNote ?? null,
+        gt_blind: !!r.guardrails?.gtBlind,
+        reasoning_excerpt: (r.reasoning || "").slice(0, 600),
+        model: r.usage?.model ?? asset?.model,
+        ts,
+      }));
+  }
+
   // save into the SAME run store the live wizard uses → shows in Load Previous Run.
   async function logJudgements() {
     if (!asset) return;
     const judgements = buildJudgements();
-    if (!judgements.length) { setSaveState({ status: "err", msg: "No notes to log yet." }); return; }
+    const metaDecisions = buildMetaDecisions();
+    // mirror each brain decision as a judgement-style entry so RunViewer surfaces
+    // it (readback proof), while the structured form lives in metaDecisions[].
+    const decisionJudgements: Judgement[] = metaDecisions.map((m) => ({
+      cluster_id: `boundary:${m.boundary_after_compartmentIndex}`,
+      cluster_label: `Meta-Reasoner decision · after Compartment ${m.boundary_after_compartmentIndex}`,
+      step_index: 0,
+      mode: "meta_decision",
+      content_excerpt: `${m.action}${m.target ? ` · ${m.target}` : ""} — ${m.rationale}`.slice(0, 240),
+      note: m.rationale,
+      ts: m.ts,
+    }));
+    const allJudgements = [...judgements, ...decisionJudgements];
+    if (!allJudgements.length && !metaDecisions.length) { setSaveState({ status: "err", msg: "No notes or decisions to log yet." }); return; }
     const exportedAt = new Date().toISOString();
     const run = {
       datasetId: asset.datasetId || "zscape_recursive",
       dataset: asset.dataset,
       model: asset.model,
       exportedAt,
-      note: `⚖️ Meta-Reasoner replay judgement — ${asset.source ?? "trimmed"} · ${judgements.length} note(s)`,
+      note: `⚖️🧠 Meta-Reasoner replay — ${asset.source ?? "trimmed"} · ${judgements.length} note(s) · ${metaDecisions.length} decision(s)`,
       source: "meta_reasoner_replay",
       replayOf: asset.schema,
       judgementMode: true,
-      judgements,
+      judgements: allJudgements,
+      metaDecisions,
       hasJudgement: true,
       // minimal clusters[] so /api/kasperov_runs accepts the run and RunViewer can list it
       clusters: asset.leaves.map((l) => ({ id: l.id, label: l.label, finalLabel: l.finalLabel, validated: false })),
@@ -224,7 +316,7 @@ export default function MetaReasonerReplayClient() {
 
   function downloadJudgements() {
     if (!asset) return;
-    const payload = { schema: "daniotype_kasperov_judgements/v1", replayOf: asset.schema, dataset: asset.dataset, model: asset.model, exportedAt: new Date().toISOString(), judgements: buildJudgements() };
+    const payload = { schema: "daniotype_kasperov_judgements/v1", replayOf: asset.schema, dataset: asset.dataset, model: asset.model, exportedAt: new Date().toISOString(), judgements: buildJudgements(), metaDecisions: buildMetaDecisions() };
     const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
     const a = document.createElement("a");
     a.href = URL.createObjectURL(blob);
@@ -233,8 +325,24 @@ export default function MetaReasonerReplayClient() {
     URL.revokeObjectURL(a.href);
   }
 
-  if (err) return <Shell><div style={{ ...CARD, color: "#b91c1c" }}>Failed to load the replay asset ({err}).<br />Expected at <code>{REPLAY_URL}</code>.</div></Shell>;
-  if (!asset || !node) return <Shell><div style={{ ...CARD, color: "#888" }}>Loading replay…</div></Shell>;
+  // download the ENTIRE conversation — every leaf's chat steps, every boundary +
+  // recorded meta-reasoner decision, plus any judgements/decisions from this session.
+  function downloadFullRun() {
+    if (!asset) return;
+    const payload = { schema: "meta_reasoner_full_run/v1", run: selected?.id ?? asset.source, exportedAt: new Date().toISOString(),
+      asset, judgements: buildJudgements(), liveDecisions: buildMetaDecisions() };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = `meta_reasoner_run_${(selected?.id || asset.dataset || "run").replace(/[^\w]+/g, "_")}.json`;
+    a.click();
+    URL.revokeObjectURL(a.href);
+  }
+
+  // ---- landing: pick a run ----
+  if (!selected) return <Shell><RunPicker runs={runs} err={runsErr} onPick={setSelected} /></Shell>;
+  if (err) return <Shell><div style={{ ...CARD, color: "#b91c1c" }}>Failed to load run <code>{selected.file}</code> ({err}). <button onClick={() => setSelected(null)} style={{ ...btnGhost, marginLeft: 8 }}>← back to runs</button></div></Shell>;
+  if (!asset || !node) return <Shell><div style={{ ...CARD, color: "#888" }}>Loading {selected.label}…</div></Shell>;
 
   const atEnd = pos >= nodes.length - 1;
 
@@ -243,14 +351,17 @@ export default function MetaReasonerReplayClient() {
       {/* header */}
       <div style={{ ...CARD, marginBottom: 12 }}>
         <div style={{ display: "flex", alignItems: "baseline", gap: 10, flexWrap: "wrap" }}>
-          <span style={{ fontSize: 18, fontWeight: 800 }}>🧠 Meta-Reasoner replay</span>
+          <button onClick={() => setSelected(null)} style={{ ...btnGhost, padding: "4px 10px", fontSize: 12 }}>← Runs</button>
+          <span style={{ fontSize: 18, fontWeight: 800 }}>🧠 {selected.label}</span>
           <span style={{ fontSize: 12.5, color: "#666" }}>
             {asset.dataset} · {asset.model} · {asset.leaves.length} leaves · {asset.calls} calls · ~${Number(asset.cost_usd).toFixed(2)}
+            {recordedByComp.size ? ` · ${recordedByComp.size} meta-decisions` : ""}
           </span>
           {nJudged ? <span style={{ fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 8px" }}>⚖️ {nJudged} note{nJudged === 1 ? "" : "s"}</span> : null}
+          <button onClick={downloadFullRun} style={{ ...btnGhost, marginLeft: "auto", padding: "5px 11px", fontSize: 12 }}>⬇ Download full run (.json)</button>
         </div>
         <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 6, lineHeight: 1.5 }}>
-          Replaying a completed headless run — no model is called. Step through each cluster&apos;s recorded chat and each compartment boundary; leave a judgement note anywhere. Notes save to the same store as the live wizard (⚖️ in Load Previous Run). Use <b>← / →</b> to move.
+          Replaying a completed headless run — no model is called. Step through each cluster&apos;s recorded chat and each compartment boundary (with its recorded meta-reasoner decision); leave a judgement note anywhere. Notes save to the same store as the live wizard (⚖️ in Load Previous Run). Use <b>← / →</b> to move.
         </div>
       </div>
 
@@ -292,7 +403,16 @@ export default function MetaReasonerReplayClient() {
           {node.kind === "step" ? (
             <StepView node={node} note={notes[node.key] || ""} onNote={(v) => setNotes((m) => ({ ...m, [node.key]: v }))} />
           ) : (
-            <BoundaryView node={node} note={notes[node.key] || ""} onNote={(v) => setNotes((m) => ({ ...m, [node.key]: v }))} />
+            <BoundaryView
+              node={node}
+              asset={asset}
+              note={notes[node.key] || ""}
+              onNote={(v) => setNotes((m) => ({ ...m, [node.key]: v }))}
+              recorded={recordedByComp.get(node.compIndex) ?? null}
+              decision={decisions[node.compIndex] ?? null}
+              priorDescentAttempts={priorAttemptsFor(node.compIndex)}
+              onDecision={(r) => setDecisions((m) => ({ ...m, [node.compIndex]: r }))}
+            />
           )}
 
           {/* nav */}
@@ -302,7 +422,7 @@ export default function MetaReasonerReplayClient() {
             <button onClick={() => setPos((p) => Math.min(nodes.length - 1, p + 1))} disabled={atEnd} style={{ ...btnPrimary, opacity: atEnd ? 0.4 : 1 }}>Next →</button>
             <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
               <button onClick={downloadJudgements} style={btnGhost}>⬇ Download notes</button>
-              <button onClick={logJudgements} style={btnPrimary}>⚖️ Log judgements ({nJudged})</button>
+              <button onClick={logJudgements} style={btnPrimary}>⚖️🧠 Log ({nJudged} note{nJudged === 1 ? "" : "s"} · {nDecisions} decision{nDecisions === 1 ? "" : "s"})</button>
             </div>
           </div>
           {saveState.status !== "idle" && (
@@ -364,11 +484,21 @@ function StepView({ node, note, onNote }: { node: Extract<Node, { kind: "step" }
   );
 }
 
-// ---- a compartment boundary: ledger + the (draft) meta-reasoner system context ----
-function BoundaryView({ node, note, onNote }: { node: Extract<Node, { kind: "boundary" }>; note: string; onNote: (v: string) => void }) {
+// ---- a compartment boundary: ledger + the Phase-2 brain + the system context ----
+function BoundaryView({ node, asset, note, onNote, recorded, decision, priorDescentAttempts, onDecision }: {
+  node: Extract<Node, { kind: "boundary" }>;
+  asset: ReplayAsset;
+  note: string;
+  onNote: (v: string) => void;
+  recorded: RecordedDecision | null;
+  decision: BrainResult | null;
+  priorDescentAttempts: Record<string, number>;
+  onDecision: (r: BrainResult) => void;
+}) {
   const b = node.boundary;
   const rows = Object.entries(b.per_compartment).sort((a, b2) => Number(a[0]) - Number(b2[0]));
   const ctx = META_REASONER_CONTEXT;
+  const ledger = React.useMemo(() => ledgerFromReplay(asset, b), [asset, b]);
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={CARD}>
@@ -379,7 +509,9 @@ function BoundaryView({ node, note, onNote }: { node: Extract<Node, { kind: "bou
           Compartment {b.at_boundary_after_compartmentIndex} complete{b.next_compartmentIndex ? ` → Compartment ${b.next_compartmentIndex}` : " (end of sweep)"}
         </h2>
         <div style={{ fontSize: 13, color: "#666", lineHeight: 1.5 }}>
-          This is where the Phase-2 brain WOULD decide which remaining compartments to descend into vs. leave consolidated. Judge the ledger it saw and the context (below) it would reason with.
+          {recorded
+            ? "The meta-reasoner reasoned over the ledger below and emitted the recorded decision (next). Judge whether it read the compartment right."
+            : "This is where the Phase-2 brain decides which remaining compartments to descend into vs. leave consolidated. Judge the ledger it saw and the context (below) it would reason with."}
         </div>
         {/* ledger */}
         <div style={{ marginTop: 12, border: "1px solid #e5e1dc", borderRadius: 10, overflow: "hidden" }}>
@@ -401,6 +533,25 @@ function BoundaryView({ node, note, onNote }: { node: Extract<Node, { kind: "bou
           <span style={{ background: "#f5f3f0", color: "#555", borderRadius: 99, padding: "2px 10px", fontWeight: 700 }}>${b.cost_so_far_usd?.toFixed?.(2) ?? b.cost_so_far_usd}</span>
         </div>
       </div>
+
+      {/* RECORDED meta-reasoner decision from this run — the chat history to judge */}
+      {recorded ? <RecordedDecisionCard rec={recorded} /> : null}
+
+      {/* PHASE 2 (live): re-run the brain over this ledger. Secondary when a decision
+          was already recorded (you're here to judge the recorded one). */}
+      {recorded ? (
+        <details style={{ ...CARD, borderColor: "#e0d3f7", background: "#fdfbff", padding: "10px 14px" }}>
+          <summary style={{ fontSize: 12, fontWeight: 700, color: "#7c3aed", cursor: "pointer" }}>↻ re-run the meta-reasoner live on this ledger (optional)</summary>
+          <div style={{ marginTop: 10 }}>
+            <MetaReasonerBrainPanel ledger={ledger} priorDescentAttempts={priorDescentAttempts} model={asset.model} onResult={onDecision} />
+          </div>
+        </details>
+      ) : (
+        <MetaReasonerBrainPanel ledger={ledger} priorDescentAttempts={priorDescentAttempts} model={asset.model} onResult={onDecision} />
+      )}
+      {decision?.decision ? (
+        <div style={{ fontSize: 11.5, color: "#15803d", fontWeight: 700 }}>✓ re-run decision captured — will be logged with your judgements ({decision.decision.action}{decision.decision.target ? ` · ${decision.decision.target}` : ""})</div>
+      ) : null}
 
       {/* the DRAFT system context — rules + experiential knowledge — to judge */}
       <div style={{ ...CARD, borderColor: "#e0d3f7", background: "#fdfbff" }}>
@@ -435,6 +586,88 @@ function ContextGroup({ title, items, color }: { title: string; items: { title: 
             <b style={{ color: "#333" }}>{r.title}.</b> {r.body}
           </div>
         ))}
+      </div>
+    </div>
+  );
+}
+
+// ---- landing page: pick which recorded run to inspect ----
+function RunPicker({ runs, err, onPick }: { runs: RunMeta[] | null; err: string | null; onPick: (r: RunMeta) => void }) {
+  if (err) return <div style={{ ...CARD, color: "#b91c1c" }}>Couldn&apos;t load the runs list ({err}). Expected at <code>{INDEX_URL}</code>.</div>;
+  if (!runs) return <div style={{ ...CARD, color: "#888" }}>Loading runs…</div>;
+  if (!runs.length) return <div style={{ ...CARD, color: "#888" }}>No recorded runs yet.</div>;
+  return (
+    <div>
+      <div style={{ ...CARD, marginBottom: 12 }}>
+        <div style={{ fontSize: 18, fontWeight: 800 }}>🧠 Meta-Reasoner — recorded runs</div>
+        <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 6, lineHeight: 1.5 }}>
+          Pick a completed headless run to inspect. You&apos;ll step through every cluster&apos;s chat and every compartment boundary&apos;s meta-reasoner decision as chat history — judge any step, and download the whole conversation as JSON.
+        </div>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))", gap: 12 }}>
+        {runs.map((r) => (
+          <div key={r.id} onClick={() => onPick(r)}
+            style={{ ...CARD, cursor: "pointer", transition: "border-color .15s" }}
+            onMouseEnter={(e) => (e.currentTarget.style.borderColor = ACCENT)}
+            onMouseLeave={(e) => (e.currentTarget.style.borderColor = "#e5e1dc")}>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+              <span style={{ fontSize: 15, fontWeight: 800 }}>{r.label}</span>
+              {r.hasBrain
+                ? <span style={{ fontSize: 10, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 8px" }}>🧠 {r.metaDecisions} meta-decisions</span>
+                : <span style={{ fontSize: 10, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 8px" }}>ledger only (no brain)</span>}
+            </div>
+            <div style={{ fontSize: 12, color: "#666", marginTop: 6, lineHeight: 1.6 }}>
+              {r.dataset} · {r.model}<br />
+              <b>{r.leaves}</b> leaves · <b>{r.compartments}</b> compartments · {r.boundaries} boundaries
+              {r.cost_usd != null ? <> · ~${Number(r.cost_usd).toFixed(2)}</> : null}
+            </div>
+            {r.date ? <div style={{ fontSize: 11, color: "#9a948c", marginTop: 6 }}>{r.date}</div> : null}
+            <div style={{ marginTop: 10, fontSize: 12.5, fontWeight: 700, color: ACCENT }}>Inspect →</div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+const REC_ACTION: Record<string, { bg: string; fg: string; icon: string }> = {
+  consolidate: { bg: "#dcfce7", fg: "#15803d", icon: "⤵" },
+  descend: { bg: "#eef2ff", fg: "#4338ca", icon: "⤓" },
+  not_found_accept: { bg: "#fff7ed", fg: "#9a3412", icon: "∅" },
+};
+
+// The recorded meta-reasoner decision, rendered as a read-only chat-history block.
+function RecordedDecisionCard({ rec }: { rec: RecordedDecision }) {
+  const a = REC_ACTION[rec.action || ""] ?? REC_ACTION.not_found_accept;
+  return (
+    <div style={{ ...CARD, borderColor: "#e0d3f7", background: "#fdfbff" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: "#7c3aed", textTransform: "uppercase", letterSpacing: 0.5 }}>🧠 Meta-Reasoner decision (recorded)</span>
+        {rec.gt_blind ? <span style={{ fontSize: 11, fontWeight: 700, color: "#15803d", background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 99, padding: "1px 8px" }}>🔒 GT-blind</span> : null}
+        {rec.cap_applied ? <span style={{ fontSize: 11, fontWeight: 800, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>⛔ cap applied</span> : null}
+        {rec.model ? <span style={{ marginLeft: "auto", fontSize: 11, color: "#9a948c" }}>{rec.model}</span> : null}
+      </div>
+      {/* the brain's reasoning as chat prose */}
+      {rec.reasoning ? (
+        <div style={{ fontSize: 13, color: "#3a352f", lineHeight: 1.55, marginTop: 10 }}>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>{stripControlBlocks(rec.reasoning)}</ReactMarkdown>
+        </div>
+      ) : null}
+      {/* the structured decision */}
+      <div style={{ marginTop: 10, border: `1px solid ${a.fg}44`, borderLeft: `3px solid ${a.fg}`, borderRadius: 10, background: "#fff", padding: "12px 14px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 13, fontWeight: 800, color: a.fg, background: a.bg, borderRadius: 99, padding: "3px 12px" }}>{a.icon} {rec.action}</span>
+          {rec.target ? <span style={{ fontSize: 13.5, fontWeight: 700, color: "#333" }}>{rec.target}</span> : null}
+        </div>
+        {rec.rationale ? <div style={{ fontSize: 13, color: "#444", marginTop: 8, lineHeight: 1.5 }}>{rec.rationale}</div> : null}
+        {rec.expected_still_missing?.length ? (
+          <div style={{ marginTop: 8, display: "flex", gap: 6, flexWrap: "wrap", alignItems: "center" }}>
+            <span style={{ fontSize: 11, fontWeight: 700, color: "#9a948c", textTransform: "uppercase", letterSpacing: 0.4 }}>still missing:</span>
+            {rec.expected_still_missing.map((t, i) => (
+              <span key={i} style={{ fontSize: 11.5, fontWeight: 700, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 9px" }}>{t}</span>
+            ))}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -101,6 +101,10 @@ asset = {
     "by_mode":      run.get("by_mode"),
     "compartments": compartments,
     "boundaries":   run.get("boundaries") or [],
+    # recorded Phase-2 meta-reasoner decisions (reasoning + structured decision +
+    # guardrail state), keyed by the boundary's just-finished compartmentIndex.
+    # Empty for Phase-1-only runs (no brain).
+    "metaDecisions": run.get("metaDecisions") or [],
     "leaves":       leaves_out,
 }
 

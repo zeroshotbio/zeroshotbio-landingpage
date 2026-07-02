@@ -11,6 +11,49 @@
 
 export type ContextRule = { title: string; body: string };
 
+// The three decision outcomes the brain may emit at a boundary. `not_found_accept`
+// is FIRST-CLASS: "we looked (or the compartment is where it would be) and the
+// expected tissue is not here" is a valid, accepted terminal answer — NOT a reason
+// to keep descending. The expectation-bias guardrail depends on this being a real
+// outcome the brain is rewarded for choosing.
+export const BRAIN_OUTCOMES = ["consolidate", "descend", "not_found_accept"] as const;
+export type BrainAction = (typeof BRAIN_OUTCOMES)[number];
+
+// HARD descent caps — encoded as data, enforced server-side (not prompt vibes).
+// maxDescentAttemptsPerExpectedTissue: once the brain has chosen `descend` in
+// pursuit of a given expected tissue this many times across the run, a further
+// `descend` for that same tissue is REJECTED and coerced to `not_found_accept`.
+// This makes "try harder until the expected tissue appears" structurally
+// impossible. maxDescentsPerBoundary bounds fan-out at a single boundary.
+export const DESCENT_CAPS = {
+  maxDescentAttemptsPerExpectedTissue: 2,
+  maxDescentsPerBoundary: 3,
+} as const;
+
+// EXPERIENTIAL PRIOR, structured: the tissues a ~48 hpf whole zebrafish embryo is
+// expected to contain. GENERAL developmental biology — the same checklist we'd
+// carry into a fresh MegaFin run. It may DIRECT attention (what's still missing?)
+// but may NEVER supply grounding for a call (see gtDiscipline). This is NOT this
+// run's answer key: it names tissue FAMILIES, not the run's per-compartment calls.
+export const EXPECTED_TISSUES_48HPF: string[] = [
+  "epidermis / periderm (surface ectoderm)",
+  "central nervous system / neural",
+  "retina / eye",
+  "otic / placodal sensory",
+  "neural crest derivatives",
+  "fast & slow skeletal muscle",
+  "notochord",
+  "vasculature / endothelium",
+  "blood / erythroid",
+  "pronephros / kidney",
+  "cartilage / skeletal / dermal",
+  "pharynx",
+  "intestine / enterocyte",
+  "liver / hepatocyte",
+  "pancreas",
+  "thyroid follicle",
+];
+
 export const META_REASONER_CONTEXT: {
   version: string;
   status: string;
@@ -18,6 +61,9 @@ export const META_REASONER_CONTEXT: {
   rules: ContextRule[];
   gtDiscipline: ContextRule[];
   experientialPriors: string[];
+  expectedTissues: string[];
+  descentCaps: typeof DESCENT_CAPS;
+  outcomes: readonly BrainAction[];
 } = {
   version: "phase2-draft-v0",
   status:
@@ -49,6 +95,14 @@ export const META_REASONER_CONTEXT: {
       title: "Budget is a decision, not a quota",
       body: "The point of descending selectively is to spend calls where they change the answer. Do not descend to raise a confidence number; do not skip a descent that would surface a missing expected tissue just to save cost.",
     },
+    {
+      title: "not_found_accept is a valid answer",
+      body: "If an expected tissue is not present after a look — or this compartment is not where it would live — emit `not_found_accept` and move on. Absence is a legitimate finding. Do NOT keep descending to make an expected tissue appear.",
+    },
+    {
+      title: "Hard descent cap (enforced)",
+      body: `A given expected tissue may be pursued by "descend" at most ${DESCENT_CAPS.maxDescentAttemptsPerExpectedTissue} time(s) across the whole run; beyond that the server coerces the decision to "not_found_accept". At most ${DESCENT_CAPS.maxDescentsPerBoundary} descents may be proposed at one boundary. This is a rule, not a suggestion.`,
+    },
   ],
   gtDiscipline: [
     {
@@ -76,4 +130,7 @@ export const META_REASONER_CONTEXT: {
     "Surface/periderm and muscle are high-abundance and tend to spawn many near-duplicate leaves — prime candidates for umbrella consolidation.",
     "Rarer endoderm derivatives (thyroid, hepatocyte, pancreas) are the tissues most likely to be 'missing' and most worth a targeted descent.",
   ],
+  expectedTissues: EXPECTED_TISSUES_48HPF,
+  descentCaps: DESCENT_CAPS,
+  outcomes: BRAIN_OUTCOMES,
 };

@@ -8,6 +8,8 @@ import type { Cluster, ClusterConf } from "../types";
 import { overallConf } from "../types";
 import { ACCENT } from "../theme";
 import { CompartmentMap } from "./CompartmentMap";
+import { ledgerFromLive } from "../../meta_reasoner/brain";
+import { MetaReasonerBrainPanel, type BrainResult } from "../../meta_reasoner/components/MetaReasonerBrainPanel";
 
 type CompRow = {
   index: number;
@@ -27,6 +29,9 @@ export function MetaReasonerStub({
   labels,
   confidence,
   onContinue,
+  model,
+  priorDescentAttempts,
+  onDecision,
 }: {
   justFinished: number; // compartmentIndex just completed (1-based)
   nextUp: number | null; // next compartmentIndex to resume into
@@ -34,7 +39,17 @@ export function MetaReasonerStub({
   labels: Record<string, string>;
   confidence: Record<string, ClusterConf>;
   onContinue: () => void;
+  // ⚖️🧠 Phase 2: run the boundary brain over a GT-blind ledger; the decision is
+  // emitted + logged, it does NOT steer the sweep queue this phase. All optional so
+  // Phase-1 callers keep working unchanged.
+  model?: string;
+  priorDescentAttempts?: Record<string, number>;
+  onDecision?: (r: BrainResult) => void;
 }) {
+  const brainLedger = React.useMemo(
+    () => ledgerFromLive({ clusters, labels, confidence, justFinished, nextUp, overallConf }),
+    [clusters, labels, confidence, justFinished, nextUp],
+  );
   // --- assemble the ledger (pure read-only aggregation of run state) ---
   const byComp = new Map<number, Cluster[]>();
   for (const c of clusters) {
@@ -144,6 +159,13 @@ export function MetaReasonerStub({
               ))}
             </tbody>
           </table>
+        </div>
+
+        {/* PHASE 2: the brain reasons over the ledger + rules + priors and emits a
+            decision. Emitted + logged this phase; it does NOT prune the queue yet.
+            The human still confirms via Continue below (watch before it drives). */}
+        <div style={{ marginBottom: 16 }}>
+          <MetaReasonerBrainPanel ledger={brainLedger} priorDescentAttempts={priorDescentAttempts} model={model} onResult={onDecision} />
         </div>
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>

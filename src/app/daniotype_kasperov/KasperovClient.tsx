@@ -212,6 +212,9 @@ export default function KasperovClient() {
   // ⚖️ judgement mode: chosen at "New Run", step-gates the sweep + collects notes
   const [judgementMode, setJudgementMode] = useState(false);
   const [judgements, setJudgements] = useState<Judgement[]>([]);
+  // ⚖️🧠 Phase-2 meta-reasoner boundary decisions, keyed by just-finished
+  // compartmentIndex. Emitted + logged (with the run); does NOT steer the queue yet.
+  const [metaDecisions, setMetaDecisions] = useState<Record<number, any>>({});
   const [newRunOpen, setNewRunOpen] = useState(false); // New Run chooser modal
   const [personasSeen, setPersonasSeen] = useState(false);
   const [loaded, setLoaded] = useState(false);
@@ -342,6 +345,15 @@ export default function KasperovClient() {
       judgementMode,
       judgements,                 // ⚖️ per-step critique notes (self-contained)
       hasJudgement: judgements.length > 0,
+      // ⚖️🧠 Phase-2 boundary brain decisions (structured, GT-blind, cap-enforced)
+      metaDecisions: Object.entries(metaDecisions).filter(([, r]: any) => r?.decision).map(([ci, r]: any) => ({
+        boundary_after_compartmentIndex: Number(ci),
+        action: r.decision.action, target: r.decision.target, rationale: r.decision.rationale,
+        expected_still_missing: r.decision.expected_still_missing,
+        cap_applied: !!r.guardrails?.capApplied, cap_note: r.guardrails?.capNote ?? null,
+        gt_blind: !!r.guardrails?.gtBlind, reasoning_excerpt: (r.reasoning || "").slice(0, 600),
+        model: r.usage?.model ?? model,
+      })),
       harness: activeHarness ? { id: activeHarness.id, version: activeHarness.version, name: activeHarness.name, gitCommit: activeHarness.gitCommit, stampedAt: activeHarness.stampedAt } : null,
       clusters: (clusters ?? []).map((c) => ({
         id: c.id,
@@ -774,6 +786,8 @@ export default function KasperovClient() {
       setConfidence={setConfidence}
       incorporated={incorporated}
       setIncorporated={setIncorporated}
+      metaDecisions={metaDecisions}
+      onMetaDecision={(comp: number, r: any) => setMetaDecisions((m) => ({ ...m, [comp]: r }))}
     />
     </>
   );
@@ -2638,9 +2652,13 @@ function ClusterStage({
   setConfidence,
   incorporated,
   setIncorporated,
+  metaDecisions,
+  onMetaDecision,
 }: {
   dataset: DatasetDef;
   model: string;
+  metaDecisions: Record<number, any>;
+  onMetaDecision: (comp: number, r: any) => void;
   addUsage: (model: string, inT: number, outT: number) => void;
   clusters: Cluster[];
   active: Cluster;
@@ -3364,6 +3382,14 @@ function ClusterStage({
           labels={labels}
           confidence={confidence}
           onContinue={resumeFromMeta}
+          model={model}
+          priorDescentAttempts={Object.entries(metaDecisions).reduce((acc: Record<string, number>, [ci, r]: any) => {
+            if (Number(ci) < metaBoundary.justFinished && r?.decision?.action === "descend" && r.decision.target) {
+              const k = String(r.decision.target).trim().toLowerCase(); acc[k] = (acc[k] || 0) + 1;
+            }
+            return acc;
+          }, {})}
+          onDecision={(r) => onMetaDecision(metaBoundary.justFinished, r)}
         />
       )}
       <style>{`

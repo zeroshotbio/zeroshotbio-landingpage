@@ -13,6 +13,7 @@ export const config = {
     "/daniotype_kasperov/:path*",
     "/meta_reasoner",
     "/meta_reasoner/:path*",
+    "/api/meta_reasoner/:path*",
     "/api/kasperov_agent/:path*",
     "/api/kasperov_confidence/:path*",
     "/api/kasperov_score/:path*",
