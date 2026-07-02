@@ -265,7 +265,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   const [dirty, setDirty] = useState(false);
   const [jSave, setJSave] = useState<{ s: "idle" | "saving" | "ok" | "err"; msg?: string }>({ s: "idle" });
   const addJudgement = (j: any) => { setJudgements((p) => [...p, { ...j, ts: new Date().toISOString() }]); setDirty(true); setJSave({ s: "idle" }); };
-  async function saveJudgements() {
+  async function saveJudgements(): Promise<{ ok: boolean; runId?: string; error?: string }> {
     setJSave({ s: "saving" });
     try {
       const body = { ...run, judgements, judgementMode: true, hasJudgement: judgements.length > 0, exportedAt: new Date().toISOString() };
@@ -274,7 +274,8 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
       if (!r.ok || d?.error) throw new Error(d?.error || `HTTP ${r.status}`);
       setDirty(false);
       setJSave({ s: "ok", msg: `Saved ${judgements.length} judgement${judgements.length === 1 ? "" : "s"} — new run version ${d.runId ?? "?"} (now the latest).` });
-    } catch (e: any) { setJSave({ s: "err", msg: `Save failed: ${String(e?.message ?? e).slice(0, 140)}` }); }
+      return { ok: true, runId: d.runId };
+    } catch (e: any) { const error = String(e?.message ?? e).slice(0, 140); setJSave({ s: "err", msg: `Save failed: ${error}` }); return { ok: false, error }; }
   }
   const nNew = dirty ? judgements.length - (Array.isArray(run?.judgements) ? run.judgements.length : 0) : 0;
 
@@ -605,7 +606,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
         ))}
 
         {/* 4. MERGING & META-REASONING — full-screen Meta-Reasoner workbench (chat + floaty visuals) */}
-        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => (finalize ? onBack() : setTab("labels"))} live={finalize} />}
+        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onSubmitJudgements={saveJudgements} onBack={() => (finalize ? onBack() : setTab("labels"))} live={finalize} />}
 
         {/* 5. FINAL JUDGE — score the MERGED NODES (fuzzy judge + purity); scorecard relocated here */}
         {tab === "judge" && (
@@ -869,11 +870,11 @@ function MetaJudgeInput({ judgements, onAdd, stage, keyId }: { judgements: any[]
   );
 }
 
-function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, live }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean }) {
+function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, live, onSubmitJudgements }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const prop = run?.operatorProposal;
   const [step, setStep] = useState(0);
   // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
-  if (live) return <MetaFinalizeFlow run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} />;
+  if (live) return <MetaFinalizeFlow run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
   if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   const comps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
   const N = comps.length + 1; // + the global Prejudice-of-Shape audit
@@ -985,7 +986,7 @@ function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, li
 // the Meta-Reasoner runs its operator on the next compartment live. Floaties track
 // its attention. Judgements append to run.judgements[] and persist via Save.
 // ===================================================================
-function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void }) {
+function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, endBtn }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; endBtn?: React.ReactNode }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [decisions, setDecisions] = useState<Record<number, any>>({});
   const [attention, setAttention] = useState<number | null>(null);
@@ -1065,6 +1066,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack }: 
         <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
         <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
+        {endBtn}
       </div>
 
       {/* right chat column with input + self-suggest */}
@@ -1134,18 +1136,72 @@ function decisionMdOut(out: any): string {
 //   3) the live workbench (LiveMetaWorkbench)
 // Every pre-step is judgement-able (persists to run.judgements[]).
 // ===================================================================
-function MetaFinalizeFlow({ run, clusters, judgements, addJudgement, onBack }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void }) {
+function MetaFinalizeFlow({ run, clusters, judgements, addJudgement, onBack, onSubmitJudgements }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const [stage, setStage] = useState<"summary" | "prep" | "workbench">("summary");
-  if (stage === "summary") return <FinalizeSummary run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onNext={() => setStage("prep")} />;
-  if (stage === "prep") return <FinalizePrep judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("summary")} onNext={() => setStage("workbench")} />;
-  return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("prep")} />;
+  const end = <EndJudgementsButton judgements={judgements} onSubmit={onSubmitJudgements} />;
+  if (stage === "summary") return <FinalizeSummary run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onNext={() => setStage("prep")} endBtn={end} />;
+  if (stage === "prep") return <FinalizePrep judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("summary")} onNext={() => setStage("workbench")} endBtn={end} />;
+  return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("prep")} endBtn={end} />;
+}
+
+// Red "End & Submit Judgements" control — opens a summary modal, submits via the
+// run's judgement-save path, and confirms to the operator.
+function EndJudgementsButton({ judgements, onSubmit }: { judgements: any[]; onSubmit?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
+  const [open, setOpen] = useState(false);
+  const [state, setState] = useState<{ s: "idle" | "saving" | "ok" | "err"; msg?: string }>({ s: "idle" });
+  const n = (judgements || []).length;
+  const submit = async () => {
+    if (!onSubmit) { setState({ s: "err", msg: "No save path wired." }); return; }
+    setState({ s: "saving" });
+    const r = await onSubmit();
+    setState(r.ok ? { s: "ok", msg: `✓ Submitted ${n} judgement${n === 1 ? "" : "s"} — logged as run version ${r.runId ?? "?"}.` } : { s: "err", msg: `Submit failed: ${r.error}` });
+  };
+  const modeLabel = (m: string) => m === "finalize_summary" ? "Run summary" : m === "finalize_prep" ? "Meta-Reasoner prep" : m === "meta" ? "boundary" : m;
+  return (
+    <>
+      <button onClick={() => { setOpen(true); setState({ s: "idle" }); }} title="End the judgement flow and submit all notes" style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 8, padding: "9px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🛑 End &amp; Submit Judgements ({n})</button>
+      {open && (
+        <div onClick={() => state.s !== "saving" && setOpen(false)} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.45)", zIndex: 2000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
+          <div onClick={(e) => e.stopPropagation()} style={{ width: "min(640px, 96vw)", maxHeight: "88vh", overflow: "auto", background: "#fffdfb", borderRadius: 14, border: "1px solid #e5e1dc", padding: "20px 22px", boxShadow: "0 24px 70px rgba(0,0,0,.35)" }}>
+            {state.s === "ok" ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div style={{ fontSize: 34 }}>✓</div>
+                <div style={{ fontSize: 17, fontWeight: 800, marginTop: 6 }}>{state.msg}</div>
+                <div style={{ fontSize: 13, color: "#666", marginTop: 6 }}>Your judgements are logged to the run. I&apos;ll use them to refine the Meta-Reasoner.</div>
+                <button onClick={() => setOpen(false)} style={{ marginTop: 16, ...btnGhost }}>Close</button>
+              </div>
+            ) : (
+              <>
+                <div style={{ fontSize: 18, fontWeight: 800 }}>End judgement flow — submit {n} judgement{n === 1 ? "" : "s"}</div>
+                <div style={{ fontSize: 12.5, color: "#666", margin: "4px 0 12px" }}>Review your notes, then submit. This logs them to the run (a new version) and confirms back to you.</div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 14 }}>
+                  {n === 0 ? <div style={{ fontSize: 13, color: "#9a948c", fontStyle: "italic" }}>No judgements captured yet.</div> :
+                    (judgements || []).map((j, i) => (
+                      <div key={i} style={{ fontSize: 12.5, color: "#4a4540", background: "#faf7ff", border: "1px solid #ece2fb", borderLeft: "3px solid #7c3aed", borderRadius: 6, padding: "6px 9px" }}>
+                        <span style={{ fontWeight: 700, color: "#7c3aed" }}>{j.cluster_label || j.cluster_id} · {modeLabel(j.mode)}</span>
+                        <div>{j.note}</div>
+                      </div>
+                    ))}
+                </div>
+                {state.s === "err" ? <div style={{ fontSize: 12.5, color: "#b91c1c", marginBottom: 10 }}>{state.msg}</div> : null}
+                <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+                  <button onClick={() => setOpen(false)} disabled={state.s === "saving"} style={btnGhost}>Cancel</button>
+                  <button onClick={submit} disabled={state.s === "saving" || n === 0} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 9, padding: "10px 20px", fontSize: 14, fontWeight: 800, cursor: n === 0 ? "not-allowed" : "pointer", opacity: n === 0 ? 0.5 : 1 }}>{state.s === "saving" ? "Submitting…" : "🛑 Submit judgements"}</button>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  );
 }
 
 const FIN_SHELL: React.CSSProperties = { position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "auto" };
 const FIN_INNER: React.CSSProperties = { maxWidth: 940, margin: "0 auto", padding: "20px 22px 90px" };
 const FIN_BAR: React.CSSProperties = { position: "fixed", left: 0, right: 0, bottom: 0, height: 60, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, background: "#fffdfb", borderTop: "1px solid #e5e1dc", zIndex: 100 };
 
-function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNext }: any) {
+function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNext, endBtn }: any) {
   const nLeaves = (run?.clusters || []).length;
   const comps = new Set((clusters || []).map((c: any) => c.compartmentIndex).filter((x: any) => typeof x === "number"));
   const money = (v: number) => (v == null ? "?" : v < 1 ? v.toFixed(3) : v.toFixed(2));
@@ -1181,6 +1237,7 @@ function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNe
         </div>
       </div>
       <div style={FIN_BAR}>
+        {endBtn}
         <button onClick={onBack} style={btnGhost}>← Back</button>
         <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Continue → Meta-Reasoner prep</button>
       </div>
@@ -1188,7 +1245,7 @@ function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNe
   );
 }
 
-function FinalizePrep({ judgements, addJudgement, onBack, onNext }: any) {
+function FinalizePrep({ judgements, addJudgement, onBack, onNext, endBtn }: any) {
   const ctx = META_REASONER_CONTEXT;
   const cat = (title: string, color: string, items: { title: string; body: string }[]) => (
     <div style={{ ...CARD, marginBottom: 12 }}>
@@ -1232,6 +1289,7 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext }: any) {
         </div>
       </div>
       <div style={FIN_BAR}>
+        {endBtn}
         <button onClick={onBack} style={btnGhost}>← Back</button>
         <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Begin finalize → live workbench</button>
       </div>
