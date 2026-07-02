@@ -1016,7 +1016,14 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const allDone = !nextComp;
   // the exact prompt the NEXT step will send — shown in the judgement gate so you
   // can judge (or improve) it before it's delivered to the Meta-Reasoner.
-  const compPrompt = nextComp ? `[Self-suggested] Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Consolidate: merge redundant restatements, set aside distinct/rebel leaves, assign each node its tier.` : "";
+  const isFirstStep = Object.keys(decisions).length === 0;
+  // ⚖️ judged: the very first prompt is the opener — give the Meta-Reasoner proper
+  // context on its job/goals (~200 words); subsequent compartments stay concise.
+  const compPrompt = nextComp
+    ? (isFirstStep
+      ? `You are the META-REASONER, and this is your opening task. The ~${ledger.totalLeaves} fine leaf clusters of this 48-hour zebrafish embryo are already labelled by a per-cell loop; your job now is to CONSOLIDATE them into a final ~50–80 defensible nodes. Four jobs: (1) MERGE redundant restatements of one identity into a single node (e.g. many "periderm / superficial epidermal keratinocyte" calls → one node); (2) SET-ASIDE / REBEL — keep a genuinely distinct leaf as its own node, and flag any leaf whose markers contradict its compartment for re-parenting; (3) PREJUDICE-OF-SHAPE (later) — audit the whole set against general 48 hpf biology (blood, pancreas, liver, CNS, muscle…) for missing tissues; that prior is a hint, never a licence to invent — "expected tissue not found" is a valid answer; (4) ASSIGN each node the schema tier it can defend (coarse tissue ↔ fine cell type). You are GT-BLIND: reason only from the labeller's own predicted labels, never sealed ground truth. We proceed compartment by compartment. Begin with Compartment ${nextComp.index} (${nextComp.leafIds.length} labelled leaves): merge the redundant, set aside the distinct/rebel, and give each node its tier.`
+      : `Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Continue the consolidation: merge redundant restatements into one node, set aside distinct/rebel leaves, and assign each node the tier it can defend.`)
+    : "";
   const auditPrompt = "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)";
   const pendingPrompt: string | null = nextComp ? compPrompt : (!globalDone ? auditPrompt : null);
   const pendingKeyId = nextComp ? `C${nextComp.index}` : "meta_global";
@@ -1353,7 +1360,9 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
       </div>
       <div style={{ fontSize: 11, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
       <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse ? "2px 6px" : "8px 10px" }}>
-        {isResponse ? <AgentMessage mode="reason" content={content} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
+        {busy
+          ? <div style={{ fontSize: 12.5, color: "#7c3aed", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>
+          : isResponse ? <AgentMessage mode="reason" content={content} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
       </div>
       {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
       <textarea value={note} onChange={(e) => setNote(e.target.value)} autoFocus rows={2} placeholder={isResponse ? "What's right/wrong about this step? (optional)" : "What's right/wrong about this prompt? (optional)"}
