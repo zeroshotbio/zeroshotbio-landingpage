@@ -1008,6 +1008,8 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
   const [liveTrace, setLiveTrace] = useState(""); // reasoning summary streaming in
   const [liveText, setLiveText] = useState("");   // output text streaming in
   const [chatW, setChatW] = useState(460);        // draggable chat-column width
+  const [auto, setAuto] = useState(false);        // autopilot running the whole arc
+  const autoRef = useRef(false);
   const dragRef = useRef<{ startX: number; startW: number } | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   useEffect(() => { const el = chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, busy, liveTrace, liveText]);
@@ -1029,11 +1031,12 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
   const isFirstStep = Object.keys(decisions).length === 0;
   // ⚖️ judged: the very first prompt is the opener — give the Meta-Reasoner proper
   // context on its job/goals (~200 words); subsequent compartments stay concise.
-  const compPrompt = nextComp
-    ? (isFirstStep
-      ? `You are the META-REASONER, and this is your opening task. The ~${ledger.totalLeaves} fine leaf clusters of this 48-hour zebrafish embryo are already labelled by a per-cell loop; your job now is to CONSOLIDATE them into a final ~50–80 defensible nodes. Four jobs: (1) MERGE redundant restatements of one identity into a single node (e.g. many "periderm / superficial epidermal keratinocyte" calls → one node); (2) SET-ASIDE / REBEL — keep a genuinely distinct leaf as its own node, and flag any leaf whose markers contradict its compartment for re-parenting; (3) PREJUDICE-OF-SHAPE (later) — audit the whole set against general 48 hpf biology (blood, pancreas, liver, CNS, muscle…) for missing tissues; that prior is a hint, never a licence to invent — "expected tissue not found" is a valid answer; (4) ASSIGN each node the schema tier it can defend (coarse tissue ↔ fine cell type). You are GT-BLIND: reason only from the labeller's own predicted labels, never sealed ground truth. We proceed compartment by compartment. Begin with Compartment ${nextComp.index} (${nextComp.leafIds.length} labelled leaves): merge the redundant, set aside the distinct/rebel, and give each node its tier.`
-      : `Compartment ${nextComp.index} — ${nextComp.leafIds.length} labelled leaves. Continue the consolidation: merge redundant restatements into one node, set aside distinct/rebel leaves, and assign each node the tier it can defend.`)
+  const promptFor = (nc: any, first: boolean) => nc
+    ? (first
+      ? `You are the META-REASONER, and this is your opening task. The ~${ledger.totalLeaves} fine leaf clusters of this 48-hour zebrafish embryo are already labelled by a per-cell loop; your job now is to CONSOLIDATE them into a final ~50–80 defensible nodes. Four jobs: (1) MERGE redundant restatements of one identity into a single node (e.g. many "periderm / superficial epidermal keratinocyte" calls → one node); (2) SET-ASIDE / REBEL — keep a genuinely distinct leaf as its own node, and flag any leaf whose markers contradict its compartment for re-parenting; (3) PREJUDICE-OF-SHAPE (later) — audit the whole set against general 48 hpf biology (blood, pancreas, liver, CNS, muscle…) for missing tissues; that prior is a hint, never a licence to invent — "expected tissue not found" is a valid answer; (4) ASSIGN each node the schema tier it can defend (coarse tissue ↔ fine cell type). You are GT-BLIND: reason only from the labeller's own predicted labels, never sealed ground truth. We proceed compartment by compartment. Begin with Compartment ${nc.index} (${nc.leafIds.length} labelled leaves): merge the redundant, set aside the distinct/rebel, and give each node its tier.`
+      : `Compartment ${nc.index} — ${nc.leafIds.length} labelled leaves. Continue the consolidation: merge redundant restatements into one node, set aside distinct/rebel leaves, and assign each node the tier it can defend.`)
     : "";
+  const compPrompt = promptFor(nextComp, isFirstStep);
   const auditPrompt = "All compartments consolidated. Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)";
   const pendingPrompt: string | null = nextComp ? compPrompt : (!globalDone ? auditPrompt : null);
   const pendingKeyId = nextComp ? `C${nextComp.index}` : "meta_global";
@@ -1082,31 +1085,66 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
     return final || { ok: false, error: "stream_ended" };
   };
 
+  // one compartment step — returns the decision output (or null on error). Drives
+  // all side effects (attention, chat, decisions) so both the single-step button
+  // and autopilot share exactly one code path.
+  async function stepCompartment(nc: any, first: boolean) {
+    setAttention(nc.index);
+    setMessages((m) => [...m, { role: "user", content: promptFor(nc, first) }]);
+    const d = await postStream({ op: "consolidate", scope: "compartment", compartment: nc.index, labelSet: nc.labelSet, ledger, model: run?.model });
+    if (d.ok) {
+      setDecisions((p) => ({ ...p, [nc.index]: d.output }));
+      setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output), thinking: d.reasoningTrace }]);
+      return d.output;
+    }
+    setMessages((m) => [...m, { role: "assistant", content: `_(operator error: ${d.error}${d.detail ? " — " + d.detail : ""})_` }]);
+    return null;
+  }
+  async function stepGlobal() {
+    setAttention(null);
+    setMessages((m) => [...m, { role: "user", content: auditPrompt }]);
+    const all = comps.flatMap((c) => c.labelSet);
+    const d = await postStream({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
+    if (d.ok) {
+      const fm = d.output?.flag_missing || {};
+      setGlobalDone(fm);
+      setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + (fm?.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : ""), thinking: d.reasoningTrace }]);
+      return fm;
+    }
+    setMessages((m) => [...m, { role: "assistant", content: `_(audit error: ${d.error})_` }]);
+    return null;
+  }
+
   async function selfSuggest() {
     if (busy) return; setBusy(true);
     try {
-      if (nextComp) {
-        setAttention(nextComp.index);
-        setMessages((m) => [...m, { role: "user", content: compPrompt }]);
-        const d = await postStream({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
-        if (d.ok) {
-          setDecisions((p) => ({ ...p, [nextComp.index]: d.output }));
-          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output), thinking: d.reasoningTrace }]);
-        } else {
-          setMessages((m) => [...m, { role: "assistant", content: `_(operator error: ${d.error}${d.detail ? " — " + d.detail : ""})_` }]);
-        }
-      } else if (!globalDone) {
-        setAttention(null);
-        setMessages((m) => [...m, { role: "user", content: auditPrompt }]);
-        const all = comps.flatMap((c) => c.labelSet);
-        const d = await postStream({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
-        if (d.ok) {
-          setGlobalDone(d.output?.flag_missing || {});
-          const fm = d.output?.flag_missing;
-          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + (fm?.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : ""), thinking: d.reasoningTrace }]);
-        } else setMessages((m) => [...m, { role: "assistant", content: `_(audit error: ${d.error})_` }]);
-      }
+      if (nextComp) await stepCompartment(nextComp, isFirstStep);
+      else if (!globalDone) await stepGlobal();
     } finally { setBusy(false); }
+  }
+
+  // AUTOPILOT — run the whole natural arc (every compartment, then the audit)
+  // without a click per step. Tracks progress in LOCAL copies since React state
+  // won't have flushed between iterations; stoppable at the next step boundary.
+  async function autopilot() {
+    if (busy || auto) return;
+    setAuto(true); autoRef.current = true; setBusy(true);
+    try {
+      let localDec: Record<number, any> = { ...decisions };
+      let localGlobal = globalDone;
+      while (autoRef.current) {
+        const nc = comps.find((c) => !localDec[c.index]);
+        if (nc) {
+          const out = await stepCompartment(nc, Object.keys(localDec).length === 0);
+          if (!out) break;
+          localDec = { ...localDec, [nc.index]: out };
+        } else if (!localGlobal) {
+          const fm = await stepGlobal();
+          if (!fm) break;
+          localGlobal = fm;
+        } else break; // whole arc complete
+      }
+    } finally { setBusy(false); setAuto(false); autoRef.current = false; }
   }
 
   async function sendPrompt() {
@@ -1138,7 +1176,7 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
         <button onClick={onBack} style={btnGhost}>← Back</button>
         <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
         <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#2563eb", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#2563eb", fontWeight: 700 }}>{auto ? `🚀 autopilot · ${processed}/${comps.length}${busy ? " · reasoning…" : ""}` : busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
         {globalDone ? <button onClick={() => setShowResults(true)} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🎉 See the final labelling →</button> : null}
       </div>
       {showResults && <FinalizeResults run={run} clusters={clusters} dataset={dataset} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
@@ -1161,10 +1199,21 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
           ) : null}
         </div>
         <div style={{ flexShrink: 0, borderTop: "1px solid #e5e1dc", padding: 10, display: "flex", flexDirection: "column", gap: 7 }}>
-          <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
-            🧠 Meta-Reasoner Self-Suggest Next Step {allDone ? (globalDone ? "· done" : "· (audit)") : `· (Compartment ${nextComp?.index})`}
+          {/* AUTOPILOT — run the whole arc; becomes a Stop button while running */}
+          {auto
+            ? <button onClick={() => { autoRef.current = false; }} style={{ background: "#b91c1c", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: "pointer" }}>
+                ⏸ Stop autopilot {nextComp ? `· at Compartment ${nextComp.index}` : "· at audit"}
+              </button>
+            : (allDone && globalDone)
+              ? null
+              : <button onClick={autopilot} disabled={busy} style={{ background: "linear-gradient(90deg,#1d4ed8,#2563eb)", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>
+                  🚀 Autopilot — run to the end of the arc
+                </button>}
+          <button onClick={selfSuggest} disabled={busy || auto || (allDone && !!globalDone)} style={{ background: "#fff", color: "#2563eb", border: "1.5px solid #2563eb", borderRadius: 8, padding: "9px", fontSize: 12.5, fontWeight: 800, cursor: busy || auto ? "wait" : "pointer", opacity: busy || auto || (allDone && globalDone) ? 0.5 : 1 }}>
+            🧠 Self-Suggest Next Step {allDone ? (globalDone ? "· done" : "· (audit)") : `· (Compartment ${nextComp?.index})`}
           </button>
-          <div style={{ display: "flex", gap: 6 }}>
+          {allDone && globalDone ? <div style={{ fontSize: 11.5, color: "#15803d", fontWeight: 700, textAlign: "center" }}>✓ Full arc complete — press <b>🎉 See the final labelling</b> above.</div> : null}
+          <div style={{ display: "flex", gap: 6, opacity: auto ? 0.5 : 1, pointerEvents: auto ? "none" : "auto" }}>
             <textarea value={input} onChange={(e) => setInput(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendPrompt(); } }} placeholder="…or type your own prompt to the Meta-Reasoner" rows={2}
               style={{ flex: 1, boxSizing: "border-box", border: "1px solid #e5e1dc", borderRadius: 8, padding: "8px 10px", fontSize: 13, resize: "none", fontFamily: "inherit" }} />
             <button onClick={sendPrompt} disabled={busy || !input.trim()} style={{ ...btnGhost, alignSelf: "stretch", fontWeight: 700, opacity: busy || !input.trim() ? 0.5 : 1 }}>Send</button>
