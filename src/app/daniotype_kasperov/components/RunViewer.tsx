@@ -317,7 +317,9 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
     return vals.length ? Math.round(vals.reduce((a: number, b: number) => a + b, 0) / vals.length) : null;
   };
   const ocRun = openCluster ? byId.get(openCluster) : null;
-  const ocAtlas = openCluster ? clusters?.find((c) => c.id === openCluster) || null : null;
+  // atlas cluster ids are numeric; openCluster is a string → coerce both (this was
+  // silently failing, leaving markers stuck on "Loading atlas…").
+  const ocAtlas = openCluster ? clusters?.find((c) => String(c.id) === String(openCluster)) || null : null;
   // for the read-only Scorecard (the per-cluster Daniotype-vs-GT breakdown the
   // new-run page shows) — rebuilt from the saved run.
   const labelsMap = useMemo(() => { const m: Record<string, string> = {}; for (const c of runClusters) if (c.finalLabel) m[String(c.id)] = String(c.finalLabel); return m; }, [run]);
@@ -519,25 +521,13 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
             ) : null}
             <div style={CARD}>
               <div style={SEC}>Top markers</div>
-              {ocAtlas ? <MarkersContent cluster={ocAtlas} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} /> : <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>}
+              {clusters == null ? <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>
+                : ocAtlas ? <MarkersContent cluster={ocAtlas} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} />
+                : <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic" }}>No marker genes for this cluster in the atlas.</div>}
             </div>
-            {Array.isArray(ocRun.transcript) && ocRun.transcript.length ? (
-              <div style={CARD}>
-                <div style={SEC}>Chat history — how this cluster was decided</div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-                  {ocRun.transcript.map((t: any, i: number) =>
-                    t.role === "user" ? (
-                      <div key={i} style={{ alignSelf: "flex-end", maxWidth: "85%", background: "#eef2f6", border: "1px solid #dfe6ee", borderRadius: 10, padding: "8px 11px", fontSize: 12.5, color: "#334", lineHeight: 1.5 }}>{stripControlBlocks(t.content)}</div>
-                    ) : (
-                      <AgentMessage key={i} content={stripControlBlocks(t.content)} mode={t.mode} thinking={t.thinking} />
-                    )
-                  )}
-                </div>
-              </div>
-            ) : null}
             <div style={CARD}>
-              <div style={SEC}>⚖️ Judge this cluster</div>
-              <JudgeBox stage="labelling" targetId={openCluster!} targetLabel={ocRun.finalLabel || `Cluster ${numOf(openCluster!)}`} excerpt={ocRun.finalLabel} judgements={judgements} addJudgement={addJudgement} />
+              <div style={SEC}>How this cluster was decided</div>
+              <ClusterTranscript transcript={Array.isArray(ocRun.transcript) ? ocRun.transcript : []} finalLabel={ocRun.finalLabel} />
             </div>
           </div>
         ) : (
@@ -592,7 +582,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 16px", fontSize: 10.5, textTransform: "uppercase", letterSpacing: 0.4, color: "#9a948c", fontWeight: 700, borderBottom: "1px solid #efece7" }}>
                   <span style={{ width: 64, flexShrink: 0 }}>Cluster</span>
                   <span style={{ flex: 1, minWidth: 0 }}>Predicted label</span>
-                  {gt ? nativeAgg.map((t: any) => <span key={t.key} style={{ width: 58, textAlign: "center", flexShrink: 0 }} title={`predicted vs GT · ${TIER_LABEL[t.key] || t.label}`}>{(TIER_LABEL[t.key] || t.label).replace("Cell — ", "")}</span>) : <span style={{ width: 70, textAlign: "center", flexShrink: 0 }}>conf</span>}
+                  {gt ? nativeAgg.map((t: any) => <span key={t.key} style={{ width: 58, textAlign: "center", flexShrink: 0 }} title={`predicted vs GT · ${TIER_LABEL[t.key] || t.label}`}>{(TIER_LABEL[t.key] || t.label).replace("Cell — ", "")}</span>) : profile.hasConfidence ? <span style={{ width: 70, textAlign: "center", flexShrink: 0 }}>conf</span> : null}
                   <span style={{ width: 14, flexShrink: 0 }} />
                 </div>
                 {runClusters.map((c) => {
@@ -606,7 +596,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                       {gt ? nativeAgg.map((t: any) => {
                         const tv = v?.[t.key];
                         return <span key={t.key} style={{ width: 58, textAlign: "center", flexShrink: 0, fontWeight: 800, color: !tv ? "#ccc" : tv.match ? "#15803d" : "#dc2626" }}>{!tv ? "·" : tv.match ? "✓" : "✗"}</span>;
-                      }) : <span style={{ width: 70, textAlign: "center", flexShrink: 0, color: "#777", fontVariantNumeric: "tabular-nums" }}>{mc != null ? `${mc}%` : "—"}</span>}
+                      }) : profile.hasConfidence ? <span style={{ width: 70, textAlign: "center", flexShrink: 0, color: "#777", fontVariantNumeric: "tabular-nums" }}>{mc != null ? `${mc}%` : "—"}</span> : null}
                       <span style={{ width: 14, flexShrink: 0, color: ACCENT, fontWeight: 700, textAlign: "right" }}>›</span>
                     </div>
                   );
@@ -868,6 +858,51 @@ function Floaty({ title, accent, initial, children, minW = 220, minH = 130 }: { 
 }
 
 
+// Collapsible per-cluster "how this was decided" view: the saved transcript is
+// grouped into BEATS (each user prompt + the personality turns it triggers), one
+// collapsible <details> per beat = a major inflection point in the story. The last
+// beat (the concluding call) opens by default. Honest muted line when unrecorded.
+const TRANSCRIPT_MODE: Record<string, { icon: string; title: string }> = {
+  research: { icon: "🔬", title: "Researcher" }, reason: { icon: "🧠", title: "Reasoner" }, archivist: { icon: "📚", title: "Archivist" },
+};
+function ClusterTranscript({ transcript, finalLabel }: { transcript: any[]; finalLabel?: string }) {
+  if (!transcript.length) return (
+    <div style={{ fontSize: 12.5, color: "#8a8378", lineHeight: 1.55 }}>
+      This run didn&apos;t capture a step-by-step reasoning transcript for each cluster — only the final call{finalLabel ? <> (<b>{finalLabel}</b>)</> : null} was recorded. Full New-Run labelling (and the fixture run) keep the whole chat; the headless / scrubbed runs don&apos;t.
+    </div>
+  );
+  // group into beats — a user prompt and the assistant turns that follow it
+  const beats: { prompt: string | null; turns: any[] }[] = [];
+  let cur: { prompt: string | null; turns: any[] } | null = null;
+  transcript.forEach((t) => {
+    if (t.role === "user") { if (cur) beats.push(cur); cur = { prompt: t.content, turns: [] }; }
+    else { if (!cur) cur = { prompt: null, turns: [] }; cur.turns.push(t); }
+  });
+  if (cur) beats.push(cur);
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+      {beats.map((b, i) => {
+        const last = i === beats.length - 1;
+        const modes = b.turns.map((t) => t.mode).filter(Boolean);
+        const meta = TRANSCRIPT_MODE[modes[modes.length - 1]] || { icon: "💬", title: `Step ${i + 1}` };
+        const preview = stripControlBlocks(b.turns.map((t) => t.content).join(" ")).replace(/\s+/g, " ").trim().slice(0, 96);
+        return (
+          <details key={i} open={last} style={{ border: "1px solid #e9e3db", borderRadius: 9, background: "#fffdfb", overflow: "hidden" }}>
+            <summary style={{ cursor: "pointer", listStyle: "none", padding: "9px 12px", display: "flex", alignItems: "baseline", gap: 8 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: "#33312e", flexShrink: 0 }}>{meta.icon} {meta.title}{last ? " · final call" : ""}</span>
+              <span style={{ fontSize: 11.5, color: "#9a938a", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{preview}…</span>
+            </summary>
+            <div style={{ padding: "2px 12px 12px", display: "flex", flexDirection: "column", gap: 9, borderTop: "1px solid #f2ede6" }}>
+              {b.prompt ? <div style={{ alignSelf: "flex-end", maxWidth: "85%", background: "#eef2f6", border: "1px solid #dfe6ee", borderRadius: 10, padding: "8px 11px", fontSize: 12, color: "#334", lineHeight: 1.5, marginTop: 9 }}>{stripControlBlocks(b.prompt)}</div> : null}
+              {b.turns.map((t, j) => <AgentMessage key={j} content={stripControlBlocks(t.content)} mode={t.mode} thinking={t.thinking} />)}
+            </div>
+          </details>
+        );
+      })}
+    </div>
+  );
+}
+
 function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, onBack, live, onSubmitJudgements }: { run: any; clusters: any[] | null; dataset?: DatasetDef; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const prop = run?.operatorProposal;
   // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
@@ -920,11 +955,26 @@ function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | n
         <div style={{ fontSize: 13, color: "#666" }}>{reduction}% fewer · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
       </div>
 
-      {/* 1 · HIERARCHY */}
+      {/* 1 · HIERARCHY — the tree on the left; the per-compartment decisions run
+          as a VERTICAL COLUMN in the white space to its right (no separate pane). */}
       <div style={RCARD}>
         <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
-        <div style={{ overflowX: "auto" }}>
-          <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={940} />
+        <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+          <div style={{ overflowX: "auto", flexShrink: 0 }}>
+            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={440} />
+          </div>
+          <div style={{ flex: "1 1 300px", minWidth: 260, display: "flex", flexDirection: "column", gap: 12, borderLeft: "1px solid #eee7df", paddingLeft: 18 }}>
+            <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c" }}>Per-compartment decisions</div>
+            {propComps.map((c: any) => (
+              <div key={c.compartment} style={{ borderLeft: "3px solid #e5e1dc", paddingLeft: 10 }}>
+                <div style={{ fontSize: 12, fontWeight: 800, color: "#33312e", marginBottom: 4 }}>Compartment {c.compartment} <span style={{ fontWeight: 400, color: "#9a948c" }}>· {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</span></div>
+                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
+                  {(c.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 11.5, lineHeight: 1.35 }}><span style={chip("#dcfce7", "#15803d")}>⤵ {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> <span style={{ color: "#9a948c" }}>×{m.member_leaf_ids?.length}</span></div>)}
+                  {(c.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 11.5, lineHeight: 1.35 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -941,21 +991,6 @@ function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | n
         {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 10, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
       </div>
 
-      {/* 4 · per-compartment decisions (read-only; no judgement entry in the viewer) */}
-      <div style={RCARD}>
-        <div style={RSEC}>Per-compartment decisions · merge / set-aside</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-          {propComps.map((c: any) => (
-            <div key={c.compartment} style={{ borderLeft: "3px solid #e5e1dc", paddingLeft: 12 }}>
-              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#33312e", marginBottom: 5 }}>Compartment {c.compartment} <span style={{ fontWeight: 400, color: "#9a948c" }}>· {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</span></div>
-              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-                {(c.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
-                {(c.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
     </div>
   );
 }
