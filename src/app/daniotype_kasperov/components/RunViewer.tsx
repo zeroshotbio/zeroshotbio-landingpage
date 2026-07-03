@@ -758,9 +758,9 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
-      {sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} /> : (
-        <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores (score the step-4 nodes through the fuzzy judge to populate this)")}</div>
-      )}
+      {sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
+        : run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
+        : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
       {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above */}
       {dataset.groundTruthUrl ? (
         <details style={CARD}>
@@ -770,6 +770,170 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
           </div>
         </details>
       ) : null}
+    </div>
+  );
+}
+
+// Parse the "menu-exposed binning" step's per-tier GT-vocabulary labels out of a
+// leaf transcript, e.g. lines "- germ_layer: ectoderm (98%)". Returns {tier: label}.
+const FJ_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
+function parseMenuLabels(transcript: any[]): Record<string, string> | null {
+  const msg = (transcript || []).find((t) => t.role === "assistant" && (t.menuExposed === true || /menu/i.test(String(t.title || ""))));
+  if (!msg) return null;
+  const text = String(msg.content || "");
+  const out: Record<string, string> = {};
+  FJ_TIERS.forEach((tier) => {
+    const re = new RegExp(`${tier.replace(/_/g, "[_ ]?")}\\s*:\\s*([^\\(\\n]+?)\\s*(?:\\(|$)`, "i");
+    const m = text.match(re);
+    if (m && m[1]) out[tier] = m[1].trim();
+  });
+  return Object.keys(out).length ? out : null;
+}
+
+// LIVE Final Judge — scores the ~70 post-Meta-Reasoner nodes against ZSCAPE Classic
+// GT at all four tiers, on BOTH paths: the blind DE-NOVO consolidated identity and
+// the MENU-EXPOSED binning (aggregated from member leaves). Red = miss, green = hit.
+function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any; dataset: any; judgements: any[]; addJudgement: (j: any) => void }) {
+  const prop = run?.operatorProposal;
+  const [state, setState] = useState<{ s: "idle" | "loading" | "scoring" | "done" | "err"; msg?: string; done?: number; total?: number }>({ s: "idle" });
+  const [rows, setRows] = useState<any[]>([]);
+  const [open, setOpen] = useState<string | null>(null);
+
+  const leafLabel: Record<string, string> = {};
+  const leafMenu: Record<string, Record<string, string> | null> = {};
+  (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; leafMenu[String(c.id)] = parseMenuLabels(c.transcript || []); });
+  const nodes = useMemo(() => {
+    const out: any[] = [];
+    (prop?.compartments || []).forEach((cc: any) => {
+      (cc.merges || []).forEach((m: any, i: number) => out.push({ id: `C${cc.compartment}-m${i}`, identity: m.node_label, tier: m.tier, leaf_ids: (m.member_leaf_ids || []).map(String), kind: "merge" }));
+      (cc.set_aside || []).forEach((s: any, i: number) => out.push({ id: `C${cc.compartment}-a${i}`, identity: s.node_label || leafLabel[String(s.leaf_id)] || "?", tier: s.tier, leaf_ids: [String(s.leaf_id)], kind: "rebel" }));
+    });
+    return out;
+  }, [prop]);
+  const menuCoverage = nodes.filter((n) => n.leaf_ids.some((l: string) => leafMenu[l])).length;
+
+  async function runScoring() {
+    if (!dataset?.groundTruthUrl) { setState({ s: "err", msg: "This dataset has no published ground truth to score against." }); return; }
+    setState({ s: "loading" });
+    let gt: any;
+    try { gt = await (await fetch(dataset.groundTruthUrl)).json(); } catch (e: any) { setState({ s: "err", msg: `Could not load ground truth: ${String(e?.message ?? e).slice(0, 100)}` }); return; }
+    const gtC = gt?.clusters || {};
+    const plurality = (ids: string[], get: (lid: string) => string | null | undefined, weight: (lid: string) => number) => {
+      const cw = new Map<string, number>(); let tot = 0, top = 0; let best: string | null = null;
+      ids.forEach((lid) => { const lab = get(lid); if (lab) { const w = weight(lid) || 1; cw.set(lab, (cw.get(lab) || 0) + w); tot += w; } });
+      cw.forEach((n, lab) => { if (n > top) { top = n; best = lab; } });
+      return { label: best, purity: tot > 0 ? top / tot : 0 };
+    };
+    // per node: GT plurality (cell-weighted), + aggregated menu-exposed label per tier
+    const prep = nodes.map((n) => {
+      const gtByTier: Record<string, string | null> = {}, menuByTier: Record<string, string | null> = {};
+      let purity = 0;
+      FJ_TIERS.forEach((t) => {
+        const g = plurality(n.leaf_ids, (lid) => gtC[lid]?.[t]?.label, (lid) => gtC[lid]?.[t]?.n || 1);
+        gtByTier[t] = g.label; if (t === n.tier) purity = g.purity;
+        const m = plurality(n.leaf_ids, (lid) => leafMenu[lid]?.[t], () => 1);
+        menuByTier[t] = m.label;
+      });
+      return { ...n, gt: gtByTier, menu: menuByTier, purity };
+    });
+    // two judge items per node — de-novo (single rolled-up identity) + menu-exposed (per-tier)
+    const items: any[] = [];
+    prep.forEach((n) => {
+      items.push({ id: n.id + "|dn", ourLabel: n.identity, gt: n.gt });
+      const hasMenu = FJ_TIERS.some((t) => n.menu[t]);
+      if (hasMenu) items.push({ id: n.id + "|mx", ourLabel: n.menu.cell_type_sub || n.identity, predictions: n.menu, gt: n.gt });
+    });
+    setState({ s: "scoring", done: 0, total: items.length });
+    const byId: Record<string, any> = {}; const B = 14;
+    for (let k = 0; k < items.length; k += B) {
+      try {
+        const r = await fetch("/api/kasperov_score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataset: dataset.id, model: run?.model, items: items.slice(k, k + B) }) });
+        const d = await r.json().catch(() => ({}));
+        (d.results || []).forEach((res: any) => { byId[res.id] = res; });
+      } catch { /* leave unscored */ }
+      setState({ s: "scoring", done: Math.min(k + B, items.length), total: items.length });
+    }
+    setRows(prep.map((n) => ({ ...n, dn: byId[n.id + "|dn"], mx: byId[n.id + "|mx"] })));
+    setState({ s: "done" });
+  }
+
+  // tally matched/total per path per tier + overall (across all node×tier cells)
+  const tally = (path: "dn" | "mx") => {
+    const per: Record<string, { a: number; t: number }> = {}; let A = 0, T = 0;
+    FJ_TIERS.forEach((tr) => { per[tr] = { a: 0, t: 0 }; });
+    rows.forEach((r) => { const v = r[path]; if (!v) return; FJ_TIERS.forEach((tr) => { if (v[tr]) { per[tr].t++; T++; if (v[tr].match) { per[tr].a++; A++; } } }); });
+    return { per, A, T, pct: T ? Math.round((A / T) * 100) : 0 };
+  };
+  const dn = tally("dn"), mx = tally("mx");
+  const hasNote = (id: string) => (judgements || []).some((j) => j.mode === "judge" && String(j.cluster_id) === String(id));
+  const cell = (v: any) => v ? <span style={{ fontWeight: 800, color: v.match ? "#15803d" : "#dc2626" }}>{v.match ? "✓" : "✗"}</span> : <span style={{ color: "#d8d2ca" }}>·</span>;
+  const tierHead = (["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const).map((t) => TIER_SHORT[t] || t);
+
+  return (
+    <div style={CARD}>
+      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+        <div style={SEC}>Final Judge · {nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT</div>
+        {state.s !== "done" ? <button onClick={runScoring} disabled={!dataset?.groundTruthUrl || state.s === "loading" || state.s === "scoring"} style={{ marginLeft: "auto", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: state.s === "loading" || state.s === "scoring" ? 0.6 : 1 }}>{state.s === "loading" ? "Loading GT…" : state.s === "scoring" ? `Scoring… ${state.done}/${state.total}` : `🏁 Score ${nodes.length} nodes`}</button> : null}
+      </div>
+      {state.s === "err" ? <div style={{ fontSize: 13, color: "#b91c1c", marginTop: 6 }}>{state.msg}</div> : null}
+      {state.s === "idle" ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 6, lineHeight: 1.5 }}>Scores each final node at all four ZSCAPE tiers on two paths: the blind <b>de-novo</b> identity and the <b>menu-exposed</b> binning ({menuCoverage}/{nodes.length} nodes have a recorded menu choice). Green = matches GT, red = miss.</div> : null}
+
+      {state.s === "done" ? (<>
+        {/* minimal scoring panel along the top */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap", margin: "10px 0 6px" }}>
+          {[{ k: "de-novo (blind)", t: dn, c: "#0891b2" }, { k: "menu-exposed", t: mx, c: "#7c3aed" }].map((p) => (
+            <div key={p.k} style={{ flex: "1 1 260px", border: "1px solid #e5e1dc", borderRadius: 10, padding: "10px 14px" }}>
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8 }}>
+                <span style={{ fontSize: 11, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: p.c }}>{p.k}</span>
+                <span style={{ marginLeft: "auto", fontSize: 26, fontWeight: 800, color: p.t.pct >= 66 ? "#15803d" : p.t.pct >= 40 ? "#b45309" : "#dc2626", fontVariantNumeric: "tabular-nums" }}>{p.t.pct}%</span>
+                <span style={{ fontSize: 11.5, color: "#9a948c" }}>{p.t.A}/{p.t.T}</span>
+              </div>
+              <div style={{ display: "flex", gap: 6, marginTop: 6, flexWrap: "wrap" }}>
+                {(["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const).map((tr) => (
+                  <span key={tr} style={{ fontSize: 10.5, color: "#666", background: "#f5f3f0", borderRadius: 99, padding: "1px 8px", fontWeight: 700 }}>{TIER_SHORT[tr]}: {p.t.per[tr].a}/{p.t.per[tr].t}</span>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+        {mx.T === 0 ? <div style={{ fontSize: 11.5, color: "#9a3412", marginBottom: 6 }}>No menu-exposed choices were recoverable from this run&apos;s transcripts — the menu-exposed column is blank.</div> : null}
+
+        <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto", marginTop: 4 }}>
+          <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, whiteSpace: "nowrap" }}>
+            <thead>
+              <tr style={{ background: "#f3f0ec", color: "#555" }}>
+                <th style={{ padding: "6px 9px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec" }}>Node identity</th>
+                {tierHead.map((h) => <th key={"gt" + h} style={{ padding: "6px 6px", fontWeight: 700, borderLeft: "1px solid #e5e1dc" }} title={`ZSCAPE GT · ${h}`}>GT·{h}</th>)}
+                {tierHead.map((h) => <th key={"dn" + h} style={{ padding: "6px 6px", color: "#0891b2", borderLeft: h === "germ" ? "2px solid #cfe8ee" : undefined }}>dn·{h}</th>)}
+                {tierHead.map((h) => <th key={"mx" + h} style={{ padding: "6px 6px", color: "#7c3aed", borderLeft: h === "germ" ? "2px solid #e6dbf7" : undefined }}>mx·{h}</th>)}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => {
+                const ownMiss = r.dn?.[r.tier] && !r.dn[r.tier].match;
+                return (
+                  <React.Fragment key={r.id}>
+                    <tr onClick={() => setOpen(open === r.id ? null : r.id)} style={{ cursor: "pointer", background: ownMiss ? "#fffbfb" : "#fbfffb", borderTop: "1px solid #f2ede6" }}>
+                      <td style={{ padding: "5px 9px", position: "sticky", left: 0, background: ownMiss ? "#fffbfb" : "#fbfffb", maxWidth: 220, overflow: "hidden", textOverflow: "ellipsis" }} title={r.identity}>{hasNote(r.id) ? "⚖️ " : ""}{r.identity}{r.kind === "merge" ? <span style={{ color: "#9a948c" }}> ×{r.leaf_ids.length}</span> : null}</td>
+                      {(["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const).map((t) => <td key={"g" + t} style={{ padding: "5px 6px", color: "#888", borderLeft: "1px solid #f2ede6", maxWidth: 120, overflow: "hidden", textOverflow: "ellipsis" }} title={String(r.gt[t] ?? "")}>{r.gt[t] ?? "—"}</td>)}
+                      {(["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const).map((t, j) => <td key={"d" + t} style={{ padding: "5px 6px", textAlign: "center", borderLeft: j === 0 ? "2px solid #cfe8ee" : undefined }}>{cell(r.dn?.[t])}</td>)}
+                      {(["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const).map((t, j) => <td key={"m" + t} style={{ padding: "5px 6px", textAlign: "center", borderLeft: j === 0 ? "2px solid #e6dbf7" : undefined }}>{cell(r.mx?.[t])}</td>)}
+                    </tr>
+                    {open === r.id ? (
+                      <tr><td colSpan={1 + 12} style={{ padding: "0 9px 8px", background: "#faf7ff", whiteSpace: "normal" }}>
+                        <div style={{ fontSize: 11.5, color: "#666", margin: "6px 0" }}>
+                          <b>de-novo:</b> {r.identity} · <b>menu-exposed:</b> {FJ_TIERS.map((t) => r.menu[t]).filter(Boolean).join(" / ") || "—"} · own tier <b>{String(r.tier).replace("cell_type_", "")}</b> · purity {Math.round((r.purity || 0) * 100)}%
+                        </div>
+                        <JudgeBox stage="judge" targetId={r.id} targetLabel={r.identity} excerpt={`${r.identity} @ ${r.tier}`} judgements={judgements} addJudgement={addJudgement} />
+                      </td></tr>
+                    ) : null}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </>) : null}
     </div>
   );
 }
