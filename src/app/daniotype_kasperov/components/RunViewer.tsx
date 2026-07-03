@@ -867,125 +867,97 @@ function Floaty({ title, accent, initial, children, minW = 220, minH = 130 }: { 
   );
 }
 
-function MetaJudgeInput({ judgements, onAdd, stage, keyId }: { judgements: any[]; onAdd: (note: string) => void; stage: string; keyId: string }) {
-  const [note, setNote] = useState("");
-  const mine = (judgements || []).filter((j) => j.mode === stage && String(j.cluster_id) === String(keyId));
-  return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%" }}>
-      <div style={{ flex: 1, minHeight: 0, overflow: "auto" }}>
-        {mine.map((j, i) => <div key={i} style={{ fontSize: 12, color: "#4a4540", marginBottom: 4, background: "#faf7ff", borderRadius: 6, padding: "4px 7px" }}>⚖️ {j.note}</div>)}
-      </div>
-      <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Judge this step — the merge, a rebel leaf, the tier call, the missing-tissue hint…" style={{ boxSizing: "border-box", minHeight: 54, border: "1px solid #ddd3ee", borderRadius: 6, padding: "6px 8px", fontSize: 12.5, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", marginTop: 5 }} />
-      <button onClick={() => { if (note.trim()) { onAdd(note.trim()); setNote(""); } }} style={{ marginTop: 6, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 6, padding: "7px 11px", fontSize: 12, fontWeight: 700, cursor: "pointer" }}>Add ⚖️</button>
-    </div>
-  );
-}
 
 function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, onBack, live, onSubmitJudgements }: { run: any; clusters: any[] | null; dataset?: DatasetDef; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const prop = run?.operatorProposal;
-  const [step, setStep] = useState(0);
   // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
   if (live) return <MetaFinalizeFlow run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
   if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
-  const comps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
-  const N = comps.length + 1; // + the global Prejudice-of-Shape audit
-  const cur = step < comps.length ? comps[step] : null;
-  const isGlobal = !cur;
-  const fm = prop.flag_missing;
-  const ctx = META_REASONER_CONTEXT;
+  // COMPLETED-RUN mode — an in-page SUMMARY of the finale visuals (no live chrome).
+  return <MergingSummary run={run} clusters={clusters} prop={prop} judgements={judgements} addJudgement={addJudgement} />;
+}
+
+// In-page summary of a completed run's Meta-Reasoner consolidation, rendered in
+// the "View Completed Run" card style: the collapse headline, the consolidation
+// hierarchy, the finalized world map, and the Prejudice-of-Shape ghost coverage —
+// the same major visuals as the live finale, but static + judgeable. Tolerant of
+// both operatorProposal shapes (slim live-append + the richer fixture bundle).
+function MergingSummary({ run, clusters, prop, judgements, addJudgement }: { run: any; clusters: any[] | null; prop: any; judgements: any[]; addJudgement: (j: any) => void }) {
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
-  const curLeaves: string[] = cur ? [...(cur.merges || []).flatMap((m: any) => m.member_leaf_ids || []), ...(cur.set_aside || []).map((s: any) => s.leaf_id)].map(String) : [];
+  const propComps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
+  // decisions keyed by compartment index, for the hierarchy tree
+  const decisions: Record<number, any> = {};
+  propComps.forEach((c: any) => { decisions[c.compartment] = { merges: c.merges || [], set_aside: c.set_aside || [] }; });
+  // comps (index + leafIds) from the live atlas, else reconstructed from the proposal
+  const comps = useMemo(() => {
+    const by = new Map<number, string[]>();
+    (clusters || []).forEach((c: any) => { if (typeof c.compartmentIndex === "number") { if (!by.has(c.compartmentIndex)) by.set(c.compartmentIndex, []); by.get(c.compartmentIndex)!.push(String(c.id)); } });
+    if (by.size) return Array.from(by.keys()).sort((a, b) => a - b).map((idx) => ({ index: idx, leafIds: by.get(idx)! }));
+    return propComps.map((c: any) => ({ index: c.compartment, leafIds: [...(c.merges || []).flatMap((m: any) => (m.member_leaf_ids || []).map(String)), ...(c.set_aside || []).map((s: any) => String(s.leaf_id))] }));
+  }, [clusters, prop]);
+  const merges = propComps.flatMap((c: any) => (c.merges || []).map((m: any) => ({ ...m, ci: c.compartment })));
+  const asides = propComps.flatMap((c: any) => (c.set_aside || []).map((s: any) => ({ ...s, ci: c.compartment })));
+  const totalNodes = prop.n_nodes ?? prop.after?.total_nodes ?? (merges.length + asides.length);
+  const leavesFolded = merges.reduce((s: number, m: any) => s + (m.member_leaf_ids?.length || 0), 0);
+  const beforeLeaves = prop.n_before ?? prop.before?.leaves ?? comps.reduce((s: number, c: any) => s + c.leafIds.length, 0);
+  const globalDone = prop.flag_missing || null;
+  const missing = globalDone?.expected_still_missing || [];
+  const reduction = beforeLeaves > 0 ? Math.round((1 - totalNodes / beforeLeaves) * 100) : 0;
   const chip = (bg: string, fg: string): React.CSSProperties => ({ fontSize: 11, fontWeight: 800, color: fg, background: bg, borderRadius: 99, padding: "1px 8px" });
 
   return (
-    <div style={{ position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "hidden" }}>
-      {/* top bar */}
-      <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "#fffdfb", borderBottom: "1px solid #e5e1dc", zIndex: 100 }}>
-        <button onClick={onBack} style={btnGhost}>← Back to run</button>
-        <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner workbench</div>
-        <span style={{ fontSize: 12.5, color: "#666" }}>after {prop.before?.leaves} leaves labelled · → {prop.after?.total_nodes} nodes</span>
-        <span style={{ marginLeft: "auto", fontSize: 12.5, color: "#7c3aed", fontWeight: 800 }}>Step {step + 1}/{N} · {isGlobal ? "Prejudice-of-Shape audit" : `Compartment ${cur.compartment}`}</span>
+    <div style={{ maxWidth: 1000, margin: "0 auto", padding: "6px 4px 40px", display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* HERO — the collapse */}
+      <div style={{ ...RCARD, textAlign: "center", padding: "20px 18px" }}>
+        <div style={{ fontSize: 12.5, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Meta-Reasoner consolidation · {run?.model}</div>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 16, margin: "8px 0 4px", flexWrap: "wrap" }}>
+          <span style={{ fontSize: 36, fontWeight: 800, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{beforeLeaves}</span>
+          <span style={{ fontSize: 20, color: "#c8c0b6" }}>fine leaves →</span>
+          <span style={{ fontSize: 44, fontWeight: 800, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>{totalNodes}</span>
+          <span style={{ fontSize: 20, color: "#c8c0b6" }}>nodes</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#666" }}>{reduction}% fewer · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
       </div>
 
-      {/* right chat column */}
-      <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: 440, background: "#fff", borderLeft: "1px solid #e5e1dc", overflow: "auto", padding: "12px 12px 24px", display: "flex", flexDirection: "column", gap: 9 }}>
-        <div style={SEC}>🧠 Meta-Reasoner chat</div>
-        {comps.slice(0, Math.min(step + 1, comps.length)).map((c: any) => (
-          <React.Fragment key={c.compartment}>
-            <div style={userBubble}>Compartment {c.compartment} — {c.n_leaves} labelled leaves. Merge redundant restatements, set aside distinct/rebel leaves, assign each node its defensible tier.</div>
-            <AgentMessage mode="reason" content={stripJsonFence(c.reasoning) + decisionMd(c)} />
-          </React.Fragment>
-        ))}
-        {isGlobal && (
-          <>
-            <div style={userBubble}>Prejudice-of-Shape — audit the whole labelled set: which expected 48 hpf tissues are still unaccounted for? (A hint, never a licence to invent one.)</div>
-            <AgentMessage mode="reason" content={fm ? (fm.rationale || "") + (fm.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : "") : "No audit recorded."} />
-          </>
-        )}
+      {/* 1 · HIERARCHY */}
+      <div style={RCARD}>
+        <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
+        <div style={{ overflowX: "auto" }}>
+          <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={940} />
+        </div>
       </div>
 
-      {/* floaty visuals over the left canvas */}
-      <Floaty title="🗺 WORLD MAP · attention" accent="#0e7490" initial={{ x: 18, y: 64, w: 430, h: 322 }}>
-        {clusters ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set()} width={404} height={248} dimUnfocused focusCompartments={cur ? [cur.compartment] : []} /> : <div style={{ color: "#aaa", fontSize: 12 }}>loading map…</div>}
-        <div style={{ fontSize: 11.5, color: "#666", marginTop: 4 }}>{isGlobal ? "Whole labelled set — missing-tissue audit" : `Focused on Compartment ${cur.compartment} · ${cur.n_leaves} leaves`}</div>
-      </Floaty>
+      {/* 2 · WORLD MAP */}
+      <div style={{ ...RCARD, padding: 12 }}>
+        <div style={{ ...RSEC, textAlign: "center" }}>The finalized atlas · every cluster</div>
+        {clusters ? <div style={{ display: "flex", justifyContent: "center" }}>{hasCompartments(clusters) ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(clusters.map((c: any) => c.id))} width={780} height={450} /> : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={new Set()} width={560} height={420} />}</div> : <div style={{ height: 300, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa" }}>loading map…</div>}
+      </div>
 
-      <Floaty title="📥 INPUTS · what it reasons over" accent="#2563eb" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
-        {cur ? (
-          <>
-            <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 800 }}>PREDICTED LABELS · labeller&apos;s own (GT-blind)</div>
-            {curLeaves.map((id) => <div key={id} style={{ fontSize: 12, color: "#444", lineHeight: 1.4 }}><span style={{ color: "#9a948c" }}>{id}:</span> {leafLabel[id] || "?"}</div>)}
-          </>
-        ) : (
-          <>
-            <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 800 }}>RUN LEDGER · whole set</div>
-            <div style={{ fontSize: 12.5, color: "#444", marginTop: 3 }}>{prop.before?.leaves} leaves · {prop.before?.compartments} compartments · {prop.after?.total_nodes} nodes ({prop.after?.n_merge_nodes} merges + {prop.after?.n_set_aside_nodes} set-aside)</div>
-          </>
-        )}
-      </Floaty>
+      {/* 3 · PREJUDICE-OF-SHAPE ghost coverage */}
+      <div style={{ ...RCARD, borderColor: missing.length ? "#fed7aa" : "#bbf7d0" }}>
+        <div style={{ ...RSEC, color: missing.length ? "#b45309" : "#15803d" }}>Prejudice of shape · did we cover every tissue we expect at 48 hpf?</div>
+        <ExpectedTissueCoverage missing={missing} />
+        {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 10, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
+      </div>
 
-      <Floaty title="📜 PRE-PROMPT · rules this phase" accent="#a16207" initial={{ x: 462, y: 64, w: 440, h: 322 }}>
-        {isGlobal ? (
-          <>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#a16207" }}>Prejudice-of-Shape · expected 48 hpf tissues (hint, not mandate)</div>
-            <div style={{ fontSize: 12, color: "#555", marginTop: 3, lineHeight: 1.5 }}>{ctx.expectedTissues.join(", ")}</div>
-          </>
-        ) : (
-          <div style={{ display: "flex", flexDirection: "column", gap: 5 }}>
-            {ctx.rules.slice(0, 5).map((r, i) => <div key={i} style={{ fontSize: 11.5, color: "#4a4540", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
-          </div>
-        )}
-        <div style={{ marginTop: 8, fontSize: 10.5, fontWeight: 800, color: "#15803d" }}>🔒 GT-BLIND DISCIPLINE</div>
-        {ctx.gtDiscipline.slice(0, 2).map((r, i) => <div key={i} style={{ fontSize: 11, color: "#555", lineHeight: 1.4 }}><b>{r.title}.</b> {r.body}</div>)}
-      </Floaty>
-
-      <Floaty title="🎯 DECISION · this step (4 jobs)" accent="#7c3aed" initial={{ x: 462, y: 398, w: 440, h: 250 }}>
-        {cur ? (
-          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-            {(cur.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
-            {(cur.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ set-aside / rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
-            {!(cur.merges || []).length && !(cur.set_aside || []).length ? <div style={{ fontSize: 12, color: "#9a948c" }}>no decision recorded</div> : null}
-          </div>
-        ) : (
-          <div style={{ fontSize: 12.5, color: "#9a3412", lineHeight: 1.5 }}><b>Prejudice-of-Shape · still missing:</b> {(fm?.expected_still_missing || []).join(", ") || "— nothing flagged"}</div>
-        )}
-      </Floaty>
-
-      <Floaty title="⚖️ ADD JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 236, w: 350, h: 244 }}>
-        <MetaJudgeInput
-          judgements={judgements}
-          stage="merging"
-          keyId={cur ? `C${cur.compartment}` : "meta_global"}
-          onAdd={(note: string) => addJudgement({ cluster_id: cur ? `C${cur.compartment}` : "meta_global", cluster_label: cur ? `Meta-Reasoner · Compartment ${cur.compartment}` : "Meta-Reasoner · Prejudice-of-Shape audit", mode: "merging", step_index: step, content_excerpt: cur ? `compartment ${cur.compartment} decision` : "missing-tissue audit", note })}
-        />
-      </Floaty>
-
-      {/* bottom nav */}
-      <div style={{ position: "absolute", bottom: 0, left: 0, right: 440, height: 54, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, background: "#fffdfb", borderTop: "1px solid #e5e1dc", zIndex: 100 }}>
-        <button onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0} style={{ ...btnGhost, opacity: step === 0 ? 0.4 : 1 }}>← Prev</button>
-        <span style={{ fontSize: 12.5, color: "#666" }}>{isGlobal ? "Prejudice-of-Shape audit" : `Compartment ${cur.compartment} · ${(cur.merges?.length || 0) + (cur.set_aside?.length || 0)} nodes`}</span>
-        <button onClick={() => setStep((s) => Math.min(N - 1, s + 1))} disabled={step >= N - 1} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 8, padding: "9px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer", opacity: step >= N - 1 ? 0.4 : 1 }}>Next →</button>
+      {/* 4 · per-compartment decisions + judgement */}
+      <div style={RCARD}>
+        <div style={RSEC}>Per-compartment decisions · merge / set-aside</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          {propComps.map((c: any) => (
+            <div key={c.compartment} style={{ borderLeft: "3px solid #e5e1dc", paddingLeft: 12 }}>
+              <div style={{ fontSize: 12.5, fontWeight: 800, color: "#33312e", marginBottom: 5 }}>Compartment {c.compartment} <span style={{ fontWeight: 400, color: "#9a948c" }}>· {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</span></div>
+              <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+                {(c.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
+                {(c.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
+              </div>
+              <div style={{ marginTop: 6 }}>
+                <JudgeBox stage="merging" targetId={`C${c.compartment}`} targetLabel={`Meta-Reasoner · Compartment ${c.compartment}`} excerpt={`${(c.merges?.length || 0)} merges · ${(c.set_aside?.length || 0)} set-aside`} judgements={judgements} addJudgement={addJudgement} />
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -1554,7 +1526,7 @@ function FinalizeResults({ run, clusters, dataset, decisions, globalDone, comps,
   async function saveAppend() {
     setSave({ s: "saving" });
     try {
-      const slimClusters = (run?.clusters || []).map((c: any) => ({ id: c.id, label: c.label, finalLabel: c.finalLabel, validated: c.validated }));
+      const slimClusters = (run?.clusters || []).map((c: any) => ({ id: c.id, label: c.label || c.finalLabel, finalLabel: c.finalLabel, validated: c.validated !== false }));
       const operatorProposal = { source: "live_finalize", n_before: beforeLeaves, n_nodes: totalNodes,
         compartments: dec.map((d) => ({ compartment: d.ci, merges: d.merges, set_aside: d.set_aside })), flag_missing: globalDone || null };
       const body = {

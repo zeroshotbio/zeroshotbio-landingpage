@@ -934,9 +934,15 @@ function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: 
                 <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
                 <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
                 {m.harness ? <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
-                {/* pipeline-stage pills: fine leaves labelled · meta-reasoner consolidation done */}
-                {m.nLabelled > 0 ? <span title="Fine leaf clusters have been labelled" style={{ fontSize: 10.5, fontWeight: 800, color: "#0f766e", background: "#ccfbf1", borderRadius: 99, padding: "1px 7px" }}>🔬 fine leaves · {m.nLabelled}</span> : null}
-                {(m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note))) ? <span title="Meta-Reasoner consolidation has been run on this run" style={{ fontSize: 10.5, fontWeight: 800, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "1px 7px" }}>🧠 meta-reasoner</span> : null}
+                {/* pipeline-stage pills: fine leaves labelled · meta-reasoner consolidation done.
+                    meta implies leaves were labelled first, so the fine-leaves pill shows either way. */}
+                {(() => {
+                  const metaDone = m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note));
+                  return (<>
+                    {(m.nLabelled > 0 || metaDone) ? <span title="Fine leaf clusters have been labelled" style={{ fontSize: 10.5, fontWeight: 800, color: "#0f766e", background: "#ccfbf1", borderRadius: 99, padding: "1px 7px" }}>🔬 fine leaves{m.nLabelled > 0 ? ` · ${m.nLabelled}` : ""}</span> : null}
+                    {metaDone ? <span title="Meta-Reasoner consolidation has been run on this run" style={{ fontSize: 10.5, fontWeight: 800, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "1px 7px" }}>🧠 meta-reasoner</span> : null}
+                  </>);
+                })()}
                 {m.hasJudgement ? <span title={`${m.nJudgements ?? ""} step critique note${m.nJudgements === 1 ? "" : "s"}`} style={{ fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>⚖️ judgement{m.nJudgements ? ` · ${m.nJudgements}` : ""}</span> : null}
                 {m.schemaBasis ? <span title={m.basisNote || ""} style={{ fontSize: 10.5, fontWeight: 700, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
                 {m.archived ? <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCH[cat].fg, background: ARCH[cat].bg, borderRadius: 99, padding: "1px 7px", border: `1px solid ${ARCH[cat].fg}33` }}>{ARCH[cat].label}</span> : null}
