@@ -1005,8 +1005,10 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const [liveTrace, setLiveTrace] = useState(""); // reasoning summary streaming in
+  const [liveText, setLiveText] = useState("");   // output text streaming in
   const chatRef = useRef<HTMLDivElement>(null);
-  useEffect(() => { const el = chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, busy]);
+  useEffect(() => { const el = chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, busy, liveTrace, liveText]);
 
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
@@ -1037,6 +1039,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   // step has run, else the next prompt to judge before it's sent.
   const lastAssistant = messages.filter((m) => m.role === "assistant").slice(-1)[0];
   const gateContent: string | null = lastAssistant ? lastAssistant.content : pendingPrompt;
+  const gateThinking: string | undefined = lastAssistant ? lastAssistant.thinking : undefined;
   const gateIsResponse = !!lastAssistant;
   const gateTargetId = gateIsResponse ? (attention != null ? `C${attention}` : "meta_global") : pendingKeyId;
   const gateTargetLabel = gateIsResponse ? (attention != null ? `Meta-Reasoner output · Compartment ${attention}` : "Meta-Reasoner audit output") : (nextComp ? `Prompt · Compartment ${nextComp.index}` : "Prompt · audit");
@@ -1049,6 +1052,33 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
     const r = await fetch("/api/meta_reasoner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
     return r.json().catch(() => ({ ok: false, error: `HTTP ${r.status}` }));
   };
+  // stream a consolidate/chat call, piping the reasoning summary word-by-word into
+  // liveTrace (and any output text into liveText). Returns the terminal payload.
+  const postStream = async (body: any) => {
+    setLiveTrace(""); setLiveText("");
+    let r: Response;
+    try { r = await fetch("/api/meta_reasoner", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ ...body, stream: true }) }); }
+    catch { return post(body); }
+    if (!r.ok || !r.body) return post(body); // fall back to non-streaming
+    const reader = r.body.getReader();
+    const dec = new TextDecoder();
+    let buf = "", final: any = null;
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      buf += dec.decode(value, { stream: true });
+      const lines = buf.split("\n"); buf = lines.pop() || "";
+      for (const line of lines) {
+        const s = line.trim(); if (!s) continue;
+        let ev: any; try { ev = JSON.parse(s); } catch { continue; }
+        if (ev.t === "trace") setLiveTrace((p) => p + ev.d);
+        else if (ev.t === "text") setLiveText((p) => p + ev.d);
+        else if (ev.t === "done") final = { ok: true, ...ev };
+        else if (ev.t === "error") final = { ok: false, error: ev.error };
+      }
+    }
+    return final || { ok: false, error: "stream_ended" };
+  };
 
   async function selfSuggest() {
     if (busy) return; setBusy(true);
@@ -1056,7 +1086,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
       if (nextComp) {
         setAttention(nextComp.index);
         setMessages((m) => [...m, { role: "user", content: compPrompt }]);
-        const d = await post({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
+        const d = await postStream({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
         if (d.ok) {
           setDecisions((p) => ({ ...p, [nextComp.index]: d.output }));
           setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output), thinking: d.reasoningTrace }]);
@@ -1067,7 +1097,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         setAttention(null);
         setMessages((m) => [...m, { role: "user", content: auditPrompt }]);
         const all = comps.flatMap((c) => c.labelSet);
-        const d = await post({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
+        const d = await postStream({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
         if (d.ok) {
           setGlobalDone(d.output?.flag_missing || {});
           const fm = d.output?.flag_missing;
@@ -1137,7 +1167,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <div style={{ fontSize: 11.5, color: "#666", marginTop: 2 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
       </Floaty>
       {/* hierarchy tree — compartments → consolidated nodes, filling in + highlighting */}
-      <Floaty title="🌳 HIERARCHY · evolutionary tree" accent="#2563eb" initial={{ x: 892, y: 64, w: 340, h: 560 }} minH={200}>
+      <Floaty title="🌳 HIERARCHY · compartments → tiers → nodes" accent="#2563eb" initial={{ x: 878, y: 64, w: 356, h: 560 }} minH={200}>
         <HierarchyTree comps={comps} decisions={decisions} attention={attention} nextIdx={nextComp?.index ?? null} globalDone={globalDone} />
       </Floaty>
       <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
@@ -1155,6 +1185,9 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
       <Floaty title="⚖️ JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 224, w: 420, h: 400 }} minH={260}>
         <StepJudgeGate
           content={gateContent}
+          thinking={gateThinking}
+          streamTrace={liveTrace}
+          streamText={liveText}
           isResponse={gateIsResponse}
           tag={gateTag}
           nLogged={nLoggedMeta}
@@ -1356,7 +1389,7 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext, endBtn }: any)
 // mirrors the labeller's JudgePanelContent: colored tag + step, instruction line,
 // the step content rendered richly, a note box that RESETS per step, and two
 // advance buttons (Continue / Add notes + continue), a note count, + End & Submit.
-function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, nextLabel, stepKey, onSubmitNote, onAdvance, endBtn }: { content: string | null; isResponse: boolean; tag: string; nLogged: number; priorNotes: any[]; busy: boolean; nextLabel: string | null; stepKey: string; onSubmitNote: (note: string) => void; onAdvance: () => void; endBtn?: React.ReactNode }) {
+function StepJudgeGate({ content, thinking, streamTrace, streamText, isResponse, tag, nLogged, priorNotes, busy, nextLabel, stepKey, onSubmitNote, onAdvance, endBtn }: { content: string | null; thinking?: string; streamTrace?: string; streamText?: string; isResponse: boolean; tag: string; nLogged: number; priorNotes: any[]; busy: boolean; nextLabel: string | null; stepKey: string; onSubmitNote: (note: string) => void; onAdvance: () => void; endBtn?: React.ReactNode }) {
   const [note, setNote] = useState("");
   // reset the note whenever the gated step changes, so a note never bleeds across steps
   useEffect(() => { setNote(""); }, [stepKey]);
@@ -1374,14 +1407,20 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
   return (
     <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "2px 9px" }}>{tag}</span>
-        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{isResponse ? "output" : "prompt"}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "2px 9px" }}>{tag}</span>
+        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{isResponse ? "trace + output" : "prompt"}</span>
       </div>
       <div style={{ fontSize: 11, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
-      <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse ? "2px 6px" : "8px 10px" }}>
+      <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse || busy ? "2px 6px" : "8px 10px" }}>
         {busy
-          ? <div style={{ fontSize: 12.5, color: "#2563eb", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>
-          : isResponse ? <AgentMessage mode="reason" content={content} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
+          ? (streamTrace || streamText
+              ? <div style={{ fontSize: 12, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#2563eb", margin: "4px 2px 4px" }}>🧠 reasoning…</div>
+                  {streamTrace ? <div style={{ color: "#33507a", whiteSpace: "pre-wrap", fontStyle: "italic" }}>{streamTrace}<span style={{ opacity: 0.5 }}>▍</span></div> : null}
+                  {streamText ? <div style={{ marginTop: 8, color: "#4a4540", whiteSpace: "pre-wrap" }}>{stripJsonFence(streamText)}</div> : null}
+                </div>
+              : <div style={{ fontSize: 12.5, color: "#2563eb", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>)
+          : isResponse ? <AgentMessage mode="reason" content={content} thinking={thinking} thinkingCollapsed={false} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
       </div>
       {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
       <textarea value={note} onChange={(e) => setNote(e.target.value)} autoFocus rows={2} placeholder={isResponse ? "What's right/wrong about this step? (optional)" : "What's right/wrong about this prompt? (optional)"}
@@ -1522,29 +1561,43 @@ function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgemen
   );
 }
 
-// Evolutionary hierarchy tree (SVG cladogram): a trunk of compartments, each a
-// branch coloured to MATCH the world map (hue = position*360/nComp), fanning out
-// into its consolidated nodes as decisions land. Pending compartments are faint
-// dashed stubs; the current attention branch is thickened + ringed blue.
+// Hierarchy tree (SVG cladogram): a trunk of compartments, each a branch coloured
+// to MATCH the world map (hue = position*360/nComp). As decisions land, a branch
+// fans out into its consolidated nodes — and each node sits at a HORIZONTAL COLUMN
+// set by its meaning: coarse tissue nodes sit close to the trunk, finer cell-type
+// nodes step out to the right, and set-aside "rebels" break out to their own far
+// column. Merges are hue-matched + sized by leaves folded; rebels are blue. Pending
+// compartments are faint dashed stubs; the current attention branch is ringed blue.
+const HTREE_TIER_X: Record<string, number> = { germ_layer: 108, tissue: 108, cell_type_broad: 156, cell_type_sub: 204 };
 function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any }) {
   const nComp = Math.max(1, comps.length);
   const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
-  const trunkX = 14, branchX = 96, nodeX = 112;
-  let y = 12;
+  const svgW = 340;
+  const trunkX = 12, branchX = 66, rebelX = 250;
+  const nodeXFor = (nd: any) => nd.kind === "rebel" ? rebelX : (HTREE_TIER_X[nd.tier] || 156);
+  const headY = 22;
+  let y = headY + 6;
   const rows = comps.map((c: any, gi: number) => {
     const d = decisions[c.index];
     const nodes = d ? [
-      ...(d.merges || []).map((m: any) => ({ label: m.node_label, n: m.member_leaf_ids?.length || 1, kind: "merge" })),
-      ...(d.set_aside || []).map((s: any) => ({ label: `leaf ${s.leaf_id}`, n: 1, kind: "rebel" })),
+      ...(d.merges || []).map((m: any) => ({ label: m.node_label, n: m.member_leaf_ids?.length || 1, kind: "merge", tier: m.tier })),
+      ...(d.set_aside || []).map((s: any) => ({ label: `leaf ${s.leaf_id}`, n: 1, kind: "rebel", tier: s.tier })),
     ] : [];
-    const h = d ? Math.max(22, nodes.length * 13 + 6) : 15;
+    const h = d ? Math.max(22, nodes.length * 13 + 6) : 14;
     const top = y; y += h;
     return { c, gi, d, nodes, top, cy: top + h / 2 };
   });
-  const totalH = y + 12;
-  const svgW = 320;
+  const totalH = y + 14;
+  // faint column guides + headers so the horizontal axis reads as "coarse → fine"
+  const cols = [{ x: HTREE_TIER_X.tissue, label: "tissue" }, { x: HTREE_TIER_X.cell_type_broad, label: "broad" }, { x: HTREE_TIER_X.cell_type_sub, label: "sub" }, { x: rebelX, label: "rebel" }];
   return (
     <svg width={svgW} height={totalH} style={{ display: "block" }}>
+      {cols.map((cc) => (
+        <g key={cc.label}>
+          <line x1={cc.x} y1={headY + 2} x2={cc.x} y2={totalH - 12} stroke={cc.label === "rebel" ? "#dbe4f5" : "#efeae4"} strokeWidth={1} strokeDasharray="2 4" />
+          <text x={cc.x} y={12} textAnchor="middle" style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: 0.3, fill: cc.label === "rebel" ? "#2563eb" : "#b0a89e" }}>{cc.label}</text>
+        </g>
+      ))}
       {rows.length > 1 ? <line x1={trunkX} y1={rows[0].cy} x2={trunkX} y2={rows[rows.length - 1].cy} stroke="#cbd5e1" strokeWidth={2} /> : null}
       {rows.map((r) => {
         const hue = hueFor(r.gi);
@@ -1554,26 +1607,30 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone }: { c
         const col = done ? `hsl(${hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
         return (
           <g key={r.c.index}>
-            <path d={`M ${trunkX} ${r.cy} C ${trunkX + 28} ${r.cy}, ${branchX - 28} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
+            <path d={`M ${trunkX} ${r.cy} C ${trunkX + 22} ${r.cy}, ${branchX - 22} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
             {isCur ? <circle cx={branchX} cy={r.cy} r={7} fill="none" stroke="#2563eb" strokeWidth={1.5} opacity={0.6} /> : null}
             <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
             <text x={trunkX + 1} y={r.cy - 5} style={{ fontSize: 8.5, fontWeight: 800, fill: done ? `hsl(${hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c") }}>C{r.c.index}</text>
             {r.nodes.map((nd: any, i: number) => {
               const ny = r.top + 8 + i * 13;
-              const ncol = nd.kind === "rebel" ? "#7c3aed" : `hsl(${hue} 62% 48%)`;
-              const rad = nd.kind === "rebel" ? 2.4 : Math.min(5.5, 2 + Math.sqrt(nd.n));
+              const nx = nodeXFor(nd);
+              const ncol = nd.kind === "rebel" ? "#2563eb" : `hsl(${hue} 62% 48%)`;
+              const rad = nd.kind === "rebel" ? 2.6 : Math.min(5.5, 2 + Math.sqrt(nd.n));
+              const maxChars = Math.max(5, Math.floor((svgW - nx - 10) / 4.7));
+              const raw = String(nd.label);
+              const lbl = raw.length > maxChars ? raw.slice(0, maxChars - 1) + "…" : raw;
               return (
                 <g key={i}>
-                  <path d={`M ${branchX} ${r.cy} C ${branchX + 7} ${r.cy}, ${nodeX - 5} ${ny}, ${nodeX} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.1} opacity={0.75} />
-                  <circle cx={nodeX} cy={ny} r={rad} fill={ncol} />
-                  <text x={nodeX + 6} y={ny + 3} style={{ fontSize: 8, fill: "#555" }}>{String(nd.label).slice(0, 24)}{nd.kind === "merge" ? ` ×${nd.n}` : ""}</text>
+                  <path d={`M ${branchX} ${r.cy} C ${branchX + 10} ${r.cy}, ${nx - 8} ${ny}, ${nx} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.1} opacity={0.7} />
+                  <circle cx={nx} cy={ny} r={rad} fill={ncol} />
+                  <text x={nx + rad + 3} y={ny + 3} style={{ fontSize: 8, fill: "#555" }}>{lbl}{nd.kind === "merge" ? ` ×${nd.n}` : ""}</text>
                 </g>
               );
             })}
           </g>
         );
       })}
-      {globalDone ? <text x={trunkX} y={totalH - 3} style={{ fontSize: 8.5, fontWeight: 800, fill: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} tissues missing</text> : null}
+      {globalDone ? <text x={trunkX} y={totalH - 2} style={{ fontSize: 8.5, fontWeight: 800, fill: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} tissues missing</text> : null}
     </svg>
   );
 }

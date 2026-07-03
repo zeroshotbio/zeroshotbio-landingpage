@@ -61,6 +61,56 @@ function extractReasoning(resp: any): string {
   return parts.join("\n\n").trim();
 }
 
+// Stream an OpenAI Responses call to the client as newline-delimited JSON so the
+// reasoning summary can be typed out word-by-word in the UI as it flows in.
+// Emits {t:"trace",d} (reasoning-summary delta), {t:"text",d} (output delta),
+// then a terminal {t:"done",reasoning,reasoningTrace,output,usage} or {t:"error"}.
+function streamMetaResponse(openaiBody: any, kind: "consolidate" | "chat", scope: OperatorScope): Response {
+  const key = process.env.OPENAI_API_KEY as string;
+  const stream = new ReadableStream({
+    async start(controller) {
+      const enc = new TextEncoder();
+      const send = (o: any) => { try { controller.enqueue(enc.encode(JSON.stringify(o) + "\n")); } catch {} };
+      const ctrl = new AbortController();
+      const timer = setTimeout(() => ctrl.abort(), 110000);
+      try {
+        const r = await fetch("https://api.openai.com/v1/responses", {
+          method: "POST", signal: ctrl.signal,
+          headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
+          body: JSON.stringify({ ...openaiBody, stream: true }),
+        });
+        if (!r.ok || !r.body) { send({ t: "error", error: `openai ${r.status}` }); controller.close(); return; }
+        const reader = r.body.getReader();
+        const dec = new TextDecoder();
+        let buf = "", full: any = null;
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buf += dec.decode(value, { stream: true });
+          const blocks = buf.split("\n\n"); buf = blocks.pop() || "";
+          for (const block of blocks) {
+            const dataLine = block.split("\n").find((l) => l.startsWith("data:"));
+            if (!dataLine) continue;
+            const payload = dataLine.slice(5).trim();
+            if (!payload || payload === "[DONE]") continue;
+            let ev: any; try { ev = JSON.parse(payload); } catch { continue; }
+            if (ev.type === "response.reasoning_summary_text.delta" && ev.delta) send({ t: "trace", d: ev.delta });
+            else if (ev.type === "response.output_text.delta" && ev.delta) send({ t: "text", d: ev.delta });
+            else if (ev.type === "response.completed" && ev.response) full = ev.response;
+          }
+        }
+        const reasoning = full ? extractText(full) : "";
+        const reasoningTrace = full ? extractReasoning(full) : "";
+        const output = kind === "consolidate" && full ? parseOperatorOutput(reasoning, scope) : null;
+        send({ t: "done", reasoning, reasoningTrace, output, usage: full?.usage ? { in: full.usage.input_tokens ?? null, out: full.usage.output_tokens ?? null } : null });
+      } catch (e: any) {
+        send({ t: "error", error: e?.name === "AbortError" ? "timeout" : String(e?.message ?? e).slice(0, 160) });
+      } finally { clearTimeout(timer); controller.close(); }
+    },
+  });
+  return new Response(stream, { headers: { "content-type": "application/x-ndjson", "cache-control": "no-store" } });
+}
+
 // meta-reasoner rules/priors, shared as a system prompt for interactive chat.
 function metaSystemPrompt(): string {
   const c = META_REASONER_CTX;
@@ -95,8 +145,9 @@ export async function POST(req: Request) {
     const ctxNote = typeof body?.labelContext === "string" ? body.labelContext.slice(0, 12000) : "";
     const ctrl = new AbortController();
     const timer = setTimeout(() => ctrl.abort(), 110000);
+    const input = ctxNote ? [{ role: "user", content: `=== CURRENT LABELLED SET (GT-blind, the labeller's own predictions) ===\n${ctxNote}` }, ...messages] : messages;
+    if (body?.stream) { clearTimeout(timer); return streamMetaResponse({ model: chatModel, instructions: metaSystemPrompt(), input, reasoning: { effort: "low", summary: "auto" }, max_output_tokens: 3000 }, "chat", "global"); }
     try {
-      const input = ctxNote ? [{ role: "user", content: `=== CURRENT LABELLED SET (GT-blind, the labeller's own predictions) ===\n${ctxNote}` }, ...messages] : messages;
       const resp = await callOpenAI2(key, chatModel, metaSystemPrompt(), input, 3000, ctrl.signal);
       return NextResponse.json({ ok: true, reasoning: extractText(resp), reasoningTrace: extractReasoning(resp), usage: { model: chatModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
     } catch (e: any) {
@@ -123,6 +174,7 @@ export async function POST(req: Request) {
     }
     const opKey = process.env.OPENAI_API_KEY;
     if (!opKey) return NextResponse.json({ ok: false, error: "no_openai_key", input: opInput, prompt: opPrompt, guardrails: { gtBlind: true } }, { status: 200 });
+    if (body?.stream) return streamMetaResponse({ model: opModel, instructions: opPrompt.system, input: [{ role: "user", content: opPrompt.user }], reasoning: { effort: "low", summary: "auto" }, max_output_tokens: 6000 }, "consolidate", scope);
     const opCtrl = new AbortController();
     const opTimer = setTimeout(() => opCtrl.abort(), 110000);
     try {

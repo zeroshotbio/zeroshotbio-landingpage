@@ -21,7 +21,7 @@ export function MapViewSwitch({ view, setView, compact }: { view: MapView; setVi
     fontSize: compact ? 10 : 11.5,
     fontWeight: 800,
     border: "1px solid #e5e1dc",
-    background: view === v ? "#7c3aed" : "#fff",
+    background: view === v ? "#2563eb" : "#fff",
     color: view === v ? "#fff" : "#6b6b6b",
     cursor: "pointer",
   });
@@ -129,7 +129,7 @@ export function CompartmentMap({
         const isDone = doneThrough != null && isl.ci <= doneThrough && !isFocus;
         // dim only the PENDING compartments so the current/next/done ones stand out
         const dim = dimUnfocused && anyFocus && !isFocus && !isNext && !isDone;
-        const haloStroke = isNext ? "#7c3aed" : isFocus ? `hsl(${isl.hue} 55% 55%)` : isDone ? "#86c99a" : `hsl(${isl.hue} 50% 82%)`;
+        const haloStroke = isNext ? "#2563eb" : isFocus ? `hsl(${isl.hue} 55% 55%)` : isDone ? "#86c99a" : `hsl(${isl.hue} 50% 82%)`;
         return (
           <g key={isl.ci} opacity={dim ? 0.22 : 1} style={{ transition: "opacity 240ms" }}>
             {/* island halo — thicker/coloured ring on the focused or next-up compartment */}
@@ -137,7 +137,7 @@ export function CompartmentMap({
             {/* compartment labels — in the RESERVED band above the island (never over the dots) */}
             {layout.showLabels && (
               <>
-                <text x={isl.cx} y={isl.labelTop + 13} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: isNext ? "#7c3aed" : `hsl(${isl.hue} 45% 36%)` }}>
+                <text x={isl.cx} y={isl.labelTop + 13} textAnchor="middle" style={{ fontSize: 11, fontWeight: 800, fill: isNext ? "#2563eb" : `hsl(${isl.hue} 45% 36%)` }}>
                   Compartment {isl.ci}{isNext ? " →" : isDone ? " ✓" : ""}
                 </text>
                 <text x={isl.cx} y={isl.labelTop + 25} textAnchor="middle" style={{ fontSize: 9, fill: "#8a847b" }}>{kfmt(isl.compCells)} cells · {isl.nLeaves} leaves</text>
