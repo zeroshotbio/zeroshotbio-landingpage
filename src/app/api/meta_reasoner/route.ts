@@ -24,7 +24,7 @@ async function callOpenAI(key: string, model: string, system: string, user: stri
   const r = await fetch("https://api.openai.com/v1/responses", {
     method: "POST", signal,
     headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ model, instructions: system, input: [{ role: "user", content: user }], reasoning: { effort: "low" }, max_output_tokens: maxTokens }),
+    body: JSON.stringify({ model, instructions: system, input: [{ role: "user", content: user }], reasoning: { effort: "low", summary: "auto" }, max_output_tokens: maxTokens }),
   });
   if (!r.ok) throw new Error(`openai ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
   return r.json();
@@ -34,7 +34,7 @@ async function callOpenAI2(key: string, model: string, system: string, input: an
   const r = await fetch("https://api.openai.com/v1/responses", {
     method: "POST", signal,
     headers: { Authorization: `Bearer ${key}`, "content-type": "application/json" },
-    body: JSON.stringify({ model, instructions: system, input, reasoning: { effort: "low" }, max_output_tokens: maxTokens }),
+    body: JSON.stringify({ model, instructions: system, input, reasoning: { effort: "low", summary: "auto" }, max_output_tokens: maxTokens }),
   });
   if (!r.ok) throw new Error(`openai ${r.status}: ${(await r.text().catch(() => "")).slice(0, 200)}`);
   return r.json();
@@ -50,6 +50,15 @@ function extractText(resp: any): string {
     }
   }
   return parts.join("\n").trim();
+}
+
+// the model's reasoning-summary trace (Responses API reasoning items → summary parts)
+function extractReasoning(resp: any): string {
+  const parts: string[] = [];
+  for (const item of resp?.output ?? []) {
+    if (item?.type === "reasoning") for (const s of item?.summary ?? []) { if (s?.text) parts.push(s.text); }
+  }
+  return parts.join("\n\n").trim();
 }
 
 // meta-reasoner rules/priors, shared as a system prompt for interactive chat.
@@ -89,7 +98,7 @@ export async function POST(req: Request) {
     try {
       const input = ctxNote ? [{ role: "user", content: `=== CURRENT LABELLED SET (GT-blind, the labeller's own predictions) ===\n${ctxNote}` }, ...messages] : messages;
       const resp = await callOpenAI2(key, chatModel, metaSystemPrompt(), input, 3000, ctrl.signal);
-      return NextResponse.json({ ok: true, reasoning: extractText(resp), usage: { model: chatModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
+      return NextResponse.json({ ok: true, reasoning: extractText(resp), reasoningTrace: extractReasoning(resp), usage: { model: chatModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
     } catch (e: any) {
       return NextResponse.json({ ok: false, error: e?.name === "AbortError" ? "timeout" : "chat_failed", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
     } finally { clearTimeout(timer); }
@@ -120,7 +129,7 @@ export async function POST(req: Request) {
       const resp = await callOpenAI(opKey, opModel, opPrompt.system, opPrompt.user, 6000, opCtrl.signal);
       const reasoning = extractText(resp);
       const output = parseOperatorOutput(reasoning, scope);
-      return NextResponse.json({ ok: true, input: opInput, prompt: opPrompt, reasoning, output,
+      return NextResponse.json({ ok: true, input: opInput, prompt: opPrompt, reasoning, reasoningTrace: extractReasoning(resp), output,
         guardrails: { gtBlind: true }, usage: { model: opModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
     } catch (e: any) {
       const aborted = e?.name === "AbortError";
@@ -163,7 +172,7 @@ export async function POST(req: Request) {
         model,
         instructions: prompt.system,
         input: [{ role: "user", content: prompt.user }],
-        reasoning: { effort: "low" },
+        reasoning: { effort: "low", summary: "auto" },
         max_output_tokens: 4000,
       }),
     });

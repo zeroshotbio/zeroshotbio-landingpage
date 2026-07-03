@@ -5,7 +5,7 @@
 // and a ground-truth summary — each shown only when the run actually captured
 // it (progressive disclosure driven by computeCompletenessProfile). Reuses the
 // presentational components extracted in Phase 1.
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAtlas } from "../useAtlas";
 import { computeCompletenessProfile } from "../completeness";
 import type { ClusterConf, DatasetDef } from "../types";
@@ -1005,6 +1005,8 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
   const [showResults, setShowResults] = useState(false);
+  const chatRef = useRef<HTMLDivElement>(null);
+  useEffect(() => { const el = chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, busy]);
 
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
@@ -1057,7 +1059,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         const d = await post({ op: "consolidate", scope: "compartment", compartment: nextComp.index, labelSet: nextComp.labelSet, ledger, model: run?.model });
         if (d.ok) {
           setDecisions((p) => ({ ...p, [nextComp.index]: d.output }));
-          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output) }]);
+          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output), thinking: d.reasoningTrace }]);
         } else {
           setMessages((m) => [...m, { role: "assistant", content: `_(operator error: ${d.error}${d.detail ? " — " + d.detail : ""})_` }]);
         }
@@ -1069,7 +1071,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         if (d.ok) {
           setGlobalDone(d.output?.flag_missing || {});
           const fm = d.output?.flag_missing;
-          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + (fm?.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : "") }]);
+          setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + (fm?.expected_still_missing?.length ? "\n\n**Still missing:** " + fm.expected_still_missing.join(", ") : ""), thinking: d.reasoningTrace }]);
         } else setMessages((m) => [...m, { role: "assistant", content: `_(audit error: ${d.error})_` }]);
       }
     } finally { setBusy(false); }
@@ -1083,7 +1085,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
     try {
       const labelContext = comps.map((c) => `Compartment ${c.index} (${c.leafIds.length}): ${c.labelSet.map((l) => l.label).join("; ")}`).join("\n");
       const d = await post({ op: "chat", messages: next.map((m) => ({ role: m.role, content: m.content })), labelContext, model: run?.model });
-      setMessages((m) => [...m, { role: "assistant", content: d.ok ? d.reasoning : `_(chat error: ${d.error})_` }]);
+      setMessages((m) => [...m, { role: "assistant", content: d.ok ? d.reasoning : `_(chat error: ${d.error})_`, thinking: d.ok ? d.reasoningTrace : undefined }]);
     } finally { setBusy(false); }
   }
 
@@ -1104,13 +1106,13 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
 
       {/* right chat column with input + self-suggest */}
       <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: 460, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column" }}>
-        <div style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 9 }}>
+        <div ref={chatRef} style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 9 }}>
           <div style={SEC}>🧠 Meta-Reasoner chat — you drive</div>
           {messages.length === 0 ? <div style={{ fontSize: 12.5, color: "#9a948c", lineHeight: 1.5 }}>The 250 leaves are labelled. Type a prompt to the Meta-Reasoner, or press <b>Self-Suggest Next Step</b> to have it consolidate the next compartment.</div> : null}
           {messages.map((m, i) => m.role === "user"
             ? <div key={i} style={userBubble}>{m.content}</div>
-            : <AgentMessage key={i} mode="reason" content={m.content} />)}
-          {busy ? <div style={{ fontSize: 12, color: "#7c3aed", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div> : null}
+            : <AgentMessage key={i} mode="reason" content={m.content} thinking={m.thinking} />)}
+          {busy ? <div style={{ fontSize: 12, color: "#2563eb", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div> : null}
         </div>
         <div style={{ flexShrink: 0, borderTop: "1px solid #e5e1dc", padding: 10, display: "flex", flexDirection: "column", gap: 7 }}>
           <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
@@ -1135,28 +1137,8 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <div style={{ fontSize: 11.5, color: "#666", marginTop: 2 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
       </Floaty>
       {/* hierarchy tree — compartments → consolidated nodes, filling in + highlighting */}
-      <Floaty title="🌳 HIERARCHY · compartments → nodes" accent="#2563eb" initial={{ x: 906, y: 64, w: 320, h: 500 }} minH={200}>
-        <div style={{ fontSize: 11.5, lineHeight: 1.5 }}>
-          {comps.map((c: any) => {
-            const d = decisions[c.index];
-            const isCur = attention === c.index;
-            const st = d ? "done" : (nextComp?.index === c.index ? "next" : "pending");
-            return (
-              <div key={c.index} style={{ marginBottom: 3, padding: "1px 4px", borderRadius: 5, background: isCur ? "#eff6ff" : "transparent" }}>
-                <div style={{ fontWeight: 800, color: st === "done" ? "#15803d" : st === "next" ? "#2563eb" : "#9a948c" }}>
-                  {st === "done" ? "✓" : st === "next" ? "→" : "○"} Compartment {c.index} <span style={{ fontWeight: 400, color: "#9a948c" }}>({c.leafIds.length})</span>
-                </div>
-                {d ? (
-                  <div style={{ paddingLeft: 14, borderLeft: "1px solid #e5e1dc", marginLeft: 5 }}>
-                    {(d.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ color: "#15803d" }}>⤵ {m.node_label} <span style={{ color: "#9a948c" }}>×{m.member_leaf_ids?.length}</span></div>)}
-                    {(d.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ color: "#7c3aed" }}>⎇ leaf {s.leaf_id}</div>)}
-                  </div>
-                ) : null}
-              </div>
-            );
-          })}
-          {globalDone ? <div style={{ marginTop: 4, fontWeight: 800, color: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} missing</div> : null}
-        </div>
+      <Floaty title="🌳 HIERARCHY · evolutionary tree" accent="#2563eb" initial={{ x: 892, y: 64, w: 340, h: 560 }} minH={200}>
+        <HierarchyTree comps={comps} decisions={decisions} attention={attention} nextIdx={nextComp?.index ?? null} globalDone={globalDone} />
       </Floaty>
       <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
         {attComp ? (<>
@@ -1398,7 +1380,7 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
       <div style={{ fontSize: 11, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
       <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse ? "2px 6px" : "8px 10px" }}>
         {busy
-          ? <div style={{ fontSize: 12.5, color: "#7c3aed", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>
+          ? <div style={{ fontSize: 12.5, color: "#2563eb", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>
           : isResponse ? <AgentMessage mode="reason" content={content} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
       </div>
       {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
@@ -1537,5 +1519,61 @@ function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgemen
         </div>
       </div>
     </div>
+  );
+}
+
+// Evolutionary hierarchy tree (SVG cladogram): a trunk of compartments, each a
+// branch coloured to MATCH the world map (hue = position*360/nComp), fanning out
+// into its consolidated nodes as decisions land. Pending compartments are faint
+// dashed stubs; the current attention branch is thickened + ringed blue.
+function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any }) {
+  const nComp = Math.max(1, comps.length);
+  const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
+  const trunkX = 14, branchX = 96, nodeX = 112;
+  let y = 12;
+  const rows = comps.map((c: any, gi: number) => {
+    const d = decisions[c.index];
+    const nodes = d ? [
+      ...(d.merges || []).map((m: any) => ({ label: m.node_label, n: m.member_leaf_ids?.length || 1, kind: "merge" })),
+      ...(d.set_aside || []).map((s: any) => ({ label: `leaf ${s.leaf_id}`, n: 1, kind: "rebel" })),
+    ] : [];
+    const h = d ? Math.max(22, nodes.length * 13 + 6) : 15;
+    const top = y; y += h;
+    return { c, gi, d, nodes, top, cy: top + h / 2 };
+  });
+  const totalH = y + 12;
+  const svgW = 320;
+  return (
+    <svg width={svgW} height={totalH} style={{ display: "block" }}>
+      {rows.length > 1 ? <line x1={trunkX} y1={rows[0].cy} x2={trunkX} y2={rows[rows.length - 1].cy} stroke="#cbd5e1" strokeWidth={2} /> : null}
+      {rows.map((r) => {
+        const hue = hueFor(r.gi);
+        const done = !!r.d;
+        const isCur = attention === r.c.index;
+        const isNext = nextIdx === r.c.index;
+        const col = done ? `hsl(${hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
+        return (
+          <g key={r.c.index}>
+            <path d={`M ${trunkX} ${r.cy} C ${trunkX + 28} ${r.cy}, ${branchX - 28} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
+            {isCur ? <circle cx={branchX} cy={r.cy} r={7} fill="none" stroke="#2563eb" strokeWidth={1.5} opacity={0.6} /> : null}
+            <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
+            <text x={trunkX + 1} y={r.cy - 5} style={{ fontSize: 8.5, fontWeight: 800, fill: done ? `hsl(${hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c") }}>C{r.c.index}</text>
+            {r.nodes.map((nd: any, i: number) => {
+              const ny = r.top + 8 + i * 13;
+              const ncol = nd.kind === "rebel" ? "#7c3aed" : `hsl(${hue} 62% 48%)`;
+              const rad = nd.kind === "rebel" ? 2.4 : Math.min(5.5, 2 + Math.sqrt(nd.n));
+              return (
+                <g key={i}>
+                  <path d={`M ${branchX} ${r.cy} C ${branchX + 7} ${r.cy}, ${nodeX - 5} ${ny}, ${nodeX} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.1} opacity={0.75} />
+                  <circle cx={nodeX} cy={ny} r={rad} fill={ncol} />
+                  <text x={nodeX + 6} y={ny + 3} style={{ fontSize: 8, fill: "#555" }}>{String(nd.label).slice(0, 24)}{nd.kind === "merge" ? ` ×${nd.n}` : ""}</text>
+                </g>
+              );
+            })}
+          </g>
+        );
+      })}
+      {globalDone ? <text x={trunkX} y={totalH - 3} style={{ fontSize: 8.5, fontWeight: 800, fill: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} tissues missing</text> : null}
+    </svg>
   );
 }
