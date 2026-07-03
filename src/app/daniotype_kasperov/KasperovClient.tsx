@@ -1070,7 +1070,7 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
                   {ready && (
                     <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
                       <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
-                      <button onClick={() => onFinalize(d)} title={`Finalize a labelled ${d.name} run — run the Meta-Reasoner live to consolidate its leaves`} style={{ alignSelf: "stretch", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 12.5, fontWeight: 800, letterSpacing: 0.5, cursor: "pointer" }}>⚙ META-REASONER FINALIZE RUN</button>
+                      <button onClick={() => onFinalize(d)} title={`Finalize a labelled ${d.name} run — run the Meta-Reasoner live to consolidate its leaves`} style={{ alignSelf: "stretch", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋＋ META-REASONER</button>
                       <button onClick={() => onViewRuns(d)} title={`Browse completed ${d.name} runs (read-only)`} style={{ alignSelf: "stretch", background: "#fff", color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>▤ VIEW COMPLETED RUNS</button>
                     </div>
                   )}
