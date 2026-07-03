@@ -617,7 +617,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
         ))}
 
         {/* 4. MERGING & META-REASONING — full-screen Meta-Reasoner workbench (chat + floaty visuals) */}
-        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onSubmitJudgements={saveJudgements} onBack={() => (finalize ? onBack() : setTab("labels"))} live={finalize} />}
+        {tab === "merging" && <MetaReasonerStage run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onSubmitJudgements={saveJudgements} onBack={() => (finalize ? onBack() : setTab("labels"))} live={finalize} />}
 
         {/* 5. FINAL JUDGE — score the MERGED NODES (fuzzy judge + purity); scorecard relocated here */}
         {tab === "judge" && (
@@ -881,11 +881,11 @@ function MetaJudgeInput({ judgements, onAdd, stage, keyId }: { judgements: any[]
   );
 }
 
-function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, live, onSubmitJudgements }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
+function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, onBack, live, onSubmitJudgements }: { run: any; clusters: any[] | null; dataset?: DatasetDef; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; live?: boolean; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const prop = run?.operatorProposal;
   const [step, setStep] = useState(0);
   // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
-  if (live) return <MetaFinalizeFlow run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
+  if (live) return <MetaFinalizeFlow run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
   if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   const comps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
   const N = comps.length + 1; // + the global Prejudice-of-Shape audit
@@ -997,7 +997,7 @@ function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, li
 // the Meta-Reasoner runs its operator on the next compartment live. Floaties track
 // its attention. Judgements append to run.judgements[] and persist via Save.
 // ===================================================================
-function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, endBtn }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; endBtn?: React.ReactNode }) {
+function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, onBack, endBtn }: { run: any; clusters: any[] | null; dataset?: DatasetDef; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; endBtn?: React.ReactNode }) {
   const [messages, setMessages] = useState<any[]>([]);
   const [decisions, setDecisions] = useState<Record<number, any>>({});
   const [attention, setAttention] = useState<number | null>(null);
@@ -1007,6 +1007,8 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const [showResults, setShowResults] = useState(false);
   const [liveTrace, setLiveTrace] = useState(""); // reasoning summary streaming in
   const [liveText, setLiveText] = useState("");   // output text streaming in
+  const [chatW, setChatW] = useState(460);        // draggable chat-column width
+  const dragRef = useRef<{ startX: number; startW: number } | null>(null);
   const chatRef = useRef<HTMLDivElement>(null);
   useEffect(() => { const el = chatRef.current; if (el) el.scrollTop = el.scrollHeight; }, [messages, busy, liveTrace, liveText]);
 
@@ -1120,8 +1122,15 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   }
 
   const attComp = attention != null ? comps.find((c) => c.index === attention) : null;
-  const attDec = attention != null ? decisions[attention] : null;
-  const chip = (bg: string, fg: string): React.CSSProperties => ({ fontSize: 11, fontWeight: 800, color: fg, background: bg, borderRadius: 99, padding: "1px 8px" });
+  // drag the chat column's LEFT edge to widen/narrow the transcript view
+  const beginChatDrag = (e: React.MouseEvent) => {
+    dragRef.current = { startX: e.clientX, startW: chatW };
+    const move = (ev: MouseEvent) => { if (!dragRef.current) return; const dx = dragRef.current.startX - ev.clientX; setChatW(Math.max(320, Math.min(820, dragRef.current.startW + dx))); };
+    const up = () => { dragRef.current = null; window.removeEventListener("mousemove", move); window.removeEventListener("mouseup", up); document.body.style.userSelect = ""; };
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", move); window.addEventListener("mouseup", up);
+    e.preventDefault();
+  };
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "hidden" }}>
@@ -1132,17 +1141,24 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#2563eb", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
         {globalDone ? <button onClick={() => setShowResults(true)} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🎉 See the final labelling →</button> : null}
       </div>
-      {showResults && <FinalizeResults run={run} clusters={clusters} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
+      {showResults && <FinalizeResults run={run} clusters={clusters} dataset={dataset} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
 
-      {/* right chat column with input + self-suggest */}
-      <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: 460, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column" }}>
+      {/* right chat column with input + self-suggest — draggable left edge to resize */}
+      <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: chatW, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column", zIndex: 80 }}>
+        <div onMouseDown={beginChatDrag} title="Drag to resize the chat column" style={{ position: "absolute", left: -4, top: 0, bottom: 0, width: 9, cursor: "col-resize", zIndex: 90 }}>
+          <div style={{ position: "absolute", left: 3, top: "50%", transform: "translateY(-50%)", width: 3, height: 46, borderRadius: 3, background: "#cbd5e1" }} />
+        </div>
         <div ref={chatRef} style={{ flex: 1, minHeight: 0, overflow: "auto", padding: "12px 12px 8px", display: "flex", flexDirection: "column", gap: 9 }}>
           <div style={SEC}>🧠 Meta-Reasoner chat — you drive</div>
           {messages.length === 0 ? <div style={{ fontSize: 12.5, color: "#9a948c", lineHeight: 1.5 }}>The 250 leaves are labelled. Type a prompt to the Meta-Reasoner, or press <b>Self-Suggest Next Step</b> to have it consolidate the next compartment.</div> : null}
           {messages.map((m, i) => m.role === "user"
             ? <div key={i} style={userBubble}>{m.content}</div>
             : <AgentMessage key={i} mode="reason" content={m.content} thinking={m.thinking} />)}
-          {busy ? <div style={{ fontSize: 12, color: "#2563eb", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div> : null}
+          {busy ? (
+            (liveTrace || liveText)
+              ? <AgentMessage mode="reason" content={stripJsonFence(liveText) || "_reasoning…_"} thinking={liveTrace} thinkingCollapsed={false} pending />
+              : <div style={{ fontSize: 12, color: "#2563eb", fontStyle: "italic" }}>🧠 the Meta-Reasoner is reasoning…</div>
+          ) : null}
         </div>
         <div style={{ flexShrink: 0, borderTop: "1px solid #e5e1dc", padding: 10, display: "flex", flexDirection: "column", gap: 7 }}>
           <button onClick={selfSuggest} disabled={busy || (allDone && !!globalDone)} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "10px", fontSize: 13.5, fontWeight: 800, cursor: busy ? "wait" : "pointer", opacity: busy || (allDone && globalDone) ? 0.5 : 1 }}>
@@ -1166,23 +1182,12 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         </div>
         <div style={{ fontSize: 11.5, color: "#666", marginTop: 2 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
       </Floaty>
-      {/* hierarchy tree — compartments → consolidated nodes, filling in + highlighting */}
-      <Floaty title="🌳 HIERARCHY · compartments → tiers → nodes" accent="#2563eb" initial={{ x: 878, y: 64, w: 356, h: 560 }} minH={200}>
+      {/* hierarchy tree — compartments → tiers → consolidated nodes, filling in + highlighting.
+          Given more room now that the INPUTS/DECISION floaties are retired. */}
+      <Floaty title="🌳 HIERARCHY · compartments → tiers → nodes" accent="#2563eb" initial={{ x: 462, y: 64, w: 466, h: 660 }} minH={240}>
         <HierarchyTree comps={comps} decisions={decisions} attention={attention} nextIdx={nextComp?.index ?? null} globalDone={globalDone} />
       </Floaty>
-      <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
-        {attComp ? (<>
-          <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 800 }}>PREDICTED LABELS · Compartment {attComp.index} (GT-blind)</div>
-          {attComp.labelSet.map((l) => <div key={l.leaf_id} style={{ fontSize: 12, color: "#444", lineHeight: 1.4 }}><span style={{ color: "#9a948c" }}>{l.leaf_id}:</span> {l.label}</div>)}
-        </>) : <div style={{ fontSize: 12, color: "#9a948c" }}>{ledger.totalLeaves} leaves across {comps.length} compartments. Self-suggest to begin.</div>}
-      </Floaty>
-      <Floaty title="🎯 DECISION · latest step" accent="#2563eb" initial={{ x: 462, y: 64, w: 440, h: 300 }}>
-        {attDec ? (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-          {(attDec.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
-          {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
-        </div>) : globalDone ? <div style={{ fontSize: 12.5, color: "#9a3412" }}><b>Still missing:</b> {(globalDone.expected_still_missing || []).join(", ") || "— nothing flagged"}</div> : <div style={{ fontSize: 12, color: "#9a948c" }}>no decision yet</div>}
-      </Floaty>
-      <Floaty title="⚖️ JUDGEMENT" accent="#7c3aed" initial={{ x: 250, y: 224, w: 420, h: 400 }} minH={260}>
+      <Floaty title="⚖️ JUDGEMENT" accent="#7c3aed" initial={{ x: 18, y: 412, w: 430, h: 424 }} minH={260}>
         <StepJudgeGate
           content={gateContent}
           thinking={gateThinking}
@@ -1219,12 +1224,12 @@ function decisionMdOut(out: any): string {
 //   3) the live workbench (LiveMetaWorkbench)
 // Every pre-step is judgement-able (persists to run.judgements[]).
 // ===================================================================
-function MetaFinalizeFlow({ run, clusters, judgements, addJudgement, onBack, onSubmitJudgements }: { run: any; clusters: any[] | null; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
+function MetaFinalizeFlow({ run, clusters, dataset, judgements, addJudgement, onBack, onSubmitJudgements }: { run: any; clusters: any[] | null; dataset?: DatasetDef; judgements: any[]; addJudgement: (j: any) => void; onBack: () => void; onSubmitJudgements?: () => Promise<{ ok: boolean; runId?: string; error?: string }> }) {
   const [stage, setStage] = useState<"summary" | "prep" | "workbench">("summary");
   const end = <EndJudgementsButton judgements={judgements} onSubmit={onSubmitJudgements} />;
   if (stage === "summary") return <FinalizeSummary run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onNext={() => setStage("prep")} endBtn={end} />;
   if (stage === "prep") return <FinalizePrep judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("summary")} onNext={() => setStage("workbench")} endBtn={end} />;
-  return <LiveMetaWorkbench run={run} clusters={clusters} judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("prep")} endBtn={end} />;
+  return <LiveMetaWorkbench run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onBack={() => setStage("prep")} endBtn={end} />;
 }
 
 // Red "End & Submit Judgements" control — opens a summary modal, submits via the
@@ -1404,34 +1409,35 @@ function StepJudgeGate({ content, thinking, streamTrace, streamText, isResponse,
       <div style={{ marginTop: "auto", display: "flex", justifyContent: "center" }}>{endBtn}</div>
     </div>
   );
+  // gate content font is ~20% smaller than the chat's (dense judgement pane)
   return (
-    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 6 }}>
+    <div style={{ display: "flex", flexDirection: "column", height: "100%", gap: 5, fontSize: 10 }}>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "2px 9px" }}>{tag}</span>
-        <span style={{ fontSize: 10.5, color: "#9a938a", fontWeight: 700 }}>{isResponse ? "trace + output" : "prompt"}</span>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 8.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.3, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "2px 9px" }}>{tag}</span>
+        <span style={{ fontSize: 8.5, color: "#9a938a", fontWeight: 700 }}>{isResponse ? "trace + output" : "prompt"}</span>
       </div>
-      <div style={{ fontSize: 11, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
-      <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse || busy ? "2px 6px" : "8px 10px" }}>
+      <div style={{ fontSize: 9, color: "#666" }}>{isResponse ? "Critique what the Meta-Reasoner produced, or continue." : "Critique the prompt about to be sent, or continue."}</div>
+      <div style={{ flex: 1, minHeight: 60, overflow: "auto", background: "#faf8f6", border: "1px solid #eee7df", borderRadius: 8, padding: isResponse || busy ? "2px 6px" : "8px 10px", fontSize: 10 }}>
         {busy
           ? (streamTrace || streamText
-              ? <div style={{ fontSize: 12, lineHeight: 1.5 }}>
-                  <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#2563eb", margin: "4px 2px 4px" }}>🧠 reasoning…</div>
+              ? <div style={{ fontSize: 9.5, lineHeight: 1.5 }}>
+                  <div style={{ fontSize: 8, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: "#2563eb", margin: "4px 2px 4px" }}>🧠 reasoning…</div>
                   {streamTrace ? <div style={{ color: "#33507a", whiteSpace: "pre-wrap", fontStyle: "italic" }}>{streamTrace}<span style={{ opacity: 0.5 }}>▍</span></div> : null}
                   {streamText ? <div style={{ marginTop: 8, color: "#4a4540", whiteSpace: "pre-wrap" }}>{stripJsonFence(streamText)}</div> : null}
                 </div>
-              : <div style={{ fontSize: 12.5, color: "#2563eb", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>)
-          : isResponse ? <AgentMessage mode="reason" content={content} thinking={thinking} thinkingCollapsed={false} /> : <div style={{ fontSize: 12, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
+              : <div style={{ fontSize: 10, color: "#2563eb", fontStyle: "italic", padding: "6px 4px" }}>🧠 the Meta-Reasoner is reasoning over this step…</div>)
+          : isResponse ? <div style={{ fontSize: "80%" }}><AgentMessage mode="reason" content={content} thinking={thinking} thinkingCollapsed /></div> : <div style={{ fontSize: 10, color: "#4a4540", lineHeight: 1.45, whiteSpace: "pre-wrap" }}>{content}</div>}
       </div>
-      {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
+      {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 9, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
       <textarea value={note} onChange={(e) => setNote(e.target.value)} autoFocus rows={2} placeholder={isResponse ? "What's right/wrong about this step? (optional)" : "What's right/wrong about this prompt? (optional)"}
         onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && note.trim()) submitStep(); }}
-        style={{ boxSizing: "border-box", minHeight: 48, border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }} />
+        style={{ boxSizing: "border-box", minHeight: 44, border: "1px solid #e5e1dc", borderRadius: 8, padding: "6px 9px", fontSize: 10, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }} />
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        {nextLabel ? <button onClick={() => onAdvance()} disabled={busy} title="Advance without a note" style={{ flex: 1, background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button> : null}
-        <button onClick={submitStep} disabled={busy || !note.trim()} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>{nextLabel ? "Add notes + continue →" : "⚖️ Add note"}</button>
+        {nextLabel ? <button onClick={() => onAdvance()} disabled={busy} title="Advance without a note" style={{ flex: 1, background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "6px 8px", fontSize: 10, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button> : null}
+        <button onClick={submitStep} disabled={busy || !note.trim()} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "6px 8px", fontSize: 10, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>{nextLabel ? "Add notes + continue →" : "⚖️ Add note"}</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, flexShrink: 0 }}>
-        <span style={{ fontSize: 10, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} · next: {nextLabel ?? "—"}</span>
+        <span style={{ fontSize: 8, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} · next: {nextLabel ?? "—"}</span>
         {endBtn}
       </div>
     </div>
@@ -1444,44 +1450,76 @@ function StepJudgeGate({ content, thinking, streamTrace, streamText, isResponse,
 // merges, the per-compartment before→after, and the Prejudice-of-Shape gap.
 // Validated categorical trio (#0891b2/#b45309/#7c3aed) + single-hue magnitude bars.
 // ===================================================================
-const TIER_COLOR: Record<string, string> = { germ_layer: "#64748b", tissue: "#0891b2", cell_type_broad: "#b45309", cell_type_sub: "#7c3aed" };
 const TIER_SHORT: Record<string, string> = { germ_layer: "germ", tissue: "tissue", cell_type_broad: "broad", cell_type_sub: "sub" };
-function HBar({ label, value, max, color, sub }: { label: React.ReactNode; value: number; max: number; color: string; sub?: string }) {
-  const pct = max > 0 ? Math.max(2, (value / max) * 100) : 0;
-  return (
-    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
-      <div style={{ width: 220, flexShrink: 0, fontSize: 12, color: "#555", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={typeof label === "string" ? label : undefined}>{label}</div>
-      <div style={{ flex: 1, height: 15, background: "#f0ece7", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4 }} /></div>
-      <div style={{ width: 52, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#333", fontVariantNumeric: "tabular-nums" }}>{value}{sub ? <span style={{ fontWeight: 400, color: "#9a948c" }}> {sub}</span> : null}</div>
-    </div>
-  );
-}
 const RCARD: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
 const RSEC: React.CSSProperties = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#9a948c", fontWeight: 800, margin: "0 0 12px" };
 
-function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgements, addJudgement, endBtn, onBack }: any) {
+// expected 48 hpf tissues (the "prejudice of shape" prior) as a coverage grid:
+// each cell is a major tissue we EXPECT; solid = covered by a final node, ghosted
+// (dashed, faded) = expected but unaccounted for (from the operator's own audit).
+function ExpectedTissueCoverage({ missing }: { missing: string[] }) {
+  const expected = META_REASONER_CONTEXT.expectedTissues;
+  const isMissing = (t: string) => missing.some((m) => m.toLowerCase().includes(t.toLowerCase().split(" ")[0]) || t.toLowerCase().includes(String(m).toLowerCase().split(" ")[0]));
+  const nCovered = expected.filter((t) => !isMissing(t)).length;
+  return (
+    <div>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 10, marginBottom: 10 }}>
+        <span style={{ fontSize: 30, fontWeight: 800, color: nCovered === expected.length ? "#15803d" : "#b45309", fontVariantNumeric: "tabular-nums" }}>{nCovered}/{expected.length}</span>
+        <span style={{ fontSize: 13, color: "#666" }}>expected 48 hpf tissues covered · {expected.length - nCovered} ghosted (unaccounted for)</span>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))", gap: 8 }}>
+        {expected.map((t) => {
+          const miss = isMissing(t);
+          return (
+            <div key={t} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 11px", borderRadius: 9,
+              border: miss ? "1.5px dashed #d8b48a" : "1px solid #bbf7d0", background: miss ? "repeating-linear-gradient(45deg,#fffdf8,#fffdf8 6px,#fdf3e6 6px,#fdf3e6 12px)" : "#f0fdf4", opacity: miss ? 0.72 : 1 }}>
+              <span style={{ fontSize: 15 }}>{miss ? "👻" : "✓"}</span>
+              <span style={{ fontSize: 12.5, fontWeight: miss ? 600 : 700, color: miss ? "#9a6a2a" : "#15803d", lineHeight: 1.25 }}>{t}</span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+function FinalizeResults({ run, clusters, dataset, decisions, globalDone, comps, judgements, addJudgement, endBtn, onBack }: any) {
+  const [stage, setStage] = useState<"finale" | "gt">("finale");
+  const [save, setSave] = useState<{ s: "idle" | "saving" | "ok" | "err"; msg?: string; runId?: string }>({ s: "idle" });
   const dec = Object.entries(decisions).map(([ci, d]: any) => ({ ci: Number(ci), merges: d.merges || [], set_aside: d.set_aside || [] }));
   const merges = dec.flatMap((d) => d.merges.map((m: any) => ({ ...m, ci: d.ci })));
   const asides = dec.flatMap((d) => d.set_aside.map((s: any) => ({ ...s, ci: d.ci })));
   const totalNodes = merges.length + asides.length;
   const leavesFolded = merges.reduce((s: number, m: any) => s + (m.member_leaf_ids?.length || 0), 0);
   const beforeLeaves = comps.reduce((s: number, c: any) => s + c.leafIds.length, 0);
-  const tierCounts: Record<string, number> = {};
-  [...merges, ...asides].forEach((n: any) => { tierCounts[n.tier] = (tierCounts[n.tier] || 0) + 1; });
-  const tierOrder = ["tissue", "cell_type_broad", "cell_type_sub"].filter((t) => tierCounts[t]);
-  const topMerges = [...merges].sort((a: any, b: any) => (b.member_leaf_ids?.length || 0) - (a.member_leaf_ids?.length || 0)).slice(0, 12);
-  const maxMerge = Math.max(1, ...topMerges.map((m: any) => m.member_leaf_ids?.length || 0));
   const missing = globalDone?.expected_still_missing || [];
-  const perComp = dec.map((d) => ({ ci: d.ci, leaves: comps.find((c: any) => c.index === d.ci)?.leafIds.length || 0, nodes: d.merges.length + d.set_aside.length })).sort((a, b) => a.ci - b.ci);
-  const maxLeaves = Math.max(1, ...perComp.map((p) => p.leaves));
   const reduction = beforeLeaves > 0 ? Math.round((1 - totalNodes / beforeLeaves) * 100) : 0;
+  const leafLabel: Record<string, string> = {};
+  (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
 
-  const tile = (label: string, value: React.ReactNode, color = "#333") => (
-    <div style={{ ...RCARD, padding: "12px 16px", minWidth: 130 }}>
-      <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, color, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{value}</div>
-    </div>
-  );
+  // save & APPEND — persist a NEW run that carries the finalized consolidation on
+  // top of the original 250 leaves (non-destructive: the source run is untouched).
+  async function saveAppend() {
+    setSave({ s: "saving" });
+    try {
+      const slimClusters = (run?.clusters || []).map((c: any) => ({ id: c.id, label: c.label, finalLabel: c.finalLabel, validated: c.validated }));
+      const operatorProposal = { source: "live_finalize", n_before: beforeLeaves, n_nodes: totalNodes,
+        compartments: dec.map((d) => ({ compartment: d.ci, merges: d.merges, set_aside: d.set_aside })), flag_missing: globalDone || null };
+      const body = {
+        schema: run?.schema ?? "daniotype_kasperov_run/v1", datasetId: run?.datasetId ?? dataset?.id, dataset: run?.dataset, model: run?.model,
+        harness: run?.harness, source: "finalize_append", fixtureRunId: run?.fixtureRunId,
+        note: `⚙ finalized (appended) — ${beforeLeaves}→${totalNodes} nodes`,
+        clusters: slimClusters, metaDecisions: run?.metaDecisions, operatorProposal,
+        appendedFrom: run?.runId ?? run?.fixtureRunId ?? null, judgements, exportedAt: new Date().toISOString(),
+      };
+      const r = await fetch("/api/kasperov_runs", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+      const d = await r.json().catch(() => ({}));
+      if (!r.ok || d?.error) throw new Error(d?.error || `HTTP ${r.status}`);
+      setSave({ s: "ok", msg: `Appended run version ${d.runId ?? "?"}`, runId: d.runId });
+    } catch (e: any) { setSave({ s: "err", msg: String(e?.message ?? e).slice(0, 140) }); }
+  }
+
+  if (stage === "gt") return <FinalGtJudgement run={run} dataset={dataset} merges={merges} asides={asides} leafLabel={leafLabel} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} saveState={save} onBack={() => setStage("finale")} />;
 
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 70, background: PAPER, overflow: "auto" }}>
@@ -1490,72 +1528,168 @@ function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgemen
         <div style={{ fontWeight: 800 }}>🎉 Final labelling</div>
         <div style={{ marginLeft: "auto" }}>{endBtn}</div>
       </div>
-      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "20px 22px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
-        {/* HERO — the collapse */}
-        <div style={{ ...RCARD, textAlign: "center", padding: "26px 18px" }}>
+      <div style={{ maxWidth: 1040, margin: "0 auto", padding: "20px 22px 120px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* HERO — the collapse (kept compact) */}
+        <div style={{ ...RCARD, textAlign: "center", padding: "22px 18px" }}>
           <div style={{ fontSize: 13, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Meta-Reasoner finalize · {run?.model}</div>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, margin: "10px 0 4px", flexWrap: "wrap" }}>
-            <span style={{ fontSize: 44, fontWeight: 800, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{beforeLeaves}</span>
-            <span style={{ fontSize: 24, color: "#c8c0b6" }}>fine leaves →</span>
-            <span style={{ fontSize: 52, fontWeight: 800, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>{totalNodes}</span>
-            <span style={{ fontSize: 24, color: "#c8c0b6" }}>nodes</span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, margin: "8px 0 4px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 40, fontWeight: 800, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{beforeLeaves}</span>
+            <span style={{ fontSize: 22, color: "#c8c0b6" }}>fine leaves →</span>
+            <span style={{ fontSize: 48, fontWeight: 800, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>{totalNodes}</span>
+            <span style={{ fontSize: 22, color: "#c8c0b6" }}>nodes</span>
           </div>
-          <div style={{ fontSize: 13.5, color: "#666" }}>{reduction}% fewer nodes · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
+          <div style={{ fontSize: 13.5, color: "#666" }}>{reduction}% fewer · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
         </div>
 
-        {/* STAT TILES */}
-        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-          {tile("final nodes", totalNodes, "#15803d")}
-          {tile("merge-nodes", merges.length, "#0891b2")}
-          {tile("set-aside / rebel", asides.length, "#7c3aed")}
-          {tile("leaves folded", leavesFolded)}
-          {tile("still missing", missing.length, missing.length ? "#b45309" : "#15803d")}
-        </div>
-
-        {/* PER-TIER node counts (validated categorical trio + legend + direct labels) */}
+        {/* 1 · THE HIERARCHY — the star of the finale */}
         <div style={RCARD}>
-          <div style={RSEC}>Final nodes by schema tier</div>
-          <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
-            {tierOrder.map((t) => <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#555" }}><span style={{ width: 11, height: 11, borderRadius: 3, background: TIER_COLOR[t] }} />{TIER_SHORT[t]}</span>)}
+          <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
+          <div style={{ overflowX: "auto" }}>
+            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={960} />
           </div>
-          {tierOrder.map((t) => <HBar key={t} label={TIER_SHORT[t]} value={tierCounts[t]} max={Math.max(1, ...tierOrder.map((x) => tierCounts[x]))} color={TIER_COLOR[t]} sub="nodes" />)}
         </div>
 
-        {/* TOP MERGES — single-hue magnitude, sorted, direct-labeled */}
-        <div style={RCARD}>
-          <div style={RSEC}>Biggest consolidations · leaves folded into one node</div>
-          {topMerges.map((m: any, i: number) => <HBar key={i} label={m.node_label} value={m.member_leaf_ids?.length || 0} max={maxMerge} color="#0891b2" sub="leaves" />)}
-          {!topMerges.length ? <div style={{ fontSize: 12.5, color: "#9a948c" }}>No merges recorded.</div> : null}
-        </div>
-
-        {/* PER-COMPARTMENT collapse */}
-        <div style={RCARD}>
-          <div style={RSEC}>Per-compartment · leaves → nodes</div>
-          {perComp.map((p) => (
-            <HBar key={p.ci} label={`Compartment ${p.ci}`} value={p.leaves} max={maxLeaves} color="#cbd5e1" sub={`→ ${p.nodes} node${p.nodes === 1 ? "" : "s"}`} />
-          ))}
-        </div>
-
-        {/* PREJUDICE-OF-SHAPE gap (status callout, not a chart) */}
-        <div style={{ ...RCARD, borderColor: missing.length ? "#fed7aa" : "#bbf7d0", background: missing.length ? "#fffbeb" : "#f0fdf4" }}>
-          <div style={{ ...RSEC, color: missing.length ? "#b45309" : "#15803d" }}>Prejudice-of-Shape · expected 48 hpf tissues still unaccounted for</div>
-          {missing.length ? (
-            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{missing.map((t: string, i: number) => <span key={i} style={{ fontSize: 12.5, fontWeight: 700, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "3px 11px" }}>{t}</span>)}</div>
-          ) : <div style={{ fontSize: 13, color: "#15803d", fontWeight: 700 }}>✓ Every expected tissue class is represented.</div>}
-          {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 8, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
-        </div>
-
-        {/* WORLD MAP — spatial view of the finalized partition */}
+        {/* 2 · THE WORLD MAP */}
         <div style={{ ...RCARD, padding: 12 }}>
-          <div style={{ ...RSEC, textAlign: "center" }}>The finalized atlas</div>
-          {clusters ? <div style={{ display: "flex", justifyContent: "center" }}>{hasCompartments(clusters) ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(clusters.map((c: any) => c.id))} width={760} height={440} /> : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={new Set()} width={560} height={420} />}</div> : null}
+          <div style={{ ...RSEC, textAlign: "center" }}>The finalized atlas · every cluster</div>
+          {clusters ? <div style={{ display: "flex", justifyContent: "center" }}>{hasCompartments(clusters) ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(clusters.map((c: any) => c.id))} width={800} height={460} /> : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={new Set()} width={560} height={420} />}</div> : null}
         </div>
 
-        {/* judge the finale */}
-        <div style={RCARD}>
-          <div style={RSEC}>⚖️ Judge the final labelling</div>
-          <JudgeBox stage="finalize_results" targetId="final" targetLabel="Finalized labelling" excerpt={`${beforeLeaves}→${totalNodes} nodes`} judgements={judgements} addJudgement={addJudgement} />
+        {/* 3 · PREJUDICE-OF-SHAPE ghost coverage map */}
+        <div style={{ ...RCARD, borderColor: missing.length ? "#fed7aa" : "#bbf7d0" }}>
+          <div style={{ ...RSEC, color: missing.length ? "#b45309" : "#15803d" }}>Prejudice of shape · did we cover every tissue we expect at 48 hpf?</div>
+          <ExpectedTissueCoverage missing={missing} />
+          {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 10, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
         </div>
+      </div>
+
+      {/* SAVE & APPEND → the final GT-judgement stage */}
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, minHeight: 62, display: "flex", alignItems: "center", justifyContent: "center", gap: 14, padding: "10px 16px", background: "#fffdfb", borderTop: "1px solid #e5e1dc", zIndex: 100, flexWrap: "wrap" }}>
+        {save.s === "err" ? <span style={{ fontSize: 12, color: "#b91c1c" }}>append failed: {save.msg}</span> : null}
+        {save.s === "ok" ? <span style={{ fontSize: 12, color: "#15803d", fontWeight: 700 }}>✓ {save.msg}</span> : null}
+        <button onClick={async () => { if (save.s !== "ok") await saveAppend(); setStage("gt"); }} disabled={save.s === "saving"}
+          style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: save.s === "saving" ? "wait" : "pointer", opacity: save.s === "saving" ? 0.6 : 1 }}>
+          {save.s === "saving" ? "Appending…" : "💾 Save &amp; append → judge against ground truth →"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// ===================================================================
+// FINAL GT JUDGEMENT — the culminating assessment. Scores the finalized MERGED
+// nodes against the ZSCAPE published reference (dataset.groundTruthUrl) via the
+// existing fuzzy judge, each node at its OWN operator tier, weighting member-leaf
+// GT by cell count. Read-only over the atlas; the append already persisted.
+// ===================================================================
+const GT_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
+function FinalGtJudgement({ run, dataset, merges, asides, leafLabel, judgements, addJudgement, endBtn, saveState, onBack }: any) {
+  const [state, setState] = useState<{ s: "idle" | "loading" | "scoring" | "done" | "err"; msg?: string; done?: number; total?: number }>({ s: "idle" });
+  const [rows, setRows] = useState<any[]>([]);
+  // build one scoring node per merge (member leaves) + per set-aside (single leaf)
+  const nodes = useMemo(() => {
+    const out: any[] = [];
+    (merges || []).forEach((m: any, i: number) => out.push({ id: `C${m.ci}-m${i}`, identity: m.node_label, tier: m.tier, leaf_ids: (m.member_leaf_ids || []).map(String), kind: "merge" }));
+    (asides || []).forEach((s: any, i: number) => out.push({ id: `C${s.ci}-a${i}`, identity: s.node_label || leafLabel[String(s.leaf_id)] || "?", tier: s.tier, leaf_ids: [String(s.leaf_id)], kind: "rebel" }));
+    return out;
+  }, [merges, asides, leafLabel]);
+
+  async function runJudgement() {
+    if (!dataset?.groundTruthUrl) { setState({ s: "err", msg: "This dataset has no published ground truth to score against." }); return; }
+    setState({ s: "loading" });
+    let gt: any;
+    try { gt = await (await fetch(dataset.groundTruthUrl)).json(); } catch (e: any) { setState({ s: "err", msg: `Could not load ground truth: ${String(e?.message ?? e).slice(0, 100)}` }); return; }
+    const gtClusters = gt?.clusters || {};
+    const plurality = (leafIds: string[], tier: string) => {
+      const cw = new Map<string, number>();
+      leafIds.forEach((lid) => { const e = gtClusters[lid]?.[tier]; if (e?.label) cw.set(e.label, (cw.get(e.label) || 0) + (e.n || 1)); });
+      let best: string | null = null, bn = -1, tot = 0, top = 0;
+      cw.forEach((n, lab) => { tot += n; if (n > bn) { bn = n; best = lab; } });
+      top = bn > 0 ? bn : 0;
+      return { label: best, purity: tot > 0 ? top / tot : 0 };
+    };
+    const items = nodes.map((n) => {
+      const g: Record<string, string | null> = {}; let purity = 0;
+      GT_TIERS.forEach((t) => { const p = plurality(n.leaf_ids, t); g[t] = p.label; if (t === n.tier) purity = p.purity; });
+      n._gt = g; n._purity = purity;
+      return { id: n.id, ourLabel: n.identity, gt: g };
+    });
+    setState({ s: "scoring", done: 0, total: items.length });
+    const byId: Record<string, any> = {};
+    const B = 14;
+    for (let k = 0; k < items.length; k += B) {
+      const batch = items.slice(k, k + B);
+      try {
+        const r = await fetch("/api/kasperov_score", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ dataset: dataset.id, model: run?.model, items: batch }) });
+        const d = await r.json().catch(() => ({}));
+        (d.results || []).forEach((res: any) => { byId[res.id] = res; });
+      } catch { /* leave unscored */ }
+      setState({ s: "scoring", done: Math.min(k + B, items.length), total: items.length });
+    }
+    const scored = nodes.map((n) => {
+      const v = byId[n.id];
+      const tierV = v?.[n.tier];
+      return { ...n, gt: n._gt, purity: n._purity, verdict: tierV, match: tierV?.match === true };
+    });
+    setRows(scored);
+    setState({ s: "done" });
+  }
+
+  const agree = rows.filter((r) => r.match).length;
+  const scoredN = rows.filter((r) => r.verdict).length;
+  const pct = scoredN > 0 ? Math.round((agree / scoredN) * 100) : 0;
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 72, background: PAPER, overflow: "auto" }}>
+      <div style={{ position: "sticky", top: 0, height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "#fffdfb", borderBottom: "1px solid #e5e1dc", zIndex: 10 }}>
+        <button onClick={onBack} style={btnGhost}>← Back to finale</button>
+        <div style={{ fontWeight: 800 }}>🏁 Final assessment · vs ZSCAPE ground truth</div>
+        {saveState?.s === "ok" ? <span style={{ fontSize: 11.5, color: "#15803d", fontWeight: 700 }}>✓ {saveState.msg}</span> : null}
+        <div style={{ marginLeft: "auto" }}>{endBtn}</div>
+      </div>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "20px 22px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
+        <div style={{ ...RCARD }}>
+          <div style={RSEC}>The final test · how well did the labelling system do?</div>
+          <p style={{ fontSize: 13.5, color: "#555", lineHeight: 1.55, margin: "0 0 12px" }}>
+            The finalized run has been <b>appended</b> onto the original 250 leaves (the source run is untouched). Now we score the <b>{nodes.length} consolidated nodes</b> against the authors&apos; published ZSCAPE reference — each node judged at its <b>own operator-assigned tier</b>, with member-leaf ground truth weighted by cell count. The judge accepts synonyms / ontology equivalence, not string match.
+          </p>
+          {state.s === "idle" ? (
+            <button onClick={runJudgement} disabled={!dataset?.groundTruthUrl} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, padding: "11px 22px", fontSize: 14.5, fontWeight: 800, cursor: dataset?.groundTruthUrl ? "pointer" : "not-allowed", opacity: dataset?.groundTruthUrl ? 1 : 0.5 }}>
+              🏁 Score {nodes.length} nodes against ground truth
+            </button>
+          ) : null}
+          {state.s === "loading" ? <div style={{ fontSize: 13, color: "#2563eb" }}>Loading ground truth…</div> : null}
+          {state.s === "scoring" ? <div style={{ fontSize: 13, color: "#2563eb" }}>Scoring nodes… {state.done}/{state.total}</div> : null}
+          {state.s === "err" ? <div style={{ fontSize: 13, color: "#b91c1c" }}>{state.msg}</div> : null}
+        </div>
+
+        {state.s === "done" ? (<>
+          <div style={{ ...RCARD, textAlign: "center", padding: "24px 18px" }}>
+            <div style={{ fontSize: 13, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Agreement at each node&apos;s own tier</div>
+            <div style={{ fontSize: 60, fontWeight: 800, color: pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#b91c1c", margin: "4px 0 2px", fontVariantNumeric: "tabular-nums" }}>{pct}%</div>
+            <div style={{ fontSize: 14, color: "#666" }}>{agree}/{scoredN} nodes match the reference</div>
+          </div>
+          <div style={{ ...RCARD, padding: 0, overflow: "hidden" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1.5fr 0.7fr 1.3fr 0.5fr 0.6fr", gap: 0, fontSize: 11, fontWeight: 800, color: "#9a948c", textTransform: "uppercase", letterSpacing: 0.4, background: "#faf7f2", padding: "9px 14px", borderBottom: "1px solid #eee7df" }}>
+              <div>our node</div><div>tier</div><div>reference @ tier</div><div>purity</div><div style={{ textAlign: "right" }}>verdict</div>
+            </div>
+            <div style={{ maxHeight: 460, overflow: "auto" }}>
+              {rows.map((r, i) => (
+                <div key={r.id} title={r.verdict?.note || ""} style={{ display: "grid", gridTemplateColumns: "1.5fr 0.7fr 1.3fr 0.5fr 0.6fr", gap: 0, alignItems: "center", fontSize: 12.5, padding: "8px 14px", borderBottom: "1px solid #f2ede6", background: i % 2 ? "#fffdfb" : "#fff" }}>
+                  <div style={{ fontWeight: 700, color: "#33312e", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.kind === "rebel" ? "⎇ " : "⤵ "}{r.identity} {r.kind === "merge" ? <span style={{ color: "#9a948c", fontWeight: 400 }}>×{r.leaf_ids.length}</span> : null}</div>
+                  <div style={{ color: "#0891b2", fontWeight: 700 }}>{TIER_SHORT[r.tier] || r.tier}</div>
+                  <div style={{ color: "#666", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{r.gt?.[r.tier] || <span style={{ color: "#c8c0b6" }}>—</span>}</div>
+                  <div style={{ color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{Math.round((r.purity || 0) * 100)}%</div>
+                  <div style={{ textAlign: "right", fontWeight: 800, color: !r.verdict ? "#c8c0b6" : r.match ? "#15803d" : "#b91c1c" }}>{!r.verdict ? "—" : r.match ? "✓" : "✗"}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+          <div style={RCARD}>
+            <div style={RSEC}>⚖️ Judge the final assessment</div>
+            <JudgeBox stage="gt_judgement" targetId="gt_final" targetLabel="GT assessment" excerpt={`${agree}/${scoredN} nodes agree (${pct}%)`} judgements={judgements} addJudgement={addJudgement} />
+          </div>
+        </>) : null}
       </div>
     </div>
   );
@@ -1569,10 +1703,10 @@ function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgemen
 // column. Merges are hue-matched + sized by leaves folded; rebels are blue. Pending
 // compartments are faint dashed stubs; the current attention branch is ringed blue.
 const HTREE_TIER_X: Record<string, number> = { germ_layer: 108, tissue: 108, cell_type_broad: 156, cell_type_sub: 204 };
-function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any }) {
+function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number }) {
   const nComp = Math.max(1, comps.length);
   const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
-  const svgW = 340;
+  const svgW = width ?? 340;
   const trunkX = 12, branchX = 66, rebelX = 250;
   const nodeXFor = (nd: any) => nd.kind === "rebel" ? rebelX : (HTREE_TIER_X[nd.tier] || 156);
   const headY = 22;
