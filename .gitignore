@@ -49,3 +49,13 @@ __pycache__/
 *.pyc
 .venv/
 *.log
+
+# large local data (native atlases + recursive/replay outputs — hundreds of MB,
+# must never hit git). Targeted, NOT a blanket daniotype_data/ — that dir also
+# holds 400+ tracked curated assets (chemfish/, megafin/) that must stay visible.
+daniotype_data/*_native/
+daniotype_data/zscape_recursive/
+daniotype_data/meta_reasoner_replay/
+
+# intentionally-untracked local config
+*.local
