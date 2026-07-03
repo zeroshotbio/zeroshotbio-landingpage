@@ -959,25 +959,30 @@ function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | n
         <div style={{ fontSize: 13, color: "#666" }}>{reduction}% fewer · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
       </div>
 
-      {/* 1 · HIERARCHY — the tree on the left; the per-compartment decisions run
-          as a VERTICAL COLUMN in the white space to its right (no separate pane). */}
+      {/* 1 · HIERARCHY — the tree on the left; the per-compartment decisions run as a
+          VERTICAL COLUMN in the white space to its right, ROW-ALIGNED so each
+          compartment's "C1" branch lines up with its "Compartment 1" heading (and
+          each node dot with its text line). Both iterate `comps` with shared heights. */}
       <div style={RCARD}>
         <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
-        <div style={{ display: "flex", gap: 18, alignItems: "flex-start", flexWrap: "wrap" }}>
+        <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ overflowX: "auto", flexShrink: 0 }}>
-            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={440} />
+            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={440} aligned />
           </div>
-          <div style={{ flex: "1 1 300px", minWidth: 260, display: "flex", flexDirection: "column", gap: 12, borderLeft: "1px solid #eee7df", paddingLeft: 18 }}>
-            <div style={{ fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c" }}>Per-compartment decisions</div>
-            {propComps.map((c: any) => (
-              <div key={c.compartment} style={{ borderLeft: "3px solid #e5e1dc", paddingLeft: 10 }}>
-                <div style={{ fontSize: 12, fontWeight: 800, color: "#33312e", marginBottom: 4 }}>Compartment {c.compartment} <span style={{ fontWeight: 400, color: "#9a948c" }}>· {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</span></div>
-                <div style={{ display: "flex", flexDirection: "column", gap: 3 }}>
-                  {(c.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 11.5, lineHeight: 1.35 }}><span style={chip("#dcfce7", "#15803d")}>⤵ {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> <span style={{ color: "#9a948c" }}>×{m.member_leaf_ids?.length}</span></div>)}
-                  {(c.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 11.5, lineHeight: 1.35 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
+          <div style={{ flex: "1 1 300px", minWidth: 260, borderLeft: "1px solid #eee7df", paddingLeft: 16 }}>
+            <div style={{ height: HTREE_HEADTOP, display: "flex", alignItems: "flex-end", paddingBottom: 4, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c" }}>Per-compartment decisions</div>
+            {comps.map((c: any) => {
+              const d = decisions[c.index] || {};
+              const nodes = [...(d.merges || []).map((m: any) => ({ kind: "merge", m })), ...(d.set_aside || []).map((s: any) => ({ kind: "rebel", s }))];
+              return (
+                <div key={c.index} style={{ height: htreeRowH(nodes.length), borderLeft: "3px solid #e5e1dc", paddingLeft: 10, boxSizing: "border-box" }}>
+                  <div style={{ height: HTREE_HDR, display: "flex", alignItems: "center", fontSize: 12, fontWeight: 800, color: "#33312e" }}>Compartment {c.index} <span style={{ fontWeight: 400, color: "#9a948c", marginLeft: 5 }}>· {nodes.length} nodes</span></div>
+                  {nodes.map((nd: any, i: number) => nd.kind === "merge"
+                    ? <div key={i} style={{ height: HTREE_LINE, display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, overflow: "hidden", whiteSpace: "nowrap" }}><span style={chip("#dcfce7", "#15803d")}>⤵ {String(nd.m.tier).replace("cell_type_", "")}</span> <b style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{nd.m.node_label}</b> <span style={{ color: "#9a948c", flexShrink: 0 }}>×{nd.m.member_leaf_ids?.length}</span></div>
+                    : <div key={i} style={{ height: HTREE_LINE, display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, overflow: "hidden", whiteSpace: "nowrap" }}><span style={chip("#eef2ff", "#4338ca")}>⎇ {String(nd.s.tier).replace("cell_type_", "")}</span> <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>leaf {nd.s.leaf_id} — {leafLabel[String(nd.s.leaf_id)] || "?"}</span></div>)}
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
       </div>
@@ -1763,23 +1768,29 @@ function FinalGtJudgement({ run, dataset, merges, asides, leafLabel, judgements,
 // column. Merges are hue-matched + sized by leaves folded; rebels are blue. Pending
 // compartments are faint dashed stubs; the current attention branch is ringed blue.
 const HTREE_TIER_X: Record<string, number> = { germ_layer: 108, tissue: 108, cell_type_broad: 156, cell_type_sub: 204 };
-function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number }) {
+// Aligned-mode geometry — shared with the per-compartment text column so a
+// compartment's branch/label lines up horizontally with its text block, and each
+// node dot lines up with its text line. HDR = header-row height, LINE = node row.
+const HTREE_HDR = 20, HTREE_LINE = 18, HTREE_HEADTOP = 30;
+const htreeRowH = (nNodes: number) => Math.max(HTREE_HDR + HTREE_LINE, HTREE_HDR + nNodes * HTREE_LINE);
+function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width, aligned }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number; aligned?: boolean }) {
   const nComp = Math.max(1, comps.length);
   const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
   const svgW = width ?? 340;
   const trunkX = 12, branchX = 66, rebelX = 250;
   const nodeXFor = (nd: any) => nd.kind === "rebel" ? rebelX : (HTREE_TIER_X[nd.tier] || 156);
   const headY = 22;
-  let y = headY + 6;
+  let y = aligned ? HTREE_HEADTOP : headY + 6;
   const rows = comps.map((c: any, gi: number) => {
     const d = decisions[c.index];
     const nodes = d ? [
       ...(d.merges || []).map((m: any) => ({ label: m.node_label, n: m.member_leaf_ids?.length || 1, kind: "merge", tier: m.tier })),
       ...(d.set_aside || []).map((s: any) => ({ label: `leaf ${s.leaf_id}`, n: 1, kind: "rebel", tier: s.tier })),
     ] : [];
-    const h = d ? Math.max(22, nodes.length * 13 + 6) : 14;
+    const h = aligned ? htreeRowH(nodes.length) : (d ? Math.max(22, nodes.length * 13 + 6) : 14);
     const top = y; y += h;
-    return { c, gi, d, nodes, top, cy: top + h / 2 };
+    // aligned: anchor the branch near the top (matches the text header center)
+    return { c, gi, d, nodes, top, cy: aligned ? top + HTREE_HDR / 2 : top + h / 2 };
   });
   const totalH = y + 14;
   // faint column guides + headers so the horizontal axis reads as "coarse → fine"
@@ -1806,7 +1817,7 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
             <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
             <text x={trunkX + 1} y={r.cy - 5} style={{ fontSize: 8.5, fontWeight: 800, fill: done ? `hsl(${hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c") }}>C{r.c.index}</text>
             {r.nodes.map((nd: any, i: number) => {
-              const ny = r.top + 8 + i * 13;
+              const ny = aligned ? r.top + HTREE_HDR + i * HTREE_LINE + HTREE_LINE / 2 : r.top + 8 + i * 13;
               const nx = nodeXFor(nd);
               const ncol = nd.kind === "rebel" ? "#2563eb" : `hsl(${hue} 62% 48%)`;
               const rad = nd.kind === "rebel" ? 2.6 : Math.min(5.5, 2 + Math.sqrt(nd.n));
