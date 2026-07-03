@@ -41,3 +41,11 @@ next-env.d.ts
 
 # large ortholog‐alliance files  (keep them out of the repo)
 public/data/ORTHOLOGY-ALLIANCE_COMBINED_*.tsv
+
+# build / runtime noise (un-rooted: also catches nested backend & app dirs
+# that the rooted /.next/ and /.venv/ above miss)
+.next/
+__pycache__/
+*.pyc
+.venv/
+*.log
