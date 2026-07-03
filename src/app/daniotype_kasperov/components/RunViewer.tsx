@@ -1004,6 +1004,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   const [globalDone, setGlobalDone] = useState<any>(null);
   const [busy, setBusy] = useState(false);
   const [input, setInput] = useState("");
+  const [showResults, setShowResults] = useState(false);
 
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
@@ -1096,7 +1097,9 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
         <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
+        {globalDone ? <button onClick={() => setShowResults(true)} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🎉 See the final labelling →</button> : null}
       </div>
+      {showResults && <FinalizeResults run={run} clusters={clusters} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
 
       {/* right chat column with input + self-suggest */}
       <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: 460, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column" }}>
@@ -1345,8 +1348,10 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
   const [note, setNote] = useState("");
   // reset the note whenever the gated step changes, so a note never bleeds across steps
   useEffect(() => { setNote(""); }, [stepKey]);
-  const advance = () => { onAdvance(); };
-  const addAndContinue = () => { if (note.trim()) onSubmitNote(note.trim()); onAdvance(); };
+  // log the note (always), and advance only if there IS a next step. At the final
+  // step (no next) this still records the judgement — the earlier bug was that the
+  // button was disabled when nextLabel was null, so audit notes never logged.
+  const submitStep = () => { if (note.trim()) { onSubmitNote(note.trim()); setNote(""); } if (nextLabel) onAdvance(); };
   if (!content) return (
     <div style={{ display: "flex", flexDirection: "column", gap: 10, height: "100%" }}>
       <div style={{ fontSize: 12.5, color: "#15803d", fontWeight: 700 }}>✓ Finalize complete — every compartment consolidated + the missing-tissue audit done.</div>
@@ -1368,15 +1373,138 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
       </div>
       {priorNotes.map((j, i) => <div key={i} style={{ fontSize: 11, color: "#7c3aed", flexShrink: 0 }}>⚖️ {j.note}</div>)}
       <textarea value={note} onChange={(e) => setNote(e.target.value)} autoFocus rows={2} placeholder={isResponse ? "What's right/wrong about this step? (optional)" : "What's right/wrong about this prompt? (optional)"}
-        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && note.trim()) addAndContinue(); }}
+        onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && note.trim()) submitStep(); }}
         style={{ boxSizing: "border-box", minHeight: 48, border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }} />
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        <button onClick={advance} disabled={busy || !nextLabel} title="Advance without a note" style={{ ...btnGhost, flex: 1, padding: "7px 8px", fontSize: 12, opacity: busy || !nextLabel ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button>
-        <button onClick={addAndContinue} disabled={busy || !note.trim() || !nextLabel} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>Add notes + continue →</button>
+        {nextLabel ? <button onClick={() => onAdvance()} disabled={busy} title="Advance without a note" style={{ ...btnGhost, flex: 1, padding: "7px 8px", fontSize: 12, opacity: busy ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button> : null}
+        <button onClick={submitStep} disabled={busy || !note.trim()} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>{nextLabel ? "Add notes + continue →" : "⚖️ Add note"}</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, flexShrink: 0 }}>
         <span style={{ fontSize: 10, color: "#9a938a" }}>{nLogged} note{nLogged === 1 ? "" : "s"} · next: {nextLabel ?? "—"}</span>
         {endBtn}
+      </div>
+    </div>
+  );
+}
+
+// ===================================================================
+// FINALIZE RESULTS — the data-vis finale, triggered once the Meta-Reasoner is done.
+// Visualises the consolidation: the collapse, per-tier node counts, the biggest
+// merges, the per-compartment before→after, and the Prejudice-of-Shape gap.
+// Validated categorical trio (#0891b2/#b45309/#7c3aed) + single-hue magnitude bars.
+// ===================================================================
+const TIER_COLOR: Record<string, string> = { germ_layer: "#64748b", tissue: "#0891b2", cell_type_broad: "#b45309", cell_type_sub: "#7c3aed" };
+const TIER_SHORT: Record<string, string> = { germ_layer: "germ", tissue: "tissue", cell_type_broad: "broad", cell_type_sub: "sub" };
+function HBar({ label, value, max, color, sub }: { label: React.ReactNode; value: number; max: number; color: string; sub?: string }) {
+  const pct = max > 0 ? Math.max(2, (value / max) * 100) : 0;
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 7 }}>
+      <div style={{ width: 220, flexShrink: 0, fontSize: 12, color: "#555", textAlign: "right", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }} title={typeof label === "string" ? label : undefined}>{label}</div>
+      <div style={{ flex: 1, height: 15, background: "#f0ece7", borderRadius: 4, overflow: "hidden" }}><div style={{ width: `${pct}%`, height: "100%", background: color, borderRadius: 4 }} /></div>
+      <div style={{ width: 52, flexShrink: 0, fontSize: 12.5, fontWeight: 800, color: "#333", fontVariantNumeric: "tabular-nums" }}>{value}{sub ? <span style={{ fontWeight: 400, color: "#9a948c" }}> {sub}</span> : null}</div>
+    </div>
+  );
+}
+const RCARD: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px" };
+const RSEC: React.CSSProperties = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#9a948c", fontWeight: 800, margin: "0 0 12px" };
+
+function FinalizeResults({ run, clusters, decisions, globalDone, comps, judgements, addJudgement, endBtn, onBack }: any) {
+  const dec = Object.entries(decisions).map(([ci, d]: any) => ({ ci: Number(ci), merges: d.merges || [], set_aside: d.set_aside || [] }));
+  const merges = dec.flatMap((d) => d.merges.map((m: any) => ({ ...m, ci: d.ci })));
+  const asides = dec.flatMap((d) => d.set_aside.map((s: any) => ({ ...s, ci: d.ci })));
+  const totalNodes = merges.length + asides.length;
+  const leavesFolded = merges.reduce((s: number, m: any) => s + (m.member_leaf_ids?.length || 0), 0);
+  const beforeLeaves = comps.reduce((s: number, c: any) => s + c.leafIds.length, 0);
+  const tierCounts: Record<string, number> = {};
+  [...merges, ...asides].forEach((n: any) => { tierCounts[n.tier] = (tierCounts[n.tier] || 0) + 1; });
+  const tierOrder = ["tissue", "cell_type_broad", "cell_type_sub"].filter((t) => tierCounts[t]);
+  const topMerges = [...merges].sort((a: any, b: any) => (b.member_leaf_ids?.length || 0) - (a.member_leaf_ids?.length || 0)).slice(0, 12);
+  const maxMerge = Math.max(1, ...topMerges.map((m: any) => m.member_leaf_ids?.length || 0));
+  const missing = globalDone?.expected_still_missing || [];
+  const perComp = dec.map((d) => ({ ci: d.ci, leaves: comps.find((c: any) => c.index === d.ci)?.leafIds.length || 0, nodes: d.merges.length + d.set_aside.length })).sort((a, b) => a.ci - b.ci);
+  const maxLeaves = Math.max(1, ...perComp.map((p) => p.leaves));
+  const reduction = beforeLeaves > 0 ? Math.round((1 - totalNodes / beforeLeaves) * 100) : 0;
+
+  const tile = (label: string, value: React.ReactNode, color = "#333") => (
+    <div style={{ ...RCARD, padding: "12px 16px", minWidth: 130 }}>
+      <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4 }}>{label}</div>
+      <div style={{ fontSize: 26, fontWeight: 800, color, marginTop: 2, fontVariantNumeric: "tabular-nums" }}>{value}</div>
+    </div>
+  );
+
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 70, background: PAPER, overflow: "auto" }}>
+      <div style={{ position: "sticky", top: 0, height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "#fffdfb", borderBottom: "1px solid #e5e1dc", zIndex: 10 }}>
+        <button onClick={onBack} style={btnGhost}>← Back to workbench</button>
+        <div style={{ fontWeight: 800 }}>🎉 Final labelling</div>
+        <div style={{ marginLeft: "auto" }}>{endBtn}</div>
+      </div>
+      <div style={{ maxWidth: 1000, margin: "0 auto", padding: "20px 22px 80px", display: "flex", flexDirection: "column", gap: 16 }}>
+        {/* HERO — the collapse */}
+        <div style={{ ...RCARD, textAlign: "center", padding: "26px 18px" }}>
+          <div style={{ fontSize: 13, color: "#9a948c", fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6 }}>Meta-Reasoner finalize · {run?.model}</div>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 18, margin: "10px 0 4px", flexWrap: "wrap" }}>
+            <span style={{ fontSize: 44, fontWeight: 800, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{beforeLeaves}</span>
+            <span style={{ fontSize: 24, color: "#c8c0b6" }}>fine leaves →</span>
+            <span style={{ fontSize: 52, fontWeight: 800, color: "#15803d", fontVariantNumeric: "tabular-nums" }}>{totalNodes}</span>
+            <span style={{ fontSize: 24, color: "#c8c0b6" }}>nodes</span>
+          </div>
+          <div style={{ fontSize: 13.5, color: "#666" }}>{reduction}% fewer nodes · {leavesFolded} leaves folded into {merges.length} merges · {asides.length} kept distinct</div>
+        </div>
+
+        {/* STAT TILES */}
+        <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
+          {tile("final nodes", totalNodes, "#15803d")}
+          {tile("merge-nodes", merges.length, "#0891b2")}
+          {tile("set-aside / rebel", asides.length, "#7c3aed")}
+          {tile("leaves folded", leavesFolded)}
+          {tile("still missing", missing.length, missing.length ? "#b45309" : "#15803d")}
+        </div>
+
+        {/* PER-TIER node counts (validated categorical trio + legend + direct labels) */}
+        <div style={RCARD}>
+          <div style={RSEC}>Final nodes by schema tier</div>
+          <div style={{ display: "flex", gap: 14, marginBottom: 10, flexWrap: "wrap" }}>
+            {tierOrder.map((t) => <span key={t} style={{ display: "inline-flex", alignItems: "center", gap: 6, fontSize: 12, color: "#555" }}><span style={{ width: 11, height: 11, borderRadius: 3, background: TIER_COLOR[t] }} />{TIER_SHORT[t]}</span>)}
+          </div>
+          {tierOrder.map((t) => <HBar key={t} label={TIER_SHORT[t]} value={tierCounts[t]} max={Math.max(1, ...tierOrder.map((x) => tierCounts[x]))} color={TIER_COLOR[t]} sub="nodes" />)}
+        </div>
+
+        {/* TOP MERGES — single-hue magnitude, sorted, direct-labeled */}
+        <div style={RCARD}>
+          <div style={RSEC}>Biggest consolidations · leaves folded into one node</div>
+          {topMerges.map((m: any, i: number) => <HBar key={i} label={m.node_label} value={m.member_leaf_ids?.length || 0} max={maxMerge} color="#0891b2" sub="leaves" />)}
+          {!topMerges.length ? <div style={{ fontSize: 12.5, color: "#9a948c" }}>No merges recorded.</div> : null}
+        </div>
+
+        {/* PER-COMPARTMENT collapse */}
+        <div style={RCARD}>
+          <div style={RSEC}>Per-compartment · leaves → nodes</div>
+          {perComp.map((p) => (
+            <HBar key={p.ci} label={`Compartment ${p.ci}`} value={p.leaves} max={maxLeaves} color="#cbd5e1" sub={`→ ${p.nodes} node${p.nodes === 1 ? "" : "s"}`} />
+          ))}
+        </div>
+
+        {/* PREJUDICE-OF-SHAPE gap (status callout, not a chart) */}
+        <div style={{ ...RCARD, borderColor: missing.length ? "#fed7aa" : "#bbf7d0", background: missing.length ? "#fffbeb" : "#f0fdf4" }}>
+          <div style={{ ...RSEC, color: missing.length ? "#b45309" : "#15803d" }}>Prejudice-of-Shape · expected 48 hpf tissues still unaccounted for</div>
+          {missing.length ? (
+            <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>{missing.map((t: string, i: number) => <span key={i} style={{ fontSize: 12.5, fontWeight: 700, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "3px 11px" }}>{t}</span>)}</div>
+          ) : <div style={{ fontSize: 13, color: "#15803d", fontWeight: 700 }}>✓ Every expected tissue class is represented.</div>}
+          {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 8, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
+        </div>
+
+        {/* WORLD MAP — spatial view of the finalized partition */}
+        <div style={{ ...RCARD, padding: 12 }}>
+          <div style={{ ...RSEC, textAlign: "center" }}>The finalized atlas</div>
+          {clusters ? <div style={{ display: "flex", justifyContent: "center" }}>{hasCompartments(clusters) ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(clusters.map((c: any) => c.id))} width={760} height={440} /> : <UmapCanvas clusters={clusters} mode="global" colored activeId={null} validated={new Set()} width={560} height={420} />}</div> : null}
+        </div>
+
+        {/* judge the finale */}
+        <div style={RCARD}>
+          <div style={RSEC}>⚖️ Judge the final labelling</div>
+          <JudgeBox stage="finalize_results" targetId="final" targetLabel="Finalized labelling" excerpt={`${beforeLeaves}→${totalNodes} nodes`} judgements={judgements} addJudgement={addJudgement} />
+        </div>
       </div>
     </div>
   );
