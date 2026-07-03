@@ -884,7 +884,11 @@ function ClusterTranscript({ transcript, finalLabel }: { transcript: any[]; fina
       {beats.map((b, i) => {
         const last = i === beats.length - 1;
         const modes = b.turns.map((t) => t.mode).filter(Boolean);
-        const meta = TRANSCRIPT_MODE[modes[modes.length - 1]] || { icon: "💬", title: `Step ${i + 1}` };
+        const mm = TRANSCRIPT_MODE[modes[modes.length - 1]] || { icon: "💬", title: `Step ${i + 1}` };
+        // prefer the recorded story title ("Researcher · evidence", "Reasoner ·
+        // menu-exposed binning", …); fall back to a mode-derived label.
+        const storyTitle = b.turns.map((t) => t.title).find(Boolean);
+        const meta = { icon: mm.icon, title: storyTitle || mm.title };
         const preview = stripControlBlocks(b.turns.map((t) => t.content).join(" ")).replace(/\s+/g, " ").trim().slice(0, 96);
         return (
           <details key={i} open={last} style={{ border: "1px solid #e9e3db", borderRadius: 9, background: "#fffdfb", overflow: "hidden" }}>
