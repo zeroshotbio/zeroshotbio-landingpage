@@ -16,6 +16,7 @@
 // nothing here mutates the fixture; decisions are emit-and-log for judgement.
 import { assertGtBlind } from "./brain";
 import { META_REASONER_CONTEXT } from "./metaReasonerContext";
+import { assertPartition } from "./partition";
 
 export type OperatorTier = "germ_layer" | "tissue" | "cell_type_broad" | "cell_type_sub";
 export type OperatorScope = "compartment" | "global";
@@ -116,7 +117,12 @@ function coerceTier(t: any): OperatorTier {
   return TIERS.includes(t) ? t : "cell_type_broad";
 }
 
-export function parseOperatorOutput(text: string, scope: OperatorScope): OperatorOutput {
+// parseOperatorOutput extracts the operator's fenced-JSON decisions from its prose
+// response. When expectedLeafIds is supplied for a COMPARTMENT-scope response, the
+// parsed merges + set_aside are asserted to be an exact partition of those ids —
+// so a malformed block (which regex-parses to empty) throws PartitionError loudly
+// rather than silently dropping every leaf from the proposed node set.
+export function parseOperatorOutput(text: string, scope: OperatorScope, expectedLeafIds?: string[]): OperatorOutput {
   let jsonStr = "";
   const fenced = text.match(/```+\s*json\s*([\s\S]*?)```+/i) || text.match(/```+\s*([\s\S]*?)```+/);
   if (fenced) jsonStr = fenced[1];
@@ -145,5 +151,8 @@ export function parseOperatorOutput(text: string, scope: OperatorScope): Operato
       rationale: String(raw?.flag_missing?.rationale ?? ""),
     };
   }
+  // Structural safety floor: compartment scope must exactly partition its input
+  // leaves. Global scope emits flag_missing only (no partition) and is exempt.
+  if (expectedLeafIds && scope === "compartment") assertPartition(out, expectedLeafIds);
   return out;
 }
