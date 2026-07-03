@@ -1170,6 +1170,10 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
     e.preventDefault();
   };
 
+  // Once the finale is open, hand the whole screen to FinalizeResults — the live
+  // workbench chrome (chat column + floaties) is retired so it never bleeds over.
+  if (showResults) return <FinalizeResults run={run} clusters={clusters} dataset={dataset} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />;
+
   return (
     <div style={{ position: "fixed", inset: 0, zIndex: 60, background: PAPER, overflow: "hidden" }}>
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, height: 52, display: "flex", alignItems: "center", gap: 12, padding: "0 16px", background: "#fffdfb", borderBottom: "1px solid #e5e1dc", zIndex: 100 }}>
@@ -1179,7 +1183,6 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
         <span style={{ marginLeft: "auto", fontSize: 12, color: "#2563eb", fontWeight: 700 }}>{auto ? `🚀 autopilot · ${processed}/${comps.length}${busy ? " · reasoning…" : ""}` : busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
         {globalDone ? <button onClick={() => setShowResults(true)} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🎉 See the final labelling →</button> : null}
       </div>
-      {showResults && <FinalizeResults run={run} clusters={clusters} dataset={dataset} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
 
       {/* right chat column with input + self-suggest — draggable left edge to resize */}
       <div style={{ position: "absolute", top: 52, right: 0, bottom: 0, width: chatW, background: "#fff", borderLeft: "1px solid #e5e1dc", display: "flex", flexDirection: "column", zIndex: 80 }}>
