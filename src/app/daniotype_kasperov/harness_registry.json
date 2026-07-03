@@ -6,10 +6,7 @@
    "name": "multi-level top-down expectation-guided recursion (MVP)",
    "version": "2.0",
    "supersedes": null,
-   "appliesTo": [
-    "zscape",
-    "zscape_recursive"
-   ],
+   "appliesTo": ["zscape", "zscape_recursive"],
    "stampedAt": "2026-06-29T00:00:00+00:00",
    "gitCommit": null,
    "model": "gpt-5.5",
@@ -22,11 +19,31 @@
     "Escape hatch: at a sub-leaf, a strong, specific lineage anchor (R4b-style, not a promiscuous gene) contradicting the parent lets the Reasoner re-home it outside the parent.",
     "Guardrails: GT-blind discipline preserved; abstention/roll-up to the deepest defensible tier preserved; expectation-bias risk mitigated by the unchanged evidentiary bar + control-vote audit (offline)."
    ],
-   "verification": {
-    "status": "NONE YET — design-stage MVP; not GT-scored.",
-    "gt": [],
-    "noGt": []
-   }
+   "verification": { "status": "NONE YET — design-stage MVP; not GT-scored.", "gt": [], "noGt": [] }
+  },
+  {
+   "id": "v1.2",
+   "name": "recursive-leaf · R4/R5 + trap-library + continuum-gate + preflight (run_leaf_v2)",
+   "version": "1.2",
+   "supersedes": "v1.1",
+   "stampedAt": "2026-06-26T22:37:10+00:00",
+   "gitCommit": "5b05b6d0",
+   "model": "gpt-5.5",
+   "summary": "HEAD run_leaf_v2 path. Extends the v1.1 three-personality loop with the post-2026-06-23 hardening that landed AFTER the last MiniFin run (frozen at 0cb5ec9e, 18 min before R4/R5): R4 positive-anchor floor + R5 scorecard hygiene (absence-tolerant conclusion logic), trap_warnings briefing layer (7 shapes), continuum gate with collision-shape bypass (_collision_shape routes shared-structural/pigment-program leaves into a discriminator probe before any abstain), convention-aware symbol resolver in the Archivist probe path, and a preflight self-test gate (_ensure_preflight) that hard-stops on a degraded config before spending. Entry point is run_leaf_v2 (recursive-leaf assets), NOT the legacy run_one_cluster UI path. ledger/snowball available but OFF for this run (ledger=None).",
+   "design": [
+    "Inherits the v1.1 design (driver-scoring, first-class abstention, semantic judge, misalignment guard + count-bound, open-vocabulary).",
+    "Preflight gate (_ensure_preflight) runs once/dataset before labelling: authenticated :5007 probe returns real stats, grounding alignment, symbol-resolver round-trip, one LLM connectivity ping — raises PreflightError (no fall-through to any legacy path) on failure.",
+    "R4/R5 absence-tolerance: an ASSIGN requires a PRESENT specific-positive anchor; probed-absent markers may not be cited as support — closes the pre-R4/R5 cross-lineage collision gap.",
+    "Continuum/collision-shape gate: low-distinctiveness leaves whose dominant markers are a shared structural/pigment program earn a discriminator probe before the continuum gate may abstain; the low-n gate (<30 cells) is NOT bypassed."
+   ],
+   "provenanceNote": "PROVENANCE-ONLY stamp bump for the 2026-06-26 recursive-leaf MiniFin run. This entry's code (app.py @ HEAD 5b05b6d0) is NOT independently GT-rescored; the GT/no-GT verification numbers below live on the v1.1 ancestor (gitCommit 87005893) and are NOT re-claimed for HEAD. v1.1's record is left intact and truthful. Re-benchmarking the run_leaf_v2 hardened path is a separate, still-pending step.",
+   "configFingerprint": [
+    {
+     "path": "backend/daniotype_autopilot_api/app.py",
+     "scope": "functions: run_leaf_v2, _ensure_preflight, preflight, _collision_shape, trap_warnings, assemble_leaf_context, _REASONER_PROTOCOL (R4/R5)",
+     "sha256_16": "(see git 5b05b6d0)"
+    }
+   ]
   },
   {
    "id": "v1.1",
@@ -142,7 +159,7 @@
       "strata": {
        "ge100": 91.9,
        "ge30": 91.2,
-       "all": 90
+       "all": 90.0
       },
       "abstention": {
        "n": 6,
@@ -166,7 +183,7 @@
       ],
       "strata": {
        "ge100": 88.3,
-       "ge30": 85,
+       "ge30": 85.0,
        "all": 84.2
       },
       "abstention": {
@@ -214,7 +231,7 @@
      {
       "dataset": "minifin",
       "coverage": {
-       "assigned_pct": 100,
+       "assigned_pct": 100.0,
        "abstained": 0
       },
       "grounding_pct": 98.5,
@@ -354,7 +371,7 @@
        },
        {
         "label": "Tissue",
-        "pct": 91
+        "pct": 91.0
        },
        {
         "label": "Cell type — broad",
@@ -398,7 +415,7 @@
       "abstention": {
        "n": 6,
        "total": 341,
-       "precision": 83
+       "precision": 83.0
       }
      },
      {
@@ -465,7 +482,7 @@
      {
       "dataset": "minifin",
       "coverage": {
-       "assigned_pct": 100,
+       "assigned_pct": 100.0,
        "abstained": 0
       },
       "grounding_pct": 98.5,
@@ -562,7 +579,7 @@
       "tiers": [
        {
         "label": "Tissue",
-        "pct": 80
+        "pct": 80.0
        },
        {
         "label": "Cell type",
