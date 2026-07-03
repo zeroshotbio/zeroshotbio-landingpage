@@ -683,7 +683,9 @@ export default function KasperovClient() {
           <RunListModal
             dataset={finalizeFor}
             title="⚙ Meta-Reasoner Finalize Run"
-            subtitle="Pick a labelled run to finalize — the Meta-Reasoner will consolidate its leaves live."
+            subtitle="Pick a labelled run to finalize — the Meta-Reasoner will consolidate its leaves live. Only compatible runs are shown: many fine leaves labelled, not yet finalized."
+            filter={isFinalizable}
+            emptyNote="No compatible runs yet. A run qualifies only once it has produced many fine-grained leaf clusters (labelled) and has NOT already been finalized by the Meta-Reasoner. Run a full New Run labelling first (or use the scrubbed fine-leaf run)."
             onView={(run, m) => { setViewingRun({ run, meta: m, dataset: finalizeFor, finalize: true }); setFinalizeFor(null); }}
             onClose={() => setFinalizeFor(null)}
           />
@@ -865,7 +867,18 @@ const TIPS: Record<string, string> = {
 // View-mode run list (Phase 2b): lists every saved run for ONE dataset and opens
 // the chosen one in the read-only RunViewer. Archived runs are off by default,
 // revealed by a toggle and badged by reason (quarantined / superseded / other).
-function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void; title?: string; subtitle?: string }) {
+// A run is a valid Meta-Reasoner FINALIZE candidate only if it produced many
+// fine-grained leaf clusters (labelled) AND has not already been finalized — the
+// operator consolidates fresh leaves, so a run that already carries meta-reasoner
+// work (or is archived) is not offered again.
+function isFinalizable(m: any): boolean {
+  const metaDone = m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note));
+  if (metaDone || m.archived) return false;
+  const leaves = Number(m.nLabelled || 0);
+  return leaves >= 20 || /scrub|fine[- ]?leaf|leaves/i.test(String(m.note || ""));
+}
+
+function RunListModal({ dataset, onView, onClose, title, subtitle, filter, emptyNote }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void; title?: string; subtitle?: string; filter?: (m: any) => boolean; emptyNote?: string }) {
   const [runs, setRuns] = useState<any[] | null>(null);
   const [status, setStatus] = useState<"loading" | "ready" | "notconfigured" | "error">("loading");
   const [err, setErr] = useState("");
@@ -906,6 +919,10 @@ function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: 
     other: { bg: "#f1ede8", fg: "#7a746c", label: "archived" },
   };
   const archivedCount = (runs || []).filter((m) => m.archived).length;
+  // optional compatibility filter (e.g. the finalize picker shows only labelled,
+  // not-yet-finalized fine-leaf runs). Archived gating is handled by the API.
+  const shown = (runs || []).filter((m) => !filter || filter(m));
+  const nHidden = (runs || []).length - shown.length;
 
   return (
     <div onClick={onClose} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.4)", zIndex: 1000, display: "flex", alignItems: "center", justifyContent: "center", padding: 20 }}>
@@ -915,7 +932,7 @@ function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: 
           {subtitle ? <div style={{ fontSize: 12, color: "#7a746c", width: "100%", marginTop: 2 }}>{subtitle}</div> : null}
           <button onClick={onClose} style={{ marginLeft: "auto", ...btnGhost, padding: "5px 11px", fontSize: 13 }}>Close</button>
         </div>
-        <div style={{ fontSize: 12.5, color: "#888", marginBottom: 12 }}>Click a run to view it read-only — its map, labels, scorecard, and saved transcripts.</div>
+        <div style={{ fontSize: 12.5, color: "#888", marginBottom: 12 }}>{filter ? "Click a run to finalize it — the Meta-Reasoner will consolidate its fine leaves live." : "Click a run to view it read-only — its map, labels, scorecard, and saved transcripts."}</div>
 
         {status === "loading" && <div style={{ color: "#888", fontSize: 14 }}>Loading…</div>}
         {status === "notconfigured" && (
@@ -925,8 +942,11 @@ function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: 
         )}
         {status === "error" && <div style={{ color: "#b91c1c", fontSize: 14 }}>Failed to list runs: {err}</div>}
         {status === "ready" && runs && runs.length === 0 && <div style={{ color: "#888", fontSize: 14 }}>No saved runs for this dataset yet.</div>}
+        {status === "ready" && runs && runs.length > 0 && shown.length === 0 && (
+          <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>{emptyNote || "No matching runs."}</div>
+        )}
 
-        {status === "ready" && runs && runs.map((m) => {
+        {status === "ready" && shown.map((m) => {
           const cat = m.archiveCategory || "other";
           return (
             <div key={m.runId} onClick={() => !loadingId && open(m)} style={{ cursor: loadingId ? "default" : "pointer", background: "#fff", border: `1px solid ${m.archived ? ARCH[cat].fg + "44" : "#e5e1dc"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
@@ -956,7 +976,10 @@ function RunListModal({ dataset, onView, onClose, title, subtitle }: { dataset: 
           );
         })}
 
-        {status === "ready" && (
+        {status === "ready" && filter && nHidden > 0 && shown.length > 0 ? (
+          <div style={{ fontSize: 11.5, color: "#9a948c", marginTop: 8, fontStyle: "italic" }}>{nHidden} other run{nHidden === 1 ? "" : "s"} hidden — not compatible (already finalized, or no fine leaves labelled).</div>
+        ) : null}
+        {status === "ready" && !filter && (
           <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12.5, color: "#666", cursor: "pointer" }}>
             <input type="checkbox" checked={showArchived} onChange={(e) => setShowArchived(e.target.checked)} />
             Show archived runs{!showArchived ? " (superseded / quarantined / other)" : archivedCount ? ` — ${archivedCount} shown, badged` : " — none"}
