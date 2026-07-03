@@ -410,17 +410,6 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
           </div>
         </div>
 
-        {/* How to read this run — the labelling method, stated once. Static copy. */}
-        <details style={{ ...CARD, marginBottom: 12 }}>
-          <summary style={{ cursor: "pointer", fontSize: 12.5, fontWeight: 800, color: "#475569" }}>How to read this run</summary>
-          <ol style={{ margin: "8px 0 0", paddingLeft: 18, fontSize: 12.5, color: "#5a544c", lineHeight: 1.55 }}>
-            <li><b>Three-personality loop</b> — two Researcher proposers debate the cluster, an Archivist checks every claim against live :5007 stats, a Reasoner concludes.</li>
-            <li><b>Grounded proposals</b> — each name is anchored in cited markers → in-vivo expression (ZFIN) → ZFA anatomy → GO function; uncited names roll up to an abstention.</li>
-            <li><b>Confidence tiers</b> — the call is placed at the depth the evidence supports (germ-layer → tissue → cell-type); the per-tier confidence shows how far it could defensibly go.</li>
-            <li><b>Evaluation, not supervision</b> — where published labels exist they were <i>held out</i> and used only to score afterward; the labeler never saw them.</li>
-          </ol>
-        </details>
-
         {/* tabs — mirror the new-run steps */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
           {([["clustering", "1. Clustering"], ["modelHarness", "2. Model & Harness"], ["labels", "3. Fine Cell Labelling"], ["merging", "4. Merging & Meta-Reasoning"], ["judge", "5. Final Judge"]] as const).map(([k, label]) => (
@@ -461,10 +450,13 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               <div style={{ marginTop: 16 }}>
                 <button onClick={() => setTab("modelHarness")} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Good to proceed — model &amp; harness →</button>
               </div>
-              {/* this run's own clustering provenance — the "filled-in" logged decision, kept below */}
-              <div style={{ marginTop: 16, textAlign: "left" }}>
-                <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
-              </div>
+              {/* this run's own clustering provenance — shown only when the run JSON
+                  structurally snapshotted a strategy (never back-filled from live data) */}
+              {profile.hasClusteringStrategy ? (
+                <div style={{ marginTop: 16, textAlign: "left" }}>
+                  <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
+                </div>
+              ) : null}
             </div>
           );
         })()}
@@ -482,21 +474,25 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               {run?.cost?.usd != null ? <span style={{ fontSize: 12.5, color: "#666" }}>~${money(Number(run.cost.usd))}{run?.cost?.estimated ? " (est.)" : ""} total</span> : null}
               <span style={{ marginLeft: "auto", fontSize: 11, fontWeight: 700, color: "#15803d" }}>✓ used this run</span>
             </div>
-            <h2 style={{ ...SEC, fontSize: 12 }}>Harness</h2>
-            <div style={{ ...CARD, border: `2px solid ${ACCENT}`, marginBottom: 12 }}>
-              {run?.harness ? (
-                <>
+            {/* Harness — only when this run stamped one (else the section is omitted) */}
+            {profile.hasHarness ? (
+              <>
+                <h2 style={{ ...SEC, fontSize: 12 }}>Harness</h2>
+                <div style={{ ...CARD, border: `2px solid ${ACCENT}`, marginBottom: 12 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>v{run.harness.version}{run.harness.name ? ` · ${run.harness.name}` : ""}</div>
                   <div style={{ fontSize: 11.5, color: "#9a948c", fontFamily: "ui-monospace, monospace", marginTop: 3 }}>{run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""}{run.harness.stampedAt ? ` · stamped ${String(run.harness.stampedAt).slice(0, 10)}` : ""}</div>
-                </>
-              ) : notRecorded("Harness")}
-            </div>
-            {/* the three personalities of this harness — the SAME panel New Run shows */}
-            <HarnessDetail harness={run?.harness} />
-            <div style={{ ...CARD, marginTop: 12 }}>
-              <div style={SEC}>Run provenance</div>
-              <GroundingPanel provenance={run?.provenance} />
-            </div>
+                </div>
+                {/* the three personalities of this harness — the SAME panel New Run shows */}
+                <HarnessDetail harness={run.harness} />
+              </>
+            ) : null}
+            {/* Run provenance — only when the run carried it */}
+            {profile.hasProvenance ? (
+              <div style={{ ...CARD, marginTop: 12 }}>
+                <div style={SEC}>Run provenance</div>
+                <GroundingPanel provenance={run?.provenance} />
+              </div>
+            ) : null}
             <div style={{ textAlign: "center", marginTop: 16 }}>
               <button onClick={() => setTab("labels")} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Proceed to 3. Fine Cell Labelling →</button>
             </div>
@@ -515,17 +511,19 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 {ocRun.validated ? <span style={{ fontSize: 12, color: "#15803d", marginLeft: 8, fontWeight: 700 }}>✓ validated</span> : null}
               </div>
             </div>
-            <div style={CARD}>
-              <div style={SEC}>Tier confidence</div>
-              {ocRun.confidence?.germ_layer ? <ConfidenceContent conf={ocRun.confidence as ClusterConf} /> : notRecorded("Tier confidence")}
-            </div>
+            {ocRun.confidence?.germ_layer ? (
+              <div style={CARD}>
+                <div style={SEC}>Tier confidence</div>
+                <ConfidenceContent conf={ocRun.confidence as ClusterConf} />
+              </div>
+            ) : null}
             <div style={CARD}>
               <div style={SEC}>Top markers</div>
               {ocAtlas ? <MarkersContent cluster={ocAtlas} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} /> : <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>}
             </div>
-            <div style={CARD}>
-              <div style={SEC}>Chat history — how this cluster was decided</div>
-              {Array.isArray(ocRun.transcript) && ocRun.transcript.length ? (
+            {Array.isArray(ocRun.transcript) && ocRun.transcript.length ? (
+              <div style={CARD}>
+                <div style={SEC}>Chat history — how this cluster was decided</div>
                 <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                   {ocRun.transcript.map((t: any, i: number) =>
                     t.role === "user" ? (
@@ -535,8 +533,8 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                     )
                   )}
                 </div>
-              ) : notRecorded("Chat history")}
-            </div>
+              </div>
+            ) : null}
             <div style={CARD}>
               <div style={SEC}>⚖️ Judge this cluster</div>
               <JudgeBox stage="labelling" targetId={openCluster!} targetLabel={ocRun.finalLabel || `Cluster ${numOf(openCluster!)}`} excerpt={ocRun.finalLabel} judgements={judgements} addJudgement={addJudgement} />
@@ -559,32 +557,34 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 </div>
               ) : null}
             </div>
-            <div>
-              <div style={{ ...SEC, marginBottom: 8 }}>{gt ? "Final accuracy by tier vs ground truth" : "Final mean confidence by tier"}</div>
-              {((gt
+            {(() => {
+              const tierRows = gt
                 ? nativeAgg.map((t: any) => ({ key: t.key, label: TIER_LABEL[t.key] || t.label, pct: t.pct, sub: `${t.matched}/${t.total} agree` }))
-                : meanConf.map((t) => ({ key: t.key, label: t.label, pct: t.pct, sub: `mean of ${t.n} clusters` })))).length ? (
-                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
-                  {(gt
-                    ? nativeAgg.map((t: any) => ({ key: t.key, label: TIER_LABEL[t.key] || t.label, pct: t.pct, sub: `${t.matched}/${t.total} agree` }))
-                    : meanConf.map((t) => ({ key: t.key, label: t.label, pct: t.pct, sub: `mean of ${t.n} clusters` }))).map((t) => {
-                    const heat = confColor(t.pct ?? 0);
-                    return (
-                      <div key={t.key} style={CARD}>
-                        <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
-                        <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
-                          <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{(t.pct ?? 0).toFixed(0)}%</span>
-                          <span style={{ fontSize: 12, color: "#999" }}>{t.sub}</span>
+                : meanConf.map((t) => ({ key: t.key, label: t.label, pct: t.pct, sub: `mean of ${t.n} clusters` }));
+              if (!tierRows.length) return null; // omit the section entirely when unrecorded
+              return (
+                <div>
+                  <div style={{ ...SEC, marginBottom: 8 }}>{gt ? "Final accuracy by tier vs ground truth" : "Final mean confidence by tier"}</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: 12 }}>
+                    {tierRows.map((t) => {
+                      const heat = confColor(t.pct ?? 0);
+                      return (
+                        <div key={t.key} style={CARD}>
+                          <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{t.label}</div>
+                          <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+                            <span style={{ fontSize: 30, fontWeight: 800, color: heat.fg, fontVariantNumeric: "tabular-nums" }}>{(t.pct ?? 0).toFixed(0)}%</span>
+                            <span style={{ fontSize: 12, color: "#999" }}>{t.sub}</span>
+                          </div>
+                          <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
+                            <div style={{ width: `${t.pct ?? 0}%`, height: "100%", background: heat.fg }} />
+                          </div>
                         </div>
-                        <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}>
-                          <div style={{ width: `${t.pct ?? 0}%`, height: "100%", background: heat.fg }} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
-              ) : notRecorded(gt ? "Ground-truth tiers" : "Tier confidence")}
-            </div>
+              );
+            })()}
 
             <div style={{ ...CARD, padding: 0, overflow: "hidden" }}>
               <div style={{ ...SEC, padding: "14px 16px 0" }}>Per-cluster breakdown — click a cluster to see how it was decided</div>
@@ -874,7 +874,7 @@ function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, o
   if (live) return <MetaFinalizeFlow run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
   if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   // COMPLETED-RUN mode — an in-page SUMMARY of the finale visuals (no live chrome).
-  return <MergingSummary run={run} clusters={clusters} prop={prop} judgements={judgements} addJudgement={addJudgement} />;
+  return <MergingSummary run={run} clusters={clusters} prop={prop} />;
 }
 
 // In-page summary of a completed run's Meta-Reasoner consolidation, rendered in
@@ -882,7 +882,7 @@ function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, o
 // hierarchy, the finalized world map, and the Prejudice-of-Shape ghost coverage —
 // the same major visuals as the live finale, but static + judgeable. Tolerant of
 // both operatorProposal shapes (slim live-append + the richer fixture bundle).
-function MergingSummary({ run, clusters, prop, judgements, addJudgement }: { run: any; clusters: any[] | null; prop: any; judgements: any[]; addJudgement: (j: any) => void }) {
+function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | null; prop: any }) {
   const leafLabel: Record<string, string> = {};
   (run?.clusters || []).forEach((c: any) => { leafLabel[String(c.id)] = c.finalLabel; });
   const propComps: any[] = (prop.compartments || []).filter((c: any) => !c.error);
@@ -941,19 +941,16 @@ function MergingSummary({ run, clusters, prop, judgements, addJudgement }: { run
         {globalDone?.rationale ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 10, lineHeight: 1.5 }}>{globalDone.rationale}</div> : null}
       </div>
 
-      {/* 4 · per-compartment decisions + judgement */}
+      {/* 4 · per-compartment decisions (read-only; no judgement entry in the viewer) */}
       <div style={RCARD}>
         <div style={RSEC}>Per-compartment decisions · merge / set-aside</div>
-        <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
           {propComps.map((c: any) => (
             <div key={c.compartment} style={{ borderLeft: "3px solid #e5e1dc", paddingLeft: 12 }}>
               <div style={{ fontSize: 12.5, fontWeight: 800, color: "#33312e", marginBottom: 5 }}>Compartment {c.compartment} <span style={{ fontWeight: 400, color: "#9a948c" }}>· {(c.merges?.length || 0) + (c.set_aside?.length || 0)} nodes</span></div>
               <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
                 {(c.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
                 {(c.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
-              </div>
-              <div style={{ marginTop: 6 }}>
-                <JudgeBox stage="merging" targetId={`C${c.compartment}`} targetLabel={`Meta-Reasoner · Compartment ${c.compartment}`} excerpt={`${(c.merges?.length || 0)} merges · ${(c.set_aside?.length || 0)} set-aside`} judgements={judgements} addJudgement={addJudgement} />
               </div>
             </div>
           ))}
