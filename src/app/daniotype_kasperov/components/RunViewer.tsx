@@ -931,7 +931,7 @@ function MetaReasonerStage({ run, clusters, judgements, addJudgement, onBack, li
         <div style={{ fontSize: 11.5, color: "#666", marginTop: 4 }}>{isGlobal ? "Whole labelled set — missing-tissue audit" : `Focused on Compartment ${cur.compartment} · ${cur.n_leaves} leaves`}</div>
       </Floaty>
 
-      <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
+      <Floaty title="📥 INPUTS · what it reasons over" accent="#2563eb" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
         {cur ? (
           <>
             <div style={{ fontSize: 10.5, color: "#9a948c", fontWeight: 800 }}>PREDICTED LABELS · labeller&apos;s own (GT-blind)</div>
@@ -1015,6 +1015,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
   }, [clusters, run]);
   const ledger = { totalLeaves: (clusters || []).length, totalCompartments: comps.length, compartmentSizes: Object.fromEntries(comps.map((c) => [String(c.index), c.leafIds.length])) };
   const processed = Object.keys(decisions).length;
+  const doneThrough = processed ? Math.max(...Object.keys(decisions).map(Number)) : null;
   const nextComp = comps.find((c) => !decisions[c.index]);
   const allDone = !nextComp;
   // the exact prompt the NEXT step will send — shown in the judgement gate so you
@@ -1096,7 +1097,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
         <button onClick={onBack} style={btnGhost}>← Back</button>
         <div style={{ fontWeight: 800 }}>🧠 Meta-Reasoner · Finalize (live)</div>
         <span style={{ fontSize: 12.5, color: "#666" }}>{comps.length} compartments · {ledger.totalLeaves} labelled leaves · {processed} consolidated{globalDone ? " · audited" : ""}</span>
-        <span style={{ marginLeft: "auto", fontSize: 12, color: "#7c3aed", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
+        <span style={{ marginLeft: "auto", fontSize: 12, color: "#2563eb", fontWeight: 700 }}>{busy ? "⏳ reasoning…" : allDone ? (globalDone ? "✓ finalize proposal complete" : "ready for the audit") : `next: Compartment ${nextComp?.index}`}</span>
         {globalDone ? <button onClick={() => setShowResults(true)} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 8, padding: "8px 15px", fontSize: 13, fontWeight: 800, cursor: "pointer" }}>🎉 See the final labelling →</button> : null}
       </div>
       {showResults && <FinalizeResults run={run} clusters={clusters} decisions={decisions} globalDone={globalDone} comps={comps} judgements={judgements} addJudgement={addJudgement} endBtn={endBtn} onBack={() => setShowResults(false)} />}
@@ -1124,9 +1125,38 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
       </div>
 
       {/* floaty visuals — track the Meta-Reasoner's current attention */}
-      <Floaty title="🗺 WORLD MAP · attention" accent="#0e7490" initial={{ x: 18, y: 64, w: 430, h: 322 }}>
-        {clusters ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(Object.keys(decisions).flatMap((k) => comps.find((c) => c.index === Number(k))?.leafIds || []))} width={404} height={248} dimUnfocused focusCompartments={attention != null ? [attention] : []} /> : <div style={{ color: "#aaa", fontSize: 12 }}>loading map…</div>}
-        <div style={{ fontSize: 11.5, color: "#666", marginTop: 4 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
+      <Floaty title="🗺 WORLD MAP · progress" accent="#2563eb" initial={{ x: 18, y: 64, w: 430, h: 336 }}>
+        {clusters ? <CompartmentMap clusters={clusters} activeId={null} validated={new Set(Object.keys(decisions).flatMap((k) => comps.find((c) => c.index === Number(k))?.leafIds || []))} width={404} height={248} dimUnfocused focusCompartments={attention != null ? [attention] : []} doneThrough={doneThrough} nextCompartment={nextComp?.index ?? null} /> : <div style={{ color: "#aaa", fontSize: 12 }}>loading map…</div>}
+        <div style={{ display: "flex", gap: 12, marginTop: 5, fontSize: 10.5, color: "#666" }}>
+          <span>✓ <b style={{ color: "#15803d" }}>{Object.keys(decisions).length}</b> done</span>
+          <span>→ <b style={{ color: "#2563eb" }}>{nextComp ? `C${nextComp.index}` : "—"}</b> next</span>
+          <span>○ <b style={{ color: "#9a948c" }}>{comps.length - Object.keys(decisions).length}</b> pending</span>
+        </div>
+        <div style={{ fontSize: 11.5, color: "#666", marginTop: 2 }}>{attComp ? `Attending to Compartment ${attComp.index} · ${attComp.leafIds.length} leaves` : allDone ? "Whole set — audit" : "Awaiting first step"}</div>
+      </Floaty>
+      {/* hierarchy tree — compartments → consolidated nodes, filling in + highlighting */}
+      <Floaty title="🌳 HIERARCHY · compartments → nodes" accent="#2563eb" initial={{ x: 906, y: 64, w: 320, h: 500 }} minH={200}>
+        <div style={{ fontSize: 11.5, lineHeight: 1.5 }}>
+          {comps.map((c: any) => {
+            const d = decisions[c.index];
+            const isCur = attention === c.index;
+            const st = d ? "done" : (nextComp?.index === c.index ? "next" : "pending");
+            return (
+              <div key={c.index} style={{ marginBottom: 3, padding: "1px 4px", borderRadius: 5, background: isCur ? "#eff6ff" : "transparent" }}>
+                <div style={{ fontWeight: 800, color: st === "done" ? "#15803d" : st === "next" ? "#2563eb" : "#9a948c" }}>
+                  {st === "done" ? "✓" : st === "next" ? "→" : "○"} Compartment {c.index} <span style={{ fontWeight: 400, color: "#9a948c" }}>({c.leafIds.length})</span>
+                </div>
+                {d ? (
+                  <div style={{ paddingLeft: 14, borderLeft: "1px solid #e5e1dc", marginLeft: 5 }}>
+                    {(d.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ color: "#15803d" }}>⤵ {m.node_label} <span style={{ color: "#9a948c" }}>×{m.member_leaf_ids?.length}</span></div>)}
+                    {(d.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ color: "#7c3aed" }}>⎇ leaf {s.leaf_id}</div>)}
+                  </div>
+                ) : null}
+              </div>
+            );
+          })}
+          {globalDone ? <div style={{ marginTop: 4, fontWeight: 800, color: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} missing</div> : null}
+        </div>
       </Floaty>
       <Floaty title="📥 INPUTS · what it reasons over" accent="#15803d" initial={{ x: 18, y: 398, w: 430, h: 250 }}>
         {attComp ? (<>
@@ -1134,7 +1164,7 @@ function LiveMetaWorkbench({ run, clusters, judgements, addJudgement, onBack, en
           {attComp.labelSet.map((l) => <div key={l.leaf_id} style={{ fontSize: 12, color: "#444", lineHeight: 1.4 }}><span style={{ color: "#9a948c" }}>{l.leaf_id}:</span> {l.label}</div>)}
         </>) : <div style={{ fontSize: 12, color: "#9a948c" }}>{ledger.totalLeaves} leaves across {comps.length} compartments. Self-suggest to begin.</div>}
       </Floaty>
-      <Floaty title="🎯 DECISION · latest step" accent="#7c3aed" initial={{ x: 462, y: 64, w: 440, h: 300 }}>
+      <Floaty title="🎯 DECISION · latest step" accent="#2563eb" initial={{ x: 462, y: 64, w: 440, h: 300 }}>
         {attDec ? (<div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {(attDec.merges || []).map((m: any, i: number) => <div key={"m" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#dcfce7", "#15803d")}>⤵ merge · {String(m.tier).replace("cell_type_", "")}</span> <b>{m.node_label}</b> ← {m.member_leaf_ids?.length} leaves</div>)}
           {(attDec.set_aside || []).map((s: any, i: number) => <div key={"a" + i} style={{ fontSize: 12, lineHeight: 1.4 }}><span style={chip("#eef2ff", "#4338ca")}>⎇ rebel · {String(s.tier).replace("cell_type_", "")}</span> leaf {s.leaf_id} — {leafLabel[String(s.leaf_id)] || "?"}</div>)}
@@ -1251,7 +1281,7 @@ function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNe
       <div style={FIN_INNER}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
           <button onClick={onBack} style={btnGhost}>← Back to datasets</button>
-          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#7c3aed", fontWeight: 700 }}>Meta-Reasoner Finalize · step 1 of 2</div>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#2563eb", fontWeight: 700 }}>Meta-Reasoner Finalize · step 1 of 2</div>
         </div>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: "2px 0 4px" }}>⚖️ Inheriting a labelled run</h1>
         <p style={{ color: "#666", fontSize: 14, lineHeight: 1.5, margin: "0 0 14px" }}>
@@ -1280,7 +1310,7 @@ function FinalizeSummary({ run, clusters, judgements, addJudgement, onBack, onNe
       <div style={FIN_BAR}>
         {endBtn}
         <button onClick={onBack} style={btnGhost}>← Back</button>
-        <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Continue → Meta-Reasoner prep</button>
+        <button onClick={onNext} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Continue → Meta-Reasoner prep</button>
       </div>
     </div>
   );
@@ -1301,7 +1331,7 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext, endBtn }: any)
       <div style={FIN_INNER}>
         <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 10 }}>
           <button onClick={onBack} style={btnGhost}>← Run summary</button>
-          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#7c3aed", fontWeight: 700 }}>Meta-Reasoner Finalize · step 2 of 2</div>
+          <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: "#2563eb", fontWeight: 700 }}>Meta-Reasoner Finalize · step 2 of 2</div>
         </div>
         <h1 style={{ fontSize: 28, fontWeight: 800, margin: "2px 0 4px" }}>🧠 Prepping the Meta-Reasoner</h1>
         <p style={{ color: "#666", fontSize: 14, lineHeight: 1.5, margin: "0 0 14px" }}>What it&apos;s loaded with before it reasons — and what it&apos;s trying to achieve. Refine these over time via system prompting + experiential knowledge.</p>
@@ -1332,7 +1362,7 @@ function FinalizePrep({ judgements, addJudgement, onBack, onNext, endBtn }: any)
       <div style={FIN_BAR}>
         {endBtn}
         <button onClick={onBack} style={btnGhost}>← Back</button>
-        <button onClick={onNext} style={{ background: "#7c3aed", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Begin finalize → live workbench</button>
+        <button onClick={onNext} style={{ background: "#2563eb", color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15, fontWeight: 800, cursor: "pointer" }}>Begin finalize → live workbench</button>
       </div>
     </div>
   );
@@ -1376,7 +1406,7 @@ function StepJudgeGate({ content, isResponse, tag, nLogged, priorNotes, busy, ne
         onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey) && note.trim()) submitStep(); }}
         style={{ boxSizing: "border-box", minHeight: 48, border: "1px solid #e5e1dc", borderRadius: 8, padding: "7px 10px", fontSize: 12.5, lineHeight: 1.45, resize: "vertical", fontFamily: "inherit", flexShrink: 0 }} />
       <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-        {nextLabel ? <button onClick={() => onAdvance()} disabled={busy} title="Advance without a note" style={{ ...btnGhost, flex: 1, padding: "7px 8px", fontSize: 12, opacity: busy ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button> : null}
+        {nextLabel ? <button onClick={() => onAdvance()} disabled={busy} title="Advance without a note" style={{ flex: 1, background: "#2563eb", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: busy ? "wait" : "pointer", opacity: busy ? 0.5 : 1 }}>{busy ? "…" : "Continue"}</button> : null}
         <button onClick={submitStep} disabled={busy || !note.trim()} style={{ flex: 1.4, background: note.trim() ? "#7c3aed" : "#cbb6ec", color: "#fff", border: "none", borderRadius: 8, padding: "7px 8px", fontSize: 12, fontWeight: 700, cursor: note.trim() ? "pointer" : "default" }}>{nextLabel ? "Add notes + continue →" : "⚖️ Add note"}</button>
       </div>
       <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, flexShrink: 0 }}>
