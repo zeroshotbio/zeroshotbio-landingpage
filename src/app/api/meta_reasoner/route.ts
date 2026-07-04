@@ -13,6 +13,8 @@
 import { NextResponse } from "next/server";
 import { assembleBrainInput, assertGtBlind, buildBrainPrompt, parseBrainDecision, enforceCaps, type BrainLedger } from "../../meta_reasoner/brain";
 import { assembleOperatorInput, buildOperatorPrompt, parseOperatorOutput, type OperatorScope, type LabelSetEntry } from "../../meta_reasoner/operator";
+import { annotateProposalSSMP } from "../../meta_reasoner/ssmpServer";
+import { ssmpTau } from "../../meta_reasoner/ssmpConfig";
 import { META_REASONER_CONTEXT as META_REASONER_CTX } from "../../meta_reasoner/metaReasonerContext";
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
@@ -65,7 +67,7 @@ function extractReasoning(resp: any): string {
 // reasoning summary can be typed out word-by-word in the UI as it flows in.
 // Emits {t:"trace",d} (reasoning-summary delta), {t:"text",d} (output delta),
 // then a terminal {t:"done",reasoning,reasoningTrace,output,usage} or {t:"error"}.
-function streamMetaResponse(openaiBody: any, kind: "consolidate" | "chat", scope: OperatorScope, expectedLeafIds?: string[]): Response {
+function streamMetaResponse(openaiBody: any, kind: "consolidate" | "chat", scope: OperatorScope, expectedLeafIds?: string[], datasetId?: string): Response {
   const key = process.env.OPENAI_API_KEY as string;
   const stream = new ReadableStream({
     async start(controller) {
@@ -102,7 +104,8 @@ function streamMetaResponse(openaiBody: any, kind: "consolidate" | "chat", scope
         const reasoning = full ? extractText(full) : "";
         const reasoningTrace = full ? extractReasoning(full) : "";
         const output = kind === "consolidate" && full ? parseOperatorOutput(reasoning, scope, expectedLeafIds) : null;
-        send({ t: "done", reasoning, reasoningTrace, output, usage: full?.usage ? { in: full.usage.input_tokens ?? null, out: full.usage.output_tokens ?? null } : null });
+        if (output?.merges) annotateProposalSSMP(datasetId, output.merges as any); // GT-blind advisory SSMP flag
+        send({ t: "done", reasoning, reasoningTrace, output, ssmpTau: ssmpTau(datasetId), usage: full?.usage ? { in: full.usage.input_tokens ?? null, out: full.usage.output_tokens ?? null } : null });
       } catch (e: any) {
         send({ t: "error", error: e?.name === "AbortError" ? "timeout" : String(e?.message ?? e).slice(0, 160) });
       } finally { clearTimeout(timer); controller.close(); }
@@ -174,15 +177,16 @@ export async function POST(req: Request) {
     }
     const opKey = process.env.OPENAI_API_KEY;
     if (!opKey) return NextResponse.json({ ok: false, error: "no_openai_key", input: opInput, prompt: opPrompt, guardrails: { gtBlind: true } }, { status: 200 });
-    if (body?.stream) return streamMetaResponse({ model: opModel, instructions: opPrompt.system, input: [{ role: "user", content: opPrompt.user }], reasoning: { effort: "low", summary: "auto" }, max_output_tokens: 6000 }, "consolidate", scope, labelSet.map((e) => e.leaf_id));
+    if (body?.stream) return streamMetaResponse({ model: opModel, instructions: opPrompt.system, input: [{ role: "user", content: opPrompt.user }], reasoning: { effort: "low", summary: "auto" }, max_output_tokens: 6000 }, "consolidate", scope, labelSet.map((e) => e.leaf_id), body?.dataset);
     const opCtrl = new AbortController();
     const opTimer = setTimeout(() => opCtrl.abort(), 110000);
     try {
       const resp = await callOpenAI(opKey, opModel, opPrompt.system, opPrompt.user, 6000, opCtrl.signal);
       const reasoning = extractText(resp);
       const output = parseOperatorOutput(reasoning, scope, labelSet.map((e) => e.leaf_id));
+      annotateProposalSSMP(body?.dataset, (output as any)?.merges); // GT-blind advisory SSMP flag (in place; never blocks)
       return NextResponse.json({ ok: true, input: opInput, prompt: opPrompt, reasoning, reasoningTrace: extractReasoning(resp), output,
-        guardrails: { gtBlind: true }, usage: { model: opModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
+        ssmpTau: ssmpTau(body?.dataset), guardrails: { gtBlind: true }, usage: { model: opModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
     } catch (e: any) {
       const aborted = e?.name === "AbortError";
       const partition = e?.code === "partition_violation";

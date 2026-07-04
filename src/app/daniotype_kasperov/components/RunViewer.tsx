@@ -8,6 +8,7 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useAtlas } from "../useAtlas";
 import { computeCompletenessProfile } from "../completeness";
+import { ssmpTau } from "../../meta_reasoner/ssmpConfig";
 import type { ClusterConf, DatasetDef } from "../types";
 import { PAPER, INK, ACCENT, confColor, btnGhost } from "../theme";
 import { UmapCanvas } from "./UmapCanvas";
@@ -653,9 +654,19 @@ function JudgeBox({ stage, targetId, targetLabel, excerpt, judgements, addJudgem
 }
 
 const stripJsonFence = (s: string) => String(s || "").replace(/```+\s*json[\s\S]*?```+/gi, "").replace(/\n{3,}/g, "\n\n").trim();
-function decisionMd(c: any): string {
+// GT-blind SSMP review flag (advisory). Returns {flagged, ssmp} for a merge node given the
+// per-dataset τ from the adapter config. Flags marker-disjoint merges; NEVER blocks.
+function ssmpOf(m: any, datasetId?: string): { flagged: boolean; ssmp: number | null } {
+  const s = (m?.ssmp ?? null) as number | null;
+  return { flagged: s != null && s < ssmpTau(datasetId), ssmp: s };
+}
+function decisionMd(c: any, datasetId?: string): string {
   const lines: string[] = [];
-  (c.merges || []).forEach((m: any) => lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves`));
+  (c.merges || []).forEach((m: any) => {
+    const { flagged, ssmp } = ssmpOf(m, datasetId);
+    const flag = flagged ? ` — ⚠️ **marker-disjoint** (SSMP ${ssmp}): members share no specific program` : (ssmp != null ? ` _(SSMP ${ssmp})_` : "");
+    lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves${flag}`);
+  });
   (c.set_aside || []).forEach((s: any) => lines.push(`- ⎇ **set aside** leaf ${s.leaf_id} (kept distinct)`));
   return lines.length ? "\n\n**→ Decision**\n" + lines.join("\n") : "";
 }
@@ -698,7 +709,7 @@ function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf
         {comps.map((c: any) => (
           <React.Fragment key={c.compartment}>
             <div style={userBubble}>Compartment {c.compartment} — {c.n_leaves} labelled leaves. Reason over them and consolidate: merge redundant restatements into one node, set aside genuinely distinct leaves.</div>
-            <AgentMessage mode="reason" content={stripJsonFence(c.reasoning) + decisionMd(c)} />
+            <AgentMessage mode="reason" content={stripJsonFence(c.reasoning) + decisionMd(c, run?.datasetId)} />
           </React.Fragment>
         ))}
         <div style={userBubble}>Now audit the whole labelled set — which expected 48&nbsp;hpf tissues are still unaccounted for?</div>
@@ -1142,7 +1153,7 @@ function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | n
                 <div key={c.index} style={{ height: htreeRowH(nodes.length), borderLeft: "3px solid #e5e1dc", paddingLeft: 10, boxSizing: "border-box" }}>
                   <div style={{ height: HTREE_HDR, display: "flex", alignItems: "center", fontSize: 12, fontWeight: 800, color: "#33312e" }}>Compartment {c.index} <span style={{ fontWeight: 400, color: "#9a948c", marginLeft: 5 }}>· {nodes.length} nodes</span></div>
                   {nodes.map((nd: any, i: number) => nd.kind === "merge"
-                    ? <div key={i} style={{ height: HTREE_LINE, display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, overflow: "hidden", whiteSpace: "nowrap" }}><span style={chip("#dcfce7", "#15803d")}>⤵ {String(nd.m.tier).replace("cell_type_", "")}</span> <b style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{nd.m.node_label}</b> <span style={{ color: "#9a948c", flexShrink: 0 }}>×{nd.m.member_leaf_ids?.length}</span></div>
+                    ? (() => { const sf = ssmpOf(nd.m, run?.datasetId); return <div key={i} style={{ height: HTREE_LINE, display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, overflow: "hidden", whiteSpace: "nowrap" }}><span style={chip("#dcfce7", "#15803d")}>⤵ {String(nd.m.tier).replace("cell_type_", "")}</span> <b style={{ overflow: "hidden", textOverflow: "ellipsis" }}>{nd.m.node_label}</b> <span style={{ color: "#9a948c", flexShrink: 0 }}>×{nd.m.member_leaf_ids?.length}</span>{sf.flagged && <span title="Marker-disjoint merge: members share no specific marker program (GT-blind SSMP flag). Catches the disjoint over-merge subclass the coherence metric missed — NOT a general over-merge detector. Advisory only." style={{ ...chip("#fef3c7", "#92400e"), flexShrink: 0, cursor: "help" }}>⚠️ disjoint · SSMP {sf.ssmp}</span>}{!sf.flagged && sf.ssmp != null && <span style={{ color: "#c4bfb8", flexShrink: 0, fontSize: 10.5 }}>SSMP {sf.ssmp}</span>}</div>; })()
                     : <div key={i} style={{ height: HTREE_LINE, display: "flex", alignItems: "center", gap: 5, fontSize: 11.5, overflow: "hidden", whiteSpace: "nowrap" }}><span style={chip("#eef2ff", "#4338ca")}>⎇ {String(nd.s.tier).replace("cell_type_", "")}</span> <span style={{ overflow: "hidden", textOverflow: "ellipsis" }}>leaf {nd.s.leaf_id} — {leafLabel[String(nd.s.leaf_id)] || "?"}</span></div>)}
                 </div>
               );
@@ -1268,10 +1279,10 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
   async function stepCompartment(nc: any, first: boolean) {
     setAttention(nc.index);
     setMessages((m) => [...m, { role: "user", content: promptFor(nc, first) }]);
-    const d = await postStream({ op: "consolidate", scope: "compartment", compartment: nc.index, labelSet: nc.labelSet, ledger, model: run?.model });
+    const d = await postStream({ op: "consolidate", scope: "compartment", compartment: nc.index, labelSet: nc.labelSet, ledger, model: run?.model, dataset: run?.datasetId ?? dataset?.id });
     if (d.ok) {
       setDecisions((p) => ({ ...p, [nc.index]: d.output }));
-      setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output), thinking: d.reasoningTrace }]);
+      setMessages((m) => [...m, { role: "assistant", content: stripJsonFence(d.reasoning) + decisionMdOut(d.output, run?.datasetId ?? dataset?.id), thinking: d.reasoningTrace }]);
       return d.output;
     }
     setMessages((m) => [...m, { role: "assistant", content: `_(operator error: ${d.error}${d.detail ? " — " + d.detail : ""})_` }]);
@@ -1281,7 +1292,7 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
     setAttention(null);
     setMessages((m) => [...m, { role: "user", content: auditPrompt }]);
     const all = comps.flatMap((c) => c.labelSet);
-    const d = await postStream({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model });
+    const d = await postStream({ op: "consolidate", scope: "global", labelSet: all, ledger, model: run?.model, dataset: run?.datasetId ?? dataset?.id });
     if (d.ok) {
       const fm = d.output?.flag_missing || {};
       setGlobalDone(fm);
@@ -1439,9 +1450,13 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
 }
 
 // decision summary (markdown) from a LIVE operator output object
-function decisionMdOut(out: any): string {
+function decisionMdOut(out: any, datasetId?: string): string {
   const lines: string[] = [];
-  (out?.merges || []).forEach((m: any) => lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves`));
+  (out?.merges || []).forEach((m: any) => {
+    const { flagged, ssmp } = ssmpOf(m, datasetId);
+    const flag = flagged ? ` — ⚠️ **marker-disjoint** (SSMP ${ssmp}): members share no specific program` : (ssmp != null ? ` _(SSMP ${ssmp})_` : "");
+    lines.push(`- ⤵ **merge** _[${String(m.tier || "").replace("cell_type_", "")}]_ **${m.node_label}** ← ${m.member_leaf_ids?.length || 0} leaves${flag}`);
+  });
   (out?.set_aside || []).forEach((s: any) => lines.push(`- ⎇ **set aside** leaf ${s.leaf_id} (kept distinct)`));
   return lines.length ? "\n\n**→ Decision**\n" + lines.join("\n") : "";
 }
