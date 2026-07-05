@@ -127,18 +127,30 @@ def _ds_dir(dataset):
 
 def _meta_from(run, run_id):
     cost = run.get("cost") or {}
+    cl = run.get("clusters") or []
+    meta = run.get("metadata") or {}
+    # Derive the list-row summary from the run's OWN content when the top-level fields
+    # aren't set (fixture bundles + headless/menu-harness runs POST clusters+transcripts
+    # but no top-level nLabelled/cost/date) — so a 250-leaf run never shows "0 labelled".
+    nlab = int(run.get("nLabelled") or 0) or sum(
+        1 for c in cl if isinstance(c.get("finalLabel"), str) and c["finalLabel"].strip())
+    nval = int(run.get("nValidated") or 0) or sum(1 for c in cl if c.get("validated"))
+    usd = cost.get("usd") or meta.get("cost_usd") or sum(
+        s.get("cost_usd", 0) for c in cl for s in (c.get("transcript") or c.get("steps") or [])
+        if isinstance(s, dict)) or 0
+    exported = run.get("exportedAt") or meta.get("finished") or meta.get("created")
     return {
         "runId": run_id,
         "dataset": run.get("dataset", run.get("datasetId")),
         "datasetId": run.get("datasetId"),
         "model": run.get("model", "?"),
-        "costUsd": float(cost.get("usd", 0) or 0),
+        "costUsd": float(usd or 0),
         "costEstimated": bool(cost.get("estimated")),
-        "exportedAt": run.get("exportedAt"),
+        "exportedAt": exported,
         "harness": run.get("harness"),
         "scoredAt": run.get("scoredAt"),
-        "nLabelled": int(run.get("nLabelled", 0) or 0),
-        "nValidated": int(run.get("nValidated", 0) or 0),
+        "nLabelled": nlab,
+        "nValidated": nval,
         "hasGroundTruth": bool(run.get("groundTruth")),
         "source": run.get("source", "server"),
         "note": run.get("note") or None,  # free-text "what's special about this run"
