@@ -321,6 +321,12 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   // atlas cluster ids are numeric; openCluster is a string → coerce both (this was
   // silently failing, leaving markers stuck on "Loading atlas…").
   const ocAtlas = openCluster ? clusters?.find((c) => String(c.id) === String(openCluster)) || null : null;
+  // Top-markers source: prefer the RUN's own embedded markers when present (a run whose
+  // fine-leaf clustering differs from the currently-registered atlas — e.g. the menu-harness
+  // smoke runs — carries its own markers), else fall back to the matched atlas cluster.
+  const ocMk = (ocRun && Array.isArray((ocRun as any).markers) && (ocRun as any).markers.length)
+    ? { ...(ocRun as any), markersDown: Array.isArray((ocRun as any).markersDown) ? (ocRun as any).markersDown : [] }
+    : ocAtlas;
   // for the read-only Scorecard (the per-cluster Daniotype-vs-GT breakdown the
   // new-run page shows) — rebuilt from the saved run.
   const labelsMap = useMemo(() => { const m: Record<string, string> = {}; for (const c of runClusters) if (c.finalLabel) m[String(c.id)] = String(c.finalLabel); return m; }, [run]);
@@ -522,8 +528,8 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
             ) : null}
             <div style={CARD}>
               <div style={SEC}>Top markers</div>
-              {clusters == null ? <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>
-                : ocAtlas ? <MarkersContent cluster={ocAtlas} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} />
+              {ocMk ? <MarkersContent cluster={ocMk} added={Array.isArray(ocRun.addedMarkers) ? ocRun.addedMarkers : []} />
+                : clusters == null ? <div style={{ fontSize: 12.5, color: "#aaa" }}>Loading atlas…</div>
                 : <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic" }}>No marker genes for this cluster in the atlas.</div>}
             </div>
             <div style={CARD}>
