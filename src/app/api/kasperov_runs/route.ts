@@ -23,31 +23,33 @@ const HEADERS = { "content-type": "application/json", "x-api-token": TOKEN };
 // --- batch fine-labelling deliverables -------------------------------------
 // The Phase-0→A→B fine-labelling runs are persisted worker-native under their own
 // datasetIds (labelling run = transcripts; consolidation run = operatorProposal).
-// These virtual picker ids resolve to {labelling, consolidation} worker coordinates;
-// on GET we fetch BOTH, merge the consolidation's operatorProposal + deliverable
-// labels into the labelling run, and normalize to viewer shape (see ./normalize).
-// Read-time only — the persisted worker runs are never rewritten.
+// They do NOT get their own picker card — instead each surfaces inside its BASE
+// dataset's "View Completed Runs" list: on a list request we append one synthetic
+// row; when that row is opened we fetch BOTH runs, merge the consolidation's
+// operatorProposal + deliverable labels into the labelling run, and normalize to
+// viewer shape (see ./normalize). Read-time only — persisted runs are never rewritten.
 type BatchRef = { ds: string; id: string };
-const BATCH: Record<string, { labelling: BatchRef; consolidation: BatchRef; model: string; label: string }> = {
-  minifin_batch: {
-    labelling: { ds: "minifin_phaseA_labelling", id: "20260704-234502-beaeee" },
-    consolidation: { ds: "minifin_final_labelling", id: "20260705-002027-a10bb8" },
-    model: "gpt-5.4", label: "MiniFin — fine-labelled + consolidated (267 leaves)",
-  },
-  megafin_batch: {
-    labelling: { ds: "megafin_phaseA_labelling", id: "20260705-051439-a10c0a" },
-    consolidation: { ds: "megafin_final_labelling", id: "20260705-063523-abad22" },
-    model: "gpt-5.4", label: "MegaFin — fine-labelled + consolidated (342 leaves, leaf-124 corrected)",
-  },
-  chemfish_batch: {
+const BATCH_BY_BASE: Record<string, { labelling: BatchRef; consolidation: BatchRef; model: string; note: string }> = {
+  chemfish: {
     labelling: { ds: "chemfish_phase1_finelabel", id: "20260704-193854-0c115f" },
     consolidation: { ds: "chemfish_phase1_finelabel", id: "20260704-222534-a70b22" },
-    model: "gpt-5.4", label: "ChemFish — fine-labelled + consolidated (288 leaves)",
+    model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (288 leaves → 51 nodes)",
   },
-  daniocell_batch: {
+  daniocell: {
     labelling: { ds: "daniocell_phase1_finelabel", id: "20260704-195339-e48838" },
     consolidation: { ds: "daniocell_phase1_finelabel", id: "20260704-222546-b3c7e8" },
-    model: "gpt-5.4", label: "DanioCell — fine-labelled + consolidated (270 leaves)",
+    model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (270 leaves → 55 nodes)",
+  },
+  minifin: {
+    labelling: { ds: "minifin_phaseA_labelling", id: "20260704-234502-beaeee" },
+    consolidation: { ds: "minifin_final_labelling", id: "20260705-002027-a10bb8" },
+    model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (267 leaves → 114 nodes; validated 0.99/0.90)",
+  },
+  // MegaFin fine-labelling ran on parse_megafin1 (the Parse/ENSDARG object) -> Parse card.
+  megafin_parse: {
+    labelling: { ds: "megafin_phaseA_labelling", id: "20260705-051439-a10c0a" },
+    consolidation: { ds: "megafin_final_labelling", id: "20260705-063523-abad22" },
+    model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (342 leaves → 131 nodes; leaf-124 corrected)",
   },
 };
 
@@ -57,22 +59,6 @@ async function fetchRunJson(ref: BatchRef): Promise<any | null> {
     if (!r.ok) return null;
     return await r.json();
   } catch { return null; }
-}
-
-// GET handler for the virtual batch datasetIds: list → one synthetic row; id → the
-// normalized, consolidation-merged run.
-async function handleBatch(cfg: (typeof BATCH)[string], id: string | null): Promise<NextResponse> {
-  if (!id) {
-    return NextResponse.json({
-      runs: [{
-        runId: cfg.labelling.id, datasetId: cfg.labelling.ds, dataset: cfg.label, model: cfg.model,
-        source: "batch (read-time normalized)", note: cfg.label, hasGroundTruth: false,
-      }],
-    });
-  }
-  const [lab, cons] = await Promise.all([fetchRunJson(cfg.labelling), fetchRunJson(cfg.consolidation)]);
-  if (!lab) return NextResponse.json({ error: "no run" }, { status: 404 });
-  return NextResponse.json(normalizeRun(lab, cons));
 }
 
 export async function POST(req: NextRequest) {
@@ -101,22 +87,33 @@ export async function GET(req: NextRequest) {
   // existing callers see no behavior change).
   const include = url.searchParams.get("include") === "archived" ? "&include=archived" : "";
   if (!dataset) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
-  // batch fine-labelling deliverables: fetch-both + normalize at read time.
-  if (BATCH[dataset]) {
-    try {
-      return await handleBatch(BATCH[dataset], id);
-    } catch (e: any) {
-      return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
-    }
-  }
+  const batch = BATCH_BY_BASE[dataset];
   try {
     if (id) {
+      // opening the appended fine-labelled row -> fetch both worker runs + normalize.
+      if (batch && id === batch.labelling.id) {
+        const [lab, cons] = await Promise.all([fetchRunJson(batch.labelling), fetchRunJson(batch.consolidation)]);
+        if (!lab) return NextResponse.json({ error: "no run" }, { status: 404 });
+        return NextResponse.json(normalizeRun(lab, cons));
+      }
       const r = await fetch(`${URL_BASE}/runs/${encodeURIComponent(dataset)}/${encodeURIComponent(id)}`, { headers: HEADERS });
       const body = await r.text();
       return new NextResponse(body, { status: r.status, headers: { "content-type": "application/json" } });
     }
+    // list: the base dataset's own runs, plus the fine-labelled deliverable row when present.
     const r = await fetch(`${URL_BASE}/runs?dataset=${encodeURIComponent(dataset)}${include}`, { headers: HEADERS });
-    return NextResponse.json(await r.json().catch(() => ({ runs: [] })), { status: r.status });
+    const data = await r.json().catch(() => ({ runs: [] }));
+    if (batch) {
+      const runs = Array.isArray(data.runs) ? data.runs : [];
+      if (!runs.some((x: any) => x?.runId === batch.labelling.id)) {
+        runs.unshift({
+          runId: batch.labelling.id, datasetId: dataset, dataset: batch.note, model: batch.model,
+          source: "batch (read-time normalized)", note: batch.note, hasGroundTruth: false,
+        });
+      }
+      return NextResponse.json({ ...data, runs }, { status: r.status });
+    }
+    return NextResponse.json(data, { status: r.status });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }

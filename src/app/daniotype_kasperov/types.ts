@@ -65,11 +65,7 @@ export interface AtlasMeta {
 }
 
 // --- dataset registry + run-scoring shapes (shared with the Scorecard) ------
-export type DatasetId =
-  | "minifin" | "zscape" | "chemfish" | "megafin" | "megafin_parse" | "daniocell"
-  // batch fine-labelling deliverables (view completed Phase-0→A→B runs; served by the
-  // kasperov_runs proxy's read-time normalization shim, not the live New-Run wizard):
-  | "minifin_batch" | "megafin_batch" | "chemfish_batch" | "daniocell_batch";
+export type DatasetId = "minifin" | "zscape" | "chemfish" | "megafin" | "megafin_parse" | "daniocell";
 // A selectable clustering partition of a dataset (e.g. DanioCell de-novo-77 vs native-470).
 // `serveId` is the asset/grounding/worker key; the run is still STORED under the dataset's id,
 // so all partitions of a dataset share one "Load Previous Run" list.

@@ -139,48 +139,12 @@ const DATASETS: DatasetDef[] = [
     status: "ready",
     approxClusters: 84,
   },
-  // --- Batch fine-labelling deliverables (view-only) --------------------------
-  // The Phase-0→A→B runs (labels + full 3-personality transcripts + consolidation +
-  // SSMP), reachable via the kasperov_runs proxy's read-time normalization. These
-  // cards are for VIEWING the completed deliverable run (use "Load Previous Run");
-  // atlas assets fall back to the base short-name so markers/UMAP resolve.
-  {
-    id: "megafin_batch", name: "MegaFin · Fine-Labelled", serveId: "megafin",
-    tagline: "Parse Evercode · 48 hpf · 540.9k cells · 342 leaves → 131 nodes",
-    blurb:
-      "The MegaFin fine-labelling deliverable (Phase-0→A→B on parse_megafin1): de-novo control-vote clustering → 342 leaves → run_leaf_v2 (v1.2) 3-personality labelling, ENSDARG→symbol grounded → GT-blind consolidation into 131 nodes with SSMP. Trust basis: MiniFin validation (0.99/0.90); MegaFin's own GT is a 4-lineage spot-check. Load the completed run to see labels, provenance, consolidation, and full transcripts.",
-    dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`, archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
-    groundTruthUrl: null, status: "ready", approxClusters: 342,
-  },
-  {
-    id: "minifin_batch", name: "MiniFin · Fine-Labelled", serveId: "minifin",
-    tagline: "Parse Evercode · 48 hpf · 94.6k cells · 267 leaves → 114 nodes",
-    blurb:
-      "The MiniFin fine-labelling deliverable (Phase-0→A→B): de-novo control-vote clustering → 267 leaves → run_leaf_v2 (v1.2) labelling → consolidation + SSMP. Validated vs Patrick's sealed 27-set GT at 0.99 committed / 0.90 overall lenient. Load the completed run for labels, provenance, consolidation, and full transcripts.",
-    dataUrl: `${ASSET_BASE}/minifin/umap.json`, archivistBase: `${ASSET_BASE}/minifin/archivist`,
-    groundTruthUrl: null, status: "ready", approxClusters: 267,
-  },
-  {
-    id: "chemfish_batch", name: "ChemFish · Fine-Labelled", serveId: "chemfish",
-    tagline: "Barkan et al. · 48 hpf · 294.9k cells · 288 leaves → 51 nodes",
-    blurb:
-      "The ChemFish fine-labelling deliverable (Phase-1 corpus): de-novo control-vote clustering → 288 leaves → run_leaf_v2 (v1.2) labelling, ENSDARG→symbol grounded → consolidation into 51 nodes with SSMP. Load the completed run for labels, provenance, consolidation, and full transcripts.",
-    dataUrl: `${ASSET_BASE}/chemfish/umap.json`, archivistBase: `${ASSET_BASE}/chemfish/archivist`,
-    groundTruthUrl: null, status: "ready", approxClusters: 288,
-  },
-  {
-    id: "daniocell_batch", name: "DanioCell · Fine-Labelled", serveId: "daniocell",
-    tagline: "Sur et al. · 36–72 hpf · 55.3k cells · 270 leaves → 55 nodes",
-    blurb:
-      "The DanioCell fine-labelling deliverable (Phase-1 corpus): de-novo clustering → 270 leaves → run_leaf_v2 (v1.2) labelling, ENSDARG→symbol grounded (gate=11, depth-adjusted) → consolidation into 55 nodes with SSMP. Load the completed run for labels, provenance, consolidation, and full transcripts.",
-    dataUrl: `${ASSET_BASE}/daniocell/umap.json`, archivistBase: `${ASSET_BASE}/daniocell/archivist`,
-    groundTruthUrl: null, status: "ready", approxClusters: 270,
-  },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
-// Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin,
-// then the batch fine-labelling deliverables.
-const DATASET_ORDER: DatasetId[] = ["zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin", "megafin_batch", "minifin_batch", "chemfish_batch", "daniocell_batch"];
+// Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
+// (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
+// its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
+const DATASET_ORDER: DatasetId[] = ["zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"];
 const ORDERED_DATASETS: DatasetDef[] = DATASET_ORDER.map((id) => DATASET_BY_ID[id]).filter(Boolean);
 
 type Box = { x: number; y: number; w: number; h: number };

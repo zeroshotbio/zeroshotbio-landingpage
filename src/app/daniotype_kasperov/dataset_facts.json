@@ -762,59 +762,7 @@
       ]
     }
   },
-  "megafin_batch": {
-  "id": "megafin_batch",
-  "platform": "Parse Evercode (combinatorial split-pool)",
-  "lab": "Zeroshot (internal)",
-  "year": 2026,
-  "namespace": "ENSDARG → symbol (chemfish canonical map, 98.5%)",
-  "role": "internal",
-  "resLabel": "0.8",
-  "cells": 540946,
-  "clusters": 342,
-  "fullCells": 540946,
-  "source": "MegaFin fine-labelling deliverable (Phase-0→A→B on parse_megafin1) — de-novo coarse Leiden 0.1 → per-compartment seurat_v3 2000-HVG → local Leiden 0.8 → DMSO control-vote; 342 leaves → 131 consolidated nodes; view-only completed run."
- },
- "minifin_batch": {
-  "id": "minifin_batch",
-  "platform": "Parse Evercode (combinatorial split-pool)",
-  "lab": "Zeroshot (internal)",
-  "year": 2026,
-  "namespace": "symbol-native",
-  "role": "internal",
-  "resLabel": "0.8",
-  "cells": 94616,
-  "clusters": 267,
-  "fullCells": 94616,
-  "source": "MiniFin fine-labelling deliverable (Phase-0→A→B) — de-novo control-vote clustering → 267 leaves → 114 consolidated nodes; validated vs Patrick 27-set GT (0.99/0.90 lenient); view-only completed run."
- },
- "chemfish_batch": {
-  "id": "chemfish_batch",
-  "platform": "sci-RNA-seq3 (Barkan et al.)",
-  "lab": "Zeroshot (internal) · Barkan atlas",
-  "year": 2026,
-  "namespace": "ENSDARG → symbol",
-  "role": "internal",
-  "resLabel": "0.8",
-  "cells": 294919,
-  "clusters": 288,
-  "fullCells": 294919,
-  "source": "ChemFish fine-labelling deliverable (Phase-1 corpus) — de-novo control-vote clustering → 288 leaves → 51 consolidated nodes; view-only completed run."
- },
- "daniocell_batch": {
-  "id": "daniocell_batch",
-  "platform": "10x droplet (Sur et al., Farrell/NICHD)",
-  "lab": "Zeroshot (internal) · DanioCell atlas",
-  "year": 2026,
-  "namespace": "ENSDARG → symbol",
-  "role": "internal",
-  "resLabel": "0.8",
-  "cells": 55324,
-  "clusters": 270,
-  "fullCells": 55324,
-  "source": "DanioCell fine-labelling deliverable (Phase-1 corpus) — de-novo clustering → 270 leaves → 55 consolidated nodes; gate=11 (depth-adjusted); view-only completed run."
- },
- "_suite": {
+  "_suite": {
     "notes": [
       "Scored in each dataset's own native schema — not cross-dataset comparable; no head-to-head ranking.",
       "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher — especially ChemFish sub.",
