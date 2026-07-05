@@ -775,8 +775,8 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
-      {sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
-        : run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
+      {run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
+        : sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
         : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
       {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above */}
       {dataset.groundTruthUrl ? (
@@ -795,7 +795,9 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
 // leaf transcript, e.g. lines "- germ_layer: ectoderm (98%)". Returns {tier: label}.
 const FJ_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
 function parseMenuLabels(transcript: any[]): Record<string, string> | null {
-  const msg = (transcript || []).find((t) => t.role === "assistant" && (t.menuExposed === true || /menu/i.test(String(t.title || ""))));
+  // find the menu-exposed step — by flag/title, or (for fixture bundles that carry no
+  // menuExposed/title) by the "Menu-aware binning" heading in the content itself.
+  const msg = (transcript || []).find((t) => t.role === "assistant" && (t.menuExposed === true || /menu/i.test(String(t.title || "")) || /menu-aware binning|menu-exposed phase/i.test(String(t.content || ""))));
   if (!msg) return null;
   const text = String(msg.content || "");
   const out: Record<string, string> = {};
@@ -812,8 +814,11 @@ function parseMenuLabels(transcript: any[]): Record<string, string> | null {
 // the MENU-EXPOSED binning (aggregated from member leaves). Red = miss, green = hit.
 function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any; dataset: any; judgements: any[]; addJudgement: (j: any) => void }) {
   const prop = run?.operatorProposal;
-  const [state, setState] = useState<{ s: "idle" | "loading" | "scoring" | "done" | "err"; msg?: string; done?: number; total?: number }>({ s: "idle" });
-  const [rows, setRows] = useState<any[]>([]);
+  // A previously-run fuzzy-judge scorecard persisted on the run → render it straight
+  // away (no recompute). The rows carry per-node dn/mx/gt/menu/purity (see runScoring).
+  const savedRows: any[] | null = Array.isArray(run?.finalJudge?.rows) && run.finalJudge.rows.length ? run.finalJudge.rows : null;
+  const [state, setState] = useState<{ s: "idle" | "loading" | "scoring" | "done" | "err"; msg?: string; done?: number; total?: number }>(savedRows ? { s: "done" } : { s: "idle" });
+  const [rows, setRows] = useState<any[]>(savedRows || []);
   const [open, setOpen] = useState<string | null>(null);
 
   const leafLabel: Record<string, string> = {};
