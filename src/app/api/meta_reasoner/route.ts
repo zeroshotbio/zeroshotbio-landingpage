@@ -104,7 +104,7 @@ function streamMetaResponse(openaiBody: any, kind: "consolidate" | "chat", scope
         const reasoning = full ? extractText(full) : "";
         const reasoningTrace = full ? extractReasoning(full) : "";
         const output = kind === "consolidate" && full ? parseOperatorOutput(reasoning, scope, expectedLeafIds) : null;
-        if (output?.merges) annotateProposalSSMP(datasetId, output.merges as any); // GT-blind advisory SSMP flag
+        if (output?.merges) await annotateProposalSSMP(datasetId, output.merges as any); // GT-blind advisory SSMP flag
         send({ t: "done", reasoning, reasoningTrace, output, ssmpTau: ssmpTau(datasetId), usage: full?.usage ? { in: full.usage.input_tokens ?? null, out: full.usage.output_tokens ?? null } : null });
       } catch (e: any) {
         send({ t: "error", error: e?.name === "AbortError" ? "timeout" : String(e?.message ?? e).slice(0, 160) });
@@ -184,7 +184,7 @@ export async function POST(req: Request) {
       const resp = await callOpenAI(opKey, opModel, opPrompt.system, opPrompt.user, 6000, opCtrl.signal);
       const reasoning = extractText(resp);
       const output = parseOperatorOutput(reasoning, scope, labelSet.map((e) => e.leaf_id));
-      annotateProposalSSMP(body?.dataset, (output as any)?.merges); // GT-blind advisory SSMP flag (in place; never blocks)
+      await annotateProposalSSMP(body?.dataset, (output as any)?.merges); // GT-blind advisory SSMP flag (in place; never blocks)
       return NextResponse.json({ ok: true, input: opInput, prompt: opPrompt, reasoning, reasoningTrace: extractReasoning(resp), output,
         ssmpTau: ssmpTau(body?.dataset), guardrails: { gtBlind: true }, usage: { model: opModel, in: resp?.usage?.input_tokens ?? null, out: resp?.usage?.output_tokens ?? null } });
     } catch (e: any) {
