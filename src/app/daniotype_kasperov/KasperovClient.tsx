@@ -955,6 +955,13 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
                 <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
+                {/* smoke-test vs full-run pill — a smoke run labels only a handful of leaves (source/note marks it) */}
+                {(() => {
+                  const isSmoke = /smoke/i.test(String(m.source ?? "")) || /\bsmoke\b/i.test(String(m.note ?? ""));
+                  return isSmoke
+                    ? <span title="Smoke test — a few leaves only, not the full atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 7px" }}>🧪 smoke test</span>
+                    : <span title="Full run over the whole atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#15803d", background: "#ecfdf3", border: "1px solid #bbf7d0", borderRadius: 99, padding: "1px 7px" }}>✓ full run</span>;
+                })()}
                 {m.harness ? <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
                 {/* pipeline-stage pills: fine leaves labelled · meta-reasoner consolidation done.
                     meta implies leaves were labelled first, so the fine-leaves pill shows either way. */}
