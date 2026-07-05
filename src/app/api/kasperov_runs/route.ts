@@ -29,27 +29,37 @@ const HEADERS = { "content-type": "application/json", "x-api-token": TOKEN };
 // operatorProposal + deliverable labels into the labelling run, and normalize to
 // viewer shape (see ./normalize). Read-time only — persisted runs are never rewritten.
 type BatchRef = { ds: string; id: string };
-const BATCH_BY_BASE: Record<string, { labelling: BatchRef; consolidation: BatchRef; model: string; note: string }> = {
+type BatchCfg = {
+  labelling: BatchRef; consolidation: BatchRef; model: string; note: string;
+  // immutable completed-run summary for the LIST row (the worker _index has these as 0/None
+  // because the runs were POSTed without top-level cost/date; the real values live in metadata).
+  exportedAt: string; costUsd: number; nLabelled: number;
+};
+const BATCH_BY_BASE: Record<string, BatchCfg> = {
   chemfish: {
     labelling: { ds: "chemfish_phase1_finelabel", id: "20260704-193854-0c115f" },
     consolidation: { ds: "chemfish_phase1_finelabel", id: "20260704-222534-a70b22" },
     model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (288 leaves → 51 nodes)",
+    exportedAt: "2026-07-04T19:38:54Z", costUsd: 18.412, nLabelled: 288,
   },
   daniocell: {
     labelling: { ds: "daniocell_phase1_finelabel", id: "20260704-195339-e48838" },
     consolidation: { ds: "daniocell_phase1_finelabel", id: "20260704-222546-b3c7e8" },
     model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (270 leaves → 55 nodes)",
+    exportedAt: "2026-07-04T19:53:39Z", costUsd: 14.291, nLabelled: 270,
   },
   minifin: {
     labelling: { ds: "minifin_phaseA_labelling", id: "20260704-234502-beaeee" },
     consolidation: { ds: "minifin_final_labelling", id: "20260705-002027-a10bb8" },
     model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (267 leaves → 114 nodes; validated 0.99/0.90)",
+    exportedAt: "2026-07-04T23:45:02Z", costUsd: 15.35, nLabelled: 267,
   },
   // MegaFin fine-labelling ran on parse_megafin1 (the Parse/ENSDARG object) -> Parse card.
   megafin_parse: {
     labelling: { ds: "megafin_phaseA_labelling", id: "20260705-051439-a10c0a" },
     consolidation: { ds: "megafin_final_labelling", id: "20260705-063523-abad22" },
     model: "gpt-5.4", note: "Fine-labelled + consolidated · Phase 0→A→B (342 leaves → 131 nodes; leaf-124 corrected)",
+    exportedAt: "2026-07-05T05:14:38Z", costUsd: 21.314, nLabelled: 342,
   },
 };
 
@@ -109,6 +119,7 @@ export async function GET(req: NextRequest) {
         runs.unshift({
           runId: batch.labelling.id, datasetId: dataset, dataset: batch.note, model: batch.model,
           source: "batch (read-time normalized)", note: batch.note, hasGroundTruth: false,
+          exportedAt: batch.exportedAt, costUsd: batch.costUsd, costEstimated: false, nLabelled: batch.nLabelled,
         });
       }
       return NextResponse.json({ ...data, runs }, { status: r.status });

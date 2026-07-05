@@ -176,6 +176,9 @@ export function normalizeRun(run: AnyRec, consolidation?: AnyRec | null): AnyRec
   const cm: AnyRec = isObj(consolidation?.metadata) ? consolidation!.metadata : {};
 
   const out: AnyRec = { ...run, schema: run.schema || "daniotype_kasperov_run/v1" };
+  // run date: the worker run JSON has no top-level exportedAt (it's in metadata.finished) — surface
+  // it so the viewer header shows the real run date instead of falling back to the model name.
+  if (!out.exportedAt) out.exportedAt = lm.finished || lm.started || cm.created || undefined;
 
   // clusters: transcript from the labelling run; label/node/ssmp from the
   // consolidation deliverable when present (authoritative final labels).
