@@ -948,7 +948,11 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
           <div style={{ color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "10px 12px", fontSize: 13, lineHeight: 1.5 }}>{emptyNote || "No matching runs."}</div>
         )}
 
-        {status === "ready" && shown.map((m) => {
+        {status === "ready" && (() => {
+        // ★ PRIMARY marks only the HEAD of a lineage group (a primary that actually has derived
+        // re-posts) — not every self-contained run. So a dataset shows at most one PRIMARY per effort.
+        const primaryHeads = new Set(shown.map((x: any) => String(x?.parentRunId || "").split("/").pop()).filter(Boolean));
+        return shown.map((m) => {
           const cat = m.archiveCategory || "other";
           // synthetic dev-effort record — not a run; distinct compact row, not clickable
           if (m.recordType === "dev-effort") {
@@ -973,7 +977,7 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                     harness (harness.version "zscape-port"). Distinct from ★ GOLDEN (the reference run itself). */}
                 {String(m.harness?.version) === "zscape-port" ? <span title="Ran the ZSCAPE golden harness — 3-personality menu-exposed chat (Researcher → Reasoner de-novo → menu-exposed binning), V1.0 port" style={{ fontSize: 10.5, fontWeight: 800, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b", borderRadius: 99, padding: "1px 8px" }}>🏅 Golden Harness V1.0</span> : null}
                 {/* canonical lineage pill (primary carries the effort's cost; derived = a re-post, no additional spend) */}
-                {m.lineageRole === "primary" ? <span title="Primary run — carries the effort's recovered cost" style={{ fontSize: 10.5, fontWeight: 800, color: "#065f46", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 99, padding: "1px 8px" }}>★ PRIMARY</span>
+                {m.lineageRole === "primary" && primaryHeads.has(m.runId) ? <span title="Primary run of this effort — carries its recovered cost; its derived re-posts link here" style={{ fontSize: 10.5, fontWeight: 800, color: "#065f46", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 99, padding: "1px 8px" }}>★ PRIMARY</span>
                   : m.lineageRole === "derived" ? <span title={`Derived re-post${m.parentRunId ? ` of ${String(m.parentRunId).slice(0, 13)}…` : ""} — no additional spend`} style={{ fontSize: 10.5, fontWeight: 700, color: "#6b7280", background: "#f3f4f6", borderRadius: 99, padding: "1px 8px" }}>↳ derived</span> : null}
                 {/* fingerprint-invariant "scoreable?" signal — canonical.scoring.fingerprintMatchesClustering */}
                 {m.canonical && m.scoreable === false ? <span title="This run's clustering fingerprint has no coherent asset set — it cannot be trusted to score against ground truth" style={{ fontSize: 10.5, fontWeight: 800, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>⚠ not scoreable</span> : null}
@@ -985,7 +989,9 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                     ? <span title="Smoke test — a few leaves only, not the full atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 7px" }}>🧪 smoke test</span>
                     : <span title="Full run over the whole atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#15803d", background: "#ecfdf3", border: "1px solid #bbf7d0", borderRadius: 99, padding: "1px 7px" }}>✓ full run</span>;
                 })()}
-                {m.harness ? <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span> : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
+                {m.harness ? (String(m.harness.version) === "zscape-gold"
+                  ? <span title="The reference ZSCAPE golden harness" style={{ fontSize: 10.5, fontWeight: 800, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span>
+                  : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span>) : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
                 {/* pipeline-stage pills: fine leaves labelled · meta-reasoner consolidation done.
                     meta implies leaves were labelled first, so the fine-leaves pill shows either way. */}
                 {(() => {
@@ -1000,13 +1006,20 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                 {m.archived ? <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCH[cat].fg, background: ARCH[cat].bg, borderRadius: 99, padding: "1px 7px", border: `1px solid ${ARCH[cat].fg}33` }}>{ARCH[cat].label}</span> : null}
                 <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
               </div>
-              {m.dataset ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 3, lineHeight: 1.4 }}>🧬 {m.dataset}</div> : null}
-              <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · {Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}` : "cost n/a"}{m.costSource && Number(m.costUsd) > 0 ? ` · ${String(m.costSource).startsWith("ledger:") ? "ledger" : m.costSource}` : ""}</div>
+              {/* prominent completion date ("July 2nd · 10:03 PM", no seconds); cost after. Dataset is
+                  the card's own — no need to restate it per row. */}
+              {(() => {
+                const dt = m.exportedAt ? new Date(m.exportedAt) : null;
+                const when = dt ? (() => { const d = dt.getDate(); const v = d % 100; const suf = ["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"; return `${dt.toLocaleString("en-US", { month: "long" })} ${d}${suf} · ${dt.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })}`; })() : "date n/a";
+                const cost = Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}${m.costSource ? ` · ${String(m.costSource).startsWith("ledger:") ? "ledger" : m.costSource}` : ""}` : "cost n/a";
+                return <div style={{ marginTop: 4 }}><span style={{ fontSize: 13.5, fontWeight: 700, color: "#3f3a34" }}>{when}</span><span style={{ fontSize: 12, color: "#9a948c" }}> · {cost}</span></div>;
+              })()}
               {m.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div> : null}
               {m.archived && cat === "quarantined" ? <div style={{ fontSize: 11.5, color: "#b91c1c", marginTop: 3, lineHeight: 1.4 }}>{m.archivedReason}</div> : null}
             </div>
           );
-        })}
+        });
+        })()}
 
         {status === "ready" && filter && nHidden > 0 && shown.length > 0 ? (
           <div style={{ fontSize: 11.5, color: "#9a948c", marginTop: 8, fontStyle: "italic" }}>{nHidden} other run{nHidden === 1 ? "" : "s"} hidden — not compatible (already finalized, or no fine leaves labelled).</div>

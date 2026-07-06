@@ -369,7 +369,9 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               {run?.cost?.usd != null ? ` · ~$${money(Number(run.cost.usd))}${run?.cost?.estimated ? "*" : ""}` : ""}
             </span>
             {run?.harness ? (
-              <span title={[run.harness.name, run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""].filter(Boolean).join(" · ") || undefined} style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>
+              <span title={[run.harness.name, run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""].filter(Boolean).join(" · ") || undefined} style={String(run.harness.version) === "zscape-gold"
+                ? { fontSize: 10.5, fontWeight: 800, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 99, padding: "1px 8px" }
+                : { fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>
                 harness v{run.harness.version}
               </span>
             ) : null}
@@ -485,7 +487,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
             {profile.hasHarness ? (
               <>
                 <h2 style={{ ...SEC, fontSize: 12 }}>Harness</h2>
-                <div style={{ ...CARD, border: `2px solid ${ACCENT}`, marginBottom: 12 }}>
+                <div style={{ ...CARD, border: `2px solid ${String(run.harness.version) === "zscape-gold" ? "#fcd34d" : ACCENT}`, background: String(run.harness.version) === "zscape-gold" ? "#fffdf5" : undefined, marginBottom: 12 }}>
                   <div style={{ fontSize: 16, fontWeight: 700 }}>v{run.harness.version}{run.harness.name ? ` · ${run.harness.name}` : ""}</div>
                   <div style={{ fontSize: 11.5, color: "#9a948c", fontFamily: "ui-monospace, monospace", marginTop: 3 }}>{run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""}{run.harness.stampedAt ? ` · stamped ${String(run.harness.stampedAt).slice(0, 10)}` : ""}</div>
                 </div>
