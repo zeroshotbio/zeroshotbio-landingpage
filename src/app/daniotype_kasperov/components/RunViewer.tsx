@@ -456,9 +456,6 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 ) : <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>}
               </div>
               {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />}
-              <div style={{ marginTop: 16 }}>
-                <button onClick={() => setTab("modelHarness")} style={{ background: "#15803d", color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Good to proceed — model &amp; harness →</button>
-              </div>
               {/* this run's own clustering provenance — shown only when the run JSON
                   structurally snapshotted a strategy (never back-filled from live data) */}
               {profile.hasClusteringStrategy ? (
@@ -502,9 +499,6 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 <GroundingPanel provenance={run?.provenance} />
               </div>
             ) : null}
-            <div style={{ textAlign: "center", marginTop: 16 }}>
-              <button onClick={() => setTab("labels")} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "12px 26px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>Proceed to 3. Fine Cell Labelling →</button>
-            </div>
           </div>
         )}
 
@@ -856,23 +850,37 @@ function MergedNodeScorecard({ run }: { run: any }) {
           </div>
         ))}
       </div>
+      <div style={{ fontSize: 11, color: "#9a948c", marginBottom: 8, lineHeight: 1.5 }}>
+        Each tier cell stacks three labels: <b style={{ color: "#4b5563" }}>GT</b> (published atlas) · <b style={{ color: "#0891b2" }}>DN</b> (blind de-novo — the node&apos;s consolidated identity, one call judged at every tier) · <b style={{ color: "#7c3aed" }}>MX</b> (menu-exposed — the per-tier bin). Green = the judge agreed with GT, red = miss.
+      </div>
       <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, whiteSpace: "nowrap" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, whiteSpace: "nowrap" }}>
           <thead>
             <tr style={{ background: "#f3f0ec", color: "#555" }}>
-              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec" }}>Node identity · Daniotype</th>
-              {tiers.map((t) => <th key={t} style={{ padding: "7px 8px", fontWeight: 700, borderLeft: "1px solid #e5e1dc" }} title={`ZSCAPE Classic GT · ${TIER_LABEL[t] || t}`}>ZSCAPE GT · {TIER_SHORT[t] || t}</th>)}
+              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec" }}>Node · De-Novo identity</th>
+              {tiers.map((t) => <th key={t} style={{ padding: "7px 8px", fontWeight: 700, borderLeft: "1px solid #e5e1dc", textTransform: "capitalize" }}>{TIER_LABEL[t] || t}</th>)}
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
-              <tr key={r.id} style={{ borderTop: "1px solid #f2ede6" }}>
-                <td style={{ padding: "6px 10px", position: "sticky", left: 0, background: "#fff", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }} title={r.identity}>{r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}</td>
+              <tr key={r.id} style={{ borderTop: "1px solid #f2ede6", verticalAlign: "top" }}>
+                <td style={{ padding: "6px 10px", position: "sticky", left: 0, background: "#fff", maxWidth: 210, overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }} title={r.identity}>{r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}</td>
                 {tiers.map((t) => {
-                  const gt = r.gt?.[t]; const matched = r.dn?.[t]?.match;
-                  const bg = gt == null ? "#fff" : matched ? "#f0fdf4" : "#fef2f2";
-                  const fg = gt == null ? "#c8c2ba" : matched ? "#166534" : "#b91c1c";
-                  return <td key={t} style={{ padding: "6px 8px", borderLeft: "1px solid #f2ede6", background: bg, color: fg, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }} title={`GT: ${gt ?? "—"}${gt != null ? ` · ${matched ? "match" : "miss"}` : ""}`}>{gt ?? "—"}</td>;
+                  const gt = r.gt?.[t]; const dnMatch = r.dn?.[t]?.match; const mx = r.menu?.[t]; const mxMatch = r.mx?.[t]?.match;
+                  const bg = gt == null ? "#fff" : dnMatch ? "#f6fef9" : "#fef7f7";
+                  const line = (tag: string, tagColor: string, val: any, matched: any) => (
+                    <div style={{ display: "flex", gap: 5, alignItems: "baseline", marginTop: tag === "GT" ? 0 : 2, maxWidth: 165 }}>
+                      <span style={{ fontSize: 8, fontWeight: 800, color: tagColor, letterSpacing: 0.3, flexShrink: 0, width: 15 }}>{tag}</span>
+                      <span style={{ color: matched == null ? "#4b5563" : matched ? "#166534" : "#b91c1c", fontWeight: matched === false ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis" }} title={String(val ?? "")}>{val ?? "—"}{matched != null ? (matched ? " ✓" : " ✗") : ""}</span>
+                    </div>
+                  );
+                  return (
+                    <td key={t} style={{ padding: "6px 8px", borderLeft: "1px solid #f2ede6", background: bg }}>
+                      {line("GT", "#a59f96", gt, null)}
+                      {line("DN", "#0891b2", r.identity, gt == null ? null : !!dnMatch)}
+                      {line("MX", "#7c3aed", mx, mx == null ? null : !!mxMatch)}
+                    </td>
+                  );
                 })}
               </tr>
             ))}
