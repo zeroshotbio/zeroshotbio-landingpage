@@ -954,6 +954,9 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
             <div key={m.runId} onClick={() => !loadingId && open(m)} style={{ cursor: loadingId ? "default" : "pointer", background: "#fff", border: `1px solid ${m.archived ? ARCH[cat].fg + "44" : "#e5e1dc"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
                 {m.golden ? <span title="The reference 'golden' run for this dataset" style={{ fontSize: 10.5, fontWeight: 800, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 99, padding: "1px 8px" }}>★ GOLDEN</span> : null}
+                {/* Golden-harness pill: runs that ported the ZSCAPE golden 3-personality menu-exposed
+                    harness (harness.version "zscape-port"). Distinct from ★ GOLDEN (the reference run itself). */}
+                {String(m.harness?.version) === "zscape-port" ? <span title="Ran the ZSCAPE golden harness — 3-personality menu-exposed chat (Researcher → Reasoner de-novo → menu-exposed binning), V1.0 port" style={{ fontSize: 10.5, fontWeight: 800, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b", borderRadius: 99, padding: "1px 8px" }}>🏅 Golden Harness V1.0</span> : null}
                 <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
                 <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
                 {/* smoke-test vs full-run pill — a smoke run labels only a handful of leaves (source/note marks it) */}

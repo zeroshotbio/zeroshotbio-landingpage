@@ -15,7 +15,14 @@ export const SSMP_TAU_DEFAULT = 0.34;
 // SSMP distribution (do NOT reuse ZSCAPE's τ blind — the margin does not necessarily transfer).
 export const SSMP_TAU: Record<string, number> = {
   zscape_recursive: 0.34, // validated (see above)
-  // chemfish / daniocell: pending per-dataset distribution check before a tuned τ is set.
+  // chemfish / daniocell: distribution check 2026-07-06 on the REBUILT 288/270-leaf archivist assets
+  // (multi-member candidate merges — 2-member SSMP is trivially 1.0). HONEST RESULT: NO clean margin.
+  // Clean-merge SSMP and synthetic-over-merge SSMP distributions OVERLAP (negative margin), worse than
+  // ZSCAPE's tight +0.023 — the margin genuinely does not transfer. τ set at each dataset's clean-p5 as
+  // a calibrated ANOMALY trigger (flags the bottom ~5% lowest-shared-program merges for a human look),
+  // NOT a validated over-merge detector. Advisory-only contains the weak discrimination.
+  chemfish: 0.31,  // clean p5≈0.307; ~9% of clean groups would false-fire at ZSCAPE's 0.34
+  daniocell: 0.39, // clean p5≈0.392; ~4% at 0.34
 };
 
 export function ssmpTau(datasetId?: string): number {

@@ -777,6 +777,9 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
       {run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
+        /* FLAT fine-leaf run (no Meta-Reasoner merge) that carries a persisted per-leaf scorecard —
+           render it directly. Ordered AFTER operatorProposal/sc so those paths are unchanged. */
+        : run?.finalJudge?.rows?.length ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
       {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above */}
       {dataset.groundTruthUrl ? (
@@ -894,7 +897,7 @@ function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any;
   return (
     <div style={CARD}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={SEC}>Final Judge · {nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT</div>
+        <div style={SEC}>Final Judge · {prop ? `${nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT` : `${rows.length} fine leaves vs ${dataset?.id ?? "sealed"} GT`}</div>
         {state.s !== "done" ? <button onClick={runScoring} disabled={!dataset?.groundTruthUrl || state.s === "loading" || state.s === "scoring"} style={{ marginLeft: "auto", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: state.s === "loading" || state.s === "scoring" ? 0.6 : 1 }}>{state.s === "loading" ? "Loading GT…" : state.s === "scoring" ? `Scoring… ${state.done}/${state.total}` : `🏁 Score ${nodes.length} nodes`}</button> : null}
       </div>
       {state.s === "err" ? <div style={{ fontSize: 13, color: "#b91c1c", marginTop: 6 }}>{state.msg}</div> : null}

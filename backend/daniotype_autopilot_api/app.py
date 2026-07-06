@@ -1656,6 +1656,33 @@ def runs_save(run: dict = Body(...), x_api_token: str = Header(default="")):
     return {"ok": True, "runId": save_run(run)}
 
 
+@app.put("/runs/{dataset}/{run_id}")
+def runs_upsert(dataset: str, run_id: str, run: dict = Body(...), x_api_token: str = Header(default="")):
+    """Checkpoint-safe upsert: overwrite an existing run file (atomic) and update its
+    _index.json entry in place under the same lock save_run() uses. Long headless/menu-harness
+    runs call this every N leaves so a mid-run crash preserves prior work and can resume."""
+    _auth(x_api_token)
+    if not isinstance(run.get("clusters"), list):
+        raise HTTPException(status_code=400, detail="bad run")
+    run.setdefault("datasetId", dataset)
+    d = _ds_dir(dataset)
+    tmp = os.path.join(d, run_id + ".json.tmp")
+    with open(tmp, "w") as f:
+        json.dump(run, f)
+    os.replace(tmp, os.path.join(d, run_id + ".json"))  # atomic swap
+    idx_path = os.path.join(d, "_index.json")
+    meta = _meta_from(run, run_id)
+    with _index_lock:
+        try:
+            idx = json.load(open(idx_path)) if os.path.exists(idx_path) else []
+        except Exception:
+            idx = []
+        idx = [e for e in idx if e.get("runId") != run_id]  # drop stale entry, re-insert fresh
+        idx.insert(0, meta)
+        json.dump(idx[:500], open(idx_path, "w"))
+    return {"ok": True, "runId": run_id, "nLabelled": meta["nLabelled"]}
+
+
 @app.get("/runs")
 def runs_list(dataset: str, include: str = "", x_api_token: str = Header(default="")):
     _auth(x_api_token)
