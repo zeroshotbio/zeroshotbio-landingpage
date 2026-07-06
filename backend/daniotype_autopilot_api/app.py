@@ -149,6 +149,7 @@ def _meta_from(run, run_id):
         "exportedAt": exported,
         "harness": run.get("harness"),
         "scoredAt": run.get("scoredAt"),
+        "golden": bool(run.get("golden")),  # reference "golden" run badge in the list
         "nLabelled": nlab,
         "nValidated": nval,
         "hasGroundTruth": bool(run.get("groundTruth")),
