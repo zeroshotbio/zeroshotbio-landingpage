@@ -99,8 +99,10 @@ export async function GET(req: NextRequest) {
       return NextResponse.json(run);
     }
 
-    // LIST — every run in this atlas (base partition + corpus siblings), grouped from atlasId.
-    return NextResponse.json({ runs: all.filter(inAtlas) });
+    // LIST — every run in this atlas (base partition + corpus siblings), grouped from atlasId,
+    // newest first (across partitions; runs with no date sink to the bottom).
+    const rows = all.filter(inAtlas).sort((a: any, b: any) => String(b.exportedAt || "").localeCompare(String(a.exportedAt || "")));
+    return NextResponse.json({ runs: rows });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }

@@ -967,53 +967,37 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
               </div>
             );
           }
+          // date = the row's main title; cost + a single leaf-count go on a de-emphasised second line.
+          const dt = m.exportedAt ? new Date(m.exportedAt) : null;
+          const when = dt ? (() => { const d = dt.getDate(); const v = d % 100; const suf = ["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"; return `${dt.toLocaleString("en-US", { month: "long" })} ${d}${suf} · ${dt.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })}`; })() : "date n/a";
+          const costStr = Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}${m.costSource ? ` · ${String(m.costSource).startsWith("ledger:") ? "ledger" : m.costSource}` : ""}` : "cost n/a";
+          const isSmoke = /smoke/i.test(String(m.source ?? "")) || /\bsmoke\b/i.test(String(m.note ?? ""));
+          const metaDone = m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note));
+          const pill = (bg: string, fg: string, bd?: string): React.CSSProperties => ({ fontSize: 10.5, fontWeight: 800, color: fg, background: bg, border: bd ? `1px solid ${bd}` : undefined, borderRadius: 99, padding: "1px 8px" });
           return (
             <div key={m.runId} onClick={() => !loadingId && open(m)} style={{ cursor: loadingId ? "default" : "pointer", background: "#fff", border: `1px solid ${m.archived ? ARCH[cat].fg + "44" : "#e5e1dc"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
-              <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-                <span style={{ fontWeight: 700, fontSize: 13.5 }}>{m.model}</span>
-                {/* pills AFTER the model title so the name reads first */}
-                {m.golden ? <span title="The reference 'golden' run for this dataset" style={{ fontSize: 10.5, fontWeight: 800, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 99, padding: "1px 8px" }}>★ GOLDEN</span> : null}
-                {/* Golden-harness pill: runs that ported the ZSCAPE golden 3-personality menu-exposed
-                    harness (harness.version "zscape-port"). Distinct from ★ GOLDEN (the reference run itself). */}
-                {String(m.harness?.version) === "zscape-port" ? <span title="Ran the ZSCAPE golden harness — 3-personality menu-exposed chat (Researcher → Reasoner de-novo → menu-exposed binning), V1.0 port" style={{ fontSize: 10.5, fontWeight: 800, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b", borderRadius: 99, padding: "1px 8px" }}>🏅 Golden Harness V1.0</span> : null}
-                {/* canonical lineage pill (primary carries the effort's cost; derived = a re-post, no additional spend) */}
-                {m.lineageRole === "primary" && primaryHeads.has(m.runId) ? <span title="Primary run of this effort — carries its recovered cost; its derived re-posts link here" style={{ fontSize: 10.5, fontWeight: 800, color: "#065f46", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 99, padding: "1px 8px" }}>★ PRIMARY</span>
-                  : m.lineageRole === "derived" ? <span title={`Derived re-post${m.parentRunId ? ` of ${String(m.parentRunId).slice(0, 13)}…` : ""} — no additional spend`} style={{ fontSize: 10.5, fontWeight: 700, color: "#6b7280", background: "#f3f4f6", borderRadius: 99, padding: "1px 8px" }}>↳ derived</span> : null}
-                {/* fingerprint-invariant "scoreable?" signal — canonical.scoring.fingerprintMatchesClustering */}
-                {m.canonical && m.scoreable === false ? <span title="This run's clustering fingerprint has no coherent asset set — it cannot be trusted to score against ground truth" style={{ fontSize: 10.5, fontWeight: 800, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>⚠ not scoreable</span> : null}
-                <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
-                {/* smoke-test vs full-run pill — a smoke run labels only a handful of leaves (source/note marks it) */}
-                {(() => {
-                  const isSmoke = /smoke/i.test(String(m.source ?? "")) || /\bsmoke\b/i.test(String(m.note ?? ""));
-                  return isSmoke
-                    ? <span title="Smoke test — a few leaves only, not the full atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#b45309", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 7px" }}>🧪 smoke test</span>
-                    : <span title="Full run over the whole atlas" style={{ fontSize: 10.5, fontWeight: 800, color: "#15803d", background: "#ecfdf3", border: "1px solid #bbf7d0", borderRadius: 99, padding: "1px 7px" }}>✓ full run</span>;
-                })()}
-                {m.harness ? (String(m.harness.version) === "zscape-gold"
-                  ? <span title="The reference ZSCAPE golden harness" style={{ fontSize: 10.5, fontWeight: 800, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span>
-                  : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 7px" }}>harness v{m.harness.version}</span>) : <span style={{ fontSize: 10.5, fontWeight: 700, color: "#9a948c", background: "#f1ede8", borderRadius: 99, padding: "1px 7px" }}>harness · unversioned</span>}
-                {/* pipeline-stage pills: fine leaves labelled · meta-reasoner consolidation done.
-                    meta implies leaves were labelled first, so the fine-leaves pill shows either way. */}
-                {(() => {
-                  const metaDone = m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note));
-                  return (<>
-                    {(m.nLabelled > 0 || metaDone) ? <span title="Fine leaf clusters have been labelled" style={{ fontSize: 10.5, fontWeight: 800, color: "#0f766e", background: "#ccfbf1", borderRadius: 99, padding: "1px 7px" }}>🔬 fine leaves{m.nLabelled > 0 ? ` · ${m.nLabelled}` : ""}</span> : null}
-                    {metaDone ? <span title="Meta-Reasoner consolidation has been run on this run" style={{ fontSize: 10.5, fontWeight: 800, color: "#2563eb", background: "#eff6ff", borderRadius: 99, padding: "1px 7px" }}>🧠 meta-reasoner</span> : null}
-                  </>);
-                })()}
-                {m.hasJudgement ? <span title={`${m.nJudgements ?? ""} step critique note${m.nJudgements === 1 ? "" : "s"}`} style={{ fontSize: 10.5, fontWeight: 800, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>⚖️ judgement{m.nJudgements ? ` · ${m.nJudgements}` : ""}</span> : null}
-                {m.schemaBasis ? <span title={m.basisNote || ""} style={{ fontSize: 10.5, fontWeight: 700, color: "#7c3aed", background: "#f3e8ff", borderRadius: 99, padding: "1px 7px" }}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
-                {m.archived ? <span style={{ fontSize: 10.5, fontWeight: 800, color: ARCH[cat].fg, background: ARCH[cat].bg, borderRadius: 99, padding: "1px 7px", border: `1px solid ${ARCH[cat].fg}33` }}>{ARCH[cat].label}</span> : null}
+              {/* DATE is the row title (prominent, top-left); status pills follow. */}
+              <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 15, fontWeight: 800, color: "#2b2b2b" }}>{when}</span>
+                {m.golden ? <span title="The reference 'golden' run for this dataset" style={pill("#fef3c7", "#92400e", "#fcd34d")}>★ GOLDEN</span> : null}
+                {String(m.harness?.version) === "zscape-port" ? <span title="Ran the ZSCAPE golden harness (V1.0 port)" style={pill("#fdf6d8", "#7c5e10", "#e8cf6b")}>🏅 Golden Harness V1.0</span> : null}
+                {m.lineageRole === "primary" && primaryHeads.has(m.runId) ? <span title="Primary run of this effort — carries its recovered cost; its derived re-posts link here" style={pill("#ecfdf5", "#065f46", "#a7f3d0")}>★ PRIMARY</span>
+                  : m.lineageRole === "derived" ? <span title={`Derived re-post${m.parentRunId ? ` of ${String(m.parentRunId).slice(0, 13)}…` : ""} — no additional spend`} style={pill("#f3f4f6", "#6b7280")}>↳ derived</span> : null}
+                {m.canonical && m.scoreable === false ? <span title="No coherent asset set for this clustering — it cannot be trusted to score against ground truth" style={pill("#fff7ed", "#9a3412", "#fed7aa")}>⚠ not scoreable</span> : null}
+                {isSmoke ? <span title="Smoke test — a few leaves only, not the full atlas" style={pill("#fff7ed", "#b45309", "#fed7aa")}>🧪 smoke test</span> : null}
+                {m.harness ? <span title={m.harness.name || undefined} style={String(m.harness.version) === "zscape-gold" ? pill("#fef3c7", "#92400e", "#fcd34d") : pill("#eef2f6", "#475569")}>harness v{m.harness.version}</span> : null}
+                {metaDone ? <span title="Meta-Reasoner consolidation has been run on this run" style={pill("#eff6ff", "#2563eb")}>🧠 meta-reasoner</span> : null}
+                {m.hasJudgement ? <span title={`${m.nJudgements ?? ""} step critique note${m.nJudgements === 1 ? "" : "s"}`} style={pill("#f3e8ff", "#7c3aed")}>⚖️ judgement{m.nJudgements ? ` · ${m.nJudgements}` : ""}</span> : null}
+                {m.schemaBasis ? <span title={m.basisNote || ""} style={pill("#f3e8ff", "#7c3aed")}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
+                {m.archived ? <span style={pill(ARCH[cat].bg, ARCH[cat].fg, ARCH[cat].fg + "33")}>{ARCH[cat].label}</span> : null}
                 <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
               </div>
-              {/* prominent completion date ("July 2nd · 10:03 PM", no seconds); cost after. Dataset is
-                  the card's own — no need to restate it per row. */}
-              {(() => {
-                const dt = m.exportedAt ? new Date(m.exportedAt) : null;
-                const when = dt ? (() => { const d = dt.getDate(); const v = d % 100; const suf = ["th", "st", "nd", "rd"][(v - 20) % 10] || ["th", "st", "nd", "rd"][v] || "th"; return `${dt.toLocaleString("en-US", { month: "long" })} ${d}${suf} · ${dt.toLocaleString("en-US", { hour: "numeric", minute: "2-digit" })}`; })() : "date n/a";
-                const cost = Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}${m.costSource ? ` · ${String(m.costSource).startsWith("ledger:") ? "ledger" : m.costSource}` : ""}` : "cost n/a";
-                return <div style={{ marginTop: 4 }}><span style={{ fontSize: 13.5, fontWeight: 700, color: "#3f3a34" }}>{when}</span><span style={{ fontSize: 12, color: "#9a948c" }}> · {cost}</span></div>;
-              })()}
+              {/* de-emphasised second line: model · single leaf-count · cost */}
+              <div style={{ fontSize: 12, color: "#8a847c", marginTop: 4 }}>
+                <span style={{ fontWeight: 600, color: "#7a746c" }}>{m.model}</span>
+                {m.nLabelled > 0 ? <> · <span style={{ color: "#0f766e", fontWeight: 700 }}>🔬 {m.nLabelled} fine leaves</span></> : null}
+                {` · ${costStr}`}{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
+              </div>
               {m.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div> : null}
               {m.archived && cat === "quarantined" ? <div style={{ fontSize: 11.5, color: "#b91c1c", marginTop: 3, lineHeight: 1.4 }}>{m.archivedReason}</div> : null}
             </div>
