@@ -235,7 +235,9 @@ def _overlay_canonical(entry, dataset):
         "parentRunId": lin.get("parentRunId"),
         "scoreable": sco.get("fingerprintMatchesClustering"),
         "leafIdFingerprint": (c.get("clustering") or {}).get("leafIdFingerprint"),
-        "nNodes": st.get("consolidated"),
+        "nLeaves": (c.get("clustering") or {}).get("nLeaves"),   # stage 1 — fine-leaf clustering
+        "nNodes": st.get("consolidated"),                         # stage 3 — meta-reasoner merge
+        "nScored": st.get("scored"),                              # stage 4 — fuzzy-judge scoring
     })
     up = _asset_scoreable(c.get("atlasId"), (c.get("clustering") or {}).get("leafIdFingerprint"))
     if up is True:

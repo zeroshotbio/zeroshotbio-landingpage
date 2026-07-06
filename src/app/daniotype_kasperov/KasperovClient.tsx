@@ -986,17 +986,27 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                 {m.canonical && m.scoreable === false ? <span title="No coherent asset set for this clustering — it cannot be trusted to score against ground truth" style={pill("#fff7ed", "#9a3412", "#fed7aa")}>⚠ not scoreable</span> : null}
                 {isSmoke ? <span title="Smoke test — a few leaves only, not the full atlas" style={pill("#fff7ed", "#b45309", "#fed7aa")}>🧪 smoke test</span> : null}
                 {m.harness ? <span title={m.harness.name || undefined} style={String(m.harness.version) === "zscape-gold" ? pill("#fef3c7", "#92400e", "#fcd34d") : pill("#eef2f6", "#475569")}>harness v{m.harness.version}</span> : null}
-                {metaDone ? <span title="Meta-Reasoner consolidation has been run on this run" style={pill("#eff6ff", "#2563eb")}>🧠 meta-reasoner</span> : null}
                 {m.hasJudgement ? <span title={`${m.nJudgements ?? ""} step critique note${m.nJudgements === 1 ? "" : "s"}`} style={pill("#f3e8ff", "#7c3aed")}>⚖️ judgement{m.nJudgements ? ` · ${m.nJudgements}` : ""}</span> : null}
                 {m.schemaBasis ? <span title={m.basisNote || ""} style={pill("#f3e8ff", "#7c3aed")}>{m.schemaBasis}{m.promotedFrom ? " · promoted" : ""}</span> : null}
                 {m.archived ? <span style={pill(ARCH[cat].bg, ARCH[cat].fg, ARCH[cat].fg + "33")}>{ARCH[cat].label}</span> : null}
                 <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
               </div>
-              {/* de-emphasised second line: model · single leaf-count · cost */}
+              {/* de-emphasised second line: model · cost (leaf/node counts live in the pipeline strip) */}
               <div style={{ fontSize: 12, color: "#8a847c", marginTop: 4 }}>
-                <span style={{ fontWeight: 600, color: "#7a746c" }}>{m.model}</span>
-                {m.nLabelled > 0 ? <> · <span style={{ color: "#0f766e", fontWeight: 700 }}>🔬 {m.nLabelled} fine leaves</span></> : null}
-                {` · ${costStr}`}{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}
+                <span style={{ fontWeight: 600, color: "#7a746c" }}>{m.model}</span>{` · ${costStr}`}{m.source === "server" ? " · ☁ server" : ""}
+              </div>
+              {/* 4-stage pipeline — what's been "snowballed" into this run so far. Done = teal✓, pending = grey○. */}
+              <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
+                {([
+                  ["Fine-leaf clustering", (Number(m.nLeaves) || Number(m.nLabelled) || 0), (Number(m.nLeaves) > 0 || Number(m.nLabelled) > 0 || Number(m.nNodes) > 0)],
+                  ["Chat-labelling", (Number(m.nLabelled) || 0), (Number(m.nLabelled) > 0)],
+                  ["Meta-Reasoner merge", (Number(m.nNodes) || 0), (Number(m.nNodes) > 0 || metaDone)],
+                  ["Fuzzy-judge score", (Number(m.nScored) || 0), (Number(m.nScored) > 0 || !!m.hasGroundTruth)],
+                ] as [string, number, boolean][]).map(([label, count, done], i) => (
+                  <span key={i} title={`${i + 1}. ${label}${done ? (count ? ` — ${count}` : " — done") : " — not run"}`} style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, whiteSpace: "nowrap", background: done ? "#ecfdf5" : "#f5f3f0", color: done ? "#065f46" : "#bcb6ac", border: `1px solid ${done ? "#a7f3d0" : "#e8e3dc"}` }}>
+                    {done ? "✓" : "○"} {i + 1}. {label}{done && count ? ` · ${count}` : ""}
+                  </span>
+                ))}
               </div>
               {m.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div> : null}
               {m.archived && cat === "quarantined" ? <div style={{ fontSize: 11.5, color: "#b91c1c", marginTop: 3, lineHeight: 1.4 }}>{m.archivedReason}</div> : null}
