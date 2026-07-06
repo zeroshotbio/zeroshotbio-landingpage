@@ -62,6 +62,16 @@ export async function GET(req: NextRequest) {
   // archived runs are surfaced only when explicitly asked for (default off, so
   // existing callers see no behavior change).
   const include = url.searchParams.get("include") === "archived" ? "&include=archived" : "";
+  // ?all=1 — every run across every atlas (canonical-faithful meta), for the lineage overview.
+  if (url.searchParams.get("all") === "1") {
+    try {
+      const allRes = await fetch(`${URL_BASE}/runs/all${include ? "?include=archived" : ""}`, { headers: HEADERS });
+      const all = ((await allRes.json().catch(() => ({ runs: [] }))).runs || []) as any[];
+      return NextResponse.json({ runs: all, generatedAt: new Date().toISOString() });
+    } catch (e: any) {
+      return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
+    }
+  }
   if (!dataset) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
   const atlas = ATLAS_OF(dataset);
   try {

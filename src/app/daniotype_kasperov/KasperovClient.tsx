@@ -670,10 +670,22 @@ export default function KasperovClient() {
   if (viewingRun)
     return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} finalize={viewingRun.finalize} onBack={() => setViewingRun(null)} />;
 
+  // deep-link from a lineage node → open that run in the read-only viewer (same nav as the cards)
+  const openRunFromViz = async (m: any) => {
+    const ds = DATASET_BY_ID[m.atlasId as DatasetId] || DATASETS.find((d) => d.id === m.atlasId);
+    if (!ds) return;
+    try {
+      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(m.atlasId)}&id=${encodeURIComponent(m.runId)}`);
+      if (!r.ok) return;
+      setViewingRun({ run: await r.json(), meta: m, dataset: ds });
+    } catch { /* ignore */ }
+  };
+
   if (!dataset)
     return (
       <>
         <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} onFinalize={setFinalizeFor} />
+        <LineageViz onOpen={openRunFromViz} />
         {viewRunsFor && (
           <RunListModal
             dataset={viewRunsFor}
@@ -1054,6 +1066,79 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
 }
 
 
+// ---- Run lineage overview (bottom of the picker page) — reads the canonical layer only ---------
+const LINEAGE_ATLASES = ["zscape", "chemfish", "daniocell", "minifin", "megafin"];
+function LineageNode({ m, x, y, onOpen }: { m: any; x: number; y: number; onOpen: (m: any) => void }) {
+  const dev = m.recordType === "dev-effort";
+  const notScoreable = !dev && m.canonical && m.scoreable === false;
+  const dt = m.exportedAt ? new Date(m.exportedAt) : null;
+  const when = dt ? dt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
+  const count = dev ? null : (m.nNodes ? `${m.nLabelled ?? "?"}→${m.nNodes}` : (m.nLabelled ? `${m.nLabelled}` : null));
+  const c = Number(m.costUsd);
+  const cost = c > 0 ? `$${c < 1 ? c.toFixed(2) : c.toFixed(0)}` : dev ? `$${Number(m.costUsd || 0).toFixed(0)}` : "—";
+  const role = dev ? "⚙ dev" : m.lineageRole === "primary" ? "★" : m.lineageRole === "derived" ? "↳" : "•";
+  return (
+    <div onClick={() => !dev && onOpen(m)} title={`${m.runId}${m.note ? "\n" + m.note : ""}`}
+      style={{ position: "absolute", left: x, top: y, width: 138, cursor: dev ? "default" : "pointer", boxSizing: "border-box",
+        background: dev ? "#faf7f0" : notScoreable ? "#fbfaf8" : "#fff",
+        border: `1px solid ${dev ? "#e8cf6b" : notScoreable ? "#e5e1dc" : "#cbe8dd"}`,
+        borderRadius: 8, padding: "5px 8px", opacity: notScoreable ? 0.75 : 1, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
+        <span style={{ fontSize: 11, fontWeight: 800, color: dev ? "#7c5e10" : "#2b2b2b" }}>{role} {when}</span>
+        {notScoreable ? <span title="not scoreable — asset fingerprint mismatch" style={{ fontSize: 9, color: "#9a3412" }}>⚠</span> : null}
+      </div>
+      <div style={{ fontSize: 9.5, color: "#7a746c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.model || "dev-effort"}{count ? ` · ${count}` : ""}</div>
+      <div style={{ fontSize: 9.5, color: "#9a948c", whiteSpace: "nowrap" }}>{cost}{m.costSource ? ` · ${String(m.costSource).startsWith("ledger") ? "ledger" : m.costSource}` : ""}</div>
+    </div>
+  );
+}
+function AtlasLane({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen: (m: any) => void }) {
+  const sorted = [...runs].sort((a, b) => String(a.exportedAt || "").localeCompare(String(b.exportedAt || "")));
+  const bareId = (v: any) => String(v?.parentRunId || "").split("/").pop();
+  const idx: Record<string, number> = {};
+  sorted.forEach((r, i) => { idx[r.runId] = i; });
+  const SLOT = 150, NODE_W = 138, NODE_H = 50, TOP = 10, BOT = 96, H = 158;
+  const width = Math.max(sorted.length * SLOT, 320);
+  const isSub = (r: any) => r.lineageRole === "derived" || r.recordType === "dev-effort";
+  const xOf = (r: any) => idx[r.runId] * SLOT + 6;
+  const conns = sorted.filter((r) => { const p = bareId(r); return p && idx[p] != null; }).map((r) => {
+    const px = idx[bareId(r)!] * SLOT + 6 + NODE_W / 2;
+    return { cx: xOf(r) + NODE_W / 2, cy: BOT, px, py: TOP + NODE_H };
+  });
+  return (
+    <div style={{ marginTop: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 4, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {runs.length} runs</span></div>
+      <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
+        <div style={{ position: "relative", width, height: H }}>
+          <svg width={width} height={H} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
+            {conns.map((c, i) => <path key={i} d={`M ${c.cx} ${c.cy} C ${c.cx} ${(c.cy + c.py) / 2}, ${c.px} ${(c.cy + c.py) / 2}, ${c.px} ${c.py}`} stroke="#d8cdb8" strokeWidth={1.5} fill="none" />)}
+          </svg>
+          {sorted.map((r) => <LineageNode key={r.runId} m={r} x={xOf(r)} y={isSub(r) ? BOT : TOP} onOpen={onOpen} />)}
+        </div>
+      </div>
+    </div>
+  );
+}
+function LineageViz({ onOpen }: { onOpen: (m: any) => void }) {
+  const [data, setData] = useState<{ runs: any[]; generatedAt: string } | null>(null);
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/kasperov_runs?all=1").then((r) => r.json()).then((d) => alive && setData({ runs: d.runs || [], generatedAt: d.generatedAt || new Date().toISOString() })).catch(() => alive && setData({ runs: [], generatedAt: new Date().toISOString() }));
+    return () => { alive = false; };
+  }, []);
+  if (!data || !data.runs.length) return null;
+  const byAtlas: Record<string, any[]> = {};
+  data.runs.forEach((r) => { const a = r.atlasId || "other"; (byAtlas[a] ||= []).push(r); });
+  return (
+    <div style={{ maxWidth: 1100, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 800, textAlign: "center", margin: "0 0 4px" }}>Run lineage · every run across all atlases</h2>
+      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 8px", maxWidth: 680, lineHeight: 1.5 }}>One track per atlas, runs left→right by date. <b>★ primary</b> runs sit on the trunk; <b>↳ derived</b> re-posts branch below, curving back to their parent. Greyed <b>⚠</b> = not scoreable (asset fingerprint mismatch). Click any node to open it.</p>
+      {LINEAGE_ATLASES.map((a) => (byAtlas[a]?.length ? <AtlasLane key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} /> : null))}
+      {Object.keys(byAtlas).filter((a) => !LINEAGE_ATLASES.includes(a)).map((a) => <AtlasLane key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} />)}
+      <div style={{ textAlign: "center", fontSize: 11, color: "#a59f96", marginTop: 16 }}>Generated {new Date(data.generatedAt).toLocaleString()} · read straight from the canonical layer</div>
+    </div>
+  );
+}
 function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void; onFinalize: (d: DatasetDef) => void }) {
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
