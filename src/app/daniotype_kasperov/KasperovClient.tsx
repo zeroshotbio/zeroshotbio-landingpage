@@ -950,6 +950,19 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
 
         {status === "ready" && shown.map((m) => {
           const cat = m.archiveCategory || "other";
+          // synthetic dev-effort record — not a run; distinct compact row, not clickable
+          if (m.recordType === "dev-effort") {
+            return (
+              <div key={m.runId} style={{ background: "#faf7f0", border: "1px dashed #d8cdb8", borderRadius: 10, padding: "9px 12px", marginBottom: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 800, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b", borderRadius: 99, padding: "1px 8px" }}>⚙ dev-effort</span>
+                  <span style={{ fontSize: 12.5, color: "#666" }}>{Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))} est.` : "cost n/a"}{m.costSource ? ` · ${String(m.costSource).replace("ledger:multiple", "ledger ×4")}` : ""}</span>
+                  {m.parentRunId ? <span style={{ fontSize: 11, color: "#9a948c" }}>child of {String(m.parentRunId).slice(0, 15)}…</span> : null}
+                </div>
+                {m.note ? <div style={{ fontSize: 12, color: "#7a746c", marginTop: 3, lineHeight: 1.4 }}>{m.note}</div> : null}
+              </div>
+            );
+          }
           return (
             <div key={m.runId} onClick={() => !loadingId && open(m)} style={{ cursor: loadingId ? "default" : "pointer", background: "#fff", border: `1px solid ${m.archived ? ARCH[cat].fg + "44" : "#e5e1dc"}`, borderRadius: 10, padding: "10px 12px", marginBottom: 8 }}>
               <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
@@ -959,6 +972,11 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                 {/* Golden-harness pill: runs that ported the ZSCAPE golden 3-personality menu-exposed
                     harness (harness.version "zscape-port"). Distinct from ★ GOLDEN (the reference run itself). */}
                 {String(m.harness?.version) === "zscape-port" ? <span title="Ran the ZSCAPE golden harness — 3-personality menu-exposed chat (Researcher → Reasoner de-novo → menu-exposed binning), V1.0 port" style={{ fontSize: 10.5, fontWeight: 800, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b", borderRadius: 99, padding: "1px 8px" }}>🏅 Golden Harness V1.0</span> : null}
+                {/* canonical lineage pill (primary carries the effort's cost; derived = a re-post, no additional spend) */}
+                {m.lineageRole === "primary" ? <span title="Primary run — carries the effort's recovered cost" style={{ fontSize: 10.5, fontWeight: 800, color: "#065f46", background: "#ecfdf5", border: "1px solid #a7f3d0", borderRadius: 99, padding: "1px 8px" }}>★ PRIMARY</span>
+                  : m.lineageRole === "derived" ? <span title={`Derived re-post${m.parentRunId ? ` of ${String(m.parentRunId).slice(0, 13)}…` : ""} — no additional spend`} style={{ fontSize: 10.5, fontWeight: 700, color: "#6b7280", background: "#f3f4f6", borderRadius: 99, padding: "1px 8px" }}>↳ derived</span> : null}
+                {/* fingerprint-invariant "scoreable?" signal — canonical.scoring.fingerprintMatchesClustering */}
+                {m.canonical && m.scoreable === false ? <span title="This run's clustering fingerprint has no coherent asset set — it cannot be trusted to score against ground truth" style={{ fontSize: 10.5, fontWeight: 800, color: "#9a3412", background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 99, padding: "1px 8px" }}>⚠ not scoreable</span> : null}
                 <span style={{ fontSize: 12.5, color: "#666" }}>· {m.nLabelled} labelled{m.hasGroundTruth ? " · scored" : ""}{m.source === "server" ? " · ☁ server" : ""}</span>
                 {/* smoke-test vs full-run pill — a smoke run labels only a handful of leaves (source/note marks it) */}
                 {(() => {
@@ -983,7 +1001,7 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
                 <span style={{ marginLeft: "auto", fontSize: 12.5, color: ACCENT, fontWeight: 700 }}>{loadingId === m.runId ? "Loading…" : "View →"}</span>
               </div>
               {m.dataset ? <div style={{ fontSize: 11.5, color: "#7a746c", marginTop: 3, lineHeight: 1.4 }}>🧬 {m.dataset}</div> : null}
-              <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · {Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}` : "cost n/a"}</div>
+              <div style={{ fontSize: 12, color: "#999", marginTop: 2 }}>{m.exportedAt ? new Date(m.exportedAt).toLocaleString() : "date n/a"} · {Number(m.costUsd) > 0 ? `~$${money(Number(m.costUsd))}${m.costEstimated ? " est." : ""}` : "cost n/a"}{m.costSource && Number(m.costUsd) > 0 ? ` · ${String(m.costSource).startsWith("ledger:") ? "ledger" : m.costSource}` : ""}</div>
               {m.note ? <div style={{ fontSize: 12.5, color: "#92400e", marginTop: 3, lineHeight: 1.45 }}>📝 {m.note}</div> : null}
               {m.archived && cat === "quarantined" ? <div style={{ fontSize: 11.5, color: "#b91c1c", marginTop: 3, lineHeight: 1.4 }}>{m.archivedReason}</div> : null}
             </div>

@@ -911,10 +911,16 @@ function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any;
   const menuCoverage = nodes.filter((n) => n.leaf_ids.some((l: string) => leafMenu[l])).length;
 
   async function runScoring() {
-    if (!dataset?.groundTruthUrl) { setState({ s: "err", msg: "This dataset has no published ground truth to score against." }); return; }
+    const canon: any = (run as any)?._canonical;
+    if (canon?.scoring?.fingerprintMatchesClustering === false) { setState({ s: "err", msg: "Not scoreable — this run's clustering has no coherent asset set (fingerprint mismatch)." }); return; }
+    // fingerprint-invariant GT: when the asset set is split (STEP-3), score against <atlas>/<fingerprint>/groundtruth.json
+    const fp = canon?.clustering?.leafIdFingerprint;
+    const gtUrl = (canon?.scoring?.gtFingerprintDir && fp && dataset?.groundTruthUrl && /\/groundtruth\.json$/.test(dataset.groundTruthUrl))
+      ? dataset.groundTruthUrl.replace(/\/groundtruth\.json$/, `/${fp}/groundtruth.json`) : dataset?.groundTruthUrl;
+    if (!gtUrl) { setState({ s: "err", msg: "This dataset has no published ground truth to score against." }); return; }
     setState({ s: "loading" });
     let gt: any;
-    try { gt = await (await fetch(dataset.groundTruthUrl)).json(); } catch (e: any) { setState({ s: "err", msg: `Could not load ground truth: ${String(e?.message ?? e).slice(0, 100)}` }); return; }
+    try { gt = await (await fetch(gtUrl)).json(); } catch (e: any) { setState({ s: "err", msg: `Could not load ground truth: ${String(e?.message ?? e).slice(0, 100)}` }); return; }
     const gtC = gt?.clusters || {};
     const plurality = (ids: string[], get: (lid: string) => string | null | undefined, weight: (lid: string) => number) => {
       const cw = new Map<string, number>(); let tot = 0, top = 0; let best: string | null = null;
@@ -971,7 +977,9 @@ function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any;
     <div style={CARD}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
         <div style={SEC}>Final Judge · {prop ? `${nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT` : `${rows.length} fine leaves vs ${dataset?.id ?? "sealed"} GT`}</div>
-        {state.s !== "done" ? <button onClick={runScoring} disabled={!dataset?.groundTruthUrl || state.s === "loading" || state.s === "scoring"} style={{ marginLeft: "auto", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: state.s === "loading" || state.s === "scoring" ? 0.6 : 1 }}>{state.s === "loading" ? "Loading GT…" : state.s === "scoring" ? `Scoring… ${state.done}/${state.total}` : `🏁 Score ${nodes.length} nodes`}</button> : null}
+        {state.s !== "done" ? ((run as any)?._canonical?.scoring?.fingerprintMatchesClustering === false
+          ? <span title="This run's clustering fingerprint has no coherent asset set — scoring against GT can't be trusted" style={{ marginLeft: "auto", fontSize: 11.5, color: "#9a3412", fontWeight: 700, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "5px 10px" }}>⚠ not scoreable — asset fingerprint mismatch</span>
+          : <button onClick={runScoring} disabled={!dataset?.groundTruthUrl || state.s === "loading" || state.s === "scoring"} style={{ marginLeft: "auto", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: state.s === "loading" || state.s === "scoring" ? 0.6 : 1 }}>{state.s === "loading" ? "Loading GT…" : state.s === "scoring" ? `Scoring… ${state.done}/${state.total}` : `🏁 Score ${nodes.length} nodes`}</button>) : null}
       </div>
       {state.s === "err" ? <div style={{ fontSize: 13, color: "#b91c1c", marginTop: 6 }}>{state.msg}</div> : null}
       {state.s === "idle" ? <div style={{ fontSize: 12.5, color: "#7a746c", marginTop: 6, lineHeight: 1.5 }}>Scores each final node at all four ZSCAPE tiers on two paths: the blind <b>de-novo</b> identity and the <b>menu-exposed</b> binning ({menuCoverage}/{nodes.length} nodes have a recorded menu choice). Green = matches GT, red = miss.</div> : null}

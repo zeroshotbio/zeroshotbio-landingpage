@@ -198,15 +198,101 @@ def _read_index(path):
         return []
 
 
+def _asset_scoreable(atlas, fp):
+    """Post-STEP-3 fingerprint invariant: a run is scoreable iff a coherent fingerprinted asset set
+    exists for its clustering (daniotype_data/<atlas>/<fp>/groundtruth.json). Reflects the asset
+    split live, so canonical's pre-split flag never goes stale. None when unknown."""
+    if not (atlas and fp):
+        return None
+    ad = os.environ.get("AUTOPILOT_ASSET_DIR", "/data/zeroshotbio-landingpage/daniotype_data")
+    return os.path.exists(os.path.join(ad, str(atlas), str(fp), "groundtruth.json"))
+
+
+def _canonical_of(dataset, run_id):
+    """Read the kasperov-run/1.0 sibling (tiny) if present, else None. Read-time only."""
+    try:
+        cp = os.path.join(_ds_dir(dataset), _safe(run_id) + ".canonical.json")
+        return json.load(open(cp)) if os.path.exists(cp) else None
+    except Exception:
+        return None
+
+
+def _overlay_canonical(entry, dataset):
+    """Overlay faithful canonical fields onto a list-meta entry (cost/lineage/atlas/scoreable).
+    Cheap: reads only the ~1-3 KB canonical sibling, never the big run file."""
+    c = _canonical_of(dataset, entry.get("runId"))
+    if not c:
+        return entry
+    cc = c.get("cost") or {}; lin = c.get("lineage") or {}; sco = c.get("scoring") or {}; st = c.get("stages") or {}
+    entry.update({
+        "canonical": True,
+        "atlasId": c.get("atlasId"),
+        "producer": c.get("producer"),
+        "costUsd": cc.get("usd"),          # None when unrecoverable -> UI shows 'cost n/a'
+        "costSource": cc.get("source"),
+        "costEstimated": bool(cc.get("estimated")),
+        "lineageRole": lin.get("role"),
+        "parentRunId": lin.get("parentRunId"),
+        "scoreable": sco.get("fingerprintMatchesClustering"),
+        "leafIdFingerprint": (c.get("clustering") or {}).get("leafIdFingerprint"),
+        "nNodes": st.get("consolidated"),
+    })
+    up = _asset_scoreable(c.get("atlasId"), (c.get("clustering") or {}).get("leafIdFingerprint"))
+    if up is True:
+        entry["scoreable"] = True  # a coherent fingerprinted asset set now exists (post STEP-3)
+    if st.get("labelled") is not None:
+        entry["nLabelled"] = st["labelled"]
+    return entry
+
+
+def _effort_rows(dataset, d):
+    """Surface synthetic dev-effort records (_effort_*.json) as their own list rows."""
+    out = []
+    for fn in sorted(os.listdir(d)):
+        if not (fn.startswith("_effort_") and fn.endswith(".json")):
+            continue
+        try:
+            e = json.load(open(os.path.join(d, fn))); cc = e.get("cost") or {}
+            out.append({"runId": fn[:-5], "datasetId": dataset, "atlasId": e.get("atlasId"),
+                        "recordType": "dev-effort", "lineageRole": "dev-effort",
+                        "parentRunId": (e.get("lineage") or {}).get("parentRunId"),
+                        "costUsd": cc.get("usd"), "costSource": cc.get("source"), "costEstimated": bool(cc.get("estimated")),
+                        "model": None, "nLabelled": 0, "note": e.get("note"), "exportedAt": None})
+        except Exception:
+            continue
+    return out
+
+
 def list_runs(dataset, include_archived=False):
+    # Scan the directory for EVERY run file — the _index.json cache is not guaranteed complete
+    # (some runs were POSTed/written without an index entry). Use the cached meta when present
+    # (fast), else derive from the file; then overlay canonical. Guarantees no run is dropped.
     d = _ds_dir(dataset)
-    runs = list(_read_index(os.path.join(d, "_index.json")))
+    idx = {e.get("runId"): e for e in _read_index(os.path.join(d, "_index.json"))}
+    runs = []
+    try:
+        names = sorted(os.listdir(d))
+    except FileNotFoundError:
+        names = []
+    for fn in names:
+        if not fn.endswith(".json") or fn.startswith("_") or fn.endswith(".canonical.json"):
+            continue
+        rid = fn[:-5]
+        e = dict(idx[rid]) if rid in idx else None
+        if e is None:
+            try:
+                e = _meta_from(json.load(open(os.path.join(d, fn))), rid)
+            except Exception:
+                continue
+        runs.append(_overlay_canonical(e, dataset))
+    runs.extend(_effort_rows(dataset, d))
     if include_archived:
         for e in _read_index(os.path.join(d, "_archive.json")):
             e = dict(e)
             e["archived"] = True
             e["archiveCategory"] = _archive_category(e.get("archivedReason"))
-            runs.append(e)
+            runs.append(_overlay_canonical(e, dataset))
+    runs.sort(key=lambda m: str(m.get("exportedAt") or ""), reverse=True)
     return runs
 
 
@@ -214,7 +300,20 @@ def get_run(dataset, run_id):
     p = os.path.join(_ds_dir(dataset), _safe(run_id) + ".json")
     if not os.path.exists(p):
         return None
-    return json.load(open(p))
+    run = json.load(open(p))
+    # read-time enrichment: attach the canonical envelope so the viewer has fingerprint +
+    # scoreable + lineage + atlasId without rewriting the stored run file.
+    c = _canonical_of(dataset, run_id)
+    if c:
+        fp = (c.get("clustering") or {}).get("leafIdFingerprint")
+        up = _asset_scoreable(c.get("atlasId"), fp)
+        if up is True:
+            sco = c.setdefault("scoring", {})
+            sco["fingerprintMatchesClustering"] = True
+            sco["assetSetFingerprint"] = fp
+            sco["gtFingerprintDir"] = True  # GT lives in the fingerprinted subdir (STEP-3 split)
+        run["_canonical"] = c
+    return run
 
 
 # --- prompts (ported from KasperovClient.tsx) ------------------------------

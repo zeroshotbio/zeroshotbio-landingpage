@@ -20,48 +20,14 @@ const URL_BASE = (process.env.KASPEROV_AUTOPILOT_URL || "").replace(/\/$/, "");
 const TOKEN = process.env.KASPEROV_AUTOPILOT_TOKEN || "";
 const HEADERS = { "content-type": "application/json", "x-api-token": TOKEN };
 
-// --- batch fine-labelling deliverables -------------------------------------
-// The Phase-0→A→B fine-labelling runs are persisted worker-native under their own
-// datasetIds (labelling run = transcripts; consolidation run = operatorProposal).
-// They do NOT get their own picker card — instead each surfaces inside its BASE
-// dataset's "View Completed Runs" list: on a list request we append one synthetic
-// row; when that row is opened we fetch BOTH runs, merge the consolidation's
-// operatorProposal + deliverable labels into the labelling run, and normalize to
-// viewer shape (see ./normalize). Read-time only — persisted runs are never rewritten.
+// --- atlas grouping (replaces the hardcoded BATCH_BY_BASE literals) ---------
+// One logical atlas spans several datasetId partitions (e.g. chemfish + chemfish_phase1_finelabel).
+// The canonical layer stamps each run's atlasId + lineage, so the "View Completed Runs" list is now
+// grouped purely from data: fetch every run's canonical-faithful meta, filter by atlasId. The old
+// labelling+consolidation "deliverable" pair (neither run self-sufficient for the 5-tab drill-in)
+// is reproduced from lineage.parentRunId — on OPEN we merge the pair, no per-run literals.
 type BatchRef = { ds: string; id: string };
-type BatchCfg = {
-  labelling: BatchRef; consolidation: BatchRef; model: string; note: string;
-  // immutable completed-run summary for the LIST row (the worker _index has these as 0/None
-  // because the runs were POSTed without top-level cost/date; the real values live in metadata).
-  exportedAt: string; costUsd: number; nLabelled: number;
-};
-const BATCH_BY_BASE: Record<string, BatchCfg> = {
-  chemfish: {
-    labelling: { ds: "chemfish_phase1_finelabel", id: "20260704-193854-0c115f" },
-    consolidation: { ds: "chemfish_phase1_finelabel", id: "20260704-222534-a70b22" },
-    model: "gpt-5.4", note: "⚠ *faulty chat-harness (run_leaf_v2 — no menu-exposed phase; JSON transcript)* · Fine-labelled + consolidated · Phase 0→A→B (288 leaves → 51 nodes)",
-    exportedAt: "2026-07-04T19:38:54Z", costUsd: 18.412, nLabelled: 288,
-  },
-  daniocell: {
-    labelling: { ds: "daniocell_phase1_finelabel", id: "20260704-195339-e48838" },
-    consolidation: { ds: "daniocell_phase1_finelabel", id: "20260704-222546-b3c7e8" },
-    model: "gpt-5.4", note: "⚠ *faulty chat-harness (run_leaf_v2 — no menu-exposed phase; JSON transcript)* · Fine-labelled + consolidated · Phase 0→A→B (270 leaves → 55 nodes)",
-    exportedAt: "2026-07-04T19:53:39Z", costUsd: 14.291, nLabelled: 270,
-  },
-  minifin: {
-    labelling: { ds: "minifin_phaseA_labelling", id: "20260704-234502-beaeee" },
-    consolidation: { ds: "minifin_final_labelling", id: "20260705-002027-a10bb8" },
-    model: "gpt-5.4", note: "⚠ *faulty chat-harness (run_leaf_v2 — no menu-exposed phase; JSON transcript)* · Fine-labelled + consolidated · Phase 0→A→B (267 leaves → 114 nodes; validated 0.99/0.90)",
-    exportedAt: "2026-07-04T23:45:02Z", costUsd: 15.35, nLabelled: 267,
-  },
-  // MegaFin fine-labelling ran on parse_megafin1 (the Parse/ENSDARG object) -> Parse card.
-  megafin_parse: {
-    labelling: { ds: "megafin_phaseA_labelling", id: "20260705-051439-a10c0a" },
-    consolidation: { ds: "megafin_final_labelling", id: "20260705-063523-abad22" },
-    model: "gpt-5.4", note: "⚠ *faulty chat-harness (run_leaf_v2 — no menu-exposed phase; JSON transcript)* · Fine-labelled + consolidated · Phase 0→A→B (342 leaves → 131 nodes; leaf-124 corrected)",
-    exportedAt: "2026-07-05T05:14:38Z", costUsd: 21.314, nLabelled: 342,
-  },
-};
+const ATLAS_OF = (ds: string) => (ds || "").replace(/_(recursive|phase1_finelabel|phaseA_labelling|final_labelling|parse|batch)$/, "");
 
 async function fetchRunJson(ref: BatchRef): Promise<any | null> {
   try {
@@ -97,34 +63,44 @@ export async function GET(req: NextRequest) {
   // existing callers see no behavior change).
   const include = url.searchParams.get("include") === "archived" ? "&include=archived" : "";
   if (!dataset) return NextResponse.json({ error: "no_dataset" }, { status: 400 });
-  const batch = BATCH_BY_BASE[dataset];
+  const atlas = ATLAS_OF(dataset);
   try {
+    // one cross-dataset fetch — meta is canonical-faithful (worker overlays cost/lineage/atlasId/scoreable).
+    const allRes = await fetch(`${URL_BASE}/runs/all${include ? "?include=archived" : ""}`, { headers: HEADERS });
+    const all = ((await allRes.json().catch(() => ({ runs: [] }))).runs || []) as any[];
+    const inAtlas = (m: any) => (m?.atlasId ?? ATLAS_OF(m?.datasetId || "")) === atlas;
+
     if (id) {
-      // opening the appended fine-labelled row -> fetch both worker runs + normalize.
-      if (batch && id === batch.labelling.id) {
-        const [lab, cons] = await Promise.all([fetchRunJson(batch.labelling), fetchRunJson(batch.consolidation)]);
-        if (!lab) return NextResponse.json({ error: "no run" }, { status: 404 });
-        return NextResponse.json(normalizeRun(lab, cons));
+      // resolve the run's REAL datasetId (may be a sibling partition) + its lineage partner.
+      const self = all.find((m) => m.runId === id && inAtlas(m));
+      const selfDs = self?.datasetId || dataset;
+      const run = await fetchRunJson({ ds: selfDs, id });
+      if (!run) return NextResponse.json({ error: "no run" }, { status: 404 });
+      // lineage merge: labelling (transcripts) + consolidation (operatorProposal) — neither is
+      // self-sufficient for the 5-tab drill-in, so we stitch them from lineage.parentRunId.
+      // Only the corpus labelling+consolidation pair needs stitching (each is a HALF-deliverable:
+      // labelling has transcripts but no operatorProposal; consolidation has operatorProposal but no
+      // transcripts). A self-sufficient run (e.g. the golden — both halves) is returned as-is, so a
+      // derived re-post that merely points parentRunId→this run never mangles it.
+      const hasOp = !!run.operatorProposal;
+      const hasTr = (run.clusters || []).some((c: any) => ((c.transcript || c.steps || []).length) > 0);
+      if (!hasOp || !hasTr) {
+        const bareId = (x: any) => String(x || "").split("/").pop();  // parentRunId may be "datasetId/runId"
+        const partnerMeta = all.find((m) => inAtlas(m) && m.recordType !== "dev-effort" && m.runId !== id &&
+          (bareId(m.parentRunId) === id || (self?.parentRunId && m.runId === bareId(self.parentRunId))));
+        if (partnerMeta) {
+          const partner = await fetchRunJson({ ds: partnerMeta.datasetId, id: partnerMeta.runId });
+          if (partner) {
+            const [lab, cons] = hasOp ? [partner, run] : [run, partner];
+            return NextResponse.json(normalizeRun(lab, cons));
+          }
+        }
       }
-      const r = await fetch(`${URL_BASE}/runs/${encodeURIComponent(dataset)}/${encodeURIComponent(id)}`, { headers: HEADERS });
-      const body = await r.text();
-      return new NextResponse(body, { status: r.status, headers: { "content-type": "application/json" } });
+      return NextResponse.json(run);
     }
-    // list: the base dataset's own runs, plus the fine-labelled deliverable row when present.
-    const r = await fetch(`${URL_BASE}/runs?dataset=${encodeURIComponent(dataset)}${include}`, { headers: HEADERS });
-    const data = await r.json().catch(() => ({ runs: [] }));
-    if (batch) {
-      const runs = Array.isArray(data.runs) ? data.runs : [];
-      if (!runs.some((x: any) => x?.runId === batch.labelling.id)) {
-        runs.unshift({
-          runId: batch.labelling.id, datasetId: dataset, dataset: batch.note, model: batch.model,
-          source: "batch (read-time normalized)", note: batch.note, hasGroundTruth: false,
-          exportedAt: batch.exportedAt, costUsd: batch.costUsd, costEstimated: false, nLabelled: batch.nLabelled,
-        });
-      }
-      return NextResponse.json({ ...data, runs }, { status: r.status });
-    }
-    return NextResponse.json(data, { status: r.status });
+
+    // LIST — every run in this atlas (base partition + corpus siblings), grouped from atlasId.
+    return NextResponse.json({ runs: all.filter(inAtlas) });
   } catch (e: any) {
     return NextResponse.json({ error: "worker_unreachable", detail: String(e?.message ?? e).slice(0, 160) }, { status: 502 });
   }
