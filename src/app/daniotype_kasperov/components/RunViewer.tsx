@@ -781,14 +781,25 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
            render it directly. Ordered AFTER operatorProposal/sc so those paths are unchanged. */
         : run?.finalJudge?.rows?.length ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
-      {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above */}
+      {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above.
+          When a node-level scorecard is persisted, show the MERGED nodes in this label-vs-GT style;
+          otherwise fall back to the pre-merge per-leaf Scorecard. */}
       {dataset.groundTruthUrl ? (
-        <details style={CARD}>
-          <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs ZSCAPE Classic (pre-merge, 250 leaves)</summary>
-          <div style={{ marginTop: 10 }}>
-            <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labels} confidence={confidence} validated={validated} onPick={onPick} model={model} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
-          </div>
-        </details>
+        run?.finalJudge?.rows?.length ? (
+          <details style={CARD} open>
+            <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} ({run.finalJudge.rows.length} post-Meta-Reasoner nodes)</summary>
+            <div style={{ marginTop: 10 }}>
+              <MergedNodeScorecard run={run} />
+            </div>
+          </details>
+        ) : (
+          <details style={CARD}>
+            <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs ZSCAPE Classic (pre-merge, 250 leaves)</summary>
+            <div style={{ marginTop: 10 }}>
+              <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labels} confidence={confidence} validated={validated} onPick={onPick} model={model} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
+            </div>
+          </details>
+        )
       ) : null}
     </div>
   );
@@ -810,6 +821,66 @@ function parseMenuLabels(transcript: any[]): Record<string, string> | null {
     if (m && m[1]) out[tier] = m[1].trim();
   });
   return Object.keys(out).length ? out : null;
+}
+
+// MergedNodeScorecard — renders the persisted finalJudge node rows (the merged post-Meta-Reasoner
+// nodes) in the label-vs-GT "ground-truth scorecard" visual style: per-tier agreement tiles on top,
+// then one row per node showing its de-novo identity (Daniotype) against the published GT label at
+// each tier, green when the fuzzy judge matched, red when it missed. Reads only what's persisted —
+// never re-scores. Replaces the empty pre-merge per-leaf Scorecard for runs that carry a scorecard.
+function MergedNodeScorecard({ run }: { run: any }) {
+  const fj = run?.finalJudge;
+  const rows: any[] = Array.isArray(fj?.rows) ? fj.rows : [];
+  const tiers: string[] = (Array.isArray(fj?.tiers) && fj.tiers.length ? fj.tiers : FJ_TIERS.filter((t) => rows.some((r) => r.gt?.[t]))) as string[];
+  const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)" };
+  const heat = (pct: number) => (pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#dc2626");
+  const agg = tiers.map((t) => {
+    let a = 0, tot = 0;
+    rows.forEach((r) => { if (r.dn?.[t]) { tot++; if (r.dn[t].match) a++; } });
+    return { t, a, tot, pct: tot ? Math.round((100 * a) / tot) : 0 };
+  });
+  return (
+    <div>
+      <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 10 }}>
+        Each of the <b>{rows.length} merged post-Meta-Reasoner nodes</b> — its blind <b>de-novo</b> consolidated identity vs the published atlas at every tier, scored by the fuzzy judge on biological meaning (not string match). Green = agrees, red = miss.
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 10 }}>
+        {agg.map((t) => (
+          <div key={t.t} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "12px 15px" }}>
+            <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{TIER_LABEL[t.t] || t.t}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+              <span style={{ fontSize: 28, fontWeight: 800, color: heat(t.pct), fontVariantNumeric: "tabular-nums" }}>{t.tot ? t.pct : "—"}{t.tot ? "%" : ""}</span>
+              <span style={{ fontSize: 12.5, color: "#999" }}>{t.a}/{t.tot} agree</span>
+            </div>
+            <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}><div style={{ width: `${t.pct}%`, height: "100%", background: heat(t.pct) }} /></div>
+          </div>
+        ))}
+      </div>
+      <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 12, whiteSpace: "nowrap" }}>
+          <thead>
+            <tr style={{ background: "#f3f0ec", color: "#555" }}>
+              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec" }}>Node identity · Daniotype</th>
+              {tiers.map((t) => <th key={t} style={{ padding: "7px 8px", fontWeight: 700, borderLeft: "1px solid #e5e1dc" }} title={`ZSCAPE Classic GT · ${TIER_LABEL[t] || t}`}>ZSCAPE GT · {TIER_SHORT[t] || t}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} style={{ borderTop: "1px solid #f2ede6" }}>
+                <td style={{ padding: "6px 10px", position: "sticky", left: 0, background: "#fff", maxWidth: 260, overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }} title={r.identity}>{r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}</td>
+                {tiers.map((t) => {
+                  const gt = r.gt?.[t]; const matched = r.dn?.[t]?.match;
+                  const bg = gt == null ? "#fff" : matched ? "#f0fdf4" : "#fef2f2";
+                  const fg = gt == null ? "#c8c2ba" : matched ? "#166534" : "#b91c1c";
+                  return <td key={t} style={{ padding: "6px 8px", borderLeft: "1px solid #f2ede6", background: bg, color: fg, maxWidth: 160, overflow: "hidden", textOverflow: "ellipsis" }} title={`GT: ${gt ?? "—"}${gt != null ? ` · ${matched ? "match" : "miss"}` : ""}`}>{gt ?? "—"}</td>;
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
 }
 
 // LIVE Final Judge — scores the ~70 post-Meta-Reasoner nodes against ZSCAPE Classic
