@@ -241,7 +241,15 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
     const toNative = (u: string) => u.replace(`/${dataset.id}/`, `/${dataset.id}_native/`);
     return { ...dataset, groundTruthUrl: toNative(dataset.groundTruthUrl) };
   }, [run, dataset]);
-  const { clusters, meta: atlasMeta, error } = useAtlas(dataset.dataUrl);
+  // Prefer this run's fingerprint-matched umap (STEP-3 split assets carry cx/cy AND compartmentIndex,
+  // so ChemFish/DanioCell get the Compartments toggle too); fall back to the dataset's flat umap.
+  const clusteringUrl = useMemo(() => {
+    const c: any = (run as any)?._canonical;
+    const fp = c?.clustering?.leafIdFingerprint;
+    return (c?.scoring?.gtFingerprintDir && fp && dataset?.dataUrl && /\/umap\.json$/.test(dataset.dataUrl))
+      ? dataset.dataUrl.replace(/\/umap\.json$/, `/${fp}/umap.json`) : dataset?.dataUrl;
+  }, [run, dataset]);
+  const { clusters, meta: atlasMeta, error } = useAtlas(clusteringUrl);
   const [mapView, setMapView] = useState<MapView>("islands");
   const profile = useMemo(() => computeCompletenessProfile(run, meta), [run, meta]);
   const runClusters: any[] = Array.isArray(run?.clusters) ? run.clusters : [];
@@ -458,7 +466,12 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                   </>
                 ) : <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>}
               </div>
-              {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />}
+              {/* ZSCAPE keeps its rich prose read; every dataset also gets the data-driven recipe panel
+                  when the canonical clustering.strategy is available (falls back to the generic explainer). */}
+              {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : null}
+              {(run as any)?._canonical?.clustering?.strategy
+                ? <ClusteringStrategyPanel strategy={(run as any)._canonical.clustering.strategy} nLeaves={clusters?.length} />
+                : dataset.id !== "zscape" ? <ClusteringExplainer /> : null}
               {/* this run's own clustering provenance — shown only when the run JSON
                   structurally snapshotted a strategy (never back-filled from live data) */}
               {profile.hasClusteringStrategy ? (
@@ -766,6 +779,38 @@ function FloatyJudgeBox({ judgements, onClose, onAdd }: { judgements: any[]; onC
 }
 
 // ---- STEP 5: Final Judge — score the MERGED NODES (own tier · fuzzy agreement · purity) ----
+// Data-driven clustering-recipe panel — the real per-run recipe (canonical clustering.strategy),
+// rendered in the ZSCAPE-quality style for EVERY dataset: a two-stage prose read + recipe chips.
+function ClusteringStrategyPanel({ strategy, nLeaves }: { strategy: any; nLeaves?: number }) {
+  const s = strategy || {};
+  const n = nLeaves && nLeaves > 0 ? nLeaves : s.nLeaves;
+  const fmt = (x: any) => (typeof x === "number" ? x.toLocaleString() : x);
+  const voteHead = String(s.voteMethod || "").split("(")[0].trim();
+  const voteDetail = s.voteMethod && s.voteMethod.includes("(") ? s.voteMethod.split("(").slice(1).join("(").replace(/\)\s*$/, "") : "";
+  const chip = (label: string, val: any) => (
+    <span style={{ fontSize: 11.5, background: "#f5f3f0", border: "1px solid #e5e1dc", borderRadius: 8, padding: "2px 9px", color: "#4a4540" }}><b style={{ color: "#7a746c", fontWeight: 700 }}>{label}</b> {val}</span>
+  );
+  return (
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "13px 16px", maxWidth: 820, margin: "8px auto 0", textAlign: "left" }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
+        <span style={{ fontSize: 14, fontWeight: 800, color: "#2b2b2b" }}>How this run was clustered</span>
+        <span style={{ fontSize: 12, color: "#7a746c" }}>{s.nCells ? `${fmt(s.nCells)} cells → ` : ""}{fmt(n)} fine leaf clusters</span>
+      </div>
+      <p style={{ fontSize: 13, lineHeight: 1.55, color: "#33312e", margin: "0 0 10px" }}>
+        Two-stage recursive Leiden. A <b>coarse pass</b> (Leiden res {s.coarse?.resolution}) first groups all cells into broad <b>compartments</b>; then the method goes <b>inside each compartment and recomputes the {fmt(s.hvg?.nTopGenes)} most-variable genes locally</b>{s.hvg?.flavor ? ` (${s.hvg.flavor})` : ""} before clustering again at <b>Leiden res {s.local?.resolution}</b>{s.local?.escalation ? " (escalated if under-clustered)" : ""} — this local re-derivation of marker genes is what lets rare tissues surface where a single global pass would bury them.{s.qc ? <> QC: {s.qc}.</> : null} Ground-truth names then come from a <b>{voteHead || "cell vote"}</b>{voteDetail ? ` (${voteDetail})` : ""}.
+      </p>
+      <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+        {chip("① coarse", `Leiden ${s.coarse?.resolution}`)}
+        {chip("HVG", `${fmt(s.hvg?.nTopGenes)} · ${s.hvg?.flavor}${s.hvg?.scope ? ` · ${s.hvg.scope}` : ""}`)}
+        {chip("② local", `Leiden ${s.local?.resolution}`)}
+        {s.neighbors ? chip("kNN", s.neighbors) : null}
+        {voteHead ? chip("GT vote", voteHead) : null}
+      </div>
+      {s.sourceScript ? <div style={{ fontSize: 10.5, color: "#a59f96", marginTop: 8, fontFamily: "ui-monospace, monospace" }}>recipe sourced from {s.sourceScript}</div> : null}
+    </div>
+  );
+}
+
 function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated, savedScore, model, onPick, judgements, addJudgement }: any) {
   const sc = run?.scoredNodes;
   const noop: any = () => {};

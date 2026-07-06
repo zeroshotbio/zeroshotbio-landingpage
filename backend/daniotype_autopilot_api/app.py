@@ -208,6 +208,20 @@ def _asset_scoreable(atlas, fp):
     return os.path.exists(os.path.join(ad, str(atlas), str(fp), "groundtruth.json"))
 
 
+_STRAT_CACHE = {}
+def _clustering_strategy(fp):
+    """Per-fingerprint clustering recipe from _clustering_strategy.json (cached). None if unavailable."""
+    if not fp:
+        return None
+    if "reg" not in _STRAT_CACHE:
+        try:
+            _STRAT_CACHE["reg"] = json.load(open(os.path.join(RUNS_DIR, "_clustering_strategy.json"))).get("strategies", {})
+        except Exception:
+            _STRAT_CACHE["reg"] = {}
+    s = _STRAT_CACHE["reg"].get(str(fp))
+    return s if (s and s.get("sourced")) else None
+
+
 def _canonical_of(dataset, run_id):
     """Read the kasperov-run/1.0 sibling (tiny) if present, else None. Read-time only."""
     try:
@@ -313,7 +327,10 @@ def get_run(dataset, run_id):
             sco = c.setdefault("scoring", {})
             sco["fingerprintMatchesClustering"] = True
             sco["assetSetFingerprint"] = fp
-            sco["gtFingerprintDir"] = True  # GT lives in the fingerprinted subdir (STEP-3 split)
+            sco["gtFingerprintDir"] = True  # GT + umap live in the fingerprinted subdir (STEP-3 split)
+        strat = _clustering_strategy(fp)
+        if strat:
+            c.setdefault("clustering", {})["strategy"] = strat  # real recipe for tab-1
         run["_canonical"] = c
     return run
 
