@@ -369,8 +369,8 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               {run?.cost?.usd != null ? ` · ~$${money(Number(run.cost.usd))}${run?.cost?.estimated ? "*" : ""}` : ""}
             </span>
             {run?.harness ? (
-              <span title={run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : undefined} style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>
-                harness v{run.harness.version}{run.harness.name ? ` · ${run.harness.name}` : ""}
+              <span title={[run.harness.name, run.harness.gitCommit ? `commit ${run.harness.gitCommit}` : ""].filter(Boolean).join(" · ") || undefined} style={{ fontSize: 10.5, fontWeight: 700, color: "#475569", background: "#eef2f6", borderRadius: 99, padding: "1px 8px" }}>
+                harness v{run.harness.version}
               </span>
             ) : null}
             {(run?.schemaBasis || meta?.schemaBasis) ? (
@@ -407,15 +407,16 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               </div>
             </details>
           ) : null}
-          {/* completeness chips — what this run actually captured */}
+          {/* completeness chips — minimalist: show only what the run actually captured (drop the
+              "○ not recorded" negatives). A persisted node/leaf scorecard counts as scored. */}
           <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
-            <Chip on={profile.hasLabels} label={`labels ${profile.labelledClusters}/${profile.nClusters}`} />
-            <Chip on={profile.hasConfidence} label="tier confidence" />
-            <Chip on={profile.hasTranscripts} label={`transcripts ${profile.transcriptClusters}/${profile.nClusters}`} />
-            <Chip on={profile.scored} label="ground-truth scored" off="no ground truth" />
-            <Chip on={profile.hasMarkers} label="chat markers" />
-            <Chip on={profile.hasHarness} label="harness stamped" />
-            <Chip on={profile.hasClusteringStrategy} label="clustering strategy" />
+            {profile.hasLabels ? <Chip on label={`labels ${profile.labelledClusters}/${profile.nClusters}`} /> : null}
+            {profile.hasTranscripts ? <Chip on label={`transcripts ${profile.transcriptClusters}/${profile.nClusters}`} /> : null}
+            {(profile.scored || run?.finalJudge?.rows?.length) ? <Chip on label="ground-truth scored" /> : null}
+            {profile.hasHarness ? <Chip on label="harness stamped" /> : null}
+            {profile.hasConfidence ? <Chip on label="tier confidence" /> : null}
+            {profile.hasMarkers ? <Chip on label="chat markers" /> : null}
+            {profile.hasClusteringStrategy ? <Chip on label="clustering strategy" /> : null}
           </div>
         </div>
 
@@ -769,31 +770,24 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
-      {run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
+      {/* PRIMARY vis: the merged-node scorecard (GT + de-novo + menu-exposed per tier). When a run has
+          a consolidation but is NOT yet scored, fall to FinalJudgePanel (which carries the Score button). */}
+      {run?.finalJudge?.rows?.length ? (
+        <div style={CARD}>
+          <div style={SEC}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} · {run.finalJudge.rows.length} post-Meta-Reasoner nodes</div>
+          <MergedNodeScorecard run={run} />
+        </div>
+      ) : run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
-        /* FLAT fine-leaf run (no Meta-Reasoner merge) that carries a persisted per-leaf scorecard —
-           render it directly. Ordered AFTER operatorProposal/sc so those paths are unchanged. */
-        : run?.finalJudge?.rows?.length ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
-      {/* the ZSCAPE Classic GT scorecard, relocated here — now secondary to the merged-node score above.
-          When a node-level scorecard is persisted, show the MERGED nodes in this label-vs-GT style;
-          otherwise fall back to the pre-merge per-leaf Scorecard. */}
-      {dataset.groundTruthUrl ? (
-        run?.finalJudge?.rows?.length ? (
-          <details style={CARD} open>
-            <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} ({run.finalJudge.rows.length} post-Meta-Reasoner nodes)</summary>
-            <div style={{ marginTop: 10 }}>
-              <MergedNodeScorecard run={run} />
-            </div>
-          </details>
-        ) : (
-          <details style={CARD}>
-            <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs ZSCAPE Classic (pre-merge, 250 leaves)</summary>
-            <div style={{ marginTop: 10 }}>
-              <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labels} confidence={confidence} validated={validated} onPick={onPick} model={model} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
-            </div>
-          </details>
-        )
+      {/* pre-merge per-leaf scorecard — secondary detail, only when there's no node scorecard yet */}
+      {dataset.groundTruthUrl && !run?.finalJudge?.rows?.length ? (
+        <details style={CARD}>
+          <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs published GT (pre-merge)</summary>
+          <div style={{ marginTop: 10 }}>
+            <Scorecard embedded readOnly dataset={dataset} clusters={viewerClusters} labels={labels} confidence={confidence} validated={validated} onPick={onPick} model={model} addUsage={noop} score={savedScore} setScore={noop} onImport={noop} />
+          </div>
+        </details>
       ) : null}
     </div>
   );
