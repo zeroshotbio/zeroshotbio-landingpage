@@ -874,10 +874,17 @@ const TIPS: Record<string, string> = {
 // operator consolidates fresh leaves, so a run that already carries meta-reasoner
 // work (or is archived) is not offered again.
 function isFinalizable(m: any): boolean {
-  const metaDone = m.source === "finalize_append" || (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat/i.test(m.note));
-  if (metaDone || m.archived) return false;
-  const leaves = Number(m.nLabelled || 0);
-  return leaves >= 20 || /scrub|fine[- ]?leaf|leaves/i.test(String(m.note || ""));
+  if (m.archived || m.recordType === "dev-effort") return false;
+  // Stages 1+2 MEANINGFULLY complete: a real fine-leaf clustering that's been chat-labelled.
+  // (nLabelled counts labelled leaves — this also filters out 1–2-leaf judgement runs + tiny
+  // kill-tests, which have clustering+labelling "done" but aren't a sensible Meta-Reasoner target.)
+  if (Number(m.nLabelled || 0) < 20) return false;
+  // Exclude anything already carrying stage 3 (Meta-Reasoner merge / consolidation / Phase-B final).
+  const merged = Number(m.nNodes || 0) > 0 || m.source === "finalize_append" ||
+    (typeof m.note === "string" && /operator proposal|finaliz|meta-reasoner|consolidat|phase b|final labelling/i.test(m.note));
+  if (merged) return false;
+  const isSmoke = /smoke/i.test(String(m.source ?? "")) || /\bsmoke\b/i.test(String(m.note ?? ""));
+  return !isSmoke;
 }
 
 function RunListModal({ dataset, onView, onClose, title, subtitle, filter, emptyNote }: { dataset: DatasetDef; onView: (run: any, meta: any) => void; onClose: () => void; title?: string; subtitle?: string; filter?: (m: any) => boolean; emptyNote?: string }) {
@@ -923,7 +930,10 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
   const archivedCount = (runs || []).filter((m) => m.archived).length;
   // optional compatibility filter (e.g. the finalize picker shows only labelled,
   // not-yet-finalized fine-leaf runs). Archived gating is handled by the API.
-  const shown = (runs || []).filter((m) => !filter || filter(m));
+  // When a filter is active (finalize picker), also drop runs that already HAVE a downstream
+  // child (a lineage parent whose consolidation was posted as a separate run) — already finalized.
+  const parentIds = filter ? new Set((runs || []).map((x: any) => String(x?.parentRunId || "").split("/").pop()).filter(Boolean)) : null;
+  const shown = (runs || []).filter((m) => !filter || (filter(m) && !(parentIds && parentIds.has(m.runId))));
   const nHidden = (runs || []).length - shown.length;
 
   return (
