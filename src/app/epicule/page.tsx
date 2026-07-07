@@ -10,7 +10,7 @@ export const metadata = {
 
 export default function EpiculePage() {
   return (
-    <div style={{ position: "fixed", inset: 0, background: "#0b0e14" }}>
+    <div style={{ position: "fixed", inset: 0, background: "#f6f4f2" }}>
       <iframe
         src="/epicule/index.html"
         title="Epicule — the GNN world-model (MiniEpi v2)"

@@ -3,234 +3,340 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Epicule — why the GNN won</title>
+<title>Epicule — why the graph network won</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Slab:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b0e14; --panel:#121826; --panel2:#0f1420;
-    --ink:#e8edf6; --muted:#93a7c6; --faint:#5b6f8f;
-    --line:#243247; --accent:#5fd0c8;
-    --gnn:#5fd0c8; --other:#40506b; --neg:#f2708a;
-    --act:#5ad19a; --rep:#f2708a;
+    --paper:#f6f4f2; --card:#fffdfb; --cardalt:#faf7f0;
+    --ink:#2b2b2b; --muted:#555; --faint:#9a948c; --line:#e5e1dc;
+    --accent:#0e7490; --accent2:#0891b2;
+    --alpha:#b45309; --beta:#0e7490; --gamma:#6d28d9; --delta:#15803d;
+    --act:#15803d; --rep:#b91c1c;
+    --gnn:#0e7490; --other:#9aa6b2; --neg:#dc2626;
   }
   *{box-sizing:border-box}
   html,body{margin:0}
   body{
-    background:radial-gradient(1100px 620px at 72% -12%, #16203a 0%, var(--bg) 55%);
-    color:var(--ink);
-    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased;line-height:1.62;
+    background:var(--paper); color:var(--ink);
+    font-family:"Roboto Slab",Georgia,serif;
+    -webkit-font-smoothing:antialiased; line-height:1.6;
   }
-  .wrap{max-width:820px;margin:0 auto;padding:46px 22px 72px}
-  .kicker{font-size:12px;letter-spacing:.24em;text-transform:uppercase;color:var(--accent);font-weight:700}
-  h1{font-size:clamp(26px,4.4vw,40px);margin:.3em 0 .5em;font-weight:800;letter-spacing:-.015em;line-height:1.12}
-  .lede{font-size:17px;color:#cdd9ec}
-  .lede b{color:#fff}
-  p.body{font-size:15.5px;color:var(--muted)}
-  p.body b{color:var(--ink)}
-  .card{background:linear-gradient(180deg,var(--panel),var(--panel2));border:1px solid var(--line);
-    border-radius:16px;padding:22px 22px 18px;margin:26px 0}
-  .cap{font-size:12px;letter-spacing:.15em;text-transform:uppercase;color:var(--faint);font-weight:700;margin:0 0 16px}
-  .cardnote{font-size:13px;color:var(--faint);margin:14px 2px 0;text-align:center}
-  /* two-input comparison */
-  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:16px}
-  @media(max-width:620px){.cmp{grid-template-columns:1fr}}
-  .box{border:1px solid var(--line);border-radius:12px;padding:14px;background:#0d1320}
-  .box.win{border-color:#2f6f68;background:rgba(95,208,200,.06)}
-  .box h3{margin:0 0 4px;font-size:14px}
+  .wrap{max-width:760px;margin:0 auto;padding:56px 24px 88px}
+  .eyebrow{font-size:13px;letter-spacing:2px;text-transform:uppercase;color:var(--accent);font-weight:600}
+  h1{font-size:clamp(30px,5vw,40px);font-weight:800;margin:12px 0 8px;line-height:1.1;letter-spacing:-.01em}
+  .lede{font-size:17.5px;color:#3f3a34;line-height:1.55;margin:0 0 8px}
+  .lede b{color:var(--ink)}
+  h2{font-size:23px;font-weight:700;margin:52px 0 2px;letter-spacing:-.005em}
+  h2 .num{color:var(--accent);font-weight:700;margin-right:10px}
+  p{font-size:16px;color:var(--muted);line-height:1.66;margin:14px 0}
+  p b{color:var(--ink);font-weight:600}
+  p i{color:#3f3a34}
+  /* card */
+  .card{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--accent);
+    border-radius:12px;padding:20px 20px 16px;margin:22px 0 4px}
+  .card.plain{border-top:1px solid var(--line)}
+  .cardlabel{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:#3f3a34;font-weight:700;margin:0 0 14px}
+  .cardnote{font-size:13.5px;color:var(--faint);line-height:1.5;margin:14px 2px 0;text-align:center}
+  .cardnote b{color:var(--accent)}
+  /* stat strip */
+  .stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .stat{flex:1 1 100px;background:var(--cardalt);border:1px solid var(--line);border-radius:10px;padding:11px 13px}
+  .stat .n{font-size:22px;font-weight:800;color:var(--ink);line-height:1.1}
+  .stat .l{font-size:11.5px;color:var(--faint);margin-top:3px}
+  .pill{display:inline-block;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;
+    border-radius:99px;padding:2px 9px;margin:2px 4px 2px 0}
+  /* two-col comparison */
+  .cmp{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:600px){.cmp{grid-template-columns:1fr}}
+  .box{border:1px solid var(--line);border-radius:11px;padding:14px;background:var(--cardalt)}
+  .box.win{border-color:var(--accent);border-top:3px solid var(--accent);background:#eef7f9;padding-top:12px}
+  .box h3{margin:0 0 3px;font-size:15px;font-weight:700}
   .box .who{font-size:12px;color:var(--faint);margin-bottom:12px}
   .box.win .who{color:var(--accent)}
   .dosewrap{display:flex;gap:3px;flex-wrap:wrap}
-  .g{width:15px;height:15px;border-radius:3px;background:#1c2942;border:1px solid #263654}
-  .g.p{background:#f2a65a;border-color:#f2a65a}
-  .g.ko{background:#3a4763}
-  .legend{font-size:11.5px;color:var(--faint);margin-top:8px}
+  .g{width:15px;height:15px;border-radius:3px;background:#eae4dc;border:1px solid #ddd5ca}
+  .g.p{background:var(--alpha);border-color:var(--alpha)}
+  .legend{font-size:11.5px;color:var(--faint);margin-top:9px;line-height:1.45}
   /* bars */
-  .bars{display:flex;flex-direction:column;gap:11px;margin-top:6px}
-  .row{display:grid;grid-template-columns:96px 1fr;align-items:center;gap:12px}
-  .row .name{font-size:13px;text-align:right;color:var(--muted)}
-  .row.hi .name{color:var(--gnn);font-weight:700}
-  .track{position:relative;height:26px;background:#0c1220;border-radius:6px;overflow:hidden}
-  .zero{position:absolute;top:0;bottom:0;left:16%;width:1px;background:#33455f}
-  .fill{position:absolute;top:0;bottom:0;border-radius:5px;display:flex;align-items:center}
-  .val{font-size:12px;font-weight:700;padding:0 7px;color:#0b0e14}
-  .val.out{color:var(--ink);position:absolute;padding:0 6px}
-  .axis{position:relative;height:14px;font-size:11px;color:var(--faint);margin:2px 0 4px;
-    margin-left:108px}
+  .axis{position:relative;height:14px;font-size:11px;color:var(--faint);margin:2px 0 6px;margin-left:104px}
   .axis span{position:absolute;transform:translateX(-50%)}
-  .foot{margin-top:30px;color:var(--faint);font-size:12.5px}
+  .bars{display:flex;flex-direction:column;gap:10px}
+  .row{display:grid;grid-template-columns:92px 1fr;align-items:center;gap:12px}
+  .row .name{font-size:13.5px;text-align:right;color:var(--muted)}
+  .row.hi .name{color:var(--gnn);font-weight:700}
+  .track{position:relative;height:26px;background:#f1ece5;border-radius:6px;overflow:hidden}
+  .zero{position:absolute;top:0;bottom:0;width:1px;background:#d3cabc}
+  .fill{position:absolute;top:0;bottom:0;border-radius:5px;display:flex;align-items:center}
+  .val{font-size:12px;font-weight:700;padding:0 8px;color:#fff}
+  .val.out{position:absolute;padding:0 6px;color:var(--ink)}
+  .foot{margin-top:40px;padding-top:18px;border-top:1px solid var(--line);color:var(--faint);font-size:12.5px;line-height:1.55}
+  svg{display:block}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="kicker">Epicule · MiniEpi v2</div>
+  <div class="eyebrow">Epicule · MiniEpi v2</div>
   <h1>Why the graph network won</h1>
+  <p class="lede">Before trusting a model on real zebrafish data, we built a <b>synthetic organism</b> where the
+    ground truth is known exactly — and used it to ask a sharp question: when a model predicts the effect of a
+    genetic perturbation, is it <i>learning how the biology is wired</i>, or just memorising what it has seen? One
+    model architecture answered that question decisively.</p>
 
-  <p class="lede">We asked five models to predict what happens when you knock out a gene.
-    Four of them see only <b>which</b> genes you perturbed. One also sees <b>how the genes are wired together</b>.
-    That single difference decides everything.</p>
+  <!-- ── 1. THE ORGANISM ─────────────────────────────────────────── -->
+  <h2><span class="num">1</span>A synthetic organism, wired by hand</h2>
+  <p>MiniEpi v2 is a miniature gene-regulatory network: <b>20 genes</b> arranged in <b>4 modules</b> of five
+    (Alpha, Beta, Gamma, Delta), connected by <b>75 directed regulatory edges</b> — 63 that activate their target
+    and 12 that repress it. The wiring isn't random: it's seeded with the same motifs real genomes use — bistable
+    toggle switches, feed-forward loops, autoregulation and competitive binding.</p>
+  <p>Every edge is a tunable <b>“volume knob.”</b> Its strength follows a Hill function — an S-shaped
+    dose–response curve — so a regulator's influence on its target is graded and nonlinear. All <b>265 of these
+    kinetic parameters</b> were tuned by an evolutionary optimiser (CMA-ES) until the network had two properties we
+    need: a stable wild-type resting state, and single-gene knockouts that each produce a <i>distinct, well-separated</i>
+    outcome. The result is a fully deterministic simulator we can run to steady state.</p>
 
-  <p class="body">In a gene-regulatory network, a perturbation doesn't stay local — knocking out one gene ripples
-    outward along regulatory edges to change its neighbours, and their neighbours in turn. A model given only a
-    <b>dose vector</b> (Ridge, MLP, XGBoost) can learn these ripples <i>only by memorising examples</i>: it has to
-    have seen that gene perturbed before to know what it does. A <b>graph neural network</b> is given the wiring
-    itself, so it predicts an effect by <b>passing messages along the known edges</b> — the same way the biology
-    actually propagates. When the test asks about a gene the model has <b>never seen perturbed</b>, memorisation has
-    nothing to fall back on, but message-passing simply routes the effect through the network. The graph is an
-    <b>inductive prior</b>: built-in knowledge of how influence flows, rather than a pattern to be rediscovered from data.</p>
-
-  <!-- VISUAL 1: what each model sees -->
   <div class="card">
-    <p class="cap">The one difference that matters — what each model is given</p>
+    <p class="cardlabel">The network — 20 genes · 4 modules · 75 signed edges</p>
+    <svg id="graph" viewBox="0 0 520 400" width="100%"></svg>
+    <div class="legend" style="text-align:center">
+      <span style="color:var(--alpha)">●</span> Alpha &nbsp;
+      <span style="color:var(--beta)">●</span> Beta &nbsp;
+      <span style="color:var(--gamma)">●</span> Gamma &nbsp;
+      <span style="color:var(--delta)">●</span> Delta &nbsp;·&nbsp;
+      <span style="color:var(--act)">▬</span> activates &nbsp;
+      <span style="color:var(--rep)">▬</span> represses
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="n">20</div><div class="l">genes</div></div>
+      <div class="stat"><div class="n">75</div><div class="l">signed edges</div></div>
+      <div class="stat"><div class="n">15</div><div class="l">regulatory motifs</div></div>
+      <div class="stat"><div class="n">265</div><div class="l">tuned parameters</div></div>
+    </div>
+  </div>
+
+  <!-- ── 2. THE TASK ─────────────────────────────────────────────── -->
+  <h2><span class="num">2</span>The predictive task</h2>
+  <p>From this organism we generate <b>2,020 perturbations</b>: single-gene knockouts, knock-downs and
+    over-expressions, plus double and triple knockouts and random multi-gene “drug” combinations. For each one we
+    run the simulator to convergence and record how far every gene's expression has shifted from wild-type — a
+    <b>20-number change vector</b> we call the delta.</p>
+  <p>Every model gets the <i>same</i> job: <b>read the perturbation, predict its 20-number delta.</b> Nothing about
+    the trajectory in between — just the perturbation in, the final change out.</p>
+
+  <div class="card plain">
+    <p class="cardlabel">One prediction, start to finish</p>
+    <svg id="task" viewBox="0 0 640 150" width="100%"></svg>
+  </div>
+
+  <!-- ── 3. WHAT EACH MODEL IS GIVEN ─────────────────────────────── -->
+  <h2><span class="num">3</span>What each model is given</h2>
+  <p>Four of the five predictors — Ridge regression, an MLP, XGBoost, and a nearest-neighbour lookup — receive only
+    a <b>dose vector</b>: 20 numbers saying which genes were perturbed and how hard (1.0 = untouched, 0.0 = knockout,
+    5.0 = strong over-expression). That's it. They see <i>which</i> genes changed, but nothing about how the genes
+    relate to one another.</p>
+  <p>The <b>graph neural network</b> receives that same dose vector <b>plus the wiring itself</b> — all 75 edges,
+    each carrying its sign, strength and Hill parameters. Crucially, no model is ever told the trajectory, the
+    wild-type levels, the gene names, or which “type” of perturbation a sample is. The only extra thing the GNN
+    holds is the <i>map of who regulates whom.</i></p>
+
+  <div class="card">
+    <p class="cardlabel">The one difference that matters</p>
     <div class="cmp">
       <div class="box">
         <h3>Dose vector only</h3>
         <div class="who">Ridge · MLP · XGBoost</div>
         <div class="dosewrap" id="dose"></div>
-        <div class="legend"><span style="color:#f2a65a">■</span> perturbed gene &nbsp; ■ untouched — <i>which</i> genes, nothing about wiring</div>
+        <div class="legend"><span style="color:var(--alpha)">■</span> perturbed &nbsp; ■ untouched — <i>which</i>
+          genes, nothing about wiring</div>
       </div>
       <div class="box win">
         <h3>Dose vector + the wiring</h3>
         <div class="who">GNN — message passing</div>
-        <svg id="mini" viewBox="0 0 240 120" width="100%" style="display:block;max-height:120px"></svg>
+        <svg id="mini" viewBox="0 0 240 118" width="100%" style="max-height:118px"></svg>
         <div class="legend">same doses, <b>plus</b> all 75 signed regulatory edges</div>
       </div>
     </div>
   </div>
 
-  <!-- VISUAL 2: the unseen-gene intuition -->
+  <!-- ── 4. WHAT THEY MUST LEARN ─────────────────────────────────── -->
+  <h2><span class="num">4</span>What they're expected to learn</h2>
+  <p>To predict a delta well, a model has to internalise how a perturbation <b>propagates</b>: knock out one gene
+    and the effect ripples along its edges to change its neighbours, and their neighbours in turn — bending back
+    through feedback loops and combining nonlinearly when several genes are hit at once (epistasis).</p>
+  <p>A dose-only model can only approximate this by <b>seeing enough examples</b> to interpolate the pattern — it
+    has to have observed a gene perturbed before to know what perturbing it does. The GNN doesn't have to rediscover
+    the wiring from data, because the wiring is handed to it: it predicts an effect by literally
+    <b>passing messages along the known edges</b>, the same way the biology propagates. That built-in structure is
+    called an <b>inductive prior</b> — and it only earns its keep when the task moves outside what was memorised.</p>
+
+  <!-- ── 5. THE TEST ─────────────────────────────────────────────── -->
+  <h2><span class="num">5</span>The hardest test — a knockout never seen</h2>
+  <p>So we designed the test that separates understanding from memorisation. We <b>removed one gene from every
+    training example</b> — the model never once sees it perturbed — then asked all five models to predict what
+    happens when you knock it out. For a dose-only model this is a column it has no signal for; it can only guess.
+    For the GNN, the gene is still a node in a known graph, still receiving influence from neighbours it <i>has</i>
+    seen. This is the moment the inductive prior pays off — or doesn't.</p>
+
   <div class="card">
-    <p class="cap">The test — predict a knockout the model has never seen</p>
-    <svg id="loko" viewBox="0 0 640 190" width="100%" style="display:block"></svg>
-    <p class="cardnote">Gene <b>A5</b> was removed from all training. A dose-only model has no signal for it → guesses.
-      The GNN receives influence <i>from its known neighbours</i> → predicts correctly.</p>
+    <p class="cardlabel">The test — predict a knockout the model has never seen</p>
+    <svg id="loko" viewBox="0 0 640 188" width="100%"></svg>
+    <p class="cardnote">Gene <b style="color:var(--ink)">A5</b> was held out of all training. A dose-only model has
+      no signal for it → guesses. The GNN receives influence <i>from its known neighbours</i> → predicts it.</p>
   </div>
 
-  <!-- VISUAL 3: the bar graph -->
+  <!-- ── 6. THE RESULT ───────────────────────────────────────────── -->
+  <h2><span class="num">6</span>The result</h2>
+  <p>On the held-out knockout, every dose-only model collapses toward zero — Ridge and Nearest-neighbour even go
+    <i>negative</i>, worse than guessing. The graph network scores <b>0.90</b>. It is the single cleanest piece of
+    evidence in the whole benchmark that encoding the network's topology is what lets a model generalise to biology
+    it was never trained on.</p>
+
   <div class="card">
-    <p class="cap">Result — predicting an unseen knockout (accuracy, Pearson r)</p>
+    <p class="cardlabel">Predicting an unseen knockout — accuracy (Pearson r)</p>
     <div class="axis"><span style="left:0%">−0.2</span><span style="left:18.2%">0</span><span style="left:63.6%">0.5</span><span style="left:100%">0.9</span></div>
     <div class="bars" id="bars"></div>
-    <p class="cardnote">Every dose-only model collapses toward zero (Ridge even goes negative). The GNN scores
-      <b style="color:var(--gnn)">0.90</b> — the clearest evidence that encoding topology is what lets a model
-      generalise to genes it was never trained on.</p>
+    <p class="cardnote">The GNN's <b>0.90</b> is not a small edge — it's the difference between a working prediction
+      and no prediction at all. Give a model the map of who regulates whom, and it can reason about parts of the
+      organism it has never been shown.</p>
   </div>
 
-  <p class="foot">Grounded in MiniEpi v2, Phase 3 (leave-one-knockout-out). Numbers are real per-sample Pearson
-    correlation on the held-out core knockouts. The full 10-phase benchmark shows the same pattern wherever data
-    is sparse or out-of-distribution.</p>
+  <p class="foot">Grounded in MiniEpi v2 · Phase 3 (leave-one-knockout-out). Bar values are the real per-sample
+    Pearson correlation on the held-out core knockouts, from <code>phase3_summary.json</code>. The same pattern —
+    topology winning wherever data is sparse or out-of-distribution — recurs across the full 10-phase benchmark.</p>
 </div>
 
 <script>
 const NS="http://www.w3.org/2000/svg";
 function el(t,a,txt){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);if(txt!=null)e.textContent=txt;return e;}
+const MODCOL={Alpha:"#b45309",Beta:"#0e7490",Gamma:"#6d28d9",Delta:"#15803d"};
 
-// ── Visual 1a: dose vector (20 cells, a couple perturbed) ──────────────
+// ── Real MiniEpi v2 network ─────────────────────────────────────────────
+const MODULES={Alpha:[0,1,2,3,4],Beta:[5,6,7,8,9],Gamma:[10,11,12,13,14],Delta:[15,16,17,18,19]};
+const NAMES=["A1","A2","A3","A4","A5","B1","B2","B3","B4","B5","G1","G2","G3","G4","G5","D1","D2","D3","D4","D5"];
+const EDGES=[{"s":2,"t":12,"sign":-1},{"s":12,"t":2,"sign":-1},{"s":8,"t":18,"sign":-1},{"s":18,"t":8,"sign":-1},{"s":0,"t":1,"sign":1},{"s":1,"t":4,"sign":1},{"s":0,"t":4,"sign":1},{"s":5,"t":7,"sign":1},{"s":7,"t":9,"sign":1},{"s":5,"t":9,"sign":1},{"s":10,"t":11,"sign":1},{"s":11,"t":14,"sign":1},{"s":10,"t":14,"sign":-1},{"s":15,"t":17,"sign":1},{"s":17,"t":19,"sign":-1},{"s":15,"t":19,"sign":1},{"s":1,"t":2,"sign":1},{"s":3,"t":2,"sign":1},{"s":6,"t":7,"sign":1},{"s":8,"t":7,"sign":1},{"s":11,"t":12,"sign":1},{"s":13,"t":12,"sign":1},{"s":16,"t":17,"sign":1},{"s":18,"t":17,"sign":1},{"s":2,"t":0,"sign":1},{"s":2,"t":1,"sign":1},{"s":4,"t":3,"sign":1},{"s":7,"t":5,"sign":1},{"s":6,"t":5,"sign":1},{"s":8,"t":6,"sign":1},{"s":5,"t":8,"sign":1},{"s":6,"t":8,"sign":1},{"s":11,"t":10,"sign":1},{"s":12,"t":11,"sign":1},{"s":12,"t":13,"sign":1},{"s":11,"t":13,"sign":1},{"s":18,"t":15,"sign":1},{"s":17,"t":16,"sign":1},{"s":18,"t":16,"sign":1},{"s":15,"t":18,"sign":1},{"s":16,"t":18,"sign":1},{"s":16,"t":0,"sign":-1},{"s":19,"t":1,"sign":1},{"s":19,"t":3,"sign":1},{"s":16,"t":4,"sign":1},{"s":13,"t":5,"sign":1},{"s":2,"t":6,"sign":1},{"s":13,"t":7,"sign":1},{"s":3,"t":9,"sign":-1},{"s":18,"t":10,"sign":-1},{"s":8,"t":11,"sign":1},{"s":1,"t":13,"sign":1},{"s":19,"t":14,"sign":1},{"s":11,"t":15,"sign":1},{"s":14,"t":16,"sign":1},{"s":0,"t":17,"sign":1},{"s":7,"t":19,"sign":-1},{"s":0,"t":14,"sign":1},{"s":11,"t":7,"sign":1},{"s":9,"t":17,"sign":1},{"s":3,"t":11,"sign":1},{"s":6,"t":14,"sign":-1},{"s":7,"t":1,"sign":1},{"s":5,"t":19,"sign":1},{"s":19,"t":10,"sign":-1},{"s":10,"t":7,"sign":1},{"s":15,"t":7,"sign":1},{"s":12,"t":5,"sign":1},{"s":6,"t":19,"sign":1},{"s":9,"t":2,"sign":1}];
+const modOf=id=>Object.keys(MODULES).find(m=>MODULES[m].includes(id));
+
+// layout: 4 module clusters
+const centers={Alpha:[140,115],Beta:[380,115],Gamma:[140,290],Delta:[380,290]};
+const pos={};
+for(const [m,ids] of Object.entries(MODULES)){const [cx,cy]=centers[m];
+  ids.forEach((id,k)=>{const a=-Math.PI/2+k*2*Math.PI/ids.length;pos[id]=[cx+56*Math.cos(a),cy+56*Math.sin(a)];});}
+
+const g=document.getElementById("graph");
+const drawn=[];
+EDGES.forEach(e=>{const [x1,y1]=pos[e.s],[x2,y2]=pos[e.t];
+  g.appendChild(el("line",{x1,y1,x2,y2,stroke:e.sign>0?"#15803d":"#b91c1c","stroke-width":1,opacity:.28}));
+  drawn.push({...e,x1,y1,x2,y2});});
+for(let i=0;i<20;i++){const [x,y]=pos[i];const c=MODCOL[modOf(i)];
+  g.appendChild(el("circle",{cx:x,cy:y,r:11,fill:"#fffdfb",stroke:c,"stroke-width":2}));
+  g.appendChild(el("text",{x,y:y+3.4,"text-anchor":"middle","font-size":8.5,fill:c,"font-weight":700},NAMES[i]));}
+for(const [m,[cx,cy]] of Object.entries(centers)){
+  g.appendChild(el("text",{x:cx,y:cy+3,"text-anchor":"middle","font-size":10,fill:MODCOL[m],opacity:.5,
+    "font-weight":800,"letter-spacing":"1.2"},m.toUpperCase()));}
+// gentle teal message pulses
+const gp=[];
+function gtick(f){
+  if(f%14===0&&gp.length<10){const e=drawn[(f*3)%drawn.length];
+    const d=el("circle",{r:2.8,fill:"#0e7490"});g.appendChild(d);gp.push({e,d,t:0});}
+  for(let k=gp.length-1;k>=0;k--){const p=gp[k];p.t+=0.03;
+    if(p.t>=1){p.d.remove();gp.splice(k,1);continue;}
+    p.d.setAttribute("cx",p.e.x1+(p.e.x2-p.e.x1)*p.t);
+    p.d.setAttribute("cy",p.e.y1+(p.e.y2-p.e.y1)*p.t);
+    p.d.setAttribute("opacity",Math.sin(p.t*Math.PI)*0.8);}
+  requestAnimationFrame(()=>gtick(f+1));
+}
+gtick(0);
+
+// ── Visual: the task flow ───────────────────────────────────────────────
+const task=document.getElementById("task");
+// input chip
+task.appendChild(el("rect",{x:10,y:45,width:150,height:60,rx:9,fill:"#faf7f0",stroke:"#e5e1dc"}));
+task.appendChild(el("text",{x:85,y:38,"text-anchor":"middle","font-size":10,fill:"#9a948c","font-weight":700,"letter-spacing":"1"},"PERTURBATION"));
+task.appendChild(el("text",{x:85,y:72,"text-anchor":"middle","font-size":15,fill:"#2b2b2b","font-weight":700},"knock out A3"));
+task.appendChild(el("text",{x:85,y:92,"text-anchor":"middle","font-size":11.5,fill:"#b45309"},"dose → 0.0"));
+// arrow
+task.appendChild(el("text",{x:200,y:80,"text-anchor":"middle","font-size":20,fill:"#c4bdb1"},"→"));
+// simulator
+task.appendChild(el("rect",{x:230,y:45,width:150,height:60,rx:9,fill:"#eef7f9",stroke:"#0e7490"}));
+task.appendChild(el("text",{x:305,y:38,"text-anchor":"middle","font-size":10,fill:"#0e7490","font-weight":700,"letter-spacing":"1"},"RUN TO STEADY STATE"));
+task.appendChild(el("text",{x:305,y:73,"text-anchor":"middle","font-size":13,fill:"#2b2b2b","font-weight":600},"simulate dynamics"));
+task.appendChild(el("text",{x:305,y:91,"text-anchor":"middle","font-size":11,fill:"#6b655d"},"…until it converges"));
+// arrow
+task.appendChild(el("text",{x:415,y:80,"text-anchor":"middle","font-size":20,fill:"#c4bdb1"},"→"));
+// output delta bars
+task.appendChild(el("text",{x:552,y:38,"text-anchor":"middle","font-size":10,fill:"#9a948c","font-weight":700,"letter-spacing":"1"},"Δ EXPRESSION · 20 GENES"));
+const dv=[0.2,-0.1,-0.9,0.7,0.3,0.05,-0.15,0.1,-0.05,0.2,-0.4,0.55,-0.6,0.15,-0.2,0.3,0.1,-0.25,0.4,-0.35];
+const bx0=470,mid=78,bw=6,gap=2.1;
+task.appendChild(el("line",{x1:bx0-4,y1:mid,x2:bx0+20*(bw+gap),y2:mid,stroke:"#d3cabc","stroke-width":1}));
+dv.forEach((v,i)=>{const h=Math.abs(v)*30;const x=bx0+i*(bw+gap);
+  task.appendChild(el("rect",{x,y:v>0?mid-h:mid,width:bw,height:h,rx:1.2,
+    fill:v>0?"#15803d":"#b91c1c",opacity:.8}));});
+
+// ── Visual: dose vector grid ────────────────────────────────────────────
 const dose=document.getElementById("dose");
 const perturbed=new Set([2,9,14]);
-for(let i=0;i<20;i++){
-  const d=document.createElement("div");
-  d.className="g "+(perturbed.has(i)?"p":"");
-  dose.appendChild(d);
-}
+for(let i=0;i<20;i++){const d=document.createElement("div");d.className="g "+(perturbed.has(i)?"p":"");dose.appendChild(d);}
 
-// ── Visual 1b: tiny wired graph ────────────────────────────────────────
+// ── Visual: tiny wired graph ────────────────────────────────────────────
 const mini=document.getElementById("mini");
-const mpos=[[40,30],[110,22],[195,35],[60,90],[135,95],[205,90],[120,58]];
+const mpos=[[42,30],[112,22],[196,34],[62,88],[136,92],[204,88],[122,58]];
 const medges=[[0,6],[1,6],[6,3],[6,4],[2,5],[6,2],[3,4]];
-medges.forEach(([a,b],i)=>{
-  const sign=i%3===0?-1:1;
-  mini.appendChild(el("line",{x1:mpos[a][0],y1:mpos[a][1],x2:mpos[b][0],y2:mpos[b][1],
-    stroke:sign>0?"#5ad19a":"#f2708a","stroke-width":1.4,opacity:.55}));
-});
-mpos.forEach(([x,y],i)=>{
-  mini.appendChild(el("circle",{cx:x,cy:y,r:8,fill:i===6?"#f2a65a":"#0b0e14",
-    stroke:i===6?"#f2a65a":"#5fd0c8","stroke-width":2}));
-});
+medges.forEach(([a,b],i)=>{mini.appendChild(el("line",{x1:mpos[a][0],y1:mpos[a][1],x2:mpos[b][0],y2:mpos[b][1],
+  stroke:i%3===0?"#b91c1c":"#15803d","stroke-width":1.3,opacity:.55}));});
+mpos.forEach(([x,y],i)=>{mini.appendChild(el("circle",{cx:x,cy:y,r:8,fill:i===6?"#b45309":"#fffdfb",
+  stroke:i===6?"#b45309":"#0e7490","stroke-width":2}));});
 
-// ── Visual 2: LOKO intuition ───────────────────────────────────────────
+// ── Visual: LOKO test ───────────────────────────────────────────────────
 const loko=document.getElementById("loko");
-// left panel: dose-only model
-loko.appendChild(el("text",{x:150,y:22,"text-anchor":"middle","font-size":12,fill:"#5b6f8f","font-weight":700,"letter-spacing":"1"},"DOSE-ONLY MODEL"));
-loko.appendChild(el("circle",{cx:150,cy:105,r:26,fill:"#0d1320",stroke:"#3a4763","stroke-width":2,"stroke-dasharray":"4 4"}));
-loko.appendChild(el("text",{x:150,y:112,"text-anchor":"middle","font-size":26,fill:"#5b6f8f","font-weight":800},"?"));
-loko.appendChild(el("text",{x:150,y:105-38,"text-anchor":"middle","font-size":11,fill:"#f2a65a","font-weight":700},"A5 knocked out"));
-loko.appendChild(el("text",{x:150,y:160,"text-anchor":"middle","font-size":12,fill:"#f2708a"},"never seen → guesses"));
-// divider
-loko.appendChild(el("line",{x1:320,y1:20,x2:320,y2:170,stroke:"#243247","stroke-width":1}));
-// right panel: GNN
-loko.appendChild(el("text",{x:490,y:22,"text-anchor":"middle","font-size":12,fill:"#5fd0c8","font-weight":700,"letter-spacing":"1"},"GNN — MESSAGE PASSING"));
-const center=[490,105];
-const neigh=[[420,55],[560,55],[410,135],[565,140],[490,170]];
-neigh.forEach(n=>{
-  loko.appendChild(el("line",{x1:n[0],y1:n[1],x2:center[0],y2:center[1],stroke:"#5ad19a","stroke-width":1.6,opacity:.6}));
-});
-neigh.forEach((n,i)=>{
-  loko.appendChild(el("circle",{cx:n[0],cy:n[1],r:9,fill:"#0b0e14",stroke:"#6bc5f2","stroke-width":2}));
-  // travelling message dot
-  const dot=el("circle",{r:3.2,fill:"#5fd0c8"});
-  dot.style.filter="drop-shadow(0 0 4px #5fd0c8)";
-  dot.dataset.i=i;
-  loko.appendChild(dot);
-});
-loko.appendChild(el("circle",{cx:center[0],cy:center[1],r:24,fill:"#0d1320",stroke:"#f2a65a","stroke-width":2}));
-loko.appendChild(el("text",{x:center[0],y:center[1]+4,"text-anchor":"middle","font-size":13,fill:"#f2a65a","font-weight":800},"A5"));
-loko.appendChild(el("text",{x:490,y:186,"text-anchor":"middle","font-size":12,fill:"#5ad19a"},"neighbours → predicts it"));
-// animate messages
-const dots=[...loko.querySelectorAll("circle[data-i]")];
-let f=0;
-function anim(){
-  f++;
-  dots.forEach((d,i)=>{
-    const t=((f*0.012 + i*0.2)%1);
-    const n=neigh[i];
-    d.setAttribute("cx", n[0]+(center[0]-n[0])*t);
-    d.setAttribute("cy", n[1]+(center[1]-n[1])*t);
-    d.setAttribute("opacity", Math.sin(t*Math.PI)*0.9);
-  });
-  requestAnimationFrame(anim);
-}
-anim();
+loko.appendChild(el("text",{x:150,y:22,"text-anchor":"middle","font-size":11.5,fill:"#9a948c","font-weight":700,"letter-spacing":"1"},"DOSE-ONLY MODEL"));
+loko.appendChild(el("text",{x:150,y:64,"text-anchor":"middle","font-size":11,fill:"#b45309","font-weight":700},"A5 knocked out"));
+loko.appendChild(el("circle",{cx:150,cy:108,r:26,fill:"#faf7f0",stroke:"#c4bdb1","stroke-width":2,"stroke-dasharray":"4 4"}));
+loko.appendChild(el("text",{x:150,y:116,"text-anchor":"middle","font-size":26,fill:"#b0a99e","font-weight":800},"?"));
+loko.appendChild(el("text",{x:150,y:162,"text-anchor":"middle","font-size":12.5,fill:"#b91c1c"},"never seen → guesses"));
+loko.appendChild(el("line",{x1:320,y1:24,x2:320,y2:168,stroke:"#e5e1dc","stroke-width":1}));
+loko.appendChild(el("text",{x:490,y:22,"text-anchor":"middle","font-size":11.5,fill:"#0e7490","font-weight":700,"letter-spacing":"1"},"GNN — MESSAGE PASSING"));
+const center=[490,106];
+const neigh=[[420,58],[560,58],[412,136],[566,140],[490,168]];
+neigh.forEach(n=>loko.appendChild(el("line",{x1:n[0],y1:n[1],x2:center[0],y2:center[1],stroke:"#15803d","stroke-width":1.5,opacity:.5})));
+const ndots=[];
+neigh.forEach((n,i)=>{loko.appendChild(el("circle",{cx:n[0],cy:n[1],r:8.5,fill:"#fffdfb",stroke:"#0e7490","stroke-width":2}));
+  const d=el("circle",{r:2.9,fill:"#0e7490"});d.dataset.i=i;loko.appendChild(d);ndots.push(d);});
+loko.appendChild(el("circle",{cx:center[0],cy:center[1],r:23,fill:"#fdf6ec",stroke:"#b45309","stroke-width":2}));
+loko.appendChild(el("text",{x:center[0],y:center[1]+4,"text-anchor":"middle","font-size":13,fill:"#b45309","font-weight":800},"A5"));
+loko.appendChild(el("text",{x:490,y:184,"text-anchor":"middle","font-size":12.5,fill:"#15803d"},"neighbours → predicts it"));
+let lf=0;
+function lanim(){lf++;ndots.forEach((d,i)=>{const t=((lf*0.012+i*0.2)%1);const n=neigh[i];
+  d.setAttribute("cx",n[0]+(center[0]-n[0])*t);d.setAttribute("cy",n[1]+(center[1]-n[1])*t);
+  d.setAttribute("opacity",Math.sin(t*Math.PI)*0.85);});requestAnimationFrame(lanim);}
+lanim();
 
-// ── Visual 3: bar graph (real Phase-3 core-LOKO Pearson) ───────────────
+// ── Visual: result bar graph (real Phase-3 core-LOKO Pearson) ───────────
 const data=[
-  {name:"GNN", v:0.897, hi:true},
-  {name:"XGBoost", v:0.270},
-  {name:"MLP", v:0.171},
-  {name:"Nearest", v:-0.071},
-  {name:"Ridge", v:-0.161},
+  {name:"GNN",v:0.897,hi:true},
+  {name:"XGBoost",v:0.270},
+  {name:"MLP",v:0.171},
+  {name:"Nearest",v:-0.071},
+  {name:"Ridge",v:-0.161},
 ];
-// scale: domain [-0.2, 0.9] mapped across track; zero at 16%
-const MIN=-0.2, MAX=0.9, ZERO=(0-MIN)/(MAX-MIN); // 0.1818
+const MIN=-0.2,MAX=0.9,ZERO=(0-MIN)/(MAX-MIN);
 const bars=document.getElementById("bars");
 data.forEach(d=>{
-  const row=document.createElement("div");
-  row.className="row"+(d.hi?" hi":"");
+  const row=document.createElement("div");row.className="row"+(d.hi?" hi":"");
   row.innerHTML=`<div class="name">${d.name}</div>`;
   const track=document.createElement("div");track.className="track";
-  const zero=document.createElement("div");zero.className="zero";zero.style.left=(ZERO*100)+"%";
-  track.appendChild(zero);
+  const zero=document.createElement("div");zero.className="zero";zero.style.left=(ZERO*100)+"%";track.appendChild(zero);
   const fill=document.createElement("div");fill.className="fill";
-  const pos=(d.v-MIN)/(MAX-MIN);
-  const neg=d.v<0;
-  const left=Math.min(pos,ZERO), width=Math.abs(pos-ZERO);
-  fill.style.left=(left*100)+"%";
-  fill.style.width=(width*100)+"%";
+  const pos=(d.v-MIN)/(MAX-MIN),neg=d.v<0;
+  const left=Math.min(pos,ZERO),width=Math.abs(pos-ZERO);
+  fill.style.left=(left*100)+"%";fill.style.width=(width*100)+"%";
   fill.style.background=d.hi?"var(--gnn)":(neg?"var(--neg)":"var(--other)");
   fill.style.justifyContent=neg?"flex-start":"flex-end";
   const label=d.v.toFixed(2);
-  if(width>0.14){
-    const v=document.createElement("span");v.className="val";v.textContent=label;
-    if(!d.hi&&!neg) v.style.color="#cdd9ec";
-    fill.appendChild(v);
-  }else{
-    const v=document.createElement("span");v.className="val out";v.textContent=label;
-    v.style.left=(neg? (left*100-2):(pos*100+1))+"%";
-    if(neg)v.style.transform="translateX(-100%)";
-    track.appendChild(v);
-  }
-  track.appendChild(fill);
-  row.appendChild(track);
-  bars.appendChild(row);
+  if(width>0.13){const v=document.createElement("span");v.className="val";v.textContent=label;fill.appendChild(v);}
+  else{const v=document.createElement("span");v.className="val out";v.textContent=label;
+    v.style.left=(neg?left*100-1:pos*100+1)+"%";if(neg)v.style.transform="translateX(-100%)";track.appendChild(v);}
+  track.appendChild(fill);row.appendChild(track);bars.appendChild(row);
 });
 </script>
 </body>
