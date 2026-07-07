@@ -197,6 +197,7 @@ export default function KasperovClient() {
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
   // a run being finalized (Meta-Reasoner picker), and a loaded run being viewed.
   const [finalizeFor, setFinalizeFor] = useState<DatasetDef | null>(null); // ⚙ Meta-Reasoner Finalize Run picker
+  const [loadingRun, setLoadingRun] = useState(false); // 🐟 pixel-fish overlay while a tree-clicked run loads
   const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef; finalize?: boolean } | null>(null);
   const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
@@ -675,17 +676,20 @@ export default function KasperovClient() {
     const atlasId = m.atlasId || m.datasetId;
     const ds = DATASET_BY_ID[atlasId as DatasetId] || DATASETS.find((d) => d.id === atlasId) || DATASET_BY_ID[m.datasetId as DatasetId];
     if (!ds) return;
+    setLoadingRun(true);
     try {
       const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(atlasId)}&id=${encodeURIComponent(m.runId)}`);
       if (!r.ok) { window.alert("Couldn't load that run."); return; }
       setViewingRun({ run: await r.json(), meta: m, dataset: ds });
     } catch { window.alert("Couldn't load that run."); }
+    finally { setLoadingRun(false); }
   };
 
   if (!dataset)
     return (
       <>
         <DatasetPicker onPick={setDataset} onOpenRun={openRunFromViz} onFinalize={setFinalizeFor} />
+        {loadingRun && <ZebrafishLoader />}
         {finalizeFor && (
           <RunListModal
             dataset={finalizeFor}
@@ -1099,6 +1103,60 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
     </div>
   );
 }
+// Cute pixel-art zebrafish loader — shown for the couple of seconds between clicking a run on the
+// lineage tree and its full view loading. Danio rerio: gold body, navy stripes, teal fins. Swims
+// (gentle bob + tail flap), blows rising bubbles, and a mono caption ticks its ellipsis.
+function ZebrafishLoader({ label = "Reeling in the run" }: { label?: string }) {
+  const PIX = 6;
+  const MAP = [
+    "........ddd.....",
+    "...t..bsbsbsb...",
+    "..ttbsbsbsbsbb..",
+    ".tttbsbsbsbsbeb.",
+    "ttttbsbsbsbsbbb.",
+    ".tttbsbsbsbsbb..",
+    "..tt..bsbsbsb...",
+    "...t....dd......",
+  ];
+  const COL: Record<string, string> = { b: "#f2dca6", s: "#33507f", e: "#20232b", t: "#7cc0d6", d: "#9ad3e2" };
+  const body: React.ReactElement[] = []; const tail: React.ReactElement[] = [];
+  MAP.forEach((rowStr, y) => {
+    for (let x = 0; x < rowStr.length; x++) {
+      const ch = rowStr[x]; if (ch === ".") continue;
+      const rect = <rect key={`${x}-${y}`} x={x * PIX} y={y * PIX} width={PIX} height={PIX} fill={COL[ch]} />;
+      (ch === "t" ? tail : body).push(rect);
+    }
+  });
+  const W = 16 * PIX, Hh = 8 * PIX;
+  return (
+    <div style={{ position: "fixed", inset: 0, zIndex: 2000, background: "rgba(250,247,242,0.86)", backdropFilter: "blur(2px)", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 20 }}>
+      <style>{`
+        @keyframes zf-swim { 0%,100% { transform: translateY(0) rotate(-2.5deg); } 50% { transform: translateY(-7px) rotate(2.5deg); } }
+        @keyframes zf-tail { 0%,100% { transform: rotate(11deg); } 50% { transform: rotate(-13deg); } }
+        @keyframes zf-bub { 0% { transform: translateY(0) scale(0.5); opacity: 0; } 25% { opacity: 0.75; } 100% { transform: translateY(-52px) scale(1); opacity: 0; } }
+        @keyframes zf-dots { 0%,20% { opacity: 0.15; } 50% { opacity: 1; } 100% { opacity: 0.15; } }
+        .zf-fish { animation: zf-swim 1.7s ease-in-out infinite; transform-box: fill-box; transform-origin: center; }
+        .zf-tail { animation: zf-tail 0.52s ease-in-out infinite; transform-box: fill-box; transform-origin: right center; }
+        .zf-bub { animation: zf-bub 1.9s ease-in-out infinite; }
+        .zf-b2 { animation-delay: 0.65s; } .zf-b3 { animation-delay: 1.2s; }
+        .zf-dot { animation: zf-dots 1.4s infinite; } .zf-dot2 { animation-delay: 0.22s; } .zf-dot3 { animation-delay: 0.44s; }
+      `}</style>
+      <svg width={(W + 24) * 2} height={(Hh + 60) * 2} viewBox={`-12 -44 ${W + 24} ${Hh + 60}`} shapeRendering="crispEdges" style={{ overflow: "visible" }}>
+        <circle className="zf-bub" cx={W + 5} cy={Hh / 2 - 2} r={2.6} fill="none" stroke="#7cc0d6" strokeWidth={1} />
+        <circle className="zf-bub zf-b2" cx={W + 9} cy={Hh / 2 - 6} r={1.9} fill="none" stroke="#7cc0d6" strokeWidth={1} />
+        <circle className="zf-bub zf-b3" cx={W + 6} cy={Hh / 2 + 3} r={2.2} fill="none" stroke="#7cc0d6" strokeWidth={1} />
+        <g className="zf-fish">
+          <g className="zf-tail">{tail}</g>
+          {body}
+        </g>
+      </svg>
+      <div style={{ fontSize: 12.5, fontWeight: 700, color: "#6b655d", letterSpacing: 0.4, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>
+        {label}<span className="zf-dot">.</span><span className="zf-dot zf-dot2">.</span><span className="zf-dot zf-dot3">.</span>
+      </div>
+    </div>
+  );
+}
+
 function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetDef) => void; onOpenRun: (m: any) => void; onFinalize: (d: DatasetDef) => void }) {
   // the run-history tree lives right in each card now — fetch every run once, group by atlas.
   const [runsByAtlas, setRunsByAtlas] = useState<Record<string, any[]>>({});
