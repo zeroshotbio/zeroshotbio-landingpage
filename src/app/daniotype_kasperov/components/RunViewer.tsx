@@ -1284,7 +1284,7 @@ function MergingSummary({ run, clusters, prop }: { run: any; clusters: any[] | n
         <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
         <div style={{ display: "flex", gap: 14, alignItems: "flex-start", flexWrap: "wrap" }}>
           <div style={{ overflowX: "auto", flexShrink: 0 }}>
-            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={440} aligned />
+            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={440} aligned leafLabel={leafLabel} />
           </div>
           <div style={{ flex: "1 1 300px", minWidth: 260, borderLeft: "1px solid #eee7df", paddingLeft: 16 }}>
             <div style={{ height: HTREE_HEADTOP, display: "flex", alignItems: "flex-end", paddingBottom: 4, fontSize: 10.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c" }}>Per-compartment decisions</div>
@@ -1567,7 +1567,7 @@ function LiveMetaWorkbench({ run, clusters, dataset, judgements, addJudgement, o
       {/* hierarchy tree — compartments → tiers → consolidated nodes, filling in + highlighting.
           Given more room now that the INPUTS/DECISION floaties are retired. */}
       <Floaty title="🌳 HIERARCHY · compartments → tiers → nodes" accent="#2563eb" initial={{ x: 462, y: 64, w: 466, h: 660 }} minH={240}>
-        <HierarchyTree comps={comps} decisions={decisions} attention={attention} nextIdx={nextComp?.index ?? null} globalDone={globalDone} />
+        <HierarchyTree comps={comps} decisions={decisions} attention={attention} nextIdx={nextComp?.index ?? null} globalDone={globalDone} leafLabel={leafLabel} />
       </Floaty>
       <Floaty title="⚖️ JUDGEMENT" accent="#7c3aed" initial={{ x: 18, y: 412, w: 430, h: 424 }} minH={260}>
         <StepJudgeGate
@@ -1931,7 +1931,7 @@ function FinalizeResults({ run, clusters, dataset, decisions, globalDone, comps,
         <div style={RCARD}>
           <div style={RSEC}>The consolidation hierarchy · compartments → tiers → final nodes</div>
           <div style={{ overflowX: "auto" }}>
-            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={960} />
+            <HierarchyTree comps={comps} decisions={decisions} attention={null} nextIdx={null} globalDone={globalDone} width={960} leafLabel={leafLabel} />
           </div>
         </div>
 
@@ -2094,7 +2094,7 @@ const HTREE_TIER_X: Record<string, number> = { germ_layer: 108, tissue: 108, cel
 // node dot lines up with its text line. HDR = header-row height, LINE = node row.
 const HTREE_HDR = 20, HTREE_LINE = 18, HTREE_HEADTOP = 30;
 const htreeRowH = (nNodes: number) => Math.max(HTREE_HDR + HTREE_LINE, HTREE_HDR + nNodes * HTREE_LINE);
-function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width, aligned }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number; aligned?: boolean }) {
+function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width, aligned, leafLabel }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number; aligned?: boolean; leafLabel?: Record<string, string> }) {
   const nComp = Math.max(1, comps.length);
   const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
   const svgW = width ?? 340;
@@ -2106,7 +2106,7 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
     const d = decisions[c.index];
     const nodes = d ? [
       ...(d.merges || []).map((m: any) => ({ label: m.node_label, n: m.member_leaf_ids?.length || 1, kind: "merge", tier: m.tier })),
-      ...(d.set_aside || []).map((s: any) => ({ label: `leaf ${s.leaf_id}`, n: 1, kind: "rebel", tier: s.tier })),
+      ...(d.set_aside || []).map((s: any) => ({ label: s.node_label || leafLabel?.[String(s.leaf_id)] || `leaf ${s.leaf_id}`, n: 1, kind: "rebel", tier: s.tier })),
     ] : [];
     const h = aligned ? htreeRowH(nodes.length) : (d ? Math.max(22, nodes.length * 13 + 6) : 14);
     const top = y; y += h;
@@ -2133,7 +2133,7 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
         const col = done ? `hsl(${hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
         return (
           <g key={r.c.index}>
-            <path d={`M ${trunkX} ${r.cy} C ${trunkX + 22} ${r.cy}, ${branchX - 22} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
+            <path d={`M ${trunkX} ${r.cy} C ${(trunkX + branchX) / 2} ${r.cy}, ${(trunkX + branchX) / 2} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeLinecap="round" strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
             {isCur ? <circle cx={branchX} cy={r.cy} r={7} fill="none" stroke="#2563eb" strokeWidth={1.5} opacity={0.6} /> : null}
             <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
             <text x={trunkX + 1} y={r.cy - 5} style={{ fontSize: 8.5, fontWeight: 800, fill: done ? `hsl(${hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c") }}>C{r.c.index}</text>
@@ -2147,7 +2147,7 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
               const lbl = raw.length > maxChars ? raw.slice(0, maxChars - 1) + "…" : raw;
               return (
                 <g key={i}>
-                  <path d={`M ${branchX} ${r.cy} C ${branchX + 10} ${r.cy}, ${nx - 8} ${ny}, ${nx} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.1} opacity={0.7} />
+                  <path d={`M ${branchX} ${r.cy} C ${(branchX + nx) / 2} ${r.cy}, ${(branchX + nx) / 2} ${ny}, ${nx} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.3} strokeLinecap="round" opacity={0.75} />
                   <circle cx={nx} cy={ny} r={rad} fill={ncol} />
                   <text x={nx + rad + 3} y={ny + 3} style={{ fontSize: 8, fill: "#555" }}>{lbl}{nd.kind === "merge" ? ` ×${nd.n}` : ""}</text>
                 </g>
