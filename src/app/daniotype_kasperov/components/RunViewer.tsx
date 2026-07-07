@@ -2145,23 +2145,31 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
       {/* faint column guides (labels drawn in the top layer below) */}
       {cols.map((cc) => <line key={cc.label} x1={cc.x} y1={headY + 2} x2={cc.x} y2={totalH - 12} stroke={cc.label === "rebel" ? "#dbe4f5" : "#efeae4"} strokeWidth={1} strokeDasharray="2 4" />)}
       {rows.length > 1 ? <line x1={trunkX} y1={rows[0].cy} x2={trunkX} y2={rows[rows.length - 1].cy} stroke="#cbd5e1" strokeWidth={2} /> : null}
-      {/* SHAPES pass — branches, connectors, dots (drawn first so all text sits above them) */}
+      {/* LINES pass — every branch + connector curve. The BACK-MOST layer, since lines are by far the
+          most numerous element; everything else (dots, labels) is layered on top of them. */}
       {rows.map((r) => {
         const done = !!r.d;
         const isCur = attention === r.c.index;
         const isNext = nextIdx === r.c.index;
         const col = done ? `hsl(${r.hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
         return (
-          <g key={r.c.index}>
+          <g key={"ln" + r.c.index}>
             <path d={`M ${trunkX} ${r.cy} C ${(trunkX + branchX) / 2} ${r.cy}, ${(trunkX + branchX) / 2} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeLinecap="round" strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
+            {r.geo.map((g: any, i: number) => <path key={i} d={`M ${branchX} ${r.cy} C ${(branchX + g.nx) / 2} ${r.cy}, ${(branchX + g.nx) / 2} ${g.ny}, ${g.nx} ${g.ny}`} fill="none" stroke={g.ncol} strokeWidth={1.3} strokeLinecap="round" opacity={0.75} />)}
+          </g>
+        );
+      })}
+      {/* DOTS pass — every branch/node marker above the lines, each with a subtle white outline so it
+          reads as a distinct object sitting on top of the (back-most) lines. */}
+      {rows.map((r) => {
+        const done = !!r.d;
+        const isCur = attention === r.c.index;
+        const col = done ? `hsl(${r.hue} 55% 45%)` : (nextIdx === r.c.index ? "#2563eb" : "#cbd5e1");
+        return (
+          <g key={"dot" + r.c.index}>
             {isCur ? <circle cx={branchX} cy={r.cy} r={7} fill="none" stroke="#2563eb" strokeWidth={1.5} opacity={0.6} /> : null}
-            <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
-            {r.geo.map((g: any, i: number) => (
-              <g key={i}>
-                <path d={`M ${branchX} ${r.cy} C ${(branchX + g.nx) / 2} ${r.cy}, ${(branchX + g.nx) / 2} ${g.ny}, ${g.nx} ${g.ny}`} fill="none" stroke={g.ncol} strokeWidth={1.3} strokeLinecap="round" opacity={0.75} />
-                <circle cx={g.nx} cy={g.ny} r={g.rad} fill={g.ncol} />
-              </g>
-            ))}
+            <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1.4} />
+            {r.geo.map((g: any, i: number) => <circle key={i} cx={g.nx} cy={g.ny} r={g.rad} fill={g.ncol} stroke="#fff" strokeWidth={1.1} />)}
           </g>
         );
       })}
