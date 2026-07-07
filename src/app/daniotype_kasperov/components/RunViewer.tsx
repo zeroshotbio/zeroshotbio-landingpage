@@ -2094,6 +2094,18 @@ const HTREE_TIER_X: Record<string, number> = { germ_layer: 108, tissue: 108, cel
 // node dot lines up with its text line. HDR = header-row height, LINE = node row.
 const HTREE_HDR = 20, HTREE_LINE = 18, HTREE_HEADTOP = 30;
 const htreeRowH = (nNodes: number) => Math.max(HTREE_HDR + HTREE_LINE, HTREE_HDR + nNodes * HTREE_LINE);
+// A small SVG label with a subtle white backing rect. SVG has no z-index, so we render these in a
+// final pass (above every path) and back each one in white — the text never hides behind a line.
+function SvgTextBg({ x, y, text, fontSize = 8, fontWeight, fill, anchor = "start" }: { x: number; y: number; text: string; fontSize?: number; fontWeight?: number | string; fill: string; anchor?: "start" | "middle" }) {
+  const w = text.length * fontSize * 0.56 + 5;
+  const rx = anchor === "middle" ? x - w / 2 : x - 2.5;
+  return (
+    <g>
+      <rect x={rx} y={y - fontSize + 1.5} width={w} height={fontSize + 3.5} rx={2} fill="#fff" opacity={0.82} />
+      <text x={x} y={y} textAnchor={anchor} style={{ fontSize, fontWeight, fill }}>{text}</text>
+    </g>
+  );
+}
 function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width, aligned, leafLabel }: { comps: any[]; decisions: Record<number, any>; attention: number | null; nextIdx: number | null; globalDone: any; width?: number; aligned?: boolean; leafLabel?: Record<string, string> }) {
   const nComp = Math.max(1, comps.length);
   const hueFor = (gi: number) => Math.round((gi * 360) / nComp);
@@ -2110,53 +2122,62 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
     ] : [];
     const h = aligned ? htreeRowH(nodes.length) : (d ? Math.max(22, nodes.length * 13 + 6) : 14);
     const top = y; y += h;
-    // aligned: anchor the branch near the top (matches the text header center)
-    return { c, gi, d, nodes, top, cy: aligned ? top + HTREE_HDR / 2 : top + h / 2 };
+    const cy = aligned ? top + HTREE_HDR / 2 : top + h / 2;   // aligned: anchor near the top row
+    const hue = hueFor(gi);
+    // precompute each node's geometry + truncated label so the shapes pass and the on-top label pass agree
+    const geo = nodes.map((nd: any, i: number) => {
+      const ny = aligned ? top + HTREE_HDR + i * HTREE_LINE + HTREE_LINE / 2 : top + 8 + i * 13;
+      const nx = nodeXFor(nd);
+      const ncol = nd.kind === "rebel" ? "#2563eb" : `hsl(${hue} 62% 48%)`;
+      const rad = nd.kind === "rebel" ? 2.6 : Math.min(5.5, 2 + Math.sqrt(nd.n));
+      const maxChars = Math.max(5, Math.floor((svgW - nx - 10) / 4.7));
+      const raw = String(nd.label);
+      const lbl = (raw.length > maxChars ? raw.slice(0, maxChars - 1) + "…" : raw) + (nd.kind === "merge" ? ` ×${nd.n}` : "");
+      return { ny, nx, ncol, rad, lbl };
+    });
+    return { c, gi, d, nodes, top, cy, hue, geo };
   });
   const totalH = y + 14;
   // faint column guides + headers so the horizontal axis reads as "coarse → fine"
   const cols = [{ x: HTREE_TIER_X.tissue, label: "tissue" }, { x: HTREE_TIER_X.cell_type_broad, label: "broad" }, { x: HTREE_TIER_X.cell_type_sub, label: "sub" }, { x: rebelX, label: "rebel" }];
   return (
     <svg width={svgW} height={totalH} style={{ display: "block" }}>
-      {cols.map((cc) => (
-        <g key={cc.label}>
-          <line x1={cc.x} y1={headY + 2} x2={cc.x} y2={totalH - 12} stroke={cc.label === "rebel" ? "#dbe4f5" : "#efeae4"} strokeWidth={1} strokeDasharray="2 4" />
-          <text x={cc.x} y={12} textAnchor="middle" style={{ fontSize: 7.5, fontWeight: 800, letterSpacing: 0.3, fill: cc.label === "rebel" ? "#2563eb" : "#b0a89e" }}>{cc.label}</text>
-        </g>
-      ))}
+      {/* faint column guides (labels drawn in the top layer below) */}
+      {cols.map((cc) => <line key={cc.label} x1={cc.x} y1={headY + 2} x2={cc.x} y2={totalH - 12} stroke={cc.label === "rebel" ? "#dbe4f5" : "#efeae4"} strokeWidth={1} strokeDasharray="2 4" />)}
       {rows.length > 1 ? <line x1={trunkX} y1={rows[0].cy} x2={trunkX} y2={rows[rows.length - 1].cy} stroke="#cbd5e1" strokeWidth={2} /> : null}
+      {/* SHAPES pass — branches, connectors, dots (drawn first so all text sits above them) */}
       {rows.map((r) => {
-        const hue = hueFor(r.gi);
         const done = !!r.d;
         const isCur = attention === r.c.index;
         const isNext = nextIdx === r.c.index;
-        const col = done ? `hsl(${hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
+        const col = done ? `hsl(${r.hue} 55% 45%)` : (isNext ? "#2563eb" : "#cbd5e1");
         return (
           <g key={r.c.index}>
             <path d={`M ${trunkX} ${r.cy} C ${(trunkX + branchX) / 2} ${r.cy}, ${(trunkX + branchX) / 2} ${r.cy}, ${branchX} ${r.cy}`} fill="none" stroke={col} strokeWidth={isCur ? 3.5 : done ? 2 : 1.2} strokeLinecap="round" strokeDasharray={done ? undefined : "3 3"} opacity={done ? 1 : 0.65} />
             {isCur ? <circle cx={branchX} cy={r.cy} r={7} fill="none" stroke="#2563eb" strokeWidth={1.5} opacity={0.6} /> : null}
             <circle cx={branchX} cy={r.cy} r={isCur ? 4.5 : 3.2} fill={col} stroke="#fff" strokeWidth={1} />
-            <text x={trunkX + 1} y={r.cy - 5} style={{ fontSize: 8.5, fontWeight: 800, fill: done ? `hsl(${hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c") }}>C{r.c.index}</text>
-            {r.nodes.map((nd: any, i: number) => {
-              const ny = aligned ? r.top + HTREE_HDR + i * HTREE_LINE + HTREE_LINE / 2 : r.top + 8 + i * 13;
-              const nx = nodeXFor(nd);
-              const ncol = nd.kind === "rebel" ? "#2563eb" : `hsl(${hue} 62% 48%)`;
-              const rad = nd.kind === "rebel" ? 2.6 : Math.min(5.5, 2 + Math.sqrt(nd.n));
-              const maxChars = Math.max(5, Math.floor((svgW - nx - 10) / 4.7));
-              const raw = String(nd.label);
-              const lbl = raw.length > maxChars ? raw.slice(0, maxChars - 1) + "…" : raw;
-              return (
-                <g key={i}>
-                  <path d={`M ${branchX} ${r.cy} C ${(branchX + nx) / 2} ${r.cy}, ${(branchX + nx) / 2} ${ny}, ${nx} ${ny}`} fill="none" stroke={ncol} strokeWidth={1.3} strokeLinecap="round" opacity={0.75} />
-                  <circle cx={nx} cy={ny} r={rad} fill={ncol} />
-                  <text x={nx + rad + 3} y={ny + 3} style={{ fontSize: 8, fill: "#555" }}>{lbl}{nd.kind === "merge" ? ` ×${nd.n}` : ""}</text>
-                </g>
-              );
-            })}
+            {r.geo.map((g: any, i: number) => (
+              <g key={i}>
+                <path d={`M ${branchX} ${r.cy} C ${(branchX + g.nx) / 2} ${r.cy}, ${(branchX + g.nx) / 2} ${g.ny}, ${g.nx} ${g.ny}`} fill="none" stroke={g.ncol} strokeWidth={1.3} strokeLinecap="round" opacity={0.75} />
+                <circle cx={g.nx} cy={g.ny} r={g.rad} fill={g.ncol} />
+              </g>
+            ))}
           </g>
         );
       })}
-      {globalDone ? <text x={trunkX} y={totalH - 2} style={{ fontSize: 8.5, fontWeight: 800, fill: "#b45309" }}>∅ audit · {(globalDone.expected_still_missing || []).length} tissues missing</text> : null}
+      {/* LABEL pass — every text on top, each with a subtle white backing so nothing hides behind a line */}
+      {cols.map((cc) => <SvgTextBg key={cc.label} x={cc.x} y={12} text={cc.label} fontSize={7.5} fontWeight={800} fill={cc.label === "rebel" ? "#2563eb" : "#b0a89e"} anchor="middle" />)}
+      {rows.map((r) => {
+        const done = !!r.d;
+        const isNext = nextIdx === r.c.index;
+        return (
+          <g key={"lbl" + r.c.index}>
+            <SvgTextBg x={trunkX + 1} y={r.cy - 5} text={`C${r.c.index}`} fontSize={8.5} fontWeight={800} fill={done ? `hsl(${r.hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c")} />
+            {r.geo.map((g: any, i: number) => <SvgTextBg key={i} x={g.nx + g.rad + 3} y={g.ny + 3} text={g.lbl} fontSize={8} fill="#555" />)}
+          </g>
+        );
+      })}
+      {globalDone ? <SvgTextBg x={trunkX} y={totalH - 2} text={`∅ audit · ${(globalDone.expected_still_missing || []).length} tissues missing`} fontSize={8.5} fontWeight={800} fill="#b45309" /> : null}
     </svg>
   );
 }
