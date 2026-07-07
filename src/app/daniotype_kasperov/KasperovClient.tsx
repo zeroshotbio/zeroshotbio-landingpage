@@ -674,7 +674,6 @@ export default function KasperovClient() {
     return (
       <>
         <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} onFinalize={setFinalizeFor} />
-        <LineageViz />
         {viewRunsFor && (
           <RunListModal
             dataset={viewRunsFor}
@@ -825,47 +824,6 @@ function Centered({ children }: { children: React.ReactNode }) {
 // ---------------------------------------------------------------------------
 // Small uppercase section label shared by the horizontal card bodies.
 const CARD_SECLABEL: React.CSSProperties = { fontSize: 9, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#a59f96" };
-
-// Textbook-style explanations (each <=100 words) shown when a card element is
-// hovered, so a reader can learn what every figure means without leaving the page.
-const TIPS: Record<string, string> = {
-  cells: "The number of individual cells profiled in this atlas (after quality filtering). Each cell's RNA is sequenced separately, giving one gene-expression profile per cell — the raw material the labeler reads.",
-  clusters: "Cells are grouped into clusters of similar expression by the Leiden algorithm. 'Resolution' is the granularity knob — higher resolution gives more, finer clusters. We pick the finest resolution where clusters still hold together as distinct types.",
-  platform: "The single-cell technology used to capture each cell's RNA (e.g. Parse Evercode split-pool, sci-RNA-seq3, or 10X droplets). Different platforms have different biases, so agreement across platforms is a stronger test of a label.",
-  source: "The lab (and year) that generated this atlas. Published atlases come with the authors' own cell-type labels; internal atlases do not.",
-  genes: "The naming system for genes here. ENSDARG are Ensembl zebrafish gene IDs; we map them to canonical ZFIN gene symbols so marker genes can be looked up and compared consistently across datasets.",
-  gtBadge: "Ground-truth benchmark: this atlas ships with the original authors' published cell-type labels, so we can score our blind labels against theirs for real accuracy.",
-  internalBadge: "Internal atlas: no published cell-type labels exist, so there is nothing to score accuracy against. Instead we report coverage and grounding — how much got labeled and how well-supported each label is.",
-  benchmark: "We re-cluster this atlas from scratch and label it blind, then score our names against the authors' own published labels — in their native label scheme, not ours. A genuine accuracy benchmark: did we recover the biology the original study described?",
-  inParadigm: "In-paradigm means the same sequencing platform and label vocabulary as our reference atlas (ZSCAPE). High scores here are 'home turf' — encouraging, but not proof the method generalises to new platforms or labs.",
-  independent: "Independent means a different lab and a different platform (10X droplet vs ours). Agreement here is the real test of generalisation, so a somewhat lower score is expected and still meaningful.",
-  tierAccuracy: "Identity is judged at several levels of detail, coarse to fine. Each tile is the agreement with the authors' published label at that tier. Accuracy naturally drops as the labels get more specific.",
-  bySize: "Clusters are scored in size bands. '≥100 cells' keeps only the larger, more reliable clusters; '≥30' relaxes it; 'all' includes the smallest. Bigger clusters give cleaner marker signal, so accuracy usually rises with size.",
-  abstain: "Abstaining means the labeler chose NOT to name a cluster — because the evidence was too weak or the cluster looks like a technical artifact rather than a real cell type. Declining a bad cluster is the correct call, not a failure.",
-  precision: "Of the clusters the labeler abstained on, the fraction that were genuinely unlabelable (under-powered or artifacts). High precision means it abstains for good reasons, not at random.",
-  coverageSection: "How much of the atlas got labeled and how well-supported those labels are — the read-out we use when there are no published labels to score against.",
-  coverage: "Coverage = the share of clusters the labeler actually named instead of abstaining. 95% assigned means it confidently named 95% of clusters and declined the rest as too weak or artifactual.",
-  grounded: "Grounding here does NOT mean matching a ground-truth cell type — this atlas has none. Every marker gene the labeler cites as evidence is checked against this cluster's own measured expression (our live :5007 service). '98.5% grounded' = 98.5% of cited markers are confirmed genuinely enriched in those very cells. It is a hallucination check on the evidence, fully defined without any reference labels — the same check runs on the labelled atlases too.",
-  tierDepth: "How specific the labels got: how many clusters were resolved all the way to a cell-type name versus only to a broader tissue name. More cell-type-level calls means a more granular, more useful atlas.",
-  coherence: "Coherence = the fraction of clusters that carry at least one strongly-enriched, cluster-specific marker gene. Near 1.0 means almost every cluster is biologically distinct and nameable; lower means some clusters lack a clean signature and are harder to label.",
-  recipe: "The computational pipeline that produced these clusters: pick highly-variable genes → PCA → Harmony batch-integration → nearest-neighbour graph → Leiden clustering, swept across resolutions to choose the finest one that still holds together.",
-  design: "The wet-lab design behind this atlas — the perturbations (drugs and doses), the controls, the zebrafish line, and how the embryos were treated and sequenced. Sample-level facts about the experiment, separate from the clustering.",
-  consistencyPrior: "With no ground truth, we compare to our own earlier automated annotation (which is also not truth). Lineage agreement = how often the broad lineage matches. Where they differ, the newer labeler is often the more correct one — read disagreements case by case, not as errors.",
-  consistencyCelltype: "Agreement at the fine cell-type level versus the prior automated annotation. It is lower than lineage mainly because the labeler deliberately stays coarse when it cannot ground a specific subtype — a granularity gap, not a wrong call.",
-  adjudicationPrior: "For the hardest disagreements we re-checked each cluster's actual marker genes. 'prior-err' = the old annotation was wrong; 'labeler-err' = the new call was wrong; 'amb' = the markers cannot decide. The new labeler was better-supported on most.",
-  processingAligned: "Manual and Parse are two processing pipelines run on the SAME cells. Where their clusters line up cleanly (mapping purity ≥0.70), this is how often the labels agree — a test of whether a label survives the processing choice, not of accuracy.",
-  // --- provenance explainers (reusable across cards) ---
-  provOwnEmbed: "Our embedding and our clustering — HVG → PCA → Harmony → Leiden, built from the counts up. Both the coordinate space and the grouping are ours.",
-  provCarriedEmbed: "Our Leiden clustering, but on a carried embedding — we ran our own partition in a coordinate space someone else built (the vendor's or the authors'). The grouping is ours; the space isn't.",
-  provVendorPartition: "The provider's own clustering, read as delivered on their embedding — a same-cells, same-space comparison to our own Leiden build.",
-  provGtScores: "Accuracy from a separate native-schema run — the wizard labeled the authors' own partition blind, then those names were scored against the authors' published labels. The atlas shown above is a de-novo re-clustering for visualization, not the partition these scores were computed on.",
-  provNoGtScores: "No published labels exist here, so there is nothing to score accuracy against — these are coverage + grounding read-outs, not accuracy, and are not comparable to the benchmark cards.",
-  provLabelsAreEval: "The names came from a blind labelling run; the published labels (where they exist) were held out and used only to score afterward — evaluation, never supervision.",
-  provPartitionId: "partitionId is a fingerprint of the exact clustering these names describe (a hash of the per-cell assignments). Shown for provenance only — this card does not re-verify the hash.",
-  provRun: "The labelling run, model and harness that produced these numbers. Open it under View Completed Runs for the full per-cluster transcript and grounding evidence.",
-  processingWeighted: "The same agreement, weighted by cell count and across all clusters. It is lower than the aligned figure mainly because the two pipelines cut the cell continuum at different granularities — partition differences, not labels conflicting on the same cells.",
-  adjudicationProc: "For the cross-lineage conflicts we adjudicated on the shared cells' markers. 'Parse'/'Manual' = which build's label was better-supported; 'amb' = markers cannot decide. Only 1 of 77 was a flat labeling error — labels are robust to the pipeline.",
-};
 
 // View-mode run list (Phase 2b): lists every saved run for ONE dataset and opens
 // the chosen one in the read-only RunViewer. Archived runs are off by default,
@@ -1041,24 +999,9 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
 }
 
 // Hover tooltip wrapper — wraps any inline element and shows its explanation on hover.
-function Tip({ text, children, style, block }: { text?: string; children: React.ReactNode; style?: React.CSSProperties; block?: boolean }) {
-  const [show, setShow] = useState(false);
-  if (!text) return <>{children}</>;
-  return (
-    <span onMouseEnter={() => setShow(true)} onMouseLeave={() => setShow(false)} style={{ position: "relative", display: block ? "flex" : "inline-flex", cursor: "help", ...style }}>
-      {children}
-      {show && (
-        <span style={{ position: "absolute", bottom: "calc(100% + 7px)", left: "50%", transform: "translateX(-50%)", zIndex: 60, width: 232, background: "#1f2937", color: "#eef1f4", fontSize: 11, fontWeight: 400, fontStyle: "normal", lineHeight: 1.5, textTransform: "none", letterSpacing: 0, textAlign: "left", padding: "9px 11px", borderRadius: 8, boxShadow: "0 10px 30px rgba(0,0,0,0.28)", pointerEvents: "none", whiteSpace: "normal" }}>{text}</span>
-      )}
-    </span>
-  );
-}
-
-
 // ---- Run lineage tree (bottom of the picker page) — a left→right pipeline phylogeny -------------
 // Reads the canonical layer only. X axis = the 5 pipeline stages; each run is a branch that extends
 // from its clustering as far as it actually progressed (labelling → meta-reasoning → fuzzy judging).
-const LINEAGE_ATLASES = ["zscape", "chemfish", "daniocell", "minifin", "megafin"];
 const STAGE_X: Record<string, number> = { raw: 56, cluster: 200, label: 372, meta: 542, judge: 700 };
 const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Fuzzy judging"]];
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
@@ -1066,7 +1009,7 @@ const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
 const TREE_W = 840;
 
-function AtlasTree({ atlas, runs }: { atlas: string; runs: any[] }) {
+function AtlasTree({ atlas, runs, bare }: { atlas: string; runs: any[]; bare?: boolean }) {
   const t = (r: any) => String(r.exportedAt || "");
   // most-recent first (top row); group by clustering fingerprint preserving that recency order, so
   // every node TOP-aligns to its column's newest branch and the very top row is the latest run's
@@ -1085,8 +1028,8 @@ function AtlasTree({ atlas, runs }: { atlas: string; runs: any[] }) {
   const X = STAGE_X;
   const curve = (x1: number, y1: number, x2: number, y2: number) => `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
   return (
-    <div style={{ marginTop: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 2, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {pipeline.length} runs · {gorder.length} clustering{gorder.length === 1 ? "" : "s"}</span></div>
+    <div style={{ marginTop: bare ? 0 : 14 }}>
+      <div style={{ fontSize: bare ? 11.5 : 13, fontWeight: bare ? 600 : 800, color: bare ? "#9a948c" : "#2b2b2b", marginBottom: bare ? 5 : 2, textTransform: bare ? "none" : "capitalize" }}>{bare ? "" : atlas + " "}{pipeline.length} runs · {gorder.length} clustering{gorder.length === 1 ? "" : "s"}</div>
       <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
         <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
           {/* per-atlas stage-header row, each title tinted to its column's node colour */}
@@ -1127,25 +1070,20 @@ function AtlasTree({ atlas, runs }: { atlas: string; runs: any[] }) {
     </div>
   );
 }
-function LineageViz() {
-  const [data, setData] = useState<{ runs: any[]; generatedAt: string } | null>(null);
+function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void; onFinalize: (d: DatasetDef) => void }) {
+  // the run-history tree lives right in each card now — fetch every run once, group by atlas.
+  const [runsByAtlas, setRunsByAtlas] = useState<Record<string, any[]>>({});
   useEffect(() => {
     let alive = true;
-    fetch("/api/kasperov_runs?all=1").then((r) => r.json()).then((d) => alive && setData({ runs: d.runs || [], generatedAt: d.generatedAt || new Date().toISOString() })).catch(() => alive && setData({ runs: [], generatedAt: new Date().toISOString() }));
+    fetch("/api/kasperov_runs?all=1").then((r) => r.json()).then((d) => {
+      if (!alive) return;
+      const by: Record<string, any[]> = {};
+      (d.runs || []).forEach((r: any) => { const a = r.atlasId || "other"; (by[a] ||= []).push(r); });
+      setRunsByAtlas(by);
+    }).catch(() => { });
     return () => { alive = false; };
   }, []);
-  if (!data || !data.runs.length) return null;
-  const byAtlas: Record<string, any[]> = {};
-  data.runs.forEach((r) => { const a = r.atlasId || "other"; (byAtlas[a] ||= []).push(r); });
-  const order = [...LINEAGE_ATLASES, ...Object.keys(byAtlas).filter((a) => !LINEAGE_ATLASES.includes(a))];
-  return (
-    <div style={{ maxWidth: 920, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
-      {order.map((a) => (byAtlas[a]?.length ? <AtlasTree key={a} atlas={a} runs={byAtlas[a]} /> : null))}
-      <div style={{ textAlign: "center", fontSize: 11, color: "#a59f96", marginTop: 16 }}>Generated {new Date(data.generatedAt).toLocaleString()} · read straight from the canonical layer</div>
-    </div>
-  );
-}
-function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void; onFinalize: (d: DatasetDef) => void }) {
+  const atlasOfCard = (id: string) => id.replace(/_(recursive|phase1_finelabel|phaseA_labelling|final_labelling|parse|batch|native|denovo)$/, "");
   return (
     <div style={{ minHeight: "100vh", background: PAPER, color: INK, display: "flex", justifyContent: "center" }}>
       <div style={{ maxWidth: 1120, padding: "72px 28px 60px", width: "100%" }}>
@@ -1161,14 +1099,8 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
             const ready = d.status === "ready";
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
-            const cellsTip = f?.subsample ? `${TIPS.cells} ${f.subsample}` : TIPS.cells;
-            const hasFull = !!(f && f.fullCells && f.fullCells > f.cells);
-            const ident: { a: string; b: string; aTip?: string; bTip?: string }[] | null = f ? [
-              { a: `${(f.cells as number).toLocaleString()} cells`, b: hasFull ? `of ${(f.fullCells as number).toLocaleString()} total` : `${f.clusters} clusters · res ${f.resLabel}`, aTip: cellsTip, bTip: hasFull ? cellsTip : TIPS.clusters },
-              ...(hasFull ? [{ a: `${f.clusters} clusters`, b: `res ${f.resLabel}`, aTip: TIPS.clusters }] : []),
-              { a: f.platform, b: `${f.lab}${f.year ? " · " + f.year : ""}`, aTip: TIPS.platform, bTip: TIPS.source },
-              { a: "genes", b: f.namespace, aTip: TIPS.genes, bTip: TIPS.genes },
-            ] : null;
+            const atlasId = atlasOfCard(d.id);
+            const atlasRuns = runsByAtlas[atlasId] || [];
             return (
               <div
                 key={d.id}
@@ -1183,32 +1115,19 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
                   color: INK,
                   display: "flex",
                   flexDirection: "row",
-                  alignItems: "stretch",
+                  alignItems: "flex-start",
                   gap: 16,
                   width: "100%",
                 }}
               >
-                {/* identity rail */}
-                <div style={{ width: 224, flexShrink: 0, display: "flex", flexDirection: "column", gap: 8 }}>
+                {/* identity rail — name + the three actions, top-aligned with the run-history tree */}
+                <div style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
                     {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
                   </div>
-                  {ident && (
-                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "4px 10px", fontSize: 11, color: "#555", lineHeight: 1.45 }}>
-                      {ident.map((r, i) => (
-                        <React.Fragment key={i}>
-                          <Tip text={r.aTip} style={{ justifySelf: "start" }}><span style={{ fontWeight: 700, color: "#3f3a34", borderBottom: r.aTip ? "1px dotted #cfc8bf" : "none" }}>{r.a}</span></Tip>
-                          {r.bTip
-                            ? <Tip text={r.bTip} style={{ justifySelf: "end" }}><span style={{ color: "#7a746c", textAlign: "right", borderBottom: "1px dotted #d8d2c9" }}>{r.b}</span></Tip>
-                            : <span style={{ color: "#7a746c", textAlign: "right", justifySelf: "end" }}>{r.b}</span>}
-                        </React.Fragment>
-                      ))}
-                    </div>
-                  )}
-                  {/* two paths live under the identity, so hovering the card for tooltips never navigates */}
                   {ready && (
-                    <div style={{ marginTop: "auto", display: "flex", flexDirection: "column", gap: 6 }}>
+                    <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
                       <button onClick={() => onFinalize(d)} title={`Finalize a labelled ${d.name} run — run the Meta-Reasoner live to consolidate its leaves`} style={{ alignSelf: "stretch", background: "#0891b2", color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋＋ META-REASONER</button>
                       <button onClick={() => onViewRuns(d)} title={`Browse completed ${d.name} runs (read-only)`} style={{ alignSelf: "stretch", background: "#fff", color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>▤ VIEW COMPLETED RUNS</button>
@@ -1216,8 +1135,12 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
                   )}
                 </div>
 
-                {/* content area — a plain high-level summary for every dataset */}
-                <div style={{ flex: 1, alignSelf: "center", fontSize: 13, color: "#5a544c", lineHeight: 1.6 }}>{d.blurb}</div>
+                {/* content area — this atlas's run-history tree (replaces the old description + stats) */}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {atlasRuns.length
+                    ? <AtlasTree atlas={atlasId} runs={atlasRuns} bare />
+                    : <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic", padding: "18px 4px" }}>No runs yet — start one with ＋ NEW RUN.</div>}
+                </div>
               </div>
             );
           };
