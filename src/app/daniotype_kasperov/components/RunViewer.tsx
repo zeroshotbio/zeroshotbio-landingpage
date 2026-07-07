@@ -19,7 +19,7 @@ import { ClusteringProvenance, BackfillBadge } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
 import { Scorecard } from "./Scorecard";
 import { CompartmentMap, MapViewSwitch, hasCompartments, type MapView } from "./CompartmentMap";
-import { ClusteringExplainer, ZscapeClusteringExplainer } from "./ClusteringExplainer";
+import { ClusteringExplainer, ZscapeClusteringExplainer, NativeClusteringExplainer, NeutralClusteringExplainer } from "./ClusteringExplainer";
 import { META_REASONER_CONTEXT } from "../../meta_reasoner/metaReasonerContext";
 
 // Strip the hidden ```kasperov-*``` control blocks the live loop embeds in
@@ -250,6 +250,22 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
       ? dataset.dataUrl.replace(/\/umap\.json$/, `/${fp}/umap.json`) : dataset?.dataUrl;
   }, [run, dataset]);
   const { clusters, meta: atlasMeta, error } = useAtlas(clusteringUrl);
+  // Clustering BASIS — the run's REAL clustering provenance, so the "1. Clustering" prose is
+  // faithful instead of hardcoding the de-novo ZSCAPE story per-atlasId. Prefer the canonical
+  // record (clustering.basis, re-emitted additively); fall back to the run's own stamp
+  // (schemaBasis / clusteringStrategy.basis) for runs not yet re-emitted. null => no positive
+  // basis stamp => neutral prose, NEVER a defaulted de-novo claim.
+  const clusteringBasis = useMemo<"native-schema" | "de-novo" | null>(() => {
+    const cb = (run as any)?._canonical?.clustering?.basis;
+    if (cb === "native-schema" || cb === "de-novo") return cb;
+    if (run?.schemaBasis === "native-schema") return "native-schema";
+    const sb = run?.clusteringStrategy?.basis;
+    if (sb === "native-schema" || sb === "de-novo") return sb;
+    return null;
+  }, [run]);
+  // This run's REAL group count (156/341/470 for native), not the illustrative atlas's leaf count.
+  const runNGroups = ((run as any)?._canonical?.clustering?.nLeaves)
+    ?? run?.clusteringStrategy?.nGroups ?? (Array.isArray(run?.clusters) ? run.clusters.length : undefined);
   const [mapView, setMapView] = useState<MapView>("islands");
   const profile = useMemo(() => computeCompletenessProfile(run, meta), [run, meta]);
   const runClusters: any[] = Array.isArray(run?.clusters) ? run.clusters : [];
@@ -449,11 +465,22 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
               <h2 style={{ fontSize: 23, fontWeight: 700, margin: "2px 0 2px" }}>1. Clustering</h2>
-              <p style={{ color: "#666", fontSize: 15, margin: "0 0 8px" }}>Coming at {dataset.name} fresh — here&apos;s how the cells get grouped into clusters.</p>
-              <p style={{ color: "#9a948c", fontSize: 12.5, margin: "0 auto 8px", lineHeight: 1.5, maxWidth: 720 }}>
-                {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
-                {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
+              {/* SUBHEAD — faithful to the run's real basis, not a per-atlas de-novo default. */}
+              <p style={{ color: "#666", fontSize: 15, margin: "0 0 8px" }}>
+                {clusteringBasis === "native-schema"
+                  ? <>These are {dataset.name}&apos;s <b>authors&apos; own published cell groups</b> — here&apos;s the grouping we labelled.</>
+                  : clusteringBasis === "de-novo"
+                    ? <>Coming at {dataset.name} fresh — here&apos;s how the cells get grouped into clusters.</>
+                    : <>Here&apos;s how the cells in {dataset.name} are grouped into clusters.</>}
               </p>
+              {/* De-novo-only micro-copy (sample cross-section + "re-cluster from scratch / de-novo
+                  calls"). Gated on basis === "de-novo" so a native-schema run never claims it. */}
+              {clusteringBasis === "de-novo" ? (
+                <p style={{ color: "#9a948c", fontSize: 12.5, margin: "0 auto 8px", lineHeight: 1.5, maxWidth: 720 }}>
+                  {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
+                  {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
+                </p>
+              ) : null}
               <div style={{ ...CARD, padding: 10 }}>
                 {clusters ? (
                   <>
@@ -466,12 +493,35 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                   </>
                 ) : <div style={{ height: 420, display: "flex", alignItems: "center", justifyContent: "center", color: "#aaa", fontSize: 13 }}>Loading atlas…</div>}
               </div>
-              {/* ZSCAPE keeps its rich prose read; every dataset also gets the data-driven recipe panel
-                  when the canonical clustering.strategy is available (falls back to the generic explainer). */}
-              {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : null}
-              {(run as any)?._canonical?.clustering?.strategy
-                ? <ClusteringStrategyPanel strategy={(run as any)._canonical.clustering.strategy} nLeaves={clusters?.length} />
-                : dataset.id !== "zscape" ? <ClusteringExplainer /> : null}
+              {/* HONEST ILLUSTRATIVE-MAP CAPTION — native-schema runs load the de-novo golden atlas as
+                  an illustrative map (the *_native umap carries no scatter points), so the picture is a
+                  DIFFERENT clustering than the run's own. Say so, don't imply the map IS the run. */}
+              {clusteringBasis === "native-schema" ? (
+                <div style={{ fontSize: 11.5, color: "#9a948c", fontStyle: "italic", margin: "6px auto 0", maxWidth: 720, lineHeight: 1.5 }}>
+                  Illustrative embedding — this run labelled the {runNGroups ?? "published"} published groups, not the de-novo map shown here.
+                </div>
+              ) : null}
+              {/* CLUSTERING PROSE — branched on the run's REAL basis, never hardcoded per-atlasId.
+                  native-schema → the honest published-groups story; de-novo → the ZSCAPE recursive read
+                  (zscape) + data-driven recipe panel / generic knobs; null → neutral, no false claim. */}
+              {clusteringBasis === "native-schema" ? (
+                <NativeClusteringExplainer
+                  nGroups={runNGroups}
+                  tiers={run?.clusteringStrategy?.nativeTiers}
+                  lab={run?.clusteringStrategy?.lab}
+                  derivation={run?.clusteringStrategy?.derivation}
+                  datasetName={dataset.name}
+                />
+              ) : clusteringBasis === "de-novo" ? (
+                <>
+                  {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : null}
+                  {(run as any)?._canonical?.clustering?.strategy
+                    ? <ClusteringStrategyPanel strategy={(run as any)._canonical.clustering.strategy} nLeaves={clusters?.length} />
+                    : dataset.id !== "zscape" ? <ClusteringExplainer /> : null}
+                </>
+              ) : (
+                <NeutralClusteringExplainer nLeaves={runNGroups} datasetName={dataset.name} />
+              )}
               {/* this run's own clustering provenance — shown only when the run JSON
                   structurally snapshotted a strategy (never back-filled from live data) */}
               {profile.hasClusteringStrategy ? (

@@ -49,8 +49,54 @@ export function ClusteringExplainer() {
   );
 }
 
+// NATIVE-SCHEMA "1. Clustering" — for runs that labelled the authors' OWN published
+// finest cell groups (NOT de-novo re-clustered). Renders the honest native story and
+// carries NONE of the de-novo narrative (no resolution sweep, no marker re-derivation,
+// no two-stage recursive re-clustering, no cell-sample). nGroups/tiers are the RUN's own
+// numbers, never the illustrative atlas's leaf count.
+export function NativeClusteringExplainer({ nGroups, tiers, lab, derivation, datasetName }: {
+  nGroups?: number; tiers?: Record<string, number> | null; lab?: string | null; derivation?: string | null; datasetName?: string;
+}) {
+  const tierStr = tiers && typeof tiers === "object"
+    ? Object.entries(tiers).map(([k, v]) => `${v} ${k.replace(/_/g, " ")}`).join(" → ")
+    : null;
+  const name = datasetName || "this atlas";
+  return (
+    <div style={{ background: "#faf7ff", border: "1px solid #e6dcf5", borderRadius: 12, padding: "11px 16px", maxWidth: 820, margin: "8px auto 0", textAlign: "left" }}>
+      <div style={{ fontSize: 10, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#7c3aed", marginBottom: 4 }}>Native-schema · authors&apos; published groups</div>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#33312e", margin: 0 }}>
+        This run does <b>not re-cluster {name}</b>. It takes the{lab ? <> authors&apos;{" "}<b>({lab})</b></> : " authors'"}{" "}
+        <b>own published finest cell groups</b> in their native ontology, exactly as released, and labels those directly —{" "}
+        <b>{derivation || "the published finest cell groups, NOT de-novo re-clustered"}</b>.{" "}
+        {nGroups ? <>The grouping is <b>{nGroups} groups</b>{tierStr ? <>, nested <b>{tierStr}</b></> : null}. </> : null}
+        There is <b>no resolution sweep, no local marker re-derivation, and no two-stage recursive re-clustering</b> — the
+        groups are the authors&apos;; only the <b>names</b> are ours. Because we label the published ontology directly, the calls
+        are scored against the very same tiers they came from.
+      </p>
+    </div>
+  );
+}
+
+// NEUTRAL "1. Clustering" — for runs whose clustering basis carries NO positive stamp
+// (older / superseded / unattributed clusterings). Makes NO de-novo OR native claim; it
+// defers to the run's own provenance block for whatever was actually captured.
+export function NeutralClusteringExplainer({ nLeaves, datasetName }: { nLeaves?: number; datasetName?: string }) {
+  const name = datasetName || "this atlas";
+  return (
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "11px 16px", maxWidth: 820, margin: "8px auto 0", textAlign: "left" }}>
+      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#5a544c", margin: 0 }}>
+        The clusters below are the fine-grained groups this run labelled in {name}{nLeaves ? <> (<b>{nLeaves} groups</b>)</> : null}.
+        The clustering <b>basis for this run isn&apos;t recorded</b>, so we don&apos;t characterise the method here — see the run&apos;s
+        own provenance for exactly what was captured.
+      </p>
+    </div>
+  );
+}
+
 // ZSCAPE "1. Clustering" — the single textbook-intro paragraph beneath the UMAP.
 // Leaf count keyed to the live atlas (nLeaves), never a baked literal.
+// DE-NOVO ONLY: gate its render on the run's real basis, never on atlasId (a native-schema
+// zscape run must NOT get this recursive-de-novo story — see RunViewer §1 fix).
 export function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
   const n = nLeaves && nLeaves > 0 ? nLeaves : 250;
   return (
