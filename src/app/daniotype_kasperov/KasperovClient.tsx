@@ -670,22 +670,11 @@ export default function KasperovClient() {
   if (viewingRun)
     return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} finalize={viewingRun.finalize} onBack={() => setViewingRun(null)} />;
 
-  // deep-link from a lineage node → open that run in the read-only viewer (same nav as the cards)
-  const openRunFromViz = async (m: any) => {
-    const ds = DATASET_BY_ID[m.atlasId as DatasetId] || DATASETS.find((d) => d.id === m.atlasId);
-    if (!ds) return;
-    try {
-      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(m.atlasId)}&id=${encodeURIComponent(m.runId)}`);
-      if (!r.ok) return;
-      setViewingRun({ run: await r.json(), meta: m, dataset: ds });
-    } catch { /* ignore */ }
-  };
-
   if (!dataset)
     return (
       <>
         <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} onFinalize={setFinalizeFor} />
-        <LineageViz onOpen={openRunFromViz} />
+        <LineageViz />
         {viewRunsFor && (
           <RunListModal
             dataset={viewRunsFor}
@@ -1077,34 +1066,34 @@ const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
 const TREE_W = 840;
 
-function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen: (m: any) => void }) {
-  const pipeline = runs.filter((r) => r.recordType !== "dev-effort");
+function AtlasTree({ atlas, runs }: { atlas: string; runs: any[] }) {
   const t = (r: any) => String(r.exportedAt || "");
-  // branch by clustering fingerprint (runs sharing a clustering converge at one cluster node)
-  const groups: Record<string, any[]> = {};
-  pipeline.forEach((r) => { const k = r.leafIdFingerprint || "—"; (groups[k] ||= []).push(r); });
-  const gkeys = Object.keys(groups).sort((a, b) => Math.min(...groups[a].map((r) => +new Date(t(r) || 0))) - Math.min(...groups[b].map((r) => +new Date(t(r) || 0))));
-  gkeys.forEach((k) => groups[k].sort((a, b) => t(a).localeCompare(t(b))));
-  const rowOf: Record<string, number> = {}; const groupMid: Record<string, number> = {};
+  // most-recent first (top row); group by clustering fingerprint preserving that recency order, so
+  // every node TOP-aligns to its column's newest branch and the very top row is the latest run's
+  // full raw→…→judge path. Rows keep uniform spacing; nodes are top-adjusted, not centred.
+  const pipeline = runs.filter((r) => r.recordType !== "dev-effort").sort((a, b) => t(b).localeCompare(t(a)));
+  const groups: Record<string, any[]> = {}; const gorder: string[] = [];
+  pipeline.forEach((r) => { const k = r.leafIdFingerprint || "—"; if (!groups[k]) { groups[k] = []; gorder.push(k); } groups[k].push(r); });
+  const rowOf: Record<string, number> = {}; const groupTop: Record<string, number> = {};
   let row = 0;
-  gkeys.forEach((k) => { const start = row; groups[k].forEach((r) => { rowOf[r.runId] = row++; }); groupMid[k] = (start + row - 1) / 2; });
+  gorder.forEach((k) => { groupTop[k] = row; groups[k].forEach((r) => { rowOf[r.runId] = row++; }); });
   const nRows = row;
-  const ROW_H = 26, HEADER_H = 26, TOP = HEADER_H + 8;
+  const ROW_H = 26, HEADER_H = 26, TOP = HEADER_H + 14;
   const yOf = (i: number) => TOP + i * ROW_H + ROW_H / 2;
-  const atlasY = nRows ? (yOf(0) + yOf(nRows - 1)) / 2 : TOP;
+  const rawY = yOf(0);
   const H = TOP + nRows * ROW_H + 8;
   const X = STAGE_X;
   const curve = (x1: number, y1: number, x2: number, y2: number) => `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
   return (
     <div style={{ marginTop: 14 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 2, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {pipeline.length} runs · {gkeys.length} clustering{gkeys.length === 1 ? "" : "s"}</span></div>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 2, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {pipeline.length} runs · {gorder.length} clustering{gorder.length === 1 ? "" : "s"}</span></div>
       <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
         <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
           {/* per-atlas stage-header row, each title tinted to its column's node colour */}
           {STAGE_LABELS.map(([k, lab]) => <text key={"h" + k} x={STAGE_X[k]} y={16} fontSize={10} fontWeight={800} textAnchor="middle" fill={STAGE_COLOR[k]} style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
           <line x1={8} y1={HEADER_H} x2={TREE_W - 8} y2={HEADER_H} stroke="#efe8dd" strokeWidth={1} />
-          {gkeys.map((k) => <path key={"rc" + k} d={curve(X.raw + 6, atlasY, X.cluster, yOf(groupMid[k]))} stroke="#e0d8c8" strokeWidth={1.4} fill="none" />)}
-          {gkeys.map((k) => groups[k].map((r) => <path key={"cl" + r.runId} d={curve(X.cluster + 6, yOf(groupMid[k]), X.label, yOf(rowOf[r.runId]))} stroke="#e6ded0" strokeWidth={1.1} fill="none" />))}
+          {gorder.map((k) => <path key={"rc" + k} d={curve(X.raw + 6, rawY, X.cluster, yOf(groupTop[k]))} stroke="#e0d8c8" strokeWidth={1.4} fill="none" />)}
+          {gorder.map((k) => groups[k].map((r) => <path key={"cl" + r.runId} d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, yOf(rowOf[r.runId]))} stroke="#e6ded0" strokeWidth={1.1} fill="none" />))}
           {pipeline.map((r) => {
             const y = yOf(rowOf[r.runId]);
             const sc = r.scoreable !== false;
@@ -1119,27 +1108,26 @@ function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen
             );
             const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
             return (
-              <g key={"run" + r.runId} style={{ cursor: "pointer" }} onClick={() => onOpen(r)}>
+              <g key={"run" + r.runId}>
                 <title>{`${r.runId}${r.note ? "\n" + r.note : ""}`}</title>
                 <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={2.4} strokeLinecap="round" />
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? dot(X.judge, "judge", r.nScored ?? "✓") : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fill="#6b655d">{label}</text>
-                <rect x={X.cluster} y={y - ROW_H / 2} width={TREE_W - X.cluster} height={ROW_H} fill="transparent" />
               </g>
             );
           })}
-          {/* clustering nodes — hollow (gold ring, open centre) */}
-          {gkeys.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupMid[k])} r={5} fill="#fff" stroke={STAGE_COLOR.cluster} strokeWidth={1.7} /><text x={X.cluster} y={yOf(groupMid[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
-          {/* raw node — semi-hollow (amber fill, gold ring) */}
-          <g><circle cx={X.raw} cy={atlasY} r={6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={1.8} /><text x={X.raw} y={atlasY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
+          {/* clustering nodes — hollow (gold ring, open centre), top-aligned to their newest run */}
+          {gorder.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupTop[k])} r={5} fill="#fff" stroke={STAGE_COLOR.cluster} strokeWidth={1.7} /><text x={X.cluster} y={yOf(groupTop[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
+          {/* raw node — semi-hollow (amber fill, gold ring), top row */}
+          <g><circle cx={X.raw} cy={rawY} r={6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={1.8} /><text x={X.raw} y={rawY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
         </svg>
       </div>
     </div>
   );
 }
-function LineageViz({ onOpen }: { onOpen: (m: any) => void }) {
+function LineageViz() {
   const [data, setData] = useState<{ runs: any[]; generatedAt: string } | null>(null);
   useEffect(() => {
     let alive = true;
@@ -1152,9 +1140,7 @@ function LineageViz({ onOpen }: { onOpen: (m: any) => void }) {
   const order = [...LINEAGE_ATLASES, ...Object.keys(byAtlas).filter((a) => !LINEAGE_ATLASES.includes(a))];
   return (
     <div style={{ maxWidth: 920, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
-      <h2 style={{ fontSize: 20, fontWeight: 800, textAlign: "center", margin: "0 0 4px" }}>Run lineage · the pipeline as an evolutionary tree</h2>
-      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 10px", maxWidth: 720, lineHeight: 1.5 }}>Every run flows left→right through the pipeline. Runs that share a clustering converge at one node, then branch into their own labelling; each branch extends only as far as it actually got. Each stage has its own hue — <b style={{ color: STAGE_COLOR.raw }}>raw</b> · <b style={{ color: STAGE_COLOR.cluster }}>clustering</b> · <b style={{ color: STAGE_COLOR.label }}>labelling</b> · <b style={{ color: STAGE_COLOR.meta }}>meta-reasoning</b> · <b style={{ color: STAGE_COLOR.judge }}>judging</b> — and a <b style={{ color: "#9a948c" }}>greyed ⚠</b> branch is not scoreable. Click a branch to open that run.</p>
-      {order.map((a) => (byAtlas[a]?.length ? <AtlasTree key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} /> : null))}
+      {order.map((a) => (byAtlas[a]?.length ? <AtlasTree key={a} atlas={a} runs={byAtlas[a]} /> : null))}
       <div style={{ textAlign: "center", fontSize: 11, color: "#a59f96", marginTop: 16 }}>Generated {new Date(data.generatedAt).toLocaleString()} · read straight from the canonical layer</div>
     </div>
   );
