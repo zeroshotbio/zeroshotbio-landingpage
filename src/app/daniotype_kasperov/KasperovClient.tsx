@@ -1066,55 +1066,66 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
 }
 
 
-// ---- Run lineage overview (bottom of the picker page) — reads the canonical layer only ---------
+// ---- Run lineage tree (bottom of the picker page) — a left→right pipeline phylogeny -------------
+// Reads the canonical layer only. X axis = the 5 pipeline stages; each run is a branch that extends
+// from its clustering as far as it actually progressed (labelling → meta-reasoning → fuzzy judging).
 const LINEAGE_ATLASES = ["zscape", "chemfish", "daniocell", "minifin", "megafin"];
-function LineageNode({ m, x, y, onOpen }: { m: any; x: number; y: number; onOpen: (m: any) => void }) {
-  const dev = m.recordType === "dev-effort";
-  const notScoreable = !dev && m.canonical && m.scoreable === false;
-  const dt = m.exportedAt ? new Date(m.exportedAt) : null;
-  const when = dt ? dt.toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "—";
-  const count = dev ? null : (m.nNodes ? `${m.nLabelled ?? "?"}→${m.nNodes}` : (m.nLabelled ? `${m.nLabelled}` : null));
-  const c = Number(m.costUsd);
-  const cost = c > 0 ? `$${c < 1 ? c.toFixed(2) : c.toFixed(0)}` : dev ? `$${Number(m.costUsd || 0).toFixed(0)}` : "—";
-  const role = dev ? "⚙ dev" : m.lineageRole === "primary" ? "★" : m.lineageRole === "derived" ? "↳" : "•";
+const STAGE_X: Record<string, number> = { raw: 56, cluster: 200, label: 372, meta: 542, judge: 700 };
+const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Fuzzy judging"]];
+const TREE_W = 840;
+
+function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen: (m: any) => void }) {
+  const pipeline = runs.filter((r) => r.recordType !== "dev-effort");
+  const t = (r: any) => String(r.exportedAt || "");
+  // branch by clustering fingerprint (runs sharing a clustering converge at one cluster node)
+  const groups: Record<string, any[]> = {};
+  pipeline.forEach((r) => { const k = r.leafIdFingerprint || "—"; (groups[k] ||= []).push(r); });
+  const gkeys = Object.keys(groups).sort((a, b) => Math.min(...groups[a].map((r) => +new Date(t(r) || 0))) - Math.min(...groups[b].map((r) => +new Date(t(r) || 0))));
+  gkeys.forEach((k) => groups[k].sort((a, b) => t(a).localeCompare(t(b))));
+  const rowOf: Record<string, number> = {}; const groupMid: Record<string, number> = {};
+  let row = 0;
+  gkeys.forEach((k) => { const start = row; groups[k].forEach((r) => { rowOf[r.runId] = row++; }); groupMid[k] = (start + row - 1) / 2; });
+  const nRows = row;
+  const ROW_H = 26, TOP = 12;
+  const yOf = (i: number) => TOP + i * ROW_H + ROW_H / 2;
+  const atlasY = nRows ? (yOf(0) + yOf(nRows - 1)) / 2 : TOP;
+  const H = nRows * ROW_H + TOP * 2;
+  const X = STAGE_X;
+  const curve = (x1: number, y1: number, x2: number, y2: number) => `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
   return (
-    <div onClick={() => !dev && onOpen(m)} title={`${m.runId}${m.note ? "\n" + m.note : ""}`}
-      style={{ position: "absolute", left: x, top: y, width: 138, cursor: dev ? "default" : "pointer", boxSizing: "border-box",
-        background: dev ? "#faf7f0" : notScoreable ? "#fbfaf8" : "#fff",
-        border: `1px solid ${dev ? "#e8cf6b" : notScoreable ? "#e5e1dc" : "#cbe8dd"}`,
-        borderRadius: 8, padding: "5px 8px", opacity: notScoreable ? 0.75 : 1, boxShadow: "0 1px 2px rgba(0,0,0,0.05)" }}>
-      <div style={{ display: "flex", alignItems: "baseline", gap: 4 }}>
-        <span style={{ fontSize: 11, fontWeight: 800, color: dev ? "#7c5e10" : "#2b2b2b" }}>{role} {when}</span>
-        {notScoreable ? <span title="not scoreable — asset fingerprint mismatch" style={{ fontSize: 9, color: "#9a3412" }}>⚠</span> : null}
-      </div>
-      <div style={{ fontSize: 9.5, color: "#7a746c", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.model || "dev-effort"}{count ? ` · ${count}` : ""}</div>
-      <div style={{ fontSize: 9.5, color: "#9a948c", whiteSpace: "nowrap" }}>{cost}{m.costSource ? ` · ${String(m.costSource).startsWith("ledger") ? "ledger" : m.costSource}` : ""}</div>
-    </div>
-  );
-}
-function AtlasLane({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen: (m: any) => void }) {
-  const sorted = [...runs].sort((a, b) => String(a.exportedAt || "").localeCompare(String(b.exportedAt || "")));
-  const bareId = (v: any) => String(v?.parentRunId || "").split("/").pop();
-  const idx: Record<string, number> = {};
-  sorted.forEach((r, i) => { idx[r.runId] = i; });
-  const SLOT = 150, NODE_W = 138, NODE_H = 50, TOP = 10, BOT = 96, H = 158;
-  const width = Math.max(sorted.length * SLOT, 320);
-  const isSub = (r: any) => r.lineageRole === "derived" || r.recordType === "dev-effort";
-  const xOf = (r: any) => idx[r.runId] * SLOT + 6;
-  const conns = sorted.filter((r) => { const p = bareId(r); return p && idx[p] != null; }).map((r) => {
-    const px = idx[bareId(r)!] * SLOT + 6 + NODE_W / 2;
-    return { cx: xOf(r) + NODE_W / 2, cy: BOT, px, py: TOP + NODE_H };
-  });
-  return (
-    <div style={{ marginTop: 16 }}>
-      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 4, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {runs.length} runs</span></div>
+    <div style={{ marginTop: 14 }}>
+      <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 2, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {pipeline.length} runs · {gkeys.length} clustering{gkeys.length === 1 ? "" : "s"}</span></div>
       <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
-        <div style={{ position: "relative", width, height: H }}>
-          <svg width={width} height={H} style={{ position: "absolute", inset: 0, pointerEvents: "none" }}>
-            {conns.map((c, i) => <path key={i} d={`M ${c.cx} ${c.cy} C ${c.cx} ${(c.cy + c.py) / 2}, ${c.px} ${(c.cy + c.py) / 2}, ${c.px} ${c.py}`} stroke="#d8cdb8" strokeWidth={1.5} fill="none" />)}
-          </svg>
-          {sorted.map((r) => <LineageNode key={r.runId} m={r} x={xOf(r)} y={isSub(r) ? BOT : TOP} onOpen={onOpen} />)}
-        </div>
+        <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
+          {gkeys.map((k) => <path key={"rc" + k} d={curve(X.raw + 6, atlasY, X.cluster, yOf(groupMid[k]))} stroke="#e0d8c8" strokeWidth={1.4} fill="none" />)}
+          {gkeys.map((k) => groups[k].map((r) => <path key={"cl" + r.runId} d={curve(X.cluster + 6, yOf(groupMid[k]), X.label, yOf(rowOf[r.runId]))} stroke="#e6ded0" strokeWidth={1.1} fill="none" />))}
+          {pipeline.map((r) => {
+            const y = yOf(rowOf[r.runId]);
+            const sMeta = Number(r.nNodes) > 0, sJudge = Number(r.nScored) > 0 || r.hasGroundTruth;
+            const lastX = sJudge ? X.judge : sMeta ? X.meta : X.label;
+            const col = r.scoreable === false ? "#c4bdb1" : "#3aa676";
+            const dot = (cx: number, count?: any) => (
+              <g key={"d" + cx}>
+                <circle cx={cx} cy={y} r={4} fill={col} stroke="#fff" strokeWidth={1} />
+                {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill="#9a948c">{count}</text> : null}
+              </g>
+            );
+            const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
+            return (
+              <g key={"run" + r.runId} style={{ cursor: "pointer" }} onClick={() => onOpen(r)}>
+                <title>{`${r.runId}${r.note ? "\n" + r.note : ""}`}</title>
+                <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={col} strokeWidth={2} strokeLinecap="round" />
+                {dot(X.label, r.nLabelled)}
+                {sMeta ? dot(X.meta, r.nNodes) : null}
+                {sJudge ? dot(X.judge, r.nScored ?? "✓") : null}
+                <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fill="#6b655d">{label}</text>
+                <rect x={X.cluster} y={y - ROW_H / 2} width={TREE_W - X.cluster} height={ROW_H} fill="transparent" />
+              </g>
+            );
+          })}
+          {gkeys.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupMid[k])} r={5} fill="#fff" stroke="#c9a94e" strokeWidth={1.6} /><text x={X.cluster} y={yOf(groupMid[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#7a746c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
+          <g><circle cx={X.raw} cy={atlasY} r={6} fill="#fef3c7" stroke="#c9a94e" strokeWidth={1.7} /><text x={X.raw} y={atlasY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill="#7c5e10">raw</text></g>
+        </svg>
       </div>
     </div>
   );
@@ -1129,12 +1140,18 @@ function LineageViz({ onOpen }: { onOpen: (m: any) => void }) {
   if (!data || !data.runs.length) return null;
   const byAtlas: Record<string, any[]> = {};
   data.runs.forEach((r) => { const a = r.atlasId || "other"; (byAtlas[a] ||= []).push(r); });
+  const order = [...LINEAGE_ATLASES, ...Object.keys(byAtlas).filter((a) => !LINEAGE_ATLASES.includes(a))];
   return (
-    <div style={{ maxWidth: 1100, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
-      <h2 style={{ fontSize: 20, fontWeight: 800, textAlign: "center", margin: "0 0 4px" }}>Run lineage · every run across all atlases</h2>
-      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 8px", maxWidth: 680, lineHeight: 1.5 }}>One track per atlas, runs left→right by date. <b>★ primary</b> runs sit on the trunk; <b>↳ derived</b> re-posts branch below, curving back to their parent. Greyed <b>⚠</b> = not scoreable (asset fingerprint mismatch). Click any node to open it.</p>
-      {LINEAGE_ATLASES.map((a) => (byAtlas[a]?.length ? <AtlasLane key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} /> : null))}
-      {Object.keys(byAtlas).filter((a) => !LINEAGE_ATLASES.includes(a)).map((a) => <AtlasLane key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} />)}
+    <div style={{ maxWidth: 920, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
+      <h2 style={{ fontSize: 20, fontWeight: 800, textAlign: "center", margin: "0 0 4px" }}>Run lineage · the pipeline as an evolutionary tree</h2>
+      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 10px", maxWidth: 700, lineHeight: 1.5 }}>Every run flows left→right through the pipeline: <b>raw data → fine-leaf clustering → chat-labelling → meta-reasoning → fuzzy judging</b>. Runs that share a clustering converge at one node, then branch into their own labelling; each branch extends only as far as it actually got. <b style={{ color: "#3aa676" }}>Teal</b> = scoreable, <b style={{ color: "#9a948c" }}>grey ⚠</b> = not. Click a branch to open that run.</p>
+      {/* stage column headers, aligned to the tree x-positions */}
+      <div style={{ overflowX: "auto" }}>
+        <svg width={TREE_W} height={20} style={{ display: "block", minWidth: TREE_W }}>
+          {STAGE_LABELS.map(([k, lab]) => <text key={k} x={STAGE_X[k]} y={13} fontSize={10.5} fontWeight={800} textAnchor="middle" fill="#9a948c" style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
+        </svg>
+      </div>
+      {order.map((a) => (byAtlas[a]?.length ? <AtlasTree key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} /> : null))}
       <div style={{ textAlign: "center", fontSize: 11, color: "#a59f96", marginTop: 16 }}>Generated {new Date(data.generatedAt).toLocaleString()} · read straight from the canonical layer</div>
     </div>
   );
