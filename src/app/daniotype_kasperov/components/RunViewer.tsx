@@ -2097,11 +2097,12 @@ const htreeRowH = (nNodes: number) => Math.max(HTREE_HDR + HTREE_LINE, HTREE_HDR
 // A small SVG label with a subtle white backing rect. SVG has no z-index, so we render these in a
 // final pass (above every path) and back each one in white — the text never hides behind a line.
 function SvgTextBg({ x, y, text, fontSize = 8, fontWeight, fill, anchor = "start" }: { x: number; y: number; text: string; fontSize?: number; fontWeight?: number | string; fill: string; anchor?: "start" | "middle" }) {
-  const w = text.length * fontSize * 0.56 + 5;
-  const rx = anchor === "middle" ? x - w / 2 : x - 2.5;
+  const w = text.length * fontSize * 0.56 + 6;
+  const h = fontSize + 4;
+  const rx = anchor === "middle" ? x - w / 2 : x - 3;
   return (
     <g>
-      <rect x={rx} y={y - fontSize + 1.5} width={w} height={fontSize + 3.5} rx={2} fill="#fff" opacity={0.82} />
+      <rect x={rx} y={y - fontSize + 1} width={w} height={h} rx={h / 2} fill="#fff" opacity={0.92} />
       <text x={x} y={y} textAnchor={anchor} style={{ fontSize, fontWeight, fill }}>{text}</text>
     </g>
   );
@@ -2159,8 +2160,23 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
           </g>
         );
       })}
-      {/* DOTS pass — every branch/node marker above the lines, each with a subtle white outline so it
-          reads as a distinct object sitting on top of the (back-most) lines. */}
+      {/* NODE CAPSULE pass — one white lozenge per node label that spans from the dot through to the end
+          of its text, so the dot (drawn next, on top) sits embedded in the capsule's rounded left end and
+          the label flows out of it as one connected shape. Sits above the lines, below the dots + text. */}
+      {rows.map((r) => (
+        <g key={"cap" + r.c.index}>
+          {r.geo.map((g: any, i: number) => {
+            const fs = 8;
+            const textX = g.nx + g.rad + 3;
+            const right = textX + g.lbl.length * fs * 0.56 + 3;
+            const left = g.nx - g.rad - 2;
+            const h = Math.max(fs + 4, 2 * g.rad + 4);
+            return <rect key={i} x={left} y={g.ny - h / 2} width={right - left} height={h} rx={h / 2} fill="#fff" opacity={0.92} />;
+          })}
+        </g>
+      ))}
+      {/* DOTS pass — every branch/node marker above the lines + capsules, each with a subtle white outline so it
+          reads as a distinct object embedded in its capsule and sitting on top of the (back-most) lines. */}
       {rows.map((r) => {
         const done = !!r.d;
         const isCur = attention === r.c.index;
@@ -2181,7 +2197,8 @@ function HierarchyTree({ comps, decisions, attention, nextIdx, globalDone, width
         return (
           <g key={"lbl" + r.c.index}>
             <SvgTextBg x={trunkX + 1} y={r.cy - 5} text={`C${r.c.index}`} fontSize={8.5} fontWeight={800} fill={done ? `hsl(${r.hue} 45% 36%)` : (isNext ? "#2563eb" : "#9a948c")} />
-            {r.geo.map((g: any, i: number) => <SvgTextBg key={i} x={g.nx + g.rad + 3} y={g.ny + 3} text={g.lbl} fontSize={8} fill="#555" />)}
+            {/* node text only — its white backing is the connected capsule drawn under the dots */}
+            {r.geo.map((g: any, i: number) => <text key={i} x={g.nx + g.rad + 3} y={g.ny + 3} style={{ fontSize: 8, fill: "#555" }}>{g.lbl}</text>)}
           </g>
         );
       })}
