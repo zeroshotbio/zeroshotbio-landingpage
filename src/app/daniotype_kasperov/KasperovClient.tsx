@@ -1072,6 +1072,9 @@ function Tip({ text, children, style, block }: { text?: string; children: React.
 const LINEAGE_ATLASES = ["zscape", "chemfish", "daniocell", "minifin", "megafin"];
 const STAGE_X: Record<string, number> = { raw: 56, cluster: 200, label: 372, meta: 542, judge: 700 };
 const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Fuzzy judging"]];
+// per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
+// labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
+const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
 const TREE_W = 840;
 
 function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen: (m: any) => void }) {
@@ -1086,10 +1089,10 @@ function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen
   let row = 0;
   gkeys.forEach((k) => { const start = row; groups[k].forEach((r) => { rowOf[r.runId] = row++; }); groupMid[k] = (start + row - 1) / 2; });
   const nRows = row;
-  const ROW_H = 26, TOP = 12;
+  const ROW_H = 26, HEADER_H = 26, TOP = HEADER_H + 8;
   const yOf = (i: number) => TOP + i * ROW_H + ROW_H / 2;
   const atlasY = nRows ? (yOf(0) + yOf(nRows - 1)) / 2 : TOP;
-  const H = nRows * ROW_H + TOP * 2;
+  const H = TOP + nRows * ROW_H + 8;
   const X = STAGE_X;
   const curve = (x1: number, y1: number, x2: number, y2: number) => `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
   return (
@@ -1097,16 +1100,20 @@ function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen
       <div style={{ fontSize: 13, fontWeight: 800, color: "#2b2b2b", marginBottom: 2, textTransform: "capitalize" }}>{atlas} <span style={{ fontWeight: 500, color: "#9a948c" }}>· {pipeline.length} runs · {gkeys.length} clustering{gkeys.length === 1 ? "" : "s"}</span></div>
       <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
         <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
+          {/* per-atlas stage-header row, each title tinted to its column's node colour */}
+          {STAGE_LABELS.map(([k, lab]) => <text key={"h" + k} x={STAGE_X[k]} y={16} fontSize={10} fontWeight={800} textAnchor="middle" fill={STAGE_COLOR[k]} style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
+          <line x1={8} y1={HEADER_H} x2={TREE_W - 8} y2={HEADER_H} stroke="#efe8dd" strokeWidth={1} />
           {gkeys.map((k) => <path key={"rc" + k} d={curve(X.raw + 6, atlasY, X.cluster, yOf(groupMid[k]))} stroke="#e0d8c8" strokeWidth={1.4} fill="none" />)}
           {gkeys.map((k) => groups[k].map((r) => <path key={"cl" + r.runId} d={curve(X.cluster + 6, yOf(groupMid[k]), X.label, yOf(rowOf[r.runId]))} stroke="#e6ded0" strokeWidth={1.1} fill="none" />))}
           {pipeline.map((r) => {
             const y = yOf(rowOf[r.runId]);
+            const sc = r.scoreable !== false;
             const sMeta = Number(r.nNodes) > 0, sJudge = Number(r.nScored) > 0 || r.hasGroundTruth;
             const lastX = sJudge ? X.judge : sMeta ? X.meta : X.label;
-            const col = r.scoreable === false ? "#c4bdb1" : "#3aa676";
-            const dot = (cx: number, count?: any) => (
+            const lineCol = sc ? "#b6ddca" : "#e0dacf";
+            const dot = (cx: number, stage: string, count?: any) => (
               <g key={"d" + cx}>
-                <circle cx={cx} cy={y} r={4} fill={col} stroke="#fff" strokeWidth={1} />
+                <circle cx={cx} cy={y} r={4} fill={sc ? STAGE_COLOR[stage] : "#c4bdb1"} stroke="#fff" strokeWidth={1} />
                 {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill="#9a948c">{count}</text> : null}
               </g>
             );
@@ -1114,17 +1121,19 @@ function AtlasTree({ atlas, runs, onOpen }: { atlas: string; runs: any[]; onOpen
             return (
               <g key={"run" + r.runId} style={{ cursor: "pointer" }} onClick={() => onOpen(r)}>
                 <title>{`${r.runId}${r.note ? "\n" + r.note : ""}`}</title>
-                <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={col} strokeWidth={2} strokeLinecap="round" />
-                {dot(X.label, r.nLabelled)}
-                {sMeta ? dot(X.meta, r.nNodes) : null}
-                {sJudge ? dot(X.judge, r.nScored ?? "✓") : null}
+                <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={2.4} strokeLinecap="round" />
+                {dot(X.label, "label", r.nLabelled)}
+                {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
+                {sJudge ? dot(X.judge, "judge", r.nScored ?? "✓") : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fill="#6b655d">{label}</text>
                 <rect x={X.cluster} y={y - ROW_H / 2} width={TREE_W - X.cluster} height={ROW_H} fill="transparent" />
               </g>
             );
           })}
-          {gkeys.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupMid[k])} r={5} fill="#fff" stroke="#c9a94e" strokeWidth={1.6} /><text x={X.cluster} y={yOf(groupMid[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#7a746c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
-          <g><circle cx={X.raw} cy={atlasY} r={6} fill="#fef3c7" stroke="#c9a94e" strokeWidth={1.7} /><text x={X.raw} y={atlasY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill="#7c5e10">raw</text></g>
+          {/* clustering nodes — hollow (gold ring, open centre) */}
+          {gkeys.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupMid[k])} r={5} fill="#fff" stroke={STAGE_COLOR.cluster} strokeWidth={1.7} /><text x={X.cluster} y={yOf(groupMid[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
+          {/* raw node — semi-hollow (amber fill, gold ring) */}
+          <g><circle cx={X.raw} cy={atlasY} r={6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={1.8} /><text x={X.raw} y={atlasY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
         </svg>
       </div>
     </div>
@@ -1144,13 +1153,7 @@ function LineageViz({ onOpen }: { onOpen: (m: any) => void }) {
   return (
     <div style={{ maxWidth: 920, margin: "40px auto 24px", padding: "0 16px", textAlign: "left" }}>
       <h2 style={{ fontSize: 20, fontWeight: 800, textAlign: "center", margin: "0 0 4px" }}>Run lineage · the pipeline as an evolutionary tree</h2>
-      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 10px", maxWidth: 700, lineHeight: 1.5 }}>Every run flows left→right through the pipeline: <b>raw data → fine-leaf clustering → chat-labelling → meta-reasoning → fuzzy judging</b>. Runs that share a clustering converge at one node, then branch into their own labelling; each branch extends only as far as it actually got. <b style={{ color: "#3aa676" }}>Teal</b> = scoreable, <b style={{ color: "#9a948c" }}>grey ⚠</b> = not. Click a branch to open that run.</p>
-      {/* stage column headers, aligned to the tree x-positions */}
-      <div style={{ overflowX: "auto" }}>
-        <svg width={TREE_W} height={20} style={{ display: "block", minWidth: TREE_W }}>
-          {STAGE_LABELS.map(([k, lab]) => <text key={k} x={STAGE_X[k]} y={13} fontSize={10.5} fontWeight={800} textAnchor="middle" fill="#9a948c" style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
-        </svg>
-      </div>
+      <p style={{ textAlign: "center", fontSize: 12.5, color: "#7a746c", margin: "0 auto 10px", maxWidth: 720, lineHeight: 1.5 }}>Every run flows left→right through the pipeline. Runs that share a clustering converge at one node, then branch into their own labelling; each branch extends only as far as it actually got. Each stage has its own hue — <b style={{ color: STAGE_COLOR.raw }}>raw</b> · <b style={{ color: STAGE_COLOR.cluster }}>clustering</b> · <b style={{ color: STAGE_COLOR.label }}>labelling</b> · <b style={{ color: STAGE_COLOR.meta }}>meta-reasoning</b> · <b style={{ color: STAGE_COLOR.judge }}>judging</b> — and a <b style={{ color: "#9a948c" }}>greyed ⚠</b> branch is not scoreable. Click a branch to open that run.</p>
       {order.map((a) => (byAtlas[a]?.length ? <AtlasTree key={a} atlas={a} runs={byAtlas[a]} onOpen={onOpen} /> : null))}
       <div style={{ textAlign: "center", fontSize: 11, color: "#a59f96", marginTop: 16 }}>Generated {new Date(data.generatedAt).toLocaleString()} · read straight from the canonical layer</div>
     </div>
