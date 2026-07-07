@@ -195,8 +195,7 @@ export default function KasperovClient() {
     setClusteringConfirmed(true); // picking a partition IS confirming the clustering — colors the map + enables proceed
   };
   // Phase 2b "View Completed Runs" read-only path (independent of the wizard):
-  // a dataset whose run list is open, and a loaded run being viewed.
-  const [viewRunsFor, setViewRunsFor] = useState<DatasetDef | null>(null);
+  // a run being finalized (Meta-Reasoner picker), and a loaded run being viewed.
   const [finalizeFor, setFinalizeFor] = useState<DatasetDef | null>(null); // ⚙ Meta-Reasoner Finalize Run picker
   const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef; finalize?: boolean } | null>(null);
   const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
@@ -670,17 +669,23 @@ export default function KasperovClient() {
   if (viewingRun)
     return <RunViewer run={viewingRun.run} meta={viewingRun.meta} dataset={viewingRun.dataset} finalize={viewingRun.finalize} onBack={() => setViewingRun(null)} />;
 
+  // open a run straight from the armed lineage tree — fetch the full run JSON (route resolves the
+  // real datasetId from the atlasId) and drop into the same expanded RunViewer as the runs list.
+  const openRunFromViz = async (m: any) => {
+    const atlasId = m.atlasId || m.datasetId;
+    const ds = DATASET_BY_ID[atlasId as DatasetId] || DATASETS.find((d) => d.id === atlasId) || DATASET_BY_ID[m.datasetId as DatasetId];
+    if (!ds) return;
+    try {
+      const r = await fetch(`/api/kasperov_runs?dataset=${encodeURIComponent(atlasId)}&id=${encodeURIComponent(m.runId)}`);
+      if (!r.ok) { window.alert("Couldn't load that run."); return; }
+      setViewingRun({ run: await r.json(), meta: m, dataset: ds });
+    } catch { window.alert("Couldn't load that run."); }
+  };
+
   if (!dataset)
     return (
       <>
-        <DatasetPicker onPick={setDataset} onViewRuns={setViewRunsFor} onFinalize={setFinalizeFor} />
-        {viewRunsFor && (
-          <RunListModal
-            dataset={viewRunsFor}
-            onView={(run, m) => { setViewingRun({ run, meta: m, dataset: viewRunsFor }); setViewRunsFor(null); }}
-            onClose={() => setViewRunsFor(null)}
-          />
-        )}
+        <DatasetPicker onPick={setDataset} onOpenRun={openRunFromViz} onFinalize={setFinalizeFor} />
         {finalizeFor && (
           <RunListModal
             dataset={finalizeFor}
@@ -1009,7 +1014,8 @@ const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
 const TREE_W = 840;
 
-function AtlasTree({ atlas, runs, bare }: { atlas: string; runs: any[]; bare?: boolean }) {
+function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: string; runs: any[]; bare?: boolean; interactive?: boolean; onOpenRun?: (m: any) => void }) {
+  const [hover, setHover] = useState<string | null>(null);
   const t = (r: any) => String(r.exportedAt || "");
   // most-recent first (top row); group by clustering fingerprint preserving that recency order, so
   // every node TOP-aligns to its column's newest branch and the very top row is the latest run's
@@ -1027,52 +1033,78 @@ function AtlasTree({ atlas, runs, bare }: { atlas: string; runs: any[]; bare?: b
   const H = TOP + nRows * ROW_H + 8;
   const X = STAGE_X;
   const curve = (x1: number, y1: number, x2: number, y2: number) => `M ${x1} ${y1} C ${(x1 + x2) / 2} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${y2}`;
+  // ── armed (interactive) mode ──────────────────────────────────────────────
+  // When the card is armed via "View Completed Runs", hovering a branch lights that run's WHOLE
+  // connected line — raw → its clustering node → its own branch — and dims every other line; a click
+  // opens the same full expanded run view as the completed-runs list. Off when not armed (glance-only).
+  const hoverGroup = hover ? (pipeline.find((r) => r.runId === hover)?.leafIdFingerprint || "—") : null;
+  const someHover = !!(interactive && hover);
+  const dimOff = (onPath: boolean) => (someHover && !onPath ? 0.2 : 1);   // fade lines not on the hovered path
   return (
     <div style={{ marginTop: bare ? 0 : 14 }}>
-      <div style={{ fontSize: bare ? 11.5 : 13, fontWeight: bare ? 600 : 800, color: bare ? "#9a948c" : "#2b2b2b", marginBottom: bare ? 5 : 2, textTransform: bare ? "none" : "capitalize" }}>{bare ? "" : atlas + " "}{pipeline.length} runs · {gorder.length} clustering{gorder.length === 1 ? "" : "s"}</div>
-      <div style={{ overflowX: "auto", border: "1px solid #eee7df", borderRadius: 10, background: "#fffdfb" }}>
+      <div style={{ fontSize: bare ? 11.5 : 13, fontWeight: bare ? 600 : 800, color: bare ? "#9a948c" : "#2b2b2b", marginBottom: bare ? 5 : 2, textTransform: bare ? "none" : "capitalize" }}>
+        {bare ? "" : atlas + " "}{pipeline.length} runs · {gorder.length} clustering{gorder.length === 1 ? "" : "s"}
+        {interactive ? <span style={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}> · hover a branch to trace it, click to open</span> : null}
+      </div>
+      <div style={{ overflowX: "auto", border: `1px solid ${interactive ? "#d8b45a" : "#eee7df"}`, borderRadius: 10, background: interactive ? "#fffdf5" : "#fffdfb", boxShadow: interactive ? "0 0 0 2px rgba(216,180,90,0.22)" : "none", transition: "box-shadow .15s, border-color .15s" }}>
         <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
           {/* per-atlas stage-header row, each title tinted to its column's node colour */}
           {STAGE_LABELS.map(([k, lab]) => <text key={"h" + k} x={STAGE_X[k]} y={16} fontSize={10} fontWeight={800} textAnchor="middle" fill={STAGE_COLOR[k]} style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
           <line x1={8} y1={HEADER_H} x2={TREE_W - 8} y2={HEADER_H} stroke="#efe8dd" strokeWidth={1} />
-          {gorder.map((k) => <path key={"rc" + k} d={curve(X.raw + 6, rawY, X.cluster, yOf(groupTop[k]))} stroke="#e0d8c8" strokeWidth={1.4} fill="none" />)}
-          {gorder.map((k) => groups[k].map((r) => <path key={"cl" + r.runId} d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, yOf(rowOf[r.runId]))} stroke="#e6ded0" strokeWidth={1.1} fill="none" />))}
+          {/* raw → clustering curves (one per clustering); lit when the hovered run belongs to that clustering */}
+          {gorder.map((k) => { const onP = hoverGroup === k; return <path key={"rc" + k} d={curve(X.raw + 6, rawY, X.cluster, yOf(groupTop[k]))} stroke={onP ? STAGE_COLOR.cluster : "#e0d8c8"} strokeWidth={onP ? 2.3 : 1.4} fill="none" opacity={dimOff(onP)} />; })}
           {pipeline.map((r) => {
             const y = yOf(rowOf[r.runId]);
+            const k = r.leafIdFingerprint || "—";
             const sc = r.scoreable !== false;
             const sMeta = Number(r.nNodes) > 0, sJudge = Number(r.nScored) > 0 || r.hasGroundTruth;
             const lastX = sJudge ? X.judge : sMeta ? X.meta : X.label;
-            const lineCol = sc ? "#b6ddca" : "#e0dacf";
+            const onP = hover === r.runId;
+            const active = !!(interactive && onP);
+            const lineCol = active ? (sc ? "#2f8f63" : "#b3a687") : (sc ? "#b6ddca" : "#e0dacf");
             const dot = (cx: number, stage: string, count?: any) => (
               <g key={"d" + cx}>
-                <circle cx={cx} cy={y} r={4} fill={sc ? STAGE_COLOR[stage] : "#c4bdb1"} stroke="#fff" strokeWidth={1} />
-                {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill="#9a948c">{count}</text> : null}
+                <circle cx={cx} cy={y} r={active ? 5 : 4} fill={sc ? STAGE_COLOR[stage] : "#c4bdb1"} stroke="#fff" strokeWidth={active ? 1.4 : 1} />
+                {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}</text> : null}
               </g>
             );
             const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
             return (
-              <g key={"run" + r.runId}>
-                <title>{`${r.runId}${r.note ? "\n" + r.note : ""}`}</title>
-                <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={2.4} strokeLinecap="round" />
+              <g key={"run" + r.runId}
+                onMouseEnter={interactive ? () => setHover(r.runId) : undefined}
+                onMouseLeave={interactive ? () => setHover(null) : undefined}
+                onClick={interactive && onOpenRun ? () => onOpenRun(r) : undefined}
+                style={{ cursor: interactive ? "pointer" : "default" }}
+                opacity={dimOff(onP)}>
+                <title>{`${r.runId}${r.note ? "\n" + r.note : ""}${interactive ? "\n\nClick to open the full run view" : ""}`}</title>
+                {/* fat transparent hit-area so the whole branch (curve + line + label) is easy to grab */}
+                {interactive ? <path d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, y)} stroke="transparent" strokeWidth={13} fill="none" /> : null}
+                {interactive ? <rect x={X.cluster} y={y - 9} width={TREE_W - X.cluster - 6} height={18} fill="transparent" /> : null}
+                {/* clustering → run curve */}
+                <path d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, y)} stroke={active ? "#bcd6c8" : "#e6ded0"} strokeWidth={active ? 1.8 : 1.1} fill="none" />
+                <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={active ? 3.3 : 2.4} strokeLinecap="round" />
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? dot(X.judge, "judge", r.nScored ?? "✓") : null}
-                <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fill="#6b655d">{label}</text>
+                <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={active ? 700 : 400} fill={active ? "#2b2b2b" : "#6b655d"}>{label}</text>
               </g>
             );
           })}
-          {/* clustering nodes — hollow (gold ring, open centre), top-aligned to their newest run */}
-          {gorder.map((k) => <g key={"cn" + k}><circle cx={X.cluster} cy={yOf(groupTop[k])} r={5} fill="#fff" stroke={STAGE_COLOR.cluster} strokeWidth={1.7} /><text x={X.cluster} y={yOf(groupTop[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>)}
-          {/* raw node — semi-hollow (amber fill, gold ring), top row */}
-          <g><circle cx={X.raw} cy={rawY} r={6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={1.8} /><text x={X.raw} y={rawY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
+          {/* clustering nodes — hollow (gold ring), top-aligned to their newest run; lit on hovered path */}
+          {gorder.map((k) => { const onP = hoverGroup === k; return <g key={"cn" + k} opacity={dimOff(onP)}><circle cx={X.cluster} cy={yOf(groupTop[k])} r={onP ? 6 : 5} fill={onP ? "#fff6df" : "#fff"} stroke={STAGE_COLOR.cluster} strokeWidth={onP ? 2.2 : 1.7} /><text x={X.cluster} y={yOf(groupTop[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>; })}
+          {/* raw node — semi-hollow (amber fill, gold ring), top row; brightens whenever a branch is traced */}
+          <g><circle cx={X.raw} cy={rawY} r={someHover ? 7 : 6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={someHover ? 2.3 : 1.8} /><text x={X.raw} y={rawY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
         </svg>
       </div>
     </div>
   );
 }
-function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: DatasetDef) => void; onViewRuns: (d: DatasetDef) => void; onFinalize: (d: DatasetDef) => void }) {
+function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetDef) => void; onOpenRun: (m: any) => void; onFinalize: (d: DatasetDef) => void }) {
   // the run-history tree lives right in each card now — fetch every run once, group by atlas.
   const [runsByAtlas, setRunsByAtlas] = useState<Record<string, any[]>>({});
+  // "View Completed Runs" arms this atlas's tree instead of opening a modal: the branches become
+  // hover-traceable + clickable, and a click opens the same full expanded run view.
+  const [armed, setArmed] = useState<string | null>(null);
   useEffect(() => {
     let alive = true;
     fetch("/api/kasperov_runs?all=1").then((r) => r.json()).then((d) => {
@@ -1130,7 +1162,19 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
                       <button onClick={() => onFinalize(d)} title={`Finalize a labelled ${d.name} run — run the Meta-Reasoner live to consolidate its leaves`} style={{ alignSelf: "stretch", background: "#0891b2", color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋＋ META-REASONER</button>
-                      <button onClick={() => onViewRuns(d)} title={`Browse completed ${d.name} runs (read-only)`} style={{ alignSelf: "stretch", background: "#fff", color: ACCENT, border: `1px solid ${ACCENT}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: "pointer" }}>▤ VIEW COMPLETED RUNS</button>
+                      {(() => {
+                        const on = armed === atlasId;
+                        const hasRuns = atlasRuns.length > 0;
+                        return (
+                          <button
+                            onClick={() => setArmed(on ? null : atlasId)}
+                            disabled={!hasRuns}
+                            title={hasRuns ? `Browse completed ${d.name} runs — trace a branch on the tree, then click to open it` : "No completed runs yet"}
+                            style={{ alignSelf: "stretch", background: on ? ACCENT : "#fff", color: on ? "#fff" : (hasRuns ? ACCENT : "#c4bdb1"), border: `1px solid ${on ? ACCENT : (hasRuns ? ACCENT : "#e0dacf")}`, borderRadius: 9, padding: "9px 0", fontSize: 12.5, fontWeight: 700, letterSpacing: 0.5, cursor: hasRuns ? "pointer" : "not-allowed" }}>
+                            {on ? "✕ DONE BROWSING" : "▤ VIEW COMPLETED RUNS"}
+                          </button>
+                        );
+                      })()}
                     </div>
                   )}
                 </div>
@@ -1138,7 +1182,7 @@ function DatasetPicker({ onPick, onViewRuns, onFinalize }: { onPick: (d: Dataset
                 {/* content area — this atlas's run-history tree (replaces the old description + stats) */}
                 <div style={{ flex: 1, minWidth: 0 }}>
                   {atlasRuns.length
-                    ? <AtlasTree atlas={atlasId} runs={atlasRuns} bare />
+                    ? <AtlasTree atlas={atlasId} runs={atlasRuns} bare interactive={armed === atlasId} onOpenRun={onOpenRun} />
                     : <div style={{ fontSize: 12.5, color: "#b0a89e", fontStyle: "italic", padding: "18px 4px" }}>No runs yet — start one with ＋ NEW RUN.</div>}
                 </div>
               </div>
