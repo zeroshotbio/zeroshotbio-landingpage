@@ -157,11 +157,13 @@ function HarnessBadge({ id }: { id: string }) {
   const h = DATASET_HARNESS[id];
   if (!h) return null;
   const base = { fontSize: 10, fontWeight: 700, letterSpacing: 0.3, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" as const };
+  // Both harnesses are gold-family (matches the existing run-list pills); Hand-Blessed is the brighter
+  // amber, Port a softer olive-gold, so they read as two shades of the same "golden" lineage.
   const style = h.blessed
-    ? { ...base, color: "#7c5e10", background: "#fdf0c9", border: "1px solid #e8c96a" }
+    ? { ...base, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d" }
     : h.pending
-    ? { ...base, color: "#64748b", background: "#f8fafc", border: "1px dashed #cbd5e1", opacity: 0.8 }
-    : { ...base, color: "#475569", background: "#f1f5f9", border: "1px solid #cbd5e1" };
+    ? { ...base, color: "#7c5e10", background: "#fdf6d8", border: "1px dashed #e8cf6b", opacity: 0.72 }
+    : { ...base, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b" };
   const title = h.blessed
     ? "ZSCAPE reference — live ZFIN/ZFA/GO web-search, hand-validated. The pipeline's ground-of-truth, not the deliverable harness."
     : "The deliverable harness — precomputed structured DEG table (same pipeline, no live search)." + (h.pending ? " Not yet run on this dataset." : "");
@@ -1051,6 +1053,12 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
   // every node TOP-aligns to its column's newest branch and the very top row is the latest run's
   // full raw→…→judge path. Rows keep uniform spacing; nodes are top-adjusted, not centred.
   const pipeline = runs.filter((r) => r.recordType !== "dev-effort").sort((a, b) => t(b).localeCompare(t(a)));
+  // The ONE golden-harness provenance run for this atlas: the fullest run stamped zscape-gold / zscape-port
+  // (the deliverable, not a smoke/dev pass). Highlighted gold in the tree. Purely display-derived from meta.
+  const ghRuns = pipeline.filter((r) => r.harness?.version === "zscape-gold" || r.harness?.version === "zscape-port");
+  const goldenRunId: string | null = ghRuns.length
+    ? ghRuns.reduce((a, b) => ((Number(b.nLabelled) || 0) > (Number(a.nLabelled) || 0) ? b : a)).runId
+    : null;
   const groups: Record<string, any[]> = {}; const gorder: string[] = [];
   pipeline.forEach((r) => { const k = r.leafIdFingerprint || "—"; if (!groups[k]) { groups[k] = []; gorder.push(k); } groups[k].push(r); });
   const rowOf: Record<string, number> = {}; const groupTop: Record<string, number> = {};
@@ -1098,7 +1106,8 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}</text> : null}
               </g>
             );
-            const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
+            const isGolden = r.runId === goldenRunId;
+            const label = `${isGolden ? "★ " : ""}${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
             return (
               <g key={"run" + r.runId}
                 onMouseEnter={interactive ? () => setHover(r.runId) : undefined}
@@ -1116,7 +1125,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? dot(X.judge, "judge", r.nScored ?? "✓") : null}
-                <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={active ? 700 : 400} fill={active ? "#2b2b2b" : "#6b655d"}>{label}</text>
+                <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
               </g>
             );
           })}
