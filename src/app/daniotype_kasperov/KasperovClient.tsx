@@ -141,6 +141,32 @@ const DATASETS: DatasetDef[] = [
   },
 ];
 const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Record<DatasetId, DatasetDef>;
+
+// Display-layer harness badge (slug→name lookup). Reflects which harness produced each atlas
+// (or will run it). Keyed by dataset id for the pre-run chooser; NO on-disk harness slug is changed.
+// zscape-gold → "Golden Harness, Hand-Blessed" · zscape-port → "Golden Harness, Port".
+const DATASET_HARNESS: Record<string, { text: string; blessed?: boolean; pending?: boolean }> = {
+  zscape: { text: "Golden Harness, Hand-Blessed", blessed: true },
+  chemfish: { text: "Golden Harness, Port" },
+  daniocell: { text: "Golden Harness, Port" },
+  minifin: { text: "Golden Harness, Port (pending run)", pending: true },
+  megafin_parse: { text: "Golden Harness, Port (pending run)", pending: true },
+  // megafin (Manual/Lawson): intentionally no badge — not run through the Port harness.
+};
+function HarnessBadge({ id }: { id: string }) {
+  const h = DATASET_HARNESS[id];
+  if (!h) return null;
+  const base = { fontSize: 10, fontWeight: 700, letterSpacing: 0.3, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" as const };
+  const style = h.blessed
+    ? { ...base, color: "#7c5e10", background: "#fdf0c9", border: "1px solid #e8c96a" }
+    : h.pending
+    ? { ...base, color: "#64748b", background: "#f8fafc", border: "1px dashed #cbd5e1", opacity: 0.8 }
+    : { ...base, color: "#475569", background: "#f1f5f9", border: "1px solid #cbd5e1" };
+  const title = h.blessed
+    ? "ZSCAPE reference — live ZFIN/ZFA/GO web-search, hand-validated. The pipeline's ground-of-truth, not the deliverable harness."
+    : "The deliverable harness — precomputed structured DEG table (same pipeline, no live search)." + (h.pending ? " Not yet run on this dataset." : "");
+  return <span style={style} title={title}>{h.text}</span>;
+}
 // Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
 // (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
 // its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
@@ -1215,6 +1241,7 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
                     {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
+                    <HarnessBadge id={d.id} />
                   </div>
                   {ready && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>

@@ -95,6 +95,7 @@ export interface DatasetDef {
   schemaBasis?: string; // stamped onto runs of a non-default partition (e.g. native-schema)
   partitionKey?: string; // which partition is currently active
   partitions?: DatasetPartition[]; // selectable clustering partitions (chooser in the "1. Clustering" screen)
+  harness?: string; // display-layer harness badge (slug→name); reflects which harness produced/will run this atlas — no on-disk slug is stored here
 }
 
 export type Usage = Record<string, { in: number; out: number }>; // tokens keyed by model id
