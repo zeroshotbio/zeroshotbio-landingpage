@@ -26,8 +26,14 @@ body{margin:0;background:var(--paper);color:var(--ink);
  font-size:10.5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--accent);
  border:1px solid var(--accent);border-radius:99px;padding:2px 9px;margin-left:10px;vertical-align:middle}
 h1{font-size:34px;font-weight:700;line-height:1.12;margin:10px 0 8px}
-.frame{color:#555;font-size:16.5px;line-height:1.55;margin:0 0 30px;max-width:760px}
+.frame{color:#555;font-size:16.5px;line-height:1.55;margin:0 0 22px;max-width:760px}
 .frame b{color:var(--ink);font-weight:600}
+.intro{max-width:760px;margin:0 0 30px}
+.intro p{color:#444;font-size:15.5px;line-height:1.62;margin:0 0 12px}
+.intro p:last-child{margin-bottom:0}
+.intro b{color:var(--ink);font-weight:600}
+.intro .lead{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;
+ letter-spacing:.5px;text-transform:uppercase;color:var(--accent);font-weight:700;margin-bottom:8px}
 .verdict{background:var(--goodbg);border:1px solid var(--goodline);border-left:4px solid var(--good);
  border-radius:12px;padding:16px 20px;margin:0 0 30px}
 .verdict h2{margin:0 0 6px;font-size:17px;font-weight:700;color:var(--good)}
@@ -71,6 +77,27 @@ figcaption{color:var(--mut);font-size:13px;line-height:1.5;margin-top:10px}
   <p class="frame">MiniFin <b>comp-8</b> (entangled endoderm: Ionocyte / Goblet), frozen
   <b>1,537-cell</b> membership. Both arms branch from the <b>identical</b> coarse-Leiden-0.1 compartment set —
   only the gene-selection step differs. GT scored on the 176 control (DMSO) + labelled cells at the end.</p>
+
+  <div class="intro">
+    <div class="lead">the concern &amp; how we tested it</div>
+    <p><b>Darien's worry, in plain English:</b> when we build our cell-type maps we first pick the
+    ~2,000 most variable genes ("highly variable genes", HVG) and cluster on those alone. Darien's
+    concern was that this step might be doing cosmetic work rather than biological work — that HVG
+    selection makes the UMAP plots <em>look</em> tidier and better-separated without actually recovering
+    any more real cell-type structure. If true, the crisp pictures would be flattering us, not informing us.</p>
+    <p><b>How we put it to the test:</b> we took a single, deliberately hard case — MiniFin compartment 8,
+    where two endoderm cell types (Ionocytes and Goblet cells) sit almost 50/50 and are genuinely easy to
+    confuse. We froze that exact set of 1,537 cells and ran it down two identical pipelines that differ in
+    <em>one</em> step only. <b>Arm A</b> does the usual HVG pick (2,000 genes); <b>Arm B</b> skips it and
+    keeps all ~24,000 expressed genes. Everything downstream — PCA, neighbor graph, Leiden clustering at
+    resolution 0.8 — is held identical, so any difference is attributable to HVG and nothing else.</p>
+    <p><b>What we measured, kept separate on purpose:</b> two things that are easy to conflate. First,
+    <em>how crisp does it look</em> — silhouette and Davies–Bouldin scores on the embedding geometry.
+    Second, <em>did we actually recover the biology</em> — purity of each cluster against ground-truth
+    labels voted from the untreated (DMSO control) cells. The whole test hinges on reading those two
+    numbers side by side: if HVG lifts the "looks crisp" score but leaves the "recovered the tissue"
+    score flat, Darien is right.</p>
+  </div>
 
   <div class="verdict">
     <h2>Verdict — Darien confirmed ✅</h2>
