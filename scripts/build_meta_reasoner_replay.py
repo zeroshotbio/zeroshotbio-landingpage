@@ -29,13 +29,39 @@ with open(os.path.join(SRC, "events.jsonl")) as f:
         e = json.loads(line)
         events[(str(e.get("leaf")), e.get("step"))] = e
 
-# canonical step order per leaf (matches the recorded 3-call loop)
-STEP_ORDER = ["research#1", "reason#r0", "reason#binning"]
-STEP_TITLE = {
-    "research#1":     "Researcher · evidence",
-    "reason#r0":      "Reasoner · de-novo conclusion",
-    "reason#binning": "Reasoner · menu-exposed binning",
-}
+# Step ordering — GENERIC over v1.2's variable reason-round structure (call_order_v2).
+# v1.2 run_leaf_v2 emits research#1 then a VARIABLE number of reason#r0..rN rounds (+ reason#gate
+# for continuum-abstained leaves), NOT the old fixed [research#1, reason#r0, reason#binning].
+# reason#binning is kept only for back-compat with legacy run_one_cluster prov runs.
+import re as _re
+def _step_sort_key(step):
+    if step.startswith("research"):
+        return (0, 0)
+    if step == "reason#gate":
+        return (1, -1)                       # abstention gate sorts first among reason steps
+    m = _re.match(r"reason#r(\d+)", step)
+    if m:
+        return (1, int(m.group(1)))
+    if step == "reason#binning":
+        return (2, 0)                        # legacy menu-exposed step, if present
+    return (3, 0)
+
+def step_order_for(leaf_id, events):
+    steps = [s for (lid, s) in events.keys() if lid == str(leaf_id)]
+    return sorted(steps, key=_step_sort_key)
+
+def title_of(step):
+    if step.startswith("research"):
+        return "Researcher · evidence"
+    if step == "reason#gate":
+        return "Reasoner · distinctiveness gate (abstain)"
+    m = _re.match(r"reason#r(\d+)", step)
+    if m:
+        return "Reasoner · de-novo conclusion" if m.group(1) == "0" else f"Reasoner · round {m.group(1)}"
+    if step == "reason#binning":
+        return "Reasoner · menu-exposed binning"
+    return step
+STEP_TITLE = {}  # retained symbol for back-compat; titles now via title_of()
 
 def mode_of(step):
     return "research" if step.startswith("research") else "reason"
@@ -44,13 +70,13 @@ leaves_out = []
 for L in run["leaves"]:
     lid = str(L["id"])
     steps_out = []
-    for step_name in STEP_ORDER:
+    for step_name in step_order_for(lid, events):
         ev = events.get((lid, step_name))
         if not ev:
             continue
         steps_out.append({
             "step":       step_name,
-            "title":      STEP_TITLE.get(step_name, step_name),
+            "title":      title_of(step_name),
             "mode":       mode_of(step_name),
             # menu-exposed pass deliberately shows the published GT menu AFTER the
             # de-novo call is locked — flag it so the judge never confuses it with
