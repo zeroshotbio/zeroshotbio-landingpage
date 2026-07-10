@@ -200,6 +200,11 @@ export function normalizeRun(run: AnyRec, consolidation?: AnyRec | null): AnyRec
   if (isObj(consolidation?.operatorProposal)) out.operatorProposal = consolidation!.operatorProposal;
   else if (isObj(run.operatorProposal)) out.operatorProposal = run.operatorProposal;
 
+  // bespoke expert-GT scorecard (kind:"expertGT-4bucket") lives on the CONSOLIDATION run — carry it
+  // through the lineage merge so the Judge tab's two-panel screen renders (else {...run}=labelling drops it).
+  if (isObj(consolidation?.expertGtScorecard)) out.expertGtScorecard = consolidation!.expertGtScorecard;
+  else if (isObj(run.expertGtScorecard)) out.expertGtScorecard = run.expertGtScorecard;
+
   mapProvenance(out, lm, cm);
 
   // keep the raw metadata around (harmless; nothing reads it) but drop nothing.

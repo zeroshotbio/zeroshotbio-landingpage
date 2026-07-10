@@ -178,7 +178,7 @@ const GOLDEN_RUN_BY_ATLAS: Record<string, string> = {
   zscape:    "20260703-050319-9258bd",
   chemfish:  "20260706-025616-26ec7d",
   daniocell: "20260706-025616-182172",
-  minifin:   "20260704-234502-beaeee",   // v1.2; validated node-set = 20260705-002027-a10bb8
+  minifin:   "20260705-002027-a10bb8",   // v1.2 validated node-set (carries full 5-stage grammar; leaf parent = 20260704-234502-beaeee)
   megafin:   "20260705-051439-a10c0a",   // v1.2 leaf; consolidation 20260705-063523-abad22 (spot-check validated)
 };
 // Per-dataset validation-state provenance (display-layer, static strings from the verified GT-scoring results).
@@ -1084,7 +1084,21 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
 // Reads the canonical layer only. X axis = the 5 pipeline stages; each run is a branch that extends
 // from its clustering as far as it actually progressed (labelling → meta-reasoning → fuzzy judging).
 const STAGE_X: Record<string, number> = { raw: 56, cluster: 200, label: 372, meta: 542, judge: 700 };
-const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Fuzzy judging"]];
+const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Judging"]];
+// Per-atlas stage-5 judge KIND — the same column holds two judge types honestly: the GT trio + ZSCAPE
+// run an LLM Fuzzy Judge vs a published menu; MiniFin is scored by a four-bucket Expert-GT crosswalk
+// (a stronger judge); MegaFin has no promoted GT so its judge node stays dark. Surfaced as the judge-dot tooltip.
+const JUDGE_KIND_BY_ATLAS: Record<string, string> = { zscape: "Fuzzy Judge", chemfish: "Fuzzy Judge", daniocell: "Fuzzy Judge", minifin: "Expert-GT (Patrick)", megafin: "" };
+// Finish-line marker — the golden LINEAGE's TRUE final reached stage node (checkered flag = pipeline endpoint,
+// distinct from ★ = golden run). MegaFin honestly ends at META (no promoted GT → no judge flag); the others
+// reach the judged node. Keyed to the run that actually carries that stage (MegaFin's is the abad22 consolidation).
+const FINISH_LINE_BY_ATLAS: Record<string, { runId: string; stage: string }> = {
+  zscape: { runId: "20260703-050319-9258bd", stage: "judge" },
+  chemfish: { runId: "20260706-025616-26ec7d", stage: "judge" },
+  daniocell: { runId: "20260706-025616-182172", stage: "judge" },
+  minifin: { runId: "20260705-002027-a10bb8", stage: "judge" },
+  megafin: { runId: "20260705-063523-abad22", stage: "meta" },
+};
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
 // labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
@@ -1147,6 +1161,21 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}</text> : null}
               </g>
             );
+            // finish-line marker — small checkered flag on the track just before the endpoint dot
+            // ("the pipeline crosses the line"); distinct-but-subtle from the ★ golden badge.
+            const finishFlag = (cx: number) => (
+              <g key="fin" opacity={0.92}>
+                <line x1={cx} y1={y - 8} x2={cx} y2={y + 5} stroke="#3f3a34" strokeWidth={1} />
+                <rect x={cx + 0.6} y={y - 8} width={3} height={3} fill="#3f3a34" />
+                <rect x={cx + 3.6} y={y - 8} width={3} height={3} fill="#fff" stroke="#3f3a34" strokeWidth={0.4} />
+                <rect x={cx + 0.6} y={y - 5} width={3} height={3} fill="#fff" stroke="#3f3a34" strokeWidth={0.4} />
+                <rect x={cx + 3.6} y={y - 5} width={3} height={3} fill="#3f3a34" />
+              </g>
+            );
+            const judgeKind = JUDGE_KIND_BY_ATLAS[atlas] || "Judge";
+            const finish = FINISH_LINE_BY_ATLAS[atlas];
+            const isFinish = !!finish && r.runId === finish.runId && (finish.stage === "judge" ? sJudge : finish.stage === "meta" ? sMeta : true);
+            const finishX = finish ? STAGE_X[finish.stage] : 0;
             const isGolden = r.runId === goldenRunId;
             const label = `${isGolden ? "★ " : ""}${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
             return (
@@ -1165,7 +1194,8 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={active ? 3.3 : 2.4} strokeLinecap="round" />
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
-                {sJudge ? dot(X.judge, "judge", r.nScored ?? "✓") : null}
+                {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓")}</g> : null}
+                {isFinish ? finishFlag(finishX - 13) : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
               </g>
             );

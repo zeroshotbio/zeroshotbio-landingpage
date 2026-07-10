@@ -18,6 +18,7 @@ import { ConfidenceContent } from "./ConfidencePanel";
 import { ClusteringProvenance, BackfillBadge } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
 import { Scorecard } from "./Scorecard";
+import { ExpertGtScorecard } from "./ExpertGtScorecard";
 import { CompartmentMap, MapViewSwitch, hasCompartments, type MapView } from "./CompartmentMap";
 import { ClusteringExplainer, ZscapeClusteringExplainer, NativeClusteringExplainer, NeutralClusteringExplainer } from "./ClusteringExplainer";
 import { META_REASONER_CONTEXT } from "../../meta_reasoner/metaReasonerContext";
@@ -867,6 +868,10 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
+      {/* Bespoke expert-GT two-panel — MiniFin judged vs Patrick's sealed expert GT (aggregate reshape,
+          kind:"expertGT-4bucket"). Renders as the PRIMARY judge screen; the standard merged-node views
+          follow as supporting detail. */}
+      {run?.expertGtScorecard?.kind === "expertGT-4bucket" ? <ExpertGtScorecard card={run.expertGtScorecard} /> : null}
       {/* PRIMARY vis: the merged-node scorecard (GT + de-novo + menu-exposed per tier). When a run has
           a consolidation but is NOT yet scored, fall to FinalJudgePanel (which carries the Score button). */}
       {run?.finalJudge?.rows?.length ? (
