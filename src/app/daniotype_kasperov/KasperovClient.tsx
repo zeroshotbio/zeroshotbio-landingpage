@@ -199,7 +199,7 @@ function ValidationLine({ id }: { id: string }) {
 }
 // OFF by default — Steven decides if the picker is the right home for this public-facing framing (else it lives
 // in the spec/README only). Flip to true to enable the atlas-grid footer.
-const SHOW_LEARNING_NOTE = false;
+const SHOW_LEARNING_NOTE = true;
 // Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
 // (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
 // its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
