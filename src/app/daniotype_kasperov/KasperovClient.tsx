@@ -144,31 +144,43 @@ const DATASET_BY_ID = Object.fromEntries(DATASETS.map((d) => [d.id, d])) as Reco
 
 // Display-layer harness badge (slug→name lookup). Reflects which harness produced each atlas
 // (or will run it). Keyed by dataset id for the pre-run chooser; NO on-disk harness slug is changed.
-// zscape-gold → "Golden Harness, Hand-Blessed" · zscape-port → "Golden Harness, Port".
-const DATASET_HARNESS: Record<string, { text: string; blessed?: boolean; pending?: boolean }> = {
-  zscape: { text: "Golden Harness, Hand-Blessed", blessed: true },
-  chemfish: { text: "Golden Harness, Port" },
-  daniocell: { text: "Golden Harness, Port" },
-  minifin: { text: "Golden Harness, Port (pending run)", pending: true },
-  megafin_parse: { text: "Golden Harness, Port (pending run)", pending: true },
-  // megafin (Manual/Lawson): intentionally no badge — not run through the Port harness.
+// Per-dataset GOLDEN RUN (HARNESS_SPEC v2): the best validated run for each atlas, tagged by its harness.
+// "golden" is per-dataset, NOT one canonical harness. blessed = live-search family (zscape-gold / run_leaf_v2 v1.2);
+// port = precomputed-DEG deliverable; spotcheck = validated only on a narrow expert-GT (MegaFin's 4 commercial sets).
+const DATASET_HARNESS: Record<string, { text: string; blessed?: boolean; spotcheck?: boolean }> = {
+  zscape: { text: "Golden run · Hand-Blessed", blessed: true },
+  chemfish: { text: "Golden run · Port" },
+  daniocell: { text: "Golden run · Port" },
+  minifin: { text: "Golden run · v1.2 (expert-GT validated)", blessed: true },
+  megafin_parse: { text: "Deliverable · v1.2 (spot-check validated)", spotcheck: true },
+  // megafin (Manual/Lawson): intentionally no badge.
 };
 function HarnessBadge({ id }: { id: string }) {
   const h = DATASET_HARNESS[id];
   if (!h) return null;
   const base = { fontSize: 10, fontWeight: 700, letterSpacing: 0.3, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" as const };
-  // Both harnesses are gold-family (matches the existing run-list pills); Hand-Blessed is the brighter
-  // amber, Port a softer olive-gold, so they read as two shades of the same "golden" lineage.
+  // gold-family (matches the run-list pills): blessed = brighter amber (live-search family), port = olive-gold,
+  // spotcheck = olive-gold dashed (narrow-GT validation, broad correctness inherited).
   const style = h.blessed
     ? { ...base, color: "#92400e", background: "#fef3c7", border: "1px solid #fcd34d" }
-    : h.pending
-    ? { ...base, color: "#7c5e10", background: "#fdf6d8", border: "1px dashed #e8cf6b", opacity: 0.72 }
+    : h.spotcheck
+    ? { ...base, color: "#7c5e10", background: "#fdf6d8", border: "1px dashed #e8cf6b", opacity: 0.85 }
     : { ...base, color: "#7c5e10", background: "#fdf6d8", border: "1px solid #e8cf6b" };
   const title = h.blessed
-    ? "ZSCAPE reference — live ZFIN/ZFA/GO web-search, hand-validated. The pipeline's ground-of-truth, not the deliverable harness."
-    : "The deliverable harness — precomputed structured DEG table (same pipeline, no live search)." + (h.pending ? " Not yet run on this dataset." : "");
+    ? "Live-search family (ZFIN/ZFA/GO web-search grounding). The atlas's best validated golden run."
+    : h.spotcheck
+    ? "Deliverable (run_leaf_v2 v1.2). Directly validated only on 4 commercial-core lineages (~9.5% coverage); broad correctness inherits from MiniFin."
+    : "Deliverable harness (zscape-port). The atlas's best validated golden run — node + leaf scorecards.";
   return <span style={style} title={title}>{h.text}</span>;
 }
+// The best VALIDATED run per atlas (HARNESS_SPEC v2). ★-highlighted in each atlas's run tree; superseded by a beat.
+const GOLDEN_RUN_BY_ATLAS: Record<string, string> = {
+  zscape:    "20260703-050319-9258bd",
+  chemfish:  "20260706-025616-26ec7d",
+  daniocell: "20260706-025616-182172",
+  minifin:   "20260704-234502-beaeee",   // v1.2; validated node-set = 20260705-002027-a10bb8
+  megafin:   "20260705-051439-a10c0a",   // v1.2 leaf; consolidation 20260705-063523-abad22 (spot-check validated)
+};
 // Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
 // (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
 // its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
@@ -1053,12 +1065,9 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
   // every node TOP-aligns to its column's newest branch and the very top row is the latest run's
   // full raw→…→judge path. Rows keep uniform spacing; nodes are top-adjusted, not centred.
   const pipeline = runs.filter((r) => r.recordType !== "dev-effort").sort((a, b) => t(b).localeCompare(t(a)));
-  // The ONE golden-harness provenance run for this atlas: the fullest run stamped zscape-gold / zscape-port
-  // (the deliverable, not a smoke/dev pass). Highlighted gold in the tree. Purely display-derived from meta.
-  const ghRuns = pipeline.filter((r) => r.harness?.version === "zscape-gold" || r.harness?.version === "zscape-port");
-  const goldenRunId: string | null = ghRuns.length
-    ? ghRuns.reduce((a, b) => ((Number(b.nLabelled) || 0) > (Number(a.nLabelled) || 0) ? b : a)).runId
-    : null;
+  // The ONE golden run for this atlas — explicit per-dataset map (HARNESS_SPEC v2), since golden is per-dataset
+  // and MiniFin/MegaFin's v1.2 runs carry no harness.version stamp. ★-highlighted gold in the tree.
+  const goldenRunId: string | null = GOLDEN_RUN_BY_ATLAS[atlas] ?? null;
   const groups: Record<string, any[]> = {}; const gorder: string[] = [];
   pipeline.forEach((r) => { const k = r.leafIdFingerprint || "—"; if (!groups[k]) { groups[k] = []; gorder.push(k); } groups[k].push(r); });
   const rowOf: Record<string, number> = {}; const groupTop: Record<string, number> = {};
