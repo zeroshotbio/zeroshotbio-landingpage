@@ -181,6 +181,25 @@ const GOLDEN_RUN_BY_ATLAS: Record<string, string> = {
   minifin:   "20260704-234502-beaeee",   // v1.2; validated node-set = 20260705-002027-a10bb8
   megafin:   "20260705-051439-a10c0a",   // v1.2 leaf; consolidation 20260705-063523-abad22 (spot-check validated)
 };
+// Per-dataset validation-state provenance (display-layer, static strings from the verified GT-scoring results).
+// Muted sub-label under the golden badge. MegaFin lines carry the honest "spot-check / inherited" framing —
+// MegaFin is NOT broadly validated on its own GT.
+const DATASET_VALIDATION: Record<string, string> = {
+  zscape: "Golden run · Hand-Blessed (live-search) · GT-scored",
+  chemfish: "Golden run · Port · GT-scored (2-tier native GT)",
+  daniocell: "Golden run · Port · GT-scored",
+  minifin: "Golden run · v1.2 · validated vs Patrick expert GT — 0.989 lenient / 0.587 strict-fine, node-consolidation validated, 0 over-merge",
+  megafin_parse: "Deliverable · v1.2 · commercial-core spot-check (4 sets, 9.5% coverage); broad correctness inherited from MiniFin",
+  megafin: "Labelled (v1.2, leaves) · not consolidated/scored",
+};
+function ValidationLine({ id }: { id: string }) {
+  const t = DATASET_VALIDATION[id];
+  if (!t) return null;
+  return <div title={t} style={{ fontSize: 10.5, color: "#8a847b", lineHeight: 1.35, maxWidth: 200 }}>{t}</div>;
+}
+// OFF by default — Steven decides if the picker is the right home for this public-facing framing (else it lives
+// in the spec/README only). Flip to true to enable the atlas-grid footer.
+const SHOW_LEARNING_NOTE = false;
 // Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
 // (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
 // its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
@@ -1261,6 +1280,7 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
                     {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
                     <HarnessBadge id={d.id} />
                   </div>
+                  <ValidationLine id={d.id} />
                   {ready && (
                     <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                       <button onClick={() => onPick(d)} title={`Start a new ${d.name} run (clustering → model → harness → chat)`} style={{ alignSelf: "stretch", background: ACCENT, color: "#fff", border: "none", borderRadius: 9, padding: "10px 0", fontSize: 13.5, fontWeight: 800, letterSpacing: 1, cursor: "pointer" }}>＋ NEW RUN</button>
@@ -1303,6 +1323,12 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
               <div style={gridStyle}>{gtDs.map(renderCard)}</div>
               <div style={{ ...hdr, marginTop: 34 }}>Internal atlases</div>
               <div style={gridStyle}>{internalDs.map(renderCard)}</div>
+              {SHOW_LEARNING_NOTE && (
+                <div style={{ marginTop: 22, fontSize: 11.5, color: "#8a847b", lineHeight: 1.5, maxWidth: 720 }}>
+                  Fine-tier ceiling characterized: pipeline validated on held expert GT; residual fine-tier gap is
+                  CNS-positional (marker-unresolvable), not a pipeline defect. Model / abstention / clustering levers tested.
+                </div>
+              )}
             </>
           );
         })()}
