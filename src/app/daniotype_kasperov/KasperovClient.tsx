@@ -200,6 +200,19 @@ function ValidationLine({ id }: { id: string }) {
 // OFF by default — Steven decides if the picker is the right home for this public-facing framing (else it lives
 // in the spec/README only). Flip to true to enable the atlas-grid footer.
 const SHOW_LEARNING_NOTE = true;
+
+// MegaFin disambiguation: Parse (ENSDARG) and Manual/Lawson (ZFIN) are two DISTINCT builds, but every megafin run
+// is canonically stamped atlasId="megafin", so both chooser cards would otherwise show the SAME conflated run list
+// (e.g. the Manual card displaying the Parse 342-leaf run). Partition by the run's real datasetId (its dir):
+//   Parse family  → megafin_parse / megafin_phaseA_labelling / megafin_final_labelling
+//   Manual/Lawson → megafin
+// Display-layer only — no run objects or atlasIds are changed on disk.
+const MEGAFIN_PARSE_DS = new Set(["megafin_parse", "megafin_phaseA_labelling", "megafin_final_labelling"]);
+function runsForCard(cardId: string, runs: any[]): any[] {
+  if (cardId === "megafin_parse") return runs.filter((r) => MEGAFIN_PARSE_DS.has(r?.datasetId));
+  if (cardId === "megafin") return runs.filter((r) => r?.datasetId === "megafin");
+  return runs;
+}
 // Card grid order: the three GT benchmarks first, then Parse/Manual MegaFin, MiniFin.
 // (The Phase-0→A→B fine-labelled deliverables are NOT separate cards — each surfaces in
 // its base dataset's "View Completed Runs" list, appended by the kasperov_runs proxy.)
@@ -1253,7 +1266,7 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
             const f: any = FACTS[d.id];
             const isGt = f?.role === "gt";
             const atlasId = atlasOfCard(d.id);
-            const atlasRuns = runsByAtlas[atlasId] || [];
+            const atlasRuns = runsForCard(d.id, runsByAtlas[atlasId] || []);
             return (
               <div
                 key={d.id}
