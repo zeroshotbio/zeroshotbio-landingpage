@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import type { Menu } from "./types";
 
-// A vertical (top-down) tidy-tree of the schema: MiniFin → germ layer → tissue → lineage
-// → (optionally) grounded ZFA term. Dot nodes + smooth cubic-bezier branches, fine text,
-// warm muted palette. Leaf labels hang vertically; pan both axes; snap-zoom slider.
+// A horizontal (left→right) tidy-tree of the schema: MiniFin → germ layer → tissue →
+// lineage → (optionally) grounded ZFA term. Dot nodes + smooth cubic-bezier branches,
+// fine horizontal text labels. Pan freely (scroll both axes); pinch-to-zoom on the
+// trackpad (ctrl+wheel, cursor-anchored). No snapping.
 
 const GERM_ORDER = ["ectoderm", "neural crest", "mesoderm", "endoderm", "germline"];
 const GERM_HUE: Record<string, number> = { ectoderm: 245, "neural crest": 300, mesoderm: 5, endoderm: 45, germline: 175 };
@@ -13,7 +14,6 @@ const BUCKET_HUE: Record<string, number> = {
   anatomical_system: 350, anatomical_system_subtype: 25, organ: 45, multi_tissue_structure: 270, tissue: 205, cell: 150,
 };
 const bucketHue = (b: string) => BUCKET_HUE[b] ?? 220;
-const ZOOM = [0.4, 0.55, 0.7, 0.85, 1, 1.25, 1.5, 2, 3];
 
 type N = {
   id: string; label: string; kind: "root" | "germ" | "tissue" | "lineage" | "term";
@@ -22,8 +22,9 @@ type N = {
 
 export default function SchemaTree({ menu }: { menu: Menu }) {
   const [deep, setDeep] = useState(false);
-  const [zi, setZi] = useState(4); // index into ZOOM (1×)
-  const z = ZOOM[zi];
+  const [zoom, setZoom] = useState(1);
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const pending = useRef<{ left: number; top: number } | null>(null);
 
   const { nodes, links, W, H } = useMemo(() => {
     const termsOf = (pname: string): N[] => {
@@ -48,38 +49,63 @@ export default function SchemaTree({ menu }: { menu: Menu }) {
     });
     const root: N = { id: "root", label: "MiniFin", kind: "root", children: germs, x: 0, y: 0, leaf: false };
 
-    // top-down: depth -> y (rows), leaf order -> x (columns)
-    const LY = deep ? { root: 22, germ: 74, tissue: 150, lineage: 250, term: 380 } : { root: 22, germ: 78, tissue: 168, lineage: 280, term: 0 };
-    const gap = deep ? 12 : 46;
-    const padX = 30;
-    let col = 0;
+    const X = [10, 120, 250, 470, 700]; // depth → x
+    const gap = deep ? 12 : 20;         // vertical spacing between leaves
+    let leaf = 0;
     const place = (n: N, depth: number): number => {
-      n.y = [LY.root, LY.germ, LY.tissue, LY.lineage, LY.term][Math.min(depth, 4)];
-      if (!n.children.length) { n.x = col * gap + padX; col++; return n.x; }
-      const xs = n.children.map((c) => place(c, depth + 1));
-      n.x = (xs[0] + xs[xs.length - 1]) / 2;
-      return n.x;
+      n.x = X[Math.min(depth, X.length - 1)];
+      if (!n.children.length) { n.y = leaf * gap + 24; leaf++; return n.y; }
+      const ys = n.children.map((c) => place(c, depth + 1));
+      n.y = (ys[0] + ys[ys.length - 1]) / 2;
+      return n.y;
     };
     place(root, 0);
 
     const nodes: N[] = []; const links: { a: N; b: N }[] = [];
     const walk = (n: N) => { nodes.push(n); for (const c of n.children) { links.push({ a: n, b: c }); walk(c); } };
     walk(root);
-    const leafLabelPx = deep ? 200 : 130;
-    const W = col * gap + padX * 2;
-    const H = (deep ? LY.term : LY.lineage) + leafLabelPx;
+    const W = (deep ? 700 : 470) + 340;   // node span + room for the right-hand labels
+    const H = leaf * gap + 48;
     return { nodes, links, W, H };
   }, [menu, deep]);
 
-  // vertical cubic-bezier branch (top -> down)
+  // apply the cursor-anchored scroll after a pinch-zoom re-render
+  useLayoutEffect(() => {
+    if (pending.current && wrapRef.current) {
+      wrapRef.current.scrollLeft = pending.current.left;
+      wrapRef.current.scrollTop = pending.current.top;
+      pending.current = null;
+    }
+  }, [zoom]);
+
+  // trackpad pinch = ctrl+wheel; keep the point under the cursor fixed. Plain wheel pans natively.
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      if (!e.ctrlKey) return;
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const vx = e.clientX - rect.left, vy = e.clientY - rect.top;
+      setZoom((old) => {
+        const nz = Math.min(4, Math.max(0.3, old * Math.exp(-e.deltaY * 0.01)));
+        const baseX = (el.scrollLeft + vx) / old, baseY = (el.scrollTop + vy) / old;
+        pending.current = { left: baseX * nz - vx, top: baseY * nz - vy };
+        return nz;
+      });
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  }, []);
+
   const link = (a: N, b: N) => {
-    const my = (a.y + b.y) / 2;
-    return `M${a.x},${a.y} C${a.x},${my} ${b.x},${my} ${b.x},${b.y}`;
+    const mx = (a.x + b.x) / 2;
+    return `M${a.x},${a.y} C${mx},${a.y} ${mx},${b.y} ${b.x},${b.y}`;
   };
   const fill = (n: N) =>
     n.kind === "root" ? "#8a847b" : n.hue != null ? `hsl(${n.hue} 55% 50%)` : n.kind === "tissue" ? "#b0a89e" : "#6b6b6b";
-  const r = (n: N) => (n.kind === "root" ? 4 : n.kind === "germ" ? 3.4 : n.kind === "term" ? 1.6 : 2.4);
-  const fs = (n: N) => (n.kind === "root" ? 11 : n.kind === "germ" ? 10 : n.kind === "tissue" ? 8.5 : n.kind === "lineage" ? 8 : 6);
+  const rad = (n: N) => (n.kind === "root" ? 4 : n.kind === "germ" ? 3.4 : n.kind === "term" ? 1.6 : 2.4);
+  const fs = (n: N) => (n.kind === "root" ? 11 : n.kind === "germ" ? 10 : n.kind === "tissue" ? 8.5 : n.kind === "lineage" ? 8 : 6.5);
 
   return (
     <section className="mt-8">
@@ -87,40 +113,28 @@ export default function SchemaTree({ menu }: { menu: Menu }) {
         <h2 className="text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
           schema tree <span className="normal-case text-slate-400">— germ layer → tissue → lineage{deep ? " → ZFA term" : ""}</span>
         </h2>
-        <div className="flex items-center gap-3">
-          <label className="flex items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400">
-            zoom
-            <input type="range" min={0} max={ZOOM.length - 1} step={1} value={zi} onChange={(e) => setZi(Number(e.target.value))} className="w-28 accent-slate-500" />
-            <span className="w-8 tabular-nums">{z}×</span>
-          </label>
-          <button onClick={() => setDeep((d) => !d)} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
-            {deep ? "collapse to lineages" : "expand to ZFA terms"}
-          </button>
-        </div>
+        <button onClick={() => setDeep((d) => !d)} className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-medium text-slate-600 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-300 dark:hover:bg-slate-700">
+          {deep ? "collapse to lineages" : "expand to ZFA terms"}
+        </button>
       </div>
-      <div className="max-h-[78vh] overflow-auto rounded-lg border border-slate-200 bg-[hsl(40,30%,99%)] dark:border-slate-700 dark:bg-slate-950">
-        <svg viewBox={`0 0 ${W} ${H}`} width={W * z} height={H * z} className="block" style={{ minWidth: W * z }}>
+      <div ref={wrapRef} className="h-[80vh] overflow-auto overscroll-contain rounded-lg border border-slate-200 bg-[hsl(40,30%,99%)] dark:border-slate-700 dark:bg-slate-950">
+        <svg viewBox={`0 0 ${W} ${H}`} width={W * zoom} height={H * zoom} className="block" style={{ minWidth: W * zoom }}>
           {links.map((l, i) => (
             <path key={i} d={link(l.a, l.b)} fill="none" stroke="currentColor" className="text-slate-300 dark:text-slate-700" strokeWidth={0.8} opacity={0.9} />
           ))}
           {nodes.map((n) => (
             <g key={n.id}>
-              <circle cx={n.x} cy={n.y} r={r(n)} fill={fill(n)} />
-              {n.leaf ? (
-                <text x={n.x} y={n.y + r(n) + 3} fontSize={fs(n)} transform={`rotate(90 ${n.x} ${n.y + r(n) + 3})`} className="fill-slate-600 dark:fill-slate-300" style={{ fontWeight: n.kind === "lineage" ? 500 : 400 }}>
-                  {n.label}{n.kind === "lineage" && n.sub ? ` · ${n.sub}` : ""}
-                </text>
-              ) : (
-                <text x={n.x} y={n.y - r(n) - 3} fontSize={fs(n)} textAnchor="middle" className="fill-slate-700 dark:fill-slate-200" style={{ fontWeight: n.kind === "root" || n.kind === "germ" ? 700 : 600 }}>
-                  {n.label}
-                </text>
-              )}
+              <circle cx={n.x} cy={n.y} r={rad(n)} fill={fill(n)} />
+              <text x={n.x + rad(n) + 4} y={n.y + fs(n) * 0.34} fontSize={fs(n)} className="fill-slate-700 dark:fill-slate-200" style={{ fontWeight: n.kind === "root" || n.kind === "germ" ? 700 : n.kind === "tissue" ? 600 : 400 }}>
+                {n.label}
+                {n.kind === "lineage" && n.sub ? <tspan className="fill-slate-400"> · {n.sub}</tspan> : null}
+              </text>
             </g>
           ))}
         </svg>
       </div>
       <p className="mt-1 text-[11px] text-slate-400">
-        {deep ? "leaves are grounded ZFA terms (colored by structural bucket); scroll both axes to explore" : "lineage leaves show grounded-term counts"} · use the zoom slider to snap in/out.
+        {deep ? "leaves are grounded ZFA terms (colored by structural bucket)" : "lineage leaves show grounded-term counts"} · scroll to pan both axes · pinch (trackpad) to zoom.
       </p>
     </section>
   );
