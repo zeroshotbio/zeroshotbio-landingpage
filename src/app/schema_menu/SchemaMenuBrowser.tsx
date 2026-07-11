@@ -3,8 +3,8 @@
 import React, { useMemo, useState } from "react";
 import type { Menu, Panel } from "./types";
 
-// CARO structural ladder, coarse -> fine, plus the "Other" residual. Each rung gets a
-// color that reads in both light and dark. This is the depth axis for cell_type_sub.
+// CARO structural ladder, coarse -> fine (+ "Other" residual). This is the depth axis
+// for cell_type_sub: a cluster is named at the deepest rung its markers support.
 const RUNGS = [
   "Anatomical system",
   "Compound organ",
@@ -14,97 +14,102 @@ const RUNGS = [
   "Other",
 ] as const;
 
-const RUNG_STYLE: Record<string, string> = {
-  "Anatomical system": "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-200 border-rose-300 dark:border-rose-800",
-  "Compound organ": "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-200 border-amber-300 dark:border-amber-800",
-  "Multi-tissue structure": "bg-violet-100 text-violet-800 dark:bg-violet-950 dark:text-violet-200 border-violet-300 dark:border-violet-800",
-  "Portion of tissue": "bg-sky-100 text-sky-800 dark:bg-sky-950 dark:text-sky-200 border-sky-300 dark:border-sky-800",
-  Cell: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800",
-  Other: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300 border-slate-300 dark:border-slate-700",
+// One color per rung, legible in light + dark. `dot` = solid swatch (bars/legend),
+// `chip` = soft background for term chips.
+const RUNG: Record<string, { dot: string; chip: string; root: string }> = {
+  "Anatomical system": { dot: "bg-rose-500", chip: "bg-rose-100 text-rose-800 dark:bg-rose-950/70 dark:text-rose-200", root: "ZFA:0001439" },
+  "Compound organ": { dot: "bg-amber-500", chip: "bg-amber-100 text-amber-800 dark:bg-amber-950/70 dark:text-amber-200", root: "ZFA:0000496" },
+  "Multi-tissue structure": { dot: "bg-violet-500", chip: "bg-violet-100 text-violet-800 dark:bg-violet-950/70 dark:text-violet-200", root: "ZFA:0001512" },
+  "Portion of tissue": { dot: "bg-sky-500", chip: "bg-sky-100 text-sky-800 dark:bg-sky-950/70 dark:text-sky-200", root: "ZFA:0001477" },
+  Cell: { dot: "bg-emerald-500", chip: "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/70 dark:text-emerald-200", root: "ZFA:0009000" },
+  Other: { dot: "bg-slate-400", chip: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300", root: "—" },
 };
 
-const CARO_ROOT: Record<string, string> = {
-  "Anatomical system": "ZFA:0001439 · CARO:0000011",
-  "Compound organ": "ZFA:0000496 · CARO:0000024",
-  "Multi-tissue structure": "ZFA:0001512 · CARO:0000055",
-  "Portion of tissue": "ZFA:0001477 · CARO:0000043",
-  Cell: "ZFA:0009000 · CARO:0000013",
-  Other: "— (reaches no CARO root)",
+// Germ layers as colored bands; order follows a rough developmental grouping.
+const GERM_ORDER = ["ectoderm", "neural crest", "mesoderm", "endoderm", "germline"];
+const GERM: Record<string, string> = {
+  ectoderm: "bg-indigo-500",
+  "neural crest": "bg-fuchsia-500",
+  mesoderm: "bg-red-500",
+  endoderm: "bg-yellow-500",
+  germline: "bg-teal-500",
 };
 
-const GERM_STYLE: Record<string, string> = {
-  ectoderm: "bg-indigo-100 text-indigo-800 dark:bg-indigo-950 dark:text-indigo-200",
-  mesoderm: "bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200",
-  endoderm: "bg-yellow-100 text-yellow-800 dark:bg-yellow-950 dark:text-yellow-200",
-  "neural crest": "bg-fuchsia-100 text-fuchsia-800 dark:bg-fuchsia-950 dark:text-fuchsia-200",
-  germline: "bg-teal-100 text-teal-800 dark:bg-teal-950 dark:text-teal-200",
-};
+function rungCounts(p: Panel): Record<string, number> {
+  const c: Record<string, number> = {};
+  for (const r of RUNGS) c[r] = p.sub_by_tier[r]?.length ?? 0;
+  return c;
+}
 
-function Pill({ children, className = "" }: { children: React.ReactNode; className?: string }) {
+// A slim horizontal bar showing where a panel's grounded sub-terms sit on the ladder.
+function RungBar({ p }: { p: Panel }) {
+  const counts = rungCounts(p);
+  const total = p.n_sub || 1;
   return (
-    <span className={`inline-block rounded-full border px-2 py-0.5 text-xs font-medium ${className}`}>
-      {children}
-    </span>
+    <div className="flex h-2 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+      {RUNGS.map((r) =>
+        counts[r] ? (
+          <div
+            key={r}
+            className={RUNG[r].dot}
+            style={{ width: `${(counts[r] / total) * 100}%` }}
+            title={`${r}: ${counts[r]}`}
+          />
+        ) : null
+      )}
+    </div>
   );
 }
 
-function PanelCard({ panel, name, query }: { panel: Panel; name: string; query: string }) {
+function PanelRow({ name, panel, query }: { name: string; panel: Panel; query: string }) {
   const [open, setOpen] = useState(false);
   const q = query.trim().toLowerCase();
-  const rungs = RUNGS.filter((r) => (panel.sub_by_tier[r]?.length ?? 0) > 0);
+  const counts = rungCounts(panel);
+  const rungs = RUNGS.filter((r) => counts[r] > 0);
+
   return (
-    <div className="rounded-lg border border-slate-200 bg-white shadow-sm dark:border-slate-700 dark:bg-slate-900">
+    <div className="border-b border-slate-100 last:border-0 dark:border-slate-800">
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+        className="grid w-full grid-cols-[1.1fr_1fr_1.4fr_auto] items-center gap-3 px-3 py-2 text-left hover:bg-slate-50 dark:hover:bg-slate-800/50"
       >
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm font-semibold text-slate-900 dark:text-slate-100">{name}</span>
-          <Pill className={`${GERM_STYLE[panel.germ_layer] ?? ""} border-transparent`}>{panel.germ_layer}</Pill>
-          <span className="text-xs text-slate-500 dark:text-slate-400">
-            {panel.tissue} · {panel.lineage}
-          </span>
-        </div>
-        <div className="flex shrink-0 items-center gap-2">
-          <span className="text-xs text-slate-400">{panel.n_sub} sub-terms</span>
-          <span className="text-slate-400">{open ? "▾" : "▸"}</span>
-        </div>
+        <span className="flex items-center gap-2 font-mono text-sm font-semibold text-slate-800 dark:text-slate-100">
+          <span className="text-slate-300 dark:text-slate-600">{open ? "▾" : "▸"}</span>
+          {name}
+        </span>
+        <span className="truncate text-xs text-slate-500 dark:text-slate-400">{panel.tissue}</span>
+        <RungBar p={panel} />
+        <span className="w-10 text-right text-xs tabular-nums text-slate-400">{panel.n_sub}</span>
       </button>
 
       {open && (
-        <div className="border-t border-slate-100 px-4 py-3 dark:border-slate-800">
-          <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
+        <div className="bg-slate-50/60 px-3 pb-3 pt-1 dark:bg-slate-900/40">
+          <div className="mb-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
             <span>
-              <span className="font-semibold text-slate-600 dark:text-slate-300">anchors:</span>{" "}
-              {panel.anchors.map((a) => (
-                <span key={a.zfa} className="mr-2 whitespace-nowrap">
-                  {a.name} <span className="font-mono text-slate-400">({a.zfa}, {a.tier})</span>
-                </span>
-              ))}
+              <b className="text-slate-600 dark:text-slate-300">lineage:</b> {panel.lineage}
+            </span>
+            <span>
+              <b className="text-slate-600 dark:text-slate-300">anchor:</b>{" "}
+              {panel.anchors.map((a) => `${a.name} (${a.zfa}·${a.tier})`).join(", ")}
+            </span>
+            <span className="font-mono">
+              <b className="font-sans text-slate-600 dark:text-slate-300">markers:</b> {panel.markers.slice(0, 12).join(", ")}
             </span>
           </div>
-          <div className="mb-3">
-            <span className="text-xs font-semibold text-slate-600 dark:text-slate-300">markers: </span>
-            <span className="font-mono text-xs text-slate-500 dark:text-slate-400">{panel.markers.join(", ")}</span>
-          </div>
-
-          <div className="space-y-2">
+          <div className="space-y-1.5">
             {rungs.map((r) => {
               let terms = panel.sub_by_tier[r] ?? [];
               if (q) terms = terms.filter((t) => t.name.toLowerCase().includes(q));
               if (q && terms.length === 0) return null;
               return (
-                <div key={r} className="flex gap-3">
-                  <div className="w-40 shrink-0">
-                    <Pill className={RUNG_STYLE[r]}>{r}</Pill>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
+                <div key={r} className="flex items-start gap-2">
+                  <span className="flex w-36 shrink-0 items-center gap-1.5 pt-0.5">
+                    <span className={`h-2 w-2 rounded-full ${RUNG[r].dot}`} />
+                    <span className="text-[11px] font-medium text-slate-600 dark:text-slate-300">{r}</span>
+                  </span>
+                  <div className="flex flex-wrap gap-1">
                     {terms.map((t) => (
-                      <span
-                        key={t.zfa}
-                        title={t.zfa}
-                        className="rounded border border-slate-200 bg-slate-50 px-1.5 py-0.5 text-xs text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
-                      >
+                      <span key={t.zfa} title={t.zfa} className={`rounded px-1.5 py-0.5 text-[11px] ${RUNG[r].chip}`}>
                         {t.name}
                       </span>
                     ))}
@@ -121,138 +126,132 @@ function PanelCard({ panel, name, query }: { panel: Panel; name: string; query: 
 
 export default function SchemaMenuBrowser({ menu }: { menu: Menu }) {
   const [query, setQuery] = useState("");
-  const [germFilter, setGermFilter] = useState<string | null>(null);
-
-  const panelNames = menu.tiers.cell_type_broad;
+  const [germ, setGerm] = useState<string | null>(null);
   const q = query.trim().toLowerCase();
 
-  const visible = useMemo(() => {
-    return panelNames.filter((name) => {
-      const p = menu.panels[name];
-      if (!p) return false;
-      if (germFilter && p.germ_layer !== germFilter) return false;
-      if (!q) return true;
-      if (name.toLowerCase().includes(q)) return true;
-      if (p.tissue.toLowerCase().includes(q) || p.lineage.toLowerCase().includes(q)) return true;
-      if (p.markers.some((m) => m.toLowerCase().includes(q))) return true;
-      return RUNGS.some((r) => (p.sub_by_tier[r] ?? []).some((t) => t.name.toLowerCase().includes(q)));
-    });
-  }, [panelNames, menu.panels, germFilter, q]);
+  const matches = (name: string): boolean => {
+    const p = menu.panels[name];
+    if (!p) return false;
+    if (germ && p.germ_layer !== germ) return false;
+    if (!q) return true;
+    if (name.toLowerCase().includes(q)) return true;
+    if (p.tissue.toLowerCase().includes(q) || p.lineage.toLowerCase().includes(q)) return true;
+    if (p.markers.some((m) => m.toLowerCase().includes(q))) return true;
+    return RUNGS.some((r) => (p.sub_by_tier[r] ?? []).some((t) => t.name.toLowerCase().includes(q)));
+  };
 
+  // Panels grouped by germ layer (band order), each group sorted by tissue then name.
+  const grouped = useMemo(() => {
+    const g: Record<string, string[]> = {};
+    for (const name of menu.tiers.cell_type_broad) {
+      if (!matches(name)) continue;
+      const layer = menu.panels[name].germ_layer;
+      (g[layer] ||= []).push(name);
+    }
+    for (const layer of Object.keys(g)) {
+      g[layer].sort((a, b) => {
+        const pa = menu.panels[a], pb = menu.panels[b];
+        return pa.tissue.localeCompare(pb.tissue) || a.localeCompare(b);
+      });
+    }
+    return g;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [menu, germ, q]);
+
+  const nShown = Object.values(grouped).reduce((a, v) => a + v.length, 0);
   const totalSub = Object.values(menu.panels).reduce((a, p) => a + p.n_sub, 0);
 
   return (
-    <main className="mx-auto max-w-5xl px-4 py-8 text-slate-900 dark:text-slate-100">
+    <main className="mx-auto max-w-4xl px-4 py-8 text-slate-900 dark:text-slate-100">
       {/* header */}
-      <header className="mb-6">
-        <h1 className="text-2xl font-bold">MiniFin — label schema &amp; menu</h1>
+      <header className="mb-5">
+        <h1 className="text-2xl font-bold">MiniFin · label schema &amp; menu</h1>
         <p className="mt-1 max-w-3xl text-sm text-slate-600 dark:text-slate-300">
-          The native menu used by the MiniFin cell-labelling pipeline. Tiers{" "}
-          <strong>germ_layer / tissue / cell_type_broad</strong> come from zlabel&apos;s{" "}
-          <code className="font-mono">panels.yaml</code>; <strong>cell_type_sub</strong> is the ZFA anatomy
-          ontology grounded to ZFIN wildtype expression, placed on the CARO structural ladder. Depth is
-          earned — the pipeline names a cluster at the deepest CARO rung its markers support, abstaining
-          deeper otherwise.
+          The native menu for MiniFin cell labelling. <b>Germ layer</b> and <b>tissue</b> come from zlabel&apos;s{" "}
+          <code className="font-mono text-[13px]">panels.yaml</code>; the fine <b>cell-type</b> vocabulary is the ZFA
+          ontology grounded to ZFIN expression, placed on the CARO ladder — a cluster is named at the deepest rung its
+          markers support.
         </p>
-        <div className="mt-3 flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500 dark:text-slate-400">
-          <span>stage: {menu.stage}</span>
-          <span>menu sha: <span className="font-mono">{menu.menu_sha}</span></span>
-          <span>panels: {panelNames.length} identity + {menu.state_panels.length} state</span>
-          <span>grounded sub-terms: {totalSub}</span>
-          <span>source: {menu.source.panels}</span>
+        <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400">
+          <span>{menu.stage}</span>
+          <span>menu <span className="font-mono">{menu.menu_sha}</span></span>
+          <span>{menu.tiers.cell_type_broad.length} lineages · {menu.tiers.tissue.length} tissues · {totalSub} grounded terms</span>
         </div>
       </header>
 
-      {/* CARO ladder legend */}
-      <section className="mb-6 rounded-lg border border-slate-200 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-900">
-        <h2 className="mb-2 text-sm font-semibold">CARO structural ladder (the cell_type_sub depth axis)</h2>
-        <div className="flex flex-wrap gap-2">
-          {RUNGS.map((r) => (
-            <div key={r} className="flex items-center gap-1.5">
-              <Pill className={RUNG_STYLE[r]}>{r}</Pill>
-              <span className="font-mono text-[10px] text-slate-400">{CARO_ROOT[r]}</span>
-            </div>
-          ))}
-        </div>
-        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
-          A term&apos;s rung is its nearest <code className="font-mono">is_a</code> ancestor among the five CARO
-          roots. &ldquo;Other&rdquo; = anatomy that reaches none (e.g. regions like retina/cornea) — kept, but
-          flagged for curation.
-        </p>
-      </section>
+      {/* CARO ladder legend — the fine-tier depth key */}
+      <div className="mb-5 flex flex-wrap items-center gap-x-3 gap-y-1 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 dark:border-slate-700 dark:bg-slate-900">
+        <span className="text-[11px] font-semibold text-slate-500 dark:text-slate-400">CARO ladder (fine → coarse):</span>
+        {[...RUNGS].map((r) => (
+          <span key={r} className="flex items-center gap-1">
+            <span className={`h-2.5 w-2.5 rounded-full ${RUNG[r].dot}`} />
+            <span className="text-[11px] text-slate-600 dark:text-slate-300">{r}</span>
+          </span>
+        ))}
+      </div>
 
-      {/* top-tier menus */}
-      <section className="mb-6 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-          <h2 className="mb-2 text-sm font-semibold">germ_layer <span className="text-slate-400">({menu.tiers.germ_layer.length})</span></h2>
-          <div className="flex flex-wrap gap-1.5">
-            {menu.tiers.germ_layer.map((g) => (
-              <button key={g} onClick={() => setGermFilter(germFilter === g ? null : g)}>
-                <Pill className={`${GERM_STYLE[g] ?? "bg-slate-100 dark:bg-slate-800"} border ${germFilter === g ? "ring-2 ring-offset-1 ring-slate-400 dark:ring-offset-slate-900" : "border-transparent"}`}>
-                  {g}
-                </Pill>
-              </button>
-            ))}
-          </div>
-          {germFilter && (
-            <button onClick={() => setGermFilter(null)} className="mt-2 text-xs text-slate-500 underline">
-              clear germ_layer filter
+      {/* controls: germ-layer tabs + search */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-1">
+          <button
+            onClick={() => setGerm(null)}
+            className={`rounded-full px-2.5 py-1 text-xs font-medium ${germ === null ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}
+          >
+            all
+          </button>
+          {GERM_ORDER.filter((g) => menu.tiers.germ_layer.includes(g)).map((g) => (
+            <button
+              key={g}
+              onClick={() => setGerm(germ === g ? null : g)}
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${germ === g ? "bg-slate-800 text-white dark:bg-slate-200 dark:text-slate-900" : "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"}`}
+            >
+              <span className={`h-2 w-2 rounded-full ${GERM[g]}`} />
+              {g}
             </button>
-          )}
+          ))}
         </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-700">
-          <h2 className="mb-2 text-sm font-semibold">tissue <span className="text-slate-400">({menu.tiers.tissue.length})</span></h2>
-          <div className="flex flex-wrap gap-1.5">
-            {menu.tiers.tissue.map((t) => (
-              <span key={t} className="rounded bg-slate-100 px-1.5 py-0.5 text-xs text-slate-700 dark:bg-slate-800 dark:text-slate-200">
-                {t}
-              </span>
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="search lineage, tissue, marker, ZFA term…"
+          className="w-60 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500 dark:border-slate-600 dark:bg-slate-900"
+        />
+      </div>
+
+      {/* grouped panel table */}
+      <div className="overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700">
+        {GERM_ORDER.filter((g) => grouped[g]?.length).map((g) => (
+          <div key={g}>
+            <div className="flex items-center gap-2 bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
+              <span className={`h-2.5 w-2.5 rounded-full ${GERM[g]}`} />
+              <span className="text-xs font-semibold uppercase tracking-wide text-slate-600 dark:text-slate-300">{g}</span>
+              <span className="text-[11px] text-slate-400">{grouped[g].length}</span>
+            </div>
+            {grouped[g].map((name) => (
+              <PanelRow key={name} name={name} panel={menu.panels[name]} query={query} />
             ))}
           </div>
-        </div>
-      </section>
-
-      {/* search + panels (cell_type_broad + cell_type_sub) */}
-      <section>
-        <div className="mb-3 flex items-center justify-between gap-3">
-          <h2 className="text-sm font-semibold">
-            cell_type_broad <span className="text-slate-400">({visible.length}/{panelNames.length} panels)</span>
-          </h2>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="search panel, tissue, marker, or ZFA term…"
-            className="w-64 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-sm outline-none focus:border-slate-500 dark:border-slate-600 dark:bg-slate-900"
-          />
-        </div>
-        <div className="space-y-2">
-          {visible.map((name) => (
-            <PanelCard key={name} name={name} panel={menu.panels[name]} query={query} />
-          ))}
-          {visible.length === 0 && (
-            <p className="py-8 text-center text-sm text-slate-400">no panels match “{query}”.</p>
-          )}
-        </div>
-      </section>
+        ))}
+        {nShown === 0 && <p className="py-10 text-center text-sm text-slate-400">no lineages match “{query}”.</p>}
+      </div>
 
       {/* state panels */}
-      <section className="mt-8">
-        <h2 className="mb-2 text-sm font-semibold">
-          state panels <span className="text-slate-400">(orthogonal to identity — no germ/tissue/anchor)</span>
+      <div className="mt-5">
+        <h2 className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+          state panels <span className="normal-case text-slate-400">— orthogonal to identity</span>
         </h2>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-2">
           {menu.state_panels.map((s) => (
-            <div key={s.panel} className="rounded-lg border border-slate-200 px-3 py-2 dark:border-slate-700">
-              <span className="font-mono text-sm font-semibold">{s.panel}</span>
-              <span className="ml-2 font-mono text-xs text-slate-500 dark:text-slate-400">{s.markers.join(", ")}</span>
-            </div>
+            <span key={s.panel} className="rounded-md border border-slate-200 px-2 py-1 text-xs dark:border-slate-700">
+              <b className="font-mono">{s.panel}</b>{" "}
+              <span className="font-mono text-slate-500 dark:text-slate-400">{s.markers.join(", ")}</span>
+            </span>
           ))}
         </div>
-      </section>
+      </div>
 
-      <footer className="mt-10 border-t border-slate-200 pt-4 text-xs text-slate-400 dark:border-slate-800">
-        Derived from zlabel panels.yaml + ZFA (zfin-grounded). Menu {menu.menu_sha}. This page is static and
-        calls no model.
+      <footer className="mt-8 border-t border-slate-200 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
+        zlabel panels.yaml + ZFA (zfin-grounded) · menu {menu.menu_sha} · static, no model.
       </footer>
     </main>
   );
