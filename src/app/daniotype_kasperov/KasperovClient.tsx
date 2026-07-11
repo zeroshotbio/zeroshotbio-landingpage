@@ -195,7 +195,7 @@ const DATASET_VALIDATION: Record<string, string> = {
 function ValidationLine({ id }: { id: string }) {
   const t = DATASET_VALIDATION[id];
   if (!t) return null;
-  return <div title={t} style={{ fontSize: 10.5, color: "#8a847b", lineHeight: 1.35, maxWidth: 200 }}>{t}</div>;
+  return <div title={t} style={{ fontSize: 10.5, color: "#8a847b", lineHeight: 1.35, maxWidth: 240 }}>{t}</div>;
 }
 // OFF by default — Steven decides if the picker is the right home for this public-facing framing (else it lives
 // in the spec/README only). Flip to true to enable the atlas-grid footer.
@@ -1169,8 +1169,11 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
             );
             // finish-line marker — small checkered flag on the track just before the endpoint dot
             // ("the pipeline crosses the line"); distinct-but-subtle from the ★ golden badge.
-            const finishFlag = (cx: number) => (
-              <g key="fin" opacity={0.92}>
+            const finishFlag = (cx: number, tip: string) => (
+              <g key="fin" opacity={0.92} style={{ cursor: "help" }}>
+                <title>{tip}</title>
+                {/* invisible hit-pad so the tiny flag is hoverable */}
+                <rect x={cx - 3} y={y - 10} width={14} height={20} fill="transparent" />
                 <line x1={cx} y1={y - 8} x2={cx} y2={y + 5} stroke="#3f3a34" strokeWidth={1} />
                 <rect x={cx + 0.6} y={y - 8} width={3} height={3} fill="#3f3a34" />
                 <rect x={cx + 3.6} y={y - 8} width={3} height={3} fill="#fff" stroke="#3f3a34" strokeWidth={0.4} />
@@ -1191,7 +1194,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 onClick={interactive && onOpenRun ? () => onOpenRun(r) : undefined}
                 style={{ cursor: interactive ? "pointer" : "default" }}
                 opacity={dimOff(onP)}>
-                <title>{`${r.runId}${r.note ? "\n" + r.note : ""}${interactive ? "\n\nClick to open the full run view" : ""}`}</title>
+                <title>{`${r.runId}${isGolden ? "\n★ GOLDEN — the single best-validated reference run for this dataset; its labels are what the atlas map is built from." : ""}${r.note ? "\n" + r.note : ""}${interactive ? "\n\nClick to open the full run view" : ""}`}</title>
                 {/* fat transparent hit-area so the whole branch (curve + line + label) is easy to grab */}
                 {interactive ? <path d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, y)} stroke="transparent" strokeWidth={13} fill="none" /> : null}
                 {interactive ? <rect x={X.cluster} y={y - 9} width={TREE_W - X.cluster - 6} height={18} fill="transparent" /> : null}
@@ -1201,7 +1204,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓")}</g> : null}
-                {isFinish ? finishFlag(finishX - 13) : null}
+                {isFinish ? finishFlag(finishX - 13, `Finish line — this lineage's pipeline endpoint (its last reached stage: ${finishStage === "judge" ? "JUDGING" : finishStage === "meta" ? "META-REASONING" : finishStage.toUpperCase()}). ${finishStage === "meta" ? "MegaFin honestly stops here — the Lawson/Parse namespace has no ground truth to judge against, so there is no JUDGING stage." : "The golden lineage runs all the way to a GT-scored JUDGING node."} Distinct from the ★ golden marker, which flags the single best reference RUN.`) : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
               </g>
             );
@@ -1323,7 +1326,7 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
                 }}
               >
                 {/* identity rail — name + the three actions, top-aligned with the run-history tree */}
-                <div style={{ width: 200, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
+                <div style={{ width: 240, flexShrink: 0, display: "flex", flexDirection: "column", gap: 10 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: 7, flexWrap: "wrap" }}>
                     <span style={{ fontSize: 18, fontWeight: 700 }}>{d.name}</span>
                     {!ready && <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.5, color: "#926a1a", background: "#fef3c7", borderRadius: 99, padding: "2px 8px" }}>soon</span>}
