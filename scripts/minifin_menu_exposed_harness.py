@@ -26,11 +26,11 @@ MODEL     = os.environ.get("MINIFIN_MODEL", "gpt-5.4")
 SEED      = int(os.environ.get("MINIFIN_SEED", "48"))
 N_SAMPLE  = int(os.environ.get("MINIFIN_N", "4"))
 ABORT_USD = float(os.environ.get("MINIFIN_ABORT_USD", "4.00"))
-HARNESS   = {"id": "menu-exposed-chat-caro", "version": "minifin-caro-v1",
-             "name": "3-personality menu-exposed chat (CARO/ZFA-native menu)",
-             "basis": "menu-exposed-chat (zscape-port) + zlabel/ZFA menu"}
+HARNESS   = {"id": "menu-exposed-chat-zfa", "version": "minifin-zfa-v2",
+             "name": "3-personality menu-exposed chat (ZFA structural-bucket menu)",
+             "basis": "menu-exposed-chat (zscape-port) + zlabel panels + Darien ZFA buckets"}
 ASSET_DIR = "/data/zeroshotbio-landingpage/daniotype_data/minifin"
-MENU_PATH = os.path.join(ASSET_DIR, "label_menu_caro.json")
+MENU_PATH = os.path.join(ASSET_DIR, "label_menu_zfa.json")
 UMAP_PATH = os.path.join(ASSET_DIR, "umap.json")
 MANIFEST  = os.environ.get("MINIFIN_MANIFEST", "/tmp/minifin_menu_exposed_results.json")
 
@@ -91,17 +91,17 @@ def score_panels(c, k=3):
     return scored[:k]
 
 def sub_menu_block(panels):
-    LADDER = MENU["caro_ladder"] + ["Other"]
     out = []
     for _, pn, ov in panels:
         p = MENU["panels"][pn]
         out.append(f"### {pn}  (germ={p['germ_layer']}, tissue={p['tissue']}; marker overlap: {', '.join(ov)})")
-        for rung in LADDER:
-            terms = p["sub_by_tier"].get(rung)
+        for b in MENU["bucket_order"]:
+            terms = p["sub_by_bucket"].get(b)
             if not terms:
                 continue
+            disp = MENU["bucket_meta"][b]["display"]
             names = ", ".join(f"{t['name']}" for t in terms[:40])
-            out.append(f"  {rung}: {names}")
+            out.append(f"  {disp}: {names}")
     return "\n".join(out)
 
 def menu_prompt(c, denovo_label):
@@ -110,27 +110,31 @@ def menu_prompt(c, denovo_label):
     broad = " | ".join(MENU["tiers"]["cell_type_broad"])
     panels = score_panels(c)
     subs = sub_menu_block(panels) or "(no panel marker overlap — choose the closest broad panel and abstain at cell_type_sub)"
-    ladder = " > ".join(MENU["caro_ladder"])
+    principal = [MENU["bucket_meta"][b]["display"] for b in MENU["bucket_order"] if MENU["bucket_meta"][b]["principal"]]
+    ladder = " > ".join(principal)
     return (
         f'=== MENU-EXPOSED PHASE — {denovo_label} ===\n'
         f'Your DE-NOVO call is now LOCKED: "{denovo_label}". Do NOT revise, re-derive, or second-guess it here.\n\n'
         f'This is MiniFin — OUR OWN dataset (48 hpf). Its label menu is native: germ_layer / tissue / '
         f'cell_type_broad come from the zlabel panel schema; cell_type_sub is the ZFA anatomy ontology '
-        f'grounded to ZFIN wildtype expression, placed on the CARO structural ladder. Bin your locked call onto it.\n\n'
+        f'grounded to ZFIN wildtype expression, each term assigned one exclusive ZFA structural bucket. '
+        f'Bin your locked call onto it.\n\n'
         f'germ_layer: [ {germ} ]\n'
         f'tissue: [ {tissue} ]\n'
         f'cell_type_broad (zlabel panels): [ {broad} ]\n\n'
-        f'cell_type_sub — CARO ladder (deepest first): {ladder} > Cell.\n'
-        f'DEPTH IS EARNED: name cell_type_sub at the DEEPEST rung the marker evidence supports, and abstain '
+        f'cell_type_sub — ZFA structural ladder (principal buckets, coarse → fine): {ladder}. '
+        f'A few named SECONDARY buckets also exist for non-principal anatomy (e.g. Organism substance = blood, '
+        f'Embryonic structure, Organism subdivision).\n'
+        f'DEPTH IS EARNED: name cell_type_sub at the DEEPEST bucket the marker evidence supports, and abstain '
         f'deeper when the markers do not converge. First confirm the cell_type_broad panel; then state the '
-        f'deepest CARO rung the evidence supports; then pick the SINGLE closest ZFA term from that panel\'s '
-        f'grounded sub-menu at that rung, or NO_MATCH if none fits.\n\n'
-        f'Grounded ZFA sub-menus for the panels closest to your call:\n{subs}\n\n'
+        f'deepest structural bucket the evidence supports; then pick the SINGLE closest ZFA term from that panel\'s '
+        f'grounded sub-menu in that bucket, or NO_MATCH if none fits.\n\n'
+        f'Grounded ZFA sub-menus (by bucket) for the panels closest to your call:\n{subs}\n\n'
         f'Declare under a "**Menu-aware binning**" heading as five short lines:\n'
         f'- germ_layer: <menu option> (<confidence>%)\n'
         f'- tissue: <menu option> (<confidence>%)\n'
         f'- cell_type_broad: <panel> (<confidence>%)\n'
-        f'- caro_rung: <Anatomical system|Compound organ|Multi-tissue structure|Portion of tissue|Cell>\n'
+        f'- zfa_bucket: <Anatomical system|System subtype|Organ|Multi-tissue structure|Portion of tissue|Cell|secondary bucket>\n'
         f'- cell_type_sub: <exact ZFA term name> (<confidence>%)   [or NO_MATCH]\n\n'
         f'Pick ONLY from the menu; never invent a label. Then REFLECT briefly on any divergence '
         f'(menu-vocabulary artifact vs real uncertainty). FINALLY end with a clear '
