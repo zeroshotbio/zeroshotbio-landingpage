@@ -110,7 +110,7 @@ def _registry() -> dict:
     # throwaway test instance. Same on-the-fly stats-from-counts contract as the v2 slots.
     for nid in ("zscape_native", "chemfish_native", "daniocell_native", "zscape_v2", "chemfish_v2", "minifin_v2", "zscape_recursive",
                 "resplit_c6m0", "resplit_c10m0", "resplit_c15m0", "resplit_c2m0",
-                "chemfish_p0", "daniocell_p0", "minifin_p0"):
+                "chemfish_p0", "daniocell_p0", "minifin_p0", "megafin_manual"):
         pre = nid.upper()
         if os.environ.get(f"{pre}_H5AD"):
             reg[nid] = dict(

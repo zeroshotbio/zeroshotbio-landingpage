@@ -130,9 +130,9 @@ const DATASETS: DatasetDef[] = [
   {
     id: "megafin",
     name: "Manual MegaFin Part 1",
-    tagline: "Manual .h5ad (Lawson) · 48 hpf · 537.9k cells · 84 de-novo clusters",
+    tagline: "Manual .h5ad (Lawson) · 48 hpf · 537.9k cells · 384 recursive leaves → 147 nodes",
     blurb:
-      "MegaFin Part 1 — the same drug-screen library (96 conditions: 45 small molecules + Sorafenib positive control at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo Leiden res 2.0 (84 clusters) on the carried Harmony(sample) embedding. The standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed), so the Parse embedding is retained; honestly less coherent (0.929) than the GT partitions. No external cell-type labels — internal, intuition-building.",
+      "MegaFin Part 1 — the same drug-screen library (96 conditions: 45 small molecules + Sorafenib positive control at 1 & 5 µM, plus DMSO-vehicle and egg-water controls; 93 samples after 3 QC removals; 48 hpf TuWT) built from the manually-created denoised .h5ad (Lawson LL → ZFIN namespace). De-novo GOLDEN RECURSIVE partition: coarse Leiden 0.1 → per-compartment local-2000-HVG → fresh local PCA(50) → 15-NN → local Leiden 0.8 (384 leaves @ 0.953 marker-coherence, beating the flat pass's 0.929), labelled by run_leaf_v2 v1.2 (Lawson :5007 grounding, no web-search) and consolidated to 147 nodes. The earlier flat res-2.0 (84-cluster) pass and the global HVG→PCA→Harmony re-embed (coherence collapsed 0.93→0.67) are superseded/rejected earlier attempts, kept as lineage ancestors. No external cell-type labels (Lawson namespace has no applicable GT — judging stays honestly dark) — broad correctness inherits from MiniFin.",
     dataUrl: `${ASSET_BASE}/megafin_rebuild/umap.json`,
     archivistBase: `${ASSET_BASE}/megafin_rebuild/archivist`,
     groundTruthUrl: null,
@@ -190,7 +190,7 @@ const DATASET_VALIDATION: Record<string, string> = {
   daniocell: "Golden run · Port · GT-scored",
   minifin: "Golden run · v1.2 · validated vs Patrick expert GT — 0.989 lenient / 0.587 strict-fine, node-consolidation validated, 0 over-merge",
   megafin_parse: "Deliverable · v1.2 · commercial-core spot-check (4 sets, 9.5% coverage); broad correctness inherited from MiniFin",
-  megafin: "Labelled (v1.2, leaves) · not consolidated/scored",
+  megafin: "Golden run · v1.2 · recursive fine-leaf (384 leaves @ 0.953 coherence) · consolidated (147 nodes) · no GT (Lawson namespace); broad correctness inherited from MiniFin",
 };
 function ValidationLine({ id }: { id: string }) {
   const t = DATASET_VALIDATION[id];
@@ -1092,13 +1092,19 @@ const JUDGE_KIND_BY_ATLAS: Record<string, string> = { zscape: "Fuzzy Judge", che
 // Finish-line marker — the golden LINEAGE's TRUE final reached stage node (checkered flag = pipeline endpoint,
 // distinct from ★ = golden run). MegaFin honestly ends at META (no promoted GT → no judge flag); the others
 // reach the judged node. Keyed to the run that actually carries that stage (MegaFin's is the abad22 consolidation).
-const FINISH_LINE_BY_ATLAS: Record<string, { runId: string; stage: string }> = {
-  zscape: { runId: "20260703-050319-9258bd", stage: "judge" },
-  chemfish: { runId: "20260706-025616-26ec7d", stage: "judge" },
-  daniocell: { runId: "20260706-025616-182172", stage: "judge" },
-  minifin: { runId: "20260705-002027-a10bb8", stage: "judge" },
-  megafin: { runId: "20260705-063523-abad22", stage: "meta" },
+// Keyed by runId (not atlas): the Manual + Parse MegaFin cards share atlas "megafin", so their
+// distinct golden endpoints must be addressed per-run. MegaFin ends at META (no promoted GT → no judge flag).
+const FINISH_LINE_BY_RUN: Record<string, string> = {
+  "20260703-050319-9258bd": "judge",  // zscape
+  "20260706-025616-26ec7d": "judge",  // chemfish
+  "20260706-025616-182172": "judge",  // daniocell
+  "20260705-002027-a10bb8": "judge",  // minifin
+  "20260705-063523-abad22": "meta",   // Parse MegaFin (honest endpoint, no judge)
+  "20260711-000000-mf384r": "meta",   // Manual MegaFin — recursive 384→147 consolidation (honest endpoint, no judge)
 };
+// Golden ★ runs the per-atlas map can't reach (Manual MegaFin shares atlas "megafin" with Parse, whose
+// golden is the a10c0a leaf) — marked by runId so the Manual card ★s its own recursive consolidation.
+const EXTRA_GOLDEN_RUNS = new Set<string>(["20260711-000000-mf384r"]);
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
 // labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
@@ -1173,10 +1179,10 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
               </g>
             );
             const judgeKind = JUDGE_KIND_BY_ATLAS[atlas] || "Judge";
-            const finish = FINISH_LINE_BY_ATLAS[atlas];
-            const isFinish = !!finish && r.runId === finish.runId && (finish.stage === "judge" ? sJudge : finish.stage === "meta" ? sMeta : true);
-            const finishX = finish ? STAGE_X[finish.stage] : 0;
-            const isGolden = r.runId === goldenRunId;
+            const finishStage = FINISH_LINE_BY_RUN[r.runId];
+            const isFinish = !!finishStage && (finishStage === "judge" ? sJudge : finishStage === "meta" ? sMeta : true);
+            const finishX = finishStage ? STAGE_X[finishStage] : 0;
+            const isGolden = r.runId === goldenRunId || EXTRA_GOLDEN_RUNS.has(r.runId);
             const label = `${isGolden ? "★ " : ""}${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
             return (
               <g key={"run" + r.runId}
