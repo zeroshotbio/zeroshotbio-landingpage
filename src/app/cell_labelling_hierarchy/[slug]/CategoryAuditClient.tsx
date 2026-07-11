@@ -31,13 +31,21 @@ function Verdict({ t }: { t?: Tier }) {
   );
 }
 
+function ConfBadge({ c }: { c?: number | null }) {
+  if (c == null) return null;
+  const h = heat(c);
+  return <span style={{ marginLeft: 4, fontSize: 9.5, fontWeight: 800, color: h.fg, background: h.bg, borderRadius: 99, padding: "0 5px", fontVariantNumeric: "tabular-nums", whiteSpace: "nowrap" }}>{c}%</span>;
+}
+
 // ── one node, transposed: rows are the info layers, columns are the ontology tiers ──
 function JudgeCard({ n }: { n: JudgeNode }) {
+  const [membersOpen, setMembersOpen] = useState(false);
   const sm = scoredMatch(n);
-  const tiers = TIER_ORDER.filter((t) => n.gt[t] || n.menu[t] || n.dn[t] || n.mx[t]);
+  const tiers = TIER_ORDER.filter((t) => n.gt[t] || n.menu[t] || n.dn[t] || n.mx[t] || n.dnPred?.[t]);
   const rowHdr: CSSProperties = { textAlign: "left", padding: "7px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", whiteSpace: "nowrap", verticalAlign: "top", borderBottom: `1px solid ${LINE}` };
   const cell: CSSProperties = { padding: "7px 10px", borderBottom: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top", lineHeight: 1.4 };
   const kindCol = n.kind === "merge" ? { c: "#0e7490", bg: "#e0f2f7", t: "MERGED" } : { c: "#a16207", bg: "#fdf3d6", t: "REBEL LEAF" };
+  const hasPred = !!n.dnPred && tiers.some((t) => n.dnPred?.[t]?.val);
   return (
     <div style={{ border: `1px solid ${LINE}`, borderLeft: `4px solid ${sm == null ? "#d8d3cd" : sm ? "#22c55e" : "#ef4444"}`, borderRadius: 10, background: CARD, padding: "12px 14px", marginBottom: 12 }}>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 9, alignItems: "center", marginBottom: 10 }}>
@@ -65,16 +73,22 @@ function JudgeCard({ n }: { n: JudgeNode }) {
               <th style={{ ...rowHdr, color: "#3f3a34", background: "#f1ede6" }}>Ground truth</th>
               {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
             </tr>
-            {/* 2 · de-novo prediction — a single holistic identity phrase (NOT a 4-tier pick like
-                 menu-exposed); the scored artifact stores one call + the tier it resolved to. Its
-                 per-tier grading is the De-novo verdict row directly below. */}
+            {/* 2 · de-novo prediction — the wizard's full 4-tier free-form call (val + confidence),
+                 recovered from a representative member leaf's transcript. Falls back to the consolidated
+                 identity phrase where the 4-tier couldn't be parsed. */}
             <tr>
               <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo pred</th>
-              <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>
-                {n.identity || "—"}
-                <span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#6b8990", marginTop: 3, fontSize: 11 }}>
-                  single holistic call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""} — graded per tier in the row below (the menu-exposed answer is the 4-tier picked-from-menu version)
-                </span>
+              {hasPred
+                ? tiers.map((t) => {
+                    const p = n.dnPred?.[t];
+                    return <td key={t} style={{ ...cell, background: t === "tissue" ? "#eefaff" : "#f6feff", fontWeight: 600, color: p?.val ? "#134e5a" : "#c4bdb1" }}>{p?.val ? <>{p.val}<ConfBadge c={p.conf} /></> : "—"}</td>;
+                  })
+                : <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>{n.identity || "—"}<span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#6b8990", marginTop: 3, fontSize: 11 }}>4-tier de-novo not parseable for this node — showing the consolidated call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}</span></td>}
+            </tr>
+            {/* caption: consolidated identity + source leaf */}
+            <tr>
+              <td colSpan={tiers.length + 1} style={{ padding: "5px 10px", borderBottom: `1px solid ${LINE}`, background: "#f9fdff", fontSize: 11, color: "#6b8990", fontStyle: "italic" }}>
+                consolidated de-novo identity: <b style={{ color: "#134e5a", fontStyle: "normal" }}>{n.identity || "—"}</b>{n.dnTier ? ` · resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}{hasPred && n.dnPredLeaf ? ` · 4-tier shown from representative leaf ${n.dnPredLeaf}${n.members && n.members.length ? ` of ${n.members.length}` : ""}` : ""}
               </td>
             </tr>
             {/* 3 · de-novo verdict */}
@@ -82,10 +96,10 @@ function JudgeCard({ n }: { n: JudgeNode }) {
               <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo verdict</th>
               {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined }}><Verdict t={n.dn[t]} /></td>)}
             </tr>
-            {/* 4 · menu-exposed prediction */}
+            {/* 4 · menu-exposed prediction (with the representative leaf's confidence) */}
             <tr>
               <th style={{ ...rowHdr, color: "#6b655d", background: "#f4f2ee" }}>Menu pred</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, color: n.menu[t] ? "#4a453f" : "#c4bdb1" }}>{n.menu[t] || "—"}</td>)}
+              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, color: n.menu[t] ? "#4a453f" : "#c4bdb1", fontWeight: n.menu[t] ? 600 : 400 }}>{n.menu[t] || "—"}{n.menu[t] && <ConfBadge c={n.menuRep?.[t]?.conf} />}</td>)}
             </tr>
             {/* 5 · menu-exposed verdict */}
             <tr>
@@ -95,6 +109,32 @@ function JudgeCard({ n }: { n: JudgeNode }) {
           </tbody>
         </table>
       </div>
+      {/* merges: audit every member leaf's own 4-tier de-novo call */}
+      {n.members && n.members.length > 1 && (
+        <div style={{ marginTop: 8 }}>
+          <button onClick={() => setMembersOpen((o) => !o)} style={{ background: membersOpen ? "#eef2f6" : "#fff", border: `1px solid ${LINE}`, borderRadius: 7, padding: "5px 10px", fontSize: 11.5, fontWeight: 700, color: "#0e7490", cursor: "pointer" }}>
+            {membersOpen ? "▾ Hide" : "▸ Show"} all {n.members.length} member-leaf de-novo calls
+          </button>
+          {membersOpen && (
+            <div style={{ overflowX: "auto", marginTop: 8 }}>
+              <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 560, fontSize: 11.5 }}>
+                <thead><tr>
+                  <th style={{ ...rowHdr, fontSize: 9.5, background: "#faf8f5", color: MUTE }}>Leaf</th>
+                  {tiers.map((t) => <th key={t} style={{ ...rowHdr, fontSize: 9.5, background: t === "tissue" ? TISSUE_BG : "#faf8f5", color: "#4a453f", borderLeft: `1px solid ${LINE}` }}>{TIER_LABEL[t]}</th>)}
+                </tr></thead>
+                <tbody>
+                  {n.members.map((m) => (
+                    <tr key={m.id} style={{ background: m.id === n.dnPredLeaf ? "#f2fafd" : undefined }}>
+                      <td style={{ ...cell, fontFamily: "ui-monospace, monospace", color: "#0e7490", fontWeight: 700 }}>{m.id}{m.id === n.dnPredLeaf ? " ★" : ""}</td>
+                      {tiers.map((t) => <td key={t} style={{ ...cell, color: m.dn?.[t]?.val ? "#134e5a" : "#c4bdb1" }}>{m.dn?.[t]?.val ? <>{m.dn[t].val}<ConfBadge c={m.dn[t].conf} /></> : "—"}</td>)}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
@@ -200,12 +240,13 @@ export default function CategoryAuditClient({ detail }: { detail: CategoryDetail
           you can compare the same tier down a column. The <b>Tissue</b> column (marked <b>SCORED</b>) drives the summary&apos;s
           correct-call rate; read the judge&apos;s note and decide for yourself whether each match is legitimate.
         </p>
-        <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#6b655d", maxWidth: 800, margin: "0 0 20px", background: "#faf7f0", border: `1px solid ${LINE}`, borderRadius: 8, padding: "9px 12px" }}>
-          <b>Why de-novo is one cell but menu-exposed is four:</b> the scored artifact persists the de-novo answer as a single
-          holistic identity phrase (with the tier it resolved to), then the judge grades <em>that one phrase</em> against all four
-          GT tiers — so the per-tier de-novo reality is the <b>De-novo verdict</b> row. The menu-exposed answer was stored as a
-          structured 4-tier pick from the GT menu, hence four values. The wizard does emit a 4-tier de-novo per <em>leaf</em> in its
-          chat transcript, but that is consolidated away at the node level and isn&apos;t re-persisted here.
+        <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#6b655d", maxWidth: 820, margin: "0 0 20px", background: "#faf7f0", border: `1px solid ${LINE}`, borderRadius: 8, padding: "9px 12px" }}>
+          <b>De-novo vs menu-exposed:</b> the <b>de-novo</b> row is the wizard&apos;s full 4-tier free-form call with its own
+          confidences, recovered from the representative member leaf&apos;s chat transcript (the scored artifact only kept the
+          consolidated phrase, so these are re-parsed from the leaf). The <b>menu-exposed</b> row is the same call forced to the
+          closest option in the GT menu at each tier. For a <b>merged</b> node, expand <em>&ldquo;member-leaf de-novo calls&rdquo;</em>
+          under the card to see every leaf&apos;s own 4-tier prediction (★ = the one shown above). A handful of nodes whose leaves
+          used an unparseable format fall back to the consolidated identity phrase.
         </p>
 
         {fuzzyDs.map((d) => <DatasetSection key={d} ds={d} nodes={byDataset[d]} />)}
