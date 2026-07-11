@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from "react";
 import type { Menu } from "./types";
+import SchemaTree from "./SchemaTree";
 
 // Bucket colors (Darien's structural scheme). Principal buckets get the ladder palette;
 // secondary buckets are muted. Unknown buckets fall back to slate.
@@ -147,6 +148,8 @@ export default function SchemaMenuBrowser({ menu }: { menu: Menu }) {
           </div>
         </div>
       </div>
+
+      <SchemaTree menu={menu} />
 
       <footer className="mt-8 border-t border-slate-200 pt-3 text-[11px] text-slate-400 dark:border-slate-800">
         ZFA structural buckets (darien_ZFA.md) · zfin-grounded · lineages from zlabel panels.yaml · menu {menu.menu_sha} · static, no model.
