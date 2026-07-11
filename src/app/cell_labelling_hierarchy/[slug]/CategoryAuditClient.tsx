@@ -41,7 +41,7 @@ function JudgeCard({ n }: { n: JudgeNode }) {
   const [membersOpen, setMembersOpen] = useState(false);
   const sm = scoredMatch(n);
   const tiers = TIER_ORDER.filter((t) => n.gt[t] || n.menu[t] || n.dn[t] || n.mx[t] || n.dnPred?.[t]);
-  const rowHdr: CSSProperties = { textAlign: "left", padding: "8px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", whiteSpace: "nowrap", verticalAlign: "top", borderBottom: `1px solid ${LINE}` };
+  const rowHdr: CSSProperties = { textAlign: "left", padding: "8px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", verticalAlign: "top", borderBottom: `1px solid ${LINE}`, overflowWrap: "anywhere" };
   const cell: CSSProperties = { padding: "8px 10px", borderBottom: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top", lineHeight: 1.4, overflowWrap: "anywhere", wordBreak: "break-word" };
   // vertical band marking the SCORED tissue column across the coloured rows
   const col = (t: string): CSSProperties => t === "tissue" ? { borderLeft: "2px solid #86bcd0", borderRight: "2px solid #86bcd0" } : { borderLeft: `1px solid ${LINE}` };
@@ -58,6 +58,11 @@ function JudgeCard({ n }: { n: JudgeNode }) {
         <span style={{ fontSize: 9.5, fontWeight: 800, color: kindCol.c, background: kindCol.bg, borderRadius: 99, padding: "1px 7px", letterSpacing: 0.4 }}>{kindCol.t}{n.leaves ? ` · ${n.leaves} ${n.leaves === 1 ? "leaf" : "leaves"}` : ""}</span>
         {n.purity != null && <span style={{ fontSize: 11, color: MUTE }}>purity {Number(n.purity).toFixed(2)}</span>}
         {n.ssmp != null && <span style={{ fontSize: 11, color: MUTE }}>ssmp {Number(n.ssmp).toFixed(2)}</span>}
+      </div>
+      <div style={{ fontSize: 11.5, color: "#5a544c", marginBottom: 10, lineHeight: 1.45 }}>
+        <b style={{ color: "#3f3a34" }}>Consolidated identity:</b> {n.identity || "—"}
+        {n.dnTier ? <span style={{ color: MUTE }}> · de-novo call resolved to {TIER_SHORT[n.dnTier] || n.dnTier}</span> : null}
+        {hasPred && n.dnPredLeaf ? <span style={{ color: MUTE }}> · 4-tier de-novo below shown from representative leaf {n.dnPredLeaf}{n.members && n.members.length ? ` of ${n.members.length}` : ""}</span> : null}
       </div>
       <div style={{ overflowX: "auto" }}>
         <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 560, tableLayout: "fixed" }}>
@@ -88,12 +93,6 @@ function JudgeCard({ n }: { n: JudgeNode }) {
                     return <td key={t} style={{ ...cell, ...col(t), background: DN.bg, fontWeight: 600, color: p?.val ? "#123f6b" : "#c4bdb1" }}>{p?.val ? <>{p.val}<ConfBadge c={p.conf} /></> : "—"}</td>;
                   })
                 : <td colSpan={tiers.length} style={{ ...cell, borderLeft: `1px solid ${LINE}`, background: DN.bg, color: "#123f6b", fontWeight: 600 }}>{n.identity || "—"}<span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#5a7a99", marginTop: 3, fontSize: 11 }}>4-tier de-novo not parseable for this node — showing the consolidated call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}</span></td>}
-            </tr>
-            {/* caption: consolidated identity + source leaf — blue */}
-            <tr>
-              <td colSpan={tiers.length + 1} style={{ padding: "5px 10px", borderBottom: `1px solid ${LINE}`, background: DN.bg, fontSize: 11, color: "#5a7a99", fontStyle: "italic" }}>
-                consolidated de-novo identity: <b style={{ color: "#123f6b", fontStyle: "normal" }}>{n.identity || "—"}</b>{n.dnTier ? ` · resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}{hasPred && n.dnPredLeaf ? ` · 4-tier shown from representative leaf ${n.dnPredLeaf}${n.members && n.members.length ? ` of ${n.members.length}` : ""}` : ""}
-              </td>
             </tr>
             {/* 3 · de-novo verdict — blue */}
             <tr>
@@ -251,6 +250,8 @@ export default function CategoryAuditClient({ detail }: { detail: CategoryDetail
           closest option in the GT menu at each tier. For a <b>merged</b> node, expand <em>&ldquo;member-leaf de-novo calls&rdquo;</em>
           under the card to see every leaf&apos;s own 4-tier prediction (★ = the one shown above). A handful of nodes whose leaves
           used an unparseable format fall back to the consolidated identity phrase.
+          <br /><b>The % badge</b> on a prediction is the labeller&apos;s <em>own self-reported confidence</em> for that tier — how
+          certain the model said it was — not an accuracy or an agreement-with-GT score.
         </p>
 
         {fuzzyDs.map((d) => <DatasetSection key={d} ds={d} nodes={byDataset[d]} />)}
