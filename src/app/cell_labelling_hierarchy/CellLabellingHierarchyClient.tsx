@@ -1,7 +1,8 @@
 "use client";
 
 import { Fragment, type CSSProperties } from "react";
-import { DATA, type Row, type PerDs } from "./data";
+import Link from "next/link";
+import { DATA, catSlug, type Row, type PerDs } from "./data";
 
 // ── design tokens ────────────────────────────────────────────────────────────
 const PAPER = "#f6f4f2", INK = "#2b2b2b", MUTE = "#8a847b", LINE = "#e7e1d9", CARD = "#fffdfb";
@@ -62,8 +63,10 @@ function RowCells({ row }: { row: Row }) {
   return (
     <>
       <td style={{ padding: "11px 12px", borderBottom: `1px solid ${LINE}` }}>
-        <div style={{ fontWeight: 700, fontSize: 14, color: INK, display: "flex", alignItems: "center", gap: 8 }}>
-          {row.category}
+        <div style={{ fontWeight: 700, fontSize: 14, display: "flex", alignItems: "center", gap: 8 }}>
+          <Link href={`/cell_labelling_hierarchy/${catSlug(row.category)}`} title="Audit the individual judge calls behind this category" style={{ color: "#0e7490", textDecoration: "none", borderBottom: "1px solid #bfe3ea" }}>
+            {row.category}
+          </Link>
           {row.thin && <span title="Thin evidence — fewer than 4 judged nodes total" style={{ fontSize: 9.5, fontWeight: 700, color: "#92600a", background: "#fdf0d0", borderRadius: 99, padding: "1px 6px", letterSpacing: 0.3 }}>THIN</span>}
         </div>
         {row.examples.length > 0 && (
@@ -101,6 +104,9 @@ export default function CellLabellingHierarchyClient() {
           Which cell &amp; tissue types the labelling wizard nails <strong>correctly and with high confidence</strong> — ranked by
           how <strong>consistently</strong> they score well across every ground-truth dataset. Each biological category pools the
           judged nodes whose ground truth falls in it; a category rises when the wizard gets it right in <em>every</em> dataset it appears in.
+        </p>
+        <p style={{ fontSize: 13, lineHeight: 1.5, color: "#0e7490", fontWeight: 600, margin: "0 0 20px" }}>
+          → Click any cell / tissue type to hand-audit the individual fuzzy-judge calls behind it, per dataset.
         </p>
 
         {/* stat strip */}
@@ -165,9 +171,9 @@ export default function CellLabellingHierarchyClient() {
               {aside.map((r) => {
                 const d = DS_ORDER.find((x) => r.perDataset[x]);
                 return (
-                  <span key={r.category} style={{ fontSize: 12, color: "#5a544c", background: CARD, border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 10px" }}>
+                  <Link key={r.category} href={`/cell_labelling_hierarchy/${catSlug(r.category)}`} style={{ fontSize: 12, color: "#0e7490", background: CARD, border: `1px solid ${LINE}`, borderRadius: 8, padding: "6px 10px", textDecoration: "none" }}>
                     {r.category} <span style={{ color: MUTE }}>· {d} only · {r.accuracy}% · n={r.n}</span>
-                  </span>
+                  </Link>
                 );
               })}
             </div>
