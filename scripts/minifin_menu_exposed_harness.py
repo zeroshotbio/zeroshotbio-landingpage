@@ -26,6 +26,7 @@ MODEL     = os.environ.get("MINIFIN_MODEL", "gpt-5.4")
 SEED      = int(os.environ.get("MINIFIN_SEED", "48"))
 N_SAMPLE  = int(os.environ.get("MINIFIN_N", "4"))
 ABORT_USD = float(os.environ.get("MINIFIN_ABORT_USD", "4.00"))
+DISPATCH_ROUNDS = int(os.environ.get("MINIFIN_DISPATCH_ROUNDS", "2"))
 HARNESS   = {"id": "menu-exposed-chat-zfa", "version": "minifin-zfa-v2",
              "name": "3-personality menu-exposed chat (ZFA structural-bucket menu)",
              "basis": "menu-exposed-chat (zscape-port) + zlabel panels + Darien ZFA buckets"}
@@ -41,7 +42,48 @@ if not os.environ.get("AUTOPILOT_API_TOKEN"):
 MENU = json.load(open(MENU_PATH))
 ATLAS = json.load(open(UMAP_PATH))
 CLUSTERS = ATLAS["clusters"]
-print(f"[init] base={BASE} model={MODEL} | menu sha {MENU['menu_sha']} | {len(CLUSTERS)} minifin clusters")
+
+# ---- Arm C: ontology evidence packet (MINIFIN_PACKET=1) --------------------
+PACKET_MODE = os.environ.get("MINIFIN_PACKET") == "1"
+PACKETS = {}
+if PACKET_MODE:
+    pk = json.load(open(os.path.join(ASSET_DIR, "ontology_packets.json")))
+    PACKETS = {str(p["id"]): p for p in pk["packets"]}
+    HARNESS = {"id": "menu-exposed-chat-zfa-packet", "version": "minifin-zfa-packet-v1",
+               "name": "ontology-packet-informed reasoner + ZFA menu-exposed chat",
+               "basis": "zlabel evidence packet (candidates/discriminators/earned-depth) → LLM reasoner"}
+print(f"[init] base={BASE} model={MODEL} | menu sha {MENU['menu_sha']} | packet={'ON' if PACKET_MODE else 'off'} | {len(CLUSTERS)} minifin clusters")
+
+
+def packet_brief(cid):
+    """Compact, LLM-readable ontology evidence packet — a deterministic PRIOR to reason
+    over, explicitly overrulable. Empty string when packet mode is off or absent."""
+    p = PACKETS.get(str(cid))
+    if not p:
+        return ""
+    call = p["call"]; conf = p["confidence"]
+    lines = ["=== ONTOLOGY EVIDENCE PACKET (deterministic zlabel/ZFA — a PRIOR to reason over, NOT a verdict) ==="]
+    if call["abstained"]:
+        lines.append(f"- Grounded call: ABSTAINED (ood={call['ood']}) — the deterministic engine could not converge; decide from the markers.")
+    else:
+        lines.append(f"- Grounded call: {call['bucket']} → {call['zfa_name']} (earned depth {call['depth']}, {call['ood']}); "
+                     f"confidence {conf['tier']} ({conf['score']}).")
+    cands = ", ".join(f"{c['bucket']} (Δ{c['margin_to_top']})" for c in p["candidates"][:3])
+    if cands:
+        lines.append(f"- Top candidate lineages (Δ = score behind leader): {cands}")
+    for d in p["discriminators"][:2]:
+        pres = ", ".join(d["present_specific"][:5]) or "—"
+        probe = ", ".join(d["absent_probe"][:5]) or "—"
+        lines.append(f"- Discriminators for {d['bucket']}: PRESENT-specific [{pres}]; ABSENT probe-targets [{probe}]")
+    if p["convergent_genes"]:
+        lines.append(f"- Convergent genes: {', '.join(p['convergent_genes'][:8])}")
+    if p["expression_evidence"]:
+        ev = "; ".join(f"{e['symbol']}→{e['name']}" for e in p["expression_evidence"][:5])
+        lines.append(f"- ZFIN expression grounding: {ev}")
+    lines.append("USE THIS: adjudicate the top candidate lineages using the discriminators (probe the ABSENT targets via the "
+                 "Archivist if a single answer would change the call); conclude at the DEEPEST rung the evidence supports. "
+                 "You MAY OVERTURN the grounded call if a discriminating marker contradicts it, or go deeper/shallower than its earned depth.")
+    return "\n".join(lines) + "\n\n"
 
 # ---- sample ---------------------------------------------------------------
 rng = random.Random(SEED)
@@ -60,13 +102,21 @@ def up_down(c):
 def researcher_prompt(c):
     up, down = up_down(c)
     up_s = ", ".join(up); down_s = ", ".join(down) if down else "(none informative)"
+    focus = ""
+    if PACKET_MODE:
+        probes = []
+        for d in (PACKETS.get(str(c["id"])) or {}).get("discriminators", [])[:2]:
+            probes += d.get("absent_probe", [])[:4]
+        if probes:
+            focus = (f" ALSO research these ontology-flagged DISCRIMINATING markers (they separate the top "
+                     f"candidate lineages, so their presence/absence would settle the call): {', '.join(dict.fromkeys(probes))}.")
     return (
         f"Cluster {c['id']}'s top UP markers: {up_s}. Depleted (DOWN) markers: {down_s}. "
         "For EACH marker — every UP marker AND the informative DOWN ones — return cited evidence from "
         "ALL THREE sources: ZFIN in-vivo expression, the ZFA anatomy term (use the ontology_lookup tool "
         "for ZFA — do not rely on web search for it), and the GO molecular function/process. Link every "
         "record so all three source pills show per marker. A depleted (DOWN) marker is real evidence "
-        "AGAINST a tissue — research it too. Evidence only — no identity call (that is the Reasoner's job)."
+        f"AGAINST a tissue — research it too.{focus} Evidence only — no identity call (that is the Reasoner's job)."
     )
 
 DENOVO_PROMPT = (
@@ -159,19 +209,43 @@ for i, cid in enumerate(SAMPLE):
         rp = researcher_prompt(cl)
         rsearch = app._agent(BASE, DATASET, MODEL, cl, [{"role": "user", "content": rp}], "research", usage)
         conv = [{"role": "user", "content": rp}, {"role": "assistant", "content": rsearch}]
-        rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": DENOVO_PROMPT}], "reason", usage)
-        conv += [{"role": "user", "content": DENOVO_PROMPT}, {"role": "assistant", "content": rdenovo}]
-        denovo, concl = denovo_label_of(rdenovo)
-        mp = menu_prompt(cl, denovo)
-        rmenu = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": mp}], "reason", usage)
         transcript = [
             {"role": "user", "content": rp, "mode": "research"},
             {"role": "assistant", "content": rsearch, "mode": "research"},
-            {"role": "user", "content": DENOVO_PROMPT, "mode": "reason"},
-            {"role": "assistant", "content": rdenovo, "mode": "reason"},
-            {"role": "user", "content": mp, "mode": "reason", "phase": "menu-exposed"},
-            {"role": "assistant", "content": rmenu, "mode": "reason", "phase": "menu-exposed"},
         ]
+        # --- de-novo reasoning, with a bounded Archivist/Researcher dispatch loop ---
+        denovo_user = packet_brief(cl["id"]) + DENOVO_PROMPT
+        conv += [{"role": "user", "content": denovo_user}]
+        rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv, "reason", usage)
+        conv += [{"role": "assistant", "content": rdenovo}]
+        transcript += [{"role": "user", "content": denovo_user, "mode": "reason"},
+                       {"role": "assistant", "content": rdenovo, "mode": "reason"}]
+        MODE = {"archivist": "archivist", "researcher": "research", "research": "research", "reason": "reason"}
+        for _ in range(DISPATCH_ROUNDS):
+            if app.parse_conclude(rdenovo):
+                break
+            disp = app.parse_dispatch(rdenovo)
+            if not disp:
+                break
+            for d in disp[:2]:  # execute the reasoner's targeted follow-ups (Archivist/Researcher)
+                m = MODE.get(d.get("to"), "archivist")
+                ans = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": d["prompt"]}], m, usage)
+                conv += [{"role": "user", "content": d["prompt"]}, {"role": "assistant", "content": ans}]
+                transcript += [{"role": "user", "content": d["prompt"], "mode": m},
+                               {"role": "assistant", "content": ans, "mode": m}]
+            nudge = ("You now have the follow-up evidence above. CONCLUDE now with a kasperov-conclude block "
+                     "(4-tier stack + earned-depth call); do NOT dispatch again.")
+            conv += [{"role": "user", "content": nudge}]
+            rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv, "reason", usage)
+            conv += [{"role": "assistant", "content": rdenovo}]
+            transcript += [{"role": "user", "content": nudge, "mode": "reason"},
+                           {"role": "assistant", "content": rdenovo, "mode": "reason"}]
+        denovo, concl = denovo_label_of(rdenovo)
+        # --- menu-exposed binding ---
+        mp = menu_prompt(cl, denovo)
+        rmenu = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": mp}], "reason", usage)
+        transcript += [{"role": "user", "content": mp, "mode": "reason", "phase": "menu-exposed"},
+                       {"role": "assistant", "content": rmenu, "mode": "reason", "phase": "menu-exposed"}]
     except Exception as e:
         print(f"[{i+1}/{len(SAMPLE)}] minifin:{cid} ERROR {e}")
         denovo, concl, transcript = "(error)", {}, []
