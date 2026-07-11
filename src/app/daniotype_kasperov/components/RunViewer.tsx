@@ -247,7 +247,9 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   const clusteringUrl = useMemo(() => {
     const c: any = (run as any)?._canonical;
     const fp = c?.clustering?.leafIdFingerprint;
-    return (c?.scoring?.gtFingerprintDir && fp && dataset?.dataUrl && /\/umap\.json$/.test(dataset.dataUrl))
+    // fp-subdir umap when the run has one: gtFingerprintDir (GT trio, STEP-3 split) OR fineUmapDir
+    // (MiniFin/ParseMF/ManualMF — no GT, but a fine-partition umap was built). Else the coarse base.
+    return ((c?.scoring?.gtFingerprintDir || c?.clustering?.fineUmapDir) && fp && dataset?.dataUrl && /\/umap\.json$/.test(dataset.dataUrl))
       ? dataset.dataUrl.replace(/\/umap\.json$/, `/${fp}/umap.json`) : dataset?.dataUrl;
   }, [run, dataset]);
   const { clusters, meta: atlasMeta, error } = useAtlas(clusteringUrl);
