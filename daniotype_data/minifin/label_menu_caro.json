@@ -1,0 +1,7204 @@
+{
+ "schema": "minifin_label_menu/caro_v1",
+ "stage": "48 hpf (MiniFin)",
+ "source": {
+  "panels": "zlabel/src/zlabel/panels.yaml@5b513d44",
+  "zfa": "zfa.obo",
+  "grounding": "zfin_wildtype_expression (attested only)"
+ },
+ "caro_ladder": [
+  "Cell",
+  "Portion of tissue",
+  "Multi-tissue structure",
+  "Compound organ",
+  "Anatomical system"
+ ],
+ "tiers": {
+  "germ_layer": [
+   "ectoderm",
+   "endoderm",
+   "germline",
+   "mesoderm",
+   "neural crest"
+  ],
+  "tissue": [
+   "blood",
+   "cartilage/skeleton",
+   "epiphysis",
+   "eye",
+   "fin",
+   "germline",
+   "gut/liver/pancreas",
+   "heart",
+   "immune system",
+   "inner ear",
+   "interrenal gland",
+   "intestine",
+   "kidney",
+   "lateral line",
+   "liver",
+   "mesenchyme/connective tissue",
+   "muscle",
+   "nervous system",
+   "neural crest",
+   "notochord",
+   "olfactory system",
+   "pancreas",
+   "pigment cells",
+   "pituitary",
+   "skeleton",
+   "skin",
+   "vasculature"
+  ],
+  "cell_type_broad": [
+   "neural",
+   "glia",
+   "neural_crest",
+   "eye",
+   "otic",
+   "lateral_line",
+   "olfactory",
+   "epidermis",
+   "ionocyte",
+   "pigment",
+   "muscle",
+   "cardiac",
+   "mural",
+   "endothelium",
+   "blood_erythroid",
+   "immune_myeloid",
+   "blood_lymphoid",
+   "pronephros",
+   "mesenchyme",
+   "cartilage",
+   "osteoblast",
+   "notochord",
+   "fin",
+   "endoderm_gut",
+   "liver",
+   "pancreas",
+   "intestine",
+   "germline",
+   "pituitary",
+   "interrenal",
+   "pineal"
+  ]
+ },
+ "panels": {
+  "neural": {
+   "germ_layer": "ectoderm",
+   "tissue": "nervous system",
+   "lineage": "neural/neuroectoderm",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "tier": "Anatomical system"
+    }
+   ],
+   "markers": [
+    "elavl3",
+    "neurod1",
+    "tubb5",
+    "sox3",
+    "sox2",
+    "her4.1",
+    "ascl1a",
+    "gfap",
+    "nova2",
+    "elavl4",
+    "srrm4",
+    "rbfox3a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009282",
+      "name": "Bergmann glial cell"
+     },
+     {
+      "zfa": "ZFA:0009191",
+      "name": "CNS interneuron"
+     },
+     {
+      "zfa": "ZFA:0009067",
+      "name": "CNS neuron (sensu Vertebrata)"
+     },
+     {
+      "zfa": "ZFA:0009243",
+      "name": "CaP motoneuron"
+     },
+     {
+      "zfa": "ZFA:0005247",
+      "name": "CiA"
+     },
+     {
+      "zfa": "ZFA:0005233",
+      "name": "CiD"
+     },
+     {
+      "zfa": "ZFA:0005176",
+      "name": "CoSA"
+     },
+     {
+      "zfa": "ZFA:0005178",
+      "name": "DoLA"
+     },
+     {
+      "zfa": "ZFA:0009276",
+      "name": "GABAergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009069",
+      "name": "Golgi cell"
+     },
+     {
+      "zfa": "ZFA:0005240",
+      "name": "Kolmer-Agduhr neuron"
+     },
+     {
+      "zfa": "ZFA:0009149",
+      "name": "Mauthner neuron"
+     },
+     {
+      "zfa": "ZFA:0005185",
+      "name": "MiD2cm"
+     },
+     {
+      "zfa": "ZFA:0005195",
+      "name": "MiD3cl"
+     },
+     {
+      "zfa": "ZFA:0005196",
+      "name": "MiD3cm"
+     },
+     {
+      "zfa": "ZFA:0005179",
+      "name": "MiP motor neuron"
+     },
+     {
+      "zfa": "ZFA:0005190",
+      "name": "MiV1"
+     },
+     {
+      "zfa": "ZFA:0009280",
+      "name": "Muller cell"
+     },
+     {
+      "zfa": "ZFA:0009319",
+      "name": "ON-bipolar cell"
+     },
+     {
+      "zfa": "ZFA:0009071",
+      "name": "Purkinje cell"
+     },
+     {
+      "zfa": "ZFA:0005180",
+      "name": "RoP motor neuron"
+     },
+     {
+      "zfa": "ZFA:0009150",
+      "name": "Rohon-Beard neuron"
+     },
+     {
+      "zfa": "ZFA:0009221",
+      "name": "UV sensitive photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0005181",
+      "name": "VaP motor neuron"
+     },
+     {
+      "zfa": "ZFA:0005177",
+      "name": "VeLD"
+     },
+     {
+      "zfa": "ZFA:0009061",
+      "name": "adrenergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009216",
+      "name": "adrenocorticotropic hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009255",
+      "name": "amacrine cell"
+     },
+     {
+      "zfa": "ZFA:0009075",
+      "name": "astrocyte"
+     },
+     {
+      "zfa": "ZFA:0009121",
+      "name": "auditory receptor cell"
+     },
+     {
+      "zfa": "ZFA:0009055",
+      "name": "bipolar neuron"
+     },
+     {
+      "zfa": "ZFA:0009222",
+      "name": "blue sensitive photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0005731",
+      "name": "branchiomotor neuron"
+     },
+     {
+      "zfa": "ZFA:0001691",
+      "name": "cerebellar granule cell"
+     },
+     {
+      "zfa": "ZFA:0007120",
+      "name": "cerebrospinal fluid contacting neuron"
+     },
+     {
+      "zfa": "ZFA:0009124",
+      "name": "chemoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009060",
+      "name": "cholinergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009304",
+      "name": "choroid plexus epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0009358",
+      "name": "ciliated olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0009322",
+      "name": "cone retinal bipolar cell"
+     },
+     {
+      "zfa": "ZFA:0009079",
+      "name": "corneal endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0005730",
+      "name": "cranial motor neuron"
+     },
+     {
+      "zfa": "ZFA:0009360",
+      "name": "crypt olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0005806",
+      "name": "diencephalic efferent neurons to the lateral line"
+     },
+     {
+      "zfa": "ZFA:0009301",
+      "name": "dopaminergic neuron"
+     },
+     {
+      "zfa": "ZFA:0005775",
+      "name": "enteric neuron"
+     },
+     {
+      "zfa": "ZFA:0009033",
+      "name": "ependymal cell"
+     },
+     {
+      "zfa": "ZFA:0009153",
+      "name": "eurydendroid cell"
+     },
+     {
+      "zfa": "ZFA:0009154",
+      "name": "eye photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009202",
+      "name": "follicle stimulating hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009073",
+      "name": "glial cell"
+     },
+     {
+      "zfa": "ZFA:0009147",
+      "name": "glial cell (sensu Vertebrata)"
+     },
+     {
+      "zfa": "ZFA:0009290",
+      "name": "glutamatergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009396",
+      "name": "glycinergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009070",
+      "name": "granule cell"
+     },
+     {
+      "zfa": "ZFA:0009223",
+      "name": "green sensitive photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009366",
+      "name": "hair cell"
+     },
+     {
+      "zfa": "ZFA:0000678",
+      "name": "hair cell anterior macula"
+     },
+     {
+      "zfa": "ZFA:0000281",
+      "name": "hair cell posterior macula"
+     },
+     {
+      "zfa": "ZFA:0005209",
+      "name": "hindbrain interneuron"
+     },
+     {
+      "zfa": "ZFA:0009315",
+      "name": "horizontal cell"
+     },
+     {
+      "zfa": "ZFA:0005778",
+      "name": "hypocretin-secreting neuron"
+     },
+     {
+      "zfa": "ZFA:0001725",
+      "name": "immature Schwann cell"
+     },
+     {
+      "zfa": "ZFA:0001098",
+      "name": "immature hair cell anterior macula"
+     },
+     {
+      "zfa": "ZFA:0001099",
+      "name": "immature hair cell posterior macula"
+     },
+     {
+      "zfa": "ZFA:0009225",
+      "name": "inhibitory interneuron"
+     },
+     {
+      "zfa": "ZFA:0009365",
+      "name": "interneuromast cell"
+     },
+     {
+      "zfa": "ZFA:0009051",
+      "name": "interneuron"
+     },
+     {
+      "zfa": "ZFA:0009199",
+      "name": "iridophore"
+     },
+     {
+      "zfa": "ZFA:0005828",
+      "name": "kappe olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0009401",
+      "name": "lens fiber cell"
+     },
+     {
+      "zfa": "ZFA:0005945",
+      "name": "long double cone cell"
+     },
+     {
+      "zfa": "ZFA:0005947",
+      "name": "long single cone cell"
+     },
+     {
+      "zfa": "ZFA:0009203",
+      "name": "luteinizing hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009120",
+      "name": "mechanoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009091",
+      "name": "melanocyte"
+     },
+     {
+      "zfa": "ZFA:0009205",
+      "name": "melanocyte stimulating hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009359",
+      "name": "microvillous olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0005210",
+      "name": "midbrain interneuron"
+     },
+     {
+      "zfa": "ZFA:0009052",
+      "name": "motor neuron"
+     },
+     {
+      "zfa": "ZFA:0009135",
+      "name": "myelinating Schwann cell"
+     },
+     {
+      "zfa": "ZFA:0009367",
+      "name": "neuromast hair cell"
+     },
+     {
+      "zfa": "ZFA:0009362",
+      "name": "neuromast mantle cell"
+     },
+     {
+      "zfa": "ZFA:0009363",
+      "name": "neuromast support cell"
+     },
+     {
+      "zfa": "ZFA:0009248",
+      "name": "neuron"
+     },
+     {
+      "zfa": "ZFA:0009186",
+      "name": "neurosecretory neuron"
+     },
+     {
+      "zfa": "ZFA:0009240",
+      "name": "nitrergic neuron"
+     },
+     {
+      "zfa": "ZFA:0005873",
+      "name": "noradrenergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009125",
+      "name": "olfactory receptor cell"
+     },
+     {
+      "zfa": "ZFA:0009076",
+      "name": "oligodendrocyte"
+     },
+     {
+      "zfa": "ZFA:0009062",
+      "name": "peptidergic neuron"
+     },
+     {
+      "zfa": "ZFA:0009237",
+      "name": "perineuronal satellite cell"
+     },
+     {
+      "zfa": "ZFA:0009063",
+      "name": "peripheral neuron"
+     },
+     {
+      "zfa": "ZFA:0009127",
+      "name": "photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009284",
+      "name": "pinealocyte"
+     },
+     {
+      "zfa": "ZFA:0009245",
+      "name": "primary interneuron"
+     },
+     {
+      "zfa": "ZFA:0009244",
+      "name": "primary motor neuron"
+     },
+     {
+      "zfa": "ZFA:0009242",
+      "name": "primary neuron"
+     },
+     {
+      "zfa": "ZFA:0000821",
+      "name": "primary neuron hindbrain"
+     },
+     {
+      "zfa": "ZFA:0009204",
+      "name": "prolactin secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009224",
+      "name": "red sensitive photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0005865",
+      "name": "reticulospinal neuron"
+     },
+     {
+      "zfa": "ZFA:0009318",
+      "name": "retinal bipolar neuron"
+     },
+     {
+      "zfa": "ZFA:0009262",
+      "name": "retinal cone cell"
+     },
+     {
+      "zfa": "ZFA:0009310",
+      "name": "retinal ganglion cell"
+     },
+     {
+      "zfa": "ZFA:0009275",
+      "name": "retinal rod cell"
+     },
+     {
+      "zfa": "ZFA:0009247",
+      "name": "secondary motor neuron"
+     },
+     {
+      "zfa": "ZFA:0009053",
+      "name": "sensory neuron"
+     },
+     {
+      "zfa": "ZFA:0009361",
+      "name": "serotonergic neuron"
+     },
+     {
+      "zfa": "ZFA:0005946",
+      "name": "short double cone cell"
+     },
+     {
+      "zfa": "ZFA:0005948",
+      "name": "short single cone cell"
+     },
+     {
+      "zfa": "ZFA:0009155",
+      "name": "somatotropin secreting cell"
+     },
+     {
+      "zfa": "ZFA:0000778",
+      "name": "spinal cord interneuron"
+     },
+     {
+      "zfa": "ZFA:0009297",
+      "name": "stellate interneuron"
+     },
+     {
+      "zfa": "ZFA:0005777",
+      "name": "sympathetic neuron"
+     },
+     {
+      "zfa": "ZFA:0009126",
+      "name": "taste receptor cell"
+     },
+     {
+      "zfa": "ZFA:0005565",
+      "name": "tether cell"
+     },
+     {
+      "zfa": "ZFA:0009218",
+      "name": "thyroid stimulating hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0005768",
+      "name": "trigeminal sensory neuron"
+     },
+     {
+      "zfa": "ZFA:0007121",
+      "name": "ventral cerebrospinal fluid contacting neuron"
+     },
+     {
+      "zfa": "ZFA:0005732",
+      "name": "visceromotor neuron"
+     },
+     {
+      "zfa": "ZFA:0009219",
+      "name": "visible light photoreceptor cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001706",
+      "name": "Purkinje cell layer corpus cerebelli"
+     },
+     {
+      "zfa": "ZFA:0001709",
+      "name": "Purkinje cell layer valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0005906",
+      "name": "Reissner's fiber"
+     },
+     {
+      "zfa": "ZFA:0000713",
+      "name": "abducens motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000714",
+      "name": "accessory pretectal nucleus"
+     },
+     {
+      "zfa": "ZFA:0005144",
+      "name": "ampullary nerve"
+     },
+     {
+      "zfa": "ZFA:0001676",
+      "name": "annular ligament"
+     },
+     {
+      "zfa": "ZFA:0000619",
+      "name": "anterior crista"
+     },
+     {
+      "zfa": "ZFA:0000468",
+      "name": "anterior crista primordium"
+     },
+     {
+      "zfa": "ZFA:0001470",
+      "name": "anterior lateral line"
+     },
+     {
+      "zfa": "ZFA:0001391",
+      "name": "anterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000425",
+      "name": "anterior lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0005117",
+      "name": "anterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000168",
+      "name": "anterior macula"
+     },
+     {
+      "zfa": "ZFA:0005146",
+      "name": "area postrema"
+     },
+     {
+      "zfa": "ZFA:0005575",
+      "name": "brain nucleus"
+     },
+     {
+      "zfa": "ZFA:0000629",
+      "name": "caudal motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000322",
+      "name": "caudal octaval nucleus"
+     },
+     {
+      "zfa": "ZFA:0000480",
+      "name": "caudal octavolateralis nucleus"
+     },
+     {
+      "zfa": "ZFA:0000630",
+      "name": "caudal parvocellular preoptic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000324",
+      "name": "caudal periventricular hypothalamus"
+     },
+     {
+      "zfa": "ZFA:0000631",
+      "name": "caudal pretectal nucleus"
+     },
+     {
+      "zfa": "ZFA:0000325",
+      "name": "caudal thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000482",
+      "name": "caudal tuberal nucleus"
+     },
+     {
+      "zfa": "ZFA:0000181",
+      "name": "caudal zone of dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000182",
+      "name": "central caudal thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000485",
+      "name": "central nucleus inferior lobe"
+     },
+     {
+      "zfa": "ZFA:0001668",
+      "name": "central nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000826",
+      "name": "central nucleus torus semicircularis"
+     },
+     {
+      "zfa": "ZFA:0000635",
+      "name": "central pretectal nucleus"
+     },
+     {
+      "zfa": "ZFA:0000487",
+      "name": "central zone of dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000636",
+      "name": "cerebellar crest"
+     },
+     {
+      "zfa": "ZFA:0001687",
+      "name": "corneal endothelium"
+     },
+     {
+      "zfa": "ZFA:0001683",
+      "name": "corneal epithelium"
+     },
+     {
+      "zfa": "ZFA:0001688",
+      "name": "corneal primordium"
+     },
+     {
+      "zfa": "ZFA:0001685",
+      "name": "corneal stroma"
+     },
+     {
+      "zfa": "ZFA:0000013",
+      "name": "cranial ganglion"
+     },
+     {
+      "zfa": "ZFA:0000641",
+      "name": "cranial nerve"
+     },
+     {
+      "zfa": "ZFA:0000249",
+      "name": "cranial nerve I"
+     },
+     {
+      "zfa": "ZFA:0000435",
+      "name": "cranial nerve II"
+     },
+     {
+      "zfa": "ZFA:0000405",
+      "name": "cranial nerve III"
+     },
+     {
+      "zfa": "ZFA:0000600",
+      "name": "cranial nerve IV"
+     },
+     {
+      "zfa": "ZFA:0000668",
+      "name": "cranial nerve IX"
+     },
+     {
+      "zfa": "ZFA:0000697",
+      "name": "cranial nerve V"
+     },
+     {
+      "zfa": "ZFA:0000310",
+      "name": "cranial nerve VI"
+     },
+     {
+      "zfa": "ZFA:0000664",
+      "name": "cranial nerve VII"
+     },
+     {
+      "zfa": "ZFA:0000247",
+      "name": "cranial nerve VIII"
+     },
+     {
+      "zfa": "ZFA:0000453",
+      "name": "cranial nerve X"
+     },
+     {
+      "zfa": "ZFA:0001663",
+      "name": "cranial nerve root"
+     },
+     {
+      "zfa": "ZFA:0000645",
+      "name": "descending octaval nucleus"
+     },
+     {
+      "zfa": "ZFA:0000192",
+      "name": "descending trigeminal root"
+     },
+     {
+      "zfa": "ZFA:0001659",
+      "name": "diencephalic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000193",
+      "name": "diffuse nucleus inferior lobe"
+     },
+     {
+      "zfa": "ZFA:0000194",
+      "name": "dorsal accessory optic nucleus"
+     },
+     {
+      "zfa": "ZFA:0001312",
+      "name": "dorsal anterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000647",
+      "name": "dorsal caudal thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000340",
+      "name": "dorsal entopeduncular nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000197",
+      "name": "dorsal habenular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000502",
+      "name": "dorsal motor nucleus trigeminal nerve"
+     },
+     {
+      "zfa": "ZFA:0000650",
+      "name": "dorsal motor root of V"
+     },
+     {
+      "zfa": "ZFA:0000343",
+      "name": "dorsal nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000652",
+      "name": "dorsal root"
+     },
+     {
+      "zfa": "ZFA:0000200",
+      "name": "dorsal root ganglion"
+     },
+     {
+      "zfa": "ZFA:0000346",
+      "name": "dorsal tegmental nucleus"
+     },
+     {
+      "zfa": "ZFA:0000506",
+      "name": "dorsal zone of dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0007001",
+      "name": "dorso-rostral cluster"
+     },
+     {
+      "zfa": "ZFA:0001672",
+      "name": "dorsolateral septum"
+     },
+     {
+      "zfa": "ZFA:0005912",
+      "name": "endolymphatic sac"
+     },
+     {
+      "zfa": "ZFA:0001555",
+      "name": "epibranchial ganglion"
+     },
+     {
+      "zfa": "ZFA:0007004",
+      "name": "epiphyseal cluster"
+     },
+     {
+      "zfa": "ZFA:0001292",
+      "name": "epiphyseal stalk"
+     },
+     {
+      "zfa": "ZFA:0000352",
+      "name": "external cellular layer"
+     },
+     {
+      "zfa": "ZFA:0001291",
+      "name": "facial ganglion"
+     },
+     {
+      "zfa": "ZFA:0000512",
+      "name": "facial lobe"
+     },
+     {
+      "zfa": "ZFA:0000206",
+      "name": "facial nerve motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0007071",
+      "name": "flexural organ"
+     },
+     {
+      "zfa": "ZFA:0000190",
+      "name": "ganglion"
+     },
+     {
+      "zfa": "ZFA:0000210",
+      "name": "gigantocellular part of magnocellular preoptic nucleus"
+     },
+     {
+      "zfa": "ZFA:0001301",
+      "name": "glossopharyngeal ganglion"
+     },
+     {
+      "zfa": "ZFA:0000358",
+      "name": "granular layer corpus cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000766",
+      "name": "granular layer valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000518",
+      "name": "griseum centrale"
+     },
+     {
+      "zfa": "ZFA:0001658",
+      "name": "hindbrain nucleus"
+     },
+     {
+      "zfa": "ZFA:0005790",
+      "name": "hypophyseal capillary"
+     },
+     {
+      "zfa": "ZFA:0000215",
+      "name": "inferior olive"
+     },
+     {
+      "zfa": "ZFA:0000366",
+      "name": "inferior raphe nucleus"
+     },
+     {
+      "zfa": "ZFA:0000523",
+      "name": "inferior reticular formation"
+     },
+     {
+      "zfa": "ZFA:0000524",
+      "name": "infraorbital lateral line"
+     },
+     {
+      "zfa": "ZFA:0001669",
+      "name": "intermediate nucleus"
+     },
+     {
+      "zfa": "ZFA:0000219",
+      "name": "intermediate reticular formation"
+     },
+     {
+      "zfa": "ZFA:0000370",
+      "name": "intermediate thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000573",
+      "name": "internal cellular layer"
+     },
+     {
+      "zfa": "ZFA:0000372",
+      "name": "interpeduncular nucleus medulla oblongata"
+     },
+     {
+      "zfa": "ZFA:0000903",
+      "name": "interpeduncular nucleus tegmentum"
+     },
+     {
+      "zfa": "ZFA:0005569",
+      "name": "iris stroma"
+     },
+     {
+      "zfa": "ZFA:0000222",
+      "name": "isthmic primary nucleus"
+     },
+     {
+      "zfa": "ZFA:0000166",
+      "name": "lateral crista"
+     },
+     {
+      "zfa": "ZFA:0000225",
+      "name": "lateral crista primordium"
+     },
+     {
+      "zfa": "ZFA:0001256",
+      "name": "lateral floor plate"
+     },
+     {
+      "zfa": "ZFA:0000227",
+      "name": "lateral hypothalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000380",
+      "name": "lateral lemniscus nucleus"
+     },
+     {
+      "zfa": "ZFA:0001469",
+      "name": "lateral line"
+     },
+     {
+      "zfa": "ZFA:0000120",
+      "name": "lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0001479",
+      "name": "lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0000228",
+      "name": "lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000176",
+      "name": "lateral nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000209",
+      "name": "lateral preglomerular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000536",
+      "name": "lateral zone of dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000035",
+      "name": "lens"
+     },
+     {
+      "zfa": "ZFA:0001326",
+      "name": "lens epithelium"
+     },
+     {
+      "zfa": "ZFA:0000539",
+      "name": "locus coeruleus"
+     },
+     {
+      "zfa": "ZFA:0000386",
+      "name": "macula"
+     },
+     {
+      "zfa": "ZFA:0000116",
+      "name": "macula lagena"
+     },
+     {
+      "zfa": "ZFA:0007000",
+      "name": "macula saccule"
+     },
+     {
+      "zfa": "ZFA:0000030",
+      "name": "macula utricle"
+     },
+     {
+      "zfa": "ZFA:0000540",
+      "name": "magnocellular octaval nucleus"
+     },
+     {
+      "zfa": "ZFA:0000248",
+      "name": "magnocellular preoptic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000235",
+      "name": "magnocellular superficial pretectal nucleus"
+     },
+     {
+      "zfa": "ZFA:0000259",
+      "name": "mandibular lateral line"
+     },
+     {
+      "zfa": "ZFA:0001257",
+      "name": "medial floor plate"
+     },
+     {
+      "zfa": "ZFA:0000389",
+      "name": "medial funicular nucleus medulla oblongata"
+     },
+     {
+      "zfa": "ZFA:0000291",
+      "name": "medial octavolateralis nucleus"
+     },
+     {
+      "zfa": "ZFA:0000390",
+      "name": "medial preglomerular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000391",
+      "name": "medial zone of dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000312",
+      "name": "mesencephalic nucleus of trigeminal nerve"
+     },
+     {
+      "zfa": "ZFA:0005757",
+      "name": "mid diencephalic organizer"
+     },
+     {
+      "zfa": "ZFA:0007125",
+      "name": "midbrain hindbrain boundary constriction"
+     },
+     {
+      "zfa": "ZFA:0001665",
+      "name": "midbrain nucleus"
+     },
+     {
+      "zfa": "ZFA:0001483",
+      "name": "middle lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000394",
+      "name": "molecular layer corpus cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000913",
+      "name": "molecular layer valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000387",
+      "name": "motor nucleus of vagal nerve"
+     },
+     {
+      "zfa": "ZFA:0007009",
+      "name": "nerve"
+     },
+     {
+      "zfa": "ZFA:0000244",
+      "name": "nucleus Edinger-Westphal"
+     },
+     {
+      "zfa": "ZFA:0000398",
+      "name": "nucleus isthmi"
+     },
+     {
+      "zfa": "ZFA:0000551",
+      "name": "nucleus lateralis valvulae"
+     },
+     {
+      "zfa": "ZFA:0005850",
+      "name": "nucleus of the caudal commissure"
+     },
+     {
+      "zfa": "ZFA:0000245",
+      "name": "nucleus of the descending root"
+     },
+     {
+      "zfa": "ZFA:0005339",
+      "name": "nucleus of the lateral recess"
+     },
+     {
+      "zfa": "ZFA:0000815",
+      "name": "nucleus of the medial longitudinal fasciculus medulla oblongata"
+     },
+     {
+      "zfa": "ZFA:0000941",
+      "name": "nucleus of the medial longitudinal fasciculus synencephalon"
+     },
+     {
+      "zfa": "ZFA:0005340",
+      "name": "nucleus of the posterior recess"
+     },
+     {
+      "zfa": "ZFA:0001339",
+      "name": "nucleus of the tract of the anterior commissure"
+     },
+     {
+      "zfa": "ZFA:0001340",
+      "name": "nucleus of the tract of the postoptic commissure"
+     },
+     {
+      "zfa": "ZFA:0000552",
+      "name": "nucleus ruber"
+     },
+     {
+      "zfa": "ZFA:0000397",
+      "name": "nucleus subglomerulosis"
+     },
+     {
+      "zfa": "ZFA:0000246",
+      "name": "nucleus taeniae"
+     },
+     {
+      "zfa": "ZFA:0001697",
+      "name": "octaval nerve motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000401",
+      "name": "octaval nerve sensory nucleus"
+     },
+     {
+      "zfa": "ZFA:0000553",
+      "name": "oculomotor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000554",
+      "name": "olfactory epithelium"
+     },
+     {
+      "zfa": "ZFA:0001428",
+      "name": "olfactory rosette"
+     },
+     {
+      "zfa": "ZFA:0005229",
+      "name": "optic choroid"
+     },
+     {
+      "zfa": "ZFA:0001619",
+      "name": "optic fiber layer"
+     },
+     {
+      "zfa": "ZFA:0001625",
+      "name": "optic nerve head"
+     },
+     {
+      "zfa": "ZFA:0000137",
+      "name": "optic stalk"
+     },
+     {
+      "zfa": "ZFA:0000404",
+      "name": "paracommissural nucleus"
+     },
+     {
+      "zfa": "ZFA:0001713",
+      "name": "parallel fiber"
+     },
+     {
+      "zfa": "ZFA:0000475",
+      "name": "paraventricular organ"
+     },
+     {
+      "zfa": "ZFA:0001195",
+      "name": "pars anterior"
+     },
+     {
+      "zfa": "ZFA:0001197",
+      "name": "pars intermedia"
+     },
+     {
+      "zfa": "ZFA:0001680",
+      "name": "parvocellular preoptic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000406",
+      "name": "parvocellular superficial pretectal nucleus"
+     },
+     {
+      "zfa": "ZFA:0005437",
+      "name": "pectoral fin motor nerve"
+     },
+     {
+      "zfa": "ZFA:0000516",
+      "name": "periventricular grey zone"
+     },
+     {
+      "zfa": "ZFA:0000260",
+      "name": "periventricular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000408",
+      "name": "periventricular nucleus of caudal tuberculum"
+     },
+     {
+      "zfa": "ZFA:0001666",
+      "name": "periventricular nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0001465",
+      "name": "photoreceptor inner segment layer"
+     },
+     {
+      "zfa": "ZFA:0001466",
+      "name": "photoreceptor outer segment layer"
+     },
+     {
+      "zfa": "ZFA:0007054",
+      "name": "pillar of the anterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0007055",
+      "name": "pillar of the lateral semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0007056",
+      "name": "pillar of the posterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0001717",
+      "name": "pillar of the semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000819",
+      "name": "postcommissural nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000566",
+      "name": "posterior crista"
+     },
+     {
+      "zfa": "ZFA:0000411",
+      "name": "posterior crista primordium"
+     },
+     {
+      "zfa": "ZFA:0000944",
+      "name": "posterior lateral line"
+     },
+     {
+      "zfa": "ZFA:0001314",
+      "name": "posterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000175",
+      "name": "posterior lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0001157",
+      "name": "posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000558",
+      "name": "posterior macula"
+     },
+     {
+      "zfa": "ZFA:0001662",
+      "name": "preglomerular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000601",
+      "name": "pretectal periventricular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000267",
+      "name": "primary olfactory fiber layer"
+     },
+     {
+      "zfa": "ZFA:0005115",
+      "name": "primary posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0001431",
+      "name": "primitive olfactory epithelium"
+     },
+     {
+      "zfa": "ZFA:0005581",
+      "name": "proximal pars anterior"
+     },
+     {
+      "zfa": "ZFA:0001429",
+      "name": "raphe nucleus"
+     },
+     {
+      "zfa": "ZFA:0005871",
+      "name": "region of the nucleus of the medial longitudinal fascicle"
+     },
+     {
+      "zfa": "ZFA:0000024",
+      "name": "retinal ganglion cell layer"
+     },
+     {
+      "zfa": "ZFA:0000119",
+      "name": "retinal inner nuclear layer"
+     },
+     {
+      "zfa": "ZFA:0001329",
+      "name": "retinal inner plexiform layer"
+     },
+     {
+      "zfa": "ZFA:0000046",
+      "name": "retinal neural layer"
+     },
+     {
+      "zfa": "ZFA:0001464",
+      "name": "retinal outer nuclear layer"
+     },
+     {
+      "zfa": "ZFA:0001330",
+      "name": "retinal outer plexiform layer"
+     },
+     {
+      "zfa": "ZFA:0000143",
+      "name": "retinal photoreceptor layer"
+     },
+     {
+      "zfa": "ZFA:0000144",
+      "name": "retinal pigmented epithelium"
+     },
+     {
+      "zfa": "ZFA:0001358",
+      "name": "roof plate diencephalic region"
+     },
+     {
+      "zfa": "ZFA:0000355",
+      "name": "roof plate midbrain region"
+     },
+     {
+      "zfa": "ZFA:0001436",
+      "name": "roof plate neural tube region"
+     },
+     {
+      "zfa": "ZFA:0000824",
+      "name": "roof plate rhombomere 2"
+     },
+     {
+      "zfa": "ZFA:0000950",
+      "name": "roof plate rhombomere 3"
+     },
+     {
+      "zfa": "ZFA:0001034",
+      "name": "roof plate rhombomere 4"
+     },
+     {
+      "zfa": "ZFA:0000828",
+      "name": "roof plate rhombomere 5"
+     },
+     {
+      "zfa": "ZFA:0000825",
+      "name": "roof plate rhombomere 6"
+     },
+     {
+      "zfa": "ZFA:0000951",
+      "name": "roof plate rhombomere 7"
+     },
+     {
+      "zfa": "ZFA:0001035",
+      "name": "roof plate rhombomere 8"
+     },
+     {
+      "zfa": "ZFA:0001311",
+      "name": "roof plate rhombomere region"
+     },
+     {
+      "zfa": "ZFA:0001177",
+      "name": "roof plate spinal cord region"
+     },
+     {
+      "zfa": "ZFA:0000654",
+      "name": "rostral motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000274",
+      "name": "rostral octaval nucleus"
+     },
+     {
+      "zfa": "ZFA:0005580",
+      "name": "rostral pars anterior"
+     },
+     {
+      "zfa": "ZFA:0000426",
+      "name": "rostral parvocellular preoptic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000580",
+      "name": "rostral preglomerular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000275",
+      "name": "rostral tegmental nucleus"
+     },
+     {
+      "zfa": "ZFA:0000427",
+      "name": "rostral thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000581",
+      "name": "rostral tuberal nucleus"
+     },
+     {
+      "zfa": "ZFA:0000582",
+      "name": "saccus dorsalis"
+     },
+     {
+      "zfa": "ZFA:0000278",
+      "name": "secondary gustatory nucleus medulla oblongata"
+     },
+     {
+      "zfa": "ZFA:0000399",
+      "name": "secondary gustatory nucleus trigeminal nucleus"
+     },
+     {
+      "zfa": "ZFA:0005116",
+      "name": "secondary posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000679",
+      "name": "sensory root of facial nerve"
+     },
+     {
+      "zfa": "ZFA:0000433",
+      "name": "sensory trigeminal nucleus"
+     },
+     {
+      "zfa": "ZFA:0005662",
+      "name": "spinal nerve"
+     },
+     {
+      "zfa": "ZFA:0000588",
+      "name": "statoacoustic (VIII) ganglion"
+     },
+     {
+      "zfa": "ZFA:0001351",
+      "name": "stratum album centrale"
+     },
+     {
+      "zfa": "ZFA:0001347",
+      "name": "stratum fibrosum et griseum superficiale"
+     },
+     {
+      "zfa": "ZFA:0001350",
+      "name": "stratum griseum centrale"
+     },
+     {
+      "zfa": "ZFA:0001348",
+      "name": "stratum marginale"
+     },
+     {
+      "zfa": "ZFA:0001349",
+      "name": "stratum opticum"
+     },
+     {
+      "zfa": "ZFA:0000683",
+      "name": "subcommissural organ"
+     },
+     {
+      "zfa": "ZFA:0001572",
+      "name": "superior cervical ganglion"
+     },
+     {
+      "zfa": "ZFA:0000440",
+      "name": "superior raphe nucleus"
+     },
+     {
+      "zfa": "ZFA:0000593",
+      "name": "superior reticular formation medial column"
+     },
+     {
+      "zfa": "ZFA:0000984",
+      "name": "superior reticular formation tegmentum"
+     },
+     {
+      "zfa": "ZFA:0000441",
+      "name": "suprachiasmatic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000689",
+      "name": "supracommissural nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000443",
+      "name": "supraorbital lateral line"
+     },
+     {
+      "zfa": "ZFA:0001556",
+      "name": "sympathetic chain ganglion"
+     },
+     {
+      "zfa": "ZFA:0000693",
+      "name": "tangential nucleus"
+     },
+     {
+      "zfa": "ZFA:0005577",
+      "name": "tegmental nucleus"
+     },
+     {
+      "zfa": "ZFA:0000447",
+      "name": "tela chorioidea"
+     },
+     {
+      "zfa": "ZFA:0001660",
+      "name": "telencephalic nucleus"
+     },
+     {
+      "zfa": "ZFA:0001356",
+      "name": "terminal nerve"
+     },
+     {
+      "zfa": "ZFA:0000448",
+      "name": "tertiary gustatory nucleus"
+     },
+     {
+      "zfa": "ZFA:0000294",
+      "name": "torus lateralis"
+     },
+     {
+      "zfa": "ZFA:0000295",
+      "name": "trigeminal ganglion"
+     },
+     {
+      "zfa": "ZFA:0001365",
+      "name": "trigeminal motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0000450",
+      "name": "trochlear motor nucleus"
+     },
+     {
+      "zfa": "ZFA:0001573",
+      "name": "trunk ganglion"
+     },
+     {
+      "zfa": "ZFA:0007067",
+      "name": "vagal ganglion"
+     },
+     {
+      "zfa": "ZFA:0001302",
+      "name": "vagal ganglion 1"
+     },
+     {
+      "zfa": "ZFA:0001303",
+      "name": "vagal ganglion 2"
+     },
+     {
+      "zfa": "ZFA:0001304",
+      "name": "vagal ganglion 3"
+     },
+     {
+      "zfa": "ZFA:0001305",
+      "name": "vagal ganglion 4"
+     },
+     {
+      "zfa": "ZFA:0000454",
+      "name": "ventral accessory optic nucleus"
+     },
+     {
+      "zfa": "ZFA:0001313",
+      "name": "ventral anterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000299",
+      "name": "ventral entopeduncular nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000302",
+      "name": "ventral habenular nucleus"
+     },
+     {
+      "zfa": "ZFA:0000703",
+      "name": "ventral motor nucleus trigeminal nerve"
+     },
+     {
+      "zfa": "ZFA:0000456",
+      "name": "ventral nucleus of ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000705",
+      "name": "ventral root"
+     },
+     {
+      "zfa": "ZFA:0005665",
+      "name": "ventral spinal nerve"
+     },
+     {
+      "zfa": "ZFA:0005576",
+      "name": "ventral thalamus nucleus"
+     },
+     {
+      "zfa": "ZFA:0007003",
+      "name": "ventro-caudal cluster"
+     },
+     {
+      "zfa": "ZFA:0007002",
+      "name": "ventro-rostral cluster"
+     },
+     {
+      "zfa": "ZFA:0000609",
+      "name": "ventrolateral nucleus"
+     },
+     {
+      "zfa": "ZFA:0000306",
+      "name": "ventrolateral thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000459",
+      "name": "ventromedial thalamic nucleus"
+     },
+     {
+      "zfa": "ZFA:0000710",
+      "name": "viscerosensory commissural nucleus of Cajal"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0001472",
+      "name": "anterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005566",
+      "name": "anterior segment eye"
+     },
+     {
+      "zfa": "ZFA:0005917",
+      "name": "anterior-posterior polarized neuromast"
+     },
+     {
+      "zfa": "ZFA:0005920",
+      "name": "anterior-posterior polarized posterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0001289",
+      "name": "ciliary marginal zone"
+     },
+     {
+      "zfa": "ZFA:0005113",
+      "name": "dorsal lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000813",
+      "name": "infraorbital lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000217",
+      "name": "inner ear"
+     },
+     {
+      "zfa": "ZFA:0000125",
+      "name": "mandibular lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000542",
+      "name": "medial column"
+     },
+     {
+      "zfa": "ZFA:0000939",
+      "name": "middle lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000241",
+      "name": "midline column"
+     },
+     {
+      "zfa": "ZFA:0000243",
+      "name": "neuromast"
+     },
+     {
+      "zfa": "ZFA:0001025",
+      "name": "occipital lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000814",
+      "name": "opercular lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000136",
+      "name": "otic lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005409",
+      "name": "pars superior ear"
+     },
+     {
+      "zfa": "ZFA:0001359",
+      "name": "pineal complex"
+     },
+     {
+      "zfa": "ZFA:0000940",
+      "name": "posterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005567",
+      "name": "posterior segment eye"
+     },
+     {
+      "zfa": "ZFA:0005227",
+      "name": "protoneuromast"
+     },
+     {
+      "zfa": "ZFA:0000421",
+      "name": "reticular formation"
+     },
+     {
+      "zfa": "ZFA:0001026",
+      "name": "supraorbital lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0001083",
+      "name": "ventricular zone"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000008",
+      "name": "brain"
+     },
+     {
+      "zfa": "ZFA:0000107",
+      "name": "eye"
+     },
+     {
+      "zfa": "ZFA:0000118",
+      "name": "hypophysis"
+     },
+     {
+      "zfa": "ZFA:0000559",
+      "name": "otolith organ"
+     },
+     {
+      "zfa": "ZFA:0001360",
+      "name": "parapineal organ"
+     },
+     {
+      "zfa": "ZFA:0000047",
+      "name": "peripheral olfactory organ"
+     },
+     {
+      "zfa": "ZFA:0000075",
+      "name": "spinal cord"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0001468",
+      "name": "anterior lateral line system"
+     },
+     {
+      "zfa": "ZFA:0000012",
+      "name": "central nervous system"
+     },
+     {
+      "zfa": "ZFA:0001155",
+      "name": "enteric nervous system"
+     },
+     {
+      "zfa": "ZFA:0000034",
+      "name": "lateral line system"
+     },
+     {
+      "zfa": "ZFA:0000396",
+      "name": "nervous system"
+     },
+     {
+      "zfa": "ZFA:0001149",
+      "name": "olfactory system"
+     },
+     {
+      "zfa": "ZFA:0000142",
+      "name": "peripheral nervous system"
+     },
+     {
+      "zfa": "ZFA:0001471",
+      "name": "posterior lateral line system"
+     },
+     {
+      "zfa": "ZFA:0000282",
+      "name": "sensory system"
+     },
+     {
+      "zfa": "ZFA:0001576",
+      "name": "sympathetic nervous system"
+     },
+     {
+      "zfa": "ZFA:0001261",
+      "name": "ventricular system"
+     },
+     {
+      "zfa": "ZFA:0001127",
+      "name": "visual system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001282",
+      "name": "adenohypophysis"
+     },
+     {
+      "zfa": "ZFA:0000618",
+      "name": "ansulate commissure"
+     },
+     {
+      "zfa": "ZFA:0005342",
+      "name": "anterior catecholaminergic tract"
+     },
+     {
+      "zfa": "ZFA:0001108",
+      "name": "anterior commissure"
+     },
+     {
+      "zfa": "ZFA:0001316",
+      "name": "anterior lateral line placode"
+     },
+     {
+      "zfa": "ZFA:0000314",
+      "name": "anterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000315",
+      "name": "asteriscus"
+     },
+     {
+      "zfa": "ZFA:0000099",
+      "name": "brain vasculature"
+     },
+     {
+      "zfa": "ZFA:0001707",
+      "name": "brainstem"
+     },
+     {
+      "zfa": "ZFA:0000318",
+      "name": "brainstem and spinal white matter"
+     },
+     {
+      "zfa": "ZFA:0000626",
+      "name": "bulbo-spinal tract"
+     },
+     {
+      "zfa": "ZFA:0000320",
+      "name": "caudal commissure"
+     },
+     {
+      "zfa": "ZFA:0000634",
+      "name": "caudal hypothalamic zone"
+     },
+     {
+      "zfa": "ZFA:0000633",
+      "name": "caudal tuberculum"
+     },
+     {
+      "zfa": "ZFA:0005020",
+      "name": "central artery"
+     },
+     {
+      "zfa": "ZFA:0000938",
+      "name": "central canal"
+     },
+     {
+      "zfa": "ZFA:0000327",
+      "name": "central zone of the optic tectum"
+     },
+     {
+      "zfa": "ZFA:0001640",
+      "name": "cephalic flexure"
+     },
+     {
+      "zfa": "ZFA:0005869",
+      "name": "cerebellar plate"
+     },
+     {
+      "zfa": "ZFA:0000100",
+      "name": "cerebellum"
+     },
+     {
+      "zfa": "ZFA:0001443",
+      "name": "choroid plexus"
+     },
+     {
+      "zfa": "ZFA:0001446",
+      "name": "choroid plexus fourth ventricle"
+     },
+     {
+      "zfa": "ZFA:0001444",
+      "name": "choroid plexus third ventricle"
+     },
+     {
+      "zfa": "ZFA:0001075",
+      "name": "choroidal fissure"
+     },
+     {
+      "zfa": "ZFA:0001203",
+      "name": "ciliary zone"
+     },
+     {
+      "zfa": "ZFA:0000490",
+      "name": "commissura cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000491",
+      "name": "commissure of the caudal tuberculum"
+     },
+     {
+      "zfa": "ZFA:0005877",
+      "name": "commissure of the tract of the commissure of the caudal tuberculum"
+     },
+     {
+      "zfa": "ZFA:0000640",
+      "name": "cornea"
+     },
+     {
+      "zfa": "ZFA:0000188",
+      "name": "corpus cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000334",
+      "name": "corpus mamillare"
+     },
+     {
+      "zfa": "ZFA:0000335",
+      "name": "crossed tecto-bulbar tract"
+     },
+     {
+      "zfa": "ZFA:0000494",
+      "name": "deep white zone"
+     },
+     {
+      "zfa": "ZFA:0000338",
+      "name": "diencephalic white matter"
+     },
+     {
+      "zfa": "ZFA:0000101",
+      "name": "diencephalon"
+     },
+     {
+      "zfa": "ZFA:0000501",
+      "name": "dorsal funiculus"
+     },
+     {
+      "zfa": "ZFA:0000649",
+      "name": "dorsal horn spinal cord"
+     },
+     {
+      "zfa": "ZFA:0000347",
+      "name": "dorsal hypothalamic zone"
+     },
+     {
+      "zfa": "ZFA:0005266",
+      "name": "dorsal longitudinal fasciculus"
+     },
+     {
+      "zfa": "ZFA:0005031",
+      "name": "dorsal longitudinal vein"
+     },
+     {
+      "zfa": "ZFA:0000199",
+      "name": "dorsal periventricular hypothalamus"
+     },
+     {
+      "zfa": "ZFA:0000505",
+      "name": "dorsal telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000653",
+      "name": "dorsal thalamus"
+     },
+     {
+      "zfa": "ZFA:0000655",
+      "name": "dorsomedial optic tract"
+     },
+     {
+      "zfa": "ZFA:0001322",
+      "name": "dorsoventral diencephalic tract"
+     },
+     {
+      "zfa": "ZFA:0005343",
+      "name": "endohypothalamic tract"
+     },
+     {
+      "zfa": "ZFA:0001705",
+      "name": "endolymphatic duct"
+     },
+     {
+      "zfa": "ZFA:0001294",
+      "name": "epibranchial placode"
+     },
+     {
+      "zfa": "ZFA:0000019",
+      "name": "epiphysis"
+     },
+     {
+      "zfa": "ZFA:0000509",
+      "name": "epithalamus"
+     },
+     {
+      "zfa": "ZFA:0001295",
+      "name": "facial placode"
+     },
+     {
+      "zfa": "ZFA:0000353",
+      "name": "fasciculus retroflexus"
+     },
+     {
+      "zfa": "ZFA:0000022",
+      "name": "floor plate"
+     },
+     {
+      "zfa": "ZFA:0000871",
+      "name": "floor plate diencephalic region"
+     },
+     {
+      "zfa": "ZFA:0001677",
+      "name": "floor plate midbrain region"
+     },
+     {
+      "zfa": "ZFA:0000887",
+      "name": "floor plate neural rod"
+     },
+     {
+      "zfa": "ZFA:0001434",
+      "name": "floor plate neural tube"
+     },
+     {
+      "zfa": "ZFA:0000882",
+      "name": "floor plate rhombomere 1"
+     },
+     {
+      "zfa": "ZFA:0000763",
+      "name": "floor plate rhombomere 2"
+     },
+     {
+      "zfa": "ZFA:0000888",
+      "name": "floor plate rhombomere 3"
+     },
+     {
+      "zfa": "ZFA:0000893",
+      "name": "floor plate rhombomere 4"
+     },
+     {
+      "zfa": "ZFA:0000764",
+      "name": "floor plate rhombomere 5"
+     },
+     {
+      "zfa": "ZFA:0000889",
+      "name": "floor plate rhombomere 6"
+     },
+     {
+      "zfa": "ZFA:0000904",
+      "name": "floor plate rhombomere 7"
+     },
+     {
+      "zfa": "ZFA:0000765",
+      "name": "floor plate rhombomere 8"
+     },
+     {
+      "zfa": "ZFA:0001258",
+      "name": "floor plate rhombomere region"
+     },
+     {
+      "zfa": "ZFA:0000890",
+      "name": "floor plate spinal cord region"
+     },
+     {
+      "zfa": "ZFA:0000914",
+      "name": "floor plate telencephalic region"
+     },
+     {
+      "zfa": "ZFA:0000109",
+      "name": "forebrain"
+     },
+     {
+      "zfa": "ZFA:0001367",
+      "name": "forebrain midbrain boundary"
+     },
+     {
+      "zfa": "ZFA:0001259",
+      "name": "forebrain ventricle"
+     },
+     {
+      "zfa": "ZFA:0000110",
+      "name": "fourth ventricle"
+     },
+     {
+      "zfa": "ZFA:0000357",
+      "name": "glomerular layer"
+     },
+     {
+      "zfa": "ZFA:0000517",
+      "name": "glossopharyngeal lobe"
+     },
+     {
+      "zfa": "ZFA:0001296",
+      "name": "glossopharyngeal placode"
+     },
+     {
+      "zfa": "ZFA:0000212",
+      "name": "granular eminence"
+     },
+     {
+      "zfa": "ZFA:0001681",
+      "name": "grey matter"
+     },
+     {
+      "zfa": "ZFA:0000213",
+      "name": "habenula"
+     },
+     {
+      "zfa": "ZFA:0000359",
+      "name": "habenular commissure"
+     },
+     {
+      "zfa": "ZFA:0000029",
+      "name": "hindbrain"
+     },
+     {
+      "zfa": "ZFA:0001692",
+      "name": "hindbrain commissure"
+     },
+     {
+      "zfa": "ZFA:0000520",
+      "name": "horizontal commissure"
+     },
+     {
+      "zfa": "ZFA:0000032",
+      "name": "hypothalamus"
+     },
+     {
+      "zfa": "ZFA:0000165",
+      "name": "inferior lobe"
+     },
+     {
+      "zfa": "ZFA:0001199",
+      "name": "infundibulum"
+     },
+     {
+      "zfa": "ZFA:0001029",
+      "name": "inner limiting membrane"
+     },
+     {
+      "zfa": "ZFA:0006000",
+      "name": "intermediate hypothalamus"
+     },
+     {
+      "zfa": "ZFA:0000684",
+      "name": "intertectal commissure"
+     },
+     {
+      "zfa": "ZFA:0001238",
+      "name": "iris"
+     },
+     {
+      "zfa": "ZFA:0000374",
+      "name": "lagena"
+     },
+     {
+      "zfa": "ZFA:0000530",
+      "name": "lapillus"
+     },
+     {
+      "zfa": "ZFA:0007012",
+      "name": "lateral forebrain bundle"
+     },
+     {
+      "zfa": "ZFA:0000379",
+      "name": "lateral forebrain bundle diencephalon"
+     },
+     {
+      "zfa": "ZFA:0000779",
+      "name": "lateral forebrain bundle telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000533",
+      "name": "lateral funiculus"
+     },
+     {
+      "zfa": "ZFA:0000534",
+      "name": "lateral longitudinal fasciculus"
+     },
+     {
+      "zfa": "ZFA:0000229",
+      "name": "lateral olfactory tract"
+     },
+     {
+      "zfa": "ZFA:0000231",
+      "name": "lateral recess"
+     },
+     {
+      "zfa": "ZFA:0000220",
+      "name": "lateral semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000532",
+      "name": "lateral valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000996",
+      "name": "lateral wall spinal cord"
+     },
+     {
+      "zfa": "ZFA:0005574",
+      "name": "lens capsule"
+     },
+     {
+      "zfa": "ZFA:0001441",
+      "name": "lower rhombic lip"
+     },
+     {
+      "zfa": "ZFA:0000388",
+      "name": "medial caudal lobe"
+     },
+     {
+      "zfa": "ZFA:0005111",
+      "name": "medial forebrain bundle"
+     },
+     {
+      "zfa": "ZFA:0005341",
+      "name": "medial longitudinal catecholaminergic tract"
+     },
+     {
+      "zfa": "ZFA:0000543",
+      "name": "medial longitudinal fasciculus"
+     },
+     {
+      "zfa": "ZFA:0000238",
+      "name": "medial olfactory tract"
+     },
+     {
+      "zfa": "ZFA:0000280",
+      "name": "medial valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0000392",
+      "name": "median tuberal portion"
+     },
+     {
+      "zfa": "ZFA:0000545",
+      "name": "medulla oblongata"
+     },
+     {
+      "zfa": "ZFA:0000128",
+      "name": "midbrain"
+     },
+     {
+      "zfa": "ZFA:0000042",
+      "name": "midbrain hindbrain boundary"
+     },
+     {
+      "zfa": "ZFA:0000550",
+      "name": "naris"
+     },
+     {
+      "zfa": "ZFA:0001271",
+      "name": "neurohypophysis"
+     },
+     {
+      "zfa": "ZFA:0001328",
+      "name": "neuromere"
+     },
+     {
+      "zfa": "ZFA:0000402",
+      "name": "olfactory bulb"
+     },
+     {
+      "zfa": "ZFA:0000130",
+      "name": "olfactory pit"
+     },
+     {
+      "zfa": "ZFA:0000048",
+      "name": "olfactory placode"
+     },
+     {
+      "zfa": "ZFA:0000556",
+      "name": "optic chiasm"
+     },
+     {
+      "zfa": "ZFA:0005094",
+      "name": "optic choroid vascular plexus"
+     },
+     {
+      "zfa": "ZFA:0005491",
+      "name": "optic furrow"
+     },
+     {
+      "zfa": "ZFA:0000049",
+      "name": "optic recess"
+     },
+     {
+      "zfa": "ZFA:0000445",
+      "name": "optic tectum"
+     },
+     {
+      "zfa": "ZFA:0000252",
+      "name": "optic tract"
+     },
+     {
+      "zfa": "ZFA:0000138",
+      "name": "otic placode"
+     },
+     {
+      "zfa": "ZFA:0001617",
+      "name": "otolith"
+     },
+     {
+      "zfa": "ZFA:0001331",
+      "name": "outer limiting membrane"
+     },
+     {
+      "zfa": "ZFA:0005027",
+      "name": "posterior cerebral vein"
+     },
+     {
+      "zfa": "ZFA:0001156",
+      "name": "posterior lateral line placode"
+     },
+     {
+      "zfa": "ZFA:0005338",
+      "name": "posterior recess"
+     },
+     {
+      "zfa": "ZFA:0000262",
+      "name": "posterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000059",
+      "name": "postoptic commissure"
+     },
+     {
+      "zfa": "ZFA:0000470",
+      "name": "preoptic area"
+     },
+     {
+      "zfa": "ZFA:0005789",
+      "name": "preopticohypophyseal tract"
+     },
+     {
+      "zfa": "ZFA:0005344",
+      "name": "preopticohypothalamic tract"
+     },
+     {
+      "zfa": "ZFA:0000266",
+      "name": "pretecto-mammillary tract"
+     },
+     {
+      "zfa": "ZFA:0000418",
+      "name": "pretectum"
+     },
+     {
+      "zfa": "ZFA:0001355",
+      "name": "primitive meninx"
+     },
+     {
+      "zfa": "ZFA:0000152",
+      "name": "retina"
+     },
+     {
+      "zfa": "ZFA:0001440",
+      "name": "rhombic lip"
+     },
+     {
+      "zfa": "ZFA:0001064",
+      "name": "rhombomere"
+     },
+     {
+      "zfa": "ZFA:0001031",
+      "name": "rhombomere 1"
+     },
+     {
+      "zfa": "ZFA:0000822",
+      "name": "rhombomere 2"
+     },
+     {
+      "zfa": "ZFA:0000948",
+      "name": "rhombomere 3"
+     },
+     {
+      "zfa": "ZFA:0001032",
+      "name": "rhombomere 4"
+     },
+     {
+      "zfa": "ZFA:0000823",
+      "name": "rhombomere 5"
+     },
+     {
+      "zfa": "ZFA:0000069",
+      "name": "rhombomere 6"
+     },
+     {
+      "zfa": "ZFA:0000949",
+      "name": "rhombomere 7"
+     },
+     {
+      "zfa": "ZFA:0000153",
+      "name": "rhombomere 8"
+     },
+     {
+      "zfa": "ZFA:0007058",
+      "name": "roof plate"
+     },
+     {
+      "zfa": "ZFA:0000643",
+      "name": "rostral cerebellar tract"
+     },
+     {
+      "zfa": "ZFA:0000428",
+      "name": "saccule"
+     },
+     {
+      "zfa": "ZFA:0000676",
+      "name": "sagitta"
+     },
+     {
+      "zfa": "ZFA:0005563",
+      "name": "sclera"
+     },
+     {
+      "zfa": "ZFA:0000431",
+      "name": "semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0005578",
+      "name": "spinal nerve root"
+     },
+     {
+      "zfa": "ZFA:0001332",
+      "name": "spinal neuromere"
+     },
+     {
+      "zfa": "ZFA:0000589",
+      "name": "sulcus ypsiloniformis"
+     },
+     {
+      "zfa": "ZFA:0000686",
+      "name": "superficial grey and white zone"
+     },
+     {
+      "zfa": "ZFA:0000690",
+      "name": "supraoptic commissure"
+     },
+     {
+      "zfa": "ZFA:0001657",
+      "name": "supraoptic tract"
+     },
+     {
+      "zfa": "ZFA:0000293",
+      "name": "synencephalon"
+     },
+     {
+      "zfa": "ZFA:0001074",
+      "name": "taste bud"
+     },
+     {
+      "zfa": "ZFA:0005907",
+      "name": "tectal neuropile"
+     },
+     {
+      "zfa": "ZFA:0000159",
+      "name": "tectal ventricle"
+     },
+     {
+      "zfa": "ZFA:0000446",
+      "name": "tecto-bulbar tract"
+     },
+     {
+      "zfa": "ZFA:0000160",
+      "name": "tegmentum"
+     },
+     {
+      "zfa": "ZFA:0000696",
+      "name": "telencephalic ventricle"
+     },
+     {
+      "zfa": "ZFA:0000079",
+      "name": "telencephalon"
+     },
+     {
+      "zfa": "ZFA:0001343",
+      "name": "telencephalon diencephalon boundary"
+     },
+     {
+      "zfa": "ZFA:0007010",
+      "name": "thalamic eminence"
+     },
+     {
+      "zfa": "ZFA:0001215",
+      "name": "thalamus"
+     },
+     {
+      "zfa": "ZFA:0000161",
+      "name": "third ventricle"
+     },
+     {
+      "zfa": "ZFA:0000449",
+      "name": "torus longitudinalis"
+     },
+     {
+      "zfa": "ZFA:0000599",
+      "name": "torus semicircularis"
+     },
+     {
+      "zfa": "ZFA:0005452",
+      "name": "tract of the caudal commissure"
+     },
+     {
+      "zfa": "ZFA:0001366",
+      "name": "tract of the postoptic commissure"
+     },
+     {
+      "zfa": "ZFA:0000296",
+      "name": "uncrossed tecto-bulbar tract"
+     },
+     {
+      "zfa": "ZFA:0001442",
+      "name": "upper rhombic lip"
+     },
+     {
+      "zfa": "ZFA:0000700",
+      "name": "utricle"
+     },
+     {
+      "zfa": "ZFA:0000297",
+      "name": "vagal lobe"
+     },
+     {
+      "zfa": "ZFA:0001297",
+      "name": "vagal placode 1"
+     },
+     {
+      "zfa": "ZFA:0001298",
+      "name": "vagal placode 2"
+     },
+     {
+      "zfa": "ZFA:0001299",
+      "name": "vagal placode 3"
+     },
+     {
+      "zfa": "ZFA:0001300",
+      "name": "vagal placode 4"
+     },
+     {
+      "zfa": "ZFA:0000603",
+      "name": "valvula cerebelli"
+     },
+     {
+      "zfa": "ZFA:0005571",
+      "name": "ventral canal eye"
+     },
+     {
+      "zfa": "ZFA:0000605",
+      "name": "ventral funiculus"
+     },
+     {
+      "zfa": "ZFA:0000702",
+      "name": "ventral horn spinal cord"
+     },
+     {
+      "zfa": "ZFA:0000707",
+      "name": "ventral hypothalamic zone"
+     },
+     {
+      "zfa": "ZFA:0000607",
+      "name": "ventral rhombencephalic commissure"
+     },
+     {
+      "zfa": "ZFA:0000305",
+      "name": "ventral sulcus"
+     },
+     {
+      "zfa": "ZFA:0000304",
+      "name": "ventral telencephalon"
+     },
+     {
+      "zfa": "ZFA:0000458",
+      "name": "ventral thalamus"
+     },
+     {
+      "zfa": "ZFA:0000708",
+      "name": "ventrolateral optic tract"
+     },
+     {
+      "zfa": "ZFA:0000307",
+      "name": "vestibulolateralis lobe"
+     },
+     {
+      "zfa": "ZFA:0005561",
+      "name": "vitreous"
+     },
+     {
+      "zfa": "ZFA:0001682",
+      "name": "white matter"
+     },
+     {
+      "zfa": "ZFA:0001344",
+      "name": "zona limitans intrathalamica"
+     }
+    ]
+   },
+   "n_sub": 636
+  },
+  "glia": {
+   "germ_layer": "ectoderm",
+   "tissue": "nervous system",
+   "lineage": "glia",
+   "anchors": [
+    {
+     "zfa": "ZFA:0009073",
+     "name": "glial cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "sox10",
+    "olig2",
+    "mbpa",
+    "gfap",
+    "plp1b",
+    "slc1a3b"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009282",
+      "name": "Bergmann glial cell"
+     },
+     {
+      "zfa": "ZFA:0009280",
+      "name": "Muller cell"
+     },
+     {
+      "zfa": "ZFA:0009075",
+      "name": "astrocyte"
+     },
+     {
+      "zfa": "ZFA:0009073",
+      "name": "glial cell"
+     },
+     {
+      "zfa": "ZFA:0009147",
+      "name": "glial cell (sensu Vertebrata)"
+     },
+     {
+      "zfa": "ZFA:0001725",
+      "name": "immature Schwann cell"
+     },
+     {
+      "zfa": "ZFA:0009135",
+      "name": "myelinating Schwann cell"
+     },
+     {
+      "zfa": "ZFA:0009076",
+      "name": "oligodendrocyte"
+     },
+     {
+      "zfa": "ZFA:0009237",
+      "name": "perineuronal satellite cell"
+     }
+    ]
+   },
+   "n_sub": 9
+  },
+  "neural_crest": {
+   "germ_layer": "ectoderm",
+   "tissue": "neural crest",
+   "lineage": "neural crest",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000045",
+     "name": "neural crest",
+     "tier": "Portion of tissue"
+    },
+    {
+     "zfa": "ZFA:0009165",
+     "name": "neural crest cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "sox10",
+    "foxd3",
+    "tfap2a",
+    "snai1b",
+    "dlx2a",
+    "sox9b"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009003",
+      "name": "cranial neural crest cell"
+     },
+     {
+      "zfa": "ZFA:0007091",
+      "name": "migratory cranial neural crest cell"
+     },
+     {
+      "zfa": "ZFA:0007086",
+      "name": "migratory neural crest cell"
+     },
+     {
+      "zfa": "ZFA:0009165",
+      "name": "neural crest cell"
+     },
+     {
+      "zfa": "ZFA:0007084",
+      "name": "premigratory neural crest cell"
+     },
+     {
+      "zfa": "ZFA:0009004",
+      "name": "trunk neural crest cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001648",
+      "name": "cardiac neural crest"
+     },
+     {
+      "zfa": "ZFA:0001194",
+      "name": "cranial neural crest"
+     },
+     {
+      "zfa": "ZFA:0007065",
+      "name": "hyoid neural crest"
+     },
+     {
+      "zfa": "ZFA:0007064",
+      "name": "mandibular neural crest"
+     },
+     {
+      "zfa": "ZFA:0007087",
+      "name": "migratory cranial neural crest"
+     },
+     {
+      "zfa": "ZFA:0007085",
+      "name": "migratory neural crest"
+     },
+     {
+      "zfa": "ZFA:0007093",
+      "name": "migratory trunk neural crest"
+     },
+     {
+      "zfa": "ZFA:0000045",
+      "name": "neural crest"
+     },
+     {
+      "zfa": "ZFA:0000811",
+      "name": "neural crest diencephalon"
+     },
+     {
+      "zfa": "ZFA:0007063",
+      "name": "neural crest hindbrain"
+     },
+     {
+      "zfa": "ZFA:0000935",
+      "name": "neural crest midbrain"
+     },
+     {
+      "zfa": "ZFA:0000812",
+      "name": "neural crest telencephalon"
+     },
+     {
+      "zfa": "ZFA:0007083",
+      "name": "premigratory neural crest"
+     },
+     {
+      "zfa": "ZFA:0007092",
+      "name": "premigratory trunk neural crest"
+     },
+     {
+      "zfa": "ZFA:0000080",
+      "name": "trigeminal neural crest"
+     },
+     {
+      "zfa": "ZFA:0001024",
+      "name": "trunk neural crest"
+     },
+     {
+      "zfa": "ZFA:0000818",
+      "name": "vagal neural crest"
+     }
+    ]
+   },
+   "n_sub": 23
+  },
+  "eye": {
+   "germ_layer": "ectoderm",
+   "tissue": "eye",
+   "lineage": "retina/lens/RPE",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "cryaa",
+    "crybb1",
+    "mipa",
+    "rho",
+    "opn1mw1",
+    "gnat2",
+    "crx",
+    "rpe65a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009280",
+      "name": "Muller cell"
+     },
+     {
+      "zfa": "ZFA:0009319",
+      "name": "ON-bipolar cell"
+     },
+     {
+      "zfa": "ZFA:0009255",
+      "name": "amacrine cell"
+     },
+     {
+      "zfa": "ZFA:0009055",
+      "name": "bipolar neuron"
+     },
+     {
+      "zfa": "ZFA:0009322",
+      "name": "cone retinal bipolar cell"
+     },
+     {
+      "zfa": "ZFA:0009079",
+      "name": "corneal endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009154",
+      "name": "eye photoreceptor cell"
+     },
+     {
+      "zfa": "ZFA:0009315",
+      "name": "horizontal cell"
+     },
+     {
+      "zfa": "ZFA:0009199",
+      "name": "iridophore"
+     },
+     {
+      "zfa": "ZFA:0009401",
+      "name": "lens fiber cell"
+     },
+     {
+      "zfa": "ZFA:0005945",
+      "name": "long double cone cell"
+     },
+     {
+      "zfa": "ZFA:0005947",
+      "name": "long single cone cell"
+     },
+     {
+      "zfa": "ZFA:0009091",
+      "name": "melanocyte"
+     },
+     {
+      "zfa": "ZFA:0009318",
+      "name": "retinal bipolar neuron"
+     },
+     {
+      "zfa": "ZFA:0009262",
+      "name": "retinal cone cell"
+     },
+     {
+      "zfa": "ZFA:0009310",
+      "name": "retinal ganglion cell"
+     },
+     {
+      "zfa": "ZFA:0009275",
+      "name": "retinal rod cell"
+     },
+     {
+      "zfa": "ZFA:0005946",
+      "name": "short double cone cell"
+     },
+     {
+      "zfa": "ZFA:0005948",
+      "name": "short single cone cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001676",
+      "name": "annular ligament"
+     },
+     {
+      "zfa": "ZFA:0001687",
+      "name": "corneal endothelium"
+     },
+     {
+      "zfa": "ZFA:0001683",
+      "name": "corneal epithelium"
+     },
+     {
+      "zfa": "ZFA:0001688",
+      "name": "corneal primordium"
+     },
+     {
+      "zfa": "ZFA:0001685",
+      "name": "corneal stroma"
+     },
+     {
+      "zfa": "ZFA:0005569",
+      "name": "iris stroma"
+     },
+     {
+      "zfa": "ZFA:0000035",
+      "name": "lens"
+     },
+     {
+      "zfa": "ZFA:0001326",
+      "name": "lens epithelium"
+     },
+     {
+      "zfa": "ZFA:0005229",
+      "name": "optic choroid"
+     },
+     {
+      "zfa": "ZFA:0001619",
+      "name": "optic fiber layer"
+     },
+     {
+      "zfa": "ZFA:0001465",
+      "name": "photoreceptor inner segment layer"
+     },
+     {
+      "zfa": "ZFA:0001466",
+      "name": "photoreceptor outer segment layer"
+     },
+     {
+      "zfa": "ZFA:0000024",
+      "name": "retinal ganglion cell layer"
+     },
+     {
+      "zfa": "ZFA:0000119",
+      "name": "retinal inner nuclear layer"
+     },
+     {
+      "zfa": "ZFA:0001329",
+      "name": "retinal inner plexiform layer"
+     },
+     {
+      "zfa": "ZFA:0000046",
+      "name": "retinal neural layer"
+     },
+     {
+      "zfa": "ZFA:0001464",
+      "name": "retinal outer nuclear layer"
+     },
+     {
+      "zfa": "ZFA:0001330",
+      "name": "retinal outer plexiform layer"
+     },
+     {
+      "zfa": "ZFA:0000143",
+      "name": "retinal photoreceptor layer"
+     },
+     {
+      "zfa": "ZFA:0000144",
+      "name": "retinal pigmented epithelium"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0005566",
+      "name": "anterior segment eye"
+     },
+     {
+      "zfa": "ZFA:0001289",
+      "name": "ciliary marginal zone"
+     },
+     {
+      "zfa": "ZFA:0005567",
+      "name": "posterior segment eye"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000107",
+      "name": "eye"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001203",
+      "name": "ciliary zone"
+     },
+     {
+      "zfa": "ZFA:0000640",
+      "name": "cornea"
+     },
+     {
+      "zfa": "ZFA:0001029",
+      "name": "inner limiting membrane"
+     },
+     {
+      "zfa": "ZFA:0001238",
+      "name": "iris"
+     },
+     {
+      "zfa": "ZFA:0005574",
+      "name": "lens capsule"
+     },
+     {
+      "zfa": "ZFA:0005094",
+      "name": "optic choroid vascular plexus"
+     },
+     {
+      "zfa": "ZFA:0005491",
+      "name": "optic furrow"
+     },
+     {
+      "zfa": "ZFA:0001331",
+      "name": "outer limiting membrane"
+     },
+     {
+      "zfa": "ZFA:0000152",
+      "name": "retina"
+     },
+     {
+      "zfa": "ZFA:0005563",
+      "name": "sclera"
+     },
+     {
+      "zfa": "ZFA:0005571",
+      "name": "ventral canal eye"
+     },
+     {
+      "zfa": "ZFA:0005561",
+      "name": "vitreous"
+     }
+    ]
+   },
+   "n_sub": 55
+  },
+  "otic": {
+   "germ_layer": "ectoderm",
+   "tissue": "inner ear",
+   "lineage": "otic",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000051",
+     "name": "otic vesicle",
+     "tier": "Other"
+    },
+    {
+     "zfa": "ZFA:0000217",
+     "name": "inner ear",
+     "tier": "Multi-tissue structure"
+    }
+   ],
+   "markers": [
+    "otomp",
+    "oc90",
+    "otol1a",
+    "dlx3b",
+    "eya1",
+    "atoh1a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0000678",
+      "name": "hair cell anterior macula"
+     },
+     {
+      "zfa": "ZFA:0000281",
+      "name": "hair cell posterior macula"
+     },
+     {
+      "zfa": "ZFA:0001098",
+      "name": "immature hair cell anterior macula"
+     },
+     {
+      "zfa": "ZFA:0001099",
+      "name": "immature hair cell posterior macula"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000619",
+      "name": "anterior crista"
+     },
+     {
+      "zfa": "ZFA:0000468",
+      "name": "anterior crista primordium"
+     },
+     {
+      "zfa": "ZFA:0000168",
+      "name": "anterior macula"
+     },
+     {
+      "zfa": "ZFA:0001672",
+      "name": "dorsolateral septum"
+     },
+     {
+      "zfa": "ZFA:0005912",
+      "name": "endolymphatic sac"
+     },
+     {
+      "zfa": "ZFA:0001096",
+      "name": "immature anterior macula"
+     },
+     {
+      "zfa": "ZFA:0001095",
+      "name": "immature macula"
+     },
+     {
+      "zfa": "ZFA:0001097",
+      "name": "immature posterior macula"
+     },
+     {
+      "zfa": "ZFA:0000166",
+      "name": "lateral crista"
+     },
+     {
+      "zfa": "ZFA:0000225",
+      "name": "lateral crista primordium"
+     },
+     {
+      "zfa": "ZFA:0000386",
+      "name": "macula"
+     },
+     {
+      "zfa": "ZFA:0000116",
+      "name": "macula lagena"
+     },
+     {
+      "zfa": "ZFA:0007000",
+      "name": "macula saccule"
+     },
+     {
+      "zfa": "ZFA:0000030",
+      "name": "macula utricle"
+     },
+     {
+      "zfa": "ZFA:0000469",
+      "name": "otic vesicle anterior protrusion"
+     },
+     {
+      "zfa": "ZFA:0000232",
+      "name": "otic vesicle lateral protrusion"
+     },
+     {
+      "zfa": "ZFA:0000412",
+      "name": "otic vesicle posterior protrusion"
+     },
+     {
+      "zfa": "ZFA:0001715",
+      "name": "otic vesicle protrusion"
+     },
+     {
+      "zfa": "ZFA:0001716",
+      "name": "otic vesicle ventral protrusion"
+     },
+     {
+      "zfa": "ZFA:0007054",
+      "name": "pillar of the anterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0007055",
+      "name": "pillar of the lateral semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0007056",
+      "name": "pillar of the posterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0001717",
+      "name": "pillar of the semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000566",
+      "name": "posterior crista"
+     },
+     {
+      "zfa": "ZFA:0000411",
+      "name": "posterior crista primordium"
+     },
+     {
+      "zfa": "ZFA:0000558",
+      "name": "posterior macula"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0000217",
+      "name": "inner ear"
+     },
+     {
+      "zfa": "ZFA:0005409",
+      "name": "pars superior ear"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000559",
+      "name": "otolith organ"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000314",
+      "name": "anterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000315",
+      "name": "asteriscus"
+     },
+     {
+      "zfa": "ZFA:0001705",
+      "name": "endolymphatic duct"
+     },
+     {
+      "zfa": "ZFA:0000374",
+      "name": "lagena"
+     },
+     {
+      "zfa": "ZFA:0000530",
+      "name": "lapillus"
+     },
+     {
+      "zfa": "ZFA:0000220",
+      "name": "lateral semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000051",
+      "name": "otic vesicle"
+     },
+     {
+      "zfa": "ZFA:0001617",
+      "name": "otolith"
+     },
+     {
+      "zfa": "ZFA:0000262",
+      "name": "posterior semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000428",
+      "name": "saccule"
+     },
+     {
+      "zfa": "ZFA:0000676",
+      "name": "sagitta"
+     },
+     {
+      "zfa": "ZFA:0000431",
+      "name": "semicircular canal"
+     },
+     {
+      "zfa": "ZFA:0000700",
+      "name": "utricle"
+     }
+    ]
+   },
+   "n_sub": 46
+  },
+  "lateral_line": {
+   "germ_layer": "ectoderm",
+   "tissue": "lateral line",
+   "lineage": "mechanosensory",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000034",
+     "name": "lateral line system",
+     "tier": "Anatomical system"
+    },
+    {
+     "zfa": "ZFA:0001074",
+     "name": "taste bud",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "atoh1a",
+    "myo6b",
+    "cldnb",
+    "six1b",
+    "eya1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005806",
+      "name": "diencephalic efferent neurons to the lateral line"
+     },
+     {
+      "zfa": "ZFA:0009365",
+      "name": "interneuromast cell"
+     },
+     {
+      "zfa": "ZFA:0009367",
+      "name": "neuromast hair cell"
+     },
+     {
+      "zfa": "ZFA:0009362",
+      "name": "neuromast mantle cell"
+     },
+     {
+      "zfa": "ZFA:0009363",
+      "name": "neuromast support cell"
+     },
+     {
+      "zfa": "ZFA:0009126",
+      "name": "taste receptor cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001470",
+      "name": "anterior lateral line"
+     },
+     {
+      "zfa": "ZFA:0001391",
+      "name": "anterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000425",
+      "name": "anterior lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0005117",
+      "name": "anterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0001312",
+      "name": "dorsal anterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000524",
+      "name": "infraorbital lateral line"
+     },
+     {
+      "zfa": "ZFA:0001469",
+      "name": "lateral line"
+     },
+     {
+      "zfa": "ZFA:0000120",
+      "name": "lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0001479",
+      "name": "lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0000228",
+      "name": "lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000259",
+      "name": "mandibular lateral line"
+     },
+     {
+      "zfa": "ZFA:0001483",
+      "name": "middle lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000944",
+      "name": "posterior lateral line"
+     },
+     {
+      "zfa": "ZFA:0001314",
+      "name": "posterior lateral line ganglion"
+     },
+     {
+      "zfa": "ZFA:0000175",
+      "name": "posterior lateral line nerve"
+     },
+     {
+      "zfa": "ZFA:0001157",
+      "name": "posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0005115",
+      "name": "primary posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0005116",
+      "name": "secondary posterior lateral line primordium"
+     },
+     {
+      "zfa": "ZFA:0000443",
+      "name": "supraorbital lateral line"
+     },
+     {
+      "zfa": "ZFA:0001313",
+      "name": "ventral anterior lateral line ganglion"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0001472",
+      "name": "anterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005917",
+      "name": "anterior-posterior polarized neuromast"
+     },
+     {
+      "zfa": "ZFA:0005920",
+      "name": "anterior-posterior polarized posterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005113",
+      "name": "dorsal lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000813",
+      "name": "infraorbital lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000125",
+      "name": "mandibular lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000939",
+      "name": "middle lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000243",
+      "name": "neuromast"
+     },
+     {
+      "zfa": "ZFA:0001025",
+      "name": "occipital lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000814",
+      "name": "opercular lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000136",
+      "name": "otic lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0000940",
+      "name": "posterior lateral line neuromast"
+     },
+     {
+      "zfa": "ZFA:0005227",
+      "name": "protoneuromast"
+     },
+     {
+      "zfa": "ZFA:0001026",
+      "name": "supraorbital lateral line neuromast"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0001468",
+      "name": "anterior lateral line system"
+     },
+     {
+      "zfa": "ZFA:0000034",
+      "name": "lateral line system"
+     },
+     {
+      "zfa": "ZFA:0001471",
+      "name": "posterior lateral line system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001316",
+      "name": "anterior lateral line placode"
+     },
+     {
+      "zfa": "ZFA:0001156",
+      "name": "posterior lateral line placode"
+     },
+     {
+      "zfa": "ZFA:0001074",
+      "name": "taste bud"
+     }
+    ]
+   },
+   "n_sub": 46
+  },
+  "olfactory": {
+   "germ_layer": "ectoderm",
+   "tissue": "olfactory system",
+   "lineage": "olfactory sensory",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001149",
+     "name": "olfactory system",
+     "tier": "Anatomical system"
+    },
+    {
+     "zfa": "ZFA:0000554",
+     "name": "olfactory epithelium",
+     "tier": "Portion of tissue"
+    }
+   ],
+   "markers": [
+    "ompb",
+    "s100z",
+    "calb2b",
+    "gng8",
+    "neurod1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009358",
+      "name": "ciliated olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0009360",
+      "name": "crypt olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0005828",
+      "name": "kappe olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0009359",
+      "name": "microvillous olfactory receptor neuron"
+     },
+     {
+      "zfa": "ZFA:0009125",
+      "name": "olfactory receptor cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000249",
+      "name": "cranial nerve I"
+     },
+     {
+      "zfa": "ZFA:0000352",
+      "name": "external cellular layer"
+     },
+     {
+      "zfa": "ZFA:0000573",
+      "name": "internal cellular layer"
+     },
+     {
+      "zfa": "ZFA:0000554",
+      "name": "olfactory epithelium"
+     },
+     {
+      "zfa": "ZFA:0001428",
+      "name": "olfactory rosette"
+     },
+     {
+      "zfa": "ZFA:0000267",
+      "name": "primary olfactory fiber layer"
+     },
+     {
+      "zfa": "ZFA:0001431",
+      "name": "primitive olfactory epithelium"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000047",
+      "name": "peripheral olfactory organ"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0001149",
+      "name": "olfactory system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000357",
+      "name": "glomerular layer"
+     },
+     {
+      "zfa": "ZFA:0000550",
+      "name": "naris"
+     },
+     {
+      "zfa": "ZFA:0000402",
+      "name": "olfactory bulb"
+     },
+     {
+      "zfa": "ZFA:0000130",
+      "name": "olfactory pit"
+     },
+     {
+      "zfa": "ZFA:0000048",
+      "name": "olfactory placode"
+     }
+    ]
+   },
+   "n_sub": 19
+  },
+  "epidermis": {
+   "germ_layer": "ectoderm",
+   "tissue": "skin",
+   "lineage": "epidermis/periderm",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000105",
+     "name": "epidermis",
+     "tier": "Portion of tissue"
+    },
+    {
+     "zfa": "ZFA:0000368",
+     "name": "integument",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "krt4",
+    "krt5",
+    "tp63",
+    "cldne",
+    "krt8",
+    "cldnb"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005579",
+      "name": "NCC ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005326",
+      "name": "NaK ionocyte"
+     },
+     {
+      "zfa": "ZFA:0009094",
+      "name": "goblet cell"
+     },
+     {
+      "zfa": "ZFA:0005325",
+      "name": "integument ionocyte"
+     },
+     {
+      "zfa": "ZFA:0009199",
+      "name": "iridophore"
+     },
+     {
+      "zfa": "ZFA:0009091",
+      "name": "melanocyte"
+     },
+     {
+      "zfa": "ZFA:0009159",
+      "name": "mucus secreting cell"
+     },
+     {
+      "zfa": "ZFA:0005327",
+      "name": "vH ionocyte"
+     },
+     {
+      "zfa": "ZFA:0009198",
+      "name": "xanthophore"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005796",
+      "name": "basal layer breeding tubercle"
+     },
+     {
+      "zfa": "ZFA:0001180",
+      "name": "epidermal basal stratum"
+     },
+     {
+      "zfa": "ZFA:0001179",
+      "name": "epidermal superficial stratum"
+     },
+     {
+      "zfa": "ZFA:0000105",
+      "name": "epidermis"
+     },
+     {
+      "zfa": "ZFA:0001136",
+      "name": "hypodermis"
+     },
+     {
+      "zfa": "ZFA:0001704",
+      "name": "scale primordium"
+     },
+     {
+      "zfa": "ZFA:0005794",
+      "name": "second tier layer of breeding tubercle"
+     },
+     {
+      "zfa": "ZFA:0005795",
+      "name": "spinous layer of breeding tubercle"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000622",
+      "name": "barbel"
+     },
+     {
+      "zfa": "ZFA:0005791",
+      "name": "breeding tubercle"
+     },
+     {
+      "zfa": "ZFA:0001186",
+      "name": "collagenous dermal stroma"
+     },
+     {
+      "zfa": "ZFA:0001119",
+      "name": "dermis"
+     },
+     {
+      "zfa": "ZFA:0005221",
+      "name": "dorsal larval melanophore stripe"
+     },
+     {
+      "zfa": "ZFA:0000368",
+      "name": "integument"
+     },
+     {
+      "zfa": "ZFA:0005798",
+      "name": "jaw row breeding tubercle"
+     },
+     {
+      "zfa": "ZFA:0005220",
+      "name": "larval melanophore stripe"
+     },
+     {
+      "zfa": "ZFA:0005408",
+      "name": "maxillary barbel"
+     },
+     {
+      "zfa": "ZFA:0001463",
+      "name": "melanophore stripe"
+     },
+     {
+      "zfa": "ZFA:0000277",
+      "name": "scale"
+     },
+     {
+      "zfa": "ZFA:0005222",
+      "name": "ventral larval melanophore stripe"
+     },
+     {
+      "zfa": "ZFA:0005224",
+      "name": "yolk larval melanophore stripe"
+     }
+    ]
+   },
+   "n_sub": 30
+  },
+  "ionocyte": {
+   "germ_layer": "ectoderm",
+   "tissue": "skin",
+   "lineage": "ionocyte",
+   "anchors": [
+    {
+     "zfa": "ZFA:0005323",
+     "name": "ionocyte",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "foxi3a",
+    "foxi3b",
+    "ca2",
+    "slc12a10.2",
+    "trpv6",
+    "atp1b1b",
+    "clcn2c",
+    "slc4a4b",
+    "atp1a1a.1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005579",
+      "name": "NCC ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005326",
+      "name": "NaK ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005324",
+      "name": "gill ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005325",
+      "name": "integument ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005323",
+      "name": "ionocyte"
+     },
+     {
+      "zfa": "ZFA:0005327",
+      "name": "vH ionocyte"
+     }
+    ]
+   },
+   "n_sub": 6
+  },
+  "pigment": {
+   "germ_layer": "neural crest",
+   "tissue": "pigment cells",
+   "lineage": "neural crest pigment derivatives",
+   "anchors": [
+    {
+     "zfa": "ZFA:0009090",
+     "name": "pigment cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "mitfa",
+    "dct",
+    "tyrp1b",
+    "gch2",
+    "slc45a2",
+    "ltk",
+    "pnp4a",
+    "aox5"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009199",
+      "name": "iridophore"
+     },
+     {
+      "zfa": "ZFA:0009091",
+      "name": "melanocyte"
+     },
+     {
+      "zfa": "ZFA:0009090",
+      "name": "pigment cell"
+     },
+     {
+      "zfa": "ZFA:0009170",
+      "name": "pigment cell (sensu Vertebrata)"
+     },
+     {
+      "zfa": "ZFA:0009198",
+      "name": "xanthophore"
+     }
+    ]
+   },
+   "n_sub": 5
+  },
+  "muscle": {
+   "germ_layer": "mesoderm",
+   "tissue": "muscle",
+   "lineage": "skeletal muscle",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000548",
+     "name": "musculature system",
+     "tier": "Anatomical system"
+    }
+   ],
+   "markers": [
+    "myod1",
+    "myog",
+    "myf5",
+    "mylpfa",
+    "acta1b",
+    "tnnt3a",
+    "tnnc2.2",
+    "ckma",
+    "smyhc2",
+    "msc",
+    "myoz1a",
+    "pvalb3",
+    "ttn.1",
+    "neb",
+    "smyhc1",
+    "actc1b",
+    "ryr1a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009316",
+      "name": "cardiac muscle cell"
+     },
+     {
+      "zfa": "ZFA:0009117",
+      "name": "fast muscle cell"
+     },
+     {
+      "zfa": "ZFA:0009114",
+      "name": "muscle cell"
+     },
+     {
+      "zfa": "ZFA:0001086",
+      "name": "muscle pioneer"
+     },
+     {
+      "zfa": "ZFA:0001006",
+      "name": "muscle pioneer somite 21"
+     },
+     {
+      "zfa": "ZFA:0000794",
+      "name": "muscle pioneer somite 22"
+     },
+     {
+      "zfa": "ZFA:0000922",
+      "name": "muscle pioneer somite 4"
+     },
+     {
+      "zfa": "ZFA:0001010",
+      "name": "muscle pioneer somite 5"
+     },
+     {
+      "zfa": "ZFA:0000799",
+      "name": "muscle pioneer somite 6"
+     },
+     {
+      "zfa": "ZFA:0009115",
+      "name": "skeletal muscle cell"
+     },
+     {
+      "zfa": "ZFA:0009116",
+      "name": "slow muscle cell"
+     },
+     {
+      "zfa": "ZFA:0000963",
+      "name": "slow muscle cell somite 1"
+     },
+     {
+      "zfa": "ZFA:0001047",
+      "name": "slow muscle cell somite 10"
+     },
+     {
+      "zfa": "ZFA:0000841",
+      "name": "slow muscle cell somite 14"
+     },
+     {
+      "zfa": "ZFA:0000972",
+      "name": "slow muscle cell somite 4"
+     },
+     {
+      "zfa": "ZFA:0000973",
+      "name": "slow muscle cell somite 7"
+     },
+     {
+      "zfa": "ZFA:0009118",
+      "name": "smooth muscle cell"
+     },
+     {
+      "zfa": "ZFA:0009181",
+      "name": "vascular associated smooth muscle cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000462",
+      "name": "abductor hyohyoid"
+     },
+     {
+      "zfa": "ZFA:0000715",
+      "name": "adductor hyohyoid"
+     },
+     {
+      "zfa": "ZFA:0007053",
+      "name": "adductor hyomandibulae"
+     },
+     {
+      "zfa": "ZFA:0007049",
+      "name": "adductor mandibulae"
+     },
+     {
+      "zfa": "ZFA:0000465",
+      "name": "adductor operculi"
+     },
+     {
+      "zfa": "ZFA:0001374",
+      "name": "atrial myocardium"
+     },
+     {
+      "zfa": "ZFA:0000172",
+      "name": "branchial muscle"
+     },
+     {
+      "zfa": "ZFA:0005280",
+      "name": "cardiac muscle"
+     },
+     {
+      "zfa": "ZFA:0000177",
+      "name": "caudal oblique"
+     },
+     {
+      "zfa": "ZFA:0005062",
+      "name": "compact layer of ventricle"
+     },
+     {
+      "zfa": "ZFA:0007050",
+      "name": "constrictor dorsalis"
+     },
+     {
+      "zfa": "ZFA:0000498",
+      "name": "dilatator operculi"
+     },
+     {
+      "zfa": "ZFA:0000738",
+      "name": "dorsal oblique extraocular muscle"
+     },
+     {
+      "zfa": "ZFA:0000345",
+      "name": "dorsal rectus"
+     },
+     {
+      "zfa": "ZFA:0001084",
+      "name": "epaxial myotome region"
+     },
+     {
+      "zfa": "ZFA:0000415",
+      "name": "esophageal sphincter"
+     },
+     {
+      "zfa": "ZFA:0001652",
+      "name": "head muscle"
+     },
+     {
+      "zfa": "ZFA:0007052",
+      "name": "hyohyoideus"
+     },
+     {
+      "zfa": "ZFA:0000521",
+      "name": "hyoid muscle"
+     },
+     {
+      "zfa": "ZFA:0001085",
+      "name": "hypaxial myotome region"
+     },
+     {
+      "zfa": "ZFA:0000362",
+      "name": "hypaxialis"
+     },
+     {
+      "zfa": "ZFA:0000522",
+      "name": "inferior hyohyoid"
+     },
+     {
+      "zfa": "ZFA:0000216",
+      "name": "infracarinalis"
+     },
+     {
+      "zfa": "ZFA:0007051",
+      "name": "interhyoideus"
+     },
+     {
+      "zfa": "ZFA:0000369",
+      "name": "intermandibularis"
+     },
+     {
+      "zfa": "ZFA:0000383",
+      "name": "lateral rectus"
+     },
+     {
+      "zfa": "ZFA:0000384",
+      "name": "levator arcus palatini"
+     },
+     {
+      "zfa": "ZFA:0000537",
+      "name": "levator operculi"
+     },
+     {
+      "zfa": "ZFA:0000236",
+      "name": "mandibular muscle"
+     },
+     {
+      "zfa": "ZFA:0000301",
+      "name": "medial rectus"
+     },
+     {
+      "zfa": "ZFA:0005145",
+      "name": "muscle"
+     },
+     {
+      "zfa": "ZFA:0001319",
+      "name": "myocardium"
+     },
+     {
+      "zfa": "ZFA:0001056",
+      "name": "myotome"
+     },
+     {
+      "zfa": "ZFA:0005926",
+      "name": "posterior hypaxial muscle"
+     },
+     {
+      "zfa": "ZFA:0005651",
+      "name": "primitive pectoral fin abductor"
+     },
+     {
+      "zfa": "ZFA:0005650",
+      "name": "primitive pectoral fin adductor"
+     },
+     {
+      "zfa": "ZFA:0000612",
+      "name": "protractor hyoidei"
+     },
+     {
+      "zfa": "ZFA:0005277",
+      "name": "skeletal muscle"
+     },
+     {
+      "zfa": "ZFA:0005274",
+      "name": "smooth muscle"
+     },
+     {
+      "zfa": "ZFA:0001651",
+      "name": "sternohyoid"
+     },
+     {
+      "zfa": "ZFA:0000286",
+      "name": "superficial lateralis"
+     },
+     {
+      "zfa": "ZFA:0000288",
+      "name": "supracarinalis"
+     },
+     {
+      "zfa": "ZFA:0005059",
+      "name": "trabecular layer"
+     },
+     {
+      "zfa": "ZFA:0005810",
+      "name": "trabecular layer of the atrium"
+     },
+     {
+      "zfa": "ZFA:0005060",
+      "name": "trabecular layer of ventricle"
+     },
+     {
+      "zfa": "ZFA:0005321",
+      "name": "vascular smooth muscle"
+     },
+     {
+      "zfa": "ZFA:0007008",
+      "name": "ventral intermandibularis anterior"
+     },
+     {
+      "zfa": "ZFA:0007048",
+      "name": "ventral intermandibularis posterior"
+     },
+     {
+      "zfa": "ZFA:0000861",
+      "name": "ventral oblique extraocular muscle"
+     },
+     {
+      "zfa": "ZFA:0000457",
+      "name": "ventral rectus"
+     },
+     {
+      "zfa": "ZFA:0000608",
+      "name": "ventral transverse"
+     },
+     {
+      "zfa": "ZFA:0005061",
+      "name": "ventricular myocardium"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0000328",
+      "name": "cephalic musculature"
+     },
+     {
+      "zfa": "ZFA:0000648",
+      "name": "dorsal fin musculature"
+     },
+     {
+      "zfa": "ZFA:0001324",
+      "name": "enteric musculature"
+     },
+     {
+      "zfa": "ZFA:0000511",
+      "name": "extraocular musculature"
+     },
+     {
+      "zfa": "ZFA:0000207",
+      "name": "fin musculature"
+     },
+     {
+      "zfa": "ZFA:0000548",
+      "name": "musculature system"
+     },
+     {
+      "zfa": "ZFA:0000563",
+      "name": "pectoral fin musculature"
+     },
+     {
+      "zfa": "ZFA:0001307",
+      "name": "pharyngeal musculature"
+     },
+     {
+      "zfa": "ZFA:0000473",
+      "name": "trunk musculature"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000671",
+      "name": "horizontal myoseptum"
+     },
+     {
+      "zfa": "ZFA:0001089",
+      "name": "myoseptum"
+     },
+     {
+      "zfa": "ZFA:0000610",
+      "name": "vertical myoseptum"
+     }
+    ]
+   },
+   "n_sub": 82
+  },
+  "cardiac": {
+   "germ_layer": "mesoderm",
+   "tissue": "heart",
+   "lineage": "cardiomyocyte",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000114",
+     "name": "heart",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "myl7",
+    "myh6",
+    "myh7",
+    "nppa",
+    "tnnt2a",
+    "ttn.2"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009316",
+      "name": "cardiac muscle cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001614",
+      "name": "atrial endocardium"
+     },
+     {
+      "zfa": "ZFA:0001374",
+      "name": "atrial myocardium"
+     },
+     {
+      "zfa": "ZFA:0001616",
+      "name": "atrioventricular canal endocardium"
+     },
+     {
+      "zfa": "ZFA:0005073",
+      "name": "atrioventricular ring"
+     },
+     {
+      "zfa": "ZFA:0005062",
+      "name": "compact layer of ventricle"
+     },
+     {
+      "zfa": "ZFA:0001317",
+      "name": "endocardial cushion"
+     },
+     {
+      "zfa": "ZFA:0005072",
+      "name": "endocardial ring"
+     },
+     {
+      "zfa": "ZFA:0001320",
+      "name": "endocardium"
+     },
+     {
+      "zfa": "ZFA:0005057",
+      "name": "epicardium"
+     },
+     {
+      "zfa": "ZFA:0001319",
+      "name": "myocardium"
+     },
+     {
+      "zfa": "ZFA:0005069",
+      "name": "sinoatrial node"
+     },
+     {
+      "zfa": "ZFA:0005601",
+      "name": "sinoatrial ring"
+     },
+     {
+      "zfa": "ZFA:0005059",
+      "name": "trabecular layer"
+     },
+     {
+      "zfa": "ZFA:0005810",
+      "name": "trabecular layer of the atrium"
+     },
+     {
+      "zfa": "ZFA:0005060",
+      "name": "trabecular layer of ventricle"
+     },
+     {
+      "zfa": "ZFA:0001615",
+      "name": "ventricular endocardium"
+     },
+     {
+      "zfa": "ZFA:0005058",
+      "name": "ventricular epicardium"
+     },
+     {
+      "zfa": "ZFA:0005061",
+      "name": "ventricular myocardium"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000471",
+      "name": "atrium"
+     },
+     {
+      "zfa": "ZFA:0000009",
+      "name": "cardiac ventricle"
+     },
+     {
+      "zfa": "ZFA:0000114",
+      "name": "heart"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0005063",
+      "name": "cardiac conduction system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001315",
+      "name": "atrioventricular canal"
+     },
+     {
+      "zfa": "ZFA:0005064",
+      "name": "atrioventricular valve"
+     },
+     {
+      "zfa": "ZFA:0000173",
+      "name": "bulbus arteriosus"
+     },
+     {
+      "zfa": "ZFA:0005065",
+      "name": "heart valve"
+     },
+     {
+      "zfa": "ZFA:0000680",
+      "name": "sinoatrial valve"
+     },
+     {
+      "zfa": "ZFA:0000154",
+      "name": "sinus venosus"
+     },
+     {
+      "zfa": "ZFA:0001375",
+      "name": "ventriculo bulbo valve"
+     }
+    ]
+   },
+   "n_sub": 30
+  },
+  "mural": {
+   "germ_layer": "mesoderm",
+   "tissue": "vasculature",
+   "lineage": "mural/smooth muscle",
+   "anchors": [
+    {
+     "zfa": "ZFA:0005944",
+     "name": "mural cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "pdgfrb",
+    "notch3",
+    "tagln",
+    "acta2"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005944",
+      "name": "mural cell"
+     },
+     {
+      "zfa": "ZFA:0009112",
+      "name": "pericyte"
+     },
+     {
+      "zfa": "ZFA:0009181",
+      "name": "vascular associated smooth muscle cell"
+     }
+    ]
+   },
+   "n_sub": 3
+  },
+  "endothelium": {
+   "germ_layer": "mesoderm",
+   "tissue": "vasculature",
+   "lineage": "endothelium",
+   "anchors": [
+    {
+     "zfa": "ZFA:0005249",
+     "name": "vasculature",
+     "tier": "Other"
+    },
+    {
+     "zfa": "ZFA:0009065",
+     "name": "endothelial cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "kdrl",
+    "fli1",
+    "etsrp",
+    "cdh5",
+    "pecam1a",
+    "flt1",
+    "egfl7",
+    "stab2",
+    "flt4"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009036",
+      "name": "blood vessel endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009304",
+      "name": "choroid plexus epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0009079",
+      "name": "corneal endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009065",
+      "name": "endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009303",
+      "name": "endothelial tip cell"
+     },
+     {
+      "zfa": "ZFA:0009078",
+      "name": "gut endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009112",
+      "name": "pericyte"
+     },
+     {
+      "zfa": "ZFA:0009181",
+      "name": "vascular associated smooth muscle cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005604",
+      "name": "angiogenic sprout"
+     },
+     {
+      "zfa": "ZFA:0005257",
+      "name": "blood vessel endothelium"
+     },
+     {
+      "zfa": "ZFA:0005250",
+      "name": "capillary"
+     },
+     {
+      "zfa": "ZFA:0005790",
+      "name": "hypophyseal capillary"
+     },
+     {
+      "zfa": "ZFA:0005258",
+      "name": "lymph vessel endothelium"
+     },
+     {
+      "zfa": "ZFA:0005603",
+      "name": "lymphangiogenic sprout"
+     },
+     {
+      "zfa": "ZFA:0005309",
+      "name": "pronephric glomerular capillary"
+     },
+     {
+      "zfa": "ZFA:0001639",
+      "name": "vascular endothelium"
+     },
+     {
+      "zfa": "ZFA:0005321",
+      "name": "vascular smooth muscle"
+     },
+     {
+      "zfa": "ZFA:0005559",
+      "name": "vascular sprouts"
+     },
+     {
+      "zfa": "ZFA:0005028",
+      "name": "ventral wall of dorsal aorta"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0001079",
+      "name": "blood vasculature"
+     },
+     {
+      "zfa": "ZFA:0000096",
+      "name": "cardinal system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000423",
+      "name": "anterior cardinal vein"
+     },
+     {
+      "zfa": "ZFA:0001067",
+      "name": "anterior cerebral vein"
+     },
+     {
+      "zfa": "ZFA:0005080",
+      "name": "anterior mesenteric artery"
+     },
+     {
+      "zfa": "ZFA:0005004",
+      "name": "aortic arch"
+     },
+     {
+      "zfa": "ZFA:0005005",
+      "name": "aortic arch 1"
+     },
+     {
+      "zfa": "ZFA:0005006",
+      "name": "aortic arch 2"
+     },
+     {
+      "zfa": "ZFA:0005007",
+      "name": "aortic arch 3"
+     },
+     {
+      "zfa": "ZFA:0005008",
+      "name": "aortic arch 4"
+     },
+     {
+      "zfa": "ZFA:0005009",
+      "name": "aortic arch 5"
+     },
+     {
+      "zfa": "ZFA:0005016",
+      "name": "aortic arch 6"
+     },
+     {
+      "zfa": "ZFA:0000005",
+      "name": "artery"
+     },
+     {
+      "zfa": "ZFA:0005295",
+      "name": "axial blood vessel"
+     },
+     {
+      "zfa": "ZFA:0001073",
+      "name": "axial vasculature"
+     },
+     {
+      "zfa": "ZFA:0005000",
+      "name": "basal communicating artery"
+     },
+     {
+      "zfa": "ZFA:0005002",
+      "name": "basilar artery"
+     },
+     {
+      "zfa": "ZFA:0005314",
+      "name": "blood vessel"
+     },
+     {
+      "zfa": "ZFA:0000099",
+      "name": "brain vasculature"
+     },
+     {
+      "zfa": "ZFA:0000097",
+      "name": "carotid artery"
+     },
+     {
+      "zfa": "ZFA:0000011",
+      "name": "caudal artery"
+     },
+     {
+      "zfa": "ZFA:0001051",
+      "name": "caudal division of the internal carotid artery"
+     },
+     {
+      "zfa": "ZFA:0005304",
+      "name": "caudal fin blood vessel"
+     },
+     {
+      "zfa": "ZFA:0000180",
+      "name": "caudal vein"
+     },
+     {
+      "zfa": "ZFA:0001286",
+      "name": "caudal vein plexus"
+     },
+     {
+      "zfa": "ZFA:0005020",
+      "name": "central artery"
+     },
+     {
+      "zfa": "ZFA:0001443",
+      "name": "choroid plexus"
+     },
+     {
+      "zfa": "ZFA:0001446",
+      "name": "choroid plexus fourth ventricle"
+     },
+     {
+      "zfa": "ZFA:0001444",
+      "name": "choroid plexus third ventricle"
+     },
+     {
+      "zfa": "ZFA:0000186",
+      "name": "common cardinal vein"
+     },
+     {
+      "zfa": "ZFA:0005297",
+      "name": "cranial blood vessel"
+     },
+     {
+      "zfa": "ZFA:0001059",
+      "name": "cranial division of the internal carotid artery"
+     },
+     {
+      "zfa": "ZFA:0001267",
+      "name": "cranial vasculature"
+     },
+     {
+      "zfa": "ZFA:0000014",
+      "name": "dorsal aorta"
+     },
+     {
+      "zfa": "ZFA:0005025",
+      "name": "dorsal longitudinal anastomotic vessel"
+     },
+     {
+      "zfa": "ZFA:0005031",
+      "name": "dorsal longitudinal vein"
+     },
+     {
+      "zfa": "ZFA:0005095",
+      "name": "fin vasculature"
+     },
+     {
+      "zfa": "ZFA:0005090",
+      "name": "hepatic portal vein"
+     },
+     {
+      "zfa": "ZFA:0005091",
+      "name": "hepatic sinusoid"
+     },
+     {
+      "zfa": "ZFA:0005045",
+      "name": "hyaloid artery"
+     },
+     {
+      "zfa": "ZFA:0005047",
+      "name": "hyaloid vein"
+     },
+     {
+      "zfa": "ZFA:0005046",
+      "name": "hyaloid vessel"
+     },
+     {
+      "zfa": "ZFA:0000673",
+      "name": "hypobranchial artery"
+     },
+     {
+      "zfa": "ZFA:0005054",
+      "name": "inner optic circle"
+     },
+     {
+      "zfa": "ZFA:0005081",
+      "name": "internal carotid artery"
+     },
+     {
+      "zfa": "ZFA:0005801",
+      "name": "interrenal vessel"
+     },
+     {
+      "zfa": "ZFA:0005319",
+      "name": "intersegmental lymph vessel"
+     },
+     {
+      "zfa": "ZFA:0001057",
+      "name": "intersegmental vein"
+     },
+     {
+      "zfa": "ZFA:0001285",
+      "name": "intersegmental vessel"
+     },
+     {
+      "zfa": "ZFA:0001054",
+      "name": "lateral dorsal aorta"
+     },
+     {
+      "zfa": "ZFA:0005844",
+      "name": "lymph vessel"
+     },
+     {
+      "zfa": "ZFA:0000039",
+      "name": "median axial vein"
+     },
+     {
+      "zfa": "ZFA:0005092",
+      "name": "mesencephalic vein"
+     },
+     {
+      "zfa": "ZFA:0005084",
+      "name": "metencephalic artery"
+     },
+     {
+      "zfa": "ZFA:0005010",
+      "name": "mid cerebral vein"
+     },
+     {
+      "zfa": "ZFA:0005053",
+      "name": "nasal ciliary artery"
+     },
+     {
+      "zfa": "ZFA:0007057",
+      "name": "ocular blood vessel"
+     },
+     {
+      "zfa": "ZFA:0005022",
+      "name": "opercular artery"
+     },
+     {
+      "zfa": "ZFA:0005044",
+      "name": "optic artery"
+     },
+     {
+      "zfa": "ZFA:0005094",
+      "name": "optic choroid vascular plexus"
+     },
+     {
+      "zfa": "ZFA:0005032",
+      "name": "optic vein"
+     },
+     {
+      "zfa": "ZFA:0005034",
+      "name": "parachordal vessel"
+     },
+     {
+      "zfa": "ZFA:0005086",
+      "name": "pectoral artery"
+     },
+     {
+      "zfa": "ZFA:0005301",
+      "name": "pectoral fin blood vessel"
+     },
+     {
+      "zfa": "ZFA:0005087",
+      "name": "pectoral vein"
+     },
+     {
+      "zfa": "ZFA:0005003",
+      "name": "pharyngeal vasculature"
+     },
+     {
+      "zfa": "ZFA:0005037",
+      "name": "post-vent vasculature"
+     },
+     {
+      "zfa": "ZFA:0000477",
+      "name": "posterior cardinal vein"
+     },
+     {
+      "zfa": "ZFA:0001063",
+      "name": "posterior caudal vein"
+     },
+     {
+      "zfa": "ZFA:0005027",
+      "name": "posterior cerebral vein"
+     },
+     {
+      "zfa": "ZFA:0005001",
+      "name": "posterior communicating artery"
+     },
+     {
+      "zfa": "ZFA:0005088",
+      "name": "posterior mesenteric artery"
+     },
+     {
+      "zfa": "ZFA:0005026",
+      "name": "primary head sinus"
+     },
+     {
+      "zfa": "ZFA:0001053",
+      "name": "primitive internal carotid artery"
+     },
+     {
+      "zfa": "ZFA:0001062",
+      "name": "primitive mesencephalic artery"
+     },
+     {
+      "zfa": "ZFA:0001052",
+      "name": "primordial hindbrain channel"
+     },
+     {
+      "zfa": "ZFA:0005017",
+      "name": "primordial midbrain channel"
+     },
+     {
+      "zfa": "ZFA:0000677",
+      "name": "segmental intercostal artery"
+     },
+     {
+      "zfa": "ZFA:0005035",
+      "name": "subintestinal vein"
+     },
+     {
+      "zfa": "ZFA:0005110",
+      "name": "thoracic duct"
+     },
+     {
+      "zfa": "ZFA:0005024",
+      "name": "trunk vasculature"
+     },
+     {
+      "zfa": "ZFA:0005249",
+      "name": "vasculature"
+     },
+     {
+      "zfa": "ZFA:0000082",
+      "name": "vein"
+     },
+     {
+      "zfa": "ZFA:0000604",
+      "name": "ventral aorta"
+     }
+    ]
+   },
+   "n_sub": 103
+  },
+  "blood_erythroid": {
+   "germ_layer": "mesoderm",
+   "tissue": "blood",
+   "lineage": "erythroid",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000007",
+     "name": "blood",
+     "tier": "Other"
+    },
+    {
+     "zfa": "ZFA:0005023",
+     "name": "hematopoietic system",
+     "tier": "Anatomical system"
+    }
+   ],
+   "markers": [
+    "gata1a",
+    "hbae1.1",
+    "hbbe2",
+    "alas2",
+    "klf1",
+    "slc4a1a",
+    "cahz"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009044",
+      "name": "blood cell"
+     },
+     {
+      "zfa": "ZFA:0009014",
+      "name": "hematopoietic stem cell"
+     },
+     {
+      "zfa": "ZFA:0009256",
+      "name": "nucleate erythrocyte"
+     },
+     {
+      "zfa": "ZFA:0009323",
+      "name": "thrombocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000094",
+      "name": "blood island"
+     },
+     {
+      "zfa": "ZFA:0005898",
+      "name": "caudal hematopoietic tissue"
+     },
+     {
+      "zfa": "ZFA:0000033",
+      "name": "intermediate cell mass of mesoderm"
+     },
+     {
+      "zfa": "ZFA:0005029",
+      "name": "rostral blood island"
+     },
+     {
+      "zfa": "ZFA:0005028",
+      "name": "ventral wall of dorsal aorta"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000669",
+      "name": "head kidney"
+     },
+     {
+      "zfa": "ZFA:0000436",
+      "name": "spleen"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0005023",
+      "name": "hematopoietic system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000007",
+      "name": "blood"
+     },
+     {
+      "zfa": "ZFA:0005654",
+      "name": "blood plasma"
+     },
+     {
+      "zfa": "ZFA:0001345",
+      "name": "interrenal gland"
+     },
+     {
+      "zfa": "ZFA:0005801",
+      "name": "interrenal vessel"
+     }
+    ]
+   },
+   "n_sub": 16
+  },
+  "immune_myeloid": {
+   "germ_layer": "mesoderm",
+   "tissue": "immune system",
+   "lineage": "myeloid/macrophage",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001159",
+     "name": "immune system",
+     "tier": "Anatomical system"
+    },
+    {
+     "zfa": "ZFA:0005023",
+     "name": "hematopoietic system",
+     "tier": "Anatomical system"
+    }
+   ],
+   "markers": [
+    "lcp1",
+    "mpeg1.1",
+    "coro1a",
+    "spi1b",
+    "mfap4.1",
+    "lyz",
+    "csf1ra"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009142",
+      "name": "B cell"
+     },
+     {
+      "zfa": "ZFA:0009046",
+      "name": "T cell"
+     },
+     {
+      "zfa": "ZFA:0009335",
+      "name": "alpha-beta T cell"
+     },
+     {
+      "zfa": "ZFA:0009044",
+      "name": "blood cell"
+     },
+     {
+      "zfa": "ZFA:0009209",
+      "name": "dendritic cell"
+     },
+     {
+      "zfa": "ZFA:0009336",
+      "name": "gamma-delta T cell"
+     },
+     {
+      "zfa": "ZFA:0009094",
+      "name": "goblet cell"
+     },
+     {
+      "zfa": "ZFA:0009048",
+      "name": "granulocyte"
+     },
+     {
+      "zfa": "ZFA:0009014",
+      "name": "hematopoietic stem cell"
+     },
+     {
+      "zfa": "ZFA:0009343",
+      "name": "immature B cell"
+     },
+     {
+      "zfa": "ZFA:0009337",
+      "name": "immature gamma-delta T cell"
+     },
+     {
+      "zfa": "ZFA:0009328",
+      "name": "immature neutrophil"
+     },
+     {
+      "zfa": "ZFA:0009389",
+      "name": "kidney cell"
+     },
+     {
+      "zfa": "ZFA:0009374",
+      "name": "kidney epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0009309",
+      "name": "leukocyte"
+     },
+     {
+      "zfa": "ZFA:0009250",
+      "name": "lymphocyte"
+     },
+     {
+      "zfa": "ZFA:0009141",
+      "name": "macrophage"
+     },
+     {
+      "zfa": "ZFA:0009049",
+      "name": "mature neutrophil"
+     },
+     {
+      "zfa": "ZFA:0001674",
+      "name": "mesonephric podocyte"
+     },
+     {
+      "zfa": "ZFA:0009077",
+      "name": "microglial cell"
+     },
+     {
+      "zfa": "ZFA:0009265",
+      "name": "monocyte"
+     },
+     {
+      "zfa": "ZFA:0009159",
+      "name": "mucus secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009326",
+      "name": "myeloid leukocyte"
+     },
+     {
+      "zfa": "ZFA:0009278",
+      "name": "natural killer cell"
+     },
+     {
+      "zfa": "ZFA:0009327",
+      "name": "neutrophil"
+     },
+     {
+      "zfa": "ZFA:0009266",
+      "name": "neutrophilic myelocyte"
+     },
+     {
+      "zfa": "ZFA:0009256",
+      "name": "nucleate erythrocyte"
+     },
+     {
+      "zfa": "ZFA:0009344",
+      "name": "precursor B cell"
+     },
+     {
+      "zfa": "ZFA:0009350",
+      "name": "pro-T cell"
+     },
+     {
+      "zfa": "ZFA:0009088",
+      "name": "professional antigen presenting cell"
+     },
+     {
+      "zfa": "ZFA:0005322",
+      "name": "renal principal cell"
+     },
+     {
+      "zfa": "ZFA:0009323",
+      "name": "thrombocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000094",
+      "name": "blood island"
+     },
+     {
+      "zfa": "ZFA:0005898",
+      "name": "caudal hematopoietic tissue"
+     },
+     {
+      "zfa": "ZFA:0000033",
+      "name": "intermediate cell mass of mesoderm"
+     },
+     {
+      "zfa": "ZFA:0005587",
+      "name": "nephron progenitor"
+     },
+     {
+      "zfa": "ZFA:0005586",
+      "name": "renal vesicle"
+     },
+     {
+      "zfa": "ZFA:0005029",
+      "name": "rostral blood island"
+     },
+     {
+      "zfa": "ZFA:0005779",
+      "name": "thymic epithelium"
+     },
+     {
+      "zfa": "ZFA:0001077",
+      "name": "thymus primordium"
+     },
+     {
+      "zfa": "ZFA:0005028",
+      "name": "ventral wall of dorsal aorta"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0005584",
+      "name": "developing mesonephric nephron"
+     },
+     {
+      "zfa": "ZFA:0005592",
+      "name": "mesonephric nephron"
+     },
+     {
+      "zfa": "ZFA:0005282",
+      "name": "nephron"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000669",
+      "name": "head kidney"
+     },
+     {
+      "zfa": "ZFA:0000529",
+      "name": "kidney"
+     },
+     {
+      "zfa": "ZFA:0001293",
+      "name": "posterior kidney"
+     },
+     {
+      "zfa": "ZFA:0000436",
+      "name": "spleen"
+     },
+     {
+      "zfa": "ZFA:0001078",
+      "name": "thymus"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0005023",
+      "name": "hematopoietic system"
+     },
+     {
+      "zfa": "ZFA:0001159",
+      "name": "immune system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000007",
+      "name": "blood"
+     },
+     {
+      "zfa": "ZFA:0005654",
+      "name": "blood plasma"
+     },
+     {
+      "zfa": "ZFA:0005294",
+      "name": "collecting duct"
+     },
+     {
+      "zfa": "ZFA:0005591",
+      "name": "developing mesonephric distal tubule"
+     },
+     {
+      "zfa": "ZFA:0005293",
+      "name": "distal early tubule"
+     },
+     {
+      "zfa": "ZFA:0005292",
+      "name": "distal late tubule"
+     },
+     {
+      "zfa": "ZFA:0001345",
+      "name": "interrenal gland"
+     },
+     {
+      "zfa": "ZFA:0005801",
+      "name": "interrenal vessel"
+     },
+     {
+      "zfa": "ZFA:0005290",
+      "name": "proximal convoluted tubule"
+     },
+     {
+      "zfa": "ZFA:0005291",
+      "name": "proximal straight tubule"
+     },
+     {
+      "zfa": "ZFA:0005289",
+      "name": "renal duct"
+     },
+     {
+      "zfa": "ZFA:0001288",
+      "name": "renal glomerulus"
+     },
+     {
+      "zfa": "ZFA:0001287",
+      "name": "renal tubule"
+     }
+    ]
+   },
+   "n_sub": 64
+  },
+  "blood_lymphoid": {
+   "germ_layer": "mesoderm",
+   "tissue": "immune system",
+   "lineage": "lymphoid",
+   "anchors": [
+    {
+     "zfa": "ZFA:0009250",
+     "name": "lymphocyte",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "lck",
+    "rag1",
+    "rag2",
+    "il7r",
+    "cd8a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009142",
+      "name": "B cell"
+     },
+     {
+      "zfa": "ZFA:0009046",
+      "name": "T cell"
+     },
+     {
+      "zfa": "ZFA:0009335",
+      "name": "alpha-beta T cell"
+     },
+     {
+      "zfa": "ZFA:0009336",
+      "name": "gamma-delta T cell"
+     },
+     {
+      "zfa": "ZFA:0009343",
+      "name": "immature B cell"
+     },
+     {
+      "zfa": "ZFA:0009337",
+      "name": "immature gamma-delta T cell"
+     },
+     {
+      "zfa": "ZFA:0009250",
+      "name": "lymphocyte"
+     },
+     {
+      "zfa": "ZFA:0009278",
+      "name": "natural killer cell"
+     },
+     {
+      "zfa": "ZFA:0009344",
+      "name": "precursor B cell"
+     }
+    ]
+   },
+   "n_sub": 9
+  },
+  "pronephros": {
+   "germ_layer": "mesoderm",
+   "tissue": "kidney",
+   "lineage": "nephron",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000151",
+     "name": "pronephros",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "pax2a",
+    "wt1a",
+    "wt1b",
+    "slc20a1a",
+    "cdh17",
+    "slc12a1",
+    "pax8",
+    "nphs1",
+    "nphs2",
+    "aqp8b",
+    "slc26a1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0001673",
+      "name": "pronephric podocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005309",
+      "name": "pronephric glomerular capillary"
+     },
+     {
+      "zfa": "ZFA:0005311",
+      "name": "pronephric glomerular capsule epithelium"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000151",
+      "name": "pronephros"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001346",
+      "name": "interrenal primordium"
+     },
+     {
+      "zfa": "ZFA:0001623",
+      "name": "posterior pronephric duct"
+     },
+     {
+      "zfa": "ZFA:0001622",
+      "name": "pronephric distal early tubule"
+     },
+     {
+      "zfa": "ZFA:0001624",
+      "name": "pronephric distal late tubule"
+     },
+     {
+      "zfa": "ZFA:0000150",
+      "name": "pronephric duct"
+     },
+     {
+      "zfa": "ZFA:0001055",
+      "name": "pronephric duct opening"
+     },
+     {
+      "zfa": "ZFA:0005313",
+      "name": "pronephric glomerular basement membrane"
+     },
+     {
+      "zfa": "ZFA:0001557",
+      "name": "pronephric glomerulus"
+     },
+     {
+      "zfa": "ZFA:0001620",
+      "name": "pronephric proximal convoluted tubule"
+     },
+     {
+      "zfa": "ZFA:0001621",
+      "name": "pronephric proximal straight tubule"
+     },
+     {
+      "zfa": "ZFA:0001558",
+      "name": "pronephric tubule"
+     }
+    ]
+   },
+   "n_sub": 15
+  },
+  "mesenchyme": {
+   "germ_layer": "mesoderm",
+   "tissue": "mesenchyme/connective tissue",
+   "lineage": "mesenchyme/fibroblast",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000393",
+     "name": "mesenchyme",
+     "tier": "Portion of tissue"
+    }
+   ],
+   "markers": [
+    "dcn",
+    "twist1a",
+    "prrx1a",
+    "osr2",
+    "fn1a"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0000003",
+      "name": "adaxial cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001650",
+      "name": "branchial mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0005139",
+      "name": "dental mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000113",
+      "name": "head mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000990",
+      "name": "intermediate mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000905",
+      "name": "lateral mesenchyme derived from mesoderm"
+     },
+     {
+      "zfa": "ZFA:0000786",
+      "name": "medial migration pathway mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000393",
+      "name": "mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000998",
+      "name": "mesenchyme derived from head mesoderm"
+     },
+     {
+      "zfa": "ZFA:0000787",
+      "name": "mesenchyme derived from head neural crest"
+     },
+     {
+      "zfa": "ZFA:0000999",
+      "name": "mesenchyme derived from trunk neural crest"
+     },
+     {
+      "zfa": "ZFA:0000788",
+      "name": "mesenchyme dorsal fin"
+     },
+     {
+      "zfa": "ZFA:0000912",
+      "name": "mesenchyme median fin fold"
+     },
+     {
+      "zfa": "ZFA:0001000",
+      "name": "mesenchyme pectoral fin"
+     },
+     {
+      "zfa": "ZFA:0000255",
+      "name": "paraxial mesoderm"
+     },
+     {
+      "zfa": "ZFA:0005572",
+      "name": "periocular mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000279",
+      "name": "segmental plate"
+     },
+     {
+      "zfa": "ZFA:0000081",
+      "name": "trunk mesenchyme"
+     },
+     {
+      "zfa": "ZFA:0000164",
+      "name": "ventral mesenchyme"
+     }
+    ]
+   },
+   "n_sub": 19
+  },
+  "cartilage": {
+   "germ_layer": "neural crest",
+   "tissue": "cartilage/skeleton",
+   "lineage": "chondrogenic",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001501",
+     "name": "cartilage element",
+     "tier": "Compound organ"
+    },
+    {
+     "zfa": "ZFA:0009084",
+     "name": "chondrocyte",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "sox9a",
+    "sox9b",
+    "col2a1a",
+    "acana",
+    "matn1",
+    "runx2b"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009027",
+      "name": "chondroblast"
+     },
+     {
+      "zfa": "ZFA:0009084",
+      "name": "chondrocyte"
+     },
+     {
+      "zfa": "ZFA:0009314",
+      "name": "columnar chondrocyte"
+     },
+     {
+      "zfa": "ZFA:0009313",
+      "name": "hypertrophic chondrocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005904",
+      "name": "retroarticular  process"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0001205",
+      "name": "Meckel's cartilage"
+     },
+     {
+      "zfa": "ZFA:0001644",
+      "name": "articular cartilage"
+     },
+     {
+      "zfa": "ZFA:0001500",
+      "name": "auditory capsule"
+     },
+     {
+      "zfa": "ZFA:0001425",
+      "name": "basal plate cartilage"
+     },
+     {
+      "zfa": "ZFA:0001510",
+      "name": "basihyal cartilage"
+     },
+     {
+      "zfa": "ZFA:0001501",
+      "name": "cartilage element"
+     },
+     {
+      "zfa": "ZFA:0001520",
+      "name": "ceratobranchial 1 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001517",
+      "name": "ceratobranchial 2 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001518",
+      "name": "ceratobranchial 3 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001519",
+      "name": "ceratobranchial 4 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001521",
+      "name": "ceratobranchial 5 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001516",
+      "name": "ceratobranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001400",
+      "name": "ceratohyal cartilage"
+     },
+     {
+      "zfa": "ZFA:0001461",
+      "name": "chondrocranium cartilage"
+     },
+     {
+      "zfa": "ZFA:0001458",
+      "name": "cranial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001244",
+      "name": "epibranchial 5"
+     },
+     {
+      "zfa": "ZFA:0001527",
+      "name": "epibranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001502",
+      "name": "epiphyseal bar"
+     },
+     {
+      "zfa": "ZFA:0001405",
+      "name": "ethmoid cartilage"
+     },
+     {
+      "zfa": "ZFA:0001422",
+      "name": "hyosymplectic cartilage"
+     },
+     {
+      "zfa": "ZFA:0001522",
+      "name": "hypobranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001321",
+      "name": "neurocranial trabecula"
+     },
+     {
+      "zfa": "ZFA:0001504",
+      "name": "occipital arch cartilage"
+     },
+     {
+      "zfa": "ZFA:0001399",
+      "name": "palatoquadrate cartilage"
+     },
+     {
+      "zfa": "ZFA:0001423",
+      "name": "parachordal cartilage"
+     },
+     {
+      "zfa": "ZFA:0000257",
+      "name": "pectoral fin cartilage"
+     },
+     {
+      "zfa": "ZFA:0001460",
+      "name": "pharyngeal arch cartilage"
+     },
+     {
+      "zfa": "ZFA:0001457",
+      "name": "postcranial axial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001455",
+      "name": "scapulocoracoid"
+     },
+     {
+      "zfa": "ZFA:0001505",
+      "name": "taenia marginalis anterior"
+     },
+     {
+      "zfa": "ZFA:0001507",
+      "name": "trabecula cranii"
+     }
+    ]
+   },
+   "n_sub": 36
+  },
+  "osteoblast": {
+   "germ_layer": "mesoderm",
+   "tissue": "skeleton",
+   "lineage": "osteoblast",
+   "anchors": [
+    {
+     "zfa": "ZFA:0009031",
+     "name": "osteoblast",
+     "tier": "Cell"
+    },
+    {
+     "zfa": "ZFA:0005621",
+     "name": "bone tissue",
+     "tier": "Portion of tissue"
+    }
+   ],
+   "markers": [
+    "sp7",
+    "spp1",
+    "bglap",
+    "col10a1a",
+    "runx2a",
+    "runx2b"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009031",
+      "name": "osteoblast"
+     },
+     {
+      "zfa": "ZFA:0009083",
+      "name": "osteocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005621",
+      "name": "bone tissue"
+     }
+    ]
+   },
+   "n_sub": 3
+  },
+  "notochord": {
+   "germ_layer": "mesoderm",
+   "tissue": "notochord",
+   "lineage": "axial mesoderm",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000135",
+     "name": "notochord",
+     "tier": "Portion of tissue"
+    }
+   ],
+   "markers": [
+    "tbxta",
+    "shha",
+    "col2a1a",
+    "col8a1a",
+    "noto",
+    "matn3a",
+    "matn3b",
+    "chad"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005746",
+      "name": "notochord inner cell"
+     },
+     {
+      "zfa": "ZFA:0005744",
+      "name": "notochord outer sheath cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000135",
+      "name": "notochord"
+     },
+     {
+      "zfa": "ZFA:0001670",
+      "name": "notochord posterior region"
+     }
+    ]
+   },
+   "n_sub": 4
+  },
+  "fin": {
+   "germ_layer": "mesoderm",
+   "tissue": "fin",
+   "lineage": "fin bud/fold",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000108",
+     "name": "fin",
+     "tier": "Other"
+    },
+    {
+     "zfa": "ZFA:0001383",
+     "name": "fin bud",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "tbx5a",
+    "fgf24",
+    "hoxd13a",
+    "msx1b",
+    "hoxa13a",
+    "and1"
+   ],
+   "sub_by_tier": {
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001270",
+      "name": "blastema"
+     },
+     {
+      "zfa": "ZFA:0000788",
+      "name": "mesenchyme dorsal fin"
+     },
+     {
+      "zfa": "ZFA:0001000",
+      "name": "mesenchyme pectoral fin"
+     },
+     {
+      "zfa": "ZFA:0000789",
+      "name": "mesoderm pectoral fin bud"
+     },
+     {
+      "zfa": "ZFA:0001386",
+      "name": "mesoderm pelvic fin bud"
+     },
+     {
+      "zfa": "ZFA:0001670",
+      "name": "notochord posterior region"
+     },
+     {
+      "zfa": "ZFA:0005437",
+      "name": "pectoral fin motor nerve"
+     },
+     {
+      "zfa": "ZFA:0005650",
+      "name": "primitive pectoral fin adductor"
+     },
+     {
+      "zfa": "ZFA:0001389",
+      "name": "regeneration epithelium"
+     },
+     {
+      "zfa": "ZFA:0001451",
+      "name": "zone of polarizing activity pectoral fin bud"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0001420",
+      "name": "anal fin pterygiophore"
+     },
+     {
+      "zfa": "ZFA:0000090",
+      "name": "apical ectodermal ridge dorsal fin"
+     },
+     {
+      "zfa": "ZFA:0000085",
+      "name": "apical ectodermal ridge pectoral fin bud"
+     },
+     {
+      "zfa": "ZFA:0001385",
+      "name": "apical ectodermal ridge pelvic fin bud"
+     },
+     {
+      "zfa": "ZFA:0001419",
+      "name": "dorsal fin pterygiophore"
+     },
+     {
+      "zfa": "ZFA:0000407",
+      "name": "pectoral girdle"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000646",
+      "name": "anal fin distal radial"
+     },
+     {
+      "zfa": "ZFA:0001421",
+      "name": "anal fin lepidotrichium"
+     },
+     {
+      "zfa": "ZFA:0000268",
+      "name": "anal fin proximal radial"
+     },
+     {
+      "zfa": "ZFA:0005535",
+      "name": "branched anal fin ray"
+     },
+     {
+      "zfa": "ZFA:0005533",
+      "name": "branched caudal fin ray"
+     },
+     {
+      "zfa": "ZFA:0005534",
+      "name": "branched dorsal fin ray"
+     },
+     {
+      "zfa": "ZFA:0001550",
+      "name": "caudal fin lepidotrichium"
+     },
+     {
+      "zfa": "ZFA:0005513",
+      "name": "caudal fin principal ray 3"
+     },
+     {
+      "zfa": "ZFA:0000184",
+      "name": "cleithrum"
+     },
+     {
+      "zfa": "ZFA:0000936",
+      "name": "dorsal fin distal radial"
+     },
+     {
+      "zfa": "ZFA:0001418",
+      "name": "dorsal fin lepidotrichium"
+     },
+     {
+      "zfa": "ZFA:0000660",
+      "name": "epural"
+     },
+     {
+      "zfa": "ZFA:0000364",
+      "name": "hypural"
+     },
+     {
+      "zfa": "ZFA:0001560",
+      "name": "hypural 1"
+     },
+     {
+      "zfa": "ZFA:0001561",
+      "name": "hypural 2"
+     },
+     {
+      "zfa": "ZFA:0001562",
+      "name": "hypural 3"
+     },
+     {
+      "zfa": "ZFA:0001563",
+      "name": "hypural 4"
+     },
+     {
+      "zfa": "ZFA:0001564",
+      "name": "hypural 5"
+     },
+     {
+      "zfa": "ZFA:0000438",
+      "name": "parhypural"
+     },
+     {
+      "zfa": "ZFA:0005545",
+      "name": "pectoral fin actinotrichium"
+     },
+     {
+      "zfa": "ZFA:0000257",
+      "name": "pectoral fin cartilage"
+     },
+     {
+      "zfa": "ZFA:0001551",
+      "name": "pectoral fin lepidotrichium"
+     },
+     {
+      "zfa": "ZFA:0001587",
+      "name": "pectoral fin proximal radial"
+     },
+     {
+      "zfa": "ZFA:0001586",
+      "name": "pectoral fin radial"
+     },
+     {
+      "zfa": "ZFA:0001552",
+      "name": "pelvic fin lepidotrichium"
+     },
+     {
+      "zfa": "ZFA:0001455",
+      "name": "scapulocoracoid"
+     },
+     {
+      "zfa": "ZFA:0000859",
+      "name": "specialized hemal arch and spine"
+     },
+     {
+      "zfa": "ZFA:0000158",
+      "name": "urostyle"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0000862",
+      "name": "caudal fin skeleton"
+     },
+     {
+      "zfa": "ZFA:0000648",
+      "name": "dorsal fin musculature"
+     },
+     {
+      "zfa": "ZFA:0000563",
+      "name": "pectoral fin musculature"
+     },
+     {
+      "zfa": "ZFA:0000943",
+      "name": "pectoral fin skeleton"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001162",
+      "name": "anal fin"
+     },
+     {
+      "zfa": "ZFA:0001058",
+      "name": "caudal fin"
+     },
+     {
+      "zfa": "ZFA:0005304",
+      "name": "caudal fin blood vessel"
+     },
+     {
+      "zfa": "ZFA:0001605",
+      "name": "caudal fin lower lobe"
+     },
+     {
+      "zfa": "ZFA:0001173",
+      "name": "dorsal fin"
+     },
+     {
+      "zfa": "ZFA:0000108",
+      "name": "fin"
+     },
+     {
+      "zfa": "ZFA:0001383",
+      "name": "fin bud"
+     },
+     {
+      "zfa": "ZFA:0005316",
+      "name": "fin fold pectoral fin bud"
+     },
+     {
+      "zfa": "ZFA:0005095",
+      "name": "fin vasculature"
+     },
+     {
+      "zfa": "ZFA:0005597",
+      "name": "median fin"
+     },
+     {
+      "zfa": "ZFA:0005596",
+      "name": "paired fin"
+     },
+     {
+      "zfa": "ZFA:0005086",
+      "name": "pectoral artery"
+     },
+     {
+      "zfa": "ZFA:0001161",
+      "name": "pectoral fin"
+     },
+     {
+      "zfa": "ZFA:0005301",
+      "name": "pectoral fin blood vessel"
+     },
+     {
+      "zfa": "ZFA:0000141",
+      "name": "pectoral fin bud"
+     },
+     {
+      "zfa": "ZFA:0005317",
+      "name": "pectoral fin fold"
+     },
+     {
+      "zfa": "ZFA:0005087",
+      "name": "pectoral vein"
+     },
+     {
+      "zfa": "ZFA:0001184",
+      "name": "pelvic fin"
+     },
+     {
+      "zfa": "ZFA:0001384",
+      "name": "pelvic fin bud"
+     },
+     {
+      "zfa": "ZFA:0001269",
+      "name": "regenerating fin"
+     }
+    ]
+   },
+   "n_sub": 68
+  },
+  "endoderm_gut": {
+   "germ_layer": "endoderm",
+   "tissue": "gut/liver/pancreas",
+   "lineage": "endoderm",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000339",
+     "name": "digestive system",
+     "tier": "Anatomical system"
+    },
+    {
+     "zfa": "ZFA:0000416",
+     "name": "presumptive endoderm",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "sox32",
+    "sox17",
+    "foxa2",
+    "gata5",
+    "gata6",
+    "hhex"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009228",
+      "name": "D cell"
+     },
+     {
+      "zfa": "ZFA:0005775",
+      "name": "enteric neuron"
+     },
+     {
+      "zfa": "ZFA:0009269",
+      "name": "enterocyte"
+     },
+     {
+      "zfa": "ZFA:0009289",
+      "name": "gut absorptive cell"
+     },
+     {
+      "zfa": "ZFA:0009078",
+      "name": "gut endothelial cell"
+     },
+     {
+      "zfa": "ZFA:0009111",
+      "name": "hepatocyte"
+     },
+     {
+      "zfa": "ZFA:0009399",
+      "name": "intestinal epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0009379",
+      "name": "intrahepatic bile duct epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0005942",
+      "name": "lysosome-rich enterocyte"
+     },
+     {
+      "zfa": "ZFA:0009029",
+      "name": "odontoblast"
+     },
+     {
+      "zfa": "ZFA:0009104",
+      "name": "pancreatic A cell"
+     },
+     {
+      "zfa": "ZFA:0009102",
+      "name": "pancreatic B cell"
+     },
+     {
+      "zfa": "ZFA:0005743",
+      "name": "pancreatic D cell"
+     },
+     {
+      "zfa": "ZFA:0005739",
+      "name": "pancreatic acinar cell"
+     },
+     {
+      "zfa": "ZFA:0009380",
+      "name": "pancreatic ductal cell"
+     },
+     {
+      "zfa": "ZFA:0005598",
+      "name": "pancreatic epsilon cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0000172",
+      "name": "branchial muscle"
+     },
+     {
+      "zfa": "ZFA:0000177",
+      "name": "caudal oblique"
+     },
+     {
+      "zfa": "ZFA:0005783",
+      "name": "cloacal epithelium"
+     },
+     {
+      "zfa": "ZFA:0001499",
+      "name": "esophageal epithelium"
+     },
+     {
+      "zfa": "ZFA:0000415",
+      "name": "esophageal sphincter"
+     },
+     {
+      "zfa": "ZFA:0005123",
+      "name": "gut epithelium"
+     },
+     {
+      "zfa": "ZFA:0001107",
+      "name": "internal gill bud"
+     },
+     {
+      "zfa": "ZFA:0005256",
+      "name": "intervillus pockets"
+     },
+     {
+      "zfa": "ZFA:0005126",
+      "name": "intestinal bulb epithelium"
+     },
+     {
+      "zfa": "ZFA:0005124",
+      "name": "intestinal epithelium"
+     },
+     {
+      "zfa": "ZFA:0005125",
+      "name": "intestinal villus"
+     },
+     {
+      "zfa": "ZFA:0005755",
+      "name": "islet"
+     },
+     {
+      "zfa": "ZFA:0005334",
+      "name": "lip epithelium"
+     },
+     {
+      "zfa": "ZFA:0005127",
+      "name": "mid intestine epithelium"
+     },
+     {
+      "zfa": "ZFA:0001104",
+      "name": "pharyngeal endoderm"
+     },
+     {
+      "zfa": "ZFA:0001174",
+      "name": "pharyngeal epithelium"
+     },
+     {
+      "zfa": "ZFA:0001467",
+      "name": "pharyngeal mesoderm"
+     },
+     {
+      "zfa": "ZFA:0005128",
+      "name": "posterior intestine epithelium"
+     },
+     {
+      "zfa": "ZFA:0005754",
+      "name": "primary islet"
+     },
+     {
+      "zfa": "ZFA:0001153",
+      "name": "tooth placode"
+     },
+     {
+      "zfa": "ZFA:0000608",
+      "name": "ventral transverse"
+     }
+    ],
+    "Multi-tissue structure": [
+     {
+      "zfa": "ZFA:0000112",
+      "name": "gut"
+     },
+     {
+      "zfa": "ZFA:0001228",
+      "name": "pharyngeal arch 3 skeleton"
+     },
+     {
+      "zfa": "ZFA:0000095",
+      "name": "pharyngeal arch 3-7 skeleton"
+     },
+     {
+      "zfa": "ZFA:0001231",
+      "name": "pharyngeal arch 4 skeleton"
+     },
+     {
+      "zfa": "ZFA:0001232",
+      "name": "pharyngeal arch 5 skeleton"
+     },
+     {
+      "zfa": "ZFA:0001230",
+      "name": "pharyngeal arch 6 skeleton"
+     },
+     {
+      "zfa": "ZFA:0001229",
+      "name": "pharyngeal arch 7 skeleton"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000170",
+      "name": "basibranchial"
+     },
+     {
+      "zfa": "ZFA:0001520",
+      "name": "ceratobranchial 1 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001517",
+      "name": "ceratobranchial 2 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001518",
+      "name": "ceratobranchial 3 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001519",
+      "name": "ceratobranchial 4 cartilage"
+     },
+     {
+      "zfa": "ZFA:0001239",
+      "name": "ceratobranchial 5 bone"
+     },
+     {
+      "zfa": "ZFA:0001521",
+      "name": "ceratobranchial 5 cartilage"
+     },
+     {
+      "zfa": "ZFA:0000488",
+      "name": "ceratobranchial bone"
+     },
+     {
+      "zfa": "ZFA:0001516",
+      "name": "ceratobranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001244",
+      "name": "epibranchial 5"
+     },
+     {
+      "zfa": "ZFA:0001527",
+      "name": "epibranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0000208",
+      "name": "gall bladder"
+     },
+     {
+      "zfa": "ZFA:0000356",
+      "name": "gill raker"
+     },
+     {
+      "zfa": "ZFA:0001522",
+      "name": "hypobranchial cartilage"
+     },
+     {
+      "zfa": "ZFA:0001338",
+      "name": "intestine"
+     },
+     {
+      "zfa": "ZFA:0000123",
+      "name": "liver"
+     },
+     {
+      "zfa": "ZFA:0000140",
+      "name": "pancreas"
+     }
+    ],
+    "Anatomical system": [
+     {
+      "zfa": "ZFA:0000339",
+      "name": "digestive system"
+     },
+     {
+      "zfa": "ZFA:0001324",
+      "name": "enteric musculature"
+     },
+     {
+      "zfa": "ZFA:0001155",
+      "name": "enteric nervous system"
+     },
+     {
+      "zfa": "ZFA:0001371",
+      "name": "pancreatic system"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001369",
+      "name": "anterior pancreatic bud"
+     },
+     {
+      "zfa": "ZFA:0005007",
+      "name": "aortic arch 3"
+     },
+     {
+      "zfa": "ZFA:0005008",
+      "name": "aortic arch 4"
+     },
+     {
+      "zfa": "ZFA:0005009",
+      "name": "aortic arch 5"
+     },
+     {
+      "zfa": "ZFA:0005016",
+      "name": "aortic arch 6"
+     },
+     {
+      "zfa": "ZFA:0005163",
+      "name": "bile canaliculus"
+     },
+     {
+      "zfa": "ZFA:0005851",
+      "name": "ceratobranchial 5 primary tooth"
+     },
+     {
+      "zfa": "ZFA:0005849",
+      "name": "ceratobranchial 5 replacement  tooth"
+     },
+     {
+      "zfa": "ZFA:0000694",
+      "name": "ceratobranchial 5 tooth"
+     },
+     {
+      "zfa": "ZFA:0005781",
+      "name": "cloaca"
+     },
+     {
+      "zfa": "ZFA:0000330",
+      "name": "cloacal chamber"
+     },
+     {
+      "zfa": "ZFA:0005165",
+      "name": "common bile duct"
+     },
+     {
+      "zfa": "ZFA:0005166",
+      "name": "cystic duct"
+     },
+     {
+      "zfa": "ZFA:0005162",
+      "name": "digestive system duct"
+     },
+     {
+      "zfa": "ZFA:0001260",
+      "name": "endocrine pancreas"
+     },
+     {
+      "zfa": "ZFA:0000204",
+      "name": "esophagus"
+     },
+     {
+      "zfa": "ZFA:0001249",
+      "name": "exocrine pancreas"
+     },
+     {
+      "zfa": "ZFA:0005170",
+      "name": "extrahepatic duct"
+     },
+     {
+      "zfa": "ZFA:0005346",
+      "name": "extrapancreatic duct"
+     },
+     {
+      "zfa": "ZFA:0001100",
+      "name": "hepatic duct"
+     },
+     {
+      "zfa": "ZFA:0005090",
+      "name": "hepatic portal vein"
+     },
+     {
+      "zfa": "ZFA:0005091",
+      "name": "hepatic sinusoid"
+     },
+     {
+      "zfa": "ZFA:0001076",
+      "name": "intestinal bulb"
+     },
+     {
+      "zfa": "ZFA:0005659",
+      "name": "intestinal lamina propria mucosa"
+     },
+     {
+      "zfa": "ZFA:0005660",
+      "name": "intestinal mucosa"
+     },
+     {
+      "zfa": "ZFA:0005807",
+      "name": "intestine lumen"
+     },
+     {
+      "zfa": "ZFA:0005169",
+      "name": "intrahepatic bile duct"
+     },
+     {
+      "zfa": "ZFA:0005748",
+      "name": "intrapancreatic duct"
+     },
+     {
+      "zfa": "ZFA:0007006",
+      "name": "lip"
+     },
+     {
+      "zfa": "ZFA:0005225",
+      "name": "lower lip"
+     },
+     {
+      "zfa": "ZFA:0001323",
+      "name": "mid intestine"
+     },
+     {
+      "zfa": "ZFA:0000547",
+      "name": "mouth"
+     },
+     {
+      "zfa": "ZFA:0000254",
+      "name": "pancreas primordium"
+     },
+     {
+      "zfa": "ZFA:0001390",
+      "name": "pancreatic bud"
+     },
+     {
+      "zfa": "ZFA:0001372",
+      "name": "pancreatic duct"
+     },
+     {
+      "zfa": "ZFA:0001606",
+      "name": "pharyngeal arch 3"
+     },
+     {
+      "zfa": "ZFA:0001613",
+      "name": "pharyngeal arch 3-7"
+     },
+     {
+      "zfa": "ZFA:0001607",
+      "name": "pharyngeal arch 4"
+     },
+     {
+      "zfa": "ZFA:0001608",
+      "name": "pharyngeal arch 5"
+     },
+     {
+      "zfa": "ZFA:0001609",
+      "name": "pharyngeal arch 6"
+     },
+     {
+      "zfa": "ZFA:0001610",
+      "name": "pharyngeal arch 7"
+     },
+     {
+      "zfa": "ZFA:0001106",
+      "name": "pharyngeal pouch"
+     },
+     {
+      "zfa": "ZFA:0001128",
+      "name": "pharyngeal pouch 1"
+     },
+     {
+      "zfa": "ZFA:0001130",
+      "name": "pharyngeal pouch 2"
+     },
+     {
+      "zfa": "ZFA:0001131",
+      "name": "pharyngeal pouch 3"
+     },
+     {
+      "zfa": "ZFA:0001134",
+      "name": "pharyngeal pouch 4"
+     },
+     {
+      "zfa": "ZFA:0001133",
+      "name": "pharyngeal pouch 5"
+     },
+     {
+      "zfa": "ZFA:0001132",
+      "name": "pharyngeal pouch 6"
+     },
+     {
+      "zfa": "ZFA:0001129",
+      "name": "pharyngeal pouches 2-6"
+     },
+     {
+      "zfa": "ZFA:0000056",
+      "name": "pharynx"
+     },
+     {
+      "zfa": "ZFA:0000706",
+      "name": "posterior intestine"
+     },
+     {
+      "zfa": "ZFA:0001370",
+      "name": "posterior pancreatic bud"
+     },
+     {
+      "zfa": "ZFA:0000416",
+      "name": "presumptive endoderm"
+     },
+     {
+      "zfa": "ZFA:0005336",
+      "name": "presumptive swim bladder"
+     },
+     {
+      "zfa": "ZFA:0000066",
+      "name": "proctodeum"
+     },
+     {
+      "zfa": "ZFA:0001055",
+      "name": "pronephric duct opening"
+     },
+     {
+      "zfa": "ZFA:0005854",
+      "name": "replacement  tooth 3V"
+     },
+     {
+      "zfa": "ZFA:0005852",
+      "name": "replacement tooth 4V"
+     },
+     {
+      "zfa": "ZFA:0005853",
+      "name": "replacement tooth 5V"
+     },
+     {
+      "zfa": "ZFA:0001290",
+      "name": "stomodeum"
+     },
+     {
+      "zfa": "ZFA:0005333",
+      "name": "tongue"
+     },
+     {
+      "zfa": "ZFA:0001145",
+      "name": "tooth 3V"
+     },
+     {
+      "zfa": "ZFA:0001143",
+      "name": "tooth 4V"
+     },
+     {
+      "zfa": "ZFA:0001142",
+      "name": "tooth 5V"
+     },
+     {
+      "zfa": "ZFA:0005141",
+      "name": "tooth pulp"
+     },
+     {
+      "zfa": "ZFA:0005226",
+      "name": "upper lip"
+     },
+     {
+      "zfa": "ZFA:0000298",
+      "name": "vent"
+     }
+    ]
+   },
+   "n_sub": 132
+  },
+  "liver": {
+   "germ_layer": "endoderm",
+   "tissue": "liver",
+   "lineage": "hepatocyte",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000123",
+     "name": "liver",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "fabp10a",
+    "cp",
+    "tfa",
+    "gc",
+    "f2",
+    "serpina1l"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009111",
+      "name": "hepatocyte"
+     },
+     {
+      "zfa": "ZFA:0009379",
+      "name": "intrahepatic bile duct epithelial cell"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000123",
+      "name": "liver"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0005163",
+      "name": "bile canaliculus"
+     },
+     {
+      "zfa": "ZFA:0005090",
+      "name": "hepatic portal vein"
+     },
+     {
+      "zfa": "ZFA:0005091",
+      "name": "hepatic sinusoid"
+     },
+     {
+      "zfa": "ZFA:0005169",
+      "name": "intrahepatic bile duct"
+     }
+    ]
+   },
+   "n_sub": 7
+  },
+  "pancreas": {
+   "germ_layer": "endoderm",
+   "tissue": "pancreas",
+   "lineage": "pancreatic (exocrine + endocrine)",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000140",
+     "name": "pancreas",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "ins",
+    "gcga",
+    "sst2",
+    "pdx1",
+    "prss1",
+    "cpa5"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0005743",
+      "name": "pancreatic D cell"
+     },
+     {
+      "zfa": "ZFA:0005739",
+      "name": "pancreatic acinar cell"
+     },
+     {
+      "zfa": "ZFA:0005598",
+      "name": "pancreatic epsilon cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005755",
+      "name": "islet"
+     },
+     {
+      "zfa": "ZFA:0005754",
+      "name": "primary islet"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0000140",
+      "name": "pancreas"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001260",
+      "name": "endocrine pancreas"
+     },
+     {
+      "zfa": "ZFA:0001249",
+      "name": "exocrine pancreas"
+     },
+     {
+      "zfa": "ZFA:0005748",
+      "name": "intrapancreatic duct"
+     }
+    ]
+   },
+   "n_sub": 9
+  },
+  "intestine": {
+   "germ_layer": "endoderm",
+   "tissue": "intestine",
+   "lineage": "enterocyte",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001338",
+     "name": "intestine",
+     "tier": "Compound organ"
+    }
+   ],
+   "markers": [
+    "fabp2",
+    "fabp6",
+    "cdx1b",
+    "slc15a1b",
+    "vil1",
+    "muc2.1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009269",
+      "name": "enterocyte"
+     },
+     {
+      "zfa": "ZFA:0009399",
+      "name": "intestinal epithelial cell"
+     },
+     {
+      "zfa": "ZFA:0005942",
+      "name": "lysosome-rich enterocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0005256",
+      "name": "intervillus pockets"
+     },
+     {
+      "zfa": "ZFA:0005126",
+      "name": "intestinal bulb epithelium"
+     },
+     {
+      "zfa": "ZFA:0005124",
+      "name": "intestinal epithelium"
+     },
+     {
+      "zfa": "ZFA:0005125",
+      "name": "intestinal villus"
+     },
+     {
+      "zfa": "ZFA:0005127",
+      "name": "mid intestine epithelium"
+     },
+     {
+      "zfa": "ZFA:0005128",
+      "name": "posterior intestine epithelium"
+     }
+    ],
+    "Compound organ": [
+     {
+      "zfa": "ZFA:0001338",
+      "name": "intestine"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001076",
+      "name": "intestinal bulb"
+     },
+     {
+      "zfa": "ZFA:0005659",
+      "name": "intestinal lamina propria mucosa"
+     },
+     {
+      "zfa": "ZFA:0005660",
+      "name": "intestinal mucosa"
+     },
+     {
+      "zfa": "ZFA:0005807",
+      "name": "intestine lumen"
+     },
+     {
+      "zfa": "ZFA:0001323",
+      "name": "mid intestine"
+     },
+     {
+      "zfa": "ZFA:0000706",
+      "name": "posterior intestine"
+     }
+    ]
+   },
+   "n_sub": 16
+  },
+  "germline": {
+   "germ_layer": "germline",
+   "tissue": "germline",
+   "lineage": "germ cells",
+   "anchors": [
+    {
+     "zfa": "ZFA:0009016",
+     "name": "germ line cell",
+     "tier": "Cell"
+    }
+   ],
+   "markers": [
+    "ddx4",
+    "nanos3",
+    "dazl",
+    "piwil1"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009156",
+      "name": "gamete"
+     },
+     {
+      "zfa": "ZFA:0009016",
+      "name": "germ line cell"
+     },
+     {
+      "zfa": "ZFA:0001109",
+      "name": "oocyte"
+     },
+     {
+      "zfa": "ZFA:0001567",
+      "name": "oocyte stage I"
+     },
+     {
+      "zfa": "ZFA:0001565",
+      "name": "oocyte stage II"
+     },
+     {
+      "zfa": "ZFA:0001566",
+      "name": "oocyte stage III"
+     },
+     {
+      "zfa": "ZFA:0001568",
+      "name": "oocyte stage IV"
+     },
+     {
+      "zfa": "ZFA:0001569",
+      "name": "oocyte stage V"
+     },
+     {
+      "zfa": "ZFA:0005878",
+      "name": "oogonia"
+     },
+     {
+      "zfa": "ZFA:0009288",
+      "name": "primordial germ cell"
+     },
+     {
+      "zfa": "ZFA:0009006",
+      "name": "sperm"
+     },
+     {
+      "zfa": "ZFA:0005769",
+      "name": "spermatid"
+     },
+     {
+      "zfa": "ZFA:0009005",
+      "name": "spermatocyte"
+     },
+     {
+      "zfa": "ZFA:0009007",
+      "name": "spermatogonium"
+     }
+    ]
+   },
+   "n_sub": 14
+  },
+  "pituitary": {
+   "germ_layer": "ectoderm",
+   "tissue": "pituitary",
+   "lineage": "adenohypophysis",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001282",
+     "name": "adenohypophysis",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "pou1f1",
+    "prl",
+    "gh1",
+    "pomca",
+    "tshba",
+    "cga"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009216",
+      "name": "adrenocorticotropic hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009202",
+      "name": "follicle stimulating hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009203",
+      "name": "luteinizing hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009205",
+      "name": "melanocyte stimulating hormone secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009204",
+      "name": "prolactin secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009155",
+      "name": "somatotropin secreting cell"
+     },
+     {
+      "zfa": "ZFA:0009218",
+      "name": "thyroid stimulating hormone secreting cell"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0001195",
+      "name": "pars anterior"
+     },
+     {
+      "zfa": "ZFA:0001197",
+      "name": "pars intermedia"
+     },
+     {
+      "zfa": "ZFA:0005581",
+      "name": "proximal pars anterior"
+     },
+     {
+      "zfa": "ZFA:0005580",
+      "name": "rostral pars anterior"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0001282",
+      "name": "adenohypophysis"
+     }
+    ]
+   },
+   "n_sub": 12
+  },
+  "interrenal": {
+   "germ_layer": "mesoderm",
+   "tissue": "interrenal gland",
+   "lineage": "steroidogenic",
+   "anchors": [
+    {
+     "zfa": "ZFA:0001345",
+     "name": "interrenal gland",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "nr5a1a",
+    "cyp11a1.1",
+    "star",
+    "mc2r",
+    "cyp21a2"
+   ],
+   "sub_by_tier": {
+    "Other": [
+     {
+      "zfa": "ZFA:0001345",
+      "name": "interrenal gland"
+     },
+     {
+      "zfa": "ZFA:0005801",
+      "name": "interrenal vessel"
+     }
+    ]
+   },
+   "n_sub": 2
+  },
+  "pineal": {
+   "germ_layer": "ectoderm",
+   "tissue": "epiphysis",
+   "lineage": "pineal photoreceptor",
+   "anchors": [
+    {
+     "zfa": "ZFA:0000019",
+     "name": "epiphysis",
+     "tier": "Other"
+    }
+   ],
+   "markers": [
+    "aanat2",
+    "exorh",
+    "otx5",
+    "asip2b"
+   ],
+   "sub_by_tier": {
+    "Cell": [
+     {
+      "zfa": "ZFA:0009284",
+      "name": "pinealocyte"
+     }
+    ],
+    "Portion of tissue": [
+     {
+      "zfa": "ZFA:0007004",
+      "name": "epiphyseal cluster"
+     }
+    ],
+    "Other": [
+     {
+      "zfa": "ZFA:0000019",
+      "name": "epiphysis"
+     }
+    ]
+   },
+   "n_sub": 3
+  }
+ },
+ "state_panels": [
+  {
+   "panel": "cycling",
+   "markers": [
+    "mki67",
+    "pcna",
+    "top2a",
+    "hmgb2a",
+    "stmn1a"
+   ]
+  },
+  {
+   "panel": "stress_response",
+   "markers": [
+    "hsp70l",
+    "hspa5",
+    "dnajb1b",
+    "fosab",
+    "atf3"
+   ]
+  }
+ ],
+ "menu_sha": "8e1284c1980b50c5"
+}
