@@ -18,13 +18,15 @@ packet the LLM reasoner will consume:
 GT-blind: panels are curated from ZFIN/literature, never atlas markers. Writes
 daniotype_data/minifin/ontology_packets.json.
 """
-import json, collections
+import os, json, collections
 from zlabel import Labeler
 from zlabel.panels import load_panels
 
-UMAP = "/data/zeroshotbio-landingpage/daniotype_data/minifin/umap.json"
-OUT = "/data/zeroshotbio-landingpage/daniotype_data/minifin/ontology_packets.json"
-STAGE = 48.0
+DATASET = os.environ.get("PACKET_DATASET", "minifin")
+DDIR = f"/data/zeroshotbio-landingpage/daniotype_data/{DATASET}"
+UMAP = os.environ.get("PACKET_UMAP", f"{DDIR}/umap.json")
+OUT = os.environ.get("PACKET_OUT", f"{DDIR}/ontology_packets.json")
+STAGE = float(os.environ.get("PACKET_STAGE", "48.0"))
 TOPN_MARKERS = 25
 
 lab = Labeler(stage_hpf=STAGE)

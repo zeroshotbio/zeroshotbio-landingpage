@@ -1,0 +1,326 @@
+{
+ "7": {
+  "label": "CNS",
+  "purity": 0.86,
+  "n": 6455,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "40": {
+  "label": "Vascular Endothelial Cells",
+  "purity": 0.97,
+  "n": 913,
+  "runner_up": "Basal Epidermis"
+ },
+ "19": {
+  "label": "CNS",
+  "purity": 0.48,
+  "n": 2028,
+  "runner_up": "MHB"
+ },
+ "25": {
+  "label": "Floor Plate",
+  "purity": 0.62,
+  "n": 1638,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "2": {
+  "label": "Erythrocytes",
+  "purity": 0.99,
+  "n": 5913,
+  "runner_up": "CNS"
+ },
+ "16": {
+  "label": "Midbrain (Optic Tectum)",
+  "purity": 0.89,
+  "n": 7079,
+  "runner_up": "MHB"
+ },
+ "6": {
+  "label": "Midbrain (Optic Tectum)",
+  "purity": 0.85,
+  "n": 3562,
+  "runner_up": "MHB"
+ },
+ "26": {
+  "label": "Fast-Twitch Muscle",
+  "purity": 0.99,
+  "n": 2280,
+  "runner_up": "Possible bipotent myoblast (myhc1+ and myl1+)"
+ },
+ "38": {
+  "label": "MHB",
+  "purity": 0.73,
+  "n": 616,
+  "runner_up": "CNS"
+ },
+ "13": {
+  "label": "Basal Epidermis",
+  "purity": 1.0,
+  "n": 860,
+  "runner_up": "Slow-Twitch Muscle"
+ },
+ "37": {
+  "label": "CNS",
+  "purity": 0.55,
+  "n": 251,
+  "runner_up": "MHB"
+ },
+ "11": {
+  "label": "CNS",
+  "purity": 0.77,
+  "n": 2949,
+  "runner_up": "MHB"
+ },
+ "18": {
+  "label": "Midbrain (Optic Tectum)",
+  "purity": 0.76,
+  "n": 3102,
+  "runner_up": "CNS"
+ },
+ "12": {
+  "label": "MHB",
+  "purity": 0.85,
+  "n": 3338,
+  "runner_up": "CNS"
+ },
+ "20": {
+  "label": "MHB",
+  "purity": 0.37,
+  "n": 2026,
+  "runner_up": "CNS"
+ },
+ "10": {
+  "label": "Forebrain (Telencephalon)",
+  "purity": 0.58,
+  "n": 2154,
+  "runner_up": "CNS"
+ },
+ "42": {
+  "label": "Melanocytes",
+  "purity": 0.94,
+  "n": 443,
+  "runner_up": "Fast-Twitch Muscle"
+ },
+ "27": {
+  "label": "Superficial Epidermis ",
+  "purity": 0.99,
+  "n": 5335,
+  "runner_up": "CNS"
+ },
+ "9": {
+  "label": "CNS",
+  "purity": 0.47,
+  "n": 818,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "22": {
+  "label": "Midbrain (Optic Tectum)",
+  "purity": 0.85,
+  "n": 3072,
+  "runner_up": "MHB"
+ },
+ "14": {
+  "label": "Basal Epidermis",
+  "purity": 0.99,
+  "n": 3131,
+  "runner_up": "Liver"
+ },
+ "24": {
+  "label": "Spinal Cord",
+  "purity": 0.5,
+  "n": 1738,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "23": {
+  "label": "Fast-Twitch Muscle",
+  "purity": 0.97,
+  "n": 807,
+  "runner_up": "Possible bipotent myoblast (myhc1+ and myl1+)"
+ },
+ "43": {
+  "label": "Ionocytes",
+  "purity": 0.96,
+  "n": 227,
+  "runner_up": "Basal Epidermis"
+ },
+ "29": {
+  "label": "Basal Epidermis",
+  "purity": 0.6,
+  "n": 1081,
+  "runner_up": "Liver"
+ },
+ "15": {
+  "label": "CNS",
+  "purity": 0.46,
+  "n": 891,
+  "runner_up": "Forebrain (Telencephalon)"
+ },
+ "36": {
+  "label": "Notochord",
+  "purity": 0.99,
+  "n": 550,
+  "runner_up": "Slow-Twitch Muscle"
+ },
+ "32": {
+  "label": "CNS",
+  "purity": 0.63,
+  "n": 1401,
+  "runner_up": "MHB"
+ },
+ "21": {
+  "label": "CNS",
+  "purity": 0.69,
+  "n": 1423,
+  "runner_up": "MHB"
+ },
+ "30": {
+  "label": "Kidney/Pronephros",
+  "purity": 0.91,
+  "n": 211,
+  "runner_up": "Liver"
+ },
+ "28": {
+  "label": "Superficial Epidermis ",
+  "purity": 1.0,
+  "n": 1209,
+  "runner_up": "Goblet Cells"
+ },
+ "31": {
+  "label": "Schwann Cell Precursors",
+  "purity": 0.97,
+  "n": 481,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "17": {
+  "label": "CNS",
+  "purity": 0.82,
+  "n": 1128,
+  "runner_up": "Spinal Cord"
+ },
+ "0": {
+  "label": "Melanocytes",
+  "purity": 0.23,
+  "n": 26,
+  "runner_up": "CNS"
+ },
+ "44": {
+  "label": "Forebrain (Telencephalon)",
+  "purity": 0.95,
+  "n": 771,
+  "runner_up": "CNS"
+ },
+ "8": {
+  "label": "CNS",
+  "purity": 0.99,
+  "n": 595,
+  "runner_up": "MHB"
+ },
+ "45": {
+  "label": "Melanocytes",
+  "purity": 0.98,
+  "n": 273,
+  "runner_up": "Fast-Twitch Muscle"
+ },
+ "47": {
+  "label": "Anterior Lens Epithelium",
+  "purity": 0.72,
+  "n": 282,
+  "runner_up": "Lens Fiber Cells"
+ },
+ "50": {
+  "label": "Goblet Cells",
+  "purity": 0.96,
+  "n": 356,
+  "runner_up": "Basal Epidermis"
+ },
+ "41": {
+  "label": "Slow-Twitch Muscle",
+  "purity": 0.91,
+  "n": 651,
+  "runner_up": "Possible bipotent myoblast (myhc1+ and myl1+)"
+ },
+ "35": {
+  "label": "Macrophages",
+  "purity": 0.64,
+  "n": 439,
+  "runner_up": "Neutrophils"
+ },
+ "4": {
+  "label": "Muscle",
+  "purity": 0.61,
+  "n": 70,
+  "runner_up": "Fast-Twitch Muscle"
+ },
+ "48": {
+  "label": "Slow-Twitch Muscle",
+  "purity": 0.71,
+  "n": 17,
+  "runner_up": "CNS"
+ },
+ "39": {
+  "label": "Melanocytes",
+  "purity": 1.0,
+  "n": 252,
+  "runner_up": null
+ },
+ "1": {
+  "label": "Cardiomyocytes",
+  "purity": 0.61,
+  "n": 59,
+  "runner_up": "Midbrain (Optic Tectum)"
+ },
+ "52": {
+  "label": "Erythrocytes",
+  "purity": 0.31,
+  "n": 39,
+  "runner_up": "CNS"
+ },
+ "46": {
+  "label": "Basal Epidermis",
+  "purity": 0.8,
+  "n": 10,
+  "runner_up": "Goblet Cells"
+ },
+ "51": {
+  "label": "Ionocytes",
+  "purity": 1.0,
+  "n": 158,
+  "runner_up": null
+ },
+ "53": {
+  "label": "Vascular Endothelial Cells",
+  "purity": 0.5,
+  "n": 4,
+  "runner_up": "Fast-Twitch Muscle"
+ },
+ "33": {
+  "label": "CNS",
+  "purity": 0.43,
+  "n": 7,
+  "runner_up": "Spinal Cord"
+ },
+ "3": {
+  "label": "Midbrain (Optic Tectum)",
+  "purity": 0.5,
+  "n": 20,
+  "runner_up": "CNS"
+ },
+ "34": {
+  "label": "Fast-Twitch Muscle",
+  "purity": 0.2,
+  "n": 5,
+  "runner_up": "Basal Epidermis"
+ },
+ "49": {
+  "label": "CNS",
+  "purity": 0.67,
+  "n": 3,
+  "runner_up": "Slow-Twitch Muscle"
+ },
+ "5": {
+  "label": "Spinal Cord",
+  "purity": 0.5,
+  "n": 2,
+  "runner_up": "Notochord"
+ }
+}

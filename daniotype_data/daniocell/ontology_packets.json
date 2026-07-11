@@ -1,0 +1,9715 @@
+{
+ "stage_hpf": 48.0,
+ "source": "zlabel Labeler + trace",
+ "n": 77,
+ "packets": [
+  {
+   "id": "0",
+   "label": "Cluster 0",
+   "nCells": 6616,
+   "markers_in": [
+    "pcna",
+    "npm1a",
+    "stmn1a",
+    "dut",
+    "snu13b",
+    "pabpc1a",
+    "rpa3",
+    "nop10",
+    "nop58",
+    "dkc1",
+    "mcm7",
+    "rpl38"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "1",
+   "label": "Cluster 1",
+   "nCells": 3591,
+   "markers_in": [
+    "atoh1a",
+    "olig3",
+    "her2",
+    "zic1",
+    "masp1",
+    "id1",
+    "her12",
+    "CU467822.1",
+    "CR848047.1",
+    "gdf10a",
+    "CU634008.1",
+    "msx1b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "lateral_line",
+     "germ_layer": "ectoderm",
+     "score": 0.238,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "otic",
+     "germ_layer": "ectoderm",
+     "score": 0.238,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "fin",
+     "germ_layer": "mesoderm",
+     "score": 0.064,
+     "margin_to_top": 0.174
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "lateral_line",
+     "present_specific": [],
+     "absent_probe": [
+      "six1b",
+      "cldnb",
+      "myo6b"
+     ],
+     "shared_nondiscriminating": [
+      "atoh1a",
+      "eya1"
+     ]
+    },
+    {
+     "bucket": "otic",
+     "present_specific": [],
+     "absent_probe": [
+      "oc90",
+      "dlx3b",
+      "otomp",
+      "otol1a"
+     ],
+     "shared_nondiscriminating": [
+      "atoh1a",
+      "eya1"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "2",
+   "label": "Cluster 2",
+   "nCells": 3487,
+   "markers_in": [
+    "her2",
+    "si:ch73-21g5.7",
+    "her4.1",
+    "her15.1",
+    "abhd6a",
+    "helt",
+    "her12",
+    "id1",
+    "sox19a",
+    "dbx1a",
+    "en2b",
+    "sox3"
+   ],
+   "call": {
+    "bucket": "brain",
+    "zfa_id": "ZFA:0000008",
+    "zfa_name": "brain",
+    "path": [
+     "nervous system",
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "brain"
+    ],
+    "depth": 5,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.6357,
+    "components": {
+     "coherence": 0.362,
+     "margin": 0.637,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.191
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.191,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.191,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "her4.1",
+      "sox3"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "sox2",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "dbx1a",
+    "en2b",
+    "helt",
+    "her12",
+    "her2",
+    "her4.1",
+    "id1",
+    "sox19a",
+    "sox3"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "her4.1",
+     "zfa": "ZFA:0000008",
+     "name": "brain"
+    },
+    {
+     "symbol": "sox3",
+     "zfa": "ZFA:0000008",
+     "name": "brain"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000101",
+     "name": "diencephalon",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 2.796,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0000128",
+     "name": "midbrain",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 2.534,
+     "depth": 11
+    },
+    {
+     "zfa": "ZFA:0000109",
+     "name": "forebrain",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 2.226,
+     "depth": 11
+    },
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "dbx1a",
+      "en2b",
+      "helt",
+      "her12",
+      "her2",
+      "her4.1",
+      "id1",
+      "sox19a",
+      "sox3"
+     ],
+     "n": 9,
+     "ic": 0.764,
+     "depth": 4
+    }
+   ]
+  },
+  {
+   "id": "3",
+   "label": "Cluster 3",
+   "nCells": 6423,
+   "markers_in": [
+    "si:ch73-21g5.7",
+    "dbx1a",
+    "CU634008.1",
+    "CU467822.1",
+    "dla",
+    "notch3",
+    "her4.1",
+    "neurog1",
+    "lrrn1",
+    "abhd6a",
+    "lfng",
+    "gadd45gb.1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "structural",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.007
+   },
+   "candidates": [
+    {
+     "bucket": "mural",
+     "germ_layer": "mesoderm",
+     "score": 0.113,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.105,
+     "margin_to_top": 0.007
+    }
+   ],
+   "top_margin": 0.007,
+   "discriminators": [
+    {
+     "bucket": "mural",
+     "present_specific": [
+      "notch3"
+     ],
+     "absent_probe": [
+      "tagln",
+      "acta2",
+      "pdgfrb",
+      "cspg4",
+      "desma"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "her4.1"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "4",
+   "label": "Cluster 4",
+   "nCells": 2597,
+   "markers_in": [
+    "dlb",
+    "dla",
+    "dbx1a",
+    "insm1a",
+    "im:7152348",
+    "abhd6a",
+    "insm1b",
+    "ebf2",
+    "nhlh2",
+    "gadd45gb.1",
+    "tp53inp2",
+    "scrt1b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "5",
+   "label": "Cluster 5",
+   "nCells": 2048,
+   "markers_in": [
+    "dla",
+    "dlb",
+    "AL845362.1",
+    "gadd45gb.1",
+    "si:ch73-21g5.7",
+    "slc1a3a",
+    "abhd6a",
+    "cdkn1ca",
+    "cep131",
+    "lfng",
+    "nhlh2",
+    "gsx1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "6",
+   "label": "Cluster 6",
+   "nCells": 2381,
+   "markers_in": [
+    "otpa",
+    "otpb",
+    "nhlh2",
+    "lhx1a",
+    "BX005003.1",
+    "scrt1a",
+    "msi2b",
+    "uncx",
+    "erfl1",
+    "si:ch73-386h18.1",
+    "mab21l1",
+    "elavl4"
+   ],
+   "call": {
+    "bucket": "telencephalon",
+    "zfa_id": "ZFA:0000079",
+    "zfa_name": "telencephalon",
+    "path": [
+     "nervous system",
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "brain",
+     "forebrain",
+     "multi-tissue structure",
+     "telencephalon"
+    ],
+    "depth": 8,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4082,
+    "components": {
+     "coherence": 0.127,
+     "margin": 0.191,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.057
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.057,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.057,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "elavl4"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "elavl4",
+    "lhx1a",
+    "mab21l1",
+    "otpa",
+    "otpb",
+    "scrt1a",
+    "uncx",
+    "zfhx3a"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "elavl4",
+     "zfa": "ZFA:0000079",
+     "name": "telencephalon"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000109",
+     "name": "forebrain",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 2.226,
+     "depth": 11
+    },
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 0.764,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "elavl4",
+      "lhx1a",
+      "mab21l1",
+      "msi2b",
+      "otpa",
+      "otpb",
+      "scrt1a",
+      "uncx",
+      "zfhx3a"
+     ],
+     "n": 9,
+     "ic": 0.574,
+     "depth": 4
+    }
+   ]
+  },
+  {
+   "id": "7",
+   "label": "Cluster 7",
+   "nCells": 3797,
+   "markers_in": [
+    "her2",
+    "her4.1",
+    "nkx2.4b",
+    "her15.1",
+    "id3",
+    "nkx2.4a",
+    "abhd6a",
+    "her4.4",
+    "sox19a",
+    "pcna",
+    "sox1b",
+    "si:ch211-156b7.4"
+   ],
+   "call": {
+    "bucket": "hypothalamus",
+    "zfa_id": "ZFA:0000032",
+    "zfa_name": "hypothalamus",
+    "path": [
+     "nervous system",
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "brain",
+     "forebrain",
+     "diencephalon",
+     "multi-tissue structure",
+     "hypothalamus"
+    ],
+    "depth": 9,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.3723,
+    "components": {
+     "coherence": 0.296,
+     "margin": 0.513,
+     "grounding": 0.0,
+     "stage": 1.0
+    },
+    "margin": 0.154
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.154,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.154,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "her4.1"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "her2",
+    "id3",
+    "nkx2.4a",
+    "nkx2.4b",
+    "pcna"
+   ],
+   "expression_evidence": [],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "her2",
+      "her4.1",
+      "her4.4",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 9,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000101",
+     "name": "diencephalon",
+     "genes": [
+      "her2",
+      "her4.1",
+      "id3",
+      "nkx2.4a",
+      "nkx2.4b",
+      "pcna",
+      "sox19a",
+      "sox1b"
+     ],
+     "n": 8,
+     "ic": 2.796,
+     "depth": 12
+    }
+   ]
+  },
+  {
+   "id": "8",
+   "label": "Cluster 8",
+   "nCells": 3869,
+   "markers_in": [
+    "neurod6b",
+    "eomesa",
+    "nfixb",
+    "neurod1",
+    "tbr1b",
+    "r3hdm1",
+    "emx3",
+    "bcl11ba",
+    "adcyap1b",
+    "nfia",
+    "id2b",
+    "nrn1a"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.091,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.091,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": [
+      "neurod1"
+     ]
+    },
+    {
+     "bucket": "olfactory",
+     "present_specific": [],
+     "absent_probe": [
+      "ompb",
+      "s100z",
+      "gng8",
+      "calb2b"
+     ],
+     "shared_nondiscriminating": [
+      "neurod1"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "9",
+   "label": "Cluster 9",
+   "nCells": 3518,
+   "markers_in": [
+    "dlx1a",
+    "dlx5a",
+    "dlx2a",
+    "arxa",
+    "sp9",
+    "dlx6a",
+    "gad2",
+    "slc6a1a",
+    "dlx2b",
+    "islr2",
+    "slc32a1",
+    "lhx6"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.104
+   },
+   "candidates": [
+    {
+     "bucket": "neural_crest",
+     "germ_layer": "ectoderm",
+     "score": 0.104,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.104,
+   "discriminators": [
+    {
+     "bucket": "neural_crest",
+     "present_specific": [
+      "dlx2a"
+     ],
+     "absent_probe": [
+      "snai1b",
+      "tfap2a",
+      "foxd3",
+      "sox10",
+      "sox9b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "10",
+   "label": "Cluster 10",
+   "nCells": 809,
+   "markers_in": [
+    "fabp11b",
+    "tyrp1b",
+    "dct",
+    "mb",
+    "pmela",
+    "pmelb",
+    "rgrb",
+    "rlbp1b",
+    "tspan36",
+    "fabp11a",
+    "rbp5",
+    "slc45a2"
+   ],
+   "call": {
+    "bucket": "melanocyte",
+    "zfa_id": "ZFA:0009091",
+    "zfa_name": "melanocyte",
+    "path": [
+     "nervous system",
+     "sensory system",
+     "compound organ",
+     "visual system",
+     "head",
+     "cavitated compound organ",
+     "eye",
+     "anatomical cluster",
+     "anterior segment eye",
+     "multi-tissue structure",
+     "organism subdivision",
+     "iris",
+     "portion of tissue",
+     "surface structure",
+     "cell",
+     "iris melanophore layer",
+     "integument",
+     "pigment cell",
+     "melanocyte"
+    ],
+    "depth": 19,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.7716,
+    "components": {
+     "coherence": 0.658,
+     "margin": 0.917,
+     "grounding": 0.667,
+     "stage": 1.0
+    },
+    "margin": 0.275
+   },
+   "candidates": [
+    {
+     "bucket": "pigment",
+     "germ_layer": "neural crest",
+     "score": 0.275,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.275,
+   "discriminators": [
+    {
+     "bucket": "pigment",
+     "present_specific": [
+      "dct",
+      "tyrp1b",
+      "slc45a2"
+     ],
+     "absent_probe": [
+      "ltk",
+      "mitfa",
+      "pnp4a",
+      "gch2",
+      "xdh",
+      "aox5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "dct",
+    "pmela",
+    "tspan36",
+    "tyrp1b"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "tyrp1b",
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte"
+    },
+    {
+     "symbol": "dct",
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001486",
+     "name": "epithelium",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 3.322,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 2.686,
+     "depth": 16
+    },
+    {
+     "zfa": "ZFA:0005567",
+     "name": "posterior segment eye",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 2.675,
+     "depth": 14
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 1.862,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0001127",
+     "name": "visual system",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 1.811,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 1.525,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001114",
+     "name": "head",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 1.457,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "dct",
+      "fabp4a",
+      "fabp4b",
+      "mb",
+      "pmela",
+      "pmelb",
+      "rbp5",
+      "rgrb",
+      "rlbp1b",
+      "slc45a2",
+      "tspan36",
+      "tyrp1b"
+     ],
+     "n": 12,
+     "ic": 1.137,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "11",
+   "label": "Cluster 11",
+   "nCells": 4290,
+   "markers_in": [
+    "lhx9",
+    "shox2",
+    "tcf7l2",
+    "shox",
+    "tmsb",
+    "nrn1a",
+    "zfhx3",
+    "onecut1",
+    "stmn1b",
+    "zfhx4",
+    "vsx2",
+    "mab21l2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "12",
+   "label": "Cluster 12",
+   "nCells": 3544,
+   "markers_in": [
+    "tac1",
+    "slc18a3a",
+    "phox2bb",
+    "prph",
+    "nefmb",
+    "isl2a",
+    "vim",
+    "slit3",
+    "alcama",
+    "chodl",
+    "onecut1",
+    "isl1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "13",
+   "label": "Cluster 13",
+   "nCells": 6068,
+   "markers_in": [
+    "adcyap1b",
+    "slc17a6a",
+    "islr2",
+    "scg2b",
+    "atp6v0cb",
+    "ywhag2",
+    "gap43",
+    "BX005003.1",
+    "sncb",
+    "rtn1b",
+    "nrn1a",
+    "cbln1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "14",
+   "label": "Cluster 14",
+   "nCells": 1785,
+   "markers_in": [
+    "phox2bb",
+    "tlx2",
+    "lmx1bb",
+    "drgx",
+    "mab21l2",
+    "shox2",
+    "lbx2",
+    "cbln2b",
+    "phox2a",
+    "gap43",
+    "si:ch73-386h18.1",
+    "cbln1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "15",
+   "label": "Cluster 15",
+   "nCells": 3053,
+   "markers_in": [
+    "hoxb8a",
+    "hoxb5b",
+    "hoxb9a",
+    "nrn1a",
+    "hoxb5a",
+    "hoxb6b",
+    "pik3r3b",
+    "pou4f1",
+    "hoxc4a",
+    "hoxc8a",
+    "rbfox3a",
+    "mab21l2"
+   ],
+   "call": {
+    "bucket": "spinal cord",
+    "zfa_id": "ZFA:0000075",
+    "zfa_name": "spinal cord",
+    "path": [
+     "nervous system",
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "spinal cord"
+    ],
+    "depth": 5,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4072,
+    "components": {
+     "coherence": 0.131,
+     "margin": 0.183,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.055
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.055,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.055,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "rbfox3a"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "hoxb5a",
+    "hoxb5b",
+    "hoxb6b",
+    "hoxb8a",
+    "hoxc4a",
+    "hoxc8a",
+    "mab21l2",
+    "nrn1a",
+    "pik3r3b",
+    "rbfox3a"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "rbfox3a",
+     "zfa": "ZFA:0000075",
+     "name": "spinal cord"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxb9a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 12,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxb9a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 12,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 11,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxb9a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1"
+     ],
+     "n": 11,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 11,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 11,
+     "ic": 0.764,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 11,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "hoxb5a",
+      "hoxb5b",
+      "hoxb6b",
+      "hoxb8a",
+      "hoxc4a",
+      "hoxc8a",
+      "mab21l2",
+      "nrn1a",
+      "pik3r3b",
+      "pou4f1",
+      "rbfox3a"
+     ],
+     "n": 11,
+     "ic": 0.574,
+     "depth": 4
+    }
+   ]
+  },
+  {
+   "id": "16",
+   "label": "Cluster 16",
+   "nCells": 6482,
+   "markers_in": [
+    "fabp7a",
+    "hes2.2",
+    "pcna",
+    "her12",
+    "si:dkey-238o13.4",
+    "ccnd1",
+    "rorb",
+    "vsx2",
+    "rrm1",
+    "acbd7",
+    "crabp1a",
+    "cldn5b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "17",
+   "label": "Cluster 17",
+   "nCells": 3198,
+   "markers_in": [
+    "barhl1a",
+    "lhx9",
+    "tcf7l2",
+    "lmo3",
+    "barhl2",
+    "lef1",
+    "pou4f1",
+    "shox",
+    "nrn1a",
+    "ctnnbip1",
+    "lhx2b",
+    "tfap2d"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "18",
+   "label": "Cluster 18",
+   "nCells": 913,
+   "markers_in": [
+    "insm1a",
+    "hes6",
+    "dlb",
+    "im:7152348",
+    "foxn4",
+    "hes2.2",
+    "nusap1",
+    "elavl3",
+    "si:ch211-69g19.2",
+    "myt1b",
+    "cited1",
+    "notch1a"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.066
+   },
+   "candidates": [
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.066,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.066,
+   "discriminators": [
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "elavl3"
+     ],
+     "absent_probe": [
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "19",
+   "label": "Cluster 19",
+   "nCells": 2847,
+   "markers_in": [
+    "mab21l2",
+    "roraa",
+    "r3hdm1",
+    "lhx9",
+    "sox7",
+    "barhl2",
+    "pik3r3b",
+    "pbx3b",
+    "meis1b",
+    "mafba",
+    "ddit3",
+    "tshz2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "20",
+   "label": "Cluster 20",
+   "nCells": 3122,
+   "markers_in": [
+    "pde6gb",
+    "otx5",
+    "crx",
+    "fabp7a",
+    "gngt2a",
+    "neurod1",
+    "msi1",
+    "si:dkey-21o19.2",
+    "fkbp1ab",
+    "six7",
+    "prdm1b",
+    "anp32e"
+   ],
+   "call": {
+    "bucket": "epiphysis",
+    "zfa_id": "ZFA:0000019",
+    "zfa_name": "epiphysis",
+    "path": [
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "brain",
+     "forebrain",
+     "diencephalon",
+     "nervous system",
+     "epithalamus",
+     "sensory system",
+     "pineal complex",
+     "endocrine system",
+     "visual system",
+     "multi-tissue structure",
+     "epiphysis"
+    ],
+    "depth": 14,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4479,
+    "components": {
+     "coherence": 0.296,
+     "margin": 0.098,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.029
+   },
+   "candidates": [
+    {
+     "bucket": "pineal",
+     "germ_layer": "ectoderm",
+     "score": 0.142,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "eye",
+     "germ_layer": "ectoderm",
+     "score": 0.113,
+     "margin_to_top": 0.029
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.08,
+     "margin_to_top": 0.062
+    },
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.08,
+     "margin_to_top": 0.062
+    }
+   ],
+   "top_margin": 0.029,
+   "discriminators": [
+    {
+     "bucket": "pineal",
+     "present_specific": [
+      "otx5"
+     ],
+     "absent_probe": [
+      "aanat2",
+      "asip2b",
+      "exorh"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "eye",
+     "present_specific": [
+      "crx"
+     ],
+     "absent_probe": [
+      "rpe65a",
+      "cryaa",
+      "crybb1",
+      "gnat2",
+      "mipa",
+      "opn1mw1",
+      "rho"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "crx",
+    "gngt2a",
+    "neurod1",
+    "otx5",
+    "pde6gb"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "otx5",
+     "zfa": "ZFA:0000019",
+     "name": "epiphysis"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "anp32e",
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 10,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "anp32e",
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 10,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "anp32e",
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 10,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "genes": [
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 9,
+     "ic": 2.686,
+     "depth": 16
+    },
+    {
+     "zfa": "ZFA:0005567",
+     "name": "posterior segment eye",
+     "genes": [
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 9,
+     "ic": 2.675,
+     "depth": 14
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "genes": [
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 9,
+     "ic": 1.862,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0001127",
+     "name": "visual system",
+     "genes": [
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 9,
+     "ic": 1.811,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "crx",
+      "fabp7a",
+      "fkbp1ab",
+      "gngt2a",
+      "neurod1",
+      "otx5",
+      "pde6gb",
+      "prdm1b",
+      "six7"
+     ],
+     "n": 9,
+     "ic": 1.525,
+     "depth": 6
+    }
+   ]
+  },
+  {
+   "id": "21",
+   "label": "Cluster 21",
+   "nCells": 5958,
+   "markers_in": [
+    "hes2.2",
+    "atoh7",
+    "insm1a",
+    "hes6",
+    "im:7152348",
+    "hmgb2a",
+    "neurod4",
+    "foxn4",
+    "si:ch211-69g19.2",
+    "ndrg1b",
+    "hes2.1",
+    "hmgn2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "22",
+   "label": "Cluster 22",
+   "nCells": 1142,
+   "markers_in": [
+    "tfap2e",
+    "tfap2b",
+    "pou4f1",
+    "barhl2",
+    "tfap2a",
+    "foxb1a",
+    "shox",
+    "tcf7l2",
+    "stmn1b",
+    "pou4f2",
+    "lhx9",
+    "lef1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.076
+   },
+   "candidates": [
+    {
+     "bucket": "neural_crest",
+     "germ_layer": "ectoderm",
+     "score": 0.076,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.076,
+   "discriminators": [
+    {
+     "bucket": "neural_crest",
+     "present_specific": [
+      "tfap2a"
+     ],
+     "absent_probe": [
+      "snai1b",
+      "dlx2a",
+      "foxd3",
+      "sox10",
+      "sox9b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "23",
+   "label": "Cluster 23",
+   "nCells": 1296,
+   "markers_in": [
+    "otpb",
+    "prdx1",
+    "si:ch211-56a11.2",
+    "otpa",
+    "nkx2.4b",
+    "bsx",
+    "nkx2.4a",
+    "kctd4",
+    "six6a",
+    "sox1b",
+    "cbln1",
+    "nkx2.1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "24",
+   "label": "Cluster 24",
+   "nCells": 2518,
+   "markers_in": [
+    "rhag",
+    "acta2",
+    "tagln",
+    "cfd",
+    "tmem88b",
+    "tpm4a",
+    "rdh10a",
+    "jun",
+    "pcolcea",
+    "pmp22a",
+    "aqp1a.1",
+    "aldh1a2"
+   ],
+   "call": {
+    "bucket": "mural",
+    "zfa_id": "ZFA:0005944",
+    "zfa_name": "mural/smooth muscle",
+    "path": [
+     "mesoderm",
+     "vasculature",
+     "mural/smooth muscle"
+    ],
+    "depth": 3,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.7344,
+    "components": {
+     "coherence": 0.531,
+     "margin": 0.74,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.222
+   },
+   "candidates": [
+    {
+     "bucket": "mural",
+     "germ_layer": "mesoderm",
+     "score": 0.222,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.222,
+   "discriminators": [
+    {
+     "bucket": "mural",
+     "present_specific": [
+      "tagln",
+      "acta2"
+     ],
+     "absent_probe": [
+      "notch3",
+      "pdgfrb",
+      "cspg4",
+      "desma"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [
+    {
+     "symbol": "acta2",
+     "zfa": "ZFA:0009181",
+     "name": "vascular associated smooth muscle cell"
+    },
+    {
+     "symbol": "tagln",
+     "zfa": "ZFA:0009181",
+     "name": "vascular associated smooth muscle cell"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tmem88b",
+      "tpm4a"
+     ],
+     "n": 11,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "acta2",
+      "aldh1a2",
+      "aqp1a.1",
+      "cfd",
+      "jun",
+      "pmp22a",
+      "rdh10a",
+      "rhag",
+      "tagln",
+      "tpm4a"
+     ],
+     "n": 10,
+     "ic": 1.137,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "25",
+   "label": "Cluster 25",
+   "nCells": 1098,
+   "markers_in": [
+    "myog",
+    "rbm24a",
+    "npm1a",
+    "tuba8l3",
+    "hsp90aa1.1",
+    "myod1",
+    "tmsb",
+    "jam2a",
+    "vwde",
+    "six1b",
+    "igfbp5b",
+    "hspe1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.21
+   },
+   "candidates": [
+    {
+     "bucket": "muscle",
+     "germ_layer": "mesoderm",
+     "score": 0.266,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "lateral_line",
+     "germ_layer": "ectoderm",
+     "score": 0.057,
+     "margin_to_top": 0.21
+    }
+   ],
+   "top_margin": 0.21,
+   "discriminators": [
+    {
+     "bucket": "muscle",
+     "present_specific": [
+      "myog",
+      "myod1"
+     ],
+     "absent_probe": [
+      "mylpfa",
+      "myf5",
+      "ttn.1",
+      "neb",
+      "ryr1a",
+      "tnnt3a",
+      "tnnc2.2",
+      "msc",
+      "smyhc2",
+      "pvalb3",
+      "ckma",
+      "acta1b",
+      "myoz1a",
+      "smyhc1",
+      "actc1b"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "lateral_line",
+     "present_specific": [
+      "six1b"
+     ],
+     "absent_probe": [
+      "eya1",
+      "atoh1a",
+      "cldnb",
+      "myo6b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "26",
+   "label": "Cluster 26",
+   "nCells": 1166,
+   "markers_in": [
+    "myl10",
+    "myl13",
+    "pvalb4",
+    "smyhc1",
+    "tnnc1b",
+    "tpm2",
+    "nme2b.2",
+    "tnni4b.2",
+    "tnnt2d",
+    "acta1a",
+    "gapdh",
+    "atp2a1"
+   ],
+   "call": {
+    "bucket": "myotome",
+    "zfa_id": "ZFA:0001056",
+    "zfa_name": "myotome",
+    "path": [
+     "musculature system",
+     "portion of tissue",
+     "trunk musculature",
+     "muscle",
+     "myotome"
+    ],
+    "depth": 5,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4654,
+    "components": {
+     "coherence": 0.202,
+     "margin": 0.282,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.085
+   },
+   "candidates": [
+    {
+     "bucket": "muscle",
+     "germ_layer": "mesoderm",
+     "score": 0.085,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.085,
+   "discriminators": [
+    {
+     "bucket": "muscle",
+     "present_specific": [
+      "smyhc1"
+     ],
+     "absent_probe": [
+      "myog",
+      "mylpfa",
+      "myf5",
+      "ttn.1",
+      "neb",
+      "ryr1a",
+      "tnnt3a",
+      "tnnc2.2",
+      "msc",
+      "myod1",
+      "smyhc2",
+      "pvalb3",
+      "ckma",
+      "acta1b",
+      "myoz1a",
+      "actc1b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "acta1a",
+    "atp2a1",
+    "gapdh",
+    "myl13",
+    "pvalb4",
+    "smyhc1",
+    "tnnc1b",
+    "tnnt2d",
+    "tpm2"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "smyhc1",
+     "zfa": "ZFA:0001056",
+     "name": "myotome"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0005145",
+     "name": "muscle",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 2.746,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000548",
+     "name": "musculature system",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 2.502,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 1.137,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "acta1a",
+      "atp2a1",
+      "gapdh",
+      "myl10",
+      "myl13",
+      "nme2b.2",
+      "pvalb4",
+      "smyhc1",
+      "tnnc1b",
+      "tnni4b.2",
+      "tnnt2d",
+      "tpm2"
+     ],
+     "n": 12,
+     "ic": 0.178,
+     "depth": 1
+    }
+   ]
+  },
+  {
+   "id": "27",
+   "label": "Cluster 27",
+   "nCells": 4030,
+   "markers_in": [
+    "col9a1a",
+    "pmp22a",
+    "cthrc1a",
+    "col2a1a",
+    "col9a2",
+    "matn4",
+    "ccl25b",
+    "col5a1",
+    "col9a3",
+    "otos",
+    "col2a1b",
+    "mfap2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "cartilage",
+     "germ_layer": "neural crest",
+     "score": 0.105,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "notochord",
+     "germ_layer": "mesoderm",
+     "score": 0.105,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "cartilage",
+     "present_specific": [],
+     "absent_probe": [
+      "runx2b",
+      "acana",
+      "matn1",
+      "sox9b",
+      "sox9a"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    },
+    {
+     "bucket": "notochord",
+     "present_specific": [],
+     "absent_probe": [
+      "col8a1a",
+      "matn3a",
+      "matn3b",
+      "shha",
+      "chad",
+      "noto",
+      "tbxta"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "28",
+   "label": "Cluster 28",
+   "nCells": 7278,
+   "markers_in": [
+    "pmp22a",
+    "barx1",
+    "her6",
+    "cxcl12a",
+    "mfap2",
+    "gsc",
+    "twist1a",
+    "dlx4a",
+    "si:dkey-261h17.1",
+    "prrx1b",
+    "fgfbp2b",
+    "ccl25b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.065
+   },
+   "candidates": [
+    {
+     "bucket": "mesenchyme",
+     "germ_layer": "mesoderm",
+     "score": 0.065,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.065,
+   "discriminators": [
+    {
+     "bucket": "mesenchyme",
+     "present_specific": [
+      "twist1a"
+     ],
+     "absent_probe": [
+      "fn1a",
+      "osr2",
+      "prrx1a",
+      "dcn",
+      "col1a2",
+      "col1a1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "29",
+   "label": "Cluster 29",
+   "nCells": 2367,
+   "markers_in": [
+    "vwde",
+    "col1a2",
+    "fmoda",
+    "col1a1b",
+    "col5a1",
+    "postnb",
+    "fgl1",
+    "thbs4b",
+    "col5a2a",
+    "pdgfrl",
+    "col1a1a",
+    "si:ch1073-459j12.1"
+   ],
+   "call": {
+    "bucket": "mesenchyme",
+    "zfa_id": "ZFA:0000393",
+    "zfa_name": "mesenchyme/fibroblast",
+    "path": [
+     "mesoderm",
+     "mesenchyme/connective tissue",
+     "mesenchyme/fibroblast"
+    ],
+    "depth": 3,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4495,
+    "components": {
+     "coherence": 0.427,
+     "margin": 0.596,
+     "grounding": 0.0,
+     "stage": 1.0
+    },
+    "margin": 0.179
+   },
+   "candidates": [
+    {
+     "bucket": "mesenchyme",
+     "germ_layer": "mesoderm",
+     "score": 0.179,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.179,
+   "discriminators": [
+    {
+     "bucket": "mesenchyme",
+     "present_specific": [
+      "col1a2",
+      "col1a1a"
+     ],
+     "absent_probe": [
+      "fn1a",
+      "osr2",
+      "prrx1a",
+      "dcn",
+      "twist1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 1.137,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "fmoda",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 9,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000155",
+     "name": "somite",
+     "genes": [
+      "col1a1a",
+      "col1a1b",
+      "col1a2",
+      "col5a1",
+      "col5a2a",
+      "pdgfrl",
+      "postnb",
+      "thbs4b"
+     ],
+     "n": 8,
+     "ic": 3.22,
+     "depth": 6
+    }
+   ]
+  },
+  {
+   "id": "30",
+   "label": "Cluster 30",
+   "nCells": 1117,
+   "markers_in": [
+    "and2",
+    "col1a1a",
+    "fbln1",
+    "c1qtnf5",
+    "and1",
+    "im:7150988",
+    "ecrg4a",
+    "hpdb",
+    "qdpra",
+    "ttc36",
+    "aqp3a",
+    "hgd"
+   ],
+   "call": {
+    "bucket": "fin",
+    "zfa_id": "ZFA:0000108",
+    "zfa_name": "fin",
+    "path": [
+     "organism subdivision",
+     "surface structure",
+     "fin"
+    ],
+    "depth": 3,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.3726,
+    "components": {
+     "coherence": 0.182,
+     "margin": 0.0,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.052
+   },
+   "candidates": [
+    {
+     "bucket": "mesenchyme",
+     "germ_layer": "mesoderm",
+     "score": 0.135,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "fin",
+     "germ_layer": "mesoderm",
+     "score": 0.083,
+     "margin_to_top": 0.052
+    }
+   ],
+   "top_margin": 0.052,
+   "discriminators": [
+    {
+     "bucket": "mesenchyme",
+     "present_specific": [
+      "col1a1a"
+     ],
+     "absent_probe": [
+      "fn1a",
+      "osr2",
+      "prrx1a",
+      "dcn",
+      "twist1a",
+      "col1a2"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "fin",
+     "present_specific": [
+      "and1"
+     ],
+     "absent_probe": [
+      "hoxa13a",
+      "msx1b",
+      "hoxd13a",
+      "tbx5a",
+      "fgf24"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "and1",
+    "and2",
+    "col1a1a",
+    "ecrg4a",
+    "fbln1",
+    "hgd",
+    "hpdb",
+    "im:7150988"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "and1",
+     "zfa": "ZFA:0001000",
+     "name": "mesenchyme pectoral fin"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra",
+      "ttc36"
+     ],
+     "n": 11,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra",
+      "ttc36"
+     ],
+     "n": 11,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra",
+      "ttc36"
+     ],
+     "n": 11,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000292",
+     "name": "surface structure",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra"
+     ],
+     "n": 10,
+     "ic": 2.286,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra"
+     ],
+     "n": 10,
+     "ic": 1.137,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra"
+     ],
+     "n": 10,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "ecrg4a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra"
+     ],
+     "n": 10,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "and1",
+      "and2",
+      "aqp3a",
+      "col1a1a",
+      "fbln1",
+      "hgd",
+      "hpdb",
+      "im:7150988",
+      "qdpra"
+     ],
+     "n": 9,
+     "ic": 0.568,
+     "depth": 2
+    }
+   ]
+  },
+  {
+   "id": "31",
+   "label": "Cluster 31",
+   "nCells": 1486,
+   "markers_in": [
+    "matn1",
+    "fgfbp2b",
+    "col9a1a",
+    "mia",
+    "col2a1a",
+    "col9a2",
+    "tnxba",
+    "col9a3",
+    "otos",
+    "col11a2",
+    "col11a1a",
+    "cnmd"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.218
+   },
+   "candidates": [
+    {
+     "bucket": "cartilage",
+     "germ_layer": "neural crest",
+     "score": 0.302,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "notochord",
+     "germ_layer": "mesoderm",
+     "score": 0.084,
+     "margin_to_top": 0.218
+    }
+   ],
+   "top_margin": 0.218,
+   "discriminators": [
+    {
+     "bucket": "cartilage",
+     "present_specific": [
+      "matn1"
+     ],
+     "absent_probe": [
+      "runx2b",
+      "acana",
+      "sox9b",
+      "sox9a"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    },
+    {
+     "bucket": "notochord",
+     "present_specific": [],
+     "absent_probe": [
+      "col8a1a",
+      "matn3a",
+      "matn3b",
+      "shha",
+      "chad",
+      "noto",
+      "tbxta"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "32",
+   "label": "Cluster 32",
+   "nCells": 2613,
+   "markers_in": [
+    "tnn",
+    "tgfbi",
+    "vwde",
+    "col1a2",
+    "col1a1b",
+    "col5a1",
+    "pmp22a",
+    "col5a2a",
+    "postnb",
+    "si:ch211-286o17.1",
+    "matn4",
+    "col1a1a"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.138
+   },
+   "candidates": [
+    {
+     "bucket": "mesenchyme",
+     "germ_layer": "mesoderm",
+     "score": 0.138,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.138,
+   "discriminators": [
+    {
+     "bucket": "mesenchyme",
+     "present_specific": [
+      "col1a2",
+      "col1a1a"
+     ],
+     "absent_probe": [
+      "fn1a",
+      "osr2",
+      "prrx1a",
+      "dcn",
+      "twist1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "33",
+   "label": "Cluster 33",
+   "nCells": 1028,
+   "markers_in": [
+    "epd",
+    "fabp11a",
+    "ggctb",
+    "bhmt",
+    "cldn11a",
+    "zgc:158423",
+    "fmoda",
+    "cygb1",
+    "igfbp2a",
+    "fxyd1",
+    "tnn",
+    "si:ch73-86n18.1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "34",
+   "label": "Cluster 34",
+   "nCells": 567,
+   "markers_in": [
+    "zgc:153704",
+    "fabp7b",
+    "gfap",
+    "mdka",
+    "igfbp7",
+    "zgc:114181",
+    "sost",
+    "cldn5a",
+    "rspo3",
+    "wls",
+    "krt18a.1",
+    "ackr3b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "structural",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "glia",
+     "germ_layer": "ectoderm",
+     "score": 0.098,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.098,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "glia",
+     "present_specific": [],
+     "absent_probe": [
+      "olig2",
+      "sox10",
+      "mbpa",
+      "slc1a3b",
+      "plp1b"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "35",
+   "label": "Cluster 35",
+   "nCells": 1501,
+   "markers_in": [
+    "slc6a5",
+    "sncgb",
+    "slc32a1",
+    "slc6a1b",
+    "cplx2l",
+    "snap25a",
+    "syt2a",
+    "kcnc3a",
+    "stxbp1a",
+    "stx1b",
+    "atp6v0cb",
+    "penkb"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "36",
+   "label": "Cluster 36",
+   "nCells": 5337,
+   "markers_in": [
+    "pax2a",
+    "otpa",
+    "mab21l2",
+    "slc6a5",
+    "pax8",
+    "scrt1a",
+    "lhx1a",
+    "en1b",
+    "otpb",
+    "slc32a1",
+    "elavl4",
+    "pax2b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.218
+   },
+   "candidates": [
+    {
+     "bucket": "pronephros",
+     "germ_layer": "mesoderm",
+     "score": 0.272,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.055,
+     "margin_to_top": 0.218
+    }
+   ],
+   "top_margin": 0.218,
+   "discriminators": [
+    {
+     "bucket": "pronephros",
+     "present_specific": [
+      "pax2a",
+      "pax8"
+     ],
+     "absent_probe": [
+      "slc26a1",
+      "nphs2",
+      "slc20a1a",
+      "nphs1",
+      "wt1a",
+      "slc12a1",
+      "wt1b",
+      "cdh17",
+      "aqp8b"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "elavl4"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "37",
+   "label": "Cluster 37",
+   "nCells": 6713,
+   "markers_in": [
+    "tal1",
+    "gata3",
+    "zfpm2b",
+    "sox14",
+    "gata2a",
+    "emx2",
+    "pax7a",
+    "tal2",
+    "slc6a1b",
+    "lhx1a",
+    "tcf7l2",
+    "slc32a1"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "38",
+   "label": "Cluster 38",
+   "nCells": 1969,
+   "markers_in": [
+    "fabp11a",
+    "aqp1a.1",
+    "plvapb",
+    "cdh5",
+    "krt18a.1",
+    "aqp8a.1",
+    "cldn5b",
+    "si:ch211-156j16.1",
+    "si:ch211-145b13.6",
+    "krt8",
+    "clec14a",
+    "igfbp7"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.028
+   },
+   "candidates": [
+    {
+     "bucket": "endothelium",
+     "germ_layer": "mesoderm",
+     "score": 0.085,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.057,
+     "margin_to_top": 0.028
+    }
+   ],
+   "top_margin": 0.028,
+   "discriminators": [
+    {
+     "bucket": "endothelium",
+     "present_specific": [
+      "cdh5"
+     ],
+     "absent_probe": [
+      "flt1",
+      "egfl7",
+      "kdrl",
+      "pecam1a",
+      "flt4",
+      "etsrp",
+      "stab2",
+      "fli1"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "krt8"
+     ],
+     "absent_probe": [
+      "krt4",
+      "tp63",
+      "cldne",
+      "cldnb",
+      "krt5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "39",
+   "label": "Cluster 39",
+   "nCells": 1250,
+   "markers_in": [
+    "ntn1b",
+    "spon1b",
+    "shha",
+    "slit1b",
+    "ptn",
+    "clu",
+    "sparcl1",
+    "ntn1a",
+    "wnt4b",
+    "si:ch73-265d7.2",
+    "slit2",
+    "npr3"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.098
+   },
+   "candidates": [
+    {
+     "bucket": "notochord",
+     "germ_layer": "mesoderm",
+     "score": 0.098,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.098,
+   "discriminators": [
+    {
+     "bucket": "notochord",
+     "present_specific": [
+      "shha"
+     ],
+     "absent_probe": [
+      "col8a1a",
+      "matn3a",
+      "matn3b",
+      "chad",
+      "noto",
+      "tbxta",
+      "col2a1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "40",
+   "label": "Cluster 40",
+   "nCells": 672,
+   "markers_in": [
+    "si:ch73-265d7.2",
+    "gfap",
+    "si:dkeyp-110a12.4",
+    "vim",
+    "apoc1",
+    "atp1a1b",
+    "wnt4b",
+    "zgc:113531",
+    "igfbp7",
+    "krt18a.1",
+    "zgc:153704",
+    "slc6a9"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "structural",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "glia",
+     "germ_layer": "ectoderm",
+     "score": 0.124,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.124,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "glia",
+     "present_specific": [],
+     "absent_probe": [
+      "olig2",
+      "sox10",
+      "mbpa",
+      "slc1a3b",
+      "plp1b"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "41",
+   "label": "Cluster 41",
+   "nCells": 2650,
+   "markers_in": [
+    "fabp7a",
+    "slc1a2b",
+    "atp1a1b",
+    "slc6a1b",
+    "slc1a3b",
+    "ptn",
+    "CU467822.1",
+    "si:ch211-251b21.1",
+    "glula",
+    "CR848047.1",
+    "atp1b4",
+    "mdkb"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.087
+   },
+   "candidates": [
+    {
+     "bucket": "glia",
+     "germ_layer": "ectoderm",
+     "score": 0.087,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.087,
+   "discriminators": [
+    {
+     "bucket": "glia",
+     "present_specific": [
+      "slc1a3b"
+     ],
+     "absent_probe": [
+      "olig2",
+      "gfap",
+      "sox10",
+      "mbpa",
+      "plp1b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "42",
+   "label": "Cluster 42",
+   "nCells": 496,
+   "markers_in": [
+    "aqp8b",
+    "si:ch211-139a5.9",
+    "atp1b1a",
+    "atp1a1a.4",
+    "pvalb9",
+    "si:dkey-36i7.3",
+    "cdh17",
+    "aldob",
+    "ndrg1a",
+    "slc4a4a",
+    "acy3.2",
+    "slc4a2a"
+   ],
+   "call": {
+    "bucket": "pronephric duct",
+    "zfa_id": "ZFA:0000150",
+    "zfa_name": "pronephric duct",
+    "path": [
+     "anatomical cluster",
+     "compound organ",
+     "pleuroperitoneal region",
+     "renal system",
+     "cavitated compound organ",
+     "multi-tissue structure",
+     "pronephros",
+     "duct",
+     "pronephric duct"
+    ],
+    "depth": 9,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "high",
+    "score": 0.8319,
+    "components": {
+     "coherence": 0.626,
+     "margin": 0.938,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.281
+   },
+   "candidates": [
+    {
+     "bucket": "pronephros",
+     "germ_layer": "mesoderm",
+     "score": 0.281,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.281,
+   "discriminators": [
+    {
+     "bucket": "pronephros",
+     "present_specific": [
+      "cdh17",
+      "aqp8b"
+     ],
+     "absent_probe": [
+      "pax2a",
+      "pax8",
+      "slc26a1",
+      "nphs2",
+      "slc20a1a",
+      "nphs1",
+      "wt1a",
+      "slc12a1",
+      "wt1b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "acy3.2",
+    "aldob",
+    "aqp8b",
+    "atp1a1a.4",
+    "atp1b1a",
+    "cdh17",
+    "ndrg1a",
+    "slc4a2a",
+    "slc4a4a"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "aqp8b",
+     "zfa": "ZFA:0001620",
+     "name": "pronephric proximal convoluted tubule"
+    },
+    {
+     "symbol": "cdh17",
+     "zfa": "ZFA:0000150",
+     "name": "pronephric duct"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "pvalb9",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 10,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "pvalb9",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 10,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "pvalb9",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 10,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "pvalb9",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 10,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "pvalb9",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 10,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000150",
+     "name": "pronephric duct",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 9,
+     "ic": 4.182,
+     "depth": 13
+    },
+    {
+     "zfa": "ZFA:0005171",
+     "name": "duct",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 9,
+     "ic": 4.074,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0000151",
+     "name": "pronephros",
+     "genes": [
+      "acy3.2",
+      "aldob",
+      "aqp8b",
+      "atp1a1a.4",
+      "atp1b1a",
+      "cdh17",
+      "ndrg1a",
+      "slc4a2a",
+      "slc4a4a"
+     ],
+     "n": 9,
+     "ic": 3.873,
+     "depth": 10
+    }
+   ]
+  },
+  {
+   "id": "43",
+   "label": "Cluster 43",
+   "nCells": 4905,
+   "markers_in": [
+    "pax6b",
+    "pvalb6",
+    "pde6gb",
+    "pax6a",
+    "pax10",
+    "pcbp3",
+    "tfap2a",
+    "rorb",
+    "bhlhe22",
+    "tfap2b",
+    "tfap2c",
+    "ppdpfb"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "structural",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.065
+   },
+   "candidates": [
+    {
+     "bucket": "neural_crest",
+     "germ_layer": "ectoderm",
+     "score": 0.065,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.065,
+   "discriminators": [
+    {
+     "bucket": "neural_crest",
+     "present_specific": [
+      "tfap2a"
+     ],
+     "absent_probe": [
+      "snai1b",
+      "dlx2a",
+      "foxd3",
+      "sox10",
+      "sox9b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "44",
+   "label": "Cluster 44",
+   "nCells": 7776,
+   "markers_in": [
+    "tcnbb",
+    "cyt1l",
+    "si:ch211-195b11.3",
+    "cyt1",
+    "icn2",
+    "krt4",
+    "zgc:193505",
+    "wu:fb18f06",
+    "anxa1c",
+    "agr1",
+    "krt17",
+    "icn"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.08
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.08,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.08,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "krt4"
+     ],
+     "absent_probe": [
+      "tp63",
+      "cldne",
+      "krt8",
+      "cldnb",
+      "krt5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "45",
+   "label": "Cluster 45",
+   "nCells": 564,
+   "markers_in": [
+    "pvalb8",
+    "grp",
+    "CR759836.1",
+    "cldnh",
+    "zgc:101744",
+    "ponzr5",
+    "itpr3",
+    "zgc:92380",
+    "prr15la",
+    "epcam",
+    "icn",
+    "ucp2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "46",
+   "label": "Cluster 46",
+   "nCells": 1209,
+   "markers_in": [
+    "apoa2",
+    "apoa1a",
+    "apoa1b",
+    "lgals2b",
+    "apoc1",
+    "fabp1b.1",
+    "bhmt",
+    "tfa",
+    "apoea",
+    "gamt",
+    "fabp2",
+    "apoc2"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.007
+   },
+   "candidates": [
+    {
+     "bucket": "liver",
+     "germ_layer": "endoderm",
+     "score": 0.062,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "intestine",
+     "germ_layer": "endoderm",
+     "score": 0.055,
+     "margin_to_top": 0.007
+    }
+   ],
+   "top_margin": 0.007,
+   "discriminators": [
+    {
+     "bucket": "liver",
+     "present_specific": [
+      "tfa"
+     ],
+     "absent_probe": [
+      "gc",
+      "f2",
+      "serpina1l",
+      "fabp10a",
+      "cp"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "intestine",
+     "present_specific": [
+      "fabp2"
+     ],
+     "absent_probe": [
+      "vil1",
+      "cdx1b",
+      "fabp6",
+      "muc2.1",
+      "slc15a1b"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "47",
+   "label": "Cluster 47",
+   "nCells": 911,
+   "markers_in": [
+    "im:7150988",
+    "si:dkey-248g15.3",
+    "krt97",
+    "icn2",
+    "anxa1c",
+    "icn",
+    "wu:fb18f06",
+    "si:ch211-207n23.2",
+    "anxa1a",
+    "si:dkey-222n6.2",
+    "si:ch211-195b11.3",
+    "cldne"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.071
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.071,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.071,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "cldne"
+     ],
+     "absent_probe": [
+      "krt4",
+      "tp63",
+      "krt8",
+      "cldnb",
+      "krt5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "48",
+   "label": "Cluster 48",
+   "nCells": 680,
+   "markers_in": [
+    "s100t",
+    "pvalb8",
+    "si:dkey-205h13.2",
+    "krt15",
+    "si:ch211-153b23.5",
+    "si:dkey-222f2.1",
+    "epcam",
+    "krt1-c5",
+    "krt18b",
+    "cldnb",
+    "zgc:158343",
+    "wu:fj16a03"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.07,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "lateral_line",
+     "germ_layer": "ectoderm",
+     "score": 0.07,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [],
+     "absent_probe": [
+      "krt4",
+      "tp63",
+      "cldne",
+      "krt8",
+      "krt5"
+     ],
+     "shared_nondiscriminating": [
+      "cldnb"
+     ]
+    },
+    {
+     "bucket": "lateral_line",
+     "present_specific": [],
+     "absent_probe": [
+      "eya1",
+      "six1b",
+      "atoh1a",
+      "myo6b"
+     ],
+     "shared_nondiscriminating": [
+      "cldnb"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "49",
+   "label": "Cluster 49",
+   "nCells": 1941,
+   "markers_in": [
+    "CABZ01021592.1",
+    "gch2",
+    "si:dkey-251i10.2",
+    "zgc:110339",
+    "gstp1",
+    "slc22a7a",
+    "uraha",
+    "pts",
+    "paics",
+    "prdx1",
+    "tmem130",
+    "slc2a11b"
+   ],
+   "call": {
+    "bucket": "xanthophore",
+    "zfa_id": "ZFA:0009198",
+    "zfa_name": "xanthophore",
+    "path": [
+     "organism subdivision",
+     "surface structure",
+     "cell",
+     "integument",
+     "pigment cell",
+     "xanthophore"
+    ],
+    "depth": 6,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.5726,
+    "components": {
+     "coherence": 0.296,
+     "margin": 0.514,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.154
+   },
+   "candidates": [
+    {
+     "bucket": "pigment",
+     "germ_layer": "neural crest",
+     "score": 0.154,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.154,
+   "discriminators": [
+    {
+     "bucket": "pigment",
+     "present_specific": [
+      "gch2"
+     ],
+     "absent_probe": [
+      "ltk",
+      "mitfa",
+      "pnp4a",
+      "dct",
+      "tyrp1b",
+      "slc45a2",
+      "xdh",
+      "aox5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "gch2",
+    "slc22a7a",
+    "slc2a11b"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "gch2",
+     "zfa": "ZFA:0009198",
+     "name": "xanthophore"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 7,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 7,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 7,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000045",
+     "name": "neural crest",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a"
+     ],
+     "n": 6,
+     "ic": 5.331,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "gch2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 6,
+     "ic": 1.137,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "paics",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a"
+     ],
+     "n": 6,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0009090",
+     "name": "pigment cell",
+     "genes": [
+      "gch2",
+      "gstp1.2",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 5,
+     "ic": 6.88,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000368",
+     "name": "integument",
+     "genes": [
+      "gch2",
+      "prdx1",
+      "si:dkey-251i10.2",
+      "slc22a7a",
+      "slc2a11b"
+     ],
+     "n": 5,
+     "ic": 3.513,
+     "depth": 5
+    }
+   ]
+  },
+  {
+   "id": "50",
+   "label": "Cluster 50",
+   "nCells": 1163,
+   "markers_in": [
+    "tal2",
+    "tfap2e",
+    "helt",
+    "abhd6a",
+    "gata2a",
+    "tp53inp1",
+    "dlb",
+    "dla",
+    "scrt1a",
+    "her15.1",
+    "dbx1a",
+    "zfpm2b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "51",
+   "label": "Cluster 51",
+   "nCells": 654,
+   "markers_in": [
+    "pvalb1",
+    "actc1b",
+    "mylpfa",
+    "tnni2a.4",
+    "pvalb2",
+    "mylz3",
+    "ttn.2",
+    "mylpfb",
+    "myl1",
+    "tnnt3a",
+    "tpma",
+    "ttn.1"
+   ],
+   "call": {
+    "bucket": "mesoderm",
+    "zfa_id": null,
+    "zfa_name": "mesoderm",
+    "path": [
+     "mesoderm"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "underclustered"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.8839,
+    "components": {
+     "coherence": 0.793,
+     "margin": 0.888,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.266
+   },
+   "candidates": [
+    {
+     "bucket": "muscle",
+     "germ_layer": "mesoderm",
+     "score": 0.332,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "cardiac",
+     "germ_layer": "mesoderm",
+     "score": 0.065,
+     "margin_to_top": 0.266
+    }
+   ],
+   "top_margin": 0.266,
+   "discriminators": [
+    {
+     "bucket": "muscle",
+     "present_specific": [
+      "mylpfa",
+      "ttn.1",
+      "tnnt3a",
+      "actc1b"
+     ],
+     "absent_probe": [
+      "myog",
+      "myf5",
+      "neb",
+      "ryr1a",
+      "tnnc2.2",
+      "msc",
+      "myod1",
+      "smyhc2",
+      "pvalb3",
+      "ckma",
+      "acta1b",
+      "myoz1a",
+      "smyhc1"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "cardiac",
+     "present_specific": [
+      "ttn.2"
+     ],
+     "absent_probe": [
+      "myl7",
+      "tnnt2a",
+      "nppa",
+      "myh7",
+      "myh6"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [
+    {
+     "symbol": "actc1b",
+     "zfa": "ZFA:0000548",
+     "name": "musculature system"
+    },
+    {
+     "symbol": "mylpfa",
+     "zfa": "ZFA:0009117",
+     "name": "fast muscle cell"
+    },
+    {
+     "symbol": "tnnt3a",
+     "zfa": "ZFA:0001085",
+     "name": "hypaxial myotome region"
+    },
+    {
+     "symbol": "ttn.1",
+     "zfa": "ZFA:0000328",
+     "name": "cephalic musculature"
+    },
+    {
+     "symbol": "ttn.2",
+     "zfa": "ZFA:0000114",
+     "name": "heart"
+    }
+   ],
+   "fine_terms": []
+  },
+  {
+   "id": "52",
+   "label": "Cluster 52",
+   "nCells": 4701,
+   "markers_in": [
+    "gfap",
+    "vim",
+    "slc1a3a",
+    "si:ch211-251b21.1",
+    "slc6a9",
+    "si:ch73-21g5.7",
+    "mdka",
+    "si:ch73-265d7.2",
+    "si:ch211-57n23.4",
+    "atp1a1b",
+    "her12",
+    "sb:cb81"
+   ],
+   "call": {
+    "bucket": "ectoderm",
+    "zfa_id": null,
+    "zfa_name": "ectoderm",
+    "path": [
+     "ectoderm"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "underclustered"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4878,
+    "components": {
+     "coherence": 0.469,
+     "margin": 0.0,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.0
+   },
+   "candidates": [
+    {
+     "bucket": "glia",
+     "germ_layer": "ectoderm",
+     "score": 0.211,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.211,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.0,
+   "discriminators": [
+    {
+     "bucket": "glia",
+     "present_specific": [],
+     "absent_probe": [
+      "olig2",
+      "sox10",
+      "mbpa",
+      "slc1a3b",
+      "plp1b"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": [
+      "gfap"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [
+    {
+     "symbol": "gfap",
+     "zfa": "ZFA:0009075",
+     "name": "astrocyte"
+    }
+   ],
+   "fine_terms": []
+  },
+  {
+   "id": "53",
+   "label": "Cluster 53",
+   "nCells": 820,
+   "markers_in": [
+    "crybb1",
+    "cryba4",
+    "cryba1b",
+    "crygn2",
+    "cryba1l1",
+    "crybb1l1",
+    "crybb1l2",
+    "cryba2b",
+    "crygmx",
+    "cryba2a",
+    "crygm2d8",
+    "lim2.4"
+   ],
+   "call": {
+    "bucket": "lens",
+    "zfa_id": "ZFA:0000035",
+    "zfa_name": "lens",
+    "path": [
+     "nervous system",
+     "sensory system",
+     "organism subdivision",
+     "compound organ",
+     "visual system",
+     "head",
+     "cavitated compound organ",
+     "eye",
+     "anatomical cluster",
+     "anterior segment eye",
+     "portion of tissue",
+     "lens"
+    ],
+    "depth": 12,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.6842,
+    "components": {
+     "coherence": 0.469,
+     "margin": 0.654,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.196
+   },
+   "candidates": [
+    {
+     "bucket": "eye",
+     "germ_layer": "ectoderm",
+     "score": 0.196,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.196,
+   "discriminators": [
+    {
+     "bucket": "eye",
+     "present_specific": [
+      "crybb1"
+     ],
+     "absent_probe": [
+      "rpe65a",
+      "cryaa",
+      "gnat2",
+      "crx",
+      "mipa",
+      "opn1mw1",
+      "rho"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "cryba1b",
+    "cryba1l1",
+    "cryba2a",
+    "cryba2b",
+    "cryba4",
+    "crybb1",
+    "crybb1l1",
+    "crybb1l2",
+    "crygm2d8",
+    "crygmx",
+    "crygn2",
+    "lim2.4"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "crybb1",
+     "zfa": "ZFA:0000035",
+     "name": "lens"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000035",
+     "name": "lens",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 4.683,
+     "depth": 16
+    },
+    {
+     "zfa": "ZFA:0005566",
+     "name": "anterior segment eye",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 4.388,
+     "depth": 14
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.862,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0001127",
+     "name": "visual system",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.811,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.525,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001114",
+     "name": "head",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.457,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.137,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001478",
+     "name": "anatomical cluster",
+     "genes": [
+      "cryba1b",
+      "cryba1l1",
+      "cryba2a",
+      "cryba2b",
+      "cryba4",
+      "crybb1",
+      "crybb1l1",
+      "crybb1l2",
+      "crygm2d8",
+      "crygmx",
+      "crygn2",
+      "lim2.4"
+     ],
+     "n": 12,
+     "ic": 1.084,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "54",
+   "label": "Cluster 54",
+   "nCells": 764,
+   "markers_in": [
+    "pvalb5",
+    "s100z",
+    "si:ch211-153b23.5",
+    "cldnh",
+    "calb2a",
+    "txn",
+    "tspan2a",
+    "atf5a",
+    "anxa5b",
+    "gstp1",
+    "selenow2b",
+    "wu:fj16a03"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.146
+   },
+   "candidates": [
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.146,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.146,
+   "discriminators": [
+    {
+     "bucket": "olfactory",
+     "present_specific": [
+      "s100z"
+     ],
+     "absent_probe": [
+      "ompb",
+      "gng8",
+      "calb2b",
+      "neurod1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "55",
+   "label": "Cluster 55",
+   "nCells": 1332,
+   "markers_in": [
+    "agr2",
+    "he1.1",
+    "si:dkey-33i11.4",
+    "he1.2",
+    "si:dkey-65b12.6",
+    "BX000438.2",
+    "atp1b1b",
+    "atp1a1a.2",
+    "si:dkey-26g8.5",
+    "icn",
+    "si:dkey-239j18.3",
+    "krt1-19d"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "structural",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.088
+   },
+   "candidates": [
+    {
+     "bucket": "ionocyte",
+     "germ_layer": "ectoderm",
+     "score": 0.088,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.088,
+   "discriminators": [
+    {
+     "bucket": "ionocyte",
+     "present_specific": [
+      "atp1b1b"
+     ],
+     "absent_probe": [
+      "foxi3b",
+      "foxi3a",
+      "slc12a10.2",
+      "clcn2c",
+      "trpv6",
+      "atp1a1a.1",
+      "slc4a4b",
+      "ca2"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "56",
+   "label": "Cluster 56",
+   "nCells": 1133,
+   "markers_in": [
+    "si:ch73-23l24.1",
+    "col9a1b",
+    "col2a1a",
+    "zgc:113232",
+    "epyc",
+    "zmp:0000000760",
+    "matn3a",
+    "col11a1a",
+    "col9a2",
+    "cmn",
+    "col11a2",
+    "col9a3"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.069
+   },
+   "candidates": [
+    {
+     "bucket": "notochord",
+     "germ_layer": "mesoderm",
+     "score": 0.173,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "cartilage",
+     "germ_layer": "neural crest",
+     "score": 0.104,
+     "margin_to_top": 0.069
+    }
+   ],
+   "top_margin": 0.069,
+   "discriminators": [
+    {
+     "bucket": "notochord",
+     "present_specific": [
+      "matn3a"
+     ],
+     "absent_probe": [
+      "col8a1a",
+      "matn3b",
+      "shha",
+      "chad",
+      "noto",
+      "tbxta"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    },
+    {
+     "bucket": "cartilage",
+     "present_specific": [],
+     "absent_probe": [
+      "runx2b",
+      "acana",
+      "matn1",
+      "sox9b",
+      "sox9a"
+     ],
+     "shared_nondiscriminating": [
+      "col2a1a"
+     ]
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "57",
+   "label": "Cluster 57",
+   "nCells": 640,
+   "markers_in": [
+    "foxp4",
+    "tfap2b",
+    "esrrga",
+    "pbx1a",
+    "lhx1a",
+    "uncx",
+    "tfap2a",
+    "CR361551.1",
+    "skor1b",
+    "dmbx1a",
+    "elavl4",
+    "roraa"
+   ],
+   "call": {
+    "bucket": "brain",
+    "zfa_id": "ZFA:0000008",
+    "zfa_name": "brain",
+    "path": [
+     "nervous system",
+     "compound organ",
+     "central nervous system",
+     "cavitated compound organ",
+     "brain"
+    ],
+    "depth": 5,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.3524,
+    "components": {
+     "coherence": 0.131,
+     "margin": 0.0,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.011
+   },
+   "candidates": [
+    {
+     "bucket": "neural_crest",
+     "germ_layer": "ectoderm",
+     "score": 0.07,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.058,
+     "margin_to_top": 0.011
+    }
+   ],
+   "top_margin": 0.011,
+   "discriminators": [
+    {
+     "bucket": "neural_crest",
+     "present_specific": [
+      "tfap2a"
+     ],
+     "absent_probe": [
+      "snai1b",
+      "dlx2a",
+      "foxd3",
+      "sox10",
+      "sox9b"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "elavl4"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "neurod1",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "dmbx1a",
+    "elavl4",
+    "esrrga",
+    "foxp4",
+    "lhx1a",
+    "pbx1a",
+    "roraa",
+    "skor1b",
+    "tfap2a",
+    "tfap2b",
+    "uncx"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "elavl4",
+     "zfa": "ZFA:0000008",
+     "name": "brain"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 0.764,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "dmbx1a",
+      "elavl4",
+      "esrrga",
+      "foxp4",
+      "lhx1a",
+      "pbx1a",
+      "roraa",
+      "skor1b",
+      "tfap2a",
+      "tfap2b",
+      "uncx"
+     ],
+     "n": 11,
+     "ic": 0.574,
+     "depth": 4
+    }
+   ]
+  },
+  {
+   "id": "58",
+   "label": "Cluster 58",
+   "nCells": 824,
+   "markers_in": [
+    "tyrp1b",
+    "pmela",
+    "dct",
+    "zgc:91968",
+    "tspan36",
+    "tyrp1a",
+    "slc45a2",
+    "qdpra",
+    "gstp1",
+    "mtbl",
+    "oca2",
+    "gstt1a"
+   ],
+   "call": {
+    "bucket": "melanocyte",
+    "zfa_id": "ZFA:0009091",
+    "zfa_name": "melanocyte",
+    "path": [
+     "nervous system",
+     "sensory system",
+     "compound organ",
+     "visual system",
+     "head",
+     "cavitated compound organ",
+     "eye",
+     "anatomical cluster",
+     "anterior segment eye",
+     "multi-tissue structure",
+     "organism subdivision",
+     "iris",
+     "portion of tissue",
+     "surface structure",
+     "cell",
+     "iris melanophore layer",
+     "integument",
+     "pigment cell",
+     "melanocyte"
+    ],
+    "depth": 19,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "high",
+    "score": 0.8776,
+    "components": {
+     "coherence": 0.861,
+     "margin": 1.0,
+     "grounding": 0.667,
+     "stage": 1.0
+    },
+    "margin": 0.36
+   },
+   "candidates": [
+    {
+     "bucket": "pigment",
+     "germ_layer": "neural crest",
+     "score": 0.36,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.36,
+   "discriminators": [
+    {
+     "bucket": "pigment",
+     "present_specific": [
+      "dct",
+      "tyrp1b",
+      "slc45a2"
+     ],
+     "absent_probe": [
+      "ltk",
+      "mitfa",
+      "pnp4a",
+      "gch2",
+      "xdh",
+      "aox5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "dct",
+    "pmela",
+    "qdpra",
+    "tspan36",
+    "tyrp1a",
+    "tyrp1b",
+    "zgc:91968"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "tyrp1b",
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte"
+    },
+    {
+     "symbol": "dct",
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 1.525,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001478",
+     "name": "anatomical cluster",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 1.084,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 0.764,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "dct",
+      "gstp1.2",
+      "gstt1a",
+      "mtbl",
+      "pmela",
+      "qdpra",
+      "slc45a2",
+      "tspan36",
+      "tyrp1a",
+      "tyrp1b",
+      "zgc:91968"
+     ],
+     "n": 11,
+     "ic": 0.574,
+     "depth": 4
+    }
+   ]
+  },
+  {
+   "id": "59",
+   "label": "Cluster 59",
+   "nCells": 756,
+   "markers_in": [
+    "ccl34b.1",
+    "mfap4",
+    "si:dkey-5n18.1",
+    "lgals2a",
+    "apoc1",
+    "cebpb",
+    "si:ch211-194m7.3",
+    "havcr1",
+    "ccl34a.4",
+    "coro1a",
+    "lygl1",
+    "ctss2.1"
+   ],
+   "call": {
+    "bucket": "immune system",
+    "zfa_id": "ZFA:0001159",
+    "zfa_name": "immune system",
+    "path": [
+     "immune system"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.6534,
+    "components": {
+     "coherence": 0.432,
+     "margin": 0.602,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.181
+   },
+   "candidates": [
+    {
+     "bucket": "immune_myeloid",
+     "germ_layer": "mesoderm",
+     "score": 0.181,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.181,
+   "discriminators": [
+    {
+     "bucket": "immune_myeloid",
+     "present_specific": [
+      "coro1a"
+     ],
+     "absent_probe": [
+      "lcp1",
+      "lyz",
+      "mfap4.1",
+      "spi1b",
+      "csf1ra",
+      "mpeg1.1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "cebpb",
+    "coro1a",
+    "havcr1",
+    "lgals2a",
+    "lygl1",
+    "mfap4.1"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "mfap4.1",
+     "zfa": "ZFA:0009141",
+     "name": "macrophage"
+    },
+    {
+     "symbol": "coro1a",
+     "zfa": "ZFA:0009141",
+     "name": "macrophage"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "apoc1",
+      "ccl34a.4",
+      "ccl34b.1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 10,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "apoc1",
+      "ccl34a.4",
+      "ccl34b.1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 10,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "apoc1",
+      "ccl34a.4",
+      "ccl34b.1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 10,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "apoc1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 8,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "apoc1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 8,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001159",
+     "name": "immune system",
+     "genes": [
+      "cebpb",
+      "coro1a",
+      "havcr1",
+      "lgals2a",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 6,
+     "ic": 3.24,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "apoc1",
+      "cebpb",
+      "coro1a",
+      "ctss2.1",
+      "lgals2a",
+      "lygl1"
+     ],
+     "n": 6,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0009141",
+     "name": "macrophage",
+     "genes": [
+      "cebpb",
+      "coro1a",
+      "havcr1",
+      "lygl1",
+      "mfap4.1"
+     ],
+     "n": 5,
+     "ic": 7.673,
+     "depth": 13
+    }
+   ]
+  },
+  {
+   "id": "60",
+   "label": "Cluster 60",
+   "nCells": 1043,
+   "markers_in": [
+    "vim",
+    "tuba8l3",
+    "six1b",
+    "si:ch211-56a11.2",
+    "tlx2",
+    "neurod1",
+    "phox2a",
+    "isl2a",
+    "onecut1",
+    "isl2b",
+    "eya1",
+    "phox2bb"
+   ],
+   "call": {
+    "bucket": "ectoderm",
+    "zfa_id": null,
+    "zfa_name": "ectoderm",
+    "path": [
+     "ectoderm"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "underclustered"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.5293,
+    "components": {
+     "coherence": 0.366,
+     "margin": 0.277,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.083
+   },
+   "candidates": [
+    {
+     "bucket": "lateral_line",
+     "germ_layer": "ectoderm",
+     "score": 0.153,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural",
+     "germ_layer": "ectoderm",
+     "score": 0.07,
+     "margin_to_top": 0.083
+    },
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.07,
+     "margin_to_top": 0.083
+    },
+    {
+     "bucket": "otic",
+     "germ_layer": "ectoderm",
+     "score": 0.055,
+     "margin_to_top": 0.098
+    }
+   ],
+   "top_margin": 0.083,
+   "discriminators": [
+    {
+     "bucket": "lateral_line",
+     "present_specific": [
+      "eya1",
+      "six1b"
+     ],
+     "absent_probe": [
+      "atoh1a",
+      "cldnb",
+      "myo6b"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "neural",
+     "present_specific": [
+      "neurod1"
+     ],
+     "absent_probe": [
+      "elavl3",
+      "her4.1",
+      "sox2",
+      "sox3",
+      "tubb5",
+      "srrm4",
+      "elavl4",
+      "gfap",
+      "rbfox3a",
+      "nova2",
+      "ascl1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [
+    {
+     "symbol": "six1b",
+     "zfa": "ZFA:0000051",
+     "name": "otic vesicle"
+    },
+    {
+     "symbol": "eya1",
+     "zfa": "ZFA:0001472",
+     "name": "anterior lateral line neuromast"
+    },
+    {
+     "symbol": "neurod1",
+     "zfa": "ZFA:0009255",
+     "name": "amacrine cell"
+    }
+   ],
+   "fine_terms": []
+  },
+  {
+   "id": "61",
+   "label": "Cluster 61",
+   "nCells": 1875,
+   "markers_in": [
+    "cldni",
+    "cfl1l",
+    "apoeb",
+    "epcam",
+    "cldn1",
+    "krt92",
+    "ociad2",
+    "pfn1",
+    "tmsb1",
+    "ptgs2a",
+    "krt18a.1",
+    "tp63"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.058
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.058,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.058,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "tp63"
+     ],
+     "absent_probe": [
+      "krt4",
+      "cldne",
+      "krt8",
+      "cldnb",
+      "krt5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "62",
+   "label": "Cluster 62",
+   "nCells": 2674,
+   "markers_in": [
+    "rbpms2b",
+    "rbpms2a",
+    "isl2b",
+    "cxcr4b",
+    "zgc:158291",
+    "atoh7",
+    "si:ch211-129p13.1",
+    "pax6a",
+    "alcama",
+    "pou4f2",
+    "hmx4",
+    "pax6b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "63",
+   "label": "Cluster 63",
+   "nCells": 4342,
+   "markers_in": [
+    "krt91",
+    "pfn1",
+    "rbp4",
+    "zgc:136930",
+    "lgals1l1",
+    "si:dkey-183i3.5",
+    "krtt1c19e",
+    "krt5",
+    "tmsb1",
+    "cldni",
+    "s100a10b",
+    "cfl1l"
+   ],
+   "call": {
+    "bucket": "epidermis",
+    "zfa_id": "ZFA:0000105",
+    "zfa_name": "epidermis",
+    "path": [
+     "organism subdivision",
+     "surface structure",
+     "portion of tissue",
+     "integument",
+     "epithelium",
+     "epidermis"
+    ],
+    "depth": 6,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.4212,
+    "components": {
+     "coherence": 0.148,
+     "margin": 0.206,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.062
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.062,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.062,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "krt5"
+     ],
+     "absent_probe": [
+      "krt4",
+      "tp63",
+      "cldne",
+      "krt8",
+      "cldnb"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "cfl1l",
+    "cldni",
+    "krt1-19e",
+    "krt5",
+    "krt91",
+    "lgals1l1",
+    "pfn1",
+    "rbp4",
+    "s100a10b"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "krt5",
+     "zfa": "ZFA:0000105",
+     "name": "epidermis"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "si:dkey-183i3.5",
+      "tmsb1",
+      "zgc:136930"
+     ],
+     "n": 12,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "si:dkey-183i3.5",
+      "tmsb1",
+      "zgc:136930"
+     ],
+     "n": 12,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "si:dkey-183i3.5",
+      "tmsb1",
+      "zgc:136930"
+     ],
+     "n": 12,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001478",
+     "name": "anatomical cluster",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 1.084,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "cfl1l",
+      "cldni",
+      "krt1-19e",
+      "krt5",
+      "krt91",
+      "lgals1l1",
+      "pfn1",
+      "rbp4",
+      "s100a10b",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.568,
+     "depth": 2
+    }
+   ]
+  },
+  {
+   "id": "64",
+   "label": "Cluster 64",
+   "nCells": 1526,
+   "markers_in": [
+    "and2",
+    "and3",
+    "and1",
+    "si:dkey-248g15.3",
+    "col1a1a",
+    "cldni",
+    "pfn1",
+    "krt97",
+    "rbp4",
+    "im:7150988",
+    "apoeb",
+    "tmsb1"
+   ],
+   "call": {
+    "bucket": "pectoral fin",
+    "zfa_id": "ZFA:0001161",
+    "zfa_name": "pectoral fin",
+    "path": [
+     "organism subdivision",
+     "surface structure",
+     "fin",
+     "paired fin",
+     "pectoral fin"
+    ],
+    "depth": 5,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.422,
+    "components": {
+     "coherence": 0.235,
+     "margin": 0.094,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.028
+   },
+   "candidates": [
+    {
+     "bucket": "fin",
+     "germ_layer": "mesoderm",
+     "score": 0.124,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "mesenchyme",
+     "germ_layer": "mesoderm",
+     "score": 0.096,
+     "margin_to_top": 0.028
+    }
+   ],
+   "top_margin": 0.028,
+   "discriminators": [
+    {
+     "bucket": "fin",
+     "present_specific": [
+      "and1"
+     ],
+     "absent_probe": [
+      "hoxa13a",
+      "msx1b",
+      "hoxd13a",
+      "tbx5a",
+      "fgf24"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "mesenchyme",
+     "present_specific": [
+      "col1a1a"
+     ],
+     "absent_probe": [
+      "fn1a",
+      "osr2",
+      "prrx1a",
+      "dcn",
+      "twist1a",
+      "col1a2"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "and1",
+    "and2",
+    "apoeb",
+    "col1a1a",
+    "krt97",
+    "pfn1"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "and1",
+     "zfa": "ZFA:0001000",
+     "name": "mesenchyme pectoral fin"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4",
+      "tmsb1"
+     ],
+     "n": 10,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001486",
+     "name": "epithelium",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4"
+     ],
+     "n": 9,
+     "ic": 3.322,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0000292",
+     "name": "surface structure",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4"
+     ],
+     "n": 9,
+     "ic": 2.286,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "and1",
+      "and2",
+      "apoeb",
+      "cldni",
+      "col1a1a",
+      "im:7150988",
+      "krt97",
+      "pfn1",
+      "rbp4"
+     ],
+     "n": 9,
+     "ic": 1.137,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "65",
+   "label": "Cluster 65",
+   "nCells": 1584,
+   "markers_in": [
+    "pvalb2",
+    "mylpfa",
+    "tnni2a.4",
+    "actc1b",
+    "pvalb1",
+    "mylz3",
+    "tpma",
+    "myl1",
+    "tnnt3b",
+    "mylpfb",
+    "acta1b",
+    "myhz2"
+   ],
+   "call": {
+    "bucket": "musculature system",
+    "zfa_id": "ZFA:0000548",
+    "zfa_name": "musculature system",
+    "path": [
+     "musculature system"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "high",
+    "score": 0.815,
+    "components": {
+     "coherence": 0.629,
+     "margin": 0.877,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.263
+   },
+   "candidates": [
+    {
+     "bucket": "muscle",
+     "germ_layer": "mesoderm",
+     "score": 0.263,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.263,
+   "discriminators": [
+    {
+     "bucket": "muscle",
+     "present_specific": [
+      "mylpfa",
+      "acta1b",
+      "actc1b"
+     ],
+     "absent_probe": [
+      "myog",
+      "myf5",
+      "ttn.1",
+      "neb",
+      "ryr1a",
+      "tnnt3a",
+      "tnnc2.2",
+      "msc",
+      "myod1",
+      "smyhc2",
+      "pvalb3",
+      "ckma",
+      "myoz1a",
+      "smyhc1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "acta1b",
+    "actc1b",
+    "myhz2",
+    "myl1",
+    "mylpfa",
+    "mylpfb",
+    "mylz3",
+    "pvalb1",
+    "pvalb2",
+    "tnni2a.4",
+    "tnnt3b",
+    "tpma"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "mylpfa",
+     "zfa": "ZFA:0009117",
+     "name": "fast muscle cell"
+    },
+    {
+     "symbol": "actc1b",
+     "zfa": "ZFA:0000548",
+     "name": "musculature system"
+    },
+    {
+     "symbol": "acta1b",
+     "zfa": "ZFA:0001056",
+     "name": "myotome"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000548",
+     "name": "musculature system",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 2.502,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001056",
+     "name": "myotome",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "myhz2",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 11,
+     "ic": 4.036,
+     "depth": 9
+    }
+   ]
+  },
+  {
+   "id": "66",
+   "label": "Cluster 66",
+   "nCells": 467,
+   "markers_in": [
+    "pvalb2",
+    "mylpfa",
+    "mylz3",
+    "pvalb1",
+    "tnni2a.4",
+    "myl1",
+    "acta1b",
+    "actc1b",
+    "tpma",
+    "tnnt3b",
+    "ckma",
+    "mylpfb"
+   ],
+   "call": {
+    "bucket": "musculature system",
+    "zfa_id": "ZFA:0000548",
+    "zfa_name": "musculature system",
+    "path": [
+     "musculature system"
+    ],
+    "depth": 1,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "high",
+    "score": 0.8927,
+    "components": {
+     "coherence": 0.732,
+     "margin": 1.0,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.306
+   },
+   "candidates": [
+    {
+     "bucket": "muscle",
+     "germ_layer": "mesoderm",
+     "score": 0.306,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.306,
+   "discriminators": [
+    {
+     "bucket": "muscle",
+     "present_specific": [
+      "mylpfa",
+      "ckma",
+      "acta1b",
+      "actc1b"
+     ],
+     "absent_probe": [
+      "myog",
+      "myf5",
+      "ttn.1",
+      "neb",
+      "ryr1a",
+      "tnnt3a",
+      "tnnc2.2",
+      "msc",
+      "myod1",
+      "smyhc2",
+      "pvalb3",
+      "myoz1a",
+      "smyhc1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "acta1b",
+    "actc1b",
+    "ckma",
+    "myl1",
+    "mylpfa",
+    "mylpfb",
+    "mylz3",
+    "pvalb1",
+    "pvalb2",
+    "tnni2a.4",
+    "tnnt3b",
+    "tpma"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "mylpfa",
+     "zfa": "ZFA:0009117",
+     "name": "fast muscle cell"
+    },
+    {
+     "symbol": "acta1b",
+     "zfa": "ZFA:0001056",
+     "name": "myotome"
+    },
+    {
+     "symbol": "actc1b",
+     "zfa": "ZFA:0000548",
+     "name": "musculature system"
+    },
+    {
+     "symbol": "ckma",
+     "zfa": "ZFA:0005277",
+     "name": "skeletal muscle"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000548",
+     "name": "musculature system",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 2.502,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "mylz3",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 12,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0001056",
+     "name": "myotome",
+     "genes": [
+      "acta1b",
+      "actc1b",
+      "ckma",
+      "myl1",
+      "mylpfa",
+      "mylpfb",
+      "pvalb1",
+      "pvalb2",
+      "tnni2a.4",
+      "tnnt3b",
+      "tpma"
+     ],
+     "n": 11,
+     "ic": 4.036,
+     "depth": 9
+    }
+   ]
+  },
+  {
+   "id": "67",
+   "label": "Cluster 67",
+   "nCells": 825,
+   "markers_in": [
+    "stm",
+    "otomp",
+    "pvalb9",
+    "si:ch211-243g18.2",
+    "si:ch211-80h18.1",
+    "si:ch211-133n4.6",
+    "si:dkey-222f2.1",
+    "s100s",
+    "tectb",
+    "mb",
+    "bricd5",
+    "s100t"
+   ],
+   "call": {
+    "bucket": "otic vesicle",
+    "zfa_id": "ZFA:0000051",
+    "zfa_name": "otic vesicle",
+    "path": [
+     "embryonic structure",
+     "otic vesicle"
+    ],
+    "depth": 2,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.5635,
+    "components": {
+     "coherence": 0.296,
+     "margin": 0.483,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.145
+   },
+   "candidates": [
+    {
+     "bucket": "otic",
+     "germ_layer": "ectoderm",
+     "score": 0.145,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.145,
+   "discriminators": [
+    {
+     "bucket": "otic",
+     "present_specific": [
+      "otomp"
+     ],
+     "absent_probe": [
+      "oc90",
+      "eya1",
+      "dlx3b",
+      "otol1a",
+      "atoh1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "bricd5",
+    "mb",
+    "otomp",
+    "s100s",
+    "stm"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "otomp",
+     "zfa": "ZFA:0000051",
+     "name": "otic vesicle"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "pvalb9",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 8,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 7,
+     "ic": 1.525,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "bricd5",
+      "mb",
+      "otomp",
+      "s100s",
+      "s100t",
+      "stm",
+      "tectb"
+     ],
+     "n": 7,
+     "ic": 1.049,
+     "depth": 2
+    }
+   ]
+  },
+  {
+   "id": "68",
+   "label": "Cluster 68",
+   "nCells": 481,
+   "markers_in": [
+    "defbl1",
+    "apoda.1",
+    "pnp4a",
+    "lypc",
+    "si:ch211-243a20.3",
+    "gpnmb",
+    "si:dkey-197i20.6",
+    "impdh1b",
+    "slc25a36a",
+    "si:ch211-256m1.8",
+    "gmps",
+    "paics"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.135
+   },
+   "candidates": [
+    {
+     "bucket": "pigment",
+     "germ_layer": "neural crest",
+     "score": 0.135,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.135,
+   "discriminators": [
+    {
+     "bucket": "pigment",
+     "present_specific": [
+      "pnp4a"
+     ],
+     "absent_probe": [
+      "ltk",
+      "mitfa",
+      "gch2",
+      "dct",
+      "tyrp1b",
+      "slc45a2",
+      "xdh",
+      "aox5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "69",
+   "label": "Cluster 69",
+   "nCells": 2547,
+   "markers_in": [
+    "gngt2b",
+    "opn1sw1",
+    "opn1lw2",
+    "opn1sw2",
+    "arr3a",
+    "rcvrn2",
+    "opn1mw1",
+    "gngt2a",
+    "rbp4l",
+    "gnb3b",
+    "ckmt2a",
+    "elovl4b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.065
+   },
+   "candidates": [
+    {
+     "bucket": "eye",
+     "germ_layer": "ectoderm",
+     "score": 0.065,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.065,
+   "discriminators": [
+    {
+     "bucket": "eye",
+     "present_specific": [
+      "opn1mw1"
+     ],
+     "absent_probe": [
+      "rpe65a",
+      "cryaa",
+      "crybb1",
+      "gnat2",
+      "crx",
+      "mipa",
+      "rho"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "70",
+   "label": "Cluster 70",
+   "nCells": 5880,
+   "markers_in": [
+    "gnb3a",
+    "gng13b",
+    "vsx1",
+    "rs1a",
+    "syt5b",
+    "calb2b",
+    "gnao1b",
+    "bhlhe23",
+    "pcp4l1",
+    "mpp6b",
+    "crx",
+    "ndrg1b"
+   ],
+   "call": {
+    "bucket": "retinal inner nuclear layer",
+    "zfa_id": "ZFA:0000119",
+    "zfa_name": "retinal inner nuclear layer",
+    "path": [
+     "nervous system",
+     "sensory system",
+     "organism subdivision",
+     "compound organ",
+     "visual system",
+     "head",
+     "cavitated compound organ",
+     "eye",
+     "anatomical cluster",
+     "posterior segment eye",
+     "multi-tissue structure",
+     "retina",
+     "retinal neural layer",
+     "portion of tissue",
+     "retinal inner nuclear layer"
+    ],
+    "depth": 15,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.3524,
+    "components": {
+     "coherence": 0.131,
+     "margin": 0.0,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.016
+   },
+   "candidates": [
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.074,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "eye",
+     "germ_layer": "ectoderm",
+     "score": 0.058,
+     "margin_to_top": 0.016
+    }
+   ],
+   "top_margin": 0.016,
+   "discriminators": [
+    {
+     "bucket": "olfactory",
+     "present_specific": [
+      "calb2b"
+     ],
+     "absent_probe": [
+      "ompb",
+      "s100z",
+      "gng8",
+      "neurod1"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "eye",
+     "present_specific": [
+      "crx"
+     ],
+     "absent_probe": [
+      "rpe65a",
+      "cryaa",
+      "crybb1",
+      "gnat2",
+      "mipa",
+      "opn1mw1",
+      "rho"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "bhlhe23",
+    "calb2b",
+    "crx",
+    "gnao1b",
+    "rs1a",
+    "vsx1"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "crx",
+     "zfa": "ZFA:0000119",
+     "name": "retinal inner nuclear layer"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 2.686,
+     "depth": 16
+    },
+    {
+     "zfa": "ZFA:0005567",
+     "name": "posterior segment eye",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 2.675,
+     "depth": 14
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.862,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0001127",
+     "name": "visual system",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.811,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000282",
+     "name": "sensory system",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.525,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001114",
+     "name": "head",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.457,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0001308",
+     "name": "organism subdivision",
+     "genes": [
+      "bhlhe23",
+      "calb2b",
+      "crx",
+      "gnao1b",
+      "gnb3a",
+      "gng13b",
+      "ndrg1b",
+      "pals2b",
+      "rs1a",
+      "syt5b",
+      "vsx1"
+     ],
+     "n": 11,
+     "ic": 1.137,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "71",
+   "label": "Cluster 71",
+   "nCells": 188,
+   "markers_in": [
+    "si:ch1073-70f20.1",
+    "nppc",
+    "urp1",
+    "pkd2l1",
+    "sst1.1",
+    "pkd1l2a",
+    "egr4",
+    "txn",
+    "slc6a1b",
+    "tal2",
+    "gad2",
+    "gad1b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "no_signal",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.0
+   },
+   "candidates": [],
+   "top_margin": 0.0,
+   "discriminators": [],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "72",
+   "label": "Cluster 72",
+   "nCells": 1210,
+   "markers_in": [
+    "mbpb",
+    "zwi",
+    "tuba8l3",
+    "cd59",
+    "cldnk",
+    "olig2",
+    "cldn19",
+    "si:ch211-156j16.1",
+    "rgcc",
+    "foxd3",
+    "zgc:112994",
+    "qki2"
+   ],
+   "call": {
+    "bucket": "glial cell (sensu Vertebrata)",
+    "zfa_id": "ZFA:0009147",
+    "zfa_name": "glial cell (sensu Vertebrata)",
+    "path": [
+     "nervous system",
+     "cell",
+     "glial cell",
+     "glial cell (sensu Vertebrata)"
+    ],
+    "depth": 4,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "low",
+    "score": 0.3808,
+    "components": {
+     "coherence": 0.167,
+     "margin": 0.046,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.014
+   },
+   "candidates": [
+    {
+     "bucket": "glia",
+     "germ_layer": "ectoderm",
+     "score": 0.074,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "neural_crest",
+     "germ_layer": "ectoderm",
+     "score": 0.06,
+     "margin_to_top": 0.014
+    }
+   ],
+   "top_margin": 0.014,
+   "discriminators": [
+    {
+     "bucket": "glia",
+     "present_specific": [
+      "olig2"
+     ],
+     "absent_probe": [
+      "gfap",
+      "mbpa",
+      "slc1a3b",
+      "plp1b"
+     ],
+     "shared_nondiscriminating": [
+      "sox10"
+     ]
+    },
+    {
+     "bucket": "neural_crest",
+     "present_specific": [
+      "foxd3"
+     ],
+     "absent_probe": [
+      "snai1b",
+      "tfap2a",
+      "dlx2a",
+      "sox9b"
+     ],
+     "shared_nondiscriminating": [
+      "sox10"
+     ]
+    }
+   ],
+   "convergent_genes": [
+    "cd59a",
+    "cldnk",
+    "foxd3",
+    "mbpb",
+    "olig2",
+    "zwi"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "olig2",
+     "zfa": "ZFA:0009076",
+     "name": "oligodendrocyte"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.764,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000496",
+     "name": "compound organ",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.692,
+     "depth": 3
+    },
+    {
+     "zfa": "ZFA:0001439",
+     "name": "anatomical system",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.574,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0001512",
+     "name": "anatomical group",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.568,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "cd59a",
+      "cldn19",
+      "cldnk",
+      "foxd3",
+      "mbpb",
+      "olig2",
+      "qki2",
+      "rgcc",
+      "tuba8l3",
+      "zwi"
+     ],
+     "n": 10,
+     "ic": 0.19,
+     "depth": 2
+    }
+   ]
+  },
+  {
+   "id": "73",
+   "label": "Cluster 73",
+   "nCells": 4957,
+   "markers_in": [
+    "hbae3",
+    "hbae1.1",
+    "hbbe1.3",
+    "hbbe1.1",
+    "hbbe1.2",
+    "hbbe3",
+    "hbbe2",
+    "si:ch211-250g4.3",
+    "cahz",
+    "hemgn",
+    "slc4a1a",
+    "alas2"
+   ],
+   "call": {
+    "bucket": "nucleate erythrocyte",
+    "zfa_id": "ZFA:0009256",
+    "zfa_name": "nucleate erythrocyte",
+    "path": [
+     "hematopoietic system",
+     "portion of organism substance",
+     "cell",
+     "blood",
+     "hematopoietic cell",
+     "blood cell",
+     "nucleate erythrocyte"
+    ],
+    "depth": 7,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "high",
+    "score": 0.9007,
+    "components": {
+     "coherence": 0.852,
+     "margin": 1.0,
+     "grounding": 0.8,
+     "stage": 1.0
+    },
+    "margin": 0.468
+   },
+   "candidates": [
+    {
+     "bucket": "blood_erythroid",
+     "germ_layer": "mesoderm",
+     "score": 0.468,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.468,
+   "discriminators": [
+    {
+     "bucket": "blood_erythroid",
+     "present_specific": [
+      "hbbe2",
+      "alas2",
+      "hbae1.1",
+      "slc4a1a",
+      "cahz"
+     ],
+     "absent_probe": [
+      "klf1",
+      "gata1a"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "alas2",
+    "hbae1.1",
+    "hbae3",
+    "hbbe2",
+    "hbbe3",
+    "slc4a1a"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "hbae1.1",
+     "zfa": "ZFA:0009256",
+     "name": "nucleate erythrocyte"
+    },
+    {
+     "symbol": "hbbe2",
+     "zfa": "ZFA:0009256",
+     "name": "nucleate erythrocyte"
+    },
+    {
+     "symbol": "slc4a1a",
+     "zfa": "ZFA:0009256",
+     "name": "nucleate erythrocyte"
+    },
+    {
+     "symbol": "alas2",
+     "zfa": "ZFA:0009256",
+     "name": "nucleate erythrocyte"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0001094",
+     "name": "whole organism",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe1.2",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 8,
+     "ic": 0.19,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000037",
+     "name": "anatomical structure",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe1.2",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 8,
+     "ic": 0.178,
+     "depth": 1
+    },
+    {
+     "zfa": "ZFA:0100000",
+     "name": "zebrafish anatomical entity",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe1.2",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 8,
+     "ic": 0.005,
+     "depth": 0
+    },
+    {
+     "zfa": "ZFA:0009044",
+     "name": "blood cell",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 7,
+     "ic": 7.299,
+     "depth": 10
+    },
+    {
+     "zfa": "ZFA:0005830",
+     "name": "hematopoietic cell",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 7,
+     "ic": 5.542,
+     "depth": 4
+    },
+    {
+     "zfa": "ZFA:0000007",
+     "name": "blood",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 7,
+     "ic": 5.514,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0000033",
+     "name": "intermediate cell mass of mesoderm",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 7,
+     "ic": 5.435,
+     "depth": 7
+    },
+    {
+     "zfa": "ZFA:0001487",
+     "name": "portion of organism substance",
+     "genes": [
+      "alas2",
+      "cahz",
+      "hbae1.1",
+      "hbae3",
+      "hbbe2",
+      "hbbe3",
+      "slc4a1a"
+     ],
+     "n": 7,
+     "ic": 5.388,
+     "depth": 3
+    }
+   ]
+  },
+  {
+   "id": "74",
+   "label": "Cluster 74",
+   "nCells": 664,
+   "markers_in": [
+    "lyz",
+    "srgn",
+    "npsn",
+    "mpx",
+    "lect2l",
+    "si:ch211-214p16.1",
+    "coro1a",
+    "si:ch1073-429i10.1",
+    "cebpb",
+    "pfn1",
+    "cpa5",
+    "arpc1b"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "doublet",
+    "ambiguity": "mixed"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.284
+   },
+   "candidates": [
+    {
+     "bucket": "immune_myeloid",
+     "germ_layer": "mesoderm",
+     "score": 0.359,
+     "margin_to_top": 0.0
+    },
+    {
+     "bucket": "pancreas",
+     "germ_layer": "endoderm",
+     "score": 0.075,
+     "margin_to_top": 0.284
+    }
+   ],
+   "top_margin": 0.284,
+   "discriminators": [
+    {
+     "bucket": "immune_myeloid",
+     "present_specific": [
+      "coro1a",
+      "lyz"
+     ],
+     "absent_probe": [
+      "lcp1",
+      "mfap4.1",
+      "spi1b",
+      "csf1ra",
+      "mpeg1.1"
+     ],
+     "shared_nondiscriminating": []
+    },
+    {
+     "bucket": "pancreas",
+     "present_specific": [
+      "cpa5"
+     ],
+     "absent_probe": [
+      "prss1",
+      "ins",
+      "sst2",
+      "gcga",
+      "pdx1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "75",
+   "label": "Cluster 75",
+   "nCells": 1859,
+   "markers_in": [
+    "icn2",
+    "wu:fb18f06",
+    "icn",
+    "zgc:193505",
+    "cyt1l",
+    "si:ch211-195b11.3",
+    "cyt1",
+    "anxa1c",
+    "agr1",
+    "krt4",
+    "si:dkey-9l20.3",
+    "tcnbb"
+   ],
+   "call": {
+    "bucket": "mixed/unresolved",
+    "zfa_id": null,
+    "zfa_name": null,
+    "path": [],
+    "depth": 0,
+    "abstained": true,
+    "ood": "in_set",
+    "ambiguity": "provisional"
+   },
+   "confidence": {
+    "tier": null,
+    "score": null,
+    "components": {},
+    "margin": 0.072
+   },
+   "candidates": [
+    {
+     "bucket": "epidermis",
+     "germ_layer": "ectoderm",
+     "score": 0.072,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.072,
+   "discriminators": [
+    {
+     "bucket": "epidermis",
+     "present_specific": [
+      "krt4"
+     ],
+     "absent_probe": [
+      "tp63",
+      "cldne",
+      "krt8",
+      "cldnb",
+      "krt5"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [],
+   "expression_evidence": [],
+   "fine_terms": []
+  },
+  {
+   "id": "76",
+   "label": "Cluster 76",
+   "nCells": 247,
+   "markers_in": [
+    "gng8",
+    "nrn1a",
+    "si:dkey-117i10.1",
+    "pou4f1",
+    "msi2b",
+    "nwd2",
+    "etv1",
+    "tcf7l2",
+    "zic1",
+    "si:dkeyp-72h1.1",
+    "olfm2a",
+    "casz1"
+   ],
+   "call": {
+    "bucket": "peripheral olfactory organ",
+    "zfa_id": "ZFA:0000047",
+    "zfa_name": "peripheral olfactory organ",
+    "path": [
+     "nervous system",
+     "sensory system",
+     "compound organ",
+     "olfactory system",
+     "cavitated compound organ",
+     "peripheral olfactory organ"
+    ],
+    "depth": 6,
+    "abstained": false,
+    "ood": "in_set",
+    "ambiguity": "none"
+   },
+   "confidence": {
+    "tier": "medium",
+    "score": 0.6989,
+    "components": {
+     "coherence": 0.469,
+     "margin": 0.704,
+     "grounding": 1.0,
+     "stage": 1.0
+    },
+    "margin": 0.211
+   },
+   "candidates": [
+    {
+     "bucket": "olfactory",
+     "germ_layer": "ectoderm",
+     "score": 0.211,
+     "margin_to_top": 0.0
+    }
+   ],
+   "top_margin": 0.211,
+   "discriminators": [
+    {
+     "bucket": "olfactory",
+     "present_specific": [
+      "gng8"
+     ],
+     "absent_probe": [
+      "ompb",
+      "s100z",
+      "calb2b",
+      "neurod1"
+     ],
+     "shared_nondiscriminating": []
+    }
+   ],
+   "convergent_genes": [
+    "casz1",
+    "gng8",
+    "msi2b"
+   ],
+   "expression_evidence": [
+    {
+     "symbol": "gng8",
+     "zfa": "ZFA:0000047",
+     "name": "peripheral olfactory organ"
+    }
+   ],
+   "fine_terms": [
+    {
+     "zfa": "ZFA:0000101",
+     "name": "diencephalon",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 2.796,
+     "depth": 12
+    },
+    {
+     "zfa": "ZFA:0000109",
+     "name": "forebrain",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 2.226,
+     "depth": 11
+    },
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 1.231,
+     "depth": 9
+    },
+    {
+     "zfa": "ZFA:0001488",
+     "name": "multi-tissue structure",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 1.132,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000012",
+     "name": "central nervous system",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 1.127,
+     "depth": 6
+    },
+    {
+     "zfa": "ZFA:0001477",
+     "name": "portion of tissue",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 1.049,
+     "depth": 2
+    },
+    {
+     "zfa": "ZFA:0000396",
+     "name": "nervous system",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 0.904,
+     "depth": 5
+    },
+    {
+     "zfa": "ZFA:0001490",
+     "name": "cavitated compound organ",
+     "genes": [
+      "casz1",
+      "etv1",
+      "gng8",
+      "msi2b",
+      "nrn1a",
+      "olfm2a",
+      "pou4f1",
+      "tcf7l2",
+      "zic1"
+     ],
+     "n": 9,
+     "ic": 0.764,
+     "depth": 4
+    }
+   ]
+  }
+ ]
+}

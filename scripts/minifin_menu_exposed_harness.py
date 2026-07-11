@@ -36,28 +36,27 @@ UMAP_PATH = os.path.join(ASSET_DIR, "umap.json")
 MANIFEST  = os.environ.get("MINIFIN_MANIFEST", "/tmp/minifin_menu_exposed_results.json")
 
 BASE = app.DEFAULT_BASE
-if not os.environ.get("AUTOPILOT_API_TOKEN"):
-    print("[FATAL] AUTOPILOT_API_TOKEN absent — source the service env first. No spend."); sys.exit(2)
-
 MENU = json.load(open(MENU_PATH))
 ATLAS = json.load(open(UMAP_PATH))
 CLUSTERS = ATLAS["clusters"]
 
-# ---- Arm C: ontology evidence packet (MINIFIN_PACKET=1) --------------------
-PACKET_MODE = os.environ.get("MINIFIN_PACKET") == "1"
+# ---- ontology evidence packet -- Arm C when injected (MINIFIN_PACKET=1) ----
+PACKET_MODE = os.environ.get("MINIFIN_PACKET") == "1"   # default arm for the main run
 PACKETS = {}
+_pk_path = os.path.join(ASSET_DIR, "ontology_packets.json")
+if os.path.exists(_pk_path):                            # load always; run_leaf gates injection per call
+    PACKETS = {str(p["id"]): p for p in json.load(open(_pk_path))["packets"]}
 if PACKET_MODE:
-    pk = json.load(open(os.path.join(ASSET_DIR, "ontology_packets.json")))
-    PACKETS = {str(p["id"]): p for p in pk["packets"]}
     HARNESS = {"id": "menu-exposed-chat-zfa-packet", "version": "minifin-zfa-packet-v1",
                "name": "ontology-packet-informed reasoner + ZFA menu-exposed chat",
                "basis": "zlabel evidence packet (candidates/discriminators/earned-depth) → LLM reasoner"}
-print(f"[init] base={BASE} model={MODEL} | menu sha {MENU['menu_sha']} | packet={'ON' if PACKET_MODE else 'off'} | {len(CLUSTERS)} minifin clusters")
 
 
-def packet_brief(cid):
+def packet_brief(cid, packet=True):
     """Compact, LLM-readable ontology evidence packet — a deterministic PRIOR to reason
-    over, explicitly overrulable. Empty string when packet mode is off or absent."""
+    over, explicitly overrulable. Empty string when not injected or absent."""
+    if not packet:
+        return ""
     p = PACKETS.get(str(cid))
     if not p:
         return ""
@@ -89,7 +88,6 @@ def packet_brief(cid):
 rng = random.Random(SEED)
 ids = [str(c["id"]) for c in CLUSTERS]
 SAMPLE = sorted(rng.sample(ids, min(N_SAMPLE, len(ids))), key=lambda x: int(x) if x.isdigit() else 1e9)
-print(f"[plan] N={len(SAMPLE)} seed={SEED} abort@${ABORT_USD:.2f} sample={SAMPLE}")
 
 # ---- helpers --------------------------------------------------------------
 def up_down(c):
@@ -99,11 +97,11 @@ def up_down(c):
     down = list(c.get("markersDown") or [])[:6]
     return [g for g in up if g], [g for g in down if g]
 
-def researcher_prompt(c):
+def researcher_prompt(c, packet=False):
     up, down = up_down(c)
     up_s = ", ".join(up); down_s = ", ".join(down) if down else "(none informative)"
     focus = ""
-    if PACKET_MODE:
+    if packet:
         probes = []
         for d in (PACKETS.get(str(c["id"])) or {}).get("discriminators", [])[:2]:
             probes += d.get("absent_probe", [])[:4]
@@ -199,79 +197,105 @@ def denovo_label_of(rc):
     m = re.search(r"cell type \(sub\).*?[—:-]\s*(.+)", rc, re.I)
     return (m.group(1).strip() if m else "(unresolved)"), concl
 
-# ---- run ------------------------------------------------------------------
-usage, bundled, results = {}, [], []
-for i, cid in enumerate(SAMPLE):
-    c = next(x for x in CLUSTERS if str(x["id"]) == cid)
-    cl = {"id": c["id"], "label": c.get("label", f"Cluster {c['id']}"),
-          "degsUp": c.get("degsUp", []), "markers": c.get("markers", []), "nCells": c.get("nCells")}
-    try:
-        rp = researcher_prompt(cl)
-        rsearch = app._agent(BASE, DATASET, MODEL, cl, [{"role": "user", "content": rp}], "research", usage)
-        conv = [{"role": "user", "content": rp}, {"role": "assistant", "content": rsearch}]
-        transcript = [
-            {"role": "user", "content": rp, "mode": "research"},
-            {"role": "assistant", "content": rsearch, "mode": "research"},
-        ]
-        # --- de-novo reasoning, with a bounded Archivist/Researcher dispatch loop ---
-        denovo_user = packet_brief(cl["id"]) + DENOVO_PROMPT
-        conv += [{"role": "user", "content": denovo_user}]
+def parse_binding(text):
+    """Extract the five menu-aware binding tiers from the menu-exposed reasoner turn."""
+    out = {}
+    for t in ("germ_layer", "tissue", "cell_type_broad", "zfa_bucket", "cell_type_sub"):
+        m = re.search(rf"{t}\s*[:\-]\s*(.+?)\s*(?:\(\d+%?\)|$)", text, re.I | re.M)
+        out[t] = m.group(1).strip().strip("*` ") if m else None
+    return out
+
+def run_leaf(cl, packet, usage):
+    """One leaf through the arm flow: Researcher → Reasoner de-novo (± ontology packet)
+    + bounded dispatch loop → ZFA menu-exposed binding. packet=True is Arm C, False Arm B.
+    Returns (denovo_label, conclude_dict, menu_binding_dict, transcript)."""
+    rp = researcher_prompt(cl, packet)
+    rsearch = app._agent(BASE, DATASET, MODEL, cl, [{"role": "user", "content": rp}], "research", usage)
+    conv = [{"role": "user", "content": rp}, {"role": "assistant", "content": rsearch}]
+    transcript = [{"role": "user", "content": rp, "mode": "research"},
+                  {"role": "assistant", "content": rsearch, "mode": "research"}]
+    denovo_user = packet_brief(cl["id"], packet) + DENOVO_PROMPT
+    conv += [{"role": "user", "content": denovo_user}]
+    rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv, "reason", usage)
+    conv += [{"role": "assistant", "content": rdenovo}]
+    transcript += [{"role": "user", "content": denovo_user, "mode": "reason"},
+                   {"role": "assistant", "content": rdenovo, "mode": "reason"}]
+    MODE = {"archivist": "archivist", "researcher": "research", "research": "research", "reason": "reason"}
+    for _ in range(DISPATCH_ROUNDS):
+        if app.parse_conclude(rdenovo):
+            break
+        disp = app.parse_dispatch(rdenovo)
+        if not disp:
+            break
+        for d in disp[:2]:
+            m = MODE.get(d.get("to"), "archivist")
+            ans = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": d["prompt"]}], m, usage)
+            conv += [{"role": "user", "content": d["prompt"]}, {"role": "assistant", "content": ans}]
+            transcript += [{"role": "user", "content": d["prompt"], "mode": m},
+                           {"role": "assistant", "content": ans, "mode": m}]
+        nudge = ("You now have the follow-up evidence above. CONCLUDE now with a kasperov-conclude block "
+                 "(4-tier stack + earned-depth call); do NOT dispatch again.")
+        conv += [{"role": "user", "content": nudge}]
         rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv, "reason", usage)
         conv += [{"role": "assistant", "content": rdenovo}]
-        transcript += [{"role": "user", "content": denovo_user, "mode": "reason"},
+        transcript += [{"role": "user", "content": nudge, "mode": "reason"},
                        {"role": "assistant", "content": rdenovo, "mode": "reason"}]
-        MODE = {"archivist": "archivist", "researcher": "research", "research": "research", "reason": "reason"}
-        for _ in range(DISPATCH_ROUNDS):
-            if app.parse_conclude(rdenovo):
-                break
-            disp = app.parse_dispatch(rdenovo)
-            if not disp:
-                break
-            for d in disp[:2]:  # execute the reasoner's targeted follow-ups (Archivist/Researcher)
-                m = MODE.get(d.get("to"), "archivist")
-                ans = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": d["prompt"]}], m, usage)
-                conv += [{"role": "user", "content": d["prompt"]}, {"role": "assistant", "content": ans}]
-                transcript += [{"role": "user", "content": d["prompt"], "mode": m},
-                               {"role": "assistant", "content": ans, "mode": m}]
-            nudge = ("You now have the follow-up evidence above. CONCLUDE now with a kasperov-conclude block "
-                     "(4-tier stack + earned-depth call); do NOT dispatch again.")
-            conv += [{"role": "user", "content": nudge}]
-            rdenovo = app._agent(BASE, DATASET, MODEL, cl, conv, "reason", usage)
-            conv += [{"role": "assistant", "content": rdenovo}]
-            transcript += [{"role": "user", "content": nudge, "mode": "reason"},
-                           {"role": "assistant", "content": rdenovo, "mode": "reason"}]
-        denovo, concl = denovo_label_of(rdenovo)
-        # --- menu-exposed binding ---
-        mp = menu_prompt(cl, denovo)
-        rmenu = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": mp}], "reason", usage)
-        transcript += [{"role": "user", "content": mp, "mode": "reason", "phase": "menu-exposed"},
-                       {"role": "assistant", "content": rmenu, "mode": "reason", "phase": "menu-exposed"}]
-    except Exception as e:
-        print(f"[{i+1}/{len(SAMPLE)}] minifin:{cid} ERROR {e}")
-        denovo, concl, transcript = "(error)", {}, []
-    bundled.append({"id": cl["id"], "label": cl["label"], "finalLabel": denovo, "validated": True,
-                    "nCells": cl["nCells"], "degsUp": cl["degsUp"], "markers": cl["markers"],
-                    "markersDown": c.get("markersDown"), "deNovo": concl, "transcript": transcript})
-    results.append({"cluster": cid, "finalLabel": denovo})
-    cum = app._est_cost(usage)[0]
-    print(f"[{i+1}/{len(SAMPLE)}] minifin:{cid} | deNovo={str(denovo)[:48]!r} | cum ${cum:.3f}", flush=True)
-    if cum >= ABORT_USD:
-        print(f"[ABORT] cum ${cum:.2f} >= ${ABORT_USD:.2f}"); break
+    denovo, concl = denovo_label_of(rdenovo)
+    mp = menu_prompt(cl, denovo)
+    rmenu = app._agent(BASE, DATASET, MODEL, cl, conv + [{"role": "user", "content": mp}], "reason", usage)
+    transcript += [{"role": "user", "content": mp, "mode": "reason", "phase": "menu-exposed"},
+                   {"role": "assistant", "content": rmenu, "mode": "reason", "phase": "menu-exposed"}]
+    return denovo, concl, parse_binding(rmenu), transcript
 
-usd, est = app._est_cost(usage)
-run = {
-    "schema": "daniotype_kasperov_run/v1", "dataset": ATLAS.get("source", DATASET), "datasetId": DATASET,
-    "model": MODEL, "cost": {"usd": usd, "estimated": est, "usage": {m: dict(u) for m, u in usage.items()}},
-    "exportedAt": app._now(), "scoredAt": None, "nLabelled": len(bundled), "nValidated": len(bundled), "source": "server",
-    "note": f"MiniFin menu-exposed-chat SMOKE TEST (CARO/ZFA-native menu) — {len(bundled)} leaves, seed {SEED} — NOT scored",
-    "harness": {**HARNESS, "menuSha": MENU["menu_sha"], "stampedAt": app._now()[:10]},
-    "provenance": {"pipeline": "researcher->reasoner-denovo->menu-exposed(CARO)", "menuVersion": MENU["menu_sha"],
-                   "menuSource": "zlabel/panels.yaml + ZFA(zfin-grounded)", "promoted": False, "scored": False,
-                   "baseUrl": BASE, "sampleSeed": SEED, "smokeTest": True},
-    "clusters": bundled, "groundTruth": None,
-}
-run_id = app.save_run(run)
-json.dump({"runId": run_id, "results": results, "spendUsd": round(usd, 4), "menuSha": MENU["menu_sha"]},
-          open(MANIFEST, "w"), indent=2)
-print(f"[saved] run {run_id} -> {app.RUNS_DIR}/{DATASET}/ | ${usd:.3f} | manifest {MANIFEST}")
-print(f"=== SMOKE COMPLETE === {len(bundled)} leaves | run {run_id} | inspect in MiniFin 'View Completed Runs'")
+
+def _cl_of(c):
+    return {"id": c["id"], "label": c.get("label", f"Cluster {c['id']}"),
+            "degsUp": c.get("degsUp", []), "markers": c.get("markers", []), "nCells": c.get("nCells")}
+
+
+def _main():
+    if not os.environ.get("AUTOPILOT_API_TOKEN"):
+        print("[FATAL] AUTOPILOT_API_TOKEN absent — source the service env first. No spend."); sys.exit(2)
+    print(f"[init] base={BASE} model={MODEL} | menu sha {MENU['menu_sha']} | packet={'ON' if PACKET_MODE else 'off'} | {len(CLUSTERS)} minifin clusters")
+    print(f"[plan] N={len(SAMPLE)} seed={SEED} abort@${ABORT_USD:.2f} sample={SAMPLE}")
+    usage, bundled, results = {}, [], []
+    for i, cid in enumerate(SAMPLE):
+        c = next(x for x in CLUSTERS if str(x["id"]) == cid); cl = _cl_of(c)
+        try:
+            denovo, concl, _binding, transcript = run_leaf(cl, PACKET_MODE, usage)
+        except Exception as e:
+            print(f"[{i+1}/{len(SAMPLE)}] minifin:{cid} ERROR {e}")
+            denovo, concl, transcript = "(error)", {}, []
+        bundled.append({"id": cl["id"], "label": cl["label"], "finalLabel": denovo, "validated": True,
+                        "nCells": cl["nCells"], "degsUp": cl["degsUp"], "markers": cl["markers"],
+                        "markersDown": c.get("markersDown"), "deNovo": concl, "transcript": transcript})
+        results.append({"cluster": cid, "finalLabel": denovo})
+        cum = app._est_cost(usage)[0]
+        print(f"[{i+1}/{len(SAMPLE)}] minifin:{cid} | deNovo={str(denovo)[:48]!r} | cum ${cum:.3f}", flush=True)
+        if cum >= ABORT_USD:
+            print(f"[ABORT] cum ${cum:.2f} >= ${ABORT_USD:.2f}"); break
+    _save(usage, bundled, results)
+
+
+def _save(usage, bundled, results):
+    usd, est = app._est_cost(usage)
+    run = {
+        "schema": "daniotype_kasperov_run/v1", "dataset": ATLAS.get("source", DATASET), "datasetId": DATASET,
+        "model": MODEL, "cost": {"usd": usd, "estimated": est, "usage": {m: dict(u) for m, u in usage.items()}},
+        "exportedAt": app._now(), "scoredAt": None, "nLabelled": len(bundled), "nValidated": len(bundled), "source": "server",
+        "note": f"MiniFin menu-exposed-chat SMOKE TEST (ZFA-native menu) — {len(bundled)} leaves, seed {SEED} — NOT scored",
+        "harness": {**HARNESS, "menuSha": MENU["menu_sha"], "stampedAt": app._now()[:10]},
+        "provenance": {"pipeline": "researcher->reasoner-denovo->menu-exposed(ZFA)", "menuVersion": MENU["menu_sha"],
+                       "menuSource": "zlabel/panels.yaml + ZFA(zfin-grounded)", "promoted": False, "scored": False,
+                       "baseUrl": BASE, "sampleSeed": SEED, "smokeTest": True},
+        "clusters": bundled, "groundTruth": None,
+    }
+    run_id = app.save_run(run)
+    json.dump({"runId": run_id, "results": results, "spendUsd": round(usd, 4), "menuSha": MENU["menu_sha"]},
+              open(MANIFEST, "w"), indent=2)
+    print(f"[saved] run {run_id} -> {app.RUNS_DIR}/{DATASET}/ | ${usd:.3f} | manifest {MANIFEST}")
+    print(f"=== SMOKE COMPLETE === {len(bundled)} leaves | run {run_id} | inspect in MiniFin 'View Completed Runs'")
+
+
+if __name__ == "__main__":
+    _main()
