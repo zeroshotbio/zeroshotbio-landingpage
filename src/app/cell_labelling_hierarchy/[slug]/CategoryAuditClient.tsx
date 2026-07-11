@@ -7,6 +7,7 @@ import type { CategoryDetail, JudgeNode, MiniNode, Tier } from "../details";
 const PAPER = "#f6f4f2", INK = "#2b2b2b", MUTE = "#8a847b", LINE = "#e7e1d9", CARD = "#fffdfb";
 const TIER_ORDER = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
 const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type · broad", cell_type_sub: "Cell type · sub" };
+const TIER_SHORT: Record<string, string> = { germ_layer: "germ layer", tissue: "tissue", cell_type_broad: "broad cell type", cell_type_sub: "cell-type sub" };
 const TISSUE_BG = "#f2fafd";
 
 function heat(pct: number | null): { bg: string; fg: string } {
@@ -64,10 +65,17 @@ function JudgeCard({ n }: { n: JudgeNode }) {
               <th style={{ ...rowHdr, color: "#3f3a34", background: "#f1ede6" }}>Ground truth</th>
               {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
             </tr>
-            {/* 2 · de-novo prediction (holistic free-text — spans the tiers) */}
+            {/* 2 · de-novo prediction — a single holistic identity phrase (NOT a 4-tier pick like
+                 menu-exposed); the scored artifact stores one call + the tier it resolved to. Its
+                 per-tier grading is the De-novo verdict row directly below. */}
             <tr>
               <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo pred</th>
-              <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>{n.identity || "—"}</td>
+              <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>
+                {n.identity || "—"}
+                <span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#6b8990", marginTop: 3, fontSize: 11 }}>
+                  single holistic call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""} — graded per tier in the row below (the menu-exposed answer is the 4-tier picked-from-menu version)
+                </span>
+              </td>
             </tr>
             {/* 3 · de-novo verdict */}
             <tr>
@@ -191,6 +199,13 @@ export default function CategoryAuditClient({ detail }: { detail: CategoryDetail
           <b> de-novo</b> prediction and the judge&apos;s verdict, then its <b>menu-exposed</b> prediction and verdict — laid out so
           you can compare the same tier down a column. The <b>Tissue</b> column (marked <b>SCORED</b>) drives the summary&apos;s
           correct-call rate; read the judge&apos;s note and decide for yourself whether each match is legitimate.
+        </p>
+        <p style={{ fontSize: 12.5, lineHeight: 1.5, color: "#6b655d", maxWidth: 800, margin: "0 0 20px", background: "#faf7f0", border: `1px solid ${LINE}`, borderRadius: 8, padding: "9px 12px" }}>
+          <b>Why de-novo is one cell but menu-exposed is four:</b> the scored artifact persists the de-novo answer as a single
+          holistic identity phrase (with the tier it resolved to), then the judge grades <em>that one phrase</em> against all four
+          GT tiers — so the per-tier de-novo reality is the <b>De-novo verdict</b> row. The menu-exposed answer was stored as a
+          structured 4-tier pick from the GT menu, hence four values. The wizard does emit a 4-tier de-novo per <em>leaf</em> in its
+          chat transcript, but that is consolidated away at the node level and isn&apos;t re-persisted here.
         </p>
 
         {fuzzyDs.map((d) => <DatasetSection key={d} ds={d} nodes={byDataset[d]} />)}
