@@ -188,7 +188,7 @@ const DATASET_VALIDATION: Record<string, string> = {
   zscape: "Golden run · Hand-Blessed (live-search) · GT-scored",
   chemfish: "Golden run · Port · GT-scored (2-tier native GT)",
   daniocell: "Golden run · Port · GT-scored",
-  minifin: "Golden run · v1.2 · validated vs Patrick expert GT — 0.989 lenient / 0.587 strict-fine, node-consolidation validated, 0 over-merge",
+  minifin: "Golden run · v1.2 · validated vs Patrick expert GT — 0.989 lenient / 0.524 strict-fine (node), node-consolidation validated, 0 over-merge",
   megafin_parse: "Deliverable · v1.2 · commercial-core spot-check (4 sets, 9.5% coverage); broad correctness inherited from MiniFin",
   megafin: "Golden run · v1.2 · recursive fine-leaf (384 leaves @ 0.953 coherence) · consolidated (147 nodes) · no GT (Lawson namespace); broad correctness inherited from MiniFin",
 };

@@ -502,6 +502,13 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                   Illustrative embedding — this run labelled the {runNGroups ?? "published"} published groups, not the de-novo map shown here.
                 </div>
               ) : null}
+              {/* COARSE-UMAP HONESTY CAPTION — when no fine-partition umap exists (MiniFin/ParseMF/ManualMF),
+                  the map falls back to the coarse base embedding. Say so, so N-fine-leaves ≠ the drawn count. */}
+              {clusteringBasis !== "native-schema" && clusters && runClusters.length > 0 && clusters.length !== runClusters.length ? (
+                <div style={{ fontSize: 11.5, color: "#9a948c", fontStyle: "italic", margin: "6px auto 0", maxWidth: 720, lineHeight: 1.5 }}>
+                  Coarse embedding shown ({clusters.length} base clusters) — this run has {runClusters.length} fine leaves. The fine-partition map is not yet built; the point cloud is the same cells at a coarser granularity.
+                </div>
+              ) : null}
               {/* CLUSTERING PROSE — branched on the run's REAL basis, never hardcoded per-atlasId.
                   native-schema → the honest published-groups story; de-novo → the ZSCAPE recursive read
                   (zscape) + data-driven recipe panel / generic knobs; null → neutral, no false claim. */}
