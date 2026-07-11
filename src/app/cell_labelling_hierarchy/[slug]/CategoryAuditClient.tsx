@@ -8,7 +8,6 @@ const PAPER = "#f6f4f2", INK = "#2b2b2b", MUTE = "#8a847b", LINE = "#e7e1d9", CA
 const TIER_ORDER = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
 const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type · broad", cell_type_sub: "Cell type · sub" };
 const TIER_SHORT: Record<string, string> = { germ_layer: "germ layer", tissue: "tissue", cell_type_broad: "broad cell type", cell_type_sub: "cell-type sub" };
-const TISSUE_BG = "#f2fafd";
 
 function heat(pct: number | null): { bg: string; fg: string } {
   if (pct == null) return { bg: "#ece8e2", fg: "#b7b0a6" };
@@ -42,8 +41,14 @@ function JudgeCard({ n }: { n: JudgeNode }) {
   const [membersOpen, setMembersOpen] = useState(false);
   const sm = scoredMatch(n);
   const tiers = TIER_ORDER.filter((t) => n.gt[t] || n.menu[t] || n.dn[t] || n.mx[t] || n.dnPred?.[t]);
-  const rowHdr: CSSProperties = { textAlign: "left", padding: "7px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", whiteSpace: "nowrap", verticalAlign: "top", borderBottom: `1px solid ${LINE}` };
-  const cell: CSSProperties = { padding: "7px 10px", borderBottom: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top", lineHeight: 1.4 };
+  const rowHdr: CSSProperties = { textAlign: "left", padding: "8px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", whiteSpace: "nowrap", verticalAlign: "top", borderBottom: `1px solid ${LINE}` };
+  const cell: CSSProperties = { padding: "8px 10px", borderBottom: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top", lineHeight: 1.4, overflowWrap: "anywhere", wordBreak: "break-word" };
+  // vertical band marking the SCORED tissue column across the coloured rows
+  const col = (t: string): CSSProperties => t === "tissue" ? { borderLeft: "2px solid #86bcd0", borderRight: "2px solid #86bcd0" } : { borderLeft: `1px solid ${LINE}` };
+  // per-layer row tints: ground truth = green, de-novo = blue, menu = purple
+  const GT = { bg: "#edf7f0", lblBg: "#dcefe3", lbl: "#256b43" };
+  const DN = { bg: "#edf3fd", lblBg: "#dce8fa", lbl: "#1e5aa8" };
+  const MN = { bg: "#f5eefb", lblBg: "#e9dcf6", lbl: "#6b3fa0" };
   const kindCol = n.kind === "merge" ? { c: "#0e7490", bg: "#e0f2f7", t: "MERGED" } : { c: "#a16207", bg: "#fdf3d6", t: "REBEL LEAF" };
   const hasPred = !!n.dnPred && tiers.some((t) => n.dnPred?.[t]?.val);
   return (
@@ -61,50 +66,49 @@ function JudgeCard({ n }: { n: JudgeNode }) {
             <tr>
               <th style={{ ...rowHdr, color: MUTE, background: "#faf8f5" }} />
               {tiers.map((t) => (
-                <th key={t} style={{ ...rowHdr, background: t === "tissue" ? TISSUE_BG : "#faf8f5", color: "#4a453f", borderLeft: `1px solid ${LINE}` }}>
+                <th key={t} style={{ ...rowHdr, ...col(t), background: "#faf8f5", color: "#4a453f" }}>
                   {TIER_LABEL[t]}{t === "tissue" && <span title="Drives the summary's correct-call rate" style={{ marginLeft: 4, fontSize: 8, fontWeight: 800, color: "#0e7490", background: "#d3ebf2", borderRadius: 99, padding: "1px 4px" }}>SCORED</span>}
                 </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {/* 1 · ground truth */}
+            {/* 1 · ground truth — green */}
             <tr>
-              <th style={{ ...rowHdr, color: "#3f3a34", background: "#f1ede6" }}>Ground truth</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
+              <th style={{ ...rowHdr, color: GT.lbl, background: GT.lblBg }}>Ground truth</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: GT.bg, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
             </tr>
-            {/* 2 · de-novo prediction — the wizard's full 4-tier free-form call (val + confidence),
-                 recovered from a representative member leaf's transcript. Falls back to the consolidated
-                 identity phrase where the 4-tier couldn't be parsed. */}
+            {/* 2 · de-novo prediction — blue — wizard's full 4-tier free-form call (val + confidence),
+                 recovered from a representative member leaf; falls back to the consolidated phrase. */}
             <tr>
-              <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo pred</th>
+              <th style={{ ...rowHdr, color: DN.lbl, background: DN.lblBg }}>De-novo pred</th>
               {hasPred
                 ? tiers.map((t) => {
                     const p = n.dnPred?.[t];
-                    return <td key={t} style={{ ...cell, background: t === "tissue" ? "#eefaff" : "#f6feff", fontWeight: 600, color: p?.val ? "#134e5a" : "#c4bdb1" }}>{p?.val ? <>{p.val}<ConfBadge c={p.conf} /></> : "—"}</td>;
+                    return <td key={t} style={{ ...cell, ...col(t), background: DN.bg, fontWeight: 600, color: p?.val ? "#123f6b" : "#c4bdb1" }}>{p?.val ? <>{p.val}<ConfBadge c={p.conf} /></> : "—"}</td>;
                   })
-                : <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>{n.identity || "—"}<span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#6b8990", marginTop: 3, fontSize: 11 }}>4-tier de-novo not parseable for this node — showing the consolidated call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}</span></td>}
+                : <td colSpan={tiers.length} style={{ ...cell, borderLeft: `1px solid ${LINE}`, background: DN.bg, color: "#123f6b", fontWeight: 600 }}>{n.identity || "—"}<span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#5a7a99", marginTop: 3, fontSize: 11 }}>4-tier de-novo not parseable for this node — showing the consolidated call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}</span></td>}
             </tr>
-            {/* caption: consolidated identity + source leaf */}
+            {/* caption: consolidated identity + source leaf — blue */}
             <tr>
-              <td colSpan={tiers.length + 1} style={{ padding: "5px 10px", borderBottom: `1px solid ${LINE}`, background: "#f9fdff", fontSize: 11, color: "#6b8990", fontStyle: "italic" }}>
-                consolidated de-novo identity: <b style={{ color: "#134e5a", fontStyle: "normal" }}>{n.identity || "—"}</b>{n.dnTier ? ` · resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}{hasPred && n.dnPredLeaf ? ` · 4-tier shown from representative leaf ${n.dnPredLeaf}${n.members && n.members.length ? ` of ${n.members.length}` : ""}` : ""}
+              <td colSpan={tiers.length + 1} style={{ padding: "5px 10px", borderBottom: `1px solid ${LINE}`, background: DN.bg, fontSize: 11, color: "#5a7a99", fontStyle: "italic" }}>
+                consolidated de-novo identity: <b style={{ color: "#123f6b", fontStyle: "normal" }}>{n.identity || "—"}</b>{n.dnTier ? ` · resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}{hasPred && n.dnPredLeaf ? ` · 4-tier shown from representative leaf ${n.dnPredLeaf}${n.members && n.members.length ? ` of ${n.members.length}` : ""}` : ""}
               </td>
             </tr>
-            {/* 3 · de-novo verdict */}
+            {/* 3 · de-novo verdict — blue */}
             <tr>
-              <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo verdict</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined }}><Verdict t={n.dn[t]} /></td>)}
+              <th style={{ ...rowHdr, color: DN.lbl, background: DN.lblBg }}>De-novo verdict</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: DN.bg }}><Verdict t={n.dn[t]} /></td>)}
             </tr>
-            {/* 4 · menu-exposed prediction (with the representative leaf's confidence) */}
+            {/* 4 · menu-exposed prediction — purple — with the representative leaf's confidence */}
             <tr>
-              <th style={{ ...rowHdr, color: "#6b655d", background: "#f4f2ee" }}>Menu pred</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, color: n.menu[t] ? "#4a453f" : "#c4bdb1", fontWeight: n.menu[t] ? 600 : 400 }}>{n.menu[t] || "—"}{n.menu[t] && <ConfBadge c={n.menuRep?.[t]?.conf} />}</td>)}
+              <th style={{ ...rowHdr, color: MN.lbl, background: MN.lblBg }}>Menu pred</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: MN.bg, color: n.menu[t] ? "#4a453f" : "#c4bdb1", fontWeight: n.menu[t] ? 600 : 400 }}>{n.menu[t] || "—"}{n.menu[t] && <ConfBadge c={n.menuRep?.[t]?.conf} />}</td>)}
             </tr>
-            {/* 5 · menu-exposed verdict */}
+            {/* 5 · menu-exposed verdict — purple */}
             <tr>
-              <th style={{ ...rowHdr, color: "#6b655d", background: "#f4f2ee" }}>Menu-exposed verdict</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, opacity: 0.85 }}><Verdict t={n.mx[t]} /></td>)}
+              <th style={{ ...rowHdr, color: MN.lbl, background: MN.lblBg }}>Menu-exposed verdict</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: MN.bg }}><Verdict t={n.mx[t]} /></td>)}
             </tr>
           </tbody>
         </table>
@@ -120,13 +124,13 @@ function JudgeCard({ n }: { n: JudgeNode }) {
               <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 560, fontSize: 11.5 }}>
                 <thead><tr>
                   <th style={{ ...rowHdr, fontSize: 9.5, background: "#faf8f5", color: MUTE }}>Leaf</th>
-                  {tiers.map((t) => <th key={t} style={{ ...rowHdr, fontSize: 9.5, background: t === "tissue" ? TISSUE_BG : "#faf8f5", color: "#4a453f", borderLeft: `1px solid ${LINE}` }}>{TIER_LABEL[t]}</th>)}
+                  {tiers.map((t) => <th key={t} style={{ ...rowHdr, ...col(t), fontSize: 9.5, background: "#faf8f5", color: "#4a453f" }}>{TIER_LABEL[t]}</th>)}
                 </tr></thead>
                 <tbody>
                   {n.members.map((m) => (
-                    <tr key={m.id} style={{ background: m.id === n.dnPredLeaf ? "#f2fafd" : undefined }}>
+                    <tr key={m.id} style={{ background: m.id === n.dnPredLeaf ? "#edf3fd" : undefined }}>
                       <td style={{ ...cell, fontFamily: "ui-monospace, monospace", color: "#0e7490", fontWeight: 700 }}>{m.id}{m.id === n.dnPredLeaf ? " ★" : ""}</td>
-                      {tiers.map((t) => <td key={t} style={{ ...cell, color: m.dn?.[t]?.val ? "#134e5a" : "#c4bdb1" }}>{m.dn?.[t]?.val ? <>{m.dn[t].val}<ConfBadge c={m.dn[t].conf} /></> : "—"}</td>)}
+                      {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), color: m.dn?.[t]?.val ? "#123f6b" : "#c4bdb1" }}>{m.dn?.[t]?.val ? <>{m.dn[t].val}<ConfBadge c={m.dn[t].conf} /></> : "—"}</td>)}
                     </tr>
                   ))}
                 </tbody>
