@@ -179,7 +179,7 @@ const GOLDEN_RUN_BY_ATLAS: Record<string, string> = {
   chemfish:  "20260706-025616-26ec7d",
   daniocell: "20260706-025616-182172",
   minifin:   "20260705-002027-a10bb8",   // v1.2 validated node-set (carries full 5-stage grammar; leaf parent = 20260704-234502-beaeee)
-  megafin:   "20260705-051439-a10c0a",   // v1.2 leaf; consolidation 20260705-063523-abad22 (spot-check validated)
+  megafin:   "20260705-063523-abad22",   // Parse Phase-B FINAL consolidation (342 leaves→59 nodes) — the finalized deliverable we move forward with; ★+🏁 both land here (leaf-labelling precursor was 20260705-051439-a10c0a)
 };
 // Per-dataset validation-state provenance (display-layer, static strings from the verified GT-scoring results).
 // Muted sub-label under the golden badge. MegaFin lines carry the honest "spot-check / inherited" framing —
@@ -1089,21 +1089,13 @@ const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine
 // run an LLM Fuzzy Judge vs a published menu; MiniFin is scored by a four-bucket Expert-GT crosswalk
 // (a stronger judge); MegaFin has no promoted GT so its judge node stays dark. Surfaced as the judge-dot tooltip.
 const JUDGE_KIND_BY_ATLAS: Record<string, string> = { zscape: "Fuzzy Judge", chemfish: "Fuzzy Judge", daniocell: "Fuzzy Judge", minifin: "Expert-GT (Patrick)", megafin: "" };
-// Finish-line marker — the golden LINEAGE's TRUE final reached stage node (checkered flag = pipeline endpoint,
-// distinct from ★ = golden run). MegaFin honestly ends at META (no promoted GT → no judge flag); the others
-// reach the judged node. Keyed to the run that actually carries that stage (MegaFin's is the abad22 consolidation).
-// Keyed by runId (not atlas): the Manual + Parse MegaFin cards share atlas "megafin", so their
-// distinct golden endpoints must be addressed per-run. MegaFin ends at META (no promoted GT → no judge flag).
-const FINISH_LINE_BY_RUN: Record<string, string> = {
-  "20260703-050319-9258bd": "judge",  // zscape
-  "20260706-025616-26ec7d": "judge",  // chemfish
-  "20260706-025616-182172": "judge",  // daniocell
-  "20260705-002027-a10bb8": "judge",  // minifin
-  "20260705-063523-abad22": "meta",   // Parse MegaFin (honest endpoint, no judge)
-  "20260711-000000-mf384r": "meta",   // Manual MegaFin — recursive 384→147 consolidation (honest endpoint, no judge)
-};
-// Golden ★ runs the per-atlas map can't reach (Manual MegaFin shares atlas "megafin" with Parse, whose
-// golden is the a10c0a leaf) — marked by runId so the Manual card ★s its own recursive consolidation.
+// The single best run we move forward with carries BOTH marks — ★ (best reference run) and 🏁 (pipeline
+// endpoint) — appended together at the END of its label, uniformly on every atlas. There is no separate
+// finish-line run anymore: star and flag always co-locate on the golden run (see GOLDEN_RUN_BY_ATLAS +
+// EXTRA_GOLDEN_RUNS). Whether that run's pipeline ends at JUDGING (GT atlases) or META (MegaFin — no GT in
+// its namespace) is read from the run's own stage flags for the tooltip, not hard-coded per run.
+// Golden ★🏁 runs the per-atlas map can't reach (Manual MegaFin shares atlas "megafin" with Parse) —
+// marked by runId so the Manual card marks its own recursive consolidation.
 const EXTRA_GOLDEN_RUNS = new Set<string>(["20260711-000000-mf384r"]);
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
 // labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
@@ -1167,26 +1159,12 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}</text> : null}
               </g>
             );
-            // finish-line marker — small checkered flag on the track just before the endpoint dot
-            // ("the pipeline crosses the line"); distinct-but-subtle from the ★ golden badge.
-            const finishFlag = (cx: number, tip: string) => (
-              <g key="fin" opacity={0.92} style={{ cursor: "help" }}>
-                <title>{tip}</title>
-                {/* invisible hit-pad so the tiny flag is hoverable */}
-                <rect x={cx - 3} y={y - 10} width={14} height={20} fill="transparent" />
-                <line x1={cx} y1={y - 8} x2={cx} y2={y + 5} stroke="#3f3a34" strokeWidth={1} />
-                <rect x={cx + 0.6} y={y - 8} width={3} height={3} fill="#3f3a34" />
-                <rect x={cx + 3.6} y={y - 8} width={3} height={3} fill="#fff" stroke="#3f3a34" strokeWidth={0.4} />
-                <rect x={cx + 0.6} y={y - 5} width={3} height={3} fill="#fff" stroke="#3f3a34" strokeWidth={0.4} />
-                <rect x={cx + 3.6} y={y - 5} width={3} height={3} fill="#3f3a34" />
-              </g>
-            );
             const judgeKind = JUDGE_KIND_BY_ATLAS[atlas] || "Judge";
-            const finishStage = FINISH_LINE_BY_RUN[r.runId];
-            const isFinish = !!finishStage && (finishStage === "judge" ? sJudge : finishStage === "meta" ? sMeta : true);
-            const finishX = finishStage ? STAGE_X[finishStage] : 0;
             const isGolden = r.runId === goldenRunId || EXTRA_GOLDEN_RUNS.has(r.runId);
-            const label = `${isGolden ? "★ " : ""}${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}`;
+            // The best run we move forward with gets BOTH marks appended at the END of its label: ★ = best
+            // reference run, 🏁 = pipeline endpoint. The endpoint text is read from the run's own stages.
+            const endpoint = sJudge ? "a GT-scored JUDGING node" : sMeta ? "a META-REASONING node (no ground truth exists in this namespace to judge against — an honest stop, not a missing stage)" : "the LABELLING stage";
+            const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}${isGolden ? " ★ 🏁" : ""}`;
             return (
               <g key={"run" + r.runId}
                 onMouseEnter={interactive ? () => setHover(r.runId) : undefined}
@@ -1194,7 +1172,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 onClick={interactive && onOpenRun ? () => onOpenRun(r) : undefined}
                 style={{ cursor: interactive ? "pointer" : "default" }}
                 opacity={dimOff(onP)}>
-                <title>{`${r.runId}${isGolden ? "\n★ GOLDEN — the single best-validated reference run for this dataset; its labels are what the atlas map is built from." : ""}${r.note ? "\n" + r.note : ""}${interactive ? "\n\nClick to open the full run view" : ""}`}</title>
+                <title>{`${r.runId}${isGolden ? `\n★ 🏁 BEST RUN — the finalized run we move forward with for this dataset; its labels build the atlas map. Its pipeline reaches ${endpoint}.` : ""}${r.note ? "\n" + r.note : ""}${interactive ? "\n\nClick to open the full run view" : ""}`}</title>
                 {/* fat transparent hit-area so the whole branch (curve + line + label) is easy to grab */}
                 {interactive ? <path d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, y)} stroke="transparent" strokeWidth={13} fill="none" /> : null}
                 {interactive ? <rect x={X.cluster} y={y - 9} width={TREE_W - X.cluster - 6} height={18} fill="transparent" /> : null}
@@ -1204,7 +1182,6 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {dot(X.label, "label", r.nLabelled)}
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓")}</g> : null}
-                {isFinish ? finishFlag(finishX - 13, `Finish line — this lineage's pipeline endpoint (its last reached stage: ${finishStage === "judge" ? "JUDGING" : finishStage === "meta" ? "META-REASONING" : finishStage.toUpperCase()}). ${finishStage === "meta" ? "MegaFin honestly stops here — the Lawson/Parse namespace has no ground truth to judge against, so there is no JUDGING stage." : "The golden lineage runs all the way to a GT-scored JUDGING node."} Distinct from the ★ golden marker, which flags the single best reference RUN.`) : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
               </g>
             );
