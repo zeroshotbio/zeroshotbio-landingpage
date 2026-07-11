@@ -18,9 +18,11 @@ packet the LLM reasoner will consume:
 GT-blind: panels are curated from ZFIN/literature, never atlas markers. Writes
 daniotype_data/minifin/ontology_packets.json.
 """
-import os, json, collections
+import os, sys, json, collections
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from zlabel import Labeler
 from zlabel.panels import load_panels
+import zfa_neighborhood as NB  # OnClass-style neighborhood adapter (cached embedding)
 
 DATASET = os.environ.get("PACKET_DATASET", "minifin")
 DDIR = f"/data/zeroshotbio-landingpage/daniotype_data/{DATASET}"
@@ -93,6 +95,8 @@ def packet(cluster):
         "convergent_genes": list(L.convergent_genes),
         "expression_evidence": [{"symbol": e.symbol, "zfa": e.zfa_id, "name": e.zfa_name} for e in L.expression_evidence[:8]],
         "fine_terms": fine[:8],
+        # OnClass-style local map: nearest identity-bearing ZFA nodes + cosine trust (guilt-by-association)
+        "neighborhood": NB.neighborhood(markers, k=8),
     }
 
 

@@ -79,9 +79,17 @@ def packet_brief(cid, packet=True):
     if p["expression_evidence"]:
         ev = "; ".join(f"{e['symbol']}→{e['name']}" for e in p["expression_evidence"][:5])
         lines.append(f"- ZFIN expression grounding: {ev}")
-    lines.append("USE THIS: adjudicate the top candidate lineages using the discriminators (probe the ABSENT targets via the "
-                 "Archivist if a single answer would change the call); conclude at the DEEPEST rung the evidence supports. "
-                 "You MAY OVERTURN the grounded call if a discriminating marker contradicts it, or go deeper/shallower than its earned depth.")
+    nb = p.get("neighborhood") or []
+    if nb:
+        loc = ", ".join(f"{x['name']} [{x['bucket']}] {x['cos']}" for x in nb[:6])
+        lines.append(f"- LOCAL MAP (nearest ZFA anatomy by expression-graph proximity; cos = trust, ~>0.5 lean on it, "
+                     f"<0.3 treat as noise): {loc}")
+    lines.append("USE THIS: the LOCAL MAP is the surrounding biology to research and validate against — the true "
+                 "identity usually sits among these neighbors or their shared parent; use their spread to judge how "
+                 "DEEP to commit (tight cluster of one lineage → go specific; scattered → stop at the shared parent). "
+                 "Adjudicate the top candidate lineages with the discriminators (probe ABSENT targets via the Archivist "
+                 "if it would change the call), conclude at the DEEPEST rung the evidence supports, and abstain deeper "
+                 "when neighbors disagree. You MAY OVERTURN the grounded call if a discriminator or the local map contradicts it.")
     return "\n".join(lines) + "\n\n"
 
 # ---- sample ---------------------------------------------------------------

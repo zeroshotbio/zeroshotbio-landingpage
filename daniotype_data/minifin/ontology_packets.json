@@ -42,7 +42,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001458",
+     "name": "cranial cartilage",
+     "bucket": "organ",
+     "cos": 0.48
+    },
+    {
+     "zfa": "ZFA:0001422",
+     "name": "hyosymplectic cartilage",
+     "bucket": "organ",
+     "cos": 0.467
+    },
+    {
+     "zfa": "ZFA:0000585",
+     "name": "kinethmoid cartilage",
+     "bucket": "organ",
+     "cos": 0.455
+    },
+    {
+     "zfa": "ZFA:0001460",
+     "name": "pharyngeal arch cartilage",
+     "bucket": "organ",
+     "cos": 0.454
+    },
+    {
+     "zfa": "ZFA:0001399",
+     "name": "palatoquadrate cartilage",
+     "bucket": "organ",
+     "cos": 0.441
+    },
+    {
+     "zfa": "ZFA:0001644",
+     "name": "articular cartilage",
+     "bucket": "organ",
+     "cos": 0.441
+    },
+    {
+     "zfa": "ZFA:0001205",
+     "name": "Meckel's cartilage",
+     "bucket": "organ",
+     "cos": 0.441
+    },
+    {
+     "zfa": "ZFA:0001511",
+     "name": "interhyal cartilage",
+     "bucket": "organ",
+     "cos": 0.441
+    }
+   ]
   },
   {
    "id": "1",
@@ -83,7 +133,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001260",
+     "name": "endocrine pancreas",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.669
+    },
+    {
+     "zfa": "ZFA:0000123",
+     "name": "liver",
+     "bucket": "organ",
+     "cos": 0.664
+    },
+    {
+     "zfa": "ZFA:0000140",
+     "name": "pancreas",
+     "bucket": "organ",
+     "cos": 0.616
+    },
+    {
+     "zfa": "ZFA:0000151",
+     "name": "pronephros",
+     "bucket": "organ",
+     "cos": 0.594
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "bucket": "organ",
+     "cos": 0.594
+    },
+    {
+     "zfa": "ZFA:0000076",
+     "name": "swim bladder",
+     "bucket": "organ",
+     "cos": 0.594
+    },
+    {
+     "zfa": "ZFA:0000360",
+     "name": "heart tube",
+     "bucket": "organ",
+     "cos": 0.594
+    },
+    {
+     "zfa": "ZFA:0000559",
+     "name": "otolith organ",
+     "bucket": "organ",
+     "cos": 0.594
+    }
+   ]
   },
   {
    "id": "2",
@@ -139,15 +239,15 @@
     {
      "bucket": "blood_erythroid",
      "present_specific": [
-      "alas2",
       "hbae1.1",
-      "slc4a1a"
+      "slc4a1a",
+      "alas2"
      ],
      "absent_probe": [
-      "gata1a",
       "klf1",
       "cahz",
-      "hbbe2"
+      "hbbe2",
+      "gata1a"
      ],
      "shared_nondiscriminating": []
     }
@@ -313,6 +413,56 @@
      "ic": 0.568,
      "depth": 2
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009017",
+     "name": "monoblast",
+     "bucket": "cell",
+     "cos": 0.753
+    },
+    {
+     "zfa": "ZFA:0009356",
+     "name": "myeloid lineage restricted progenitor cell",
+     "bucket": "cell",
+     "cos": 0.753
+    },
+    {
+     "zfa": "ZFA:0009021",
+     "name": "common myeloid progenitor",
+     "bucket": "cell",
+     "cos": 0.753
+    },
+    {
+     "zfa": "ZFA:0009015",
+     "name": "erythroid progenitor cell",
+     "bucket": "cell",
+     "cos": 0.752
+    },
+    {
+     "zfa": "ZFA:0009044",
+     "name": "blood cell",
+     "bucket": "cell",
+     "cos": 0.752
+    },
+    {
+     "zfa": "ZFA:0009022",
+     "name": "megakaryocyte erythroid progenitor cell",
+     "bucket": "cell",
+     "cos": 0.752
+    },
+    {
+     "zfa": "ZFA:0009253",
+     "name": "promonocyte",
+     "bucket": "cell",
+     "cos": 0.752
+    },
+    {
+     "zfa": "ZFA:0009352",
+     "name": "neutrophil progenitor cell",
+     "bucket": "cell",
+     "cos": 0.751
+    }
    ]
   },
   {
@@ -371,11 +521,11 @@
       "cspg4"
      ],
      "absent_probe": [
-      "desma",
-      "tagln",
       "acta2",
+      "pdgfrb",
       "notch3",
-      "pdgfrb"
+      "desma",
+      "tagln"
      ],
      "shared_nondiscriminating": []
     },
@@ -383,22 +533,72 @@
      "bucket": "endothelium",
      "present_specific": [],
      "absent_probe": [
-      "cdh5",
+      "flt4",
       "pecam1a",
-      "kdrl",
-      "stab2",
-      "egfl7",
+      "cdh5",
       "fli1",
       "flt1",
-      "flt4",
-      "etsrp"
+      "egfl7",
+      "kdrl",
+      "etsrp",
+      "stab2"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005867",
+     "name": "cephalic mesoderm",
+     "bucket": "tissue",
+     "cos": 0.534
+    },
+    {
+     "zfa": "ZFA:0000033",
+     "name": "intermediate cell mass of mesoderm",
+     "bucket": "tissue",
+     "cos": 0.517
+    },
+    {
+     "zfa": "ZFA:0000998",
+     "name": "mesenchyme derived from head mesoderm",
+     "bucket": "tissue",
+     "cos": 0.511
+    },
+    {
+     "zfa": "ZFA:0000905",
+     "name": "lateral mesenchyme derived from mesoderm",
+     "bucket": "tissue",
+     "cos": 0.509
+    },
+    {
+     "zfa": "ZFA:0000255",
+     "name": "paraxial mesoderm",
+     "bucket": "tissue",
+     "cos": 0.495
+    },
+    {
+     "zfa": "ZFA:0000990",
+     "name": "intermediate mesenchyme",
+     "bucket": "tissue",
+     "cos": 0.492
+    },
+    {
+     "zfa": "ZFA:0000081",
+     "name": "trunk mesenchyme",
+     "bucket": "tissue",
+     "cos": 0.485
+    },
+    {
+     "zfa": "ZFA:0001206",
+     "name": "intermediate mesoderm",
+     "bucket": "tissue",
+     "cos": 0.482
+    }
+   ]
   },
   {
    "id": "4",
@@ -454,9 +654,9 @@
      "bucket": "lateral_line",
      "present_specific": [],
      "absent_probe": [
-      "cldnb",
       "myo6b",
-      "six1b"
+      "six1b",
+      "cldnb"
      ],
      "shared_nondiscriminating": [
       "atoh1a",
@@ -467,10 +667,10 @@
      "bucket": "otic",
      "present_specific": [],
      "absent_probe": [
-      "oc90",
+      "otomp",
       "otol1a",
-      "dlx3b",
-      "otomp"
+      "oc90",
+      "dlx3b"
      ],
      "shared_nondiscriminating": [
       "atoh1a",
@@ -480,7 +680,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000228",
+     "name": "lateral line primordium",
+     "bucket": "tissue",
+     "cos": 0.487
+    },
+    {
+     "zfa": "ZFA:0005118",
+     "name": "middle lateral line primordium",
+     "bucket": "tissue",
+     "cos": 0.45
+    },
+    {
+     "zfa": "ZFA:0005117",
+     "name": "anterior lateral line primordium",
+     "bucket": "tissue",
+     "cos": 0.443
+    },
+    {
+     "zfa": "ZFA:0001157",
+     "name": "posterior lateral line primordium",
+     "bucket": "tissue",
+     "cos": 0.44
+    },
+    {
+     "zfa": "ZFA:0001470",
+     "name": "anterior lateral line",
+     "bucket": "tissue",
+     "cos": 0.425
+    },
+    {
+     "zfa": "ZFA:0001483",
+     "name": "middle lateral line ganglion",
+     "bucket": "tissue",
+     "cos": 0.414
+    },
+    {
+     "zfa": "ZFA:0001482",
+     "name": "middle lateral line nerve",
+     "bucket": "tissue",
+     "cos": 0.401
+    },
+    {
+     "zfa": "ZFA:0000033",
+     "name": "intermediate cell mass of mesoderm",
+     "bucket": "tissue",
+     "cos": 0.38
+    }
+   ]
   },
   {
    "id": "5",
@@ -549,12 +799,12 @@
       "col1a1a"
      ],
      "absent_probe": [
+      "prrx1a",
       "twist1a",
       "fn1a",
-      "col1a2",
       "dcn",
-      "osr2",
-      "prrx1a"
+      "col1a2",
+      "osr2"
      ],
      "shared_nondiscriminating": []
     },
@@ -564,11 +814,11 @@
       "and1"
      ],
      "absent_probe": [
-      "msx1b",
-      "fgf24",
       "tbx5a",
       "hoxa13a",
-      "hoxd13a"
+      "hoxd13a",
+      "msx1b",
+      "fgf24"
      ],
      "shared_nondiscriminating": []
     }
@@ -722,6 +972,56 @@
      "ic": 2.286,
      "depth": 4
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005316",
+     "name": "fin fold pectoral fin bud",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.625
+    },
+    {
+     "zfa": "ZFA:0000102",
+     "name": "dorsal fin fold",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.596
+    },
+    {
+     "zfa": "ZFA:0001069",
+     "name": "ventral fin fold",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.583
+    },
+    {
+     "zfa": "ZFA:0000912",
+     "name": "mesenchyme median fin fold",
+     "bucket": "tissue",
+     "cos": 0.57
+    },
+    {
+     "zfa": "ZFA:0000788",
+     "name": "mesenchyme dorsal fin",
+     "bucket": "tissue",
+     "cos": 0.437
+    },
+    {
+     "zfa": "ZFA:0000393",
+     "name": "mesenchyme",
+     "bucket": "tissue",
+     "cos": 0.395
+    },
+    {
+     "zfa": "ZFA:0005869",
+     "name": "cerebellar plate",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.368
+    },
+    {
+     "zfa": "ZFA:0000789",
+     "name": "mesoderm pectoral fin bud",
+     "bucket": "tissue",
+     "cos": 0.349
+    }
    ]
   },
   {
@@ -763,7 +1063,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000760",
+     "name": "fast muscle cell somite 8",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000758",
+     "name": "fast muscle cell somite 3",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000759",
+     "name": "fast muscle cell somite 5",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000886",
+     "name": "fast muscle cell somite 9",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000513",
+     "name": "fast muscle cell somite 1",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000885",
+     "name": "fast muscle cell somite 6",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000879",
+     "name": "fast muscle cell somite 2",
+     "bucket": "cell",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0000860",
+     "name": "fast muscle cell somite 7",
+     "bucket": "cell",
+     "cos": 0.563
+    }
+   ]
   },
   {
    "id": "7",
@@ -804,7 +1154,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.769
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.737
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.71
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.693
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.677
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.671
+    },
+    {
+     "zfa": "ZFA:0000603",
+     "name": "valvula cerebelli",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.651
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.646
+    }
+   ]
   },
   {
    "id": "8",
@@ -882,13 +1282,13 @@
       "crx"
      ],
      "absent_probe": [
-      "gnat2",
+      "crybb1",
+      "rho",
+      "rpe65a",
       "opn1mw1",
       "cryaa",
-      "rho",
-      "crybb1",
-      "mipa",
-      "rpe65a"
+      "gnat2",
+      "mipa"
      ],
      "shared_nondiscriminating": []
     },
@@ -898,9 +1298,9 @@
       "otx5"
      ],
      "absent_probe": [
+      "exorh",
       "aanat2",
-      "asip2b",
-      "exorh"
+      "asip2b"
      ],
      "shared_nondiscriminating": []
     }
@@ -1075,6 +1475,56 @@
      "ic": 0.904,
      "depth": 5
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009275",
+     "name": "retinal rod cell",
+     "bucket": "cell",
+     "cos": 0.63
+    },
+    {
+     "zfa": "ZFA:0009154",
+     "name": "eye photoreceptor cell",
+     "bucket": "cell",
+     "cos": 0.63
+    },
+    {
+     "zfa": "ZFA:0009262",
+     "name": "retinal cone cell",
+     "bucket": "cell",
+     "cos": 0.629
+    },
+    {
+     "zfa": "ZFA:0009220",
+     "name": "photopic photoreceptor cell",
+     "bucket": "cell",
+     "cos": 0.629
+    },
+    {
+     "zfa": "ZFA:0009223",
+     "name": "green sensitive photoreceptor cell",
+     "bucket": "cell",
+     "cos": 0.626
+    },
+    {
+     "zfa": "ZFA:0009222",
+     "name": "blue sensitive photoreceptor cell",
+     "bucket": "cell",
+     "cos": 0.626
+    },
+    {
+     "zfa": "ZFA:0009224",
+     "name": "red sensitive photoreceptor cell",
+     "bucket": "cell",
+     "cos": 0.626
+    },
+    {
+     "zfa": "ZFA:0005948",
+     "name": "short single cone cell",
+     "bucket": "cell",
+     "cos": 0.62
+    }
    ]
   },
   {
@@ -1116,7 +1566,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.638
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.618
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.615
+    },
+    {
+     "zfa": "ZFA:0001202",
+     "name": "optic cup",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.612
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.593
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.578
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.558
+    }
+   ]
   },
   {
    "id": "10",
@@ -1157,7 +1657,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.719
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.717
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.715
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.713
+    },
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.71
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.7
+    },
+    {
+     "zfa": "ZFA:0000173",
+     "name": "bulbus arteriosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.686
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.683
+    }
+   ]
   },
   {
    "id": "11",
@@ -1216,16 +1766,16 @@
       "elavl4"
      ],
      "absent_probe": [
-      "sox3",
-      "gfap",
+      "her4.1",
+      "tubb5",
+      "srrm4",
       "rbfox3a",
       "elavl3",
-      "nova2",
-      "srrm4",
-      "her4.1",
-      "ascl1a",
       "neurod1",
-      "tubb5",
+      "nova2",
+      "ascl1a",
+      "gfap",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": []
@@ -1367,6 +1917,56 @@
      "ic": 3.422,
      "depth": 5
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000165",
+     "name": "inferior lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.699
+    },
+    {
+     "zfa": "ZFA:0000392",
+     "name": "median tuberal portion",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.668
+    },
+    {
+     "zfa": "ZFA:0000347",
+     "name": "dorsal hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.654
+    },
+    {
+     "zfa": "ZFA:0000707",
+     "name": "ventral hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.652
+    },
+    {
+     "zfa": "ZFA:0000634",
+     "name": "caudal hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.64
+    },
+    {
+     "zfa": "ZFA:0000633",
+     "name": "caudal tuberculum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.636
+    },
+    {
+     "zfa": "ZFA:0000653",
+     "name": "dorsal thalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.635
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.599
+    }
    ]
   },
   {
@@ -1425,14 +2025,14 @@
       "pax2a"
      ],
      "absent_probe": [
-      "slc26a1",
-      "pax8",
-      "wt1a",
-      "slc12a1",
-      "slc20a1a",
-      "nphs2",
-      "aqp8b",
       "nphs1",
+      "slc12a1",
+      "wt1a",
+      "pax8",
+      "slc26a1",
+      "aqp8b",
+      "nphs2",
+      "slc20a1a",
       "wt1b",
       "cdh17"
      ],
@@ -1444,16 +2044,16 @@
       "rbfox3a"
      ],
      "absent_probe": [
-      "sox3",
-      "gfap",
-      "elavl3",
-      "nova2",
-      "srrm4",
       "her4.1",
-      "ascl1a",
-      "neurod1",
-      "elavl4",
       "tubb5",
+      "srrm4",
+      "elavl4",
+      "elavl3",
+      "neurod1",
+      "nova2",
+      "ascl1a",
+      "gfap",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": []
@@ -1461,7 +2061,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001305",
+     "name": "vagal ganglion 4",
+     "bucket": "tissue",
+     "cos": 0.448
+    },
+    {
+     "zfa": "ZFA:0001304",
+     "name": "vagal ganglion 3",
+     "bucket": "tissue",
+     "cos": 0.448
+    },
+    {
+     "zfa": "ZFA:0001303",
+     "name": "vagal ganglion 2",
+     "bucket": "tissue",
+     "cos": 0.448
+    },
+    {
+     "zfa": "ZFA:0001302",
+     "name": "vagal ganglion 1",
+     "bucket": "tissue",
+     "cos": 0.448
+    },
+    {
+     "zfa": "ZFA:0007067",
+     "name": "vagal ganglion",
+     "bucket": "tissue",
+     "cos": 0.448
+    },
+    {
+     "zfa": "ZFA:0001332",
+     "name": "spinal neuromere",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.432
+    },
+    {
+     "zfa": "ZFA:0000758",
+     "name": "fast muscle cell somite 3",
+     "bucket": "cell",
+     "cos": 0.426
+    },
+    {
+     "zfa": "ZFA:0000759",
+     "name": "fast muscle cell somite 5",
+     "bucket": "cell",
+     "cos": 0.426
+    }
+   ]
   },
   {
    "id": "13",
@@ -1530,11 +2180,11 @@
       "and1"
      ],
      "absent_probe": [
-      "msx1b",
-      "fgf24",
       "tbx5a",
       "hoxa13a",
-      "hoxd13a"
+      "hoxd13a",
+      "msx1b",
+      "fgf24"
      ],
      "shared_nondiscriminating": []
     },
@@ -1544,12 +2194,12 @@
       "col1a1a"
      ],
      "absent_probe": [
+      "prrx1a",
       "twist1a",
       "fn1a",
-      "col1a2",
       "dcn",
-      "osr2",
-      "prrx1a"
+      "col1a2",
+      "osr2"
      ],
      "shared_nondiscriminating": []
     }
@@ -1724,6 +2374,56 @@
      "ic": 0.005,
      "depth": 0
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005316",
+     "name": "fin fold pectoral fin bud",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.467
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.454
+    },
+    {
+     "zfa": "ZFA:0000102",
+     "name": "dorsal fin fold",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.445
+    },
+    {
+     "zfa": "ZFA:0001071",
+     "name": "presumptive neural retina",
+     "bucket": "tissue",
+     "cos": 0.443
+    },
+    {
+     "zfa": "ZFA:0001069",
+     "name": "ventral fin fold",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.437
+    },
+    {
+     "zfa": "ZFA:0005653",
+     "name": "vagal sensory zone",
+     "bucket": "tissue",
+     "cos": 0.433
+    },
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.419
+    },
+    {
+     "zfa": "ZFA:0001723",
+     "name": "presumptive atrioventricular canal",
+     "bucket": "tissue",
+     "cos": 0.415
+    }
    ]
   },
   {
@@ -1794,11 +2494,11 @@
       "krt5"
      ],
      "absent_probe": [
-      "krt4",
       "krt8",
+      "tp63",
+      "krt4",
       "cldnb",
-      "cldne",
-      "tp63"
+      "cldne"
      ],
      "shared_nondiscriminating": []
     },
@@ -1808,12 +2508,12 @@
       "col1a2"
      ],
      "absent_probe": [
+      "prrx1a",
       "twist1a",
       "fn1a",
       "dcn",
-      "osr2",
-      "prrx1a",
-      "col1a1a"
+      "col1a1a",
+      "osr2"
      ],
      "shared_nondiscriminating": []
     }
@@ -2001,6 +2701,56 @@
      "ic": 0.574,
      "depth": 4
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001389",
+     "name": "regeneration epithelium",
+     "bucket": "tissue",
+     "cos": 0.578
+    },
+    {
+     "zfa": "ZFA:0000144",
+     "name": "retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.571
+    },
+    {
+     "zfa": "ZFA:0005880",
+     "name": "seminiferous epithelium",
+     "bucket": "tissue",
+     "cos": 0.569
+    },
+    {
+     "zfa": "ZFA:0001185",
+     "name": "periderm",
+     "bucket": "tissue",
+     "cos": 0.547
+    },
+    {
+     "zfa": "ZFA:0001428",
+     "name": "olfactory rosette",
+     "bucket": "tissue",
+     "cos": 0.547
+    },
+    {
+     "zfa": "ZFA:0001431",
+     "name": "primitive olfactory epithelium",
+     "bucket": "tissue",
+     "cos": 0.547
+    },
+    {
+     "zfa": "ZFA:0005123",
+     "name": "gut epithelium",
+     "bucket": "tissue",
+     "cos": 0.547
+    },
+    {
+     "zfa": "ZFA:0001077",
+     "name": "thymus primordium",
+     "bucket": "tissue",
+     "cos": 0.547
+    }
    ]
   },
   {
@@ -2042,7 +2792,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005173",
+     "name": "right liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.829
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.815
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    },
+    {
+     "zfa": "ZFA:0005698",
+     "name": "vmGx",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    },
+    {
+     "zfa": "ZFA:0005680",
+     "name": "ventroanterior zone of olfactory bulb",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    },
+    {
+     "zfa": "ZFA:0000160",
+     "name": "tegmentum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    },
+    {
+     "zfa": "ZFA:0005967",
+     "name": "pseudobranch",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    },
+    {
+     "zfa": "ZFA:0000019",
+     "name": "epiphysis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.813
+    }
+   ]
   },
   {
    "id": "16",
@@ -2094,18 +2894,68 @@
       "notch3"
      ],
      "absent_probe": [
-      "desma",
-      "tagln",
       "acta2",
       "pdgfrb",
-      "cspg4"
+      "cspg4",
+      "desma",
+      "tagln"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000165",
+     "name": "inferior lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.761
+    },
+    {
+     "zfa": "ZFA:0000653",
+     "name": "dorsal thalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.72
+    },
+    {
+     "zfa": "ZFA:0000633",
+     "name": "caudal tuberculum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.72
+    },
+    {
+     "zfa": "ZFA:0000392",
+     "name": "median tuberal portion",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0000347",
+     "name": "dorsal hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.691
+    },
+    {
+     "zfa": "ZFA:0000707",
+     "name": "ventral hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.688
+    },
+    {
+     "zfa": "ZFA:0000458",
+     "name": "ventral thalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.688
+    },
+    {
+     "zfa": "ZFA:0000634",
+     "name": "caudal hypothalamic zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.678
+    }
+   ]
   },
   {
    "id": "17",
@@ -2146,7 +2996,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001555",
+     "name": "epibranchial ganglion",
+     "bucket": "tissue",
+     "cos": 0.808
+    },
+    {
+     "zfa": "ZFA:0001291",
+     "name": "facial ganglion",
+     "bucket": "tissue",
+     "cos": 0.757
+    },
+    {
+     "zfa": "ZFA:0007067",
+     "name": "vagal ganglion",
+     "bucket": "tissue",
+     "cos": 0.745
+    },
+    {
+     "zfa": "ZFA:0001303",
+     "name": "vagal ganglion 2",
+     "bucket": "tissue",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0001302",
+     "name": "vagal ganglion 1",
+     "bucket": "tissue",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0001305",
+     "name": "vagal ganglion 4",
+     "bucket": "tissue",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0001304",
+     "name": "vagal ganglion 3",
+     "bucket": "tissue",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0001301",
+     "name": "glossopharyngeal ganglion",
+     "bucket": "tissue",
+     "cos": 0.71
+    }
+   ]
   },
   {
    "id": "18",
@@ -2207,11 +3107,11 @@
       "slc1a3b"
      ],
      "absent_probe": [
-      "sox10",
-      "gfap",
-      "mbpa",
       "olig2",
-      "plp1b"
+      "mbpa",
+      "plp1b",
+      "gfap",
+      "sox10"
      ],
      "shared_nondiscriminating": []
     }
@@ -2361,6 +3261,56 @@
      "ic": 0.574,
      "depth": 4
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.884
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.884
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.883
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.877
+    },
+    {
+     "zfa": "ZFA:0000173",
+     "name": "bulbus arteriosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.861
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.852
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.851
+    },
+    {
+     "zfa": "ZFA:0001203",
+     "name": "ciliary zone",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.84
+    }
    ]
   },
   {
@@ -2402,7 +3352,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000033",
+     "name": "intermediate cell mass of mesoderm",
+     "bucket": "tissue",
+     "cos": 0.645
+    },
+    {
+     "zfa": "ZFA:0001378",
+     "name": "axial hypoblast",
+     "bucket": "tissue",
+     "cos": 0.615
+    },
+    {
+     "zfa": "ZFA:0001122",
+     "name": "primary germ layer",
+     "bucket": "tissue",
+     "cos": 0.614
+    },
+    {
+     "zfa": "ZFA:0001204",
+     "name": "axial mesoderm",
+     "bucket": "tissue",
+     "cos": 0.582
+    },
+    {
+     "zfa": "ZFA:0005041",
+     "name": "anterior lateral plate mesoderm",
+     "bucket": "tissue",
+     "cos": 0.579
+    },
+    {
+     "zfa": "ZFA:0001206",
+     "name": "intermediate mesoderm",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0005039",
+     "name": "anterior lateral mesoderm",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0000083",
+     "name": "ventral mesoderm",
+     "bucket": "tissue",
+     "cos": 0.553
+    }
+   ]
   },
   {
    "id": "20",
@@ -2454,18 +3454,68 @@
       "tfap2a"
      ],
      "absent_probe": [
-      "sox10",
-      "foxd3",
-      "snai1b",
       "dlx2a",
-      "sox9b"
+      "sox9b",
+      "snai1b",
+      "foxd3",
+      "sox10"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.704
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.702
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.7
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.69
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.686
+    },
+    {
+     "zfa": "ZFA:0000173",
+     "name": "bulbus arteriosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.675
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    },
+    {
+     "zfa": "ZFA:0001721",
+     "name": "presumptive atrium primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.661
+    }
+   ]
   },
   {
    "id": "21",
@@ -2506,7 +3556,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.654
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.651
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.651
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.65
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.648
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.639
+    },
+    {
+     "zfa": "ZFA:0001259",
+     "name": "forebrain ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.638
+    },
+    {
+     "zfa": "ZFA:0001721",
+     "name": "presumptive atrium primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.637
+    }
+   ]
   },
   {
    "id": "22",
@@ -2547,7 +3647,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.717
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.717
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.715
+    },
+    {
+     "zfa": "ZFA:0000149",
+     "name": "primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.711
+    },
+    {
+     "zfa": "ZFA:0001718",
+     "name": "presumptive atrium heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.701
+    },
+    {
+     "zfa": "ZFA:0001721",
+     "name": "presumptive atrium primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.701
+    },
+    {
+     "zfa": "ZFA:0001719",
+     "name": "presumptive cardiac ventricle heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.701
+    },
+    {
+     "zfa": "ZFA:0001720",
+     "name": "presumptive cardiac ventricle primitive heart tube",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.701
+    }
+   ]
   },
   {
    "id": "23",
@@ -2609,25 +3759,25 @@
     {
      "bucket": "muscle",
      "present_specific": [
-      "neb",
-      "tnnt3a",
       "ttn.1",
+      "tnnt3a",
+      "neb",
       "mylpfa"
      ],
      "absent_probe": [
-      "myod1",
-      "pvalb3",
-      "myoz1a",
       "smyhc2",
-      "acta1b",
-      "myf5",
-      "smyhc1",
       "msc",
       "actc1b",
-      "ryr1a",
+      "myog",
+      "myoz1a",
       "ckma",
+      "myf5",
       "tnnc2.2",
-      "myog"
+      "ryr1a",
+      "pvalb3",
+      "acta1b",
+      "smyhc1",
+      "myod1"
      ],
      "shared_nondiscriminating": []
     },
@@ -2637,11 +3787,11 @@
       "ttn.2"
      ],
      "absent_probe": [
-      "tnnt2a",
-      "myl7",
-      "nppa",
       "myh6",
-      "myh7"
+      "myl7",
+      "tnnt2a",
+      "myh7",
+      "nppa"
      ],
      "shared_nondiscriminating": []
     }
@@ -2674,7 +3824,57 @@
      "name": "heart"
     }
    ],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000155",
+     "name": "somite",
+     "bucket": "tissue",
+     "cos": 0.92
+    },
+    {
+     "zfa": "ZFA:0000730",
+     "name": "somite 23",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000856",
+     "name": "somite 28",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000855",
+     "name": "somite 24",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000731",
+     "name": "somite 27",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000977",
+     "name": "somite 19",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000853",
+     "name": "somite 18",
+     "bucket": "tissue",
+     "cos": 0.918
+    },
+    {
+     "zfa": "ZFA:0000156",
+     "name": "somite 20",
+     "bucket": "tissue",
+     "cos": 0.918
+    }
+   ]
   },
   {
    "id": "24",
@@ -2730,11 +3930,11 @@
      "bucket": "glia",
      "present_specific": [],
      "absent_probe": [
-      "sox10",
-      "mbpa",
-      "olig2",
       "slc1a3b",
-      "plp1b"
+      "olig2",
+      "mbpa",
+      "plp1b",
+      "sox10"
      ],
      "shared_nondiscriminating": [
       "gfap"
@@ -2744,16 +3944,16 @@
      "bucket": "neural",
      "present_specific": [],
      "absent_probe": [
-      "sox3",
+      "her4.1",
+      "tubb5",
+      "srrm4",
+      "elavl4",
       "rbfox3a",
       "elavl3",
-      "nova2",
-      "srrm4",
-      "her4.1",
-      "ascl1a",
       "neurod1",
-      "elavl4",
-      "tubb5",
+      "nova2",
+      "ascl1a",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": [
@@ -2763,7 +3963,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001332",
+     "name": "spinal neuromere",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.514
+    },
+    {
+     "zfa": "ZFA:0001259",
+     "name": "forebrain ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.469
+    },
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.347
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.343
+    },
+    {
+     "zfa": "ZFA:0001306",
+     "name": "pharyngeal arch",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.339
+    },
+    {
+     "zfa": "ZFA:0001611",
+     "name": "pharyngeal arch 2",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.313
+    },
+    {
+     "zfa": "ZFA:0000649",
+     "name": "dorsal horn spinal cord",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.301
+    },
+    {
+     "zfa": "ZFA:0000702",
+     "name": "ventral horn spinal cord",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.301
+    }
+   ]
   },
   {
    "id": "25",
@@ -2816,19 +4066,69 @@
      ],
      "absent_probe": [
       "tbxta",
-      "col8a1a",
-      "chad",
-      "matn3b",
       "col2a1a",
+      "matn3b",
+      "matn3a",
+      "col8a1a",
       "noto",
-      "matn3a"
+      "chad"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0007058",
+     "name": "roof plate",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.757
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.601
+    },
+    {
+     "zfa": "ZFA:0001277",
+     "name": "anterior chamber swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.601
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.6
+    },
+    {
+     "zfa": "ZFA:0001278",
+     "name": "posterior chamber swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.594
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.593
+    },
+    {
+     "zfa": "ZFA:0005563",
+     "name": "sclera",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.585
+    },
+    {
+     "zfa": "ZFA:0000032",
+     "name": "hypothalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.585
+    }
+   ]
   },
   {
    "id": "26",
@@ -2894,25 +4194,25 @@
     {
      "bucket": "muscle",
      "present_specific": [
-      "acta1b",
-      "neb",
       "actc1b",
       "ttn.1",
+      "neb",
+      "acta1b",
       "mylpfa"
      ],
      "absent_probe": [
-      "myod1",
-      "pvalb3",
-      "myoz1a",
       "smyhc2",
-      "tnnt3a",
-      "myf5",
-      "smyhc1",
       "msc",
-      "ryr1a",
+      "myog",
+      "myoz1a",
       "ckma",
+      "myf5",
+      "tnnt3a",
       "tnnc2.2",
-      "myog"
+      "ryr1a",
+      "pvalb3",
+      "smyhc1",
+      "myod1"
      ],
      "shared_nondiscriminating": []
     },
@@ -2922,11 +4222,11 @@
       "ttn.2"
      ],
      "absent_probe": [
-      "tnnt2a",
-      "myl7",
-      "nppa",
       "myh6",
-      "myh7"
+      "myl7",
+      "tnnt2a",
+      "myh7",
+      "nppa"
      ],
      "shared_nondiscriminating": []
     }
@@ -3139,6 +4439,56 @@
      "ic": 0.19,
      "depth": 2
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000155",
+     "name": "somite",
+     "bucket": "tissue",
+     "cos": 0.801
+    },
+    {
+     "zfa": "ZFA:0000730",
+     "name": "somite 23",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000856",
+     "name": "somite 28",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000855",
+     "name": "somite 24",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000731",
+     "name": "somite 27",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000074",
+     "name": "somite 26",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000981",
+     "name": "somite 29",
+     "bucket": "tissue",
+     "cos": 0.799
+    },
+    {
+     "zfa": "ZFA:0000980",
+     "name": "somite 25",
+     "bucket": "tissue",
+     "cos": 0.799
+    }
    ]
   },
   {
@@ -3192,17 +4542,67 @@
      ],
      "absent_probe": [
       "krt8",
-      "cldnb",
-      "cldne",
       "krt5",
-      "tp63"
+      "tp63",
+      "cldnb",
+      "cldne"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000816",
+     "name": "oral epithelium",
+     "bucket": "tissue",
+     "cos": 0.597
+    },
+    {
+     "zfa": "ZFA:0005880",
+     "name": "seminiferous epithelium",
+     "bucket": "tissue",
+     "cos": 0.591
+    },
+    {
+     "zfa": "ZFA:0000144",
+     "name": "retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.589
+    },
+    {
+     "zfa": "ZFA:0001185",
+     "name": "periderm",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0005780",
+     "name": "immature thymic epithelium",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0005779",
+     "name": "thymic epithelium",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0001683",
+     "name": "corneal epithelium",
+     "bucket": "tissue",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0001687",
+     "name": "corneal endothelium",
+     "bucket": "tissue",
+     "cos": 0.565
+    }
+   ]
   },
   {
    "id": "28",
@@ -3255,17 +4655,67 @@
      ],
      "absent_probe": [
       "krt8",
-      "cldnb",
-      "cldne",
       "krt5",
-      "tp63"
+      "tp63",
+      "cldnb",
+      "cldne"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001389",
+     "name": "regeneration epithelium",
+     "bucket": "tissue",
+     "cos": 0.723
+    },
+    {
+     "zfa": "ZFA:0000816",
+     "name": "oral epithelium",
+     "bucket": "tissue",
+     "cos": 0.712
+    },
+    {
+     "zfa": "ZFA:0005880",
+     "name": "seminiferous epithelium",
+     "bucket": "tissue",
+     "cos": 0.693
+    },
+    {
+     "zfa": "ZFA:0000144",
+     "name": "retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.692
+    },
+    {
+     "zfa": "ZFA:0001431",
+     "name": "primitive olfactory epithelium",
+     "bucket": "tissue",
+     "cos": 0.667
+    },
+    {
+     "zfa": "ZFA:0001513",
+     "name": "dermomyotome",
+     "bucket": "tissue",
+     "cos": 0.667
+    },
+    {
+     "zfa": "ZFA:0001428",
+     "name": "olfactory rosette",
+     "bucket": "tissue",
+     "cos": 0.667
+    },
+    {
+     "zfa": "ZFA:0000105",
+     "name": "epidermis",
+     "bucket": "tissue",
+     "cos": 0.667
+    }
+   ]
   },
   {
    "id": "29",
@@ -3321,9 +4771,9 @@
      "bucket": "lateral_line",
      "present_specific": [],
      "absent_probe": [
-      "cldnb",
       "myo6b",
-      "six1b"
+      "six1b",
+      "cldnb"
      ],
      "shared_nondiscriminating": [
       "atoh1a",
@@ -3334,10 +4784,10 @@
      "bucket": "otic",
      "present_specific": [],
      "absent_probe": [
-      "oc90",
+      "otomp",
       "otol1a",
-      "dlx3b",
-      "otomp"
+      "oc90",
+      "dlx3b"
      ],
      "shared_nondiscriminating": [
       "atoh1a",
@@ -3347,7 +4797,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.45
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.446
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.443
+    },
+    {
+     "zfa": "ZFA:0001202",
+     "name": "optic cup",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.437
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.434
+    },
+    {
+     "zfa": "ZFA:0001278",
+     "name": "posterior chamber swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.423
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.412
+    },
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.41
+    }
+   ]
   },
   {
    "id": "30",
@@ -3399,15 +4899,15 @@
       "cdh17"
      ],
      "absent_probe": [
-      "slc26a1",
       "pax2a",
-      "pax8",
-      "wt1a",
-      "slc12a1",
-      "slc20a1a",
-      "nphs2",
-      "aqp8b",
       "nphs1",
+      "slc12a1",
+      "wt1a",
+      "pax8",
+      "slc26a1",
+      "aqp8b",
+      "nphs2",
+      "slc20a1a",
       "wt1b"
      ],
      "shared_nondiscriminating": []
@@ -3415,7 +4915,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001705",
+     "name": "endolymphatic duct",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.695
+    },
+    {
+     "zfa": "ZFA:0000150",
+     "name": "pronephric duct",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.675
+    },
+    {
+     "zfa": "ZFA:0001620",
+     "name": "pronephric proximal convoluted tubule",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.674
+    },
+    {
+     "zfa": "ZFA:0000560",
+     "name": "oviduct",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    },
+    {
+     "zfa": "ZFA:0001430",
+     "name": "pneumatic duct",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    },
+    {
+     "zfa": "ZFA:0001437",
+     "name": "ductus communicans",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    },
+    {
+     "zfa": "ZFA:0005571",
+     "name": "ventral canal eye",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    },
+    {
+     "zfa": "ZFA:0000546",
+     "name": "mesonephric duct",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.672
+    }
+   ]
   },
   {
    "id": "31",
@@ -3481,9 +5031,9 @@
      ],
      "absent_probe": [
       "tfap2a",
-      "snai1b",
       "dlx2a",
-      "sox9b"
+      "sox9b",
+      "snai1b"
      ],
      "shared_nondiscriminating": [
       "sox10"
@@ -3493,11 +5043,11 @@
      "bucket": "glia",
      "present_specific": [],
      "absent_probe": [
-      "gfap",
-      "mbpa",
-      "olig2",
       "slc1a3b",
-      "plp1b"
+      "olig2",
+      "mbpa",
+      "plp1b",
+      "gfap"
      ],
      "shared_nondiscriminating": [
       "sox10"
@@ -3517,7 +5067,57 @@
      "name": "cranial neural crest"
     }
    ],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000818",
+     "name": "vagal neural crest",
+     "bucket": "tissue",
+     "cos": 0.683
+    },
+    {
+     "zfa": "ZFA:0001648",
+     "name": "cardiac neural crest",
+     "bucket": "tissue",
+     "cos": 0.683
+    },
+    {
+     "zfa": "ZFA:0000045",
+     "name": "neural crest",
+     "bucket": "tissue",
+     "cos": 0.68
+    },
+    {
+     "zfa": "ZFA:0000762",
+     "name": "facio-acoustic neural crest",
+     "bucket": "tissue",
+     "cos": 0.674
+    },
+    {
+     "zfa": "ZFA:0007085",
+     "name": "migratory neural crest",
+     "bucket": "tissue",
+     "cos": 0.673
+    },
+    {
+     "zfa": "ZFA:0009165",
+     "name": "neural crest cell",
+     "bucket": "cell",
+     "cos": 0.673
+    },
+    {
+     "zfa": "ZFA:0001194",
+     "name": "cranial neural crest",
+     "bucket": "tissue",
+     "cos": 0.673
+    },
+    {
+     "zfa": "ZFA:0001024",
+     "name": "trunk neural crest",
+     "bucket": "tissue",
+     "cos": 0.672
+    }
+   ]
   },
   {
    "id": "32",
@@ -3558,7 +5158,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000032",
+     "name": "hypothalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0000056",
+     "name": "pharynx",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0000019",
+     "name": "epiphysis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0007077",
+     "name": "accessory chamber of the maxillary blood sinus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0000128",
+     "name": "midbrain",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0001681",
+     "name": "grey matter",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0006000",
+     "name": "intermediate hypothalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    },
+    {
+     "zfa": "ZFA:0005967",
+     "name": "pseudobranch",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.819
+    }
+   ]
   },
   {
    "id": "33",
@@ -3610,19 +5260,69 @@
       "col1a2"
      ],
      "absent_probe": [
+      "prrx1a",
       "twist1a",
       "fn1a",
       "dcn",
-      "osr2",
-      "prrx1a",
-      "col1a1a"
+      "col1a1a",
+      "osr2"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001510",
+     "name": "basihyal cartilage",
+     "bucket": "organ",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0001460",
+     "name": "pharyngeal arch cartilage",
+     "bucket": "organ",
+     "cos": 0.563
+    },
+    {
+     "zfa": "ZFA:0007049",
+     "name": "adductor mandibulae",
+     "bucket": "tissue",
+     "cos": 0.558
+    },
+    {
+     "zfa": "ZFA:0000236",
+     "name": "mandibular muscle",
+     "bucket": "tissue",
+     "cos": 0.553
+    },
+    {
+     "zfa": "ZFA:0001399",
+     "name": "palatoquadrate cartilage",
+     "bucket": "organ",
+     "cos": 0.552
+    },
+    {
+     "zfa": "ZFA:0001644",
+     "name": "articular cartilage",
+     "bucket": "organ",
+     "cos": 0.552
+    },
+    {
+     "zfa": "ZFA:0005390",
+     "name": "gill ray",
+     "bucket": "organ",
+     "cos": 0.552
+    },
+    {
+     "zfa": "ZFA:0001205",
+     "name": "Meckel's cartilage",
+     "bucket": "organ",
+     "cos": 0.552
+    }
+   ]
   },
   {
    "id": "34",
@@ -3663,7 +5363,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005173",
+     "name": "right liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.787
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.786
+    },
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.783
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.751
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.75
+    },
+    {
+     "zfa": "ZFA:0001277",
+     "name": "anterior chamber swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.749
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.746
+    },
+    {
+     "zfa": "ZFA:0000161",
+     "name": "third ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.744
+    }
+   ]
   },
   {
    "id": "35",
@@ -3723,11 +5473,11 @@
       "lyz"
      ],
      "absent_probe": [
-      "spi1b",
-      "csf1ra",
-      "mpeg1.1",
       "coro1a",
-      "mfap4.1"
+      "mpeg1.1",
+      "csf1ra",
+      "mfap4.1",
+      "spi1b"
      ],
      "shared_nondiscriminating": []
     }
@@ -3907,6 +5657,56 @@
      "ic": 3.24,
      "depth": 5
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009326",
+     "name": "myeloid leukocyte",
+     "bucket": "cell",
+     "cos": 0.874
+    },
+    {
+     "zfa": "ZFA:0009355",
+     "name": "lymphoid progenitor cell",
+     "bucket": "cell",
+     "cos": 0.871
+    },
+    {
+     "zfa": "ZFA:0009023",
+     "name": "common lymphoid progenitor",
+     "bucket": "cell",
+     "cos": 0.862
+    },
+    {
+     "zfa": "ZFA:0009048",
+     "name": "granulocyte",
+     "bucket": "cell",
+     "cos": 0.861
+    },
+    {
+     "zfa": "ZFA:0009349",
+     "name": "pro-B cell",
+     "bucket": "cell",
+     "cos": 0.861
+    },
+    {
+     "zfa": "ZFA:0009350",
+     "name": "pro-T cell",
+     "bucket": "cell",
+     "cos": 0.861
+    },
+    {
+     "zfa": "ZFA:0005830",
+     "name": "hematopoietic cell",
+     "bucket": "cell",
+     "cos": 0.858
+    },
+    {
+     "zfa": "ZFA:0009354",
+     "name": "hematopoietic multipotent progenitor cell",
+     "bucket": "cell",
+     "cos": 0.853
+    }
    ]
   },
   {
@@ -3966,11 +5766,11 @@
      ],
      "absent_probe": [
       "tbxta",
-      "chad",
-      "matn3b",
       "shha",
+      "matn3b",
+      "matn3a",
       "noto",
-      "matn3a"
+      "chad"
      ],
      "shared_nondiscriminating": [
       "col2a1a"
@@ -3980,11 +5780,11 @@
      "bucket": "cartilage",
      "present_specific": [],
      "absent_probe": [
-      "runx2b",
-      "acana",
-      "matn1",
       "sox9b",
-      "sox9a"
+      "acana",
+      "runx2b",
+      "sox9a",
+      "matn1"
      ],
      "shared_nondiscriminating": [
       "col2a1a"
@@ -3993,7 +5793,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001458",
+     "name": "cranial cartilage",
+     "bucket": "organ",
+     "cos": 0.74
+    },
+    {
+     "zfa": "ZFA:0001422",
+     "name": "hyosymplectic cartilage",
+     "bucket": "organ",
+     "cos": 0.702
+    },
+    {
+     "zfa": "ZFA:0001460",
+     "name": "pharyngeal arch cartilage",
+     "bucket": "organ",
+     "cos": 0.682
+    },
+    {
+     "zfa": "ZFA:0005390",
+     "name": "gill ray",
+     "bucket": "organ",
+     "cos": 0.666
+    },
+    {
+     "zfa": "ZFA:0001644",
+     "name": "articular cartilage",
+     "bucket": "organ",
+     "cos": 0.666
+    },
+    {
+     "zfa": "ZFA:0001511",
+     "name": "interhyal cartilage",
+     "bucket": "organ",
+     "cos": 0.666
+    },
+    {
+     "zfa": "ZFA:0001205",
+     "name": "Meckel's cartilage",
+     "bucket": "organ",
+     "cos": 0.666
+    },
+    {
+     "zfa": "ZFA:0001399",
+     "name": "palatoquadrate cartilage",
+     "bucket": "organ",
+     "cos": 0.666
+    }
+   ]
   },
   {
    "id": "37",
@@ -4034,7 +5884,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000516",
+     "name": "periventricular grey zone",
+     "bucket": "tissue",
+     "cos": 0.65
+    },
+    {
+     "zfa": "ZFA:0000357",
+     "name": "glomerular layer",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.633
+    },
+    {
+     "zfa": "ZFA:0001315",
+     "name": "atrioventricular canal",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.599
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.577
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.576
+    },
+    {
+     "zfa": "ZFA:0001202",
+     "name": "optic cup",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.57
+    },
+    {
+     "zfa": "ZFA:0000885",
+     "name": "fast muscle cell somite 6",
+     "bucket": "cell",
+     "cos": 0.557
+    },
+    {
+     "zfa": "ZFA:0000513",
+     "name": "fast muscle cell somite 1",
+     "bucket": "cell",
+     "cos": 0.557
+    }
+   ]
   },
   {
    "id": "38",
@@ -4086,16 +5986,16 @@
       "elavl3"
      ],
      "absent_probe": [
-      "sox3",
-      "gfap",
-      "rbfox3a",
-      "nova2",
-      "srrm4",
       "her4.1",
-      "ascl1a",
-      "neurod1",
-      "elavl4",
       "tubb5",
+      "srrm4",
+      "elavl4",
+      "rbfox3a",
+      "neurod1",
+      "nova2",
+      "ascl1a",
+      "gfap",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": []
@@ -4103,7 +6003,57 @@
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000165",
+     "name": "inferior lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.676
+    },
+    {
+     "zfa": "ZFA:0000392",
+     "name": "median tuberal portion",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.624
+    },
+    {
+     "zfa": "ZFA:0000154",
+     "name": "sinus venosus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.623
+    },
+    {
+     "zfa": "ZFA:0000458",
+     "name": "ventral thalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.623
+    },
+    {
+     "zfa": "ZFA:0000297",
+     "name": "vagal lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.623
+    },
+    {
+     "zfa": "ZFA:0001119",
+     "name": "dermis",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.622
+    },
+    {
+     "zfa": "ZFA:0000653",
+     "name": "dorsal thalamus",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.619
+    },
+    {
+     "zfa": "ZFA:0000633",
+     "name": "caudal tuberculum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.617
+    }
+   ]
   },
   {
    "id": "39",
@@ -4164,17 +6114,17 @@
     {
      "bucket": "pigment",
      "present_specific": [
-      "aox5",
-      "gch2"
+      "gch2",
+      "aox5"
      ],
      "absent_probe": [
-      "xdh",
+      "mitfa",
       "ltk",
+      "xdh",
       "pnp4a",
       "dct",
-      "tyrp1b",
-      "mitfa",
-      "slc45a2"
+      "slc45a2",
+      "tyrp1b"
      ],
      "shared_nondiscriminating": []
     }
@@ -4345,6 +6295,56 @@
      "ic": 5.331,
      "depth": 3
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009165",
+     "name": "neural crest cell",
+     "bucket": "cell",
+     "cos": 0.645
+    },
+    {
+     "zfa": "ZFA:0007086",
+     "name": "migratory neural crest cell",
+     "bucket": "cell",
+     "cos": 0.642
+    },
+    {
+     "zfa": "ZFA:0007085",
+     "name": "migratory neural crest",
+     "bucket": "tissue",
+     "cos": 0.639
+    },
+    {
+     "zfa": "ZFA:0009003",
+     "name": "cranial neural crest cell",
+     "bucket": "cell",
+     "cos": 0.637
+    },
+    {
+     "zfa": "ZFA:0001194",
+     "name": "cranial neural crest",
+     "bucket": "tissue",
+     "cos": 0.636
+    },
+    {
+     "zfa": "ZFA:0007089",
+     "name": "embryonic cell",
+     "bucket": "cell",
+     "cos": 0.636
+    },
+    {
+     "zfa": "ZFA:0000080",
+     "name": "trigeminal neural crest",
+     "bucket": "tissue",
+     "cos": 0.636
+    },
+    {
+     "zfa": "ZFA:0000762",
+     "name": "facio-acoustic neural crest",
+     "bucket": "tissue",
+     "cos": 0.636
+    }
    ]
   },
   {
@@ -4403,11 +6403,11 @@
     {
      "bucket": "endothelium",
      "present_specific": [
+      "flt4",
       "cdh5",
-      "kdrl",
-      "stab2",
       "egfl7",
-      "flt4"
+      "kdrl",
+      "stab2"
      ],
      "absent_probe": [
       "pecam1a",
@@ -4633,6 +6633,56 @@
      "ic": 0.005,
      "depth": 0
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005047",
+     "name": "hyaloid vein",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.629
+    },
+    {
+     "zfa": "ZFA:0005045",
+     "name": "hyaloid artery",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.618
+    },
+    {
+     "zfa": "ZFA:0001061",
+     "name": "intersegmental artery",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.585
+    },
+    {
+     "zfa": "ZFA:0005044",
+     "name": "optic artery",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.57
+    },
+    {
+     "zfa": "ZFA:0001057",
+     "name": "intersegmental vein",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.557
+    },
+    {
+     "zfa": "ZFA:0005054",
+     "name": "inner optic circle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.556
+    },
+    {
+     "zfa": "ZFA:0005032",
+     "name": "optic vein",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.554
+    },
+    {
+     "zfa": "ZFA:0005082",
+     "name": "dorsal branch nasal ciliary artery",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.549
+    }
    ]
   },
   {
@@ -4693,25 +6743,25 @@
     {
      "bucket": "muscle",
      "present_specific": [
-      "smyhc1",
-      "ryr1a"
+      "ryr1a",
+      "smyhc1"
      ],
      "absent_probe": [
-      "myod1",
-      "pvalb3",
-      "myoz1a",
       "smyhc2",
-      "acta1b",
-      "neb",
-      "tnnt3a",
-      "myf5",
       "msc",
       "actc1b",
-      "ckma",
       "ttn.1",
-      "tnnc2.2",
       "myog",
-      "mylpfa"
+      "myoz1a",
+      "ckma",
+      "myf5",
+      "tnnt3a",
+      "tnnc2.2",
+      "neb",
+      "pvalb3",
+      "acta1b",
+      "mylpfa",
+      "myod1"
      ],
      "shared_nondiscriminating": []
     }
@@ -4894,6 +6944,56 @@
      "ic": 1.137,
      "depth": 3
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0007048",
+     "name": "ventral intermandibularis posterior",
+     "bucket": "tissue",
+     "cos": 0.644
+    },
+    {
+     "zfa": "ZFA:0007051",
+     "name": "interhyoideus",
+     "bucket": "tissue",
+     "cos": 0.631
+    },
+    {
+     "zfa": "ZFA:0001652",
+     "name": "head muscle",
+     "bucket": "tissue",
+     "cos": 0.625
+    },
+    {
+     "zfa": "ZFA:0007008",
+     "name": "ventral intermandibularis anterior",
+     "bucket": "tissue",
+     "cos": 0.587
+    },
+    {
+     "zfa": "ZFA:0007052",
+     "name": "hyohyoideus",
+     "bucket": "tissue",
+     "cos": 0.58
+    },
+    {
+     "zfa": "ZFA:0000521",
+     "name": "hyoid muscle",
+     "bucket": "tissue",
+     "cos": 0.572
+    },
+    {
+     "zfa": "ZFA:0007053",
+     "name": "adductor hyomandibulae",
+     "bucket": "tissue",
+     "cos": 0.556
+    },
+    {
+     "zfa": "ZFA:0000465",
+     "name": "adductor operculi",
+     "bucket": "tissue",
+     "cos": 0.556
+    }
    ]
   },
   {
@@ -4968,16 +7068,16 @@
     {
      "bucket": "pigment",
      "present_specific": [
+      "gch2",
       "dct",
-      "tyrp1b",
-      "gch2"
+      "tyrp1b"
      ],
      "absent_probe": [
-      "xdh",
-      "ltk",
-      "pnp4a",
-      "aox5",
       "mitfa",
+      "ltk",
+      "xdh",
+      "aox5",
+      "pnp4a",
       "slc45a2"
      ],
      "shared_nondiscriminating": []
@@ -5168,6 +7268,56 @@
      "ic": 0.178,
      "depth": 1
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009090",
+     "name": "pigment cell",
+     "bucket": "cell",
+     "cos": 0.575
+    },
+    {
+     "zfa": "ZFA:0009010",
+     "name": "glioblast",
+     "bucket": "cell",
+     "cos": 0.565
+    },
+    {
+     "zfa": "ZFA:0009317",
+     "name": "cyanophore",
+     "bucket": "cell",
+     "cos": 0.557
+    },
+    {
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte",
+     "bucket": "cell",
+     "cos": 0.557
+    },
+    {
+     "zfa": "ZFA:0009263",
+     "name": "erythrophore",
+     "bucket": "cell",
+     "cos": 0.55
+    },
+    {
+     "zfa": "ZFA:0009198",
+     "name": "xanthophore",
+     "bucket": "cell",
+     "cos": 0.55
+    },
+    {
+     "zfa": "ZFA:0009261",
+     "name": "leucophore",
+     "bucket": "cell",
+     "cos": 0.534
+    },
+    {
+     "zfa": "ZFA:0009199",
+     "name": "iridophore",
+     "bucket": "cell",
+     "cos": 0.533
+    }
    ]
   },
   {
@@ -5237,11 +7387,11 @@
       "atp1b1b"
      ],
      "absent_probe": [
+      "atp1a1a.1",
+      "trpv6",
+      "ca2",
       "foxi3b",
       "slc4a4b",
-      "atp1a1a.1",
-      "ca2",
-      "trpv6",
       "foxi3a",
       "clcn2c"
      ],
@@ -5418,6 +7568,56 @@
      "ic": 0.178,
      "depth": 1
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000008",
+     "name": "brain",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000559",
+     "name": "otolith organ",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000107",
+     "name": "eye",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000114",
+     "name": "heart",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000151",
+     "name": "pronephros",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000529",
+     "name": "kidney",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000047",
+     "name": "peripheral olfactory organ",
+     "bucket": "organ",
+     "cos": 0.573
+    },
+    {
+     "zfa": "ZFA:0000360",
+     "name": "heart tube",
+     "bucket": "organ",
+     "cos": 0.573
+    }
    ]
   },
   {
@@ -5484,16 +7684,16 @@
       "elavl4"
      ],
      "absent_probe": [
-      "sox3",
-      "gfap",
+      "her4.1",
+      "tubb5",
+      "srrm4",
       "rbfox3a",
       "elavl3",
-      "nova2",
-      "srrm4",
-      "her4.1",
-      "ascl1a",
       "neurod1",
-      "tubb5",
+      "nova2",
+      "ascl1a",
+      "gfap",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": []
@@ -5672,6 +7872,56 @@
      "ic": 1.127,
      "depth": 6
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0005173",
+     "name": "right liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.87
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.854
+    },
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.85
+    },
+    {
+     "zfa": "ZFA:0000110",
+     "name": "fourth ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.841
+    },
+    {
+     "zfa": "ZFA:0000161",
+     "name": "third ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.841
+    },
+    {
+     "zfa": "ZFA:0000687",
+     "name": "superficial pretectum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.841
+    },
+    {
+     "zfa": "ZFA:0000183",
+     "name": "central pretectum",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.841
+    },
+    {
+     "zfa": "ZFA:0001700",
+     "name": "tunica externa swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.841
+    }
    ]
   },
   {
@@ -5750,12 +8000,12 @@
       "tyrp1b"
      ],
      "absent_probe": [
-      "xdh",
-      "ltk",
-      "pnp4a",
-      "aox5",
-      "gch2",
       "mitfa",
+      "ltk",
+      "xdh",
+      "gch2",
+      "aox5",
+      "pnp4a",
       "slc45a2"
      ],
      "shared_nondiscriminating": []
@@ -5933,6 +8183,56 @@
      "ic": 1.084,
      "depth": 3
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000064",
+     "name": "presumptive retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.615
+    },
+    {
+     "zfa": "ZFA:0000152",
+     "name": "retina",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.6
+    },
+    {
+     "zfa": "ZFA:0001202",
+     "name": "optic cup",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.578
+    },
+    {
+     "zfa": "ZFA:0001071",
+     "name": "presumptive neural retina",
+     "bucket": "tissue",
+     "cos": 0.561
+    },
+    {
+     "zfa": "ZFA:0000144",
+     "name": "retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.523
+    },
+    {
+     "zfa": "ZFA:0005881",
+     "name": "tunica propria of seminiferous tubule",
+     "bucket": "tissue",
+     "cos": 0.521
+    },
+    {
+     "zfa": "ZFA:0005880",
+     "name": "seminiferous epithelium",
+     "bucket": "tissue",
+     "cos": 0.508
+    },
+    {
+     "zfa": "ZFA:0000046",
+     "name": "retinal neural layer",
+     "bucket": "tissue",
+     "cos": 0.503
+    }
    ]
   },
   {
@@ -5974,7 +8274,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001259",
+     "name": "forebrain ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.496
+    },
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.49
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.477
+    },
+    {
+     "zfa": "ZFA:0005337",
+     "name": "anterior swim bladder bud",
+     "bucket": "tissue",
+     "cos": 0.424
+    },
+    {
+     "zfa": "ZFA:0005173",
+     "name": "right liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.304
+    },
+    {
+     "zfa": "ZFA:0001278",
+     "name": "posterior chamber swim bladder",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.295
+    },
+    {
+     "zfa": "ZFA:0005867",
+     "name": "cephalic mesoderm",
+     "bucket": "tissue",
+     "cos": 0.29
+    },
+    {
+     "zfa": "ZFA:0000067",
+     "name": "pronephric mesoderm",
+     "bucket": "tissue",
+     "cos": 0.252
+    }
+   ]
   },
   {
    "id": "47",
@@ -6045,12 +8395,12 @@
       "mipa"
      ],
      "absent_probe": [
-      "gnat2",
       "crx",
+      "rho",
+      "rpe65a",
       "opn1mw1",
       "cryaa",
-      "rho",
-      "rpe65a"
+      "gnat2"
      ],
      "shared_nondiscriminating": []
     }
@@ -6240,6 +8590,56 @@
      "ic": 0.005,
      "depth": 0
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0001724",
+     "name": "presumptive endocardium",
+     "bucket": "tissue",
+     "cos": 0.923
+    },
+    {
+     "zfa": "ZFA:0001320",
+     "name": "endocardium",
+     "bucket": "tissue",
+     "cos": 0.92
+    },
+    {
+     "zfa": "ZFA:0005073",
+     "name": "atrioventricular ring",
+     "bucket": "tissue",
+     "cos": 0.916
+    },
+    {
+     "zfa": "ZFA:0000573",
+     "name": "internal cellular layer",
+     "bucket": "tissue",
+     "cos": 0.916
+    },
+    {
+     "zfa": "ZFA:0001723",
+     "name": "presumptive atrioventricular canal",
+     "bucket": "tissue",
+     "cos": 0.915
+    },
+    {
+     "zfa": "ZFA:0000352",
+     "name": "external cellular layer",
+     "bucket": "tissue",
+     "cos": 0.912
+    },
+    {
+     "zfa": "ZFA:0000267",
+     "name": "primary olfactory fiber layer",
+     "bucket": "tissue",
+     "cos": 0.91
+    },
+    {
+     "zfa": "ZFA:0005489",
+     "name": "endocardial precursor",
+     "bucket": "tissue",
+     "cos": 0.908
+    }
    ]
   },
   {
@@ -6312,15 +8712,15 @@
       "elavl4"
      ],
      "absent_probe": [
-      "sox3",
-      "gfap",
+      "her4.1",
+      "tubb5",
+      "srrm4",
       "rbfox3a",
       "elavl3",
       "nova2",
-      "srrm4",
-      "her4.1",
       "ascl1a",
-      "tubb5",
+      "gfap",
+      "sox3",
       "sox2"
      ],
      "shared_nondiscriminating": [
@@ -6331,10 +8731,10 @@
      "bucket": "olfactory",
      "present_specific": [],
      "absent_probe": [
-      "gng8",
       "s100z",
-      "ompb",
-      "calb2b"
+      "calb2b",
+      "gng8",
+      "ompb"
      ],
      "shared_nondiscriminating": [
       "neurod1"
@@ -6511,6 +8911,56 @@
      "ic": 0.574,
      "depth": 4
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000013",
+     "name": "cranial ganglion",
+     "bucket": "tissue",
+     "cos": 0.739
+    },
+    {
+     "zfa": "ZFA:0000295",
+     "name": "trigeminal ganglion",
+     "bucket": "tissue",
+     "cos": 0.708
+    },
+    {
+     "zfa": "ZFA:0000588",
+     "name": "statoacoustic (VIII) ganglion",
+     "bucket": "tissue",
+     "cos": 0.708
+    },
+    {
+     "zfa": "ZFA:0000120",
+     "name": "lateral line ganglion",
+     "bucket": "tissue",
+     "cos": 0.688
+    },
+    {
+     "zfa": "ZFA:0001291",
+     "name": "facial ganglion",
+     "bucket": "tissue",
+     "cos": 0.643
+    },
+    {
+     "zfa": "ZFA:0001555",
+     "name": "epibranchial ganglion",
+     "bucket": "tissue",
+     "cos": 0.642
+    },
+    {
+     "zfa": "ZFA:0001572",
+     "name": "superior cervical ganglion",
+     "bucket": "tissue",
+     "cos": 0.597
+    },
+    {
+     "zfa": "ZFA:0001314",
+     "name": "posterior lateral line ganglion",
+     "bucket": "tissue",
+     "cos": 0.584
+    }
    ]
   },
   {
@@ -6564,20 +9014,70 @@
       "pnp4a"
      ],
      "absent_probe": [
-      "xdh",
-      "dct",
-      "aox5",
-      "tyrp1b",
-      "gch2",
       "mitfa",
-      "slc45a2"
+      "xdh",
+      "gch2",
+      "aox5",
+      "dct",
+      "slc45a2",
+      "tyrp1b"
      ],
      "shared_nondiscriminating": []
     }
    ],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009090",
+     "name": "pigment cell",
+     "bucket": "cell",
+     "cos": 0.639
+    },
+    {
+     "zfa": "ZFA:0009091",
+     "name": "melanocyte",
+     "bucket": "cell",
+     "cos": 0.623
+    },
+    {
+     "zfa": "ZFA:0009317",
+     "name": "cyanophore",
+     "bucket": "cell",
+     "cos": 0.623
+    },
+    {
+     "zfa": "ZFA:0009263",
+     "name": "erythrophore",
+     "bucket": "cell",
+     "cos": 0.617
+    },
+    {
+     "zfa": "ZFA:0009198",
+     "name": "xanthophore",
+     "bucket": "cell",
+     "cos": 0.617
+    },
+    {
+     "zfa": "ZFA:0009261",
+     "name": "leucophore",
+     "bucket": "cell",
+     "cos": 0.603
+    },
+    {
+     "zfa": "ZFA:0009199",
+     "name": "iridophore",
+     "bucket": "cell",
+     "cos": 0.603
+    },
+    {
+     "zfa": "ZFA:0005929",
+     "name": "xantholeucophore",
+     "bucket": "cell",
+     "cos": 0.582
+    }
+   ]
   },
   {
    "id": "50",
@@ -6618,7 +9118,57 @@
    "discriminators": [],
    "convergent_genes": [],
    "expression_evidence": [],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000211",
+     "name": "gill lamella",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.697
+    },
+    {
+     "zfa": "ZFA:0005173",
+     "name": "right liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.634
+    },
+    {
+     "zfa": "ZFA:0005172",
+     "name": "left liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.631
+    },
+    {
+     "zfa": "ZFA:0005174",
+     "name": "ventral liver lobe",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.63
+    },
+    {
+     "zfa": "ZFA:0000428",
+     "name": "saccule",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.626
+    },
+    {
+     "zfa": "ZFA:0005065",
+     "name": "heart valve",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.604
+    },
+    {
+     "zfa": "ZFA:0000161",
+     "name": "third ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.601
+    },
+    {
+     "zfa": "ZFA:0000110",
+     "name": "fourth ventricle",
+     "bucket": "multi_tissue_structure",
+     "cos": 0.601
+    }
+   ]
   },
   {
    "id": "51",
@@ -6684,11 +9234,11 @@
       "atp1b1b"
      ],
      "absent_probe": [
-      "foxi3b",
-      "slc12a10.2",
-      "slc4a4b",
       "atp1a1a.1",
       "ca2",
+      "slc12a10.2",
+      "foxi3b",
+      "slc4a4b",
       "foxi3a",
       "clcn2c"
      ],
@@ -6701,10 +9251,10 @@
      ],
      "absent_probe": [
       "krt8",
-      "cldnb",
-      "cldne",
       "krt5",
-      "tp63"
+      "tp63",
+      "cldnb",
+      "cldne"
      ],
      "shared_nondiscriminating": []
     }
@@ -6727,7 +9277,57 @@
      "name": "epidermal superficial stratum"
     }
    ],
-   "fine_terms": []
+   "fine_terms": [],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000144",
+     "name": "retinal pigmented epithelium",
+     "bucket": "tissue",
+     "cos": 0.539
+    },
+    {
+     "zfa": "ZFA:0005880",
+     "name": "seminiferous epithelium",
+     "bucket": "tissue",
+     "cos": 0.534
+    },
+    {
+     "zfa": "ZFA:0001389",
+     "name": "regeneration epithelium",
+     "bucket": "tissue",
+     "cos": 0.528
+    },
+    {
+     "zfa": "ZFA:0001326",
+     "name": "lens epithelium",
+     "bucket": "tissue",
+     "cos": 0.509
+    },
+    {
+     "zfa": "ZFA:0000816",
+     "name": "oral epithelium",
+     "bucket": "tissue",
+     "cos": 0.506
+    },
+    {
+     "zfa": "ZFA:0001513",
+     "name": "dermomyotome",
+     "bucket": "tissue",
+     "cos": 0.505
+    },
+    {
+     "zfa": "ZFA:0001428",
+     "name": "olfactory rosette",
+     "bucket": "tissue",
+     "cos": 0.505
+    },
+    {
+     "zfa": "ZFA:0005123",
+     "name": "gut epithelium",
+     "bucket": "tissue",
+     "cos": 0.505
+    }
+   ]
   },
   {
    "id": "52",
@@ -6789,15 +9389,15 @@
     {
      "bucket": "blood_erythroid",
      "present_specific": [
-      "alas2",
       "hbae1.1",
-      "slc4a1a"
+      "slc4a1a",
+      "alas2"
      ],
      "absent_probe": [
-      "gata1a",
       "klf1",
       "cahz",
-      "hbbe2"
+      "hbbe2",
+      "gata1a"
      ],
      "shared_nondiscriminating": []
     }
@@ -6965,6 +9565,56 @@
      "ic": 5.514,
      "depth": 7
     }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0009017",
+     "name": "monoblast",
+     "bucket": "cell",
+     "cos": 0.74
+    },
+    {
+     "zfa": "ZFA:0009356",
+     "name": "myeloid lineage restricted progenitor cell",
+     "bucket": "cell",
+     "cos": 0.74
+    },
+    {
+     "zfa": "ZFA:0009021",
+     "name": "common myeloid progenitor",
+     "bucket": "cell",
+     "cos": 0.74
+    },
+    {
+     "zfa": "ZFA:0009015",
+     "name": "erythroid progenitor cell",
+     "bucket": "cell",
+     "cos": 0.74
+    },
+    {
+     "zfa": "ZFA:0009044",
+     "name": "blood cell",
+     "bucket": "cell",
+     "cos": 0.739
+    },
+    {
+     "zfa": "ZFA:0009022",
+     "name": "megakaryocyte erythroid progenitor cell",
+     "bucket": "cell",
+     "cos": 0.739
+    },
+    {
+     "zfa": "ZFA:0009253",
+     "name": "promonocyte",
+     "bucket": "cell",
+     "cos": 0.739
+    },
+    {
+     "zfa": "ZFA:0009352",
+     "name": "neutrophil progenitor cell",
+     "bucket": "cell",
+     "cos": 0.738
+    }
    ]
   },
   {
@@ -7044,10 +9694,10 @@
       "eya1"
      ],
      "absent_probe": [
-      "oc90",
       "otol1a",
-      "atoh1a",
-      "dlx3b"
+      "oc90",
+      "dlx3b",
+      "atoh1a"
      ],
      "shared_nondiscriminating": []
     },
@@ -7057,11 +9707,11 @@
       "sox10"
      ],
      "absent_probe": [
-      "gfap",
-      "mbpa",
-      "olig2",
       "slc1a3b",
-      "plp1b"
+      "olig2",
+      "mbpa",
+      "plp1b",
+      "gfap"
      ],
      "shared_nondiscriminating": []
     }
@@ -7241,6 +9891,56 @@
      "n": 10,
      "ic": 0.568,
      "depth": 2
+    }
+   ],
+   "neighborhood": [
+    {
+     "zfa": "ZFA:0000116",
+     "name": "macula lagena",
+     "bucket": "tissue",
+     "cos": 0.478
+    },
+    {
+     "zfa": "ZFA:0000030",
+     "name": "macula utricle",
+     "bucket": "tissue",
+     "cos": 0.476
+    },
+    {
+     "zfa": "ZFA:0000234",
+     "name": "macula neglecta",
+     "bucket": "tissue",
+     "cos": 0.474
+    },
+    {
+     "zfa": "ZFA:0007000",
+     "name": "macula saccule",
+     "bucket": "tissue",
+     "cos": 0.472
+    },
+    {
+     "zfa": "ZFA:0000386",
+     "name": "macula",
+     "bucket": "tissue",
+     "cos": 0.47
+    },
+    {
+     "zfa": "ZFA:0000168",
+     "name": "anterior macula",
+     "bucket": "tissue",
+     "cos": 0.467
+    },
+    {
+     "zfa": "ZFA:0000619",
+     "name": "anterior crista",
+     "bucket": "tissue",
+     "cos": 0.464
+    },
+    {
+     "zfa": "ZFA:0000566",
+     "name": "posterior crista",
+     "bucket": "tissue",
+     "cos": 0.464
     }
    ]
   }
