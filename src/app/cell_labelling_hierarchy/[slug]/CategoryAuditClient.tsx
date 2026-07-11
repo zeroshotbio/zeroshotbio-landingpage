@@ -19,13 +19,17 @@ function heat(pct: number | null): { bg: string; fg: string } {
 // the tissue tier is what the summary's correct-call rate is scored on (falls back to broad)
 const scoredMatch = (n: JudgeNode): boolean | null => n.dn?.tissue?.m ?? n.dn?.cell_type_broad?.m ?? null;
 
+// the bold, high-contrast label — the visual hero of every cell
+const HERO: CSSProperties = { fontWeight: 800, fontSize: 14, color: "#0b0d0f", letterSpacing: -0.1, lineHeight: 1.25 };
+
+// compact verdict shown UNDER the label: match/miss + the judge's quoted reason
 function Verdict({ t }: { t?: Tier }) {
-  if (!t) return <span style={{ color: "#c4bdb1" }}>—</span>;
+  if (!t) return null;
   const ok = t.m;
   return (
-    <div>
-      <div style={{ fontWeight: 800, fontSize: 11.5, color: ok ? "#15803d" : "#b91c1c" }}>{ok ? "✓ match" : "✗ miss"}</div>
-      {t.note && <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.4, fontStyle: "italic", marginTop: 2 }}>“{t.note}”</div>}
+    <div style={{ fontSize: 11, lineHeight: 1.35, marginTop: 5 }}>
+      <span style={{ fontWeight: 800, color: ok ? "#15803d" : "#b91c1c", whiteSpace: "nowrap" }}>{ok ? "✓ match" : "✗ miss"}</span>
+      {t.note && <span style={{ color: "#6b655d", fontStyle: "italic" }}> — {t.note}</span>}
     </div>
   );
 }
@@ -78,36 +82,36 @@ function JudgeCard({ n }: { n: JudgeNode }) {
             </tr>
           </thead>
           <tbody>
-            {/* 1 · ground truth — green */}
+            {/* 1 · ground truth — green — the answer key (label only, no verdict) */}
             <tr>
               <th style={{ ...rowHdr, color: GT.lbl, background: GT.lblBg }}>Ground truth</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: GT.bg, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
+              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: GT.bg }}>{n.gt[t] ? <span style={HERO}>{n.gt[t]}</span> : <span style={{ color: "#c4bdb1" }}>—</span>}</td>)}
             </tr>
-            {/* 2 · de-novo prediction — blue — wizard's full 4-tier free-form call (val + confidence),
-                 recovered from a representative member leaf; falls back to the consolidated phrase. */}
+            {/* 2 · de-novo — blue — the wizard's free-form 4-tier call (bold label + its confidence)
+                 with the judge's match/miss + reason on the same cell. Falls back to the verdict alone
+                 for nodes whose 4-tier de-novo couldn't be parsed (identity is shown in the header). */}
             <tr>
-              <th style={{ ...rowHdr, color: DN.lbl, background: DN.lblBg }}>De-novo pred</th>
-              {hasPred
-                ? tiers.map((t) => {
-                    const p = n.dnPred?.[t];
-                    return <td key={t} style={{ ...cell, ...col(t), background: DN.bg, fontWeight: 600, color: p?.val ? "#123f6b" : "#c4bdb1" }}>{p?.val ? <>{p.val}<ConfBadge c={p.conf} /></> : "—"}</td>;
-                  })
-                : <td colSpan={tiers.length} style={{ ...cell, borderLeft: `1px solid ${LINE}`, background: DN.bg, color: "#123f6b", fontWeight: 600 }}>{n.identity || "—"}<span style={{ display: "block", fontWeight: 400, fontStyle: "italic", color: "#5a7a99", marginTop: 3, fontSize: 11 }}>4-tier de-novo not parseable for this node — showing the consolidated call{n.dnTier ? `, resolved to ${TIER_SHORT[n.dnTier] || n.dnTier}` : ""}</span></td>}
+              <th style={{ ...rowHdr, color: DN.lbl, background: DN.lblBg }}>De-novo</th>
+              {tiers.map((t) => {
+                const p = n.dnPred?.[t];
+                return (
+                  <td key={t} style={{ ...cell, ...col(t), background: DN.bg }}>
+                    {p?.val ? <div><span style={HERO}>{p.val}</span><ConfBadge c={p.conf} /></div> : (!n.dn[t] ? <span style={{ color: "#c4bdb1" }}>—</span> : null)}
+                    <Verdict t={n.dn[t]} />
+                  </td>
+                );
+              })}
             </tr>
-            {/* 3 · de-novo verdict — blue */}
+            {/* 3 · menu-exposed — purple — the label forced to the closest GT-menu option, with confidence
+                 and the judge's match/miss + reason on the same cell. */}
             <tr>
-              <th style={{ ...rowHdr, color: DN.lbl, background: DN.lblBg }}>De-novo verdict</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: DN.bg }}><Verdict t={n.dn[t]} /></td>)}
-            </tr>
-            {/* 4 · menu-exposed prediction — purple — with the representative leaf's confidence */}
-            <tr>
-              <th style={{ ...rowHdr, color: MN.lbl, background: MN.lblBg }}>Menu pred</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: MN.bg, color: n.menu[t] ? "#4a453f" : "#c4bdb1", fontWeight: n.menu[t] ? 600 : 400 }}>{n.menu[t] || "—"}{n.menu[t] && <ConfBadge c={n.menuRep?.[t]?.conf} />}</td>)}
-            </tr>
-            {/* 5 · menu-exposed verdict — purple */}
-            <tr>
-              <th style={{ ...rowHdr, color: MN.lbl, background: MN.lblBg }}>Menu-exposed verdict</th>
-              {tiers.map((t) => <td key={t} style={{ ...cell, ...col(t), background: MN.bg }}><Verdict t={n.mx[t]} /></td>)}
+              <th style={{ ...rowHdr, color: MN.lbl, background: MN.lblBg }}>Menu-exposed</th>
+              {tiers.map((t) => (
+                <td key={t} style={{ ...cell, ...col(t), background: MN.bg }}>
+                  {n.menu[t] ? <div><span style={HERO}>{n.menu[t]}</span><ConfBadge c={n.menuRep?.[t]?.conf} /></div> : (!n.mx[t] ? <span style={{ color: "#c4bdb1" }}>—</span> : null)}
+                  <Verdict t={n.mx[t]} />
+                </td>
+              ))}
             </tr>
           </tbody>
         </table>
