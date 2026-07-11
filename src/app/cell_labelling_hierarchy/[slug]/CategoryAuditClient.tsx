@@ -1,12 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import { useState, type CSSProperties } from "react";
 import type { CategoryDetail, JudgeNode, MiniNode, Tier } from "../details";
 
 const PAPER = "#f6f4f2", INK = "#2b2b2b", MUTE = "#8a847b", LINE = "#e7e1d9", CARD = "#fffdfb";
 const TIER_ORDER = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"] as const;
 const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type · broad", cell_type_sub: "Cell type · sub" };
+const TISSUE_BG = "#f2fafd";
 
 function heat(pct: number | null): { bg: string; fg: string } {
   if (pct == null) return { bg: "#ece8e2", fg: "#b7b0a6" };
@@ -22,56 +23,67 @@ function Verdict({ t }: { t?: Tier }) {
   if (!t) return <span style={{ color: "#c4bdb1" }}>—</span>;
   const ok = t.m;
   return (
-    <div style={{ display: "flex", gap: 6, alignItems: "baseline" }}>
-      <span style={{ fontWeight: 800, fontSize: 12, color: ok ? "#15803d" : "#b91c1c", flexShrink: 0 }}>{ok ? "✓ match" : "✗ miss"}</span>
-      {t.note && <span style={{ fontSize: 12, color: "#5a544c", lineHeight: 1.4, fontStyle: "italic" }}>“{t.note}”</span>}
+    <div>
+      <div style={{ fontWeight: 800, fontSize: 11.5, color: ok ? "#15803d" : "#b91c1c" }}>{ok ? "✓ match" : "✗ miss"}</div>
+      {t.note && <div style={{ fontSize: 11.5, color: "#5a544c", lineHeight: 1.4, fontStyle: "italic", marginTop: 2 }}>“{t.note}”</div>}
     </div>
   );
 }
 
-function GtChip({ v }: { v: string | null }) {
-  if (!v) return <span style={{ color: "#c4bdb1" }}>—</span>;
-  return <span style={{ fontWeight: 600, color: INK }}>{v}</span>;
-}
-
+// ── one node, transposed: rows are the info layers, columns are the ontology tiers ──
 function JudgeCard({ n }: { n: JudgeNode }) {
   const sm = scoredMatch(n);
+  const tiers = TIER_ORDER.filter((t) => n.gt[t] || n.menu[t] || n.dn[t] || n.mx[t]);
+  const rowHdr: CSSProperties = { textAlign: "left", padding: "7px 10px", fontSize: 10.5, fontWeight: 800, letterSpacing: 0.3, textTransform: "uppercase", whiteSpace: "nowrap", verticalAlign: "top", borderBottom: `1px solid ${LINE}` };
+  const cell: CSSProperties = { padding: "7px 10px", borderBottom: `1px solid ${LINE}`, borderLeft: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top", lineHeight: 1.4 };
+  const kindCol = n.kind === "merge" ? { c: "#0e7490", bg: "#e0f2f7", t: "MERGED" } : { c: "#a16207", bg: "#fdf3d6", t: "REBEL LEAF" };
   return (
-    <div style={{ border: `1px solid ${LINE}`, borderLeft: `4px solid ${sm == null ? "#d8d3cd" : sm ? "#22c55e" : "#ef4444"}`, borderRadius: 10, background: CARD, padding: "12px 14px", marginBottom: 10 }}>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 10, alignItems: "baseline", marginBottom: 8 }}>
+    <div style={{ border: `1px solid ${LINE}`, borderLeft: `4px solid ${sm == null ? "#d8d3cd" : sm ? "#22c55e" : "#ef4444"}`, borderRadius: 10, background: CARD, padding: "12px 14px", marginBottom: 12 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 9, alignItems: "center", marginBottom: 10 }}>
         <span style={{ fontWeight: 800, fontSize: 13, fontFamily: "ui-monospace, monospace", color: "#0e7490" }}>{n.id}</span>
-        {n.kind && <span style={{ fontSize: 11, color: MUTE }}>{n.kind}{n.leaves ? ` · ${n.leaves} leaves` : ""}</span>}
+        <span style={{ fontSize: 9.5, fontWeight: 800, color: kindCol.c, background: kindCol.bg, borderRadius: 99, padding: "1px 7px", letterSpacing: 0.4 }}>{kindCol.t}{n.leaves ? ` · ${n.leaves} ${n.leaves === 1 ? "leaf" : "leaves"}` : ""}</span>
         {n.purity != null && <span style={{ fontSize: 11, color: MUTE }}>purity {Number(n.purity).toFixed(2)}</span>}
         {n.ssmp != null && <span style={{ fontSize: 11, color: MUTE }}>ssmp {Number(n.ssmp).toFixed(2)}</span>}
       </div>
-      <div style={{ fontSize: 12.5, color: "#3f3a34", marginBottom: 10, lineHeight: 1.45 }}>
-        <span style={{ fontWeight: 700, color: MUTE, textTransform: "uppercase", fontSize: 10, letterSpacing: 0.5 }}>Wizard de-novo call</span><br />
-        {n.identity || <span style={{ color: MUTE }}>—</span>}
-      </div>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 620, fontSize: 12.5 }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 560, tableLayout: "fixed" }}>
+          <colgroup><col style={{ width: 132 }} />{tiers.map((t) => <col key={t} />)}</colgroup>
           <thead>
             <tr>
-              {["Tier", "Ground truth", "De-novo verdict", "Menu pred", "Menu-exposed verdict"].map((h, i) => (
-                <th key={h} style={{ textAlign: "left", padding: "4px 8px", fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: MUTE, borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap", opacity: i >= 3 ? 0.75 : 1 }}>{h}</th>
+              <th style={{ ...rowHdr, color: MUTE, background: "#faf8f5" }} />
+              {tiers.map((t) => (
+                <th key={t} style={{ ...rowHdr, background: t === "tissue" ? TISSUE_BG : "#faf8f5", color: "#4a453f", borderLeft: `1px solid ${LINE}` }}>
+                  {TIER_LABEL[t]}{t === "tissue" && <span title="Drives the summary's correct-call rate" style={{ marginLeft: 4, fontSize: 8, fontWeight: 800, color: "#0e7490", background: "#d3ebf2", borderRadius: 99, padding: "1px 4px" }}>SCORED</span>}
+                </th>
               ))}
             </tr>
           </thead>
           <tbody>
-            {TIER_ORDER.filter((t) => n.gt[t] || n.dn[t] || n.menu[t]).map((t) => {
-              const scored = t === "tissue";
-              return (
-                <tr key={t} style={{ background: scored ? "#f5fbff" : "transparent" }}>
-                  <td style={{ padding: "6px 8px", borderBottom: `1px solid ${LINE}`, whiteSpace: "nowrap", fontWeight: 700, color: "#4a453f" }}>
-                    {TIER_LABEL[t]}{scored && <span title="This tier drives the summary's correct-call rate" style={{ marginLeft: 5, fontSize: 8.5, fontWeight: 800, color: "#0e7490", background: "#e0f2f7", borderRadius: 99, padding: "1px 5px", letterSpacing: 0.3 }}>SCORED</span>}
-                  </td>
-                  <td style={{ padding: "6px 8px", borderBottom: `1px solid ${LINE}` }}><GtChip v={n.gt[t]} /></td>
-                  <td style={{ padding: "6px 8px", borderBottom: `1px solid ${LINE}` }}><Verdict t={n.dn[t]} /></td>
-                  <td style={{ padding: "6px 8px", borderBottom: `1px solid ${LINE}`, color: "#6b655d" }}><GtChip v={n.menu[t]} /></td>
-                  <td style={{ padding: "6px 8px", borderBottom: `1px solid ${LINE}`, opacity: 0.82 }}><Verdict t={n.mx[t]} /></td>
-                </tr>
-              );
-            })}
+            {/* 1 · ground truth */}
+            <tr>
+              <th style={{ ...rowHdr, color: "#3f3a34", background: "#f1ede6" }}>Ground truth</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, fontWeight: 700, color: n.gt[t] ? INK : "#c4bdb1" }}>{n.gt[t] || "—"}</td>)}
+            </tr>
+            {/* 2 · de-novo prediction (holistic free-text — spans the tiers) */}
+            <tr>
+              <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo pred</th>
+              <td colSpan={tiers.length} style={{ ...cell, background: "#f6feff", color: "#134e5a", fontWeight: 600 }}>{n.identity || "—"}</td>
+            </tr>
+            {/* 3 · de-novo verdict */}
+            <tr>
+              <th style={{ ...rowHdr, color: "#0e7490", background: "#ecfeff" }}>De-novo verdict</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined }}><Verdict t={n.dn[t]} /></td>)}
+            </tr>
+            {/* 4 · menu-exposed prediction */}
+            <tr>
+              <th style={{ ...rowHdr, color: "#6b655d", background: "#f4f2ee" }}>Menu pred</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, color: n.menu[t] ? "#4a453f" : "#c4bdb1" }}>{n.menu[t] || "—"}</td>)}
+            </tr>
+            {/* 5 · menu-exposed verdict */}
+            <tr>
+              <th style={{ ...rowHdr, color: "#6b655d", background: "#f4f2ee" }}>Menu-exposed verdict</th>
+              {tiers.map((t) => <td key={t} style={{ ...cell, background: t === "tissue" ? TISSUE_BG : undefined, opacity: 0.85 }}><Verdict t={n.mx[t]} /></td>)}
+            </tr>
           </tbody>
         </table>
       </div>
@@ -79,36 +91,85 @@ function JudgeCard({ n }: { n: JudgeNode }) {
   );
 }
 
-function MiniTable({ nodes }: { nodes: MiniNode[] }) {
+function DatasetSection({ ds, nodes }: { ds: string; nodes: JudgeNode[] }) {
+  const [open, setOpen] = useState(false);
+  const merges = nodes.filter((n) => n.kind === "merge");
+  const rebels = nodes.filter((n) => n.kind !== "merge");
+  const primary = merges.length ? merges : rebels;
+  const extra = merges.length ? rebels : [];
+  const matched = nodes.filter((n) => scoredMatch(n) === true).length;
+  return (
+    <section style={{ marginTop: 30 }}>
+      <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: 12, borderBottom: `2px solid ${LINE}`, paddingBottom: 6, marginBottom: 14 }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>{ds}</h2>
+        <span style={{ fontSize: 12.5, color: MUTE }}>
+          {matched}/{nodes.length} matched at the tissue tier (de-novo) · fuzzy LLM judge
+          {merges.length ? ` · ${merges.length} merged node${merges.length === 1 ? "" : "s"} shown` : " · no merges — showing leaves"}
+          {extra.length ? ` · ${extra.length} rebel ${extra.length === 1 ? "leaf" : "leaves"} collapsed` : ""}
+        </span>
+      </div>
+      {primary.map((n) => <JudgeCard key={n.id} n={n} />)}
+      {extra.length > 0 && (
+        <div>
+          <button onClick={() => setOpen((o) => !o)} style={{ background: open ? "#eef2f6" : "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, color: "#0e7490", cursor: "pointer" }}>
+            {open ? "▾ Hide" : "▸ Show"} {extra.length} individual rebel {extra.length === 1 ? "leaf" : "leaves"} (not folded into a merge)
+          </button>
+          {open && <div style={{ marginTop: 12 }}>{extra.map((n) => <JudgeCard key={n.id} n={n} />)}</div>}
+        </div>
+      )}
+    </section>
+  );
+}
+
+function MiniSection({ nodes }: { nodes: MiniNode[] }) {
+  const sorted = [...nodes].sort((a, b) => (b.nCells ?? 0) - (a.nCells ?? 0));
+  const CAP = 12;
+  const [open, setOpen] = useState(false);
+  const shown = open ? sorted : sorted.slice(0, CAP);
+  const hidden = sorted.length - shown.length;
   const th: CSSProperties = { textAlign: "left", padding: "7px 9px", fontSize: 9.5, fontWeight: 800, letterSpacing: 0.5, textTransform: "uppercase", color: MUTE, borderBottom: `2px solid ${LINE}`, whiteSpace: "nowrap" };
   const td: CSSProperties = { padding: "8px 9px", borderBottom: `1px solid ${LINE}`, fontSize: 12.5, verticalAlign: "top" };
   return (
-    <div style={{ overflowX: "auto", border: `1px solid ${LINE}`, borderRadius: 10, background: CARD }}>
-      <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 720 }}>
-        <thead><tr>
-          <th style={th}>Leaf</th><th style={th}>GT term</th><th style={{ ...th, width: "38%" }}>Wizard call</th>
-          <th style={th}>Bucket</th><th style={th} title="Lenient match (drives the score)">Lenient</th><th style={th}>Strict</th><th style={th}>Purity</th><th style={{ ...th, textAlign: "right" }}>Cells</th>
-        </tr></thead>
-        <tbody>
-          {nodes.map((n) => {
-            const lh = heat(Math.round((n.lenient ?? 0) * 100)), sh = heat(Math.round((n.strict ?? 0) * 100));
-            const bucketCol = n.category === "in_ontology" ? "#15803d" : n.category === "abstain" ? "#a16207" : "#b91c1c";
-            return (
-              <tr key={n.id}>
-                <td style={{ ...td, fontFamily: "ui-monospace, monospace", color: "#0e7490", fontWeight: 700 }}>{n.id}</td>
-                <td style={{ ...td, fontWeight: 700, color: INK }}>{n.term}{n.dom_finest && n.dom_finest !== n.term ? <div style={{ fontSize: 10.5, color: MUTE, fontWeight: 400 }}>dom: {n.dom_finest}</div> : null}</td>
-                <td style={{ ...td, color: "#3f3a34" }}>{n.call}</td>
-                <td style={td}><span style={{ fontSize: 10.5, fontWeight: 700, color: bucketCol }}>{n.category}</span>{n.soft ? <div style={{ fontSize: 9.5, color: MUTE }}>soft</div> : null}</td>
-                <td style={td}><span style={{ padding: "2px 7px", borderRadius: 6, background: lh.bg, color: lh.fg, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{(n.lenient ?? 0).toFixed(2)}</span></td>
-                <td style={td}><span style={{ padding: "2px 7px", borderRadius: 6, background: sh.bg, color: sh.fg, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{(n.strict ?? 0).toFixed(2)}</span></td>
-                <td style={{ ...td, color: MUTE, fontVariantNumeric: "tabular-nums" }}>{n.purity != null ? Number(n.purity).toFixed(2) : "—"}</td>
-                <td style={{ ...td, textAlign: "right", color: MUTE, fontVariantNumeric: "tabular-nums" }}>{n.nCells ?? "—"}</td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
+    <section style={{ marginTop: 34 }}>
+      <div style={{ display: "flex", alignItems: "baseline", gap: 12, borderBottom: `2px solid ${LINE}`, paddingBottom: 6, marginBottom: 6 }}>
+        <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>MiniFin</h2>
+        <span style={{ fontSize: 12.5, color: MUTE }}>{nodes.length} GT-covered leaves · expert-GT crosswalk (Patrick)</span>
+      </div>
+      <p style={{ fontSize: 12, color: "#6b655d", margin: "0 0 12px", lineHeight: 1.5, maxWidth: 760 }}>
+        MiniFin is <em>not</em> scored by the fuzzy judge — it&apos;s a 4-bucket crosswalk against Patrick&apos;s expert answer key (leaf-level, no merges), so there are no per-tier notes. <b>Lenient</b> is the cell-weighted match that feeds the summary; <b>strict</b> demands exact sub-type; <b>bucket</b> is whether the call landed in-ontology, off-ontology, or abstained.
+      </p>
+      <div style={{ overflowX: "auto", border: `1px solid ${LINE}`, borderRadius: 10, background: CARD }}>
+        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 720 }}>
+          <thead><tr>
+            <th style={th}>Leaf</th><th style={th}>GT term</th><th style={{ ...th, width: "38%" }}>Wizard call</th>
+            <th style={th}>Bucket</th><th style={th} title="Lenient match (drives the score)">Lenient</th><th style={th}>Strict</th><th style={th}>Purity</th><th style={{ ...th, textAlign: "right" }}>Cells</th>
+          </tr></thead>
+          <tbody>
+            {shown.map((n) => {
+              const lh = heat(Math.round((n.lenient ?? 0) * 100)), sh = heat(Math.round((n.strict ?? 0) * 100));
+              const bucketCol = n.category === "in_ontology" ? "#15803d" : n.category === "abstain" ? "#a16207" : "#b91c1c";
+              return (
+                <tr key={n.id}>
+                  <td style={{ ...td, fontFamily: "ui-monospace, monospace", color: "#0e7490", fontWeight: 700 }}>{n.id}</td>
+                  <td style={{ ...td, fontWeight: 700, color: INK }}>{n.term}{n.dom_finest && n.dom_finest !== n.term ? <div style={{ fontSize: 10.5, color: MUTE, fontWeight: 400 }}>dom: {n.dom_finest}</div> : null}</td>
+                  <td style={{ ...td, color: "#3f3a34" }}>{n.call}</td>
+                  <td style={td}><span style={{ fontSize: 10.5, fontWeight: 700, color: bucketCol }}>{n.category}</span>{n.soft ? <div style={{ fontSize: 9.5, color: MUTE }}>soft</div> : null}</td>
+                  <td style={td}><span style={{ padding: "2px 7px", borderRadius: 6, background: lh.bg, color: lh.fg, fontWeight: 800, fontVariantNumeric: "tabular-nums" }}>{(n.lenient ?? 0).toFixed(2)}</span></td>
+                  <td style={td}><span style={{ padding: "2px 7px", borderRadius: 6, background: sh.bg, color: sh.fg, fontWeight: 700, fontVariantNumeric: "tabular-nums" }}>{(n.strict ?? 0).toFixed(2)}</span></td>
+                  <td style={{ ...td, color: MUTE, fontVariantNumeric: "tabular-nums" }}>{n.purity != null ? Number(n.purity).toFixed(2) : "—"}</td>
+                  <td style={{ ...td, textAlign: "right", color: MUTE, fontVariantNumeric: "tabular-nums" }}>{n.nCells ?? "—"}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+      {hidden > 0 && (
+        <button onClick={() => setOpen(true)} style={{ marginTop: 10, background: "#fff", border: `1px solid ${LINE}`, borderRadius: 8, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, color: "#0e7490", cursor: "pointer" }}>
+          ▸ Show {hidden} more {hidden === 1 ? "leaf" : "leaves"}
+        </button>
+      )}
+    </section>
   );
 }
 
@@ -124,39 +185,16 @@ export default function CategoryAuditClient({ detail }: { detail: CategoryDetail
         <Link href="/cell_labelling_hierarchy" style={{ fontSize: 13, color: "#0e7490", textDecoration: "none", fontWeight: 600 }}>← Cell-Labelling Hierarchy</Link>
         <div style={{ fontSize: 12, letterSpacing: 2, textTransform: "uppercase", color: MUTE, fontWeight: 700, marginTop: 18 }}>Fuzzy-judge audit</div>
         <h1 style={{ fontSize: 30, fontWeight: 700, margin: "6px 0 10px", lineHeight: 1.12 }}>{category}</h1>
-        <p style={{ fontSize: 14, lineHeight: 1.55, color: "#5a544c", maxWidth: 780, margin: "0 0 8px" }}>
-          Every ground-truth node whose GT label falls in this category, with the judge&apos;s per-tier verdict and its written
-          justification. The <b>de-novo</b> column judges the wizard&apos;s free-text call; the muted <b>menu-exposed</b> column
-          judges its answer when handed the GT menu. The <b>Tissue</b> row (marked <b>SCORED</b>) is what the summary&apos;s
-          correct-call rate is computed from — read the note and decide for yourself whether each match is legitimate.
+        <p style={{ fontSize: 14, lineHeight: 1.55, color: "#5a544c", maxWidth: 800, margin: "0 0 8px" }}>
+          The rolled-up <b>merged</b> nodes whose ground truth falls in this category — individual <b>rebel leaves</b> (not folded
+          into a merge) are collapsed per dataset. Each node&apos;s table reads top-to-bottom: <b>ground truth</b>, the wizard&apos;s
+          <b> de-novo</b> prediction and the judge&apos;s verdict, then its <b>menu-exposed</b> prediction and verdict — laid out so
+          you can compare the same tier down a column. The <b>Tissue</b> column (marked <b>SCORED</b>) drives the summary&apos;s
+          correct-call rate; read the judge&apos;s note and decide for yourself whether each match is legitimate.
         </p>
 
-        {fuzzyDs.map((d) => {
-          const nodes = byDataset[d];
-          const matched = nodes.filter((n) => scoredMatch(n) === true).length;
-          return (
-            <section key={d} style={{ marginTop: 30 }}>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 12, borderBottom: `2px solid ${LINE}`, paddingBottom: 6, marginBottom: 14 }}>
-                <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>{d}</h2>
-                <span style={{ fontSize: 12.5, color: MUTE }}>{nodes.length} judged node{nodes.length === 1 ? "" : "s"} · {matched}/{nodes.length} matched at the tissue tier (de-novo) · fuzzy LLM judge</span>
-              </div>
-              {nodes.map((n) => <JudgeCard key={n.id} n={n} />)}
-            </section>
-          );
-        })}
-
-        {mf.length > 0 && (
-          <section style={{ marginTop: 34 }}>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 12, borderBottom: `2px solid ${LINE}`, paddingBottom: 6, marginBottom: 6 }}>
-              <h2 style={{ fontSize: 19, fontWeight: 800, margin: 0 }}>MiniFin</h2>
-              <span style={{ fontSize: 12.5, color: MUTE }}>{mf.length} GT-covered leaves · expert-GT crosswalk (Patrick)</span>
-            </div>
-            <p style={{ fontSize: 12, color: "#6b655d", margin: "0 0 12px", lineHeight: 1.5, maxWidth: 760 }}>
-              MiniFin is <em>not</em> scored by the fuzzy judge — it&apos;s a 4-bucket crosswalk against Patrick&apos;s expert answer key, so there are no per-tier notes. <b>Lenient</b> is the cell-weighted match that feeds the summary; <b>strict</b> demands exact sub-type; <b>bucket</b> is whether the call landed in-ontology, off-ontology, or abstained.
-            </p>
-            <MiniTable nodes={mf} />
-          </section>
-        )}
+        {fuzzyDs.map((d) => <DatasetSection key={d} ds={d} nodes={byDataset[d]} />)}
+        {mf.length > 0 && <MiniSection nodes={mf} />}
       </div>
     </div>
   );
