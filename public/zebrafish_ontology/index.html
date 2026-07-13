@@ -121,10 +121,9 @@ function render(data){
   const strat = data.nodes.map(n => ({ id:n.id, parentId:(n.p==null?ROOT:n.p) }));
   strat.push({ id:ROOT, parentId:null });
   const hroot = d3.stratify()(strat);
-  d3.cluster().size([2*Math.PI, 720]).separation((a,b)=> a.parent===b.parent?1:1.6)(hroot);
+  d3.tree().nodeSize([6, 78])(hroot);           // top-down hierarchical tree (root up, leaves down)
   const TREE = new Map();
-  hroot.each(d => { if (d.id!==ROOT){ const a=d.x-Math.PI/2; TREE.set(d.id,[Math.cos(a)*d.y, Math.sin(a)*d.y]); } });
-  TREE.set(ROOT,[0,0]);
+  hroot.each(d => { if (d.id!==ROOT) TREE.set(d.id, [d.x, d.y]); });
   let LAYOUT = FORCE, MODE = "force";
   const P = id => LAYOUT.get(id) || [0,0];
 
@@ -133,7 +132,11 @@ function render(data){
   data.nodes.forEach(n => { if (n.p!=null && FORCE.has(n.p)) isaLinks.push([n.id, n.p]); });
   data.part_of.forEach(e => { if (FORCE.has(e[0]) && FORCE.has(e[1])) partLinks.push(e); });
   function segD(pairs){ return pairs.map(([a,b])=>{ const [x,y]=P(a),[px,py]=P(b); return `M${x},${y}L${px},${py}`; }).join(""); }
-  const isaPath = g.append("path").attr("d",segD(isaLinks)).attr("fill","none")
+  // is_a: straight in Force; rectangular elbow (parent→bus→child) in Tree
+  function isaD(){ if (MODE!=="tree") return segD(isaLinks);
+    return isaLinks.map(([c,pa])=>{ const [cx,cy]=P(c),[px,py]=P(pa); const my=(cy+py)/2;
+      return `M${px},${py}V${my}H${cx}V${cy}`; }).join(""); }
+  const isaPath = g.append("path").attr("d",isaD()).attr("fill","none")
     .attr("stroke","#b0a89c").attr("stroke-width",0.35).attr("stroke-opacity",0.35);
   const partPath = g.append("path").attr("d",segD(partLinks)).attr("fill","none")
     .attr("stroke","#2f9e6b").attr("stroke-width",0.4).attr("stroke-opacity",0.28);
@@ -212,14 +215,20 @@ function render(data){
   svg.on("click",()=>{ hl.attr("stroke-opacity",0); glyphs.attr("opacity",1); emptyDots.attr("fill-opacity",0.6); tip.style("opacity",0); });
 
   // ---- zoom ----
-  const zoom = d3.zoom().scaleExtent([0.12,20]).on("zoom",ev=>{ g.attr("transform",ev.transform); refreshLabels(); });
+  const zoom = d3.zoom().scaleExtent([0.02,20]).on("zoom",ev=>{ g.attr("transform",ev.transform); refreshLabels(); });
   svg.call(zoom);
-  const W=svg.node().clientWidth,H=svg.node().clientHeight, k0=Math.min(W,H)/1600;
-  svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2).scale(k0));
+  function fitTransform(map){
+    const W=svg.node().clientWidth, H=svg.node().clientHeight;
+    let x0=1/0,x1=-1/0,y0=1/0,y1=-1/0;
+    map.forEach(([x,y])=>{ if(x<x0)x0=x; if(x>x1)x1=x; if(y<y0)y0=y; if(y>y1)y1=y; });
+    const bw=(x1-x0)||1, bh=(y1-y0)||1, k=Math.min(W/bw,H/bh)*0.88, cx=(x0+x1)/2, cy=(y0+y1)/2;
+    return d3.zoomIdentity.translate(W/2-cx*k, H/2-cy*k).scale(k);
+  }
+  svg.call(zoom.transform, fitTransform(FORCE));
 
   // ---- layout switch ----
   function relayout(){
-    isaPath.transition().duration(220).style("opacity",0).on("end",()=>isaPath.attr("d",segD(isaLinks)).transition().duration(320).style("opacity",1));
+    isaPath.transition().duration(220).style("opacity",0).on("end",()=>isaPath.attr("d",isaD()).transition().duration(320).style("opacity",1));
     partPath.transition().duration(220).style("opacity",0).on("end",()=>partPath.attr("d",segD(partLinks)).transition().duration(320).style("opacity",1));
     hl.attr("stroke-opacity",0);
     emptyDots.transition().duration(750).attr("cx",n=>P(n.id)[0]).attr("cy",n=>P(n.id)[1]);
@@ -230,7 +239,9 @@ function render(data){
     setTimeout(refreshLabels, 120);
   }
   function setMode(m){ if (m===MODE) return; MODE=m; LAYOUT = m==="force"?FORCE:TREE;
-    d3.select("#btnForce").classed("on",m==="force"); d3.select("#btnTree").classed("on",m==="tree"); relayout(); }
+    d3.select("#btnForce").classed("on",m==="force"); d3.select("#btnTree").classed("on",m==="tree");
+    svg.transition().duration(800).call(zoom.transform, fitTransform(LAYOUT));   // reframe camera
+    relayout(); }
   d3.select("#btnForce").on("click",()=>setMode("force"));
   d3.select("#btnTree").on("click",()=>setMode("tree"));
 
