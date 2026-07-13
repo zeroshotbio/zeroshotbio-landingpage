@@ -897,9 +897,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
         </div>
       ) : null}
       {view === "new" && graphBlock ? (
-        <div style={{ width: "min(1680px, 98vw)", marginLeft: "calc(50% - min(840px, 49vw))" }}>
-          <GraphJudgeScorecard block={graphBlock} run={run} datasetName={gjName} />
-        </div>
+        <GraphJudgeScorecard block={graphBlock} run={run} datasetName={gjName} />
       ) : (<>
       {/* Bespoke expert-GT two-panel — MiniFin judged vs Patrick's sealed expert GT (aggregate reshape,
           kind:"expertGT-4bucket"). Renders as the PRIMARY judge screen; the standard merged-node views
@@ -908,7 +906,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
       {/* PRIMARY vis: the merged-node scorecard (GT + de-novo + menu-exposed per tier). When a run has
           a consolidation but is NOT yet scored, fall to FinalJudgePanel (which carries the Score button). */}
       {run?.finalJudge?.rows?.length ? (
-        <div style={{ width: "min(1680px, 98vw)", marginLeft: "calc(50% - min(840px, 49vw))" }}>
+        <div>
           <div style={{ ...SEC, textAlign: "center", marginBottom: 8 }}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} · {run.finalJudge.rows.length} post-Meta-Reasoner nodes</div>
           <GraphJudgeScorecard block={run.finalJudge} variant="llm" run={run} datasetName={gjName} />
         </div>

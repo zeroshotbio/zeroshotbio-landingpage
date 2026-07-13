@@ -149,8 +149,9 @@ export function GraphJudgeScorecard({ block, variant = "graph" }: { block: any; 
         ))}
       </div>
 
-      {/* Node × tier table — each cell is a boxed 3-band heat-map (GT / DN / MX), rows spaced apart */}
-      <div style={{ overflow: "auto" }}>
+      {/* Node × tier table — each cell is a boxed 3-band heat-map (GT / DN / MX), rows spaced apart.
+          Full-bleed to ~98vw (only the table breaks out of the page's centred column). */}
+      <div style={{ width: "98vw", marginLeft: "calc(50% - 49vw)", overflow: "auto" }}>
         <table style={{ width: "100%", borderCollapse: "separate", borderSpacing: "0 9px", fontSize: 11 }}>
           <thead>
             <tr style={{ background: "#f3f0ec", color: "#555" }}>
