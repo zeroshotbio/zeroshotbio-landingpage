@@ -876,7 +876,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   const sc = run?.scoredNodes;
   const noop: any = () => {};
   const graphBlock = run?.finalJudge_graph || run?.expertGtScorecard_graph;
-  const [judgeView, setJudgeView] = useState<"old" | "new">("old");   // default OLD — nothing changes until deliberately flipped
+  const [judgeView, setJudgeView] = useState<"old" | "new">("new");   // default NEW (graph judge) where a block exists; Old stays one click away
   const view = graphBlock ? judgeView : "old";
   const gjName = dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published");
   return (
