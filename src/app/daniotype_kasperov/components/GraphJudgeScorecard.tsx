@@ -51,10 +51,10 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
   return (
     <div>
       <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 4 }}>
-        Each node&apos;s blind <b style={{ color: DN_COL }}>de-novo</b> identity (and its <b style={{ color: MX_COL }}>menu-exposed</b> bin) vs the published <b style={{ color: GT_COL }}>GT</b> at every tier, scored by the fuzzy <b>graph judge</b> on ZFA ontology distance. <b style={{ color: HIT_C }}>✓</b> agrees, <b style={{ color: MISS_C }}>✗</b> misses (red-underlined).
+        The blind <b style={{ color: DN_COL }}>de-novo</b> call&apos;s own answer at each tier (and its <b style={{ color: MX_COL }}>menu-exposed</b> bin) vs the published <b style={{ color: GT_COL }}>GT</b>, scored by the fuzzy <b>graph judge</b> on ZFA ontology distance. Each tier is judged at its own granularity — the de-novo&apos;s germ-layer word vs GT&apos;s germ layer, its tissue word vs GT&apos;s tissue, and so on. <b style={{ color: HIT_C }}>✓</b> agrees, <b style={{ color: MISS_C }}>✗</b> misses (red-underlined).
       </div>
       <div style={{ fontSize: 11.5, color: "#9a948c", lineHeight: 1.5, marginBottom: 12 }}>
-        The number after each ✓/✗ is the <b>graph score</b> — <b>1.00</b> = exact or ontology-contained, <b>~0.5–0.67</b> = a near-miss one hop away (e.g. cell↔its tissue), lower = further apart in ZFA. (The graph judge does not roll a specific cell up to a germ-layer word, so coarse tiers read low — that&apos;s the ontology, not an error.)
+        The number after each ✓/✗ is the <b>graph score</b> — <b>1.00</b> = exact or ontology-contained, <b>~0.5–0.67</b> = a near-miss one hop away (e.g. cell↔its tissue), lower = further apart in ZFA. Coarse tiers read high when the de-novo names the right germ layer / tissue; fine tiers are where the real disagreements show.
       </div>
 
       {/* per-tier agreement tiles */}
@@ -92,7 +92,7 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
                   return (
                     <td key={t} style={{ padding: "7px 10px", borderLeft: "1px solid #f2ede6", background: bg }}>
                       {line("GT", GT_COL, gt, null)}
-                      {line("DN", DN_COL, r.identity, gt == null ? null : dnC)}
+                      {line("DN", DN_COL, dnC?.value ?? r.identity, gt == null ? null : dnC)}
                       {mx ? line("MX", MX_COL, mx, mxC) : null}
                     </td>
                   );

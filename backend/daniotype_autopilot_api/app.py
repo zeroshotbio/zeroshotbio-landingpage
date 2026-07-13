@@ -79,6 +79,28 @@ def _parse_driver(final_label):
     return fl, 3, "assign"
 
 
+def _denovo_stack(c):
+    """Per-tier de-novo predictions from a cluster's kasperov-conclude stack
+    ({tier: prediction_str}). The de-novo phase emits a full 4-tier stack; use each
+    tier's OWN word so the graph judge scores germ-layer-vs-germ-layer etc., instead
+    of rolling the sub-tier identity up all tiers. Empty dict if unparseable."""
+    for m in (c.get("transcript") or []):
+        if m.get("role") == "assistant" and "kasperov-conclude" in str(m.get("content", "")):
+            mt = re.search(r"```kasperov-conclude\s*(\{.*?\})\s*```", m["content"], re.S)
+            if mt:
+                try:
+                    stack = (json.loads(mt.group(1)) or {}).get("stack") or {}
+                    out = {}
+                    for t, v in stack.items():
+                        p = v.get("prediction") if isinstance(v, dict) else v
+                        if p and str(p).strip():
+                            out[t] = str(p).strip()
+                    return out
+                except Exception:  # noqa: BLE001
+                    pass
+    return {}
+
+
 def _attempted(reached_idx, kind, tier_idx):
     return False if kind == "unresolved" else tier_idx <= reached_idx
 PRICES = {"gpt-5-mini": (0.25, 2.0), "gpt-5": (1.25, 10.0)}
@@ -1751,26 +1773,36 @@ def _run(run_id, store_id, serve_id, model, base):
         # old scorecard layout. Additive, best-effort; NEVER blocks the save (guardrail e).
         if gt:
             try:
-                pairs = []
+                # de-novo prediction per tier: coarse tiers from the cluster's own 4-tier
+                # kasperov-conclude stack, sub tier from the driver identity (== finalLabel).
+                dn_pred = {}
                 for c in labelled:
                     ident, _r, _k = _parse_driver(c.get("finalLabel"))
+                    ident = ident or c.get("finalLabel")
+                    stk = _denovo_stack(c)
+                    dn_pred[c["id"]] = {"germ_layer": stk.get("germ_layer") or ident,
+                                        "tissue": stk.get("tissue") or ident,
+                                        "cell_type_broad": stk.get("cell_type_broad") or ident,
+                                        "cell_type_sub": ident}
+                pairs = []
+                for c in labelled:
                     rec = (gt or {}).get(c["id"], {})
                     for t in SCORE_TIERS:
                         g = (rec.get(t) or {}).get("label")
                         if g:
-                            pairs.append((ident or c.get("finalLabel"), g))
+                            pairs.append((dn_pred[c["id"]][t], g))
                 uniq = list(dict.fromkeys(pairs))
                 _gr = requests.post(f"{GRAPHJUDGE_URL}/graph_score",
                                     json={"rows": [{"id": i, "pred": p, "gt": g} for i, (p, g) in enumerate(uniq)]}, timeout=180)
                 _gr.raise_for_status()
                 sc = {uniq[row["id"]]: row for row in _gr.json()["block"]["rows"]}
                 def _cell(pred, g):
-                    if not g:
+                    if not pred or not g:
                         return None
                     s = sc.get((pred, g))
                     if not s:
                         return None
-                    return {"score": s.get("score"), "match": (s.get("route") == "graph" and isinstance(s.get("score"), (int, float)) and s["score"] >= 0.4),
+                    return {"value": pred, "score": s.get("score"), "match": (s.get("route") == "graph" and isinstance(s.get("score"), (int, float)) and s["score"] >= 0.4),
                             "route": s.get("route"), "subsumption": s.get("subsumption"), "distance": s.get("distance"),
                             "path_edge_types": s.get("path_edge_types"), "pred_zfa_name": s.get("pred_zfa_name"), "gt_zfa_name": s.get("gt_zfa_name")}
                 grows = []
@@ -1779,7 +1811,7 @@ def _run(run_id, store_id, serve_id, model, base):
                     rec = (gt or {}).get(c["id"], {})
                     pred = ident or c.get("finalLabel")
                     grows.append({"id": c["id"], "identity": pred, "gt": {t: (rec.get(t) or {}).get("label") for t in SCORE_TIERS},
-                                  "menu": {}, "dn": {t: _cell(pred, (rec.get(t) or {}).get("label")) for t in SCORE_TIERS}, "mx": {}})
+                                  "menu": {}, "dn": {t: _cell(dn_pred[c["id"]][t], (rec.get(t) or {}).get("label")) for t in SCORE_TIERS}, "mx": {}})
                 present = [t for t in SCORE_TIERS if any(((gt or {}).get(c["id"], {}).get(t) or {}).get("label") for c in labelled)]
                 aggd = {}
                 for t in present:
@@ -1793,7 +1825,8 @@ def _run(run_id, store_id, serve_id, model, base):
                     aggd[t] = {"agree": a, "total": tot, "pct": round(100 * a / tot) if tot else 0}
                 run_json["finalJudge_graph"] = {"judge": "fuzzy graph judge (ZFA scheme-b + Qwen resolver + CL bridge)",
                     "scored": "live", "embedder": "Qwen3-Embedding-0.6B", "threshold": 0.78,
-                    "scheme": "b (part_of=0.5,is_a=1.0; 1/(1+d_w)); widened-subsumption NOT applied",
+                    "scheme": "b (part_of=0.5,is_a=1.0; 1/(1+d_w))",
+                    "dn_source": "de-novo 4-tier stack: coarse tiers from kasperov-conclude stack, sub tier = driver identity",
                     "tiers": present, "rows": grows, "aggregate": {"per_tier": aggd}}
             except Exception as _ge:  # noqa: BLE001
                 st.setdefault("warnings", []).append(f"graph-judge (:5011) scoring skipped — old scoring retained ({str(_ge)[:100]})")
