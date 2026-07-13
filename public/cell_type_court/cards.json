@@ -6,7 +6,16 @@
     "pred_label": "crista support cell · mature",
     "pred_gloss": "supporting (non-sensory) cell of the inner-ear sensory crista, in a mature state",
     "matched_term": "Cajal-Retzius cell",
-    "matched_gloss": "an early-born neuron of the developing cerebral cortex that secretes reelin"
+    "matched_gloss": "an early-born neuron of the developing cerebral cortex that secretes reelin",
+    "evidence": [
+      { "source": "ZFA", "query": "crista supporting cell", "term_id": "ZFA:0001402", "term_name": "crista supporting cell",
+        "definition": "non-sensory supporting cell of the ampullary crista of the inner ear",
+        "relation": "is_a supporting cell; part_of crista", "note": "matches the labeller's marker set (otog, cldnb)" },
+      { "source": "GO", "query": "otogelin", "term_id": "GO:0032585", "term_name": "multivesicular body membrane",
+        "definition": "component of the otolithic/otogelin secretory apparatus", "note": "otog is a crista support marker, not neuronal" },
+      { "source": "ZFIN", "query": "otog expression", "term_id": "ZDB-GENE-040426-2889", "term_name": "otog (otogelin)",
+        "definition": "expressed in inner ear supporting cells; no cortical expression", "note": "no reelin (reln) in the marker set" }
+    ]
   },
   {
     "cluster_id": "leiden_3.0::42",
@@ -15,7 +24,16 @@
     "pred_label": "hatching gland secretory cell",
     "pred_gloss": "polster-derived cell that secretes the hatching enzyme to digest the chorion",
     "matched_term": "hatching gland cell",
-    "matched_gloss": "cell of the embryonic hatching gland (ZFA:0005150) that releases chorion-digesting enzymes"
+    "matched_gloss": "cell of the embryonic hatching gland (ZFA:0005150) that releases chorion-digesting enzymes",
+    "evidence": [
+      { "source": "ZFA", "query": "hatching gland", "term_id": "ZFA:0005150", "term_name": "hatching gland cell",
+        "definition": "secretory cell of the hatching gland derived from the polster",
+        "relation": "part_of hatching gland", "note": "exact anatomical match to the prediction" },
+      { "source": "ZFIN", "query": "he1a expression", "term_id": "ZDB-GENE-050208-731", "term_name": "he1a (hatching enzyme 1a)",
+        "definition": "hatching-gland-specific; top marker of this cluster", "note": "he1a + ctslb both present" },
+      { "source": "GO", "query": "hatching enzyme activity", "term_id": "GO:0004175", "term_name": "endopeptidase activity",
+        "definition": "catalysis of chorion protein cleavage during hatching" }
+    ]
   },
   {
     "cluster_id": "leiden_2.0::8",
@@ -24,7 +42,16 @@
     "pred_label": "slow muscle fibre",
     "pred_gloss": "slow-twitch skeletal muscle fibre of the myotome, superficial monolayer",
     "matched_term": "fast muscle cell",
-    "matched_gloss": "fast-twitch skeletal muscle fibre of the deep myotome"
+    "matched_gloss": "fast-twitch skeletal muscle fibre of the deep myotome",
+    "evidence": [
+      { "source": "ZFA", "query": "slow muscle cell", "term_id": "ZFA:0001056", "term_name": "slow muscle cell",
+        "definition": "slow-twitch myofibre; superficial monolayer adjacent to the skin",
+        "relation": "is_a skeletal muscle cell", "note": "labeller's own term is the SLOW node" },
+      { "source": "ZFIN", "query": "smyhc1 expression", "term_id": "ZDB-GENE-991123-5", "term_name": "smyhc1 (slow myosin heavy chain 1)",
+        "definition": "slow-fibre-specific myosin; strong in this cluster", "note": "no fast-fibre myha/mylpfa signal" },
+      { "source": "ZFA", "query": "fast muscle cell", "term_id": "ZFA:0001057", "term_name": "fast muscle cell",
+        "definition": "fast-twitch myofibre of the deep myotome", "note": "the term we MATCHED to — sibling, not the same node" }
+    ]
   },
   {
     "cluster_id": "leiden_3.0::5",
@@ -35,7 +62,16 @@
     "matched_term": "pancreatic beta cell",
     "matched_gloss": "insulin-secreting endocrine cell of the pancreatic islet",
     "gt_label": "pancreatic endocrine cell",
-    "gt_gloss": "hormone-secreting cell of the pancreatic islet (alpha / beta / delta lineage)"
+    "gt_gloss": "hormone-secreting cell of the pancreatic islet (alpha / beta / delta lineage)",
+    "evidence": [
+      { "source": "ZFA", "query": "pancreatic beta cell", "term_id": "ZFA:0009035", "term_name": "type B pancreatic cell",
+        "definition": "insulin-producing endocrine cell of the islet", "relation": "is_a pancreatic endocrine cell",
+        "note": "beta cell is a child of the broader endocrine term" },
+      { "source": "ZFIN", "query": "ins expression", "term_id": "ZDB-GENE-980526-113", "term_name": "ins (insulin)",
+        "definition": "beta-cell-specific hormone; defines this cluster" },
+      { "source": "GO", "query": "insulin secretion", "term_id": "GO:0030073", "term_name": "insulin secretion",
+        "definition": "regulated release of insulin by pancreatic beta cells" }
+    ]
   },
   {
     "cluster_id": "leiden_2.0::23",
@@ -46,7 +82,15 @@
     "matched_term": "retinal ganglion cell",
     "matched_gloss": "projection neuron of the inner retina whose axons form the optic nerve",
     "gt_label": "amacrine cell",
-    "gt_gloss": "inhibitory interneuron of the inner nuclear layer of the retina"
+    "gt_gloss": "inhibitory interneuron of the inner nuclear layer of the retina",
+    "evidence": [
+      { "source": "ZFA", "query": "retinal ganglion cell", "term_id": "ZFA:0009306", "term_name": "retinal ganglion cell",
+        "definition": "projection neuron; soma in the ganglion cell layer", "relation": "part_of retina" },
+      { "source": "ZFA", "query": "amacrine cell", "term_id": "ZFA:0009286", "term_name": "amacrine cell",
+        "definition": "inhibitory interneuron of the inner nuclear layer", "note": "both retinal neurons, different layers/roles" },
+      { "source": "ZFIN", "query": "isl2b vs tfap2a", "term_name": "isl2b (RGC) / tfap2a (amacrine)",
+        "definition": "distinct marker programs — RGC projection vs amacrine interneuron" }
+    ]
   },
   {
     "cluster_id": "leiden_3.0::31",
@@ -57,6 +101,14 @@
     "matched_term": "erythroid progenitor",
     "matched_gloss": "committed progenitor that gives rise to red blood cells",
     "gt_label": "notochord vacuolated cell",
-    "gt_gloss": "large fluid-filled cell of the embryonic notochord providing axial support"
+    "gt_gloss": "large fluid-filled cell of the embryonic notochord providing axial support",
+    "evidence": [
+      { "source": "ZFA", "query": "erythroid progenitor cell", "term_id": "ZFA:0009142", "term_name": "erythroid progenitor cell",
+        "definition": "haematopoietic progenitor committed to the red-cell lineage", "relation": "is_a haematopoietic cell" },
+      { "source": "ZFA", "query": "notochord vacuolated cell", "term_id": "ZFA:0001086", "term_name": "vacuolated cell of notochord",
+        "definition": "turgor-bearing axial support cell", "note": "mesoderm axial structure — unrelated lineage" },
+      { "source": "GO", "query": "hemoglobin complex", "term_id": "GO:0005833", "term_name": "hemoglobin complex",
+        "definition": "oxygen-carrying complex of erythroid cells", "note": "hbae1/hbbe1 present; no notochord col2a1/shha" }
+    ]
   }
 ]

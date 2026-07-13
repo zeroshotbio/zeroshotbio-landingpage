@@ -35,7 +35,45 @@ type Card = {
   question_type: QType;
   gt_label?: string;   // scoring cards only
   gt_gloss?: string;   // scoring cards only
+  evidence?: Evidence[]; // the researcher's ZFA/ZFIN/GO lookups from the labeller chat history
 };
+
+// One ontology/database lookup the labeller's Researcher made while reasoning out this label —
+// lifted verbatim from the run's chat history so the judge sees the SAME evidence the machine did.
+type OntologySource = "ZFA" | "ZFIN" | "GO";
+type Evidence = {
+  source: OntologySource;
+  query?: string;      // what the researcher searched for
+  term_id?: string;    // e.g. "ZFA:0000135", "GO:0005179", "ZDB-GENE-…"
+  term_name?: string;  // canonical name returned
+  definition?: string; // the definition/gloss the lookup returned
+  relation?: string;   // ontology relation surfaced, e.g. "is_a inner ear sensory epithelium"
+  note?: string;       // how the researcher used it in the reasoning
+  url?: string;        // explicit deep-link; if absent we derive the authoritative page below
+};
+
+const SOURCE_META: Record<OntologySource, { label: string; color: string; full: string }> = {
+  ZFA: { label: "ZFA", color: "#d97706", full: "Zebrafish Anatomy Ontology" },
+  ZFIN: { label: "ZFIN", color: "#0d9488", full: "Zebrafish Information Network" },
+  GO: { label: "GO", color: "#7c3aed", full: "Gene Ontology" },
+};
+
+// Deep-link to the authoritative page for a lookup — this is the "tool in the UI": one tap takes
+// the judge to the live ontology record. No API call from us; just an anchor to the source of truth.
+function evidenceUrl(e: Evidence): string {
+  if (e.url) return e.url;
+  const id = e.term_id?.trim();
+  const q = encodeURIComponent(e.query || e.term_name || "");
+  if (e.source === "GO") {
+    return id && /^GO:/i.test(id) ? `https://www.ebi.ac.uk/QuickGO/term/${id}` : `https://www.ebi.ac.uk/QuickGO/search/${q}`;
+  }
+  if (e.source === "ZFA") {
+    return id && /^ZFA:/i.test(id)
+      ? `https://www.ebi.ac.uk/ols4/ontologies/zfa/classes/http%3A%2F%2Fpurl.obolibrary.org%2Fobo%2F${id.replace(":", "_")}`
+      : `https://zfin.org/search?q=${q}`;
+  }
+  return id ? `https://zfin.org/${id}` : `https://zfin.org/search?q=${q}`; // ZFIN gene / term / expression
+}
 
 type PlacementAns = "same" | "close" | "no";
 type ScoringAns = "same" | "near" | "unrelated";
@@ -108,6 +146,7 @@ export default function CourtClient() {
   const [idx, setIdx] = useState(0);
   const [correction, setCorrection] = useState("");
   const [flash, setFlash] = useState(false);
+  const [evOpen, setEvOpen] = useState(true); // sticky across cards: expand once, stays for the run
   const cardsRef = useRef<Card[]>([]);
 
   useEffect(() => {
@@ -175,6 +214,7 @@ export default function CourtClient() {
       else if (e.key === "2") record(opts[1].key);
       else if (e.key === "3") record(opts[2].key);
       else if (e.key === "0" || e.key.toLowerCase() === "s" || e.key === " ") { e.preventDefault(); record("abstain"); }
+      else if (e.key.toLowerCase() === "e") setEvOpen((o) => !o);
       else if (e.key === "ArrowLeft") goBack();
     };
     window.addEventListener("keydown", onKey);
@@ -262,9 +302,10 @@ export default function CourtClient() {
       {flash ? (
         <FlashCard color={d.color} />
       ) : cur.question_type === "placement" ? (
-        <PlacementBody card={cur} correction={correction} setCorrection={setCorrection} onPick={record} />
+        <PlacementBody card={cur} correction={correction} setCorrection={setCorrection} onPick={record}
+          evOpen={evOpen} onToggleEv={() => setEvOpen((o) => !o)} />
       ) : (
-        <ScoringBody card={cur} onPick={record} />
+        <ScoringBody card={cur} onPick={record} evOpen={evOpen} onToggleEv={() => setEvOpen((o) => !o)} />
       )}
 
       {/* abstention — records "not sure", never forces a call */}
@@ -279,8 +320,9 @@ export default function CourtClient() {
 }
 
 // ---------------- PLACEMENT screen (resolver check) ----------------
-function PlacementBody({ card, correction, setCorrection, onPick }: {
+function PlacementBody({ card, correction, setCorrection, onPick, evOpen, onToggleEv }: {
   card: Card; correction: string; setCorrection: (s: string) => void; onPick: (a: PlacementAns) => void;
+  evOpen: boolean; onToggleEv: () => void;
 }) {
   return (
     <>
@@ -289,6 +331,8 @@ function PlacementBody({ card, correction, setCorrection, onPick }: {
         …we filed it under ↓
       </div>
       <TermCard tag="STANDARD TERM WE MATCHED IT TO" tagColor="#0f172a" term={card.matched_term} gloss={card.matched_gloss} strong />
+
+      <EvidencePanel evidence={card.evidence} open={evOpen} onToggle={onToggleEv} />
 
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
         {PLACEMENT_OPTS.map((o) => <OptButton key={o.key} o={o} onClick={() => onPick(o.key)} />)}
@@ -309,7 +353,9 @@ function PlacementBody({ card, correction, setCorrection, onPick }: {
 // Both labels are ALREADY placement-confirmed upstream. Shown as neutral A/B cards (which side is
 // the model's prediction is de-emphasized) so the expert judges the biological relationship, not
 // "was the model right". No number is ever shown.
-function ScoringBody({ card, onPick }: { card: Card; onPick: (a: ScoringAns) => void }) {
+function ScoringBody({ card, onPick, evOpen, onToggleEv }: {
+  card: Card; onPick: (a: ScoringAns) => void; evOpen: boolean; onToggleEv: () => void;
+}) {
   return (
     <>
       <div style={{ display: "flex", gap: 10, alignItems: "stretch" }}>
@@ -317,6 +363,9 @@ function ScoringBody({ card, onPick }: { card: Card; onPick: (a: ScoringAns) => 
         <div style={{ display: "flex", alignItems: "center", color: "#0d9488", fontWeight: 800, fontSize: 13 }}>vs</div>
         <TermCard tag="LABEL B" tagColor="#0d9488" term={card.gt_label || card.matched_term} gloss={card.gt_gloss || card.matched_gloss} strong flex />
       </div>
+
+      <EvidencePanel evidence={card.evidence} open={evOpen} onToggle={onToggleEv} />
+
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 14 }}>
         {SCORING_OPTS.map((o) => <OptButton key={o.key} o={o} onClick={() => onPick(o.key)} />)}
       </div>
@@ -335,6 +384,62 @@ function OptButton({ o, onClick }: { o: { k: string; emoji: string; label: strin
       <span style={{ flex: 1 }}>{o.label}</span>
       <span style={{ fontSize: 12, fontWeight: 800, color: o.color, border: `1px solid ${o.color}55`, borderRadius: 6, padding: "1px 7px" }}>{o.k}</span>
     </button>
+  );
+}
+
+// The labeller's ZFA/ZFIN/GO research trail for this card — the same evidence the machine reasoned
+// over, lifted from the run's chat history. Collapsible (key "E") and sticky across cards so a fast
+// judge can hide it, but it's the decision-support the whole tool is built around.
+function EvidencePanel({ evidence, open, onToggle }: { evidence?: Evidence[]; open: boolean; onToggle: () => void }) {
+  if (!evidence || evidence.length === 0) return null;
+  const n = evidence.length;
+  return (
+    <div style={{ marginTop: 12 }}>
+      <button onClick={onToggle} style={{
+        display: "flex", alignItems: "center", gap: 8, width: "100%", padding: "9px 12px", cursor: "pointer",
+        background: "#f8fafc", border: "1px solid #e2e8f0", borderRadius: open ? "12px 12px 0 0" : 12,
+        fontSize: 12.5, fontWeight: 800, color: "#334155", textAlign: "left",
+      }}>
+        <span>🔍 Researcher evidence</span>
+        <span style={{ fontWeight: 600, color: "#94a3b8" }}>· {n} ontology lookup{n > 1 ? "s" : ""}</span>
+        <span style={{ flex: 1 }} />
+        {/* de-emphasized source badges as a preview of what's inside */}
+        {Array.from(new Set(evidence.map((e) => e.source))).map((s) => (
+          <span key={s} style={{ fontSize: 9, fontWeight: 800, color: SOURCE_META[s].color, border: `1px solid ${SOURCE_META[s].color}55`, borderRadius: 5, padding: "0px 5px" }}>{SOURCE_META[s].label}</span>
+        ))}
+        <span style={{ color: "#94a3b8", fontSize: 12, marginLeft: 4 }}>{open ? "▲ hide (E)" : "▼ show (E)"}</span>
+      </button>
+      {open && (
+        <div style={{ border: "1px solid #e2e8f0", borderTop: "none", borderRadius: "0 0 12px 12px", padding: 8, display: "flex", flexDirection: "column", gap: 6, background: "#fff" }}>
+          {evidence.map((e, i) => <EvidenceRow key={i} e={e} />)}
+          <div style={{ fontSize: 10.5, color: "#94a3b8", textAlign: "center", padding: "2px 0 1px" }}>
+            tap any row to open its record on ZFA · ZFIN · QuickGO ↗
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// One lookup row — clickable, opening the authoritative ontology record in a new tab.
+function EvidenceRow({ e }: { e: Evidence }) {
+  const m = SOURCE_META[e.source];
+  return (
+    <a href={evidenceUrl(e)} target="_blank" rel="noreferrer" title={`Open on ${m.full}`}
+      style={{ display: "block", textDecoration: "none", background: "#f8fafc", border: "1px solid #eef2f7",
+        borderLeft: `3px solid ${m.color}`, borderRadius: 8, padding: "7px 9px" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 7 }}>
+        <span style={{ fontSize: 9.5, fontWeight: 800, color: "#fff", background: m.color, borderRadius: 5, padding: "1px 6px" }}>{m.label}</span>
+        {e.term_id && <span style={{ fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", fontSize: 11, color: "#64748b" }}>{e.term_id}</span>}
+        <span style={{ flex: 1 }} />
+        <span style={{ color: "#94a3b8", fontSize: 13 }}>↗</span>
+      </div>
+      {e.query && <div style={{ fontSize: 11, color: "#94a3b8", marginTop: 2 }}>searched: &ldquo;{e.query}&rdquo;</div>}
+      {e.term_name && <div style={{ fontSize: 13, fontWeight: 700, color: "#0f172a", marginTop: 1, lineHeight: 1.2 }}>{e.term_name}</div>}
+      {e.definition && <div style={{ fontSize: 12, color: "#475569", fontStyle: "italic", marginTop: 2, lineHeight: 1.35 }}>{e.definition}</div>}
+      {e.relation && <div style={{ fontSize: 11.5, color: "#64748b", marginTop: 2 }}>↳ {e.relation}</div>}
+      {e.note && <div style={{ fontSize: 11.5, color: "#475569", marginTop: 2 }}>🧭 {e.note}</div>}
+    </a>
   );
 }
 
@@ -396,7 +501,7 @@ function IntroScreen({ rater, onStart, onBack }: { rater: string; onStart: () =>
         {block(DOCKET.scoring, "Two already-correctly-placed labels. You say how close they are in plain biology — same thing, near neighbor, or unrelated. This certifies whether our distance score is fair, independent of placement.")}
       </div>
       <p style={{ fontSize: 12, color: "#94a3b8", textAlign: "center", margin: "12px 0 0" }}>
-        Keys: <b>1 · 2 · 3</b> to answer · <b>S</b> to skip · <b>←</b> back
+        Keys: <b>1 · 2 · 3</b> answer · <b>S</b> skip · <b>E</b> evidence · <b>←</b> back
       </p>
       <button onClick={onStart} style={{ ...primaryBtn, marginTop: 14 }}>Take the bench →</button>
     </Shell>
