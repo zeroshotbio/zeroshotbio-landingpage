@@ -41,6 +41,7 @@
   .toggle input { width:14px; height:14px; }
   .tg-z input { accent-color:var(--zscape); } .tg-c input { accent-color:var(--chemfish); }
   .tg-d input { accent-color:var(--daniocell); } .tg-x input { accent-color:var(--accent); }
+  input[type=range] { accent-color:var(--accent); height:16px; }
   details { margin:7px 0; } summary { cursor:pointer; color:var(--muted); font-size:12px; }
   .bin { font-size:11px; color:var(--muted); max-height:150px; overflow-y:auto; margin-top:6px;
     background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:7px 9px; }
@@ -79,6 +80,12 @@
     <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="3.2" fill="none" stroke="#6e6a63" stroke-width="1.3" stroke-dasharray="2.4 1.8"/></svg> <b style="font-weight:500">dashed ring</b> — fuzzy (embedder/CL) placement, uncertain</div>
     <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="2.4" fill="#2563eb"/><circle cx="10" cy="7" r="4.4" fill="none" stroke="#c0543b" stroke-width="1.3"/></svg> <b style="font-weight:500">concentric rings</b> — same node in 2+ menus</div>
     <div class="hint">A bigger glyph just means more menus land on that node — one ring per dataset. Empty ZFA nodes are the small grey dots.</div>
+
+    <h2>Widening net · fuzzy reach</h2>
+    <label class="toggle tg-x"><input type="checkbox" id="tNet" checked> show the net</label>
+    <div class="row" style="margin-top:4px; gap:7px">threshold <input type="range" id="netcut" min="0.5" max="0.95" step="0.01" value="0.72"></div>
+    <div class="hint" id="netcount"></div>
+    <div class="hint">Each ghost is a menu term with <b>no exact ZFA name</b>, tethered to the node it would land on via the embedder / CL bridge. Lower the threshold to <b>widen the net</b> — more terms get caught (filled), but coercions creep in too. Distance from the node ≈ how weak the match is.</div>
 
     <h2>Coverage · menu → ZFA</h2>
     <table><thead><tr><th>set</th><th>menu</th><th>exact</th><th>fuzzy</th><th>unpl.</th></tr></thead><tbody id="counts"></tbody></table>
@@ -131,6 +138,29 @@ function render(data){
       .attr("stroke",ds=>COL[ds]).attr("stroke-width",1.2)
       .attr("stroke-dasharray",ds=> n.ds[ds]==="fuzzy" ? "2.5 2" : null).attr("fill-opacity",0.95);
   });
+
+  // widening net: ghost per non-exact menu term, tethered to the node it would land on
+  function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
+  const netData=(data.net||[]).filter(d=>XY.has(d.to)).map(d=>{
+    const [tx,ty]=XY.get(d.to), a=(hash(d.term)%628)/100, r=8+(1-d.cos)*55;
+    return Object.assign({},d,{gx:tx+Math.cos(a)*r,gy:ty+Math.sin(a)*r,tx,ty}); });
+  const netG=g.append("g");
+  const tethers=netG.append("g").selectAll("line").data(netData).join("line")
+    .attr("x1",d=>d.gx).attr("y1",d=>d.gy).attr("x2",d=>d.tx).attr("y2",d=>d.ty);
+  const ghosts=netG.append("g").selectAll("circle").data(netData).join("circle")
+    .attr("cx",d=>d.gx).attr("cy",d=>d.gy).attr("r",1.9).attr("stroke-width",0.8).style("cursor","pointer");
+  ghosts.on("mousemove",(ev,d)=>{ tip.html(`<b>${d.term}</b><br><span class="t">${d.ds} · cos ${d.cos.toFixed(2)} · via ${d.via}</span><br>→ ${(byId.get(d.to)||{}).name||d.to}`).style("opacity",1); moveTip(ev); })
+        .on("mouseleave",()=>tip.style("opacity",0));
+  function applyCut(cut){
+    tethers.attr("stroke",d=>d.cos>=cut?COL[d.ds]:"#c9c2b8").attr("stroke-width",0.5)
+      .attr("stroke-opacity",d=>d.cos>=cut?0.5:0.16).attr("stroke-dasharray",d=>d.cos>=cut?null:"2 2");
+    ghosts.attr("fill",d=>d.cos>=cut?COL[d.ds]:"#fffdfb").attr("stroke",d=>COL[d.ds])
+      .attr("opacity",d=>d.cos>=cut?0.95:0.5);
+    d3.select("#netcount").html(`cutoff <b>${cut.toFixed(2)}</b> · <b>${netData.filter(d=>d.cos>=cut).length}</b> of ${netData.length} caught beyond exact scope`);
+  }
+  d3.select("#netcut").on("input",function(){ applyCut(+this.value); });
+  d3.select("#tNet").on("change",function(){ netG.style("display",this.checked?null:"none"); });
+  applyCut(0.72);
 
   // interaction
   function label(n){ const parts = ORDER.filter(d=>n.ds[d]).map(d=>`<span style="color:${COL[d]}">${d}</span><span class="t"> ${n.ds[d]}</span>`);
