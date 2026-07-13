@@ -1,0 +1,62 @@
+[
+  {
+    "cluster_id": "leiden_3.0::17",
+    "dataset": "ChemFish",
+    "question_type": "placement",
+    "pred_label": "crista support cell · mature",
+    "pred_gloss": "supporting (non-sensory) cell of the inner-ear sensory crista, in a mature state",
+    "matched_term": "Cajal-Retzius cell",
+    "matched_gloss": "an early-born neuron of the developing cerebral cortex that secretes reelin"
+  },
+  {
+    "cluster_id": "leiden_3.0::42",
+    "dataset": "ChemFish",
+    "question_type": "placement",
+    "pred_label": "hatching gland secretory cell",
+    "pred_gloss": "polster-derived cell that secretes the hatching enzyme to digest the chorion",
+    "matched_term": "hatching gland cell",
+    "matched_gloss": "cell of the embryonic hatching gland (ZFA:0005150) that releases chorion-digesting enzymes"
+  },
+  {
+    "cluster_id": "leiden_2.0::8",
+    "dataset": "DanioCell",
+    "question_type": "placement",
+    "pred_label": "slow muscle fibre",
+    "pred_gloss": "slow-twitch skeletal muscle fibre of the myotome, superficial monolayer",
+    "matched_term": "fast muscle cell",
+    "matched_gloss": "fast-twitch skeletal muscle fibre of the deep myotome"
+  },
+  {
+    "cluster_id": "leiden_3.0::5",
+    "dataset": "ChemFish",
+    "question_type": "scoring",
+    "pred_label": "pancreatic beta cell",
+    "pred_gloss": "insulin-secreting endocrine cell of the pancreatic islet",
+    "matched_term": "pancreatic beta cell",
+    "matched_gloss": "insulin-secreting endocrine cell of the pancreatic islet",
+    "gt_label": "pancreatic endocrine cell",
+    "gt_gloss": "hormone-secreting cell of the pancreatic islet (alpha / beta / delta lineage)"
+  },
+  {
+    "cluster_id": "leiden_2.0::23",
+    "dataset": "DanioCell",
+    "question_type": "scoring",
+    "pred_label": "retinal ganglion cell",
+    "pred_gloss": "projection neuron of the inner retina whose axons form the optic nerve",
+    "matched_term": "retinal ganglion cell",
+    "matched_gloss": "projection neuron of the inner retina whose axons form the optic nerve",
+    "gt_label": "amacrine cell",
+    "gt_gloss": "inhibitory interneuron of the inner nuclear layer of the retina"
+  },
+  {
+    "cluster_id": "leiden_3.0::31",
+    "dataset": "ChemFish",
+    "question_type": "scoring",
+    "pred_label": "erythroid progenitor",
+    "pred_gloss": "committed progenitor that gives rise to red blood cells",
+    "matched_term": "erythroid progenitor",
+    "matched_gloss": "committed progenitor that gives rise to red blood cells",
+    "gt_label": "notochord vacuolated cell",
+    "gt_gloss": "large fluid-filled cell of the embryonic notochord providing axial support"
+  }
+]
