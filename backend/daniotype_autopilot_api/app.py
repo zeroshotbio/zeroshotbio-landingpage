@@ -45,6 +45,7 @@ def _hdrs(extra=None):
     return h
 # completed runs are stored on the EC2 EBS volume (no S3 needed for the POC)
 RUNS_DIR = os.environ.get("AUTOPILOT_RUNS_DIR", "/data/daniotype_runs")
+GRAPHJUDGE_URL = os.environ.get("GRAPHJUDGE_URL", "http://127.0.0.1:5011")  # resident graph-judge scorer (:5011)
 _index_lock = threading.Lock()
 AUTO_MAX_ROUNDS = 4
 SCORE_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"]
@@ -1746,6 +1747,24 @@ def _run(run_id, store_id, serve_id, model, base):
             # served from a sibling partition (e.g. daniocell_native) but stored under store_id;
             # stamp native-schema so the read-only viewer resolves GT against the served partition.
             run_json["schemaBasis"] = "native-schema"
+        # GRAPH-JUDGE parallel block (Burst 27) — additive, best-effort; the graph view renders this.
+        # NEVER blocks the save: if :5011 is down we still write the old scoring + log a warning (guardrail e).
+        if gt:
+            try:
+                grows = []
+                for c in labelled:
+                    ident, _r, _k = _parse_driver(c.get("finalLabel"))
+                    rec = (gt or {}).get(c["id"], {})
+                    gtier = next((t for t in reversed(SCORE_TIERS) if (rec.get(t) or {}).get("label")), None)
+                    grows.append({"id": c["id"], "pred": ident or c.get("finalLabel"),
+                                  "gt": ((rec.get(gtier) or {}).get("label") if gtier else None), "tier": gtier})
+                _gr = requests.post(f"{GRAPHJUDGE_URL}/graph_score",
+                                    json={"rows": grows, "join": "headless: pred=driver identity, gt=finest available GT tier"},
+                                    timeout=120)
+                _gr.raise_for_status()
+                run_json["finalJudge_graph"] = _gr.json()["block"]
+            except Exception as _ge:  # noqa: BLE001
+                st.setdefault("warnings", []).append(f"graph-judge (:5011) scoring skipped — old scoring retained ({str(_ge)[:100]})")
         rid = save_run(run_json)
         st.update(phase="done", saved=True, runSaved=rid, cost=usd)
     except Exception as e:  # noqa: BLE001
