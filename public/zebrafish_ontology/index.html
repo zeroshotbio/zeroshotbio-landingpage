@@ -19,8 +19,11 @@
     font-family:"Roboto Slab",Georgia,serif; font-weight:300; font-size:13px; }
   #app { display:flex; height:100vh; }
   #stage { flex:1; position:relative; }
-  svg { width:100%; height:100%; display:block; cursor:grab; background:var(--paper); }
-  svg:active { cursor:grabbing; }
+  #stage > svg { width:100%; height:100%; display:block; cursor:grab; background:var(--paper); }
+  #stage > svg:active { cursor:grabbing; }
+  .row svg { vertical-align:middle; flex:none; overflow:visible; }
+  text.lbl { fill:var(--ink); stroke:#fffdfb; stroke-width:3.2px; paint-order:stroke;
+    stroke-linejoin:round; pointer-events:none; font-weight:500; }
   #panel { width:340px; flex:none; background:var(--card); border-left:1px solid var(--line);
     padding:22px 20px 48px; overflow-y:auto; }
   h1 { font-size:19px; font-weight:600; margin:0 0 3px; letter-spacing:.2px; }
@@ -149,11 +152,21 @@ function render(data){
   }
   svg.on("click",()=>{ hl.attr("stroke-opacity",0); glyphs.attr("opacity",1); emptyDots.attr("fill-opacity",0.55); tip.style("opacity",0); });
 
+  // Maps-style zoom-tiered labels with white halo (drawn last = on top)
+  const labels = g.append("g").selectAll("text").data(data.nodes.filter(n=>n.lab)).join("text")
+    .attr("class","lbl").attr("x",n=>n.x).attr("y",n=>n.y).attr("dy","-0.6em")
+    .attr("text-anchor","middle").text(n=>n.lab);
+  function updateLabels(k){
+    labels.style("display",d=> k>=d.lz ? null : "none")
+          .style("font-size",(11/k)+"px").style("stroke-width",(3.2/k)+"px");
+  }
+
   // zoom — fit to content
-  const zoom = d3.zoom().scaleExtent([0.15,20]).on("zoom",ev=>g.attr("transform",ev.transform));
+  const zoom = d3.zoom().scaleExtent([0.15,20]).on("zoom",ev=>{ g.attr("transform",ev.transform); updateLabels(ev.transform.k); });
   svg.call(zoom);
   const W=svg.node().clientWidth,H=svg.node().clientHeight, k=Math.min(W,H)/1500;
   svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2).scale(k));
+  updateLabels(k);
 
   // toggles
   d3.select("#tIsa").on("change",function(){ isaPath.style("display",this.checked?null:"none"); });
