@@ -897,7 +897,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
         </div>
       ) : null}
       {view === "new" && graphBlock ? (
-        <div style={{ width: "min(1180px, 96vw)", marginLeft: "calc(50% - min(590px, 48vw))" }}>
+        <div style={{ width: "min(1680px, 98vw)", marginLeft: "calc(50% - min(840px, 49vw))" }}>
           <GraphJudgeScorecard block={graphBlock} run={run} datasetName={gjName} />
         </div>
       ) : (<>

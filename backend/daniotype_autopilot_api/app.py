@@ -1815,14 +1815,18 @@ def _run(run_id, store_id, serve_id, model, base):
                 present = [t for t in SCORE_TIERS if any(((gt or {}).get(c["id"], {}).get(t) or {}).get("label") for c in labelled)]
                 aggd = {}
                 for t in present:
-                    a = tot = 0
+                    a = tot = unresolved = 0
                     for r in grows:
                         cc = r["dn"].get(t)
-                        if cc and cc["route"] != "not_scored":
+                        if not cc:
+                            continue
+                        if cc.get("route") == "graph":  # actually placed in ZFA -> real graph score
                             tot += 1
                             if cc["match"]:
                                 a += 1
-                    aggd[t] = {"agree": a, "total": tot, "pct": round(100 * a / tot) if tot else 0}
+                        else:  # llm_fallback / not_scored -> ZFA can't place the label; not a miss
+                            unresolved += 1
+                    aggd[t] = {"agree": a, "total": tot, "unresolved": unresolved, "pct": round(100 * a / tot) if tot else 0}
                 run_json["finalJudge_graph"] = {"judge": "fuzzy graph judge (ZFA scheme-b + Qwen resolver + CL bridge)",
                     "scored": "live", "embedder": "Qwen3-Embedding-0.6B", "threshold": 0.78,
                     "scheme": "b (part_of=0.5,is_a=1.0; 1/(1+d_w))",

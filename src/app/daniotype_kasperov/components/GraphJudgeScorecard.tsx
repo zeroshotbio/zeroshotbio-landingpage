@@ -26,35 +26,37 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
   if (!block) return null;
 
   // normalise per-tier (ZSCAPE/CF/DC) and single-tier (MiniFin) into one shape
-  let tiers: string[]; let rows: any[]; let agg: { t: string; agree: number; total: number; pct: number }[];
+  let tiers: string[]; let rows: any[]; let agg: { t: string; agree: number; total: number; unresolved: number; pct: number }[];
   if (Array.isArray(block.tiers)) {
     tiers = block.tiers; rows = block.rows || [];
-    agg = tiers.map((t) => ({ t, agree: block.aggregate?.per_tier?.[t]?.agree ?? 0, total: block.aggregate?.per_tier?.[t]?.total ?? 0, pct: block.aggregate?.per_tier?.[t]?.pct ?? 0 }));
+    agg = tiers.map((t) => ({ t, agree: block.aggregate?.per_tier?.[t]?.agree ?? 0, total: block.aggregate?.per_tier?.[t]?.total ?? 0, unresolved: block.aggregate?.per_tier?.[t]?.unresolved ?? 0, pct: block.aggregate?.per_tier?.[t]?.pct ?? 0 }));
   } else {
     tiers = ["gt"];
     rows = (block.rows || []).map((r: any) => ({
       id: r.id, identity: r.identity, kind: r.kind, leaf_ids: r.leaf_ids, gt: { gt: r.gt }, menu: {},
       dn: { gt: { score: r.score, match: r.route === "graph" && r.score >= 0.4, route: r.route, subsumption: r.subsumption, distance: r.distance, path_edge_types: r.path_edge_types, pred_zfa_name: r.pred_zfa_name, gt_zfa_name: r.gt_zfa_name } }, mx: {},
     }));
-    let a = 0, tot = 0; rows.forEach((r) => { const c = r.dn.gt; if (c && c.route !== "not_scored") { tot++; if (c.match) a++; } });
-    agg = [{ t: "gt", agree: a, total: tot, pct: tot ? Math.round((100 * a) / tot) : 0 }];
+    let a = 0, tot = 0, un = 0; rows.forEach((r) => { const c = r.dn.gt; if (c) { if (c.route === "graph") { tot++; if (c.match) a++; } else un++; } });
+    agg = [{ t: "gt", agree: a, total: tot, unresolved: un, pct: tot ? Math.round((100 * a) / tot) : 0 }];
   }
 
   const line = (tag: string, tagColor: string, val: any, cell: any) => {
-    const scored = cell && cell.route !== "not_scored" && typeof cell?.score === "number";
+    const scored = cell && cell.route === "graph" && typeof cell?.score === "number";
     const col = scored ? scoreColor(cell.score) : NOSCORE;
     const matched: boolean | null = cell ? !!cell.match : null;
     const isMiss = scored && matched === false;
     return (
-      <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginTop: tag === "GT" ? 0 : 3 }}>
-        <span style={{ fontSize: 8.5, fontWeight: 800, color: tagColor, letterSpacing: 0.3, flexShrink: 0, width: 16, paddingTop: 1 }}>{tag}</span>
-        <span style={{ color: tagColor, fontSize: 12.5, fontWeight: 500, lineHeight: 1.3, whiteSpace: "nowrap",
-          borderBottom: isMiss ? `2px solid ${col}` : undefined, paddingBottom: isMiss ? 1 : 0 }}>{val ?? "—"}</span>
+      <div style={{ display: "flex", gap: 7, alignItems: "baseline", marginTop: tag === "GT" ? 0 : 1.5 }}>
+        <span style={{ fontSize: 6, fontWeight: 800, color: tagColor, letterSpacing: 0.3, flexShrink: 0, width: 11, paddingTop: 1 }}>{tag}</span>
+        <span style={{ color: tagColor, fontSize: 7.5, fontWeight: 500, lineHeight: 1.25, whiteSpace: "nowrap",
+          borderBottom: isMiss ? `1.5px solid ${col}` : undefined, paddingBottom: isMiss ? 1 : 0 }}>{val ?? "—"}</span>
         {cell && scored && matched != null ? (
-          <span style={{ marginLeft: "auto", paddingLeft: 18, display: "inline-flex", alignItems: "baseline", gap: 5, flexShrink: 0 }}>
-            <span style={{ fontSize: 16, fontWeight: 900, lineHeight: 1, color: col }}>{matched ? "✓" : "✗"}</span>
-            <span style={{ fontSize: 11, fontWeight: 700, color: col, fontVariantNumeric: "tabular-nums" }}>{cell.score.toFixed(2)}</span>
+          <span style={{ marginLeft: "auto", paddingLeft: 12, display: "inline-flex", alignItems: "baseline", gap: 3, flexShrink: 0 }}>
+            <span style={{ fontSize: 10, fontWeight: 900, lineHeight: 1, color: col }}>{matched ? "✓" : "✗"}</span>
+            <span style={{ fontSize: 7, fontWeight: 700, color: col, fontVariantNumeric: "tabular-nums" }}>{cell.score.toFixed(2)}</span>
           </span>
+        ) : cell ? (
+          <span title="label not found in the ZFA ontology — no graph distance" style={{ marginLeft: "auto", paddingLeft: 12, fontSize: 7, fontWeight: 700, color: NOSCORE, flexShrink: 0, letterSpacing: 0.3 }}>n/a</span>
         ) : null}
       </div>
     );
@@ -64,9 +66,9 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
   const isSingle = tiers.length === 1 && tiers[0] === "gt";
   const gtVal = (r: any, key: string) => (r.gt && typeof r.gt === "object" ? r.gt[key] : undefined);
   const gtRow = (label: string, v: any, first: boolean) => (
-    <div key={label} style={{ display: "flex", gap: 10, alignItems: "baseline", marginTop: first ? 0 : 3 }}>
-      <span style={{ fontSize: 10, fontWeight: 400, color: "#9a948c", flexShrink: 0, width: 66, whiteSpace: "nowrap" }}>{label}</span>
-      <span style={{ fontSize: 12.5, fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap" }}>{(v ?? "").toString().trim() || "—"}</span>
+    <div key={label} style={{ display: "flex", gap: 7, alignItems: "baseline", marginTop: first ? 0 : 1.5 }}>
+      <span style={{ fontSize: 6.5, fontWeight: 400, color: "#9a948c", flexShrink: 0, width: 46, whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ fontSize: 7.5, fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap" }}>{(v ?? "").toString().trim() || "—"}</span>
     </div>
   );
 
@@ -86,7 +88,7 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
             <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{TIER_LABEL[t.t] || t.t}</div>
             <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
               <span style={{ fontSize: 28, fontWeight: 800, color: heat(t.pct), fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct : "—"}{t.total ? "%" : ""}</span>
-              <span style={{ fontSize: 12.5, color: "#999" }}>{t.agree}/{t.total} agree</span>
+              <span style={{ fontSize: 12.5, color: "#999" }}>{t.agree}/{t.total} agree{t.unresolved ? <span style={{ color: NOSCORE }}> · {t.unresolved} n/a</span> : null}</span>
             </div>
             <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}><div style={{ width: `${t.pct}%`, height: "100%", background: heat(t.pct) }} /></div>
           </div>
@@ -95,23 +97,23 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
 
       {/* Node × tier table — stacked GT / DN / MX cells, full text */}
       <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 7.5 }}>
           <thead>
             <tr style={{ background: "#f3f0ec", color: "#555" }}>
-              <th style={{ padding: "7px 12px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec", minWidth: 190 }}>Full GT</th>
-              {tiers.map((t) => <th key={t} style={{ padding: "7px 10px", fontWeight: 700, borderLeft: "1px solid #e5e1dc", textAlign: "left", minWidth: 230 }}>{TIER_LABEL[t] || t}</th>)}
+              <th style={{ padding: "4px 8px", fontSize: 8.5, textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec", minWidth: 150 }}>Full GT</th>
+              {tiers.map((t) => <th key={t} style={{ padding: "4px 8px", fontSize: 8.5, fontWeight: 700, borderLeft: "1px solid #e5e1dc", textAlign: "left", minWidth: 150 }}>{TIER_LABEL[t] || t}</th>)}
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} style={{ borderTop: "1px solid #f2ede6", verticalAlign: "top" }}>
-                <td style={{ padding: "7px 12px", position: "sticky", left: 0, background: "#fff", whiteSpace: "nowrap", minWidth: 190 }}>
+                <td style={{ padding: "4px 8px", position: "sticky", left: 0, background: "#fff", whiteSpace: "nowrap", minWidth: 150 }}>
                   {isSingle ? gtRow("GT", r.gt?.gt, true) : GT_STACK.map(([k, label], i) => gtRow(label, gtVal(r, k), i === 0))}
                 </td>
                 {tiers.map((t) => {
                   const gt = r.gt?.[t]; const dnC = r.dn?.[t]; const mx = r.menu?.[t]; const mxC = r.mx?.[t];
                   return (
-                    <td key={t} style={{ padding: "7px 12px", borderLeft: "1px solid #f2ede6", background: "#fff" }}>
+                    <td key={t} style={{ padding: "4px 8px", borderLeft: "1px solid #f2ede6", background: "#fff" }}>
                       {line("GT", GT_COL, gt, null)}
                       {line("DN", DN_COL, dnC?.value ?? r.identity, gt == null ? null : dnC)}
                       {mx ? line("MX", MX_COL, mx, mxC) : null}
