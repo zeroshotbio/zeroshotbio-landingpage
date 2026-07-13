@@ -19,6 +19,7 @@ import { ClusteringProvenance, BackfillBadge } from "./ClusteringProvenance";
 import { HarnessDetail } from "./HarnessDetail";
 import { Scorecard } from "./Scorecard";
 import { ExpertGtScorecard } from "./ExpertGtScorecard";
+import { GraphJudgeScorecard } from "./GraphJudgeScorecard";
 import { CompartmentMap, MapViewSwitch, hasCompartments, type MapView } from "./CompartmentMap";
 import { ClusteringExplainer, ZscapeClusteringExplainer, NativeClusteringExplainer, NeutralClusteringExplainer } from "./ClusteringExplainer";
 import { META_REASONER_CONTEXT } from "../../meta_reasoner/metaReasonerContext";
@@ -874,9 +875,28 @@ function ClusteringStrategyPanel({ strategy, nLeaves }: { strategy: any; nLeaves
 function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated, savedScore, model, onPick, judgements, addJudgement }: any) {
   const sc = run?.scoredNodes;
   const noop: any = () => {};
+  const graphBlock = run?.finalJudge_graph || run?.expertGtScorecard_graph;
+  const [judgeView, setJudgeView] = useState<"old" | "new">("old");   // default OLD — nothing changes until deliberately flipped
+  const view = graphBlock ? judgeView : "old";
+  const gjName = dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
       <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
+      {/* Old (LLM) ↔ New (Graph) toggle — only when the parallel graph block exists. Comparison surface,
+          not a cutover: both stay viewable, old is default and byte-identical to before. */}
+      {graphBlock ? (
+        <div style={{ display: "flex", justifyContent: "center", gap: 0, margin: "-2px 0 2px" }}>
+          <div style={{ display: "inline-flex", border: "1px solid #e4ded6", borderRadius: 9, overflow: "hidden", background: "#fffdfb" }}>
+            {(["old", "new"] as const).map((v) => (
+              <button key={v} onClick={() => setJudgeView(v)} style={{
+                border: "none", cursor: "pointer", fontFamily: "inherit", fontSize: 12.5, fontWeight: 600, padding: "7px 16px",
+                background: view === v ? "#0e7490" : "transparent", color: view === v ? "#fff" : "#6e6a63",
+              }}>{v === "old" ? "Old · LLM judge" : "New · Graph judge"}</button>
+            ))}
+          </div>
+        </div>
+      ) : null}
+      {view === "new" && graphBlock ? <GraphJudgeScorecard block={graphBlock} datasetName={gjName} /> : (<>
       {/* Bespoke expert-GT two-panel — MiniFin judged vs Patrick's sealed expert GT (aggregate reshape,
           kind:"expertGT-4bucket"). Renders as the PRIMARY judge screen; the standard merged-node views
           follow as supporting detail. */}
@@ -891,8 +911,9 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
       ) : run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
         : <div style={CARD}><div style={SEC}>Merged-node scoring</div>{notRecorded("Merged-node scores — this run has no Meta-Reasoner consolidation to score")}</div>}
+      </>)}
       {/* pre-merge per-leaf scorecard — secondary detail, only when there's no node scorecard yet */}
-      {dataset.groundTruthUrl && !run?.finalJudge?.rows?.length ? (
+      {view === "old" && dataset.groundTruthUrl && !run?.finalJudge?.rows?.length ? (
         <details style={CARD}>
           <summary style={{ ...SEC, margin: 0, cursor: "pointer" }}>Per-leaf scorecard vs published GT (pre-merge)</summary>
           <div style={{ marginTop: 10 }}>

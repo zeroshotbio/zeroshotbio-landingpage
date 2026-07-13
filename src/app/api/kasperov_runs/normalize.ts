@@ -205,6 +205,13 @@ export function normalizeRun(run: AnyRec, consolidation?: AnyRec | null): AnyRec
   if (isObj(consolidation?.expertGtScorecard)) out.expertGtScorecard = consolidation!.expertGtScorecard;
   else if (isObj(run.expertGtScorecard)) out.expertGtScorecard = run.expertGtScorecard;
 
+  // parallel GRAPH-JUDGE blocks (Burst 23) live on the consolidation run too — carry them through the
+  // lineage merge so the new Graph-judge view renders; else {...run}=labelling drops them.
+  if (isObj(consolidation?.finalJudge_graph)) out.finalJudge_graph = consolidation!.finalJudge_graph;
+  else if (isObj(run.finalJudge_graph)) out.finalJudge_graph = run.finalJudge_graph;
+  if (isObj(consolidation?.expertGtScorecard_graph)) out.expertGtScorecard_graph = consolidation!.expertGtScorecard_graph;
+  else if (isObj(run.expertGtScorecard_graph)) out.expertGtScorecard_graph = run.expertGtScorecard_graph;
+
   mapProvenance(out, lm, cm);
 
   // keep the raw metadata around (harmless; nothing reads it) but drop nothing.
