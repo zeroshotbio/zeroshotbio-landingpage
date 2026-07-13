@@ -21,6 +21,8 @@ export const config = {
     "/api/kasperov_autopilot/:path*",
     "/patrick",
     "/patrick/:path*",
+    "/zebrafish_ontology",
+    "/zebrafish_ontology/:path*",
   ],
 };
 

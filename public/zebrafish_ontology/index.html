@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ZFA Atlas — dataset menus on the zebrafish anatomy ontology</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<style>
+  :root { --blue:#4C9AFF; --coral:#FF6B6B; --amber:#FFB13D; --green:#4caf7d; }
+  * { box-sizing: border-box; }
+  html,body { margin:0; height:100%; background:#0d1117; color:#c9d1d9;
+    font:13px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif; overflow:hidden; }
+  #app { display:flex; height:100vh; }
+  #stage { flex:1; position:relative; }
+  svg { width:100%; height:100%; display:block; cursor:grab; }
+  svg:active { cursor:grabbing; }
+  #panel { width:320px; background:#11161d; border-left:1px solid #232b36; padding:16px 16px 40px;
+    overflow-y:auto; }
+  h1 { font-size:15px; margin:0 0 2px; color:#e6edf3; letter-spacing:.2px; }
+  .sub { color:#7d8794; font-size:11.5px; margin-bottom:14px; }
+  h2 { font-size:11px; text-transform:uppercase; letter-spacing:.7px; color:#7d8794;
+    margin:18px 0 7px; border-bottom:1px solid #232b36; padding-bottom:4px; }
+  .row { display:flex; align-items:center; gap:8px; margin:4px 0; }
+  .swatch { width:12px; height:12px; border-radius:50%; flex:none; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  th,td { text-align:right; padding:3px 5px; }
+  th:first-child,td:first-child { text-align:left; }
+  thead th { color:#7d8794; font-weight:600; border-bottom:1px solid #232b36; }
+  .ds-z td:first-child{color:var(--blue)} .ds-c td:first-child{color:var(--coral)} .ds-d td:first-child{color:var(--amber)}
+  .toggle { display:flex; align-items:center; gap:7px; margin:6px 0; cursor:pointer; user-select:none; }
+  .toggle input { accent-color:var(--green); }
+  details { margin:6px 0; }
+  summary { cursor:pointer; color:#9aa5b1; }
+  .bin { font-size:11px; color:#8b95a1; max-height:150px; overflow-y:auto; margin-top:5px;
+    background:#0d1117; border:1px solid #232b36; border-radius:6px; padding:6px 8px; }
+  .bin div { padding:1px 0; }
+  #tip { position:absolute; pointer-events:none; background:#1c2430; border:1px solid #313c4a;
+    border-radius:6px; padding:6px 9px; font-size:12px; color:#e6edf3; opacity:0; transition:opacity .08s;
+    max-width:260px; box-shadow:0 4px 14px rgba(0,0,0,.4); z-index:5; }
+  #tip b { color:#fff; } #tip .t { font-size:11px; color:#9aa5b1; }
+  .legline { stroke-width:1.6; } .hint { color:#5b6672; font-size:10.5px; margin-top:4px; }
+  #loading { position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:#7d8794; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="stage">
+    <div id="loading">rendering the ontology…</div>
+    <svg></svg>
+    <div id="tip"></div>
+  </div>
+  <div id="panel">
+    <h1>ZFA Atlas</h1>
+    <div class="sub">Three dataset menus placed on the zebrafish anatomy ontology (ZFA). Structural map only — no scores, no predictions.</div>
+
+    <h2>Axes</h2>
+    <div class="row"><svg width="26" height="12"><line class="legline" x1="1" y1="6" x2="25" y2="6" stroke="#8892a0"/></svg> is_a backbone (subsumption)</div>
+    <div class="row"><svg width="26" height="12"><line class="legline" x1="1" y1="6" x2="25" y2="6" stroke="var(--green)" stroke-dasharray="3 2"/></svg> part_of (containment)</div>
+    <div class="hint">The two axes meet only near the root — part_of arcs bridging distant is_a branches make that visible.</div>
+
+    <h2>Datasets</h2>
+    <div class="row"><span class="swatch" style="background:var(--blue)"></span> ZSCAPE</div>
+    <div class="row"><span class="swatch" style="background:var(--coral)"></span> ChemFish</div>
+    <div class="row"><span class="swatch" style="background:var(--amber)"></span> DanioCell</div>
+    <div class="hint">Filled dot = exact placement · dashed hollow ring = fuzzy-resolved (uncertain) · concentric rings = shared by multiple menus.</div>
+
+    <h2>Coverage (menu → ZFA)</h2>
+    <table><thead><tr><th>set</th><th>menu</th><th>exact</th><th>fuzzy</th><th>unpl.</th></tr></thead><tbody id="counts"></tbody></table>
+    <div class="hint" id="touched"></div>
+
+    <h2>View</h2>
+    <label class="toggle"><input type="checkbox" id="tEmpty" checked> show empty ZFA (sparsity)</label>
+    <label class="toggle"><input type="checkbox" id="tPart" checked> show part_of arcs</label>
+    <label class="toggle"><input type="checkbox" id="tFocus"> focus populated subtree only</label>
+    <div class="hint">Scroll = zoom · drag = pan · hover = name · click a colored node = highlight its lineage + part_of neighbours.</div>
+
+    <h2>Unplaced (honest side-bin)</h2>
+    <div class="hint">Menu terms with no confident ZFA node — never forced onto a nearest node.</div>
+    <div id="bins"></div>
+  </div>
+</div>
+<script>
+const COL = { zscape:"#4C9AFF", chemfish:"#FF6B6B", daniocell:"#FFB13D" };
+const ORDER = ["zscape","chemfish","daniocell"];
+const svg = d3.select("svg"), tip = d3.select("#tip");
+
+d3.json("./atlas_data.json").then(data => {
+  d3.select("#loading").remove();
+  const byId = new Map(data.nodes.map(n => [n.id, n]));
+  const placed = new Set(data.nodes.filter(n => Object.keys(n.ds).length).map(n => n.id));
+
+  // ancestor closure of populated nodes (for focus mode + part_of filtering)
+  const closure = new Set();
+  for (const p of placed) { let x = p; while (x != null && !closure.has(x)) { closure.add(x); x = (byId.get(x)||{}).p; } }
+
+  // build hierarchy: synthetic root over is_a roots
+  const ROOT = "__root__";
+  const strat = data.nodes.map(n => ({ id:n.id, parentId:(n.p==null?ROOT:n.p), ref:n }));
+  strat.push({ id:ROOT, parentId:null, ref:{ id:ROOT, name:"ZFA", ds:{}, depth:-1 } });
+  const root = d3.stratify().id(d=>d.id).parentId(d=>d.parentId)(strat);
+
+  const W = svg.node().clientWidth, H = svg.node().clientHeight;
+  const R = Math.min(W,H)/2 - 30;
+  d3.cluster().size([2*Math.PI, R]).separation((a,b)=> (a.parent===b.parent?1:2)/a.depth || 1)(root);
+  const pos = new Map();
+  root.each(d => { const a = d.x - Math.PI/2; pos.set(d.id, [Math.cos(a)*d.y, Math.sin(a)*d.y]); });
+
+  const g = svg.append("g").attr("transform", `translate(${W/2},${H/2})`);
+  const gIsa = g.append("g"), gPart = g.append("g"), gNode = g.append("g");
+
+  // is_a links (radial, grey)
+  const isaLinks = gIsa.selectAll("path").data(root.links().filter(l=>l.source.id!==ROOT)).join("path")
+    .attr("fill","none").attr("stroke","#8892a0").attr("stroke-width",0.5).attr("stroke-opacity",0.22)
+    .attr("d", l => { const [sx,sy]=pos.get(l.source.id),[tx,ty]=pos.get(l.target.id);
+      return `M${sx},${sy}C${sx*.5+tx*.5},${sy*.5+ty*.5} ${sx*.5+tx*.5},${sy*.5+ty*.5} ${tx},${ty}`; });
+
+  // part_of arcs (green dashed, only those incident to the populated closure)
+  const partEdges = data.part_of.filter(e => (closure.has(e[0])||closure.has(e[1])) && pos.has(e[0]) && pos.has(e[1]));
+  const partLinks = gPart.selectAll("path").data(partEdges).join("path")
+    .attr("fill","none").attr("stroke","var(--green,#4caf7d)").attr("stroke-width",0.7)
+    .attr("stroke-opacity",0.5).attr("stroke-dasharray","3 2")
+    .attr("d", e => { const [sx,sy]=pos.get(e[0]),[tx,ty]=pos.get(e[1]);
+      return `M${sx},${sy}Q${(sx+tx)*0.28},${(sy+ty)*0.28} ${tx},${ty}`; }); // bow toward centre
+
+  // empty nodes
+  const empties = data.nodes.filter(n => !placed.has(n.id));
+  const emptyDots = gNode.selectAll("circle.e").data(empties).join("circle").attr("class","e")
+    .attr("cx",n=>pos.get(n.id)[0]).attr("cy",n=>pos.get(n.id)[1]).attr("r",0.9)
+    .attr("fill","#b8c0cc").attr("fill-opacity",0.32);
+
+  // populated glyphs (concentric rings per dataset)
+  const glyphs = gNode.selectAll("g.p").data(data.nodes.filter(n=>placed.has(n.id))).join("g").attr("class","p")
+    .attr("transform",n=>`translate(${pos.get(n.id)})`).style("cursor","pointer");
+  glyphs.each(function(n){
+    const sel = ORDER.filter(ds => n.ds[ds]);
+    d3.select(this).selectAll("circle").data(sel).join("circle")
+      .attr("r",(ds,i)=>3.5+i*2.4)
+      .attr("fill",(ds,i)=> (i===0 && n.ds[ds]==="exact") ? COL[ds] : "none")
+      .attr("stroke",ds=>COL[ds]).attr("stroke-width",1.4)
+      .attr("stroke-dasharray",ds=> n.ds[ds]==="fuzzy" ? "2.5 2" : null)
+      .attr("fill-opacity",0.9);
+  });
+
+  // ---- interaction ----
+  function label(n){ const parts = ORDER.filter(d=>n.ds[d]).map(d=>`${d}<span class="t"> ${n.ds[d]}</span>`);
+    return `<b>${n.name}</b><br><span class="t">${n.id} · depth ${n.depth}</span>${parts.length?"<br>"+parts.join(" · "):""}`; }
+  function moveTip(ev){ tip.style("left",(ev.offsetX+14)+"px").style("top",(ev.offsetY+12)+"px"); }
+  glyphs.on("mousemove",(ev,n)=>{ tip.html(label(n)).style("opacity",1); moveTip(ev); })
+        .on("mouseleave",()=>tip.style("opacity",0))
+        .on("click",(ev,n)=>{ ev.stopPropagation(); highlight(n.id); });
+  emptyDots.on("mousemove",(ev,n)=>{ tip.html(label(n)).style("opacity",1); moveTip(ev); })
+           .on("mouseleave",()=>tip.style("opacity",0));
+
+  function highlight(id){
+    const keep = new Set(); let x=id; while(x!=null){ keep.add(x); x=(byId.get(x)||{}).p; } // lineage to root
+    data.part_of.forEach(e=>{ if(e[0]===id) keep.add(e[1]); if(e[1]===id) keep.add(e[0]); });
+    glyphs.attr("opacity",n=>keep.has(n.id)?1:0.12);
+    isaLinks.attr("stroke-opacity",l=> (keep.has(l.source.id)&&keep.has(l.target.id))?0.85:0.05)
+            .attr("stroke",l=> (keep.has(l.source.id)&&keep.has(l.target.id))?"#e6edf3":"#8892a0");
+    partLinks.attr("stroke-opacity",e=> (e[0]===id||e[1]===id)?0.95:0.08);
+    emptyDots.attr("fill-opacity",n=>keep.has(n.id)?0.7:0.12);
+  }
+  svg.on("click",()=>{ glyphs.attr("opacity",1); isaLinks.attr("stroke-opacity",0.22).attr("stroke","#8892a0");
+    partLinks.attr("stroke-opacity",0.5); emptyDots.attr("fill-opacity",0.32); tip.style("opacity",0); });
+
+  svg.call(d3.zoom().scaleExtent([0.3,14]).on("zoom",ev=>g.attr("transform",
+    `translate(${W/2+ev.transform.x},${H/2+ev.transform.y}) scale(${ev.transform.k})`)));
+
+  // ---- toggles ----
+  d3.select("#tEmpty").on("change",function(){ emptyDots.style("display",this.checked?null:"none"); });
+  d3.select("#tPart").on("change",function(){ gPart.style("display",this.checked?null:"none"); });
+  d3.select("#tFocus").on("change",function(){
+    const foc=this.checked;
+    emptyDots.style("display",n=> foc ? (closure.has(n.id)?null:"none") : (d3.select("#tEmpty").property("checked")?null:"none"));
+    isaLinks.style("display",l=> foc ? ((closure.has(l.source.id)&&closure.has(l.target.id))?null:"none") : null);
+  });
+
+  // ---- panel data ----
+  const cls = { zscape:"ds-z", chemfish:"ds-c", daniocell:"ds-d" };
+  d3.select("#counts").html(ORDER.map(ds=>{ const c=data.counts[ds];
+    return `<tr class="${cls[ds]}"><td>${ds}</td><td>${c.menu}</td><td>${c.exact}</td><td>${c.fuzzy}</td><td>${c.unplaced}</td></tr>`;}).join(""));
+  const multi = data.nodes.filter(n=>Object.keys(n.ds).length>1).length;
+  d3.select("#touched").html(`${placed.size} of ${data.meta.n_nodes} ZFA nodes populated (${(100*placed.size/data.meta.n_nodes).toFixed(0)}% — the rest is genuinely empty). ${multi} shared by ≥2 menus.`);
+  d3.select("#bins").html(ORDER.map(ds=>`<details><summary>${ds} — ${data.unplaced[ds].length} unplaced</summary><div class="bin">${data.unplaced[ds].map(t=>`<div>${t}</div>`).join("")}</div></details>`).join(""));
+});
+</script>
+</body>
+</html>
