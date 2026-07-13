@@ -8,8 +8,9 @@ import React from "react";
 // a FLUID red→amber→green scale by the graph score. Text never wraps — the table scrolls
 // horizontally instead, so every label reads on one line.
 
-const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed", NODE_COL = "#111827", NOSCORE = "#b8b2a9";
+const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed", NOSCORE = "#b8b2a9";
 const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)", gt: "Ground truth" };
+const GT_STACK: [string, string][] = [["germ_layer", "Germ"], ["tissue", "Tissue"], ["cell_type_broad", "Cell (broad)"], ["cell_type_sub", "Cell (Sub)"]];
 const heat = (pct: number) => (pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#dc2626");
 
 // fluid graph-score colour: dark green = exact (1.00), amber = nearby, red = far (0.00)
@@ -59,6 +60,16 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
     );
   };
 
+  // left-most column: the cluster's full ground-truth stack, one tier per text-row
+  const isSingle = tiers.length === 1 && tiers[0] === "gt";
+  const gtVal = (r: any, key: string) => (r.gt && typeof r.gt === "object" ? r.gt[key] : undefined);
+  const gtRow = (label: string, v: any, first: boolean) => (
+    <div key={label} style={{ display: "flex", gap: 10, alignItems: "baseline", marginTop: first ? 0 : 3 }}>
+      <span style={{ fontSize: 10, fontWeight: 400, color: "#9a948c", flexShrink: 0, width: 66, whiteSpace: "nowrap" }}>{label}</span>
+      <span style={{ fontSize: 12.5, fontWeight: 500, color: "#1f2937", whiteSpace: "nowrap" }}>{(v ?? "").toString().trim() || "—"}</span>
+    </div>
+  );
+
   return (
     <div>
       <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 4 }}>
@@ -87,15 +98,15 @@ export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetN
         <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
           <thead>
             <tr style={{ background: "#f3f0ec", color: "#555" }}>
-              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec", minWidth: 190 }}>Node · De-Novo identity</th>
+              <th style={{ padding: "7px 12px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec", minWidth: 190 }}>Full GT</th>
               {tiers.map((t) => <th key={t} style={{ padding: "7px 10px", fontWeight: 700, borderLeft: "1px solid #e5e1dc", textAlign: "left", minWidth: 230 }}>{TIER_LABEL[t] || t}</th>)}
             </tr>
           </thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} style={{ borderTop: "1px solid #f2ede6", verticalAlign: "top" }}>
-                <td style={{ padding: "7px 12px", position: "sticky", left: 0, background: "#fff", fontWeight: 600, color: NODE_COL, whiteSpace: "nowrap", minWidth: 190 }} title={r.identity}>
-                  {r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}
+                <td style={{ padding: "7px 12px", position: "sticky", left: 0, background: "#fff", whiteSpace: "nowrap", minWidth: 190 }}>
+                  {isSingle ? gtRow("GT", r.gt?.gt, true) : GT_STACK.map(([k, label], i) => gtRow(label, gtVal(r, k), i === 0))}
                 </td>
                 {tiers.map((t) => {
                   const gt = r.gt?.[t]; const dnC = r.dn?.[t]; const mx = r.menu?.[t]; const mxC = r.mx?.[t];
