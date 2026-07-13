@@ -19,7 +19,7 @@
     font-family:"Roboto Slab",Georgia,serif; font-weight:300; font-size:13px; }
   #app { display:flex; height:100vh; }
   #stage { flex:1; position:relative; }
-  svg { width:100%; height:100%; display:block; cursor:grab; }
+  svg { width:100%; height:100%; display:block; cursor:grab; background:var(--paper); }
   svg:active { cursor:grabbing; }
   #panel { width:340px; flex:none; background:var(--card); border-left:1px solid var(--line);
     padding:22px 20px 48px; overflow-y:auto; }
@@ -35,9 +35,10 @@
   thead th { color:var(--faint); font-weight:600; border-bottom:1px solid var(--line); font-size:11px; }
   tbody td:first-child { font-weight:500; }
   .toggle { display:flex; align-items:center; gap:8px; margin:7px 0; cursor:pointer; user-select:none; font-size:12.5px; }
-  .toggle input { accent-color:var(--accent); width:14px; height:14px; }
+  .toggle input { width:14px; height:14px; }
+  .tg-z input { accent-color:var(--zscape); } .tg-c input { accent-color:var(--chemfish); }
+  .tg-d input { accent-color:var(--daniocell); } .tg-x input { accent-color:var(--accent); }
   details { margin:7px 0; } summary { cursor:pointer; color:var(--muted); font-size:12px; }
-  summary::marker { color:var(--faint); }
   .bin { font-size:11px; color:var(--muted); max-height:150px; overflow-y:auto; margin-top:6px;
     background:var(--paper); border:1px solid var(--line); border-radius:7px; padding:7px 9px; }
   .bin div { padding:1.5px 0; }
@@ -47,40 +48,35 @@
   #tip b { font-weight:600; } #tip .t { font-size:11px; color:var(--faint); font-weight:300; }
   #msg { position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
     color:var(--muted); font-size:14px; flex-direction:column; gap:8px; text-align:center; padding:24px; }
-  .badge { display:inline-block; padding:1px 6px; border-radius:5px; font-size:10.5px; font-weight:500; }
 </style>
 </head>
 <body>
 <div id="app">
   <div id="stage">
-    <div id="msg">rendering the ontology…</div>
+    <div id="msg">laying out the ontology…</div>
     <svg></svg>
     <div id="tip"></div>
   </div>
   <div id="panel">
     <h1>ZFA Atlas</h1>
-    <div class="sub">Three dataset menus placed on the zebrafish anatomy ontology (ZFA). A structural map — no scores, no predictions.</div>
+    <div class="sub">The whole zebrafish anatomy ontology (ZFA) in a gravity-repel layout — is_a + part_of as springs, nodes repel. Layer each dataset's menu on top. Structural map only — no scores, no predictions.</div>
 
-    <h2>Axes</h2>
-    <div class="row"><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="#b0a89c" stroke-width="1.6"/></svg> is_a backbone (subsumption)</div>
-    <div class="row"><svg width="26" height="10"><line x1="1" y1="5" x2="25" y2="5" stroke="var(--partof)" stroke-width="1.6" stroke-dasharray="3 2"/></svg> part_of (containment)</div>
-    <div class="hint">The two axes meet only near the root — part_of arcs bridging distant is_a branches make that visible.</div>
+    <h2>Ontology layers</h2>
+    <label class="toggle tg-x"><input type="checkbox" id="tIsa" checked> is_a edges (backbone)</label>
+    <label class="toggle tg-x"><input type="checkbox" id="tPart" checked> part_of edges (containment)</label>
+    <label class="toggle tg-x"><input type="checkbox" id="tEmpty" checked> empty ZFA nodes (the 97%)</label>
 
-    <h2>Datasets</h2>
-    <div class="row"><span class="swatch" style="background:var(--zscape)"></span> ZSCAPE</div>
-    <div class="row"><span class="swatch" style="background:var(--chemfish)"></span> ChemFish</div>
-    <div class="row"><span class="swatch" style="background:var(--daniocell)"></span> DanioCell</div>
+    <h2>Dataset overlays</h2>
+    <label class="toggle tg-z"><input type="checkbox" id="ov-zscape" checked> <span class="swatch" style="background:var(--zscape)"></span> ZSCAPE</label>
+    <label class="toggle tg-c"><input type="checkbox" id="ov-chemfish" checked> <span class="swatch" style="background:var(--chemfish)"></span> ChemFish</label>
+    <label class="toggle tg-d"><input type="checkbox" id="ov-daniocell" checked> <span class="swatch" style="background:var(--daniocell)"></span> DanioCell</label>
     <div class="hint">Filled dot = exact placement · dashed hollow ring = fuzzy-resolved (uncertain) · concentric rings = shared by multiple menus.</div>
 
     <h2>Coverage · menu → ZFA</h2>
     <table><thead><tr><th>set</th><th>menu</th><th>exact</th><th>fuzzy</th><th>unpl.</th></tr></thead><tbody id="counts"></tbody></table>
     <div class="hint" id="touched"></div>
 
-    <h2>View</h2>
-    <label class="toggle"><input type="checkbox" id="tEmpty" checked> show empty ZFA (sparsity)</label>
-    <label class="toggle"><input type="checkbox" id="tPart" checked> show part_of arcs</label>
-    <label class="toggle"><input type="checkbox" id="tFocus"> focus populated subtree only</label>
-    <div class="hint">Scroll = zoom · drag = pan · hover = name · click a colored node = highlight its lineage + part_of neighbours.</div>
+    <div class="hint" style="margin-top:14px">Scroll = zoom · drag = pan · hover = name · click a placed node = highlight its is_a lineage + part_of neighbours.</div>
 
     <h2>Unplaced · honest side-bin</h2>
     <div class="hint">Menu terms with no confident ZFA node — never forced onto a nearest node.</div>
@@ -92,92 +88,76 @@ const COL = { zscape:"#2563eb", chemfish:"#c0543b", daniocell:"#c58a1a" };
 const ORDER = ["zscape","chemfish","daniocell"];
 const svg = d3.select("svg"), tip = d3.select("#tip");
 function fail(m){ d3.select("#msg").style("display","flex").html("Could not load the atlas.<br><span style='font-size:11px'>"+m+"</span>"); }
-
-// Absolute path — the page URL has no trailing slash (Vercel strips it), so a
-// relative "./atlas_data.json" would wrongly resolve to /atlas_data.json.
 d3.json("/zebrafish_ontology/atlas_data.json").then(render).catch(e => fail(String(e)));
 
 function render(data){
   d3.select("#msg").remove();
   const byId = new Map(data.nodes.map(n => [n.id, n]));
-  const placed = new Set(data.nodes.filter(n => Object.keys(n.ds).length).map(n => n.id));
-  const closure = new Set();
-  for (const p of placed) { let x=p; while (x!=null && !closure.has(x)) { closure.add(x); x=(byId.get(x)||{}).p; } }
+  const XY = new Map(data.nodes.map(n => [n.id, [n.x, n.y]]));
 
-  const ROOT = "__root__";
-  const strat = data.nodes.map(n => ({ id:n.id, parentId:(n.p==null?ROOT:n.p), ref:n }));
-  strat.push({ id:ROOT, parentId:null, ref:{ id:ROOT, name:"ZFA", ds:{}, depth:-1 } });
-  const root = d3.stratify().id(d=>d.id).parentId(d=>d.parentId)(strat);
+  const g = svg.append("g");
+  // batched edges: one path each (fast)
+  const isaSeg = [], partSeg = [];
+  data.nodes.forEach(n => { if (n.p!=null && XY.has(n.p)){ const [x,y]=XY.get(n.id),[px,py]=XY.get(n.p); isaSeg.push(`M${x},${y}L${px},${py}`);} });
+  data.part_of.forEach(e => { if (XY.has(e[0])&&XY.has(e[1])){ const [x,y]=XY.get(e[0]),[px,py]=XY.get(e[1]); partSeg.push(`M${x},${y}L${px},${py}`);} });
+  const isaPath = g.append("path").attr("d", isaSeg.join("")).attr("fill","none")
+    .attr("stroke","#b0a89c").attr("stroke-width",0.35).attr("stroke-opacity",0.35);
+  const partPath = g.append("path").attr("d", partSeg.join("")).attr("fill","none")
+    .attr("stroke","var(--partof,#2f9e6b)").attr("stroke-width",0.4).attr("stroke-opacity",0.28);
 
-  const W = svg.node().clientWidth, H = svg.node().clientHeight, R = Math.min(W,H)/2 - 34;
-  d3.cluster().size([2*Math.PI, R]).separation((a,b)=> a.parent===b.parent ? 1 : 1.6)(root);
-  const pos = new Map();
-  root.each(d => { const a=d.x-Math.PI/2; pos.set(d.id, [Math.cos(a)*d.y, Math.sin(a)*d.y]); });
+  // empty nodes (non-interactive, one selection)
+  const placed = new Set(data.nodes.filter(n=>Object.keys(n.ds).length).map(n=>n.id));
+  const emptyDots = g.append("g").selectAll("circle")
+    .data(data.nodes.filter(n=>!placed.has(n.id))).join("circle")
+    .attr("cx",n=>n.x).attr("cy",n=>n.y).attr("r",1.1).attr("fill","#cec7bd").attr("fill-opacity",0.55);
 
-  const g = svg.append("g").attr("transform",`translate(${W/2},${H/2})`);
-  const gIsa=g.append("g"), gPart=g.append("g"), gNode=g.append("g");
-
-  gIsa.selectAll("path").data(root.links().filter(l=>l.source.id!==ROOT)).join("path")
-    .attr("fill","none").attr("stroke","#b0a89c").attr("stroke-width",0.5).attr("stroke-opacity",0.4)
-    .attr("d", l => { const [sx,sy]=pos.get(l.source.id),[tx,ty]=pos.get(l.target.id);
-      const mx=(sx+tx)/2,my=(sy+ty)/2; return `M${sx},${sy}C${mx},${my} ${mx},${my} ${tx},${ty}`; });
-
-  const partEdges = data.part_of.filter(e => (closure.has(e[0])||closure.has(e[1])) && pos.has(e[0]) && pos.has(e[1]));
-  const partLinks = gPart.selectAll("path").data(partEdges).join("path")
-    .attr("fill","none").attr("stroke",COL_PART()).attr("stroke-width",0.8)
-    .attr("stroke-opacity",0.55).attr("stroke-dasharray","3 2")
-    .attr("d", e => { const [sx,sy]=pos.get(e[0]),[tx,ty]=pos.get(e[1]);
-      return `M${sx},${sy}Q${(sx+tx)*0.26},${(sy+ty)*0.26} ${tx},${ty}`; });
-  function COL_PART(){ return "#2f9e6b"; }
-
-  const empties = data.nodes.filter(n=>!placed.has(n.id));
-  const emptyDots = gNode.selectAll("circle.e").data(empties).join("circle").attr("class","e")
-    .attr("cx",n=>pos.get(n.id)[0]).attr("cy",n=>pos.get(n.id)[1]).attr("r",0.9)
-    .attr("fill","#cec7bd").attr("fill-opacity",0.6);
-
-  const glyphs = gNode.selectAll("g.p").data(data.nodes.filter(n=>placed.has(n.id))).join("g").attr("class","p")
-    .attr("transform",n=>`translate(${pos.get(n.id)})`).style("cursor","pointer");
+  // populated glyphs — concentric rings per placing dataset (toggle by class)
+  const gGly = g.append("g");
+  const glyphs = gGly.selectAll("g").data(data.nodes.filter(n=>placed.has(n.id))).join("g")
+    .attr("transform",n=>`translate(${n.x},${n.y})`).style("cursor","pointer");
   glyphs.each(function(n){
     const sel = ORDER.filter(ds=>n.ds[ds]);
     d3.select(this).selectAll("circle").data(sel).join("circle")
-      .attr("r",(ds,i)=>3.6+i*2.5)
-      .attr("fill",(ds,i)=> (i===0 && n.ds[ds]==="exact") ? COL[ds] : "#fffdfb")
+      .attr("class",ds=>"ov ov-"+ds).attr("r",ds=>3.8+ORDER.indexOf(ds)*2.3)
+      .attr("fill",ds=> (ds===sel[0] && n.ds[ds]==="exact") ? COL[ds] : "var(--card,#fffdfb)")
       .attr("stroke",ds=>COL[ds]).attr("stroke-width",1.5)
       .attr("stroke-dasharray",ds=> n.ds[ds]==="fuzzy" ? "2.5 2" : null).attr("fill-opacity",0.95);
   });
 
+  // interaction
   function label(n){ const parts = ORDER.filter(d=>n.ds[d]).map(d=>`<span style="color:${COL[d]}">${d}</span><span class="t"> ${n.ds[d]}</span>`);
     return `<b>${n.name}</b><br><span class="t">${n.id} · depth ${n.depth}</span>${parts.length?"<br>"+parts.join(" · "):""}`; }
   function moveTip(ev){ tip.style("left",(ev.offsetX+14)+"px").style("top",(ev.offsetY+12)+"px"); }
   glyphs.on("mousemove",(ev,n)=>{ tip.html(label(n)).style("opacity",1); moveTip(ev); })
         .on("mouseleave",()=>tip.style("opacity",0))
-        .on("click",(ev,n)=>{ ev.stopPropagation(); highlight(n.id); });
-  emptyDots.on("mousemove",(ev,n)=>{ tip.html(label(n)).style("opacity",1); moveTip(ev); })
-           .on("mouseleave",()=>tip.style("opacity",0));
+        .on("click",(ev,n)=>{ ev.stopPropagation(); highlight(n); });
 
-  function highlight(id){
-    const keep=new Set(); let x=id; while(x!=null){ keep.add(x); x=(byId.get(x)||{}).p; }
-    data.part_of.forEach(e=>{ if(e[0]===id) keep.add(e[1]); if(e[1]===id) keep.add(e[0]); });
-    glyphs.attr("opacity",n=>keep.has(n.id)?1:0.14);
-    gIsa.selectAll("path").attr("stroke-opacity",l=>(keep.has(l.source.id)&&keep.has(l.target.id))?0.9:0.12)
-        .attr("stroke",l=>(keep.has(l.source.id)&&keep.has(l.target.id))?"#0e7490":"#b0a89c");
-    partLinks.attr("stroke-opacity",e=>(e[0]===id||e[1]===id)?0.95:0.1);
-    emptyDots.attr("fill-opacity",n=>keep.has(n.id)?0.85:0.2);
+  const hl = g.append("path").attr("fill","none").attr("stroke","#0e7490").attr("stroke-width",1.1).attr("stroke-opacity",0);
+  function highlight(n){
+    const keep=new Set(); let x=n.id; while(x!=null){ keep.add(x); x=(byId.get(x)||{}).p; }
+    const nbr=new Set(); data.part_of.forEach(e=>{ if(e[0]===n.id) nbr.add(e[1]); if(e[1]===n.id) nbr.add(e[0]); });
+    const seg=[]; let y=n.id; while(y!=null){ const p=(byId.get(y)||{}).p; if(p!=null&&XY.has(p)){ const [ax,ay]=XY.get(y),[bx,by]=XY.get(p); seg.push(`M${ax},${ay}L${bx},${by}`);} y=p; }
+    nbr.forEach(m=>{ if(XY.has(m)){ const [ax,ay]=XY.get(n.id),[bx,by]=XY.get(m); seg.push(`M${ax},${ay}L${bx},${by}`);} });
+    hl.attr("d",seg.join("")).attr("stroke-opacity",0.9);
+    glyphs.attr("opacity",m=> (keep.has(m.id)||nbr.has(m.id))?1:0.15);
+    emptyDots.attr("fill-opacity",m=>keep.has(m.id)?0.9:0.2);
   }
-  svg.on("click",()=>{ glyphs.attr("opacity",1); gIsa.selectAll("path").attr("stroke-opacity",0.4).attr("stroke","#b0a89c");
-    partLinks.attr("stroke-opacity",0.55); emptyDots.attr("fill-opacity",0.6); tip.style("opacity",0); });
+  svg.on("click",()=>{ hl.attr("stroke-opacity",0); glyphs.attr("opacity",1); emptyDots.attr("fill-opacity",0.55); tip.style("opacity",0); });
 
-  svg.call(d3.zoom().scaleExtent([0.3,16]).on("zoom",ev=>g.attr("transform",
-    `translate(${W/2+ev.transform.x},${H/2+ev.transform.y}) scale(${ev.transform.k})`)));
+  // zoom — fit to content
+  const zoom = d3.zoom().scaleExtent([0.15,20]).on("zoom",ev=>g.attr("transform",ev.transform));
+  svg.call(zoom);
+  const W=svg.node().clientWidth,H=svg.node().clientHeight, k=Math.min(W,H)/1500;
+  svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2).scale(k));
 
+  // toggles
+  d3.select("#tIsa").on("change",function(){ isaPath.style("display",this.checked?null:"none"); });
+  d3.select("#tPart").on("change",function(){ partPath.style("display",this.checked?null:"none"); });
   d3.select("#tEmpty").on("change",function(){ emptyDots.style("display",this.checked?null:"none"); });
-  d3.select("#tPart").on("change",function(){ gPart.style("display",this.checked?null:"none"); });
-  d3.select("#tFocus").on("change",function(){
-    const foc=this.checked, showEmpty=d3.select("#tEmpty").property("checked");
-    emptyDots.style("display",n=> foc ? (closure.has(n.id)?null:"none") : (showEmpty?null:"none"));
-    gIsa.selectAll("path").style("display",l=> foc ? ((closure.has(l.source.id)&&closure.has(l.target.id))?null:"none") : null);
-  });
+  ORDER.forEach(ds => d3.select("#ov-"+ds).on("change",function(){
+    gGly.selectAll(".ov-"+ds).style("display",this.checked?null:"none"); }));
 
+  // panel
   d3.select("#counts").html(ORDER.map(ds=>{ const c=data.counts[ds];
     return `<tr><td style="color:${COL[ds]}">${ds}</td><td>${c.menu}</td><td>${c.exact}</td><td>${c.fuzzy}</td><td>${c.unplaced}</td></tr>`;}).join(""));
   const multi = data.nodes.filter(n=>Object.keys(n.ds).length>1).length;
