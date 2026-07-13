@@ -10,21 +10,8 @@ import React, { useState } from "react";
 // the co-resident old block (the graph judge does not re-score the menu bin).
 // Provisional: shows the scores, does not endorse them (the Patrick gate governs).
 
-const CARD: React.CSSProperties = { background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px" };
-const SEC: React.CSSProperties = { fontSize: 11, textTransform: "uppercase", letterSpacing: 0.6, color: "#9a948c", fontWeight: 800, margin: "0 0 8px" };
 const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed";
 const HIT = "#16a34a", MISS = "#dc2626";
-const BUCKETS: [string, string][] = [["exact", "#15803d"], ["specific", "#16a34a"], ["coarse", "#65a30d"], ["near_miss", "#b45309"], ["error", "#dc2626"]];
-
-function Stat({ label, big, sub, tone }: { label: string; big: string; sub?: string; tone?: string }) {
-  return (
-    <div style={{ minWidth: 0 }}>
-      <div style={{ fontSize: 10, textTransform: "uppercase", letterSpacing: 0.5, color: "#9a948c", fontWeight: 700 }}>{label}</div>
-      <div style={{ fontSize: 26, fontWeight: 800, color: tone || "#2b2b2b", fontVariantNumeric: "tabular-nums", lineHeight: 1.1 }}>{big}</div>
-      {sub ? <div style={{ fontSize: 11, color: "#8a847c" }}>{sub}</div> : null}
-    </div>
-  );
-}
 
 // one stacked label line: tag (small, coloured) + full-text value (coloured) + optional big ✓/✗
 function LabelLine({ tag, tagColor, text, verdict, score }: { tag: string; tagColor: string; text: any; verdict?: "hit" | "miss" | null; score?: number | null }) {
@@ -43,10 +30,6 @@ function LabelLine({ tag, tagColor, text, verdict, score }: { tag: string; tagCo
 export function GraphJudgeScorecard({ block, run, datasetName }: { block: any; run?: any; datasetName?: string }) {
   const [open, setOpen] = useState<string | null>(null);
   if (!block || !Array.isArray(block.rows)) return null;
-  const cov = block.coverage || {}, agg = block.aggregate || {};
-  const scoreable = (cov.graph || 0) + (cov.fallback || 0);
-  const pctScoreable = scoreable ? Math.round((100 * (cov.graph || 0)) / scoreable) : 0;
-  const buckets = agg.buckets || {};
   const rows: any[] = block.rows;
 
   // MX (menu-exposed) label per node, from the co-resident old block — for human comparison only.
@@ -55,31 +38,6 @@ export function GraphJudgeScorecard({ block, run, datasetName }: { block: any; r
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ background: "#20242e", color: "#e7e2d8", borderRadius: 10, padding: "9px 13px", fontSize: 12, lineHeight: 1.5 }}>
-        <b style={{ color: "#fbbf24" }}>Graph judge · provisional.</b> Resolver not yet expert-validated
-        (Qwen3-0.6B · scheme b · THR {block.threshold ?? "?"}). Scores shown for comparison — they do <b>not</b> endorse; the Patrick gate governs.
-      </div>
-
-      <div style={CARD}>
-        <div style={SEC}>{block.judge || "graph judge"}{datasetName ? ` · vs ${datasetName}` : ""}</div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 8 }}>
-          <Stat label="Graph-routed" big={`${cov.graph_pct ?? "—"}%`} sub={`${cov.graph ?? 0} / ${cov.n ?? 0} nodes`} tone="#0e7490" />
-          <Stat label="Of scoreable" big={`${pctScoreable}%`} sub={`${cov.graph ?? 0} / ${scoreable} with GT`} tone="#0e7490" />
-          <Stat label="Mean score" big={agg.mean_score_graph_routed != null ? Number(agg.mean_score_graph_routed).toFixed(3) : "—"} sub="graph-routed" />
-          <Stat label="Not scored" big={String(cov.not_scored ?? 0)} sub="no GT at tier" tone="#6b655d" />
-        </div>
-        {Object.keys(buckets).length ? (
-          <div style={{ marginTop: 12 }}>
-            <div style={{ display: "flex", height: 10, borderRadius: 99, overflow: "hidden", border: "1px solid #eee7df" }}>
-              {BUCKETS.map(([k, c]) => buckets[k] ? <div key={k} style={{ flex: buckets[k], background: c }} title={`${k}: ${buckets[k]}`} /> : null)}
-            </div>
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginTop: 7, fontSize: 11.5, color: "#6b655d" }}>
-              {BUCKETS.map(([k, c]) => buckets[k] ? <span key={k}><b style={{ color: c }}>{buckets[k]}</b> {k.replace("_", "-")}</span> : null)}
-            </div>
-          </div>
-        ) : null}
-      </div>
-
       <div style={{ fontSize: 11.5, color: "#7a746c", lineHeight: 1.5 }}>
         Each node's blind <b style={{ color: DN_COL }}>de-novo</b> call vs the published <b>GT</b> (and the <b style={{ color: MX_COL }}>menu-exposed</b> bin, shown for comparison), scored by the fuzzy graph judge on ZFA distance — <b style={{ color: HIT }}>✓</b> agrees, <b style={{ color: MISS }}>✗</b> misses (red-underlined). Full label text, nothing truncated.
       </div>
