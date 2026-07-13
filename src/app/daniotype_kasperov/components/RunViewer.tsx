@@ -896,7 +896,11 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
           </div>
         </div>
       ) : null}
-      {view === "new" && graphBlock ? <GraphJudgeScorecard block={graphBlock} datasetName={gjName} /> : (<>
+      {view === "new" && graphBlock ? (
+        <div style={{ width: "min(1180px, 96vw)", marginLeft: "calc(50% - min(590px, 48vw))" }}>
+          <GraphJudgeScorecard block={graphBlock} run={run} datasetName={gjName} />
+        </div>
+      ) : (<>
       {/* Bespoke expert-GT two-panel — MiniFin judged vs Patrick's sealed expert GT (aggregate reshape,
           kind:"expertGT-4bucket"). Renders as the PRIMARY judge screen; the standard merged-node views
           follow as supporting detail. */}
