@@ -1,85 +1,106 @@
 "use client";
-import React, { useState } from "react";
+import React from "react";
 
-// Faithful renderer for the parallel GRAPH-JUDGE block (finalJudge_graph /
-// expertGtScorecard_graph). Mirrors the old MergedNodeScorecard's stacked-label
-// presentation so labels read side-by-side for the human eye — GT / DN / MX one
-// above the other, FULL text (never truncated), DN in baby-blue, MX in purple, and
-// ONLY the ✓/✗ carries green/red (larger, with a red underline on a miss). The
-// graph judge scores the de-novo (DN) call; MX is shown for comparison, pulled from
-// the co-resident old block (the graph judge does not re-score the menu bin).
-// Provisional: shows the scores, does not endorse them (the Patrick gate governs).
+// Graph-judge scorecard — copies the old MergedNodeScorecard layout exactly (per-tier
+// agreement tiles + Node × tier table with stacked GT / DN / MX cells), but the ✓/✗
+// verdicts + the distance SCORE come from the fuzzy graph judge. DN text baby-blue,
+// MX text purple, only the ✓/✗ carries green/red (larger, red-underlined on a miss),
+// with the graph score shown after it. Full label text, nothing truncated.
 
-const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed";
-const HIT = "#16a34a", MISS = "#dc2626";
+const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed", HIT_C = "#16a34a", MISS_C = "#dc2626";
+const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)", gt: "Ground truth" };
+const heat = (pct: number) => (pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#dc2626");
 
-// one stacked label line: tag (small, coloured) + full-text value (coloured) + optional big ✓/✗
-function LabelLine({ tag, tagColor, text, verdict, score }: { tag: string; tagColor: string; text: any; verdict?: "hit" | "miss" | null; score?: number | null }) {
-  const isMiss = verdict === "miss";
+export function GraphJudgeScorecard({ block }: { block: any; run?: any; datasetName?: string }) {
+  if (!block) return null;
+
+  // normalise per-tier (ZSCAPE/CF/DC) and single-tier (MiniFin) into one shape
+  let tiers: string[]; let rows: any[]; let agg: { t: string; agree: number; total: number; pct: number }[];
+  if (Array.isArray(block.tiers)) {
+    tiers = block.tiers; rows = block.rows || [];
+    agg = tiers.map((t) => ({ t, agree: block.aggregate?.per_tier?.[t]?.agree ?? 0, total: block.aggregate?.per_tier?.[t]?.total ?? 0, pct: block.aggregate?.per_tier?.[t]?.pct ?? 0 }));
+  } else {
+    tiers = ["gt"];
+    rows = (block.rows || []).map((r: any) => ({
+      id: r.id, identity: r.identity, kind: r.kind, leaf_ids: r.leaf_ids, gt: { gt: r.gt }, menu: {},
+      dn: { gt: { score: r.score, match: r.route === "graph" && r.score >= 0.4, route: r.route, subsumption: r.subsumption, distance: r.distance, path_edge_types: r.path_edge_types, pred_zfa_name: r.pred_zfa_name, gt_zfa_name: r.gt_zfa_name } }, mx: {},
+    }));
+    let a = 0, tot = 0; rows.forEach((r) => { const c = r.dn.gt; if (c && c.route !== "not_scored") { tot++; if (c.match) a++; } });
+    agg = [{ t: "gt", agree: a, total: tot, pct: tot ? Math.round((100 * a) / tot) : 0 }];
+  }
+
+  const line = (tag: string, tagColor: string, val: any, cell: any) => {
+    const matched: boolean | null = cell ? !!cell.match : null;
+    const isMiss = matched === false;
+    const notScored = cell && cell.route === "not_scored";
+    return (
+      <div style={{ display: "flex", gap: 6, alignItems: "baseline", marginTop: tag === "GT" ? 0 : 3 }}>
+        <span style={{ fontSize: 8.5, fontWeight: 800, color: tagColor, letterSpacing: 0.3, flexShrink: 0, width: 16, paddingTop: 1 }}>{tag}</span>
+        <span style={{ color: tagColor, fontSize: 12.5, fontWeight: 500, lineHeight: 1.3, whiteSpace: "normal", wordBreak: "break-word",
+          borderBottom: isMiss ? `2px solid ${MISS_C}` : undefined, paddingBottom: isMiss ? 1 : 0 }}>{val ?? "—"}</span>
+        {cell && !notScored && matched != null ? (
+          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 4, flexShrink: 0 }}>
+            <span style={{ fontSize: 16, fontWeight: 900, lineHeight: 1, color: matched ? HIT_C : MISS_C }}>{matched ? "✓" : "✗"}</span>
+            {typeof cell.score === "number" ? <span style={{ fontSize: 11, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{cell.score.toFixed(2)}</span> : null}
+          </span>
+        ) : null}
+      </div>
+    );
+  };
+
   return (
-    <div style={{ display: "flex", gap: 9, alignItems: "baseline", padding: "2px 0" }}>
-      <span style={{ fontSize: 9.5, fontWeight: 800, color: tagColor, width: 22, flexShrink: 0, letterSpacing: 0.3, paddingTop: 2 }}>{tag}</span>
-      <span style={{ color: tagColor, fontSize: 13.5, fontWeight: 500, lineHeight: 1.35, whiteSpace: "normal", wordBreak: "break-word",
-        borderBottom: isMiss ? `2px solid ${MISS}` : undefined, paddingBottom: isMiss ? 1 : 0 }}>{text ?? "—"}</span>
-      {verdict ? <span style={{ fontSize: 18, fontWeight: 900, lineHeight: 1, color: verdict === "hit" ? HIT : MISS, flexShrink: 0 }}>{verdict === "hit" ? "✓" : "✗"}</span> : null}
-      {score != null ? <span style={{ fontSize: 11.5, color: "#9a948c", fontVariantNumeric: "tabular-nums", flexShrink: 0 }}>{score.toFixed(2)}</span> : null}
-    </div>
-  );
-}
-
-export function GraphJudgeScorecard({ block, run, datasetName }: { block: any; run?: any; datasetName?: string }) {
-  const [open, setOpen] = useState<string | null>(null);
-  if (!block || !Array.isArray(block.rows)) return null;
-  const rows: any[] = block.rows;
-
-  // MX (menu-exposed) label per node, from the co-resident old block — for human comparison only.
-  const menuById: Record<string, any> = {};
-  for (const r of (run?.finalJudge?.rows || [])) menuById[String(r.id)] = r.menu?.[r.tier] ?? null;
-
-  return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-      <div style={{ fontSize: 11.5, color: "#7a746c", lineHeight: 1.5 }}>
-        Each node&apos;s blind <b style={{ color: DN_COL }}>de-novo</b> call vs the published <b>GT</b> (and the <b style={{ color: MX_COL }}>menu-exposed</b> bin, shown for comparison), scored by the fuzzy graph judge on ZFA distance — <b style={{ color: HIT }}>✓</b> agrees, <b style={{ color: MISS }}>✗</b> misses (red-underlined). Full label text, nothing truncated.
+    <div>
+      <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 4 }}>
+        Each node&apos;s blind <b style={{ color: DN_COL }}>de-novo</b> identity (and its <b style={{ color: MX_COL }}>menu-exposed</b> bin) vs the published <b style={{ color: GT_COL }}>GT</b> at every tier, scored by the fuzzy <b>graph judge</b> on ZFA ontology distance. <b style={{ color: HIT_C }}>✓</b> agrees, <b style={{ color: MISS_C }}>✗</b> misses (red-underlined).
+      </div>
+      <div style={{ fontSize: 11.5, color: "#9a948c", lineHeight: 1.5, marginBottom: 12 }}>
+        The number after each ✓/✗ is the <b>graph score</b> — <b>1.00</b> = exact or ontology-contained, <b>~0.5–0.67</b> = a near-miss one hop away (e.g. cell↔its tissue), lower = further apart in ZFA. (The graph judge does not roll a specific cell up to a germ-layer word, so coarse tiers read low — that&apos;s the ontology, not an error.)
       </div>
 
-      {/* per-node stacked label rows — GT / DN / MX one above the other, full text */}
-      <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "hidden" }}>
-        {rows.map((r, i) => {
-          const isGraph = r.route === "graph" && typeof r.score === "number";
-          const verdict: "hit" | "miss" | null = isGraph ? (r.score >= 0.4 ? "hit" : "miss") : null;
-          const mx = menuById[String(r.id)];
-          const isOpen = open === String(r.id);
-          return (
-            <div key={r.id} style={{ borderTop: i ? "1px solid #f2ede6" : undefined, background: verdict === "miss" ? "#fffbfb" : verdict === "hit" ? "#fbfffb" : "#fff" }}>
-              <div onClick={() => setOpen(isOpen ? null : String(r.id))} style={{ display: "flex", gap: 12, padding: "8px 12px", cursor: "pointer" }}>
-                <div style={{ flexShrink: 0, width: 118, minWidth: 118 }}>
-                  <div style={{ fontSize: 10.5, color: "#b0a89e", fontVariantNumeric: "tabular-nums" }}>{r.id}{r.tier ? ` · ${String(r.tier).replace("cell_type_", "")}` : ""}</div>
-                  <div style={{ marginTop: 3, fontSize: 10, fontWeight: 700, color: r.route === "graph" ? "#0e7490" : r.route === "not_scored" ? "#9a948c" : "#b45309" }}>
-                    {r.route === "graph" ? "graph" : r.route === "not_scored" ? "no GT at tier" : "llm-fallback"}
-                  </div>
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <LabelLine tag="GT" tagColor={GT_COL} text={r.gt} />
-                  <LabelLine tag="DN" tagColor={DN_COL} text={r.identity} verdict={verdict} score={isGraph ? r.score : null} />
-                  {mx ? <LabelLine tag="MX" tagColor={MX_COL} text={mx} /> : null}
-                </div>
-              </div>
-              {isOpen && isGraph ? (
-                <div style={{ padding: "0 12px 10px 142px", fontSize: 11.5, color: "#5a554e" }}>
-                  <div style={{ display: "flex", gap: 18, flexWrap: "wrap" }}>
-                    <span><b>subsumption:</b> {r.subsumption ?? "—"}</span>
-                    <span><b>distance:</b> {r.distance ?? "—"}</span>
-                    <span><b>path:</b> {Array.isArray(r.path_edge_types) && r.path_edge_types.length ? r.path_edge_types.join(" → ") : "—"}</span>
-                  </div>
-                  <div style={{ marginTop: 5, display: "flex", gap: 18, flexWrap: "wrap" }}>
-                    <span><b style={{ color: DN_COL }}>pred→ZFA</b> {r.pred_zfa_name ?? "unresolved"} <span style={{ color: "#9a948c" }}>({r.pred_via ?? "—"})</span></span>
-                    <span><b style={{ color: GT_COL }}>gt→ZFA</b> {r.gt_zfa_name ?? "unresolved"} <span style={{ color: "#9a948c" }}>({r.gt_via ?? "—"})</span></span>
-                  </div>
-                </div>
-              ) : null}
+      {/* per-tier agreement tiles */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 12 }}>
+        {agg.map((t) => (
+          <div key={t.t} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "12px 15px" }}>
+            <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{TIER_LABEL[t.t] || t.t}</div>
+            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
+              <span style={{ fontSize: 28, fontWeight: 800, color: heat(t.pct), fontVariantNumeric: "tabular-nums" }}>{t.total ? t.pct : "—"}{t.total ? "%" : ""}</span>
+              <span style={{ fontSize: 12.5, color: "#999" }}>{t.agree}/{t.total} agree</span>
             </div>
-          );
-        })}
+            <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}><div style={{ width: `${t.pct}%`, height: "100%", background: heat(t.pct) }} /></div>
+          </div>
+        ))}
+      </div>
+
+      {/* Node × tier table — stacked GT / DN / MX cells, full text */}
+      <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5 }}>
+          <thead>
+            <tr style={{ background: "#f3f0ec", color: "#555" }}>
+              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec", minWidth: 190 }}>Node · De-Novo identity</th>
+              {tiers.map((t) => <th key={t} style={{ padding: "7px 10px", fontWeight: 700, borderLeft: "1px solid #e5e1dc", textAlign: "left", minWidth: 230 }}>{TIER_LABEL[t] || t}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r) => (
+              <tr key={r.id} style={{ borderTop: "1px solid #f2ede6", verticalAlign: "top" }}>
+                <td style={{ padding: "7px 10px", position: "sticky", left: 0, background: "#fff", fontWeight: 600, color: DN_COL, whiteSpace: "normal", wordBreak: "break-word", minWidth: 190 }} title={r.identity}>
+                  {r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}
+                </td>
+                {tiers.map((t) => {
+                  const gt = r.gt?.[t]; const dnC = r.dn?.[t]; const mx = r.menu?.[t]; const mxC = r.mx?.[t];
+                  const bg = gt == null ? "#fff" : dnC?.match ? "#f6fef9" : dnC && dnC.route !== "not_scored" ? "#fef7f7" : "#fff";
+                  return (
+                    <td key={t} style={{ padding: "7px 10px", borderLeft: "1px solid #f2ede6", background: bg }}>
+                      {line("GT", GT_COL, gt, null)}
+                      {line("DN", DN_COL, r.identity, gt == null ? null : dnC)}
+                      {mx ? line("MX", MX_COL, mx, mxC) : null}
+                    </td>
+                  );
+                })}
+              </tr>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   );

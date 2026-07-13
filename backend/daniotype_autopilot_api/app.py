@@ -1747,22 +1747,54 @@ def _run(run_id, store_id, serve_id, model, base):
             # served from a sibling partition (e.g. daniocell_native) but stored under store_id;
             # stamp native-schema so the read-only viewer resolves GT against the served partition.
             run_json["schemaBasis"] = "native-schema"
-        # GRAPH-JUDGE parallel block (Burst 27) — additive, best-effort; the graph view renders this.
-        # NEVER blocks the save: if :5011 is down we still write the old scoring + log a warning (guardrail e).
+        # GRAPH-JUDGE parallel block (Burst 27+) — PER-TIER (dn vs GT at each tier), matching the
+        # old scorecard layout. Additive, best-effort; NEVER blocks the save (guardrail e).
         if gt:
             try:
+                pairs = []
+                for c in labelled:
+                    ident, _r, _k = _parse_driver(c.get("finalLabel"))
+                    rec = (gt or {}).get(c["id"], {})
+                    for t in SCORE_TIERS:
+                        g = (rec.get(t) or {}).get("label")
+                        if g:
+                            pairs.append((ident or c.get("finalLabel"), g))
+                uniq = list(dict.fromkeys(pairs))
+                _gr = requests.post(f"{GRAPHJUDGE_URL}/graph_score",
+                                    json={"rows": [{"id": i, "pred": p, "gt": g} for i, (p, g) in enumerate(uniq)]}, timeout=180)
+                _gr.raise_for_status()
+                sc = {uniq[row["id"]]: row for row in _gr.json()["block"]["rows"]}
+                def _cell(pred, g):
+                    if not g:
+                        return None
+                    s = sc.get((pred, g))
+                    if not s:
+                        return None
+                    return {"score": s.get("score"), "match": (s.get("route") == "graph" and isinstance(s.get("score"), (int, float)) and s["score"] >= 0.4),
+                            "route": s.get("route"), "subsumption": s.get("subsumption"), "distance": s.get("distance"),
+                            "path_edge_types": s.get("path_edge_types"), "pred_zfa_name": s.get("pred_zfa_name"), "gt_zfa_name": s.get("gt_zfa_name")}
                 grows = []
                 for c in labelled:
                     ident, _r, _k = _parse_driver(c.get("finalLabel"))
                     rec = (gt or {}).get(c["id"], {})
-                    gtier = next((t for t in reversed(SCORE_TIERS) if (rec.get(t) or {}).get("label")), None)
-                    grows.append({"id": c["id"], "pred": ident or c.get("finalLabel"),
-                                  "gt": ((rec.get(gtier) or {}).get("label") if gtier else None), "tier": gtier})
-                _gr = requests.post(f"{GRAPHJUDGE_URL}/graph_score",
-                                    json={"rows": grows, "join": "headless: pred=driver identity, gt=finest available GT tier"},
-                                    timeout=120)
-                _gr.raise_for_status()
-                run_json["finalJudge_graph"] = _gr.json()["block"]
+                    pred = ident or c.get("finalLabel")
+                    grows.append({"id": c["id"], "identity": pred, "gt": {t: (rec.get(t) or {}).get("label") for t in SCORE_TIERS},
+                                  "menu": {}, "dn": {t: _cell(pred, (rec.get(t) or {}).get("label")) for t in SCORE_TIERS}, "mx": {}})
+                present = [t for t in SCORE_TIERS if any(((gt or {}).get(c["id"], {}).get(t) or {}).get("label") for c in labelled)]
+                aggd = {}
+                for t in present:
+                    a = tot = 0
+                    for r in grows:
+                        cc = r["dn"].get(t)
+                        if cc and cc["route"] != "not_scored":
+                            tot += 1
+                            if cc["match"]:
+                                a += 1
+                    aggd[t] = {"agree": a, "total": tot, "pct": round(100 * a / tot) if tot else 0}
+                run_json["finalJudge_graph"] = {"judge": "fuzzy graph judge (ZFA scheme-b + Qwen resolver + CL bridge)",
+                    "scored": "live", "embedder": "Qwen3-Embedding-0.6B", "threshold": 0.78,
+                    "scheme": "b (part_of=0.5,is_a=1.0; 1/(1+d_w)); widened-subsumption NOT applied",
+                    "tiers": present, "rows": grows, "aggregate": {"per_tier": aggd}}
             except Exception as _ge:  # noqa: BLE001
                 st.setdefault("warnings", []).append(f"graph-judge (:5011) scoring skipped — old scoring retained ({str(_ge)[:100]})")
         rid = save_run(run_json)
