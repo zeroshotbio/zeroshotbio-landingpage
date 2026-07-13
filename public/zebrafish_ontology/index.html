@@ -24,6 +24,12 @@
   .row svg { vertical-align:middle; flex:none; overflow:visible; }
   text.lbl { fill:var(--ink); stroke:#fffdfb; stroke-width:3.2px; paint-order:stroke;
     stroke-linejoin:round; pointer-events:none; font-weight:500; }
+  #viewtoggle { position:absolute; top:14px; right:14px; z-index:6; display:flex;
+    background:var(--card); border:1px solid var(--line); border-radius:9px; overflow:hidden;
+    box-shadow:0 3px 12px rgba(60,50,40,.10); font-family:inherit; }
+  #viewtoggle button { border:none; background:transparent; color:var(--muted); font-family:inherit;
+    font-size:12.5px; font-weight:500; padding:8px 15px; cursor:pointer; }
+  #viewtoggle button.on { background:var(--accent); color:#fff; }
   #panel { width:340px; flex:none; background:var(--card); border-left:1px solid var(--line);
     padding:22px 20px 48px; overflow-y:auto; }
   h1 { font-size:19px; font-weight:600; margin:0 0 3px; letter-spacing:.2px; }
@@ -57,13 +63,14 @@
 <body>
 <div id="app">
   <div id="stage">
+    <div id="viewtoggle"><button id="btnForce" class="on">Force</button><button id="btnTree">Tree</button></div>
     <div id="msg">laying out the ontology…</div>
     <svg></svg>
     <div id="tip"></div>
   </div>
   <div id="panel">
     <h1>ZFA Atlas</h1>
-    <div class="sub">The whole zebrafish anatomy ontology (ZFA) in a gravity-repel layout — is_a + part_of as springs, nodes repel. Layer each dataset's menu on top. Structural map only — no scores, no predictions.</div>
+    <div class="sub">The whole zebrafish anatomy ontology (ZFA), gravity-repel or as a hierarchical tree. Layer each dataset's menu on top, and see how far the fuzzy judge can reach. Structural map — no scores, no predictions.</div>
 
     <h2>Ontology layers</h2>
     <label class="toggle tg-x"><input type="checkbox" id="tIsa" checked> is_a edges (backbone)</label>
@@ -77,24 +84,22 @@
 
     <h2>Node legend</h2>
     <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="2.4" fill="#6e6a63"/></svg> <b style="font-weight:500">solid dot</b> — exact string match</div>
-    <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="3.2" fill="none" stroke="#6e6a63" stroke-width="1.3" stroke-dasharray="2.4 1.8"/></svg> <b style="font-weight:500">dashed ring</b> — fuzzy (embedder/CL) placement, uncertain</div>
+    <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="3.2" fill="none" stroke="#6e6a63" stroke-width="1.3" stroke-dasharray="2.4 1.8"/></svg> <b style="font-weight:500">dashed ring</b> — fuzzy placement, uncertain</div>
     <div class="row"><svg width="20" height="14"><circle cx="10" cy="7" r="2.4" fill="#2563eb"/><circle cx="10" cy="7" r="4.4" fill="none" stroke="#c0543b" stroke-width="1.3"/></svg> <b style="font-weight:500">concentric rings</b> — same node in 2+ menus</div>
-    <div class="hint">A bigger glyph just means more menus land on that node — one ring per dataset. Empty ZFA nodes are the small grey dots.</div>
+    <div class="hint">Empty ZFA nodes are the small grey dots.</div>
 
     <h2>Widening net · fuzzy reach</h2>
     <label class="toggle tg-x"><input type="checkbox" id="tNet" checked> show the net</label>
     <div class="row" style="margin-top:4px; gap:7px">threshold <input type="range" id="netcut" min="0.5" max="0.95" step="0.01" value="0.72"></div>
     <div class="hint" id="netcount"></div>
-    <div class="hint">Each ghost is a menu term with <b>no exact ZFA name</b>, tethered to the node it would land on via the embedder / CL bridge. Lower the threshold to <b>widen the net</b> — more terms get caught (filled), but coercions creep in too. Distance from the node ≈ how weak the match is.</div>
+    <div class="hint">Each ghost is a menu term with <b>no exact ZFA name</b>, tethered to the node it would land on. Lower the threshold to <b>widen the net</b> — more caught (filled), coercions included.</div>
 
     <h2>Coverage · menu → ZFA</h2>
     <table><thead><tr><th>set</th><th>menu</th><th>exact</th><th>fuzzy</th><th>unpl.</th></tr></thead><tbody id="counts"></tbody></table>
     <div class="hint" id="touched"></div>
-
-    <div class="hint" style="margin-top:14px">Scroll = zoom · drag = pan · hover = name · click a placed node = highlight its is_a lineage + part_of neighbours.</div>
+    <div class="hint" style="margin-top:12px">Scroll = zoom · drag = pan · hover = name · click a placed node = highlight lineage + part_of.</div>
 
     <h2>Unplaced · honest side-bin</h2>
-    <div class="hint">Menu terms with no confident ZFA node — never forced onto a nearest node.</div>
     <div id="bins"></div>
   </div>
 </div>
@@ -108,47 +113,58 @@ d3.json("/zebrafish_ontology/atlas_data.json").then(render).catch(e => fail(Stri
 function render(data){
   d3.select("#msg").remove();
   const byId = new Map(data.nodes.map(n => [n.id, n]));
-  const XY = new Map(data.nodes.map(n => [n.id, [n.x, n.y]]));
+  const placed = new Set(data.nodes.filter(n => Object.keys(n.ds).length).map(n => n.id));
+
+  // ---- two layouts: FORCE (precomputed x,y) and TREE (radial dendrogram) ----
+  const FORCE = new Map(data.nodes.map(n => [n.id, [n.x, n.y]]));
+  const ROOT = "__root__";
+  const strat = data.nodes.map(n => ({ id:n.id, parentId:(n.p==null?ROOT:n.p) }));
+  strat.push({ id:ROOT, parentId:null });
+  const hroot = d3.stratify()(strat);
+  d3.cluster().size([2*Math.PI, 720]).separation((a,b)=> a.parent===b.parent?1:1.6)(hroot);
+  const TREE = new Map();
+  hroot.each(d => { if (d.id!==ROOT){ const a=d.x-Math.PI/2; TREE.set(d.id,[Math.cos(a)*d.y, Math.sin(a)*d.y]); } });
+  TREE.set(ROOT,[0,0]);
+  let LAYOUT = FORCE, MODE = "force";
+  const P = id => LAYOUT.get(id) || [0,0];
 
   const g = svg.append("g");
-  // batched edges: one path each (fast)
-  const isaSeg = [], partSeg = [];
-  data.nodes.forEach(n => { if (n.p!=null && XY.has(n.p)){ const [x,y]=XY.get(n.id),[px,py]=XY.get(n.p); isaSeg.push(`M${x},${y}L${px},${py}`);} });
-  data.part_of.forEach(e => { if (XY.has(e[0])&&XY.has(e[1])){ const [x,y]=XY.get(e[0]),[px,py]=XY.get(e[1]); partSeg.push(`M${x},${y}L${px},${py}`);} });
-  const isaPath = g.append("path").attr("d", isaSeg.join("")).attr("fill","none")
+  const isaLinks = [], partLinks = [];
+  data.nodes.forEach(n => { if (n.p!=null && FORCE.has(n.p)) isaLinks.push([n.id, n.p]); });
+  data.part_of.forEach(e => { if (FORCE.has(e[0]) && FORCE.has(e[1])) partLinks.push(e); });
+  function segD(pairs){ return pairs.map(([a,b])=>{ const [x,y]=P(a),[px,py]=P(b); return `M${x},${y}L${px},${py}`; }).join(""); }
+  const isaPath = g.append("path").attr("d",segD(isaLinks)).attr("fill","none")
     .attr("stroke","#b0a89c").attr("stroke-width",0.35).attr("stroke-opacity",0.35);
-  const partPath = g.append("path").attr("d", partSeg.join("")).attr("fill","none")
-    .attr("stroke","var(--partof,#2f9e6b)").attr("stroke-width",0.4).attr("stroke-opacity",0.28);
+  const partPath = g.append("path").attr("d",segD(partLinks)).attr("fill","none")
+    .attr("stroke","#2f9e6b").attr("stroke-width",0.4).attr("stroke-opacity",0.28);
 
-  // empty nodes (non-interactive, one selection)
-  const placed = new Set(data.nodes.filter(n=>Object.keys(n.ds).length).map(n=>n.id));
   const emptyDots = g.append("g").selectAll("circle")
     .data(data.nodes.filter(n=>!placed.has(n.id))).join("circle")
-    .attr("cx",n=>n.x).attr("cy",n=>n.y).attr("r",1.6).attr("fill","#cec7bd").attr("fill-opacity",0.6);
+    .attr("cx",n=>P(n.id)[0]).attr("cy",n=>P(n.id)[1]).attr("r",1.6).attr("fill","#cec7bd").attr("fill-opacity",0.6);
 
-  // populated glyphs — concentric rings per placing dataset (toggle by class)
   const gGly = g.append("g");
   const glyphs = gGly.selectAll("g").data(data.nodes.filter(n=>placed.has(n.id))).join("g")
-    .attr("transform",n=>`translate(${n.x},${n.y})`).style("cursor","pointer");
+    .attr("transform",n=>`translate(${P(n.id)})`).style("cursor","pointer");
   glyphs.each(function(n){
     const sel = ORDER.filter(ds=>n.ds[ds]);
     d3.select(this).selectAll("circle").data(sel).join("circle")
       .attr("class",ds=>"ov ov-"+ds).attr("r",(ds,i)=>2.4+i*1.5)
-      .attr("fill",(ds,i)=> (i===0 && n.ds[ds]==="exact") ? COL[ds] : "var(--card,#fffdfb)")
+      .attr("fill",(ds,i)=> (i===0 && n.ds[ds]==="exact") ? COL[ds] : "#fffdfb")
       .attr("stroke",ds=>COL[ds]).attr("stroke-width",1.2)
       .attr("stroke-dasharray",ds=> n.ds[ds]==="fuzzy" ? "2.5 2" : null).attr("fill-opacity",0.95);
   });
 
-  // widening net: ghost per non-exact menu term, tethered to the node it would land on
+  // ---- widening net ----
   function hash(s){ let h=0; for(let i=0;i<s.length;i++) h=(h*31+s.charCodeAt(i))>>>0; return h; }
-  const netData=(data.net||[]).filter(d=>XY.has(d.to)).map(d=>{
-    const [tx,ty]=XY.get(d.to), a=(hash(d.term)%628)/100, r=8+(1-d.cos)*55;
-    return Object.assign({},d,{gx:tx+Math.cos(a)*r,gy:ty+Math.sin(a)*r,tx,ty}); });
-  const netG=g.append("g");
-  const tethers=netG.append("g").selectAll("line").data(netData).join("line")
-    .attr("x1",d=>d.gx).attr("y1",d=>d.gy).attr("x2",d=>d.tx).attr("y2",d=>d.ty);
-  const ghosts=netG.append("g").selectAll("circle").data(netData).join("circle")
-    .attr("cx",d=>d.gx).attr("cy",d=>d.gy).attr("r",1.9).attr("stroke-width",0.8).style("cursor","pointer");
+  const netData = (data.net||[]).filter(d=>FORCE.has(d.to)).map(d=>{
+    const a=(hash(d.term)%628)/100, r=8+(1-d.cos)*55; return Object.assign({},d,{a,r}); });
+  function netXY(d){ const [tx,ty]=P(d.to); return { tx,ty, gx:tx+Math.cos(d.a)*d.r, gy:ty+Math.sin(d.a)*d.r }; }
+  const netG = g.append("g");
+  const tethers = netG.append("g").selectAll("line").data(netData).join("line")
+    .each(function(d){ const p=netXY(d); d3.select(this).attr("x1",p.gx).attr("y1",p.gy).attr("x2",p.tx).attr("y2",p.ty); });
+  const ghosts = netG.append("g").selectAll("circle").data(netData).join("circle")
+    .each(function(d){ const p=netXY(d); d3.select(this).attr("cx",p.gx).attr("cy",p.gy); })
+    .attr("r",1.9).attr("stroke-width",0.8).style("cursor","pointer");
   ghosts.on("mousemove",(ev,d)=>{ tip.html(`<b>${d.term}</b><br><span class="t">${d.ds} · cos ${d.cos.toFixed(2)} · via ${d.via}</span><br>→ ${(byId.get(d.to)||{}).name||d.to}`).style("opacity",1); moveTip(ev); })
         .on("mouseleave",()=>tip.style("opacity",0));
   function applyCut(cut){
@@ -158,54 +174,75 @@ function render(data){
       .attr("opacity",d=>d.cos>=cut?0.95:0.5);
     d3.select("#netcount").html(`cutoff <b>${cut.toFixed(2)}</b> · <b>${netData.filter(d=>d.cos>=cut).length}</b> of ${netData.length} caught beyond exact scope`);
   }
-  d3.select("#netcut").on("input",function(){ applyCut(+this.value); });
-  d3.select("#tNet").on("change",function(){ netG.style("display",this.checked?null:"none"); });
-  applyCut(0.72);
 
-  // interaction
+  // ---- labels with greedy collision, tiered by zoom ----
+  const labels = g.append("g").selectAll("text").data(data.nodes.filter(n=>n.lab)).join("text")
+    .attr("class","lbl").attr("dy","-0.6em").attr("text-anchor","middle").text(n=>n.lab)
+    .each(function(n){ const [x,y]=P(n.id); d3.select(this).attr("x",x).attr("y",y); });
+  function refreshLabels(){
+    const t = d3.zoomTransform(svg.node()), k = t.k;
+    const cand = data.nodes.filter(n=>n.lab && k>=n.lz).map(n=>{ const [x,y]=P(n.id);
+      return { id:n.id, deg:n.deg, sx:x*k+t.x, sy:y*k+t.y, w:(n.lab.length*6.0)+6, h:12 }; });
+    cand.sort((a,b)=> b.deg - a.deg);
+    const kept=[], show=new Set();
+    for (const c of cand){ const L=c.sx-c.w/2,R=c.sx+c.w/2,T=c.sy-c.h,B=c.sy; let ok=true;
+      for (const p of kept){ if (!(R<p.L||L>p.R||B<p.T||T>p.B)){ ok=false; break; } }
+      if (ok){ kept.push({L,R,T,B}); show.add(c.id); } }
+    labels.style("display",d=> show.has(d.id) ? null : "none")
+          .style("font-size",(11/k)+"px").style("stroke-width",(3.2/k)+"px");
+  }
+
+  // ---- interaction ----
   function label(n){ const parts = ORDER.filter(d=>n.ds[d]).map(d=>`<span style="color:${COL[d]}">${d}</span><span class="t"> ${n.ds[d]}</span>`);
     return `<b>${n.name}</b><br><span class="t">${n.id} · depth ${n.depth}</span>${parts.length?"<br>"+parts.join(" · "):""}`; }
   function moveTip(ev){ tip.style("left",(ev.offsetX+14)+"px").style("top",(ev.offsetY+12)+"px"); }
   glyphs.on("mousemove",(ev,n)=>{ tip.html(label(n)).style("opacity",1); moveTip(ev); })
         .on("mouseleave",()=>tip.style("opacity",0))
         .on("click",(ev,n)=>{ ev.stopPropagation(); highlight(n); });
-
   const hl = g.append("path").attr("fill","none").attr("stroke","#0e7490").attr("stroke-width",1.1).attr("stroke-opacity",0);
   function highlight(n){
     const keep=new Set(); let x=n.id; while(x!=null){ keep.add(x); x=(byId.get(x)||{}).p; }
     const nbr=new Set(); data.part_of.forEach(e=>{ if(e[0]===n.id) nbr.add(e[1]); if(e[1]===n.id) nbr.add(e[0]); });
-    const seg=[]; let y=n.id; while(y!=null){ const p=(byId.get(y)||{}).p; if(p!=null&&XY.has(p)){ const [ax,ay]=XY.get(y),[bx,by]=XY.get(p); seg.push(`M${ax},${ay}L${bx},${by}`);} y=p; }
-    nbr.forEach(m=>{ if(XY.has(m)){ const [ax,ay]=XY.get(n.id),[bx,by]=XY.get(m); seg.push(`M${ax},${ay}L${bx},${by}`);} });
+    const seg=[]; let y=n.id; while(y!=null){ const p=(byId.get(y)||{}).p; if(p!=null&&LAYOUT.has(p)){ const [ax,ay]=P(y),[bx,by]=P(p); seg.push(`M${ax},${ay}L${bx},${by}`);} y=p; }
+    nbr.forEach(m=>{ if(LAYOUT.has(m)){ const [ax,ay]=P(n.id),[bx,by]=P(m); seg.push(`M${ax},${ay}L${bx},${by}`);} });
     hl.attr("d",seg.join("")).attr("stroke-opacity",0.9);
     glyphs.attr("opacity",m=> (keep.has(m.id)||nbr.has(m.id))?1:0.15);
     emptyDots.attr("fill-opacity",m=>keep.has(m.id)?0.9:0.2);
   }
-  svg.on("click",()=>{ hl.attr("stroke-opacity",0); glyphs.attr("opacity",1); emptyDots.attr("fill-opacity",0.55); tip.style("opacity",0); });
+  svg.on("click",()=>{ hl.attr("stroke-opacity",0); glyphs.attr("opacity",1); emptyDots.attr("fill-opacity",0.6); tip.style("opacity",0); });
 
-  // Maps-style zoom-tiered labels with white halo (drawn last = on top)
-  const labels = g.append("g").selectAll("text").data(data.nodes.filter(n=>n.lab)).join("text")
-    .attr("class","lbl").attr("x",n=>n.x).attr("y",n=>n.y).attr("dy","-0.6em")
-    .attr("text-anchor","middle").text(n=>n.lab);
-  function updateLabels(k){
-    labels.style("display",d=> k>=d.lz ? null : "none")
-          .style("font-size",(11/k)+"px").style("stroke-width",(3.2/k)+"px");
-  }
-
-  // zoom — fit to content
-  const zoom = d3.zoom().scaleExtent([0.15,20]).on("zoom",ev=>{ g.attr("transform",ev.transform); updateLabels(ev.transform.k); });
+  // ---- zoom ----
+  const zoom = d3.zoom().scaleExtent([0.12,20]).on("zoom",ev=>{ g.attr("transform",ev.transform); refreshLabels(); });
   svg.call(zoom);
-  const W=svg.node().clientWidth,H=svg.node().clientHeight, k=Math.min(W,H)/1500;
-  svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2).scale(k));
-  updateLabels(k);
+  const W=svg.node().clientWidth,H=svg.node().clientHeight, k0=Math.min(W,H)/1600;
+  svg.call(zoom.transform, d3.zoomIdentity.translate(W/2,H/2).scale(k0));
 
-  // toggles
+  // ---- layout switch ----
+  function relayout(){
+    isaPath.transition().duration(220).style("opacity",0).on("end",()=>isaPath.attr("d",segD(isaLinks)).transition().duration(320).style("opacity",1));
+    partPath.transition().duration(220).style("opacity",0).on("end",()=>partPath.attr("d",segD(partLinks)).transition().duration(320).style("opacity",1));
+    hl.attr("stroke-opacity",0);
+    emptyDots.transition().duration(750).attr("cx",n=>P(n.id)[0]).attr("cy",n=>P(n.id)[1]);
+    glyphs.transition().duration(750).attr("transform",n=>`translate(${P(n.id)})`);
+    labels.transition().duration(750).attr("x",n=>P(n.id)[0]).attr("y",n=>P(n.id)[1]).on("end",refreshLabels);
+    tethers.transition().duration(750).each(function(d){ const p=netXY(d); d3.select(this).attr("x1",p.gx).attr("y1",p.gy).attr("x2",p.tx).attr("y2",p.ty); });
+    ghosts.transition().duration(750).each(function(d){ const p=netXY(d); d3.select(this).attr("cx",p.gx).attr("cy",p.gy); });
+    setTimeout(refreshLabels, 120);
+  }
+  function setMode(m){ if (m===MODE) return; MODE=m; LAYOUT = m==="force"?FORCE:TREE;
+    d3.select("#btnForce").classed("on",m==="force"); d3.select("#btnTree").classed("on",m==="tree"); relayout(); }
+  d3.select("#btnForce").on("click",()=>setMode("force"));
+  d3.select("#btnTree").on("click",()=>setMode("tree"));
+
+  // ---- toggles + panel ----
   d3.select("#tIsa").on("change",function(){ isaPath.style("display",this.checked?null:"none"); });
   d3.select("#tPart").on("change",function(){ partPath.style("display",this.checked?null:"none"); });
   d3.select("#tEmpty").on("change",function(){ emptyDots.style("display",this.checked?null:"none"); });
-  ORDER.forEach(ds => d3.select("#ov-"+ds).on("change",function(){
-    gGly.selectAll(".ov-"+ds).style("display",this.checked?null:"none"); }));
+  ORDER.forEach(ds => d3.select("#ov-"+ds).on("change",function(){ gGly.selectAll(".ov-"+ds).style("display",this.checked?null:"none"); }));
+  d3.select("#netcut").on("input",function(){ applyCut(+this.value); });
+  d3.select("#tNet").on("change",function(){ netG.style("display",this.checked?null:"none"); });
+  applyCut(0.72); refreshLabels();
 
-  // panel
   d3.select("#counts").html(ORDER.map(ds=>{ const c=data.counts[ds];
     return `<tr><td style="color:${COL[ds]}">${ds}</td><td>${c.menu}</td><td>${c.exact}</td><td>${c.fuzzy}</td><td>${c.unplaced}</td></tr>`;}).join(""));
   const multi = data.nodes.filter(n=>Object.keys(n.ds).length>1).length;
