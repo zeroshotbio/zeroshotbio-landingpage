@@ -100,6 +100,16 @@ export function GraphJudgeScorecard({ block, variant = "graph" }: { block: any; 
   const last = tiers.length - 1;
   return (
     <div>
+      {!isLLM ? (
+        <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 18px", marginBottom: 16, fontSize: 12.5, lineHeight: 1.6, color: "#5f5a52" }}>
+          <p style={{ margin: "0 0 10px" }}>
+            <b style={{ color: "#3f3b35" }}>The old way:</b> we asked a language model (like ChatGPT) to eyeball each pair and judge &ldquo;match or not?&rdquo; It worked, loosely, but had real problems — it gave only yes/no (no partial credit), it contradicted itself (the same pair judged differently on different runs), and it manufactured fake misses. On closer audit, most of its &ldquo;wrong&rdquo; calls were scoring errors, not labelling errors.
+          </p>
+          <p style={{ margin: 0 }}>
+            <b style={{ color: "#3f3b35" }}>The new way:</b> we use a map of zebrafish anatomy where every cell type and body part is a point, connected by biological relationships. To score a guess, we place both the prediction and the true answer on this map and measure the distance between them. Close = high score, far = low.
+          </p>
+        </div>
+      ) : null}
       {isLLM ? (
         <>
           <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 4 }}>
