@@ -39,7 +39,7 @@ export function GraphJudgeScorecard({ block, run, datasetName }: { block: any; r
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ fontSize: 11.5, color: "#7a746c", lineHeight: 1.5 }}>
-        Each node's blind <b style={{ color: DN_COL }}>de-novo</b> call vs the published <b>GT</b> (and the <b style={{ color: MX_COL }}>menu-exposed</b> bin, shown for comparison), scored by the fuzzy graph judge on ZFA distance — <b style={{ color: HIT }}>✓</b> agrees, <b style={{ color: MISS }}>✗</b> misses (red-underlined). Full label text, nothing truncated.
+        Each node&apos;s blind <b style={{ color: DN_COL }}>de-novo</b> call vs the published <b>GT</b> (and the <b style={{ color: MX_COL }}>menu-exposed</b> bin, shown for comparison), scored by the fuzzy graph judge on ZFA distance — <b style={{ color: HIT }}>✓</b> agrees, <b style={{ color: MISS }}>✗</b> misses (red-underlined). Full label text, nothing truncated.
       </div>
 
       {/* per-node stacked label rows — GT / DN / MX one above the other, full text */}
