@@ -908,9 +908,9 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
       {/* PRIMARY vis: the merged-node scorecard (GT + de-novo + menu-exposed per tier). When a run has
           a consolidation but is NOT yet scored, fall to FinalJudgePanel (which carries the Score button). */}
       {run?.finalJudge?.rows?.length ? (
-        <div style={CARD}>
-          <div style={SEC}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} · {run.finalJudge.rows.length} post-Meta-Reasoner nodes</div>
-          <MergedNodeScorecard run={run} />
+        <div style={{ width: "min(1680px, 98vw)", marginLeft: "calc(50% - min(840px, 49vw))" }}>
+          <div style={{ ...SEC, textAlign: "center", marginBottom: 8 }}>Merged-node scorecard vs {dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published")} · {run.finalJudge.rows.length} post-Meta-Reasoner nodes</div>
+          <GraphJudgeScorecard block={run.finalJudge} variant="llm" run={run} datasetName={gjName} />
         </div>
       ) : run?.operatorProposal ? <FinalJudgePanel run={run} dataset={dataset} judgements={judgements} addJudgement={addJudgement} />
         : sc ? <MergedNodesTable sc={sc} judgements={judgements} addJudgement={addJudgement} />
@@ -945,80 +945,6 @@ function parseMenuLabels(transcript: any[]): Record<string, string> | null {
     if (m && m[1]) out[tier] = m[1].trim();
   });
   return Object.keys(out).length ? out : null;
-}
-
-// MergedNodeScorecard — renders the persisted finalJudge node rows (the merged post-Meta-Reasoner
-// nodes) in the label-vs-GT "ground-truth scorecard" visual style: per-tier agreement tiles on top,
-// then one row per node showing its de-novo identity (Daniotype) against the published GT label at
-// each tier, green when the fuzzy judge matched, red when it missed. Reads only what's persisted —
-// never re-scores. Replaces the empty pre-merge per-leaf Scorecard for runs that carry a scorecard.
-function MergedNodeScorecard({ run }: { run: any }) {
-  const fj = run?.finalJudge;
-  const rows: any[] = Array.isArray(fj?.rows) ? fj.rows : [];
-  const tiers: string[] = (Array.isArray(fj?.tiers) && fj.tiers.length ? fj.tiers : FJ_TIERS.filter((t) => rows.some((r) => r.gt?.[t]))) as string[];
-  const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)" };
-  const heat = (pct: number) => (pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#dc2626");
-  const agg = tiers.map((t) => {
-    let a = 0, tot = 0;
-    rows.forEach((r) => { if (r.dn?.[t]) { tot++; if (r.dn[t].match) a++; } });
-    return { t, a, tot, pct: tot ? Math.round((100 * a) / tot) : 0 };
-  });
-  return (
-    <div>
-      <div style={{ fontSize: 12.5, color: "#7a746c", lineHeight: 1.5, marginBottom: 10 }}>
-        Each of the <b>{rows.length} merged post-Meta-Reasoner nodes</b> — its blind <b>de-novo</b> consolidated identity vs the published atlas at every tier, scored by the fuzzy judge on biological meaning (not string match). Green = agrees, red = miss.
-      </div>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))", gap: 12, marginBottom: 10 }}>
-        {agg.map((t) => (
-          <div key={t.t} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "12px 15px" }}>
-            <div style={{ fontSize: 11.5, textTransform: "uppercase", letterSpacing: 0.5, color: "#888", fontWeight: 700 }}>{TIER_LABEL[t.t] || t.t}</div>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 8, margin: "6px 0 8px" }}>
-              <span style={{ fontSize: 28, fontWeight: 800, color: heat(t.pct), fontVariantNumeric: "tabular-nums" }}>{t.tot ? t.pct : "—"}{t.tot ? "%" : ""}</span>
-              <span style={{ fontSize: 12.5, color: "#999" }}>{t.a}/{t.tot} agree</span>
-            </div>
-            <div style={{ height: 8, background: "#eee7df", borderRadius: 99, overflow: "hidden" }}><div style={{ width: `${t.pct}%`, height: "100%", background: heat(t.pct) }} /></div>
-          </div>
-        ))}
-      </div>
-      <div style={{ fontSize: 11, color: "#9a948c", marginBottom: 8, lineHeight: 1.5 }}>
-        Each tier cell stacks three labels: <b style={{ color: "#4b5563" }}>GT</b> (published atlas) · <b style={{ color: "#0891b2" }}>DN</b> (blind de-novo — the node&apos;s consolidated identity, one call judged at every tier) · <b style={{ color: "#7c3aed" }}>MX</b> (menu-exposed — the per-tier bin). Green = the judge agreed with GT, red = miss.
-      </div>
-      <div style={{ border: "1px solid #e5e1dc", borderRadius: 10, overflow: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 11.5, whiteSpace: "nowrap" }}>
-          <thead>
-            <tr style={{ background: "#f3f0ec", color: "#555" }}>
-              <th style={{ padding: "7px 10px", textAlign: "left", position: "sticky", left: 0, background: "#f3f0ec" }}>Node · De-Novo identity</th>
-              {tiers.map((t) => <th key={t} style={{ padding: "7px 8px", fontWeight: 700, borderLeft: "1px solid #e5e1dc", textTransform: "capitalize" }}>{TIER_LABEL[t] || t}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.id} style={{ borderTop: "1px solid #f2ede6", verticalAlign: "top" }}>
-                <td style={{ padding: "6px 10px", position: "sticky", left: 0, background: "#fff", maxWidth: 210, overflow: "hidden", textOverflow: "ellipsis", fontWeight: 600 }} title={r.identity}>{r.identity}{r.kind === "merge" && r.leaf_ids ? <span style={{ color: "#9a948c", fontWeight: 400 }}> ×{r.leaf_ids.length}</span> : null}</td>
-                {tiers.map((t) => {
-                  const gt = r.gt?.[t]; const dnMatch = r.dn?.[t]?.match; const mx = r.menu?.[t]; const mxMatch = r.mx?.[t]?.match;
-                  const bg = gt == null ? "#fff" : dnMatch ? "#f6fef9" : "#fef7f7";
-                  const line = (tag: string, tagColor: string, val: any, matched: any) => (
-                    <div style={{ display: "flex", gap: 5, alignItems: "baseline", marginTop: tag === "GT" ? 0 : 2, maxWidth: 165 }}>
-                      <span style={{ fontSize: 8, fontWeight: 800, color: tagColor, letterSpacing: 0.3, flexShrink: 0, width: 15 }}>{tag}</span>
-                      <span style={{ color: matched == null ? "#4b5563" : matched ? "#166534" : "#b91c1c", fontWeight: matched === false ? 700 : 500, overflow: "hidden", textOverflow: "ellipsis" }} title={String(val ?? "")}>{val ?? "—"}{matched != null ? (matched ? " ✓" : " ✗") : ""}</span>
-                    </div>
-                  );
-                  return (
-                    <td key={t} style={{ padding: "6px 8px", borderLeft: "1px solid #f2ede6", background: bg }}>
-                      {line("GT", "#a59f96", gt, null)}
-                      {line("DN", "#0891b2", r.identity, gt == null ? null : !!dnMatch)}
-                      {line("MX", "#7c3aed", mx, mx == null ? null : !!mxMatch)}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
 }
 
 // LIVE Final Judge — scores the ~70 post-Meta-Reasoner nodes against ZSCAPE Classic
