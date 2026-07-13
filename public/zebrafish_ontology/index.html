@@ -30,6 +30,16 @@
   #viewtoggle button { border:none; background:transparent; color:var(--muted); font-family:inherit;
     font-size:12.5px; font-weight:500; padding:8px 15px; cursor:pointer; }
   #viewtoggle button.on { background:var(--accent); color:#fff; }
+  #filter { position:absolute; top:60px; right:14px; z-index:6; display:flex; flex-direction:column;
+    gap:6px; align-items:flex-end; }
+  #filter button { border:1px solid var(--line); background:var(--card); color:var(--muted);
+    font-family:inherit; font-size:12px; font-weight:500; padding:7px 13px; border-radius:8px;
+    cursor:pointer; box-shadow:0 2px 8px rgba(60,50,40,.08); }
+  #filter button.on { color:#fff; }
+  #filter button[data-f=""].on { background:var(--accent); border-color:var(--accent); }
+  #filter button[data-f="zscape"].on { background:var(--zscape); border-color:var(--zscape); }
+  #filter button[data-f="chemfish"].on { background:var(--chemfish); border-color:var(--chemfish); }
+  #filter button[data-f="daniocell"].on { background:var(--daniocell); border-color:var(--daniocell); }
   #panel { width:340px; flex:none; background:var(--card); border-left:1px solid var(--line);
     padding:22px 20px 48px; overflow-y:auto; }
   h1 { font-size:19px; font-weight:600; margin:0 0 3px; letter-spacing:.2px; }
@@ -64,6 +74,12 @@
 <div id="app">
   <div id="stage">
     <div id="viewtoggle"><button id="btnForce" class="on">Force</button><button id="btnTree">Tree</button></div>
+    <div id="filter">
+      <button data-f="" class="on">Full ontology</button>
+      <button data-f="zscape">Just ZSCAPE</button>
+      <button data-f="chemfish">Just ChemFish</button>
+      <button data-f="daniocell">Just DanioCell</button>
+    </div>
     <div id="msg">laying out the ontology…</div>
     <svg></svg>
     <div id="tip"></div>
@@ -115,30 +131,60 @@ function render(data){
   const byId = new Map(data.nodes.map(n => [n.id, n]));
   const placed = new Set(data.nodes.filter(n => Object.keys(n.ds).length).map(n => n.id));
 
-  // ---- two layouts: FORCE (precomputed x,y) and TREE (radial dendrogram) ----
+  // ---- full layouts: FORCE (precomputed) + TREE (top-down d3.tree) ----
   const FORCE = new Map(data.nodes.map(n => [n.id, [n.x, n.y]]));
   const ROOT = "__root__";
   const strat = data.nodes.map(n => ({ id:n.id, parentId:(n.p==null?ROOT:n.p) }));
   strat.push({ id:ROOT, parentId:null });
   const hroot = d3.stratify()(strat);
-  d3.tree().nodeSize([6, 78])(hroot);           // top-down hierarchical tree (root up, leaves down)
+  d3.tree().nodeSize([6, 78])(hroot);
   const TREE = new Map();
   hroot.each(d => { if (d.id!==ROOT) TREE.set(d.id, [d.x, d.y]); });
-  let LAYOUT = FORCE, MODE = "force";
-  const P = id => LAYOUT.get(id) || [0,0];
 
-  const g = svg.append("g");
   const isaLinks = [], partLinks = [];
   data.nodes.forEach(n => { if (n.p!=null && FORCE.has(n.p)) isaLinks.push([n.id, n.p]); });
   data.part_of.forEach(e => { if (FORCE.has(e[0]) && FORCE.has(e[1])) partLinks.push(e); });
+
+  // ---- active view state (full ontology, or one dataset's induced subgraph) ----
+  let MODE="force", FILTER=null;
+  let activeForce=FORCE, activeTree=TREE, activeIsa=isaLinks, activePart=partLinks, activeNodes=null;
+  let LAYOUT=FORCE;
+  const P = id => LAYOUT.get(id) || [0,0];
+  const inView = id => !activeNodes || activeNodes.has(id);
+
+  // per-dataset subgraph = its placed nodes + is_a-ancestor closure, laid out fresh
+  const _fc={};
+  function subForce(S, edges){
+    const arr=[...S].map(id=>({id})), ix=new Map(arr.map(n=>[n.id,n]));
+    const links=edges.map(([a,b])=>({source:ix.get(a),target:ix.get(b)})).filter(l=>l.source&&l.target);
+    const sim=d3.forceSimulation(arr).force("charge",d3.forceManyBody().strength(-85))
+      .force("link",d3.forceLink(links).distance(26).strength(0.8))
+      .force("center",d3.forceCenter(0,0)).force("collide",d3.forceCollide(4.5)).stop();
+    for(let i=0;i<260;i++) sim.tick();
+    const m=new Map(); arr.forEach(n=>m.set(n.id,[n.x,n.y])); return m;
+  }
+  function subTree(S){
+    const arr=[...S].map(id=>({id, parentId:((byId.get(id).p && S.has(byId.get(id).p))?byId.get(id).p:"__r__")}));
+    arr.push({id:"__r__",parentId:null});
+    const r=d3.stratify()(arr); d3.tree().nodeSize([10,74])(r);
+    const m=new Map(); r.each(d=>{ if(d.id!=="__r__") m.set(d.id,[d.x,d.y]); }); return m;
+  }
+  function computeFilter(ds){
+    if(_fc[ds]) return _fc[ds];
+    const S=new Set();
+    data.nodes.forEach(n=>{ if(n.ds[ds]){ let x=n.id; while(x!=null && !S.has(x)){ S.add(x); x=(byId.get(x)||{}).p; } } });
+    const isa=isaLinks.filter(([a,b])=>S.has(a)&&S.has(b)), part=partLinks.filter(([a,b])=>S.has(a)&&S.has(b));
+    return _fc[ds]={nodes:S, isa, part, force:subForce(S,isa.concat(part)), tree:subTree(S)};
+  }
+
+  const g = svg.append("g");
   function segD(pairs){ return pairs.map(([a,b])=>{ const [x,y]=P(a),[px,py]=P(b); return `M${x},${y}L${px},${py}`; }).join(""); }
-  // is_a: straight in Force; rectangular elbow (parent→bus→child) in Tree
-  function isaD(){ if (MODE!=="tree") return segD(isaLinks);
-    return isaLinks.map(([c,pa])=>{ const [cx,cy]=P(c),[px,py]=P(pa); const my=(cy+py)/2;
+  function isaD(){ if (MODE!=="tree") return segD(activeIsa);
+    return activeIsa.map(([c,pa])=>{ const [cx,cy]=P(c),[px,py]=P(pa); const my=(cy+py)/2;
       return `M${px},${py}V${my}H${cx}V${cy}`; }).join(""); }
   const isaPath = g.append("path").attr("d",isaD()).attr("fill","none")
     .attr("stroke","#b0a89c").attr("stroke-width",0.35).attr("stroke-opacity",0.35);
-  const partPath = g.append("path").attr("d",segD(partLinks)).attr("fill","none")
+  const partPath = g.append("path").attr("d",segD(activePart)).attr("fill","none")
     .attr("stroke","#2f9e6b").attr("stroke-width",0.4).attr("stroke-opacity",0.28);
 
   const emptyDots = g.append("g").selectAll("circle")
@@ -184,7 +230,7 @@ function render(data){
     .each(function(n){ const [x,y]=P(n.id); d3.select(this).attr("x",x).attr("y",y); });
   function refreshLabels(){
     const t = d3.zoomTransform(svg.node()), k = t.k;
-    const cand = data.nodes.filter(n=>n.lab && k>=n.lz).map(n=>{ const [x,y]=P(n.id);
+    const cand = data.nodes.filter(n=>n.lab && k>=n.lz && inView(n.id)).map(n=>{ const [x,y]=P(n.id);
       return { id:n.id, deg:n.deg, sx:x*k+t.x, sy:y*k+t.y, w:(n.lab.length*6.0)+6, h:12 }; });
     cand.sort((a,b)=> b.deg - a.deg);
     const kept=[], show=new Set();
@@ -226,33 +272,53 @@ function render(data){
   }
   svg.call(zoom.transform, fitTransform(FORCE));
 
-  // ---- layout switch ----
-  function relayout(){
-    isaPath.transition().duration(220).style("opacity",0).on("end",()=>isaPath.attr("d",isaD()).transition().duration(320).style("opacity",1));
-    partPath.transition().duration(220).style("opacity",0).on("end",()=>partPath.attr("d",segD(partLinks)).transition().duration(320).style("opacity",1));
-    hl.attr("stroke-opacity",0);
-    emptyDots.transition().duration(750).attr("cx",n=>P(n.id)[0]).attr("cy",n=>P(n.id)[1]);
-    glyphs.transition().duration(750).attr("transform",n=>`translate(${P(n.id)})`);
-    labels.transition().duration(750).attr("x",n=>P(n.id)[0]).attr("y",n=>P(n.id)[1]).on("end",refreshLabels);
-    tethers.transition().duration(750).each(function(d){ const p=netXY(d); d3.select(this).attr("x1",p.gx).attr("y1",p.gy).attr("x2",p.tx).attr("y2",p.ty); });
-    ghosts.transition().duration(750).each(function(d){ const p=netXY(d); d3.select(this).attr("cx",p.gx).attr("cy",p.gy); });
-    setTimeout(refreshLabels, 120);
+  // ---- visibility (respects filter + panel toggles) ----
+  const chk = id => d3.select("#"+id).property("checked");
+  function applyVisibility(){
+    emptyDots.style("display",n=> (inView(n.id) && !placed.has(n.id) && chk("tEmpty")) ? null : "none");
+    glyphs.style("display",n=> (inView(n.id) && (!FILTER || n.ds[FILTER])) ? null : "none");
+    ORDER.forEach(ds=>{ const show = FILTER ? (ds===FILTER) : chk("ov-"+ds);
+      gGly.selectAll(".ov-"+ds).style("display", show ? null : "none"); });
+    const netOn = chk("tNet");
+    tethers.style("display",d=> (netOn && (!FILTER||d.ds===FILTER) && inView(d.to)) ? null : "none");
+    ghosts.style("display",d=> (netOn && (!FILTER||d.ds===FILTER) && inView(d.to)) ? null : "none");
+    isaPath.style("display", chk("tIsa")?null:"none");
+    partPath.style("display", chk("tPart")?null:"none");
   }
-  function setMode(m){ if (m===MODE) return; MODE=m; LAYOUT = m==="force"?FORCE:TREE;
+
+  // ---- apply current view (mode + filter): revisible, reposition, reframe ----
+  function applyView(animate){
+    LAYOUT = MODE==="force"?activeForce:activeTree;
+    applyVisibility();
+    const dur = animate?750:0, ef=animate?220:0, ei=animate?320:0;
+    isaPath.transition().duration(ef).style("opacity",0).on("end",()=>isaPath.attr("d",isaD()).transition().duration(ei).style("opacity",1));
+    partPath.transition().duration(ef).style("opacity",0).on("end",()=>partPath.attr("d",segD(activePart)).transition().duration(ei).style("opacity",1));
+    hl.attr("stroke-opacity",0);
+    emptyDots.transition().duration(dur).attr("cx",n=>P(n.id)[0]).attr("cy",n=>P(n.id)[1]);
+    glyphs.transition().duration(dur).attr("transform",n=>`translate(${P(n.id)})`);
+    labels.transition().duration(dur).attr("x",n=>P(n.id)[0]).attr("y",n=>P(n.id)[1]).on("end",refreshLabels);
+    tethers.transition().duration(dur).each(function(d){ const p=netXY(d); d3.select(this).attr("x1",p.gx).attr("y1",p.gy).attr("x2",p.tx).attr("y2",p.ty); });
+    ghosts.transition().duration(dur).each(function(d){ const p=netXY(d); d3.select(this).attr("cx",p.gx).attr("cy",p.gy); });
+    svg.transition().duration(dur).call(zoom.transform, fitTransform(LAYOUT));
+    setTimeout(refreshLabels, animate?140:0);
+  }
+  function setMode(m){ if (m===MODE) return; MODE=m;
     d3.select("#btnForce").classed("on",m==="force"); d3.select("#btnTree").classed("on",m==="tree");
-    svg.transition().duration(800).call(zoom.transform, fitTransform(LAYOUT));   // reframe camera
-    relayout(); }
+    applyView(true); }
+  function setFilter(f){ f=f||null; if (f===FILTER) return; FILTER=f;
+    d3.selectAll("#filter button").classed("on",function(){ return (this.getAttribute("data-f")||"")===(FILTER||""); });
+    if (!FILTER){ activeForce=FORCE; activeTree=TREE; activeIsa=isaLinks; activePart=partLinks; activeNodes=null; }
+    else { const c=computeFilter(FILTER); activeForce=c.force; activeTree=c.tree; activeIsa=c.isa; activePart=c.part; activeNodes=c.nodes; }
+    applyView(true); }
   d3.select("#btnForce").on("click",()=>setMode("force"));
   d3.select("#btnTree").on("click",()=>setMode("tree"));
+  d3.selectAll("#filter button").on("click",function(){ setFilter(this.getAttribute("data-f")); });
 
   // ---- toggles + panel ----
-  d3.select("#tIsa").on("change",function(){ isaPath.style("display",this.checked?null:"none"); });
-  d3.select("#tPart").on("change",function(){ partPath.style("display",this.checked?null:"none"); });
-  d3.select("#tEmpty").on("change",function(){ emptyDots.style("display",this.checked?null:"none"); });
-  ORDER.forEach(ds => d3.select("#ov-"+ds).on("change",function(){ gGly.selectAll(".ov-"+ds).style("display",this.checked?null:"none"); }));
+  ["tIsa","tPart","tEmpty","tNet","ov-zscape","ov-chemfish","ov-daniocell"].forEach(id=>
+    d3.select("#"+id).on("change",applyVisibility));
   d3.select("#netcut").on("input",function(){ applyCut(+this.value); });
-  d3.select("#tNet").on("change",function(){ netG.style("display",this.checked?null:"none"); });
-  applyCut(0.72); refreshLabels();
+  applyCut(0.72); applyVisibility(); refreshLabels();
 
   d3.select("#counts").html(ORDER.map(ds=>{ const c=data.counts[ds];
     return `<tr><td style="color:${COL[ds]}">${ds}</td><td>${c.menu}</td><td>${c.exact}</td><td>${c.fuzzy}</td><td>${c.unplaced}</td></tr>`;}).join(""));
