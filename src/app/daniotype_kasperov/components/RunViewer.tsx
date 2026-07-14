@@ -482,7 +482,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
               {clusteringBasis === "de-novo" ? (
                 <p style={{ color: "#9a948c", fontSize: 12.5, margin: "0 auto 8px", lineHeight: 1.5, maxWidth: 720 }}>
                   {dataset.id === "zscape" && sampled ? (
-                    <><b style={{ color: "#5a544c" }}>The sample.</b> We cluster {clusteredCells.toLocaleString()} cells — a random cross-section of the full {fullCells!.toLocaleString()}, not a biological subset. It spans every condition, perturbed and control alike, and is drawn from a single developmental age (48&nbsp;hpf) so that young and old cells are never blended into the same cluster. The authors&apos; own published cell-type labels are held out entirely, so we can score our de-novo calls against them later.</>
+                    <><b style={{ color: "#5a544c" }}>The sample.</b> Of the full {fullCells!.toLocaleString()} cells we cluster only the 48&nbsp;hpf cells — {clusteredCells.toLocaleString()} of them — a single developmental age, so young and old never blend into one cluster. The authors&apos; published cell-type labels are held out, so we can score our de-novo calls against them later.</>
                   ) : (<>
                     {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
                     {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
@@ -528,18 +528,17 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                   datasetName={dataset.name}
                 />
               ) : clusteringBasis === "de-novo" ? (
-                <>
-                  {dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : null}
-                  {(run as any)?._canonical?.clustering?.strategy
+                dataset.id === "zscape"
+                  ? <ZscapeClusteringExplainer nLeaves={clusters?.length} />
+                  : (run as any)?._canonical?.clustering?.strategy
                     ? <ClusteringStrategyPanel strategy={(run as any)._canonical.clustering.strategy} nLeaves={clusters?.length} />
-                    : dataset.id !== "zscape" ? <ClusteringExplainer /> : null}
-                </>
+                    : <ClusteringExplainer />
               ) : (
                 <NeutralClusteringExplainer nLeaves={runNGroups} datasetName={dataset.name} />
               )}
               {/* this run's own clustering provenance — shown only when the run JSON
                   structurally snapshotted a strategy (never back-filled from live data) */}
-              {profile.hasClusteringStrategy ? (
+              {profile.hasClusteringStrategy && dataset.id !== "zscape" ? (
                 <div style={{ marginTop: 16, textAlign: "left" }}>
                   <ClusteringProvenance mode="viewer" strategy={run?.clusteringStrategy} datasetId={dataset.id} nClusters={runClusters.length} datasetName={dataset.name} />
                 </div>
