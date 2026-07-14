@@ -1083,7 +1083,7 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
 // ---- Run lineage tree (bottom of the picker page) — a left→right pipeline phylogeny -------------
 // Reads the canonical layer only. X axis = the 5 pipeline stages; each run is a branch that extends
 // from its clustering as far as it actually progressed (labelling → meta-reasoning → fuzzy judging).
-const STAGE_X: Record<string, number> = { raw: 56, cluster: 200, label: 372, meta: 542, judge: 700 };
+const STAGE_X: Record<string, number> = { raw: 53, cluster: 190, label: 353, meta: 515, judge: 665 };  // 5% narrower (×0.95) to fit the card without horizontal scroll
 const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Judging"]];
 // Per-atlas stage-5 judge KIND — the same column holds two judge types honestly: the GT trio + ZSCAPE
 // run an LLM Fuzzy Judge vs a published menu; MiniFin is scored by a four-bucket Expert-GT crosswalk
@@ -1100,7 +1100,7 @@ const EXTRA_GOLDEN_RUNS = new Set<string>(["20260711-000000-mf384r"]);
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
 // labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
-const TREE_W = 840;
+const TREE_W = 798;  // 5% narrower (×0.95, was 840) so the lineage viz fits the card without horizontal scroll
 
 function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: string; runs: any[]; bare?: boolean; interactive?: boolean; onOpenRun?: (m: any) => void }) {
   const [hover, setHover] = useState<string | null>(null);
