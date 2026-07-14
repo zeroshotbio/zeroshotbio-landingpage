@@ -10,7 +10,9 @@ import React from "react";
 
 const GT_COL = "#4b5563", DN_COL = "#0891b2", MX_COL = "#7c3aed", NOSCORE = "#b8b2a9";
 const SCORE_TIERS = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
-const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)", gt: "Ground truth" };
+const TIER_LABEL: Record<string, string> = { germ_layer: "Germ layer", tissue: "Tissue", cell_type_broad: "Cell type (broad)", cell_type_sub: "Cell type (sub)", gt: "Ground truth",
+  // six-tier CARO/ZFA schema (burst 38 MVP)
+  anatomical_system: "Anatomical system", compound_organ: "Compound organ", multi_tissue_structure: "Multi-tissue", portion_of_tissue: "Portion of tissue", cell: "Cell", body_substance: "Body substance" };
 const heat = (pct: number) => (pct >= 66 ? "#15803d" : pct >= 40 ? "#b45309" : "#dc2626");
 
 // fluid graph-score colour: dark green = exact (1.00), amber = nearby, red = far (0.00)
