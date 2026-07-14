@@ -474,15 +474,19 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 {clusteringBasis === "native-schema"
                   ? <>These are {dataset.name}&apos;s <b>authors&apos; own published cell groups</b> — here&apos;s the grouping we labelled.</>
                   : clusteringBasis === "de-novo"
-                    ? <>Coming at {dataset.name} fresh — here&apos;s how the cells get grouped into clusters.</>
+                    ? <>Coming at {dataset.name} fresh — here&apos;s how the cells get grouped into clusters, and why each step is done the way it is.</>
                     : <>Here&apos;s how the cells in {dataset.name} are grouped into clusters.</>}
               </p>
               {/* De-novo-only micro-copy (sample cross-section + "re-cluster from scratch / de-novo
                   calls"). Gated on basis === "de-novo" so a native-schema run never claims it. */}
               {clusteringBasis === "de-novo" ? (
                 <p style={{ color: "#9a948c", fontSize: 12.5, margin: "0 auto 8px", lineHeight: 1.5, maxWidth: 720 }}>
-                  {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
-                  {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
+                  {dataset.id === "zscape" && sampled ? (
+                    <><b style={{ color: "#5a544c" }}>The sample.</b> We cluster {clusteredCells.toLocaleString()} cells — a random cross-section of the full {fullCells!.toLocaleString()}, not a biological subset. It spans every condition, perturbed and control alike, and is drawn from a single developmental age (48&nbsp;hpf) so that young and old cells are never blended into the same cluster. The authors&apos; own published cell-type labels are held out entirely, so we can score our de-novo calls against them later.</>
+                  ) : (<>
+                    {sampled ? `The sample spans every condition in ${dataset.name} (perturbed and control alike) — it is not a biological subset, just a random cross-section drawn so we can cluster ${clusteredCells.toLocaleString()} cells rather than all ${fullCells!.toLocaleString()}.` : ""}
+                    {dataset.groundTruthUrl ? " We re-cluster from scratch — the authors' published cell-type labels are held out, so we can score our de-novo calls against them afterward." : ""}
+                  </>)}
                 </p>
               ) : null}
               <div style={{ ...CARD, padding: 10 }}>

@@ -99,25 +99,50 @@ export function NeutralClusteringExplainer({ nLeaves, datasetName }: { nLeaves?:
 // zscape run must NOT get this recursive-de-novo story — see RunViewer §1 fix).
 export function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
   const n = nLeaves && nLeaves > 0 ? nLeaves : 250;
+  const S = { fontSize: 13, lineHeight: 1.55, color: "#33312e", margin: "0 0 12px" };
+  const H = { fontWeight: 700 as const, color: "#2b2620" };
   return (
-    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "11px 16px", maxWidth: 820, margin: "8px auto 0", textAlign: "left" }}>
-      <p style={{ fontSize: 13, lineHeight: 1.5, color: "#33312e", margin: 0 }}>
-        ZSCAPE is clustered in <b>two recursive stages</b>. First, all <b>~813,000 cells from the 48-hour stage</b>{" "}
-        (a single developmental age, so young and old cells are never blended) are grouped into a handful of broad{" "}
-        <b>compartments</b>. Then the method goes <b>inside each compartment and recomputes which genes vary most locally</b>{" "}
-        before clustering again — this local re-derivation of marker genes is what lets rare tissues like{" "}
-        <b>blood, pancreas, and liver</b> surface, where a single global pass would bury them under the dominant cell types.{" "}
-        <b>Every cell is used to build the clusters.</b> Each resulting cluster is then given its tissue name by a{" "}
-        <b>vote that counts only the non-perturbed control cells</b>, so drug-induced shifts don&apos;t bias the labels —{" "}
-        to be explicit: <i>all cells are clustered; only control cells vote on the names.</i> The result is{" "}
-        <b>{n} fine clusters</b> spanning the embedding. This two-stage structure — broad{" "}
-        <b>compartments</b> that each contain finer <b>leaf clusters</b> — is exactly what the new{" "}
-        <b>v2.0 labelling harness descends top-down</b>: it names each compartment&apos;s umbrella first, then dives only{" "}
-        into the branches where an expected tissue or cell type is still missing. One honest limit: blood, pancreas,{" "}
-        and intestine come out cleanly and liver is named, but at 48 hpf{" "}
-        <b>liver, gut, and pancreas still share a strong common endoderm program</b>, so they remain partly blended —{" "}
-        the liver cluster is a <b>plurality call</b>, not a pure one.
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 18px", maxWidth: 820, margin: "10px auto 0", textAlign: "left" }}>
+      <p style={S}>
+        <span style={H}>Step 1 — Coarse pass: find the broad compartments.</span> All ~813,000 cells are grouped at{" "}
+        <b>Leiden res 0.1</b> into a handful of broad <b>compartments</b>. This is deliberately low-resolution: it
+        establishes the major territories before any fine splitting.
       </p>
+      <p style={S}>
+        <span style={H}>Step 2 — Local recompute: let rare tissues surface.</span> The method then goes inside each
+        compartment (≥500 cells) and <b>recomputes the 2,000 most-variable genes locally</b> before clustering again at{" "}
+        <b>Leiden res 0.8</b>. This local re-derivation is the load-bearing step: a single global HVG pass is dominated by
+        the most abundant cell types and buries rare tissues like <b>blood, pancreas, and liver</b> — recomputing
+        per-compartment is what lets them surface. Result: <b>{n} fine leaf clusters</b>.
+      </p>
+      <p style={S}>
+        <span style={H}>Step 3 — Naming: control cells vote.</span> Every cell is used to build the clusters, but only the{" "}
+        <b>non-perturbed control cells</b> (<code>gene_target ctrl-*</code>) vote on each cluster&apos;s tissue name
+        (all-cells vote as secondary). At this stage the labeller hasn&apos;t run yet — the name is a{" "}
+        <b>provisional scaffold</b> inherited from ZSCAPE&apos;s own annotations. Restricting the vote to controls keeps
+        drug-induced transcriptional shifts from biasing that scaffold.
+      </p>
+      <p style={S}>
+        <span style={H}>Why two stages.</span> This broad-compartments-containing-leaf-clusters structure is exactly what
+        the <b>v2.0 harness descends top-down</b>: it names each compartment&apos;s umbrella first, then dives only into
+        branches where an expected tissue or cell type is still missing.
+      </p>
+      <p style={{ ...S, marginBottom: 0 }}>
+        <span style={H}>One honest limit.</span> Blood, pancreas, and intestine come out cleanly and liver is named — but
+        at 48 hpf, <b>liver, gut, and pancreas still share a strong common endoderm program</b>, so they remain partly
+        blended. The liver cluster is a <b>plurality call</b>, not a pure one.
+      </p>
+      <div style={{ borderTop: "1px solid #eee7df", paddingTop: 11, marginTop: 12 }}>
+        <div style={{ fontSize: 11.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.5, color: "#8a847b", marginBottom: 5 }}>
+          The technical recipe (813,782 cells → {n} fine leaf clusters)
+        </div>
+        <p style={{ fontSize: 12, lineHeight: 1.5, color: "#5a544c", margin: 0 }}>
+          <b>Two-stage recursive Leiden.</b> ① coarse Leiden 0.1 → broad compartments. ② per-compartment (≥500 cells):
+          recompute 2,000 HVG (seurat) → local Leiden 0.8, kNN 15. GT names: control-vote primary, all-cells secondary.
+          <br />
+          <span style={{ fontFamily: "ui-monospace, monospace", color: "#9a948c" }}>recipe: scratch/bench/build_zscape_recursive_ctrlvote_res08.py</span>
+        </p>
+      </div>
     </div>
   );
 }
