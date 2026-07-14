@@ -1100,7 +1100,7 @@ const EXTRA_GOLDEN_RUNS = new Set<string>(["20260711-000000-mf384r"]);
 // per-stage hue — the header titles + that column's node dots share it (clustering/raw gold,
 // labelling teal, meta-reasoning blue, judging purple — matching the app's pill conventions).
 const STAGE_COLOR: Record<string, string> = { raw: "#b8862e", cluster: "#c1962f", label: "#2f8f63", meta: "#2563eb", judge: "#7c3aed" };
-const TREE_W = 798;  // 5% narrower (×0.95, was 840) so the lineage viz fits the card without horizontal scroll
+const TREE_W = 820;  // coordinate width incl. run labels; the SVG scales responsively to the card (see below), so it never h-scrolls or clips
 
 function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: string; runs: any[]; bare?: boolean; interactive?: boolean; onOpenRun?: (m: any) => void }) {
   const [hover, setHover] = useState<string | null>(null);
@@ -1138,7 +1138,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
         {interactive ? <span style={{ color: ACCENT, fontWeight: 700, textTransform: "none" }}> · hover a branch to trace it, click to open</span> : null}
       </div>
       <div style={{ overflowX: "auto", border: `1px solid ${interactive ? "#d8b45a" : "#eee7df"}`, borderRadius: 10, background: interactive ? "#fffdf5" : "#fffdfb", boxShadow: interactive ? "0 0 0 2px rgba(216,180,90,0.22)" : "none", transition: "box-shadow .15s, border-color .15s" }}>
-        <svg width={TREE_W} height={H} style={{ display: "block", minWidth: TREE_W }}>
+        <svg viewBox={`0 0 ${TREE_W} ${H}`} width="100%" style={{ display: "block", height: "auto", maxWidth: TREE_W }}>
           {/* per-atlas stage-header row, each title tinted to its column's node colour */}
           {STAGE_LABELS.map(([k, lab]) => <text key={"h" + k} x={STAGE_X[k]} y={16} fontSize={10} fontWeight={800} textAnchor="middle" fill={STAGE_COLOR[k]} style={{ textTransform: "uppercase", letterSpacing: 0.3 }}>{lab}</text>)}
           <line x1={8} y1={HEADER_H} x2={TREE_W - 8} y2={HEADER_H} stroke="#efe8dd" strokeWidth={1} />
@@ -1164,7 +1164,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
             // The best run we move forward with gets BOTH marks appended at the END of its label: ★ = best
             // reference run, 🏁 = pipeline endpoint. The endpoint text is read from the run's own stages.
             const endpoint = sJudge ? "a GT-scored JUDGING node" : sMeta ? "a META-REASONING node (no ground truth exists in this namespace to judge against — an honest stop, not a missing stage)" : "the LABELLING stage";
-            const label = `${r.model || ""} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}${isGolden ? " ★ 🏁" : ""}`;
+            const label = `${(r.model || "").replace(/\s*\([^)]*\)/g, "").trim()} · ${r.exportedAt ? new Date(r.exportedAt).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}${Number(r.costUsd) > 0 ? ` · $${Number(r.costUsd) < 1 ? Number(r.costUsd).toFixed(2) : Number(r.costUsd).toFixed(0)}` : ""}${r.scoreable === false ? " ⚠" : ""}${isGolden ? " ★ 🏁" : ""}`;
             return (
               <g key={"run" + r.runId}
                 onMouseEnter={interactive ? () => setHover(r.runId) : undefined}
