@@ -38,6 +38,11 @@ A behavior change means all three: **bump the SPEC `version`** + **append a LEDG
   while live code is v2.** No golden has been minted since those improvements shipped.
 - **`dataset_facts.json` scorecard/provenance is stale (2b, parked)** — stale model/scores/clustering
   description for zscape/chemfish/daniocell. The drift test *warns* on this; don't be surprised.
+- **Three labellers exist** — `run_leaf_v2` (app.py, produced the golden — the *proven* one),
+  `kasperov_agent/route.ts` (thinner browser path), `kasperov_confidence/route.ts` (forms the scored stack).
+  If you ever collapse the fork, collapse TOWARD app.py, not away. See `pillars/labelling/LEDGER.md` #8.
+- **The scored broad tier is only as good as `/api/kasperov_confidence`** — that endpoint forms
+  germ/tissue/broad, not `run_leaf_v2`. A prompt rule (e.g. burst-30) must live there to affect scoring.
 
 ## 5. Where things live
 - **Pillars:** `pillars/{clustering,labelling,merging,judge}/{SPEC,LEDGER}.md`.

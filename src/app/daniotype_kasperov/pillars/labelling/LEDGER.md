@@ -29,3 +29,21 @@ untestable here · verdict: needs DanioCell/ChemFish (real sub-granularity) befo
 ### 6 — Menu-exposed neighborhood-snapping — [UNTESTED]
 · the relocated home for ZFA-neighborhood (snap a phrasing to a constrained valid vocabulary at the
 menu step, not seed de-novo reasoning) · status: not yet built/measured. do-not-retry: n/a.
+
+### 7 — Root cause of "sub rolled up verbatim up the hierarchy" — [DIAGNOSED, not fixed]
+2026-07-14 · the golden's producer (`run_leaf_v2` in app.py) emits ONLY a driver `identity` (the sub
+tier) and forms NO germ/tissue/broad stack. The scored 4-tier stack is produced by a SEPARATE endpoint
+`/api/kasperov_confidence`, which the headless producer (`run_v2_full.py`, sets `confidence:None`)
+never calls. So `_denovo_stack()` finds no `kasperov-conclude` block → the scorer falls back to
+`stk.get(tier) or ident` = the sub label rolled up every tier · **fix (unbuilt): the producer must call
+`get_confidence` per leaf so the coarse tiers are real labels, not a roll-up.** do-not-retry: n/a.
+
+### 8 — Three labellers exist, not two — [MAPPED; fork-collapse REJECTED as scoped]
+2026-07-14 · (1) `run_leaf_v2` (app.py) — **produced the 94% golden**; carries ledger soft-prior,
+collision-shape bypass, `_route_depth` gate, the discriminating-marker rubric; lacks burst-30.
+(2) `kasperov_agent/route.ts` — thinner browser path; HAS burst-30; lacks all of (1)'s machinery.
+(3) `kasperov_confidence/route.ts` — forms the SCORED germ/tissue/broad stack; lacks burst-30 (the
+[[labelling]] one-line fix lands here). **The proven labeller is app.py's (1).** Option B (rewire the
+producer to the TS endpoints / port app.py→TS) was scoped and **REJECTED**: multi-day cross-language
+port toward the WEAKER program. If the fork is ever collapsed, evidence says collapse TOWARD `run_leaf_v2`,
+not toward route.ts. do-not-retry: option B as scoped, yes.

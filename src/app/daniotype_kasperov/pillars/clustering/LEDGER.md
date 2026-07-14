@@ -67,3 +67,11 @@ full scale** · verdict: likely a developmental fact at 48 hpf, not a tuning gap
 plurality with explicit caveat · **one untested lever:** does a cleaner coarse pass — forming
 endoderm as its OWN compartment from the start rather than re-recursing a leaf — move the ceiling?
 [UNTESTED]. do-not-retry: the tuning attempts, yes; the coarse-compartment lever, open.
+
+### 13 — Three ZSCAPE partitions are staged on disk — [HAZARD, recorded]
+2026-07-14 · a fresh run can silently label the wrong one. Served `daniotype_data/zscape/umap.json` =
+**55** leaves; producer input `/data/scratch/v2_zscape/umap.json` = **99**; the GOLDEN (`9258bd`) partition
+= **250**, at `/data/scratch/bench/zscape_recursive_v2_full_48hpf/clusters.json`. `run_v2_full.py` reads
+the 99. **Any fresh golden must stage the 250-leaf `clusters.json` + schema-convert it to the loader's
+`{clusters:[{id,label,degsUp,markers,nCells,compartment}]}` shape** — it's an edit, not a param.
+do-not-retry: n/a.
