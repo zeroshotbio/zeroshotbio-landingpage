@@ -183,7 +183,37 @@ def _meta_from(run, run_id):
     }
 
 
-def save_run(run):
+# Producer pipeline versions — bump HERE when the producing code changes. The drift test
+# (scripts/test_provenance_binding.py, assertion a) cross-checks these against pillars/<stage>/SPEC.md,
+# so a stale-HIGH bump fails CI; a stale-LOW value is a legitimate lag. NOT read from the SPEC at
+# write time (that would make the drift test vacuous — the stamp must be an independent assertion).
+PRODUCER_PIPELINE = {"clustering": "clustering-v2", "labelling": "labelling-v2",
+                     "merging": "merging-v2", "judge": "judge-v1"}
+
+
+def _write_canonical(run, run_id, pipeline):
+    """Write/merge the <run_id>.canonical.json sidecar's pipeline{} stamp. Non-destructive:
+    preserves any fields an assembly step already wrote. `judge` is stamped ONLY when the run was
+    actually scored (absent is honest; a wrong stamp is not)."""
+    d = _ds_dir(run.get("datasetId") or "unknown")
+    cp = os.path.join(d, _safe(run_id) + ".canonical.json")
+    env = {}
+    if os.path.exists(cp):
+        try:
+            env = json.load(open(cp))
+        except Exception:
+            env = {}
+    scored = bool(run.get("finalJudge_graph") or run.get("verdicts"))
+    env["pipeline"] = {k: {"spec": v} for k, v in pipeline.items() if k != "judge" or scored}
+    env.setdefault("schemaVersion", "kasperov-run/1.0")
+    env.setdefault("runId", run_id)
+    env.setdefault("datasetId", run.get("datasetId"))
+    env.setdefault("model", run.get("model"))
+    with open(cp, "w") as f:
+        json.dump(env, f)
+
+
+def save_run(run, pipeline=None):
     dataset = run.get("datasetId") or "unknown"
     run_id = datetime.now(timezone.utc).strftime("%Y%m%d-%H%M%S") + "-" + uuid.uuid4().hex[:6]
     d = _ds_dir(dataset)
@@ -197,6 +227,8 @@ def save_run(run):
             idx = []
         idx.insert(0, _meta_from(run, run_id))
         json.dump(idx[:500], open(idx_path, "w"))
+    if pipeline:                       # stamp only when the caller declares versions (else unstamped → honest "—")
+        _write_canonical(run, run_id, pipeline)
     return run_id
 
 
@@ -275,6 +307,7 @@ def _overlay_canonical(entry, dataset):
         "nLeaves": (c.get("clustering") or {}).get("nLeaves"),   # stage 1 — fine-leaf clustering
         "nNodes": st.get("consolidated"),                         # stage 3 — meta-reasoner merge
         "nScored": st.get("scored"),                              # stage 4 — fuzzy-judge scoring
+        "pipeline": c.get("pipeline"),                            # per-stage spec stamp (None when unstamped → UI shows —)
     })
     up = _asset_scoreable(c.get("atlasId"), (c.get("clustering") or {}).get("leafIdFingerprint"))
     if up is True:
