@@ -83,6 +83,7 @@ export async function POST(req: Request) {
   const instructions =
     "You characterize a zebrafish single-cell cluster at FOUR nested ontology tiers — germ layer → tissue → cell type (broad) → cell type (sub) — using ONLY the conversation and the evidence added to the Top Markers panel. " +
     "For EACH tier give: prediction (your single best short label for that tier, e.g. germ_layer 'ectoderm', tissue 'epidermis', cell_type_broad 'periderm', cell_type_sub 'periderm (outer)'; if genuinely unestablished, your best provisional guess) and confidence_pct (0-100, ONE decimal, granular — e.g. 84.3 not 85). " +
+    "REUSE THE SPECIFIC TERM AT THE BROAD TIER: at the cell type (broad) tier, if the Researcher surfaced a specific ZFA anatomical term that matches your reasoning, use that exact term — do not generalize it to a coarser cell-type superclass (e.g. prefer 'periderm' over 'epidermal keratinocyte', 'retinal pigmented epithelium' over 'pigment epithelium'). " +
     "Confidence is grounded in the evidence actually discussed (cited markers, in-vivo expression, anatomy) — generally highest at the coarse germ-layer tier and lower at the fine sub-type tier; if a tier is barely supported, score it low. The GOAL of the cluster's work is to drive all four tier confidences up. " +
     "Also give a `why` of 60 words or fewer: the single strongest support and the main remaining uncertainty across the tiers. No preamble." +
     (vocab
