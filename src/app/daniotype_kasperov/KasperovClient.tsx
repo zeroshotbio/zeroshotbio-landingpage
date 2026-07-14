@@ -1048,10 +1048,10 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
               {/* 4-stage pipeline — what's been "snowballed" into this run so far. Done = teal✓, pending = grey○. */}
               <div style={{ display: "flex", gap: 4, marginTop: 5, flexWrap: "wrap" }}>
                 {([
-                  ["Fine-leaf clustering", (Number(m.nLeaves) || Number(m.nLabelled) || 0), (Number(m.nLeaves) > 0 || Number(m.nLabelled) > 0 || Number(m.nNodes) > 0)],
-                  ["Chat-labelling", (Number(m.nLabelled) || 0), (Number(m.nLabelled) > 0)],
-                  ["Meta-Reasoner merge", (Number(m.nNodes) || 0), (Number(m.nNodes) > 0 || metaDone)],
-                  ["Fuzzy-judge score", (Number(m.nScored) || 0), (Number(m.nScored) > 0 || !!m.hasGroundTruth)],
+                  ["Clustering", (Number(m.nLeaves) || Number(m.nLabelled) || 0), (Number(m.nLeaves) > 0 || Number(m.nLabelled) > 0 || Number(m.nNodes) > 0)],
+                  ["Labelling", (Number(m.nLabelled) || 0), (Number(m.nLabelled) > 0)],
+                  ["Merging", (Number(m.nNodes) || 0), (Number(m.nNodes) > 0 || metaDone)],
+                  ["Judge", (Number(m.nScored) || 0), (Number(m.nScored) > 0 || !!m.hasGroundTruth)],
                 ] as [string, number, boolean][]).map(([label, count, done], i) => (
                   <span key={i} title={`${i + 1}. ${label}${done ? (count ? ` — ${count}` : " — done") : " — not run"}`} style={{ fontSize: 10, fontWeight: 700, padding: "2px 7px", borderRadius: 6, whiteSpace: "nowrap", background: done ? "#ecfdf5" : "#f5f3f0", color: done ? "#065f46" : "#bcb6ac", border: `1px solid ${done ? "#a7f3d0" : "#e8e3dc"}` }}>
                     {done ? "✓" : "○"} {i + 1}. {label}{done && count ? ` · ${count}` : ""}
@@ -1084,7 +1084,14 @@ function RunListModal({ dataset, onView, onClose, title, subtitle, filter, empty
 // Reads the canonical layer only. X axis = the 5 pipeline stages; each run is a branch that extends
 // from its clustering as far as it actually progressed (labelling → meta-reasoning → fuzzy judging).
 const STAGE_X: Record<string, number> = { raw: 53, cluster: 190, label: 353, meta: 515, judge: 665 };  // 5% narrower (×0.95) to fit the card without horizontal scroll
-const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Fine-leaf clustering"], ["label", "Chat-labelling"], ["meta", "Meta-reasoning"], ["judge", "Judging"]];
+const STAGE_LABELS: [string, string][] = [["raw", "Raw data"], ["cluster", "Clustering"], ["label", "Labelling"], ["meta", "Merging"], ["judge", "Judge"]];
+// Pipeline version badge from a run's pipeline{} stamp (data-driven; unstamped runs render nothing).
+// e.g. {clustering:{spec:"clustering-v2"},…} -> "c·v2 l·v1 m·v1 j·v1". Never inherited, never guessed.
+const PIPE_ORDER = ["clustering", "labelling", "merging", "judge"] as const;
+function pipeBadge(p: any): string {
+  if (!p || typeof p !== "object") return "";
+  return PIPE_ORDER.filter((s) => p[s]?.spec).map((s) => `${s[0]}·${String(p[s].spec).split("-").pop()}`).join(" ");
+}
 // Per-atlas stage-5 judge KIND — the same column holds two judge types honestly: the GT trio + ZSCAPE
 // run an LLM Fuzzy Judge vs a published menu; MiniFin is scored by a four-bucket Expert-GT crosswalk
 // (a stronger judge); MegaFin has no promoted GT so its judge node stays dark. Surfaced as the judge-dot tooltip.
@@ -1183,6 +1190,7 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
                 {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓")}</g> : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
+                {pipeBadge(r.pipeline) ? <text x={lastX + 9} y={y + 12.5} fontSize={7} fill="#a99f8f" style={{ letterSpacing: 0.2 }}><title>pipeline spec stamp (per-stage version this run was produced under)</title>{pipeBadge(r.pipeline)}</text> : null}
               </g>
             );
           })}
