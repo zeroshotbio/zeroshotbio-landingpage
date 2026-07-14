@@ -1,8 +1,8 @@
 {
   "_note": "SINGLE SOURCE OF TRUTH: dataset -> canonical labelling run id. Run path = daniotype_runs/<ds>/<runId>.json (run-store keyed by datasetId). Consumers: backfill_canonical_provenance.py, nogt_analysis.py, gen_dataset_facts.py. Proven by scripts/test_provenance_binding.py (jsonl<->run finalLabel match). Do NOT add a parallel map.",
-  "zscape": "20260615-211010-c4d306",
-  "chemfish": "20260615-211010-e4aafa",
-  "daniocell": "20260615-211010-b39045",
+  "zscape": "20260703-050319-9258bd",
+  "chemfish": "20260706-025616-26ec7d",
+  "daniocell": "20260706-025616-182172",
   "minifin": "20260615-042324-472be7",
   "megafin": "20260615-042324-3a15a2",
   "megafin_parse": "20260615-043737-1afa19"
