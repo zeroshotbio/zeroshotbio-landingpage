@@ -19,6 +19,7 @@ import { MetaReasonerStub } from "./components/MetaReasonerStub";
 import { RunViewer } from "./components/RunViewer";
 import { ClusteringExplainer, ZscapeClusteringExplainer } from "./components/ClusteringExplainer";
 import { HarnessDetail } from "./components/HarnessDetail";
+import { PERSONA_PROMPTS } from "./personas";
 import { StageVersionSelector } from "./components/StageVersionSelector";
 import { recommendedVersion, versionsFor } from "./pipeline_versions";
 import { useTween } from "./useTween";
@@ -845,6 +846,7 @@ export default function KasperovClient() {
         labellingVersion={labellingVersion || recommendedVersion(dataset.id, "labelling")}
         onChangeLabellingVersion={setLabellingVersion}
         onProceedToLabelling={() => { setClusteringConfirmed(true); setRevealed(true); }}
+        onSelectModel={setModel}
         usage={usage}
         score={score}
         setScore={setScore}
@@ -2106,6 +2108,7 @@ function MapStage({
   confidence = {},
   model,
   onChangeModel,
+  onSelectModel,
   clusteringConfirmed,
   onConfirmClustering,
   clusteringVersion,
@@ -2137,6 +2140,7 @@ function MapStage({
   confidence?: Record<string, ClusterConf>;
   model: KasperovModel;
   onChangeModel: () => void;
+  onSelectModel: (m: KasperovModel) => void;
   clusteringConfirmed: boolean;
   onConfirmClustering: () => void;
   clusteringVersion: string;
@@ -2154,6 +2158,8 @@ function MapStage({
   const unlabelled = clusters.filter((c) => !labels[c.id]);
   const [srvNoteFor, setSrvNoteFor] = useState<string | null>(null); // server run awaiting its optional note
   const [manualMode, setManualMode] = useState(false); // "Run Completely Manually" → reveal the clickable per-cluster list
+  const [modelMenu, setModelMenu] = useState(false); // model dropdown open state (labelling page)
+  const [promptsOpen, setPromptsOpen] = useState(false); // three-personality system-prompt panel open state
   // completeness gate for saving: every cluster must be labelled + have tier
   // confidence, and (on GT datasets) the ground-truth comparison must have run.
   const confN = clusters.filter((c) => confidence[c.id]).length;
@@ -2385,16 +2391,61 @@ function MapStage({
             run, not the clustering, so it only appears after reveal; the "How we
             clustered" page stays purely about how the clusters were derived. */}
         {revealed && (
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 16, fontSize: 13 }}>
-            <span style={{ color: "#555" }}>
-              Model <strong>{model}</strong>{" "}
-              <button onClick={onChangeModel} style={{ background: "none", border: "none", color: ACCENT, cursor: "pointer", fontSize: 12.5, textDecoration: "underline", padding: 0 }}>change</button>
-            </span>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, flexWrap: "wrap", marginBottom: 12, fontSize: 13 }}>
+            {/* MODEL dropdown — each option shows its projected full-run cost */}
+            <div style={{ position: "relative" }}>
+              {modelMenu && <div onClick={() => setModelMenu(false)} style={{ position: "fixed", inset: 0, zIndex: 20 }} />}
+              <button onClick={() => setModelMenu((o) => !o)} title="Choose the model that drives every personality + the scoring" style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #d8d3cd", borderRadius: 9, padding: "8px 13px", fontSize: 13.5, fontWeight: 600, color: INK, cursor: "pointer" }}>
+                Model <strong>{model}</strong> <span style={{ color: "#999", fontSize: 11 }}>▾</span>
+              </button>
+              {modelMenu && (
+                <div style={{ position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 21, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 10, boxShadow: "0 8px 24px rgba(0,0,0,0.14)", padding: 6, minWidth: 300, textAlign: "left" }}>
+                  {KASPEROV_MODELS.map((m) => {
+                    const cost = projectRunCost(m, clusters.length); const on = m === model; const info = modelInfo(m);
+                    return (
+                      <button key={m} onClick={() => { onSelectModel(m); setModelMenu(false); }} title={info.strength} style={{ display: "flex", alignItems: "baseline", gap: 8, width: "100%", textAlign: "left", background: on ? "#eef7f9" : "transparent", border: "none", borderRadius: 7, padding: "8px 10px", cursor: "pointer", color: INK }}>
+                        <span style={{ fontWeight: 700, fontSize: 13 }}>{m}</span>
+                        {on && <span style={{ fontSize: 9.5, fontWeight: 800, textTransform: "uppercase", letterSpacing: 0.4, color: ACCENT }}>current</span>}
+                        <span style={{ marginLeft: "auto", fontVariantNumeric: "tabular-nums", fontWeight: 800, color: ACCENT, fontSize: 13 }}>~${cost.toFixed(2)}</span>
+                      </button>
+                    );
+                  })}
+                  <div style={{ fontSize: 10.5, color: "#9a948c", padding: "5px 10px 3px" }}>estimated cost to label all {clusters.length} clusters</div>
+                </div>
+              )}
+            </div>
             <span style={{ color: "#555" }} title="Rough projection: ~21k tokens/cluster × the model's price.">
               ~<strong style={{ fontVariantNumeric: "tabular-nums", color: ACCENT, fontSize: 14 }}>{fmtUsd(projectedCost)}</strong> projected to label all {clusters.length} clusters
             </span>
             {spent > 0 && labelled.length > 0 && <span style={{ color: "#aaa" }}>· {fmtUsd(spent)} spent so far</span>}
             {score.scoredAt && <span style={{ color: "#aaa" }}>· scored {new Date(score.scoredAt).toLocaleDateString()}</span>}
+          </div>
+        )}
+
+        {/* THREE-PERSONALITY SYSTEM PROMPTS — collapsed by default; expands to a 3-column panel showing
+            the actual system prompt that defines each in-app personality (from personas.ts). */}
+        {revealed && (
+          <div style={{ maxWidth: 980, margin: "0 auto 16px", textAlign: "left" }}>
+            <button onClick={() => setPromptsOpen((o) => !o)} style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", border: "1px solid #e5e1dc", borderRadius: 9, padding: "8px 13px", fontSize: 13, fontWeight: 700, color: INK, cursor: "pointer" }}>
+              <span style={{ color: "#999" }}>{promptsOpen ? "▾" : "▸"}</span> System prompts — the three personalities
+            </button>
+            {promptsOpen && (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 12, marginTop: 10 }}>
+                {(["research", "reason", "archivist"] as AgentMode[]).map((mode) => {
+                  const t = THEME[mode];
+                  return (
+                    <div key={mode} style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderTop: `3px solid ${t.color}`, borderRadius: 10, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 7, padding: "9px 11px", background: t.bg, borderBottom: "1px solid #eee7df" }}>
+                        <span aria-hidden>{t.icon}</span>
+                        <span style={{ fontWeight: 800, fontSize: 13, color: t.color }}>{t.name}</span>
+                        <span style={{ marginLeft: "auto", fontSize: 10.5, color: "#9a948c" }}>{t.blurb}</span>
+                      </div>
+                      <pre style={{ margin: 0, padding: "10px 11px", fontSize: 10.5, lineHeight: 1.5, color: "#4a453f", whiteSpace: "pre-wrap", wordBreak: "break-word", maxHeight: 340, overflow: "auto", fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace" }}>{PERSONA_PROMPTS[mode]}</pre>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
         )}
 
