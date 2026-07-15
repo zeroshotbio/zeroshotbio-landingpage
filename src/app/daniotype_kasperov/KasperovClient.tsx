@@ -1098,8 +1098,10 @@ function pipeBadge(p: any): string {
 function stageVer(p: any, stage: string): string {
   const spec = p && typeof p === "object" ? p[stage]?.spec : null;
   if (!spec) return "v0.0";
-  const tok = String(spec).split("-").pop() || "";
-  return /^v/i.test(tok) ? tok : `v${tok}`;
+  let tok = String(spec).split("-").pop() || "";
+  if (!/^v/i.test(tok)) tok = `v${tok}`;
+  if (!tok.includes(".")) tok = `${tok}.0`; // always carry a minor: "v1" -> "v1.0"
+  return tok;
 }
 const STAGE_VER_FILL = "#c0b8ab"; // muted tint for the little version token sitting beside each stage count
 // Per-atlas stage-5 judge KIND — the same column holds two judge types honestly: the GT trio + ZSCAPE
