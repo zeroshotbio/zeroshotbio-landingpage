@@ -225,6 +225,19 @@ function TissueOnlyLabels({ clusters, numOf, onPick }: { clusters: any[]; numOf:
   );
 }
 
+// Per-stage pipeline spec version for a run, e.g. pipeline.labelling.spec "labelling-v2" -> "v2.0".
+// Reads the run's pipeline{} stamp (top-level or on the canonical sidecar). Unstamped stages fall back
+// to "v0.0" — most legacy runs carry no provenance, so an unstamped stage is honestly "unknown", not blank.
+function pipeStageVer(run: any, stage: string): string {
+  const p = run?.pipeline ?? run?._canonical?.pipeline;
+  const spec = p && typeof p === "object" ? p[stage]?.spec : null;
+  if (!spec) return "v0.0";
+  let tok = String(spec).split("-").pop() || "";
+  if (!/^v/i.test(tok)) tok = `v${tok}`;
+  if (!tok.includes(".")) tok = `${tok}.0`;
+  return tok;
+}
+
 export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; meta?: any; dataset: DatasetDef; onBack: () => void; finalize?: boolean }) {
   // A run labelled on a dataset's NATIVE published partition (schemaBasis
   // "native-schema") carries cluster ids in the *_native asset space — not the
@@ -280,7 +293,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   }, [run]);
   const validated = useMemo(() => new Set(runClusters.filter((c) => c.validated).map((c) => String(c.id))), [run]);
 
-  const [tab, setTab] = useState<"clustering" | "modelHarness" | "labels" | "merging" | "judge">(finalize ? "merging" : "clustering");
+  const [tab, setTab] = useState<"clustering" | "labels" | "merging" | "judge">(finalize ? "merging" : "clustering");
   // Cell Labelling is a master→detail: openCluster=null shows the per-tier
   // summary + per-cluster breakdown; setting it drills into that cluster's chat.
   const [openCluster, setOpenCluster] = useState<string | null>(null);
@@ -452,9 +465,15 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
 
         {/* tabs — mirror the new-run steps */}
         <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-          {([["clustering", "1. Clustering"], ["modelHarness", "2. Model & Harness"], ["labels", "3. Fine Cell Labelling"], ["merging", "4. Merging & Meta-Reasoning"], ["judge", "5. Final Judge"]] as const).map(([k, label]) => (
-            <button key={k} onClick={() => setTab(k)} style={{ ...btnGhost, fontWeight: 700, ...(tab === k ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>{label}</button>
-          ))}
+          {([["clustering", "1. Clustering", "clustering"], ["labels", "2. Labelling", "labelling"], ["merging", "3. Merging", "merging"], ["judge", "4. Judge", "judge"]] as const).map(([k, label, stage]) => {
+            const on = tab === k;
+            return (
+              <button key={k} onClick={() => setTab(k)} title={`Pipeline stage stamp: ${stage} ${pipeStageVer(run, stage)} (v0.0 = no versioned provenance recorded for this run)`} style={{ ...btnGhost, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 7, ...(on ? { background: ACCENT, color: "#fff", borderColor: ACCENT } : {}) }}>
+                {label}
+                <span style={{ fontSize: 10.5, fontWeight: 800, fontVariantNumeric: "tabular-nums", letterSpacing: 0.2, padding: "1px 6px", borderRadius: 6, background: on ? "rgba(255,255,255,0.24)" : "#efece7", color: on ? "#fff" : "#9a948c" }}>{pipeStageVer(run, stage)}</span>
+              </button>
+            );
+          })}
         </div>
 
         {error && <div style={{ ...CARD, color: "#b91c1c" }}>Failed to load the atlas: {error}</div>}
@@ -468,7 +487,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
           return (
             <div style={{ textAlign: "center" }}>
               <div style={{ fontSize: 13, letterSpacing: 1.5, textTransform: "uppercase", color: ACCENT, fontWeight: 600 }}>World map · {dataset.name} atlas</div>
-              <h2 style={{ fontSize: 23, fontWeight: 700, margin: "2px 0 2px" }}>1. Clustering</h2>
+              <h2 style={{ fontSize: 23, fontWeight: 700, margin: "2px 0 2px" }}>1. Clustering <span style={{ fontSize: 13, fontWeight: 800, color: "#9a948c", verticalAlign: "middle", fontVariantNumeric: "tabular-nums" }}>{pipeStageVer(run, "clustering")}</span></h2>
               {/* SUBHEAD — faithful to the run's real basis, not a per-atlas de-novo default. */}
               <p style={{ color: "#666", fontSize: 15, margin: "0 0 8px" }}>
                 {clusteringBasis === "native-schema"
@@ -548,11 +567,13 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
         })()}
 
         {/* 2. MODEL & HARNESS — the SAME picker stage as New Run, filled in read-only */}
-        {tab === "modelHarness" && (
-          <div style={{ maxWidth: 760, margin: "0 auto" }}>
-            <h1 style={{ fontSize: 30, fontWeight: 700, margin: "4px 0 4px", lineHeight: 1.1, textAlign: "center" }}>2. Model &amp; Harness</h1>
+        {/* 2. LABELLING — merged step: Model & Harness (was step 2) + the fine cell labelling (was step 3).
+            This master block carries the Model & Harness section; the fine-labelling map/table follows below. */}
+        {tab === "labels" && !openCluster && (
+          <div style={{ maxWidth: 760, margin: "0 auto 4px" }}>
+            <h1 style={{ fontSize: 30, fontWeight: 700, margin: "4px 0 4px", lineHeight: 1.1, textAlign: "center" }}>2. Labelling <span style={{ fontSize: 14, fontWeight: 800, color: "#9a948c", verticalAlign: "middle", fontVariantNumeric: "tabular-nums" }}>{pipeStageVer(run, "labelling")}</span></h1>
             <p style={{ color: "#666", fontSize: 14, textAlign: "center", margin: "0 auto 18px", maxWidth: 620, lineHeight: 1.5 }}>
-              The <strong>model</strong> that drove every personality and the scoring, and the <strong>harness</strong> — the labelling loop + grounding rules — as recorded for this run.
+              The <strong>model</strong> and <strong>harness</strong> that drove labelling — the loop, personalities, and grounding rules — as recorded for this run, then the de-novo call for every cluster below.
             </p>
             <h2 style={{ ...SEC, fontSize: 12 }}>Model</h2>
             <div style={{ ...CARD, border: `2px solid ${ACCENT}`, display: "flex", alignItems: "baseline", gap: 10, marginBottom: 18 }}>
@@ -615,7 +636,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
           /* ---- master: the SAME "3. Cell Labelling" map view New Run shows (revealed), filled in ---- */
           <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
             <div style={{ textAlign: "center" }}>
-              <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px" }}>3. Fine Cell Labelling</h1>
+              <h2 style={{ fontSize: 20, fontWeight: 700, margin: "14px 0 2px" }}>Fine cell labelling</h2>
               <p style={{ color: "#666", fontSize: 14, margin: "0 0 10px" }}>{runClusters.length} de-novo clusters · {profile.validatedClusters} validated. Click a cluster on the map or in the list below to see how it was decided.</p>
               {clusters ? (
                 <div style={{ ...CARD, padding: 10 }}>
@@ -705,7 +726,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
   );
 }
 
-// ---- STEP 4: Merging & Meta-Reasoning — surface the operator proposal (propose-and-judge) ----
+// ---- STEP 3: Merging (meta-reasoner) — surface the operator proposal (propose-and-judge) ----
 const ACT_STYLE: Record<string, { bg: string; fg: string; icon: string }> = {
   merge: { bg: "#dcfce7", fg: "#15803d", icon: "⤵" },
   set_aside: { bg: "#eef2ff", fg: "#4338ca", icon: "⎇" },
@@ -758,7 +779,7 @@ const userBubble: React.CSSProperties = { alignSelf: "flex-end", maxWidth: "86%"
 function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf: (id: string) => React.ReactNode; judgements: any[]; addJudgement: (j: any) => void }) {
   const prop = run?.operatorProposal;
   const [judgeOpen, setJudgeOpen] = useState(false);
-  if (!prop) return <div style={CARD}><div style={SEC}>Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (run the fine-then-consolidate operator to populate this)")}</div>;
+  if (!prop) return <div style={CARD}><div style={SEC}>Merging</div>{notRecorded("Operator proposal (run the fine-then-consolidate operator to populate this)")}</div>;
   const af = prop.after || {}, be = prop.before || {};
   const tierOrder = ["germ_layer", "tissue", "cell_type_broad", "cell_type_sub"];
   const comps = (prop.compartments || []).filter((c: any) => !c.error);
@@ -766,7 +787,7 @@ function MergingView({ run, numOf, judgements, addJudgement }: { run: any; numOf
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px auto", textAlign: "center" }}>4. Merging &amp; Meta-Reasoning</h1>
+        <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px auto", textAlign: "center" }}>3. Merging <span style={{ fontSize: 14, fontWeight: 800, color: "#9a948c", verticalAlign: "middle", fontVariantNumeric: "tabular-nums" }}>{pipeStageVer(run, "merging")}</span></h1>
         <button onClick={() => setJudgeOpen(true)} style={{ position: "absolute", right: 22, background: "#7c3aed", color: "#fff", border: "none", borderRadius: 8, padding: "7px 13px", fontSize: 12.5, fontWeight: 700, cursor: "pointer" }}>⚖️ Add Judgement</button>
       </div>
       {/* collapse summary */}
@@ -842,7 +863,7 @@ function FloatyJudgeBox({ judgements, onClose, onAdd }: { judgements: any[]; onC
   );
 }
 
-// ---- STEP 5: Final Judge — score the MERGED NODES (own tier · fuzzy agreement · purity) ----
+// ---- STEP 4: Judge — score the MERGED NODES (own tier · fuzzy agreement · purity) ----
 // Data-driven clustering-recipe panel — the real per-run recipe (canonical clustering.strategy),
 // rendered in the ZSCAPE-quality style for EVERY dataset: a two-stage prose read + recipe chips.
 function ClusteringStrategyPanel({ strategy, nLeaves }: { strategy: any; nLeaves?: number }) {
@@ -884,7 +905,7 @@ function JudgeView({ run, dataset, viewerClusters, labels, confidence, validated
   const gjName = dataset?.id === "zscape" ? "ZSCAPE Classic" : (dataset?.name ?? dataset?.id ?? "published");
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
-      <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>5. Final Judge</h1>
+      <h1 style={{ fontSize: 26, fontWeight: 700, margin: "2px 0 2px", textAlign: "center" }}>4. Judge <span style={{ fontSize: 14, fontWeight: 800, color: "#9a948c", verticalAlign: "middle", fontVariantNumeric: "tabular-nums" }}>{pipeStageVer(run, "judge")}</span></h1>
       {/* Old (LLM) ↔ New (Graph) toggle — only when the parallel graph block exists. Comparison surface,
           not a cutover: both stay viewable, old is default and byte-identical to before. */}
       {graphBlock ? (
@@ -1039,7 +1060,7 @@ function FinalJudgePanel({ run, dataset, judgements, addJudgement }: { run: any;
   return (
     <div style={CARD}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={SEC}>Final Judge · {prop ? `${nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT` : `${rows.length} fine leaves vs ${dataset?.id ?? "sealed"} GT`}</div>
+        <div style={SEC}>Judge · {prop ? `${nodes.length} post-Meta-Reasoner nodes vs ZSCAPE Classic GT` : `${rows.length} fine leaves vs ${dataset?.id ?? "sealed"} GT`}</div>
         {state.s !== "done" ? ((run as any)?._canonical?.scoring?.fingerprintMatchesClustering === false
           ? <span title="This run's clustering fingerprint has no coherent asset set — scoring against GT can't be trusted" style={{ marginLeft: "auto", fontSize: 11.5, color: "#9a3412", fontWeight: 700, background: "#fff7ed", border: "1px solid #fed7aa", borderRadius: 8, padding: "5px 10px" }}>⚠ not scoreable — asset fingerprint mismatch</span>
           : <button onClick={runScoring} disabled={!dataset?.groundTruthUrl || state.s === "loading" || state.s === "scoring"} style={{ marginLeft: "auto", background: "#2563eb", color: "#fff", border: "none", borderRadius: 9, padding: "8px 16px", fontSize: 13, fontWeight: 800, cursor: "pointer", opacity: state.s === "loading" || state.s === "scoring" ? 0.6 : 1 }}>{state.s === "loading" ? "Loading GT…" : state.s === "scoring" ? `Scoring… ${state.done}/${state.total}` : `🏁 Score ${nodes.length} nodes`}</button>) : null}
@@ -1115,7 +1136,7 @@ function MergedNodesTable({ sc, judgements, addJudgement }: { sc: any; judgement
   return (
     <div style={CARD}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-        <div style={SEC}>Final Judge · merged nodes scored at their own tier (fuzzy judge)</div>
+        <div style={SEC}>Judge · merged nodes scored at their own tier (fuzzy judge)</div>
         <span style={{ marginLeft: "auto", fontSize: 13, fontWeight: 800 }}>{sc.overall_agree}/{sc.n_nodes} agree</span>
       </div>
       <div style={{ display: "flex", gap: 8, flexWrap: "wrap", margin: "6px 0 4px" }}>
@@ -1244,7 +1265,7 @@ function MetaReasonerStage({ run, clusters, dataset, judgements, addJudgement, o
   const prop = run?.operatorProposal;
   // FINALIZE / LIVE mode — pre-flight summary → prep → human-driven live chat.
   if (live) return <MetaFinalizeFlow run={run} clusters={clusters} dataset={dataset} judgements={judgements} addJudgement={addJudgement} onBack={onBack} onSubmitJudgements={onSubmitJudgements} />;
-  if (!prop) return <div style={CARD}><div style={SEC}>4. Merging & Meta-Reasoning</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
+  if (!prop) return <div style={CARD}><div style={SEC}>Merging</div>{notRecorded("Operator proposal (use 'Meta-Reasoner Finalize Run' to run it live, or score this run to view a recorded proposal)")}</div>;
   // COMPLETED-RUN mode — an in-page SUMMARY of the finale visuals (no live chrome).
   return <MergingSummary run={run} clusters={clusters} prop={prop} />;
 }
