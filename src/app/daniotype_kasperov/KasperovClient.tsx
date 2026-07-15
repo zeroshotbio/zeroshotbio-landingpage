@@ -1092,6 +1092,16 @@ function pipeBadge(p: any): string {
   if (!p || typeof p !== "object") return "";
   return PIPE_ORDER.filter((s) => p[s]?.spec).map((s) => `${s[0]}·${String(p[s].spec).split("-").pop()}`).join(" ");
 }
+// Per-stage spec version token for a run's pipeline{} stamp, e.g. pipeline.clustering.spec "clustering-v3" -> "v3".
+// Unstamped stages fall back to "v0.0" — we don't have reliable historical provenance for most legacy runs, so a
+// stage that produced a number but carries no stamp is honestly marked v0.0 (unknown), not silently blank.
+function stageVer(p: any, stage: string): string {
+  const spec = p && typeof p === "object" ? p[stage]?.spec : null;
+  if (!spec) return "v0.0";
+  const tok = String(spec).split("-").pop() || "";
+  return /^v/i.test(tok) ? tok : `v${tok}`;
+}
+const STAGE_VER_FILL = "#c0b8ab"; // muted tint for the little version token sitting beside each stage count
 // Per-atlas stage-5 judge KIND — the same column holds two judge types honestly: the GT trio + ZSCAPE
 // run an LLM Fuzzy Judge vs a published menu; MiniFin is scored by a four-bucket Expert-GT crosswalk
 // (a stronger judge); MegaFin has no promoted GT so its judge node stays dark. Surfaced as the judge-dot tooltip.
@@ -1160,10 +1170,10 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
             const onP = hover === r.runId;
             const active = !!(interactive && onP);
             const lineCol = active ? (sc ? "#2f8f63" : "#b3a687") : (sc ? "#b6ddca" : "#e0dacf");
-            const dot = (cx: number, stage: string, count?: any) => (
+            const dot = (cx: number, stage: string, count?: any, ver?: string) => (
               <g key={"d" + cx}>
                 <circle cx={cx} cy={y} r={active ? 5 : 4} fill={sc ? STAGE_COLOR[stage] : "#c4bdb1"} stroke="#fff" strokeWidth={active ? 1.4 : 1} />
-                {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}</text> : null}
+                {count != null ? <text x={cx} y={y - 6.5} fontSize={8} textAnchor="middle" fill={active ? "#6b655d" : "#9a948c"}>{count}{ver ? <tspan fontSize={6.5} fill={STAGE_VER_FILL}> {ver}</tspan> : null}</text> : null}
               </g>
             );
             const judgeKind = JUDGE_KIND_BY_ATLAS[atlas] || "Judge";
@@ -1186,16 +1196,16 @@ function AtlasTree({ atlas, runs, bare, interactive, onOpenRun }: { atlas: strin
                 {/* clustering → run curve */}
                 <path d={curve(X.cluster + 6, yOf(groupTop[k]), X.label, y)} stroke={active ? "#bcd6c8" : "#e6ded0"} strokeWidth={active ? 1.8 : 1.1} fill="none" />
                 <line x1={X.label} y1={y} x2={lastX} y2={y} stroke={lineCol} strokeWidth={active ? 3.3 : 2.4} strokeLinecap="round" />
-                {dot(X.label, "label", r.nLabelled)}
-                {sMeta ? dot(X.meta, "meta", r.nNodes) : null}
-                {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓")}</g> : null}
+                {dot(X.label, "label", r.nLabelled, stageVer(r.pipeline, "labelling"))}
+                {sMeta ? dot(X.meta, "meta", r.nNodes, stageVer(r.pipeline, "merging")) : null}
+                {sJudge ? <g key="jz"><title>{judgeKind}</title>{dot(X.judge, "judge", r.nScored ?? "✓", stageVer(r.pipeline, "judge"))}</g> : null}
                 <text x={lastX + 9} y={y + 3.2} fontSize={9.5} fontWeight={isGolden || active ? 700 : 400} fill={isGolden ? "#b45309" : (active ? "#2b2b2b" : "#6b655d")}>{label}</text>
                 {pipeBadge(r.pipeline) ? <text x={lastX + 9} y={y + 12.5} fontSize={7} fill="#a99f8f" style={{ letterSpacing: 0.2 }}><title>pipeline spec stamp (per-stage version this run was produced under)</title>{pipeBadge(r.pipeline)}</text> : null}
               </g>
             );
           })}
           {/* clustering nodes — hollow (gold ring), top-aligned to their newest run; lit on hovered path */}
-          {gorder.map((k) => { const onP = hoverGroup === k; return <g key={"cn" + k} opacity={dimOff(onP)}><circle cx={X.cluster} cy={yOf(groupTop[k])} r={onP ? 6 : 5} fill={onP ? "#fff6df" : "#fff"} stroke={STAGE_COLOR.cluster} strokeWidth={onP ? 2.2 : 1.7} /><text x={X.cluster} y={yOf(groupTop[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}</text></g>; })}
+          {gorder.map((k) => { const onP = hoverGroup === k; return <g key={"cn" + k} opacity={dimOff(onP)}><circle cx={X.cluster} cy={yOf(groupTop[k])} r={onP ? 6 : 5} fill={onP ? "#fff6df" : "#fff"} stroke={STAGE_COLOR.cluster} strokeWidth={onP ? 2.2 : 1.7} /><text x={X.cluster} y={yOf(groupTop[k]) - 9} fontSize={8.5} textAnchor="middle" fill="#9a948c">{k === "—" ? "?" : `${groups[k][0].nLeaves || groups[k][0].nLabelled || "?"} leaf`}{k === "—" ? null : <tspan fontSize={6.5} fill={STAGE_VER_FILL}> {stageVer(groups[k][0].pipeline, "clustering")}</tspan>}</text></g>; })}
           {/* raw node — semi-hollow (amber fill, gold ring), top row; brightens whenever a branch is traced */}
           <g><circle cx={X.raw} cy={rawY} r={someHover ? 7 : 6} fill="#fdf1cf" stroke={STAGE_COLOR.raw} strokeWidth={someHover ? 2.3 : 1.8} /><text x={X.raw} y={rawY - 11} fontSize={9} textAnchor="middle" fontWeight={700} fill={STAGE_COLOR.raw}>raw</text></g>
         </svg>
