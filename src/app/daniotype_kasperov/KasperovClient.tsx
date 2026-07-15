@@ -19,6 +19,8 @@ import { MetaReasonerStub } from "./components/MetaReasonerStub";
 import { RunViewer } from "./components/RunViewer";
 import { ClusteringExplainer, ZscapeClusteringExplainer } from "./components/ClusteringExplainer";
 import { HarnessDetail } from "./components/HarnessDetail";
+import { StageVersionSelector } from "./components/StageVersionSelector";
+import { recommendedVersion } from "./pipeline_versions";
 import { useTween } from "./useTween";
 import { useAtlas } from "./useAtlas";
 
@@ -277,6 +279,8 @@ export default function KasperovClient() {
   // step 1 (Clustering): the UMAP starts grey; confirming the clustering colours
   // it in and unlocks "Choose a model →". Reset per dataset (fresh new run).
   const [clusteringConfirmed, setClusteringConfirmed] = useState(false);
+  // Selected pipeline VERSION per stage (New Run). "" falls back to the dataset's recommended version.
+  const [clusteringVersion, setClusteringVersion] = useState<string>("");
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Record<string, string>>({});
@@ -828,6 +832,8 @@ export default function KasperovClient() {
         onChangeModel={() => setStage("model")}
         clusteringConfirmed={clusteringConfirmed}
         onConfirmClustering={() => setClusteringConfirmed(true)}
+        clusteringVersion={clusteringVersion || recommendedVersion(dataset.id, "clustering")}
+        onChangeClusteringVersion={setClusteringVersion}
         usage={usage}
         score={score}
         setScore={setScore}
@@ -2091,6 +2097,8 @@ function MapStage({
   onChangeModel,
   clusteringConfirmed,
   onConfirmClustering,
+  clusteringVersion,
+  onChangeClusteringVersion,
   usage,
   score,
   setScore,
@@ -2117,6 +2125,8 @@ function MapStage({
   onChangeModel: () => void;
   clusteringConfirmed: boolean;
   onConfirmClustering: () => void;
+  clusteringVersion: string;
+  onChangeClusteringVersion: (v: string) => void;
   usage: Usage;
   score: RunScore;
   setScore: React.Dispatch<React.SetStateAction<RunScore>>;
@@ -2293,6 +2303,31 @@ function MapStage({
             : ""}
         </p>
 
+        {/* STAGE VERSION SELECTOR (New Run · step 1) — pick which clustering recipe this run uses, with a
+            plain-english "what's different" per version. The Proceed button lives here (top), to the right. */}
+        {!revealed && (() => {
+          const needsPartition = !!dataset.partitions && dataset.partitions.length > 1;
+          const proceedDisabled = needsPartition && !clusteringConfirmed;
+          return (
+            <StageVersionSelector
+              stage="clustering"
+              datasetId={dataset.id}
+              value={clusteringVersion}
+              onChange={onChangeClusteringVersion}
+              right={
+                <button
+                  onClick={() => { onConfirmClustering(); onChangeModel(); }}
+                  disabled={proceedDisabled}
+                  title={proceedDisabled ? "Choose a clustering below first" : "Continue to the labelling setup"}
+                  style={{ background: proceedDisabled ? "#d8d3cc" : ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "12px 22px", fontSize: 15, fontWeight: 700, cursor: proceedDisabled ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
+                >
+                  Proceed to Labelling →
+                </button>
+              }
+            />
+          );
+        })()}
+
         {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous.
             If the cached run isn't on the server (e.g. an archived/contaminated run still in
             this browser), say so plainly instead of implying it's loadable. */}
@@ -2334,7 +2369,7 @@ function MapStage({
           {mapView === "islands" && hasCompartments(clusters) ? (
             <CompartmentMap clusters={clusters} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
           ) : (
-            <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+            <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed || !!clusteringVersion} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
           )}
         </div>
         {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
@@ -2354,14 +2389,7 @@ function MapStage({
                 );
               })}
             </div>
-            {/* proceed — lights up only once a clustering is picked (which colours the map above) */}
-            <div style={{ display: "flex", justifyContent: "center", marginTop: 16 }}>
-              <button onClick={onChangeModel} disabled={!clusteringConfirmed}
-                title={clusteringConfirmed ? "" : "Pick a clustering above first"}
-                style={{ background: clusteringConfirmed ? ACCENT : "#d8d3cc", color: "#fff", border: "none", borderRadius: 10, padding: "13px 26px", fontSize: 16, fontWeight: 600, cursor: clusteringConfirmed ? "pointer" : "not-allowed" }}>
-                Set up model &amp; harness →
-              </button>
-            </div>
+            {/* proceed button now lives in the StageVersionSelector at the top of the page */}
           </div>
         )}
         {!revealed && (dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />)}
@@ -2372,17 +2400,7 @@ function MapStage({
           </div>
         )}
         <div style={{ marginTop: revealed ? 20 : 12 }}>
-          {!revealed ? (
-            dataset.partitions ? null : clusteringConfirmed ? (
-              <button onClick={onChangeModel} style={{ background: ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 600, cursor: "pointer" }}>
-                Set up model &amp; harness →
-              </button>
-            ) : (
-              <button onClick={onConfirmClustering} style={{ background: THEME.research.color, color: "#fff", border: "none", borderRadius: 10, padding: "11px 24px", fontSize: 15.5, fontWeight: 700, cursor: "pointer" }}>
-                Good to proceed — apply this clustering →
-              </button>
-            )
-          ) : (
+          {!revealed ? null : (
             <>
               {/* run-itself controls */}
               <div style={{ display: "flex", gap: 10, justifyContent: "center", flexWrap: "wrap", marginBottom: 14 }}>
