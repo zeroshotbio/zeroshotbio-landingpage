@@ -273,7 +273,6 @@ export default function KasperovClient() {
   const [finalizeFor, setFinalizeFor] = useState<DatasetDef | null>(null); // ⚙ Meta-Reasoner Finalize Run picker
   const [loadingRun, setLoadingRun] = useState(false); // 🐟 pixel-fish overlay while a tree-clicked run loads
   const [viewingRun, setViewingRun] = useState<{ run: any; meta: any; dataset: DatasetDef; finalize?: boolean } | null>(null);
-  const { clusters, meta, error } = useAtlas(dataset?.dataUrl ?? null);
   const [stage, setStage] = useState<Stage>("intro");
   const [revealed, setRevealed] = useState(false);
   // step 1 (Clustering): the UMAP starts grey; confirming the clustering colours
@@ -281,6 +280,14 @@ export default function KasperovClient() {
   const [clusteringConfirmed, setClusteringConfirmed] = useState(false);
   // Selected pipeline VERSION per stage (New Run). "" falls back to the dataset's recommended version.
   const [clusteringVersion, setClusteringVersion] = useState<string>("");
+  // ZSCAPE 'v1.0' is the REAL flat clustering-v1 partition (staged sibling asset): on the clustering
+  // stage, swap the map source so it genuinely shows the flat (rare-tissue-buried) partition, not the
+  // recursive one. Scoped to the clustering view (!revealed); labelling stays on the validated partition.
+  const clusteringVer = clusteringVersion || (dataset ? recommendedVersion(dataset.id, "clustering") : "");
+  const clusteringMajor = clusteringVer.match(/v(\d+)/i)?.[1] ?? "0";
+  const useFlatV1 = dataset?.id === "zscape" && clusteringMajor === "1" && !revealed;
+  const effDataUrl = useFlatV1 ? `${ASSET_BASE}/zscape_flat_v1/umap.json` : (dataset?.dataUrl ?? null);
+  const { clusters, meta, error } = useAtlas(effDataUrl);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [validated, setValidated] = useState<Set<string>>(new Set());
   const [labels, setLabels] = useState<Record<string, string>>({});

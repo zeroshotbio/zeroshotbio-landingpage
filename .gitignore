@@ -55,6 +55,7 @@ __pycache__/
 # holds 400+ tracked curated assets (chemfish/, megafin/) that must stay visible.
 daniotype_data/*_native/
 daniotype_data/zscape_recursive/
+daniotype_data/zscape_flat_v1/
 daniotype_data/meta_reasoner_replay/
 
 # intentionally-untracked local config
