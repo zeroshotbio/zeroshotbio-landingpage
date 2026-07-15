@@ -20,7 +20,7 @@ import { RunViewer } from "./components/RunViewer";
 import { ClusteringExplainer, ZscapeClusteringExplainer } from "./components/ClusteringExplainer";
 import { HarnessDetail } from "./components/HarnessDetail";
 import { StageVersionSelector } from "./components/StageVersionSelector";
-import { recommendedVersion } from "./pipeline_versions";
+import { recommendedVersion, versionsFor } from "./pipeline_versions";
 import { useTween } from "./useTween";
 import { useAtlas } from "./useAtlas";
 
@@ -280,6 +280,7 @@ export default function KasperovClient() {
   const [clusteringConfirmed, setClusteringConfirmed] = useState(false);
   // Selected pipeline VERSION per stage (New Run). "" falls back to the dataset's recommended version.
   const [clusteringVersion, setClusteringVersion] = useState<string>("");
+  const [labellingVersion, setLabellingVersion] = useState<string>("");
   // ZSCAPE 'v1.0' is the REAL flat clustering-v1 partition (staged sibling asset): on the clustering
   // stage, swap the map source so it genuinely shows the flat (rare-tissue-buried) partition, not the
   // recursive one. Scoped to the clustering view (!revealed); labelling stays on the validated partition.
@@ -841,6 +842,9 @@ export default function KasperovClient() {
         onConfirmClustering={() => setClusteringConfirmed(true)}
         clusteringVersion={clusteringVersion || recommendedVersion(dataset.id, "clustering")}
         onChangeClusteringVersion={setClusteringVersion}
+        labellingVersion={labellingVersion || recommendedVersion(dataset.id, "labelling")}
+        onChangeLabellingVersion={setLabellingVersion}
+        onProceedToLabelling={() => { setClusteringConfirmed(true); setRevealed(true); }}
         usage={usage}
         score={score}
         setScore={setScore}
@@ -2106,6 +2110,9 @@ function MapStage({
   onConfirmClustering,
   clusteringVersion,
   onChangeClusteringVersion,
+  labellingVersion,
+  onChangeLabellingVersion,
+  onProceedToLabelling,
   usage,
   score,
   setScore,
@@ -2134,6 +2141,9 @@ function MapStage({
   onConfirmClustering: () => void;
   clusteringVersion: string;
   onChangeClusteringVersion: (v: string) => void;
+  labellingVersion: string;
+  onChangeLabellingVersion: (v: string) => void;
+  onProceedToLabelling: () => void;
   usage: Usage;
   score: RunScore;
   setScore: React.Dispatch<React.SetStateAction<RunScore>>;
@@ -2143,14 +2153,15 @@ function MapStage({
   const labelled = clusters.filter((c) => labels[c.id]);
   const unlabelled = clusters.filter((c) => !labels[c.id]);
   const [srvNoteFor, setSrvNoteFor] = useState<string | null>(null); // server run awaiting its optional note
+  const [manualMode, setManualMode] = useState(false); // "Run Completely Manually" → reveal the clickable per-cluster list
   // completeness gate for saving: every cluster must be labelled + have tier
   // confidence, and (on GT datasets) the ground-truth comparison must have run.
   const confN = clusters.filter((c) => confidence[c.id]).length;
-  const needsGt = !!dataset.groundTruthUrl;
+  // GT scoring moved OFF this page (scorecard removed) — save no longer gates on it.
+  const needsGt = false;
   const saveChecks = [
     { ok: clusters.length > 0 && labelled.length === clusters.length, label: `Every cluster labelled (${labelled.length}/${clusters.length})` },
     { ok: clusters.length > 0 && confN === clusters.length, label: `Tier confidence on every cluster (${confN}/${clusters.length})` },
-    ...(needsGt ? [{ ok: !!score.scoredAt, label: `Compared to ${dataset.name} ground truth` }] : []),
   ];
   const saveReady = saveChecks.every((c) => c.ok);
 
@@ -2292,10 +2303,10 @@ function MapStage({
             </span>
           </div>
         ) : null}
-        <h2 style={{ fontSize: revealed ? 26 : 23, fontWeight: 700, margin: revealed ? "6px 0 2px" : "2px 0 2px" }}>{revealed ? "3. Cell Labelling" : "1. Clustering"}</h2>
+        <h2 style={{ fontSize: revealed ? 26 : 23, fontWeight: 700, margin: revealed ? "6px 0 2px" : "2px 0 2px" }}>{revealed ? "2. Labelling" : "1. Clustering"}</h2>
         <p style={{ color: "#666", fontSize: 15, marginTop: 0, marginBottom: 8 }}>
           {revealed
-            ? `${clusters.length} de-novo clusters · ${validated.size} validated. Click a cluster on the map or pick one below.`
+            ? `${clusters.length} de-novo clusters · ${validated.size} validated.`
             : clusteringConfirmed
             ? `Clustering applied — ${clusters.length} de-novo Leiden clusters${sampled ? ` on a ${clusteredCells.toLocaleString()}-cell representative sample of the full ${fullCells!.toLocaleString()}-cell atlas` : `, ${clusteredCells.toLocaleString()} cells`} (real UMAP). Good to proceed — set up the model & harness next.`
             : `Coming at ${dataset.name} fresh — here's how the cells get grouped into clusters.`}
@@ -2323,9 +2334,9 @@ function MapStage({
               onChange={onChangeClusteringVersion}
               right={
                 <button
-                  onClick={() => { onConfirmClustering(); onChangeModel(); }}
+                  onClick={onProceedToLabelling}
                   disabled={proceedDisabled}
-                  title={proceedDisabled ? "Choose a clustering below first" : "Continue to the labelling setup"}
+                  title={proceedDisabled ? "Choose a clustering below first" : "Continue to labelling"}
                   style={{ background: proceedDisabled ? "#d8d3cc" : ACCENT, color: "#fff", border: "none", borderRadius: 10, padding: "12px 22px", fontSize: 15, fontWeight: 700, cursor: proceedDisabled ? "not-allowed" : "pointer", whiteSpace: "nowrap" }}
                 >
                   Proceed to Labelling →
@@ -2334,6 +2345,26 @@ function MapStage({
             />
           );
         })()}
+
+        {/* LABELLER VERSION picker (New Run · step 2 · revealed) — choose the labeller architecture,
+            with a plain-english summary of how it's set up. Sits under the "2. Labelling" title. */}
+        {revealed && (
+          <div style={{ maxWidth: 900, margin: "6px auto 4px" }}>
+            <StageVersionSelector stage="labelling" datasetId={dataset.id} value={labellingVersion} onChange={onChangeLabellingVersion} />
+            {(() => {
+              const sel = versionsFor(dataset.id, "labelling").find((v) => v.version === labellingVersion);
+              if (!sel) return null;
+              return (
+                <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "14px 16px", textAlign: "left" }}>
+                  <div style={{ fontSize: 12.5, fontWeight: 800, color: "#2b2620", marginBottom: 4 }}>
+                    Architecture — {sel.name} <span style={{ fontWeight: 800, color: "#9a948c", fontVariantNumeric: "tabular-nums" }}>{sel.version}</span>
+                  </div>
+                  <div style={{ fontSize: 13, lineHeight: 1.55, color: "#4a453f" }}>{sel.summary}</div>
+                </div>
+              );
+            })()}
+          </div>
+        )}
 
         {/* which run am I looking at — shown on the cluster-chooser so it's never ambiguous.
             If the cached run isn't on the server (e.g. an archived/contaminated run still in
@@ -2374,9 +2405,9 @@ function MapStage({
             </div>
           )}
           {mapView === "islands" && hasCompartments(clusters) ? (
-            <CompartmentMap clusters={clusters} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+            <CompartmentMap clusters={clusters} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={undefined} />
           ) : (
-            <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed || !!clusteringVersion} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={revealed ? onPick : undefined} />
+            <UmapCanvas clusters={clusters} mode="global" colored={revealed || clusteringConfirmed || !!clusteringVersion} activeId={null} validated={revealed ? validated : EMPTY_VALIDATED} width={revealed ? size.w : Math.min(size.w, 560)} height={revealed ? size.h : Math.min(size.h, 392)} onPick={undefined} />
           )}
         </div>
         {!revealed && dataset.partitions && dataset.partitions.length > 1 && (
@@ -2423,6 +2454,13 @@ function MapStage({
                   style={{ display: "inline-flex", alignItems: "center", gap: 8, background: "#fff", color: THEME.reason.color, border: `1px solid ${THEME.reason.color}`, borderRadius: 10, padding: "12px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
                 >
                   ☁ Run AutoPilot on server (persistent)
+                </button>
+                <button
+                  onClick={() => setManualMode(true)}
+                  title="Label every cluster yourself — pick a cluster from the list below and drive the chat."
+                  style={{ display: "inline-flex", alignItems: "center", gap: 8, background: manualMode ? THEME.research.color : "#fff", color: manualMode ? "#fff" : THEME.research.color, border: `1px solid ${THEME.research.color}`, borderRadius: 10, padding: "12px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" }}
+                >
+                  ✎ Run Completely Manually
                 </button>
                 {/* No load/import here — this page manages the NEW run only.
                     Saving lives at the very bottom (gated on a completeness check).
@@ -2477,10 +2515,11 @@ function MapStage({
                 adding evidence, and accepting an identity when settled. Watch it go; stop anytime. (Uses OpenAI credits.)
               </p>
 
-              {/* run-summary cluster grid — only when there's no ground-truth
-                  scorecard to merge the per-cluster list into (e.g. MiniFin) */}
-              {!dataset.groundTruthUrl && (
+              {/* run-summary cluster grid — the clickable per-cluster list. Shown for no-GT datasets,
+                  and whenever the user chose "Run Completely Manually" (pick a cluster to label by hand). */}
+              {(manualMode || !dataset.groundTruthUrl) && (
               <div style={{ marginTop: 8, textAlign: "left" }}>
+                {manualMode && <div style={{ fontSize: 12.5, color: "#5a544c", marginBottom: 8 }}>✎ Manual mode — click any cluster below to label it yourself.</div>}
                 <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", flexWrap: "wrap", gap: 8, marginBottom: 8 }}>
                   <div style={{ fontSize: 12, textTransform: "uppercase", letterSpacing: 1, color: "#999", fontWeight: 600 }}>
                     Run summary · {labelled.length}/{clusters.length} labelled · {validated.size} validated
@@ -2532,27 +2571,6 @@ function MapStage({
               {labelled.length > 0 && unlabelled.length > 0 && (
                 <div style={{ marginTop: 14, textAlign: "left", fontSize: 12.5, color: "#92400e", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 8, padding: "8px 11px" }}>
                   {unlabelled.length} of {clusters.length} clusters not yet labelled: {unlabelled.map((c) => c.label.replace("Cluster ", "C")).join(", ")}. Run &ldquo;Activate AutoPilot Cluster Labeller&rdquo; — it auto-skips the {labelled.length} already labelled and finishes only these.
-                </div>
-              )}
-
-              {/* ground-truth scoring, always inline under the run summary —
-                  un-filled until you press the button (once all clusters are labelled) */}
-              {dataset.groundTruthUrl && (
-                <div style={{ marginTop: 28 }}>
-                  <Scorecard
-                    embedded
-                    dataset={dataset}
-                    clusters={clusters}
-                    labels={labels}
-                    confidence={confidence}
-                    validated={validated}
-                    onPick={onPick}
-                    model={model}
-                    addUsage={addUsage}
-                    score={score}
-                    setScore={setScore}
-                    onImport={onImport}
-                  />
                 </div>
               )}
 

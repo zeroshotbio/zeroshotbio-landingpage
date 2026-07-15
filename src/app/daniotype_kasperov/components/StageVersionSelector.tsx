@@ -19,6 +19,7 @@ const STATUS_TAG: Record<VersionStatus, { label: string; fg: string; bg: string 
   supported: { label: "supported", fg: "#5a544c", bg: "#f0ede9" },
   legacy: { label: "legacy", fg: "#92600a", bg: "#fef6e3" },
   defective: { label: "superseded", fg: "#9a3412", bg: "#fff2ec" },
+  experimental: { label: "experimental", fg: "#6d28d9", bg: "#f3eefe" },
   unspecified: { label: "unpinned", fg: "#6b7280", bg: "#f3f4f6" },
 };
 

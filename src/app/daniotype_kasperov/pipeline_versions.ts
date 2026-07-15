@@ -8,7 +8,7 @@
 // {SPEC,LEDGER}.md. When a pillar SPEC version bumps, add the new version here too.
 
 export type PipelineStage = "clustering" | "labelling" | "merging" | "judge";
-export type VersionStatus = "current" | "supported" | "legacy" | "defective" | "unspecified";
+export type VersionStatus = "current" | "supported" | "legacy" | "defective" | "experimental" | "unspecified";
 export type PipelineVersion = { version: string; name: string; summary: string; status: VersionStatus };
 
 // Shared "no recorded recipe" option — every stage offers it so a user can explicitly decline to pin a version.
@@ -54,6 +54,37 @@ export const PIPELINE_VERSIONS: Record<string, Partial<Record<PipelineStage, Pip
           "measured-neutral (0% tissue-identity flips vs v2.0). This is the current recommended recipe.",
       },
     ],
+    labelling: [
+      UNSPECIFIED,
+      {
+        version: "v1.0",
+        status: "supported",
+        name: "Three-personality flat de-novo",
+        summary:
+          "Each of the 250 leaf clusters is named independently by a three-personality loop: a Researcher pulls ZFIN / " +
+          "ZFA / GO marker evidence, a Reasoner proposes an open-vocabulary 4-tier identity (germ layer → tissue → broad " +
+          "→ sub), and the call is binned to the tier the evidence supports. No cross-cluster context — each leaf stands " +
+          "alone. This is the architecture that produced the Jul-3 golden run.",
+      },
+      {
+        version: "v1.1",
+        status: "current",
+        name: "+ broad-tier reuse-specific-term rule",
+        summary:
+          "Same three-personality flat loop as v1.0, plus the broad-tier 'reuse-specific-term' rule: at the " +
+          "cell_type_broad tier the Reasoner reuses the specific ZFA term the Researcher surfaced instead of coarsening " +
+          "to a superclass — noticeably sharper broad-tier calls. Current recommended labeller.",
+      },
+      {
+        version: "v2.0",
+        status: "experimental",
+        name: "Top-down expectation-guided recursion",
+        summary:
+          "Instead of naming all 250 leaves flat, the labeller names each coarse compartment's umbrella first, then " +
+          "descends only into the branches where an expected tissue is still missing — hierarchy-aware and fewer model " +
+          "calls. Multi-level MVP; not yet the validated default.",
+      },
+    ],
   },
   chemfish: {
     clustering: [
@@ -68,6 +99,25 @@ export const PIPELINE_VERSIONS: Record<string, Partial<Record<PipelineStage, Pip
           "(not the ZSCAPE recursive local-HVG recipe) — appropriate for this chemical-screen atlas.",
       },
     ],
+    labelling: [
+      UNSPECIFIED,
+      {
+        version: "v1.0",
+        status: "supported",
+        name: "Three-personality flat de-novo",
+        summary:
+          "Each leaf named independently by the three-personality loop (Researcher evidence → Reasoner 4-tier de-novo → " +
+          "menu-bin). No cross-cluster context.",
+      },
+      {
+        version: "v1.1",
+        status: "current",
+        name: "+ broad-tier reuse-specific-term rule",
+        summary:
+          "The three-personality loop plus the broad-tier reuse-specific-term rule for sharper cell_type_broad calls. " +
+          "Current recommended labeller.",
+      },
+    ],
   },
   daniocell: {
     clustering: [
@@ -80,6 +130,17 @@ export const PIPELINE_VERSIONS: Record<string, Partial<Record<PipelineStage, Pip
           "Highly-variable genes → PCA → Harmony batch-integration on developmental stage → 15-nearest-neighbour graph → " +
           "Leiden resolution sweep. 270 fine leaf clusters (the de-novo partition). Same recipe family as ChemFish, " +
           "stage-integrated. (The authors' native published groups are a separate clustering choice, offered below.)",
+      },
+    ],
+    labelling: [
+      UNSPECIFIED,
+      {
+        version: "v1.0",
+        status: "current",
+        name: "Two-tier de-novo → menu-bin",
+        summary:
+          "DanioCell-specific two-tier labeller: the three-personality loop names each leaf and bins to DanioCell's " +
+          "native tissue + cell-type schema (rather than the full 4-tier ZFA stack). Current recommended for this atlas.",
       },
     ],
   },
