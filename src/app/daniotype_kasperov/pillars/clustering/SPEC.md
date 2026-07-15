@@ -33,6 +33,17 @@ rare-but-distinct tissues surface; it cannot separate a genuinely shared program
 - ⚠ Harness scores banked against the OLD `build_zscape_asset.py` partition sit on a **defective build**
   (no local-HVG recompute — it never ran the mechanism) and should be **re-banked onto v2**.
 
+## Cross-dataset clustering versions (other goldens carry these)
+The recipe above (`clustering-v2`/`clustering-v3`) is **ZSCAPE-specific** (recursive local-HVG). Other
+datasets' goldens were clustered by different recipes; recorded here so their run stamps resolve. These
+are NOT the ZSCAPE recursive recipe — they are flat, Harmony-integrated Leiden sweeps.
+- **`clustering-chemfish-v1`** — ChemFish golden `6165c255` (288 leaves, built 2026-06-13). HVG → PCA →
+  **Harmony(sample)** integration → 15-NN → Leiden resolution sweep, **res 3.0 chosen** (`chemfish_build2.log`).
+  The fine-split beyond res 3.0 (78→288 leaves) is not fully recovered from disk — **[UNVERIFIED]** at that depth.
+- **`clustering-daniocell-v1`** — DanioCell golden `e4ac7461` (270 leaves, built 2026-06-13). HVG → PCA →
+  **Harmony(stage)** integration → 15-NN → Leiden resolution sweep (`daniocell_build2.log`). Same recipe
+  family as chemfish, stage-integrated. Fine-split depth **[UNVERIFIED]**.
+
 ## Changelog
 - **v3 (2026-07-14)** — leaf naming vote switched control-only → all-cells. Partition unchanged (vote
   does not touch clustering). Justified by LEDGER #3: 0% tissue-identity flips between the two votes.

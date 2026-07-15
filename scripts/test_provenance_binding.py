@@ -54,6 +54,11 @@ def _spec_versions(stage):
     versions = {hdr.group(1)}                                     # e.g. "labelling-v2"
     for n in re.findall(r"\*\*v(\d+)", txt):                      # changelog "**v1", "**v2 (…)"
         versions.add(f"{stage}-v{n}")
+    # ALSO accept any explicit "<stage>-<token>" version literally recorded in the SPEC — covers
+    # dataset-specific goldens (e.g. clustering-chemfish-v1) and date-meta stamps. The SPEC is the
+    # source of truth for what versions exist; if it's written there, a run may legitimately stamp it.
+    for v in re.findall(rf"{re.escape(stage)}-[a-z0-9][a-z0-9.\-]*", txt):
+        versions.add(v)
     return versions
 
 def test_canonical_run_binding():
