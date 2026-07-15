@@ -187,7 +187,7 @@ def _meta_from(run, run_id):
 # (scripts/test_provenance_binding.py, assertion a) cross-checks these against pillars/<stage>/SPEC.md,
 # so a stale-HIGH bump fails CI; a stale-LOW value is a legitimate lag. NOT read from the SPEC at
 # write time (that would make the drift test vacuous — the stamp must be an independent assertion).
-PRODUCER_PIPELINE = {"clustering": "clustering-v2", "labelling": "labelling-v2",
+PRODUCER_PIPELINE = {"clustering": "clustering-v3", "labelling": "labelling-v2",
                      "merging": "merging-v2", "judge": "judge-v1"}
 
 

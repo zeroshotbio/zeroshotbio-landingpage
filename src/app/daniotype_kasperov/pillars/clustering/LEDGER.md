@@ -75,3 +75,16 @@ endoderm as its OWN compartment from the start rather than re-recursing a leaf �
 the 99. **Any fresh golden must stage the 250-leaf `clusters.json` + schema-convert it to the loader's
 `{clusters:[{id,label,degsUp,markers,nCells,compartment}]}` shape** — it's an edit, not a param.
 do-not-retry: n/a.
+
+### 14 — Leaf naming vote: control-only → all-cells — [SHIPPED] (clustering-v3)
+2026-07-14 · flip the primary GT-scaffold vote from control-cells-only to all-cells; control-only vote
+kept alongside as secondary (its diff has been useful twice — LEDGER #3). **Partition is untouched** —
+the vote is downstream of clustering, so fingerprint `a09d8492` is identical under v3. · result:
+**measured-neutral** — LEDGER #3 found 0% tissue-IDENTITY flips (the only "tissue" diffs are the
+Muscle ↔ Cranial Muscle (Late) vocabulary pair; 29 sub-tier granularity diffs). Chosen for
+**simplicity** (one vote path, not two), NOT an accuracy claim. · **Dissent recorded:** the assistant
+recommended KEEPING control-only, for the defensibility of "tissues named from untreated cells only"
+(cleaner story for a reviewer). Steven overrode on the strength of the 0%-flip result — the tradeoff
+was **seen, not missed**. A future agent reconsidering this should weigh defensibility vs simplicity,
+not re-discover the flip rate. do-not-retry: the measurement (settled); the framing choice is a
+judgment call, not a falsified idea.
