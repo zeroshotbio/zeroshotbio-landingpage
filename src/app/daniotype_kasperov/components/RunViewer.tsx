@@ -548,7 +548,7 @@ export function RunViewer({ run, meta, dataset, onBack, finalize }: { run: any; 
                 />
               ) : clusteringBasis === "de-novo" ? (
                 dataset.id === "zscape"
-                  ? <ZscapeClusteringExplainer nLeaves={clusters?.length} />
+                  ? <ZscapeClusteringExplainer nLeaves={clusters?.length} version={pipeStageVer(run, "clustering")} />
                   : (run as any)?._canonical?.clustering?.strategy
                     ? <ClusteringStrategyPanel strategy={(run as any)._canonical.clustering.strategy} nLeaves={clusters?.length} />
                     : <ClusteringExplainer />

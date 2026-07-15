@@ -2392,7 +2392,7 @@ function MapStage({
             {/* proceed button now lives in the StageVersionSelector at the top of the page */}
           </div>
         )}
-        {!revealed && (dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} /> : <ClusteringExplainer />)}
+        {!revealed && (dataset.id === "zscape" ? <ZscapeClusteringExplainer nLeaves={clusters?.length} version={clusteringVersion} /> : <ClusteringExplainer />)}
 
         {loadedNote && (
           <div style={{ maxWidth: 640, margin: "14px auto 0", background: "#fffbeb", border: "1px solid #fde68a", borderRadius: 10, padding: "9px 13px", fontSize: 13, color: "#92400e", textAlign: "left", lineHeight: 1.5 }}>

@@ -109,11 +109,60 @@ function ClustStep({ num, title, children }: { num: string; title: string; child
   );
 }
 
-export function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
+// The ZSCAPE clustering story, keyed to the SELECTED clustering VERSION — the prose below the map
+// changes as the user clicks v0.0 / v1.0 / v2.0 / v3.0 on the New Run stage (and in the completed-run
+// viewer, keyed to the run's own stamp). Content mirrors pillars/clustering/{SPEC,LEDGER}.md.
+// version normalizes to a major: "v2" and "v2.0" both read as v2.
+export function ZscapeClusteringExplainer({ nLeaves, version = "v3.0" }: { nLeaves?: number; version?: string }) {
   const n = nLeaves && nLeaves > 0 ? nLeaves : 250;
-  const note = { fontSize: 12.5, lineHeight: 1.55, color: "#6b655d", margin: "0 0 8px" };
-  return (
-    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px", maxWidth: 820, margin: "10px auto 0", textAlign: "left" }}>
+  const note = { fontSize: 12.5, lineHeight: 1.55, color: "#6b655d", margin: "0 0 8px" } as const;
+  const wrap = (children: React.ReactNode) => (
+    <div style={{ background: "#fffdfb", border: "1px solid #e5e1dc", borderRadius: 12, padding: "16px 18px", maxWidth: 820, margin: "10px auto 0", textAlign: "left" }}>{children}</div>
+  );
+  const major = (String(version).match(/v(\d+)/i)?.[1]) ?? "0"; // "v3.0" -> "3"; unknown -> "0"
+
+  // v0.0 — no recipe pinned
+  if (major === "0") {
+    return wrap(
+      <>
+        <div style={{ fontWeight: 700, color: "#2b2620", fontSize: 14, marginBottom: 4 }}>No clustering recipe pinned</div>
+        <p style={{ ...note, marginBottom: 0 }}>
+          This run isn&apos;t tied to a specific clustering version — the partition drawn above is ZSCAPE&apos;s current
+          staged clustering, but its exact recipe isn&apos;t recorded in provenance (older runs stamp <b>v0.0</b>). Pick a
+          numbered version above to record — and read here — exactly how the cells were grouped.
+        </p>
+      </>
+    );
+  }
+
+  // v1.0 — flat global Leiden (superseded / defective)
+  if (major === "1") {
+    return wrap(
+      <>
+        <ClustStep num="1" title="Single global pass — one clustering over everything">
+          All ~813,000 cells are clustered in one shot: a single <b>global</b> highly-variable-gene selection → <b>Leiden
+          res 2.0</b>. There is <b>no per-compartment recompute</b> — every cell is grouped against the same global gene set.
+        </ClustStep>
+        <ClustStep num="2" title="Naming — control cells vote">
+          Only the <b>non-perturbed control cells</b> (<code>gene_target ctrl-*</code>) vote on each cluster&apos;s tissue
+          name — a <b>provisional scaffold</b> from ZSCAPE&apos;s own annotations, before the labeller runs.
+        </ClustStep>
+        <div style={{ borderTop: "1px solid #f0eae1", paddingTop: 12, marginTop: 3 }}>
+          <p style={{ ...note, marginBottom: 0 }}>
+            <b style={{ color: "#9a3412" }}>Why it was superseded.</b> A single global HVG pass is dominated by the most
+            abundant cell types, so rare tissues — <b>blood, pancreas, liver</b> — never get the chance to separate and stay
+            buried inside larger clusters. <b>v2.0</b> fixes this by recomputing marker genes <i>locally</i> inside each
+            compartment. Kept selectable for provenance only.
+          </p>
+        </div>
+      </>
+    );
+  }
+
+  // v2.0 / v3.0 — recursive local-HVG; the only difference is the naming vote (step 3).
+  const allCellVote = major === "3";
+  return wrap(
+    <>
       <ClustStep num="1" title="Coarse pass — find the broad compartments">
         All ~813,000 cells are grouped at <b>Leiden res 0.1</b> into a handful of broad <b>compartments</b>. Deliberately
         low-resolution: it establishes the major territories before any fine splitting.
@@ -124,15 +173,24 @@ export function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
         dominated by the most abundant cell types and buries rare tissues like <b>blood, pancreas, and liver</b> —
         recomputing per-compartment is what lets them surface. Result: <b>{n} fine leaf clusters</b>.
       </ClustStep>
-      <ClustStep num="3" title="Naming — control cells vote">
-        Every cell builds the clusters, but only the <b>non-perturbed control cells</b> (<code>gene_target ctrl-*</code>){" "}
-        vote on each cluster&apos;s tissue name. The labeller hasn&apos;t run yet — this is a <b>provisional scaffold</b>{" "}
-        from ZSCAPE&apos;s own annotations; restricting the vote to controls keeps drug-induced shifts from biasing it.
-      </ClustStep>
+      {allCellVote ? (
+        <ClustStep num="3" title="Naming — all cells vote">
+          Every cell both builds the clusters <b>and votes</b> on each cluster&apos;s tissue name (the control-only vote is
+          kept alongside as a secondary check). The labeller hasn&apos;t run yet — this is a <b>provisional scaffold</b>{" "}
+          from ZSCAPE&apos;s own annotations. Voting with all cells is the simpler single path, and measured-neutral vs the
+          control-only vote (<b>0% tissue-identity flips</b>).
+        </ClustStep>
+      ) : (
+        <ClustStep num="3" title="Naming — control cells vote">
+          Every cell builds the clusters, but only the <b>non-perturbed control cells</b> (<code>gene_target ctrl-*</code>){" "}
+          vote on each cluster&apos;s tissue name. The labeller hasn&apos;t run yet — this is a <b>provisional scaffold</b>{" "}
+          from ZSCAPE&apos;s own annotations; restricting the vote to controls keeps drug-induced shifts from biasing it.
+        </ClustStep>
+      )}
       <div style={{ borderTop: "1px solid #f0eae1", paddingTop: 12, marginTop: 3 }}>
         <p style={note}>
           <b style={{ color: "#4a453f" }}>Why two stages.</b> This broad-compartments-containing-leaf-clusters structure
-          is exactly what the <b>v2.0 harness descends top-down</b>: it names each compartment&apos;s umbrella first, then
+          is exactly what the <b>labelling harness descends top-down</b>: it names each compartment&apos;s umbrella first, then
           dives only into branches where an expected tissue is still missing.
         </p>
         <p style={{ ...note, marginBottom: 0 }}>
@@ -141,6 +199,6 @@ export function ZscapeClusteringExplainer({ nLeaves }: { nLeaves?: number }) {
           remain partly blended. The liver cluster is a <b>plurality call</b>, not a pure one.
         </p>
       </div>
-    </div>
+    </>
   );
 }
