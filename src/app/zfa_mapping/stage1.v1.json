@@ -1,0 +1,8789 @@
+{
+ "meta": {
+  "generated_utc": "2026-07-16T17:50:28.695040+00:00",
+  "zfa_obo_sha256": "58c5f1a00c435bef895b9ad7f931cde6a88a01d068f48123558b6907c9f4fa7b",
+  "zfa_data_version": "releases/2026-06-02",
+  "zfa_date": "12:05:2026 09:24",
+  "zfa_n_terms": 3214,
+  "zfa_n_obsolete": 53,
+  "n_labels": 216,
+  "dataset_cells": 3231733,
+  "rule_counts": {
+   "R1": 94,
+   "R2": 7,
+   "R3": 4,
+   "R6": 7,
+   "R7": 88,
+   "UNMATCHED": 16
+  },
+  "outcome_counts": {
+   "AUTO_BIND": 61,
+   "PROPOSE": 139,
+   "UNMATCHED": 16
+  },
+  "cell_weighted_coverage_by_tier": {
+   "germ_layer": {
+    "bound_cells": 2945955,
+    "tier_cells": 3231733,
+    "coverage": 0.9116
+   },
+   "tissue": {
+    "bound_cells": 2513440,
+    "tier_cells": 3231733,
+    "coverage": 0.7777
+   },
+   "cell_type_broad": {
+    "bound_cells": 379651,
+    "tier_cells": 3231733,
+    "coverage": 0.1175
+   },
+   "cell_type_sub": {
+    "bound_cells": 403326,
+    "tier_cells": 3231733,
+    "coverage": 0.1248
+   }
+  },
+  "headline_cell_weighted_coverage_sub": 0.1248,
+  "label_weighted_bind_rate": 0.2824,
+  "r7_floor": 85.0,
+  "caro_source": "scripts/zfa_neighborhood.cand_bucket (cached zfa_embed_meta.json)"
+ },
+ "labels": [
+  {
+   "string": "ectoderm",
+   "norm_light": "ectoderm",
+   "norm_morph": "ectoderm",
+   "tiers": {
+    "germ_layer": 1864924
+   },
+   "parents": {},
+   "n_cells": 1864924,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000016",
+   "zfa_name": "ectoderm",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000016",
+     "zfa_name": "ectoderm",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mesoderm",
+   "norm_light": "mesoderm",
+   "norm_morph": "mesoderm",
+   "tiers": {
+    "germ_layer": 946089
+   },
+   "parents": {},
+   "n_cells": 946089,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000041",
+   "zfa_name": "mesoderm",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000041",
+     "zfa_name": "mesoderm",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Epidermis",
+   "norm_light": "epidermis",
+   "norm_morph": "epidermis",
+   "tiers": {
+    "tissue": 762485
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm",
+     "neural crest"
+    ]
+   },
+   "n_cells": 762485,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000105",
+   "zfa_name": "epidermis",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm",
+   "norm_light": "periderm",
+   "norm_morph": "periderm",
+   "tiers": {
+    "cell_type_broad": 630381
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Epidermis"
+    ]
+   },
+   "n_cells": 630381,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001185",
+   "zfa_name": "periderm",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Central Nervous System",
+   "norm_light": "central nervous system",
+   "norm_morph": "central nervous system",
+   "tiers": {
+    "tissue": 611914
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 611914,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000012",
+   "zfa_name": "central nervous system",
+   "caro_bucket": "",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000012",
+     "zfa_name": "central nervous system",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "Pharyngeal Arch",
+   "norm_light": "pharyngeal arch",
+   "norm_morph": "pharyngeal arch",
+   "tiers": {
+    "tissue": 323932
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm",
+     "mesoderm/neural crest",
+     "neural crest"
+    ]
+   },
+   "n_cells": 323932,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001306",
+   "zfa_name": "pharyngeal arch",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001306",
+     "zfa_name": "pharyngeal arch",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Cranial Muscle (Late)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "tissue": 306624
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 306624,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "mature fast muscle",
+   "norm_light": "mature fast muscle",
+   "norm_morph": "mature fast muscle",
+   "tiers": {
+    "cell_type_broad": 284344
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ]
+   },
+   "n_cells": 284344,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009369",
+     "zfa_name": "fast muscle myoblast",
+     "match_text": "fast muscle myoblast",
+     "score": 78.9,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Connective Tissue",
+   "norm_light": "connective tissue",
+   "norm_morph": "connective tissue",
+   "tiers": {
+    "tissue": 281433
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm",
+     "mesoderm/ectoderm"
+    ]
+   },
+   "n_cells": 281433,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001632",
+     "zfa_name": "portion of connective tissue",
+     "match_text": "portion of connective tissue",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001633",
+     "zfa_name": "perichordal connective tissue",
+     "match_text": "perichordal connective tissue",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mesoderm/ectoderm",
+   "norm_light": "mesoderm/ectoderm",
+   "norm_morph": "mesoderm/ectoderm",
+   "tiers": {
+    "germ_layer": 241518
+   },
+   "parents": {},
+   "n_cells": 241518,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001120",
+     "zfa_name": "neuroectoderm",
+     "match_text": "neurectoderm",
+     "score": 69.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000083",
+     "zfa_name": "ventral mesoderm",
+     "match_text": "ventral mesoderm",
+     "score": 66.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001120",
+     "zfa_name": "neuroectoderm",
+     "match_text": "neuroectoderm",
+     "score": 66.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Eye",
+   "norm_light": "eye",
+   "norm_morph": "eye",
+   "tiers": {
+    "tissue": 207338
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 207338,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000107",
+   "zfa_name": "eye",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000107",
+     "zfa_name": "eye",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Muscle",
+   "norm_light": "muscle",
+   "norm_morph": "muscle",
+   "tiers": {
+    "tissue": 174783
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 174783,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005145",
+   "zfa_name": "muscle",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 10",
+   "norm_light": "periderm 10",
+   "norm_morph": "periderm 10",
+   "tiers": {
+    "cell_type_sub": 168532
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 168532,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005353",
+     "zfa_name": "vertebra 10",
+     "match_text": "vertebra 10",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "connective tissue-meninges-dermal FB",
+   "norm_light": "connective tissue meninges dermal fb",
+   "norm_morph": "connective tissue meninges dermal fb",
+   "tiers": {
+    "cell_type_broad": 131195
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Connective Tissue"
+    ]
+   },
+   "n_cells": 131195,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 87.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001634",
+     "zfa_name": "perichondrium",
+     "match_text": "cartilage connective tissue",
+     "score": 77.3,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001632",
+     "zfa_name": "portion of connective tissue",
+     "match_text": "portion of connective tissue",
+     "score": 75.6,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "basal cell",
+   "norm_light": "basal cell",
+   "norm_morph": "basal cell",
+   "tiers": {
+    "cell_type_broad": 124449
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Connective Tissue",
+     "Epidermis"
+    ]
+   },
+   "n_cells": 124449,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009178",
+     "zfa_name": "blastemal cell",
+     "match_text": "blastemal cell",
+     "score": 83.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Fin",
+   "norm_light": "fin",
+   "norm_morph": "fin",
+   "tiers": {
+    "tissue": 110848
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm",
+     "mesoderm/ectoderm"
+    ]
+   },
+   "n_cells": 110848,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000108",
+   "zfa_name": "fin",
+   "caro_bucket": "",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000108",
+     "zfa_name": "fin",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "mature fast muscle 6",
+   "norm_light": "mature fast muscle 6",
+   "norm_morph": "mature fast muscle 6",
+   "tiers": {
+    "cell_type_sub": 103097
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 103097,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000885",
+     "zfa_name": "fast muscle cell somite 6",
+     "match_text": "fast muscle cell somite 6",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "retinal neuron",
+   "norm_light": "retinal neuron",
+   "norm_morph": "retinal neuron",
+   "tiers": {
+    "cell_type_broad": 92758
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Eye"
+    ]
+   },
+   "n_cells": 92758,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009318",
+     "zfa_name": "retinal bipolar neuron",
+     "match_text": "retinal bipolar neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000046",
+     "zfa_name": "retinal neural layer",
+     "match_text": "neuroretina",
+     "score": 88.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "connective tissue-meninges-dermal FB (late)",
+   "norm_light": "connective tissue meninges dermal fb",
+   "norm_morph": "connective tissue meninges dermal fb",
+   "tiers": {
+    "cell_type_sub": 89792
+   },
+   "parents": {
+    "cell_type_sub": [
+     "connective tissue-meninges-dermal FB"
+    ]
+   },
+   "n_cells": 89792,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 87.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001634",
+     "zfa_name": "perichondrium",
+     "match_text": "cartilage connective tissue",
+     "score": 77.3,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001632",
+     "zfa_name": "portion of connective tissue",
+     "match_text": "portion of connective tissue",
+     "score": 75.6,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neural crest",
+   "norm_light": "neural crest",
+   "norm_morph": "neural crest",
+   "tiers": {
+    "germ_layer": 85391
+   },
+   "parents": {},
+   "n_cells": 85391,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000045",
+   "zfa_name": "neural crest",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000045",
+     "zfa_name": "neural crest",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature fast muscle 2",
+   "norm_light": "mature fast muscle 2",
+   "norm_morph": "mature fast muscle 2",
+   "tiers": {
+    "cell_type_sub": 84430
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 84430,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000879",
+     "zfa_name": "fast muscle cell somite 2",
+     "match_text": "fast muscle cell somite 2",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature slow muscle",
+   "norm_light": "mature slow muscle",
+   "norm_morph": "mature slow muscle",
+   "tiers": {
+    "cell_type_broad": 84216
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ]
+   },
+   "n_cells": 84216,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009116",
+     "zfa_name": "slow muscle cell",
+     "match_text": "slow muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009368",
+     "zfa_name": "slow muscle myoblast",
+     "match_text": "slow muscle myoblast",
+     "score": 78.9,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neural progenitor (telencephalon/diencephalon)",
+   "norm_light": "neural progenitor",
+   "norm_morph": "neural progenitor",
+   "tiers": {
+    "cell_type_broad": 81417,
+    "cell_type_sub": 81417
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neural progenitor (telencephalon/diencephalon)"
+    ]
+   },
+   "n_cells": 81417,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005587",
+     "zfa_name": "nephron progenitor",
+     "match_text": "nephron progenitor",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009349",
+     "zfa_name": "pro-B cell",
+     "match_text": "progenitor b cell",
+     "score": 76.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000133",
+     "zfa_name": "neural rod",
+     "match_text": "neural rod",
+     "score": 75.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "retinal neuron (amacrine, RGC)",
+   "norm_light": "retinal neuron",
+   "norm_morph": "retinal neuron",
+   "tiers": {
+    "cell_type_sub": 79563
+   },
+   "parents": {
+    "cell_type_sub": [
+     "retinal neuron"
+    ]
+   },
+   "n_cells": 79563,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009318",
+     "zfa_name": "retinal bipolar neuron",
+     "match_text": "retinal bipolar neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000046",
+     "zfa_name": "retinal neural layer",
+     "match_text": "neuroretina",
+     "score": 88.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 14",
+   "norm_light": "periderm 14",
+   "norm_morph": "periderm 14",
+   "tiers": {
+    "cell_type_sub": 77753
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 77753,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007097",
+     "zfa_name": "vertebra 14",
+     "match_text": "vertebra 14",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neurons (gabaergic, glutamatergic; contains Purkinje)",
+   "norm_light": "neurons",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 76300,
+    "cell_type_sub": 76300
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neurons (gabaergic, glutamatergic; contains Purkinje)"
+    ]
+   },
+   "n_cells": 76300,
+   "outcome": "AUTO_BIND",
+   "rule": "R3",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R3"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Endothelial",
+   "norm_light": "endothelial",
+   "norm_morph": "endothelial",
+   "tiers": {
+    "tissue": 75923
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 75923,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005773",
+     "zfa_name": "embryonic blood vessel endothelial progenitor cell",
+     "match_text": "embryonic blood vessel endothelial progenitor cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005927",
+     "zfa_name": "endothelial blood brain barrier",
+     "match_text": "endothelial blood brain barrier",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005954",
+     "zfa_name": "cardiac lymphatic endothelial cluster",
+     "match_text": "cardiac lymphatic endothelial cluster",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neurons (differentiating, contains peripheral)",
+   "norm_light": "neurons",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 70963,
+    "cell_type_sub": 70963
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neurons (differentiating, contains peripheral)"
+    ]
+   },
+   "n_cells": 70963,
+   "outcome": "AUTO_BIND",
+   "rule": "R3",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R3"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "eye, optic cup",
+   "norm_light": "optic cup eye",
+   "norm_morph": "optic cup eye",
+   "tiers": {
+    "cell_type_broad": 70673,
+    "cell_type_sub": 70673
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Eye"
+    ],
+    "cell_type_sub": [
+     "eye, optic cup"
+    ]
+   },
+   "n_cells": 70673,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000107",
+     "zfa_name": "eye",
+     "match_text": "eye",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001202",
+     "zfa_name": "optic cup",
+     "match_text": "optic cup",
+     "score": 100.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000435",
+     "zfa_name": "cranial nerve II",
+     "match_text": "optic",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neurons (gabaergic, glutamatergic)",
+   "norm_light": "neurons",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 66392,
+    "cell_type_sub": 66392
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neurons (gabaergic, glutamatergic)"
+    ]
+   },
+   "n_cells": 66392,
+   "outcome": "AUTO_BIND",
+   "rule": "R3",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R3"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neural progenitor (hindbrain)",
+   "norm_light": "neural progenitor",
+   "norm_morph": "neural progenitor",
+   "tiers": {
+    "cell_type_broad": 66190,
+    "cell_type_sub": 66190
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neural progenitor (hindbrain)"
+    ]
+   },
+   "n_cells": 66190,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005587",
+     "zfa_name": "nephron progenitor",
+     "match_text": "nephron progenitor",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009349",
+     "zfa_name": "pro-B cell",
+     "match_text": "progenitor b cell",
+     "score": 76.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000133",
+     "zfa_name": "neural rod",
+     "match_text": "neural rod",
+     "score": 75.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "basal cell (early)",
+   "norm_light": "basal cell",
+   "norm_morph": "basal cell",
+   "tiers": {
+    "cell_type_sub": 62194
+   },
+   "parents": {
+    "cell_type_sub": [
+     "basal cell"
+    ]
+   },
+   "n_cells": 62194,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009178",
+     "zfa_name": "blastemal cell",
+     "match_text": "blastemal cell",
+     "score": 83.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pharyngeal arch (early)",
+   "norm_light": "pharyngeal arch",
+   "norm_morph": "pharyngeal arch",
+   "tiers": {
+    "cell_type_broad": 61185,
+    "cell_type_sub": 61185
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "pharyngeal arch (early)"
+    ]
+   },
+   "n_cells": 61185,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001306",
+   "zfa_name": "pharyngeal arch",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001306",
+     "zfa_name": "pharyngeal arch",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "head mesenchyme (maybe ventral, hand2+)",
+   "norm_light": "head mesenchyme",
+   "norm_morph": "head mesenchyme",
+   "tiers": {
+    "cell_type_broad": 60365,
+    "cell_type_sub": 60365
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "head mesenchyme (maybe ventral, hand2+)"
+    ]
+   },
+   "n_cells": 60365,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000113",
+   "zfa_name": "head mesenchyme",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000113",
+     "zfa_name": "head mesenchyme",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Notochord",
+   "norm_light": "notochord",
+   "norm_morph": "notochord",
+   "tiers": {
+    "tissue": 57931
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 57931,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000135",
+   "zfa_name": "notochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000135",
+     "zfa_name": "notochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "notochord",
+   "norm_light": "notochord",
+   "norm_morph": "notochord",
+   "tiers": {
+    "cell_type_broad": 57931
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Notochord"
+    ]
+   },
+   "n_cells": 57931,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000135",
+   "zfa_name": "notochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000135",
+     "zfa_name": "notochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 2",
+   "norm_light": "periderm 2",
+   "norm_morph": "periderm 2",
+   "tiers": {
+    "cell_type_sub": 57418
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 57418,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "fin fold",
+   "norm_light": "fin fold",
+   "norm_morph": "fin fold",
+   "tiers": {
+    "cell_type_broad": 54428,
+    "cell_type_sub": 54428
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Fin"
+    ],
+    "cell_type_sub": [
+     "fin fold"
+    ]
+   },
+   "n_cells": 54428,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000040",
+     "zfa_name": "median fin fold",
+     "match_text": "median fin fold",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000089",
+     "zfa_name": "fin fold actinotrichium",
+     "match_text": "fin fold actinotrichium",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000102",
+     "zfa_name": "dorsal fin fold",
+     "match_text": "dorsal fin fold",
+     "score": 100.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 16",
+   "norm_light": "periderm 16",
+   "norm_morph": "periderm 16",
+   "tiers": {
+    "cell_type_sub": 51167
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 51167,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007099",
+     "zfa_name": "vertebra 16",
+     "match_text": "vertebra 16",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "head mesenchyme",
+   "norm_light": "head mesenchyme",
+   "norm_morph": "head mesenchyme",
+   "tiers": {
+    "cell_type_broad": 50854
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ]
+   },
+   "n_cells": 50854,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000113",
+   "zfa_name": "head mesenchyme",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000113",
+     "zfa_name": "head mesenchyme",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "head mesenchyme (contains sclerotome)",
+   "norm_light": "head mesenchyme",
+   "norm_morph": "head mesenchyme",
+   "tiers": {
+    "cell_type_sub": 50854
+   },
+   "parents": {
+    "cell_type_sub": [
+     "head mesenchyme"
+    ]
+   },
+   "n_cells": 50854,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000113",
+   "zfa_name": "head mesenchyme",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000113",
+     "zfa_name": "head mesenchyme",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "endoderm",
+   "norm_light": "endoderm",
+   "norm_morph": "endoderm",
+   "tiers": {
+    "germ_layer": 49551
+   },
+   "parents": {},
+   "n_cells": 49551,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000017",
+   "zfa_name": "endoderm",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000017",
+     "zfa_name": "endoderm",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neural progenitor (MHB)",
+   "norm_light": "neural progenitor",
+   "norm_morph": "neural progenitor",
+   "tiers": {
+    "cell_type_broad": 49499,
+    "cell_type_sub": 49499
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neural progenitor (MHB)"
+    ]
+   },
+   "n_cells": 49499,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005587",
+     "zfa_name": "nephron progenitor",
+     "match_text": "nephron progenitor",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009349",
+     "zfa_name": "pro-B cell",
+     "match_text": "progenitor b cell",
+     "score": 76.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000133",
+     "zfa_name": "neural rod",
+     "match_text": "neural rod",
+     "score": 75.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "anterior migratory muscle",
+   "norm_light": "anterior migratory muscle",
+   "norm_morph": "anterior migratory muscle",
+   "tiers": {
+    "cell_type_broad": 48219,
+    "cell_type_sub": 48219
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "anterior migratory muscle"
+    ]
+   },
+   "n_cells": 48219,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005923",
+     "zfa_name": "anterior migratory muscle precursor stream",
+     "match_text": "anterior migratory muscle precursor stream",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005921",
+     "zfa_name": "migratory muscle precursor",
+     "match_text": "migratory muscle precursor",
+     "score": 82.4,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature slow muscle 3",
+   "norm_light": "mature slow muscle 3",
+   "norm_morph": "mature slow muscle 3",
+   "tiers": {
+    "cell_type_sub": 47498
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature slow muscle"
+    ]
+   },
+   "n_cells": 47498,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009116",
+     "zfa_name": "slow muscle cell",
+     "match_text": "slow muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000722",
+     "zfa_name": "slow muscle cell somite 3",
+     "match_text": "slow muscle cell somite 3",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "notochord (late)",
+   "norm_light": "notochord",
+   "norm_morph": "notochord",
+   "tiers": {
+    "cell_type_sub": 45668
+   },
+   "parents": {
+    "cell_type_sub": [
+     "notochord"
+    ]
+   },
+   "n_cells": 45668,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000135",
+   "zfa_name": "notochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000135",
+     "zfa_name": "notochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "neural progenitor (hindbrain R7/8)",
+   "norm_light": "neural progenitor",
+   "norm_morph": "neural progenitor",
+   "tiers": {
+    "cell_type_broad": 42470,
+    "cell_type_sub": 42470
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neural progenitor (hindbrain R7/8)"
+    ]
+   },
+   "n_cells": 42470,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005587",
+     "zfa_name": "nephron progenitor",
+     "match_text": "nephron progenitor",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009349",
+     "zfa_name": "pro-B cell",
+     "match_text": "progenitor b cell",
+     "score": 76.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000133",
+     "zfa_name": "neural rod",
+     "match_text": "neural rod",
+     "score": 75.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "connective tissue-meninges-dermal FB (early)",
+   "norm_light": "connective tissue meninges dermal fb",
+   "norm_morph": "connective tissue meninges dermal fb",
+   "tiers": {
+    "cell_type_sub": 41403
+   },
+   "parents": {
+    "cell_type_sub": [
+     "connective tissue-meninges-dermal FB"
+    ]
+   },
+   "n_cells": 41403,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 87.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001634",
+     "zfa_name": "perichondrium",
+     "match_text": "cartilage connective tissue",
+     "score": 77.3,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001632",
+     "zfa_name": "portion of connective tissue",
+     "match_text": "portion of connective tissue",
+     "score": 75.6,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pharyngeal arch (contains muscle, early cartilage)",
+   "norm_light": "pharyngeal arch",
+   "norm_morph": "pharyngeal arch",
+   "tiers": {
+    "cell_type_broad": 40835,
+    "cell_type_sub": 40835
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "pharyngeal arch (contains muscle, early cartilage)"
+    ]
+   },
+   "n_cells": 40835,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001306",
+   "zfa_name": "pharyngeal arch",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001306",
+     "zfa_name": "pharyngeal arch",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "neural tube-like connective tissue (+ taste bud)",
+   "norm_light": "neural tube like connective tissue",
+   "norm_morph": "neural tube like connective tissue",
+   "tiers": {
+    "cell_type_broad": 40551,
+    "cell_type_sub": 40551
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Connective Tissue"
+    ],
+    "cell_type_sub": [
+     "neural tube-like connective tissue (+ taste bud)"
+    ]
+   },
+   "n_cells": 40551,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001135",
+     "zfa_name": "neural tube",
+     "match_text": "neural tube",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 87.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001634",
+     "zfa_name": "perichondrium",
+     "match_text": "cartilage connective tissue",
+     "score": 77.3,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Hatching Gland",
+   "norm_light": "hatching gland",
+   "norm_morph": "hatching gland",
+   "tiers": {
+    "tissue": 40214
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 40214,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000026",
+   "zfa_name": "hatching gland",
+   "caro_bucket": "",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000026",
+     "zfa_name": "hatching gland",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "hatching gland",
+   "norm_light": "hatching gland",
+   "norm_morph": "hatching gland",
+   "tiers": {
+    "cell_type_broad": 40214
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Hatching Gland"
+    ]
+   },
+   "n_cells": 40214,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000026",
+   "zfa_name": "hatching gland",
+   "caro_bucket": "",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000026",
+     "zfa_name": "hatching gland",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_ABOVE_ROOTS_cell_type_broad",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 6",
+   "norm_light": "periderm 6",
+   "norm_morph": "periderm 6",
+   "tiers": {
+    "cell_type_sub": 39886
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 39886,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 5",
+   "norm_light": "periderm 5",
+   "norm_morph": "periderm 5",
+   "tiers": {
+    "cell_type_sub": 39804
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 39804,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "endothelium (vein + early artery)",
+   "norm_light": "endothelium",
+   "norm_morph": "endothelium",
+   "tiers": {
+    "cell_type_broad": 39581,
+    "cell_type_sub": 39581
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Endothelial"
+    ],
+    "cell_type_sub": [
+     "endothelium (vein + early artery)"
+    ]
+   },
+   "n_cells": 39581,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001639",
+     "zfa_name": "vascular endothelium",
+     "match_text": "vascular endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001687",
+     "zfa_name": "corneal endothelium",
+     "match_text": "corneal endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005257",
+     "zfa_name": "blood vessel endothelium",
+     "match_text": "blood vessel endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "head/eye connective tissue",
+   "norm_light": "head/eye connective tissue",
+   "norm_morph": "head/eye connective tissue",
+   "tiers": {
+    "cell_type_broad": 39454,
+    "cell_type_sub": 39454
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Connective Tissue"
+    ],
+    "cell_type_sub": [
+     "head/eye connective tissue"
+    ]
+   },
+   "n_cells": 39454,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009392",
+     "zfa_name": "connective tissue cell",
+     "match_text": "connective tissue cell",
+     "score": 87.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001632",
+     "zfa_name": "portion of connective tissue",
+     "match_text": "portion of connective tissue",
+     "score": 79.1,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001633",
+     "zfa_name": "perichordal connective tissue",
+     "match_text": "perichordal connective tissue",
+     "score": 79.1,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 7",
+   "norm_light": "periderm 7",
+   "norm_morph": "periderm 7",
+   "tiers": {
+    "cell_type_sub": 39341
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 39341,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 11",
+   "norm_light": "periderm 11",
+   "norm_morph": "periderm 11",
+   "tiers": {
+    "cell_type_sub": 38656
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 38656,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005354",
+     "zfa_name": "vertebra 11",
+     "match_text": "vertebra 11",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature fast muscle 4",
+   "norm_light": "mature fast muscle 4",
+   "norm_morph": "mature fast muscle 4",
+   "tiers": {
+    "cell_type_sub": 38110
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 38110,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000849",
+     "zfa_name": "fast muscle cell somite 4",
+     "match_text": "fast muscle cell somite 4",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "hatching gland 2",
+   "norm_light": "hatching gland 2",
+   "norm_morph": "hatching gland 2",
+   "tiers": {
+    "cell_type_sub": 37606
+   },
+   "parents": {
+    "cell_type_sub": [
+     "hatching gland"
+    ]
+   },
+   "n_cells": 37606,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000026",
+     "zfa_name": "hatching gland",
+     "match_text": "hatching gland",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009151",
+     "zfa_name": "hatching gland cell",
+     "match_text": "hatching gland cell",
+     "score": 93.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000019",
+     "zfa_name": "epiphysis",
+     "match_text": "pineal gland",
+     "score": 58.8,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "basal cell (fn1b, cyp26a1+; posterior?)",
+   "norm_light": "basal cell",
+   "norm_morph": "basal cell",
+   "tiers": {
+    "cell_type_sub": 37176
+   },
+   "parents": {
+    "cell_type_sub": [
+     "basal cell"
+    ]
+   },
+   "n_cells": 37176,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009178",
+     "zfa_name": "blastemal cell",
+     "match_text": "blastemal cell",
+     "score": 83.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature fast muscle 1",
+   "norm_light": "mature fast muscle 1",
+   "norm_morph": "mature fast muscle 1",
+   "tiers": {
+    "cell_type_sub": 36002
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 36002,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000513",
+     "zfa_name": "fast muscle cell somite 1",
+     "match_text": "fast muscle cell somite 1",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "ionocyte/goblet cell",
+   "norm_light": "ionocyte/goblet cell",
+   "norm_morph": "ionocyte/goblet cell",
+   "tiers": {
+    "cell_type_broad": 33552
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Epidermis"
+    ]
+   },
+   "n_cells": 33552,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009142",
+     "zfa_name": "B cell",
+     "match_text": "b cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Intestine",
+   "norm_light": "intestine",
+   "norm_morph": "intestine",
+   "tiers": {
+    "tissue": 33019
+   },
+   "parents": {
+    "tissue": [
+     "endoderm"
+    ]
+   },
+   "n_cells": 33019,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001338",
+   "zfa_name": "intestine",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001338",
+     "zfa_name": "intestine",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "intestine",
+   "norm_light": "intestine",
+   "norm_morph": "intestine",
+   "tiers": {
+    "cell_type_broad": 33019
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Intestine"
+    ]
+   },
+   "n_cells": 33019,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001338",
+   "zfa_name": "intestine",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001338",
+     "zfa_name": "intestine",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "ectoderm/neural crest",
+   "norm_light": "ectoderm/neural crest",
+   "norm_morph": "ectoderm/neural crest",
+   "tiers": {
+    "germ_layer": 31846
+   },
+   "parents": {},
+   "n_cells": 31846,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001120",
+     "zfa_name": "neuroectoderm",
+     "match_text": "neural ectoderm",
+     "score": 77.8,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009165",
+     "zfa_name": "neural crest cell",
+     "match_text": "neural crest cell",
+     "score": 73.7,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000045",
+     "zfa_name": "neural crest",
+     "match_text": "neural crest",
+     "score": 72.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "head mesenchyme/PA cartilage",
+   "norm_light": "head mesenchyme/pa cartilage",
+   "norm_morph": "head mesenchyme/pa cartilage",
+   "tiers": {
+    "cell_type_broad": 31440,
+    "cell_type_sub": 31440
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "head mesenchyme/PA cartilage"
+    ]
+   },
+   "n_cells": 31440,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001114",
+     "zfa_name": "head",
+     "match_text": "head",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001501",
+     "zfa_name": "cartilage element",
+     "match_text": "cartilage",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001227",
+     "zfa_name": "mandibular arch skeleton",
+     "match_text": "jaw cartilage",
+     "score": 81.8,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "endothelium (dorsal aorta)",
+   "norm_light": "endothelium",
+   "norm_morph": "endothelium",
+   "tiers": {
+    "cell_type_broad": 31167,
+    "cell_type_sub": 31167
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Endothelial"
+    ],
+    "cell_type_sub": [
+     "endothelium (dorsal aorta)"
+    ]
+   },
+   "n_cells": 31167,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001639",
+     "zfa_name": "vascular endothelium",
+     "match_text": "vascular endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001687",
+     "zfa_name": "corneal endothelium",
+     "match_text": "corneal endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005257",
+     "zfa_name": "blood vessel endothelium",
+     "match_text": "blood vessel endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Kidney",
+   "norm_light": "kidney",
+   "norm_morph": "kidney",
+   "tiers": {
+    "tissue": 30628
+   },
+   "parents": {
+    "tissue": [
+     "endoderm",
+     "mesoderm"
+    ]
+   },
+   "n_cells": 30628,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000529",
+   "zfa_name": "kidney",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000529",
+     "zfa_name": "kidney",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Peripheral Nervous System",
+   "norm_light": "peripheral nervous system",
+   "norm_morph": "peripheral nervous system",
+   "tiers": {
+    "tissue": 29782
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm/neural crest"
+    ]
+   },
+   "n_cells": 29782,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000142",
+   "zfa_name": "peripheral nervous system",
+   "caro_bucket": "",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000142",
+     "zfa_name": "peripheral nervous system",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "Ear",
+   "norm_light": "ear",
+   "norm_morph": "ear",
+   "tiers": {
+    "tissue": 29663
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 29663,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0000217",
+   "zfa_name": "inner ear",
+   "caro_bucket": "",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000217",
+     "zfa_name": "inner ear",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "support cells/otic vesicle",
+   "norm_light": "support cells/otic vesicle",
+   "norm_morph": "support cells/otic vesicle",
+   "tiers": {
+    "cell_type_broad": 29663,
+    "cell_type_sub": 29663
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Ear"
+    ],
+    "cell_type_sub": [
+     "support cells/otic vesicle"
+    ]
+   },
+   "n_cells": 29663,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000051",
+     "zfa_name": "otic vesicle",
+     "match_text": "otic vesicle",
+     "score": 73.7,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001679",
+     "zfa_name": "solid lens vesicle",
+     "match_text": "lens vesicle",
+     "score": 73.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000050",
+     "zfa_name": "optic vesicle",
+     "match_text": "optic vesicle",
+     "score": 70.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "differentiating neuron 1",
+   "norm_light": "differentiating neuron 1",
+   "norm_morph": "differentiating neuron 1",
+   "tiers": {
+    "cell_type_broad": 29034,
+    "cell_type_sub": 29034
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "differentiating neuron 1"
+    ]
+   },
+   "n_cells": 29034,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "match_text": "ka neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009150",
+     "zfa_name": "Rohon-Beard neuron",
+     "match_text": "rb neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 1",
+   "norm_light": "periderm 1",
+   "norm_morph": "periderm 1",
+   "tiers": {
+    "cell_type_sub": 28105
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 28105,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Lateral Line",
+   "norm_light": "lateral line",
+   "norm_morph": "lateral line",
+   "tiers": {
+    "tissue": 28102
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 28102,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001469",
+   "zfa_name": "lateral line",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001469",
+     "zfa_name": "lateral line",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "fin mesenchyme",
+   "norm_light": "fin mesenchyme",
+   "norm_morph": "fin mesenchyme",
+   "tiers": {
+    "cell_type_broad": 28043,
+    "cell_type_sub": 28043
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Fin"
+    ],
+    "cell_type_sub": [
+     "fin mesenchyme"
+    ]
+   },
+   "n_cells": 28043,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000108",
+     "zfa_name": "fin",
+     "match_text": "fin",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000393",
+     "zfa_name": "mesenchyme",
+     "match_text": "mesenchyme",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000788",
+     "zfa_name": "mesenchyme dorsal fin",
+     "match_text": "mesenchyme dorsal fin",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature slow muscle 1",
+   "norm_light": "mature slow muscle 1",
+   "norm_morph": "mature slow muscle 1",
+   "tiers": {
+    "cell_type_sub": 26839
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature slow muscle"
+    ]
+   },
+   "n_cells": 26839,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009116",
+     "zfa_name": "slow muscle cell",
+     "match_text": "slow muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000963",
+     "zfa_name": "slow muscle cell somite 1",
+     "match_text": "slow muscle cell somite 1",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "fast-committed myocyte",
+   "norm_light": "fast committed myocyte",
+   "norm_morph": "fast committed myocyte",
+   "tiers": {
+    "cell_type_broad": 26642
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ]
+   },
+   "n_cells": 26642,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009114",
+     "zfa_name": "muscle cell",
+     "match_text": "myocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009316",
+     "zfa_name": "cardiac muscle cell",
+     "match_text": "cardiac myocyte",
+     "score": 63.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009090",
+     "zfa_name": "pigment cell",
+     "match_text": "chromatocyte",
+     "score": 58.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "differentiating neuron (hindbrain)",
+   "norm_light": "differentiating neuron",
+   "norm_morph": "differentiating neuron",
+   "tiers": {
+    "cell_type_broad": 25778,
+    "cell_type_sub": 25778
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "differentiating neuron (hindbrain)"
+    ]
+   },
+   "n_cells": 25778,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "match_text": "ka neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009150",
+     "zfa_name": "Rohon-Beard neuron",
+     "match_text": "rb neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "basal cell (late)",
+   "norm_light": "basal cell",
+   "norm_morph": "basal cell",
+   "tiers": {
+    "cell_type_sub": 25079
+   },
+   "parents": {
+    "cell_type_sub": [
+     "basal cell"
+    ]
+   },
+   "n_cells": 25079,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009178",
+     "zfa_name": "blastemal cell",
+     "match_text": "blastemal cell",
+     "score": 83.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pharyngeal arch (NC-derived)",
+   "norm_light": "pharyngeal arch",
+   "norm_morph": "pharyngeal arch",
+   "tiers": {
+    "cell_type_broad": 24658,
+    "cell_type_sub": 24658
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "pharyngeal arch (NC-derived)"
+    ]
+   },
+   "n_cells": 24658,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001306",
+   "zfa_name": "pharyngeal arch",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001306",
+     "zfa_name": "pharyngeal arch",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "lens",
+   "norm_light": "lens",
+   "norm_morph": "len",
+   "tiers": {
+    "cell_type_broad": 24304
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Eye"
+    ]
+   },
+   "n_cells": 24304,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000035",
+   "zfa_name": "lens",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000035",
+     "zfa_name": "lens",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Paraxial Mesoderm",
+   "norm_light": "paraxial mesoderm",
+   "norm_morph": "paraxial mesoderm",
+   "tiers": {
+    "tissue": 22151
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 22151,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000255",
+   "zfa_name": "paraxial mesoderm",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000255",
+     "zfa_name": "paraxial mesoderm",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mesodermal progenitor cells (contains PSM)",
+   "norm_light": "mesodermal progenitor cells",
+   "norm_morph": "mesodermal progenitor cell",
+   "tiers": {
+    "cell_type_broad": 22151,
+    "cell_type_sub": 22151
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Paraxial Mesoderm"
+    ],
+    "cell_type_sub": [
+     "mesodermal progenitor cells (contains PSM)"
+    ]
+   },
+   "n_cells": 22151,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009138",
+     "zfa_name": "mesodermal cell",
+     "match_text": "mesodermal cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009349",
+     "zfa_name": "pro-B cell",
+     "match_text": "progenitor b cell",
+     "score": 93.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "intestine (mid)",
+   "norm_light": "intestine",
+   "norm_morph": "intestine",
+   "tiers": {
+    "cell_type_sub": 21311
+   },
+   "parents": {
+    "cell_type_sub": [
+     "intestine"
+    ]
+   },
+   "n_cells": 21311,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001338",
+   "zfa_name": "intestine",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001338",
+     "zfa_name": "intestine",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "retinal pigmented epithelium (early)",
+   "norm_light": "retinal pigmented epithelium",
+   "norm_morph": "retinal pigmented epithelium",
+   "tiers": {
+    "cell_type_broad": 19603,
+    "cell_type_sub": 19603
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Eye"
+    ],
+    "cell_type_sub": [
+     "retinal pigmented epithelium (early)"
+    ]
+   },
+   "n_cells": 19603,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000144",
+   "zfa_name": "retinal pigmented epithelium",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000144",
+     "zfa_name": "retinal pigmented epithelium",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "pectoral fin bud (osteoblast+)",
+   "norm_light": "pectoral fin bud",
+   "norm_morph": "pectoral fin bud",
+   "tiers": {
+    "cell_type_broad": 19328,
+    "cell_type_sub": 19328
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Fin"
+    ],
+    "cell_type_sub": [
+     "pectoral fin bud (osteoblast+)"
+    ]
+   },
+   "n_cells": 19328,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000141",
+   "zfa_name": "pectoral fin bud",
+   "caro_bucket": "",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000141",
+     "zfa_name": "pectoral fin bud",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_ABOVE_ROOTS_cell_type_broad",
+    "CATEGORY_ABOVE_ROOTS_cell_type_sub",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "floor plate",
+   "norm_light": "floor plate",
+   "norm_morph": "floor plate",
+   "tiers": {
+    "cell_type_broad": 18556,
+    "cell_type_sub": 18556
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "floor plate"
+    ]
+   },
+   "n_cells": 18556,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000022",
+   "zfa_name": "floor plate",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000022",
+     "zfa_name": "floor plate",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 9",
+   "norm_light": "periderm 9",
+   "norm_morph": "periderm 9",
+   "tiers": {
+    "cell_type_sub": 17660
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 17660,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature fast muscle 3",
+   "norm_light": "mature fast muscle 3",
+   "norm_morph": "mature fast muscle 3",
+   "tiers": {
+    "cell_type_sub": 17457
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 17457,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000758",
+     "zfa_name": "fast muscle cell somite 3",
+     "match_text": "fast muscle cell somite 3",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Blood",
+   "norm_light": "blood",
+   "norm_morph": "blood",
+   "tiers": {
+    "tissue": 17337
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 17337,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000007",
+   "zfa_name": "blood",
+   "caro_bucket": "",
+   "depth": 2,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000007",
+     "zfa_name": "blood",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_TISSUE_ABOVE_ROOTS"
+   ]
+  },
+  {
+   "string": "fast-committed myocyte (fusing)",
+   "norm_light": "fast committed myocyte",
+   "norm_morph": "fast committed myocyte",
+   "tiers": {
+    "cell_type_sub": 16790
+   },
+   "parents": {
+    "cell_type_sub": [
+     "fast-committed myocyte"
+    ]
+   },
+   "n_cells": 16790,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009114",
+     "zfa_name": "muscle cell",
+     "match_text": "myocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009316",
+     "zfa_name": "cardiac muscle cell",
+     "match_text": "cardiac myocyte",
+     "score": 63.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009090",
+     "zfa_name": "pigment cell",
+     "match_text": "chromatocyte",
+     "score": 58.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuromast support cell",
+   "norm_light": "neuromast support cell",
+   "norm_morph": "neuromast support cell",
+   "tiers": {
+    "cell_type_broad": 16585,
+    "cell_type_sub": 16585
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Lateral Line"
+    ],
+    "cell_type_sub": [
+     "neuromast support cell"
+    ]
+   },
+   "n_cells": 16585,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009363",
+   "zfa_name": "neuromast support cell",
+   "caro_bucket": "cell",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009363",
+     "zfa_name": "neuromast support cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "melanophore",
+   "norm_light": "melanophore",
+   "norm_morph": "melanophore",
+   "tiers": {
+    "cell_type_broad": 16576,
+    "cell_type_sub": 16576
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Epidermis"
+    ],
+    "cell_type_sub": [
+     "melanophore"
+    ]
+   },
+   "n_cells": 16576,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0009091",
+   "zfa_name": "melanocyte",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009091",
+     "zfa_name": "melanocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuron (cranial ganglia sensory, Rohon-Beard)",
+   "norm_light": "neuron",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 16497,
+    "cell_type_sub": 6550
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Peripheral Nervous System"
+    ],
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 16497,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cranial muscle (early)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "cell_type_broad": 16393,
+    "cell_type_sub": 16393
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "cranial muscle (early)"
+    ]
+   },
+   "n_cells": 16393,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "pronephros proximal tubule",
+   "norm_light": "pronephros proximal tubule",
+   "norm_morph": "pronephros proximal tubule",
+   "tiers": {
+    "cell_type_broad": 16047,
+    "cell_type_sub": 16047
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Kidney"
+    ],
+    "cell_type_sub": [
+     "pronephros proximal tubule"
+    ]
+   },
+   "n_cells": 16047,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001621",
+     "zfa_name": "pronephric proximal straight tubule",
+     "match_text": "pronephric proximal straight tubule",
+     "score": 82.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001621",
+     "zfa_name": "pronephric proximal straight tubule",
+     "match_text": "proximal straight tubule",
+     "score": 76.9,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005291",
+     "zfa_name": "proximal straight tubule",
+     "match_text": "proximal straight tubule",
+     "score": 76.9,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "xanthophore",
+   "norm_light": "xanthophore",
+   "norm_morph": "xanthophore",
+   "tiers": {
+    "cell_type_broad": 15736,
+    "cell_type_sub": 15736
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Epidermis"
+    ],
+    "cell_type_sub": [
+     "xanthophore"
+    ]
+   },
+   "n_cells": 15736,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009198",
+   "zfa_name": "xanthophore",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009198",
+     "zfa_name": "xanthophore",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 18",
+   "norm_light": "periderm 18",
+   "norm_morph": "periderm 18",
+   "tiers": {
+    "cell_type_sub": 15615
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 15615,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007101",
+     "zfa_name": "vertebra 18",
+     "match_text": "vertebra 18",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cranial muscle (non-somitic, fast-twitch)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "cell_type_broad": 15239,
+    "cell_type_sub": 15239
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "cranial muscle (non-somitic, fast-twitch)"
+    ]
+   },
+   "n_cells": 15239,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "lens (early)",
+   "norm_light": "lens",
+   "norm_morph": "len",
+   "tiers": {
+    "cell_type_sub": 15147
+   },
+   "parents": {
+    "cell_type_sub": [
+     "lens"
+    ]
+   },
+   "n_cells": 15147,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000035",
+   "zfa_name": "lens",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000035",
+     "zfa_name": "lens",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Cranial NC",
+   "norm_light": "cranial nc",
+   "norm_morph": "cranial nc",
+   "tiers": {
+    "tissue": 15002
+   },
+   "parents": {
+    "tissue": [
+     "neural crest"
+    ]
+   },
+   "n_cells": 15002,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000013",
+     "zfa_name": "cranial ganglion",
+     "match_text": "cranial ganglion",
+     "score": 82.4,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000247",
+     "zfa_name": "cranial nerve VIII",
+     "match_text": "cranial nerve viii",
+     "score": 82.4,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000249",
+     "zfa_name": "cranial nerve I",
+     "match_text": "cranial nerve i",
+     "score": 82.4,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cranial neural crest",
+   "norm_light": "cranial neural crest",
+   "norm_morph": "cranial neural crest",
+   "tiers": {
+    "cell_type_broad": 15002
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial NC"
+    ]
+   },
+   "n_cells": 15002,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001194",
+   "zfa_name": "cranial neural crest",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001194",
+     "zfa_name": "cranial neural crest",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "cranial neural crest (ntm, foxd3+)",
+   "norm_light": "cranial neural crest",
+   "norm_morph": "cranial neural crest",
+   "tiers": {
+    "cell_type_sub": 15002
+   },
+   "parents": {
+    "cell_type_sub": [
+     "cranial neural crest"
+    ]
+   },
+   "n_cells": 15002,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001194",
+   "zfa_name": "cranial neural crest",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001194",
+     "zfa_name": "cranial neural crest",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "motor neuron",
+   "norm_light": "motor neuron",
+   "norm_morph": "motor neuron",
+   "tiers": {
+    "cell_type_broad": 14780
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ]
+   },
+   "n_cells": 14780,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009052",
+   "zfa_name": "motor neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009052",
+     "zfa_name": "motor neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "motor neuron (hindbrain, spinal cord, enteric)",
+   "norm_light": "motor neuron",
+   "norm_morph": "motor neuron",
+   "tiers": {
+    "cell_type_sub": 14780
+   },
+   "parents": {
+    "cell_type_sub": [
+     "motor neuron"
+    ]
+   },
+   "n_cells": 14780,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009052",
+   "zfa_name": "motor neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009052",
+     "zfa_name": "motor neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "posterior spinal cord progenitors",
+   "norm_light": "posterior spinal cord progenitors",
+   "norm_morph": "posterior spinal cord progenitor",
+   "tiers": {
+    "cell_type_broad": 14756,
+    "cell_type_sub": 14756
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "posterior spinal cord progenitors"
+    ]
+   },
+   "n_cells": 14756,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000075",
+     "zfa_name": "spinal cord",
+     "match_text": "spinal cord",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000094",
+     "zfa_name": "blood island",
+     "match_text": "posterior icm",
+     "score": 81.8,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001426",
+     "zfa_name": "posterior naris",
+     "match_text": "posterior nare",
+     "score": 78.3,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 3",
+   "norm_light": "periderm 3",
+   "norm_morph": "periderm 3",
+   "tiers": {
+    "cell_type_sub": 13587
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 13587,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuron (cranial ganglion)",
+   "norm_light": "neuron",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 13285,
+    "cell_type_sub": 13285
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Peripheral Nervous System"
+    ],
+    "cell_type_sub": [
+     "neuron (cranial ganglion)"
+    ]
+   },
+   "n_cells": 13285,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "retinal neuron (RGC, photoreceptor, bipolar cell)",
+   "norm_light": "retinal neuron",
+   "norm_morph": "retinal neuron",
+   "tiers": {
+    "cell_type_sub": 13195
+   },
+   "parents": {
+    "cell_type_sub": [
+     "retinal neuron"
+    ]
+   },
+   "n_cells": 13195,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009318",
+     "zfa_name": "retinal bipolar neuron",
+     "match_text": "retinal bipolar neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000046",
+     "zfa_name": "retinal neural layer",
+     "match_text": "neuroretina",
+     "score": 88.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Pigment",
+   "norm_light": "pigment",
+   "norm_morph": "pigment",
+   "tiers": {
+    "tissue": 13102
+   },
+   "parents": {
+    "tissue": [
+     "neural crest"
+    ]
+   },
+   "n_cells": 13102,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005331",
+     "zfa_name": "pigment erythroblast",
+     "match_text": "pigment erythroblast",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009090",
+     "zfa_name": "pigment cell",
+     "match_text": "pigment cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009170",
+     "zfa_name": "pigment cell (sensu Vertebrata)",
+     "match_text": "pigment cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "glia",
+   "norm_light": "glia",
+   "norm_morph": "glia",
+   "tiers": {
+    "cell_type_broad": 12469,
+    "cell_type_sub": 6118
+   },
+   "parents": {
+    "cell_type_broad": [
+     "CNS/Neural crest",
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "glia"
+    ]
+   },
+   "n_cells": 12469,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005971",
+     "zfa_name": "motor exit point glia",
+     "match_text": "motor exit point glia",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005971",
+     "zfa_name": "motor exit point glia",
+     "match_text": "mep glia",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000190",
+     "zfa_name": "ganglion",
+     "match_text": "ganglia",
+     "score": 72.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mesoderm/neural crest",
+   "norm_light": "mesoderm/neural crest",
+   "norm_morph": "mesoderm/neural crest",
+   "tiers": {
+    "germ_layer": 12414
+   },
+   "parents": {},
+   "n_cells": 12414,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000045",
+     "zfa_name": "neural crest",
+     "match_text": "neural crest",
+     "score": 72.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009138",
+     "zfa_name": "mesodermal cell",
+     "match_text": "mesodermal cell",
+     "score": 72.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001120",
+     "zfa_name": "neuroectoderm",
+     "match_text": "neural ectoderm",
+     "score": 72.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "notochord (early)",
+   "norm_light": "notochord",
+   "norm_morph": "notochord",
+   "tiers": {
+    "cell_type_sub": 12263
+   },
+   "parents": {
+    "cell_type_sub": [
+     "notochord"
+    ]
+   },
+   "n_cells": 12263,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000135",
+   "zfa_name": "notochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000135",
+     "zfa_name": "notochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Olfactory",
+   "norm_light": "olfactory",
+   "norm_morph": "olfactory",
+   "tiers": {
+    "tissue": 12019
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 12019,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000047",
+     "zfa_name": "peripheral olfactory organ",
+     "match_text": "peripheral olfactory organ",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000048",
+     "zfa_name": "olfactory placode",
+     "match_text": "olfactory placode",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000130",
+     "zfa_name": "olfactory pit",
+     "match_text": "olfactory pit",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "olfactory vesicle/bulb",
+   "norm_light": "olfactory vesicle/bulb",
+   "norm_morph": "olfactory vesicle/bulb",
+   "tiers": {
+    "cell_type_broad": 12019,
+    "cell_type_sub": 12019
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Olfactory"
+    ],
+    "cell_type_sub": [
+     "olfactory vesicle/bulb"
+    ]
+   },
+   "n_cells": 12019,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000130",
+     "zfa_name": "olfactory pit",
+     "match_text": "olfactory pit",
+     "score": 81.8,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000402",
+     "zfa_name": "olfactory bulb",
+     "match_text": "olfactory bulb",
+     "score": 78.3,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000402",
+     "zfa_name": "olfactory bulb",
+     "match_text": "olfactory lobe",
+     "score": 78.3,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 17",
+   "norm_light": "periderm 17",
+   "norm_morph": "periderm 17",
+   "tiers": {
+    "cell_type_sub": 11568
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 11568,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007100",
+     "zfa_name": "vertebra 17",
+     "match_text": "vertebra 17",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pronephros distal tubule",
+   "norm_light": "pronephros distal tubule",
+   "norm_morph": "pronephros distal tubule",
+   "tiers": {
+    "cell_type_broad": 11546,
+    "cell_type_sub": 11546
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Kidney"
+    ],
+    "cell_type_sub": [
+     "pronephros distal tubule"
+    ]
+   },
+   "n_cells": 11546,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001624",
+     "zfa_name": "pronephric distal late tubule",
+     "match_text": "distal late tubule",
+     "score": 83.9,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005292",
+     "zfa_name": "distal late tubule",
+     "match_text": "distal late tubule",
+     "score": 83.9,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001624",
+     "zfa_name": "pronephric distal late tubule",
+     "match_text": "pronephric distal late tubule",
+     "score": 83.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Heart",
+   "norm_light": "heart",
+   "norm_morph": "heart",
+   "tiers": {
+    "tissue": 11450
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 11450,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000114",
+   "zfa_name": "heart",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000114",
+     "zfa_name": "heart",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cardiomyocyte",
+   "norm_light": "cardiomyocyte",
+   "norm_morph": "cardiomyocyte",
+   "tiers": {
+    "cell_type_broad": 11450,
+    "cell_type_sub": 11450
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Heart"
+    ],
+    "cell_type_sub": [
+     "cardiomyocyte"
+    ]
+   },
+   "n_cells": 11450,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0009316",
+   "zfa_name": "cardiac muscle cell",
+   "caro_bucket": "cell",
+   "depth": 7,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009316",
+     "zfa_name": "cardiac muscle cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "jaw chondrocyte",
+   "norm_light": "jaw chondrocyte",
+   "norm_morph": "jaw chondrocyte",
+   "tiers": {
+    "cell_type_broad": 11206,
+    "cell_type_sub": 11206
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "jaw chondrocyte"
+    ]
+   },
+   "n_cells": 11206,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009084",
+     "zfa_name": "chondrocyte",
+     "match_text": "chondrocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001227",
+     "zfa_name": "mandibular arch skeleton",
+     "match_text": "jaw",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009312",
+     "zfa_name": "periarticular chondrocyte",
+     "match_text": "periarticular chondrocyte",
+     "score": 84.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuron (telencephalon, glutamatergic)",
+   "norm_light": "neuron",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 11174,
+    "cell_type_sub": 11174
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neuron (telencephalon, glutamatergic)"
+    ]
+   },
+   "n_cells": 11174,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cranial muscle (progenitor)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "cell_type_broad": 11080,
+    "cell_type_sub": 11080
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "cranial muscle (progenitor)"
+    ]
+   },
+   "n_cells": 11080,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "intestine (early)",
+   "norm_light": "intestine",
+   "norm_morph": "intestine",
+   "tiers": {
+    "cell_type_sub": 10861
+   },
+   "parents": {
+    "cell_type_sub": [
+     "intestine"
+    ]
+   },
+   "n_cells": 10861,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001338",
+   "zfa_name": "intestine",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001338",
+     "zfa_name": "intestine",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "goblet cell",
+   "norm_light": "goblet cell",
+   "norm_morph": "goblet cell",
+   "tiers": {
+    "cell_type_sub": 10757
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 10757,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009094",
+   "zfa_name": "goblet cell",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009094",
+     "zfa_name": "goblet cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "myeloid cell",
+   "norm_light": "myeloid cell",
+   "norm_morph": "myeloid cell",
+   "tiers": {
+    "cell_type_broad": 10678
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Blood"
+    ]
+   },
+   "n_cells": 10678,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009324",
+   "zfa_name": "myeloid cell",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009324",
+     "zfa_name": "myeloid cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "differentiating neuron 2",
+   "norm_light": "differentiating neuron 2",
+   "norm_morph": "differentiating neuron 2",
+   "tiers": {
+    "cell_type_broad": 10118,
+    "cell_type_sub": 10118
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "differentiating neuron 2"
+    ]
+   },
+   "n_cells": 10118,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "match_text": "ka neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009150",
+     "zfa_name": "Rohon-Beard neuron",
+     "match_text": "rb neuron",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature slow muscle 2",
+   "norm_light": "mature slow muscle 2",
+   "norm_morph": "mature slow muscle 2",
+   "tiers": {
+    "cell_type_sub": 9879
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature slow muscle"
+    ]
+   },
+   "n_cells": 9879,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009116",
+     "zfa_name": "slow muscle cell",
+     "match_text": "slow muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000843",
+     "zfa_name": "slow muscle cell somite 2",
+     "match_text": "slow muscle cell somite 2",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "fast-committed myocyte (pre-fusion)",
+   "norm_light": "fast committed myocyte",
+   "norm_morph": "fast committed myocyte",
+   "tiers": {
+    "cell_type_sub": 9852
+   },
+   "parents": {
+    "cell_type_sub": [
+     "fast-committed myocyte"
+    ]
+   },
+   "n_cells": 9852,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009114",
+     "zfa_name": "muscle cell",
+     "match_text": "myocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009316",
+     "zfa_name": "cardiac muscle cell",
+     "match_text": "cardiac myocyte",
+     "score": 63.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009090",
+     "zfa_name": "pigment cell",
+     "match_text": "chromatocyte",
+     "score": 58.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 19",
+   "norm_light": "periderm 19",
+   "norm_morph": "periderm 19",
+   "tiers": {
+    "cell_type_sub": 9092
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 9092,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007102",
+     "zfa_name": "vertebra 19",
+     "match_text": "vertebra 19",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "lens (late)",
+   "norm_light": "lens",
+   "norm_morph": "len",
+   "tiers": {
+    "cell_type_sub": 9064
+   },
+   "parents": {
+    "cell_type_sub": [
+     "lens"
+    ]
+   },
+   "n_cells": 9064,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000035",
+   "zfa_name": "lens",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000035",
+     "zfa_name": "lens",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "fin bud mesoderm (pectoral)",
+   "norm_light": "fin bud mesoderm",
+   "norm_morph": "fin bud mesoderm",
+   "tiers": {
+    "cell_type_broad": 9049,
+    "cell_type_sub": 9049
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Fin"
+    ],
+    "cell_type_sub": [
+     "fin bud mesoderm (pectoral)"
+    ]
+   },
+   "n_cells": 9049,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000041",
+     "zfa_name": "mesoderm",
+     "match_text": "mesoderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000108",
+     "zfa_name": "fin",
+     "match_text": "fin",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000789",
+     "zfa_name": "mesoderm pectoral fin bud",
+     "match_text": "mesoderm pectoral fin bud",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "ionocyte",
+   "norm_light": "ionocyte",
+   "norm_morph": "ionocyte",
+   "tiers": {
+    "cell_type_sub": 8574
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 8574,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005323",
+   "zfa_name": "ionocyte",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005323",
+     "zfa_name": "ionocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "roof plate, flexural + subcommissural organ",
+   "norm_light": "flexural + subcommissural organ roof plate",
+   "norm_morph": "flexural + subcommissural organ roof plate",
+   "tiers": {
+    "cell_type_broad": 8452,
+    "cell_type_sub": 8452
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "roof plate, flexural + subcommissural organ"
+    ]
+   },
+   "n_cells": 8452,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000683",
+     "zfa_name": "subcommissural organ",
+     "match_text": "subcommissural organ",
+     "score": 100.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007058",
+     "zfa_name": "roof plate",
+     "match_text": "roof plate",
+     "score": 100.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007071",
+     "zfa_name": "flexural organ",
+     "match_text": "flexural organ",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "cranial muscle (mid)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "cell_type_broad": 8264,
+    "cell_type_sub": 8264
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "cranial muscle (mid)"
+    ]
+   },
+   "n_cells": 8264,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "Head Mesoderm",
+   "norm_light": "head mesoderm",
+   "norm_morph": "head mesoderm",
+   "tiers": {
+    "tissue": 8175
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm",
+     "mesoderm/neural crest"
+    ]
+   },
+   "n_cells": 8175,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000041",
+     "zfa_name": "mesoderm",
+     "match_text": "mesoderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000998",
+     "zfa_name": "mesenchyme derived from head mesoderm",
+     "match_text": "mesenchyme derived from head mesoderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001114",
+     "zfa_name": "head",
+     "match_text": "head",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periocular mesenchyme",
+   "norm_light": "periocular mesenchyme",
+   "norm_morph": "periocular mesenchyme",
+   "tiers": {
+    "cell_type_broad": 8175,
+    "cell_type_sub": 8175
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Head Mesoderm"
+    ],
+    "cell_type_sub": [
+     "periocular mesenchyme"
+    ]
+   },
+   "n_cells": 8175,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005572",
+   "zfa_name": "periocular mesenchyme",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005572",
+     "zfa_name": "periocular mesenchyme",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "contains head vasculature?",
+   "norm_light": "contains head vasculature?",
+   "norm_morph": "contains head vasculature?",
+   "tiers": {
+    "cell_type_broad": 8039,
+    "cell_type_sub": 8039
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Connective Tissue"
+    ],
+    "cell_type_sub": [
+     "contains head vasculature?"
+    ]
+   },
+   "n_cells": 8039,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001114",
+     "zfa_name": "head",
+     "match_text": "head",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001267",
+     "zfa_name": "cranial vasculature",
+     "match_text": "head vasculature",
+     "score": 76.2,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001267",
+     "zfa_name": "cranial vasculature",
+     "match_text": "cranial vasculature",
+     "score": 71.1,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "iridophore",
+   "norm_light": "iridophore",
+   "norm_morph": "iridophore",
+   "tiers": {
+    "cell_type_broad": 7226,
+    "cell_type_sub": 7226
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pigment"
+    ],
+    "cell_type_sub": [
+     "iridophore"
+    ]
+   },
+   "n_cells": 7226,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009199",
+   "zfa_name": "iridophore",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009199",
+     "zfa_name": "iridophore",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "goblet cell (Ca2+)",
+   "norm_light": "goblet cell",
+   "norm_morph": "goblet cell",
+   "tiers": {
+    "cell_type_sub": 7053
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 7053,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009094",
+   "zfa_name": "goblet cell",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009094",
+     "zfa_name": "goblet cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "posterior lateral line primordium",
+   "norm_light": "posterior lateral line primordium",
+   "norm_morph": "posterior lateral line primordium",
+   "tiers": {
+    "cell_type_broad": 6933,
+    "cell_type_sub": 6933
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Lateral Line"
+    ],
+    "cell_type_sub": [
+     "posterior lateral line primordium"
+    ]
+   },
+   "n_cells": 6933,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001157",
+   "zfa_name": "posterior lateral line primordium",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001157",
+     "zfa_name": "posterior lateral line primordium",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "cranial muscle (late)",
+   "norm_light": "cranial muscle",
+   "norm_morph": "cranial muscle",
+   "tiers": {
+    "cell_type_broad": 6819,
+    "cell_type_sub": 6819
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "cranial muscle (late)"
+    ]
+   },
+   "n_cells": 6819,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0001652",
+   "zfa_name": "head muscle",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001652",
+     "zfa_name": "head muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "red blood cell",
+   "norm_light": "red blood cell",
+   "norm_morph": "red blood cell",
+   "tiers": {
+    "cell_type_broad": 6659,
+    "cell_type_sub": 6659
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Blood"
+    ],
+    "cell_type_sub": [
+     "red blood cell"
+    ]
+   },
+   "n_cells": 6659,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0009256",
+   "zfa_name": "nucleate erythrocyte",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009256",
+     "zfa_name": "nucleate erythrocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 13",
+   "norm_light": "periderm 13",
+   "norm_morph": "periderm 13",
+   "tiers": {
+    "cell_type_sub": 6114
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 6114,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007096",
+     "zfa_name": "vertebra 13",
+     "match_text": "vertebra 13",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neural crest + pigment cell progenitor",
+   "norm_light": "neural crest + pigment cell progenitor",
+   "norm_morph": "neural crest + pigment cell progenitor",
+   "tiers": {
+    "cell_type_broad": 5876,
+    "cell_type_sub": 5876
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pigment"
+    ],
+    "cell_type_sub": [
+     "neural crest + pigment cell progenitor"
+    ]
+   },
+   "n_cells": 5876,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000045",
+     "zfa_name": "neural crest",
+     "match_text": "neural crest",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009090",
+     "zfa_name": "pigment cell",
+     "match_text": "pigment cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "myoblast",
+   "norm_light": "myoblast",
+   "norm_morph": "myoblast",
+   "tiers": {
+    "cell_type_broad": 5823,
+    "cell_type_sub": 5823
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "myoblast"
+    ]
+   },
+   "n_cells": 5823,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009025",
+   "zfa_name": "myoblast",
+   "caro_bucket": "cell",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009025",
+     "zfa_name": "myoblast",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 20",
+   "norm_light": "periderm 20",
+   "norm_morph": "periderm 20",
+   "tiers": {
+    "cell_type_sub": 5610
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 5610,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007103",
+     "zfa_name": "vertebra 20",
+     "match_text": "vertebra 20",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuron (+ spinal cord)",
+   "norm_light": "neuron",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 5565,
+    "cell_type_sub": 5565
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neuron (+ spinal cord)"
+    ]
+   },
+   "n_cells": 5565,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "macrophage",
+   "norm_light": "macrophage",
+   "norm_morph": "macrophage",
+   "tiers": {
+    "cell_type_sub": 5398
+   },
+   "parents": {
+    "cell_type_sub": [
+     "myeloid cell"
+    ]
+   },
+   "n_cells": 5398,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009141",
+   "zfa_name": "macrophage",
+   "caro_bucket": "cell",
+   "depth": 6,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009141",
+     "zfa_name": "macrophage",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neutrophil",
+   "norm_light": "neutrophil",
+   "norm_morph": "neutrophil",
+   "tiers": {
+    "cell_type_sub": 5280
+   },
+   "parents": {
+    "cell_type_sub": [
+     "myeloid cell"
+    ]
+   },
+   "n_cells": 5280,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009327",
+   "zfa_name": "neutrophil",
+   "caro_bucket": "cell",
+   "depth": 7,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009327",
+     "zfa_name": "neutrophil",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "mature fast muscle 5",
+   "norm_light": "mature fast muscle 5",
+   "norm_morph": "mature fast muscle 5",
+   "tiers": {
+    "cell_type_sub": 5248
+   },
+   "parents": {
+    "cell_type_sub": [
+     "mature fast muscle"
+    ]
+   },
+   "n_cells": 5248,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005145",
+     "zfa_name": "muscle",
+     "match_text": "muscle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009117",
+     "zfa_name": "fast muscle cell",
+     "match_text": "fast muscle cell",
+     "score": 81.5,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000759",
+     "zfa_name": "fast muscle cell somite 5",
+     "match_text": "fast muscle cell somite 5",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Pancreas",
+   "norm_light": "pancreas",
+   "norm_morph": "pancreas",
+   "tiers": {
+    "tissue": 5230
+   },
+   "parents": {
+    "tissue": [
+     "endoderm"
+    ]
+   },
+   "n_cells": 5230,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000140",
+   "zfa_name": "pancreas",
+   "caro_bucket": "organ",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000140",
+     "zfa_name": "pancreas",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pancreas",
+   "norm_light": "pancreas",
+   "norm_morph": "pancreas",
+   "tiers": {
+    "cell_type_broad": 5230,
+    "cell_type_sub": 3613
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pancreas"
+    ],
+    "cell_type_sub": [
+     "pancreas"
+    ]
+   },
+   "n_cells": 5230,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000140",
+   "zfa_name": "pancreas",
+   "caro_bucket": "organ",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000140",
+     "zfa_name": "pancreas",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:organ",
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Liver",
+   "norm_light": "liver",
+   "norm_morph": "liver",
+   "tiers": {
+    "tissue": 5180
+   },
+   "parents": {
+    "tissue": [
+     "endoderm"
+    ]
+   },
+   "n_cells": 5180,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000123",
+   "zfa_name": "liver",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000123",
+     "zfa_name": "liver",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "liver",
+   "norm_light": "liver",
+   "norm_morph": "liver",
+   "tiers": {
+    "cell_type_broad": 5180,
+    "cell_type_sub": 5180
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Liver"
+    ],
+    "cell_type_sub": [
+     "liver"
+    ]
+   },
+   "n_cells": 5180,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000123",
+   "zfa_name": "liver",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000123",
+     "zfa_name": "liver",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:organ",
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "endothelium (f8+, clic2+)",
+   "norm_light": "endothelium",
+   "norm_morph": "endothelium",
+   "tiers": {
+    "cell_type_broad": 5175,
+    "cell_type_sub": 5175
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Endothelial"
+    ],
+    "cell_type_sub": [
+     "endothelium (f8+, clic2+)"
+    ]
+   },
+   "n_cells": 5175,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001639",
+     "zfa_name": "vascular endothelium",
+     "match_text": "vascular endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001687",
+     "zfa_name": "corneal endothelium",
+     "match_text": "corneal endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005257",
+     "zfa_name": "blood vessel endothelium",
+     "match_text": "blood vessel endothelium",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "chondrocranium",
+   "norm_light": "chondrocranium",
+   "norm_morph": "chondrocranium",
+   "tiers": {
+    "cell_type_broad": 5003,
+    "cell_type_sub": 5003
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "chondrocranium"
+    ]
+   },
+   "n_cells": 5003,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001424",
+   "zfa_name": "chondrocranium",
+   "caro_bucket": "",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001424",
+     "zfa_name": "chondrocranium",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_ABOVE_ROOTS_cell_type_broad",
+    "CATEGORY_ABOVE_ROOTS_cell_type_sub",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 12",
+   "norm_light": "periderm 12",
+   "norm_morph": "periderm 12",
+   "tiers": {
+    "cell_type_sub": 4650
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 4650,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005352",
+     "zfa_name": "vertebra 12",
+     "match_text": "vertebra 12",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "hair cell",
+   "norm_light": "hair cell",
+   "norm_morph": "hair cell",
+   "tiers": {
+    "cell_type_broad": 4584,
+    "cell_type_sub": 4584
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Lateral Line"
+    ],
+    "cell_type_sub": [
+     "hair cell"
+    ]
+   },
+   "n_cells": 4584,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009366",
+   "zfa_name": "hair cell",
+   "caro_bucket": "cell",
+   "depth": 8,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009366",
+     "zfa_name": "hair cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "radial glia",
+   "norm_light": "radial glia",
+   "norm_morph": "radial glia",
+   "tiers": {
+    "cell_type_sub": 4287
+   },
+   "parents": {
+    "cell_type_sub": [
+     "glia"
+    ]
+   },
+   "n_cells": 4287,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000271",
+     "zfa_name": "radial",
+     "match_text": "radial",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009292",
+     "zfa_name": "radial glial cell",
+     "match_text": "radial glial cell",
+     "score": 78.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000508",
+     "zfa_name": "pelvic radial",
+     "match_text": "pelvic radial",
+     "score": 75.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "enveloping layer (EVL)",
+   "norm_light": "enveloping layer",
+   "norm_morph": "enveloping layer",
+   "tiers": {
+    "cell_type_broad": 3985,
+    "cell_type_sub": 3985
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Epidermis"
+    ],
+    "cell_type_sub": [
+     "enveloping layer (EVL)"
+    ]
+   },
+   "n_cells": 3985,
+   "outcome": "PROPOSE",
+   "rule": "R2",
+   "zfa_id": "ZFA:0000086",
+   "zfa_name": "EVL",
+   "caro_bucket": "",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000086",
+     "zfa_name": "EVL",
+     "caro_bucket": "",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": [
+    "CATEGORY_ABOVE_ROOTS_cell_type_broad",
+    "CATEGORY_ABOVE_ROOTS_cell_type_sub",
+    "DEMOTED_FROM_AUTOBIND:R2"
+   ]
+  },
+  {
+   "string": "unknown (dcn+, col6+)",
+   "norm_light": "unknown",
+   "norm_morph": "unknown",
+   "tiers": {
+    "cell_type_broad": 3724,
+    "cell_type_sub": 3724
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "unknown (dcn+, col6+)"
+    ]
+   },
+   "n_cells": 3724,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001115",
+     "zfa_name": "trunk",
+     "match_text": "trunk",
+     "score": 50.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "match_text": "ka neuron",
+     "score": 50.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009067",
+     "zfa_name": "CNS neuron (sensu Vertebrata)",
+     "match_text": "cns neuron",
+     "score": 47.1,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "KA neuron",
+   "norm_light": "ka neuron",
+   "norm_morph": "ka neuron",
+   "tiers": {
+    "cell_type_broad": 3654,
+    "cell_type_sub": 3654
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "KA neuron"
+    ]
+   },
+   "n_cells": 3654,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0005240",
+   "zfa_name": "Kolmer-Agduhr neuron",
+   "caro_bucket": "cell",
+   "depth": 9,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Retina",
+   "norm_light": "retina",
+   "norm_morph": "retina",
+   "tiers": {
+    "tissue": 3470
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 3470,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000152",
+   "zfa_name": "retina",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000152",
+     "zfa_name": "retina",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "retinal pigmented epithelium (late)",
+   "norm_light": "retinal pigmented epithelium",
+   "norm_morph": "retinal pigmented epithelium",
+   "tiers": {
+    "cell_type_broad": 3470,
+    "cell_type_sub": 3470
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Retina"
+    ],
+    "cell_type_sub": [
+     "retinal pigmented epithelium (late)"
+    ]
+   },
+   "n_cells": 3470,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000144",
+   "zfa_name": "retinal pigmented epithelium",
+   "caro_bucket": "tissue",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000144",
+     "zfa_name": "retinal pigmented epithelium",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "cranial ganglion progenitor",
+   "norm_light": "cranial ganglion progenitor",
+   "norm_morph": "cranial ganglion progenitor",
+   "tiers": {
+    "cell_type_sub": 3291
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 3291,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000013",
+     "zfa_name": "cranial ganglion",
+     "match_text": "cranial ganglion",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000190",
+     "zfa_name": "ganglion",
+     "match_text": "ganglion",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000295",
+     "zfa_name": "trigeminal ganglion",
+     "match_text": "5th ganglion",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "slow-committed myocyte",
+   "norm_light": "slow committed myocyte",
+   "norm_morph": "slow committed myocyte",
+   "tiers": {
+    "cell_type_broad": 3270,
+    "cell_type_sub": 3270
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "slow-committed myocyte"
+    ]
+   },
+   "n_cells": 3270,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009114",
+     "zfa_name": "muscle cell",
+     "match_text": "myocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009316",
+     "zfa_name": "cardiac muscle cell",
+     "match_text": "cardiac myocyte",
+     "score": 63.6,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009116",
+     "zfa_name": "slow muscle cell",
+     "match_text": "slow muscle cell",
+     "score": 57.9,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Hypochord",
+   "norm_light": "hypochord",
+   "norm_morph": "hypochord",
+   "tiers": {
+    "tissue": 3149
+   },
+   "parents": {
+    "tissue": [
+     "mesoderm"
+    ]
+   },
+   "n_cells": 3149,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000031",
+   "zfa_name": "hypochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000031",
+     "zfa_name": "hypochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "hypochord",
+   "norm_light": "hypochord",
+   "norm_morph": "hypochord",
+   "tiers": {
+    "cell_type_broad": 3149,
+    "cell_type_sub": 3149
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Hypochord"
+    ],
+    "cell_type_sub": [
+     "hypochord"
+    ]
+   },
+   "n_cells": 3149,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000031",
+   "zfa_name": "hypochord",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000031",
+     "zfa_name": "hypochord",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "satellite cells",
+   "norm_light": "satellite cells",
+   "norm_morph": "satellite cell",
+   "tiers": {
+    "cell_type_broad": 3111,
+    "cell_type_sub": 3111
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Cranial Muscle (Late)",
+     "Muscle"
+    ],
+    "cell_type_sub": [
+     "satellite cells"
+    ]
+   },
+   "n_cells": 3111,
+   "outcome": "PROPOSE",
+   "rule": "R6",
+   "zfa_id": "ZFA:0009235",
+   "zfa_name": "smooth muscle myoblast",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009235",
+     "zfa_name": "smooth muscle myoblast",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R6"
+    }
+   ],
+   "flags": [
+    "LOW_CONFIDENCE_RELATED"
+   ]
+  },
+  {
+   "string": "dorsal spinal cord neuron",
+   "norm_light": "dorsal spinal cord neuron",
+   "norm_morph": "dorsal spinal cord neuron",
+   "tiers": {
+    "cell_type_broad": 2925,
+    "cell_type_sub": 2925
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "dorsal spinal cord neuron"
+    ]
+   },
+   "n_cells": 2925,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000075",
+     "zfa_name": "spinal cord",
+     "match_text": "spinal cord",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "match_text": "neuron",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000649",
+     "zfa_name": "dorsal horn spinal cord",
+     "match_text": "dorsal horn spinal cord",
+     "score": 87.8,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "hypophysis/locus coeruleus",
+   "norm_light": "hypophysis/locus coeruleus",
+   "norm_morph": "hypophysis/locus coeruleus",
+   "tiers": {
+    "cell_type_broad": 2764
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ]
+   },
+   "n_cells": 2764,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000539",
+     "zfa_name": "locus coeruleus",
+     "match_text": "loci coeruleus",
+     "score": 78.3,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000539",
+     "zfa_name": "locus coeruleus",
+     "match_text": "locus coeruleus",
+     "score": 75.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001557",
+     "zfa_name": "pronephric glomerulus",
+     "match_text": "pronephric glomerulus",
+     "score": 59.6,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "vascular smooth muscle",
+   "norm_light": "vascular smooth muscle",
+   "norm_morph": "vascular smooth muscle",
+   "tiers": {
+    "cell_type_broad": 2649,
+    "cell_type_sub": 2649
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharyngeal Arch"
+    ],
+    "cell_type_sub": [
+     "vascular smooth muscle"
+    ]
+   },
+   "n_cells": 2649,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005321",
+   "zfa_name": "vascular smooth muscle",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005321",
+     "zfa_name": "vascular smooth muscle",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:tissue",
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "hatching gland 1",
+   "norm_light": "hatching gland 1",
+   "norm_morph": "hatching gland 1",
+   "tiers": {
+    "cell_type_sub": 2608
+   },
+   "parents": {
+    "cell_type_sub": [
+     "hatching gland"
+    ]
+   },
+   "n_cells": 2608,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000026",
+     "zfa_name": "hatching gland",
+     "match_text": "hatching gland",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009151",
+     "zfa_name": "hatching gland cell",
+     "match_text": "hatching gland cell",
+     "score": 93.3,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000019",
+     "zfa_name": "epiphysis",
+     "match_text": "pineal gland",
+     "score": 58.8,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "NaK ionocyte",
+   "norm_light": "nak ionocyte",
+   "norm_morph": "nak ionocyte",
+   "tiers": {
+    "cell_type_sub": 2480
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 2480,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005326",
+   "zfa_name": "NaK ionocyte",
+   "caro_bucket": "cell",
+   "depth": 6,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005326",
+     "zfa_name": "NaK ionocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "periderm 8",
+   "norm_light": "periderm 8",
+   "norm_morph": "periderm 8",
+   "tiers": {
+    "cell_type_sub": 2432
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 2432,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "gill ionocyte",
+   "norm_light": "gill ionocyte",
+   "norm_morph": "gill ionocyte",
+   "tiers": {
+    "cell_type_sub": 2368
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 2368,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0005324",
+   "zfa_name": "gill ionocyte",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005324",
+     "zfa_name": "gill ionocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Endocrine",
+   "norm_light": "endocrine",
+   "norm_morph": "endocrine",
+   "tiers": {
+    "tissue": 2106
+   },
+   "parents": {
+    "tissue": [
+     "endoderm",
+     "mesoderm/ectoderm"
+    ]
+   },
+   "n_cells": 2106,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001158",
+     "zfa_name": "endocrine system",
+     "match_text": "endocrine system",
+     "score": 100.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001260",
+     "zfa_name": "endocrine pancreas",
+     "match_text": "endocrine pancreas",
+     "score": 100.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009096",
+     "zfa_name": "endocrine cell",
+     "match_text": "endocrine cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "CNS/Neural crest",
+   "norm_light": "cns/neural crest",
+   "norm_morph": "cns/neural crest",
+   "tiers": {
+    "tissue": 2064
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm/neural crest"
+    ]
+   },
+   "n_cells": 2064,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000045",
+     "zfa_name": "neural crest",
+     "match_text": "neural crest",
+     "score": 85.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009165",
+     "zfa_name": "neural crest cell",
+     "match_text": "neural crest cell",
+     "score": 78.8,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001194",
+     "zfa_name": "cranial neural crest",
+     "match_text": "cranial neural crest",
+     "score": 77.8,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "schwann cell, oligodendrocyte",
+   "norm_light": "oligodendrocyte schwann cell",
+   "norm_morph": "oligodendrocyte schwann cell",
+   "tiers": {
+    "cell_type_sub": 2064
+   },
+   "parents": {
+    "cell_type_sub": [
+     "glia"
+    ]
+   },
+   "n_cells": 2064,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009076",
+     "zfa_name": "oligodendrocyte",
+     "match_text": "oligodendrocyte",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009135",
+     "zfa_name": "myelinating Schwann cell",
+     "match_text": "schwann cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Pharynx",
+   "norm_light": "pharynx",
+   "norm_morph": "pharynx",
+   "tiers": {
+    "tissue": 2055
+   },
+   "parents": {
+    "tissue": [
+     "endoderm"
+    ]
+   },
+   "n_cells": 2055,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000056",
+   "zfa_name": "pharynx",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000056",
+     "zfa_name": "pharynx",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pharynx",
+   "norm_light": "pharynx",
+   "norm_morph": "pharynx",
+   "tiers": {
+    "cell_type_broad": 2055
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Pharynx"
+    ]
+   },
+   "n_cells": 2055,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000056",
+   "zfa_name": "pharynx",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000056",
+     "zfa_name": "pharynx",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "hypophysis",
+   "norm_light": "hypophysis",
+   "norm_morph": "hypophysis",
+   "tiers": {
+    "cell_type_sub": 2028
+   },
+   "parents": {
+    "cell_type_sub": [
+     "hypophysis/locus coeruleus"
+    ]
+   },
+   "n_cells": 2028,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000118",
+   "zfa_name": "hypophysis",
+   "caro_bucket": "organ",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000118",
+     "zfa_name": "hypophysis",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 4",
+   "norm_light": "periderm 4",
+   "norm_morph": "periderm 4",
+   "tiers": {
+    "cell_type_sub": 1906
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 1906,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 72.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000105",
+     "zfa_name": "epidermis",
+     "match_text": "epidermis",
+     "score": 63.2,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Germ Line",
+   "norm_light": "germ line",
+   "norm_morph": "germ line",
+   "tiers": {
+    "tissue": 1845
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm"
+    ]
+   },
+   "n_cells": 1845,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009016",
+     "zfa_name": "germ line cell",
+     "match_text": "germ line cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000111",
+     "zfa_name": "germ ring",
+     "match_text": "germ ring",
+     "score": 77.8,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000217",
+     "zfa_name": "inner ear",
+     "match_text": "inner ear",
+     "score": 66.7,
+     "caro_bucket": "",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "primordial germ cell",
+   "norm_light": "primordial germ cell",
+   "norm_morph": "primordial germ cell",
+   "tiers": {
+    "cell_type_broad": 1845,
+    "cell_type_sub": 1845
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Germ Line"
+    ],
+    "cell_type_sub": [
+     "primordial germ cell"
+    ]
+   },
+   "n_cells": 1845,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009288",
+   "zfa_name": "primordial germ cell",
+   "caro_bucket": "cell",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009288",
+     "zfa_name": "primordial germ cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "epibranchial ganglion",
+   "norm_light": "epibranchial ganglion",
+   "norm_morph": "epibranchial ganglion",
+   "tiers": {
+    "cell_type_sub": 1829
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 1829,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001555",
+   "zfa_name": "epibranchial ganglion",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001555",
+     "zfa_name": "epibranchial ganglion",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "pharynx (early)",
+   "norm_light": "pharynx",
+   "norm_morph": "pharynx",
+   "tiers": {
+    "cell_type_sub": 1787
+   },
+   "parents": {
+    "cell_type_sub": [
+     "pharynx"
+    ]
+   },
+   "n_cells": 1787,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000056",
+   "zfa_name": "pharynx",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000056",
+     "zfa_name": "pharynx",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "epidermal cell (grp, pvalb8+)",
+   "norm_light": "epidermal cell",
+   "norm_morph": "epidermal cell",
+   "tiers": {
+    "cell_type_sub": 1773
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 1773,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009183",
+   "zfa_name": "epidermal cell",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009183",
+     "zfa_name": "epidermal cell",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "thyroid follicle cell",
+   "norm_light": "thyroid follicle cell",
+   "norm_morph": "thyroid follicle cell",
+   "tiers": {
+    "cell_type_broad": 1621
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Endocrine"
+    ]
+   },
+   "n_cells": 1621,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001072",
+     "zfa_name": "thyroid follicle",
+     "match_text": "thyroid follicle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pancreas (exocrine)",
+   "norm_light": "pancreas",
+   "norm_morph": "pancreas",
+   "tiers": {
+    "cell_type_sub": 1617
+   },
+   "parents": {
+    "cell_type_sub": [
+     "pancreas"
+    ]
+   },
+   "n_cells": 1617,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000140",
+   "zfa_name": "pancreas",
+   "caro_bucket": "organ",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000140",
+     "zfa_name": "pancreas",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "pronephric podocyte",
+   "norm_light": "pronephric podocyte",
+   "norm_morph": "pronephric podocyte",
+   "tiers": {
+    "cell_type_broad": 1539,
+    "cell_type_sub": 1539
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Kidney"
+    ],
+    "cell_type_sub": [
+     "pronephric podocyte"
+    ]
+   },
+   "n_cells": 1539,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001673",
+   "zfa_name": "pronephric podocyte",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001673",
+     "zfa_name": "pronephric podocyte",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "trigeminal ganglion",
+   "norm_light": "trigeminal ganglion",
+   "norm_morph": "trigeminal ganglion",
+   "tiers": {
+    "cell_type_sub": 1535
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 1535,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000295",
+   "zfa_name": "trigeminal ganglion",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000295",
+     "zfa_name": "trigeminal ganglion",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Bone",
+   "norm_light": "bone",
+   "norm_morph": "bone",
+   "tiers": {
+    "tissue": 1512
+   },
+   "parents": {
+    "tissue": [
+     "ectoderm",
+     "mesoderm"
+    ]
+   },
+   "n_cells": 1512,
+   "outcome": "AUTO_BIND",
+   "rule": "R3",
+   "zfa_id": "ZFA:0001514",
+   "zfa_name": "bone element",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001514",
+     "zfa_name": "bone element",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R3"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pronephric duct",
+   "norm_light": "pronephric duct",
+   "norm_morph": "pronephric duct",
+   "tiers": {
+    "cell_type_broad": 1496,
+    "cell_type_sub": 1496
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Kidney"
+    ],
+    "cell_type_sub": [
+     "pronephric duct"
+    ]
+   },
+   "n_cells": 1496,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000150",
+   "zfa_name": "pronephric duct",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000150",
+     "zfa_name": "pronephric duct",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_broad:multi_tissue_structure",
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "periderm 15",
+   "norm_light": "periderm 15",
+   "norm_morph": "periderm 15",
+   "tiers": {
+    "cell_type_sub": 1485
+   },
+   "parents": {
+    "cell_type_sub": [
+     "periderm"
+    ]
+   },
+   "n_cells": 1485,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001185",
+     "zfa_name": "periderm",
+     "match_text": "periderm",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009041",
+     "zfa_name": "peridermal cell",
+     "match_text": "peridermal cell",
+     "score": 69.2,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0007098",
+     "zfa_name": "vertebra 15",
+     "match_text": "vertebra 15",
+     "score": 63.6,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "osteoblast",
+   "norm_light": "osteoblast",
+   "norm_morph": "osteoblast",
+   "tiers": {
+    "cell_type_broad": 1456,
+    "cell_type_sub": 1456
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Bone"
+    ],
+    "cell_type_sub": [
+     "osteoblast"
+    ]
+   },
+   "n_cells": 1456,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009031",
+   "zfa_name": "osteoblast",
+   "caro_bucket": "cell",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009031",
+     "zfa_name": "osteoblast",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "statoacoustic ganglion",
+   "norm_light": "statoacoustic ganglion",
+   "norm_morph": "statoacoustic ganglion",
+   "tiers": {
+    "cell_type_sub": 1239
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 1239,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000588",
+   "zfa_name": "statoacoustic (VIII) ganglion",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000588",
+     "zfa_name": "statoacoustic (VIII) ganglion",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "thyroid follicle cell 1",
+   "norm_light": "thyroid follicle cell 1",
+   "norm_morph": "thyroid follicle cell 1",
+   "tiers": {
+    "cell_type_sub": 1227
+   },
+   "parents": {
+    "cell_type_sub": [
+     "thyroid follicle cell"
+    ]
+   },
+   "n_cells": 1227,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001072",
+     "zfa_name": "thyroid follicle",
+     "match_text": "thyroid follicle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "lateral line ganglion",
+   "norm_light": "lateral line ganglion",
+   "norm_morph": "lateral line ganglion",
+   "tiers": {
+    "cell_type_sub": 1090
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 1090,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000120",
+   "zfa_name": "lateral line ganglion",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000120",
+     "zfa_name": "lateral line ganglion",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "Swim Bladder",
+   "norm_light": "swim bladder",
+   "norm_morph": "swim bladder",
+   "tiers": {
+    "tissue": 950
+   },
+   "parents": {
+    "tissue": [
+     "endoderm"
+    ]
+   },
+   "n_cells": 950,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000076",
+   "zfa_name": "swim bladder",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000076",
+     "zfa_name": "swim bladder",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "swim bladder primordium",
+   "norm_light": "swim bladder primordium",
+   "norm_morph": "swim bladder primordium",
+   "tiers": {
+    "cell_type_broad": 950,
+    "cell_type_sub": 950
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Swim Bladder"
+    ],
+    "cell_type_sub": [
+     "swim bladder primordium"
+    ]
+   },
+   "n_cells": 950,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000076",
+     "zfa_name": "swim bladder",
+     "match_text": "swim bladder",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005335",
+     "zfa_name": "swim bladder bud",
+     "match_text": "swim bladder bud",
+     "score": 85.7,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000076",
+     "zfa_name": "swim bladder",
+     "match_text": "gas bladder",
+     "score": 77.8,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "intestine (late)",
+   "norm_light": "intestine",
+   "norm_morph": "intestine",
+   "tiers": {
+    "cell_type_sub": 847
+   },
+   "parents": {
+    "cell_type_sub": [
+     "intestine"
+    ]
+   },
+   "n_cells": 847,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0001338",
+   "zfa_name": "intestine",
+   "caro_bucket": "organ",
+   "depth": 4,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001338",
+     "zfa_name": "intestine",
+     "caro_bucket": "organ",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:organ",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "locus coeruleus",
+   "norm_light": "locus coeruleus",
+   "norm_morph": "locus coeruleus",
+   "tiers": {
+    "cell_type_sub": 736
+   },
+   "parents": {
+    "cell_type_sub": [
+     "hypophysis/locus coeruleus"
+    ]
+   },
+   "n_cells": 736,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000539",
+   "zfa_name": "locus coeruleus",
+   "caro_bucket": "tissue",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000539",
+     "zfa_name": "locus coeruleus",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "rohon-beard neuron",
+   "norm_light": "rohon beard neuron",
+   "norm_morph": "rohon beard neuron",
+   "tiers": {
+    "cell_type_sub": 617
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 617,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009150",
+   "zfa_name": "Rohon-Beard neuron",
+   "caro_bucket": "cell",
+   "depth": 6,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009150",
+     "zfa_name": "Rohon-Beard neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "neuron (dopaminergic)",
+   "norm_light": "neuron",
+   "norm_morph": "neuron",
+   "tiers": {
+    "cell_type_broad": 567,
+    "cell_type_sub": 567
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "neuron (dopaminergic)"
+    ]
+   },
+   "n_cells": 567,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009248",
+   "zfa_name": "neuron",
+   "caro_bucket": "cell",
+   "depth": 5,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009248",
+     "zfa_name": "neuron",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "ionocyte/goblet cell (pou2f3+)",
+   "norm_light": "ionocyte/goblet cell",
+   "norm_morph": "ionocyte/goblet cell",
+   "tiers": {
+    "cell_type_sub": 547
+   },
+   "parents": {
+    "cell_type_sub": [
+     "ionocyte/goblet cell"
+    ]
+   },
+   "n_cells": 547,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009142",
+     "zfa_name": "B cell",
+     "match_text": "b cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "adrenal gland",
+   "norm_light": "adrenal gland",
+   "norm_morph": "adrenal gland",
+   "tiers": {
+    "cell_type_broad": 485,
+    "cell_type_sub": 485
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Endocrine"
+    ],
+    "cell_type_sub": [
+     "adrenal gland"
+    ]
+   },
+   "n_cells": 485,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001345",
+     "zfa_name": "interrenal gland",
+     "match_text": "interrenal gland",
+     "score": 75.9,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005138",
+     "zfa_name": "dental organ",
+     "match_text": "dental organ",
+     "score": 72.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000019",
+     "zfa_name": "epiphysis",
+     "match_text": "pineal gland",
+     "score": 72.0,
+     "caro_bucket": "multi_tissue_structure",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "thyroid follicle cell 2",
+   "norm_light": "thyroid follicle cell 2",
+   "norm_morph": "thyroid follicle cell 2",
+   "tiers": {
+    "cell_type_sub": 394
+   },
+   "parents": {
+    "cell_type_sub": [
+     "thyroid follicle cell"
+    ]
+   },
+   "n_cells": 394,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001072",
+     "zfa_name": "thyroid follicle",
+     "match_text": "thyroid follicle",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009000",
+     "zfa_name": "cell",
+     "match_text": "cell",
+     "score": 100.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009046",
+     "zfa_name": "T cell",
+     "match_text": "t cell",
+     "score": 80.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "unknown sensory ganglion",
+   "norm_light": "unknown sensory ganglion",
+   "norm_morph": "unknown sensory ganglion",
+   "tiers": {
+    "cell_type_sub": 346
+   },
+   "parents": {
+    "cell_type_sub": [
+     "neuron (cranial ganglia sensory, Rohon-Beard)"
+    ]
+   },
+   "n_cells": 346,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000190",
+     "zfa_name": "ganglion",
+     "match_text": "ganglion",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0000295",
+     "zfa_name": "trigeminal ganglion",
+     "match_text": "5th ganglion",
+     "score": 80.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001573",
+     "zfa_name": "trunk ganglion",
+     "match_text": "trunk ganglion",
+     "score": 72.7,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "Tooth",
+   "norm_light": "tooth",
+   "norm_morph": "tooth",
+   "tiers": {
+    "tissue": 317
+   },
+   "parents": {
+    "tissue": [
+     "neural crest"
+    ]
+   },
+   "n_cells": 317,
+   "outcome": "AUTO_BIND",
+   "rule": "R2",
+   "zfa_id": "ZFA:0000694",
+   "zfa_name": "ceratobranchial 5 tooth",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000694",
+     "zfa_name": "ceratobranchial 5 tooth",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R2"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "odontoblast",
+   "norm_light": "odontoblast",
+   "norm_morph": "odontoblast",
+   "tiers": {
+    "cell_type_broad": 317,
+    "cell_type_sub": 317
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Tooth"
+    ],
+    "cell_type_sub": [
+     "odontoblast"
+    ]
+   },
+   "n_cells": 317,
+   "outcome": "AUTO_BIND",
+   "rule": "R1",
+   "zfa_id": "ZFA:0009029",
+   "zfa_name": "odontoblast",
+   "caro_bucket": "cell",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0009029",
+     "zfa_name": "odontoblast",
+     "caro_bucket": "cell",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "pharynx (late)",
+   "norm_light": "pharynx",
+   "norm_morph": "pharynx",
+   "tiers": {
+    "cell_type_sub": 268
+   },
+   "parents": {
+    "cell_type_sub": [
+     "pharynx"
+    ]
+   },
+   "n_cells": 268,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000056",
+   "zfa_name": "pharynx",
+   "caro_bucket": "multi_tissue_structure",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000056",
+     "zfa_name": "pharynx",
+     "caro_bucket": "multi_tissue_structure",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:multi_tissue_structure",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "unknown (K+ channel, ciliated)",
+   "norm_light": "unknown",
+   "norm_morph": "unknown",
+   "tiers": {
+    "cell_type_broad": 155,
+    "cell_type_sub": 155
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Central Nervous System"
+    ],
+    "cell_type_sub": [
+     "unknown (K+ channel, ciliated)"
+    ]
+   },
+   "n_cells": 155,
+   "outcome": "UNMATCHED",
+   "rule": null,
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0001115",
+     "zfa_name": "trunk",
+     "match_text": "trunk",
+     "score": 50.0,
+     "caro_bucket": "",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005240",
+     "zfa_name": "Kolmer-Agduhr neuron",
+     "match_text": "ka neuron",
+     "score": 50.0,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0009067",
+     "zfa_name": "CNS neuron (sensu Vertebrata)",
+     "match_text": "cns neuron",
+     "score": 47.1,
+     "caro_bucket": "cell",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  },
+  {
+   "string": "lens (other)",
+   "norm_light": "lens",
+   "norm_morph": "len",
+   "tiers": {
+    "cell_type_sub": 93
+   },
+   "parents": {
+    "cell_type_sub": [
+     "lens"
+    ]
+   },
+   "n_cells": 93,
+   "outcome": "PROPOSE",
+   "rule": "R1",
+   "zfa_id": "ZFA:0000035",
+   "zfa_name": "lens",
+   "caro_bucket": "tissue",
+   "depth": 3,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0000035",
+     "zfa_name": "lens",
+     "caro_bucket": "tissue",
+     "obsolete": false,
+     "rule": "R1"
+    }
+   ],
+   "flags": [
+    "CATEGORY_MISMATCH_cell_type_sub:tissue",
+    "DEMOTED_FROM_AUTOBIND:R1"
+   ]
+  },
+  {
+   "string": "mineralized tissue, bone",
+   "norm_light": "bone mineralized tissue",
+   "norm_morph": "bone mineralized tissue",
+   "tiers": {
+    "cell_type_broad": 56,
+    "cell_type_sub": 56
+   },
+   "parents": {
+    "cell_type_broad": [
+     "Bone"
+    ],
+    "cell_type_sub": [
+     "mineralized tissue, bone"
+    ]
+   },
+   "n_cells": 56,
+   "outcome": "PROPOSE",
+   "rule": "R7",
+   "zfa_id": null,
+   "zfa_name": null,
+   "caro_bucket": null,
+   "depth": null,
+   "candidates": [
+    {
+     "zfa_id": "ZFA:0005621",
+     "zfa_name": "bone tissue",
+     "match_text": "bone tissue",
+     "score": 100.0,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0001514",
+     "zfa_name": "bone element",
+     "match_text": "bone",
+     "score": 100.0,
+     "caro_bucket": "organ",
+     "rule": "R7"
+    },
+    {
+     "zfa_id": "ZFA:0005147",
+     "zfa_name": "regenerating tissue",
+     "match_text": "regenerating tissue",
+     "score": 61.9,
+     "caro_bucket": "tissue",
+     "rule": "R7"
+    }
+   ],
+   "flags": []
+  }
+ ]
+}
