@@ -40,34 +40,34 @@ h1{margin:2px 0 0;font-size:20px;font-weight:800;letter-spacing:-.3px}
 .scrollhint{font-size:12.5px;color:var(--accent);font-weight:600}
 svg{font-family:"Roboto Slab",serif;display:block}
 /* ---- comparison section (below the fold): literal 2-column table ---- */
-.detail{max-width:1040px;margin:0 auto;padding:36px 26px 90px}
+.detail{max-width:1040px;margin:0 auto;padding:36px 26px 90px;overflow-x:auto}
 .detail h2{margin:0 0 6px;font-size:23px;font-weight:800;letter-spacing:-.2px}
 .detail .lede{color:var(--mut);font-size:14px;margin:0 0 20px;max-width:78ch}
 .detail .lede b{color:var(--ink)}
 .cmp{width:100%;border-collapse:collapse}
 .cmp col.cc-zfa{width:47%}
 .cmp thead th{position:sticky;top:0;background:var(--paper);z-index:2;
- font-size:11px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut2);
+ font-size:6px;font-weight:800;letter-spacing:1px;text-transform:uppercase;color:var(--mut2);
  padding:11px 20px;border-bottom:2px solid var(--ink)}
 .cmp th.h-zfa{text-align:right}
 .cmp th.h-zs{text-align:left;border-left:2px solid var(--ink)}
-.cmp td{padding:7px 20px;font-size:14.5px;vertical-align:baseline}
+.cmp td{padding:7px 20px;font-size:7.5px;vertical-align:baseline;white-space:nowrap}
 .cmp td.c-zfa{text-align:right;border-right:2px solid #cfc7bc}
 .cmp tr.a td{background:var(--card)} .cmp tr.b td{background:#f0ebe4}
-.cat{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
+.cat{display:inline-block;font-size:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
  color:var(--accent);background:#e8f1f4;border:1px solid #cfe4ea;border-radius:5px;padding:1px 6px;margin-right:8px;vertical-align:2px}
 .zfa-name{font-weight:700;margin-left:10px}
-.zfa-name.rep{font-weight:400;color:var(--mut2)}
-.zfa-id{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--mut2);margin:0}
-.otag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+.zfa-name.rep{font-weight:700;color:var(--mut2)}
+.zfa-id{font-family:ui-monospace,monospace;font-size:5.5px;color:var(--mut2);margin:0}
+.otag{display:inline-block;font-size:5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
  border-radius:4px;padding:1px 6px;margin-left:10px;vertical-align:1px}
-.zs-s{font-weight:600}
-.rule-t{font-size:10px;color:var(--mut2);margin-left:8px}
+.zs-s{font-weight:700}
+.rule-t{font-size:5px;color:var(--mut2);margin-left:8px}
 .o-AUTO_BIND .otag{background:#eaf7ee;color:#136a34} .o-AUTO_BIND .zs-s{color:#136a34}
 .o-PROPOSE .otag{background:#fbf3e0;color:#8a6608} .o-PROPOSE .zs-s{color:#8a6608}
 .o-UNMATCHED .otag{background:#fdeceb;color:#a3231b} .o-UNMATCHED .zs-s{color:#a3231b}
 .none{color:var(--mut2);font-style:italic}
-.cmp tr.sec td{background:var(--paper);font-size:11px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
+.cmp tr.sec td{background:var(--paper);font-size:6px;font-weight:800;letter-spacing:.8px;text-transform:uppercase;
  color:var(--red);padding:20px 20px 7px;border-bottom:2px solid var(--edge)}
 .kname{font-size:13px;font-weight:700;fill:var(--ink)}
 .kcount{font-size:10.5px;fill:var(--mut)}
@@ -165,19 +165,26 @@ function render(){
   kg.append('text').attr('x',xL-12).attr('y',d=>d.y0+27).attr('text-anchor','end').attr('class','kcount').text(d=>`${fmt(d.terms)} terms`);
   kg.append('text').attr('x',xL-12).attr('y',d=>d.y0+40).attr('text-anchor','end').attr('class','kused').text(d=>`${d.used} used`);
 
-  // ribbons FIRST (under bars): ZFA used sliver (thin, true scale) → ZSCAPE segment (fanned to fill)
+  // ribbons FIRST (under bars): ZFA used sliver (thin, true scale) → ZSCAPE segment (fanned to fill).
+  // The two endpoints stack INDEPENDENTLY: the ZFA side groups per kind (true scale), while the
+  // ZSCAPE side stacks AUTO_BIND before PROPOSE within each tier so every ribbon lands on the
+  // matching green/beige sub-segment of the split bar (otherwise interleaved kinds mis-colour, as
+  // the tissue tier did).
   const kMap=Object.fromEntries(M.kinds.map(k=>[k.kind,k])), tMap=Object.fromEntries(M.tiers.map(t=>[t.tier,t]));
-  const order=[];
+  const flows2=M.flows.filter(f=>f.outcome==='AUTO_BIND'||f.outcome==='PROPOSE');
+  // ZFA endpoint (per kind, tier→outcome order)
+  M.kinds.forEach(k=>k.cur=k.usedY);
   M.kinds.forEach(k=>M.tiers.forEach(t=>['AUTO_BIND','PROPOSE'].forEach(o=>{
-    const f=M.flows.find(z=>z.kind===k.kind&&z.tier===t.tier&&z.outcome===o); if(f) order.push(f);})));
+    const f=flows2.find(z=>z.kind===k.kind&&z.tier===t.tier&&z.outcome===o); if(!f) return;
+    const hz=f.v*unit; f.a0=k.cur; f.b0=k.cur+hz; k.cur+=hz; })));
+  // ZSCAPE endpoint (per tier, AUTO before PROPOSE, then by kind) — matches the split bar
+  M.tiers.forEach(t=>t.curM=t.y0);
+  M.tiers.forEach(t=>['AUTO_BIND','PROPOSE'].forEach(o=>M.kinds.forEach(k=>{
+    const f=flows2.find(z=>z.kind===k.kind&&z.tier===t.tier&&z.outcome===o); if(!f) return;
+    const hs=(f.v/t.matched)*t.matchedH; f.a1=t.curM; f.b1=t.curM+hs; t.curM+=hs; })));
   const rg=svg.append('g');
-  order.forEach(f=>{
-    const k=kMap[f.kind], t=tMap[f.tier];
-    const hz=f.v*unit;                       // ZFA side: true scale (thin)
-    const hs=(f.v/t.matched)*t.matchedH;     // ZSCAPE side: fan to fill the tall segment
-    const a0=k.cur,b0=k.cur+hz; k.cur+=hz;
-    const a1=t.curM,b1=t.curM+hs; t.curM+=hs;
-    rg.append('path').attr('d',ribbon(xL+barW,a0,b0,xR,a1,b1))
+  flows2.forEach(f=>{
+    rg.append('path').attr('d',ribbon(xL+barW,f.a0,f.b0,xR,f.a1,f.b1))
       .attr('fill',OC[f.outcome]).attr('opacity',.5).attr('stroke','none')
       .append('title').text(`${KLAB[f.kind]} → ${TLAB[f.tier]}\n${OCN[f.outcome]} · ${f.v} labels`);
   });
