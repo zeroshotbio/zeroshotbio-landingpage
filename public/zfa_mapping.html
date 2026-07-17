@@ -75,11 +75,11 @@ svg{font-family:"Roboto Slab",serif;display:block}
   <h1>ZSCAPE &#8646; ZFA Mapping</h1>
   <div class="explain">
    <div class="ex ex-auto">
-    <div class="ex-h"><span class="dot"></span>Auto-bind<span class="ex-n" id="nAuto"></span></div>
+    <div class="ex-h"><span class="dot"></span>Near-Perfect Match<span class="ex-n" id="nAuto"></span></div>
     <div class="ex-b">The ZSCAPE label matched a ZFA term&#39;s primary name or an exact synonym after light normalisation (case, plurals, punctuation). Stage 1 binds these on its own — high confidence, no human in the loop.</div>
    </div>
    <div class="ex ex-prop">
-    <div class="ex-h"><span class="dot"></span>Propose<span class="ex-n" id="nProp"></span></div>
+    <div class="ex-h"><span class="dot"></span>Fuzzy Match<span class="ex-n" id="nProp"></span></div>
     <div class="ex-b">A looser hit — a broader, related, or fuzzy token match. Surfaced as a ranked suggestion for a human to confirm in Stage 2, never bound silently.</div>
    </div>
    <div class="ex ex-unm">
@@ -107,7 +107,7 @@ svg{font-family:"Roboto Slab",serif;display:block}
 <script>
 const M = JSON.parse(document.getElementById('data').textContent);
 const OC={AUTO_BIND:'#15803d',PROPOSE:'#b8860b',UNMATCHED:'#b91c1c'};
-const OCN={AUTO_BIND:'auto-bind',PROPOSE:'propose',UNMATCHED:'unmatched'};
+const OCN={AUTO_BIND:'near-perfect match',PROPOSE:'fuzzy match',UNMATCHED:'unmatched'};
 const KLAB={cell:'cell types',tissue:'tissues',multi_tissue_structure:'multi-tissue',organ:'organs','above-roots':'systems / other'};
 const TLAB={germ_layer:'germ_layer',tissue:'tissue',cell_type_broad:'cell_type_broad',cell_type_sub:'cell_type_sub'};
 const fmt=n=>n.toLocaleString();
@@ -213,7 +213,7 @@ function render(){
       .text(`${t.total} labels · ${t.terms} ZFA term${t.terms===1?'':'s'}`); yy+=15;
     // outcome breakdown, coloured tspans on one line
     const oline=g.append('text').attr('x',dx).attr('y',yy).style('font-size','10.5px');
-    const parts=[['auto',t.auto,OC.AUTO_BIND],['propose',t.propose,OC.PROPOSE],['unmatched',t.unmatched,OC.UNMATCHED]].filter(p=>p[1]>0);
+    const parts=[['near-perfect',t.auto,OC.AUTO_BIND],['fuzzy',t.propose,OC.PROPOSE],['unmatched',t.unmatched,OC.UNMATCHED]].filter(p=>p[1]>0);
     parts.forEach((p,i)=>{ if(i)oline.append('tspan').attr('fill','var(--mut2)').text('  ·  ');
       oline.append('tspan').attr('fill',p[2]).style('font-weight',700).text(`${p[1]} ${p[0]}`); });
     yy+=15;
@@ -230,7 +230,7 @@ document.fonts&&document.fonts.ready.then(render);
 
 // ---- comparison table: one row per (ZFA term ↔ ZSCAPE label) pair, straight down ----
 const KCAT={cell:'cell type',tissue:'tissue',multi_tissue_structure:'multi-tissue',organ:'organ','above-roots':'systems / other'};
-const OTAG={AUTO_BIND:'auto-bind',PROPOSE:'propose',UNMATCHED:'unmatched'};
+const OTAG={AUTO_BIND:'near-perfect match',PROPOSE:'fuzzy match',UNMATCHED:'unmatched'};
 const esc=s=>String(s==null?'':s).replace(/[&<>]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 let html='', gi=0;
 M.pairs.forEach(g=>{
