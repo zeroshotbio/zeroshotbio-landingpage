@@ -34,7 +34,7 @@ h1{margin:0 0 12px;font-size:24px;font-weight:800;letter-spacing:-.4px}
 svg{font-family:"Roboto Slab",serif;display:block}
 /* ---- comparison section (below the fold): literal 2-column table ---- */
 .detail{max-width:1040px;margin:0 auto;padding:36px 26px 90px;overflow-x:auto}
-.detail h2{margin:0 0 6px;font-size:23px;font-weight:800;letter-spacing:-.2px}
+.detail h2{margin:0 0 18px;font-size:23px;font-weight:800;letter-spacing:-.2px}
 .detail .lede{color:var(--mut);font-size:14px;margin:0 0 20px;max-width:78ch}
 .detail .lede b{color:var(--ink)}
 .cmp{width:100%;border-collapse:collapse}
@@ -50,7 +50,6 @@ svg{font-family:"Roboto Slab",serif;display:block}
 .cat{display:inline-block;font-size:5px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
  color:var(--accent);background:#e8f1f4;border:1px solid #cfe4ea;border-radius:5px;padding:1px 6px;margin-right:8px;vertical-align:2px}
 .zfa-name{font-weight:700;margin-left:10px}
-.zfa-name.rep{font-weight:700;color:var(--mut2)}
 .zfa-id{font-family:ui-monospace,monospace;font-size:5.5px;color:var(--mut2);margin:0}
 .otag{display:inline-block;font-size:5px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
  border-radius:4px;padding:1px 6px;margin-left:10px;vertical-align:1px}
@@ -93,10 +92,7 @@ svg{font-family:"Roboto Slab",serif;display:block}
  </div>
 </div>
 <div class="detail">
- <h2>Side&#8209;by&#8209;side: every ZFA term ↔ the ZSCAPE label it matched</h2>
- <p class="lede">One row per match, read straight across: <b>left = the ZFA term</b> (with its schema category and id),
-  <b>right = the exact ZSCAPE label</b> and how it matched. Raw text on both sides — nothing normalised — so you can compare them directly.
-  When several ZSCAPE labels share one ZFA term, the term repeats (greyed) down the left. The 16 labels with no ZFA term are at the bottom.</p>
+ <h2>ZFA &#8646; ZSCAPE Term-by-Term</h2>
  <table class="cmp"><colgroup><col class="cc-zfa"><col></colgroup>
   <thead><tr><th class="h-zfa">ZFA term  ◀</th><th class="h-zs">▶  ZSCAPE label</th></tr></thead>
   <tbody id="cmpbody"></tbody>
@@ -236,11 +232,10 @@ let html='', gi=0;
 M.pairs.forEach(g=>{
   const z=(gi%2)?'b':'a'; gi++;
   g.labels.forEach((l,li)=>{
-    // ZFA (right-aligned col): extra info (category, id) to the LEFT, the term name
-    // last so it sits right-adjusted, closest to the centre divider.
-    const left = li===0
-      ? `<span class="cat">${KCAT[g.kind]||g.kind}</span><span class="zfa-id">${esc(g.id||'')}</span><span class="zfa-name">${esc(g.name)}</span>`
-      : `<span class="zfa-name rep">${esc(g.name)}</span>`;
+    // ZFA (right-aligned col): every row carries the full labelling — category + id to
+    // the LEFT, the bold term name last so it sits right-adjusted against the divider
+    // (no greyed "repeat" rows; each pair is fully labelled top to bottom).
+    const left = `<span class="cat">${KCAT[g.kind]||g.kind}</span><span class="zfa-id">${esc(g.id||'')}</span><span class="zfa-name">${esc(g.name)}</span>`;
     // ZSCAPE (left-aligned col): label name FIRST so it sits left-adjusted, closest to
     // the divider; outcome + rule trail off to the right.
     const right = `<span class="zs-s">${esc(l.s)}</span><span class="otag">${OTAG[l.o]}</span><span class="rule-t">${esc(l.rule)}</span>`;
