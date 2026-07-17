@@ -56,11 +56,11 @@ svg{font-family:"Roboto Slab",serif;display:block}
 .cmp tr.a td{background:var(--card)} .cmp tr.b td{background:#f0ebe4}
 .cat{display:inline-block;font-size:9px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;
  color:var(--accent);background:#e8f1f4;border:1px solid #cfe4ea;border-radius:5px;padding:1px 6px;margin-right:8px;vertical-align:2px}
-.zfa-name{font-weight:700}
+.zfa-name{font-weight:700;margin-left:10px}
 .zfa-name.rep{font-weight:400;color:var(--mut2)}
-.zfa-id{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--mut2);margin-left:9px}
+.zfa-id{font-family:ui-monospace,monospace;font-size:10.5px;color:var(--mut2);margin:0}
 .otag{display:inline-block;font-size:9px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
- border-radius:4px;padding:1px 6px;margin-right:9px;vertical-align:1px}
+ border-radius:4px;padding:1px 6px;margin-left:10px;vertical-align:1px}
 .zs-s{font-weight:600}
 .rule-t{font-size:10px;color:var(--mut2);margin-left:8px}
 .o-AUTO_BIND .otag{background:#eaf7ee;color:#136a34} .o-AUTO_BIND .zs-s{color:#136a34}
@@ -182,10 +182,18 @@ function render(){
       .append('title').text(`${KLAB[f.kind]} → ${TLAB[f.tier]}\n${OCN[f.outcome]} · ${f.v} labels`);
   });
 
-  // ZSCAPE bars: matched (grey-blue) + red unmatched cap
+  // ZSCAPE bars: matched split into auto-bind (green) over propose (beige) — same
+  // stacking order the ribbons land in — then the red unmatched cap. Shades tie to
+  // the green/amber outcome legend so each part of ZSCAPE reads as auto vs propose.
+  const ZS_AUTO='#4fa06a', ZS_PROP='#d3b06a';
   const tg=svg.selectAll('g.t').data(M.tiers).join('g');
-  tg.append('rect').attr('x',xR).attr('y',d=>d.y0).attr('width',barW).attr('height',d=>Math.max(1,d.matchedH)).attr('fill','#9fb9c0').attr('rx',2);
-  tg.append('rect').attr('x',xR).attr('y',d=>d.y0+d.matchedH).attr('width',barW).attr('height',d=>Math.max(0,d.h-d.matchedH)).attr('fill',OC.UNMATCHED).attr('rx',2);
+  tg.each(function(d){
+    const g=d3.select(this), mh=Math.max(1,d.matchedH);
+    const autoH=d.matched?mh*(d.auto/d.matched):0, propH=mh-autoH;
+    g.append('rect').attr('x',xR).attr('y',d.y0).attr('width',barW).attr('height',autoH).attr('fill',ZS_AUTO).attr('rx',2);
+    g.append('rect').attr('x',xR).attr('y',d.y0+autoH).attr('width',barW).attr('height',propH).attr('fill',ZS_PROP);
+    g.append('rect').attr('x',xR).attr('y',d.y0+mh).attr('width',barW).attr('height',Math.max(0,d.h-mh)).attr('fill',OC.UNMATCHED).attr('rx',2);
+  });
 
   // ZSCAPE detail: name + counts + outcome breakdown + which ZFA kinds it draws from
   const dx=xR+barW+13, KAB={cell:'cell',tissue:'tissue',multi_tissue_structure:'multi',organ:'organ','above-roots':'sys'};
@@ -219,10 +227,14 @@ let html='', gi=0;
 M.pairs.forEach(g=>{
   const z=(gi%2)?'b':'a'; gi++;
   g.labels.forEach((l,li)=>{
+    // ZFA (right-aligned col): extra info (category, id) to the LEFT, the term name
+    // last so it sits right-adjusted, closest to the centre divider.
     const left = li===0
-      ? `<span class="cat">${KCAT[g.kind]||g.kind}</span><span class="zfa-name">${esc(g.name)}</span><span class="zfa-id">${esc(g.id||'')}</span>`
+      ? `<span class="cat">${KCAT[g.kind]||g.kind}</span><span class="zfa-id">${esc(g.id||'')}</span><span class="zfa-name">${esc(g.name)}</span>`
       : `<span class="zfa-name rep">${esc(g.name)}</span>`;
-    const right = `<span class="otag">${OTAG[l.o]}</span><span class="zs-s">${esc(l.s)}</span><span class="rule-t">${esc(l.rule)}</span>`;
+    // ZSCAPE (left-aligned col): label name FIRST so it sits left-adjusted, closest to
+    // the divider; outcome + rule trail off to the right.
+    const right = `<span class="zs-s">${esc(l.s)}</span><span class="otag">${OTAG[l.o]}</span><span class="rule-t">${esc(l.rule)}</span>`;
     html+=`<tr class="${z} o-${l.o}"><td class="c-zfa">${left}</td><td class="c-zs">${right}</td></tr>`;
   });
 });
@@ -230,7 +242,7 @@ if(M.unmatched && M.unmatched.length){
   html+=`<tr class="sec"><td colspan="2">no ZFA term found — ${M.unmatched.length} unmatched ZSCAPE labels</td></tr>`;
   M.unmatched.forEach((x,i)=>{
     html+=`<tr class="${i%2?'b':'a'} o-UNMATCHED"><td class="c-zfa"><span class="none">— no ZFA term —</span></td>`+
-      `<td class="c-zs"><span class="otag">unmatched</span><span class="zs-s">${esc(x)}</span></td></tr>`;
+      `<td class="c-zs"><span class="zs-s">${esc(x)}</span><span class="otag">unmatched</span></td></tr>`;
   });
 }
 document.getElementById('cmpbody').innerHTML=html;
