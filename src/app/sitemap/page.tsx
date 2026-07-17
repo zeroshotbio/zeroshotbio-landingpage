@@ -29,6 +29,7 @@ const SECTIONS: Section[] = [
     title: "Visualizations & interactive pages",
     links: [
       { href: "/zebrafish_ontology", label: "ZFA Atlas — zebrafish anatomy ontology", note: "dataset menus on the anatomy graph" },
+      { href: "/zfa_mapping", label: "ZSCAPE → ZFA mapping — Stage 1", note: "parallel-sets + side-by-side term table" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
       { href: "/d3_complexity_heatmap.html", label: "Complexity heatmap" },
       { href: "/prospective_diseases_treemap.html", label: "Prospective diseases treemap" },
