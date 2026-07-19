@@ -112,7 +112,7 @@ tr.jv5 td.c-zfa{box-shadow:inset 4px 0 0 var(--b5)}
  border:1px solid #cfe4ea;background:#eef6f8;border-radius:5px;padding:1px 5px;margin-right:5px;vertical-align:1px}
 .moreb:hover{background:#e0eef2}
 .ddwrap{position:relative;display:inline-block}
-.dd{position:absolute;z-index:30;top:130%;left:0;width:360px;max-height:400px;overflow-y:auto;text-align:left;
+.dd{position:absolute;z-index:30;top:130%;left:0;width:612px;max-height:720px;overflow-y:auto;text-align:left;
  background:var(--card);border:1px solid var(--edge);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:5px;display:none}
 .dd.open{display:block}
 .dd .ddhd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);padding:3px 8px 6px}
@@ -605,6 +605,9 @@ cmpbody.addEventListener('click',e=>{
   }
   const dl=e.target.closest('.ddload');               // "load 100 more" -> extend, keep scroll
   if(dl){
+    // re-rendering detaches this very node, so the document's click-outside handler would
+    // see a target with no .ddwrap ancestor and close the dropdown. Stop it here.
+    e.stopPropagation();
     const dd=dl.closest('.dd'), box=dd.querySelector('input');
     dd.dataset.lim=dl.getAttribute('data-lim');
     const y=dd.scrollTop;
@@ -626,7 +629,10 @@ cmpbody.addEventListener('click',e=>{
     dirty=true; applyJudge(); return;
   }
 });
-document.addEventListener('click',e=>{ if(!e.target.closest('.ddwrap')) closeDD(); });
+document.addEventListener('click',e=>{
+  if(!e.target.isConnected) return;      // re-rendered away mid-click: not an outside click
+  if(!e.target.closest('.ddwrap')) closeDD();
+});
 // live search inside an open +more dropdown
 cmpbody.addEventListener('input',e=>{
   const box=e.target.closest('.ddsearch input'); if(!box) return;
