@@ -100,8 +100,30 @@ tr.exp .bandmeter .seg{box-shadow:0 0 0 1px rgba(0,0,0,.18)}
 .vbtn{font-size:7.5px;font-weight:800;letter-spacing:.1px;text-transform:uppercase;border-radius:4px;
  padding:2px 5px;cursor:pointer;border:1px solid transparent;color:#fff;opacity:.32;transition:opacity .1s}
 .vbtn.v2{color:#3f5910}
-.vbtn.v1{background:var(--b1)} .vbtn.v2{background:var(--b2)} .vbtn.v3{background:var(--b3)}
-.vbtn.v4{background:var(--b4)} .vbtn.v5{background:var(--b5)}
+.vbtn.v1{background:var(--b1)} .vbtn.v3{background:var(--b3)} .vbtn.v5{background:var(--b5)}
+/* comment capture: ambiguous / can't-find are not recorded until this is saved with text */
+.notetxt{display:inline-block;margin-left:8px;font-size:10.5px;font-style:italic;color:var(--mut);
+ max-width:340px;vertical-align:middle;cursor:pointer}
+.notetxt:hover{color:var(--ink);text-decoration:underline dotted}
+.notetxt .ntq{color:var(--mut2)}
+.notewrap{display:block}
+.noteed{display:block;margin:6px 0 2px;padding:8px 9px;background:#faf7f3;border:1px solid var(--edge);
+ border-radius:7px;max-width:430px}
+.noteed .nhd{display:block;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.5px;
+ color:var(--mut2);margin-bottom:5px}
+.noteed .nta{display:block;width:100%;box-sizing:border-box;font:inherit;font-size:12px;padding:5px 7px;
+ border:1px solid var(--edge);border-radius:5px;background:#fff;color:var(--ink);resize:vertical}
+.noteed .nta:focus{outline:none;border-color:var(--accent)}
+.noteed .nta.bad{border-color:var(--red);background:#fff6f4}
+.noteed .nbtns{display:flex;justify-content:flex-end;gap:6px;margin-top:6px}
+.noteed .nbtn{font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;
+ padding:4px 9px;border-radius:5px;cursor:pointer}
+.noteed .ncancel{color:var(--mut2);border:1px solid var(--edge)}
+.noteed .ncancel:hover{color:var(--ink);background:#f0ece6}
+.noteed .nsave{color:#fff;border:1px solid transparent}
+.noteed .nsave.v1{background:var(--b1)} .noteed .nsave.v3{background:var(--b3)}
+.noteed .nsave.v5{background:var(--b5)}
+.noteed .nsave:hover{filter:brightness(1.08)}
 .vbtn:hover{opacity:.8}
 .vbtn.on{opacity:1;box-shadow:0 1px 3px rgba(0,0,0,.28);border-color:rgba(0,0,0,.28)}
 tr.jv1 td.c-zfa{box-shadow:inset 4px 0 0 var(--b1)} tr.jv2 td.c-zfa{box-shadow:inset 4px 0 0 var(--b2)}
@@ -188,7 +210,7 @@ tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20
    <button class="save-btn" id="saveBtn">Save judgements</button>
   </div>
  </div>
- <p class="hint">Ordered by <b>confidence band</b> (strongest first); the meter shows the band in its gradient colour — <b>click it for the signal breakdown</b>. Candidates cascade from the left (boldest = best); pick one, or <b>+more</b> for the full ZFA list, or <b>✗</b> for none. Then set your verdict — <b>Match → Rough → Somewhat → Stretch → None</b> — which records the row. Enumerated sub-clusters (<i>periderm 1…20</i>) fold into one <b>&times;N</b> row. Save persists all.</p>
+ <p class="hint">Ordered by <b>confidence band</b> (strongest first); the meter shows the band in its gradient colour — <b>click it for the signal breakdown</b>. Each row shows the algorithm's pick; keep it, or use <b>+more</b> to search all 3,107 ZFA terms by name or synonym, or <b>✗</b> for none. Then set your verdict — <b>Match</b> records straight away, while <b>Ambiguous</b> and <b>Can't find</b> ask for a one-line reason first and are only recorded once you save it. Enumerated sub-clusters (<i>periderm 1…20</i>) fold into one <b>&times;N</b> row. Save persists all.</p>
  <table class="cmp"><colgroup><col class="cc-zfa"><col></colgroup>
   <thead><tr><th class="h-zfa">ZFA candidates  ◀</th><th class="h-zs">▶  ZSCAPE label</th></tr></thead>
   <tbody id="cmpbody"></tbody>
@@ -356,15 +378,17 @@ const saveBtn=document.getElementById('saveBtn'), jstat=document.getElementById(
 const ENDPOINT='https://zscape.zeroshot.bio/zfa_judge';
 
 const BANDIX={B1:0,B2:1,B3:2,B4:3,B5:4};
-// human verdict scale — same green->red gradient as the bands; v5 == "no ZFA term".
+// human verdict — three calls. The two uncertain ones require a written reason, and the
+// verdict is not recorded until that comment is saved.
 const VERDICTS=[
- {k:'match',    lab:'Match',    cls:'v1', full:'Match'},
- {k:'rough',    lab:'Rough',    cls:'v2', full:'Rough-Match'},
- {k:'somewhat', lab:'Somewhat', cls:'v3', full:'Somewhat-Match'},
- {k:'stretch',  lab:'Stretch',  cls:'v4', full:"It's a Stretch"},
- {k:'none',     lab:'None',     cls:'v5', full:"Didn't Find Any ZFA Terms"},
+ {k:'match',     lab:'Match',      cls:'v1', full:'Match', ask:null},
+ {k:'ambiguous', lab:'Ambiguous',  cls:'v3', full:'Ambiguous — needs a comment',
+                 ask:'What makes this one ambiguous?'},
+ {k:'notfound',  lab:"Can't find", cls:'v5', full:"Can't find a ZFA term — needs a comment",
+                 ask:'What did you look for, and what was missing?'},
 ];
-const VJV={match:'jv1',rough:'jv2',somewhat:'jv3',stretch:'jv4',none:'jv5'};
+const VMAP=Object.fromEntries(VERDICTS.map(v=>[v.k,v]));
+const VJV={match:'jv1',ambiguous:'jv3',notfound:'jv5'};
 
 function meterHTML(band){
   const ix=BANDIX[band], fill=ix==null?0:5-ix; let s='';
@@ -520,6 +544,7 @@ function renderDD(dd, s, q){
 const rowS={};                       // s -> row model (for save)
 const SEL={};                        // s -> {id,name} currently-picked term (default = algo)
 const VERD={};                       // s -> verdict key (set == judged)
+const NOTE={};                       // s -> comment (required for ambiguous / can't-find)
 let dirty=false, lastSaved='';
 
 function buildTable(){
@@ -543,7 +568,7 @@ function buildTable(){
       `<span class="vbtn ${v.cls}" data-v="${v.k}" title="${escA(v.full)}">${v.lab}</span>`).join('')+`</span>`;
     const right=`${meterHTML(row.band)}<span class="zs-s">${esc(row.s)}</span>${badge}`+
       `<span class="bandpill">${esc(BNAME[row.band]||'')}</span><span class="rule-t">${esc(row.rule)}</span>`+
-      `<span class="selnow"></span>${verdict}`;
+      `<span class="selnow"></span>${verdict}<span class="notetxt"></span><span class="notewrap"></span>`;
     h+=`<tr class="${stripe?'b':'a'} bd-${(row.band||'').toLowerCase()}" data-s="${escA(row.s)}" data-algo="${escA(algo.id)}">`+
        `<td class="c-zfa">${more}${rej}${chips}</td><td class="c-zs">${right}</td></tr>`+
        detailHTML(row);
@@ -568,6 +593,8 @@ function applyJudge(){
     if(sn){ sn.innerHTML = (touched && sel.id!=='__none__') ? `→ <b>${esc(sel.name)}</b>` : ''; }
     tr.querySelectorAll('.vbtn').forEach(b=> b.classList.toggle('on', b.getAttribute('data-v')===verd));
     if(verd) tr.classList.add(VJV[verd]);
+    const nt=tr.querySelector('.notetxt');            // saved comment, click to amend
+    if(nt) nt.innerHTML = NOTE[s] ? `<span class="ntq">“</span>${esc(NOTE[s])}<span class="ntq">”</span>` : '';
   });
   updateBar();
 }
@@ -621,14 +648,49 @@ cmpbody.addEventListener('click',e=>{
   const cand=e.target.closest('.cand');               // pick a candidate / reject term
   if(cand){ SEL[s]={id:cand.getAttribute('data-id'),name:cand.getAttribute('data-name')}; dirty=true; applyJudge(); return; }
 
+  const ns=e.target.closest('.nsave');                // comment saved -> NOW record the verdict
+  if(ns){
+    e.stopPropagation();
+    const ta=tr.querySelector('.nta'), txt=(ta.value||'').trim();
+    if(!txt){ ta.classList.add('bad'); ta.focus(); return; }   // comment is required
+    const k=ns.getAttribute('data-v');
+    NOTE[s]=txt; VERD[s]=k;
+    if(k==='notfound') SEL[s]={id:'__none__',name:''};
+    closeNote(); dirty=true; applyJudge(); return;
+  }
+  if(e.target.closest('.ncancel')){ e.stopPropagation(); closeNote(); return; }
+  if(e.target.closest('.notetxt') && NOTE[s]){        // click the saved note to amend it
+    openNote(tr, s, VERD[s]); return;
+  }
+
   const vb=e.target.closest('.vbtn');                 // set verdict = records the row
   if(vb){
     const k=vb.getAttribute('data-v');
-    if(VERD[s]===k){ delete VERD[s]; }                // click again to un-judge
-    else { VERD[s]=k; if(k==='none') SEL[s]={id:'__none__',name:''}; }
+    if(VERD[s]===k){ delete VERD[s]; delete NOTE[s]; closeNote(); }   // click again to un-judge
+    else if(VMAP[k].ask){ openNote(tr, s, k); return; }               // ask first, record on save
+    else { VERD[s]=k; }
     dirty=true; applyJudge(); return;
   }
 });
+
+// comment editor — the verdict is applied only when this is saved with text in it
+let noteOpen=null;
+function closeNote(){
+  if(noteOpen){ const w=noteOpen.querySelector('.notewrap'); if(w) w.innerHTML=''; noteOpen=null; }
+}
+function openNote(tr, s, k){
+  closeNote();
+  const v=VMAP[k]; if(!v) return;
+  tr.querySelector('.notewrap').innerHTML=
+    `<span class="noteed"><span class="nhd">${esc(v.ask||'Comment')}</span>`+
+    `<textarea class="nta" rows="2" placeholder="required"></textarea>`+
+    `<span class="nbtns"><span class="nbtn ncancel">Cancel</span>`+
+    `<span class="nbtn nsave ${v.cls}" data-v="${escA(k)}">Save ${esc(v.lab)}</span></span></span>`;
+  const ta=tr.querySelector('.nta');
+  ta.value=NOTE[s]||'';
+  ta.focus();
+  noteOpen=tr;
+}
 document.addEventListener('click',e=>{
   if(!e.target.isConnected) return;      // re-rendered away mid-click: not an outside click
   if(!e.target.closest('.ddwrap')) closeDD();
@@ -655,7 +717,7 @@ function buildPayload(){
   const j={};
   for(const s of Object.keys(VERD)){
     const row=rowS[s]||{}, sel=SEL[s]||{id:'__none__',name:''}, algo=algoPick(row);
-    j[s]={chosen_id:sel.id, chosen_name:sel.name, verdict:VERD[s],
+    j[s]={chosen_id:sel.id, chosen_name:sel.name, verdict:VERD[s], comment:NOTE[s]||'',
           band:row.band, algo_id:algo.id, algo_name:algo.name, outcome:row.o};
   }
   return j;
@@ -679,7 +741,8 @@ buildTable();
 fetch(ENDPOINT).then(r=>r.json()).then(d=>{
   if(d&&d.judgements){
     for(const [s,j] of Object.entries(d.judgements)){
-      if(j.verdict) VERD[s]=j.verdict;
+      if(j.verdict && VMAP[j.verdict]) VERD[s]=j.verdict;   // ignore keys from the old 5-way scale
+      if(j.comment) NOTE[s]=j.comment;
       if(j.chosen_id) SEL[s]={id:j.chosen_id,name:j.chosen_name||''};
     }
     if(d.saved_utc) lastSaved='(loaded)';
