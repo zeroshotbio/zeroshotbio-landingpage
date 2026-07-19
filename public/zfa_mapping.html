@@ -68,13 +68,11 @@ svg{font-family:"Roboto Slab",serif;display:block}
 .cmp td.c-zfa{text-align:right;border-right:2px solid #cfc7bc}
 .cmp tr.a td{background:var(--card)} .cmp tr.b td{background:#f0ebe4}
 /* (judged-row accent = the chosen verdict colour; see .jv1..jv5 below) */
-/* ranked ZFA candidate chips: best (r0) rightmost + boldest, cascading down leftward */
+/* the algorithm's single pick. Runner-up candidates used to cascade leftward in fading
+   grey; +more (search over all 3,107 terms) replaced that, so only the pick is shown. */
 .cand{display:inline-block;cursor:pointer;border-radius:7px;padding:2px 8px;margin-left:5px;
  vertical-align:middle;transition:background .1s,color .1s,opacity .1s;user-select:none}
 .cand.r0{font-size:14.5px;font-weight:800;color:var(--ink);opacity:1}
-.cand.r1{font-size:11.5px;font-weight:600;color:var(--mut);opacity:.72}
-.cand.r2{font-size:10px;font-weight:500;color:var(--mut2);opacity:.6}
-.cand.r3{font-size:9px;font-weight:500;color:var(--mut2);opacity:.5}
 .cand.rej{font-size:11px;font-weight:800;color:var(--mut2);opacity:.42;margin-right:2px}
 .cand:hover{background:#e7e1d8;color:var(--ink);opacity:1}
 .cand.algo{text-decoration:underline dotted;text-underline-offset:3px;text-decoration-color:var(--accent)}
@@ -145,6 +143,14 @@ tr.jv5 td.c-zfa{box-shadow:inset 4px 0 0 var(--b5)}
 .syn.hit{box-shadow:0 0 0 2px rgba(45,124,155,.30)}
 .dd .ddsyns{margin-top:1px}
 .dd .ddnil{padding:8px;font-size:11px;color:var(--mut2)}
+/* paging: the list starts at 50, this pulls the next 100 */
+.dd .ddload{margin:5px 4px 2px;padding:6px 8px;text-align:center;font-size:10.5px;font-weight:800;
+ color:var(--accent);background:#eef6f8;border:1px solid #cfe4ea;border-radius:6px;cursor:pointer;
+ text-transform:uppercase;letter-spacing:.5px}
+.dd .ddload:hover{background:#e0eef2}
+.dd .ddload .ddleft{display:block;font-weight:500;font-size:9px;letter-spacing:0;
+ text-transform:none;color:var(--mut2);margin-top:1px}
+.dd .ddend{padding:7px 8px 4px;text-align:center;font-size:9px;color:var(--mut2)}
 /* expand detail row (signal breakdown) */
 tr.drow{display:none} tr.exp + tr.drow{display:table-row}
 tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20px 11px;white-space:normal}
@@ -154,6 +160,9 @@ tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20
 .sig-driver{background:#fff4d6;border-radius:4px;padding:1px 6px;box-shadow:inset 0 0 0 1px #e7cf8f}
 .sig-CORROBORATED{color:var(--green)} .sig-CONTRADICTED{color:var(--red)} .sig-UNTESTABLE{color:var(--mut2)}
 .sigdrv{color:var(--mut);margin-left:4px}
+.runup{margin-top:5px;font-size:10.5px;color:var(--mut)}
+.runup .sigk{color:var(--mut2);margin-right:5px}
+.runup .ruid{font-family:ui-monospace,monospace;font-size:8.5px;color:var(--mut2);margin-left:4px}
 .kname{font-size:13px;font-weight:700;fill:var(--ink)}
 .kcount{font-size:10.5px;fill:var(--mut)}
 .kused{font-size:10.5px;font-weight:700;fill:var(--accent)}
@@ -379,7 +388,12 @@ function detailHTML(row){
   const nudges=(row.adj||[]).map(a=>`${a.signal} ${a.tiers>0?'+':''}${a.tiers}`).join(', ');
   const path = row.base===row.band ? `${row.base} ${esc(BNAME[row.base]||'')} (rule set it)`
     : `${row.base} ${esc(BNAME[row.base]||'')} → ${row.band} ${esc(BNAME[row.band]||'')} (${esc(nudges)})`;
-  return `<tr class="drow"><td colspan="2"><div class="sigrow"><span class="sighead">${row.band} · ${esc(BNAME[row.band]||'')}</span>${cells}<span class="sigdrv">↳ ${path}</span></div></td></tr>`;
+  // runner-ups no longer sit in the row; keep them here so `margin` (cand1−cand2) stays readable
+  const rest=(row.cands||[]).slice(1);
+  const ru = rest.length ? `<div class="runup"><span class="sigk">runner-ups</span> `+
+    rest.map(c=>`${esc(c.name)}<span class="ruid">${esc(c.id)}${c.score!=null?' · '+c.score:''}</span>`).join(' &nbsp;·&nbsp; ')+
+    `</div>` : '';
+  return `<tr class="drow"><td colspan="2"><div class="sigrow"><span class="sighead">${row.band} · ${esc(BNAME[row.band]||'')}</span>${cells}<span class="sigdrv">↳ ${path}</span></div>${ru}</td></tr>`;
 }
 
 // algo's default pick: bound term, else top candidate, else none.
@@ -476,11 +490,17 @@ function rankVocab(label, lim){
 // Typed box -> synonym-aware search. Either way the row's data-name is the TERM name,
 // never a synonym: what you click is what gets recorded.
 function renderDD(dd, s, q){
-  const hits = q.trim() ? searchVocab(q,50) : rankVocab(s,50).map(t=>({t, via:null}));
-  const head = q.trim() ? `${hits.length} match${hits.length===1?'':'es'} on name or synonym`
-                        : `${hits.length} similar ZFA terms — pick one`;
+  const lim = +(dd.dataset.lim || 50);
+  const all = q.trim() ? searchVocab(q, 1e9) : rankVocab(s, 1e9).map(t=>({t, via:null}));
+  const hits = all.slice(0, lim);
+  const head = q.trim() ? `${all.length} match${all.length===1?'':'es'} on name or synonym`
+                        : `${all.length} ZFA terms, closest first — pick one`;
   const list = dd.querySelector('.ddlist');
   if(!hits.length){ list.innerHTML=`<div class="ddnil">No ZFA term matches “${esc(q)}”.</div>`; return; }
+  const left = all.length - hits.length;
+  const more = left>0
+    ? `<div class="ddload" data-lim="${lim+100}">load 100 more <span class="ddleft">${left} left</span></div>`
+    : (all.length>50 ? `<div class="ddend">end of list — ${all.length} shown</div>` : '');
   list.innerHTML=`<div class="ddhd">${head}</div>`+hits.map(h=>{
     const t=h.t, syns=t.synonyms||[];
     // matched synonym first (the reason this row surfaced), then the rest, capped
@@ -494,7 +514,7 @@ function renderDD(dd, s, q){
            `<span class="tnm"><b>${esc(t.name)}</b><span class="id">${esc(t.id)}</span></span>`+
            (chips?`<span class="ddsyns">${chips}${extra>0?`<span class="syn syn-RELATED">+${extra}</span>`:''}</span>`:'')+
            `</span>`;
-  }).join('');
+  }).join('')+more;
 }
 
 const rowS={};                       // s -> row model (for save)
@@ -509,11 +529,12 @@ function buildTable(){
     if(!(row.s in SEL)) SEL[row.s]=algoPick(row);
     if(row.band!==prevBand){stripe^=1; prevBand=row.band;}
     const algo=algoPick(row);
-    // candidates reversed so cands[0] lands rightmost (right-aligned column)
+    // Only the algorithm's pick is shown. Runner-ups are reachable via +more (which searches
+    // the whole vocabulary anyway) and their scores still show in the expand panel.
     let chips='';
-    for(let i=row.cands.length-1;i>=0;i--){
-      const c=row.cands[i], t=c.id+(c.score!=null?'  ·  score '+c.score:'')+(c.rule?'  ·  '+c.rule:'');
-      chips+=`<span class="cand r${Math.min(i,3)}" data-id="${escA(c.id)}" data-name="${escA(c.name)}" title="${escA(t)}">${esc(c.name)}</span>`;
+    if(row.cands.length){
+      const c=row.cands[0], t=c.id+(c.score!=null?'  ·  score '+c.score:'')+(c.rule?'  ·  '+c.rule:'');
+      chips=`<span class="cand r0" data-id="${escA(c.id)}" data-name="${escA(c.name)}" title="${escA(t)}">${esc(c.name)}</span>`;
     }
     const more=`<span class="ddwrap"><span class="moreb" title="pick from the full ZFA vocabulary">+more</span><div class="dd"></div></span>`;
     const rej=`<span class="cand rej" data-id="__none__" data-name="" title="no good ZFA match">✗</span>`;
@@ -582,6 +603,15 @@ cmpbody.addEventListener('click',e=>{
     const box=dd.querySelector('input'); if(box) box.focus();
     return;
   }
+  const dl=e.target.closest('.ddload');               // "load 100 more" -> extend, keep scroll
+  if(dl){
+    const dd=dl.closest('.dd'), box=dd.querySelector('input');
+    dd.dataset.lim=dl.getAttribute('data-lim');
+    const y=dd.scrollTop;
+    renderDD(dd, s, box?box.value:'');
+    dd.scrollTop=y;
+    return;
+  }
   const ddi=e.target.closest('.ddi');                 // pick from dropdown
   if(ddi){ SEL[s]={id:ddi.getAttribute('data-id'),name:ddi.getAttribute('data-name')}; closeDD(); dirty=true; applyJudge(); return; }
 
@@ -600,7 +630,10 @@ document.addEventListener('click',e=>{ if(!e.target.closest('.ddwrap')) closeDD(
 // live search inside an open +more dropdown
 cmpbody.addEventListener('input',e=>{
   const box=e.target.closest('.ddsearch input'); if(!box) return;
-  renderDD(box.closest('.dd'), box.getAttribute('data-s'), box.value);
+  const dd=box.closest('.dd');
+  dd.dataset.lim=50;                       // a new query starts the page count over
+  renderDD(dd, box.getAttribute('data-s'), box.value);
+  dd.scrollTop=0;
 });
 cmpbody.addEventListener('keydown',e=>{
   if(e.key==='Escape' && e.target.closest('.ddsearch input')){ closeDD(); }
