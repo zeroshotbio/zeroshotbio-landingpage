@@ -135,24 +135,35 @@ tr.jv5 td.c-zfa{box-shadow:inset 4px 0 0 var(--b5)}
 .moreb:hover{background:#e0eef2}
 .ddwrap{position:relative;display:inline-block}
 .dd{position:absolute;z-index:30;top:130%;left:-306px;width:918px;max-height:720px;overflow-y:auto;text-align:left;
- background:var(--card);border:1px solid var(--edge);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:5px;display:none}
+ background:var(--card);border:1px solid var(--edge);border-radius:9px;box-shadow:0 8px 26px rgba(0,0,0,.18);padding:0;display:none}
 .dd.open{display:block}
-.dd .ddhd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);padding:3px 8px 6px}
+/* the whole top block is pinned and fully opaque — the list scrolls behind it, never above it.
+   (.dd itself carries no padding, or the list would show through the gap above this.) */
+.dd .ddtop{position:sticky;top:0;z-index:5;background:var(--card);padding:8px 8px 0;
+ border-bottom:1px solid var(--edge);box-shadow:0 3px 8px -3px rgba(0,0,0,.16)}
+.dd .ddlist{padding:5px}
+.dd .ddsel{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;padding:0 1px 7px;font-size:12px}
+.dd .ddsel .dsl{font-weight:700;color:var(--ink)}
+.dd .ddsel .dsarrow{color:var(--mut2)}
+.dd .ddsel b{font-weight:700;color:var(--accent)}
+.dd .ddsel .dsnone{color:var(--mut2);font-style:italic}
+.dd .ddsel .id{font-family:ui-monospace,monospace;font-size:9px;color:var(--mut2)}
+.dd .ddhd{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.6px;color:var(--mut2);padding:6px 1px 7px}
 .dd .ddi{display:block;padding:4px 8px;font-size:12px;border-radius:5px;cursor:pointer;white-space:normal}
 .dd .ddi:hover{background:#eef6f8}
 .dd .ddi .id{font-family:ui-monospace,monospace;font-size:9px;color:var(--mut2);flex:none}
 /* the term name is what gets recorded: it stays dominant. Synonyms are subordinate chips. */
 .dd .ddi .tnm{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
 .dd .ddi .tnm b{font-weight:600;color:var(--ink)}
-/* search box pinned at the top of the dropdown */
-.dd .ddsearch{position:sticky;top:0;background:var(--card);padding:3px 6px 5px;z-index:2}
+/* search box (inside the pinned header) */
+.dd .ddsearch{padding:0 0 6px}
 .dd .ddsearch input{width:100%;box-sizing:border-box;font:inherit;font-size:12px;padding:5px 8px;
  border:1px solid var(--edge);border-radius:6px;background:#fbf9f6;color:var(--ink)}
 .dd .ddsearch input:focus{outline:none;border-color:var(--accent);background:#fff}
 /* Synonym chips: the text sits in a neutral chip, and the ZFA synonym SCOPE rides along
    as a small subtle pill carrying the word itself. Legend up top teaches the same pill. */
-.dd .ddleg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:0 8px 7px;font-size:9px;color:var(--mut2);
- border-bottom:1px solid var(--edge);margin-bottom:4px;align-items:center}
+.dd .ddleg{display:flex;flex-wrap:wrap;gap:4px 12px;padding:0 1px;font-size:9px;color:var(--mut2);
+ align-items:center}
 .dd .ddleg i{font-style:normal;display:inline-flex;align-items:baseline;gap:4px}
 .syn{display:inline-block;font-size:10px;line-height:1.6;padding:1px 6px;margin:2px 4px 0 0;border-radius:4px;
  background:#f4f2ee;border:1px solid #e4e0d9;color:var(--mut);white-space:normal}
@@ -520,23 +531,23 @@ function renderDD(dd, s, q){
   const head = q.trim() ? `${all.length} match${all.length===1?'':'es'} on name or synonym`
                         : `${all.length} ZFA terms, closest first — pick one`;
   const list = dd.querySelector('.ddlist');
+  dd.querySelector('.ddhd').textContent = head;      // lives in the pinned header, not the list
   if(!hits.length){ list.innerHTML=`<div class="ddnil">No ZFA term matches “${esc(q)}”.</div>`; return; }
   const left = all.length - hits.length;
   const more = left>0
     ? `<div class="ddload" data-lim="${lim+100}">load 100 more <span class="ddleft">${left} left</span></div>`
     : (all.length>50 ? `<div class="ddend">end of list — ${all.length} shown</div>` : '');
-  list.innerHTML=`<div class="ddhd">${head}</div>`+hits.map(h=>{
+  list.innerHTML=hits.map(h=>{
     const t=h.t, syns=t.synonyms||[];
-    // matched synonym first (the reason this row surfaced), then the rest, capped
+    // every synonym is listed; the matched one leads, flagged as the reason this row surfaced
     const via=h.via, rest=syns.filter(x=>!via||x.text!==via.text);
-    const show=(via?[{text:via.text,scope:via.scope,hit:1}]:[]).concat(rest.slice(0,via?2:3));
+    const show=(via?[{text:via.text,scope:via.scope,hit:1}]:[]).concat(rest);
     const chips=show.map(x=>
       `<span class="syn${x.hit?' hit':''}" title="${escA(x.scope)} synonym of ${escA(t.name)}">`+
       `<span class="sl sl-${escA(x.scope)}">${esc(x.scope.toLowerCase())}</span>${esc(x.text)}</span>`).join('');
-    const extra=syns.length-show.length;
     return `<span class="ddi" data-id="${escA(t.id)}" data-name="${escA(t.name)}">`+
            `<span class="tnm"><b>${esc(t.name)}</b><span class="id">${esc(t.id)}</span></span>`+
-           (chips?`<span class="ddsyns">${chips}${extra>0?`<span class="syn">+${extra} more</span>`:''}</span>`:'')+
+           (chips?`<span class="ddsyns">${chips}</span>`:'')+
            `</span>`;
   }).join('')+more;
 }
@@ -614,14 +625,23 @@ cmpbody.addEventListener('click',e=>{
     if(dd===openDD){ closeDD(); return; }
     closeDD();
     if(!dd.dataset.built){
+      const cur=SEL[s]||{id:'__none__',name:''};
       dd.innerHTML=
-        `<div class="ddsearch"><input type="search" placeholder="search names &amp; synonyms…" `+
-        `data-s="${escA(s)}" autocomplete="off" spellcheck="false"></div>`+
-        `<div class="ddleg">`+
-          `<i><span class="sl sl-EXACT">exact</span>same thing</i>`+
-          `<i><span class="sl sl-NARROW">narrow</span>more specific than the term</i>`+
-          `<i><span class="sl sl-BROAD">broad</span>less specific — loses precision</i>`+
-          `<i><span class="sl sl-RELATED">related</span>loosely associated only</i>`+
+        `<div class="ddtop">`+
+          `<div class="ddsel"><span class="dsl">${esc(s)}</span>`+
+            `<span class="dsarrow">→</span>`+
+            (cur.id==='__none__' ? `<span class="dsnone">no term selected</span>`
+              : `<b>${esc(cur.name)}</b><span class="id">${esc(cur.id)}</span>`)+
+          `</div>`+
+          `<div class="ddsearch"><input type="search" placeholder="search names &amp; synonyms…" `+
+          `data-s="${escA(s)}" autocomplete="off" spellcheck="false"></div>`+
+          `<div class="ddleg">`+
+            `<i><span class="sl sl-EXACT">exact</span>same thing</i>`+
+            `<i><span class="sl sl-NARROW">narrow</span>more specific than the term</i>`+
+            `<i><span class="sl sl-BROAD">broad</span>less specific — loses precision</i>`+
+            `<i><span class="sl sl-RELATED">related</span>loosely associated only</i>`+
+          `</div>`+
+          `<div class="ddhd"></div>`+
         `</div><div class="ddlist"></div>`;
       renderDD(dd, s, '');
       dd.dataset.built='1';
