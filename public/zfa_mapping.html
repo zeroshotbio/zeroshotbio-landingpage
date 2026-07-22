@@ -22,13 +22,13 @@ body{margin:0;background:var(--paper);color:var(--ink);
 .hd{padding:14px 26px 16px;border-bottom:1px solid var(--edge);background:var(--card);flex:none}
 h1{margin:0 0 12px;font-size:24px;font-weight:800;letter-spacing:-.4px}
 /* ---- five band cards: one merged confidence rubric, green -> red ---- */
-.explain{display:flex;flex-wrap:wrap;gap:10px}
-.ex{flex:1;min-width:180px;border:1px solid var(--edge);border-top:4px solid var(--edge);
- border-radius:11px;padding:10px 13px;background:var(--card)}
-.ex-h{display:flex;align-items:baseline;gap:8px;font-size:14px;font-weight:800;letter-spacing:-.1px}
-.ex-h .ex-n{margin-left:auto;font-size:18px;font-weight:800;line-height:1}
-.ex-b{margin-top:6px;font-size:11.5px;line-height:1.4;color:var(--mut)}
-.ex-b .eg{display:block;margin-top:5px;font-size:10.5px;color:var(--mut2)}
+.explain{display:flex;flex-wrap:nowrap;gap:8px}
+.ex{flex:1 1 0;min-width:0;border:1px solid var(--edge);border-top:4px solid var(--edge);
+ border-radius:9px;padding:7px 10px;background:var(--card)}
+.ex-h{display:flex;align-items:baseline;gap:6px;font-size:12px;font-weight:800;letter-spacing:-.1px}
+.ex-h .ex-n{margin-left:auto;font-size:15px;font-weight:800;line-height:1}
+.ex-b{margin-top:4px;font-size:10px;line-height:1.35;color:var(--mut)}
+.ex-b .eg{display:block;margin-top:4px;font-size:9.5px;color:var(--mut2)}
 .ex-b .eg b{color:var(--mut)}
 .ex.c1{border-top-color:var(--b1);background:var(--b1t)}.ex.c1 .ex-h,.ex.c1 .ex-n{color:var(--b1)}
 .ex.c2{border-top-color:var(--b2);background:var(--b2t)}.ex.c2 .ex-h,.ex.c2 .ex-n{color:#5f8a1e}
@@ -344,6 +344,9 @@ svg{font-family:"Roboto Slab",serif;display:block}
 .cmp th.h-zs{text-align:left;border-left:2px solid var(--ink)}
 .cmp td{padding:5px 18px;font-size:10px;vertical-align:middle;white-space:nowrap}
 .cmp td.c-zfa{text-align:right;border-right:2px solid #cfc7bc}
+/* keep both cells on one shared vertical axis: mixed baseline/middle among the inline
+   chips + pills made the left (ZFA) column sit ~1px low. Centre every child of both cells. */
+.cmp td.c-zfa>*,.cmp td.c-zs>*{vertical-align:middle}
 .cmp tr.a td{background:var(--card)} .cmp tr.b td{background:#f0ebe4}
 /* (judged-row accent = the chosen verdict colour; see .jv1..jv5 below) */
 /* the algorithm's single pick. Runner-up candidates used to cascade leftward in fading
@@ -565,31 +568,6 @@ tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20
  <div class="tools tools-bot">
   <span class="jstat" id="jstat2"></span>
   <button class="save-btn" id="saveBtn2">Save judgements</button>
- </div>
- <div class="meta" id="metaPanel">
-  <h2>ZSCAPE reference metadata</h2>
-  <p class="hint">The canonical ZSCAPE export tables, uploaded once and kept server-side at
-   <code>/opt/zeroshot/data/zscape_metadata/</code>. Sheet-name prefixes are stripped on the way in
-   (<i>zscape-extra-metadata - 8_top_marker_genes.csv</i> &rarr; <i>8_top_marker_genes.csv</i>) and a
-   re-upload overwrites — these are single-source reference, not versioned drops.</p>
-  <div class="drop" id="drop" tabindex="0" role="button" aria-label="upload reference CSVs">
-   <div class="dropb">&#8681;</div>
-   <div class="dropt"><b>Drop .csv files here</b><span>or click to browse — several at once is fine</span></div>
-   <input type="file" id="fileIn" accept=".csv,text/csv" multiple hidden>
-  </div>
-  <div class="uplist" id="upList"></div>
-  <div class="mtabwrap">
-   <div class="mtabhd"><b>Loaded reference files</b><span class="mstat" id="mStat">reading manifest…</span></div>
-   <table class="mtab"><tbody id="mBody"></tbody></table>
-  </div>
- </div>
- <div class="dl">
-  <h2>Download</h2>
-  <p class="hint">Every ZSCAPE label name, filed under its schema category — four columns
-   (<i>germ_layer</i>, <i>tissue</i>, <i>cell_type_broad</i>, <i>cell_type_sub</i>), one label per cell.
-   germ_layer 7 &middot; tissue 34 &middot; cell_type_broad 99 &middot; cell_type_sub 156 &mdash; 216 distinct label strings (296 label&times;category pairs).</p>
-  <a class="dl-btn" download="zscape_labels_by_category.csv"
-     href="data:text/csv;base64,Z2VybV9sYXllcix0aXNzdWUsY2VsbF90eXBlX2Jyb2FkLGNlbGxfdHlwZV9zdWIKZWN0b2Rlcm0sQmxvb2QsYWRyZW5hbCBnbGFuZCxhZHJlbmFsIGdsYW5kCmVjdG9kZXJtL25ldXJhbCBjcmVzdCxCb25lLGFudGVyaW9yIG1pZ3JhdG9yeSBtdXNjbGUsYW50ZXJpb3IgbWlncmF0b3J5IG11c2NsZQplbmRvZGVybSxDZW50cmFsIE5lcnZvdXMgU3lzdGVtLGJhc2FsIGNlbGwsYmFzYWwgY2VsbCAoZWFybHkpCm1lc29kZXJtLENOUy9OZXVyYWwgY3Jlc3QsY2FyZGlvbXlvY3l0ZSwiYmFzYWwgY2VsbCAoZm4xYiwgY3lwMjZhMSs7IHBvc3Rlcmlvcj8pIgptZXNvZGVybS9lY3RvZGVybSxDb25uZWN0aXZlIFRpc3N1ZSxjaG9uZHJvY3Jhbml1bSxiYXNhbCBjZWxsIChsYXRlKQptZXNvZGVybS9uZXVyYWwgY3Jlc3QsQ3JhbmlhbCBNdXNjbGUgKExhdGUpLGNvbm5lY3RpdmUgdGlzc3VlLW1lbmluZ2VzLWRlcm1hbCBGQixjYXJkaW9teW9jeXRlCm5ldXJhbCBjcmVzdCxDcmFuaWFsIE5DLGNvbnRhaW5zIGhlYWQgdmFzY3VsYXR1cmU/LGNob25kcm9jcmFuaXVtCixFYXIsY3JhbmlhbCBtdXNjbGUgKGVhcmx5KSxjb25uZWN0aXZlIHRpc3N1ZS1tZW5pbmdlcy1kZXJtYWwgRkIgKGVhcmx5KQosRW5kb2NyaW5lLGNyYW5pYWwgbXVzY2xlIChsYXRlKSxjb25uZWN0aXZlIHRpc3N1ZS1tZW5pbmdlcy1kZXJtYWwgRkIgKGxhdGUpCixFbmRvdGhlbGlhbCxjcmFuaWFsIG11c2NsZSAobWlkKSxjb250YWlucyBoZWFkIHZhc2N1bGF0dXJlPwosRXBpZGVybWlzLCJjcmFuaWFsIG11c2NsZSAobm9uLXNvbWl0aWMsIGZhc3QtdHdpdGNoKSIsY3JhbmlhbCBnYW5nbGlvbiBwcm9nZW5pdG9yCixFeWUsY3JhbmlhbCBtdXNjbGUgKHByb2dlbml0b3IpLGNyYW5pYWwgbXVzY2xlIChlYXJseSkKLEZpbixjcmFuaWFsIG5ldXJhbCBjcmVzdCxjcmFuaWFsIG11c2NsZSAobGF0ZSkKLEdlcm0gTGluZSxkaWZmZXJlbnRpYXRpbmcgbmV1cm9uIChoaW5kYnJhaW4pLGNyYW5pYWwgbXVzY2xlIChtaWQpCixIYXRjaGluZyBHbGFuZCxkaWZmZXJlbnRpYXRpbmcgbmV1cm9uIDEsImNyYW5pYWwgbXVzY2xlIChub24tc29taXRpYywgZmFzdC10d2l0Y2gpIgosSGVhZCBNZXNvZGVybSxkaWZmZXJlbnRpYXRpbmcgbmV1cm9uIDIsY3JhbmlhbCBtdXNjbGUgKHByb2dlbml0b3IpCixIZWFydCxkb3JzYWwgc3BpbmFsIGNvcmQgbmV1cm9uLCJjcmFuaWFsIG5ldXJhbCBjcmVzdCAobnRtLCBmb3hkMyspIgosSHlwb2Nob3JkLGVuZG90aGVsaXVtIChkb3JzYWwgYW9ydGEpLGRpZmZlcmVudGlhdGluZyBuZXVyb24gKGhpbmRicmFpbikKLEludGVzdGluZSwiZW5kb3RoZWxpdW0gKGY4KywgY2xpYzIrKSIsZGlmZmVyZW50aWF0aW5nIG5ldXJvbiAxCixLaWRuZXksZW5kb3RoZWxpdW0gKHZlaW4gKyBlYXJseSBhcnRlcnkpLGRpZmZlcmVudGlhdGluZyBuZXVyb24gMgosTGF0ZXJhbCBMaW5lLGVudmVsb3BpbmcgbGF5ZXIgKEVWTCksZG9yc2FsIHNwaW5hbCBjb3JkIG5ldXJvbgosTGl2ZXIsImV5ZSwgb3B0aWMgY3VwIixlbmRvdGhlbGl1bSAoZG9yc2FsIGFvcnRhKQosTXVzY2xlLGZhc3QtY29tbWl0dGVkIG15b2N5dGUsImVuZG90aGVsaXVtIChmOCssIGNsaWMyKykiCixOb3RvY2hvcmQsZmluIGJ1ZCBtZXNvZGVybSAocGVjdG9yYWwpLGVuZG90aGVsaXVtICh2ZWluICsgZWFybHkgYXJ0ZXJ5KQosT2xmYWN0b3J5LGZpbiBmb2xkLGVudmVsb3BpbmcgbGF5ZXIgKEVWTCkKLFBhbmNyZWFzLGZpbiBtZXNlbmNoeW1lLGVwaWJyYW5jaGlhbCBnYW5nbGlvbgosUGFyYXhpYWwgTWVzb2Rlcm0sZmxvb3IgcGxhdGUsImVwaWRlcm1hbCBjZWxsIChncnAsIHB2YWxiOCspIgosUGVyaXBoZXJhbCBOZXJ2b3VzIFN5c3RlbSxnbGlhLCJleWUsIG9wdGljIGN1cCIKLFBoYXJ5bmdlYWwgQXJjaCxoYWlyIGNlbGwsZmFzdC1jb21taXR0ZWQgbXlvY3l0ZSAoZnVzaW5nKQosUGhhcnlueCxoYXRjaGluZyBnbGFuZCxmYXN0LWNvbW1pdHRlZCBteW9jeXRlIChwcmUtZnVzaW9uKQosUGlnbWVudCxoZWFkIG1lc2VuY2h5bWUsZmluIGJ1ZCBtZXNvZGVybSAocGVjdG9yYWwpCixSZXRpbmEsImhlYWQgbWVzZW5jaHltZSAobWF5YmUgdmVudHJhbCwgaGFuZDIrKSIsZmluIGZvbGQKLFN3aW0gQmxhZGRlcixoZWFkIG1lc2VuY2h5bWUvUEEgY2FydGlsYWdlLGZpbiBtZXNlbmNoeW1lCixUb290aCxoZWFkL2V5ZSBjb25uZWN0aXZlIHRpc3N1ZSxmbG9vciBwbGF0ZQosLGh5cG9jaG9yZCxnaWxsIGlvbm9jeXRlCiwsaHlwb3BoeXNpcy9sb2N1cyBjb2VydWxldXMsZ2xpYQosLGludGVzdGluZSxnb2JsZXQgY2VsbAosLGlvbm9jeXRlL2dvYmxldCBjZWxsLGdvYmxldCBjZWxsIChDYTIrKQosLGlyaWRvcGhvcmUsaGFpciBjZWxsCiwsamF3IGNob25kcm9jeXRlLGhhdGNoaW5nIGdsYW5kIDEKLCxLQSBuZXVyb24saGF0Y2hpbmcgZ2xhbmQgMgosLGxlbnMsaGVhZCBtZXNlbmNoeW1lIChjb250YWlucyBzY2xlcm90b21lKQosLGxpdmVyLCJoZWFkIG1lc2VuY2h5bWUgKG1heWJlIHZlbnRyYWwsIGhhbmQyKykiCiwsbWF0dXJlIGZhc3QgbXVzY2xlLGhlYWQgbWVzZW5jaHltZS9QQSBjYXJ0aWxhZ2UKLCxtYXR1cmUgc2xvdyBtdXNjbGUsaGVhZC9leWUgY29ubmVjdGl2ZSB0aXNzdWUKLCxtZWxhbm9waG9yZSxoeXBvY2hvcmQKLCxtZXNvZGVybWFsIHByb2dlbml0b3IgY2VsbHMgKGNvbnRhaW5zIFBTTSksaHlwb3BoeXNpcwosLCJtaW5lcmFsaXplZCB0aXNzdWUsIGJvbmUiLGludGVzdGluZSAoZWFybHkpCiwsbW90b3IgbmV1cm9uLGludGVzdGluZSAobGF0ZSkKLCxteWVsb2lkIGNlbGwsaW50ZXN0aW5lIChtaWQpCiwsbXlvYmxhc3QsaW9ub2N5dGUKLCxuZXVyYWwgY3Jlc3QgKyBwaWdtZW50IGNlbGwgcHJvZ2VuaXRvcixpb25vY3l0ZS9nb2JsZXQgY2VsbCAocG91MmYzKykKLCxuZXVyYWwgcHJvZ2VuaXRvciAoaGluZGJyYWluIFI3LzgpLGlyaWRvcGhvcmUKLCxuZXVyYWwgcHJvZ2VuaXRvciAoaGluZGJyYWluKSxqYXcgY2hvbmRyb2N5dGUKLCxuZXVyYWwgcHJvZ2VuaXRvciAoTUhCKSxLQSBuZXVyb24KLCxuZXVyYWwgcHJvZ2VuaXRvciAodGVsZW5jZXBoYWxvbi9kaWVuY2VwaGFsb24pLGxhdGVyYWwgbGluZSBnYW5nbGlvbgosLG5ldXJhbCB0dWJlLWxpa2UgY29ubmVjdGl2ZSB0aXNzdWUgKCsgdGFzdGUgYnVkKSxsZW5zIChlYXJseSkKLCxuZXVyb21hc3Qgc3VwcG9ydCBjZWxsLGxlbnMgKGxhdGUpCiwsbmV1cm9uICgrIHNwaW5hbCBjb3JkKSxsZW5zIChvdGhlcikKLCwibmV1cm9uIChjcmFuaWFsIGdhbmdsaWEgc2Vuc29yeSwgUm9ob24tQmVhcmQpIixsaXZlcgosLG5ldXJvbiAoY3JhbmlhbCBnYW5nbGlvbiksbG9jdXMgY29lcnVsZXVzCiwsbmV1cm9uIChkb3BhbWluZXJnaWMpLG1hY3JvcGhhZ2UKLCwibmV1cm9uICh0ZWxlbmNlcGhhbG9uLCBnbHV0YW1hdGVyZ2ljKSIsbWF0dXJlIGZhc3QgbXVzY2xlIDEKLCwibmV1cm9ucyAoZGlmZmVyZW50aWF0aW5nLCBjb250YWlucyBwZXJpcGhlcmFsKSIsbWF0dXJlIGZhc3QgbXVzY2xlIDIKLCwibmV1cm9ucyAoZ2FiYWVyZ2ljLCBnbHV0YW1hdGVyZ2ljKSIsbWF0dXJlIGZhc3QgbXVzY2xlIDMKLCwibmV1cm9ucyAoZ2FiYWVyZ2ljLCBnbHV0YW1hdGVyZ2ljOyBjb250YWlucyBQdXJraW5qZSkiLG1hdHVyZSBmYXN0IG11c2NsZSA0Ciwsbm90b2Nob3JkLG1hdHVyZSBmYXN0IG11c2NsZSA1Ciwsb2RvbnRvYmxhc3QsbWF0dXJlIGZhc3QgbXVzY2xlIDYKLCxvbGZhY3RvcnkgdmVzaWNsZS9idWxiLG1hdHVyZSBzbG93IG11c2NsZSAxCiwsb3N0ZW9ibGFzdCxtYXR1cmUgc2xvdyBtdXNjbGUgMgosLHBhbmNyZWFzLG1hdHVyZSBzbG93IG11c2NsZSAzCiwscGVjdG9yYWwgZmluIGJ1ZCAob3N0ZW9ibGFzdCspLG1lbGFub3Bob3JlCiwscGVyaWRlcm0sbWVzb2Rlcm1hbCBwcm9nZW5pdG9yIGNlbGxzIChjb250YWlucyBQU00pCiwscGVyaW9jdWxhciBtZXNlbmNoeW1lLCJtaW5lcmFsaXplZCB0aXNzdWUsIGJvbmUiCiwsInBoYXJ5bmdlYWwgYXJjaCAoY29udGFpbnMgbXVzY2xlLCBlYXJseSBjYXJ0aWxhZ2UpIiwibW90b3IgbmV1cm9uIChoaW5kYnJhaW4sIHNwaW5hbCBjb3JkLCBlbnRlcmljKSIKLCxwaGFyeW5nZWFsIGFyY2ggKGVhcmx5KSxteW9ibGFzdAosLHBoYXJ5bmdlYWwgYXJjaCAoTkMtZGVyaXZlZCksTmFLIGlvbm9jeXRlCiwscGhhcnlueCxuZXVyYWwgY3Jlc3QgKyBwaWdtZW50IGNlbGwgcHJvZ2VuaXRvcgosLHBvc3RlcmlvciBsYXRlcmFsIGxpbmUgcHJpbW9yZGl1bSxuZXVyYWwgcHJvZ2VuaXRvciAoaGluZGJyYWluIFI3LzgpCiwscG9zdGVyaW9yIHNwaW5hbCBjb3JkIHByb2dlbml0b3JzLG5ldXJhbCBwcm9nZW5pdG9yIChoaW5kYnJhaW4pCiwscHJpbW9yZGlhbCBnZXJtIGNlbGwsbmV1cmFsIHByb2dlbml0b3IgKE1IQikKLCxwcm9uZXBocmljIGR1Y3QsbmV1cmFsIHByb2dlbml0b3IgKHRlbGVuY2VwaGFsb24vZGllbmNlcGhhbG9uKQosLHByb25lcGhyaWMgcG9kb2N5dGUsbmV1cmFsIHR1YmUtbGlrZSBjb25uZWN0aXZlIHRpc3N1ZSAoKyB0YXN0ZSBidWQpCiwscHJvbmVwaHJvcyBkaXN0YWwgdHVidWxlLG5ldXJvbWFzdCBzdXBwb3J0IGNlbGwKLCxwcm9uZXBocm9zIHByb3hpbWFsIHR1YnVsZSxuZXVyb24gKCsgc3BpbmFsIGNvcmQpCiwscmVkIGJsb29kIGNlbGwsIm5ldXJvbiAoY3JhbmlhbCBnYW5nbGlhIHNlbnNvcnksIFJvaG9uLUJlYXJkKSIKLCxyZXRpbmFsIG5ldXJvbixuZXVyb24gKGNyYW5pYWwgZ2FuZ2xpb24pCiwscmV0aW5hbCBwaWdtZW50ZWQgZXBpdGhlbGl1bSAoZWFybHkpLG5ldXJvbiAoZG9wYW1pbmVyZ2ljKQosLHJldGluYWwgcGlnbWVudGVkIGVwaXRoZWxpdW0gKGxhdGUpLCJuZXVyb24gKHRlbGVuY2VwaGFsb24sIGdsdXRhbWF0ZXJnaWMpIgosLCJyb29mIHBsYXRlLCBmbGV4dXJhbCArIHN1YmNvbW1pc3N1cmFsIG9yZ2FuIiwibmV1cm9ucyAoZGlmZmVyZW50aWF0aW5nLCBjb250YWlucyBwZXJpcGhlcmFsKSIKLCxzYXRlbGxpdGUgY2VsbHMsIm5ldXJvbnMgKGdhYmFlcmdpYywgZ2x1dGFtYXRlcmdpYykiCiwsc2xvdy1jb21taXR0ZWQgbXlvY3l0ZSwibmV1cm9ucyAoZ2FiYWVyZ2ljLCBnbHV0YW1hdGVyZ2ljOyBjb250YWlucyBQdXJraW5qZSkiCiwsc3VwcG9ydCBjZWxscy9vdGljIHZlc2ljbGUsbmV1dHJvcGhpbAosLHN3aW0gYmxhZGRlciBwcmltb3JkaXVtLG5vdG9jaG9yZCAoZWFybHkpCiwsdGh5cm9pZCBmb2xsaWNsZSBjZWxsLG5vdG9jaG9yZCAobGF0ZSkKLCwidW5rbm93biAoZGNuKywgY29sNispIixvZG9udG9ibGFzdAosLCJ1bmtub3duIChLKyBjaGFubmVsLCBjaWxpYXRlZCkiLG9sZmFjdG9yeSB2ZXNpY2xlL2J1bGIKLCx2YXNjdWxhciBzbW9vdGggbXVzY2xlLG9zdGVvYmxhc3QKLCx4YW50aG9waG9yZSxwYW5jcmVhcwosLCxwYW5jcmVhcyAoZXhvY3JpbmUpCiwsLHBlY3RvcmFsIGZpbiBidWQgKG9zdGVvYmxhc3QrKQosLCxwZXJpZGVybSAxCiwsLHBlcmlkZXJtIDEwCiwsLHBlcmlkZXJtIDExCiwsLHBlcmlkZXJtIDEyCiwsLHBlcmlkZXJtIDEzCiwsLHBlcmlkZXJtIDE0CiwsLHBlcmlkZXJtIDE1CiwsLHBlcmlkZXJtIDE2CiwsLHBlcmlkZXJtIDE3CiwsLHBlcmlkZXJtIDE4CiwsLHBlcmlkZXJtIDE5CiwsLHBlcmlkZXJtIDIKLCwscGVyaWRlcm0gMjAKLCwscGVyaWRlcm0gMwosLCxwZXJpZGVybSA0CiwsLHBlcmlkZXJtIDUKLCwscGVyaWRlcm0gNgosLCxwZXJpZGVybSA3CiwsLHBlcmlkZXJtIDgKLCwscGVyaWRlcm0gOQosLCxwZXJpb2N1bGFyIG1lc2VuY2h5bWUKLCwsInBoYXJ5bmdlYWwgYXJjaCAoY29udGFpbnMgbXVzY2xlLCBlYXJseSBjYXJ0aWxhZ2UpIgosLCxwaGFyeW5nZWFsIGFyY2ggKGVhcmx5KQosLCxwaGFyeW5nZWFsIGFyY2ggKE5DLWRlcml2ZWQpCiwsLHBoYXJ5bnggKGVhcmx5KQosLCxwaGFyeW54IChsYXRlKQosLCxwb3N0ZXJpb3IgbGF0ZXJhbCBsaW5lIHByaW1vcmRpdW0KLCwscG9zdGVyaW9yIHNwaW5hbCBjb3JkIHByb2dlbml0b3JzCiwsLHByaW1vcmRpYWwgZ2VybSBjZWxsCiwsLHByb25lcGhyaWMgZHVjdAosLCxwcm9uZXBocmljIHBvZG9jeXRlCiwsLHByb25lcGhyb3MgZGlzdGFsIHR1YnVsZQosLCxwcm9uZXBocm9zIHByb3hpbWFsIHR1YnVsZQosLCxyYWRpYWwgZ2xpYQosLCxyZWQgYmxvb2QgY2VsbAosLCwicmV0aW5hbCBuZXVyb24gKGFtYWNyaW5lLCBSR0MpIgosLCwicmV0aW5hbCBuZXVyb24gKFJHQywgcGhvdG9yZWNlcHRvciwgYmlwb2xhciBjZWxsKSIKLCwscmV0aW5hbCBwaWdtZW50ZWQgZXBpdGhlbGl1bSAoZWFybHkpCiwsLHJldGluYWwgcGlnbWVudGVkIGVwaXRoZWxpdW0gKGxhdGUpCiwsLHJvaG9uLWJlYXJkIG5ldXJvbgosLCwicm9vZiBwbGF0ZSwgZmxleHVyYWwgKyBzdWJjb21taXNzdXJhbCBvcmdhbiIKLCwsc2F0ZWxsaXRlIGNlbGxzCiwsLCJzY2h3YW5uIGNlbGwsIG9saWdvZGVuZHJvY3l0ZSIKLCwsc2xvdy1jb21taXR0ZWQgbXlvY3l0ZQosLCxzdGF0b2Fjb3VzdGljIGdhbmdsaW9uCiwsLHN1cHBvcnQgY2VsbHMvb3RpYyB2ZXNpY2xlCiwsLHN3aW0gYmxhZGRlciBwcmltb3JkaXVtCiwsLHRoeXJvaWQgZm9sbGljbGUgY2VsbCAxCiwsLHRoeXJvaWQgZm9sbGljbGUgY2VsbCAyCiwsLHRyaWdlbWluYWwgZ2FuZ2xpb24KLCwsInVua25vd24gKGRjbissIGNvbDYrKSIKLCwsInVua25vd24gKEsrIGNoYW5uZWwsIGNpbGlhdGVkKSIKLCwsdW5rbm93biBzZW5zb3J5IGdhbmdsaW9uCiwsLHZhc2N1bGFyIHNtb290aCBtdXNjbGUKLCwseGFudGhvcGhvcmUK">&#8681;&nbsp; zscape_labels_by_category.csv</a>
  </div>
 </div>
 
@@ -1896,88 +1874,6 @@ async function fileSubmission(){
   }
 }
 
-// ---- reference metadata: upload the canonical ZSCAPE CSVs, list what is already loaded ----
-// Same absolute-origin trick as the judge endpoint: the backend only exists on the EC2 box, so
-// the Vercel copy of this page talks to it directly rather than to its own /api.
-const META_API='https://zscape.zeroshot.bio/api/zscape-metadata';
-const drop=document.getElementById('drop'), fileIn=document.getElementById('fileIn');
-const upList=document.getElementById('upList'), mBody=document.getElementById('mBody'), mStat=document.getElementById('mStat');
-
-function fmtWhen(iso){
-  if(!iso) return '';
-  const d=new Date(iso); return isNaN(d)?iso:d.toLocaleString([], {dateStyle:'medium',timeStyle:'short'});
-}
-
-function renderManifest(v){
-  const by={}; (v.files||[]).forEach(f=>by[f.filename]=f);
-  const expected=(v.expected||[]).map(e=>e.filename);
-  const extra=(v.files||[]).filter(f=>!expected.includes(f.filename)).map(f=>f.filename);
-  const rows=expected.concat(extra).map(name=>{
-    const f=by[name];
-    if(!f) return `<tr class="miss"><td class="mf">${esc(name)}</td><td colspan="3" class="mcols">not uploaded yet</td>`+
-                  `<td class="mnum"><span class="mpill off">missing</span></td></tr>`;
-    const pill=expected.includes(name)?'<span class="mpill on">loaded</span>':'<span class="mpill extra">extra</span>';
-    return `<tr><td class="mf">${esc(f.filename)}</td>`+
-      `<td class="mnum">${(f.rows||0).toLocaleString()} rows</td>`+
-      `<td class="mnum">${f.n_columns||0} cols</td>`+
-      `<td class="mcols" title="${escA((f.columns||[]).join(', '))}">${esc((f.columns||[]).join(', '))}</td>`+
-      `<td class="mwhen">${esc(fmtWhen(f.uploaded_utc))}</td><td class="mnum">${pill}</td></tr>`;
-  }).join('');
-  mBody.innerHTML=rows;
-  mStat.textContent=`${v.n_loaded||0} loaded · ${v.n_expected_missing||0} of ${expected.length} expected still missing`;
-}
-
-async function loadManifest(){
-  try{ renderManifest(await (await fetch(META_API+'/manifest')).json()); }
-  catch(err){ mStat.textContent='could not reach the metadata service'; }
-}
-
-// One POST per file so a single bad CSV can't fail the batch, and each row reports its own fate.
-async function uploadOne(file){
-  const row=document.createElement('div');
-  row.className='uprow go';
-  row.innerHTML=`<span class="un">${esc(file.name)}</span><span class="ud"></span><span class="us">uploading…</span>`;
-  upList.appendChild(row);
-  const det=row.querySelector('.ud'), st=row.querySelector('.us');
-  try{
-    const fd=new FormData(); fd.append('file',file,file.name);
-    const r=await fetch(META_API+'/upload',{method:'POST',body:fd});
-    const j=await r.json();
-    const got=(j.saved||[])[0];
-    if(j.ok && got){
-      row.className='uprow ok'; st.textContent='done';
-      det.textContent=`→ ${got.filename} · ${got.rows.toLocaleString()} rows · ${got.n_columns} cols`;
-      if(j.manifest) renderManifest(j.manifest);
-    }else{
-      row.className='uprow err'; st.textContent='error';
-      det.textContent=((j.errors||[])[0]||{}).error || j.error || 'rejected';
-    }
-  }catch(err){
-    row.className='uprow err'; st.textContent='error'; det.textContent='upload failed (offline?)';
-  }
-}
-
-function takeFiles(list){
-  const files=[...list].filter(f=>/\.csv$/i.test(f.name));
-  const skipped=[...list].length-files.length;
-  if(skipped){
-    const row=document.createElement('div');
-    row.className='uprow err';
-    row.innerHTML=`<span class="un">${skipped} non-CSV file${skipped>1?'s':''} ignored</span><span class="us">skipped</span>`;
-    upList.appendChild(row);
-  }
-  files.forEach(uploadOne);          // concurrent: each row updates independently
-}
-
-drop.addEventListener('click',()=>fileIn.click());
-drop.addEventListener('keydown',e=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); fileIn.click(); } });
-fileIn.addEventListener('change',()=>{ takeFiles(fileIn.files); fileIn.value=''; });
-['dragenter','dragover'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.add('over'); }));
-['dragleave','drop'].forEach(ev=>drop.addEventListener(ev,e=>{ e.preventDefault(); drop.classList.remove('over'); }));
-drop.addEventListener('drop',e=>{ if(e.dataTransfer&&e.dataTransfer.files) takeFiles(e.dataTransfer.files); });
-// a stray drop anywhere else shouldn't make the browser navigate to the file
-['dragover','drop'].forEach(ev=>addEventListener(ev,e=>{ if(!drop.contains(e.target)) e.preventDefault(); }));
-loadManifest();
 
 buildTable();
 // restore any previously-saved judgements (term + verdict). This MUST be visible: a silent
