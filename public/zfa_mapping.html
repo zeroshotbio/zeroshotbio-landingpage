@@ -1980,17 +1980,33 @@ drop.addEventListener('drop',e=>{ if(e.dataTransfer&&e.dataTransfer.files) takeF
 loadManifest();
 
 buildTable();
-// restore any previously-saved judgements (term + verdict)
-fetch(ENDPOINT).then(r=>r.json()).then(d=>{
-  if(d&&d.judgements){
-    for(const [s,j] of Object.entries(d.judgements)){
-      if(j.verdict && VMAP[j.verdict]) VERD[s]=j.verdict;   // ignore keys from the old 5-way scale
-      if(j.comment) NOTE[s]=j.comment;
-      if(j.chosen_id) SEL[s]={id:j.chosen_id,name:j.chosen_name||''};
+// restore any previously-saved judgements (term + verdict). This MUST be visible: a silent
+// failure here (service blip, cached page) reads as "my progress vanished" when the draft is
+// safe on the server the whole time. So report the count on success and the error on failure —
+// and never let a failed load look like an empty one.
+function restoreDraft(){
+  jstat.textContent='loading saved progress…';
+  fetch(ENDPOINT,{cache:'no-store'}).then(r=>{ if(!r.ok) throw new Error('HTTP '+r.status); return r.json(); }).then(d=>{
+    let n=0;
+    if(d&&d.judgements){
+      for(const [s,j] of Object.entries(d.judgements)){
+        if(!rowS[s]) continue;                                 // a key with no current row: skip, don't lose it
+        if(j.verdict && VMAP[j.verdict]){ VERD[s]=j.verdict; n++; }  // ignore keys from the old 5-way scale
+        if(j.comment) NOTE[s]=j.comment;
+        if(j.chosen_id) SEL[s]={id:j.chosen_id,name:j.chosen_name||''};
+      }
+      if(d.saved_utc) lastSaved='(loaded)';
+      applyJudge();
     }
-    if(d.saved_utc) lastSaved='(loaded)';
-    applyJudge();
-  }
-}).catch(()=>{});
+    jstat.textContent = n ? `restored ${n} saved judgement${n===1?'':'s'}` : 'no saved judgements yet';
+  }).catch(err=>{
+    // do NOT show "0 judged" — that would imply the work is gone. Say it couldn't load + offer retry.
+    jstat.innerHTML='⚠ could not load saved progress (your work is safe on the server) — '+
+      '<a href="#" id="jretry" style="color:var(--accent);font-weight:700">retry</a>';
+    const rt=document.getElementById('jretry');
+    if(rt) rt.addEventListener('click',e=>{ e.preventDefault(); restoreDraft(); });
+  });
+}
+restoreDraft();
 </script>
 </body></html>
