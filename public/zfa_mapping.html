@@ -538,6 +538,49 @@ tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20
 .tcount{font-size:10.5px;fill:var(--mut)}
 .leader{stroke:#c9c1b6;stroke-width:1;fill:none}
 .hdr{font-size:11px;font-weight:800;letter-spacing:.6px;text-transform:uppercase;fill:var(--mut2)}
+
+/* ===== DEG Double-Check (preview) — two columns, kasperov visual language ===== */
+:root{--kaccent:#0e7490;--kup:#8a847b;--kdn:#b8b2a8;--kpaper:#fffdfb;--kreason:#2563eb}
+#degpreview-ribbon{position:fixed;top:0;right:0;z-index:9999;background:var(--kaccent);color:#fff;
+  font:800 10px/1 system-ui,sans-serif;padding:6px 11px;border-radius:0 0 0 8px;letter-spacing:.6px;
+  box-shadow:0 2px 8px rgba(0,0,0,.2);pointer-events:none}
+.dmask .degview{width:min(1180px,96vw)}                 /* widen for two columns */
+.dg2{display:grid;grid-template-columns:1fr 1fr;gap:0;padding:2px 0 4px}
+.dg2col{padding:4px 20px 6px}
+.dg2col.L{border-right:1px solid var(--edge)}
+.dgcolhd{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;
+  color:var(--mut);padding:2px 0 12px;display:flex;align-items:center;gap:8px}
+.dgcolhd .tag{font-size:9px;font-weight:800;border-radius:4px;padding:1px 6px;text-transform:lowercase;letter-spacing:0}
+.dgcolhd.L .tag{color:#7a5b12;background:#fdf4e0;border:1px solid #e8d5a8}
+.dgcolhd.R .tag{color:var(--kaccent);background:#e6f3f5;border:1px solid #bfe0e5}
+/* de-novo marker rows: gene | log2FC bar | fold-change (kasperov style) */
+.mkt{margin:2px 0 6px}
+.mkt-h{font-size:10px;font-weight:800;letter-spacing:.4px;color:var(--mut);margin:9px 0 4px}
+.mkrow{display:grid;grid-template-columns:104px 1fr 52px;align-items:center;gap:8px;padding:2px 4px;font-size:11px;border-radius:5px}
+.mkrow .g{font-family:ui-monospace,Menlo,monospace;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mkrow .barwrap{height:9px;background:#f0ece7;border-radius:3px;overflow:hidden}
+.mkrow .bar{height:100%;border-radius:3px}
+.mkrow.up .bar{background:var(--kup)} .mkrow.dn .bar{background:var(--kdn)}
+.mkrow .pf{text-align:right;font-variant-numeric:tabular-nums;color:var(--mut);font-size:10px}
+.mkrow.shared{background:#eafcff;box-shadow:inset 0 0 0 1px #bfe0e5}
+.mkrow.shared .g{color:var(--kaccent)}
+.gz{margin-left:5px;font-size:8.5px;font-weight:800;color:var(--kaccent);cursor:help;border-bottom:1px dotted #bfe0e5;white-space:nowrap}
+.mkmeta{font-size:9.5px;color:var(--mut2);margin-top:5px}
+/* comparison strip spans both columns */
+.dgcmp{grid-column:1/3;margin:2px 20px 12px;padding:9px 12px;border-radius:8px;
+  background:#f6f8f8;border:1px solid var(--edge);font-size:11.5px;color:var(--ink);display:flex;align-items:center;gap:10px}
+.dgcmp b{color:var(--kaccent);font-weight:800}
+.dgcmp .chip{font-size:9px;font-weight:800;color:var(--kaccent);background:#e6f3f5;border:1px solid #bfe0e5;border-radius:4px;padding:1px 6px;text-transform:uppercase;letter-spacing:.4px}
+/* reasoner card (advisory) */
+.dgreason{border:1px solid #d8e6ec;border-left:3px solid var(--kreason);background:var(--kpaper);border-radius:8px;padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--ink)}
+.dgreason .adv{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--kreason);background:#eff6ff;border:1px solid #cfe0f7;border-radius:4px;padding:1px 6px;margin-bottom:7px}
+.dgreason p{margin:.4em 0} .dgreason ul{margin:.4em 0;padding-left:1.1em} .dgreason li{margin:.15em 0}
+/* loader — the kasperov kpulse dot */
+@keyframes kpulse{0%,100%{opacity:.3}50%{opacity:1}}
+.dgload{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:11.5px;padding:10px 0}
+.dgload .dot{width:7px;height:7px;border-radius:50%;background:var(--kaccent);animation:kpulse 1.1s infinite}
+.dgwarn{font-size:11px;color:#b45309;padding:8px 0;line-height:1.4}
+@media(max-width:860px){.dg2{grid-template-columns:1fr}.dg2col.L{border-right:none;border-bottom:1px solid var(--edge)}.dgcmp{margin:2px 20px}}
 </style></head><body>
 <div class="viewport">
  <div class="hd">
@@ -1003,9 +1046,19 @@ function markerTable(ms,cg){
   return `<table class="dgtab"><thead><tr>${head.map(h=>`<th>${h}</th>`).join('')}</tr></thead><tbody>${body}</tbody></table>`;
 }
 
-function openDeg(s){
-  const d=DEG[s], row=rowS[s]||{};
-  if(!d || !(d.evidence||(d.markers||[]).length)) return;   // muted button: nothing to show
+// ===== DEG Double-Check (preview) — two-column panel; right column is LIVE =====
+// Replaces the single-column openDeg. LEFT = the authors' account (unchanged content).
+// RIGHT = our de-novo re-derivation (markers from :5012, advisory synthesis, ZFIN join).
+// Read-only: nothing here writes SEL/VERD, picks a term, or changes a band.
+// Absolute so it works from BOTH origins: the nginx-served page (zscape.zeroshot.bio, same-origin)
+// and the Vercel-served page (www.zeroshot.bio, cross-origin — the sidecar sends CORS headers).
+const DEGPREVIEW_API='https://zscape.zeroshot.bio/degpreview';
+let G2T=null;                                  // gene symbol -> [{id,name}] (ZFIN, loaded once)
+function loadG2T(){ if(G2T) return Promise.resolve(G2T);
+  return fetch(DEGPREVIEW_API+'/gene2terms').then(r=>r.json()).then(j=>{G2T=j;return j;}).catch(()=>{G2T={};return G2T;}); }
+
+// LEFT column = the former DEG panel body, verbatim content (authors' claim + why).
+function authorsColumnHTML(s,d,row){
   const ch=d.chain||{};
   const chain = ch.germ_layer ? `<div class="dgchain">`+
       [['germ layer',ch.germ_layer],['tissue',ch.tissue],['broad',ch.cell_type_broad],['sub',ch.cell_type_sub]]
@@ -1016,26 +1069,97 @@ function openDeg(s){
   const quote = d.evidence
     ? `<div class="dgquote">&ldquo;${esc(d.evidence)}&rdquo;</div>`
     : `<div class="dgquote none">The authors left the evidence cell empty for this label.</div>`;
-  const nTot = d.n_markers_total||0, nShown=(d.markers||[]).length;
-  dbody.innerHTML =
-    `<div class="dgh"><h3>&#9878; DEG check<span class="dgsub">${esc(s)}${
-        d.groups&&d.groups.length?' · group cluster '+esc(d.groups.join(', ')):''}</span></h3>`+
-      `<button class="mbtn" id="dClose">Close</button></div>`+
-    `<div class="dgbody">`+
-      `<div class="dgsec"><h4>Authors&rsquo; evidence, verbatim</h4>${quote}${hedge}</div>`+
-      `<div class="dgsec"><h4>Top markers by specificity${nTot>nShown?` · showing ${nShown} of ${nTot}`:''}</h4>`+
-        markerTable(d.markers||[],false)+`</div>`+
-      ((d.cg_markers||[]).length ? `<div class="dgsec"><h4>Cranial-ganglion marker table</h4>`+
-        markerTable(d.cg_markers,true)+`</div>` : '')+
-      `<div class="dgsec"><h4>Asserted tier chain</h4>${chain}</div>`+
-      `<p class="dgfoot">Read-only. This panel reports what the ZSCAPE authors wrote and measured —
-        it does not suggest a ZFA term, change the band, or record anything. Row band
-        <b>${esc(BNAME[row.band]||row.band||'')}</b> and rule <b>${esc(row.rule||'')}</b> are unaffected by it.</p>`+
-    `</div>`;
-  document.getElementById('dClose').addEventListener('click',closeDeg);
-  dmask.classList.add('open');
+  const nTot=d.n_markers_total||0, nShown=(d.markers||[]).length;
+  return `<div class="dgsec"><h4>Authors&rsquo; evidence, verbatim</h4>${quote}${hedge}</div>`+
+    `<div class="dgsec"><h4>Authors&rsquo; cited markers${nTot>nShown?` · showing ${nShown} of ${nTot}`:''}</h4>`+
+      markerTable(d.markers||[],false)+`</div>`+
+    ((d.cg_markers||[]).length?`<div class="dgsec"><h4>Cranial-ganglion marker table</h4>`+markerTable(d.cg_markers,true)+`</div>`:'')+
+    `<div class="dgsec"><h4>Asserted tier chain</h4>${chain}</div>`;
 }
 
+function openDeg(s){
+  const d=DEG[s]||{}, row=rowS[s]||{};
+  const grp = d.groups&&d.groups.length?' · group cluster '+esc(d.groups.join(', ')):'';
+  dbody.innerHTML =
+    `<div class="dgh"><h3>&#9878; DEG Double-Check of ZSCAPE Label Authority<span class="dgsub">${esc(s)}${grp}</span></h3>`+
+      `<button class="mbtn" id="dClose">Close</button></div>`+
+    `<div class="dg2">`+
+      `<div class="dg2col L"><div class="dgcolhd L"><span class="tag">authors</span> what the authors claimed &amp; why</div>`+
+        authorsColumnHTML(s,d,row)+`</div>`+
+      `<div class="dg2col R"><div class="dgcolhd R"><span class="tag">de-novo</span> our re-derivation, from scratch</div>`+
+        `<div class="dgsec"><h4>Top de-novo markers (Welch one-vs-rest)</h4>`+
+          `<div id="dnMk"><div class="dgload"><span class="dot"></span>re-deriving this cluster&rsquo;s markers from the reference…</div></div></div>`+
+        `<div class="dgsec"><h4>What the de-novo markers suggest</h4>`+
+          `<div id="dnRs"><div class="dgload"><span class="dot"></span>waiting for markers…</div></div></div>`+
+      `</div>`+
+      `<div class="dgcmp" id="dnCmp" style="display:none"></div>`+
+    `</div>`+
+    `<p class="dgfoot">Read-only reading aid. LEFT is the ZSCAPE authors&rsquo; own account; RIGHT is an independent de-novo re-derivation (Welch one-vs-rest on the reference matrix) plus a non-binding synthesis that names no term. Nothing here suggests a ZFA term, changes a band, or is written as a judgement — row band <b>${esc(BNAME[row.band]||row.band||'')}</b> and rule <b>${esc(row.rule||'')}</b> are untouched. Your click remains the only writer.</p>`;
+  document.getElementById('dClose').addEventListener('click',closeDeg);
+  dmask.classList.add('open');
+  loadDenovo(s,d);
+}
+
+function mkTable(rows,dir,sharedSet){
+  if(!rows.length) return `<p class="dgnil">no ${dir==='up'?'enriched':'depleted'} markers passed the filter.</p>`;
+  const max=Math.max(1,...rows.map(m=>Math.abs(m.l2fc)));
+  return rows.map(m=>{
+    const w=Math.round(100*Math.abs(m.l2fc)/max);
+    const sh=sharedSet.has(m.gene.toLowerCase());
+    const terms=(G2T&&G2T[m.gene])||null;
+    const zt=terms?`<span class="gz" title="ZFIN annotates ${esc(m.gene)} → ${escA(terms.map(t=>t.name).slice(0,10).join(', '))}">ZFA▾</span>`:'';
+    const pct=dir==='up'?(100*m.pct_in).toFixed(0):(100*m.pct_out).toFixed(0);
+    return `<div class="mkrow ${dir} ${sh?'shared':''}"><span class="g" title="${esc(m.gene)}">${esc(m.gene)}${zt}</span>`+
+      `<span class="barwrap"><span class="bar" style="width:${w}%"></span></span>`+
+      `<span class="pf" title="log2FC ${m.l2fc} · score ${m.score} · ${pct}% of ${dir==='up'?'cluster':'rest'} express">${m.l2fc>0?'+':''}${m.l2fc}</span></div>`;
+  }).join('');
+}
+
+function loadDenovo(s,d){
+  const authorGenes=new Set((d.markers||[]).map(m=>(m.gene||'').toLowerCase()));
+  loadG2T().finally(()=>{
+    fetch(DEGPREVIEW_API+'/denovo_markers',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:s})})
+      .then(r=>r.json()).then(res=>{
+        const mk=document.getElementById('dnMk'); if(!mk) return;
+        if(res.error||res.status){ mk.innerHTML=`<div class="dgwarn">de-novo unavailable: ${esc(res.error||res.status)}</div>`;
+          const rs=document.getElementById('dnRs'); if(rs) rs.innerHTML=`<div class="dgwarn">skipped — no de-novo markers</div>`; return; }
+        const upG=new Set(res.up.map(m=>m.gene.toLowerCase()));
+        const shared=new Set([...authorGenes].filter(g=>upG.has(g)));   // authors' markers we also find
+        mk.innerHTML=`<div class="mkt"><div class="mkt-h">▲ UP-REGULATED</div>${mkTable(res.up,'up',shared)}`+
+          `<div class="mkt-h">▼ DOWN-REGULATED</div>${mkTable(res.down,'dn',shared)}</div>`+
+          `<div class="mkmeta">${res.n_in.toLocaleString()} cells vs ${res.n_out.toLocaleString()} rest · Welch one-vs-rest, BH-adjusted · ${res.cached?'cached':res.compute_seconds+'s'}</div>`;
+        const cmp=document.getElementById('dnCmp');
+        if(cmp && authorGenes.size){ cmp.style.display='flex';
+          cmp.innerHTML=`<span class="chip">overlap</span><span><b>${shared.size}</b> of the authors&rsquo; ${authorGenes.size} cited markers appear in our top de-novo up-markers.`+
+            (shared.size?' Shared genes are highlighted in both columns — where they agree, the label is well-grounded.':' None overlap — this label is worth reading with extra care.')+`</span>`;
+          document.querySelectorAll('.dg2col.L .dgtab tbody tr').forEach(tr=>{
+            const td=tr.querySelector('td'); const g=(td?.textContent||'').toLowerCase();
+            if(shared.has(g)){ tr.style.background='#eafcff'; tr.style.boxShadow='inset 0 0 0 1px #bfe0e5'; if(td) td.style.color='var(--kaccent)'; }
+          });
+        }
+        loadReason(s,res);
+      }).catch(()=>{ const mk=document.getElementById('dnMk'); if(mk) mk.innerHTML=`<div class="dgwarn">de-novo request failed</div>`; });
+  });
+}
+
+function loadReason(s,res){
+  const rs=document.getElementById('dnRs'); if(!rs) return;
+  rs.innerHTML=`<div class="dgload"><span class="dot"></span>synthesising what the genes suggest…</div>`;
+  fetch(DEGPREVIEW_API+'/reason',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:s,up:res.up,down:res.down})})
+    .then(r=>r.json()).then(j=>{
+      if(!j.ok){ rs.innerHTML=`<div class="dgwarn">advisory synthesis unavailable: ${esc(j.error||'error')}</div>`; return; }
+      rs.innerHTML=`<div class="dgreason"><span class="adv">Advisory · non-binding · names no term</span>${mdLite(j.text)}</div>`;
+    }).catch(()=>{ rs.innerHTML=`<div class="dgwarn">advisory synthesis request failed</div>`; });
+}
+
+// minimal markdown: bullets + paragraphs (the reasoner returns simple md)
+function mdLite(t){
+  const lines=(t||'').split('\n'); let html='',inul=false;
+  for(const ln of lines){ const b=ln.match(/^\s*[-*]\s+(.*)/);
+    if(b){ if(!inul){html+='<ul>';inul=true;} html+='<li>'+esc(b[1])+'</li>'; }
+    else { if(inul){html+='</ul>';inul=false;} if(ln.trim()) html+='<p>'+esc(ln)+'</p>'; } }
+  if(inul) html+='</ul>'; return html||'<p>'+esc(t)+'</p>';
+}
 let openDD=null;
 function closeDD(){ if(openDD){ openDD.classList.remove('open'); openDD=null; } }
 
