@@ -136,6 +136,24 @@ svg{font-family:"Roboto Slab",serif;display:block}
 .mband .mbc{width:58px;flex:none;text-align:right;color:var(--mut2);font-size:10px}
 .mwarn{background:#fff4e6;border:1px solid #f0c98a;border-radius:8px;padding:9px 11px;
  font-size:12px;color:#8a5a14;margin-bottom:16px}
+.mwarn .mfind{display:inline-block;margin-top:9px;font-family:inherit;font-size:12px;font-weight:800;
+ color:#fff;background:#e08a1e;border:0;border-radius:7px;padding:6px 13px;cursor:pointer}
+.mwarn .mfind:hover{filter:brightness(1.06)}
+/* highlight rows that still need a verdict + a floating cycler to walk to them */
+tr.needs-judge td{background:#fff4e6!important;box-shadow:inset 0 -1px 0 #f0c98a}
+tr.needs-judge td.c-zfa{box-shadow:inset 4px 0 0 #e08a1e,inset 0 -1px 0 #f0c98a}
+@keyframes ujflash{0%,100%{background:#fff4e6}50%{background:#ffdca0}}
+tr.ujflash td{animation:ujflash .55s ease 2}
+#ujnav{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:200;display:none;
+ align-items:center;gap:12px;background:#2b2620;color:#fff;border-radius:12px;padding:10px 15px;
+ box-shadow:0 12px 34px rgba(0,0,0,.32);font-size:13px;font-weight:600}
+#ujnav.on{display:flex}
+#ujnav .ujc{background:#e08a1e;color:#fff;border-radius:6px;padding:1px 8px;font-weight:800;font-variant-numeric:tabular-nums}
+#ujnav .ujnext{font:inherit;font-weight:800;font-size:12px;color:#2b2620;background:#fff;border:0;border-radius:7px;padding:5px 12px;cursor:pointer}
+#ujnav .ujnext:hover{filter:brightness(.94)}
+#ujnav .ujx{background:transparent;border:0;color:#b9b1a6;font-weight:800;font-size:15px;cursor:pointer;padding:0 2px}
+#ujnav .ujx:hover{color:#fff}
+#ujnav.done .ujc{background:var(--b1)}
 .mask .mq{font-size:15px;font-weight:800;margin:0 0 12px}
 .mbtns{display:flex;justify-content:flex-end;gap:9px;flex-wrap:wrap}
 .mbtn{font-family:inherit;font-size:13px;font-weight:700;border-radius:9px;padding:9px 16px;cursor:pointer;
@@ -1042,6 +1060,7 @@ function applyJudge(){
     if(nt) nt.innerHTML = NOTE[s] ? `<span class="ntq">“</span>${esc(NOTE[s])}<span class="ntq">”</span>` : '';
   });
   updateBar();
+  if(typeof refreshUnjudged==='function') refreshUnjudged();   // keep the "needs a verdict" cycler current
 }
 
 // ---- DEG check: a read-only look at the ZSCAPE authors' own evidence for this label -------
@@ -2009,7 +2028,7 @@ function summaryHTML(sm){
   const warn = sm.unjudged
     ? `<div class="mwarn"><b>${sm.unjudged} row${sm.unjudged===1?'':'s'} still unjudged.</b>
        Filing now records only the ${sm.judged} you have decided — the rest are simply absent,
-       not marked as anything.</div>` : '';
+       not marked as anything.<br><button class="mfind" id="mFind">&#9873; Show me the ${sm.unjudged} unjudged row${sm.unjudged===1?'':'s'} &rarr;</button></div>` : '';
   return `<h3>Before you file</h3>
     <p class="msub">This writes a permanent, timestamped submission. Progress saves stay editable; a submission is the artefact you will compare against later.</p>
     <div class="mring"><div><div class="rbig">${sm.pct}%</div><div class="rlab">${sm.judged} of ${sm.total_rows} rows</div></div>
@@ -2032,7 +2051,63 @@ function summaryHTML(sm){
   mask.classList.add('open');
   document.getElementById('mNo').addEventListener('click',closeModal);
   document.getElementById('mYes').addEventListener('click',fileSubmission);
+  const find=document.getElementById('mFind');
+  if(find) find.addEventListener('click',()=>{ closeModal(); startUnjudged(); });
 }));
+
+// ---- "which rows still need a verdict?" — highlight them and walk through them ----------
+let _ujList=[], _ujIdx=0;
+function unjudgedRows(){ return M.rows.filter(r=>!(r.s in VERD)).map(r=>r.s); }
+function ujMap(){ const m={}; cmpbody.querySelectorAll('tr[data-s]').forEach(tr=>m[tr.getAttribute('data-s')]=tr); return m; }
+function highlightUnjudged(){
+  const list=unjudgedRows(), map=ujMap();
+  cmpbody.querySelectorAll('tr.needs-judge').forEach(tr=>tr.classList.remove('needs-judge'));
+  list.forEach(s=>{ const tr=map[s]; if(tr) tr.classList.add('needs-judge'); });
+  return list;
+}
+function ujNavEl(){
+  let nav=document.getElementById('ujnav');
+  if(nav) return nav;
+  nav=document.createElement('div'); nav.id='ujnav';
+  nav.innerHTML=`<span class="ujc"></span><span class="ujlab"></span>`+
+    `<button class="ujnext">Next &rarr;</button><button class="ujx" title="dismiss">&times;</button>`;
+  document.body.appendChild(nav);
+  nav.querySelector('.ujnext').addEventListener('click',()=>gotoUj(_ujIdx+1));
+  nav.querySelector('.ujx').addEventListener('click',()=>{ nav.classList.remove('on');
+    cmpbody.querySelectorAll('tr.needs-judge').forEach(tr=>tr.classList.remove('needs-judge')); });
+  return nav;
+}
+function updateUjNav(){
+  const nav=ujNavEl(), n=_ujList.length;
+  if(!n){ nav.classList.add('done'); nav.querySelector('.ujc').textContent='✓';
+    nav.querySelector('.ujlab').textContent='all rows judged';
+    nav.querySelector('.ujnext').style.display='none'; nav.classList.add('on');
+    clearTimeout(nav._t); nav._t=setTimeout(()=>nav.classList.remove('on'),2600); return; }
+  nav.classList.remove('done');
+  nav.querySelector('.ujc').textContent=n;
+  nav.querySelector('.ujlab').textContent=(n===1?'row needs a verdict':'rows need a verdict');
+  nav.querySelector('.ujnext').style.display=n>1?'':'none';
+  nav.classList.add('on');
+}
+function gotoUj(i){
+  if(!_ujList.length) return;
+  const map=ujMap(); _ujIdx=((i%_ujList.length)+_ujList.length)%_ujList.length;
+  const tr=map[_ujList[_ujIdx]];
+  if(tr){ tr.scrollIntoView({behavior:'smooth',block:'center'});
+    tr.classList.remove('ujflash'); void tr.offsetWidth; tr.classList.add('ujflash'); }
+}
+function startUnjudged(){
+  _ujList=highlightUnjudged(); _ujIdx=0; updateUjNav();
+  if(_ujList.length) gotoUj(0);
+}
+// keep the cycler honest as rows get judged (applyJudge runs on every verdict)
+function refreshUnjudged(){
+  const nav=document.getElementById('ujnav');
+  if(!nav||!nav.classList.contains('on')||nav.classList.contains('done')) return;
+  _ujList=highlightUnjudged();
+  if(_ujIdx>=_ujList.length) _ujIdx=0;
+  updateUjNav();
+}
 
 async function fileSubmission(){
   const yes=document.getElementById('mYes'), no=document.getElementById('mNo');
