@@ -576,6 +576,26 @@ tr.drow td{background:#faf7f3;border-bottom:1px solid var(--edge);padding:8px 20
 .dgreason{border:1px solid #d8e6ec;border-left:3px solid var(--kreason);background:var(--kpaper);border-radius:8px;padding:10px 13px;font-size:12.5px;line-height:1.5;color:var(--ink)}
 .dgreason .adv{display:inline-block;font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.4px;color:var(--kreason);background:#eff6ff;border:1px solid #cfe0f7;border-radius:4px;padding:1px 6px;margin-bottom:7px}
 .dgreason p{margin:.4em 0} .dgreason ul{margin:.4em 0;padding-left:1.1em} .dgreason li{margin:.15em 0}
+/* follow-up chat with the reasoner */
+.dgchat{margin-top:12px;border-top:1px dashed var(--edge);padding-top:10px}
+.dgchat-hd{font-size:10px;font-weight:800;letter-spacing:.4px;text-transform:uppercase;color:var(--mut);margin-bottom:8px}
+.dgchat-log{display:flex;flex-direction:column;gap:7px;max-height:260px;overflow-y:auto;margin-bottom:8px}
+.dgchat-log:empty{display:none;margin:0}
+.dgbub{font-size:12px;line-height:1.45;padding:7px 10px;border-radius:9px;max-width:88%;word-wrap:break-word}
+.dgbub p{margin:.3em 0} .dgbub ul{margin:.3em 0;padding-left:1.1em} .dgbub li{margin:.1em 0}
+.dgbub.user{align-self:flex-end;background:var(--kaccent);color:#fff;border-bottom-right-radius:3px}
+.dgbub.bot{align-self:flex-start;background:#f2f5f6;border:1px solid var(--edge);color:var(--ink);border-bottom-left-radius:3px}
+.dgbub.errbub{align-self:flex-start;background:#fff6f4;border:1px solid #f0c9c0}
+.dgbub .err{color:#b45309;font-size:11px}
+.dgbub.typing{display:flex;gap:4px;align-items:center;padding:9px 11px}
+.dgbub.typing .dot{width:6px;height:6px;border-radius:50%;background:var(--mut);animation:kpulse 1.1s infinite}
+.dgbub.typing .dot:nth-child(2){animation-delay:.2s} .dgbub.typing .dot:nth-child(3){animation-delay:.4s}
+.dgchat-in{display:flex;gap:7px;align-items:flex-end}
+.dgchat-in textarea{flex:1;resize:none;font:inherit;font-size:12px;line-height:1.4;padding:7px 9px;border:1px solid var(--edge);border-radius:8px;background:#fff;color:var(--ink);box-sizing:border-box;max-height:120px;overflow-y:auto}
+.dgchat-in textarea:focus{outline:none;border-color:var(--kaccent)}
+.dgchat-send{font:inherit;font-size:12px;font-weight:700;color:#fff;background:var(--kaccent);border:1px solid transparent;border-radius:8px;padding:7px 14px;cursor:pointer;white-space:nowrap}
+.dgchat-send:hover{filter:brightness(1.06)} .dgchat-send:disabled{opacity:.55;cursor:default}
+.dgchat-note{font-size:9.5px;color:var(--mut2);margin-top:6px}
 /* loader — the kasperov kpulse dot */
 @keyframes kpulse{0%,100%{opacity:.3}50%{opacity:1}}
 .dgload{display:flex;align-items:center;gap:8px;color:var(--mut);font-size:11.5px;padding:10px 0}
@@ -1143,14 +1163,61 @@ function loadDenovo(s,d){
   });
 }
 
+let REASON_STATE=null;   // {label,up,down,synthesis,messages:[]} — backs the follow-up chat
+
 function loadReason(s,res){
   const rs=document.getElementById('dnRs'); if(!rs) return;
+  REASON_STATE=null;
   rs.innerHTML=`<div class="dgload"><span class="dot"></span>synthesising what the genes suggest…</div>`;
   fetch(DEGPREVIEW_API+'/reason',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({label:s,up:res.up,down:res.down})})
     .then(r=>r.json()).then(j=>{
       if(!j.ok){ rs.innerHTML=`<div class="dgwarn">advisory synthesis unavailable: ${esc(j.error||'error')}</div>`; return; }
-      rs.innerHTML=`<div class="dgreason"><span class="adv">Advisory · non-binding · names no term</span>${mdLite(j.text)}</div>`;
+      REASON_STATE={label:s,up:res.up,down:res.down,synthesis:j.text,messages:[]};
+      rs.innerHTML=`<div class="dgreason"><span class="adv">Advisory · non-binding · names no term</span>${mdLite(j.text)}</div>`+chatShellHTML();
+      wireChat();
     }).catch(()=>{ rs.innerHTML=`<div class="dgwarn">advisory synthesis request failed</div>`; });
+}
+
+// ── follow-up chat: keep asking the reasoner about the same cluster ──
+function chatShellHTML(){
+  return `<div class="dgchat">`+
+    `<div class="dgchat-hd">Continue with the reasoner</div>`+
+    `<div class="dgchat-log" id="dnChatLog"></div>`+
+    `<div class="dgchat-in">`+
+      `<textarea id="dnChatQ" rows="1" placeholder="Ask a follow-up about these markers…"></textarea>`+
+      `<button class="dgchat-send" id="dnChatSend">Ask</button></div>`+
+    `<div class="dgchat-note">Still advisory — the reasoner won&rsquo;t name a term, give a verdict, or rank identities.</div>`+
+  `</div>`;
+}
+function wireChat(){
+  const q=document.getElementById('dnChatQ'), send=document.getElementById('dnChatSend');
+  if(!q||!send) return;
+  const grow=()=>{ q.style.height='auto'; q.style.height=Math.min(q.scrollHeight,120)+'px'; };
+  q.addEventListener('input',grow);
+  q.addEventListener('keydown',e=>{ if(e.key==='Enter'&&!e.shiftKey){ e.preventDefault(); sendFollowup(); } });
+  send.addEventListener('click',sendFollowup);
+}
+function chatBubble(role,html,cls){
+  const log=document.getElementById('dnChatLog'); if(!log) return null;
+  const b=document.createElement('div'); b.className='dgbub '+role+(cls?' '+cls:''); b.innerHTML=html;
+  log.appendChild(b); log.scrollTop=log.scrollHeight; return b;
+}
+function sendFollowup(){
+  const st=REASON_STATE; if(!st) return;
+  const q=document.getElementById('dnChatQ'), send=document.getElementById('dnChatSend');
+  const text=(q.value||'').trim(); if(!text) return;
+  q.value=''; q.style.height='auto'; q.disabled=true; send.disabled=true;
+  chatBubble('user',esc(text));
+  st.messages.push({role:'user',content:text});
+  const typing=chatBubble('bot','<span class="dot"></span><span class="dot"></span><span class="dot"></span>','typing');
+  fetch(DEGPREVIEW_API+'/reason_followup',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({label:st.label,up:st.up,down:st.down,synthesis:st.synthesis,messages:st.messages})})
+    .then(r=>r.json()).then(j=>{
+      if(typing) typing.remove();
+      if(!j.ok){ st.messages.pop(); chatBubble('bot',`<span class="err">reasoner unavailable: ${esc(j.error||'error')}</span>`,'errbub'); }
+      else { chatBubble('bot',mdLite(j.text)); st.messages.push({role:'assistant',content:j.text}); }
+    }).catch(()=>{ if(typing) typing.remove(); st.messages.pop(); chatBubble('bot','<span class="err">request failed</span>','errbub'); })
+    .finally(()=>{ q.disabled=false; send.disabled=false; q.focus(); });
 }
 
 // minimal markdown: bullets + paragraphs (the reasoner returns simple md)
