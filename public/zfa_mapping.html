@@ -775,8 +775,8 @@ const BANDIX={B1:0,B2:1,B3:2,B4:3,B5:4};
 // verdict is not recorded until that comment is saved.
 const VERDICTS=[
  {k:'match',     lab:'Match',      cls:'v1', full:'Match — unequivocal', ask:null},
- {k:'dirty',     lab:'Dirty Match',cls:'v2', ask:null,
-                 full:"Dirty Match — calling it a match to keep moving, but there may be room for further disambiguation"},
+ {k:'dirty',     lab:'Dirty Match',cls:'v2', ask:'What still needs disambiguation?',
+                 full:"Dirty Match — calling it a match to keep moving; leave a note on what still needs disambiguation"},
  {k:'ambiguous', lab:'Ambiguous',  cls:'v3', full:'Ambiguous — needs a comment',
                  ask:'What makes this one ambiguous?'},
  {k:'notfound',  lab:"Can't find", cls:'v5', full:"Can't find a ZFA term — needs a comment",
