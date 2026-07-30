@@ -1288,6 +1288,116 @@ function ZebrafishLoader({ label = "Reeling in the run" }: { label?: string }) {
   );
 }
 
+// ---------------------------------------------------------------------------
+// ZSCAPE Commit Gold — a benchmark row, NOT a normal labelling atlas. It has no
+// run history (clustering is given/frozen; no runs exist yet), so it is rendered
+// bespoke rather than through renderCard. All provenance below is hard-coded from
+// the scaffold artifacts (datasets/zscape_commit_gold/) — NO answer-key content
+// (labels / ZFA IDs / agreement flags) appears here; the gold key stays in
+// _HELDOUT/ on-instance. See that row's LEDGER #1: not blind on our side.
+// ---------------------------------------------------------------------------
+function CommitGoldCard() {
+  const [showVal, setShowVal] = useState(false);
+  const GOLD = "#15803d";
+  // The five pipeline stages for this row. Merging is DISABLED by design (see reason).
+  const stages: { name: string; badge: string; tone: "ready" | "frozen" | "off"; desc: string; disabled?: boolean; reason?: string }[] = [
+    { name: "Clustering", badge: "given · v-frozen", tone: "frozen",
+      desc: "ZSCAPE-published — 112 clusters (≥50 cells). Not leaf-comparable to ZSCAPE Classic's ~250 recursive leaves." },
+    { name: "Labelling", badge: "menu-constrained", tone: "ready",
+      desc: "Three personalities select from the frozen ZFA option set — 3,107 terms, hash dec9f728." },
+    { name: "Resolve", badge: "ready", tone: "ready",
+      desc: "Branch choice (cell-type vs anatomy) + depth commit → one ZFA ID per cluster, with evidence." },
+    { name: "Merging", badge: "n/a · by design", tone: "off", disabled: true,
+      reason: "Disabled by design: upward compression is exactly what the scoring rule penalises. This row has no merge stage.",
+      desc: "Upward compression is what the scoring rule penalises — no merge stage on this row." },
+    { name: "Graph Scorer", badge: "ready", tone: "ready",
+      desc: "Exact ZFA ID match, then edge distance. Dual: internal fuzzy-graph metric + Darien's asymmetric rule." },
+  ];
+  // .h5ad structural validation — 9/9 checks passed (datasets/zscape_commit_gold/artifacts/h5ad_validation.json).
+  // Structural metadata only (shapes / dtypes / obsm keys) — no per-cluster answer.
+  const valChecks: [string, string][] = [
+    ["shape 209,639 × 32,031", "got 209,639 × 32,031"],
+    ["112 cluster labels present (named obs key)", "obs['cluster_id'] — 112 categories; all 112 gold ids present"],
+    ["layers['counts'] integer", "dtype uint16, sample max 427"],
+    ["X is log1p CP10k", "dtype float32, sample max 8.152 (log1p(1e4)=9.21)"],
+    ["2,000 HVGs flagged in var", "var['highly_variable'] sum = 2000"],
+    ["HVGs flagged, NOT subset (full width)", "var width 32,031 (== all genes)"],
+    ["PCA present (obsm)", "obsm: X_pca, X_umap, X_umap_zscape, X_umap_zscape_3d"],
+    ["our UMAP present (obsm)", "obsm: X_pca, X_umap, X_umap_zscape, X_umap_zscape_3d"],
+    ["ZSCAPE published embedding present (obsm)", "obsm: X_pca, X_umap, X_umap_zscape, X_umap_zscape_3d"],
+  ];
+  const chip = (text: string, tone: "ready" | "frozen" | "off") => {
+    const c = tone === "off" ? { bg: "#efece8", fg: "#9a938a", bd: "#e2ddd6" }
+      : tone === "frozen" ? { bg: "#eef6f0", fg: GOLD, bd: "#cfe6d5" }
+        : { bg: "#e6f4f6", fg: ACCENT, bd: "#c7e4e8" };
+    return <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.3, color: c.fg, background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap" }}>{text}</span>;
+  };
+  const artifact = (name: string, meta: string) => (
+    <div style={{ display: "flex", flexDirection: "column", gap: 2, background: "#faf8f5", border: "1px solid #ece7e0", borderRadius: 8, padding: "8px 11px", minWidth: 0 }}>
+      <span style={{ fontSize: 12.5, fontWeight: 700, fontFamily: "ui-monospace, SFMono-Regular, Menlo, monospace", color: INK, wordBreak: "break-all" }}>{name}</span>
+      <span style={{ fontSize: 11, color: "#7a746c", lineHeight: 1.45 }}>{meta}</span>
+    </div>
+  );
+  return (
+    <div style={{ textAlign: "left", background: "#fffdfb", border: "1px solid #e5e1dc", borderLeft: `3px solid ${GOLD}`, borderRadius: 12, padding: "17px 19px", color: INK, display: "flex", flexDirection: "column", gap: 14, width: "100%" }}>
+      {/* header — name + status + not-blind warning */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+          <span style={{ fontSize: 19, fontWeight: 800 }}>ZSCAPE Commit Gold</span>
+          <span style={{ fontSize: 10, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.4, color: GOLD, background: "#eef6f0", border: "1px solid #cfe6d5", borderRadius: 99, padding: "3px 9px" }}>Benchmark cut · scaffolded · no runs</span>
+        </div>
+        <div style={{ fontSize: 13, color: "#555", lineHeight: 1.5 }}>
+          ZSCAPE 48 hpf control arm · 112 published clusters (≥50 cells, 26 excluded) · 209,639 cells × 32,031 genes · ZFA-menu-constrained · gold key held out
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, background: "#fdf6e3", border: "1px solid #efdca0", borderRadius: 8, padding: "8px 11px", fontSize: 12.5, color: "#7a5a12", fontWeight: 600, lineHeight: 1.45 }}>
+          <span style={{ fontSize: 14 }}>⚠</span>
+          <span>Not blind on our side — answer key is on-instance. See LEDGER #1.</span>
+        </div>
+      </div>
+
+      {/* five stage columns */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(5, minmax(0, 1fr))", gap: 9 }}>
+        {stages.map((s) => (
+          <div key={s.name} title={s.disabled ? s.reason : undefined}
+            style={{ display: "flex", flexDirection: "column", gap: 6, background: s.disabled ? "#f4f1ed" : "#fff", border: `1px solid ${s.disabled ? "#e6e1da" : "#eae5de"}`, borderRadius: 9, padding: "10px 11px", opacity: s.disabled ? 0.6 : 1, cursor: s.disabled ? "not-allowed" : "default", minWidth: 0 }}>
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6 }}>
+              <span style={{ fontSize: 12.5, fontWeight: 800, color: s.disabled ? "#8a837a" : INK }}>{s.name}</span>
+            </div>
+            <div>{chip(s.badge, s.tone)}</div>
+            <span style={{ fontSize: 11, color: s.disabled ? "#9a938a" : "#6b655d", lineHeight: 1.45 }}>{s.desc}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* raw-data / provenance panel */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 9, background: "#f7f4f0", border: "1px solid #ece7e0", borderRadius: 10, padding: "12px 13px" }}>
+        <div style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: 0.6, color: "#8a837a" }}>Raw data &amp; frozen artifacts</div>
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 9 }}>
+          {artifact("zscape_gold_48hpf.h5ad", "482,783,838 bytes · SHA256 066c8d55…e51e6 · 9/9 validation checks passed")}
+          {artifact("gold_features.csv", "112 rows · 4 marker columns (top-50 · bottom-50 · family-50 · ZSCAPE-published)")}
+          {artifact("zfa_menu.v1.json", "frozen ZFA option set · 3,107 terms · hash dec9f728…afcf0a6")}
+        </div>
+        <div>
+          <button onClick={() => setShowVal((v) => !v)} style={{ background: "none", border: "none", color: ACCENT, fontSize: 12, fontWeight: 700, cursor: "pointer", padding: 0 }}>
+            {showVal ? "▾ Hide validation table" : "▸ View validation table (9/9 passed)"}
+          </button>
+          {showVal && (
+            <div style={{ marginTop: 8, display: "flex", flexDirection: "column", gap: 4 }}>
+              {valChecks.map(([name, detail]) => (
+                <div key={name} style={{ display: "flex", alignItems: "baseline", gap: 8, fontSize: 11.5, lineHeight: 1.4 }}>
+                  <span style={{ color: GOLD, fontWeight: 800, flexShrink: 0 }}>PASS</span>
+                  <span style={{ fontWeight: 600, color: INK, flexShrink: 0 }}>{name}</span>
+                  <span style={{ color: "#8a837a" }}>{detail}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetDef) => void; onOpenRun: (m: any) => void; onFinalize: (d: DatasetDef) => void }) {
   // the run-history tree lives right in each card now — fetch every run once, group by atlas.
   const [runsByAtlas, setRunsByAtlas] = useState<Record<string, any[]>>({});
@@ -1388,7 +1498,7 @@ function DatasetPicker({ onPick, onOpenRun, onFinalize }: { onPick: (d: DatasetD
           return (
             <>
               <div style={hdr}>Atlases with published labels</div>
-              <div style={gridStyle}>{gtDs.map(renderCard)}</div>
+              <div style={gridStyle}><CommitGoldCard />{gtDs.map(renderCard)}</div>
               <div style={{ ...hdr, marginTop: 34 }}>Internal atlases</div>
               <div style={gridStyle}>{internalDs.map(renderCard)}</div>
               {SHOW_LEARNING_NOTE && (
