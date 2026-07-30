@@ -6,7 +6,10 @@
 import React, { useRef, useState } from "react";
 import { PAPER, INK, ACCENT } from "../theme";
 
-const UPLOAD_URL = "https://zscape.zeroshot.bio/zfa_judge/upload";
+// Streaming raw endpoint — one request per file, body = raw bytes, filename in the query.
+// Streams straight to disk on the box (no multipart, no whole-file buffering), so large .h5ad
+// files (100s of MB) upload without hanging.
+const RAW_URL = "https://zscape.zeroshot.bio/zfa_judge/upload_raw";
 
 function human(b: number): string {
   return b > 1e6 ? (b / 1e6).toFixed(1) + " MB" : b > 1e3 ? (b / 1e3).toFixed(0) + " KB" : b + " B";
@@ -23,31 +26,36 @@ export default function UploadSection() {
   const [err, setErr] = useState<string | null>(null);
   const [saved, setSaved] = useState<Saved[]>([]);
 
-  function send(files: FileList | File[]) {
+  function uploadOne(f: File, idx: number, count: number): Promise<{ ok: boolean; error?: string }> {
+    return new Promise((resolve) => {
+      setMsg(`Uploading ${f.name} (${human(f.size)}) — ${idx + 1}/${count}`); setPct(0);
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${RAW_URL}?name=${encodeURIComponent(f.name)}`);
+      xhr.setRequestHeader("Content-Type", "application/octet-stream");
+      xhr.upload.onprogress = (e) => { if (e.lengthComputable) setPct(Math.round((100 * e.loaded) / e.total)); };
+      xhr.onload = () => {
+        let j: { ok?: boolean; saved?: Saved[]; error?: string } = {};
+        try { j = JSON.parse(xhr.responseText); } catch { /* ignore */ }
+        if (xhr.status === 200 && j.ok) { setSaved((prev) => [...(j.saved || []), ...prev]); resolve({ ok: true }); }
+        else resolve({ ok: false, error: j.error || `HTTP ${xhr.status}` });
+      };
+      xhr.onerror = () => resolve({ ok: false, error: "network error" });
+      xhr.send(f); // streams the File body straight through
+    });
+  }
+
+  async function send(files: FileList | File[]) {
     const list = Array.from(files);
     if (!list.length) return;
     setBusy(true); setErr(null); setMsg(null); setPct(0);
-    const fd = new FormData();
-    list.forEach((f) => fd.append("file", f, f.name));
-    const total = list.reduce((s, f) => s + f.size, 0);
-    setMsg(`Uploading ${list.length} file${list.length === 1 ? "" : "s"} (${human(total)})…`);
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", UPLOAD_URL);
-    xhr.upload.onprogress = (e) => { if (e.lengthComputable) setPct(Math.round((100 * e.loaded) / e.total)); };
-    xhr.onload = () => {
-      setBusy(false);
-      let j: { ok?: boolean; saved?: Saved[]; error?: string; dir?: string } = {};
-      try { j = JSON.parse(xhr.responseText); } catch { /* ignore */ }
-      if (xhr.status === 200 && j.ok) {
-        setSaved((prev) => [...(j.saved || []), ...prev]);
-        setMsg(`✓ Uploaded — on the EC2 now (${j.dir || "data/mappings/uploads/"}).`);
-      } else {
-        setErr("Upload failed" + (j.error ? ": " + j.error : ` (${xhr.status})`));
-        setMsg(null);
-      }
-    };
-    xhr.onerror = () => { setBusy(false); setErr("Upload failed — network error."); setMsg(null); };
-    xhr.send(fd);
+    const failures: string[] = [];
+    for (let i = 0; i < list.length; i++) {
+      const r = await uploadOne(list[i], i, list.length);
+      if (!r.ok) failures.push(`${list[i].name}: ${r.error}`);
+    }
+    setBusy(false); setPct(0);
+    if (failures.length) { setErr(`Some uploads failed — ${failures.join("; ")}`); setMsg(null); }
+    else setMsg(`✓ Uploaded ${list.length} file${list.length === 1 ? "" : "s"} — on the EC2 now.`);
   }
 
   return (
