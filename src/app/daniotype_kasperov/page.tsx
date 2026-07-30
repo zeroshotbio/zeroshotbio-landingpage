@@ -11,6 +11,7 @@
 // output so this swaps onto a live runs/<run>/hierarchy.json + decision_log.
 
 import KasperovClient from "./KasperovClient";
+import UploadSection from "./components/UploadSection";
 
 export const metadata = {
   title: "daniotype · kasperov — human-in-the-loop cell-type labelling",
@@ -19,5 +20,10 @@ export const metadata = {
 };
 
 export default function DaniotypeKasperovPage() {
-  return <KasperovClient />;
+  return (
+    <>
+      <KasperovClient />
+      <UploadSection />
+    </>
+  );
 }
