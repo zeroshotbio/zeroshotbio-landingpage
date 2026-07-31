@@ -82,7 +82,7 @@ const DATASETS: DatasetDef[] = [
       "The Commit benchmark cut: ZSCAPE's published 112-cluster gold set at 48 hpf (≥50 cells, 26 excluded upstream). Clustering is given and frozen — we do not re-cluster — so three personalities label each fixed cluster by selecting from a frozen ZFA option menu (3,107 terms), resolve one ZFA ID per cluster with evidence, and score by exact ZFA-ID match then graph edge-distance against Commit. NOT blind on our side: we authored the gold and hold the answer key on-instance (LEDGER #1).",
     dataUrl: `${ASSET_BASE}/zscape_commit_gold/umap.json`,
     archivistBase: `${ASSET_BASE}/zscape_commit_gold/archivist`,
-    groundTruthUrl: `${ASSET_BASE}/zscape_commit_gold/groundtruth.json`,
+    groundTruthUrl: null, // gold key is HELD OUT (dataset LEDGER #1) — no GT served in-browser; scoring is offline
     serveId: "zscape_commit_gold",
     status: "ready",
     approxClusters: 112,

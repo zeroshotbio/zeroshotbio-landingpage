@@ -39,6 +39,7 @@ import DANIOCELL_ARCHIVIST from "./daniocell_archivist.json";
 import ZSCAPE_NATIVE_ARCHIVIST from "./zscape_native_archivist.json";
 import CHEMFISH_NATIVE_ARCHIVIST from "./chemfish_native_archivist.json";
 import DANIOCELL_NATIVE_ARCHIVIST from "./daniocell_native_archivist.json";
+import ZSCAPE_COMMIT_GOLD_ARCHIVIST from "./zscape_commit_gold_archivist.json"; // frozen 112-cluster gold partition (no GT served — held out)
 import { isKasperovModel, DEFAULT_MODEL } from "../../daniotype_kasperov/models";
 
 // One agent route serves every dataset; the body's `dataset` id selects which
@@ -50,6 +51,7 @@ const DATASET_CFG: Record<string, DatasetCfg> = {
   minifin: { id: "minifin", name: "MiniFin", base: "/api/kasperov_asset/minifin/archivist", dataDir: "minifin", archivist: MINIFIN_ARCHIVIST as any },
   zscape: { id: "zscape", name: "ZSCAPE", base: "/api/kasperov_asset/zscape/archivist", dataDir: "zscape", archivist: ZSCAPE_ARCHIVIST as any },
   zscape_recursive: { id: "zscape_recursive", name: "ZSCAPE (recursive)", base: "/api/kasperov_asset/zscape_recursive/archivist", dataDir: "zscape_recursive", archivist: ZSCAPE_RECURSIVE_ARCHIVIST as any },
+  zscape_commit_gold: { id: "zscape_commit_gold", name: "ZSCAPE Commit Gold", base: "/api/kasperov_asset/zscape_commit_gold/archivist", dataDir: "zscape_commit_gold", archivist: ZSCAPE_COMMIT_GOLD_ARCHIVIST as any },
   megafin: { id: "megafin", name: "Manual MegaFin Part 1", base: "/api/kasperov_asset/megafin_rebuild/archivist", dataDir: "megafin_rebuild", archivist: MEGAFIN_ARCHIVIST as any },
   megafin_parse: { id: "megafin_parse", name: "Parse MegaFin Part 1", base: "/api/kasperov_asset/megafin/archivist", dataDir: "megafin", archivist: MEGAFIN_PARSE_ARCHIVIST as any },
   chemfish: { id: "chemfish", name: "ChemFish", base: "/api/kasperov_asset/chemfish/archivist", dataDir: "chemfish", archivist: CHEMFISH_ARCHIVIST as any },
