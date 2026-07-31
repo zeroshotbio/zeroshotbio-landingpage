@@ -1,772 +1,791 @@
 {
-  "minifin": {
-    "id": "minifin",
-    "platform": "Parse Evercode (combinatorial split-pool)",
-    "lab": "Zeroshot (internal)",
-    "year": 2026,
-    "namespace": "ENSDARG → ZFIN canonical",
-    "role": "internal",
-    "resLabel": "1.0",
-    "cells": 94616,
+ "minifin": {
+  "id": "minifin",
+  "platform": "Parse Evercode (combinatorial split-pool)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "ENSDARG → ZFIN canonical",
+  "role": "internal",
+  "resLabel": "1.0",
+  "cells": 94616,
+  "clusters": 54,
+  "fullCells": 94616,
+  "source": "MiniFin — 48 hpf, Parse Evercode, 43 drug samples — de-novo Leiden res 1.0 on Harmony embedding (HVG->PCA->Harmony[sample])",
+  "recipe": "HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
     "clusters": 54,
-    "fullCells": 94616,
-    "source": "MiniFin — 48 hpf, Parse Evercode, 43 drug samples — de-novo Leiden res 1.0 on Harmony embedding (HVG->PCA->Harmony[sample])",
-    "recipe": "HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": [
-      {
-        "res": 1.0,
-        "clusters": 54,
-        "coherence": 0.981,
-        "minSize": 180,
-        "under50": 0,
-        "chosen": true
-      },
-      {
-        "res": 2.0,
-        "clusters": 74,
-        "coherence": 1.0,
-        "minSize": 39,
-        "under50": 1,
-        "chosen": false
-      },
-      {
-        "res": 3.0,
-        "clusters": 82,
-        "coherence": 0.988,
-        "minSize": 16,
-        "under50": 2,
-        "chosen": false
-      },
-      {
-        "res": 4.0,
-        "clusters": 104,
-        "coherence": 1.0,
-        "minSize": 17,
-        "under50": 2,
-        "chosen": false
-      },
-      {
-        "res": 5.0,
-        "clusters": 115,
-        "coherence": 1.0,
-        "minSize": 10,
-        "under50": 3,
-        "chosen": false
-      }
-    ],
-    "chosenRes": 1.0,
-    "selectionNote": null,
-    "noGtNote": "Internal reference — no published labels; intuition-building, not a benchmark.",
-    "designFacts": {
-      "kit": "Evercode (Parse)",
-      "samples": "43 drug samples",
-      "stage": "48 hpf · TU WT",
-      "purpose": "internal reference (intuition)"
-    },
-    "noGtScorecard": {
-      "units": 54,
-      "coverage": {
-        "assigned_pct": 100.0,
-        "abstained": 0
-      },
-      "grounding_pct": 98.5,
-      "tier_depth": {
-        "cell_type": 50,
-        "tissue": 4
-      },
-      "badge": "No-GT",
-      "consistency": {
-        "headlinePct": 74,
-        "celltypePct": 53.7,
-        "framing": "Consistency, not accuracy — the prior is an automated internal annotation, not ground truth.",
-        "celltypeNote": "Cell-type differences are mostly granularity (the labeler stays coarse where it won't guess an ungroundable subtype) plus prior-annotation errors.",
-        "adjudication": {
-          "prior_error": 4,
-          "labeler_error": 1,
-          "ambiguous": 2,
-          "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
-        }
-      }
-    },
-    "provenance": {
-      "clusteringOrigin": "our embedding · our Leiden res 1.0",
-      "originTip": "provOwnEmbed",
-      "embeddingSource": "HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
-      "labellingRunId": "20260615-042324-472be7",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.0",
-        "name": "native-validated",
-        "gitCommit": "f5278022"
-      },
-      "scoredBasis": "de-novo",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "TODO — umap.json not yet stamped",
-      "caveats": [
-        "Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild."
-      ]
-    }
+    "coherence": 0.981,
+    "minSize": 180,
+    "under50": 0,
+    "chosen": true
+   },
+   {
+    "res": 2.0,
+    "clusters": 74,
+    "coherence": 1.0,
+    "minSize": 39,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 82,
+    "coherence": 0.988,
+    "minSize": 16,
+    "under50": 2,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 104,
+    "coherence": 1.0,
+    "minSize": 17,
+    "under50": 2,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 115,
+    "coherence": 1.0,
+    "minSize": 10,
+    "under50": 3,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 1.0,
+  "selectionNote": null,
+  "noGtNote": "Internal reference — no published labels; intuition-building, not a benchmark.",
+  "designFacts": {
+   "kit": "Evercode (Parse)",
+   "samples": "43 drug samples",
+   "stage": "48 hpf · TU WT",
+   "purpose": "internal reference (intuition)"
   },
-  "zscape": {
-    "id": "zscape",
-    "platform": "sci-RNA-seq3",
-    "lab": "Saunders/Trapnell et al.",
-    "year": 2023,
-    "namespace": "ENSDARG → ZFIN canonical",
-    "role": "gt",
-    "resLabel": "recursive per-compartment (local-HVG)",
-    "cells": 813782,
-    "clusters": 250,
-    "fullCells": 3231733,
-    "source": "ZSCAPE Saunders et al. (recursive per-compartment, local-HVG, control-vote, env-pinned v2)",
-    "subsample": "All ~813,782 cells at 48 hpf (single developmental stage); every condition (drug-treated + control), clustered in full.",
-    "recipe": "two-stage recursive per-compartment: coarse Leiden -> local 2000-HVG recompute per compartment -> local Leiden; control-only GT vote",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": null,
-    "chosenRes": null,
-    "selectionNote": "Recursive per-compartment with local feature recompute; tissue names voted on control cells only.",
-    "subSplitNote": "Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented.",
-    "clusteringViz": {
-      "headline": "Not a flat resolution sweep — a silhouette-gated recursive sub-split on the authors' own embedding.",
-      "pipeline": [
-        {
-          "icon": "📦",
-          "title": "Sample",
-          "stat": "250k / 3.23M cells",
-          "detail": "Uniform random draw across every condition (drug-treated and control alike) — a tractable cross-section of the full perturbation reference."
-        },
-        {
-          "icon": "🧬",
-          "title": "Features → PCA",
-          "stat": "2,000 HVG · PCA(50)",
-          "detail": "Highly-variable genes (seurat_v3) on raw counts, then 50 principal components. No Harmony — the published sci-RNA-seq3 embedding is already integrated."
-        },
-        {
-          "icon": "🕸️",
-          "title": "Global Leiden",
-          "stat": "res 2.0",
-          "detail": "A 15-nearest-neighbour graph, then one global Leiden pass at resolution 2.0 — the coarse starting partition."
-        },
-        {
-          "icon": "✂️",
-          "title": "Silhouette-gated sub-split",
-          "stat": "recursive",
-          "detail": "Each large cluster is tentatively re-clustered and the split is kept only if it is geometrically real (the gate below). This is what makes ZSCAPE different."
-        },
-        {
-          "icon": "🎯",
-          "title": "Leaf clusters",
-          "stat": "55 leaves · 4 tiers",
-          "detail": "The accepted leaves span the authors' germ-layer → tissue → cell-type-broad → cell-type-sub ontology."
-        }
-      ],
-      "gate": {
-        "trigger": "cluster ≥ 4,000 cells",
-        "tentative": "re-Leiden the cluster at resolution 1.0",
-        "checks": [
-          "≥ 2 sub-clusters result",
-          "each sub-cluster keeps ≥ 600 cells",
-          "mean silhouette of the split ≥ 0.05"
-        ],
-        "accept": "all three pass → keep the finer split",
-        "rollback": "any check fails → roll back, stays one cluster",
-        "why": "A sub-cluster survives only if it is geometrically separated in PCA space — never merely over-fragmented. Silhouette gating is what lets us trust each leaf."
-      },
-      "tierOutcome": {
-        "total": 55,
-        "germLayers": [
-          {
-            "label": "ectoderm",
-            "n": 29,
-            "color": "#4ea1ff"
-          },
-          {
-            "label": "mesoderm",
-            "n": 17,
-            "color": "#d29922"
-          },
-          {
-            "label": "neural crest",
-            "n": 3,
-            "color": "#a371f7"
-          },
-          {
-            "label": "mixed lineage",
-            "n": 5,
-            "color": "#8b97a7"
-          },
-          {
-            "label": "endoderm",
-            "n": 1,
-            "color": "#3fb950"
-          }
-        ],
-        "note": "Majority published germ-layer of each de-novo leaf (groundtruth.json) — the partition resolves cleanly onto the authors' ontology."
-      }
-    },
-    "scorecard": {
-      "evidentiaryRunId": "20260615-211010-c4d306",
-      "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
-      "schema": "native",
-      "platform_class": "in-paradigm",
-      "tiers": [
-        {
-          "label": "Germ layer",
-          "pct": 93.6
-        },
-        {
-          "label": "Tissue",
-          "pct": 94.9
-        },
-        {
-          "label": "Cell type — broad",
-          "pct": 94.9
-        },
-        {
-          "label": "Cell type — sub",
-          "pct": 92.9
-        }
-      ],
-      "strata": {
-        "ge100": 94.5,
-        "ge30": 94.1,
-        "all": 94.1
-      },
-      "abstention": {
-        "n": 0,
-        "total": 156,
-        "precision": 0
-      },
-      "notes": [
-        "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space — home-turf, not generalization."
-      ],
-      "harnessVersion": "v1.1"
-    },
-    "provenance": {
-      "clusteringOrigin": "our sub-Leiden · authors' embedding",
-      "originTip": "provCarriedEmbed",
-      "embeddingSource": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
-      "labellingRunId": "20260615-211010-c4d306",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.1",
-        "name": "native-validated · roll-up/superset judge",
-        "gitCommit": "dc6eff4e"
-      },
-      "scoredBasis": "native-schema",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "TODO — umap.json not yet stamped",
-      "caveats": []
+  "noGtScorecard": {
+   "units": 54,
+   "coverage": {
+    "assigned_pct": 100.0,
+    "abstained": 0
+   },
+   "grounding_pct": 98.5,
+   "tier_depth": {
+    "cell_type": 50,
+    "tissue": 4
+   },
+   "badge": "No-GT",
+   "consistency": {
+    "headlinePct": 74,
+    "celltypePct": 53.7,
+    "framing": "Consistency, not accuracy — the prior is an automated internal annotation, not ground truth.",
+    "celltypeNote": "Cell-type differences are mostly granularity (the labeler stays coarse where it won't guess an ungroundable subtype) plus prior-annotation errors.",
+    "adjudication": {
+     "prior_error": 4,
+     "labeler_error": 1,
+     "ambiguous": 2,
+     "note": "On the 7 hardest cross-lineage conflicts, grounded adjudication on each cluster's own enriched markers: the labeler's call was better-supported more often than the prior's — including its one genuine miss (c30 enterocyte, actually pronephric tubule)."
     }
+   }
   },
-  "chemfish": {
-    "id": "chemfish",
-    "platform": "sci-RNA-seq3",
-    "lab": "Barkan et al.",
-    "year": null,
-    "namespace": "ENSDARG → ZFIN canonical",
-    "role": "gt",
-    "resLabel": "3.0",
-    "cells": 250000,
-    "clusters": 78,
-    "fullCells": 1579675,
-    "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) — 48 hpf subset, de-novo Leiden res 3.0 on Harmony(expt) embedding",
-    "subsample": "Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
-    "recipe": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": [
-      {
-        "res": 1.0,
-        "clusters": 46,
-        "coherence": 0.978,
-        "minSize": 156,
-        "under50": 0,
-        "chosen": false
-      },
-      {
-        "res": 2.0,
-        "clusters": 69,
-        "coherence": 0.986,
-        "minSize": 40,
-        "under50": 1,
-        "chosen": false
-      },
-      {
-        "res": 3.0,
-        "clusters": 78,
-        "coherence": 1.0,
-        "minSize": 40,
-        "under50": 1,
-        "chosen": true
-      },
-      {
-        "res": 4.0,
-        "clusters": 93,
-        "coherence": 0.989,
-        "minSize": 27,
-        "under50": 3,
-        "chosen": false
-      },
-      {
-        "res": 5.0,
-        "clusters": 107,
-        "coherence": 0.991,
-        "minSize": 12,
-        "under50": 3,
-        "chosen": false
-      }
-    ],
-    "chosenRes": 3.0,
-    "selectionNote": null,
-    "scorecard": {
-      "evidentiaryRunId": "20260615-211010-e4aafa",
-      "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
-      "schema": "native",
-      "platform_class": "in-paradigm",
-      "tiers": [
-        {
-          "label": "Tissue",
-          "pct": 90.9
-        },
-        {
-          "label": "Cell type — sub",
-          "pct": 90.1
-        }
-      ],
-      "strata": {
-        "ge100": 91.9,
-        "ge30": 91.2,
-        "all": 90.0
-      },
-      "abstention": {
-        "n": 6,
-        "total": 341,
-        "precision": 67.0
-      },
-      "notes": [
-        "In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
-        "Correction: 87.7% tissue supersedes the earlier withheld 31% — that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
-      ],
-      "harnessVersion": "v1.1"
-    },
-    "provenance": {
-      "clusteringOrigin": "our embedding · our Leiden res 3.0",
-      "originTip": "provOwnEmbed",
-      "embeddingSource": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
-      "labellingRunId": "20260615-211010-e4aafa",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.1",
-        "name": "native-validated · roll-up/superset judge",
-        "gitCommit": "dc6eff4e"
-      },
-      "scoredBasis": "native-schema",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "TODO — umap.json not yet stamped",
-      "caveats": []
-    }
-  },
-  "daniocell": {
-    "id": "daniocell",
-    "platform": "10X droplet",
-    "lab": "Sur et al. (Farrell / NICHD)",
-    "year": 2023,
-    "namespace": "ENSDARG → ZFIN canonical",
-    "role": "gt",
-    "resLabel": "2.0",
-    "cells": 191832,
-    "clusters": 77,
-    "fullCells": 191832,
-    "source": "DanioCell Sur et al. (Farrell/NICHD) — 36-72hpf window, de-novo Leiden res 2.0 on Harmony(stage) embedding",
-    "recipe": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": [
-      {
-        "res": 1.0,
-        "clusters": 55,
-        "coherence": 1.0,
-        "minSize": 188,
-        "under50": 0,
-        "chosen": false
-      },
-      {
-        "res": 2.0,
-        "clusters": 77,
-        "coherence": 1.0,
-        "minSize": 188,
-        "under50": 0,
-        "chosen": true
-      },
-      {
-        "res": 3.0,
-        "clusters": 99,
-        "coherence": 1.0,
-        "minSize": 22,
-        "under50": 1,
-        "chosen": false
-      },
-      {
-        "res": 4.0,
-        "clusters": 117,
-        "coherence": 1.0,
-        "minSize": 22,
-        "under50": 4,
-        "chosen": false
-      },
-      {
-        "res": 5.0,
-        "clusters": 133,
-        "coherence": 1.0,
-        "minSize": 22,
-        "under50": 4,
-        "chosen": false
-      }
-    ],
-    "chosenRes": 2.0,
-    "selectionNote": null,
-    "scorecard": {
-      "evidentiaryRunId": "20260615-211010-b39045",
-      "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
-      "schema": "native",
-      "platform_class": "independent",
-      "tiers": [
-        {
-          "label": "Tissue",
-          "pct": 82.6
-        },
-        {
-          "label": "Cell type — broad",
-          "pct": 86.2
-        }
-      ],
-      "strata": {
-        "ge100": 88.3,
-        "ge30": 85.0,
-        "all": 84.2
-      },
-      "abstention": {
-        "n": 2,
-        "total": 470,
-        "precision": 0
-      },
-      "notes": [
-        "Genuinely INDEPENDENT / cross-platform (10X droplet) — the real generalization read.",
-        "Coarse: scored on tissue + broad only (≤43-level; numeric clust-codes are not a nameable vocabulary, excluded) — coarse-resolution generalization, not fine."
-      ],
-      "harnessVersion": "v1.1"
-    },
-    "provenance": {
-      "clusteringOrigin": "our embedding · our Leiden res 2.0",
-      "originTip": "provOwnEmbed",
-      "embeddingSource": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
-      "labellingRunId": "20260615-211010-b39045",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.1",
-        "name": "native-validated · roll-up/superset judge",
-        "gitCommit": "dc6eff4e"
-      },
-      "scoredBasis": "native-schema",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "TODO — umap.json not yet stamped",
-      "caveats": []
-    }
-  },
-  "megafin": {
-    "id": "megafin",
-    "platform": "Parse Evercode · manual .h5ad (Lawson)",
-    "lab": "Zeroshot (internal)",
-    "year": 2026,
-    "namespace": "Lawson LL → ZFIN canonical",
-    "role": "internal",
-    "resLabel": "2.0",
-    "cells": 537959,
-    "clusters": 84,
-    "fullCells": 537959,
-    "source": "MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) (Manual/Lawson object) — de-novo Leiden res 2.0 (84 clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
-    "recipe": "HVG → PCA → carried Harmony(sample) embedding → kNN graph → Leiden sweep",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": [
-      {
-        "res": 1.0,
-        "clusters": 60,
-        "coherence": 0.867,
-        "minSize": 10,
-        "under50": 3,
-        "chosen": false
-      },
-      {
-        "res": 2.0,
-        "clusters": 85,
-        "coherence": 0.929,
-        "minSize": 9,
-        "under50": 3,
-        "chosen": true
-      },
-      {
-        "res": 3.0,
-        "clusters": 107,
-        "coherence": 0.925,
-        "minSize": 20,
-        "under50": 3,
-        "chosen": false
-      },
-      {
-        "res": 4.0,
-        "clusters": 128,
-        "coherence": 0.938,
-        "minSize": 10,
-        "under50": 4,
-        "chosen": false
-      },
-      {
-        "res": 5.0,
-        "clusters": 147,
-        "coherence": 0.925,
-        "minSize": 10,
-        "under50": 6,
-        "chosen": false
-      }
-    ],
-    "chosenRes": 2.0,
-    "selectionNote": null,
-    "noGtNote": "Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
-    "design": "Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
-    "designFacts": {
-      "kit": "Evercode WT Mega",
-      "conditions": "96 designed → 93 sequenced",
-      "compounds": "45 small molecules + Sorafenib (pos. ctrl)",
-      "doses": "1 µM & 5 µM",
-      "controls": "2 DMSO vehicle · 2 egg-water",
-      "rearing": "TU WT · 6 embryos/well · 24→48 hpf",
-      "composition": "≈3% control · ≈97% drug-exposed cells",
-      "qc": "3 wells dropped (UMAP explosion)"
-    },
-    "coherence": 0.929,
-    "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) — this 96-condition drug screen (93 samples after QC) keeps the carried Parse Harmony embedding; a standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed to 0.47–0.67 with 56–63 micro-clusters).",
-    "canonicalPct": 95.6,
-    "groundingNote": "100.0% of markers queryable on :5007; 95.6% under canonical ZFIN names (thinner than the ENSDARG-native sets, but key cell-type markers ground fine).",
-    "rejectedReembed": {
-      "sweep": [
-        {
-          "res": 1.0,
-          "clusters": 118,
-          "coherence": 0.475,
-          "minSize": 7,
-          "under50": 57,
-          "chosen": false
-        },
-        {
-          "res": 2.0,
-          "clusters": 143,
-          "coherence": 0.573,
-          "minSize": 7,
-          "under50": 56,
-          "chosen": false
-        },
-        {
-          "res": 3.0,
-          "clusters": 179,
-          "coherence": 0.62,
-          "minSize": 6,
-          "under50": 63,
-          "chosen": false
-        },
-        {
-          "res": 4.0,
-          "clusters": 197,
-          "coherence": 0.65,
-          "minSize": 6,
-          "under50": 63,
-          "chosen": false
-        },
-        {
-          "res": 5.0,
-          "clusters": 210,
-          "coherence": 0.667,
-          "minSize": 6,
-          "under50": 63,
-          "chosen": false
-        }
-      ],
-      "note": "Standard re-embed (HVG→PCA→Harmony→neighbors): coherence collapsed to 0.475–0.667 with 56–63 micro-clusters — worse than the Parse embedding. Rejected."
-    },
-    "sizeMin": 9,
-    "sizeMedian": 4552,
-    "sizeMax": 19798,
-    "merged": {
-      "from": 67,
-      "into": 61,
-      "cells_moved": 29,
-      "renumbered_to_contiguous": true
-    },
-    "noGtScorecard": {
-      "units": 84,
-      "coverage": {
-        "assigned_pct": 95.2,
-        "abstained": 4
-      },
-      "grounding_pct": 98.6,
-      "tier_depth": {
-        "cell_type": 70,
-        "tissue": 10
-      },
-      "badge": "No published labels — not an accuracy benchmark",
-      "abstentionNote": "All 4 abstentions justified — and it declined c23, a 4,131-cell cluster, because it is a ribosome-high / low-complexity technical artifact, not a size call. It knows the difference between a cell type it can't resolve and a cluster it shouldn't label."
-    },
-    "provenance": {
-      "clusteringOrigin": "our Leiden res 2.0 · our Harmony embedding",
-      "originTip": "provOwnEmbed",
-      "embeddingSource": "our Harmony(sample), computed in the manual-denoise step and carried into the asset build; standard in-build re-embed tested & rejected (coherence 0.93->0.67)",
-      "labellingRunId": "20260615-042324-3a15a2",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.0",
-        "name": "native-validated",
-        "gitCommit": "f5278022"
-      },
-      "scoredBasis": "de-novo",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "33e60eb5c5105df62ff8ba65b8e2a13d7ea2ff6c85b104f3b97b66c56d01a72f",
-      "caveats": [
-        "No external cell-type labels — internal, intuition-building.",
-        "Less coherent (0.929) than the GT partitions."
-      ]
-    }
-  },
-  "megafin_parse": {
-    "id": "megafin_parse",
-    "platform": "Parse Evercode (combinatorial split-pool)",
-    "lab": "Zeroshot (internal)",
-    "year": 2026,
-    "namespace": "ENSDARG → ZFIN canonical",
-    "role": "internal",
-    "resLabel": "3.0",
-    "cells": 540946,
-    "clusters": 77,
-    "fullCells": 540946,
-    "source": "MegaFin Part 1 — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) — de-novo Leiden res 3.0 on Parse Harmony embedding (sidecar:megafin_leiden_labels.csv)",
-    "recipe": "Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
-    "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
-    "sweep": [
-      {
-        "res": 1.0,
-        "clusters": 39,
-        "coherence": 1.0,
-        "minSize": 1184,
-        "under50": 0,
-        "chosen": false
-      },
-      {
-        "res": 2.0,
-        "clusters": 57,
-        "coherence": 1.0,
-        "minSize": 200,
-        "under50": 0,
-        "chosen": false
-      },
-      {
-        "res": 3.0,
-        "clusters": 77,
-        "coherence": 0.974,
-        "minSize": 203,
-        "under50": 0,
-        "chosen": true
-      }
-    ],
-    "chosenRes": 3.0,
-    "selectionNote": null,
-    "noGtNote": "Internal drug-screen atlas (Parse pipeline build) — no published labels; intuition-building, not a benchmark.",
-    "design": "Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
-    "designFacts": {
-      "kit": "Evercode WT Mega",
-      "conditions": "96 designed → 93 sequenced",
-      "compounds": "45 small molecules + Sorafenib (pos. ctrl)",
-      "doses": "1 µM & 5 µM",
-      "controls": "2 DMSO vehicle · 2 egg-water",
-      "rearing": "TU WT · 6 embryos/well · 24→48 hpf",
-      "composition": "≈3% control · ≈97% drug-exposed cells",
-      "qc": "3 wells dropped (UMAP explosion)"
-    },
-    "noGtScorecard": {
-      "units": 77,
-      "coverage": {
-        "assigned_pct": 98.7,
-        "abstained": 1
-      },
-      "grounding_pct": 98.4,
-      "tier_depth": {
-        "cell_type": 73,
-        "tissue": 3
-      },
-      "badge": "No-GT",
-      "abstentionNote": "1 abstention (P7, ~4.8k cells) — a biosynthetic/growth-associated translational artifact, not a cell type; the same kind of cluster Manual declined at c23.",
-      "processingConsistency": {
-        "headlinePct": 80,
-        "alignedN": 35,
-        "cellWeightedPct": 71,
-        "allClusterPct": 66,
-        "framing": "Processing-consistency, not accuracy — neither pipeline is ground truth; this measures whether the annotation survives the upstream processing choice.",
-        "decompNote": "Headline = agreement where the two partitions align (mapping purity ≥0.70). The all-cluster figure is lower only because the two pipelines cut the neural continuum at different resolutions — partition granularity, not labels disagreeing on the same cells.",
-        "crosswalkNote": "Aligned via a barcode crosswalk validated at 100% drug-sample concordance and 0.994 expression correlation on matched pairs — the same physical cells.",
-        "adjudication": {
-          "parse_better": 4,
-          "manual_better": 1,
-          "marker_ceiling": 2,
-          "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."
-        }
-      }
-    },
-    "provenance": {
-      "clusteringOrigin": "our Leiden res 3.0 · carried Parse embedding",
-      "originTip": "provCarriedEmbed",
-      "embeddingSource": "Parse/Trailmaker Harmony(sample), genuinely carried from parse_megafin1.h5ad; our Leiden res-3.0 sweep on it",
-      "labellingRunId": "20260615-043737-1afa19",
-      "model": "gpt-5.5",
-      "harness": {
-        "version": "1.0",
-        "name": "native-validated",
-        "gitCommit": "f5278022"
-      },
-      "scoredBasis": "de-novo",
-      "groundingOntologies": [
-        "ZFIN",
-        "ZFA",
-        "GO"
-      ],
-      "partitionId": "f093170b0c47bc41d4b1c73a01b8c0e5eb6b6f27cb09166054fa08c2aaaf8a06",
-      "caveats": [
-        "A second processing of the same MegaFin Part 1 library — Parse/Trailmaker (540.9k, ENSDARG) vs the Manual Lawson denoise (537.9k); the two builds share no cell barcodes.",
-        "Difference from Manual is the Leiden resolution (3.0/77 vs 2.0/84), ~88% concordant in expression space — see the consistency panel."
-      ]
-    }
-  },
-  "_suite": {
-    "notes": [
-      "Scored in each dataset's own native schema — not cross-dataset comparable; no head-to-head ranking.",
-      "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher — especially ChemFish sub.",
-      "Abstains only on under-powered or technical-artifact clusters, never reliable ones, and flags likely reference errors — it knows what it doesn't know."
-    ]
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 1.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(sample) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-042324-472be7",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": [
+    "Provisional — to be regenerated on the de-novo + LOKO STARsolo rebuild."
+   ]
   }
+ },
+ "zscape": {
+  "id": "zscape",
+  "platform": "sci-RNA-seq3",
+  "lab": "Saunders/Trapnell et al.",
+  "year": 2023,
+  "namespace": "ENSDARG → ZFIN canonical",
+  "role": "gt",
+  "resLabel": "recursive per-compartment (local-HVG)",
+  "cells": 813782,
+  "clusters": 250,
+  "fullCells": 3231733,
+  "source": "ZSCAPE Saunders et al. (recursive per-compartment, local-HVG, control-vote, env-pinned v2)",
+  "subsample": "All ~813,782 cells at 48 hpf (single developmental stage); every condition (drug-treated + control), clustered in full.",
+  "recipe": "two-stage recursive per-compartment: coarse Leiden -> local 2000-HVG recompute per compartment -> local Leiden; control-only GT vote",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": null,
+  "chosenRes": null,
+  "selectionNote": "Recursive per-compartment with local feature recompute; tissue names voted on control cells only.",
+  "subSplitNote": "Sub-clusters are silhouette-gated: a cluster (≥4,000 cells) is split further only if the split's mean silhouette ≥ 0.05 and every resulting sub-cluster keeps ≥ 600 cells — so each leaf is geometrically well-separated, never over-fragmented.",
+  "clusteringViz": {
+   "headline": "Not a flat resolution sweep — a silhouette-gated recursive sub-split on the authors' own embedding.",
+   "pipeline": [
+    {
+     "icon": "📦",
+     "title": "Sample",
+     "stat": "250k / 3.23M cells",
+     "detail": "Uniform random draw across every condition (drug-treated and control alike) — a tractable cross-section of the full perturbation reference."
+    },
+    {
+     "icon": "🧬",
+     "title": "Features → PCA",
+     "stat": "2,000 HVG · PCA(50)",
+     "detail": "Highly-variable genes (seurat_v3) on raw counts, then 50 principal components. No Harmony — the published sci-RNA-seq3 embedding is already integrated."
+    },
+    {
+     "icon": "🕸️",
+     "title": "Global Leiden",
+     "stat": "res 2.0",
+     "detail": "A 15-nearest-neighbour graph, then one global Leiden pass at resolution 2.0 — the coarse starting partition."
+    },
+    {
+     "icon": "✂️",
+     "title": "Silhouette-gated sub-split",
+     "stat": "recursive",
+     "detail": "Each large cluster is tentatively re-clustered and the split is kept only if it is geometrically real (the gate below). This is what makes ZSCAPE different."
+    },
+    {
+     "icon": "🎯",
+     "title": "Leaf clusters",
+     "stat": "55 leaves · 4 tiers",
+     "detail": "The accepted leaves span the authors' germ-layer → tissue → cell-type-broad → cell-type-sub ontology."
+    }
+   ],
+   "gate": {
+    "trigger": "cluster ≥ 4,000 cells",
+    "tentative": "re-Leiden the cluster at resolution 1.0",
+    "checks": [
+     "≥ 2 sub-clusters result",
+     "each sub-cluster keeps ≥ 600 cells",
+     "mean silhouette of the split ≥ 0.05"
+    ],
+    "accept": "all three pass → keep the finer split",
+    "rollback": "any check fails → roll back, stays one cluster",
+    "why": "A sub-cluster survives only if it is geometrically separated in PCA space — never merely over-fragmented. Silhouette gating is what lets us trust each leaf."
+   },
+   "tierOutcome": {
+    "total": 55,
+    "germLayers": [
+     {
+      "label": "ectoderm",
+      "n": 29,
+      "color": "#4ea1ff"
+     },
+     {
+      "label": "mesoderm",
+      "n": 17,
+      "color": "#d29922"
+     },
+     {
+      "label": "neural crest",
+      "n": 3,
+      "color": "#a371f7"
+     },
+     {
+      "label": "mixed lineage",
+      "n": 5,
+      "color": "#8b97a7"
+     },
+     {
+      "label": "endoderm",
+      "n": 1,
+      "color": "#3fb950"
+     }
+    ],
+    "note": "Majority published germ-layer of each de-novo leaf (groundtruth.json) — the partition resolves cleanly onto the authors' ontology."
+   }
+  },
+  "scorecard": {
+   "evidentiaryRunId": "20260615-211010-c4d306",
+   "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
+   "schema": "native",
+   "platform_class": "in-paradigm",
+   "tiers": [
+    {
+     "label": "Germ layer",
+     "pct": 93.6
+    },
+    {
+     "label": "Tissue",
+     "pct": 94.9
+    },
+    {
+     "label": "Cell type — broad",
+     "pct": 94.9
+    },
+    {
+     "label": "Cell type — sub",
+     "pct": 92.9
+    }
+   ],
+   "strata": {
+    "ge100": 94.5,
+    "ge30": 94.1,
+    "all": 94.1
+   },
+   "abstention": {
+    "n": 0,
+    "total": 156,
+    "precision": 0
+   },
+   "notes": [
+    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-derived label space — home-turf, not generalization."
+   ],
+   "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our sub-Leiden · authors' embedding",
+   "originTip": "provCarriedEmbed",
+   "embeddingSource": "silhouette-gated sub-Leiden on the published embedding (adaptive per branch)",
+   "labellingRunId": "20260615-211010-c4d306",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
+  }
+ },
+ "zscape_commit_gold": {
+  "id": "zscape_commit_gold",
+  "platform": "sci-RNA-seq3",
+  "lab": "Saunders/Trapnell et al. · Commit benchmark cut",
+  "year": 2023,
+  "namespace": "ZFIN gene short-name → ZFA menu",
+  "role": "gt",
+  "resLabel": "given · frozen (ZSCAPE-published 112 clusters)",
+  "cells": 209639,
+  "clusters": 112,
+  "fullCells": 3231733,
+  "source": "ZSCAPE Commit Gold — 48 hpf control arm, published 112-cluster gold set (≥50 cells, 26 excluded); ZFA-menu-constrained. NOT blind: we hold the answer key (dataset LEDGER #1).",
+  "subsample": "209,639 cells at 48 hpf, control arm; the 112 published clusters with ≥50 cells (26 smaller clusters excluded upstream).",
+  "recipe": "clustering GIVEN/frozen (ZSCAPE published) — we do not re-cluster; labels selected from the frozen ZFA menu (zfa_menu.v1, 3,107 terms, hash dec9f728).",
+  "selectionRule": "n/a — clustering is frozen upstream (published 112-cluster gold set)",
+  "sweep": null,
+  "chosenRes": null,
+  "selectionNote": "Given/frozen clustering: not leaf-comparable to ZSCAPE Classic's ~250 recursive leaves. Merging is disabled by design (upward compression is what the scoring rule penalises)."
+ },
+ "chemfish": {
+  "id": "chemfish",
+  "platform": "sci-RNA-seq3",
+  "lab": "Barkan et al.",
+  "year": null,
+  "namespace": "ENSDARG → ZFIN canonical",
+  "role": "gt",
+  "resLabel": "3.0",
+  "cells": 250000,
+  "clusters": 78,
+  "fullCells": 1579675,
+  "source": "ChemFish Barkan et al. (CHEM10 DSP + CHEM11 BS3) — 48 hpf subset, de-novo Leiden res 3.0 on Harmony(expt) embedding",
+  "subsample": "Uniform random 250,000-cell sample of the 48-hpf subset (both CHEM10 + CHEM11 screens, all conditions — treated and control alike), not control-only; the 48-hpf window matches the other atlases.",
+  "recipe": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 46,
+    "coherence": 0.978,
+    "minSize": 156,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 69,
+    "coherence": 0.986,
+    "minSize": 40,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 78,
+    "coherence": 1.0,
+    "minSize": 40,
+    "under50": 1,
+    "chosen": true
+   },
+   {
+    "res": 4.0,
+    "clusters": 93,
+    "coherence": 0.989,
+    "minSize": 27,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 107,
+    "coherence": 0.991,
+    "minSize": 12,
+    "under50": 3,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 3.0,
+  "selectionNote": null,
+  "scorecard": {
+   "evidentiaryRunId": "20260615-211010-e4aafa",
+   "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
+   "schema": "native",
+   "platform_class": "in-paradigm",
+   "tiers": [
+    {
+     "label": "Tissue",
+     "pct": 90.9
+    },
+    {
+     "label": "Cell type — sub",
+     "pct": 90.1
+    }
+   ],
+   "strata": {
+    "ge100": 91.9,
+    "ge30": 91.2,
+    "all": 90.0
+   },
+   "abstention": {
+    "n": 6,
+    "total": 341,
+    "precision": 67.0
+   },
+   "notes": [
+    "In-paradigm validation: sci-RNA-seq3, ZSCAPE-projected labels.",
+    "Correction: 87.7% tissue supersedes the earlier withheld 31% — that was a :5007-misalignment artifact (ChemFish was served MiniFin's stats), now fixed."
+   ],
+   "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 3.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(experiment) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-211010-e4aafa",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
+  }
+ },
+ "daniocell": {
+  "id": "daniocell",
+  "platform": "10X droplet",
+  "lab": "Sur et al. (Farrell / NICHD)",
+  "year": 2023,
+  "namespace": "ENSDARG → ZFIN canonical",
+  "role": "gt",
+  "resLabel": "2.0",
+  "cells": 191832,
+  "clusters": 77,
+  "fullCells": 191832,
+  "source": "DanioCell Sur et al. (Farrell/NICHD) — 36-72hpf window, de-novo Leiden res 2.0 on Harmony(stage) embedding",
+  "recipe": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 55,
+    "coherence": 1.0,
+    "minSize": 188,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 77,
+    "coherence": 1.0,
+    "minSize": 188,
+    "under50": 0,
+    "chosen": true
+   },
+   {
+    "res": 3.0,
+    "clusters": 99,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 1,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 117,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 4,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 133,
+    "coherence": 1.0,
+    "minSize": 22,
+    "under50": 4,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 2.0,
+  "selectionNote": null,
+  "scorecard": {
+   "evidentiaryRunId": "20260615-211010-b39045",
+   "evidentiaryRunBasis": "native-schema · parked-on-de-novo-revert; promoted from archive",
+   "schema": "native",
+   "platform_class": "independent",
+   "tiers": [
+    {
+     "label": "Tissue",
+     "pct": 82.6
+    },
+    {
+     "label": "Cell type — broad",
+     "pct": 86.2
+    }
+   ],
+   "strata": {
+    "ge100": 88.3,
+    "ge30": 85.0,
+    "all": 84.2
+   },
+   "abstention": {
+    "n": 2,
+    "total": 470,
+    "precision": 0
+   },
+   "notes": [
+    "Genuinely INDEPENDENT / cross-platform (10X droplet) — the real generalization read.",
+    "Coarse: scored on tissue + broad only (≤43-level; numeric clust-codes are not a nameable vocabulary, excluded) — coarse-resolution generalization, not fine."
+   ],
+   "harnessVersion": "v1.1"
+  },
+  "provenance": {
+   "clusteringOrigin": "our embedding · our Leiden res 2.0",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "HVG → PCA → Harmony(stage) → kNN graph → Leiden resolution sweep",
+   "labellingRunId": "20260615-211010-b39045",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.1",
+    "name": "native-validated · roll-up/superset judge",
+    "gitCommit": "dc6eff4e"
+   },
+   "scoredBasis": "native-schema",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "TODO — umap.json not yet stamped",
+   "caveats": []
+  }
+ },
+ "megafin": {
+  "id": "megafin",
+  "platform": "Parse Evercode · manual .h5ad (Lawson)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "Lawson LL → ZFIN canonical",
+  "role": "internal",
+  "resLabel": "2.0",
+  "cells": 537959,
+  "clusters": 84,
+  "fullCells": 537959,
+  "source": "MegaFin Part 1 REBUILD — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) (Manual/Lawson object) — de-novo Leiden res 2.0 (84 clusters; C67 periderm fragment merged into C61) on the carried Harmony(sample) embedding. Standard re-embed tested and REJECTED (coherence collapsed); Parse embedding retained. Supersedes the 77-cluster Parse interim.",
+  "recipe": "HVG → PCA → carried Harmony(sample) embedding → kNN graph → Leiden sweep",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 60,
+    "coherence": 0.867,
+    "minSize": 10,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 85,
+    "coherence": 0.929,
+    "minSize": 9,
+    "under50": 3,
+    "chosen": true
+   },
+   {
+    "res": 3.0,
+    "clusters": 107,
+    "coherence": 0.925,
+    "minSize": 20,
+    "under50": 3,
+    "chosen": false
+   },
+   {
+    "res": 4.0,
+    "clusters": 128,
+    "coherence": 0.938,
+    "minSize": 10,
+    "under50": 4,
+    "chosen": false
+   },
+   {
+    "res": 5.0,
+    "clusters": 147,
+    "coherence": 0.925,
+    "minSize": 10,
+    "under50": 6,
+    "chosen": false
+   }
+  ],
+  "chosenRes": 2.0,
+  "selectionNote": null,
+  "noGtNote": "Internal drug-screen atlas (Manual build) — no published labels; intuition-building, not a benchmark.",
+  "design": "Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
+  "designFacts": {
+   "kit": "Evercode WT Mega",
+   "conditions": "96 designed → 93 sequenced",
+   "compounds": "45 small molecules + Sorafenib (pos. ctrl)",
+   "doses": "1 µM & 5 µM",
+   "controls": "2 DMSO vehicle · 2 egg-water",
+   "rearing": "TU WT · 6 embryos/well · 24→48 hpf",
+   "composition": "≈3% control · ≈97% drug-exposed cells",
+   "qc": "3 wells dropped (UMAP explosion)"
+  },
+  "coherence": 0.929,
+  "coherenceNote": "Less coherent (0.929) than the GT partitions (~1.0) — this 96-condition drug screen (93 samples after QC) keeps the carried Parse Harmony embedding; a standard HVG→PCA→Harmony re-embed was tested and rejected (coherence collapsed to 0.47–0.67 with 56–63 micro-clusters).",
+  "canonicalPct": 95.6,
+  "groundingNote": "100.0% of markers queryable on :5007; 95.6% under canonical ZFIN names (thinner than the ENSDARG-native sets, but key cell-type markers ground fine).",
+  "rejectedReembed": {
+   "sweep": [
+    {
+     "res": 1.0,
+     "clusters": 118,
+     "coherence": 0.475,
+     "minSize": 7,
+     "under50": 57,
+     "chosen": false
+    },
+    {
+     "res": 2.0,
+     "clusters": 143,
+     "coherence": 0.573,
+     "minSize": 7,
+     "under50": 56,
+     "chosen": false
+    },
+    {
+     "res": 3.0,
+     "clusters": 179,
+     "coherence": 0.62,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    },
+    {
+     "res": 4.0,
+     "clusters": 197,
+     "coherence": 0.65,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    },
+    {
+     "res": 5.0,
+     "clusters": 210,
+     "coherence": 0.667,
+     "minSize": 6,
+     "under50": 63,
+     "chosen": false
+    }
+   ],
+   "note": "Standard re-embed (HVG→PCA→Harmony→neighbors): coherence collapsed to 0.475–0.667 with 56–63 micro-clusters — worse than the Parse embedding. Rejected."
+  },
+  "sizeMin": 9,
+  "sizeMedian": 4552,
+  "sizeMax": 19798,
+  "merged": {
+   "from": 67,
+   "into": 61,
+   "cells_moved": 29,
+   "renumbered_to_contiguous": true
+  },
+  "noGtScorecard": {
+   "units": 84,
+   "coverage": {
+    "assigned_pct": 95.2,
+    "abstained": 4
+   },
+   "grounding_pct": 98.6,
+   "tier_depth": {
+    "cell_type": 70,
+    "tissue": 10
+   },
+   "badge": "No published labels — not an accuracy benchmark",
+   "abstentionNote": "All 4 abstentions justified — and it declined c23, a 4,131-cell cluster, because it is a ribosome-high / low-complexity technical artifact, not a size call. It knows the difference between a cell type it can't resolve and a cluster it shouldn't label."
+  },
+  "provenance": {
+   "clusteringOrigin": "our Leiden res 2.0 · our Harmony embedding",
+   "originTip": "provOwnEmbed",
+   "embeddingSource": "our Harmony(sample), computed in the manual-denoise step and carried into the asset build; standard in-build re-embed tested & rejected (coherence 0.93->0.67)",
+   "labellingRunId": "20260615-042324-3a15a2",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "33e60eb5c5105df62ff8ba65b8e2a13d7ea2ff6c85b104f3b97b66c56d01a72f",
+   "caveats": [
+    "No external cell-type labels — internal, intuition-building.",
+    "Less coherent (0.929) than the GT partitions."
+   ]
+  }
+ },
+ "megafin_parse": {
+  "id": "megafin_parse",
+  "platform": "Parse Evercode (combinatorial split-pool)",
+  "lab": "Zeroshot (internal)",
+  "year": 2026,
+  "namespace": "ENSDARG → ZFIN canonical",
+  "role": "internal",
+  "resLabel": "3.0",
+  "cells": 540946,
+  "clusters": 77,
+  "fullCells": 540946,
+  "source": "MegaFin Part 1 — 48 hpf TuWT, 93 samples (96 conditions; 3 QC-removed) — de-novo Leiden res 3.0 on Parse Harmony embedding (sidecar:megafin_leiden_labels.csv)",
+  "recipe": "Leiden resolution sweep on the Parse/Trailmaker Harmony(sample) embedding",
+  "selectionRule": "coherent_frac ≥ 0.95 & min_size ≥ 30 (finest qualifying)",
+  "sweep": [
+   {
+    "res": 1.0,
+    "clusters": 39,
+    "coherence": 1.0,
+    "minSize": 1184,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 2.0,
+    "clusters": 57,
+    "coherence": 1.0,
+    "minSize": 200,
+    "under50": 0,
+    "chosen": false
+   },
+   {
+    "res": 3.0,
+    "clusters": 77,
+    "coherence": 0.974,
+    "minSize": 203,
+    "under50": 0,
+    "chosen": true
+   }
+  ],
+  "chosenRes": 3.0,
+  "selectionNote": null,
+  "noGtNote": "Internal drug-screen atlas (Parse pipeline build) — no published labels; intuition-building, not a benchmark.",
+  "design": "Evercode WT Mega · 96 conditions designed (0 replicates): 45 test small molecules × 2 doses (1 µM & 5 µM) + Sorafenib positive control (1 & 5 µM) + 2 DMSO vehicle (0.01% / 0.05%) + 2 egg-water no-vehicle controls. 3 wells QC-removed for UMAP explosion (Vorinostat 1µM/B11, Romidepsin 5µM/C3, Dinaciclib 5µM/E3) → 93 samples sequenced. TU Wildtype, 6 embryos/well, treated 24→48 hpf, fixed at 48 hpf. Negative/vehicle controls ≈ 3% of cells; 45 test compounds ≈ 94% (Sorafenib pos-control ≈ 2%).",
+  "designFacts": {
+   "kit": "Evercode WT Mega",
+   "conditions": "96 designed → 93 sequenced",
+   "compounds": "45 small molecules + Sorafenib (pos. ctrl)",
+   "doses": "1 µM & 5 µM",
+   "controls": "2 DMSO vehicle · 2 egg-water",
+   "rearing": "TU WT · 6 embryos/well · 24→48 hpf",
+   "composition": "≈3% control · ≈97% drug-exposed cells",
+   "qc": "3 wells dropped (UMAP explosion)"
+  },
+  "noGtScorecard": {
+   "units": 77,
+   "coverage": {
+    "assigned_pct": 98.7,
+    "abstained": 1
+   },
+   "grounding_pct": 98.4,
+   "tier_depth": {
+    "cell_type": 73,
+    "tissue": 3
+   },
+   "badge": "No-GT",
+   "abstentionNote": "1 abstention (P7, ~4.8k cells) — a biosynthetic/growth-associated translational artifact, not a cell type; the same kind of cluster Manual declined at c23.",
+   "processingConsistency": {
+    "headlinePct": 80,
+    "alignedN": 35,
+    "cellWeightedPct": 71,
+    "allClusterPct": 66,
+    "framing": "Processing-consistency, not accuracy — neither pipeline is ground truth; this measures whether the annotation survives the upstream processing choice.",
+    "decompNote": "Headline = agreement where the two partitions align (mapping purity ≥0.70). The all-cluster figure is lower only because the two pipelines cut the neural continuum at different resolutions — partition granularity, not labels disagreeing on the same cells.",
+    "crosswalkNote": "Aligned via a barcode crosswalk validated at 100% drug-sample concordance and 0.994 expression correlation on matched pairs — the same physical cells.",
+    "adjudication": {
+     "parse_better": 4,
+     "manual_better": 1,
+     "marker_ceiling": 2,
+     "note": "7 high-purity cross-lineage conflicts adjudicated on :5007 (same cells, queried on both builds): disagreements are mostly resolution — one pipeline resolves a population the other lumped, and the finer label is correct — not biology. Only 1/77 is a flat labeling error."
+    }
+   }
+  },
+  "provenance": {
+   "clusteringOrigin": "our Leiden res 3.0 · carried Parse embedding",
+   "originTip": "provCarriedEmbed",
+   "embeddingSource": "Parse/Trailmaker Harmony(sample), genuinely carried from parse_megafin1.h5ad; our Leiden res-3.0 sweep on it",
+   "labellingRunId": "20260615-043737-1afa19",
+   "model": "gpt-5.5",
+   "harness": {
+    "version": "1.0",
+    "name": "native-validated",
+    "gitCommit": "f5278022"
+   },
+   "scoredBasis": "de-novo",
+   "groundingOntologies": [
+    "ZFIN",
+    "ZFA",
+    "GO"
+   ],
+   "partitionId": "f093170b0c47bc41d4b1c73a01b8c0e5eb6b6f27cb09166054fa08c2aaaf8a06",
+   "caveats": [
+    "A second processing of the same MegaFin Part 1 library — Parse/Trailmaker (540.9k, ENSDARG) vs the Manual Lawson denoise (537.9k); the two builds share no cell barcodes.",
+    "Difference from Manual is the Leiden resolution (3.0/77 vs 2.0/84), ~88% concordant in expression space — see the consistency panel."
+   ]
+  }
+ },
+ "_suite": {
+  "notes": [
+   "Scored in each dataset's own native schema — not cross-dataset comparable; no head-to-head ranking.",
+   "Semantic-judge floor: misses are near-dominated (right lineage, sub-resolution), so true quality runs higher — especially ChemFish sub.",
+   "Abstains only on under-powered or technical-artifact clusters, never reliable ones, and flags likely reference errors — it knows what it doesn't know."
+  ]
+ }
 }
