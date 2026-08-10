@@ -35,7 +35,9 @@ const CLASS_TINT: Record<string, Tint> = {
   DRUG: { bg: "#e2f1f4", fg: "#0e6a80", bd: "#bfdfe7" },
   "GENETIC KO": { bg: "#fef3c7", fg: "#92400e", bd: "#fcd34d" },
   "CONTROL ARM": { bg: "#f1efeb", fg: "#6b655d", bd: "#ddd8d1" },
-  UNPERTURBED: { bg: "#f0f4f2", fg: "#4a6b5c", bd: "#d3e0d9" },
+  // Observational = no treatment arm at all. Deliberately green-leaning and distinct from
+  // CONTROL ARM, which is a perturbation study's untreated wells — not the same thing.
+  OBSERVATIONAL: { bg: "#eef4f0", fg: "#3f6b55", bd: "#cfe0d6" },
 };
 const NEUTRAL: Tint = { bg: "#f3f0ec", fg: FAINT, bd: "#e5e1dc" };
 const tintFor = (cls: string): Tint => CLASS_TINT[cls] || NEUTRAL;
@@ -59,7 +61,12 @@ function Value({ v }: { v: string }) {
   );
 }
 
-function StatRow({ label, value, last }: { label: string; value: string; last?: boolean }) {
+const rowLabel: React.CSSProperties = {
+  fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7,
+  textTransform: "uppercase", color: MUTED,
+};
+
+function StatRow({ label, value, last, highlight }: { label: string; value: string; last?: boolean; highlight?: boolean }) {
   return (
     <div
       style={{
@@ -71,10 +78,72 @@ function StatRow({ label, value, last }: { label: string; value: string; last?: 
         borderBottom: last ? "none" : `1px solid ${RULE}`,
       }}
     >
-      <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED }}>
-        {label}
-      </span>
-      <Value v={value} />
+      <span style={rowLabel}>{label}</span>
+      {highlight && !isTbd(value) ? <TimePill v={value} on /> : <Value v={value} />}
+    </div>
+  );
+}
+
+// A single timepoint token. `on` = this atlas covers 48 hpf, our common join point across
+// datasets — filled accent so a reader scanning all seven cards spots it without reading.
+function TimePill({ v, on, unit }: { v: string; on?: boolean; unit?: string }) {
+  return (
+    <span
+      style={{
+        fontFamily: MONO, fontSize: 9.5, fontWeight: on ? 800 : 600,
+        fontVariantNumeric: "tabular-nums", borderRadius: 99, padding: "1.5px 7px",
+        whiteSpace: "nowrap",
+        color: on ? "#fff" : MUTED,
+        background: on ? ACCENT : "#f3f0ec",
+        border: `1px solid ${on ? ACCENT : RULE}`,
+      }}
+    >
+      {v}{unit ? ` ${unit}` : ""}
+    </span>
+  );
+}
+
+// Full timepoint vector, read from obs — every stage the atlas actually contains, wrapped
+// rather than truncated. 48 hpf (if present) is the only filled pill.
+function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; highlight?: string }; last?: boolean }) {
+  const vals = tp.values || [];
+  return (
+    <div style={{ padding: "7px 0", borderBottom: last ? "none" : `1px solid ${RULE}` }}>
+      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
+        <span style={rowLabel}>Timepoints</span>
+        <span style={{ fontFamily: MONO, fontSize: 9.5, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
+          {vals.length} · {tp.unit || ""}
+        </span>
+      </div>
+      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
+        {vals.map((v) => <TimePill key={v} v={v} on={v === tp.highlight} />)}
+      </div>
+    </div>
+  );
+}
+
+// The atlas's OWN label hierarchy, with the real column names. Deliberately not normalised to a
+// common tier: ChemFish's 348 cell_type and ZSCAPE's 99 cell_type_broad are different kinds of
+// number, and flattening them to one "CELL TYPES" row hid that.
+function SchemaBlock({ schema }: { schema: any }) {
+  return (
+    <div style={{ padding: "7px 0", borderBottom: `1px solid ${RULE}` }}>
+      <div style={{ ...rowLabel, marginBottom: 5 }}>Native schema</div>
+      {schema?.tiers ? (
+        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "3px 5px" }}>
+          {schema.tiers.map((t: any, i: number) => (
+            <React.Fragment key={t.col}>
+              {i > 0 && <span style={{ color: FAINT, fontSize: 11 }}>→</span>}
+              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 3 }}>
+                <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 800, color: INK, fontVariantNumeric: "tabular-nums" }}>{t.n}</span>
+                <span style={{ fontFamily: MONO, fontSize: 9.5, color: MUTED }}>{t.col}</span>
+              </span>
+            </React.Fragment>
+          ))}
+        </div>
+      ) : (
+        <div style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{schema?.status || TBD}</div>
+      )}
     </div>
   );
 }
@@ -159,16 +228,28 @@ function DatasetSpecCard({ id }: { id: string }) {
         </span>
       </div>
 
-      {/* stat table — CELLS + METHOD read from dataset_facts.json; the rest from dataset_cards.json */}
+      {/* stat table — CELLS is the full published object (dataset_cards.json), falling back to
+          dataset_facts.json; METHOD still comes from facts. A subsample never sits here unlabelled:
+          where we work on a slice, workingSlice names it on the line below. */}
       <div style={{ marginTop: 11 }}>
-        <StatRow label="Cells" value={nfmt(f.cells)} />
+        <div style={{ padding: "6px 0", borderBottom: `1px solid ${RULE}` }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
+            <span style={rowLabel}>Cells</span>
+            <Value v={c.cells || nfmt(f.cells)} />
+          </div>
+          {c.workingSlice && (
+            <div style={{ marginTop: 3, fontSize: 10, fontStyle: "italic", color: FAINT, textAlign: "right", lineHeight: 1.35 }}>
+              {c.workingSlice}
+            </div>
+          )}
+        </div>
         <StatRow label="Genes" value={c.genes} />
-        <StatRow label="Tissues" value={c.tissues} />
-        <StatRow label="Cell types" value={c.cellTypes} />
+        <SchemaBlock schema={c.schema} />
         <StatRow label="Method" value={f.platform || TBD} />
-        <StatRow label="Capture" value={c.capture} />
+        <StatRow label="Capture" value={c.capture} last={!c.timepoints && !(c.timing || []).length} />
+        {c.timepoints && <TimepointRow tp={c.timepoints} last={!(c.timing || []).length} />}
         {(c.timing || []).map((t: any, i: number) => (
-          <StatRow key={t.label} label={t.label} value={t.value} last={i === (c.timing || []).length - 1} />
+          <StatRow key={t.label} label={t.label} value={t.value} highlight={t.highlight} last={i === (c.timing || []).length - 1} />
         ))}
       </div>
 
@@ -180,7 +261,14 @@ function DatasetSpecCard({ id }: { id: string }) {
       )}
 
       <SectionHead label="Controls" summary={c.controls?.summary || TBD} />
-      <div style={chipWrap}>{ctrls.map((x, i) => <CtrlChip key={i} text={x} />)}</div>
+      {ctrls.length ? (
+        <div style={chipWrap}>{ctrls.map((x, i) => <CtrlChip key={i} text={x} />)}</div>
+      ) : (
+        // N/A, not TBD: an observational atlas has no control arm because it has no treatment arm.
+        <div style={{ fontSize: 11, color: FAINT, fontStyle: "italic" }}>
+          {c.controls?.summary === "N/A" ? "No control arm — nothing to control against." : TBD}
+        </div>
+      )}
 
       <div
         style={{
@@ -195,10 +283,22 @@ function DatasetSpecCard({ id }: { id: string }) {
 }
 
 // ── summary strip ──────────────────────────────────────────────────────────
-// Every numeral here is summed straight from dataset_facts.json — nothing estimated.
+// Every numeral here is summed from the cards — nothing estimated. Cells match what the cards
+// show (full published objects), NOT dataset_facts.json's working-slice counts, so the strip and
+// the grid above it can never disagree.
+const cellsOf = (id: string): number => {
+  const s = CARDS[id]?.cells;
+  if (typeof s === "string") {
+    const n = Number(s.replace(/,/g, ""));
+    if (Number.isFinite(n)) return n;
+  }
+  const f = FACTS[id];
+  return typeof f?.cells === "number" ? f.cells : 0;
+};
+
 function SummaryStrip({ ids }: { ids: string[] }) {
   const rows = ids.map((id) => FACTS[id]).filter(Boolean);
-  const cells = rows.reduce((s, f) => s + (typeof f.cells === "number" ? f.cells : 0), 0);
+  const cells = ids.reduce((s, id) => s + cellsOf(id), 0);
   const clusters = rows.reduce((s, f) => s + (typeof f.clusters === "number" ? f.clusters : 0), 0);
   const gt = rows.filter((f) => f.role === "gt").length;
   const items = [

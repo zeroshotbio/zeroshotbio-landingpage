@@ -1,16 +1,16 @@
 {
-  "_note": "Per-dataset SPEC-CARD fields (biology / experimental design). Joined on `id` to dataset_facts.json, which stays the source of truth for CELLS and METHOD (platform) — those are NOT duplicated here. Values are either (a) read live from the backing .h5ad / author metadata, (b) transcribed from prose already in the repo, or (c) supplied by Steven from the published spec card. Provenance for every non-obvious value is recorded in `_provenance` below. Anything not sourced is the literal string \"TBD\" and is waiting on a human — do not fill these in by inference.",
+  "_note": "Per-dataset SPEC-CARD fields. These cards describe THE ATLAS, not the slice we happen to work on: `cells`, `schema` tier counts and `timepoints` are all full-published-object numbers, with `workingSlice` naming our subset where one exists. Joined on `id` to dataset_facts.json (still the source of truth for METHOD/platform and the cluster counts in the summary strip); dataset_facts.json is never modified. Values are read live from the backing .h5ad / author metadata, transcribed from repo prose, or supplied by Steven — see `_provenance`. Anything unsourced is the literal string \"TBD\". Where a field is not a gap but a genuine absence, it says so in words (\"Unannotated — labelling target\", \"N/A\") rather than TBD.",
 
   "_provenance": {
-    "genes": "n_vars, read in backed mode. zscape + zscape_commit_gold + chemfish 32,031; daniocell 30,121; megafin_parse + minifin 32,520; megafin (Lawson) 36,351.",
-    "zscape_tissues_celltypes": "obs[tissue]=34 and obs[cell_type_broad]=99 in /data/datasets/raw_datasets/ZSCAPE/zscape_perturb_reference_merged_dedubled.h5ad (full published object, 3,231,733 cells). obs[cell_type_sub]=156 is the finer native alternative. The 48-hpf control-only slice gives 33/97.",
-    "zscape_perturbations": "obs[gene_target]=34 in the same object: 28 knockouts + 6 ctrl-* controls. Matches the published spec card exactly.",
-    "chemfish_tissues_celltypes": "obs[tissue]=39 and obs[cell_type]=348 in /data/datasets/raw_datasets/ChemFish/extracted/chemfish_cds/cell_metadata.csv (authors' own metadata, 2,068,668 rows). NOTE: ChemFish `cell_type` is the fine native tier — not the same granularity as ZSCAPE cell_type_broad.",
-    "chemfish_perturbations": "obs[perturbation]=11 (8 compounds + DMSO/EtOH/novehicle) and obs[target]=8 (7 pathways + Control) in the same file. Confirms the published spec card exactly.",
-    "daniocell_tissues_celltypes": "obs[tissue.name]=19 and obs[tissue.figure]=43 in /data/datasets/raw_datasets/DanioCell_h5ad/daniocell_canonical.h5ad (336,603 cells, all stages). obs[clust]=498 is the finer native alternative.",
-    "capture": "Supplied by Steven. Single-nucleus for the sci-RNA-seq3 builds (ZSCAPE ×2, ChemFish); whole-cell for the Parse Evercode builds and DanioCell 10X.",
-    "megafin_minifin_perturbations": "PENDING REVIEW — decoded from obs[sample]/obs[samples] (93 wells) and obs[perturbation], reported to Steven for eyeball before shipping. Not yet written.",
-    "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven (Phase 3, Source 4)."
+    "cells_and_slices": "Full-object n_obs read in backed mode. zscape 3,231,733 (obs[timepoint]==48 -> 813,782, matches facts.cells). daniocell 336,603 (36-72 hpf window -> 191,832, matches facts.cells). chemfish 2,068,668 (timepoint==48 -> 1,579,675, which is what facts.fullCells records; facts.cells 250,000 is our uniform sample of that). commit_gold 209,639 is the benchmark definition itself, not a subsample, so no working-slice line. megafin/megafin_parse/minifin are used whole.",
+    "timepoints": "Read from obs, never inferred. zscape obs[timepoint] = 18 values (18-48 in 2h steps, +72, +96). commit_gold obs[timepoint] = single value 48. daniocell obs[hpf] = 39 values (18-96). chemfish cell_metadata timepoint = 36/48/72. megafin/megafin_parse/minifin have NO timepoint column — single-collection designs, so they keep EXPOSURE -> COLLECTION rows.",
+    "schema": "Native label hierarchies, exact column names, counted on the full objects. zscape obs[tissue]/obs[cell_type_broad]/obs[cell_type_sub]. chemfish cell_metadata tissue/cell_type. daniocell obs[tissue.name]/obs[tissue.figure]/obs[clust]. Counts are NOT comparable across datasets — the tiers are different granularities, which is why the cards show the hierarchy rather than a normalised number.",
+    "genes": "n_vars. zscape + commit_gold + chemfish 32,031; daniocell 30,121; megafin_parse + minifin 32,520; megafin (Lawson) 36,351.",
+    "zscape_perturbations": "obs[gene_target] = 34: 28 knockouts + 6 ctrl-* arms. Matches the published spec card exactly.",
+    "chemfish_perturbations": "cell_metadata obs[perturbation] = 11 (8 compounds + DMSO/EtOH/novehicle), obs[target] = 8 (7 pathways + Control). Confirms the published spec card exactly.",
+    "megafin_perturbations": "Decoded from obs[sample] (Manual) / obs[samples] (Parse) — identical 93-well sets, format m1_<well>_CP01_<compound>_<dose>. 46 compounds = 45 small molecules + Sorafenib positive control, matching designFacts. The 3 QC-removed wells (Vorinostat 1uM/B11, Romidepsin 5uM/C3, Dinaciclib 5uM/E3) dropped ONE DOSE each, not the compound — all 46 survive in the object, so all 46 are listed and the dropped wells are noted in the summary line.",
+    "minifin_perturbations": "obs[perturbation] = 4 (DMSO, Dapagliflozin, Orlistat, Sorafenib) across obs[sample] = 43 replicate samples (DMSO 11, Dapagliflozin 10, Orlistat 11, Sorafenib 11). Spelling taken from obs[perturbation]; obs[sample] misspells it 'Dapaglifozan'.",
+    "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven — they need a target annotation he supplies."
   },
 
   "order": ["zscape_commit_gold", "zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"],
@@ -19,11 +19,12 @@
     "zscape_commit_gold": {
       "name": "ZSCAPE Commit Gold",
       "perturbationClass": "CONTROL ARM",
+      "cells": "209,639",
+      "workingSlice": null,
       "genes": "32,031",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
+      "schema": { "status": "Held out — benchmark key" },
       "capture": "Single-nucleus",
-      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "timepoints": { "unit": "hpf", "values": ["48"], "highlight": "48" },
       "perturbations": { "summary": "NONE · CONTROL ARM", "items": [] },
       "controls": {
         "summary": "6 TYPES",
@@ -35,11 +36,22 @@
     "zscape": {
       "name": "ZSCAPE Classic",
       "perturbationClass": "GENETIC KO",
+      "cells": "3,231,733",
+      "workingSlice": "Working slice — 48 hpf, 813,782 cells",
       "genes": "32,031",
-      "tissues": "34",
-      "cellTypes": "99",
+      "schema": {
+        "tiers": [
+          { "n": "34", "col": "tissue" },
+          { "n": "99", "col": "cell_type_broad" },
+          { "n": "156", "col": "cell_type_sub" }
+        ]
+      },
       "capture": "Single-nucleus",
-      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "timepoints": {
+        "unit": "hpf",
+        "values": ["18", "20", "22", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48", "72", "96"],
+        "highlight": "48"
+      },
       "perturbations": {
         "summary": "28 GENE KNOCKOUTS",
         "items": [
@@ -60,11 +72,17 @@
     "chemfish": {
       "name": "ChemFish",
       "perturbationClass": "DRUG",
+      "cells": "2,068,668",
+      "workingSlice": "Working slice — 48 hpf (1,579,675), 250,000-cell uniform sample",
       "genes": "32,031",
-      "tissues": "39",
-      "cellTypes": "348",
+      "schema": {
+        "tiers": [
+          { "n": "39", "col": "tissue" },
+          { "n": "348", "col": "cell_type" }
+        ]
+      },
       "capture": "Single-nucleus",
-      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "timepoints": { "unit": "hpf", "values": ["36", "48", "72"], "highlight": "48" },
       "perturbations": {
         "summary": "8 COMPOUNDS",
         "items": ["Cyclopamine", "DEAB", "DMH1", "LY411575", "SB505124", "SU5402", "WntC59", "A8301"]
@@ -75,31 +93,56 @@
 
     "daniocell": {
       "name": "DanioCell",
-      "perturbationClass": "UNPERTURBED",
+      "perturbationClass": "OBSERVATIONAL",
+      "cells": "336,603",
+      "workingSlice": "Working slice — 36–72 hpf, 191,832 cells",
       "genes": "30,121",
-      "tissues": "19",
-      "cellTypes": "43",
+      "schema": {
+        "tiers": [
+          { "n": "19", "col": "tissue.name" },
+          { "n": "43", "col": "tissue.figure" },
+          { "n": "498", "col": "clust" }
+        ]
+      },
       "capture": "Whole-cell",
-      "timing": [{ "label": "TIMEPOINTS", "value": "36–72 hpf" }],
-      "perturbations": { "summary": "NONE · DEVELOPMENTAL ATLAS", "items": [] },
-      "controls": { "summary": "TBD", "items": ["TBD"] },
-      "footer": "TBD"
+      "timepoints": {
+        "unit": "hpf",
+        "values": ["18", "21", "24", "26", "28", "30", "32", "34", "36", "38", "40", "42", "44", "46", "48", "50", "52", "54", "56", "58", "60", "62", "64", "66", "68", "70", "72", "74", "76", "78", "80", "82", "84", "86", "88", "90", "92", "94", "96"],
+        "highlight": "48"
+      },
+      "perturbations": { "summary": "NONE · DEVELOPMENTAL REFERENCE ATLAS", "items": [] },
+      "controls": { "summary": "N/A", "items": [] },
+      "footer": "Developmental reference atlas — no treatment arm, nothing perturbed."
     },
 
     "megafin_parse": {
       "name": "Parse MegaFin Part 1",
       "perturbationClass": "DRUG",
+      "cells": "540,946",
+      "workingSlice": null,
       "genes": "32,520",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
+      "schema": { "status": "Unannotated — labelling target" },
       "capture": "Whole-cell",
       "timing": [
         { "label": "EXPOSURE", "value": "24 → 48 hpf" },
-        { "label": "COLLECTION", "value": "48 hpf" }
+        { "label": "COLLECTION", "value": "48 hpf", "highlight": true }
       ],
       "perturbations": {
-        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES",
-        "items": ["Sorafenib · pos. ctrl", "TBD"]
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES · 3 WELLS QC-REMOVED",
+        "items": [
+          "17-AAG (KOS953)", "Abiraterone", "Apixaban", "Aspirin", "Atorvastatin calcium",
+          "Axitinib", "Budesonide", "CAL-101 (Idelalisib)", "Celecoxib",
+          "Citalopram hydrobromide", "Clopidogrel", "Cyclosporin A", "Dapagliflozin",
+          "Dexamethasone (DHP)", "Dinaciclib (SCH727965)", "Enalapril",
+          "Entinostat (MS-275)", "Everolimus (RAD001)", "Finasteride", "Fluoxetine HCl",
+          "Ganetespib (STA-9090)", "GSK2126458 (Omipalisib)", "Hydrocortisone",
+          "LDE225 (Erismodegib)", "Losartan potassium", "Lovastatin", "Metformin HCl",
+          "Panobinostat", "Paroxetine HCl", "Pazopanib", "Pravastatin sodium",
+          "Prednisone", "Propranolol HCl", "Ramipril", "Rapamycin (Sirolimus)",
+          "Resveratrol", "Rivaroxaban", "Romidepsin (FK228)", "Rucaparib (AG-014699)",
+          "Sertraline HCl", "Simvastatin (Zocor)", "Sorafenib · pos. ctrl",
+          "Sunitinib malate", "Ticagrelor", "Valsartan", "Vorinostat (SAHA)"
+        ]
       },
       "controls": {
         "summary": "2 TYPES",
@@ -111,17 +154,31 @@
     "megafin": {
       "name": "Manual MegaFin Part 1",
       "perturbationClass": "DRUG",
+      "cells": "537,959",
+      "workingSlice": null,
       "genes": "36,351",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
+      "schema": { "status": "Unannotated — labelling target" },
       "capture": "Whole-cell",
       "timing": [
         { "label": "EXPOSURE", "value": "24 → 48 hpf" },
-        { "label": "COLLECTION", "value": "48 hpf" }
+        { "label": "COLLECTION", "value": "48 hpf", "highlight": true }
       ],
       "perturbations": {
-        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES",
-        "items": ["Sorafenib · pos. ctrl", "TBD"]
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES · 3 WELLS QC-REMOVED",
+        "items": [
+          "17-AAG (KOS953)", "Abiraterone", "Apixaban", "Aspirin", "Atorvastatin calcium",
+          "Axitinib", "Budesonide", "CAL-101 (Idelalisib)", "Celecoxib",
+          "Citalopram hydrobromide", "Clopidogrel", "Cyclosporin A", "Dapagliflozin",
+          "Dexamethasone (DHP)", "Dinaciclib (SCH727965)", "Enalapril",
+          "Entinostat (MS-275)", "Everolimus (RAD001)", "Finasteride", "Fluoxetine HCl",
+          "Ganetespib (STA-9090)", "GSK2126458 (Omipalisib)", "Hydrocortisone",
+          "LDE225 (Erismodegib)", "Losartan potassium", "Lovastatin", "Metformin HCl",
+          "Panobinostat", "Paroxetine HCl", "Pazopanib", "Pravastatin sodium",
+          "Prednisone", "Propranolol HCl", "Ramipril", "Rapamycin (Sirolimus)",
+          "Resveratrol", "Rivaroxaban", "Romidepsin (FK228)", "Rucaparib (AG-014699)",
+          "Sertraline HCl", "Simvastatin (Zocor)", "Sorafenib · pos. ctrl",
+          "Sunitinib malate", "Ticagrelor", "Valsartan", "Vorinostat (SAHA)"
+        ]
       },
       "controls": {
         "summary": "2 TYPES",
@@ -133,13 +190,20 @@
     "minifin": {
       "name": "MiniFin",
       "perturbationClass": "DRUG",
+      "cells": "94,616",
+      "workingSlice": null,
       "genes": "32,520",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
+      "schema": { "status": "Unannotated — labelling target" },
       "capture": "Whole-cell",
-      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
-      "perturbations": { "summary": "43 DRUG SAMPLES", "items": ["TBD"] },
-      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "timing": [
+        { "label": "EXPOSURE", "value": "TBD" },
+        { "label": "COLLECTION", "value": "48 hpf", "highlight": true }
+      ],
+      "perturbations": {
+        "summary": "3 COMPOUNDS + VEHICLE · 43 SAMPLES",
+        "items": ["Dapagliflozin", "Orlistat", "Sorafenib"]
+      },
+      "controls": { "summary": "1 TYPE", "items": ["DMSO vehicle"] },
       "footer": "TBD"
     }
   }
