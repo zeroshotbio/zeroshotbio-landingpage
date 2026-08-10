@@ -101,12 +101,13 @@ function TimePill({ v, on, unit, title }: { v: string; on?: boolean; unit?: stri
     <span
       title={title}
       style={{
-        fontFamily: MONO, fontSize: 9.5, fontWeight: on ? 800 : 600,
+        fontFamily: MONO, fontSize: 9.5, fontWeight: on ? 700 : 600,
         fontVariantNumeric: "tabular-nums", borderRadius: 99, padding: "1.5px 7px",
         whiteSpace: "nowrap",
-        color: on ? "#fff" : MUTED,
-        background: on ? ACCENT : "#f3f0ec",
-        border: `1px solid ${on ? ACCENT : RULE}`,
+        // 48 hpf is nudged forward, not shouted: a light tint and a coloured rule, no solid fill.
+        color: on ? "#0e6a80" : MUTED,
+        background: on ? "#e6f2f5" : "#f3f0ec",
+        border: `1px solid ${on ? "#a9d3de" : RULE}`,
       }}
     >
       {v}{unit ? ` ${unit}` : ""}
@@ -273,6 +274,35 @@ function CtrlChip({ text }: { text: string }) {
 
 const chipWrap: React.CSSProperties = { display: "flex", flexWrap: "wrap", gap: 5 };
 
+// Perturbation sub-groups (ZSCAPE: single vs double knockout, crispant vs stable mutant).
+// Separated by a hairline and a small caption, each group on its own hue — enough to read as
+// three kinds of thing without fragmenting the block into three separate sections.
+const GROUP_TINT: Tint[] = [
+  { bg: "#fdf6e3", fg: "#8a6410", bd: "#ecd9a4" }, // single-gene crispant
+  { bg: "#f6f0e6", fg: "#7a5c2e", bd: "#e0d0b4" }, // double-gene crispant
+  { bg: "#f2eee9", fg: "#6b6153", bd: "#ddd4c6" }, // stable mutant line
+];
+
+function PertGroups({ groups }: { groups: { label: string; items: string[] }[] }) {
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+      {groups.map((g, gi) => (
+        <div
+          key={g.label}
+          style={{ paddingTop: gi === 0 ? 0 : 7, borderTop: gi === 0 ? "none" : `1px solid #efeae3` }}
+        >
+          <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase", color: FAINT, marginBottom: 5 }}>
+            {g.label}
+          </div>
+          <div style={chipWrap}>
+            {g.items.map((t) => <PertChip key={t} text={t} tint={GROUP_TINT[gi % GROUP_TINT.length]} />)}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 // ── card ───────────────────────────────────────────────────────────────────
 function DatasetSpecCard({ id }: { id: string }) {
   const c = CARDS[id];
@@ -342,6 +372,8 @@ function DatasetSpecCard({ id }: { id: string }) {
         <FactCell label="Method" value={f.platform || TBD} />
         <FactCell label="Genes" value={c.genes} />
         <FactCell label="Capture" value={c.capture} />
+        <FactCell label="Genome" value={c.genome} />
+        <FactCell label="Annotation" value={c.annotation} />
         <FactCell label="Native schema" span stack={!!c.schema?.tierNames}>
           <SchemaInline schema={c.schema} />
         </FactCell>
@@ -369,7 +401,9 @@ function DatasetSpecCard({ id }: { id: string }) {
 
       {/* what was done to the animals */}
       <SectionHead label="Perturbations" summary={c.perturbations?.summary || TBD} />
-      {perts.length ? (
+      {c.perturbations?.groups ? (
+        <PertGroups groups={c.perturbations.groups} />
+      ) : perts.length ? (
         isDosed(perts[0])
           ? <DoseChips items={perts as unknown as Dosed[]} />
           : <div style={chipWrap}>{(perts as string[]).map((p, i) => <PertChip key={i} text={p} tint={tint} />)}</div>
@@ -400,56 +434,6 @@ function DatasetSpecCard({ id }: { id: string }) {
   );
 }
 
-// ── summary strip ──────────────────────────────────────────────────────────
-// Every numeral here is summed from the cards — nothing estimated. Cells match what the cards
-// show (full published objects), NOT dataset_facts.json's working-slice counts, so the strip and
-// the grid above it can never disagree.
-const cellsOf = (id: string): number => {
-  const s = CARDS[id]?.cells;
-  if (typeof s === "string") {
-    const n = Number(s.replace(/,/g, ""));
-    if (Number.isFinite(n)) return n;
-  }
-  const f = FACTS[id];
-  return typeof f?.cells === "number" ? f.cells : 0;
-};
-
-function SummaryStrip({ ids }: { ids: string[] }) {
-  const rows = ids.map((id) => FACTS[id]).filter(Boolean);
-  const cells = ids.reduce((s, id) => s + cellsOf(id), 0);
-  const clusters = rows.reduce((s, f) => s + (typeof f.clusters === "number" ? f.clusters : 0), 0);
-  // role === "gt" means "we score against its published labels", NOT "has published labels" —
-  // Zebrahub has 147 published ZFA classes but is a reference we never score, so the caption says
-  // gt benchmarks. `clusters` is our de-novo partitions, not an atlas property, so it's captioned
-  // as ours; Zebrahub contributes none (no `clusters` key) because we've cut no partition of it.
-  const gt = rows.filter((f) => f.role === "gt").length;
-  const items = [
-    { n: String(rows.length), cap: "atlases" },
-    { n: cells.toLocaleString("en-US"), cap: "cells profiled" },
-    { n: clusters.toLocaleString("en-US"), cap: "clusters we cut" },
-    { n: String(gt), cap: "gt benchmarks" },
-  ];
-  return (
-    <div
-      style={{
-        marginTop: 16, borderTop: `1px solid ${RULE}`, paddingTop: 16,
-        display: "flex", flexWrap: "wrap", gap: 34, alignItems: "flex-end",
-      }}
-    >
-      {items.map((it) => (
-        <div key={it.cap} style={{ display: "flex", flexDirection: "column", gap: 1 }}>
-          <span style={{ fontSize: 34, fontWeight: 800, lineHeight: 1, color: INK, fontVariantNumeric: "tabular-nums", letterSpacing: -0.5 }}>
-            {it.n}
-          </span>
-          <span style={{ fontSize: 12, fontWeight: 700, letterSpacing: 0.8, color: MUTED, fontVariant: "all-small-caps" }}>
-            {it.cap}
-          </span>
-        </div>
-      ))}
-    </div>
-  );
-}
-
 // ── section ────────────────────────────────────────────────────────────────
 export default function DatasetSpecCards() {
   const ids = ORDER.filter((id) => CARDS[id]);
@@ -468,7 +452,6 @@ export default function DatasetSpecCards() {
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {ids.map((id) => <DatasetSpecCard key={id} id={id} />)}
         </div>
-        <SummaryStrip ids={ids} />
       </div>
     </section>
   );
