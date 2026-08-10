@@ -12,6 +12,14 @@
 
 import KasperovClient from "./KasperovClient";
 import DatasetSpecCards from "./components/DatasetSpecCards";
+import PaperUploadSection from "./components/PaperUploadSection";
+import DATASET_CARDS from "./dataset_cards.json";
+
+// Built here, server-side, so the upload section's dataset tags stay in lockstep with the cards
+// without the client having to import the (large) cards JSON just to read eight names.
+const UPLOAD_TARGETS = ((DATASET_CARDS as any).order as string[])
+  .map((id) => ({ id, name: (DATASET_CARDS as any).cards[id]?.name as string }))
+  .filter((t) => !!t.name);
 
 export const metadata = {
   title: "daniotype · kasperov — human-in-the-loop cell-type labelling",
@@ -24,6 +32,7 @@ export default function DaniotypeKasperovPage() {
     <>
       <KasperovClient />
       <DatasetSpecCards />
+      <PaperUploadSection datasets={UPLOAD_TARGETS} />
     </>
   );
 }
