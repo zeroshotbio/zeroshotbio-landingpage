@@ -1,0 +1,116 @@
+{
+  "_note": "Per-dataset SPEC-CARD fields (biology / experimental design). Joined on `id` to dataset_facts.json, which stays the source of truth for CELLS, METHOD (platform) and cluster counts — those are NOT duplicated here. Every value in this file is transcribed from prose already in the repo (dataset_facts.json `designFacts` / `design` / `subsample` / `source`, and the DatasetDef `blurb` strings in KasperovClient.tsx). Anything not stated in those sources is the literal string \"TBD\" and is waiting on a human — do not fill these in by inference.",
+
+  "order": ["zscape_commit_gold", "zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"],
+
+  "cards": {
+    "zscape_commit_gold": {
+      "name": "ZSCAPE Commit Gold",
+      "perturbationClass": "CONTROL ARM",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "TBD",
+      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "perturbations": { "summary": "NONE · CONTROL ARM", "items": [] },
+      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "footer": "TBD"
+    },
+
+    "zscape": {
+      "name": "ZSCAPE Classic",
+      "perturbationClass": "DRUG",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "TBD",
+      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "perturbations": { "summary": "TBD", "items": ["TBD"] },
+      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "footer": "TBD"
+    },
+
+    "chemfish": {
+      "name": "ChemFish",
+      "perturbationClass": "DRUG",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "TBD",
+      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "perturbations": { "summary": "2 SCREENS", "items": ["CHEM10 DSP", "CHEM11 BS3", "TBD"] },
+      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "footer": "TBD"
+    },
+
+    "daniocell": {
+      "name": "DanioCell",
+      "perturbationClass": "UNPERTURBED",
+      "genes": "TBD",
+      "tissues": "19",
+      "cellTypes": "43",
+      "capture": "TBD",
+      "timing": [{ "label": "TIMEPOINTS", "value": "36–72 hpf" }],
+      "perturbations": { "summary": "NONE · DEVELOPMENTAL ATLAS", "items": [] },
+      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "footer": "TBD"
+    },
+
+    "megafin_parse": {
+      "name": "Parse MegaFin Part 1",
+      "perturbationClass": "DRUG",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "Evercode WT Mega",
+      "timing": [
+        { "label": "EXPOSURE", "value": "24 → 48 hpf" },
+        { "label": "COLLECTION", "value": "48 hpf" }
+      ],
+      "perturbations": {
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES",
+        "items": ["Sorafenib · pos. ctrl", "TBD"]
+      },
+      "controls": {
+        "summary": "2 TYPES",
+        "items": ["DMSO vehicle · 0.01%", "DMSO vehicle · 0.05%", "Egg water · no vehicle"]
+      },
+      "footer": "TBD"
+    },
+
+    "megafin": {
+      "name": "Manual MegaFin Part 1",
+      "perturbationClass": "DRUG",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "Evercode WT Mega",
+      "timing": [
+        { "label": "EXPOSURE", "value": "24 → 48 hpf" },
+        { "label": "COLLECTION", "value": "48 hpf" }
+      ],
+      "perturbations": {
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES",
+        "items": ["Sorafenib · pos. ctrl", "TBD"]
+      },
+      "controls": {
+        "summary": "2 TYPES",
+        "items": ["DMSO vehicle · 0.01%", "DMSO vehicle · 0.05%", "Egg water · no vehicle"]
+      },
+      "footer": "TBD"
+    },
+
+    "minifin": {
+      "name": "MiniFin",
+      "perturbationClass": "DRUG",
+      "genes": "TBD",
+      "tissues": "TBD",
+      "cellTypes": "TBD",
+      "capture": "Evercode (Parse)",
+      "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
+      "perturbations": { "summary": "43 DRUG SAMPLES", "items": ["TBD"] },
+      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "footer": "TBD"
+    }
+  }
+}
