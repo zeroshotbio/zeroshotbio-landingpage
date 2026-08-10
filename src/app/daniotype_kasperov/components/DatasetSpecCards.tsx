@@ -86,9 +86,10 @@ function StatRow({ label, value, last, highlight }: { label: string; value: stri
 
 // A single timepoint token. `on` = this atlas covers 48 hpf, our common join point across
 // datasets — filled accent so a reader scanning all seven cards spots it without reading.
-function TimePill({ v, on, unit }: { v: string; on?: boolean; unit?: string }) {
+function TimePill({ v, on, unit, title }: { v: string; on?: boolean; unit?: string; title?: string }) {
   return (
     <span
+      title={title}
       style={{
         fontFamily: MONO, fontSize: 9.5, fontWeight: on ? 800 : 600,
         fontVariantNumeric: "tabular-nums", borderRadius: 99, padding: "1.5px 7px",
@@ -105,7 +106,7 @@ function TimePill({ v, on, unit }: { v: string; on?: boolean; unit?: string }) {
 
 // Full timepoint vector, read from obs — every stage the atlas actually contains, wrapped
 // rather than truncated. 48 hpf (if present) is the only filled pill.
-function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; highlight?: string }; last?: boolean }) {
+function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; highlight?: string; highlightTitle?: string }; last?: boolean }) {
   const vals = tp.values || [];
   return (
     <div style={{ padding: "7px 0", borderBottom: last ? "none" : `1px solid ${RULE}` }}>
@@ -116,7 +117,9 @@ function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; hig
         </span>
       </div>
       <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-        {vals.map((v) => <TimePill key={v} v={v} on={v === tp.highlight} />)}
+        {vals.map((v) => (
+          <TimePill key={v} v={v} on={v === tp.highlight} title={v === tp.highlight ? tp.highlightTitle : undefined} />
+        ))}
       </div>
     </div>
   );
@@ -228,6 +231,19 @@ function DatasetSpecCard({ id }: { id: string }) {
         </span>
       </div>
 
+      {/* Described but deliberately unrunnable. Sits directly under the header so a reader hits it
+          before the stats and reads the missing chooser row as intent, not breakage. */}
+      {c.notRunnable && (
+        <div
+          style={{
+            marginTop: 10, background: "#faf8f5", border: `1px solid #ece8e2`, borderRadius: 8,
+            padding: "7px 9px", fontSize: 10.5, fontStyle: "italic", lineHeight: 1.45, color: MUTED,
+          }}
+        >
+          {c.notRunnable}
+        </div>
+      )}
+
       {/* stat table — CELLS is the full published object (dataset_cards.json), falling back to
           dataset_facts.json; METHOD still comes from facts. A subsample never sits here unlabelled:
           where we work on a slice, workingSlice names it on the line below. */}
@@ -300,12 +316,16 @@ function SummaryStrip({ ids }: { ids: string[] }) {
   const rows = ids.map((id) => FACTS[id]).filter(Boolean);
   const cells = ids.reduce((s, id) => s + cellsOf(id), 0);
   const clusters = rows.reduce((s, f) => s + (typeof f.clusters === "number" ? f.clusters : 0), 0);
+  // role === "gt" means "we score against its published labels", NOT "has published labels" —
+  // Zebrahub has 147 published ZFA classes but is a reference we never score, so the caption says
+  // gt benchmarks. `clusters` is our de-novo partitions, not an atlas property, so it's captioned
+  // as ours; Zebrahub contributes none (no `clusters` key) because we've cut no partition of it.
   const gt = rows.filter((f) => f.role === "gt").length;
   const items = [
     { n: String(rows.length), cap: "atlases" },
     { n: cells.toLocaleString("en-US"), cap: "cells profiled" },
-    { n: clusters.toLocaleString("en-US"), cap: "clusters" },
-    { n: String(gt), cap: "with published labels" },
+    { n: clusters.toLocaleString("en-US"), cap: "clusters we cut" },
+    { n: String(gt), cap: "gt benchmarks" },
   ];
   return (
     <div

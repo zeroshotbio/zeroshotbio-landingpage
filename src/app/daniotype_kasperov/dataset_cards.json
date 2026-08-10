@@ -10,10 +10,11 @@
     "chemfish_perturbations": "cell_metadata obs[perturbation] = 11 (8 compounds + DMSO/EtOH/novehicle), obs[target] = 8 (7 pathways + Control). Confirms the published spec card exactly.",
     "megafin_perturbations": "Decoded from obs[sample] (Manual) / obs[samples] (Parse) — identical 93-well sets, format m1_<well>_CP01_<compound>_<dose>. 46 compounds = 45 small molecules + Sorafenib positive control, matching designFacts. The 3 QC-removed wells (Vorinostat 1uM/B11, Romidepsin 5uM/C3, Dinaciclib 5uM/E3) dropped ONE DOSE each, not the compound — all 46 survive in the object, so all 46 are listed and the dropped wells are noted in the summary line.",
     "minifin_perturbations": "obs[perturbation] = 4 (DMSO, Dapagliflozin, Orlistat, Sorafenib) across obs[sample] = 43 replicate samples (DMSO 11, Dapagliflozin 10, Orlistat 11, Sorafenib 11). Spelling taken from obs[perturbation]; obs[sample] misspells it 'Dapaglifozan'.",
-    "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven — they need a target annotation he supplies."
+    "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven — they need a target annotation he supplies.",
+    "zebrahub": "Read from /data/datasets/raw_datasets/Zebrahub/. zebrahub_combined.h5ad = 101,833 x 32,060, verified equal to the sum of the 10 per-stage v1 releases (1,251 + 6,699 + 3,862 + 3,862 + 6,297 + 5,899 + 12,914 + 15,483 + 24,987 + 20,579). Timepoints from obs[timepoint] (10 values, native mixed hpf/dpf labels kept as published). Schema = obs[zebrafish_anatomy_ontology_class] = 147, a single ZFA-backed tier (obs[zebrafish_anatomy_ontology_id] is the same 147 as ZFA IDs). The dataset README maps 2dpf -> 48 hpf, which is why the 2dpf pill carries the 48-hpf highlight. NOT in the wizard chooser and has no DatasetDef — reference card only."
   },
 
-  "order": ["zscape_commit_gold", "zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"],
+  "order": ["zscape_commit_gold", "zscape", "chemfish", "daniocell", "zebrahub", "megafin_parse", "megafin", "minifin"],
 
   "cards": {
     "zscape_commit_gold": {
@@ -30,7 +31,7 @@
         "summary": "6 TYPES",
         "items": ["ctrl-uninj", "ctrl-inj", "ctrl-hgfa", "ctrl-noto", "ctrl-met", "ctrl-mafba"]
       },
-      "footer": "TBD"
+      "footer": "N/A — control arm, no targets hit."
     },
 
     "zscape": {
@@ -113,6 +114,26 @@
       "perturbations": { "summary": "NONE · DEVELOPMENTAL REFERENCE ATLAS", "items": [] },
       "controls": { "summary": "N/A", "items": [] },
       "footer": "Developmental reference atlas — no treatment arm, nothing perturbed."
+    },
+
+    "zebrahub": {
+      "name": "Zebrahub",
+      "perturbationClass": "OBSERVATIONAL",
+      "notRunnable": "Not a labelling target — 10X droplet, so it doesn't integrate with the combinatorial-indexing atlases (ZSCAPE / ChemFish / MegaFIN).",
+      "cells": "101,833",
+      "workingSlice": null,
+      "genes": "32,060",
+      "schema": { "tiers": [{ "n": "147", "col": "zebrafish_anatomy_ontology_class" }] },
+      "capture": "TBD",
+      "timepoints": {
+        "unit": "hpf / dpf",
+        "values": ["10hpf", "12hpf", "14hpf", "15hpf", "16hpf", "19hpf", "24hpf", "2dpf", "5dpf", "10dpf"],
+        "highlight": "2dpf",
+        "highlightTitle": "2 dpf = 48 hpf — the common join point across the atlases"
+      },
+      "perturbations": { "summary": "NONE · WILD-TYPE REFERENCE", "items": [] },
+      "controls": { "summary": "N/A", "items": [] },
+      "footer": "Wild-type developmental reference — no treatment arm, nothing perturbed."
     },
 
     "megafin_parse": {
