@@ -422,6 +422,29 @@ function DatasetSpecCard({ id }: { id: string }) {
         </div>
       )}
 
+      {/* Reference build — the exact files and transforms behind the feature universe. Only
+          present where we've actually pinned it, so it never renders as a row of TBDs. */}
+      {c.reference && (
+        <>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30 }}>
+            <FactCell label="FASTA" value={c.reference.fasta} />
+            <FactCell label="GTF" value={c.reference.gtf} />
+            <FactCell label="Reference processing" value={c.reference.processing} />
+            <FactCell label="Feature universe" value={c.reference.features} />
+          </div>
+          <FactCell label="3′ extension" value={c.reference.extension} />
+          <FactCell label="Gene filtering" value={c.reference.filter} />
+          <div
+            style={{
+              margin: "10px 0 2px", background: "#f2f7f5", border: "1px solid #d6e6df",
+              borderRadius: 8, padding: "7px 9px", fontSize: 10.5, lineHeight: 1.45, color: "#3f6b55",
+            }}
+          >
+            <strong style={{ letterSpacing: 0.3 }}>REFERENCE CONFIRMED</strong> — {c.reference.confidence}
+          </div>
+        </>
+      )}
+
       {/* full-width rows — the vocabulary and the time axes */}
       <div>
         <FactCell label="Native schema" stack={!!c.schema?.tierNames}>

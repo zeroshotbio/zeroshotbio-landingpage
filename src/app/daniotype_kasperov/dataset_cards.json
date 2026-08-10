@@ -22,7 +22,7 @@
     "zscape_groups": "Grouping derived from the naming convention in obs[gene_target], NOT from a genotype column — none exists. '-mut' suffix = stable mutant line; a hyphen joining two gene symbols = double knockout; bare symbol = single-gene F0 crispant. Corroborated by the data: hgfa/hgfa-mut, mafba/mafba-mut, met/met-mut, noto/noto-mut, tbx16/tbx16-mut all appear as SEPARATE targets (which only makes sense as crispant vs mutant of the same gene), and four of the five mutant genes have a matching sibling control arm (ctrl-hgfa, ctrl-mafba, ctrl-met, ctrl-noto). 18 single + 5 double + 5 mutant = 28.",
     "chemfish_doses": "Per-compound concentrations from cell_metadata dose/dose_type: Cyclopamine 100, DEAB 10, DMH1 40, LY411575 10, SB505124 50, SU5402 20, WntC59 20, A8301 50 (all micromolar). Each compound has exactly ONE concentration — unlike MegaFin, ChemFish is not a two-dose design. Dosing timepoints from obs[drug_addition] = 6/13/24/36/42 hpf; collection from obs[timepoint] = 36/48/72 hpf. Only the 6 and 13 hpf dosing arms were collected at all three timepoints; 24/36/42 hpf dosing was collected at 48 hpf only.",
     "megafin_qc_conflict": "CONFLICT, unresolved — do not treat either side as settled. The object on this instance is missing wells B11, C3 and E3, i.e. Vorinostat 1 uM, Romidepsin 5 uM and Dinaciclib 5 uM; dataset_facts.json's `design` field names exactly those three. Steven's MegaFin write-up instead lists the failed samples as Dapagliflozin 1 uM (B7), Rivaroxaban 1 uM (B9) and Budesonide 5 uM (G10) — all three of which ARE present in our object. Two different QC passes, or the note refers to a different build. The cards report what the object contains, since that is what we label.",
-    "annotation_evidence": "STATE AFTER READING THE PAPER ITSELF (raw_datasets/ZSCAPE/sources/publication/ZSCAPE_paper.pdf, 34pp). PROVEN NEGATIVE: it is not plain Ensembl. The GEO gene metadata's 32,031 ENSDARG ids are a perfect subset of the Ensembl GRCz11 gene set, but only 6.89% of coordinates match Ensembl exactly and ALL 29,825 that differ span LONGER (start median -92bp, end mean +245bp). Ensembl 99 and 114 have byte-identical zebrafish gene sets AND coordinates, so drift cannot explain it and no Ensembl release fits. INFERRED, NOT PROVEN: that the extended-UTR annotation is Lawson. The paper mentions 'Lawson' ZERO times. Its only GRCz11/Ensembl sentence is in 'Comparison of published zebrafish developmental atlases' and concerns harmonising OTHER atlases' gene names for a cross-atlas comparison — NOT its own alignment, exactly the distinction Steven's table drew. The Methods name the pipeline but never the reference: 'Read alignment and gene-count matrix generation were performed using the Brotman Baty Institute pipelines for sci-RNA-seq3 (bbi-dmux; bbi-sci)'. The bbi-sci docs list only Mouse and Human reference genomes and never mention zebrafish. So the GTF is named nowhere: not the paper, not GEO, not the pipeline docs. Lawson remains the best candidate — it is the standard GRCz11 extended-3'UTR zebrafish annotation, built on Ensembl 99, and its Ensembl-id'd subset is about this size — but it is a fingerprint match, not a citation. Cards say so. CONFIRMED VERBATIM from the Methods: raw processing bbi-dmux -> bbi-sci; downstream Monocle3 v1.3.1 (workflow defaults, 100 PCs whole-embryo / 50 for subsets, cluster_cells resolution 1e-4). CHEMFISH inherits the same annotation: its authors' BPCells row_names are byte-identical to ZSCAPE's 32,031-id set.",
+    "annotation_evidence": "RESOLVED — Ensembl release 99, Danio_rerio.GRCz11.99.gtf.gz, with the BBI genome-preparation pipeline's strand-aware +500 bp 3' extension. Reconstructed from public code plus the deposited data, which agree exactly. CODE: bbi-lab/bbi-genome-data (tree 946231a3). organisms/genome.zebrafish.sh names ENSEMBL_DNA_URL (release-99), FASTA_GZ=Danio_rerio.GRCz11.dna.toplevel.fa.gz, ENSEMBL_GTF_URL (release-99), GTF_GZ=Danio_rerio.GRCz11.99.gtf.gz. scripts/rna.03.make_bed_files.sh line 4 EXTENSION_LIST=\"500\"; extend_3p_utr_gene_annotations() line 207 does +strand end+=500 / -strand start-=500 (floored at 1), then bedtools-intersects against the un-extended genes and retracts or clips any extension colliding with a same-strand gene. The 500 constant dates to 2020-03-20 (f9fa030f), predating the 2022-05 deposit. bbi-sci bin/assign-reads-to-genes.py lines 7-14 consume those BEDs. DATA: measured against Ensembl 99 — +strand 3' end median +500, -strand 3' start median -500, 5' ends median 0, max extension exactly 500 (mean 493 = clipped genes), 2,206 genes unchanged (6.89%, fully-retracted extensions). Gene set: Ensembl 99 minus pseudogene|IG_*|TR_*|TEC = 32,031, an EXACT set match with 0 discrepancies either way. LAWSON IS EXCLUDED, not merely unsupported: tested against the published annotation (eLife 55792 Source Data 2, md5 19759898187c47edfd9c216162851e31, filed at raw_datasets/_annotations/lawson_v4_3/) — 4.54% coordinate agreement, WORSE than plain Ensembl (7.34%); deltas bidirectional (17,163 longer / 9,398 shorter); and 3,629 ZSCAPE gene ids absent from Lawson entirely, impossible if it were the counting reference. All 'Lawson inferred' wording has been removed. CAVEAT: no ZSCAPE-specific run manifest naming these files has been recovered — the paper, GEO series record, GEO per-sample records, bbi-sci docs and sdg-zfish repo all name the pipeline but never the reference. MINIFIN + MEGAFIN PARSE remain the complete Ensembl GRCz11 set (32,520); release not narrowable, 99 and 114 being identical for zebrafish. DANIOCELL remains TBD — its native distribution is symbol-keyed.",
     "pipeline": "How the authors got from raw FASTQ to the object we hold. ZSCAPE — supplied by Steven with citations: bbi-dmux -> bbi-sci (Methods, Nature s41586-023-06720-2), Monocle3 v1.3.1, GEO GSE202639 / SRA SRP374541 / PRJNA836866, repo cole-trapnell-lab/sdg-zfish. That same table also states the GTF is NOT resolvable from the paper or GEO and that Ensembl-vs-Lawson cannot be justified for raw counting — which is why ZSCAPE's annotation stays TBD. GRCz11 downstream gene NAMES do not prove an Ensembl GTF was used for alignment. ChemFish — downstream confirmed LOCALLY, not from the web: the distribution is extracted/chemfish_cds/cds_object.rds with a bpcells_matrix_dir, i.e. a Monocle3 cell_data_set. Raw side unconfirmed; same lab and assay as ZSCAPE makes bbi-dmux/bbi-sci likely but that is inference, so it stays TBD. DanioCell — distributed as a Seurat object (DanioCell site + GEO GSE223922); code at farrelllab/2023_Sur. CellRanger version not confirmed, so raw stays TBD. Zebrahub — TBD. The only pipeline detail findable (Cell Ranger ARC 2.0.2 + Signac) belongs to Zebrahub-MULTIOME, a different assay from the scRNA atlas on this card. Same trap as the genome citation. MiniFin + MegaFin — Parse split-pipe v1.7.1 read from process/run_proc_def.json; downstream from the Trailmaker settings in the design docs (Seurat+Harmony for MiniFin; Seurat then Scanpy for MegaFin). The ZSB build diverges after split-pipe: manual Lawson denoise, then our own Harmony pass. ZSCAPE Commit Gold left TBD deliberately — it is a cut of the same published ZSCAPE data, so it would inherit bbi-dmux/bbi-sci + Monocle3, but that is Steven's call to make rather than mine to assume.",
     "zscape_cell_metadata": "GSE202639_reference_cell_metadata.csv.gz — 1,241,018 cells x 25 columns, the wild-type REFERENCE arm. Carries per-cell cell_type_sub (~156), cell_type_broad (~98), tissue (33), germ_layer (6), major_group (4), timepoint (19 incl. one blank), expt (GAP13/14/16/18, HF4), embryo, 3D UMAP coords, and gene_target. Note gene_target here has only 7 values: the 6 ctrl-* arms plus tbx16-mut (9,004 cells) — i.e. the reference arm bundles one stable mutant line with the controls, which supports the crispant-vs-stable-mutant split the ZSCAPE card draws from the naming convention. The 28 knockouts live in the zperturb file, not this one.",
     "zscape_raw_counts": "GSE202639_reference_raw_counts.RDS.gz — dgCMatrix 32,031 x 1,241,018, 523,335,834 non-zeros (98.68% sparse), integer counts max 2,391, 954,711,330 total UMIs, median 454 UMI/cell. Dimensions match the gene and cell metadata exactly. No attributes naming the annotation. File is DOUBLY gzipped (outer gzip around an already-compressed RDS): gunzip first, then readRDS. TWO GAPS CLOSED. (a) The 32,031-gene set is the REFERENCE, not a QC artifact: 951 genes have zero counts across all 1.24M cells and were retained, which an expression filter would not do. (b) The 489 Ensembl genes it omits are excluded by gene-model CLASS, not location or expression — 299 pseudogenes, 171 IG/TR receptor segments, 14 TEC, 5 other; 488 of 489 are on primary chromosomes and ZSCAPE keeps 462 genes on non-primary scaffolds, so it is not an assembly restriction. Dropping pseudogenes and rearranging immune-receptor segments is curation, not a stock Ensembl GTF — a third independent line of evidence (with the extended coordinates and the Ensembl-subset id space) for a curated extended-UTR annotation. Still no citation naming it. CAVEAT: gene metadata's num_cells_expressed is systematically HIGHER than the matrix supports (median ratio 1.0076, max 1.093, never lower across all 32,031 genes) despite both files claiming 1,241,018 cells. Recompute from the matrix if exact."
@@ -72,10 +72,20 @@
       },
       "summary": "The Commit benchmark cut: ZSCAPE's published 112-cluster gold set at 48 hpf, control arm only. Clustering is given and frozen, so three personalities label each fixed cluster from a ZFA option menu and score by exact ZFA-ID match. Not blind — we hold the answer key on-instance.",
       "genome": "GRCz11",
-      "annotation": "Extended-UTR GRCz11 · Lawson v4.3.x inferred",
+      "annotation": "Ensembl release 99",
       "pipeline": {
         "raw": "TBD",
         "downstream": "TBD"
+      },
+      "reference": {
+        "assembly": "GRCz11",
+        "fasta": "Danio_rerio.GRCz11.dna.toplevel.fa.gz",
+        "gtf": "Danio_rerio.GRCz11.99.gtf.gz",
+        "processing": "BBI genome-preparation pipeline",
+        "extension": "+500 bp 3′, strand-aware — clipped where it would overlap a same-strand gene",
+        "features": "32,031 ENSDARG genes",
+        "filter": "excludes pseudogenes · IG/TR · TEC",
+        "confidence": "inherited: Commit Gold is a cut of the same published ZSCAPE data and carries the identical 32,031-gene feature universe."
       }
     },
     "zscape": {
@@ -186,7 +196,7 @@
       },
       "summary": "The Trapnell-lab whole-embryo knockout atlas: 28 gene knockouts against six control arms, spanning 18 to 96 hpf. We re-cluster from scratch with recursive per-compartment clustering, then score our de-novo names against the authors' published germ-layer, tissue, broad and sub labels.",
       "genome": "GRCz11",
-      "annotation": "Extended-UTR GRCz11 · Lawson v4.3.x inferred",
+      "annotation": "Ensembl release 99",
       "pipeline": {
         "raw": "bbi-dmux → bbi-sci",
         "downstream": "Monocle3 v1.3.1",
@@ -194,6 +204,16 @@
         "accessionHref": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202639",
         "code": "cole-trapnell-lab/sdg-zfish",
         "codeHref": "https://github.com/cole-trapnell-lab/sdg-zfish"
+      },
+      "reference": {
+        "assembly": "GRCz11",
+        "fasta": "Danio_rerio.GRCz11.dna.toplevel.fa.gz",
+        "gtf": "Danio_rerio.GRCz11.99.gtf.gz",
+        "processing": "BBI genome-preparation pipeline",
+        "extension": "+500 bp 3′, strand-aware — clipped where it would overlap a same-strand gene",
+        "features": "32,031 ENSDARG genes",
+        "filter": "excludes pseudogenes · IG/TR · TEC",
+        "confidence": "pipeline reconstruction + exact feature/coordinate fingerprint. No ZSCAPE-specific run manifest naming the GTF recovered."
       }
     },
     "chemfish": {
@@ -262,7 +282,7 @@
       },
       "summary": "Barkan et al. chemical-screen atlas — eight pathway-blocking compounds across three timepoints, hitting Hedgehog, retinoic acid, BMP, Notch, TGF-β, FGF and Wnt. We re-cluster the 48 hpf window de-novo and score against the authors' native tissue and cell-type labels.",
       "genome": "GRCz11",
-      "annotation": "Extended-UTR GRCz11 · Lawson v4.3.x inferred",
+      "annotation": "Ensembl release 99",
       "dosing": {
         "unit": "hpf",
         "values": [
@@ -285,6 +305,16 @@
       "pipeline": {
         "raw": "TBD",
         "downstream": "Monocle3 · cell_data_set"
+      },
+      "reference": {
+        "assembly": "GRCz11",
+        "fasta": "Danio_rerio.GRCz11.dna.toplevel.fa.gz",
+        "gtf": "Danio_rerio.GRCz11.99.gtf.gz",
+        "processing": "BBI genome-preparation pipeline",
+        "extension": "+500 bp 3′, strand-aware — clipped where it would overlap a same-strand gene",
+        "features": "32,031 ENSDARG genes",
+        "filter": "excludes pseudogenes · IG/TR · TEC",
+        "confidence": "ChemFish's own BPCells row_names are byte-identical to ZSCAPE's 32,031-gene set. Coordinates not independently re-tested; same lab, same assay, same reference build."
       }
     },
     "daniocell": {
