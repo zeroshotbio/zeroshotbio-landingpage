@@ -14,13 +14,15 @@
     "summary": "One-line high-level description per card, max 50 words, condensed from prose already in the repo (DatasetDef blurbs in KasperovClient.tsx, dataset_facts source/design/subsample) plus the counts verified in this file. Descriptive only - introduces no number that isn't already sourced elsewhere in this file.",
     "name": "Card names track the datasets themselves; 'ZSCAPE Classic' is shown as 'ZSCAPE' here. The wizard chooser's own DatasetDef name is unchanged (KasperovClient.tsx is not touched), so the chooser row still reads 'ZSCAPE Classic'.",
     "megafin_doses": "Doses decoded from the well names: every compound is 1 uM and 5 uM except the three whose one dose was QC-removed — Vorinostat (SAHA) survives at 5 uM only, Romidepsin (FK228) and Dinaciclib (SCH727965) at 1 uM only. 46 compounds -> 89 dose-pills. Matches facts.design's QC list exactly.",
-    "minifin_doses": "MiniFin has NO dose data: no dose column in obs, no dose in obs[sample], nothing in the Parse report metadata (all-sample/report/*, process/run_proc_def.json). The 43 samples are REPLICATES (numbered 1-6 plus a 'b' batch) — DMSO 11, Dapagliflozin 10, Orlistat 11, Sorafenib 11 — not two doses. Concentration left unstated rather than guessed.",
+    "minifin_doses": "RESOLVED by Steven's design doc: all three compounds at 1 uM, vehicle 0.1% DMSO, dosed 24-48 hpf, dissociation/fixation at 48 hpf, 12 replicates per condition, TU wildtype, 48-well plate, 6 embryos per well. The concentration is not recorded anywhere in the h5ad or the Parse report, which is why it read TBD before.",
     "zfa_schema": "ZFA target schema + vocabulary counts supplied by Steven. Applied to the three unannotated internal atlases (MegaFin x2, MiniFin) as the schema we label INTO — they carry no annotation of their own today, which the row's note keeps explicit. The ~3,107-term figure agrees with the frozen ZFA option menu already cited in the Commit Gold blurb.",
     "megafin_manual_date": "2026-06-14 — the Manual/Lawson rebuild's completion. Corroborated two ways: mtime of /data/scratch/bench/megafin_rebuild_src.h5ad (2026-06-14 02:52) and repo commit 07a3ef19 'DanioType combined pass: finalize MegaFin rebuild' (2026-06-14). Not a recorded build-date field — none exists.",
-    "genome_annotation": "Genome build + GTF per dataset. ZSCAPE / ChemFish / DanioCell: GRCz11 with Lawson Lab Zebrafish Transcriptome Annotation v4.3.2 (harmonises Ensembl+RefSeq, improved 3'UTRs, extra gene models) — published methods; ZSCAPE and ChemFish corroborate locally by sharing an identical 32,031-gene universe. MiniFin + MegaFin Parse: GRCz11 read straight out of process/run_proc_def.json (Parse split-pipe v1.7.1, genome_names 'GRcZ11', 32,520 genes); the Ensembl release is not recorded there, so it stays TBD. MegaFin ZSB: Lawson LL IDs in var[ll_id] (36,351 genes) — Lawson annotation is defined on GRCz11; the exact version is not recorded on-instance. Zebrahub: GRCz11 — but the citation found is Zebrahub-MULTIOME (Cell Ranger ARC 2.0.2 on Ensembl GRCz11), a sibling assay, not the scRNA atlas on this card. Verify before relying on it.",
+    "genome_annotation": "VERIFIED: MegaFin ZSB = Lawson Lab v4.3 on GRCz11. The Lawson paper (PMC7486121) states the v4.3 annotation comprises 36,351 genes and assigns every gene an arbitrary 'LL' ID — our object has n_vars 36,351 and var[ll_id] of the form LL#########. Exact match, so this one is settled. MiniFin + MegaFin Parse = GRCz11 from process/run_proc_def.json (Parse split-pipe v1.7.1) and independently from the sequencing QC review (GRcZ11 used, not GRCz12, because the line is TU). NOT VERIFIED: ZSCAPE / ZSCAPE Commit Gold / ChemFish / DanioCell annotation is back to TBD. The earlier 'Lawson Lab v4.3.2' came from search snippets, and the SAME sentence surfaced for all three papers, which is a strong sign one source was being echoed rather than three independently confirming. Their gene universes (32,031 and 30,121) also do not match Lawson v4.3's 36,351, which would need explaining. Genome GRCz11 is still well-supported for all of them; only the GTF is unresolved.",
     "zebrahub_capture": "Whole-cell, from Lange et al. 2024 (Cell) methods: an optimised cell-dissociation protocol avoiding embryo pooling, suspensions counted at 700-1200 cells/ul and loaded on the Chromium Controller. The nuclei-based protocol belongs to Zebrahub-Multiome, a different assay.",
     "zscape_groups": "Grouping derived from the naming convention in obs[gene_target], NOT from a genotype column — none exists. '-mut' suffix = stable mutant line; a hyphen joining two gene symbols = double knockout; bare symbol = single-gene F0 crispant. Corroborated by the data: hgfa/hgfa-mut, mafba/mafba-mut, met/met-mut, noto/noto-mut, tbx16/tbx16-mut all appear as SEPARATE targets (which only makes sense as crispant vs mutant of the same gene), and four of the five mutant genes have a matching sibling control arm (ctrl-hgfa, ctrl-mafba, ctrl-met, ctrl-noto). 18 single + 5 double + 5 mutant = 28.",
-    "chemfish_doses": "Per-compound concentrations from cell_metadata dose/dose_type: Cyclopamine 100, DEAB 10, DMH1 40, LY411575 10, SB505124 50, SU5402 20, WntC59 20, A8301 50 (all micromolar). Each compound has exactly ONE concentration — unlike MegaFin, ChemFish is not a two-dose design. Dosing timepoints from obs[drug_addition] = 6/13/24/36/42 hpf; collection from obs[timepoint] = 36/48/72 hpf. Only the 6 and 13 hpf dosing arms were collected at all three timepoints; 24/36/42 hpf dosing was collected at 48 hpf only."
+    "chemfish_doses": "Per-compound concentrations from cell_metadata dose/dose_type: Cyclopamine 100, DEAB 10, DMH1 40, LY411575 10, SB505124 50, SU5402 20, WntC59 20, A8301 50 (all micromolar). Each compound has exactly ONE concentration — unlike MegaFin, ChemFish is not a two-dose design. Dosing timepoints from obs[drug_addition] = 6/13/24/36/42 hpf; collection from obs[timepoint] = 36/48/72 hpf. Only the 6 and 13 hpf dosing arms were collected at all three timepoints; 24/36/42 hpf dosing was collected at 48 hpf only.",
+    "megafin_qc_conflict": "CONFLICT, unresolved — do not treat either side as settled. The object on this instance is missing wells B11, C3 and E3, i.e. Vorinostat 1 uM, Romidepsin 5 uM and Dinaciclib 5 uM; dataset_facts.json's `design` field names exactly those three. Steven's MegaFin write-up instead lists the failed samples as Dapagliflozin 1 uM (B7), Rivaroxaban 1 uM (B9) and Budesonide 5 uM (G10) — all three of which ARE present in our object. Two different QC passes, or the note refers to a different build. The cards report what the object contains, since that is what we label.",
+    "annotation_evidence": "Per-dataset confidence, after Steven challenged the blanket 'Lawson v4.3.2' claim. CONFIRMED — MegaFin ZSB: Lawson Lab v4.3, GRCz11. The Lawson paper (PMC7486121) says v4.3 has 36,351 genes and gives every gene an arbitrary 'LL' ID; our object is exactly 36,351 genes with var[ll_id] = LL#########. Exact match on both count and ID scheme. CONFIRMED — MiniFin + MegaFin Parse: GRCz11 from process/run_proc_def.json (split-pipe v1.7.1) and from the sequencing QC review; GTF release not recorded, so annotation stays TBD. LIKELY BUT UNVERIFIED — DanioCell: a search restricted to the paper's own host returned the Lawson v4.3.2 sentence attributed to Sur et al. Dev Cell 2023. Better evidence than the others, still not read from primary text. CONTRADICTED — ZSCAPE: a domain-restricted search of the Saunders material says gene names were 'converted to the GRCz11 ENSEMBL gene names', which points at Ensembl rather than Lawson, and matches the ENSDARG IDs the object actually ships. NOT VERIFIED — ChemFish: only a general-search snippet; both attempts to fetch the Barkan bioRxiv full text were blocked (429 then 403). All four public atlases therefore render annotation = TBD. Genome GRCz11 remains well-supported everywhere. The original error was trusting one sentence that a general web search echoed back for three different papers."
   },
   "order": [
     "zscape_commit_gold",
@@ -67,7 +69,7 @@
       },
       "summary": "The Commit benchmark cut: ZSCAPE's published 112-cluster gold set at 48 hpf, control arm only. Clustering is given and frozen, so three personalities label each fixed cluster from a ZFA option menu and score by exact ZFA-ID match. Not blind — we hold the answer key on-instance.",
       "genome": "GRCz11",
-      "annotation": "Lawson Lab v4.3.2"
+      "annotation": "TBD"
     },
     "zscape": {
       "name": "ZSCAPE",
@@ -177,7 +179,7 @@
       },
       "summary": "The Trapnell-lab whole-embryo knockout atlas: 28 gene knockouts against six control arms, spanning 18 to 96 hpf. We re-cluster from scratch with recursive per-compartment clustering, then score our de-novo names against the authors' published germ-layer, tissue, broad and sub labels.",
       "genome": "GRCz11",
-      "annotation": "Lawson Lab v4.3.2"
+      "annotation": "TBD"
     },
     "chemfish": {
       "name": "ChemFish",
@@ -245,7 +247,7 @@
       },
       "summary": "Barkan et al. chemical-screen atlas — eight pathway-blocking compounds across three timepoints, hitting Hedgehog, retinoic acid, BMP, Notch, TGF-β, FGF and Wnt. We re-cluster the 48 hpf window de-novo and score against the authors' native tissue and cell-type labels.",
       "genome": "GRCz11",
-      "annotation": "Lawson Lab v4.3.2",
+      "annotation": "TBD",
       "dosing": {
         "unit": "hpf",
         "values": [
@@ -344,7 +346,7 @@
       },
       "summary": "Farrell-lab dense developmental reference: 39 timepoints from 18 to 96 hpf, nothing perturbed. 10X droplet makes it our cross-platform check, and its populations are in-situ-hybridization validated — unusually trustworthy ground truth.",
       "genome": "GRCz11",
-      "annotation": "Lawson Lab v4.3.2"
+      "annotation": "TBD"
     },
     "zebrahub": {
       "name": "Zebrahub",
@@ -772,14 +774,14 @@
         ]
       },
       "controls": {
-        "summary": "2 TYPES",
+        "summary": "2 TYPES · 4 WELLS",
         "items": [
-          "DMSO vehicle · 0.01%",
-          "DMSO vehicle · 0.05%",
-          "Egg water · no vehicle"
+          "DMSO vehicle · 0.01% (for 1 µM)",
+          "DMSO vehicle · 0.05% (for 5 µM)",
+          "Egg water · no vehicle ×2"
         ]
       },
-      "summary": "Our large-scale drug-screen atlas — 45 small molecules plus a Sorafenib positive control, each at two doses, on 48 hpf whole embryos. This is the Parse/Trailmaker processing of the library, in ENSDARG. No external labels: a labelling target, not a benchmark.",
+      "summary": "Large-scale anti-angiogenesis screen: 45 small molecules at 1 and 5 µM plus a Sorafenib positive control, 96 conditions and no replicates, TU wildtype dosed 24–48 hpf, 6 embryos per well. The Parse/Trailmaker processing of the library, in ENSDARG. A labelling target, not a benchmark.",
       "vocabulary": {
         "terms": "~3,107",
         "synonyms": "~2,991",
@@ -800,7 +802,9 @@
         "highlight": "48"
       },
       "genome": "GRCz11",
-      "annotation": "Ensembl · Parse split-pipe v1.7.1 · release TBD"
+      "annotation": "Ensembl · Parse split-pipe v1.7.1 · release TBD",
+      "line": "TU wildtype · 6 embryos/well",
+      "replicates": "None (0)"
     },
     "megafin": {
       "name": "MegaFin Part 1 — ZSB, June 14th",
@@ -1183,14 +1187,14 @@
         ]
       },
       "controls": {
-        "summary": "2 TYPES",
+        "summary": "2 TYPES · 4 WELLS",
         "items": [
-          "DMSO vehicle · 0.01%",
-          "DMSO vehicle · 0.05%",
-          "Egg water · no vehicle"
+          "DMSO vehicle · 0.01% (for 1 µM)",
+          "DMSO vehicle · 0.05% (for 5 µM)",
+          "Egg water · no vehicle ×2"
         ]
       },
-      "summary": "The same drug-screen library as the Parse build, rebuilt from the manually denoised Lawson object and clustered recursively. It shares no cell barcodes with its sibling, so the two builds are an independent check on each other. No external labels.",
+      "summary": "The same anti-angiogenesis screen as the Parse build — 45 small molecules at 1 and 5 µM plus Sorafenib, dosed 24–48 hpf — rebuilt from the manually denoised Lawson object and clustered recursively. Shares no cell barcodes with its sibling, so the two are an independent check.",
       "vocabulary": {
         "terms": "~3,107",
         "synonyms": "~2,991",
@@ -1211,7 +1215,9 @@
         "highlight": "48"
       },
       "genome": "GRCz11",
-      "annotation": "Lawson Lab · LL IDs · version TBD"
+      "annotation": "Lawson Lab v4.3 · LL IDs",
+      "line": "TU wildtype · 6 embryos/well",
+      "replicates": "None (0)"
     },
     "minifin": {
       "name": "MiniFin",
@@ -1233,29 +1239,29 @@
       },
       "capture": "Whole-cell",
       "perturbations": {
-        "summary": "3 COMPOUNDS + VEHICLE · 43 SAMPLES · SINGLE DOSE (CONC. UNRECORDED)",
+        "summary": "3 COMPOUNDS · 1 µM EACH · SORAFENIB = ANTI-ANGIOGENIC POS. CTRL",
         "items": [
           {
-            "drug": "Dapagliflozin",
-            "dose": null
+            "drug": "Sorafenib · pos. ctrl",
+            "dose": "1 µM"
           },
           {
             "drug": "Orlistat",
-            "dose": null
+            "dose": "1 µM"
           },
           {
-            "drug": "Sorafenib",
-            "dose": null
+            "drug": "Dapagliflozin",
+            "dose": "1 µM"
           }
         ]
       },
       "controls": {
         "summary": "1 TYPE",
         "items": [
-          "DMSO vehicle"
+          "DMSO vehicle · 0.1%"
         ]
       },
-      "summary": "Our in-house Parse reference: three compounds plus DMSO vehicle across 43 samples at 48 hpf. Small, fast and unlabelled by anyone else — we use it to build intuition and to validate the labeller against Patrick's expert annotations.",
+      "summary": "Pilot validating Parse Evercode combinatorial barcoding in whole embryos, aimed at angiogenesis: Sorafenib (VEGFR/PDGFR/Raf, anti-angiogenic positive control) against Orlistat (FAS) and Dapagliflozin (SGLT2), all 1 µM, dosed 24–48 hpf, 12 replicates each. TU wildtype, 6 embryos per well.",
       "vocabulary": {
         "terms": "~3,107",
         "synonyms": "~2,991",
@@ -1264,8 +1270,9 @@
       },
       "dosing": {
         "unit": "hpf",
-        "values": [],
-        "status": "TBD"
+        "values": [
+          "24"
+        ]
       },
       "collection": {
         "unit": "hpf",
@@ -1275,7 +1282,9 @@
         "highlight": "48"
       },
       "genome": "GRCz11",
-      "annotation": "Ensembl · Parse split-pipe v1.7.1 · release TBD"
+      "annotation": "Ensembl · Parse split-pipe v1.7.1 · release TBD",
+      "line": "TU wildtype · 6 embryos/well",
+      "replicates": "12 per condition"
     }
   }
 }

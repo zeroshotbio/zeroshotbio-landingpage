@@ -365,37 +365,52 @@ function DatasetSpecCard({ id }: { id: string }) {
       {/* Headline facts in two columns. CELLS is the full published object (dataset_cards.json),
           falling back to dataset_facts.json; METHOD still comes from facts. A subsample never sits
           here unlabelled: where we work on a slice, workingSlice names it directly beneath. */}
-      {/* Grid fills row-major, so the pairs below put cells → genes down the left and
-          method → capture down the right, with the working slice tucked under the cells figure. */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30, marginTop: 14 }}>
-        <FactCell label="Cells" value={c.cells || nfmt(f.cells)} sub={c.workingSlice} />
-        <FactCell label="Method" value={f.platform || TBD} />
-        <FactCell label="Genes" value={c.genes} />
-        <FactCell label="Capture" value={c.capture} />
-        <FactCell label="Genome" value={c.genome} />
-        <FactCell label="Annotation" value={c.annotation} />
-        <FactCell label="Native schema" span stack={!!c.schema?.tierNames}>
+      {/* Two explicit columns rather than a row-major grid, so what-the-data-IS (cells, genes and
+          the reference it was built against) stacks down the left, and how-it-was-MADE stacks down
+          the right. Row-major fill couldn't express that. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "0 30px", marginTop: 14 }}>
+        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <FactCell label="Cells" value={c.cells || nfmt(f.cells)} sub={c.workingSlice} />
+          <FactCell label="Genes" value={c.genes} />
+          <FactCell label="Genome" value={c.genome} />
+          <FactCell label="Annotation" value={c.annotation} />
+        </div>
+        <div style={{ flex: "1 1 260px", minWidth: 0 }}>
+          <FactCell label="Method" value={f.platform || TBD} />
+          <FactCell label="Capture" value={c.capture} />
+          {c.line && <FactCell label="Line" value={c.line} />}
+          {c.replicates && <FactCell label="Replicates" value={c.replicates} />}
+        </div>
+      </div>
+
+      {/* full-width rows — the vocabulary and the time axes */}
+      <div>
+        <FactCell label="Native schema" stack={!!c.schema?.tierNames}>
           <SchemaInline schema={c.schema} />
         </FactCell>
         {c.vocabulary && (
-          <FactCell label="ZFA vocabulary" span stack>
+          <FactCell label="ZFA vocabulary" stack>
             <VocabRow v={c.vocabulary} />
           </FactCell>
         )}
         {c.timepoints && (
-          <FactCell label={`Timepoints (${(c.timepoints.values || []).length})`} span stack>
+          <FactCell label={`Timepoints (${(c.timepoints.values || []).length})`} stack>
             <TimepointPills tp={c.timepoints} />
           </FactCell>
         )}
-        {c.dosing && (
-          <FactCell label={`Dosing timepoints (${(c.dosing.values || []).length})`} stack>
-            <TimepointPills tp={c.dosing} />
-          </FactCell>
-        )}
-        {c.collection && (
-          <FactCell label={`Collection timepoints (${(c.collection.values || []).length})`} stack>
-            <TimepointPills tp={c.collection} />
-          </FactCell>
+        {(c.dosing || c.collection) && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30 }}>
+            {c.dosing && (
+              <FactCell label={`Dosing timepoints (${(c.dosing.values || []).length})`} stack>
+                <TimepointPills tp={c.dosing} />
+              </FactCell>
+            )}
+            {c.collection && (
+              <FactCell label={`Collection timepoints (${(c.collection.values || []).length})`} stack>
+                <TimepointPills tp={c.collection} />
+              </FactCell>
+            )}
+          </div>
         )}
       </div>
 
