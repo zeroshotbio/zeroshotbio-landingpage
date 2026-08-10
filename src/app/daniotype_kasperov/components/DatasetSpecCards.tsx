@@ -60,6 +60,25 @@ function Value({ v }: { v: string }) {
   );
 }
 
+// A value that points somewhere — accession, repo. Same monospace weight as a plain value so the
+// fact table stays even; the accent and underline carry the affordance.
+function Linked({ text, href }: { text: string; href?: string }) {
+  if (!href) return <Value v={text} />;
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      style={{
+        fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: ACCENT,
+        textDecoration: "underline", textUnderlineOffset: 2, textDecorationColor: "#a9d3de",
+      }}
+    >
+      {text}
+    </a>
+  );
+}
+
 const rowLabel: React.CSSProperties = {
   fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7,
   textTransform: "uppercase", color: MUTED,
@@ -382,6 +401,26 @@ function DatasetSpecCard({ id }: { id: string }) {
           {c.replicates && <FactCell label="Replicates" value={c.replicates} />}
         </div>
       </div>
+
+      {/* How the authors got from raw FASTQ to the object we hold. Sits directly under the
+          reference block because genome → annotation → raw processing → downstream object is one
+          provenance chain, and the reader should be able to follow it in order. */}
+      {c.pipeline && (
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30 }}>
+          <FactCell label="Raw processing" value={c.pipeline.raw} />
+          <FactCell label="Downstream object" value={c.pipeline.downstream} />
+          {c.pipeline.accession && (
+            <FactCell label="Accession">
+              <Linked text={c.pipeline.accession} href={c.pipeline.accessionHref} />
+            </FactCell>
+          )}
+          {c.pipeline.code && (
+            <FactCell label="Code">
+              <Linked text={c.pipeline.code} href={c.pipeline.codeHref} />
+            </FactCell>
+          )}
+        </div>
+      )}
 
       {/* full-width rows — the vocabulary and the time axes */}
       <div>
