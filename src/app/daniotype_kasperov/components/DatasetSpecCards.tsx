@@ -53,7 +53,6 @@ function Value({ v }: { v: string }) {
         color: isTbd(v) ? FAINT : INK,
         fontVariantNumeric: "tabular-nums",
         letterSpacing: isTbd(v) ? 0.6 : 0,
-        textAlign: "right",
       }}
     >
       {v}
@@ -66,20 +65,31 @@ const rowLabel: React.CSSProperties = {
   textTransform: "uppercase", color: MUTED,
 };
 
-function StatRow({ label, value, last, highlight }: { label: string; value: string; last?: boolean; highlight?: boolean }) {
+// One fact. The value sits immediately beside its label rather than flushed to a far edge, so a
+// label/value pair reads as a unit and two columns can run side by side without the eye getting
+// lost across a gap. `span` makes a fact take the full card width (schema, timepoints).
+function FactCell({
+  label, value, sub, span, highlight, stack, children,
+}: {
+  label: string; value?: string; sub?: string | null; span?: boolean;
+  highlight?: boolean; stack?: boolean; children?: React.ReactNode;
+}) {
+  const body = children ?? (highlight && !isTbd(value || "") ? <TimePill v={value || ""} on /> : <Value v={value || TBD} />);
   return (
-    <div
-      style={{
-        display: "flex",
-        alignItems: "baseline",
-        justifyContent: "space-between",
-        gap: 10,
-        padding: "6px 0",
-        borderBottom: last ? "none" : `1px solid ${RULE}`,
-      }}
-    >
-      <span style={rowLabel}>{label}</span>
-      {highlight && !isTbd(value) ? <TimePill v={value} on /> : <Value v={value} />}
+    <div style={{ gridColumn: span ? "1 / -1" : "auto", padding: "7px 0", borderBottom: `1px solid ${RULE}`, minWidth: 0 }}>
+      <div
+        style={
+          stack
+            ? { minWidth: 0 }
+            : { display: "flex", alignItems: "baseline", gap: 9, flexWrap: "wrap", minWidth: 0 }
+        }
+      >
+        <span style={{ ...rowLabel, ...(stack ? { display: "block", marginBottom: 6 } : null) }}>{label}</span>
+        {body}
+      </div>
+      {sub && (
+        <div style={{ marginTop: 4, fontSize: 10, fontStyle: "italic", color: FAINT, lineHeight: 1.35 }}>{sub}</div>
+      )}
     </div>
   );
 }
@@ -106,21 +116,16 @@ function TimePill({ v, on, unit, title }: { v: string; on?: boolean; unit?: stri
 
 // Full timepoint vector, read from obs — every stage the atlas actually contains, wrapped
 // rather than truncated. 48 hpf (if present) is the only filled pill.
-function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; highlight?: string; highlightTitle?: string }; last?: boolean }) {
+function TimepointPills({ tp }: { tp: { unit?: string; values: string[]; highlight?: string; highlightTitle?: string } }) {
   const vals = tp.values || [];
   return (
-    <div style={{ padding: "7px 0", borderBottom: last ? "none" : `1px solid ${RULE}` }}>
-      <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10, marginBottom: 6 }}>
-        <span style={rowLabel}>Timepoints</span>
-        <span style={{ fontFamily: MONO, fontSize: 9.5, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
-          {vals.length} · {tp.unit || ""}
-        </span>
-      </div>
-      <div style={{ display: "flex", flexWrap: "wrap", gap: 4 }}>
-        {vals.map((v) => (
-          <TimePill key={v} v={v} on={v === tp.highlight} title={v === tp.highlight ? tp.highlightTitle : undefined} />
-        ))}
-      </div>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "baseline" }}>
+      {vals.map((v) => (
+        <TimePill key={v} v={v} on={v === tp.highlight} title={v === tp.highlight ? tp.highlightTitle : undefined} />
+      ))}
+      <span style={{ marginLeft: 3, fontFamily: MONO, fontSize: 9.5, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
+        {vals.length} · {tp.unit || ""}
+      </span>
     </div>
   );
 }
@@ -128,10 +133,9 @@ function TimepointRow({ tp, last }: { tp: { unit?: string; values: string[]; hig
 // The atlas's OWN label hierarchy, with the real column names. Deliberately not normalised to a
 // common tier: ChemFish's 348 cell_type and ZSCAPE's 99 cell_type_broad are different kinds of
 // number, and flattening them to one "CELL TYPES" row hid that.
-function SchemaBlock({ schema }: { schema: any }) {
+function SchemaInline({ schema }: { schema: any }) {
   return (
-    <div style={{ padding: "7px 0", borderBottom: `1px solid ${RULE}` }}>
-      <div style={{ ...rowLabel, marginBottom: 5 }}>Native schema</div>
+    <>
       {schema?.tiers ? (
         <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "3px 5px" }}>
           {schema.tiers.map((t: any, i: number) => (
@@ -145,9 +149,9 @@ function SchemaBlock({ schema }: { schema: any }) {
           ))}
         </div>
       ) : (
-        <div style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{schema?.status || TBD}</div>
+        <span style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{schema?.status || TBD}</span>
       )}
-    </div>
+    </>
   );
 }
 
@@ -211,10 +215,10 @@ function DatasetSpecCard({ id }: { id: string }) {
         background: "#fffdfb",
         border: `1px solid ${RULE}`,
         borderRadius: 18,
-        padding: "24px 26px 20px",
-        // ~1.2 h:w — a playing card squared up a little. Sparse cards sit at the floor; the
-        // compound-heavy MegaFIN pair grow past it rather than being cropped.
-        minHeight: 600,
+        padding: "24px 28px 20px",
+        // Landscape: wider than tall. minHeight is a floor, not a cap — the compound-heavy MegaFIN
+        // pair grow past it to hold 46 chips rather than being cropped.
+        minHeight: 430,
         color: INK,
         display: "flex",
         flexDirection: "column",
@@ -254,37 +258,28 @@ function DatasetSpecCard({ id }: { id: string }) {
         </div>
       )}
 
-      {/* Two interior columns so a card reads as a squarish panel rather than a tall strip:
-          the stat table on the left, the chip sections on the right. Wraps on narrow viewports. */}
-      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px 30px", marginTop: 16, flex: 1, alignContent: "flex-start" }}>
-
-      {/* stat table — CELLS is the full published object (dataset_cards.json), falling back to
-          dataset_facts.json; METHOD still comes from facts. A subsample never sits here unlabelled:
-          where we work on a slice, workingSlice names it on the line below. */}
-      <div style={{ flex: "1 1 250px", minWidth: 0 }}>
-        <div style={{ padding: "6px 0", borderBottom: `1px solid ${RULE}` }}>
-          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
-            <span style={rowLabel}>Cells</span>
-            <Value v={c.cells || nfmt(f.cells)} />
-          </div>
-          {c.workingSlice && (
-            <div style={{ marginTop: 3, fontSize: 10, fontStyle: "italic", color: FAINT, textAlign: "right", lineHeight: 1.35 }}>
-              {c.workingSlice}
-            </div>
-          )}
-        </div>
-        <StatRow label="Genes" value={c.genes} />
-        <SchemaBlock schema={c.schema} />
-        <StatRow label="Method" value={f.platform || TBD} />
-        <StatRow label="Capture" value={c.capture} last={!c.timepoints && !(c.timing || []).length} />
-        {c.timepoints && <TimepointRow tp={c.timepoints} last={!(c.timing || []).length} />}
-        {(c.timing || []).map((t: any, i: number) => (
-          <StatRow key={t.label} label={t.label} value={t.value} highlight={t.highlight} last={i === (c.timing || []).length - 1} />
+      {/* Headline facts in two columns. CELLS is the full published object (dataset_cards.json),
+          falling back to dataset_facts.json; METHOD still comes from facts. A subsample never sits
+          here unlabelled: where we work on a slice, workingSlice names it directly beneath. */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30, marginTop: 14 }}>
+        <FactCell label="Cells" value={c.cells || nfmt(f.cells)} sub={c.workingSlice} />
+        <FactCell label="Genes" value={c.genes} />
+        <FactCell label="Method" value={f.platform || TBD} />
+        <FactCell label="Capture" value={c.capture} />
+        <FactCell label="Native schema" span>
+          <SchemaInline schema={c.schema} />
+        </FactCell>
+        {c.timepoints && (
+          <FactCell label="Timepoints" span stack>
+            <TimepointPills tp={c.timepoints} />
+          </FactCell>
+        )}
+        {(c.timing || []).map((t: any) => (
+          <FactCell key={t.label} label={t.label} value={t.value} highlight={t.highlight} />
         ))}
       </div>
 
-      {/* right column — what was done to the animals */}
-      <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column" }}>
+      {/* what was done to the animals */}
       <SectionHead label="Perturbations" summary={c.perturbations?.summary || TBD} />
       {perts.length ? (
         <div style={chipWrap}>{perts.map((p, i) => <PertChip key={i} text={p} tint={tint} />)}</div>
@@ -302,31 +297,14 @@ function DatasetSpecCard({ id }: { id: string }) {
         </div>
       )}
 
-      </div>
-      </div>
-
-      {/* bottom bar — footer left, and the card's index repeated upside-down bottom-right, the way
-          a playing card mirrors its corner so it reads either way up. */}
+      {/* what this dataset is, in a breath — pinned to the foot of the card */}
       <div
         style={{
-          marginTop: 18, paddingTop: 12, borderTop: `1px solid ${RULE}`,
-          display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16,
+          marginTop: "auto", paddingTop: 14, borderTop: `1px solid ${RULE}`,
+          fontSize: 12.5, lineHeight: 1.55, color: "#5a544c",
         }}
       >
-        <div
-          style={{
-            fontSize: 11, fontStyle: "italic", lineHeight: 1.45, maxWidth: "72%",
-            color: isTbd(c.footer) ? FAINT : MUTED,
-          }}
-        >
-          {isTbd(c.footer) ? "Pathways / targets — TBD" : c.footer}
-        </div>
-        <div aria-hidden style={{ transform: "rotate(180deg)", textAlign: "left", flexShrink: 0, opacity: 0.5 }}>
-          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{c.name}</div>
-          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: tint.fg }}>
-            {c.perturbationClass}
-          </div>
-        </div>
+        {c.summary || TBD}
       </div>
     </div>
   );
@@ -387,7 +365,7 @@ export default function DatasetSpecCards() {
   const ids = ORDER.filter((id) => CARDS[id]);
   return (
     <section style={{ background: PAPER, color: INK, padding: "34px 20px 60px", borderTop: `1px solid ${RULE}` }}>
-      <div style={{ maxWidth: 500, margin: "0 auto" }}>
+      <div style={{ maxWidth: 900, margin: "0 auto" }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: "#6b655d", marginBottom: 4 }}>
           ▤ Dataset specs
         </div>
