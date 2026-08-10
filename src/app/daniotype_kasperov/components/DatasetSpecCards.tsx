@@ -207,23 +207,33 @@ function DatasetSpecCard({ id }: { id: string }) {
   return (
     <div
       style={{
+        position: "relative",
         background: "#fffdfb",
         border: `1px solid ${RULE}`,
-        borderRadius: 12,
-        padding: "15px 17px 16px",
+        borderRadius: 18,
+        padding: "24px 26px 20px",
+        // ~1.2 h:w — a playing card squared up a little. Sparse cards sit at the floor; the
+        // compound-heavy MegaFIN pair grow past it rather than being cropped.
+        minHeight: 600,
         color: INK,
         display: "flex",
         flexDirection: "column",
       }}
     >
-      {/* header — serif name left, perturbation-class badge right */}
-      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 10 }}>
-        <span style={{ fontSize: 18, fontWeight: 700, lineHeight: 1.2 }}>{c.name}</span>
+      {/* inset hairline frame — the playing-card border-within-a-border */}
+      <div
+        aria-hidden
+        style={{ position: "absolute", inset: 9, border: "1px solid #f1ece5", borderRadius: 12, pointerEvents: "none" }}
+      />
+
+      {/* header — serif name left, perturbation-class badge right (the card's top index) */}
+      <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+        <span style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.2 }}>{c.name}</span>
         <span
           title={`Perturbation class — ${c.perturbationClass}`}
           style={{
             flexShrink: 0, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase",
-            borderRadius: 99, padding: "2px 8px", whiteSpace: "nowrap",
+            borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap",
             color: tint.fg, background: "transparent", border: `1px solid ${tint.bd}`,
           }}
         >
@@ -244,10 +254,14 @@ function DatasetSpecCard({ id }: { id: string }) {
         </div>
       )}
 
+      {/* Two interior columns so a card reads as a squarish panel rather than a tall strip:
+          the stat table on the left, the chip sections on the right. Wraps on narrow viewports. */}
+      <div style={{ display: "flex", flexWrap: "wrap", gap: "16px 30px", marginTop: 16, flex: 1, alignContent: "flex-start" }}>
+
       {/* stat table — CELLS is the full published object (dataset_cards.json), falling back to
           dataset_facts.json; METHOD still comes from facts. A subsample never sits here unlabelled:
           where we work on a slice, workingSlice names it on the line below. */}
-      <div style={{ marginTop: 11 }}>
+      <div style={{ flex: "1 1 250px", minWidth: 0 }}>
         <div style={{ padding: "6px 0", borderBottom: `1px solid ${RULE}` }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 10 }}>
             <span style={rowLabel}>Cells</span>
@@ -269,6 +283,8 @@ function DatasetSpecCard({ id }: { id: string }) {
         ))}
       </div>
 
+      {/* right column — what was done to the animals */}
+      <div style={{ flex: "1 1 260px", minWidth: 0, display: "flex", flexDirection: "column" }}>
       <SectionHead label="Perturbations" summary={c.perturbations?.summary || TBD} />
       {perts.length ? (
         <div style={chipWrap}>{perts.map((p, i) => <PertChip key={i} text={p} tint={tint} />)}</div>
@@ -286,13 +302,31 @@ function DatasetSpecCard({ id }: { id: string }) {
         </div>
       )}
 
+      </div>
+      </div>
+
+      {/* bottom bar — footer left, and the card's index repeated upside-down bottom-right, the way
+          a playing card mirrors its corner so it reads either way up. */}
       <div
         style={{
-          marginTop: "auto", paddingTop: 13, fontSize: 11, fontStyle: "italic", lineHeight: 1.45,
-          color: isTbd(c.footer) ? FAINT : MUTED,
+          marginTop: 18, paddingTop: 12, borderTop: `1px solid ${RULE}`,
+          display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 16,
         }}
       >
-        {isTbd(c.footer) ? "Pathways / targets — TBD" : c.footer}
+        <div
+          style={{
+            fontSize: 11, fontStyle: "italic", lineHeight: 1.45, maxWidth: "72%",
+            color: isTbd(c.footer) ? FAINT : MUTED,
+          }}
+        >
+          {isTbd(c.footer) ? "Pathways / targets — TBD" : c.footer}
+        </div>
+        <div aria-hidden style={{ transform: "rotate(180deg)", textAlign: "left", flexShrink: 0, opacity: 0.5 }}>
+          <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{c.name}</div>
+          <div style={{ fontSize: 8, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: tint.fg }}>
+            {c.perturbationClass}
+          </div>
+        </div>
       </div>
     </div>
   );
@@ -353,7 +387,7 @@ export default function DatasetSpecCards() {
   const ids = ORDER.filter((id) => CARDS[id]);
   return (
     <section style={{ background: PAPER, color: INK, padding: "34px 20px 60px", borderTop: `1px solid ${RULE}` }}>
-      <div style={{ maxWidth: 1120, margin: "0 auto" }}>
+      <div style={{ maxWidth: 500, margin: "0 auto" }}>
         <div style={{ fontSize: 11, fontWeight: 800, letterSpacing: 0.6, textTransform: "uppercase", color: "#6b655d", marginBottom: 4 }}>
           ▤ Dataset specs
         </div>
@@ -362,7 +396,8 @@ export default function DatasetSpecCards() {
           <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: FAINT, letterSpacing: 0.6 }}>TBD</span>{" "}
           rather than a guess.
         </p>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))", gap: 14, alignItems: "stretch" }}>
+        {/* one card per row — each is its own object, not a cell in a grid */}
+        <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
           {ids.map((id) => <DatasetSpecCard key={id} id={id} />)}
         </div>
         <SummaryStrip ids={ids} />
