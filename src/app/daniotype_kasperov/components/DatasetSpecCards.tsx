@@ -116,16 +116,16 @@ function TimePill({ v, on, unit, title }: { v: string; on?: boolean; unit?: stri
 
 // Full timepoint vector, read from obs — every stage the atlas actually contains, wrapped
 // rather than truncated. 48 hpf (if present) is the only filled pill.
-function TimepointPills({ tp }: { tp: { unit?: string; values: string[]; highlight?: string; highlightTitle?: string } }) {
+function TimepointPills({ tp }: { tp: { unit?: string; values: string[]; highlight?: string; highlightTitle?: string; status?: string } }) {
   const vals = tp.values || [];
+  if (!vals.length) {
+    return <span style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{tp.status || TBD}</span>;
+  }
   return (
     <div style={{ display: "flex", flexWrap: "wrap", gap: 4, alignItems: "baseline" }}>
       {vals.map((v) => (
         <TimePill key={v} v={v} on={v === tp.highlight} title={v === tp.highlight ? tp.highlightTitle : undefined} />
       ))}
-      <span style={{ marginLeft: 3, fontFamily: MONO, fontSize: 9.5, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
-        {vals.length} · {tp.unit || ""}
-      </span>
     </div>
   );
 }
@@ -133,38 +133,74 @@ function TimepointPills({ tp }: { tp: { unit?: string; values: string[]; highlig
 // The atlas's OWN label hierarchy, with the real column names. Deliberately not normalised to a
 // common tier: ChemFish's 348 cell_type and ZSCAPE's 99 cell_type_broad are different kinds of
 // number, and flattening them to one "CELL TYPES" row hid that.
+// Emphasis sits on the tier NAMES — the shape of the vocabulary is the point; the counts are
+// supporting detail, so they ride small and muted beside each name.
 function SchemaInline({ schema }: { schema: any }) {
+  const names: string[] | null = schema?.tierNames || null;
+  const tiers: any[] | null = schema?.tiers || null;
+  const arrow = <span style={{ color: FAINT, fontSize: 11, margin: "0 1px" }}>→</span>;
+  if (!names && !tiers) {
+    return <span style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{schema?.status || TBD}</span>;
+  }
   return (
-    <>
-      {schema?.tiers ? (
-        <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "3px 5px" }}>
-          {schema.tiers.map((t: any, i: number) => (
-            <React.Fragment key={t.col}>
-              {i > 0 && <span style={{ color: FAINT, fontSize: 11 }}>→</span>}
-              <span style={{ display: "inline-flex", alignItems: "baseline", gap: 3 }}>
-                <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 800, color: INK, fontVariantNumeric: "tabular-nums" }}>{t.n}</span>
-                <span style={{ fontFamily: MONO, fontSize: 9.5, color: MUTED }}>{t.col}</span>
+    <span style={{ display: "inline-flex", flexWrap: "wrap", alignItems: "baseline", gap: "3px 5px" }}>
+      {(names || tiers!.map((t: any) => t.col)).map((nm: string, i: number) => (
+        <React.Fragment key={nm}>
+          {i > 0 && arrow}
+          <span style={{ display: "inline-flex", alignItems: "baseline", gap: 3 }}>
+            <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK }}>{nm}</span>
+            {tiers && (
+              <span style={{ fontFamily: MONO, fontSize: 9, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
+                {tiers[i].n}
               </span>
-            </React.Fragment>
-          ))}
-        </div>
-      ) : (
-        <span style={{ fontSize: 11, fontStyle: "italic", color: FAINT }}>{schema?.status || TBD}</span>
+            )}
+          </span>
+        </React.Fragment>
+      ))}
+      {schema?.source && (
+        <span style={{ fontSize: 9.5, fontStyle: "italic", color: FAINT, marginLeft: 4 }}>
+          {schema.source}
+          {schema.note ? ` · ${schema.note}` : ""}
+        </span>
       )}
-    </>
+    </span>
+  );
+}
+
+// The ZFA vocabulary, sized. Its own row on the atlases we label into ZFA.
+function VocabRow({ v }: { v: any }) {
+  const cell = (n: string, cap: string) => (
+    <span key={cap} style={{ display: "inline-flex", alignItems: "baseline", gap: 4 }}>
+      <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 800, color: INK, fontVariantNumeric: "tabular-nums" }}>{n}</span>
+      <span style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 0.4, textTransform: "uppercase", color: MUTED }}>{cap}</span>
+    </span>
+  );
+  return (
+    <div style={{ display: "flex", flexWrap: "wrap", alignItems: "baseline", gap: "4px 16px" }}>
+      {cell(v.terms, "terms")}
+      {cell(v.synonyms, "synonyms")}
+      <span style={{ display: "inline-flex", alignItems: "baseline", gap: 5, color: MUTED }}>
+        {cell(v.strings, "strings")}
+        <span style={{ color: FAINT, fontSize: 11 }}>→</span>
+        {cell(v.concepts, "concepts")}
+      </span>
+    </div>
   );
 }
 
 function SectionHead({ label, summary }: { label: string; summary: string }) {
   return (
-    <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED, margin: "13px 0 7px" }}>
-      {label}
+    <div style={{ fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, color: MUTED, margin: "13px 0 7px" }}>
+      <span style={{ textTransform: "uppercase" }}>{label}</span>
+      {/* NOT uppercased — the summaries are already written in caps, and transforming them would
+          mangle the unit symbol in "1 µM & 5 µM" into "1 MM & 5 MM". */}
       <span style={{ color: isTbd(summary) ? FAINT : "#6b655d" }}> — {summary}</span>
     </div>
   );
 }
 
-// Perturbation chip — tinted by the card's perturbation class.
+// Perturbation chip — tinted by the card's perturbation class, or by its own hue when the card
+// keys colour per drug.
 function PertChip({ text, tint }: { text: string; tint: Tint }) {
   const blank = isTbd(text);
   const t = blank ? NEUTRAL : tint;
@@ -178,6 +214,44 @@ function PertChip({ text, tint }: { text: string; tint: Tint }) {
     >
       {text}
     </span>
+  );
+}
+
+// Dose chips: both doses of one compound share a hue, and the hue walks a little between
+// compounds — so a pair reads as a pair without turning the block into a rainbow. Hue is keyed to
+// the compound's position in the sorted list, so it's stable across renders.
+type Dosed = { drug: string; dose: string | null };
+const isDosed = (x: unknown): x is Dosed => !!x && typeof x === "object" && "drug" in (x as any);
+
+function doseTint(i: number, n: number): Tint {
+  const h = 150 + (n > 1 ? (i / (n - 1)) * 128 : 0); // teal → indigo, staying in the cool family
+  return { bg: `hsl(${h} 44% 94%)`, fg: `hsl(${h} 52% 31%)`, bd: `hsl(${h} 36% 83%)` };
+}
+
+function DoseChips({ items }: { items: Dosed[] }) {
+  const drugs = Array.from(new Set(items.map((d) => d.drug)));
+  const hueOf = new Map(drugs.map((d, i) => [d, doseTint(i, drugs.length)]));
+  return (
+    <div style={chipWrap}>
+      {items.map((d, i) => {
+        const t = hueOf.get(d.drug) || NEUTRAL;
+        return (
+          <span
+            key={i}
+            title={d.dose ? `${d.drug} — ${d.dose}` : d.drug}
+            style={{
+              fontSize: 10, fontWeight: 700, letterSpacing: 0.3, borderRadius: 99, padding: "2px 8px",
+              color: t.fg, background: t.bg, border: `1px solid ${t.bd}`, whiteSpace: "nowrap",
+            }}
+          >
+            {d.drug}
+            {d.dose && (
+              <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 600, opacity: 0.75 }}> {d.dose}</span>
+            )}
+          </span>
+        );
+      })}
+    </div>
   );
 }
 
@@ -205,7 +279,7 @@ function DatasetSpecCard({ id }: { id: string }) {
   const f = FACTS[id] || {};
   if (!c) return null;
   const tint = tintFor(c.perturbationClass);
-  const perts: string[] = c.perturbations?.items || [];
+  const perts: any[] = c.perturbations?.items || [];
   const ctrls: string[] = c.controls?.items || [];
 
   return (
@@ -261,28 +335,44 @@ function DatasetSpecCard({ id }: { id: string }) {
       {/* Headline facts in two columns. CELLS is the full published object (dataset_cards.json),
           falling back to dataset_facts.json; METHOD still comes from facts. A subsample never sits
           here unlabelled: where we work on a slice, workingSlice names it directly beneath. */}
+      {/* Grid fills row-major, so the pairs below put cells → genes down the left and
+          method → capture down the right, with the working slice tucked under the cells figure. */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", columnGap: 30, marginTop: 14 }}>
         <FactCell label="Cells" value={c.cells || nfmt(f.cells)} sub={c.workingSlice} />
-        <FactCell label="Genes" value={c.genes} />
         <FactCell label="Method" value={f.platform || TBD} />
+        <FactCell label="Genes" value={c.genes} />
         <FactCell label="Capture" value={c.capture} />
-        <FactCell label="Native schema" span>
+        <FactCell label="Native schema" span stack={!!c.schema?.tierNames}>
           <SchemaInline schema={c.schema} />
         </FactCell>
+        {c.vocabulary && (
+          <FactCell label="ZFA vocabulary" span stack>
+            <VocabRow v={c.vocabulary} />
+          </FactCell>
+        )}
         {c.timepoints && (
-          <FactCell label="Timepoints" span stack>
+          <FactCell label={`Timepoints (${(c.timepoints.values || []).length})`} span stack>
             <TimepointPills tp={c.timepoints} />
           </FactCell>
         )}
-        {(c.timing || []).map((t: any) => (
-          <FactCell key={t.label} label={t.label} value={t.value} highlight={t.highlight} />
-        ))}
+        {c.dosing && (
+          <FactCell label={`Dosing timepoints (${(c.dosing.values || []).length})`} stack>
+            <TimepointPills tp={c.dosing} />
+          </FactCell>
+        )}
+        {c.collection && (
+          <FactCell label={`Collection timepoints (${(c.collection.values || []).length})`} stack>
+            <TimepointPills tp={c.collection} />
+          </FactCell>
+        )}
       </div>
 
       {/* what was done to the animals */}
       <SectionHead label="Perturbations" summary={c.perturbations?.summary || TBD} />
       {perts.length ? (
-        <div style={chipWrap}>{perts.map((p, i) => <PertChip key={i} text={p} tint={tint} />)}</div>
+        isDosed(perts[0])
+          ? <DoseChips items={perts as unknown as Dosed[]} />
+          : <div style={chipWrap}>{(perts as string[]).map((p, i) => <PertChip key={i} text={p} tint={tint} />)}</div>
       ) : (
         <div style={{ fontSize: 11, color: FAINT, fontStyle: "italic" }}>None — nothing applied.</div>
       )}

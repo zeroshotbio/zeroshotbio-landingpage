@@ -12,7 +12,11 @@
     "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven — they need a target annotation he supplies.",
     "zebrahub": "Read from /data/datasets/raw_datasets/Zebrahub/. zebrahub_combined.h5ad = 101,833 x 32,060, verified equal to the sum of the 10 per-stage v1 releases (1,251 + 6,699 + 3,862 + 3,862 + 6,297 + 5,899 + 12,914 + 15,483 + 24,987 + 20,579). Timepoints from obs[timepoint] (10 values, native mixed hpf/dpf labels kept as published). Schema = obs[zebrafish_anatomy_ontology_class] = 147, a single ZFA-backed tier (obs[zebrafish_anatomy_ontology_id] is the same 147 as ZFA IDs). The dataset README maps 2dpf -> 48 hpf, which is why the 2dpf pill carries the 48-hpf highlight. NOT in the wizard chooser and has no DatasetDef — reference card only.",
     "summary": "One-line high-level description per card, max 50 words, condensed from prose already in the repo (DatasetDef blurbs in KasperovClient.tsx, dataset_facts source/design/subsample) plus the counts verified in this file. Descriptive only - introduces no number that isn't already sourced elsewhere in this file.",
-    "name": "Card names track the datasets themselves; 'ZSCAPE Classic' is shown as 'ZSCAPE' here. The wizard chooser's own DatasetDef name is unchanged (KasperovClient.tsx is not touched), so the chooser row still reads 'ZSCAPE Classic'."
+    "name": "Card names track the datasets themselves; 'ZSCAPE Classic' is shown as 'ZSCAPE' here. The wizard chooser's own DatasetDef name is unchanged (KasperovClient.tsx is not touched), so the chooser row still reads 'ZSCAPE Classic'.",
+    "megafin_doses": "Doses decoded from the well names: every compound is 1 uM and 5 uM except the three whose one dose was QC-removed — Vorinostat (SAHA) survives at 5 uM only, Romidepsin (FK228) and Dinaciclib (SCH727965) at 1 uM only. 46 compounds -> 89 dose-pills. Matches facts.design's QC list exactly.",
+    "minifin_doses": "MiniFin has NO dose data: no dose column in obs, no dose in obs[sample], nothing in the Parse report metadata (all-sample/report/*, process/run_proc_def.json). The 43 samples are REPLICATES (numbered 1-6 plus a 'b' batch) — DMSO 11, Dapagliflozin 10, Orlistat 11, Sorafenib 11 — not two doses. Concentration left unstated rather than guessed.",
+    "zfa_schema": "ZFA target schema + vocabulary counts supplied by Steven. Applied to the three unannotated internal atlases (MegaFin x2, MiniFin) as the schema we label INTO — they carry no annotation of their own today, which the row's note keeps explicit. The ~3,107-term figure agrees with the frozen ZFA option menu already cited in the Commit Gold blurb.",
+    "megafin_manual_date": "2026-06-14 — the Manual/Lawson rebuild's completion. Corroborated two ways: mtime of /data/scratch/bench/megafin_rebuild_src.h5ad (2026-06-14 02:52) and repo commit 07a3ef19 'DanioType combined pass: finalize MegaFin rebuild' (2026-06-14). Not a recorded build-date field — none exists."
   },
   "order": [
     "zscape_commit_gold",
@@ -331,69 +335,377 @@
       "workingSlice": null,
       "genes": "32,520",
       "schema": {
-        "status": "Unannotated — labelling target"
+        "source": "ZFA",
+        "note": "labelling target — unannotated today",
+        "tierNames": [
+          "Anatomical System",
+          "Compound Organ",
+          "Multi-Tissue",
+          "Portion of Tissue",
+          "Cell",
+          "Body Substance"
+        ]
       },
       "capture": "Whole-cell",
-      "timing": [
-        {
-          "label": "EXPOSURE",
-          "value": "24 → 48 hpf"
-        },
-        {
-          "label": "COLLECTION",
-          "value": "48 hpf",
-          "highlight": true
-        }
-      ],
       "perturbations": {
-        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES · 3 WELLS QC-REMOVED",
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 1 µM & 5 µM · 3 WELLS QC-REMOVED",
         "items": [
-          "17-AAG (KOS953)",
-          "Abiraterone",
-          "Apixaban",
-          "Aspirin",
-          "Atorvastatin calcium",
-          "Axitinib",
-          "Budesonide",
-          "CAL-101 (Idelalisib)",
-          "Celecoxib",
-          "Citalopram hydrobromide",
-          "Clopidogrel",
-          "Cyclosporin A",
-          "Dapagliflozin",
-          "Dexamethasone (DHP)",
-          "Dinaciclib (SCH727965)",
-          "Enalapril",
-          "Entinostat (MS-275)",
-          "Everolimus (RAD001)",
-          "Finasteride",
-          "Fluoxetine HCl",
-          "Ganetespib (STA-9090)",
-          "GSK2126458 (Omipalisib)",
-          "Hydrocortisone",
-          "LDE225 (Erismodegib)",
-          "Losartan potassium",
-          "Lovastatin",
-          "Metformin HCl",
-          "Panobinostat",
-          "Paroxetine HCl",
-          "Pazopanib",
-          "Pravastatin sodium",
-          "Prednisone",
-          "Propranolol HCl",
-          "Ramipril",
-          "Rapamycin (Sirolimus)",
-          "Resveratrol",
-          "Rivaroxaban",
-          "Romidepsin (FK228)",
-          "Rucaparib (AG-014699)",
-          "Sertraline HCl",
-          "Simvastatin (Zocor)",
-          "Sorafenib · pos. ctrl",
-          "Sunitinib malate",
-          "Ticagrelor",
-          "Valsartan",
-          "Vorinostat (SAHA)"
+          {
+            "drug": "17-AAG (KOS953)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "17-AAG (KOS953)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Abiraterone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Abiraterone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Apixaban",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Apixaban",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Aspirin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Aspirin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Atorvastatin calcium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Atorvastatin calcium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Axitinib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Axitinib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Budesonide",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Budesonide",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "CAL-101 (Idelalisib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "CAL-101 (Idelalisib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Celecoxib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Celecoxib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Citalopram hydrobromide",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Citalopram hydrobromide",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Clopidogrel",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Clopidogrel",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Cyclosporin A",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Cyclosporin A",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dapagliflozin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Dapagliflozin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dexamethasone (DHP)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Dexamethasone (DHP)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dinaciclib (SCH727965)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Enalapril",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Enalapril",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Entinostat (MS-275)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Entinostat (MS-275)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Everolimus (RAD001)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Everolimus (RAD001)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Finasteride",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Finasteride",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Fluoxetine HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Fluoxetine HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ganetespib (STA-9090)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ganetespib (STA-9090)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "GSK2126458 (Omipalisib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "GSK2126458 (Omipalisib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Hydrocortisone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Hydrocortisone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "LDE225 (Erismodegib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "LDE225 (Erismodegib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Losartan potassium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Losartan potassium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Lovastatin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Lovastatin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Metformin HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Metformin HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Panobinostat",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Panobinostat",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Paroxetine HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Paroxetine HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Pazopanib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Pazopanib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Pravastatin sodium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Pravastatin sodium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Prednisone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Prednisone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Propranolol HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Propranolol HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ramipril",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ramipril",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Rapamycin (Sirolimus)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rapamycin (Sirolimus)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Resveratrol",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Resveratrol",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Rivaroxaban",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rivaroxaban",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Romidepsin (FK228)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rucaparib (AG-014699)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rucaparib (AG-014699)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sertraline HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sertraline HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Simvastatin (Zocor)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Simvastatin (Zocor)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sorafenib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sorafenib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sunitinib malate",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sunitinib malate",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ticagrelor",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ticagrelor",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Valsartan",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Valsartan",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Vorinostat (SAHA)",
+            "dose": "5 µM"
+          }
         ]
       },
       "controls": {
@@ -404,78 +716,405 @@
           "Egg water · no vehicle"
         ]
       },
-      "summary": "Our large-scale drug-screen atlas — 45 small molecules plus a Sorafenib positive control, each at two doses, on 48 hpf whole embryos. This is the Parse/Trailmaker processing of the library, in ENSDARG. No external labels: a labelling target, not a benchmark."
+      "summary": "Our large-scale drug-screen atlas — 45 small molecules plus a Sorafenib positive control, each at two doses, on 48 hpf whole embryos. This is the Parse/Trailmaker processing of the library, in ENSDARG. No external labels: a labelling target, not a benchmark.",
+      "vocabulary": {
+        "terms": "~3,107",
+        "synonyms": "~2,991",
+        "strings": "~6,098",
+        "concepts": "~3,107"
+      },
+      "dosing": {
+        "unit": "hpf",
+        "values": [
+          "24"
+        ]
+      },
+      "collection": {
+        "unit": "hpf",
+        "values": [
+          "48"
+        ],
+        "highlight": "48"
+      }
     },
     "megafin": {
-      "name": "Manual MegaFin Part 1",
+      "name": "MegaFin Manual (2026-06-14)",
       "perturbationClass": "DRUG",
       "cells": "537,959",
       "workingSlice": null,
       "genes": "36,351",
       "schema": {
-        "status": "Unannotated — labelling target"
+        "source": "ZFA",
+        "note": "labelling target — unannotated today",
+        "tierNames": [
+          "Anatomical System",
+          "Compound Organ",
+          "Multi-Tissue",
+          "Portion of Tissue",
+          "Cell",
+          "Body Substance"
+        ]
       },
       "capture": "Whole-cell",
-      "timing": [
-        {
-          "label": "EXPOSURE",
-          "value": "24 → 48 hpf"
-        },
-        {
-          "label": "COLLECTION",
-          "value": "48 hpf",
-          "highlight": true
-        }
-      ],
       "perturbations": {
-        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 2 DOSES · 3 WELLS QC-REMOVED",
+        "summary": "45 SMALL MOLECULES + SORAFENIB (POS. CTRL) · 1 µM & 5 µM · 3 WELLS QC-REMOVED",
         "items": [
-          "17-AAG (KOS953)",
-          "Abiraterone",
-          "Apixaban",
-          "Aspirin",
-          "Atorvastatin calcium",
-          "Axitinib",
-          "Budesonide",
-          "CAL-101 (Idelalisib)",
-          "Celecoxib",
-          "Citalopram hydrobromide",
-          "Clopidogrel",
-          "Cyclosporin A",
-          "Dapagliflozin",
-          "Dexamethasone (DHP)",
-          "Dinaciclib (SCH727965)",
-          "Enalapril",
-          "Entinostat (MS-275)",
-          "Everolimus (RAD001)",
-          "Finasteride",
-          "Fluoxetine HCl",
-          "Ganetespib (STA-9090)",
-          "GSK2126458 (Omipalisib)",
-          "Hydrocortisone",
-          "LDE225 (Erismodegib)",
-          "Losartan potassium",
-          "Lovastatin",
-          "Metformin HCl",
-          "Panobinostat",
-          "Paroxetine HCl",
-          "Pazopanib",
-          "Pravastatin sodium",
-          "Prednisone",
-          "Propranolol HCl",
-          "Ramipril",
-          "Rapamycin (Sirolimus)",
-          "Resveratrol",
-          "Rivaroxaban",
-          "Romidepsin (FK228)",
-          "Rucaparib (AG-014699)",
-          "Sertraline HCl",
-          "Simvastatin (Zocor)",
-          "Sorafenib · pos. ctrl",
-          "Sunitinib malate",
-          "Ticagrelor",
-          "Valsartan",
-          "Vorinostat (SAHA)"
+          {
+            "drug": "17-AAG (KOS953)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "17-AAG (KOS953)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Abiraterone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Abiraterone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Apixaban",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Apixaban",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Aspirin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Aspirin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Atorvastatin calcium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Atorvastatin calcium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Axitinib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Axitinib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Budesonide",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Budesonide",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "CAL-101 (Idelalisib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "CAL-101 (Idelalisib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Celecoxib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Celecoxib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Citalopram hydrobromide",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Citalopram hydrobromide",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Clopidogrel",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Clopidogrel",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Cyclosporin A",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Cyclosporin A",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dapagliflozin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Dapagliflozin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dexamethasone (DHP)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Dexamethasone (DHP)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Dinaciclib (SCH727965)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Enalapril",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Enalapril",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Entinostat (MS-275)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Entinostat (MS-275)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Everolimus (RAD001)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Everolimus (RAD001)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Finasteride",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Finasteride",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Fluoxetine HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Fluoxetine HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ganetespib (STA-9090)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ganetespib (STA-9090)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "GSK2126458 (Omipalisib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "GSK2126458 (Omipalisib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Hydrocortisone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Hydrocortisone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "LDE225 (Erismodegib)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "LDE225 (Erismodegib)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Losartan potassium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Losartan potassium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Lovastatin",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Lovastatin",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Metformin HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Metformin HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Panobinostat",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Panobinostat",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Paroxetine HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Paroxetine HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Pazopanib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Pazopanib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Pravastatin sodium",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Pravastatin sodium",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Prednisone",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Prednisone",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Propranolol HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Propranolol HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ramipril",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ramipril",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Rapamycin (Sirolimus)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rapamycin (Sirolimus)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Resveratrol",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Resveratrol",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Rivaroxaban",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rivaroxaban",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Romidepsin (FK228)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rucaparib (AG-014699)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Rucaparib (AG-014699)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sertraline HCl",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sertraline HCl",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Simvastatin (Zocor)",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Simvastatin (Zocor)",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sorafenib",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sorafenib",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Sunitinib malate",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Sunitinib malate",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Ticagrelor",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Ticagrelor",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Valsartan",
+            "dose": "1 µM"
+          },
+          {
+            "drug": "Valsartan",
+            "dose": "5 µM"
+          },
+          {
+            "drug": "Vorinostat (SAHA)",
+            "dose": "5 µM"
+          }
         ]
       },
       "controls": {
@@ -486,7 +1125,26 @@
           "Egg water · no vehicle"
         ]
       },
-      "summary": "The same drug-screen library as the Parse build, rebuilt from the manually denoised Lawson object and clustered recursively. It shares no cell barcodes with its sibling, so the two builds are an independent check on each other. No external labels."
+      "summary": "The same drug-screen library as the Parse build, rebuilt from the manually denoised Lawson object and clustered recursively. It shares no cell barcodes with its sibling, so the two builds are an independent check on each other. No external labels.",
+      "vocabulary": {
+        "terms": "~3,107",
+        "synonyms": "~2,991",
+        "strings": "~6,098",
+        "concepts": "~3,107"
+      },
+      "dosing": {
+        "unit": "hpf",
+        "values": [
+          "24"
+        ]
+      },
+      "collection": {
+        "unit": "hpf",
+        "values": [
+          "48"
+        ],
+        "highlight": "48"
+      }
     },
     "minifin": {
       "name": "MiniFin",
@@ -495,26 +1153,33 @@
       "workingSlice": null,
       "genes": "32,520",
       "schema": {
-        "status": "Unannotated — labelling target"
+        "source": "ZFA",
+        "note": "labelling target — unannotated today",
+        "tierNames": [
+          "Anatomical System",
+          "Compound Organ",
+          "Multi-Tissue",
+          "Portion of Tissue",
+          "Cell",
+          "Body Substance"
+        ]
       },
       "capture": "Whole-cell",
-      "timing": [
-        {
-          "label": "EXPOSURE",
-          "value": "TBD"
-        },
-        {
-          "label": "COLLECTION",
-          "value": "48 hpf",
-          "highlight": true
-        }
-      ],
       "perturbations": {
-        "summary": "3 COMPOUNDS + VEHICLE · 43 SAMPLES",
+        "summary": "3 COMPOUNDS + VEHICLE · 43 SAMPLES · SINGLE DOSE (CONC. UNRECORDED)",
         "items": [
-          "Dapagliflozin",
-          "Orlistat",
-          "Sorafenib"
+          {
+            "drug": "Dapagliflozin",
+            "dose": null
+          },
+          {
+            "drug": "Orlistat",
+            "dose": null
+          },
+          {
+            "drug": "Sorafenib",
+            "dose": null
+          }
         ]
       },
       "controls": {
@@ -523,7 +1188,25 @@
           "DMSO vehicle"
         ]
       },
-      "summary": "Our in-house Parse reference: three compounds plus DMSO vehicle across 43 samples at 48 hpf. Small, fast and unlabelled by anyone else — we use it to build intuition and to validate the labeller against Patrick's expert annotations."
+      "summary": "Our in-house Parse reference: three compounds plus DMSO vehicle across 43 samples at 48 hpf. Small, fast and unlabelled by anyone else — we use it to build intuition and to validate the labeller against Patrick's expert annotations.",
+      "vocabulary": {
+        "terms": "~3,107",
+        "synonyms": "~2,991",
+        "strings": "~6,098",
+        "concepts": "~3,107"
+      },
+      "dosing": {
+        "unit": "hpf",
+        "values": [],
+        "status": "TBD"
+      },
+      "collection": {
+        "unit": "hpf",
+        "values": [
+          "48"
+        ],
+        "highlight": "48"
+      }
     }
   }
 }
