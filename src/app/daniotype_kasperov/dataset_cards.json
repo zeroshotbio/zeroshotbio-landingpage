@@ -1,5 +1,17 @@
 {
-  "_note": "Per-dataset SPEC-CARD fields (biology / experimental design). Joined on `id` to dataset_facts.json, which stays the source of truth for CELLS, METHOD (platform) and cluster counts — those are NOT duplicated here. Every value in this file is transcribed from prose already in the repo (dataset_facts.json `designFacts` / `design` / `subsample` / `source`, and the DatasetDef `blurb` strings in KasperovClient.tsx). Anything not stated in those sources is the literal string \"TBD\" and is waiting on a human — do not fill these in by inference.",
+  "_note": "Per-dataset SPEC-CARD fields (biology / experimental design). Joined on `id` to dataset_facts.json, which stays the source of truth for CELLS and METHOD (platform) — those are NOT duplicated here. Values are either (a) read live from the backing .h5ad / author metadata, (b) transcribed from prose already in the repo, or (c) supplied by Steven from the published spec card. Provenance for every non-obvious value is recorded in `_provenance` below. Anything not sourced is the literal string \"TBD\" and is waiting on a human — do not fill these in by inference.",
+
+  "_provenance": {
+    "genes": "n_vars, read in backed mode. zscape + zscape_commit_gold + chemfish 32,031; daniocell 30,121; megafin_parse + minifin 32,520; megafin (Lawson) 36,351.",
+    "zscape_tissues_celltypes": "obs[tissue]=34 and obs[cell_type_broad]=99 in /data/datasets/raw_datasets/ZSCAPE/zscape_perturb_reference_merged_dedubled.h5ad (full published object, 3,231,733 cells). obs[cell_type_sub]=156 is the finer native alternative. The 48-hpf control-only slice gives 33/97.",
+    "zscape_perturbations": "obs[gene_target]=34 in the same object: 28 knockouts + 6 ctrl-* controls. Matches the published spec card exactly.",
+    "chemfish_tissues_celltypes": "obs[tissue]=39 and obs[cell_type]=348 in /data/datasets/raw_datasets/ChemFish/extracted/chemfish_cds/cell_metadata.csv (authors' own metadata, 2,068,668 rows). NOTE: ChemFish `cell_type` is the fine native tier — not the same granularity as ZSCAPE cell_type_broad.",
+    "chemfish_perturbations": "obs[perturbation]=11 (8 compounds + DMSO/EtOH/novehicle) and obs[target]=8 (7 pathways + Control) in the same file. Confirms the published spec card exactly.",
+    "daniocell_tissues_celltypes": "obs[tissue.name]=19 and obs[tissue.figure]=43 in /data/datasets/raw_datasets/DanioCell_h5ad/daniocell_canonical.h5ad (336,603 cells, all stages). obs[clust]=498 is the finer native alternative.",
+    "capture": "Supplied by Steven. Single-nucleus for the sci-RNA-seq3 builds (ZSCAPE ×2, ChemFish); whole-cell for the Parse Evercode builds and DanioCell 10X.",
+    "megafin_minifin_perturbations": "PENDING REVIEW — decoded from obs[sample]/obs[samples] (93 wells) and obs[perturbation], reported to Steven for eyeball before shipping. Not yet written.",
+    "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven (Phase 3, Source 4)."
+  },
 
   "order": ["zscape_commit_gold", "zscape", "chemfish", "daniocell", "megafin_parse", "megafin", "minifin"],
 
@@ -7,49 +19,67 @@
     "zscape_commit_gold": {
       "name": "ZSCAPE Commit Gold",
       "perturbationClass": "CONTROL ARM",
-      "genes": "TBD",
+      "genes": "32,031",
       "tissues": "TBD",
       "cellTypes": "TBD",
-      "capture": "TBD",
+      "capture": "Single-nucleus",
       "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
       "perturbations": { "summary": "NONE · CONTROL ARM", "items": [] },
-      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "controls": {
+        "summary": "6 TYPES",
+        "items": ["ctrl-uninj", "ctrl-inj", "ctrl-hgfa", "ctrl-noto", "ctrl-met", "ctrl-mafba"]
+      },
       "footer": "TBD"
     },
 
     "zscape": {
       "name": "ZSCAPE Classic",
-      "perturbationClass": "DRUG",
-      "genes": "TBD",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
-      "capture": "TBD",
+      "perturbationClass": "GENETIC KO",
+      "genes": "32,031",
+      "tissues": "34",
+      "cellTypes": "99",
+      "capture": "Single-nucleus",
       "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
-      "perturbations": { "summary": "TBD", "items": ["TBD"] },
-      "controls": { "summary": "TBD", "items": ["TBD"] },
+      "perturbations": {
+        "summary": "28 GENE KNOCKOUTS",
+        "items": [
+          "cdx4", "cdx4-cdx1a", "egr2b", "epha4a", "foxd3", "foxi1", "hand2",
+          "hgfa", "hgfa-mut", "hoxb1a", "mafba", "mafba-mut", "met", "met-mut",
+          "noto", "noto-mut", "phox2a", "smo", "tbx1", "tbx16", "tbx16-msgn1",
+          "tbx16-mut", "tbx16-tbx16l", "tbxta", "tfap2a", "tfap2a-foxd3",
+          "wnt3a-wnt8", "zc4h2"
+        ]
+      },
+      "controls": {
+        "summary": "6 TYPES",
+        "items": ["ctrl-uninj", "ctrl-inj", "ctrl-hgfa", "ctrl-noto", "ctrl-met", "ctrl-mafba"]
+      },
       "footer": "TBD"
     },
 
     "chemfish": {
       "name": "ChemFish",
       "perturbationClass": "DRUG",
-      "genes": "TBD",
-      "tissues": "TBD",
-      "cellTypes": "TBD",
-      "capture": "TBD",
+      "genes": "32,031",
+      "tissues": "39",
+      "cellTypes": "348",
+      "capture": "Single-nucleus",
       "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
-      "perturbations": { "summary": "2 SCREENS", "items": ["CHEM10 DSP", "CHEM11 BS3", "TBD"] },
-      "controls": { "summary": "TBD", "items": ["TBD"] },
-      "footer": "TBD"
+      "perturbations": {
+        "summary": "8 COMPOUNDS",
+        "items": ["Cyclopamine", "DEAB", "DMH1", "LY411575", "SB505124", "SU5402", "WntC59", "A8301"]
+      },
+      "controls": { "summary": "3 TYPES", "items": ["DMSO", "EtOH", "no vehicle"] },
+      "footer": "Hedgehog · Retinoic acid · BMP · Notch · TGF-β · FGF · Wnt"
     },
 
     "daniocell": {
       "name": "DanioCell",
       "perturbationClass": "UNPERTURBED",
-      "genes": "TBD",
+      "genes": "30,121",
       "tissues": "19",
       "cellTypes": "43",
-      "capture": "TBD",
+      "capture": "Whole-cell",
       "timing": [{ "label": "TIMEPOINTS", "value": "36–72 hpf" }],
       "perturbations": { "summary": "NONE · DEVELOPMENTAL ATLAS", "items": [] },
       "controls": { "summary": "TBD", "items": ["TBD"] },
@@ -59,10 +89,10 @@
     "megafin_parse": {
       "name": "Parse MegaFin Part 1",
       "perturbationClass": "DRUG",
-      "genes": "TBD",
+      "genes": "32,520",
       "tissues": "TBD",
       "cellTypes": "TBD",
-      "capture": "Evercode WT Mega",
+      "capture": "Whole-cell",
       "timing": [
         { "label": "EXPOSURE", "value": "24 → 48 hpf" },
         { "label": "COLLECTION", "value": "48 hpf" }
@@ -81,10 +111,10 @@
     "megafin": {
       "name": "Manual MegaFin Part 1",
       "perturbationClass": "DRUG",
-      "genes": "TBD",
+      "genes": "36,351",
       "tissues": "TBD",
       "cellTypes": "TBD",
-      "capture": "Evercode WT Mega",
+      "capture": "Whole-cell",
       "timing": [
         { "label": "EXPOSURE", "value": "24 → 48 hpf" },
         { "label": "COLLECTION", "value": "48 hpf" }
@@ -103,10 +133,10 @@
     "minifin": {
       "name": "MiniFin",
       "perturbationClass": "DRUG",
-      "genes": "TBD",
+      "genes": "32,520",
       "tissues": "TBD",
       "cellTypes": "TBD",
-      "capture": "Evercode (Parse)",
+      "capture": "Whole-cell",
       "timing": [{ "label": "TIMEPOINTS", "value": "48 hpf" }],
       "perturbations": { "summary": "43 DRUG SAMPLES", "items": ["TBD"] },
       "controls": { "summary": "TBD", "items": ["TBD"] },
