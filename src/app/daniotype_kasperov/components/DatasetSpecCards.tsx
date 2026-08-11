@@ -396,7 +396,8 @@ function DatasetSpecCard({ id }: { id: string }) {
           <FactCell label="Annotation" value={c.annotation} />
         </div>
         <div style={{ flex: "1 1 260px", minWidth: 0 }}>
-          <FactCell label="Method" value={f.platform || TBD} />
+          {/* c.method is an override for datasets with no dataset_facts.json row (ZCL 2.0). */}
+          <FactCell label="Method" value={c.method || f.platform || TBD} />
           <FactCell label="Capture" value={c.capture} />
           {c.line && <FactCell label="Line" value={c.line} />}
           {c.replicates && <FactCell label="Replicates" value={c.replicates} />}

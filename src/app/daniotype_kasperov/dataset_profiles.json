@@ -4,7 +4,8 @@
     "zscape",
     "chemfish",
     "daniocell",
-    "zebrahub"
+    "zebrahub",
+    "zcl2"
   ],
   "profiles": {
     "zscape": {
@@ -915,6 +916,178 @@
         }
       ],
       "footer": "Full evidence, scripts and checksums: /data/datasets/raw_datasets/Zebrahub/sources/README.md"
+    },
+    "zcl2": {
+      "name": "ZCL 2.0 / ZCDL",
+      "kicker": "Wild-type life-span atlas — embryo to aged adult",
+      "lede": "The only zebrafish atlas here that reaches adulthood and ageing: five stages from 24 hpf to 22 months, 1.08M cells by Microwell-seq. Its annotations were never missing — they ship in a companion CSV rather than inside the Seurat object.",
+      "paper": {
+        "citation": "Han, Guo et al. — Zhejiang University",
+        "venue": "Nucleic Acids Research · 2023",
+        "title": "Construction of a cross-species cell landscape at single-cell level",
+        "href": "https://doi.org/10.1093/nar/gkac633"
+      },
+      "headline": [
+        {
+          "n": "1,088,106",
+          "cap": "cells"
+        },
+        {
+          "n": "5",
+          "cap": "stages, 24 hpf – 22 mo"
+        },
+        {
+          "n": "143",
+          "cap": "clusters"
+        },
+        {
+          "n": "27,538",
+          "cap": "features"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Canonical release",
+          "rows": [
+            {
+              "k": "ZCDL.rdata",
+              "v": "Seurat v4.0.2, 27,538 genes x 1,088,106 cells, raw integer counts (627,152,947 nonzeros). counts and data are identical, so the object is not normalized; scale.data, reductions and commands are all empty.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "ZCDL_cellinfo.csv",
+              "v": "1,082,680 rows carrying cluster, cell_type, cell_lineage and t-SNE coordinates. Zero nulls.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Source",
+              "v": "Figshare article 20363190 v8 — doi:10.6084/m9.figshare.20363190.v8. The paper itself cites only a private Figshare link.",
+              "mono": true
+            }
+          ]
+        },
+        {
+          "title": "Cell-count reconciliation — closed",
+          "shared": "1,088,106 = the released object AND the exact sum of the paper's five per-stage figures. 1,082,680 = the annotation table AND the paper's abstract. The paper is not inconsistent — the two numbers count different populations.",
+          "rows": [
+            {
+              "k": "Difference",
+              "v": "5,426 cells present in the object with no published annotation, spanning all five stages (22 m 3,290 · 21 d 947 · 3 m 748 · 72 hpf 280 · 24 hpf 161). Retained in our rebuild under in_published_atlas = False.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Per stage",
+              "v": "3 m 431,168 · 22 m 330,924 · 72 hpf 159,128 · 21 d 121,954 · 24 hpf 44,932"
+            }
+          ]
+        },
+        {
+          "title": "Annotation — our 'no annotations' record was wrong",
+          "note": "Every one of the 143 clusters is pure — one cell_type and one cell_lineage each — so cluster is the atomic unit and the hierarchy is a strict chain.",
+          "rows": [
+            {
+              "k": "Hierarchy",
+              "v": "cluster (143) → cell_type (41) → cell_lineage (10)",
+              "mono": true,
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Lineages",
+              "v": "Epithelial 474,911 · Immune 173,910 · Neuron 173,794 · Stromal 119,556 · Muscle 31,427 · Germ 29,112 · Erythroid 23,362 · Secretory 20,643 · Endothelial 18,051 · Other 17,914"
+            },
+            {
+              "k": "Two conflicting sources",
+              "v": "Supplementary Table S1 annotates the same 143 clusters differently: 135/143 lineages agree but only 113/143 cell types. C8 and C11 are outright swapped (Epithelial cell ↔ Keratinocyte); C34 is a real conflict (Hepatocyte/Epithelial vs Mt-rich cell/Other). Use ZCDL_cellinfo.csv as ground truth — it is what is attached to the cells — and declare which source any score was measured against.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Markers",
+              "v": "Table S1 also carries per-cluster marker genes and a label-transfer mapping onto ZCL 1.0 with mean AUROC — recorded for reuse, not as a label source."
+            }
+          ]
+        },
+        {
+          "title": "Assay & reference",
+          "rows": [
+            {
+              "k": "Platform",
+              "v": "Microwell-seq with beads 3.0 (mice used beads 2.0). Cell barcode built by three rounds of split-pool synthesis; 18 nt in the released data, uniform across all 1,082,680 barcodes.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Sequencing",
+              "v": "Illumina HiSeq or MGI DNBSEQ-T7, 150 bp + 150 bp"
+            },
+            {
+              "k": "Alignment",
+              "v": "STAR against the D. rerio GRCz11 genome; DGE by modified Drop-seq tools 1.12",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "GTF / Ensembl release",
+              "v": "Stated nowhere — the paper, the Supplementary Methods (wet-lab only) and the repo (downstream analysis only) are all silent. The namespace is GRCz11 Ensembl symbols including clone-based names like AL590150.1, and 93.6% of them appear in the Ensembl 99 symbol set, which dates it to an Ensembl release and no further. No ENSDARG ids are published.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "UMI length",
+              "v": "Not stated, and not recoverable from a DGE",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "QC — three sources that disagree",
+          "shared": "The released atlas is PRE-QC: nCount_RNA min 63 and nFeature_RNA min 27 sit far below the paper's stated '< 500 transcripts and 200 genes'. Do not assume the published thresholds hold.",
+          "rows": [
+            {
+              "k": "Mito filter is a no-op",
+              "v": "The authors' Pre_processing.R calls PercentageFeatureSet(pattern = '^mt:'), which matches 0 zebrafish genes — zebrafish mitochondrial genes use the mt- prefix and 13 are present. '^mt:' is the FlyBase convention, inherited unchanged from this cross-species script, so percent.mt is 0 for every zebrafish cell and the < 20 filter excludes nothing.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Top 10,000 vs 20,000",
+              "v": "The Methods say the DGEs keep the top 10,000 cells per library by total transcripts. Every GEO DGE file we hold contains exactly 20,000.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Table S1 averages",
+              "v": "Per-stage average UMI and gene counts reproduce to the decimal for 24 hpf, 72 hpf and 21 day — independently confirming the rebuild. The two adult stages do not (3 m 2095.0 vs our 1666.4; 22 m 2647.0 vs 2056.0), and restricting to annotated cells does not close it. The obvious explanation, that S1 used the higher-depth GEO deposit, is refuted — those averages are lower still.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Other",
+              "v": "RNA-contamination correction is cited only as 'the same methods described previously', with no code in the repo. DoubletFinder pN=0.25, ~5% removed.",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Our objects",
+          "note": "zcl2.h5ad is retained, not overwritten, so prior results stay reproducible.",
+          "rows": [
+            {
+              "k": "Old — zcl2.h5ad",
+              "v": "800,000 cells x 27,744 genes with an empty var and no annotations. Exactly 40 GEO libraries x 20,000 cells, covering only 3 m and 22 m. Of the 230,152 canonical cells belonging to its own libraries it holds 157,640 (68.5%), and recovery is stage-split: ~96-100% per 3 m library but ~40% for 22 m.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "The 20,000 cap is theirs",
+              "v": "GSM5380997_Zebrafish_3m_COL3_dge.txt.gz is itself exactly 20,000 x 24,213 — the truncation is the authors' deposit convention, not a subsample of ours.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "New — zcl2_canonical.h5ad",
+              "v": "1,088,106 x 27,538, raw integer counts, full obs (stage, sample, batch, cluster, cell_type, cell_lineage, in_published_atlas), the authors' t-SNE in obsm, and a uns['provenance'] stamp with both source SHA256s. Validated on read-back: row sums equal nCount_RNA and per-row nonzeros equal nFeature_RNA.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Barcode trap",
+              "v": "Barcodes are <batch>_<SAMPLE>.<18nt> for four stages but <SAMPLE>.<18nt> for 22 Month, so a regex assuming the prefix silently returns zero samples there. Worse, COL sample ids are reused across stages (72 of 84) — (stage, sample) is the key, sample alone is not.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        }
+      ]
     }
   }
 }

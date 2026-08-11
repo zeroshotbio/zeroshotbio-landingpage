@@ -28,7 +28,8 @@
     "zscape_raw_counts": "GSE202639_reference_raw_counts.RDS.gz — dgCMatrix 32,031 x 1,241,018, 523,335,834 non-zeros (98.68% sparse), integer counts max 2,391, 954,711,330 total UMIs, median 454 UMI/cell. Dimensions match the gene and cell metadata exactly. No attributes naming the annotation. File is DOUBLY gzipped (outer gzip around an already-compressed RDS): gunzip first, then readRDS. TWO GAPS CLOSED. (a) The 32,031-gene set is the REFERENCE, not a QC artifact: 951 genes have zero counts across all 1.24M cells and were retained, which an expression filter would not do. (b) The 489 Ensembl genes it omits are excluded by gene-model CLASS, not location or expression — 299 pseudogenes, 171 IG/TR receptor segments, 14 TEC, 5 other; 488 of 489 are on primary chromosomes and ZSCAPE keeps 462 genes on non-primary scaffolds, so it is not an assembly restriction. Dropping pseudogenes and rearranging immune-receptor segments is curation, not a stock Ensembl GTF — a third independent line of evidence (with the extended coordinates and the Ensembl-subset id space) for a curated extended-UTR annotation. Still no citation naming it. CAVEAT: gene metadata's num_cells_expressed is systematically HIGHER than the matrix supports (median ratio 1.0076, max 1.093, never lower across all 32,031 genes) despite both files claiming 1,241,018 cells. Recompute from the matrix if exact.",
     "zscape_supplementary": "sources/supplementary/zscape-extra-metadata.xlsx — the paper's supplementary tables, 8 sheets. Highest-information single file in sources/. CONFIRMS THE PERTURBATION SPLIT FROM THE AUTHORS' OWN TABLE, not from naming convention: sheet 6_perturbation_info lists 28 rows using 'hgfa' / 'hgfa null', 'mafba' / 'mafba null', 'met' / 'met null', 'noto' / 'noto null', 'tbx16' / 'tbx16 null'. So obs[gene_target]'s '-mut' suffix IS the authors' stable NULL mutant line, and the sheet's 'Null Comparison (y/n)' column is 'y' on exactly those five crispant rows. 18 single + 5 double + 5 null = 28 labels = 23 distinct perturbations. Card group relabelled 'Stable null mutant line' to match the authors' term. TIMEPOINTS: sheet 1 gives four experiments — Time Series R1 (48/72/96), R2 (18-38 even, +42), R3 (40/42/44/46), and the perturbation experiment (18/24/36/48/72). Their union is EXACTLY the 18 numeric values in obs[timepoint], and the perturbation timepoints are a subset. The abstract's '19 timepoints' is still one more than any file accounts for — likely the blank level in the reference cell metadata. ALSO: hash enrichment thresholds (>3 for R1/R2, >5 for perturbations and R3) — this is the 'Supplementary Table 1' the Methods cite; 76 crRNA sequences over 27 gene entries (3 non-targeting controls), ~3 guides/gene, 7 failed phenotyping and 10 unused so the shipped pool is 66; rhAmpSeq genotyping primers for 26 genes; per-perturbation cell and individual counts (smallest is tbx16 null at 7,475 cells / 8 individuals). NAMING: obs writes 'wnt3a-wnt8' but the real second gene is wnt8a ('wnt3a; wnt8a'). Card chips keep the literal obs strings because that is what the data column contains. SCHEME vs DATA: sheet 2 documents the authored annotation scheme (36 tissue / 101 broad / 148 sub / 7 germ_layer) which does NOT equal the values realized in obs (34 / 99 / 156 / 7). Neither is wrong — different denominators. Card numbers stay measured from the data. MOST USEFUL TO US: sheet 2 carries a free-text 'evidence' column naming the marker genes behind each cell-type call (120 of 151 rows), and sheet 8 gives quantitative top markers for 151 cell_type_sub values. That is a far richer scoring target for the labeller than the label strings alone.",
     "chemfish_pipeline": "CONFIRMED from the ChemFish Methods: 'Pipelines for generating count matrices from sci-RNA-seq3 sequencing data are available at github.com/bbi-lab/bbi-dmux and github.com/bbi-lab/bbi-sci', and 'data were processed using the Monocle3 (develop branch, v.1.3.1) workflow'. Card corrected from raw=TBD.",
-    "daniocell": "REFERENCE CONFIRMED from the Methods: GRCz11 / Ensembl release 99 with the Lawson Lab Zebrafish Transcriptome Annotation v4.3.2, 320 Ensembl-annotated pseudogenes removed, aligned with Cell Ranger 4.0.0 (STAR 2.5.1b), --expect-cells 6,000-21,250 per sample. New data is 10X Chromium 3' v3.1 + MULTI-seq; the 2018 Farrell Drop-seq cells were realigned against the same reference before merging. This is a DIFFERENT reference lineage from ZSCAPE/ChemFish — its 36,250 features do not correspond to their BBI-prepared 32,031. GENE UNIVERSE RECONSTRUCTED against the Lawson v4.3 we hold (v4.3.2 is UMass-only and bot-walled): v4.3 has 36,351 gene rows, 314 with an Ens99 pseudogene biotype (paper removes 320 in v4.3.2), leaving 36,031 vs the released 36,250 (+219). Cell Ranger feature-name de-duplication explains the shape: Lawson has 216 symbols occurring more than once over 458 rows, and exactly 242 DanioCell-only names are '<lawson symbol>.N' (e.g. 'HTRA2 (1 of many).10'); 32 more differ only by case. The residual 2,006 is the v4.3->v4.3.2 delta. QC VERIFIED CLEAN, unlike ChemFish: 0 cells with nGene<=200 (min exactly 201), 0 cells with percent.mt>=10 (max 9.999), no Doublet label present (only Bar1-Bar12 and Negative), 1 cell with nUMI_MS<20. The top-0.5%-features rule is not testable post-hoc. 59,013 cells lack MULTI-seq calls: 38,731 Drop-seq plus 20,282 non-hashed 10X. ACCOUNTING: 489,687 was a header-inclusive line count, real total 489,686. 63 distinct integer stages in the release (Drop-seq 10 at 3-12 hpf, 10X 53 at 14-120 hpf, no overlap) vs the paper's 62 — one unit, UNRESOLVED. 522 clust in metadata vs 521 annotation rows: 'ceph' (3,191 cells) is unannotated, so annotation covers 99.348% of cells. 498 clust and 19 tissues are the 18-96 hpf subset, not alternative atlas figures. CANONICAL CONVERSION UNRESOLVED: no script exists on the instance, and the README's '26,251 mapped' does not reproduce — the on-box gene_id_map_zf.tsv (31,312 entries) intersects DanioCell at 27,247, and neither equals the 30,121 features actually in daniocell_canonical.h5ad. All 30,121 do fall inside the ZSCAPE 32,031 space, so the conversion targeted it, but the mapping is not recorded. Regenerate with a logged conversion before depending on its exact gene set. CITATION CORRECTED: the dataset README cited Nature Communications 10.1038/s41467-024-50053-5, which Crossref 404s — the DOI does not exist. Correct venue is Developmental Cell 58, 3028-3047.e12 (2023), 10.1016/j.devcel.2023.11.001, PMID 37995681."
+    "daniocell": "REFERENCE CONFIRMED from the Methods: GRCz11 / Ensembl release 99 with the Lawson Lab Zebrafish Transcriptome Annotation v4.3.2, 320 Ensembl-annotated pseudogenes removed, aligned with Cell Ranger 4.0.0 (STAR 2.5.1b), --expect-cells 6,000-21,250 per sample. New data is 10X Chromium 3' v3.1 + MULTI-seq; the 2018 Farrell Drop-seq cells were realigned against the same reference before merging. This is a DIFFERENT reference lineage from ZSCAPE/ChemFish — its 36,250 features do not correspond to their BBI-prepared 32,031. GENE UNIVERSE RECONSTRUCTED against the Lawson v4.3 we hold (v4.3.2 is UMass-only and bot-walled): v4.3 has 36,351 gene rows, 314 with an Ens99 pseudogene biotype (paper removes 320 in v4.3.2), leaving 36,031 vs the released 36,250 (+219). Cell Ranger feature-name de-duplication explains the shape: Lawson has 216 symbols occurring more than once over 458 rows, and exactly 242 DanioCell-only names are '<lawson symbol>.N' (e.g. 'HTRA2 (1 of many).10'); 32 more differ only by case. The residual 2,006 is the v4.3->v4.3.2 delta. QC VERIFIED CLEAN, unlike ChemFish: 0 cells with nGene<=200 (min exactly 201), 0 cells with percent.mt>=10 (max 9.999), no Doublet label present (only Bar1-Bar12 and Negative), 1 cell with nUMI_MS<20. The top-0.5%-features rule is not testable post-hoc. 59,013 cells lack MULTI-seq calls: 38,731 Drop-seq plus 20,282 non-hashed 10X. ACCOUNTING: 489,687 was a header-inclusive line count, real total 489,686. 63 distinct integer stages in the release (Drop-seq 10 at 3-12 hpf, 10X 53 at 14-120 hpf, no overlap) vs the paper's 62 — one unit, UNRESOLVED. 522 clust in metadata vs 521 annotation rows: 'ceph' (3,191 cells) is unannotated, so annotation covers 99.348% of cells. 498 clust and 19 tissues are the 18-96 hpf subset, not alternative atlas figures. CANONICAL CONVERSION UNRESOLVED: no script exists on the instance, and the README's '26,251 mapped' does not reproduce — the on-box gene_id_map_zf.tsv (31,312 entries) intersects DanioCell at 27,247, and neither equals the 30,121 features actually in daniocell_canonical.h5ad. All 30,121 do fall inside the ZSCAPE 32,031 space, so the conversion targeted it, but the mapping is not recorded. Regenerate with a logged conversion before depending on its exact gene set. CITATION CORRECTED: the dataset README cited Nature Communications 10.1038/s41467-024-50053-5, which Crossref 404s — the DOI does not exist. Correct venue is Developmental Cell 58, 3028-3047.e12 (2023), 10.1016/j.devcel.2023.11.001, PMID 37995681.",
+    "zcl2": "All facts from the authors' own release and the NAR paper: cells/genes from ZCDL.rdata (Seurat v4.0.2, 27,538 x 1,088,106); annotation tiers from ZCDL_cellinfo.csv (143 clusters / 41 cell_type / 10 cell_lineage, every cluster pure); genome/aligner/DGE quoted from the Methods (STAR, GRCz11, modified Drop-seq tools 1.12). Annotation release reads TBD because no paper, supplement or repo states a GTF or Ensembl release -- the namespace is 93.6% present in the Ensembl 99 symbol set, which dates it to *an* Ensembl release and no further. Accession names both GEO series because the paper cites only GSE198832, whose zebrafish subseries covers 21d+22m; 24hpf/72hpf/3m are GSE178150 under a different SuperSeries. Full record: ZCL2/sources/README.md."
   },
   "order": [
     "zscape_commit_gold",
@@ -36,6 +37,7 @@
     "chemfish",
     "daniocell",
     "zebrahub",
+    "zcl2",
     "megafin_parse",
     "megafin",
     "minifin"
@@ -1399,6 +1401,61 @@
         "raw": "Parse split-pipe v1.7.1",
         "downstream": "Parse Trailmaker · Seurat + Harmony"
       }
+    },
+    "zcl2": {
+      "name": "ZCL 2.0",
+      "perturbationClass": "OBSERVATIONAL",
+      "notRunnable": "Viable labelling target — the full 143-cluster hierarchy lives in the authors' companion ZCDL_cellinfo.csv, not in the Seurat object, which is why we previously recorded this dataset as unannotated. Caveats: Microwell-seq is shallow (median 872 UMI / 475 genes per cell) and the released atlas is pre-QC.",
+      "cells": "1,088,106",
+      "workingSlice": "1,082,680 annotated · 5,426 cells carry no published label",
+      "genes": "27,538",
+      "genome": "GRCz11",
+      "annotation": "Ensembl gene symbols · release TBD",
+      "method": "Microwell-seq",
+      "capture": "Whole-cell",
+      "schema": {
+        "tiers": [
+          {
+            "n": "143",
+            "col": "cluster"
+          },
+          {
+            "n": "41",
+            "col": "cell_type"
+          },
+          {
+            "n": "10",
+            "col": "cell_lineage"
+          }
+        ]
+      },
+      "timepoints": {
+        "unit": "hpf / day / month",
+        "values": [
+          "24hpf",
+          "72hpf",
+          "21d",
+          "3m",
+          "22m"
+        ]
+      },
+      "perturbations": {
+        "summary": "NONE · WILD-TYPE LIFE-SPAN ATLAS",
+        "items": []
+      },
+      "controls": {
+        "summary": "N/A",
+        "items": []
+      },
+      "pipeline": {
+        "raw": "STAR → modified Drop-seq tools 1.12",
+        "downstream": "Seurat v4.0.2",
+        "accession": "GSE198832 + GSE178150",
+        "accessionHref": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE198832",
+        "code": "ggjlab/cell_landscape",
+        "codeHref": "https://github.com/ggjlab/cell_landscape"
+      },
+      "summary": "Wild-type life-span atlas from 24 hpf to 22 months — the only zebrafish reference here reaching adult and aged animals. 143 annotated clusters across 10 lineages. Coverage is shallow and the released object is pre-QC, so treat its thresholds as unapplied."
     }
   }
 }

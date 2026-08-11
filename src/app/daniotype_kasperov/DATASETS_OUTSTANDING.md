@@ -1,4 +1,6 @@
-# Outstanding work — ZSCAPE · ChemFish · DanioCell · Zebrahub
+# Outstanding work — held datasets + acquisition targets
+
+Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub. ZCL 2.0 / ZCDL in progress.
 
 Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md`.
 Canonical path: `/data/datasets/raw_datasets/OUTSTANDING.md` (symlink to this file, so edits are versioned).
@@ -15,6 +17,28 @@ _Automated access is blocked; these need a browser._
 
 Upload to `/daniotype_kasperov` tagged with the dataset; `sweep_uploads.sh --go` files them.
 
+## Acquisition targets — zebrafish perturbation scRNA-seq class
+_Steven's defensible public list, 2026-08-11. **Not independently verified by us** — cell counts and
+years are as supplied; treat as acquisition scope, not as sourced facts, until each is checked
+against its own release the way ZSCAPE/ChemFish/Zebrahub/ZCL2 were._
+
+| Dataset | Year | Perturbation | Cells | Held? |
+|---|---|---|---|---|
+| Farrell / URD | 2018 | MZoep Nodal mutant | 38,731-cell WT atlas + 5,616 WT/MZoep assay cells | No |
+| Wagner | 2018 | CRISPR *chordin* vs *tyr* | >92,000 total; six CRISPR embryos | No |
+| **CellOracle** | 2023 | *noto, lhx1a, sebox, irx3a, flh* LOF | main replicated *lhx1a*/*tyr* 121,745; further cohorts | No |
+| Body-elongation perturbations | 2023 | FGF/BMP inhibition + Wnt suppression | ~120–140k across WT + 3 perturbations | No |
+| **ZSCAPE** | 2023 | 23 genetic perturbations | 3.2M total; ~2.0M perturbation arm | **Yes** |
+| **Cell-cycle arrest** | 2024 | HUA drugs + *emi1* mutant | 248,998 | No |
+| UPR-TF / MIMIR | 2025 | CRISPR + TF gain-of-function | ~60,000 across 12 conditions | No |
+| **ChemFish** | 2025 | 8 compounds / 7 pathways | 2,068,668; 508 embryos | **Yes** |
+| **MIC-Drop-seq** | 2026 | 50-TF CRISPR screen | 226,492 in flagship screen | No — **top priority** |
+| Cranial-neural-crest Perturb-seq | 2026 (public GEO) | F0 TF crispants | 15-library Direct-Capture Perturb-seq; no consolidated count reported | No |
+
+**Standouts:** ZSCAPE · ChemFish · MIC-Drop · CellOracle · cell-cycle arrest.
+**MIC-Drop-seq is the most important missing acquisition.** Held datasets are bold+Yes; the other
+eight are unacquired, so each needs accession discovery, download, and a `sources/` provenance pass.
+
 ## Technical debt
 _Ours to finish._
 
@@ -23,7 +47,9 @@ _Ours to finish._
 | DanioCell | Regenerate `daniocell_canonical*.h5ad` with a logged script | **Our labelling consumes it**; no script exists and the recorded "26,251 mapped" doesn't reproduce (on-box map gives 27,247; object has 30,121) | **Not started — highest priority** |
 | DanioCell | Audit publication-era `cluster_annotations.csv` vs the live portal | Labels may have drifted since 2023; we score against them | Not started |
 | Zebrahub | Rerun `visualization/` against `zebrahub_combined_v2.h5ad` | Existing outputs used the defective object — it duplicated 14 hpf as 15 hpf and omitted 3 dpf entirely | **Required** |
-| all four | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo — provenance records exist on this box only | Not started |
+| all five | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo — provenance records exist on this box only | Not started |
+| ZCL2 | Retire `zcl2.h5ad` in favour of `zcl2_canonical.h5ad` | The old object is 40/199 libraries, 2 of 5 stages, empty `var`, no labels | Superseded; **no consumers found**, so retiring is safe whenever we want the 2.8 GB back |
+| ZCL2 | Decide whether ZCL 2.0 becomes a labelling target | It now has a full 143-cluster GT hierarchy and is the only atlas here covering adult + aged fish; but Microwell-seq is shallow (median 872 UMI) and cross-platform | **Product decision — not started** |
 
 ## Unresolved provenance
 _Small, documented, mostly not closable by us._
@@ -39,3 +65,8 @@ _Small, documented, mostly not closable by us._
 | Zebrahub | Exact custom reference recipe | Name is known (`Danio.rerio_genome_Zebrabow_6`); assembly, Ensembl release, FASTA, GTF, Cell Ranger version and mkref are not | Open |
 | Zebrahub | Historical QC-regime discrepancy | 2/5/10 dpf match the notebook's `total_counts` window; 10 hpf–24 hpf do not (~17k–100k) | Open |
 | ZSCAPE | No run manifest naming the GTF | Reference is reconstructed to exact agreement; manifest is simply not public | Closed as far as possible |
+| ZCL2 | GTF / Ensembl release, STAR version, UMI length, RNA-contamination method | Paper, Supplementary Methods (wet-lab only) and repo (downstream only) are all silent; namespace is 93.6% Ensembl-99 symbols, which dates it no further | Open — likely not closable |
+| ZCL2 | Table S1 vs `ZCDL_cellinfo.csv` disagree on **30/143** cluster cell types, 8/143 lineages | Two published annotations of the same clusters; C8/C11 are swapped. We use cellinfo — any score must declare which | Open |
+| ZCL2 | Paper says top **10,000** cells/library; every GEO DGE holds exactly **20,000** | Affects what "the deposit" means; the cap is the authors', not ours | Open |
+| ZCL2 | Table S1 adult average UMI/gene not reproduced (3 of 5 stages match to the decimal) | 3 m and 22 m only; the GEO-deposit explanation is refuted | Open |
+| ZCL2 | Old `zcl2.h5ad` recovers only ~40% of canonical 22-month cells (~96–100% for 3 m) | Stage-split, so not a simple depth cap | Open — moot once retired |
