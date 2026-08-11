@@ -1,0 +1,206 @@
+{
+  "_note": "EXPANDED technical profiles, rendered as a second card directly beneath the concise spec card for the same dataset. Deliberately a separate file from dataset_cards.json so the existing cards' data and layout are untouched. Concise card = fast orientation; this = a one-page technical reference. Confidence tags are used sparingly and only where provenance actually matters: CONFIRMED / STRONGLY INFERRED / RECONSTRUCTED / UNRESOLVED. Full evidence lives in /data/datasets/raw_datasets/<DATASET>/sources/README.md.",
+
+  "order": ["zscape", "chemfish"],
+
+  "profiles": {
+    "zscape": {
+      "name": "ZSCAPE",
+      "kicker": "Zebrafish Single-Cell Atlas of Perturbed Embryos",
+      "lede": "Whole-embryo reverse genetics at single-cell resolution. Embryos are resolved individually, so cell-type abundance variance can be estimated first and perturbation effects measured against that baseline rather than against an assumed constant.",
+      "paper": {
+        "citation": "Saunders, Srivatsan, Duran, Dorrity, Ewing, Linbo, Shendure, Raible, Moens, Kimelman & Trapnell",
+        "venue": "Nature 623 · 23 Nov 2023",
+        "title": "Embryo-scale reverse genetics at single-cell resolution",
+        "href": "https://www.nature.com/articles/s41586-023-06720-2"
+      },
+      "headline": [
+        { "n": "3.2 M", "cap": "cells" },
+        { "n": "1,812", "cap": "embryos, individually resolved" },
+        { "n": "23", "cap": "perturbations" },
+        { "n": "32,031", "cap": "genes" }
+      ],
+      "sections": [
+        {
+          "title": "Experimental design",
+          "rows": [
+            { "k": "Scale", "v": "1,812 individually resolved embryos, ≥8 per condition. Perturbation arm alone: 804 barcoded embryos over 98 conditions, 2.7 M cells in a single run." },
+            { "k": "Stages", "v": "18 → 96 hpf, reared at 28 °C. Four experiments: three wild-type time series plus the perturbation experiment." },
+            { "k": "Timepoints", "v": "Paper states 19; released metadata resolves 18 numeric values plus one blank level.", "tag": "UNRESOLVED" },
+            { "k": "Sampling", "v": "≈10% of cells per embryo; embryo-of-origin recovered for ≈70% of QC-passing cells via hashing." },
+            { "k": "Reference arm", "v": "1.24 M cells — wild-type time series plus ~600,000 control-injected cells, which showed no batch effect and were merged in." }
+          ],
+          "groups": [
+            { "label": "Single-gene F0 crispant (18)", "items": ["cdx4","egr2b","epha4a","foxd3","foxi1","hand2","hgfa","hoxb1a","mafba","met","noto","phox2a","smo","tbx1","tbx16","tbxta","tfap2a","zc4h2"] },
+            { "label": "Double-gene crispant (5)", "items": ["cdx4-cdx1a","tbx16-msgn1","tbx16-tbx16l","tfap2a-foxd3","wnt3a-wnt8"] },
+            { "label": "Stable null mutant line (5)", "items": ["hgfa-mut","mafba-mut","met-mut","noto-mut","tbx16-mut"] },
+            { "label": "Controls (6)", "items": ["ctrl-uninj","ctrl-inj","ctrl-hgfa","ctrl-noto","ctrl-met","ctrl-mafba"], "muted": true }
+          ],
+          "note": "28 released labels resolve to 23 distinct perturbations: the five null lines target five genes already perturbed as crispants. Confirmed by the authors' supplementary table, which pairs each as “gene” / “gene null”."
+        },
+        {
+          "title": "Assay",
+          "rows": [
+            { "k": "Chemistry", "v": "sci-RNA-seq3 — combinatorial indexing on PFA-fixed nuclei (single-nucleus capture)." },
+            { "k": "Multiplexing", "v": "sci-Plex oligo hashing, one barcode per embryo." },
+            { "k": "Sequencing", "v": "Illumina NextSeq 500 / NextSeq 2000 / NovaSeq 6000." }
+          ]
+        },
+        {
+          "title": "Reference & counting",
+          "shared": "The prepared feature universe below is shared byte-for-byte with ChemFish.",
+          "rows": [
+            { "k": "Assembly", "v": "GRCz11", "tag": "CONFIRMED" },
+            { "k": "Base annotation", "v": "Ensembl release 99" },
+            { "k": "FASTA", "v": "Danio_rerio.GRCz11.dna.toplevel.fa.gz", "mono": true },
+            { "k": "GTF", "v": "Danio_rerio.GRCz11.99.gtf.gz", "mono": true },
+            { "k": "Reference prep", "v": "BBI genome-preparation pipeline" },
+            { "k": "3′ extension", "v": "up to 500 bp, strand-aware — retracted or clipped where it would overlap another same-strand gene" },
+            { "k": "Gene filtering", "v": "excludes pseudogenes, IG/TR features and TEC genes" },
+            { "k": "Feature universe", "v": "32,031 ENSDARG genes" },
+            { "k": "Read processing", "v": "bbi-dmux → bbi-sci", "mono": true, "tag": "CONFIRMED" },
+            { "k": "Downstream", "v": "Monocle3 v1.3.1 — 100 PCs whole-embryo / 50 for subsets, cluster_cells(resolution = 1e-4)" }
+          ],
+          "note": "The reference transformation is reconstructed to exact agreement between the public BBI code and the released coordinates — 3′ deltas of exactly ±500 bp, 5′ ends untouched, and an exact 32,031-gene set match. No ZSCAPE-specific run manifest naming the GTF has been recovered.",
+          "noteTags": ["RECONSTRUCTED", "UNRESOLVED"]
+        },
+        {
+          "title": "Quality control",
+          "rows": [
+            { "k": "UMI floor", "v": "100–250, set per experiment" },
+            { "k": "Outliers", "v": "cells > 4 SD from the mean UMI removed" },
+            { "k": "Mitochondrial", "v": "cells > 25% mitochondrial reads removed" },
+            { "k": "Hash enrichment", "v": "> 3 for time series R1/R2; > 5 for the perturbation experiment and R3" },
+            { "k": "Multiplets", "v": "residual multiplet clusters manually inspected and removed" }
+          ]
+        },
+        {
+          "title": "Cell annotation",
+          "rows": [
+            { "k": "Method", "v": "Hierarchical annotation with subclustering; perturbed cells annotated by projection onto the reference atlas and label transfer." },
+            { "k": "Hierarchy", "v": "7 germ_layer → 34 tissue → 99 cell_type_broad → 156 cell_type_sub, plus an orthogonal major_group of 4" },
+            { "k": "Marker evidence", "v": "Supplementary carries a free-text evidence column for 120 of 151 annotation rows, plus quantitative top markers for 151 cell_type_sub" }
+          ]
+        },
+        {
+          "title": "Released data & accessions",
+          "rows": [
+            { "k": "GEO", "v": "GSE202639", "href": "https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE202639" },
+            { "k": "SRA / BioProject", "v": "SRP374541 · PRJNA836866" },
+            { "k": "Code", "v": "cole-trapnell-lab/sdg-zfish", "href": "https://github.com/cole-trapnell-lab/sdg-zfish", "mono": true },
+            { "k": "Reference matrix", "v": "32,031 × 1,241,018 · 523 M non-zeros · 954,711,330 UMIs · median 454 UMI/cell" },
+            { "k": "Held locally", "v": "Paper, reference cell metadata (1.24 M × 25), reference raw counts, both gene metadata files, and the 8-sheet supplementary workbook" },
+            { "k": "Supplementary", "v": "Experiment metrics · cell-type annotation evidence · target notes with PMIDs · 76 gRNA sequences · rhAmpSeq genotyping primers · per-perturbation counts · top marker genes" }
+          ]
+        },
+        {
+          "title": "Provenance & caveats",
+          "bullets": [
+            "The Lawson Lab annotation was tested directly and ruled out — 4.54% coordinate agreement, bidirectional deltas, and 3,629 ZSCAPE gene IDs absent from it entirely. It is a closed negative result, not an open alternative.",
+            "951 genes carry zero counts across all 1.24 M reference cells and were retained, confirming the 32,031-gene set is the reference itself rather than an expression filter.",
+            "The gene space contains no pseudogenes and no IG/TR segments — absence of such a gene is a property of the reference, not biological evidence.",
+            "num_cells_expressed in the gene metadata runs systematically higher than the matrix supports (median ratio 1.0076, never lower). Recompute from the matrix if the number matters.",
+            "The paper's only GRCz11/Ensembl sentence concerns harmonising other atlases for a cross-atlas comparison — it is not evidence about the counting reference."
+          ]
+        }
+      ],
+      "footer": "Full evidence, scripts and checksums: /data/datasets/raw_datasets/ZSCAPE/sources/README.md"
+    },
+
+    "chemfish": {
+      "name": "ChemFish",
+      "kicker": "Embryo-scale single-cell chemical transcriptomics",
+      "lede": "Chemical inhibition of the seven major developmental signalling pathways across whole zebrafish embryos, with cells annotated by projection into the ZSCAPE developmental reference.",
+      "paper": {
+        "citation": "Barkan, Duran, Lammers, Tresenrider, Jackson, Lee, Haagen, Saunders, Abitua … Trapnell",
+        "venue": "bioRxiv preprint · 3 Apr 2025",
+        "title": "Embryo-scale single-cell chemical transcriptomics reveals dependencies between cell types and signaling pathways",
+        "href": "https://doi.org/10.1101/2025.04.03.646423"
+      },
+      "headline": [
+        { "n": "2,068,668", "cap": "cells" },
+        { "n": "508", "cap": "embryos" },
+        { "n": "8+3", "cap": "compounds + controls" },
+        { "n": "32,031", "cap": "genes" }
+      ],
+      "sections": [
+        {
+          "title": "Experimental design",
+          "rows": [
+            { "k": "CHEM10 — round 1", "v": "708,764 cells · 258 embryos · WIK/AB · collected 36, 48, 72 hpf · drug added 6, 13 hpf · 11 perturbations" },
+            { "k": "CHEM11 — round 2", "v": "1,359,904 cells · 250 embryos · AB · collected 48 hpf only · drug added 6, 13, 24, 36, 42 hpf · 9 perturbations" },
+            { "k": "Round mapping", "v": "Confirmed by design, not numbering: the paper's second round adds drug additions during organogenesis (13, 24, 36, 42 hpf), and CHEM11 is the only experiment containing 24/36/42.", "tag": "CONFIRMED" },
+            { "k": "Collection", "v": "36 hpf — 139,655 cells / 86 embryos · 48 hpf — 1,579,675 / 336 · 72 hpf — 349,338 / 86" },
+            { "k": "Control pairing", "v": "compare_against is populated for only 419,976 cells (DMSO 373,949, EtOH 46,027); the remaining 1.65 M are NA." }
+          ],
+          "groups": [
+            { "label": "Compounds — one concentration each (8)", "items": ["Cyclopamine 100 µM","DEAB 10 µM","DMH1 40 µM","LY411575 10 µM","SB505124 50 µM","SU5402 20 µM","WntC59 20 µM","A8301 50 µM"] },
+            { "label": "Pathways targeted (7)", "items": ["Hedgehog","Retinoic acid","BMP","Notch","TGF-β","FGF","Wnt"] },
+            { "label": "Controls (3)", "items": ["DMSO · 0 and 33.8 µM","EtOH · 0 µM and 1%","no vehicle"], "muted": true }
+          ]
+        },
+        {
+          "title": "Assay",
+          "rows": [
+            { "k": "Chemistry", "v": "sci-RNA-seq3 on PFA-fixed nuclei, with sci-Plex oligo hashing per embryo." },
+            { "k": "Fixation", "v": "Round 1 used DSP; round 2 used BS3 — matching the fix_protocol 2 → 3 change in the released metadata." },
+            { "k": "Dissociation", "v": "Per Saunders et al. 2023 (ZSCAPE)." }
+          ]
+        },
+        {
+          "title": "Reference & counting",
+          "shared": "Identical to ZSCAPE — same prepared 32,031-gene feature universe, same coordinates, same ordering.",
+          "rows": [
+            { "k": "Assembly", "v": "GRCz11", "tag": "CONFIRMED" },
+            { "k": "Feature universe", "v": "32,031 ENSDARG genes — 100.0000% identical to ZSCAPE across gene ID, ordering, symbol, chromosome, start, end and strand (0 mismatches in any field)", "tag": "CONFIRMED" },
+            { "k": "3′ extension", "v": "up to 500 bp, strand-aware, same-strand collision clipping — inherited with the coordinates" },
+            { "k": "FASTA", "v": "Danio_rerio.GRCz11.dna.toplevel.fa.gz", "mono": true, "tag": "STRONGLY INFERRED" },
+            { "k": "GTF", "v": "Danio_rerio.GRCz11.99.gtf.gz", "mono": true, "tag": "STRONGLY INFERRED" },
+            { "k": "Read processing", "v": "bbi-dmux → bbi-sci; read processing and cell filtering stated to follow Saunders et al. 2023", "mono": true, "tag": "CONFIRMED" },
+            { "k": "Downstream", "v": "Monocle3 develop branch v1.3.1 — align_cds(~log10(n.umi)), 3-component reduction, cluster_cells with k scaled by cell number" }
+          ],
+          "note": "The literal FASTA and GTF filenames are inferred through that inheritance rather than read from the object: ChemFish embeds no reference strings at all — no GRCz11, Ensembl, Danio_rerio, .gtf or bbi-sci anywhere in the released CDS."
+        },
+        {
+          "title": "Quality control",
+          "rows": [
+            { "k": "Published thresholds", "v": "≥ 80 UMI in round 1 and ≥ 100 in round 2; hash enrichment ratio ≥ 2.5; total corrected hash UMI > 5" },
+            { "k": "CHEM10 as released", "v": "Matches every threshold exactly — minimum ratio is precisely 2.500, minimum hash UMI 6, no cell below 101 UMI" },
+            { "k": "CHEM11 as released", "v": "65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor", "tag": "UNRESOLVED" },
+            { "k": "Round-1 UMI floor", "v": "No released cell in either experiment falls below 100 UMI, so the 80-UMI round-1 cells the paper implies were called are not present — most likely an additional filter applied before release", "tag": "UNRESOLVED" }
+          ]
+        },
+        {
+          "title": "Cell annotation",
+          "rows": [
+            { "k": "Method", "v": "Labels transferred by projection, not called de novo: cells projected into the 1.2 M-cell ZSCAPE developmental reference (18–96 hpf), first globally then within sub-spaces, by majority vote of k = 10 approximate nearest neighbours (annoy)." },
+            { "k": "Projection groups", "v": "30 realized — matches the paper's 30 tissue-level labels" },
+            { "k": "Cell types", "v": "348 realized against a stated 319-label reference vocabulary — 29 more than the vocabulary should permit", "tag": "UNRESOLVED" },
+            { "k": "Other levels", "v": "39 tissue · 18 partition_col" }
+          ]
+        },
+        {
+          "title": "Released data & accessions",
+          "rows": [
+            { "k": "Raw sequencing", "v": "Not found — the paper states the accession \"will be available soon\". GEO, SRA and BioProject searched by title, author, ChemFish and CHEM10/CHEM11: no hits.", "tag": "UNRESOLVED" },
+            { "k": "Processed data", "v": "Trapnell Lab S3, CC-BY-NC", "href": "https://cole-trapnell-lab.github.io/chemfish/" },
+            { "k": "Matrix", "v": "BPCells, column-major · 32,031 × 2,068,668 · 1,087,795,475 non-zeros (98.36% sparse) · 2,316,871,517 UMIs · mean 1,120 UMI/cell" },
+            { "k": "Held locally", "v": "All six released artifacts, checksummed — chemfish_cds.tar (21 GB), pectoral fin atlas, DEGs, DvEGs and abundance changes — plus the paper" },
+            { "k": "Supplementary", "v": "Supplemental Table 1 (differential abundance by perturbation and timepoint) and Table 2 (pectoral fin DEGs) are the released RDS artifacts already held" }
+          ]
+        },
+        {
+          "title": "Provenance & caveats",
+          "bullets": [
+            "The shared reference with ZSCAPE is the strongest cross-dataset fact we have: the two feature universes are identical gene-for-gene and position-for-position, so counts are directly comparable without gene-ID mapping.",
+            "Two QC discrepancies between the paper and the released object remain open — CHEM11's missing hash filtering and the absent round-1 80-UMI cells. Do not infer the missing cells from the filtered object; the pre-QC data is not available.",
+            "The published and reference columns are False for all 2,068,668 cells; meaning unclear.",
+            "The pectoral-fin subset carries genetic perturbations (hgfa-negsib, met-negsib, noto-negsib, mafba-negsib) on the same four genes as ZSCAPE's stable null lines — a direct experimental link between the two datasets.",
+            "BPCells files carry an 8-byte type header; reading from offset 0 silently corrupts every value. The CDS also needs monocle3 for S4 dispatch — without it, reach in via attr() only."
+          ]
+        }
+      ],
+      "footer": "Full evidence, scripts and checksums: /data/datasets/raw_datasets/ChemFish/sources/README.md"
+    }
+  }
+}

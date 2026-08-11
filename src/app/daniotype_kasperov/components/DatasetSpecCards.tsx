@@ -13,6 +13,7 @@ import React from "react";
 import { PAPER, INK, ACCENT } from "../theme";
 import DATASET_FACTS from "../dataset_facts.json";
 import DATASET_CARDS from "../dataset_cards.json";
+import DatasetProfileCard, { hasProfile } from "./DatasetProfileCard";
 
 const FACTS: Record<string, any> = DATASET_FACTS as any;
 const CARDS: Record<string, any> = (DATASET_CARDS as any).cards;
@@ -525,9 +526,16 @@ export default function DatasetSpecCards() {
           <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 600, color: FAINT, letterSpacing: 0.6 }}>TBD</span>{" "}
           rather than a guess.
         </p>
-        {/* one card per row — each is its own object, not a cell in a grid */}
+        {/* One card per row. Where an expanded technical profile exists, it follows immediately
+            after that dataset's concise card — fast orientation first, then the deep reference.
+            The concise cards themselves are untouched. */}
         <div style={{ display: "flex", flexDirection: "column", gap: 20 }}>
-          {ids.map((id) => <DatasetSpecCard key={id} id={id} />)}
+          {ids.map((id) => (
+            <React.Fragment key={id}>
+              <DatasetSpecCard id={id} />
+              {hasProfile(id) && <DatasetProfileCard id={id} />}
+            </React.Fragment>
+          ))}
         </div>
       </div>
     </section>
