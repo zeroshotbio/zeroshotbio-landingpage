@@ -1,6 +1,6 @@
 # Outstanding work — held datasets + acquisition targets
 
-Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub. ZCL 2.0 / ZCDL in progress.
+Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub · ZCL 2.0 · MIC-Drop-seq · CellOracle.
 
 Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md` — now version-controlled
 at `provenance/<DATASET>_SOURCES.md`, all five sharing a common 9-section structure and an identical
@@ -28,7 +28,7 @@ against its own release the way ZSCAPE/ChemFish/Zebrahub/ZCL2 were._
 |---|---|---|---|---|
 | Farrell / URD | 2018 | MZoep Nodal mutant | 38,731-cell WT atlas + 5,616 WT/MZoep assay cells | No |
 | Wagner | 2018 | CRISPR *chordin* vs *tyr* | >92,000 total; six CRISPR embryos | No |
-| **CellOracle** | 2023 | *noto, lhx1a, sebox, irx3a, flh* LOF | main replicated *lhx1a*/*tyr* 121,745; further cohorts | No |
+| **CellOracle** | 2023 | *noto, lhx1a, sebox, irx3a, flh* LOF | **394,459 over 30 samples** (our count; the supplied 121,745 was not reproduced) | **Yes — acquired & provenanced 2026-08-11** |
 | Body-elongation perturbations | 2023 | FGF/BMP inhibition + Wnt suppression | ~120–140k across WT + 3 perturbations | No |
 | **ZSCAPE** | 2023 | 23 genetic perturbations | 3.2M total; ~2.0M perturbation arm | **Yes** |
 | **Cell-cycle arrest** | 2024 | HUA drugs + *emi1* mutant | 248,998 | No |
@@ -38,6 +38,7 @@ against its own release the way ZSCAPE/ChemFish/Zebrahub/ZCL2 were._
 | Cranial-neural-crest Perturb-seq | 2026 (public GEO) | F0 TF crispants | 15-library Direct-Capture Perturb-seq; no consolidated count reported | No |
 
 **Standouts:** ZSCAPE · ChemFish · MIC-Drop · CellOracle · cell-cycle arrest.
+**Six of ten now held.** Remaining: Farrell/URD, Wagner, body-elongation, UPR-TF/MIMIR, cell-cycle arrest, cranial-NC Perturb-seq.
 **MIC-Drop-seq is the most important missing acquisition.** Held datasets are bold+Yes; the other
 eight are unacquired, so each needs accession discovery, download, and a `sources/` provenance pass.
 
@@ -73,6 +74,11 @@ _Small, documented, mostly not closable by us._
 | MIC-Drop | Paper + GEO claim a Lawson v4.3.2 reference; the feature universe is **exactly** the Ensembl GRCz11 gene set | 32,520/32,520 identical to Ensembl; 0 of Lawson's 36,351 LL ids present | **Closed as a confirmed mismatch** |
 | MIC-Drop | Cell Ranger version | GEO says v7 on all 36 samples; the paper names no version and "v5.0.0" appears in no released artifact | Open — check the bioRxiv preprint |
 | MIC-Drop | Paper's 135,881 genotyped cells not reproducible | Released data and the paper's own Supplementary Data 4 both give ~138.8k | Open — likely scDblFinder, but no doublet flag was distributed |
+| CellOracle | **No cell-type annotations exist in the deposit** | GEO ships Cell Ranger matrices only — no labels, embeddings or Seurat object. Paper labels were transferred from Farrell et al. then WT→perturbed | Open — needs re-derivation or an author request |
+| CellOracle | GRNs, TF–target edges, simulation vectors and vector fields not distributed | The paper's central output; only celloracle.org interactive exploration is offered | Open |
+| CellOracle | QC thresholds unstated; ambient-cluster removal is manual | Deposit has an undocumented hard 500-UMI floor and no mito filter; paper's flh n=57,175 vs deposited 72,870 (~21.5% removed) | Open — not reproducible |
+| CellOracle | Ensembl release not datable | Releases 99/102/114 identical under the reconstructed protein-coding + primary-assembly rule | Open — likely not closable |
+| CellOracle | Preprint critique of the method exists | Nourisa, Passemiers & Tomforde, bioRxiv 10.1101/2024.10.16.618746 — concerns the inferred networks, not the observed data | Recorded, not evaluated |
 | MIC-Drop | Deposited pilot feature reference covers 4 of 8 target sets | **Closed** — the Zenodo bundle's `feature_reference.csv` has all 32 guides | Closed |
 | MIC-Drop | No editing validation for the 50 flagship targets | amplican and rhAmpSeq are pilot-only. The pilot's "Non-Targeting" control edits at 9.79% — it is a tyr crispant, not an unedited control | Open — authors' data simply doesn't cover it |
 | MIC-Drop | Per-replicate pseudobulk DE not distributed | The released DE grid is collapsed across the 4 biological replicates | Open |

@@ -6,7 +6,8 @@
     "daniocell",
     "zebrahub",
     "zcl2",
-    "micdrop"
+    "micdrop",
+    "celloracle"
   ],
   "profiles": {
     "zscape": {
@@ -1350,6 +1351,248 @@
             {
               "k": "Validation is pilot-only",
               "v": "Neither amplican nor rhAmpSeq covers the 50 flagship targets — no editing efficiency is published for them",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        }
+      ]
+    },
+    "celloracle": {
+      "name": "CellOracle (zebrafish)",
+      "kicker": "Observed perturbations behind in silico knockouts",
+      "lede": "Crispants and flh mutants at 10 hpf against a 6/8/10 hpf wild-type reference. Its value is the pairing of real perturbation scRNA-seq with inferred regulatory networks — but the deposit ships matrices only, and the network outputs live elsewhere.",
+      "paper": {
+        "citation": "Kamimoto et al. — Morris lab",
+        "venue": "Nature 614 · 2023",
+        "title": "Dissecting cell identity via network inference and in silico gene perturbation",
+        "href": "https://doi.org/10.1038/s41586-022-05688-9"
+      },
+      "headline": [
+        {
+          "n": "394,459",
+          "cap": "cells"
+        },
+        {
+          "n": "30",
+          "cap": "zebrafish samples"
+        },
+        {
+          "n": "6",
+          "cap": "perturbed genotypes"
+        },
+        {
+          "n": "25,107",
+          "cap": "features"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Design — reconstructed from GEO",
+          "note": "All perturbations sit at 10 hpf; the 6/8/10 hpf wild-type series is the reference used for GRN inference and label transfer, not a perturbation arm.",
+          "rows": [
+            {
+              "k": "31 samples, one is mouse",
+              "v": "GSM4314394 (perturbseq_ieps) is Mus musculus — the iEP Perturb-seq arm. The zebrafish experiment is 30 samples. Headline counts treating the series as 31 zebrafish samples are wrong.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "F0 crispants",
+              "v": "Cas9/gRNA RNP injected at 0 hpf — noto (27,554 cells), lhx1a (58,119), sebox (44,119), irx3a (44,090), tyr (105,090)",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Stable mutant line",
+              "v": "floating head (flh): n1/n1 mutants (35,716) with +/+ and +/n1 siblings (37,154), selected on morphology at 10 hpf — a genuinely different genetic strategy from the crispants",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Wild-type reference",
+              "v": "42,617 cells across 6 hpf (2 samples), 8 hpf (2) and 10 hpf (2)",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "TF selection",
+              "v": "lhx1a, sebox and irx3a were chosen from a larger list; creb3l1 dropped for sgRNA specificity against creb3l2, zic2a dropped for expression in other sub-branches",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Reference — reconstructed exactly",
+          "shared": "Neither the paper nor GEO names a GTF. The rule was recovered from the deposited features and matches in set AND in GTF order, which Cell Ranger preserves.",
+          "rows": [
+            {
+              "k": "The rule",
+              "v": "Ensembl GRCz11, gene_biotype == protein_coding, primary assembly only (chr 1–25 + MT), unplaced scaffolds dropped → exactly 25,107",
+              "mono": true,
+              "tag": "RECONSTRUCTED"
+            },
+            {
+              "k": "Evidence",
+              "v": "0 CellOracle ids fall outside Ensembl GRCz11; all 25,107 are protein_coding; of the 325 protein_coding genes absent, ALL sit on KN*/KZ* scaffolds and NONE on primary chromosomes; 13 mitochondrial genes retained",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Not the 10x allowlist",
+              "v": "10x's standard mkgtf filter yields 25,606 by keeping lncRNA and IG/TR. CellOracle keeps neither.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Not Lawson",
+              "v": "0 of Lawson v4.3's 36,351 LL gene ids appear",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Ensembl release",
+              "v": "Releases 99, 102 and 114 are identical under this rule, so the set cannot date it. Cell Ranger v5.0.1 puts the build around 2020–2021.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Smallest universe in the corpus",
+              "v": "A strict subset of MIC-Drop (32,520), ZSCAPE/ChemFish (32,031) and Zebrahub (32,057) — 100% contained in each. Absence of a lncRNA, pseudogene or scaffold gene here is a reference property, not biology.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Cell Ranger and QC",
+          "shared": "Unlike MIC-Drop-seq, the version agrees: v5.0.1 in both the paper Methods and GEO.",
+          "rows": [
+            {
+              "k": "Pipeline",
+              "v": "Cell Ranger v5.0.1 default, filtered output; Seurat v4.0.1; NormalizeData, 2,000 variable features, anchor-based integration, t-SNE on 30 PCs",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Published thresholds",
+              "v": "The paper says only that cells were filtered by RNA count and mitochondrial percentage. NO numeric thresholds are given anywhere.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "What the deposit actually has",
+              "v": "A hard 500-UMI floor with zero cells below it — undocumented, and not something Cell Ranger's filtered output imposes. No mitochondrial filter: pct_mt reaches 52% and 1,475 cells (0.4%) exceed 10%.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Ambient removal is manual",
+              "v": "Clusters with an 'abnormal RNA count distribution' were removed by inspection — not reproducible",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Corroboration",
+              "v": "The paper reports 57,175 cells for the flh comparison; the deposited flh mutant + sibling samples total 72,870. The published figure is 78% of the deposit, so ~21.5% was removed by steps that are not numerically specified.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Doublets",
+              "v": "No doublet method is mentioned anywhere in the paper",
+              "tag": "CONFIRMED absence"
+            }
+          ]
+        },
+        {
+          "title": "Annotation — none deposited",
+          "shared": "GSE145298 contains barcodes, features and matrices. No cell-type labels, no embeddings, no Seurat object, no per-cell metadata of any kind. This is the dominant limitation of the dataset as we hold it.",
+          "rows": [
+            {
+              "k": "How the paper's labels were made",
+              "v": "Transferred from Farrell et al. 2018 via Seurat FindTransferAnchors/TransferData, manually adjusted for collection timing, then propagated from the WT reference to the perturbed samples",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Two hops, not one",
+              "v": "Farrell → WT reference → perturbed. The labels are not independent evidence about Farrell et al., and error propagates across both transfers.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Ontology ids",
+              "v": "none",
+              "tag": "CONFIRMED absence"
+            }
+          ]
+        },
+        {
+          "title": "Controls — three tiers, and tyr is not neutral",
+          "shared": "obs['control_class'] encodes this: uninjected_wild_type, uninjected_mutant_sibling, injection_control_crispant, not_a_control.",
+          "rows": [
+            {
+              "k": "tyr is a crispant",
+              "v": "Cas9 cuts the tyr locus in these embryos — real double-strand breaks, real indels. The paper uses tyr as the comparison baseline throughout (the NMF table compares lhx1a_gRNA_average against tyr_gRNA_average). Anything needing a genuinely unedited baseline must use wt_* or flh_control_*.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Same trap as MIC-Drop",
+              "v": "There, the tyr control guides were labelled 'Non-Targeting' and shown by amplicon sequencing to edit at 9.79%. Two independent datasets, one recurring hazard.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "The real neutral controls",
+              "v": "wt_s1..s6 (uninjected wild type) and flh_control_1,2 (uninjected +/+ and +/n1 siblings)",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Perturbation and network outputs",
+          "rows": [
+            {
+              "k": "In silico TF KO screen",
+              "v": "Negative perturbation-score sum for 325 TFs, ranked — top hits foxc1b, fosab, zeb1b, foxd2, mef2d",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Predicted vs literature",
+              "v": "31 TFs annotated Direct (11), Hox gene family (10), Indirect (6), Unknown (4), with PubMed ids — the paper's own predicted-versus-known validation",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Cell-type abundance effects",
+              "v": "45 rows for noto/lhx1a with p, Bonferroni-adjusted p, and control vs LOF proportions",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "NMF modules",
+              "v": "40 modules with lhx1a vs tyr averages, delta, adjusted p, cell-type annotation and GO terms — 24 of 40 significant — plus top-30 genes and weights per module",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Guides and primers",
+              "v": "25 sgRNA sequences, 18 genotyping primers, 4 RT-qPCR primers",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "What is missing",
+              "v": "The fitted GRNs, TF–target edge tables, simulation vectors and differentiation vector fields are NOT distributed. The paper points to celloracle.org for interactive exploration; no downloadable network object exists in GEO or with the paper.",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Our canonical object",
+          "rows": [
+            {
+              "k": "celloracle_zebrafish_canonical.h5ad",
+              "v": "394,459 × 25,107, raw integer counts from the Cell Ranger filtered matrices, ENSDARG in var, full design metadata in obs (sample, genotype, perturbation_class, control_class, replicate, stage, strain), uns['provenance'] recording the reconstructed reference rule and the QC caveats",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "No labels invented",
+              "v": "The object carries no cell types, because none are deposited. Nothing was fabricated to fill the gap.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Feature files verified",
+              "v": "Byte-identical and in identical order across all 30 zebrafish samples — asserted during the build",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Independent critique",
+          "rows": [
+            {
+              "k": "A preprint disputes the method",
+              "v": "'Critical issues found in Dissecting cell identity via network inference and in silico gene perturbation' — Nourisa, Passemiers & Tomforde, bioRxiv 10.1101/2024.10.16.618746 (2024-10-17). Recorded, not endorsed; we have not evaluated it. It concerns the inferred networks, not the observed scRNA-seq data we hold.",
               "tag": "UNRESOLVED"
             }
           ]
