@@ -1,6 +1,6 @@
 # Outstanding work — held datasets + acquisition targets
 
-Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub · ZCL 2.0 · MIC-Drop-seq · CellOracle.
+Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub · ZCL 2.0 · MIC-Drop-seq · CellOracle · **Tahoe-100M** (human).
 
 Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md` — now version-controlled
 at `provenance/<DATASET>_SOURCES.md`, all five sharing a common 9-section structure and an identical
@@ -41,6 +41,18 @@ against its own release the way ZSCAPE/ChemFish/Zebrahub/ZCL2 were._
 **Six of ten now held.** Remaining: Farrell/URD, Wagner, body-elongation, UPR-TF/MIMIR, cell-cycle arrest, cranial-NC Perturb-seq.
 **MIC-Drop-seq is the most important missing acquisition.** Held datasets are bold+Yes; the other
 eight are unacquired, so each needs accession discovery, download, and a `sources/` provenance pass.
+
+## Tahoe-100M (human) — in progress
+_Not part of the zebrafish acquisition list; provenanced 2026-08-11._
+
+| Task | Why it matters | Status |
+|---|---|---|
+| Finish `pdex/all_plates_pdex.parquet` (Rhaister) | The per-gene DE table — cell line × treatment × gene × plate. 158/161 Rhaister files held; the HF tree API under-reports LFS sizes so this one is >1.9 GB, not the 1.0 GB estimated | **In progress** |
+| Validate Rhaister against raw cells | Recompute treated/reference means, fold change and membership on a stratified sample to establish the transformation and the normalization convention | **Blocked on pdex** |
+| Establish the Tahoe pseudobulk-DE ↔ Rhaister relationship | Whether Rhaister is a subset, a recomputation, or a different convention of the 89 GB `pseudobulk_differential_expression` layer. The 89 GB was deliberately not downloaded | Not started |
+| Retrieve the preprint PDF | Sequencing platform, treatment duration and replicate structure are absent from the documentation held | Not started |
+| Decide on the misfiled Replogle objects | `ReplogleWeissman2022_*.h5ad` (2.8 GB) sit under `Tahoe/` but are a different dataset; a `Replogle/` directory already exists | **Decision needed** |
+| `pass_filter` numeric thresholds | Published only as "'full' is more stringent on gene_count and tsc_count" | Open — likely not closable |
 
 ## Technical debt
 _Ours to finish._
