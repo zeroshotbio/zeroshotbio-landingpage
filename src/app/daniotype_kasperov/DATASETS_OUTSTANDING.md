@@ -2,7 +2,9 @@
 
 Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub. ZCL 2.0 / ZCDL in progress.
 
-Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md`.
+Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md` — now version-controlled
+at `provenance/<DATASET>_SOURCES.md`, all five sharing a common 9-section structure and an identical
+**Cross-dataset provenance principles** block.
 Canonical path: `/data/datasets/raw_datasets/OUTSTANDING.md` (symlink to this file, so edits are versioned).
 
 ## Manual downloads needed
@@ -51,7 +53,7 @@ _Ours to finish._
 | MIC-Drop | Zenodo processed bundle **held** (MD5-verified, 211 files) — DE grid republished as `analysis/deg_results_pseudobulk.parquet` (30,053,751 rows, 71 cell types × 51 perturbations × 20,362 genes) | Also brings the Daniocell 21–26 hpf reference used for label transfer, so the annotation chain is reproducible | **Done 2026-08-11** |
 | MIC-Drop | Hash `micdrop_2-6-25.rds` (Zenodo) against `GSE315445_micdrop_50_gene.rds` (GEO) | They differ by 8.6 MB; unclear which is canonical. I built from the GEO one | Not started — small |
 | infra | `minifin_query.service` has **427 restarts** | OOM-killed while loading MegaFin (537,959 × 36,351). Pre-existing, not caused by this work, but it makes any large local job unsafe | **Not started — real production issue** |
-| all five | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo — provenance records exist on this box only | Not started |
+| all five | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo | **Done 2026-08-11** — the five records now live in `provenance/<DATASET>_SOURCES.md` and are symlinked back to `<DATASET>/sources/README.md`, the same pattern this file already uses |
 | ZCL2 | Retire `zcl2.h5ad` in favour of `zcl2_canonical.h5ad` | The old object is 40/199 libraries, 2 of 5 stages, empty `var`, no labels | Superseded; **no consumers found**, so retiring is safe whenever we want the 2.8 GB back |
 | ZCL2 | Decide whether ZCL 2.0 becomes a labelling target | It now has a full 143-cluster GT hierarchy and is the only atlas here covering adult + aged fish; but Microwell-seq is shallow (median 872 UMI) and cross-platform | **Product decision — not started** |
 
