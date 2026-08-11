@@ -48,7 +48,8 @@ _Ours to finish._
 | DanioCell | Audit publication-era `cluster_annotations.csv` vs the live portal | Labels may have drifted since 2023; we score against them | Not started |
 | Zebrahub | Rerun `visualization/` against `zebrahub_combined_v2.h5ad` | Existing outputs used the defective object — it duplicated 14 hpf as 15 hpf and omitted 3 dpf entirely | **Required** |
 | MIC-Drop | Canonical H5ADs **built** — `micdrop_50gene_canonical.h5ad` (226,492 × 26,435) + `micdrop_pilot_canonical.h5ad` (21,994 × 26,007), gRNA matrices and ENSDARG preserved | Genotype evidence survives conversion; validated against nCount_RNA/nFeature_RNA/nCount_CRISPR | **Done 2026-08-11** |
-| MIC-Drop | Finish the 28.95 GB Zenodo processed bundle | Holds the precomputed DE results, gRNA detection tables and validation measurements — the analysis-ready perturbation truths | In progress; Zenodo throttles to ~0.5 MB/s and ignores Range requests |
+| MIC-Drop | Zenodo processed bundle **held** (MD5-verified, 211 files) — DE grid republished as `analysis/deg_results_pseudobulk.parquet` (30,053,751 rows, 71 cell types × 51 perturbations × 20,362 genes) | Also brings the Daniocell 21–26 hpf reference used for label transfer, so the annotation chain is reproducible | **Done 2026-08-11** |
+| MIC-Drop | Hash `micdrop_2-6-25.rds` (Zenodo) against `GSE315445_micdrop_50_gene.rds` (GEO) | They differ by 8.6 MB; unclear which is canonical. I built from the GEO one | Not started — small |
 | infra | `minifin_query.service` has **427 restarts** | OOM-killed while loading MegaFin (537,959 × 36,351). Pre-existing, not caused by this work, but it makes any large local job unsafe | **Not started — real production issue** |
 | all five | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo — provenance records exist on this box only | Not started |
 | ZCL2 | Retire `zcl2.h5ad` in favour of `zcl2_canonical.h5ad` | The old object is 40/199 libraries, 2 of 5 stages, empty `var`, no labels | Superseded; **no consumers found**, so retiring is safe whenever we want the 2.8 GB back |
@@ -70,7 +71,9 @@ _Small, documented, mostly not closable by us._
 | MIC-Drop | Paper + GEO claim a Lawson v4.3.2 reference; the feature universe is **exactly** the Ensembl GRCz11 gene set | 32,520/32,520 identical to Ensembl; 0 of Lawson's 36,351 LL ids present | **Closed as a confirmed mismatch** |
 | MIC-Drop | Cell Ranger version | GEO says v7 on all 36 samples; the paper names no version and "v5.0.0" appears in no released artifact | Open — check the bioRxiv preprint |
 | MIC-Drop | Paper's 135,881 genotyped cells not reproducible | Released data and the paper's own Supplementary Data 4 both give ~138.8k | Open — likely scDblFinder, but no doublet flag was distributed |
-| MIC-Drop | Deposited pilot feature reference covers 4 of 8 target sets | Use Supplementary Data 1 (all 32 guides) instead | Documented |
+| MIC-Drop | Deposited pilot feature reference covers 4 of 8 target sets | **Closed** — the Zenodo bundle's `feature_reference.csv` has all 32 guides | Closed |
+| MIC-Drop | No editing validation for the 50 flagship targets | amplican and rhAmpSeq are pilot-only. The pilot's "Non-Targeting" control edits at 9.79% — it is a tyr crispant, not an unedited control | Open — authors' data simply doesn't cover it |
+| MIC-Drop | Per-replicate pseudobulk DE not distributed | The released DE grid is collapsed across the 4 biological replicates | Open |
 | ZSCAPE | No run manifest naming the GTF | Reference is reconstructed to exact agreement; manifest is simply not public | Closed as far as possible |
 | ZCL2 | GTF / Ensembl release, STAR version, UMI length, RNA-contamination method | Paper, Supplementary Methods (wet-lab only) and repo (downstream only) are all silent; namespace is 93.6% Ensembl-99 symbols, which dates it no further | Open — likely not closable |
 | ZCL2 | Table S1 vs `ZCDL_cellinfo.csv` disagree on **30/143** cluster cell types, 8/143 lineages | Two published annotations of the same clusters; C8/C11 are swapped. We use cellinfo — any score must declare which | Open |

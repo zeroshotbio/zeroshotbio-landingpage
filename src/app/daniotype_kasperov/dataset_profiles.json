@@ -1322,6 +1322,37 @@
               "tag": "CONFIRMED"
             }
           ]
+        },
+        {
+          "title": "Perturbation outputs (Zenodo bundle)",
+          "shared": "The 28.95 GB processed bundle carries the analysis-ready truths, not just the cell matrix. MD5-verified against Zenodo's published checksum.",
+          "rows": [
+            {
+              "k": "Pseudobulk DE grid",
+              "v": "30,053,751 rows — 71 cell types × 51 perturbations × 20,362 genes, with logFC/logCPM/F/PValue/FDR and ncell_perturbed. 76,490 combinations reach FDR<0.05 with |logFC|>0.5, led by neurod1 (3,911), tcf7l2 (3,309) and tbxta (3,227). Republished as parquet since the RDS is unreadable from Python.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Collapsed across replicates",
+              "v": "There is no replicate column — only the pooled contrast per cell type × perturbation. Per-replicate DE is not part of the release.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Daniocell reference included",
+              "v": "dcell_21_26.rds is the actual 21–26 hpf reference used for label transfer, so the annotation chain is now reproducible rather than merely documented",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "The control guides edit",
+              "v": "amplican assays the four control sequences as tyr-1..4 while labelling them Group='Non-Targeting'. They edit at 9.79% and frameshift at 6.33% — matching real targets (cdx4 9.72%, tbx16 10.72%) against a ≤0.89% wild-type background. A genuinely non-targeting guide cannot do that. Anyone using these cells as an UNEDITED control is using tyr crispants with real Cas9 cutting.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Validation is pilot-only",
+              "v": "Neither amplican nor rhAmpSeq covers the 50 flagship targets — no editing efficiency is published for them",
+              "tag": "UNRESOLVED"
+            }
+          ]
         }
       ]
     }
