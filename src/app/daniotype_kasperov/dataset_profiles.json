@@ -5,7 +5,8 @@
     "chemfish",
     "daniocell",
     "zebrahub",
-    "zcl2"
+    "zcl2",
+    "micdrop"
   ],
   "profiles": {
     "zscape": {
@@ -1083,6 +1084,220 @@
             {
               "k": "Barcode trap",
               "v": "Barcodes are <batch>_<SAMPLE>.<18nt> for four stages but <SAMPLE>.<18nt> for 22 Month, so a regex assuming the prefix silently returns zero samples there. Worse, COL sample ids are reused across stages (72 of 84) — (stage, sample) is the key, sample alone is not.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        }
+      ]
+    },
+    "micdrop": {
+      "name": "MIC-Drop-seq",
+      "kicker": "Pooled CRISPR screen with per-cell genotypes",
+      "lede": "Fifty transcription factors disrupted across ~1,000 embryos, each cell carrying the gRNAs that made it. The only dataset in this corpus that pairs a per-cell genotype with a whole-embryo phenotype -- which is what makes cell-extrinsic effects visible at all.",
+      "paper": {
+        "citation": "Carey, Parvez et al. — Burgess lab",
+        "venue": "Nature Communications · 2026",
+        "title": "MIC-Drop-seq: scalable single-cell phenotyping of mutant vertebrate embryos",
+        "href": "https://doi.org/10.1038/s41467-026-70989-w"
+      },
+      "headline": [
+        {
+          "n": "226,492",
+          "cap": "cells"
+        },
+        {
+          "n": "50",
+          "cap": "TF targets + tyr"
+        },
+        {
+          "n": "74",
+          "cap": "cell types"
+        },
+        {
+          "n": "138,767",
+          "cap": "genotyped cells"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Two experiments, kept separate",
+          "rows": [
+            {
+              "k": "Pilot",
+              "v": "21,994 cells, 40 embryos in one super-loaded 10X channel, 7 TFs + tyr, 32 guides, 35 clusters, 14,488 genotyped (65.9%). Median 15 gRNA molecules per classified cell.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "50-gene screen",
+              "v": "226,492 cells from ~1,000 embryos split into 4 biological replicates of ~250, each dissociated into 4 technical pools = 16 samples. 204 guides, 74 clusters, 138,767 genotyped (61.3%). Median 5 gRNA molecules per cell.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Both at 24 hpf",
+              "v": "Single timepoint. Assignment rate by replicate: 64.1 / 59.6 / 62.7 / 57.8 %. Per-target yield 976 (neurod1) to 4,701 (neurod4), median 2,539."
+            }
+          ]
+        },
+        {
+          "title": "Reference — the paper's claim fails the test",
+          "shared": "The Methods and the GEO metadata both say GRCz11 v4.3.2, citing Lawson et al. 2020. The deposited feature universe says otherwise, and the test is not close.",
+          "rows": [
+            {
+              "k": "Feature universe",
+              "v": "32,520 Gene Expression + 204 CRISPR Guide Capture, 100% ENSDARG",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "vs Ensembl GRCz11",
+              "v": "EXACT identity — 32,520 of 32,520, zero differences in either direction against our release-114 GTF",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "vs Lawson v4.3",
+              "v": "0 of Lawson's 36,351 LL gene ids appear. Lawson's Ensembl-99 cross-reference covers only 28,875, and its 7,265 genes with no Ensembl equivalent are entirely absent.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Verdict",
+              "v": "This is a plain Ensembl GRCz11 reference. A Cell Ranger build from the Lawson GTF would carry LL ids and Lawson's feature count; it does not. Same class of finding as ZSCAPE.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Ensembl release",
+              "v": "Cannot be dated — the zebrafish gene set is identical from release 99 to 114",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Cell Ranger version",
+          "rows": [
+            {
+              "k": "GEO",
+              "v": "'Cell Ranger v7 was used to align and count features' — stated identically on all 36 samples, pilot and screen alike",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "The paper",
+              "v": "Names 'Cell Ranger software from 10X Genomics' and no version. 'Cell Ranger' does not appear in the Supplementary Information, the Reporting Summary, or any other supplementary PDF, and the Seurat object carries no Cell Ranger provenance.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "v5.0.0",
+              "v": "Not found in any released artifact. It may come from the preprint or an earlier version, which we have not retrieved. There is no evidence the two experiments used different versions.",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Genotype assignment",
+          "note": "Guides are captured in the cell, so the genotype is measured rather than inferred from a well or a hash.",
+          "rows": [
+            {
+              "k": "Design",
+              "v": "4 gRNAs per target, 10X Feature Barcoding, pattern (BC)GTTTAAGAGCTAAGCTGGAA on R2",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Thresholds",
+              "v": "A Gaussian mixture model in Cell Ranger sets a UMI threshold per gRNA species to separate injected guides from ambient. Below threshold → 'ND' (87,725 cells, 38.7%). Guides for more than one target → 'Multiple', treated as doublets and removed.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Multi-guide cells",
+              "v": "Cells keeping several guides for the SAME target are retained: 76,128 with 1 guide, 42,265 with 2, 15,902 with 3, 4,472 with 4",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "The control is mislabelled",
+              "v": "Supplementary Data 3 names the four control guides tyr-1..tyr-4; the deposited feature reference calls the identical four sequences Non-Targeting-1..4. The class column resolves them to tyr and the rhAmpSeq table shows real editing at tyr loci. Reading the feature reference alone, you would conclude the screen has no positive control.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "51 targets, not 50",
+              "v": "class carries 51 target levels plus ND. The 51st is the tyr control (4,249 cells).",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "135,881 is not reproducible",
+              "v": "The paper reports 135,881 confidently assigned. The deposited metadata gives 138,767; excluding tyr gives 134,518; adding the repo's QC gives 138,224; and the paper's own Supplementary Data 4 sums to 138,822. Nothing lands on 135,881. The residual is plausibly scDblFinder, but no doublet flag was distributed.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "rhAmpSeq",
+              "v": "23 amplicons validate editing for the PILOT targets only, 3.05% (tbx16 t4) to 99.92% (foxa2 t2), wild-type background indel ≤0.89%. No amplicon validation for the 50 flagship targets is deposited.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "QC — three sources, three thresholds",
+          "shared": "The deposited 50-gene object satisfies neither the paper nor the repo: 1,783 cells carry ≥10% mitochondrial reads and 8 exceed 9,000 genes. It is the state BEFORE the Figure-2 subset, which the analysis applies downstream.",
+          "rows": [
+            {
+              "k": "Paper",
+              "v": "remove >15% mitochondrial, remove <200 genes"
+            },
+            {
+              "k": "Repo Figure1 (pilot)",
+              "v": "percent.mt < 15, nFeature 200–9,000 — and the deposited pilot object obeys all three (max mt 15.00, min 203, max 8,980)",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Repo Figure2 (50-gene)",
+              "v": "percent.mt < 10, nFeature 250–9,000 — the deposited object has max mt 14.99, min 251, max 9,984",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Annotation is DanioCell-derived",
+          "shared": "MIC-Drop is NOT independently annotated. Labels were transferred from Daniocell (21–26 hpf) and then manually verified against markers, so they cannot serve as independent evidence about DanioCell.",
+          "rows": [
+            {
+              "k": "Hierarchy",
+              "v": "predicted.id (179 realized) → curated_cell_type2 (74) → cell_class (3: Neural, Mesoderm/Endoderm, Non-neural Ectoderm)",
+              "mono": true,
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Transfer machinery",
+              "v": "A prediction.score.celltype assay scores all 274 DanioCell reference labels per cell, and the object carries ref.pca / ref.umap reductions — a Seurat reference-mapping workflow",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Vocabulary match",
+              "v": "predicted.id is DanioCell's own tissue|identity.super>identity.sub string. 161 of 179 match a DanioCell cluster_annotations row exactly (89.9%); the misses mostly have an empty sub-tier.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Supplementary Data 4",
+              "v": "All 74 clusters with cell counts, pct.classified and 5 markers each. Counts sum to exactly 226,492, and 73 of 73 name-matched clusters agree cell-for-cell with the deposited metadata.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Gene overlap — a superset of our whole corpus",
+          "rows": [
+            {
+              "k": "ZSCAPE / ChemFish",
+              "v": "32,031 of 32,031 shared — 100% of theirs",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Zebrahub",
+              "v": "32,057 of 32,057 shared — 100% of theirs",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "DanioCell",
+              "v": "30,121 of 30,121 shared — 100% of theirs (symbol-space daniocell.h5ad matches 27,495 of 36,250 by name)",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Caveat",
+              "v": "The deposited Seurat object is gene-filtered to 26,435 and uses SYMBOLS with Seurat make.unique suffixes (phtf2, phtf2.1), not ENSDARG. The full universe is only in the per-sample features.tsv files.",
               "tag": "CONFIRMED"
             }
           ]
