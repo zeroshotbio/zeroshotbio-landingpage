@@ -10,7 +10,7 @@
     "megafin_perturbations": "Decoded from obs[sample] (Manual) / obs[samples] (Parse) — identical 93-well sets, format m1_<well>_CP01_<compound>_<dose>. 46 compounds = 45 small molecules + Sorafenib positive control, matching designFacts. The 3 QC-removed wells (Vorinostat 1uM/B11, Romidepsin 5uM/C3, Dinaciclib 5uM/E3) dropped ONE DOSE each, not the compound — all 46 survive in the object, so all 46 are listed and the dropped wells are noted in the summary line.",
     "minifin_perturbations": "obs[perturbation] = 4 (DMSO, Dapagliflozin, Orlistat, Sorafenib) across obs[sample] = 43 replicate samples (DMSO 11, Dapagliflozin 10, Orlistat 11, Sorafenib 11). Spelling taken from obs[perturbation]; obs[sample] misspells it 'Dapaglifozan'.",
     "footers": "MegaFIN + MiniFin pathway/target footers deferred to Steven — they need a target annotation he supplies.",
-    "zebrahub": "Read from /data/datasets/raw_datasets/Zebrahub/. zebrahub_combined.h5ad = 101,833 x 32,060, verified equal to the sum of the 10 per-stage v1 releases (1,251 + 6,699 + 3,862 + 3,862 + 6,297 + 5,899 + 12,914 + 15,483 + 24,987 + 20,579). Timepoints from obs[timepoint] (10 values, native mixed hpf/dpf labels kept as published). Schema = obs[zebrafish_anatomy_ontology_class] = 147, a single ZFA-backed tier (obs[zebrafish_anatomy_ontology_id] is the same 147 as ZFA IDs). The dataset README maps 2dpf -> 48 hpf, which is why the 2dpf pill carries the 48-hpf highlight. NOT in the wizard chooser and has no DatasetDef — reference card only.",
+    "zebrahub": "CANONICAL RELEASE CORRECTED. Figshare article 20510367 v1 publishes TWELVE files; we held ten. The two missing were zf_atlas_3dpf_v1_release (22,473 cells, a real timepoint never downloaded) and zf_atlas_full_v1_release (the AUTHORS' own combined atlas, 120,444 cells = the final paper). Both downloaded this pass. 14 vs 15 hpf VERDICT: zf_atlas_15hpf_v1_release is a packaging duplicate of 14 hpf — identical barcodes, fish and total_counts, archives 404 bytes apart — and the authors' full atlas contains NO 15 hpf timepoint. The cells are 14 hpf. Reconciliation is exact: 101,833 (our old concat) - 3,862 (duplicate) + 22,473 (3 dpf) = 120,444. NAMESPACE CLAIM RETRACTED: we recorded Zebrahub as gene-symbol-only and cited that as an integration barrier. Wrong — every original release carries var[gene_ids] with 32,057 ENSDARG plus dTomato/mCerulean/EYFP (Zebrabow transgenes). We believed otherwise only because our old combined object had discarded var. 31,569 genes are shared with the ZSCAPE/ChemFish 32,031 set. REFERENCE: var[genome] = 'Danio.rerio_genome_Zebrabow_6', a custom Cell Ranger build. Assembly, Ensembl release, FASTA, GTF, Cell Ranger version and the mkref procedure are UNRESOLVED — absent from the QC notebook, the paper was not retrievable, and the only findable online details belong to Zebrahub-MULTIOME, a different assay. Not inferred from ZSCAPE/DanioCell. QC: from Sequencing_QualityControl.ipynb — pct_counts_nc<15, pct_counts_mt<15, total_counts in [2000,20000], filter_genes min_cells=3. Verified: nc, mt and n_genes pass with 0 violations across all ten per-stage releases; the total_counts window holds ONLY for 2/5/10 dpf. The early timepoints (10 hpf-24 hpf) span ~17,000-100,000 counts — two QC regimes. UNRESOLVED. REBUILT: zebrahub_combined_v2.h5ad via sources/code/build_zebrahub_combined.py — adopts the authors' full atlas and joins the finer per-stage ZFA labels (154 classes, all 120,444 cells matched), preserving var, layers['counts'] and obsm['X_umap'] with a uns['provenance'] stamp. The old object is retained, not overwritten. visualization/ reads the OLD object and must be rerun.",
     "summary": "One-line high-level description per card, max 50 words, condensed from prose already in the repo (DatasetDef blurbs in KasperovClient.tsx, dataset_facts source/design/subsample) plus the counts verified in this file. Descriptive only - introduces no number that isn't already sourced elsewhere in this file.",
     "name": "Card names track the datasets themselves; 'ZSCAPE Classic' is shown as 'ZSCAPE' here. The wizard chooser's own DatasetDef name is unchanged (KasperovClient.tsx is not touched), so the chooser row still reads 'ZSCAPE Classic'.",
     "megafin_doses": "Doses decoded from the well names: every compound is 1 uM and 5 uM except the three whose one dose was QC-removed — Vorinostat (SAHA) survives at 5 uM only, Romidepsin (FK228) and Dinaciclib (SCH727965) at 1 uM only. 46 compounds -> 89 dose-pills. Matches facts.design's QC list exactly.",
@@ -445,15 +445,19 @@
     "zebrahub": {
       "name": "Zebrahub",
       "perturbationClass": "OBSERVATIONAL",
-      "notRunnable": "Not a labelling target — 10X droplet, so it doesn't integrate with the combinatorial-indexing atlases (ZSCAPE / ChemFish / MegaFIN).",
-      "cells": "101,833",
+      "notRunnable": "Not a labelling target — 10X droplet, so it doesn't integrate with the combinatorial-indexing atlases (ZSCAPE / ChemFish / MegaFIN). Gene IDs are not a barrier: 31,569 ENSDARG are shared with them.",
+      "cells": "120,444",
       "workingSlice": null,
       "genes": "32,060",
       "schema": {
         "tiers": [
           {
-            "n": "147",
+            "n": "10",
             "col": "zebrafish_anatomy_ontology_class"
+          },
+          {
+            "n": "154",
+            "col": "per-stage ZFA class"
           }
         ]
       },
@@ -464,11 +468,11 @@
           "10hpf",
           "12hpf",
           "14hpf",
-          "15hpf",
           "16hpf",
           "19hpf",
           "24hpf",
           "2dpf",
+          "3dpf",
           "5dpf",
           "10dpf"
         ],
@@ -483,9 +487,9 @@
         "summary": "N/A",
         "items": []
       },
-      "summary": "Wild-type developmental reference spanning 10 hpf to 10 dpf across 36 embryos, annotated to 147 ZFA ontology classes. Reference only: 10X droplet and a gene-symbol namespace keep it from integrating with the combinatorial-indexing atlases we label.",
+      "summary": "Wild-type developmental reference spanning 10 hpf to 10 dpf across 40 embryos, annotated to 154 fine ZFA classes. Reference only — 10X droplet keeps it from integrating with the combinatorial-indexing atlases we label, though its gene IDs do overlap.",
       "genome": "GRCz11",
-      "annotation": "Ensembl · release TBD",
+      "annotation": "Custom Cell Ranger ref · TBD",
       "pipeline": {
         "raw": "TBD",
         "downstream": "TBD"

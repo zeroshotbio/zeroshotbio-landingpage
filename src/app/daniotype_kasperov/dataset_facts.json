@@ -786,12 +786,12 @@
   "platform": "10X droplet",
   "lab": "TBD",
   "year": null,
-  "namespace": "Gene symbol (unmapped — requires ENSDARG mapping)",
+  "namespace": "ENSDARG (var[gene_ids]) + gene symbols as var_names",
   "role": "reference",
-  "cells": 101833,
-  "fullCells": 101833,
-  "source": "Zebrahub — wild-type developmental reference atlas, 10 timepoints (10 hpf → 10 dpf / 240 hpf), 36 embryos, 101,833 cells, 147 ZFA-ontology cell types. Combined object verified equal to the sum of the 10 per-stage v1 releases. Reference only: NOT a labelling target — 10X droplet does not integrate with the combinatorial-indexing atlases (ZSCAPE / ChemFish / MegaFIN). No de-novo partition of our own, hence no `clusters` key.",
-  "noGtNote": "External reference atlas. Published ZFA annotations exist (147 classes) but we do not score against them — Zebrahub is not in the wizard's dataset chooser."
+  "cells": 120444,
+  "fullCells": 120444,
+  "source": "Zebrahub — wild-type developmental reference atlas, 10 timepoints (10 hpf → 10 dpf), 40 embryos, 120,444 cells (authors' zf_atlas_full_v1_release, matching the final paper), 154 fine / 10 coarse ZFA classes. Reference only: NOT a labelling target — 10X droplet does not integrate with the combinatorial-indexing atlases (ZSCAPE / ChemFish / MegaFIN). No de-novo partition of our own, hence no `clusters` key.",
+  "noGtNote": "External reference atlas. Published ZFA annotations exist (154 fine classes) but we do not score against them — Zebrahub is not in the wizard's dataset chooser."
  },
  "_suite": {
   "notes": [

@@ -3,7 +3,8 @@
   "order": [
     "zscape",
     "chemfish",
-    "daniocell"
+    "daniocell",
+    "zebrahub"
   ],
   "profiles": {
     "zscape": {
@@ -724,6 +725,196 @@
         }
       ],
       "footer": "Full evidence, scripts and checksums: /data/datasets/raw_datasets/DanioCell_h5ad/sources/README.md"
+    },
+    "zebrahub": {
+      "name": "Zebrahub",
+      "kicker": "Wild-type developmental reference atlas",
+      "lede": "Single-embryo-resolved wild-type development across ten stages from 10 hpf to 10 dpf. Reference only — we do not label it — but its ZFA-annotated cells and 31,569 genes shared with ZSCAPE/ChemFish make it a usable cross-platform anchor.",
+      "paper": {
+        "citation": "Lange et al. — Royer lab, CZ Biohub",
+        "venue": "Cell · 2024",
+        "title": "A multimodal zebrafish developmental atlas reveals the state-transition dynamics of late-vertebrate pluripotent axial progenitors",
+        "href": "https://www.cell.com/cell/fulltext/S0092-8674(24)01147-4"
+      },
+      "headline": [
+        {
+          "n": "120,444",
+          "cap": "cells"
+        },
+        {
+          "n": "10",
+          "cap": "stages, 10 hpf – 10 dpf"
+        },
+        {
+          "n": "40",
+          "cap": "embryos"
+        },
+        {
+          "n": "32,060",
+          "cap": "features"
+        }
+      ],
+      "sections": [
+        {
+          "title": "Canonical release — corrected",
+          "rows": [
+            {
+              "k": "Authors' atlas",
+              "v": "zf_atlas_full_v1_release.h5ad — 120,444 cells, matching the final paper exactly. We had been concatenating our own from per-stage files instead.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Missing timepoint",
+              "v": "3 dpf (22,473 cells) was never downloaded — Figshare publishes 12 files and we held 10."
+            },
+            {
+              "k": "14 vs 15 hpf",
+              "v": "The 15 hpf release is a packaging duplicate of 14 hpf — identical barcodes, fish and total_counts, archives 404 bytes apart. The authors' atlas contains no 15 hpf timepoint at all, so the cells are 14 hpf.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Reconciliation",
+              "v": "101,833 (our old concatenation) − 3,862 (duplicate) + 22,473 (3 dpf) = 120,444 — exact."
+            },
+            {
+              "k": "Stages",
+              "v": "10, 12, 14, 16, 19, 24 hpf and 2, 3, 5, 10 dpf · 4 embryos per stage"
+            }
+          ]
+        },
+        {
+          "title": "Assay",
+          "rows": [
+            {
+              "k": "Chemistry",
+              "v": "10X Chromium — whole cells, not nuclei. Dissociation optimised to avoid embryo pooling, so every cell traces to a named individual."
+            },
+            {
+              "k": "Individuals",
+              "v": "40 embryos, tracked in obs['fish'] (TDR-numbered)"
+            },
+            {
+              "k": "Not Multiome",
+              "v": "Zebrahub-Multiome is a separate snRNA+ATAC assay with its own preprint, repo and reference. Its methods are not this atlas's and are not cited here."
+            }
+          ]
+        },
+        {
+          "title": "Reference & counting",
+          "shared": "Gene IDs are NOT a barrier — 31,569 ENSDARG are shared with the ZSCAPE/ChemFish 32,031-gene space.",
+          "rows": [
+            {
+              "k": "Reference",
+              "v": "Danio.rerio_genome_Zebrabow_6 — a custom Cell Ranger build, named in var['genome'] of every release",
+              "mono": true,
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Gene IDs",
+              "v": "32,057 ENSDARG in var['gene_ids'], plus three Zebrabow transgene features: dTomato, mCerulean, EYFP",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Feature names",
+              "v": "scanpy var_names_make_unique() applied — 1,132 names carry a -N suffix"
+            },
+            {
+              "k": "Assembly / Ensembl release / FASTA / GTF",
+              "v": "Not published. Absent from the QC notebook, the paper was not retrievable, and the only findable online details belong to Zebrahub-Multiome — a different assay.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Cell Ranger version / mkref",
+              "v": "Not published; Zebrabow transgene sequences and their source likewise unrecorded",
+              "tag": "UNRESOLVED"
+            }
+          ],
+          "note": "We previously recorded Zebrahub as a gene-symbol-only namespace and cited that as an integration barrier. That was wrong — ENSDARG IDs are present in every original release. We believed otherwise only because our own combined object had discarded var entirely."
+        },
+        {
+          "title": "Quality control",
+          "rows": [
+            {
+              "k": "Published filters",
+              "v": "pct_counts_nc < 15, pct_counts_mt < 15, total_counts between 2,000 and 20,000, filter_genes(min_cells=3) — from the authors' Sequencing_QualityControl.ipynb"
+            },
+            {
+              "k": "Pre-filter",
+              "v": "min 100 genes and 100 counts per cell at load, described in the notebook as size reduction rather than QC"
+            },
+            {
+              "k": "nc / mt / n_genes",
+              "v": "0 violations across all ten per-stage releases",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "total_counts window",
+              "v": "Holds for 2, 5 and 10 dpf only. The early timepoints (10 hpf–24 hpf) span roughly 17,000–100,000 counts — a different QC regime from the notebook's. The v1 files are Aug 2022; the notebook is Jan 2023.",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Annotation",
+          "rows": [
+            {
+              "k": "Two granularities",
+              "v": "The full atlas carries 10 coarse ZFA classes (central_nervous_system, paraxial_mesoderm, neural_crest …); the per-stage releases carry a fine vocabulary (diencephalon, blood island, otic vesicle …), 154 distinct across all stages."
+            },
+            {
+              "k": "Ontology",
+              "v": "zebrafish_anatomy_ontology_id gives ZFA identifiers at both levels",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "developmental_stage",
+              "v": "Somite counts early (0/05/10/15/20/30 somites), larval-Ndpf late"
+            },
+            {
+              "k": "timepoint_cluster",
+              "v": "51 values, but per-timepoint — the same integer means different things at different stages, and the authors' code does not define them further",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Our rebuilt object",
+          "rows": [
+            {
+              "k": "Path",
+              "v": "zebrahub_combined_v2.h5ad, built by sources/code/build_zebrahub_combined.py",
+              "mono": true
+            },
+            {
+              "k": "Approach",
+              "v": "Adopts the authors' full atlas and joins the finer per-stage ZFA labels rather than re-concatenating — their object is already correct, and rebuilding from parts would reintroduce risk."
+            },
+            {
+              "k": "Contents",
+              "v": "120,444 cells × 32,060 genes · 10 timepoints · 40 fish · 10 coarse + 154 fine ZFA classes, matched for all 120,444 cells"
+            },
+            {
+              "k": "Preserved",
+              "v": "var (gene_ids, feature_types, genome, mt, nc …), layers['counts'], obsm['X_umap'], and a uns['provenance'] stamp with source checksums"
+            },
+            {
+              "k": "Old object",
+              "v": "Retained, not overwritten, so prior results stay reproducible"
+            }
+          ]
+        },
+        {
+          "title": "Provenance & caveats",
+          "bullets": [
+            "Our previous combined object had two defects at once: it discarded var (losing the ENSDARG IDs and the reference name) and it double-counted 3,862 cells as both 14 and 15 hpf while omitting 3 dpf entirely.",
+            "Everything downstream of that object — the visualization/ latent space, timepoint centroids, developmental paths and renders — was computed on the defective input and must be regenerated.",
+            "The custom Zebrabow reference is named but not specified anywhere public. Nothing here is inferred from ZSCAPE or DanioCell.",
+            "Zebrahub-Multiome has repeatedly surfaced in searches for this atlas and has already produced one incorrect citation in our notes. The two are kept explicitly separate.",
+            "Zebrahub stays a reference rather than a labelling target on platform grounds (10X droplet vs combinatorial indexing) — not on gene-namespace grounds, which was the earlier and mistaken reason."
+          ]
+        }
+      ],
+      "footer": "Full evidence, scripts and checksums: /data/datasets/raw_datasets/Zebrahub/sources/README.md"
     }
   }
 }
