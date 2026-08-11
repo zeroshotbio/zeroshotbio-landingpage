@@ -1301,6 +1301,27 @@
               "tag": "CONFIRMED"
             }
           ]
+        },
+        {
+          "title": "Our canonical objects",
+          "note": "The deposited RDS files are never modified. Note the two experiments ship in different Seurat generations — the 50-gene screen is v4.1.3 (Assay) and the pilot is v5 (Assay5, layer-based), so conversion code that reaches for @counts works on one and fails on the other.",
+          "rows": [
+            {
+              "k": "micdrop_50gene_canonical.h5ad",
+              "v": "226,492 × 26,435, raw integer counts (530,118,067 nnz), ENSDARG recovered for 26,422 genes, obsm['gRNA_counts'] with all 204 guides, pca/umap/ref.pca/ref.umap",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "micdrop_pilot_canonical.h5ad",
+              "v": "21,994 × 26,007, 60,342,478 nnz, ENSDARG for 25,997, obsm['gRNA_counts'] with all 32 guides — confirming the 16-row deposited pilot feature reference is a deposit gap, not a smaller experiment",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "What conversion would have lost",
+              "v": "The guide-capture matrix is the genotype evidence; without it the class calls cannot be checked. Its row sums validate exactly against nCount_CRISPR. The ENSDARG namespace was recovered by replaying Seurat's make.unique over the features.tsv names, since the objects carry symbols like phtf2.1.",
+              "tag": "CONFIRMED"
+            }
+          ]
         }
       ]
     }
