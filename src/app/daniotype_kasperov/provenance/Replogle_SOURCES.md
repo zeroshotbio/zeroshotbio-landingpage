@@ -119,7 +119,7 @@ valuable part for cross-dataset work.
 | Feature universe | — | 8,248 / 8,563 / 8,749, differing per object | **CONFIRMED**; the filtering rule is **UNRESOLVED** |
 | Reference release | — | not tested against any Ensembl build | **UNRESOLVED** — standard test not run |
 | Processing / QC | — | not recovered | **UNRESOLVED** |
-| Misfiling (now fixed) | — | `K562_essential` and `rpe1` previously sat under `Tahoe/`; a third, `K562_gwps`, was in `Replogle/`. All three are now together in `human/Replogle/` | **CONFIRMED** — resolved 2026-08-12 |
+| Misfiling (now fixed) | — | `K562_essential` and `rpe1` previously sat under `Tahoe/`; a third, `K562_gwps`, was in `Replogle/`. All three are now together in `human/Replogle/`, and the duplicate Tahoe copies were deleted 2026-08-12 after full SHA256 confirmation | **CONFIRMED** — resolved |
 
 ## 8. Local assets
 

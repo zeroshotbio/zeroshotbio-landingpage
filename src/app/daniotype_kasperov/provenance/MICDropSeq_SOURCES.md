@@ -72,7 +72,8 @@ layer-based). The two experiments ship in **different Seurat generations**; code
 `@counts` works on one and fails on the other. Use `SeuratObject::LayerData()`. **CONFIRMED.**
 
 **The Zenodo bundle** (MD5 `133fbc3728adbfba436d2027590068df`, matching the published checksum;
-211 files, 28 GB extracted under `data/input_data/`) carries material GEO does not. The authors ship
+211 files, 28 GB, held extracted at `data/input_data/` — the zip itself was deleted 2026-08-12 once
+every entry was verified on disk) carries material GEO does not. The authors ship
 a `README.md` inside it documenting every file.
 
 | File | Size | What it gives |
@@ -307,7 +308,7 @@ Validated on read-back: counts integral, row sums equal `nCount_RNA`, per-row no
 |---|---|---|
 | `geo/GSE315445_micdrop_50_gene.rds` | 7,212,997,471 B | the flagship object (Seurat 4.1.3) |
 | `geo/GSE315445_pilot_seurat_object.rds` | 376,452,563 B | the pilot (Seurat v5) |
-| `data/mic_drop_seq_source_data.zip` | 28,952,036,968 B | MD5 `133fbc3728adbfba436d2027590068df` ✔ published checksum |
+| ~~`data/mic_drop_seq_source_data.zip`~~ | 28,952,036,968 B | **deleted 2026-08-12** after verifying all 211 entries were extracted to `data/input_data/`. MD5 was `133fbc3728adbfba436d2027590068df`, matching Zenodo's published checksum; re-downloadable from the Zenodo DOI |
 | `geo/*_cell_metadata.csv.gz` | | 226,492 × 17 and 21,994 × 23 |
 | `geo/*_feature_reference.csv.gz` | | 204 guides (50-gene) and only 16 (pilot) |
 | `geo/GSE315445_rhamp_results.csv.gz` | | 23 amplicons, pilot only |

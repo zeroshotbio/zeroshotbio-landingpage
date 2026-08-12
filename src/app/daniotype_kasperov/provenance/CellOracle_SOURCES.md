@@ -71,7 +71,9 @@ design) and `zic2a` was dropped (expressed in other sub-branches). **CONFIRMED.*
 ## 2. Canonical released data
 
 GEO deposits **only Cell Ranger filtered matrices** — `barcodes.tsv.gz`, `features.tsv.gz`,
-`matrix.mtx.gz` per sample, in `GSE145298_RAW.tar` (1,882,255,360 B, 94 entries).
+`matrix.mtx.gz` per sample, delivered as `GSE145298_RAW.tar` (1,882,255,360 B, 94 entries) and held
+locally in extracted form at `data/matrices/`. The tar itself was deleted 2026-08-12 once every
+entry was verified present on disk.
 
 > ### There are no annotations in the deposit
 > **No cell-type labels, no embeddings, no Seurat object, no per-cell metadata of any kind** are
@@ -271,7 +273,7 @@ samples (asserted during the build); 13 mitochondrial genes present.
 
 | File | Size | Notes |
 |---|---|---|
-| `geo/GSE145298_RAW.tar` | 1,882,255,360 B | matches the remote `Content-Length` exactly; 94 entries |
+| ~~`geo/GSE145298_RAW.tar`~~ | 1,882,255,360 B | **deleted 2026-08-12** after verifying all 94 entries were extracted to `data/matrices/`. Size matched the remote `Content-Length` exactly; re-downloadable from GEO |
 | `geo/GSE145298_family.soft.gz` | | full GEO metadata, 31 samples |
 | `data/matrices/` | | extracted per-sample barcodes/features/matrix |
 | `publication/nature_celloracle_fulltext.xml` | 325,423 B | Europe PMC full text |
