@@ -356,7 +356,23 @@ function DatasetSpecCard({ id }: { id: string }) {
 
       {/* header — serif name left, perturbation-class badge right (the card's top index) */}
       <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
-        <span style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.2 }}>{c.name}</span>
+        <span style={{ display: "flex", alignItems: "baseline", gap: 9, flexWrap: "wrap", minWidth: 0 }}>
+          <span style={{ fontSize: 26, fontWeight: 700, lineHeight: 1.15, letterSpacing: -0.2 }}>{c.name}</span>
+          {/* Organism marker. Only rendered for non-zebrafish data: the corpus is zebrafish by
+              default, so the badge exists to stop a human atlas being read as one of them. */}
+          {c.organism && c.organism !== "zebrafish" && (
+            <span
+              title={`Organism — ${c.organism}. Not zebrafish; do not pool with the zebrafish atlases.`}
+              style={{
+                flexShrink: 0, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.5, textTransform: "uppercase",
+                borderRadius: 99, padding: "3px 9px", whiteSpace: "nowrap",
+                color: "#7a4a12", background: "#fdf3e3", border: "1px solid #e8d3ac",
+              }}
+            >
+              {c.organism}
+            </span>
+          )}
+        </span>
         <span
           title={`Perturbation class — ${c.perturbationClass}`}
           style={{

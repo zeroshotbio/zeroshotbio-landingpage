@@ -7,7 +7,9 @@
     "zebrahub",
     "zcl2",
     "micdrop",
-    "celloracle"
+    "celloracle",
+    "tahoe",
+    "replogle"
   ],
   "profiles": {
     "zscape": {
@@ -1594,6 +1596,223 @@
               "k": "A preprint disputes the method",
               "v": "'Critical issues found in Dissecting cell identity via network inference and in silico gene perturbation' — Nourisa, Passemiers & Tomforde, bioRxiv 10.1101/2024.10.16.618746 (2024-10-17). Recorded, not endorsed; we have not evaluated it. It concerns the inferred networks, not the observed scRNA-seq data we hold.",
               "tag": "UNRESOLVED"
+            }
+          ]
+        }
+      ]
+    },
+    "tahoe": {
+      "name": "Tahoe-100M (human)",
+      "kicker": "Giga-scale chemical perturbation — cross-species reference",
+      "lede": "50 cancer cell lines pooled per well, 1,138 drug×dose combinations, 100.6 million cells. Human, so never pooled with the zebrafish atlases — its value here is the summary-statistics abstraction, which is the template for how we would ever summarise our own perturbation data.",
+      "paper": {
+        "citation": "Zhang, Ubas, de Borja et al. — Vevo Therapeutics",
+        "venue": "bioRxiv · 2025",
+        "title": "Tahoe-100M: A Giga-Scale Single-Cell Perturbation Atlas for Context-Dependent Gene Function and Cellular Modeling",
+        "href": "https://www.biorxiv.org/content/10.1101/2025.02.20.639398v1"
+      },
+      "headline": [
+        {
+          "n": "100,648,790",
+          "cap": "cells released"
+        },
+        {
+          "n": "50",
+          "cap": "cancer cell lines"
+        },
+        {
+          "n": "1,138",
+          "cap": "drug × dose"
+        },
+        {
+          "n": "62,710",
+          "cap": "features"
+        }
+      ],
+      "sections": [
+        {
+          "title": "\"100M\" is branding — the realized numbers",
+          "shared": "Two figures circulate and both are real; they count different populations. State which one you mean.",
+          "rows": [
+            {
+              "k": "100,648,790",
+              "v": "every cell in the release — the sum of our 14 plate objects AND the row count of obs_metadata.parquet",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "95,624,334",
+              "v": "cells with pass_filter=='full'; EXACTLY the Hugging Face expression split's num_examples",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Our copy is a superset",
+              "v": "The local Arc Institute per-plate H5ADs carry all 100.6M, including the 5,024,456 'minimal' cells the public expression split omits. Re-downloading from Hugging Face would lose data, not gain it.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "~1,100 perturbations",
+              "v": "reconciles to 1,138 distinct drugname_drugconc; Vevo's own dataset.toml says 1,137, which is this minus DMSO_TF",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Reference — the one that passed",
+          "shared": "ZSCAPE, ZCL 2.0 and MIC-Drop-seq all state a reference their deposited features contradict. Tahoe does not. Recording that matters: the rule is verify, not distrust.",
+          "rows": [
+            {
+              "k": "Verdict",
+              "v": "The 62,710 ensembl_ids are an EXACT set match to Ensembl 109 / GRCh38 — 0 differences in either direction",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Local files carry symbols only",
+              "v": "The plate H5ADs have a single var column, gene_name. But gene_metadata.parquet is order-identical to it, verified position by position, so ENSG and Tahoe-x1 token IDs restore by positional join.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Tahoe-x1 does not filter genes",
+              "v": "Its vocabulary is 62,720 = the full 62,710-gene universe plus 10 special tokens. The model corpus differs by tokenization, not filtering — the opposite of the usual assumption.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Controls — audited, with a trap",
+          "rows": [
+            {
+              "k": "Coverage",
+              "v": "DMSO_TF is 2,330,156 cells (2.32%). All 14 plates and all 700 (plate × cell-line) combinations have a matched control — 100%, zero gaps. Depth per combination: min 20, median 2,982, max 15,630.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "The trap",
+              "v": "'Trametinib (DMSO_TF solvate)' — 269,491 cells — is a MEK inhibitor, not a control. A filter of the form drug.str.contains('DMSO') silently mislabels every one of them as vehicle. Match drug == 'DMSO_TF' exactly.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "Summary statistics — validated",
+          "shared": "The Rhaister companion release carries the analysis-ready layer, and we checked it against the raw cells rather than trusting it.",
+          "rows": [
+            {
+              "k": "cell_eval convention",
+              "v": "normalize_total(1e4) → log1p → per-group mean → treated minus plate-matched DMSO. Established by recomputing 6 (cell line × treatment) pairs from raw cells: mean r = 0.9644, against 0.029 for the log-ratio rival and 0.832 for a raw delta.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Sample is thin",
+              "v": "Pairs were ranked by cell count, which biased selection toward Gemcitabine (4 of 6), one dose, one plate. Enough to fix the convention, not to certify the release.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "pdex is a different scale",
+              "v": "pdex's fold_change is log2(target_mean/ref_mean) — a log RATIO — while cell_eval is a log-space DELTA. Mixing them is a silent error.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Annotations are LLM-generated",
+              "v": "targets, moa-broad, moa-fine, human-approved and clinical-trials were all produced by GPT-4o and validated against MedChemExpress. Useful annotation, not primary-source pharmacology.",
+              "tag": "CONFIRMED"
+            }
+          ]
+        }
+      ]
+    },
+    "replogle": {
+      "name": "Replogle (human)",
+      "kicker": "Genome-scale CRISPRi Perturb-seq",
+      "lede": "Nearly ten thousand gene knockdowns in a single cell line — the mirror image of our zebrafish data, which has few perturbations across many cell types. Held as scPerturb redistributions rather than the authors' release.",
+      "paper": {
+        "citation": "Replogle, Saunders, Pogson, Hussmann et al. — Weissman lab",
+        "venue": "Cell 185 · 2022",
+        "title": "Mapping information-rich genotype-phenotype landscapes with genome-scale Perturb-seq",
+        "href": "https://doi.org/10.1016/j.cell.2022.05.013"
+      },
+      "headline": [
+        {
+          "n": "2,547,877",
+          "cap": "cells"
+        },
+        {
+          "n": "9,866",
+          "cap": "targets (K562 GWPS)"
+        },
+        {
+          "n": "2",
+          "cap": "cell lines"
+        },
+        {
+          "n": "3",
+          "cap": "objects"
+        }
+      ],
+      "sections": [
+        {
+          "title": "The three objects",
+          "note": "All measured directly from the local files.",
+          "rows": [
+            {
+              "k": "K562 GWPS",
+              "v": "1,989,578 cells × 8,248 genes — genome-wide, 9,866 gene targets, 75,328 control cells",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "K562 essential",
+              "v": "310,385 cells × 8,563 genes — 2,057 targets, 10,691 controls",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "RPE1 essential",
+              "v": "247,914 cells × 8,749 genes — 2,393 targets, 11,485 controls. RPE1 is non-cancer; K562 is chronic myeloid leukemia.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Single-target only",
+              "v": "nperts is 0 or 1 throughout — no combinatorial perturbations",
+              "tag": "CONFIRMED"
+            }
+          ]
+        },
+        {
+          "title": "What we actually hold",
+          "shared": "These are NOT the authors' original release. The three filenames match the scPerturb Zenodo record (13350497) exactly, and the obs schema — perturbation, perturbation_type, nperts, organism, disease, tissue_type, cancer — is scPerturb's harmonization standard.",
+          "rows": [
+            {
+              "k": "Provenance",
+              "v": "scPerturb redistribution of Replogle et al. 2022",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Counts are raw",
+              "v": "X is a DENSE float32 array holding integral values with no negatives (max 431) — raw counts, not z-scores, despite the dense storage",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Gene set is filtered",
+              "v": "8,248–8,749 features, not the full transcriptome, and the three objects differ from each other. Whether the filtering is the authors' or scPerturb's is UNRESOLVED — so gene absence here is not biological evidence.",
+              "tag": "UNRESOLVED"
+            },
+            {
+              "k": "Not yet provenanced to our standard",
+              "v": "Raw processing, replicate structure and the original accession have not been checked. Card facts are measured; pipeline fields read TBD rather than guessing.",
+              "tag": "UNRESOLVED"
+            }
+          ]
+        },
+        {
+          "title": "Why it is here",
+          "rows": [
+            {
+              "k": "The complementary design",
+              "v": "Replogle is many perturbations in one context; our zebrafish atlases are few perturbations across many cell types. Together they bracket the compositional-generalization problem that the Tahoe/Rhaister abstraction targets.",
+              "tag": "CONFIRMED"
+            },
+            {
+              "k": "Not a labelling target",
+              "v": "One cell line per object means there is no cell-type axis to label.",
+              "tag": "CONFIRMED"
             }
           ]
         }

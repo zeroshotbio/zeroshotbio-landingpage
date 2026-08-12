@@ -31,7 +31,9 @@
     "daniocell": "REFERENCE CONFIRMED from the Methods: GRCz11 / Ensembl release 99 with the Lawson Lab Zebrafish Transcriptome Annotation v4.3.2, 320 Ensembl-annotated pseudogenes removed, aligned with Cell Ranger 4.0.0 (STAR 2.5.1b), --expect-cells 6,000-21,250 per sample. New data is 10X Chromium 3' v3.1 + MULTI-seq; the 2018 Farrell Drop-seq cells were realigned against the same reference before merging. This is a DIFFERENT reference lineage from ZSCAPE/ChemFish — its 36,250 features do not correspond to their BBI-prepared 32,031. GENE UNIVERSE RECONSTRUCTED against the Lawson v4.3 we hold (v4.3.2 is UMass-only and bot-walled): v4.3 has 36,351 gene rows, 314 with an Ens99 pseudogene biotype (paper removes 320 in v4.3.2), leaving 36,031 vs the released 36,250 (+219). Cell Ranger feature-name de-duplication explains the shape: Lawson has 216 symbols occurring more than once over 458 rows, and exactly 242 DanioCell-only names are '<lawson symbol>.N' (e.g. 'HTRA2 (1 of many).10'); 32 more differ only by case. The residual 2,006 is the v4.3->v4.3.2 delta. QC VERIFIED CLEAN, unlike ChemFish: 0 cells with nGene<=200 (min exactly 201), 0 cells with percent.mt>=10 (max 9.999), no Doublet label present (only Bar1-Bar12 and Negative), 1 cell with nUMI_MS<20. The top-0.5%-features rule is not testable post-hoc. 59,013 cells lack MULTI-seq calls: 38,731 Drop-seq plus 20,282 non-hashed 10X. ACCOUNTING: 489,687 was a header-inclusive line count, real total 489,686. 63 distinct integer stages in the release (Drop-seq 10 at 3-12 hpf, 10X 53 at 14-120 hpf, no overlap) vs the paper's 62 — one unit, UNRESOLVED. 522 clust in metadata vs 521 annotation rows: 'ceph' (3,191 cells) is unannotated, so annotation covers 99.348% of cells. 498 clust and 19 tissues are the 18-96 hpf subset, not alternative atlas figures. CANONICAL CONVERSION UNRESOLVED: no script exists on the instance, and the README's '26,251 mapped' does not reproduce — the on-box gene_id_map_zf.tsv (31,312 entries) intersects DanioCell at 27,247, and neither equals the 30,121 features actually in daniocell_canonical.h5ad. All 30,121 do fall inside the ZSCAPE 32,031 space, so the conversion targeted it, but the mapping is not recorded. Regenerate with a logged conversion before depending on its exact gene set. CITATION CORRECTED: the dataset README cited Nature Communications 10.1038/s41467-024-50053-5, which Crossref 404s — the DOI does not exist. Correct venue is Developmental Cell 58, 3028-3047.e12 (2023), 10.1016/j.devcel.2023.11.001, PMID 37995681.",
     "zcl2": "All facts from the authors' own release and the NAR paper: cells/genes from ZCDL.rdata (Seurat v4.0.2, 27,538 x 1,088,106); annotation tiers from ZCDL_cellinfo.csv (143 clusters / 41 cell_type / 10 cell_lineage, every cluster pure); genome/aligner/DGE quoted from the Methods (STAR, GRCz11, modified Drop-seq tools 1.12). Annotation release reads TBD because no paper, supplement or repo states a GTF or Ensembl release -- the namespace is 93.6% present in the Ensembl 99 symbol set, which dates it to *an* Ensembl release and no further. Accession names both GEO series because the paper cites only GSE198832, whose zebrafish subseries covers 21d+22m; 24hpf/72hpf/3m are GSE178150 under a different SuperSeries. Full record: ZCL2/sources/README.md.",
     "micdrop": "Cells/genes/tiers read from the deposited GEO artifacts, not the paper text: 226,492 x 17 cell metadata (74 curated_cell_type2, 3 cell_class, 179 predicted.id) and the 32,520 Gene Expression + 204 CRISPR Guide Capture features.tsv. Genome reads GRCz11 but Annotation reads TBD deliberately: the paper and GEO both claim a Lawson v4.3.2 reference, yet the deposited feature universe is EXACTLY the Ensembl GRCz11 gene set (32,520/32,520 identical to our release-114 GTF) while the Lawson v4.3 GTF shares 0 of its 36,351 LL ids -- so the claim is contradicted and the Ensembl release cannot be dated (the zebrafish gene set is unchanged from release 99 to 114). Raw processing records Cell Ranger v7 because that is what all 36 GEO samples state; the paper's Methods name no version at all. Controls read tyr because Supplementary Data 3 names the four control guides tyr-1..4 while the deposited feature reference calls the same four sequences Non-Targeting. Genotype-assigned counts are ours from `class`; the paper's 135,881 is not reproducible from any released artifact. Full record: MICDropSeq/sources/README.md.",
-    "celloracle": "Cells/genes/design read from the GEO deposit, not the paper. 394,459 cells over the 30 Danio rerio samples of GSE145298's 31 (GSM4314394 perturbseq_ieps is Mus musculus). Genome reads GRCz11 per GEO; Annotation reads a reconstructed rule with release TBD because neither paper nor GEO names a GTF: the 25,107-feature universe is reproduced EXACTLY, in set and in GTF order, by Ensembl GRCz11 protein_coding restricted to the primary assembly (chr 1-25 + MT, 325 scaffold genes dropped), and releases 99/102/114 are identical under that rule so it cannot be dated. Not Lawson: 0 of its 36,351 LL ids appear. Cell Ranger v5.0.1 agrees between the paper Methods and GEO. Schema reads NONE DEPOSITED because the tar contains only barcodes/features/matrix -- no labels, embeddings or Seurat object. Controls are split three ways because tyr is an F0 crispant with real Cas9 cutting, not a neutral control. Full record: CellOracle/sources/README.md."
+    "celloracle": "Cells/genes/design read from the GEO deposit, not the paper. 394,459 cells over the 30 Danio rerio samples of GSE145298's 31 (GSM4314394 perturbseq_ieps is Mus musculus). Genome reads GRCz11 per GEO; Annotation reads a reconstructed rule with release TBD because neither paper nor GEO names a GTF: the 25,107-feature universe is reproduced EXACTLY, in set and in GTF order, by Ensembl GRCz11 protein_coding restricted to the primary assembly (chr 1-25 + MT, 325 scaffold genes dropped), and releases 99/102/114 are identical under that rule so it cannot be dated. Not Lawson: 0 of its 36,351 LL ids appear. Cell Ranger v5.0.1 agrees between the paper Methods and GEO. Schema reads NONE DEPOSITED because the tar contains only barcodes/features/matrix -- no labels, embeddings or Seurat object. Controls are split three ways because tyr is an F0 crispant with real Cas9 cutting, not a neutral control. Full record: CellOracle/sources/README.md.",
+    "tahoe": "All figures measured from the deposit, not the paper. 100,648,790 cells is the sum of our 14 plate H5ADs AND the row count of obs_metadata.parquet; 95,624,334 is pass_filter=='full' and exactly the Hugging Face expression split's num_examples, so '100M' is branding and both numbers are stated. Annotation reads 'Ensembl 109 - verified exact' because the 62,710 ensembl_ids are an exact set match to Ensembl 109 GRCh38, 0 differences either way - the only dataset in this corpus whose stated reference passed unchanged. 1,138 is distinct drugname_drugconc (Vevo's own dataset.toml says 1,137, which is this minus DMSO_TF). Controls: DMSO_TF covers all 700 plate x cell-line combinations. Trap: 'Trametinib (DMSO_TF solvate)' is a MEK inhibitor, not a control. moa/target/approval fields are GPT-4o-generated, not curated. Full record: human/Tahoe/sources/README.md.",
+    "replogle": "Measured directly from the three local h5ads: 310,385 + 1,989,578 + 247,914 = 2,547,877 cells; X is a DENSE float32 array holding raw integer counts (max 431, no negatives); gene counts 8,563 / 8,248 / 8,749 - a filtered feature set, not the full transcriptome. Perturbation counts are distinct 'perturbation' values minus the 'control' level: 2,057 / 9,866 / 2,393. Controls total 10,691 + 75,328 + 11,485 = 97,504. nperts is 0 or 1 throughout, so single-target only. Provenance: the three filenames match the scPerturb Zenodo record 13350497 EXACTLY, and the obs schema (perturbation, perturbation_type, nperts, organism, disease, tissue_type, cancer) is scPerturb's standard - so these are redistributions, not the authors' original release. Raw processing and replicate structure read TBD because no primary accession has been checked. Full record: human/Replogle/sources/README.md."
   },
   "order": [
     "zscape_commit_gold",
@@ -44,7 +46,9 @@
     "zcl2",
     "megafin_parse",
     "megafin",
-    "minifin"
+    "minifin",
+    "tahoe",
+    "replogle"
   ],
   "cards": {
     "zscape_commit_gold": {
@@ -1647,6 +1651,141 @@
         "codeHref": "https://github.com/morris-lab/CellOracle"
       },
       "summary": "Zebrafish crispants and flh mutants at 10 hpf against a 6/8/10 hpf wild-type reference — the observed perturbation ground truth behind CellOracle's in silico knockouts. Ships matrices only: no cell-type labels, and tyr is a crispant rather than a neutral control."
+    },
+    "tahoe": {
+      "name": "Tahoe-100M",
+      "organism": "human",
+      "perturbationClass": "CHEMICAL · 1,138 DRUG × DOSE",
+      "notRunnable": "Human, not zebrafish — a cross-species reference for method development, never pooled with the zebrafish atlases. There are no cell-type labels: the biological identity axis is the cell line, assigned by genetic demultiplexing.",
+      "cells": "100,648,790",
+      "workingSlice": "95,624,334 pass_filter='full' — the public expression split. Our 14 plate H5ADs hold all 100.6M, a superset by 5,024,456 cells",
+      "genes": "62,710",
+      "genome": "GRCh38",
+      "annotation": "Ensembl 109 — verified exact",
+      "method": "Parse / GigaLab (Vevo Mosaic)",
+      "capture": "Whole-cell",
+      "line": "50 cancer cell lines, pooled per well",
+      "replicates": "14 × 96-well plates · 1,344 samples",
+      "schema": {
+        "tiers": [
+          {
+            "n": "50",
+            "col": "cell_line (Cellosaurus)"
+          },
+          {
+            "n": "15",
+            "col": "Organ"
+          },
+          {
+            "n": "26",
+            "col": "moa-fine"
+          }
+        ]
+      },
+      "timepoints": {
+        "unit": "—",
+        "values": [
+          "single endpoint"
+        ],
+        "status": "treatment duration TBD"
+      },
+      "perturbations": {
+        "summary": "379 COMPOUNDS × 3 DOSES = 1,138 COMBINATIONS",
+        "groups": [
+          {
+            "label": "mechanism (moa-broad)",
+            "items": [
+              "inhibitor/antagonist · 276",
+              "activator/agonist · 27",
+              "unclear · 76"
+            ]
+          },
+          {
+            "label": "clinical status",
+            "items": [
+              "human-approved · 263",
+              "not approved · 116"
+            ]
+          }
+        ]
+      },
+      "controls": {
+        "summary": "DMSO_TF · 2,330,156 cells · 700/700 plate×line coverage",
+        "items": [
+          "DMSO_TF"
+        ]
+      },
+      "pipeline": {
+        "raw": "Cell Ranger–equivalent (Parse pipeline)",
+        "downstream": "Arc Institute per-plate H5AD",
+        "accession": "tahoebio/Tahoe-100M",
+        "accessionHref": "https://huggingface.co/datasets/tahoebio/Tahoe-100M",
+        "code": "tahoebio/tahoe-de-rhaister",
+        "codeHref": "https://huggingface.co/datasets/tahoebio/tahoe-de-rhaister"
+      },
+      "summary": "Giga-scale chemical perturbation: 50 cancer cell lines pooled per well, 1,138 drug×dose combinations, 100.6M cells. Every plate×line pair has a matched vehicle control. Its pseudobulk-DE companion is the template for how we would summarise the zebrafish perturbation data."
+    },
+    "replogle": {
+      "name": "Replogle",
+      "organism": "human",
+      "perturbationClass": "GENETIC · CRISPRi PERTURB-SEQ",
+      "notRunnable": "Human, not zebrafish. Held as scPerturb redistributions rather than the authors' original release, and gene-filtered to ~8.2–8.7k features — so it is a method reference, not a labelling target.",
+      "cells": "2,547,877",
+      "workingSlice": "3 objects: K562 GWPS 1,989,578 · K562 essential 310,385 · RPE1 247,914",
+      "genes": "8,248 – 8,749",
+      "genome": "GRCh38",
+      "annotation": "TBD — scPerturb-processed; ENSG present in var",
+      "method": "10X Perturb-seq (CRISPRi)",
+      "capture": "Whole-cell",
+      "line": "K562 (CML) · RPE1 (non-cancer)",
+      "replicates": "TBD",
+      "schema": {
+        "status": "NO CELL TYPES — one cell line per object"
+      },
+      "timepoints": {
+        "unit": "—",
+        "values": [
+          "single endpoint"
+        ],
+        "status": "TBD"
+      },
+      "perturbations": {
+        "summary": "GENOME-SCALE CRISPRi KNOCKDOWN",
+        "groups": [
+          {
+            "label": "K562 genome-wide (GWPS)",
+            "items": [
+              "9,866 gene targets"
+            ]
+          },
+          {
+            "label": "K562 essential-gene",
+            "items": [
+              "2,057 gene targets"
+            ]
+          },
+          {
+            "label": "RPE1 essential-gene",
+            "items": [
+              "2,393 gene targets"
+            ]
+          }
+        ]
+      },
+      "controls": {
+        "summary": "non-targeting 'control' · 97,504 cells across the three objects",
+        "items": [
+          "control"
+        ]
+      },
+      "pipeline": {
+        "raw": "TBD",
+        "downstream": "scPerturb harmonized H5AD",
+        "accession": "Zenodo 13350497 (scPerturb)",
+        "accessionHref": "https://zenodo.org/records/13350497",
+        "code": "—"
+      },
+      "summary": "Genome-scale CRISPRi Perturb-seq in two human cell lines: 9,866 targets genome-wide in K562 plus essential-gene screens in K562 and RPE1. Single-target only. The canonical example of a one-context, many-perturbation design — the mirror image of our zebrafish data."
     }
   }
 }

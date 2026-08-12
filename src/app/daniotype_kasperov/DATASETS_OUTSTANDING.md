@@ -53,8 +53,21 @@ _Not part of the zebrafish acquisition list; provenanced 2026-08-11._
 | Establish the Tahoe pseudobulk-DE ↔ Rhaister relationship | Whether Rhaister is a subset, a recomputation, or a different convention of the 89 GB `pseudobulk_differential_expression` layer. The 89 GB was deliberately not downloaded | Not started |
 | Retrieve the preprint PDF | Sequencing platform, treatment duration and replicate structure absent from documentation held. bioRxiv has 3 versions (v1 2025-02-24 … v3 2025-05-10), **never journal-published**, and is **not open access in PMC**; biorxiv.org returned HTTP 429 | Open — needs a browser |
 | Vevo-internal artifacts not public | A/B replicate-split `pdex` (43.4+43.5 GB) defines the **noise ceiling**; also a full-gene `cell_eval` (15.3 GB) and PRISM sensitivity labels. Documented in the Rhaister model repo but absent from every public release | Open — may never be released |
-| Decide on the misfiled Replogle objects | `ReplogleWeissman2022_*.h5ad` (2.8 GB) sit under `Tahoe/` but are a different dataset; a `Replogle/` directory already exists | **Decision needed** |
+| Misfiled Replogle objects | Resolved by the 2026-08-12 reorganization — all three now sit together in `human/Replogle/` | **Done** |
 | `pass_filter` numeric thresholds | Published only as "'full' is more stringent on gene_count and tsc_count" | Open — likely not closable |
+
+## Replogle (human) — partial
+
+_Card and provenance record written 2026-08-12 from measured facts only; upstream chain not traced._
+
+| Task | Why it matters | Status |
+|---|---|---|
+| Run the feature-universe test | Objects carry 8,248 / 8,563 / 8,749 features and differ from each other. Which Ensembl release, and whose filtering rule? Until this is answered, gene absence is not biological evidence | **Not started — highest priority for this dataset** |
+| Trace to the authors' original release | What we hold are scPerturb redistributions (Zenodo 13350497), confirmed by exact filename and obs-schema match. The primary accession has not been checked | Not started |
+| Mine the Cell 2022 Methods | Alignment, QC thresholds, replicate structure all unrecovered | Not started |
+| Establish whether summary statistics are distributed | A Rhaister-comparable layer would be the valuable part for cross-dataset work | Not started |
+| Guide-level detail | Guides per target, assignment thresholds, multi-guide handling — `nperts` never exceeds 1 | Not started |
+| Checksums | none computed | Not started |
 
 ## Technical debt
 _Ours to finish._
