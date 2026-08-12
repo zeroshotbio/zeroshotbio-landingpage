@@ -139,9 +139,24 @@ position-by-position, so a positional join restores `ensembl_id` and `token_id` 
 | Counts | raw integer counts, stated and consistent with CSR `float32` storage | **CONFIRMED** |
 | Sequencing platform, treatment duration, replicate structure | not recovered from the documentation held | **UNRESOLVED** — requires the preprint PDF |
 
-> **Distinguish the atlas from the model corpus.** `tahoebio/tahoe-x1` applies its own preprocessing
-> and gene filtering to build a *training* representation. That filtered corpus is **not** the
-> canonical Tahoe-100M release and must not be cited as its dimensions. Indexed, not analysed.
+### Tahoe-x1 — indexed, and it does NOT filter the gene universe
+
+`tahoebio/Tahoe-x1` (HF **model** repo, apache-2.0, commit `d218a580…`, 2025-10-24) ships three
+sizes — **70m / 1b / 3b** — each with `model.safetensors`, `best-model.pt`, `model_config.yml`,
+`collator_config.yml` and `vocab.json`.
+
+| Test | Result |
+|---|---|
+| Tahoe-x1 70m vocabulary | **62,720 entries = 62,710 gene tokens + 10 special** (`<cls>`, `<eoc>`, `<junk0..6>`, `<pad>`) |
+| Gene tokens keyed by | **ENSG**, 100% |
+| Canonical universe genes missing from the vocabulary | **0** |
+| Vocabulary genes outside the canonical universe | **0** |
+
+**VERDICT: Tahoe-x1's vocabulary is the full canonical 62,710-gene universe plus special tokens.**
+The model corpus differs from the atlas by *tokenization*, not by gene filtering — so the common
+assumption that a training representation implies a reduced feature set does **not** hold here.
+(The 3b vocabulary has one extra entry, 62,721; unexamined.) Related repos, indexed only:
+`tahoebio/Rhaister` (the model) and `tahoebio/Tahoe-100M-SCVI-v1`.
 
 ## 5. Ground-truth annotations and metadata
 
@@ -256,7 +271,38 @@ that `pdex` uses a **log-ratio** convention while `cell_eval` uses a **log-space
 tables are not on the same scale and must not be mixed. **CONFIRMED** from the official schema
 documentation; the numeric check awaits the file.
 
-## 9. Local assets and caveats
+## 9. The training-ready abstraction
+
+Recorded in full at `analysis/ABSTRACTION_INDEX.md`, from the authors' own
+`docs/architecture.md`, `docs/data_inventory.md` and `autoresearch/paper_methods.md`:
+
+```
+raw single cells → plate-matched (plate, cell_line, treatment) groups
+   → pseudobulk means/deltas (cell_eval)  |  per-gene DE statistics (pdex)
+      → per-gene response vectors y[c,p] → held-out (context, perturbation) pairs
+```
+
+The task Rhaister trains on is **compositional generalization**: predict `y[c*, p*]` where `c*` and
+`p*` each appear individually in the observed set but their combination does not. The abstraction is
+assay-agnostic — Rhaister applies it to Tahoe-100M (50 cell lines × **1,137 drugs** × 14 plates,
+i.e. our 1,138 minus `DMSO_TF`), **Parse PBMC** (18 cell types × 12 donors × ~100 cytokines) and
+**PerturbAI** (whole-brain CRISPR). `pdex` is computed by Mann–Whitney U via the `pdex` library;
+`cell_eval` by pseudobulk delta.
+
+The index also sketches how ZSCAPE / ChemFish / MIC-Drop / CellOracle would map onto it, and names
+the three obstacles specific to us — divergent control semantics (ChemFish's three vehicles;
+MIC-Drop's and CellOracle's *tyr* arms, which edit), CellOracle's absent cell-type labels, and
+feature universes spanning 25,107–32,520. **No zebrafish harmonisation was performed.**
+
+### Internal artifacts that are not public
+
+`docs/data_inventory.md` documents Vevo-internal files absent from every public release: a
+full-gene `cell_eval` (15.3 GB), **A/B replicate-split `pdex` (43.4 + 43.5 GB)**, per-cell-line
+top-3k gene lists, seqrun growth-rate labels (282 pairs) and PRISM dose-matched sensitivity
+(9,240 rows). The A/B split matters most — it defines the **noise ceiling**, i.e. what agreement is
+achievable at all. **UNRESOLVED** whether any becomes available.
+
+## 10. Local assets and caveats
 
 ### Local assets
 

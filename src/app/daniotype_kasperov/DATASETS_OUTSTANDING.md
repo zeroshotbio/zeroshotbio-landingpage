@@ -51,7 +51,8 @@ _Not part of the zebrafish acquisition list; provenanced 2026-08-11._
 | Validate Rhaister `cell_eval` against raw cells | **Done 2026-08-12** — 6 pairs, 4 cell lines, 3 compounds. Convention established: `normalize_total(1e4)` → `log1p` → group mean → treated − plate-matched DMSO (mean r 0.9644 vs 0.029 for log-ratio). Sample is thin on the compound axis | **Done** |
 | Validate `pdex` against raw cells | `pdex` uses a log-RATIO convention while `cell_eval` uses a log-space DELTA — the two are not on the same scale | **Blocked on the 40.6 GB transfer** |
 | Establish the Tahoe pseudobulk-DE ↔ Rhaister relationship | Whether Rhaister is a subset, a recomputation, or a different convention of the 89 GB `pseudobulk_differential_expression` layer. The 89 GB was deliberately not downloaded | Not started |
-| Retrieve the preprint PDF | Sequencing platform, treatment duration and replicate structure are absent from the documentation held | Not started |
+| Retrieve the preprint PDF | Sequencing platform, treatment duration and replicate structure absent from documentation held. bioRxiv has 3 versions (v1 2025-02-24 … v3 2025-05-10), **never journal-published**, and is **not open access in PMC**; biorxiv.org returned HTTP 429 | Open — needs a browser |
+| Vevo-internal artifacts not public | A/B replicate-split `pdex` (43.4+43.5 GB) defines the **noise ceiling**; also a full-gene `cell_eval` (15.3 GB) and PRISM sensitivity labels. Documented in the Rhaister model repo but absent from every public release | Open — may never be released |
 | Decide on the misfiled Replogle objects | `ReplogleWeissman2022_*.h5ad` (2.8 GB) sit under `Tahoe/` but are a different dataset; a `Replogle/` directory already exists | **Decision needed** |
 | `pass_filter` numeric thresholds | Published only as "'full' is more stringent on gene_count and tsc_count" | Open — likely not closable |
 
