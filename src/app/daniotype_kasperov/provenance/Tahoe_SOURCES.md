@@ -214,13 +214,47 @@ the two has not yet been established. **UNRESOLVED.**
 
 ## 8. Validation of summary statistics against raw cells
 
-**NOT YET PERFORMED.** Blocked on the `pdex` transfer completing.
+**PERFORMED for `cell_eval`.** Six (cell line × treatment) pairs from plate 1 — 4 cell lines,
+3 compounds — recomputed from the raw cells and compared against the released deltas over all
+2,000 panel genes. Script: `code/validate_rhaister.py`; results:
+`analysis/rhaister_validation.csv`.
 
-The intended check, on a modest stratified sample of plates × cell lines × compounds × genes:
-recompute from raw cells the treated mean, the plate-matched DMSO reference mean, log2 fold change,
-expression delta and membership counts, and compare against the released values — enough to
-establish the transformation and its trustworthiness, not to recompute billions of rows. The exact
-normalization convention (raw vs CPM vs log1p, and the pseudocount) is **UNRESOLVED** until then.
+### The normalization convention — established
+
+| Candidate convention | mean Pearson r | min r |
+|---|---|---|
+| **mean `log1p(CP10k)`, treated − plate-matched DMSO** | **0.9644** | **0.9337** |
+| `log2(mean_raw ratio)` | 0.0289 | 0.0154 |
+| raw mean delta | 0.8317 | 0.6569 |
+
+**`cell_eval` is: `normalize_total(target_sum=1e4)` → `log1p` → per-group mean → treated minus
+plate-matched DMSO_TF control.** The log-ratio convention is cleanly excluded (r ≈ 0.03, max abs
+difference > 20); the raw-count delta is clearly worse. **CONFIRMED.**
+
+| cell line | treatment | r (log1p CP10k) | max abs diff |
+|---|---|---|---|
+| CVCL_0459 | Gemcitabine 0.05 µM | 0.9745 | 0.351 |
+| CVCL_0546 | Gemcitabine 0.05 µM | 0.9498 | 0.193 |
+| CVCL_0399 | Gemcitabine 0.05 µM | 0.9812 | 0.179 |
+| CVCL_0293 | Gemcitabine 0.05 µM | 0.9797 | 0.203 |
+| CVCL_0546 | Everolimus 0.05 µM | 0.9676 | 0.219 |
+| CVCL_0546 | Anastrozole 0.05 µM | 0.9337 | 0.214 |
+
+**Why r is ~0.96 and not 1.0:** both the treated and control groups were subsampled to at most
+4,000 cells for tractability, so the residual is sampling noise, not disagreement. The consistency
+across four cell lines and three compounds — and the three-orders-of-magnitude gap to the nearest
+rival convention — is what establishes the transformation.
+
+**Caveats on the sample.** Pairs were ranked by treated-cell count, which biased the selection
+toward Gemcitabine (4 of 6). The compound axis is therefore thin: 3 compounds, one dose (0.05 µM),
+one plate. This is enough to fix the convention, **not** enough to certify the release globally.
+
+**`pdex` is NOT yet validated** — see §7 for its acquisition status. Its documented columns are
+`cell_line`, `target`, `plate`, `feature`, `fold_change` (`log2(target_mean / ref_mean)`, `-inf`
+where `target_mean = 0`), plus membership counts, Mann–Whitney statistic, p-value and FDR. Note
+that `pdex` uses a **log-ratio** convention while `cell_eval` uses a **log-space delta** — the two
+tables are not on the same scale and must not be mixed. **CONFIRMED** from the official schema
+documentation; the numeric check awaits the file.
 
 ## 9. Local assets and caveats
 

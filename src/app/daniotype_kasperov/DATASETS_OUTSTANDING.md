@@ -47,8 +47,9 @@ _Not part of the zebrafish acquisition list; provenanced 2026-08-11._
 
 | Task | Why it matters | Status |
 |---|---|---|
-| Finish `pdex/all_plates_pdex.parquet` (Rhaister) | The per-gene DE table — cell line × treatment × gene × plate. 158/161 Rhaister files held; the HF tree API under-reports LFS sizes so this one is >1.9 GB, not the 1.0 GB estimated | **In progress** |
-| Validate Rhaister against raw cells | Recompute treated/reference means, fold change and membership on a stratified sample to establish the transformation and the normalization convention | **Blocked on pdex** |
+| Finish `pdex/all_plates_pdex.parquet` (Rhaister) | The per-gene DE table, ~4.1 B rows. **40.6 GB**, not the ~1 GB the HF tree API implied; Rhaister as a whole is ~44 GB. HF is throttling at ~1.3 MB/s (~8 h) | **In progress — resuming** |
+| Validate Rhaister `cell_eval` against raw cells | **Done 2026-08-12** — 6 pairs, 4 cell lines, 3 compounds. Convention established: `normalize_total(1e4)` → `log1p` → group mean → treated − plate-matched DMSO (mean r 0.9644 vs 0.029 for log-ratio). Sample is thin on the compound axis | **Done** |
+| Validate `pdex` against raw cells | `pdex` uses a log-RATIO convention while `cell_eval` uses a log-space DELTA — the two are not on the same scale | **Blocked on the 40.6 GB transfer** |
 | Establish the Tahoe pseudobulk-DE ↔ Rhaister relationship | Whether Rhaister is a subset, a recomputation, or a different convention of the 89 GB `pseudobulk_differential_expression` layer. The 89 GB was deliberately not downloaded | Not started |
 | Retrieve the preprint PDF | Sequencing platform, treatment duration and replicate structure are absent from the documentation held | Not started |
 | Decide on the misfiled Replogle objects | `ReplogleWeissman2022_*.h5ad` (2.8 GB) sit under `Tahoe/` but are a different dataset; a `Replogle/` directory already exists | **Decision needed** |
