@@ -105,6 +105,19 @@ a `README.md` inside it documenting every file.
 | **Deposited feature universe** | **32,724 features = 32,520 Gene Expression + 204 CRISPR Guide Capture** | **CONFIRMED** |
 | **Gene namespace** | **100% ENSDARG** in the Cell Ranger matrices | **CONFIRMED** |
 | **Custom transformation** | the 204 gRNA protospacers added as CRISPR Guide Capture features, giving a separate guide count matrix per sample | **CONFIRMED** |
+| **Reference as named by the pipeline** | `Reference Path = /uufs/chpc.utah.edu/common/home/gagnon-group1/data/Clay/MICDROP/`**`GRCZ11.annotated`** · `Transcriptome = GRCZ11.annotated-` | **CONFIRMED** (web summary, x1–x4) |
+
+> **What `GRCZ11.annotated` establishes, and what it does not.** The run artifacts show the counting
+> reference was a **custom `mkref` build** — a locally-prepared directory on University of Utah CHPC
+> storage under a **Gagnon-group** path, not a stock 10x reference. That is independent support for
+> the measured 32,520-feature universe: a stock 10x `mkref` biotype filter yields **25,606** genes
+> for zebrafish, so no filter was applied. The trailing hyphen in `GRCZ11.annotated-` means
+> `mkref --version` was left blank.
+>
+> **The exact `mkref` recipe remains UNKNOWN** — the FASTA, GTF, `--genome`/`--genes` arguments and
+> any filtering are not recoverable from the web summary, which records only the reference *path*
+> and *name*. The name says "GRCZ11", consistent with the Ensembl GRCz11 gene set we measured, and
+> **inconsistent with the "Lawson v4.3.2" wording in both the paper and the GEO metadata**.
 
 ### VERDICT: the deposited reference is plain Ensembl GRCz11, not Lawson v4.3.2
 
@@ -145,12 +158,82 @@ At ENSDARG level MIC-Drop integrates with all three with no loss on their side. 
 
 | Stage | Value | Confidence |
 |---|---|---|
-| Alignment / counting | Cell Ranger — **GEO states v7 for all 36 samples**, pilot and screen alike | **CONFIRMED** |
+| Alignment / counting | **Cell Ranger 5.0.0** — read from the pipeline's own `web_summary.html` in the Zenodo bundle | **CONFIRMED** (see below) |
+| Chemistry | **Single Cell 3′ v3** | **CONFIRMED** (web summary) |
+| **Intronic reads** | **`Include introns: False`** — the released main-screen matrix is **exon-only** | **CONFIRMED** (web summary) |
 | Cell Ranger version in the paper | **none given anywhere in the Methods**; "Cell Ranger" appears in no supplementary PDF, and the Seurat objects carry no aligner provenance | **CONFIRMED absence** |
+| Cell Ranger version in GEO | **"Cell Ranger v7"**, on all 36 samples — **contradicted by the run artifacts** | **CONFIRMED conflict** |
 | Genotype thresholding | **Gaussian mixture model (Cell Ranger)** sets a UMI threshold per gRNA species, separating injected guides from ambient | **CONFIRMED** |
 | Doublets | scDblFinder | **CONFIRMED** in Methods; **no doublet column in any deposited object** |
 | Annotation method | **label transfer from Daniocell (21–26 hpf)**, then manual verification against markers | **CONFIRMED** |
 | Downstream framework | Seurat — **4.1.3** (flagship) / **v5** (pilot) | **CONFIRMED** |
+
+### VERDICT: Cell Ranger 5.0.0, exon-only — from the pipeline's own output
+
+The Zenodo bundle ships Cell Ranger output directories for the 16 main-screen samples, and **four
+of them retain the machine-written `web_summary.html`** (`x1/web_summary.html`, and
+`x2/50_x2.html`, `x3/50_x3.html`, `x4/50_x4.html` — renamed, which is why an earlier pass looking
+only for `web_summary.html` found one). Cell Ranger writes its own version into that file at run
+time; it cannot be wrong about itself. **All four agree exactly:**
+
+| Field | Value (identical in x1–x4) |
+|---|---|
+| **Pipeline Version** | **`cellranger-5.0.0`** |
+| **Chemistry** | `Single Cell 3' v3` |
+| **Include introns** | **`False`** |
+| Reference Path | `/uufs/chpc.utah.edu/common/home/gagnon-group1/data/Clay/MICDROP/GRCZ11.annotated` |
+| Transcriptome | `GRCZ11.annotated-` |
+
+Per-sample metrics, preserved verbatim (`analysis/micdrop_websummaries.json`):
+
+| | x1 | x2 | x3 | x4 |
+|---|---|---|---|---|
+| Estimated cells | 20,731 | 18,597 | 19,182 | 19,712 |
+| Reads | 1,064,943,872 | 1,021,029,965 | 1,027,844,216 | 1,130,975,771 |
+| Mean reads/cell | 51,370 | 54,903 | 53,584 | 57,375 |
+| Sequencing saturation | 53.1% | 53.4% | 51.5% | 53.1% |
+| Confidently mapped to genome | 92.4% | 92.3% | 92.8% | 92.7% |
+| **→ exonic** | **76.5%** | **76.5%** | **77.2%** | **77.3%** |
+| **→ intronic** | **9.5%** | **9.4%** | **9.2%** | **9.1%** |
+| → intergenic | 6.4% | 6.4% | 6.4% | 6.3% |
+| Confidently mapped to transcriptome | 72.7% | 72.5% | 73.2% | 73.4% |
+| Median genes/cell | 2,479 | 2,501 | 2,534 | 2,591 |
+| Median UMI/cell | 10,650 | 11,131 | 11,454 | 11,822 |
+
+**Status: CONFIRMED for x1–x4 (4 of 16); STRONGLY INFERRED for the remaining 12** — the "light"
+bundle stripped their summaries, and four identical runs of one screen is strong but not complete
+evidence. **No web summary survives for the pilot**, so the pilot's version is **UNRESOLVED**.
+
+> **GEO's "Cell Ranger v7" is hand-entered submission metadata and is wrong for these samples.**
+> `!Sample_data_processing` repeats *"Cell Ranger v7 was used to align and count features"* on all
+> 36 records. Where a hand-typed field and a machine-written run artifact disagree, the artifact
+> wins. Retain GEO's claim as a documented conflict, not as the version.
+
+### ⚠ The released main-screen matrix contains NO intronic reads
+
+`Include introns: False`, and the version is what makes that interpretable — intron handling
+changed across exactly this range:
+
+| Cell Ranger | 3′ GEX intron handling |
+|---|---|
+| **5.0.0** | no intronic reads; not an option |
+| 6.x | `--include-introns` opt-in, default off |
+| 7.x | **default on** |
+
+Had GEO's "v7" been true, you would assume introns *were* counted. They were not, and the run
+metrics quantify what was discarded: **9.1–9.5% of confidently-mapped reads were intronic and are
+absent from the count matrix**, against 76.5–77.3% exonic.
+
+Consequences, all of which matter more than the version number itself:
+
+1. **Reproducing the deposited matrix requires Cell Ranger 5.0.0 with introns excluded.** Re-running
+   a modern Cell Ranger with defaults produces a materially different matrix — silently.
+2. **Cross-dataset depth comparisons are pipeline-confounded in a known direction.** ZSCAPE and
+   ChemFish are sci-RNA-seq3 on **nuclei**, where transcripts are intron-rich; MIC-Drop is whole
+   cells, exon-only. UMI and gene-detection differences between them are not purely biological.
+3. **Low or absent detection of a transcript here is weak biological evidence**, particularly for
+   long or nuclear-retained transcripts. Combine with the reference caveat in §3 — gene *absence*
+   already has two non-biological explanations in this dataset.
 
 ### QC — three sources, three thresholds
 
@@ -209,6 +292,41 @@ exactly (89.9%). The misses mostly have an empty sub-tier (`adenohypophysis|aden
 
 > **Trap:** `class` has **51 target levels + ND**, not 50. The 51st is `tyr`, the control.
 
+#### The 135,881 figure — correctly framed, still unresolved
+
+The paper: *"Genotypes were confidently assigned in **135,881** cells, with each of the 50 genes
+represented in each of the 4 replicates with an average of **2,718 cells per genotype**."*
+
+**Those two numbers pin the denominator: 50 × 2,718 = 135,900, and 135,881 / 50 = 2,717.6.** The
+paper's count is over the **50 real targets, excluding `tyr`.** Earlier drafts of this record
+compared it against 138,767, which includes `tyr` — the wrong comparison.
+
+Measured on the deposited object:
+
+| Population | Cells | vs paper's 135,881 |
+|---|---|---|
+| non-ND (all 51 targets) | 138,767 | +2,886 |
+| **non-ND, excluding `tyr`** | **134,518** | **−1,363** ← the right comparison |
+| non-ND + Figure-2 QC (`mt<10`, `250<nFeature<9000`) | 138,224 | +2,343 |
+| non-ND + Figure-2 QC, excluding `tyr` | 134,000 | −1,881 |
+| non-ND + paper QC (`mt<15`, `nFeature>200`) | 138,767 | +2,886 |
+
+**The deposit has 1,363 *fewer* genotyped cells than the paper reports (1.0%).** That direction
+matters: **no filter can reconcile it**, because filters only remove cells. The gap has to come from
+a difference in guide-calling or in how the deposited object was assembled, not from QC.
+
+**scDblFinder does not explain it.** The Methods name it, but in the authors' own code it appears
+**only in `Figure1` (the pilot)**, under a section headed *"Use computational doublet detection to
+**validate** that cells with multiple gRNA targets are enriched for doublets."* It is a validation
+of the `Multiple` class, not a filter on the 50-gene screen — `Figure2` contains **zero**
+`scDblFinder` calls. Its QC block is only `percent.mt < 10 & nFeature_RNA > 250 & nFeature_RNA <
+9000`, which moves the count the wrong way.
+
+**UNRESOLVED, and left so deliberately.** No combination of the released filters reaches 135,881,
+and the shortfall runs opposite to any filtering explanation. Searched: the Nat Commun full text
+(one hit, quoted above), Supplementary Data 1–5, the Source Data workbook, the Zenodo bundle and
+all four authors' R Markdown files — `135881` appears in none of them outside that sentence.
+
 ### The "Non-Targeting" guides are tyr-targeting — proven
 
 Supplementary Data 3 lists the four control guides as **`tyr-1..tyr-4`**. The deposited feature
@@ -263,15 +381,16 @@ Republished as Parquet by `code/convert_deg_results.R` because the RDS is unread
 |---|---|---|---|
 | Reference | "GRCz11 v4.3.2", citing Lawson | feature universe is **exactly** the Ensembl GRCz11 gene set; 0 of Lawson's 36,351 LL ids present | **CONFIRMED mismatch** |
 | Ensembl release | — | identical sets across releases 99–114 | **UNRESOLVED** |
-| Cell Ranger version | paper names **none**; GEO says **v7** on all 36 samples | no artifact contains "v5.0.0" | **v7 CONFIRMED; v5 NOT FOUND** |
+| Cell Ranger version | paper names **none**; GEO says **v7** on all 36 samples | **`cellranger-5.0.0`** in the machine-written `web_summary.html` of x1, x2, x3 and x4 | **v5.0.0 CONFIRMED (4/16); GEO's v7 is a hand-entered error** |
+| Intronic reads | not stated anywhere | `Include introns: False`; 9.1–9.5% of confidently-mapped reads discarded as intronic | **CONFIRMED — matrix is exon-only** |
 | Control guides | Supp. Data 3 says `tyr-1..4` | every machine-readable file says `Non-Targeting`; amplican shows **9.79% editing** | **CONFIRMED** — they are tyr guides |
-| Genotyped cells | **135,881** | deposited metadata gives **138,767**; excluding tyr **134,518**; with Figure-2 QC **138,224**; the paper's own Supp. Data 4 sums to **138,822** | **UNRESOLVED** — nothing lands on 135,881 |
+| Genotyped cells | **135,881** | see the dedicated analysis below | **UNRESOLVED**, but now correctly framed: the deposit has **1,363 fewer** than the paper, not more |
 | scDblFinder | used per Methods | no doublet flag distributed anywhere | **UNRESOLVED** |
 | 50-gene QC | Figure2 code: mt < 10, genes < 9000 | released object has 1,783 cells ≥10% mito and 8 above 9,000 genes | **CONFIRMED** — object is pre-subset |
 | Pilot feature reference | — | GEO ships 16 rows / 4 target sets; the data uses 32 guides / 8 sets | **CONFIRMED gap, now closed** by the Zenodo `feature_reference.csv` |
 | Flagship validation | — | amplican and rhAmpSeq cover the **pilot only** | **UNRESOLVED** — no editing efficiency published for the 50 targets |
 | Seurat generation | — | flagship v4.1.3 (`Assay`), pilot **v5** (`Assay5`) | **CONFIRMED** |
-| `micdrop_2-6-25.rds` vs GEO object | — | differ by 8.6 MB | **UNVERIFIED** — not hashed |
+| `micdrop_2-6-25.rds` vs GEO object | — | hashed and byte-compared: **identical for the first 23,355,451,955 uncompressed bytes**, diverging only in a ~28.9 MB tail | **CLOSED** — the data are the same object; see §8 |
 
 ## 8. Local assets
 
@@ -302,12 +421,36 @@ Validated on read-back: counts integral, row sums equal `nCount_RNA`, per-row no
 > **The pilot object carries all 32 guides** across its 8 target sets — confirming the 16-row
 > deposited pilot feature reference is a deposit gap, not a smaller experiment.
 
+### Zenodo vs GEO flagship object — CLOSED, they are the same data
+
+Both are gzip-wrapped R serialization, header `X\n` version 3, and were streamed and byte-compared
+in full:
+
+| | Zenodo `micdrop_2-6-25.rds` | GEO `GSE315445_micdrop_50_gene.rds` |
+|---|---|---|
+| Bytes on disk | 7,221,586,953 | 7,212,997,471 |
+| sha256 | `eb481bf4…86c688` | `b1196ba1…b6858a` |
+| Uncompressed prefix | **identical for the first 23,355,451,955 bytes (23.36 GB)** | |
+| After that | diverges; Zenodo carries **~28.9 MB** more | ends |
+
+**Interpretation (inference, not measured):** the divergence falls at ~97.6% of the stream. Seurat
+S4 slots serialize in class-definition order, with `assays`, `meta.data` and `reductions` early and
+`project.name`, `misc`, `version`, `commands`, `tools` last — so a difference confined to the final
+~29 MB is almost certainly extra trailing slots (most plausibly `@commands`, Seurat's command
+history). **The count matrices, the CRISPR assay, the metadata and the embeddings are provably
+identical**, because they serialize inside the shared 23.36 GB prefix.
+
+**Consequence:** our canonical H5ADs are unaffected by the source choice — building from the Zenodo
+object instead of the GEO one would produce the same result. The earlier "unclear which is
+canonical" concern is closed.
+
 ### Source files
 
 | File | Size | Notes |
 |---|---|---|
-| `geo/GSE315445_micdrop_50_gene.rds` | 7,212,997,471 B | the flagship object (Seurat 4.1.3) |
+| `geo/GSE315445_micdrop_50_gene.rds` | 7,212,997,471 B | the flagship object (Seurat 4.1.3). sha256 `b1196ba1f79fb9628f48ee67fbd646a9841e2856c1a61f71598902131cb6858a` |
 | `geo/GSE315445_pilot_seurat_object.rds` | 376,452,563 B | the pilot (Seurat v5) |
+| `data/input_data/micdrop_2-6-25.rds` | 7,221,586,953 B | sha256 `eb481bf41b9567bcc1422e4a537248570873aebf2607464bf46673ea0786c688` |
 | ~~`data/mic_drop_seq_source_data.zip`~~ | 28,952,036,968 B | **deleted 2026-08-12** after verifying all 211 entries were extracted to `data/input_data/`. MD5 was `133fbc3728adbfba436d2027590068df`, matching Zenodo's published checksum; re-downloadable from the Zenodo DOI |
 | `geo/*_cell_metadata.csv.gz` | | 226,492 × 17 and 21,994 × 23 |
 | `geo/*_feature_reference.csv.gz` | | 204 guides (50-gene) and only 16 (pilot) |
@@ -329,13 +472,18 @@ The 100 per-sample feature-barcode matrices (~65 GB) were **not** bulk-downloade
 
 - **The paper's reference claim is wrong for the deposited data.** Treat the feature universe as
   Ensembl GRCz11 and ignore the "v4.3.2" wording.
-- **"v5.0.0" appears in no released artifact.** Check the bioRxiv preprint if the version matters.
-- **135,881 is not reproducible** from any released file, including the paper's own Supp. Data 4.
+- **Cell Ranger 5.0.0, exon-only** — confirmed from the run artifacts, not the metadata. GEO's "v7"
+  is wrong. The matrix contains **no intronic reads**, which is the caveat that actually bites:
+  reproducing it needs 5.0.0 with introns off, and depth comparisons against nuclei-based atlases
+  (ZSCAPE, ChemFish) are pipeline-confounded.
+- **135,881 is not reproducible.** Correctly compared (50 targets, `tyr` excluded) the deposit holds
+  **134,518** — **1,363 fewer** than the paper. Because the deposit is *short*, no filter explains
+  it, and scDblFinder is a pilot-only validation step, not a screen filter. Genuinely open.
 - **No editing validation exists for the 50 flagship targets**, so per-target knockout efficiency is
   unknown for the main screen. This limits how much weight a null result per target can carry.
 - **Per-replicate DE is not distributed.**
-- **`micdrop_2-6-25.rds` vs the GEO object** — differ by 8.6 MB, not yet hashed; unclear which is
-  canonical. Our H5ADs were built from the GEO object.
+- ~~`micdrop_2-6-25.rds` vs the GEO object~~ — **closed**: identical for 23.36 GB, differing only in
+  a ~29 MB trailing-slot tail. Either source yields the same canonical H5AD.
 - **Annotation is DanioCell-derived**, so it cannot serve as independent evidence about DanioCell.
 
 ---
