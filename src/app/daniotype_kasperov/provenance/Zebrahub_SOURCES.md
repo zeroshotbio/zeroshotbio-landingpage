@@ -102,10 +102,52 @@ Figshare v1 full release is already 120,444. **UNRESOLVED** (227 cells), not con
 | mt / nc flags | 13 mitochondrial, 24 nc genes flagged | **CONFIRMED** |
 | FASTA / GTF / Ensembl release / Cell Ranger version / `mkref` procedure | **not published** | **UNRESOLVED** |
 
-**The exact reference recipe is UNRESOLVED.** The QC notebook contains no `mkref`, `GRCz`, `Ensembl`
-or `gtf` reference; the paper Methods were not retrievable; and the only reference details findable
-online belong to **Zebrahub-Multiome**, a different assay. Nothing here is inferred from ZSCAPE or
-DanioCell. The Zebrabow transgene sequences and their source are likewise unpublished.
+### The reference recipe — WRITTEN OFF 2026-08-13 as unpublished
+
+**Cell Ranger versions are now CONFIRMED** from the paper's STAR Methods, verbatim:
+
+> *"After sequencing, the obtained sequences were de-multiplexed using **bcl2fastq (v2.20.0.422)**.
+> To align the reads to the reference genome, a **reference genome was first created using
+> CellRanger v.4.0.0**. Subsequently, the **CellRanger v.5.0.1** software was used for read
+> alignment to the reference zebrafish genome."*
+
+Identical wording appears in the bioRxiv v2 preprint. (An earlier pass reported "Cell Ranger absent"
+from the paper — that was a **search error**: the paper writes `CellRanger` with no space.)
+
+| Layer | Status |
+|---|---|
+| `mkref` builder | **CellRanger v4.0.0** — CONFIRMED |
+| Aligner | **CellRanger v5.0.1** — CONFIRMED |
+| Demultiplexer | **bcl2fastq v2.20.0.422** — CONFIRMED |
+| Sequencer | **NovaSeq 6000** — CONFIRMED (Key Resources Table) |
+| Chemistry | **Chromium Next GEM Single Cell 3′ v3.1** (10 hpf–1 dpf) and **Single Cell 3′ v3.1 HT** (2–10 dpf) — CONFIRMED |
+| Raw data accession | **NIH BioProject PRJNA940501** — CONFIRMED (Key Resources Table) |
+| **FASTA / GTF / assembly / Ensembl release fed to `mkref`** | ❌ **UNPUBLISHED — written off** |
+| **Zebrabow transgene sequences** (`dTomato`, `mCerulean`, `EYFP`) | ❌ **UNPUBLISHED — written off** |
+
+**Sources exhausted 2026-08-13.** Every one of the following was obtained and searched for
+`Zebrabow`, `mkref`, `GRCz`, `Ensembl`, `GTF`, `FASTA` and the transgene names:
+
+| Source | Result |
+|---|---|
+| *Cell* 2024 paper incl. STAR Methods (36 pp) | versions yes; **no** reference inputs |
+| **Methods S1** (14 pp) | **all terms ABSENT** — it is the imaging/HCR supplement |
+| Data S1 (17 pp), Tables S1 & S2 | no reference content |
+| bioRxiv **v2** preprint (50 pp) | repeats the paper verbatim, adds nothing |
+| `zebrahub_analysis` repo | only printed `adata.var` output echoing the name |
+| **`zebrahub-multiome-analysis` repo** (267 MB) | **`Zebrabow` appears nowhere in it** |
+
+> ⚠ **The multiome repo's reference statement is a trap, not an answer.** Its README specifies
+> *"Cell Ranger ARC 2.0.2 reference built from the Ensembl GRCz11 genome (`Danio.rerio.fa`) and
+> annotation (`Danio.rerio.gtf`), primary chromosomes 1–25 + MT"* — but that is the **Multiome**
+> dataset, a different assay with its own reference and its own accession (PRJNA1164307). **Do not
+> transplant it onto this atlas.**
+
+**Consequence for use:** the name `Danio.rerio_genome_Zebrabow_6` is all that is knowable about the
+counting reference from published material. Treat the 32,057 ENSDARG ids as the operative feature
+universe — all are members of Ensembl 99, though that does not date the build, since the zebrafish
+gene set is identical across releases 99–114. Closing this now requires an author request. Recorded
+as a documented gap rather than an open task.
 
 All 32,057 ENSDARG ids are members of Ensembl 99 — but that is uninformative for dating, since the
 zebrafish gene set is identical between releases 99 and 114.
@@ -237,12 +279,20 @@ API responses substantiating the claims above are in `analysis/`.
   `zebrahub_combined.h5ad`, so every downstream output (latent space, timepoint centroids,
   developmental paths, renders) was computed on an object that double-counted 3,862 cells as two
   timepoints and omitted 3 dpf entirely. **Required.**
-- **The exact reference recipe is unresolved** and probably not closable without the authors or the
-  final paper's supplementary.
+- **The exact reference recipe is WRITTEN OFF as unpublished** (§3). Cell Ranger v4.0.0/v5.0.1,
+  bcl2fastq v2.20.0.422, NovaSeq 6000 and PRJNA940501 are now confirmed; the FASTA/GTF/assembly and
+  the Zebrabow transgene sequences appear in **no** source we hold, including Methods S1 and the
+  multiome repo. Author request only.
 - **Two QC regimes** in the v1 release set — early vs late timepoints. Do not assume the notebook's
-  window applies to 10 hpf–24 hpf.
+  window applies to 10 hpf–24 hpf. **Likely explanation found 2026-08-13:** the paper used two
+  different kits — `Chromium Next GEM Single Cell 3′ v3.1` for **10 hpf–1 dpf** and
+  `Single Cell 3′ v3.1 HT` for **2–10 dpf**. That boundary coincides with the observed
+  `total_counts` split (10 hpf–24 hpf ~17k–100k vs 2/5/10 dpf inside 2,000–20,000).
+  **STRONGLY INFERRED**, not proven.
 - **`timepoint_cluster` is not a global vocabulary.** Never pool it across stages.
-- Final *Cell* paper PDF and supplementary not retrieved — archival gap.
+- ~~Final *Cell* paper PDF and supplementary not retrieved~~ — **CLOSED 2026-08-13**: paper,
+  Methods S1, Data S1, Tables S1–S2, Videos S1–S5, the bioRxiv v2 preprint and both analysis repos
+  are all held.
 
 ---
 
