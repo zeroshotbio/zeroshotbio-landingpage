@@ -81,15 +81,25 @@ The two platforms cover **disjoint** stage ranges — Drop-seq 3–12 hpf (10 in
 
 ### How 36,250 released names arise — reconstruction
 
-We hold Lawson **v4.3** (eLife 55792 Source Data 2, `../../_annotations/lawson_v4_3/`); the study
-used **v4.3.2**, which is distributed only from the UMass site and was not retrievable. Testing
-against v4.3 explains the transformation but leaves a version-sized residual:
+> ### Corrected 2026-08-13 — we DO hold Lawson v4.3.2
+> This section previously said v4.3.2 "is distributed only from the UMass site and was not
+> retrievable", and attributed the 2,006-name residual to the v4.3 → v4.3.2 version delta.
+> **Both statements were wrong.** A v4.3.2 GTF was already on the instance, undocumented, at
+> `/data/scratch/bench/ref/`; it is now promoted to
+> `../../references/lawson_v4_3_2/V4.3.2.ensembl_names.gtf` with its own README.
+>
+> The four statistics below reproduce **exactly against v4.3.2 and not against v4.3** — so this
+> reconstruction was computed with v4.3.2 all along, while the text claimed v4.3. Re-run it with
+> `code/verify_lawson_v4_3_2.py` (25 checks, exits 0).
+
+The study used **v4.3.2**. We hold both it and v4.3 (eLife 55792 Source Data 2,
+`../../references/lawson_v4_3/`). Measured against **v4.3.2**:
 
 | Step | Count |
 |---|---|
-| Lawson v4.3 gene rows | 36,351 |
-| — of which Ens99 biotype contains "pseudogene" | **314** (paper removes **320** in v4.3.2) |
-| Lawson v4.3 genes minus pseudogenes | 36,031 |
+| Lawson gene rows (identical in v4.3 and v4.3.2) | 36,351 |
+| — of which Ens99 biotype contains "pseudogene" | **314** measured *(from the **v4.3** gene table — the paper removes **320** in v4.3.2, and the v4.3.2 gene table is **still missing**, so this one number cannot yet be checked at v4.3.2)* |
+| Lawson genes minus pseudogenes | 36,031 |
 | **DanioCell released names** | **36,250** (delta **+219**) |
 
 Two mechanisms account for the shape of the difference, both verified:
@@ -103,12 +113,32 @@ Two mechanisms account for the shape of the difference, both verified:
 2. **Case handling.** 32 DanioCell-only names differ from a Lawson symbol only by case
    (`ABCD2`, `ANXA1`, `ARF5`, …).
 
-The remaining **2,006** names are unexplained by either mechanism and are attributed to the
-**v4.3 → v4.3.2 version delta** — consistent with the pseudogene count also differing (314 vs 320).
-**RECONSTRUCTED**; closing it exactly requires the v4.3.2 GTF.
+The remaining **2,006** names are unexplained by either mechanism. **They are NOT a Lawson version
+artifact** — measured 2026-08-13, they persist unchanged against v4.3.2:
 
-Script: reproduce with `reference/lawson_v4_3geneinformation.tab` against
-`geo/GSE223922_Sur2023_counts_rows_genes.txt.gz`.
+| Statistic | v4.3 | **v4.3.2** |
+|---|---|---|
+| unique gene_names | 36,208 | **36,109** |
+| direct matches | 33,788 | **33,970** |
+| Cell Ranger `.N` matches | 227 | **242** |
+| case-only matches | 32 | **32** |
+| **unexplained residual** | 2,203 | **2,006** |
+
+Upgrading v4.3 → v4.3.2 resolves **197** names and leaves **2,006**. What they are:
+
+- **1,997 (99.6%) are ALL-UPPERCASE symbols** — `ANXA1`, `CCR8`, `CDHR1`, `CELA1`, `COX7A2`,
+  `DOCK4`, `ERBB4`, … — absent from Lawson **even case-insensitively** (the 32 case-only matches
+  are already accounted for above), and matching no column of `v4_3geneinformation.tab`.
+- **9 others**: eight `unm-*` ZFIN mutant-allele features (`unm-hu7910`, `unm-sa808`,
+  `unm-sa1506`, …) plus `si:ch211-64i20.5-2`. The same `unm-*` family accounts for the 13
+  unmapped rows in MIC-Drop-seq's canonical H5AD, so it is not DanioCell-specific.
+
+**Origin UNRESOLVED.** The uppercase convention suggests a second annotation source merged into
+DanioCell's Cell Ranger reference, but nothing local establishes which. Do **not** attribute this
+residual to the Lawson version delta.
+
+Script: `code/verify_lawson_v4_3_2.py` — reproduces every number in this section and asserts that
+v4.3 does *not* reproduce them.
 
 ## QC — published thresholds vs the released cells
 
@@ -252,7 +282,9 @@ Large derived objects stay at the dataset root: `daniocell.h5ad` (10 GB),
 |---|---|
 | Canonical conversion provenance | **UNRESOLVED** — no script; documented gene count does not reproduce |
 | **Inherited `nUMI` / `nGene` / `percent.mt` / `percent.ribo` are stale** — they describe the 36,250-feature source, not the 30,121-feature `X`. Recompute from `X`. Breaks the published <10% mito guarantee (recomputed max 12.86%) | **CONFIRMED**, measured 2026-08-13 |
-| Lawson **v4.3.2** GTF not obtainable (UMass site bot-walled); we hold v4.3 | **RECONSTRUCTED** with a 2,006-name version residual |
+| Lawson **v4.3.2** GTF | **HELD** — `../../references/lawson_v4_3_2/`, promoted 2026-08-13. Biological identity **CONFIRMED**; original UMass acquisition **UNRESOLVED** |
+| Lawson **v4.3.2 gene-information table** (biotypes + Ens99 cross-reference) | **STILL MISSING** — blocks the 314-vs-320 pseudogene check |
+| 2,006-name residual | **UNRESOLVED** — persists against v4.3.2, so *not* a version delta. 1,997 are uppercase symbols absent from Lawson; 9 are `unm-*`/`si:` features |
 | Paper says 62 stages; released metadata has 63 integer stages | **UNRESOLVED**, one unit |
 | `ceph` cluster (3,191 cells) has no row in `cluster_annotations.csv` | documented |
 | ZFA identifiers present on only 358 of 521 clusters | documented |

@@ -15,7 +15,9 @@ _Automated access is blocked; these need a browser._
 |---|---|---|---|
 | DanioCell | Final paper PDF (PMC11181902 / Dev Cell) | Only archival gap; the Methods facts are already recorded | PMC is free-to-read but **not** OA, bot wall — **blocked** |
 | DanioCell | Supplementary Tables S1–S7 + figures | Unreviewed; may hold per-sample QC and cluster detail | Elsevier paywall — **blocked** |
-| all three | **Lawson v4.3.2** GTF + gene table | Would close DanioCell's 2,006-name residual exactly; we only hold v4.3 | UMass Cloudflare challenge — **blocked** |
+| ~~all three~~ | ~~**Lawson v4.3.2** GTF~~ | ~~Would close DanioCell's 2,006-name residual~~ | **RESOLVED 2026-08-13 — we already had it.** Found undocumented at `/data/scratch/bench/ref/`, promoted to `datasets/zebrafish/references/lawson_v4_3_2/`. It does **not** close the residual: v4.3→v4.3.2 resolves only 197 names, 2,006 remain |
+| DanioCell | **Lawson v4.3.2 gene-information table** (biotypes + Ens99 cross-reference) | The GTF carries no biotypes, so the pseudogene check is still stuck at the v4.3 table's **314** vs the paper's **320**. This is the only remaining Lawson gap | UMass Cloudflare challenge — **blocked**, needs a browser |
+| DanioCell | An **untouched** v4.3.2 GTF from UMass | Ours is seqname-harmonized + MT-annotated by a since-deleted local script. Would let us attribute the 287 non-MT gene_name changes to the version delta rather than inferring it | **blocked**, low priority — biological identity is already confirmed |
 | Zebrahub | Final *Cell* paper PDF + supplementary | Archives the publication package; may resolve the reference recipe and QC-regime questions below | **blocked** — not yet held |
 
 Upload to `/daniotype_kasperov` tagged with the dataset; `sweep_uploads.sh --go` files them.
@@ -75,6 +77,7 @@ _Ours to finish._
 
 | Dataset | Task | Why it matters | Status |
 |---|---|---|---|
+| DanioCell | Identify the source of the 2,006 residual feature names | **Reopened 2026-08-13.** Previously attributed to the v4.3→v4.3.2 delta; that is **refuted** — they persist against v4.3.2. 1,997 are ALL-UPPERCASE symbols (`ANXA1`, `CCR8`, …) absent from Lawson even case-insensitively; 9 are `unm-*`/`si:` features. Suggests a second annotation source in DanioCell's Cell Ranger reference | Open — `provenance/code/verify_lawson_v4_3_2.py` reproduces the finding |
 | DanioCell | Regenerate `daniocell_canonical*.h5ad` with a logged script | **Our labelling consumes it**; no script exists and the recorded "26,251 mapped" doesn't reproduce (on-box map gives 27,247; object has 30,121). **Also measured 2026-08-13: the inherited `nUMI`/`nGene`/`percent.mt`/`percent.ribo` are stale** — they describe the 36,250-feature source, not the 30,121-feature `X` (rowsum ratio mean 0.947 / 0.747, 0 exact matches), and the published <10% mito guarantee fails when recomputed from `X` (max 12.86%) | **Not started — highest priority.** Hazard is now documented in both READMEs; recompute QC from `X` meanwhile |
 | DanioCell | Audit publication-era `cluster_annotations.csv` vs the live portal | Labels may have drifted since 2023; we score against them | Not started |
 | Zebrahub | Rerun `visualization/` against `zebrahub_combined_v2.h5ad` | Existing outputs used the defective object — it duplicated 14 hpf as 15 hpf and omitted 3 dpf entirely | **Required** |
