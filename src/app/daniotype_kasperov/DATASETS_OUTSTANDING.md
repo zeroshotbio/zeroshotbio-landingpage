@@ -2,9 +2,10 @@
 
 Held and provenanced: ZSCAPE · ChemFish · DanioCell · Zebrahub · ZCL 2.0 · MIC-Drop-seq · CellOracle · **Tahoe-100M** (human).
 
-Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md` — now version-controlled
-at `provenance/<DATASET>_SOURCES.md`, all five sharing a common 9-section structure and an identical
-**Cross-dataset provenance principles** block.
+Only genuinely unfinished items. Detail lives in each `<DATASET>/sources/README.md` — version-controlled
+at `provenance/<DATASET>_SOURCES.md`. **Nine records** (the eight above plus Replogle) share a common
+structure and an identical **Cross-dataset provenance principles** block. MegaFin and MiniFin are
+internal datasets and are **not** at this standard; their pages say so.
 Canonical path: `/data/datasets/raw_datasets/OUTSTANDING.md` (symlink to this file, so edits are versioned).
 
 ## Manual downloads needed
@@ -47,7 +48,7 @@ _Not part of the zebrafish acquisition list; provenanced 2026-08-11._
 
 | Task | Why it matters | Status |
 |---|---|---|
-| Finish `pdex/all_plates_pdex.parquet` (Rhaister) | The per-gene DE table, ~4.1 B rows. **40.6 GB**, not the ~1 GB the HF tree API implied; Rhaister as a whole is ~44 GB. HF is throttling at ~1.3 MB/s (~8 h) | **In progress — resuming** |
+| Finish `pdex/all_plates_pdex.parquet` (Rhaister) | The per-gene DE table, ~4.1 B rows. **40.6 GB**, not the ~1 GB the HF tree API implied; Rhaister as a whole is ~44 GB. HF is throttling at ~1.3 MB/s (~8 h) | **Stalled at 16.66 GB and QUARANTINED 2026-08-13** — the partial file has no Parquet footer and fails to open. Renamed `INCOMPLETE_DOWNLOAD_all_plates_pdex.parquet.part`; must not return to the canonical name until `pq.ParquetFile()` succeeds |
 | Validate Rhaister `cell_eval` against raw cells | **Done 2026-08-12** — 6 pairs, 4 cell lines, 3 compounds. Convention established: `normalize_total(1e4)` → `log1p` → group mean → treated − plate-matched DMSO (mean r 0.9644 vs 0.029 for log-ratio). Sample is thin on the compound axis | **Done** |
 | Validate `pdex` against raw cells | `pdex` uses a log-RATIO convention while `cell_eval` uses a log-space DELTA — the two are not on the same scale | **Blocked on the 40.6 GB transfer** |
 | Establish the Tahoe pseudobulk-DE ↔ Rhaister relationship | Whether Rhaister is a subset, a recomputation, or a different convention of the 89 GB `pseudobulk_differential_expression` layer. The 89 GB was deliberately not downloaded | Not started |
@@ -74,14 +75,16 @@ _Ours to finish._
 
 | Dataset | Task | Why it matters | Status |
 |---|---|---|---|
-| DanioCell | Regenerate `daniocell_canonical*.h5ad` with a logged script | **Our labelling consumes it**; no script exists and the recorded "26,251 mapped" doesn't reproduce (on-box map gives 27,247; object has 30,121) | **Not started — highest priority** |
+| DanioCell | Regenerate `daniocell_canonical*.h5ad` with a logged script | **Our labelling consumes it**; no script exists and the recorded "26,251 mapped" doesn't reproduce (on-box map gives 27,247; object has 30,121). **Also measured 2026-08-13: the inherited `nUMI`/`nGene`/`percent.mt`/`percent.ribo` are stale** — they describe the 36,250-feature source, not the 30,121-feature `X` (rowsum ratio mean 0.947 / 0.747, 0 exact matches), and the published <10% mito guarantee fails when recomputed from `X` (max 12.86%) | **Not started — highest priority.** Hazard is now documented in both READMEs; recompute QC from `X` meanwhile |
 | DanioCell | Audit publication-era `cluster_annotations.csv` vs the live portal | Labels may have drifted since 2023; we score against them | Not started |
 | Zebrahub | Rerun `visualization/` against `zebrahub_combined_v2.h5ad` | Existing outputs used the defective object — it duplicated 14 hpf as 15 hpf and omitted 3 dpf entirely | **Required** |
 | MIC-Drop | Canonical H5ADs **built** — `micdrop_50gene_canonical.h5ad` (226,492 × 26,435) + `micdrop_pilot_canonical.h5ad` (21,994 × 26,007), gRNA matrices and ENSDARG preserved | Genotype evidence survives conversion; validated against nCount_RNA/nFeature_RNA/nCount_CRISPR | **Done 2026-08-11** |
 | MIC-Drop | Zenodo processed bundle **held** (MD5-verified, 211 files) — DE grid republished as `analysis/deg_results_pseudobulk.parquet` (30,053,751 rows, 71 cell types × 51 perturbations × 20,362 genes) | Also brings the Daniocell 21–26 hpf reference used for label transfer, so the annotation chain is reproducible | **Done 2026-08-11** |
 | MIC-Drop | Hash `micdrop_2-6-25.rds` (Zenodo) against `GSE315445_micdrop_50_gene.rds` (GEO) | They differ by 8.6 MB; unclear which is canonical. I built from the GEO one | Not started — small |
 | infra | `minifin_query.service` has **427 restarts** | OOM-killed while loading MegaFin (537,959 × 36,351). Pre-existing, not caused by this work, but it makes any large local job unsafe | **Not started — real production issue** |
-| all five | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo | **Done 2026-08-11** — the five records now live in `provenance/<DATASET>_SOURCES.md` and are symlinked back to `<DATASET>/sources/README.md`, the same pattern this file already uses |
+| all nine | Version-control the `sources/README.md` files | `raw_datasets/` is not a git repo | **Done** — 2026-08-11 for eight; **DanioCell added 2026-08-13** (it had been a plain untracked file and lacked the shared principles block). All nine now live in `provenance/<DATASET>_SOURCES.md`, symlinked back to `<DATASET>/sources/README.md` |
+| all | Front-door `<DATASET>/README.md` files contradicted `sources/README.md` | A cold-start agent reads the front door first and would pick the wrong object, wrong namespace, wrong control | **Done 2026-08-13** — every front door now carries an `AUTHORITATIVE PROVENANCE` banner; Zebrahub/ZCL2/ChemFish/ZSCAPE rewritten; MICDropSeq and CellOracle given their first README; dead `/data/raw_datasets/` paths replaced |
+| ZSCAPE | Document the merged/deduplicated build | The canonical object had no build record, no script and an empty `uns` — its composition could not be reconstructed from the docs | **Done 2026-08-13** — `provenance/ZSCAPE_SOURCES.md` §2b–2d records the two sources, the filter counts, the 610,839-cell deduplication and the full final composition; `ZSCAPE/sources/code/verify_zscape_merge.py` verifies it all and exits 0 |
 | ZCL2 | Retire `zcl2.h5ad` in favour of `zcl2_canonical.h5ad` | The old object is 40/199 libraries, 2 of 5 stages, empty `var`, no labels | Superseded; **no consumers found**, so retiring is safe whenever we want the 2.8 GB back |
 | ZCL2 | Decide whether ZCL 2.0 becomes a labelling target | It now has a full 143-cluster GT hierarchy and is the only atlas here covering adult + aged fish; but Microwell-seq is shallow (median 872 UMI) and cross-platform | **Product decision — not started** |
 

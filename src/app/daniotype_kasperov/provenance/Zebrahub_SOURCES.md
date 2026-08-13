@@ -4,7 +4,7 @@ Wild-type developmental reference atlas. Companion to `../README.md`, which desc
 *contents*; this file records **where everything came from and how far each claim is
 substantiated**.
 
-**Confidence vocabulary** — used identically across all five provenance records:
+**Confidence vocabulary** — used identically across all provenance records:
 
 | Label | Meaning |
 |---|---|
@@ -248,7 +248,7 @@ API responses substantiating the claims above are in `analysis/`.
 
 ## Cross-dataset provenance principles
 
-Applies to every dataset in this corpus; substantially identical in all five `sources/README.md`
+Applies to every dataset in this corpus; substantially identical in all `sources/README.md`
 records.
 
 1. **The deposited feature universe is evidence; the paper's reference claim is a hypothesis.**

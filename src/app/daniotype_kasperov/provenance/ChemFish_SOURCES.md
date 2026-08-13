@@ -4,7 +4,7 @@ Chemical-perturbation atlas of zebrafish development. Companion to `../README.md
 dataset *contents*; this file records **where everything came from and how far each claim is
 substantiated**.
 
-**Confidence vocabulary** — used identically across all five provenance records:
+**Confidence vocabulary** — used identically across all provenance records:
 
 | Label | Meaning |
 |---|---|
@@ -255,7 +255,7 @@ convenience. Converters in `code/` (hardlinked from `../`). Evidence in `analysi
 
 ## Cross-dataset provenance principles
 
-Applies to every dataset in this corpus; substantially identical in all five `sources/README.md`
+Applies to every dataset in this corpus; substantially identical in all `sources/README.md`
 records.
 
 1. **The deposited feature universe is evidence; the paper's reference claim is a hypothesis.**

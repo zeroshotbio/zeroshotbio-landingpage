@@ -218,10 +218,21 @@ Rhaister is the smaller, more directly useful layer and is the one acquired. Its
 | **`definition/`** | 141 | split definitions as TOML across `5_holdout` … `9_holdout`; few-shot splits (DE-diversity, biomni, claude, diverse-20, focused-diversity, high-effect-size A/B); **titration** splits at 1/3/6/10/20/30/60 drugs; `generalization_converted_cell_lines_3b`, `zeroshot_*`, `scantshot_*`; plus `dataset.toml` and **`static_2k_genes.json`** (the 2,000-gene panel) |
 | **`zeroshot/`** | 3 | `cell_line_centroids_dmso.parquet`, `cell_line_centroids_dmso_hvg.parquet`, `control_expression.parquet` — the zero-shot reference/plate-control tables |
 
-**Acquisition status: 158 of 161 files held (~2.9 GB).** `pdex/all_plates_pdex.parquet` was still
-transferring when this record was written — the HF tree API under-reports LFS sizes, so the initial
-1.00 GB estimate was wrong; the file alone exceeds 1.9 GB. **Its schema, row count and the
-validation in §8 are therefore NOT yet established.**
+**Acquisition status: 160 of 161 files held (~17 GB); `pdex` is INCOMPLETE.**
+
+> ### ⚠ `pdex/all_plates_pdex.parquet` is a truncated partial download — quarantined 2026-08-13
+> 16,655,922,866 B on disk against an expected **~40.6 GB**. The `PAR1` header is present but the
+> **footer is absent**, and `pq.ParquetFile(...)` fails with
+> `ArrowInvalid: Parquet magic bytes not found in footer`.
+>
+> It has been **renamed to `pdex/INCOMPLETE_DOWNLOAD_all_plates_pdex.parquet.part`** with a
+> `pdex/README_INCOMPLETE.md` beside it. Until then it sat at the canonical path under the canonical
+> name with nothing marking it incomplete. **It must not be restored to the canonical filename until
+> a `pq.ParquetFile()` open succeeds.**
+>
+> The HF tree API under-reports LFS sizes, which is why earlier estimates of 1.00 GB and then
+> ">1.9 GB" were both wrong. **`pdex`'s schema, row count and the §8 validation remain
+> NOT established.** The 14 `cell_eval` plate files are complete and validated and are unaffected.
 
 The ~89 GB Tahoe `pseudobulk_differential_expression` shards were **deliberately not downloaded**:
 Rhaister covers the same statistical layer in a fraction of the space, and the relationship between
@@ -315,15 +326,17 @@ achievable at all. **UNRESOLVED** whether any becomes available.
 | `sources/rhaister/` | ~2.9 GB and growing | the Rhaister release |
 | `sources/publication/HF_README.md`, `LICENSE.md` | | official documentation and CC0 licence |
 
-**Misfiled:** `../ReplogleWeissman2022_K562_essential.h5ad` (1.55 GB) and
-`../ReplogleWeissman2022_rpe1.h5ad` (1.24 GB) sit under `Tahoe/` but are the **Replogle/Weissman
-CRISPRi** dataset, unrelated to Tahoe. A separate `Replogle/` directory already exists in
-`raw_datasets/`. **Not moved** — flagged for a decision.
+**Previously misfiled, now RESOLVED (2026-08-12 reorganization).** The two Replogle/Weissman
+CRISPRi objects that used to sit under `Tahoe/` were moved; all three Replogle objects
+(`ReplogleWeissman2022_K562_gwps.h5ad`, `..._K562_essential.h5ad`, `..._rpe1.h5ad`) now live
+together in `/data/datasets/human/Replogle/`. Verified on disk 2026-08-13. Nothing
+Replogle-related remains under `Tahoe/`.
 
 ### Caveats and outstanding work
 
-- **`pdex` acquisition incomplete**, so its schema and the §8 validation are open. This is the
-  single most important remaining item.
+- **`pdex` acquisition incomplete and the partial file is quarantined** as
+  `pdex/INCOMPLETE_DOWNLOAD_all_plates_pdex.parquet.part` (unreadable — no Parquet footer). Its
+  schema and the §8 validation are open. This is the single most important remaining item.
 - **The Tahoe ↔ Rhaister relationship is unestablished** — whether Rhaister is a subset,
   recomputation, or different convention of the 89 GB pseudobulk DE layer.
 - **`pass_filter` thresholds are not published** — only that "full" is stricter on `gene_count` and
