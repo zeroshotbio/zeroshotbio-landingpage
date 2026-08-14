@@ -1623,7 +1623,8 @@
               "noto",
               "lhx1a",
               "sebox",
-              "irx3a"
+              "irx3a",
+              "tyr — the paper's injection-control baseline, but a real crispant, not neutral"
             ]
           },
           {
@@ -1690,7 +1691,7 @@
         "status": "treatment duration TBD"
       },
       "perturbations": {
-        "summary": "379 COMPOUNDS × 3 DOSES = 1,138 COMBINATIONS",
+        "summary": "379 COMPOUNDS × 3 DOSES = 1,137 TREATMENTS + DMSO_TF = 1,138 CONDITIONS",
         "groups": [
           {
             "label": "mechanism (moa-broad)",
@@ -1712,7 +1713,7 @@
       "controls": {
         "summary": "DMSO_TF · 2,330,156 cells · 700/700 plate×line coverage",
         "items": [
-          "DMSO_TF"
+          "DMSO_TF — match drug == \"DMSO_TF\" exactly; a substring match on \"DMSO\" also captures Trametinib (DMSO_TF solvate), a MEK inhibitor"
         ]
       },
       "pipeline": {
@@ -1729,7 +1730,7 @@
       "name": "Replogle",
       "organism": "human",
       "perturbationClass": "GENETIC · CRISPRi PERTURB-SEQ",
-      "notRunnable": "Human, not zebrafish. Held as scPerturb redistributions rather than the authors' original release, and gene-filtered to ~8.2–8.7k features — so it is a method reference, not a labelling target.",
+      "notRunnable": "Human, not zebrafish. The authors' primary release plus the previously held scPerturb redistributions are both available locally. Gene-filtered to ~8.2–8.7k features — so it is a method reference, not a labelling target.",
       "cells": "2,547,877",
       "workingSlice": "3 objects: K562 GWPS 1,989,578 · K562 essential 310,385 · RPE1 247,914",
       "genes": "8,248 – 8,749",

@@ -28,7 +28,7 @@
           "cap": "cells"
         },
         {
-          "n": "1,812",
+          "n": "1,860",
           "cap": "embryos, individually resolved"
         },
         {
@@ -46,15 +46,15 @@
           "rows": [
             {
               "k": "Scale",
-              "v": "1,812 individually resolved embryos, ≥8 per condition. Perturbation arm alone: 804 barcoded embryos over 98 conditions, 2.7 M cells in a single run."
+              "v": "1,860 individually resolved embryos, ≥8 per condition — measured from obs['embryo'] in the canonical object. The paper's 1,812 comes from a four-experiment sheet that omits HF4. Perturbation arm alone: 804 barcoded embryos over 98 conditions, 2.7 M cells in a single run."
             },
             {
               "k": "Stages",
-              "v": "18 → 96 hpf, reared at 28 °C. Four experiments: three wild-type time series plus the perturbation experiment."
+              "v": "18 → 96 hpf, reared at 28 °C. Five experiments: four wild-type time series (expt1 GAP13 · expt2 GAP14 · expt4 GAP18 · expt5 HF4) plus the perturbation experiment (expt3 GAP16)."
             },
             {
               "k": "Timepoints",
-              "v": "Paper states 19; released metadata resolves 18 numeric values plus one blank level.",
+              "v": "Paper states 19; the canonical object carries 18 clean timepoint levels, 18–96 hpf.",
               "tag": "UNRESOLVED"
             },
             {
@@ -64,6 +64,10 @@
             {
               "k": "Reference arm",
               "v": "1.24 M cells — wild-type time series plus ~600,000 control-injected cells, which showed no batch effect and were merged in."
+            },
+            {
+              "k": "Canonical merge",
+              "v": "The two release arms overlap, so they do not simply add. Reference file 1,241,018 + perturbation file 2,687,135, minus QC-filtered cells and 610,839 control cells present in both, gives the canonical 3,231,733."
             }
           ],
           "groups": [
@@ -500,7 +504,7 @@
             },
             {
               "k": "Held locally",
-              "v": "All six released artifacts, checksummed — chemfish_cds.tar (21 GB), pectoral fin atlas, DEGs, DvEGs and abundance changes — plus the paper"
+              "v": "All six released artifacts, checksummed — chemfish_cds.tar (21 GB), pectoral fin atlas, DEGs, DvEGs and abundance changes — plus the paper, and our converted canonical chemfish.h5ad (2.9 GB, 2,068,668 × 32,031)"
             },
             {
               "k": "Supplementary",
@@ -639,12 +643,12 @@
             },
             {
               "k": "Genes ≥ 200",
-              "v": "Satisfied exactly — 0 cells at or below 200, minimum is 201",
+              "v": "Author/source release: satisfied exactly by the deposited QC metadata — 0 cells at or below 200, minimum is 201. Recompute from X for the mapped canonical objects.",
               "tag": "CONFIRMED"
             },
             {
               "k": "Mitochondrial < 10%",
-              "v": "Satisfied exactly — 0 cells at or above 10%, maximum is 9.999",
+              "v": "Author/source release: satisfied exactly by the deposited QC metadata — max 9.999%. The Zeroshot mapped canonical objects carry a reduced 30,121-gene universe with the inherited obs columns unchanged, so this guarantee does not hold there; recompute from X for canonical analyses.",
               "tag": "CONFIRMED"
             },
             {
@@ -1723,7 +1727,7 @@
     "replogle": {
       "name": "Replogle (human)",
       "kicker": "Genome-scale CRISPRi Perturb-seq",
-      "lede": "Nearly ten thousand gene knockdowns in a single cell line — the mirror image of our zebrafish data, which has few perturbations across many cell types. Held as scPerturb redistributions rather than the authors' release.",
+      "lede": "Nearly ten thousand gene knockdowns in a single cell line — the mirror image of our zebrafish data, which has few perturbations across many cell types. The authors' primary release plus the previously held scPerturb redistributions are both available locally.",
       "paper": {
         "citation": "Replogle, Saunders, Pogson, Hussmann et al. — Weissman lab",
         "venue": "Cell 185 · 2022",
@@ -1745,7 +1749,7 @@
         },
         {
           "n": "3",
-          "cap": "objects"
+          "cap": "primary single-cell screens"
         }
       ],
       "sections": [
@@ -1777,11 +1781,11 @@
         },
         {
           "title": "What we actually hold",
-          "shared": "These are NOT the authors' original release. The three filenames match the scPerturb Zenodo record (13350497) exactly, and the obs schema — perturbation, perturbation_type, nperts, organism, disease, tissue_type, cancer — is scPerturb's harmonization standard.",
+          "shared": "The authors' primary release plus the previously held scPerturb redistributions are both available locally. The three objects profiled above are the scPerturb copies — their filenames match the scPerturb Zenodo record (13350497) exactly, and the obs schema (perturbation, perturbation_type, nperts, organism, disease, tissue_type, cancer) is scPerturb's harmonization standard.",
           "rows": [
             {
               "k": "Provenance",
-              "v": "scPerturb redistribution of Replogle et al. 2022",
+              "v": "Two layers held: the authors' primary release (three raw single-cell objects plus their bulk/statistical counterparts, paper, supplements and code) and the scPerturb redistribution of Replogle et al. 2022 profiled above",
               "tag": "CONFIRMED"
             },
             {
