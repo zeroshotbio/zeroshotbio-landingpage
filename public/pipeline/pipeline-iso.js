@@ -56,25 +56,36 @@ function installDefs(svg){
    inherit pause, trace-one-step and prefers-reduced-motion for free. */
 const TICKERS=[];
 
-/* Lay each row out from its own contents, then mirror the alternate rows so the
-   map snakes. Mutates NODES.x in place; call once before anything is drawn. */
-function layoutRows(NODES, ROWS, MIRROR){
-  /* Lay each row out from its own contents: steps within a cluster sit close
+/* Lay each LANE out from its own contents, then mirror the lanes that run
+   right-to-left so the map snakes. Mutates NODES.x and NODES.y in place; call
+   once before anything is drawn.
+
+   A lane is {id, y, x0, x1, dir}. Membership is explicit — a node opts in with
+   lane:"<id>" — because a row can carry more than one lane at once. Row 1 forks
+   into a biology lane above the centreline and a chemistry lane below it, and
+   inferring membership from y would interleave the two. Side structures (the
+   ones with follow{}) belong to no lane: they keep their authored y and take
+   their x from whatever they follow, after the lanes are placed. */
+function layoutRows(NODES, LANES, MIRROR){
+  /* Lay each lane out from its own contents: steps within a cluster sit close
      together, and a landmark always stands well clear of the cluster either side
-     of it. Gaps are then scaled so every row still spans the same width. */
+     of it. Gaps are then scaled so the lane fills its own span. */
+  const M={}; NODES.forEach(n=>M[n.id]=n);
+  const byLane={}; LANES.forEach(L=>byLane[L.id]=L);
   (function place(){
-    const GAP_MINOR=0.6, GAP_MAJOR=1.5, X0=0.7, X1=22.0;
-    const M={}; NODES.forEach(n=>M[n.id]=n);
+    const GAP_MINOR=0.6, GAP_MAJOR=1.5;
     const big=n=>n.anchor||n.shape==="works"||n.shape==="machine";
-    ROWS.forEach(row=>{
-      const on=NODES.filter(n=>Math.abs(n.y-row)<=1).sort((a,b)=>a.x-b.x);
+    LANES.forEach(L=>{
+      const on=NODES.filter(n=>n.lane===L.id && !n.follow).sort((a,b)=>a.x-b.x);
+      if(!on.length) return;
+      on.forEach(n=>n.y=L.y);
+      let cur=L.x0+on[0].w/2; on[0].x=cur;
       if(on.length<2) return;
       let sw=on[0].w; const gaps=[];
       for(let i=1;i<on.length;i++){
         gaps.push((big(on[i])||big(on[i-1]))?GAP_MAJOR:GAP_MINOR); sw+=on[i].w;
       }
-      const k=Math.max(0.25,(X1-X0-sw)/gaps.reduce((a,b)=>a+b,0));
-      let cur=X0+on[0].w/2; on[0].x=cur;
+      const k=Math.max(0.25,(L.x1-L.x0-sw)/gaps.reduce((a,b)=>a+b,0));
       for(let i=1;i<on.length;i++){
         cur+=on[i-1].w/2 + gaps[i-1]*k + on[i].w/2; on[i].x=cur;
       }
@@ -84,9 +95,11 @@ function layoutRows(NODES, ROWS, MIRROR){
       n.x = B ? (A.x+B.x)/2 : A.x + (n.follow.dx||0);
     });
   })();
+  /* mirror after follow{} resolves, so a side structure flips with the lane it
+     tracks rather than against it */
   NODES.forEach(n=>{
-    let ri=0,best=1e9;
-    ROWS.forEach((ry,i)=>{const d=Math.abs(n.y-ry); if(d<best){best=d;ri=i;}});
-    if(ri===1||ri===3) n.x = MIRROR - n.x;
+    const id = n.lane || (n.follow && M[n.follow.a] ? M[n.follow.a].lane : null);
+    const L = id ? byLane[id] : null;
+    if(L && L.dir===-1) n.x = MIRROR - n.x;
   });
 }

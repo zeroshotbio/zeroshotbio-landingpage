@@ -54,67 +54,85 @@
      row 4  y=36   the labelling     ←
    x values below are seed order only — layoutRows() recomputes them.
    ============================================================ */
-const R1=0, R2=12, R3=24, R4=36;
+const R1=0, R2=12.5, R3=25, R4=37.5;
 
 const NODES = [
 
 /* ================= ROW 1 — THE FISH ================= */
 {id:"AQ", key:"1", group:"① The aquarium", groupMark:true, anchor:true, shape:"tankrack",
+ lane:"r1-head",
  name:"The aquarium", x:1.3, y:R1, w:2.6, d:2.0, h:1.6,
  sub:"recirculating racks · in-house colony", stat:"adult zebrafish",
  does:"Every cell in every dataset downstream was in one of these tanks. The colony is the actual capital asset of the company — an atlas is a claim about zebrafish development, and it is only as good as the fish that made it.",
  built:"Recirculating system, standard husbandry. Line is disputed for the worked example: the MiniFin front door says TU wildtype (and argues GRCz11 is the right reference because GRCz11 was derived from TU); the MegaFin design spec says Tg(fli1:egfp) or Tg(kdrl:egfp) angiogenesis reporters.",
  cond:"Two problems, and the second is general. The line conflict above is unresolved and matters — a fli1:egfp reporter carries a transgene the reference does not, and Zebrahub shows what that costs: its counting reference has three Zebrabow transgene features bolted on, and the recipe for them was never published. And nothing about tank, clutch or parentage travels with a cell into the matrix, so a batch effect originating in husbandry is invisible from the data side."},
 {id:"A1", key:"A1", group:"Breeding", shape:"breedingtank", name:"Pair set in the evening", x:4.3, y:R1, w:0.72, d:0.72, h:0.62,
+ lane:"r1-bio",
  sub:"male and female, divider in",
  does:"A male and a female go into a breeding tank the night before with a divider between them. Spawning is triggered by pulling the divider at first light.",
  built:"Standard pairwise crossing.",
  cond:"No bench record on this instance. This is the generic protocol, not a transcript of what was done, and there is no artefact that would let anyone check it."},
 {id:"A2", key:"A2", group:"Breeding", shape:"clutch", name:"The clutch", x:5.7, y:R1, w:1.0, d:1.0, h:0.22,
+ lane:"r1-bio",
  sub:"one morning's eggs",
  does:"Fertilised eggs collected within the first hour. Everything downstream is one narrow developmental cohort, which is what makes staging by hours post fertilisation mean anything.",
  built:"Collected, rinsed, held in embryo medium.",
  cond:"No bench record. Clutch identity is not recorded per well and there is no clutch column anywhere in the object, so if two clutches were mixed that difference cannot be recovered later."},
 {id:"A3", key:"A3", group:"Breeding", shape:"culldish", name:"Cull the unfertilised", x:7.1, y:R1, w:1.0, d:1.0, h:0.24,
+ lane:"r1-bio",
  sub:"first quality gate",
  does:"Dead and unfertilised eggs are removed under a scope. The first cull on the whole map happens here, by hand, with a pipette.",
  built:"Visual screen.",
  cond:"No bench record and no count, so the denominator at the very start of the experiment is unknown. Every retention figure further down this map is conditional on a number nobody wrote down."},
-{id:"A4", key:"A4", group:"② The treatment plate", groupMark:true, shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
+{id:"CS", key:"P1", group:"The compounds", shape:"tile", name:"Compound selection", x:7.0, y:R1, w:0.72, d:0.72, h:0.5,
+ lane:"r1-chem",
+ sub:"4 picked from ~147,025",
+ does:"Somebody decides what the experiment is about. Four compounds are chosen out of the SPARC library — 0.1% DMSO as the vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns — and written into a cherry-picking layout. Everything the finished atlas can possibly say about drug effect is bounded here, before any of it exists.",
+ built:"A cherry-picking layout drawn against the SPARC BioCentre compound library, roughly 147,025 compounds. Four selected, twelve replicate wells each.",
+ cond:"This is the only step on the whole map where a human decides what the question is, and it is the one step with no artefact behind it at all. Nothing in the pipeline records why these four — why sorafenib rather than another VEGFR inhibitor, why orlistat and dapagliflozin as the unknowns, what was considered and dropped. The choice is legible in the object as four values in one column, and the reasoning is nowhere. Every downstream claim about mechanism inherits it."},
+
+{id:"ECHO", key:"P2", group:"The compounds", shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
+ lane:"r1-chem",
  sub:"SPARC BioCentre · acoustic, from the cherry-picking layout",
  does:"Compound is fired into an empty 48-well plate without anything touching it. The destination plate is held inverted above the source and 2.5 nL droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists.",
  built:"A Beckman Echo 650 at the SPARC BioCentre, SickKids, 686 Bay Street, Toronto. Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; the embryos arrive later.",
  cond:"The cherry-picking sheet and the sample loading table disagree, and the disagreement starts here. This sheet is where treatment assignment first exists; the loading table is what the barcodes physically encode. Until the two are reconciled nothing downstream is trustworthy at treatment level, and neither sheet is on this instance, so it cannot be settled from here. Three more things about this step are unrecorded and are open questions for the bench: the actual transfer volume per well — 1 µM is in the design document and in no column of the object, and at 2.5 nL a droplet it is hundreds of droplets a well; whether the compound went in dry or into medium; and how long the plate then sat dosed before the embryos arrived. That last one is a real experimental variable — DMSO is hygroscopic and nanolitre volumes evaporate — and this map currently implies it was zero, because nothing records otherwise."},
 
 {id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
+ lane:"r1-chem",
  name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36,
  sub:"one well = one condition = one future .obs row", stat:"48 wells · 4 × 12",
  does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Drawn dosed and empty, which is what it is at this moment: four vertical bands of twelve replicate wells, compound in every one of them and not a fish in the building yet. In the worked example those four conditions are — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
  cond:"The label defect here is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin. And the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. This is the general shape of the problem: design intent and deposited object are two different artefacts, and they have to be reconciled by hand."},
 
-{id:"A5", key:"A5", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:2.0, d:1.55, h:0.22,
+{id:"A4", key:"A4", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:2.0, d:1.55, h:0.22,
+ lane:"r1-tail",
  sub:"6 embryos per well, at 24 hpf",
  does:"Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
  built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
  cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held."},
-{id:"A6", key:"A6", group:"The experiment", shape:"tile", name:"Incubate to 48 hpf", x:14.7, y:R1, w:0.72, d:0.72, h:0.58,
+{id:"A5", key:"A5", group:"The experiment", shape:"tile", name:"Incubate to 48 hpf", x:14.7, y:R1, w:0.72, d:0.72, h:0.58,
+ lane:"r1-tail",
  sub:"24 hours of exposure",
  does:"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset.",
  built:"Fixed 24→48 hpf window, single collection timepoint — stated in the design spec and used as the confirmed stage by every downstream asset.",
  cond:"No imaging or phenotype scoring in this window, so a transcriptomic result cannot be checked against what the embryo visibly did. Incubation temperature is not recorded in any artefact here."},
-{id:"A7", key:"A7", group:"Collection", shape:"tile", name:"Collect and fix", x:16.0, y:R1, w:0.72, d:0.72, h:0.46,
+{id:"A6", key:"A6", group:"Collection", shape:"tile", name:"Collect and fix", x:16.0, y:R1, w:0.72, d:0.72, h:0.46,
+ lane:"r1-tail",
  sub:"euthanise, pool per well",
  does:"Embryos are euthanised and pooled within their well. From here the well is the unit, not the animal.",
  built:"Fixed collection at 48 hpf, single timepoint, confirmed in the design spec and re-confirmed by the clustering metadata, which records the stage as protocol-derived rather than guessed.",
  cond:"Six embryos go in, one pool comes out, and embryo identity is destroyed permanently. The design spec's speculative obs schema lists an embryo column as a batch covariate — that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
-{id:"A8", key:"A8", group:"Collection", shape:"tile", name:"Dissociate", x:17.3, y:R1, w:0.72, d:0.72, h:0.62,
+{id:"A7", key:"A7", group:"Collection", shape:"tile", name:"Dissociate", x:17.3, y:R1, w:0.72, d:0.72, h:0.62,
+ lane:"r1-tail",
  sub:"whole cells or nuclei — the fork",
  does:"Enzymatic and mechanical dissociation into a suspension, then strained. The choice made here — intact cells or isolated nuclei — propagates through the entire rest of the map.",
  built:"No protocol detail on this instance for the worked example; reagent, digest time and strainer size are recorded nowhere. Across the corpus the split is clean: sci-RNA-seq3 runs on PFA-fixed nuclei (ZSCAPE, ChemFish), while 10x, Microwell-seq and Parse all run on whole cells (Zebrahub, CellOracle, MIC-Drop-seq, ZCL2, MiniFin, MegaFin).",
  cond:"The most biased step in the wet lab and the least documented one. Cell types survive dissociation unequally, so atlas composition is partly a report on how tough each tissue is — and the mitochondrial cull two rows down then deletes the ones most stressed by it. The nuclei-or-cells fork is not a detail: nuclear transcripts are intron-rich, so it changes what the intron-handling stage on row 3 does, and it changes what a mitochondrial fraction even means."},
 
 {id:"FX", key:"3", group:"③ Fixed material", groupMark:true, anchor:true, shape:"vials",
+ lane:"r1-tail",
  name:"Fixed material", x:19.4, y:R1, w:1.8, d:1.5, h:1.0,
  sub:"biology locked · four assay families downstream", stat:"the biology stops here",
  does:"Fixation and permeabilisation stop transcription dead. In combinatorial chemistries this also turns each cell into its own sealed reaction vessel, which is what lets the barcoding work without any microfluidics. It is the last moment on this map at which the sample is alive in any sense.",
@@ -122,66 +140,67 @@ const NODES = [
  cond:"Fixation efficiency is not measured per sample anywhere in the corpus. A poorly fixed well contributes ambient RNA rather than cells, and because no per-stage drop count survives from any QC chain, that surfaces only as an unexplained low yield with no way to attribute it."},
 
 /* ================= ROW 2 — THE CHEMISTRY ================= */
-{id:"B0", key:"B1", group:"Combinatorial barcoding", shape:"tile", name:"Count and loading table", x:0.7, y:R2, w:0.72, d:0.72, h:0.44,
+{id:"B0", key:"B1", group:"Combinatorial barcoding", shape:"tile", name:"Count and loading table", x:0.7, y:R2, lane:"r2", w:0.72, d:0.72, h:0.44,
  sub:"finalised before anything starts",
  does:"Cells are counted and the sample loading table is fixed: which sample goes in which round-one well, at what concentration. The kit does not let you improvise later.",
  built:"Sample loading table, completed in advance. The run definition carries 44 sample entries against 48 loaded wells; 43 distinct samples reach the matrix.",
  cond:"This table — not any dispensing sheet — is what the barcodes physically encode, so it is the authority on which drug a cell saw. The 48 → 44 → 43 attrition across the three artefacts is undocumented at every step."},
-{id:"R1p", key:"B2", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 1 — reverse transcription", x:2.6, y:R2, w:1.0, d:0.8, h:0.3, cols:12, rows:4,
+{id:"R1p", key:"B2", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:4,
  sub:"48 wells · 96 barcodes · sample identity",
  does:"Each well gets its own barcoded primer and RNA is reverse transcribed inside the intact cell. This round carries sample identity — everything the dataset knows about which drug a cell saw is written here, in the first chemical step.",
  built:"In-situ RT on a 48-well round-one layout (rows A–D, cols 1–12), barcode set n141_R1_v3_8. Two barcodes per well, 96 in total — the Evercode explanation being that each well is primed both with poly-dT and with random hexamers, though the run definition records only the counts. sample_bc_rounds = 1: round one and only round one carries sample identity.",
  cond:"Clean, and structurally the strongest link on the map — sample identity is written in a chemical step rather than carried in a spreadsheet, so there is no demultiplex cull downstream. The hashed designs pay for that convenience with a whole extra QC stage."},
-{id:"B1", key:"B3", group:"Combinatorial barcoding", shape:"tile", name:"Pool and split", x:4.2, y:R2, w:0.6, d:0.6, h:0.3,
+{id:"B1", key:"B3", group:"Combinatorial barcoding", shape:"tile", name:"Pool and split", x:4.2, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3,
  sub:"shuffle the deck",
  does:"Every well is pooled into one tube and redistributed at random across the next plate. The randomisation is the whole trick: after this, well position carries no information.",
  built:"Pool, mix, redistribute.", cond:"Clean."},
-{id:"R2p", key:"B4", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 2 — ligation", x:5.8, y:R2, w:1.0, d:0.8, h:0.3, cols:12, rows:8,
+{id:"R2p", key:"B4", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 2 — ligation", x:5.8, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
  sub:"96 wells · barcode set v1",
  does:"A second barcode is ligated onto the cDNA inside the cell.",
  built:"Ligation in a 96-well plate (rows A–H, cols 1–12), barcode set v1, 96 barcodes across 96 wells — one per well, unlike round one.",
  cond:"Clean."},
-{id:"B2", key:"B5", group:"Combinatorial barcoding", shape:"tile", name:"Pool and split", x:7.4, y:R2, w:0.6, d:0.6, h:0.3,
+{id:"B2", key:"B5", group:"Combinatorial barcoding", shape:"tile", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3,
  sub:"shuffle again",
  does:"Pooled and redistributed a second time.",
  built:"Pool, mix, redistribute.", cond:"Clean."},
-{id:"R3p", key:"B6", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 3 — ligation", x:9.0, y:R2, w:1.0, d:0.8, h:0.3, cols:12, rows:8,
+{id:"R3p", key:"B6", group:"Combinatorial barcoding", shape:"miniplate", name:"Round 3 — ligation", x:9.0, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
  sub:"96 wells · barcode set R3_v3 + TruSeq R2",
  does:"A third barcode is ligated, carrying the Illumina TruSeq R2 sequence with it. After this round a cell's path through three plates is almost certainly unique — that combination is what will be read as a cell identity, and no droplet was ever involved.",
  built:"Ligation in a third 96-well plate, barcode set R3_v3. The three rounds give 48 × 96 × 96 ≈ 442k addressable paths for roughly 95k cells. Microwell-seq builds its barcode the same way — three rounds of split-pool synthesis, 3 × 6 nt in an 18 nt barcode.",
  cond:"Two cells can still collide on the same path. That residual collision rate is the real doublet source, it is set here by loading density, and it differs per sublibrary — which is exactly why a single global doublet threshold two rows down cannot be right for all eight."},
-{id:"SB", key:"B7", group:"Combinatorial barcoding", shape:"tile", name:"Split into sublibraries, lyse", x:10.8, y:R2, w:0.85, d:0.85, h:0.55,
+{id:"SB", key:"B7", group:"Combinatorial barcoding", shape:"tile", name:"Split into sublibraries, lyse", x:10.8, y:R2, lane:"r2", w:0.85, d:0.85, h:0.55,
  sub:"8 sublibraries",
  does:"The pool is divided into sublibraries and only now are the cells lysed. Every sublibrary contains cells from every sample.",
  built:"Eight sublibraries (Sublib1–Sublib8, library IDs LV6001530579 … LV6001530706, submission SO11332). Sublibrary membership becomes a first-class .obs field and survives to the matrix.",
  cond:"The eight are unusually even — 11,152 to 12,656 cells each — so this is not the weak point it looks like. Where they do differ is depth: sequencing saturation runs 0.366 to 0.486 across them, and the per-sample thresholds downstream do not know that."},
-{id:"R4p", key:"B8", group:"Combinatorial barcoding", shape:"tile", name:"Round 4 — sublibrary index", x:12.4, y:R2, w:0.72, d:0.72, h:0.42,
+{id:"R4p", key:"B8", group:"Combinatorial barcoding", shape:"tile", name:"Round 4 — sublibrary index", x:12.4, y:R2, lane:"r2", w:0.72, d:0.72, h:0.42,
  sub:"applied by PCR, not in-cell",
  does:"The fourth barcode identifies the sublibrary and is added by PCR after lysis. Four barcodes, not three — the read only shows three because the fourth arrives as the Illumina index.",
  built:"UDI plate. Visible in the matrix as the __s1 … __s8 suffix on every cell id.",
  cond:"Clean."},
-{id:"B3", key:"B9", group:"Library prep", shape:"tile", name:"cDNA capture and amplify", x:13.9, y:R2, w:0.72, d:0.72, h:0.44,
+{id:"B3", key:"B9", group:"Library prep", shape:"tile", name:"cDNA capture and amplify", x:13.9, y:R2, lane:"r2", w:0.72, d:0.72, h:0.44,
  sub:"beads, PCR",
  does:"cDNA is captured on beads and amplified to a workable quantity.",
  built:"Evercode WT protocol. No run-specific record on this instance.",
  cond:"Amplification is where transcript-length and GC bias enter, and it is unmeasured. Nothing was archived from this step."},
-{id:"B4", key:"C1", group:"Library prep", shape:"tile", name:"Fragment, repair, A-tail", x:15.4, y:R2, w:0.72, d:0.72, h:0.4,
+{id:"B4", key:"C1", group:"Library prep", shape:"tile", name:"Fragment, repair, A-tail", x:15.4, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
  sub:"→ sequenceable lengths",
  does:"DNA is fragmented, ends repaired and A-tailed.",
  built:"Evercode WT protocol. No run-specific record on this instance.",
  cond:"Protocol, not transcript. Nothing to check it against."},
-{id:"B5", key:"C2", group:"Library prep", shape:"tile", name:"Adapters and index PCR", x:16.9, y:R2, w:0.72, d:0.72, h:0.4,
+{id:"B5", key:"C2", group:"Library prep", shape:"tile", name:"Adapters and index PCR", x:16.9, y:R2, lane:"r2", w:0.72, d:0.72, h:0.4,
  sub:"TruSeq R1 adapter",
  does:"Illumina adapters are ligated and the final index PCR is run.",
  built:"TruSeq R1 adapter to the 5′ end, then indexing. Evercode WT protocol; no run-specific record.",
  cond:"Protocol, not transcript. The index assignment is the only part that can be checked after the fact, and it checks out — eight sublibraries came back."},
-{id:"LIB", key:"C3", group:"Library prep", shape:"dish", name:"Sequencing-ready library", x:18.5, y:R2, w:0.95, d:0.95, h:0.34,
+{id:"LIB", key:"C3", group:"Library prep", shape:"dish", name:"Sequencing-ready library", x:18.5, y:R2, lane:"r2", w:0.95, d:0.95, h:0.34,
  sub:"eight indexed libraries",
  does:"A tube of adapter-flanked, indexed DNA. Nothing about it looks like a fish any more.",
  built:"Eight libraries, one per sublibrary, QC'd on fragment size and concentration before loading.",
  cond:"No QC trace was archived. What can be recovered after the fact are the base-quality figures from the sequencer, and they are good: cDNA Q30 0.971, barcode Q30 0.955–0.973 across all eight."},
 
 {id:"SEQ", key:"S", group:"The sequencer", shape:"machine",
+ lane:"r2",
  name:"Illumina sequencer", x:21.0, y:R2, w:2.2, d:1.4, h:1.0,
  sub:"paired-end · R1 cDNA · R2 barcodes + UMI", stat:"3,655,719,111 reads",
  does:"Reads the library by synthesis. Three and a half billion reads across eight sublibraries, 38,637 reads per called cell on average — heavily oversampled on purpose, because combinatorial barcoding spends reads on barcodes that were never cells.",
@@ -190,32 +209,33 @@ const NODES = [
 
 /* ================= ROW 3 — THE MATRIX ================= */
 {id:"FQ", key:"4", group:"④ FASTQ", groupMark:true, anchor:true, shape:"heap",
+ lane:"r3",
  name:"FASTQ", x:1.0, y:R3, w:2.7, d:2.7, h:0.7,
  sub:"paired-end · demultiplexed · usually gone", stat:"off-instance",
  does:"The first digital object, and the only genuinely shapeless one. Different libraries, different depths, no schema — and nothing in it yet says which barcode is a cell.",
  built:"For the worked example: sequenced 2026-03/04 and processed in the vendor's own cloud workdir, whose S3 path the run definition still points at. Demultiplexing is its own named step in some pipelines — Zebrahub records bcl2fastq v2.20.0.422 — and invisible in others.",
  cond:"The biggest hole on the map, and a general one. The reads are not on this box and no manifest of them is either, so every raw-read claim on this page is downstream of a vendor report rather than of the reads. It is worse elsewhere: ChemFish's pre-QC data is documented as unavailable, and CellOracle's SRA FASTQs are a deliberate non-acquisition. Re-deriving anything — a second annotation arm, a different intron setting — starts by getting the reads back."},
-{id:"cb1", key:"C4", group:"Getting to a matrix", shape:"tile", name:"Barcode calling", x:4.2, y:R3, w:0.68, d:0.68, h:0.42,
+{id:"cb1", key:"C4", group:"Getting to a matrix", shape:"tile", name:"Barcode calling", x:4.2, y:R3, lane:"r3", w:0.68, d:0.68, h:0.42,
  sub:"four stacks, one job",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
  cond:"The version is load-bearing and it is often wrong in the record. MIC-Drop-seq's GEO metadata says Cell Ranger v7 on all 36 samples; the pipeline's own machine-written web_summary.html says 5.0.0 — and that difference decides whether introns were counted. Where a hand-typed field and a machine-written run artefact disagree, the artefact wins. Also worth noticing: the 24.3% of reads with no valid barcode are discarded here and never counted again — the first and largest deletion on the digital side, and the one nobody thinks of as a cull."},
-{id:"cb2", key:"C5", group:"Getting to a matrix", shape:"tile", name:"Alignment", x:5.9, y:R3, w:0.68, d:0.68, h:0.5,
+{id:"cb2", key:"C5", group:"Getting to a matrix", shape:"tile", name:"Alignment", x:5.9, y:R3, lane:"r3", w:0.68, d:0.68, h:0.5,
  sub:"cDNA → gene model",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
  cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look."},
-{id:"IN", key:"G2", group:"Getting to a matrix", shape:"tile", hatch:true, name:"Intron inclusion", x:6.8, y:R3, w:0.68, d:0.68, h:0.36,
+{id:"IN", key:"G2", group:"Getting to a matrix", shape:"tile", hatch:true, name:"Intron inclusion", x:6.8, y:R3, lane:"r3", w:0.68, d:0.68, h:0.36,
  sub:"one boolean, rarely reported",
  does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
  built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",
  cond:"Three consequences, all worse than the version number. Reproducing that matrix requires Cell Ranger 5.0.0 specifically — a modern default produces a materially different object, silently. Cross-dataset depth comparisons are confounded in a known direction, because sci-RNA-seq3 runs on intron-rich nuclei while the 10x runs here used whole cells and threw the introns away. And low detection of a long or nuclear-retained transcript is weak biological evidence, because gene absence already has two non-biological explanations."},
-{id:"cb3", key:"C6", group:"Getting to a matrix", shape:"tile", name:"UMI collapse", x:7.6, y:R3, w:0.68, d:0.68, h:0.4,
+{id:"cb3", key:"C6", group:"Getting to a matrix", shape:"tile", name:"UMI collapse", x:7.6, y:R3, lane:"r3", w:0.68, d:0.68, h:0.4,
  sub:"reads → molecules",
  does:"Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
  built:"For the worked example, 3.66 billion reads collapse to 735,624,135 transcripts — sequencing saturation 0.424. MIC-Drop-seq's four measured 10x runs sit at 51.5–53.4%.",
  cond:"Saturation around 0.4–0.5 is the corpus norm and it means depth is not saturated: read depth alone accounts for about a quarter of the worked example's cluster resolution. Any cross-dataset comparison of genes-per-cell has to control for it. ZCL2 cannot even be checked — its UMI length is not stated and is not recoverable from a count matrix."},
-{id:"cb4", key:"C7", group:"Getting to a matrix", shape:"tile", name:"Combine and stamp", x:9.3, y:R3, w:0.68, d:0.68, h:0.45,
+{id:"cb4", key:"C7", group:"Getting to a matrix", shape:"tile", name:"Combine and stamp", x:9.3, y:R3, lane:"r3", w:0.68, d:0.68, h:0.45,
  sub:"one index",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
@@ -242,38 +262,39 @@ const NODES = [
  cond:"It is not 'the same cells in a different gene space'. The two arms differ by 195,295 cells, and six of the eight worst-hit samples lose more than 90% of theirs. A bridge exists but is thin — lawson_to_ensdarg.csv maps 7,238 of 36,351 Lawson genes to ENSDARG, 19.9%: enough to compare, nowhere near enough to concatenate. And the v4.3.2 gene-information table is still missing, so the GTF carries no biotypes."},
 
 {id:"UD", key:"5", group:"⑤ Unfiltered matrix", groupMark:true, anchor:true, shape:"matrix",
+ lane:"r3",
  name:"Unfiltered matrix", x:12.2, y:R3, w:2.5, d:2.5, h:2.0, cells:8, fill:0.09,
  sub:"every barcode × every gene · rarely delivered", stat:"almost never shipped",
  does:"Every barcode that ever appeared, against every gene. Drawn sparse because it is sparse — almost all of this volume is empty, and most of these barcodes were never cells.",
  built:"Written once inside the counting pipeline and read by every QC stage. It is essentially never part of a delivery: for the worked example, all-sample/ on this instance holds report/ and figures/ only.",
  cond:"Its absence is why the funnel on this row has no numbers. ChemFish states the rule plainly — do not infer the missing cells from the filtered object, the pre-QC data is not available. What survives for the worked example is a ratio, not a count: 86.1% of transcripts and 86.4% of reads fell inside called cells, so the discarded ambient tail is roughly a seventh of the signal. That tail is also the only place treatment-correlated contamination would show up, and it is gone."},
 
-{id:"c1", key:"D2", group:"The cull", shape:"tile", hatch:true, name:"Cell or background", x:15.4, y:R3, w:0.7, d:0.7, h:0.78,
+{id:"c1", key:"D2", group:"The cull", shape:"tile", hatch:true, name:"Cell or background", x:15.4, y:R3, lane:"r3", w:0.7, d:0.7, h:0.78,
  sub:"knee, classifier, or expect-cells", tier:"physics",
  does:"Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
  built:"Every stack does this and none of them do it the same way. Parse Trailmaker runs a classifier at FDR 0.01; split-pipe fits a transcript cutoff per sublibrary (613.7–711.2 in the worked example, 670.4 combined); Cell Ranger uses its own cell-calling against --expect-cells (DanioCell set 6,000–21,250 per sample); Microwell-seq took the top 10,000 cells by transcript count, or 20,000 depending which artefact you read; ZCL2's code instead treats everything below 500 UMI as the ambient profile and excludes it.",
  cond:"The only stage on this row whose threshold is fitted rather than chosen, which is why it is the one to trust. It is also where an undocumented floor can hide: CellOracle's deposit has a minimum of exactly 500 UMI with zero cells below it, and no paper or GEO record mentions a 500-UMI rule anywhere."},
-{id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, name:"Depth floor", x:16.6, y:R3, w:0.7, d:0.7, h:0.52,
+{id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, name:"Depth floor", x:16.6, y:R3, lane:"r3", w:0.7, d:0.7, h:0.52,
  sub:"100 UMI to 2,000, depending who you ask", tier:"physics",
  does:"Removes barcodes carrying too few molecules or too few genes to support any statement about cell type.",
  built:"The corpus spread is nearly two orders of magnitude and every value is defensible in its own context: 100–250 UMI set per experiment (ZSCAPE); 80 stated and ~100 realised (ChemFish); more than 200 detected genes (DanioCell); a total-count window of 2,000–20,000 (Zebrahub); 500 transcripts and 200 genes as published (ZCL2); a per-sample fitted knee of 232–1,370 (MegaFin CP01).",
  cond:"Two failures worth carrying. ZCL2's released atlas does not obey its own published floor at all — minimum 63 UMI and 27 genes against a stated 500 and 200, so the deposit is pre-QC. And the worked example retains cells down to 294 transcripts, below split-pipe's own 670 knee estimate, while its cell count is exactly split-pipe's number_of_cells — which suggests the vendor's QC chain was applied to the analysis object and not to what was delivered."},
-{id:"c3", key:"D4", group:"The cull", shape:"tile", hatch:true, name:"Mitochondrial fraction", x:17.8, y:R3, w:0.7, d:0.7, h:0.5,
+{id:"c3", key:"D4", group:"The cull", shape:"tile", hatch:true, name:"Mitochondrial fraction", x:17.8, y:R3, lane:"r3", w:0.7, d:0.7, h:0.5,
  sub:"25% · 15% · 10% · 1% · none", tier:"taste",
  does:"Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
  built:"ZSCAPE cuts above 25%, Zebrahub above 15%, DanioCell above 10%, Parse Trailmaker at a per-sample absolute threshold of 0.50–1.51%, CellOracle not at all.",
  cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally."},
-{id:"c4", key:"D5", group:"The cull", shape:"tile", hatch:true, name:"Outliers off the trend", x:19.0, y:R3, w:0.7, d:0.7, h:0.62,
+{id:"c4", key:"D5", group:"The cull", shape:"tile", hatch:true, name:"Outliers off the trend", x:19.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.62,
  sub:"spline residual, or 4 SD, or the top 0.5%", tier:"taste",
  does:"Fits genes detected against total counts and removes points sitting too far off the fit — classically two cells sharing one barcode.",
  built:"Parse Trailmaker fits a spline per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate. ZSCAPE removes cells more than 4 SD from the mean UMI. DanioCell removes the top 0.5% by detected features.",
  cond:"Two problems. It runs before the doublet scorer and removes much of what the doublet scorer exists to find, so the two are partly redundant and their order decides which gets the credit — and the order genuinely differs between stacks. And DanioCell's version is untestable after the fact: the top 0.5% of an already-filtered distribution is 0.5% by construction, so the rule cannot be verified against the deposit."},
-{id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, name:"Sample demultiplex", x:20.0, y:R3, w:0.7, d:0.7, h:0.46,
+{id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, name:"Sample demultiplex", x:20.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.46,
  sub:"only if the sample was hashed", tier:"taste",
  does:"In multiplexed designs, assigns each cell to the embryo or sample it came from by its hash oligo, and discards cells that cannot be confidently assigned. An entire cull stage that exists or does not exist depending on a choice made two rows up.",
  built:"ZSCAPE uses sci-Plex hashing with an enrichment ratio above 3 for the timeseries rounds and above 5 for perturbations, cutoffs set manually from the ratio distribution. ChemFish uses the same chemistry at ratio ≥ 2.5 with total corrected hash UMI above 5. DanioCell uses MULTI-seq: a barcode is negative below 20 UMIs, a singlet needs SNR ≥ 5, and cells called doublets by either approach are removed. Combinatorial designs skip this entirely — the barcode already is the sample.",
  cond:"The clearest case in the corpus of a published threshold that was not applied. ChemFish's round-two screen was released without its stated hash filters: 65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor, while round one matches every published threshold exactly. Two rounds of one experiment, one filtered and one not, and nothing in the object says which is which."},
-{id:"c5", key:"D6", group:"The cull", shape:"tile", hatch:true, name:"Doublets", x:21.0, y:R3, w:0.7, d:0.7, h:0.44,
+{id:"c5", key:"D6", group:"The cull", shape:"tile", hatch:true, name:"Doublets", x:21.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.44,
  sub:"five tools, and one no tool at all", tier:"taste",
  does:"Scores each barcode for looking like two cells and removes those above a threshold.",
  built:"Parse Trailmaker fits a probability threshold per sample, 0.469 to 0.903 across one plate. ZSCAPE inspects residual multiplet clusters manually and removes them. ZCL2 runs DoubletFinder at a fixed 5% expected rate. MIC-Drop-seq's Methods state scDblFinder. Our own droplet path uses Scrublet. CellOracle mentions no doublet detection anywhere.",
@@ -285,6 +306,7 @@ const NODES = [
  cond:"It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact. Vendors emit settings, not tallies. Authors publish thresholds, not ledgers. CellOracle reports a comparison at 57,175 cells against a deposit of 72,870 — roughly 21.5% removed by QC and ambient-cluster steps that are never numerically specified. Every retention figure on this row is therefore a ratio between two objects, never a sum over stages."},
 
 {id:"FD", key:"6", group:"⑥ Filtered matrix", groupMark:true, anchor:true, shape:"matrix",
+ lane:"r3",
  name:"Filtered matrix", x:22.0, y:R3, w:1.55, d:1.55, h:1.55, cells:6, fill:0.62,
  sub:"94,616 × 32,520 · median 3,198 UMI / 1,618 genes", stat:"the cells, as asserted",
  does:"The same gene space, a fraction of the barcodes, dense where the first cube was empty. Everything here has been asserted to be a cell.",
@@ -292,18 +314,19 @@ const NODES = [
  cond:"The governing rule for this object is corpus principle 4 — a threshold printed in Methods is never assumed to have been applied to the deposited data. Tested against their own releases, four datasets here disagree with their own Methods: ChemFish shipped one screen without its hash filters, ZCL2 shipped a pre-QC atlas with a mitochondrial filter matching zero genes, CellOracle shipped an undocumented 500-UMI floor and no mitochondrial filter, and the worked example keeps cells below its own knee. DanioCell is the one that verifies exactly — and even there a later format conversion broke the guarantee."},
 
 /* ================= ROW 4 — THE LABELLING ================= */
-{id:"s1", key:"D8", group:"Finishing", shape:"tile", name:"Stamp .obs", x:0.7, y:R4, w:0.68, d:0.68, h:0.4,
+{id:"s1", key:"D8", group:"Finishing", shape:"tile", name:"Stamp .obs", x:0.7, y:R4, lane:"r4", w:0.68, d:0.68, h:0.4,
  sub:"sample · well · perturbation",
  does:"Joins the sample metadata onto the cells so each one knows what it was treated with.",
  built:"Fourteen obs columns for the worked example: bc1/bc2/bc3_well, cell_id, cell_type, gene_count, mread_count, parse_sample, perturbation, replicate, sample, species, sublibrary, tscp_count.",
  cond:"Inherits the misspelled compound and the absent dose. cell_type is written here too, and it is the string 'unknown' for all 94,616 cells — it stays that way to the end of this map. Principle 6 governs from here on: original gene ids, native labels, stage definitions and perturbation identities are preserved alongside any canonical mapping, never replaced by it."},
-{id:"s2", key:"D9", group:"Finishing", shape:"tile", name:"Sibling note", x:2.2, y:R4, w:0.68, d:0.68, h:0.4,
+{id:"s2", key:"D9", group:"Finishing", shape:"tile", name:"Sibling note", x:2.2, y:R4, lane:"r4", w:0.68, d:0.68, h:0.4,
  sub:"versions, inputs, hashes",
  does:"Writes the provenance that travels beside the object.",
  built:"Carried in uns for the worked example: dataset MiniFIN-100k, genome GRcZ11, kit Evercode WT, pipeline split-pipe v1.7.1, run_date 2026-04-08, source Parse Biosciences.",
  cond:"Six fields, all true, and thinner than it looks — no Ensembl release, no reference checksum, no QC settings, no cell-calling parameters, no intron flag. Everything the reference and cull nodes on the row above had to reconstruct by hand is exactly what these six fields do not say. The corpus standard is stricter: every derived object must carry a reproducible build script and a uns['provenance'] stamp, and superseded objects are retained rather than overwritten."},
 
 {id:"H5", key:"7", group:"⑦ Published object", groupMark:true, anchor:true, shape:"monolith",
+ lane:"r4",
  name:"Published object", x:4.6, y:R4, w:2.0, d:2.0, h:1.9,
  sub:"counts, metadata, provenance · no biology", stat:"complete and mute",
  does:"Counts, treatment metadata, provenance. Complete as a measurement and completely mute about biology — nothing in it says what any of these cells are.",
@@ -315,28 +338,28 @@ const NODES = [
  built:"Nothing to build it from: the arm requires the reads, and they are not on this instance.",
  cond:"Drawn as an outline because it is absent, not because it would be useless. MegaFin Part 1 has such an arm and it diverges sharply from the vendor arm; whether this one would diverge the same way is unknown and currently unknowable here."},
 
-{id:"p1", key:"E2", group:"Building the partition", shape:"tile", name:"Coarse Leiden 0.1", x:7.4, y:R4, w:0.7, d:0.7, h:0.5,
+{id:"p1", key:"E2", group:"Building the partition", shape:"tile", name:"Coarse Leiden 0.1", x:7.4, y:R4, lane:"r4", w:0.7, d:0.7, h:0.5,
  sub:"→ 18 compartments",
  does:"A deliberately blunt first pass carving the object into broad compartments. Nothing here is a cell type yet.",
  built:"2,000 HVGs, seurat_v3 flavour on the counts layer, then Leiden at resolution 0.1. Eighteen compartments for the worked example, holding 6 to 28 leaves each.",
  cond:"Runs from raw counts, not from a carried embedding — the worked example has no embedding to carry, and no global batch correction is applied at this stage. That is deliberate: global re-Harmonization was tried on the MegaFin Manual build and coherence collapsed from 0.93 to the 0.48–0.67 range."},
-{id:"p2", key:"E3", group:"Building the partition", shape:"tile", name:"Local 2000-HVG recompute", x:8.8, y:R4, w:0.7, d:0.7, h:0.72,
+{id:"p2", key:"E3", group:"Building the partition", shape:"tile", name:"Local 2000-HVG recompute", x:8.8, y:R4, lane:"r4", w:0.7, d:0.7, h:0.72,
  sub:"per compartment · seurat_v3 · raw counts",
  does:"The load-bearing trick. Inside each compartment, variable genes are chosen again from scratch, then scaled, re-PCA'd to 50 dimensions and re-neighboured at 15. Genes invisible globally become the axis locally.",
  built:"Per compartment: fresh seurat_v3 2,000-HVG on the counts layer → scale → PCA(50) → 15-NN. random_state 0, held constant across all five internally-clustered datasets rather than tuned per dataset.",
  cond:"Load-bearing for droplet data and arguably skippable for combinatorial, kept on for cross-dataset comparability. The cost of that consistency is unmeasured on any single dataset."},
-{id:"p3", key:"E4", group:"Building the partition", shape:"tile", name:"Local Leiden 0.8 → leaves", x:10.2, y:R4, w:0.7, d:0.7, h:0.62,
+{id:"p3", key:"E4", group:"Building the partition", shape:"tile", name:"Local Leiden 0.8 → leaves", x:10.2, y:R4, lane:"r4", w:0.7, d:0.7, h:0.62,
  sub:"251 – 342 leaves across five atlases",
  does:"Clusters inside each compartment and assembles one fine-leaf partition. This, not the labeller, decides how fine the answers can possibly be.",
  built:"Leiden 0.8, no nudge needed on the worked example: 267 leaves, median 150 cells, smallest 6 and largest 3,942. Across the corpus the same recipe lands at 251 (ZSCAPE) / 267 (MiniFin) / 270 (DanioCell) / 288 (ChemFish) / 342 (MegaFin), over datasets spanning 55k to 540k cells.",
  cond:"Leaf count being near-invariant to cell count is the strongest generalisation on this row — the recipe finds transcriptional states, not cells. It cuts both ways: 267 leaves from 94,616 cells is finer, relative to cell count, than 288 from 295,000, and 29 of the worked example's leaves fall under 30 cells, small enough that the labeller is told not to trust their fine statistics."},
-{id:"p4", key:"E5", group:"Building the partition", shape:"tile", name:"Leaf briefing", x:11.6, y:R4, w:0.7, d:0.7, h:0.48,
+{id:"p4", key:"E5", group:"Building the partition", shape:"tile", name:"Leaf briefing", x:11.6, y:R4, lane:"r4", w:0.7, d:0.7, h:0.48,
  sub:"GT-blind context object",
  does:"What the labeller sees for each leaf, and nothing else: id, cell count, compartment, embedding centroid, the enriched genes, per-marker log2FC with in- and out-of-cluster prevalence, and a low-n flag. No identity, no published label, no hint.",
  built:"Assembled fresh per cluster and re-sent with the standing instructions. Verified ground-truth-blind: expert labels are loaded only to build the sealed key and never written into this file.",
  cond:"Two gaps worth naming. 265 of 267 leaves carry markers — two carry none and are being asked to be identified from nothing. And the markersDown field exists on every leaf and is empty on every leaf: the briefing has a slot for what a cluster fails to express and it has never once been filled. Absence of a marker is often the discriminating evidence, and the labeller has never been given any."},
 
-{id:"KAS", key:"K", group:"The labeller", shape:"works", name:"DanioType Kasperov", x:14.0, y:R4, w:2.0, d:2.0, h:1.9,
+{id:"KAS", key:"K", group:"The labeller", shape:"works", name:"DanioType Kasperov", x:14.0, y:R4, lane:"r4", w:2.0, d:2.0, h:1.9,
  sub:"Researcher · Reasoner · Archivist", stat:"de novo, from markers alone",
  does:"Three specialists arguing about one cluster at a time. The Researcher searches the literature against the marker set. The Archivist answers raw-statistics probes on the live matrix so a claim can be checked rather than believed. The Reasoner synthesises, may go round again up to four times, then concludes or abstains. On the worked example, 46 of 267 leaves never reached the Researcher — a distinctiveness gate committed them to a coarse call up front — and of the 221 that did, 91 needed a second round, 37 a third, 7 a fourth and 5 a fifth.",
  built:"run_leaf_v2 (v1.2), gpt-5.4, ground-truth-blind end to end, leak-scanned per leaf. 209 assigns and 58 abstains, zero errors, $15.35 and 5,321 agent-seconds over 21 minutes — about six cents a leaf.",
@@ -362,7 +385,7 @@ const NODES = [
  built:"zfa_menu.v1.json — 3,107 non-obsolete ZFA terms from the 2026-06-02 release, hashed dec9f7289d7c…, built for the ZSCAPE Commit Gold benchmark on 2026-07-30.",
  cond:"It exists because almost nothing else does. Of the seven external atlases here, six ship free text with no ontology ids — ZSCAPE, ChemFish, DanioCell, ZCL2, MIC-Drop-seq and CellOracle. Zebrahub is the sole exception and ships ZFA identifiers natively, coarse in the full atlas and fine per stage. Without a closed vocabulary two atlases cannot be compared without a human adjudicating synonyms. Note the date: this menu postdates the worked example's run by four weeks, so those calls are free-text cell-type identities scored against an expert's own vocabulary, not against an ontology."},
 
-{id:"m1", key:"E9", group:"Consolidation", shape:"tile", name:"Meta-reasoner", x:17.0, y:R4, w:0.75, d:0.75, h:0.66,
+{id:"m1", key:"E9", group:"Consolidation", shape:"tile", name:"Meta-reasoner", x:17.0, y:R4, lane:"r4", w:0.75, d:0.75, h:0.66,
  sub:"267 leaves → 114 nodes",
  does:"Collapses the fine leaves into a defensible set: merge what is the same thing, set aside what cannot be called, assign a tier to what survives.",
  built:"One GT-blind consolidation pass, compartment-scoped, offline — not a re-run of the labeller. For the worked example: 51 merge nodes plus 63 set aside, 114 in total, all 267 leaves mapped, none orphaned.",
@@ -377,19 +400,20 @@ const NODES = [
  does:"Where ground truth finally enters. Expert hand-drawn cell sets, hierarchical and overlapping — a cell can carry up to three — sealed before clustering and opened only to score.",
  built:"Per-leaf multi-label profiles, primary on controls and secondary on all cells, full distribution kept rather than collapsed to a plurality. Scoring is lenient (right lineage) and strict (right depth), never a single number.",
  cond:"Ground truth is thinner and less stable than the phrase suggests. Coverage across the corpus: 27 expert sets over 77% of cells (MiniFin), 4 sets over 9.5% (MegaFin), tissue level only (DanioCell), transferred rather than called and therefore not ground truth at all (ChemFish), none deposited (CellOracle). It also disagrees with itself — ZCL2 ships two published annotations of the same 143 clusters that agree on lineage 135 times out of 143 but on cell type only 113, with two clusters outright swapped. And an authored scheme rarely equals the labels realized in the object: ZSCAPE's workbook documents 36 tissue / 101 broad / 148 sub against a realized 34 / 99 / 156. Any score has to declare which source it scored against."},
-{id:"m3", key:"F3", group:"Consolidation", shape:"tile", name:"Assemble the deliverable", x:18.2, y:R4, w:0.7, d:0.7, h:0.44,
+{id:"m3", key:"F3", group:"Consolidation", shape:"tile", name:"Assemble the deliverable", x:18.2, y:R4, lane:"r4", w:0.7, d:0.7, h:0.44,
  sub:"JSON, not a column",
  does:"Writes out every leaf's identity, its consolidation node, tier, marker-overlap score and route.",
  built:"schema daniotype_kasperov_run/v1, beside a leaf assignment mapping every cell to its leaf. Tiers are cell_type_sub, cell_type_broad, tissue and self.",
  cond:"That tier ladder is inherited, not invented: it mirrors the four levels realized in ZSCAPE's obs — germ_layer 7, tissue 34, cell_type_broad 99, cell_type_sub 156 — which is the closest thing the field has to a shared depth scale. Other atlases ladder differently: ZCL2 runs cluster 143 → cell_type 41 → cell_lineage 10, Zebrahub coarse 10 → fine 154. A tier name only means something next to the vocabulary it came from."},
 
 {id:"LB", key:"8", group:"⑧ Labelled deliverable", groupMark:true, anchor:true, shape:"strata",
+ lane:"r4",
  name:"Labelled deliverable", x:20.2, y:R4, w:2.0, d:2.0, h:1.9,
  sub:"267 leaves named · 114 nodes · every cell reachable", stat:"the first biological claim",
  does:"The same cells as the published object, sorted into named strata. On the worked example: 209 leaves resolved outright, 24 left region-unresolved, 34 subtype-unresolved, and 19 resolved finer than the expert did. Four rows from a fish tank, this is the first object on the map that makes a biological claim.",
  built:"Validated on the sealed key at 0.989 lenient for committed in-ontology calls and 0.904 across all GT-backed leaves; strict agreement 0.524 and 0.478. At node level, 0.989 and 0.916 on 77 GT-backed nodes.",
  cond:"Read the gap between lenient and strict before quoting either. Lineage recovery is expert-level; depth agreement is about half, and most of that gap is an ontology-axis mismatch rather than error — the expert labels the CNS by anatomical region using spatial lassoes, and region is not recoverable from markers, so the labeller says 'region-unresolved' instead of guessing. Which axis becomes primary is an open product decision, flagged rather than defaulted. And there is no labelled matrix: obs['cell_type'] on the published object is still 'unknown' for every cell. Anyone who wants labelled cells joins the deliverable to the leaf assignment themselves."},
-{id:"PR", key:"F4", group:"⑧ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R4, w:0.8, d:0.8, h:0.55,
+{id:"PR", key:"F4", group:"⑧ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R4, lane:"r4", w:0.8, d:0.8, h:0.55,
  sub:"foundation model",
  does:"Where a labelled atlas stops being an analysis and becomes training data.",
  built:"Reads the deliverable directly. No copy, no re-label.",
@@ -399,10 +423,30 @@ const NODES = [
 
 const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
 
+/* Row 1 forks. The biology lane sits above the centreline, the chemistry lane
+   below it, and they meet exactly once — at the arraying step, which is back on
+   the centreline. Membership is explicit rather than inferred from y, because
+   two lanes share one row and inferring would interleave them. dir:-1 mirrors
+   the lane so the map snakes. */
+const LANES = [
+  {id:"r1-head",  y:R1,       x0:0.7,  x1:5.2,  dir:+1},
+  {id:"r1-bio",   y:R1-1.5,   x0:6.4,  x1:13.6, dir:+1},
+  {id:"r1-chem",  y:R1+1.5,   x0:6.4,  x1:13.6, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:15.0, x1:22.0, dir:+1},
+  {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
+  {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
+  {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
+];
+
 const EDGES = [
+  /* the biology lane */
   {a:"AQ",b:"A1",kind:"fish"},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
-  {a:"A3",b:"A4",kind:"fish"},{a:"A4",b:"PL",kind:"fish"},{a:"PL",b:"A5",kind:"fish"},
-  {a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"A8",kind:"fish"},{a:"A8",b:"FX",kind:"fish"},
+  /* the chemistry lane — no incoming edge from the colony on purpose: the
+     compounds have nothing to do with our fish, and arrive from off-map */
+  {a:"CS",b:"ECHO",kind:"meta"},{a:"ECHO",b:"PL",kind:"meta"},
+  /* the merge — the embryos go into wells that already hold compound */
+  {a:"A3",b:"A4",kind:"fish"},{a:"PL",b:"A4",kind:"meta"},
+  {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
@@ -436,7 +480,7 @@ const EDGES = [
 /* the four bands — what kind of work each row is.
    All four share the same x0/x1 gridlines, so the four titles line up
    along one diagonal on the bottom-right edge. */
-const BAND_W=[-2,24], BAND_H=[-2.7,3.3];
+const BAND_W=[-2,24], BAND_H=[-2.7,3.8];
 const BANDS = [R1,R2,R3,R4].map((r,i)=>({
   name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
   x0:BAND_W[0], x1:BAND_W[1], y0:r+BAND_H[0], y1:r+BAND_H[1]
@@ -444,6 +488,10 @@ const BANDS = [R1,R2,R3,R4].map((r,i)=>({
 
 /* one carry: the map runs out at the end, into everything that comes after */
 const CARRIES = [
+  /* the compound library is not ours and is not on this map */
+  {x0:0.5,y0:R1+7.5,x1:6.2,y1:R1+2.0, fade:"in", kind:"meta",
+   from:"the SPARC compound library", to:"compound selection"},
+  /* and the map runs out at the end, into everything that comes after */
   {x0:-0.6,y0:R4,x1:-4.6,y1:R4, fade:"out", kind:"call",
    from:"PRISM handoff", to:"everything after this map"},
 ];
@@ -672,12 +720,12 @@ const OVERVIEW = {
   sub:"four rows · eight landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
 <p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
-<p><mark>Row 1 — the fish.</mark> Aquarium to fixed material. The only row where biology is being done rather than described. It ends on the fork that governs everything after it: whole cells, or nuclei.</p>
+<p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology lane runs above the centreline — pair, clutch, cull — while a chemistry lane runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology lane comes out of our own tanks, the chemistry lane fades in from off-map, because the compounds are not ours. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where.</p>
 <p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>
 <p>Eight landmarks are real things you could point at; everything between them is a step, drawn small. Outlines are roads not taken. Hatching means the stage destroys data.</p>
-<p>Three dependencies do not follow the rows. Sample identity on row 3 was written chemically on row 2 and decided physically on row 1. The doublet threshold on row 3 is trying to measure a collision rate that loading density set on row 2. And the nuclei-or-cells choice on row 1 decides what the intron stage on row 3 does, and what a mitochondrial percentage even means.</p>`,
+<p>Beyond the row-1 fork, three dependencies do not follow the rows. Sample identity on row 3 was written chemically on row 2 and decided physically on row 1. The doublet threshold on row 3 is trying to measure a collision rate that loading density set on row 2. And the nuclei-or-cells choice on row 1 decides what the intron stage on row 3 does, and what a mitochondrial percentage even means.</p>`,
   built:`<p>General claims come from the corpus at <mark>/data/datasets/zebrafish/</mark>: nine dataset entries, seven carrying a full nine-section provenance record under <mark>&lt;DATASET&gt;/sources/README.md</mark> — ZSCAPE, ChemFish, DanioCell, Zebrahub, ZCL2, MIC-Drop-seq, CellOracle. Every record ends with the same seven cross-dataset provenance principles, which are the nearest thing to a written statement of this pipeline; the four that drive this map are quoted in the header of <mark>pipeline-data.js</mark>.</p>
 <p>Worked-example numbers come from that run's own artefacts — vendor run definition and QC report, the matrix itself, and the clustering, labelling and deliverable backups. Every source file is named in the same header comment.</p>
 <p>The payloads behind the moving dots are real records, not shapes. Two of them deliberately show nothing, because nothing is what exists.</p>
@@ -694,4 +742,4 @@ const OVERVIEW = {
    independently by the vendor's own barcode-set description. What remains is
    genuinely undocumented — the breeding steps, the dissociation, and library
    prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","A4","A8","B9","C1","C2"]);
+const UNVERIFIED = new Set(["A1","A2","A3","P2","A7","B9","C1","C2"]);

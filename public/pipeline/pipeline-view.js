@@ -9,7 +9,7 @@
 (function requires(){
   const need={ "pipeline-iso.js":["P","paint","installDefs","layoutRows","TICKERS"],
                "pipeline-shapes.js":["DRAW","SKIN","topOf"],
-               "pipeline-data.js":["NODES","EDGES","BANDS","CARRIES","SNIPPETS","OVERVIEW"] };
+               "pipeline-data.js":["NODES","EDGES","LANES","BANDS","CARRIES","SNIPPETS","OVERVIEW"] };
   const missing=[];
   for(const file in need)
     for(const sym of need[file])
@@ -30,7 +30,7 @@ Check the script paths resolve (a route without a trailing slash will 404 them).
 
 const svg=document.getElementById("svg");
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
-layoutRows(NODES, ROWS, MIRROR);
+layoutRows(NODES, LANES, MIRROR);
 
 const defs=installDefs(svg);
 
