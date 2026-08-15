@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Aquarium to Labelled h5ad</title>
+<style>
+  :root{
+    /* ---- dark (default) ---- */
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
+    --signal:#74b0f0; --drop:#e0765c;
+
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
+    --m-top:#dbe2d9; --m-left:#aeb8ad; --m-right:#8f9b91;
+    --g-top:#33403a; --g-left:#242e29; --g-right:#1b2320;
+    --c-top:#7fa3c0; --c-left:#52708c; --c-right:#3d566c;
+
+    --sa-top:#dbe2d9; --sa-left:#aeb8ad; --sa-right:#8f9b91;
+    --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
+    --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
+
+    --txt-mono:#131816;  /* text over the pale monolith / strata */
+    --txt-box:#dfe6df;   /* text over everything else */
+  }
+  body.light{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
+    --signal:#1e4c8a; --drop:#8a3324;
+
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
+    --m-top:#75837a; --m-left:#4a574f; --m-right:#37433b;
+    --g-top:#e4eae1; --g-left:#cfd8ce; --g-right:#c0cabf;
+    --c-top:#8fa3ae; --c-left:#63798a; --c-right:#4c6172;
+
+    --sa-top:#7d8b81; --sa-left:#4f5c54; --sa-right:#3b473f;
+    --sb-top:#6d7b72; --sb-left:#44514a; --sb-right:#323e37;
+    --sc-top:#3f5b7e; --sc-left:#2a4260; --sc-right:#1e3350;
+
+    --txt-mono:#d5dcd3; --txt-box:#161e19;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+       font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
+  .stat{padding:5px 14px 7px;border-right:1px solid var(--rule);white-space:nowrap}
+  .stat .k{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
+  .stat .v{font-size:13px}
+  .controls{margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 10px;flex:none}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+
+  .body{display:flex;flex:1;min-height:0}
+  aside{width:238px;flex:none;border-right:1px solid var(--fg);overflow-y:auto;padding-bottom:24px;background:var(--bg)}
+  .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
+  .grp.mark{color:var(--fg)}
+  .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
+       border:1px solid var(--rule);border-left:none;border-right:none;margin-top:-1px}
+  .row .key{width:22px;height:17px;flex:none;border:1px solid var(--fg);display:grid;place-items:center;font-size:9px}
+  .row.anchor .key{background:var(--fg);color:var(--bg)}
+  .row .nm{flex:1;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35}
+  .row.anchor .nm{font-size:11.5px}
+  .row .n{font-size:9px;color:var(--fg3)}
+  .row:hover,.row:focus-visible{background:var(--panel2)}
+  .row.on{background:var(--fg);color:var(--bg)}
+  .row.on .key{border-color:var(--bg)}
+  .row.on.anchor .key{background:var(--bg);color:var(--fg)}
+  .row.on .n{color:var(--bg)}
+
+  .stage{flex:1;position:relative;min-width:0;overflow:hidden}
+  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  svg.drag{cursor:grabbing}
+  .zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px}
+  .zoom button{width:24px;height:24px;border:1px solid var(--fg);display:grid;place-items:center;
+               background:var(--bg);font-size:13px;line-height:1}
+  .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
+        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none}
+
+  .reader{width:352px;flex:none;border-left:1px solid var(--fg);display:flex;flex-direction:column;
+          background:var(--panel);min-height:0}
+  .tabs{display:flex;flex:none;border-bottom:1px solid var(--fg)}
+  .tab{flex:1;padding:6px 4px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;border-right:1px solid var(--rule)}
+  .tab:last-child{border-right:none}
+  .tab.on{background:var(--fg);color:var(--bg)}
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:24px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:16px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:104px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .cond{border-left:2px solid var(--drop);padding-left:9px}
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
+        white-space:pre;overflow-x:auto;line-height:1.6}
+  .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
+         letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+
+  .mobtoggle{display:none}
+  @media (max-width:900px){
+    .body{flex-direction:column;position:relative}
+    aside{position:absolute;z-index:5;top:0;bottom:0;left:0;width:224px;transform:translateX(-100%);
+          transition:transform .18s ease}
+    aside.open{transform:none}
+    .stage{flex:none;height:46dvh;border-bottom:1px solid var(--fg)}
+    .reader{width:auto;flex:1;border-left:none}
+    .mobtoggle{display:inline-flex}
+    .stat{padding:4px 10px 6px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="stat"><div class="k">Run</div><div class="v">MiniFin &middot; bench to model</div></div>
+    <div class="stat"><div class="k">Exposure</div><div class="v">24 → 48 hpf</div></div>
+    <div class="stat"><div class="k">Barcode rounds</div><div class="v">4</div></div>
+    <div class="stat"><div class="k">Reads</div><div class="v">3.66 B · 8 sublibraries</div></div>
+    <div class="stat"><div class="k">Cells called</div><div class="v">94,616</div></div>
+    <div class="stat"><div class="k">Leaves</div><div class="v">267 → 114 nodes</div></div>
+    <div class="controls">
+      <button class="ctl mobtoggle" id="btnStages">Stages</button>
+      <button class="ctl" id="btnPlay">Pause the flow</button>
+      <button class="ctl" id="btnStep">Trace one step</button>
+      <button class="ctl" id="btnTheme">Light</button>
+      <button class="ctl" id="btnReset">Reset view</button>
+    </div>
+  </header>
+  <div class="body">
+    <aside id="aside"></aside>
+    <div class="stage">
+      <svg id="svg" aria-label="Isometric map from the zebrafish aquarium to a labelled h5ad"></svg>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+      <div class="hint">Hover to read · Click a moving dot to inspect it · Drag to pan · Scroll to zoom</div>
+    </div>
+    <div class="reader">
+      <div class="tabs">
+        <button class="tab on" data-tab="does">What it does</button>
+        <button class="tab" data-tab="built">How it's built</button>
+      </div>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/pipeline/pipeline-iso.js"></script>
+<script src="/pipeline/pipeline-shapes.js"></script>
+<script src="/pipeline/pipeline-data.js"></script>
+<script src="/pipeline/pipeline-view.js"></script>
+</body>
+</html>

@@ -8,8 +8,16 @@ const nextConfig = {
   // /zfa_mapping is a self-contained static viz in public/zfa_mapping.html.
   // SOURCE + how to rebuild/redeploy: /data/scratch/zlabel/ZFA_MAPPING_README.md
   // (built by /data/scratch/zlabel/build_zfa_parallel.py; copy its output here + push).
+  // /pipeline is a self-contained static viz in public/pipeline/ (index.html +
+  // four classic scripts, no build step). Its <script src> attributes are
+  // ABSOLUTE (/pipeline/pipeline-iso.js) because this route has no trailing
+  // slash — relative paths would resolve against / and 404.
+  // Contract + ownership split: public/pipeline/HANDOFF.md
   async rewrites() {
-    return [{ source: '/zfa_mapping', destination: '/zfa_mapping.html' }]
+    return [
+      { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
+      { source: '/pipeline', destination: '/pipeline/index.html' },
+    ]
   },
 }
 

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Shape sandbox</title>
+<style>
+  :root{
+    --bg:#131816; --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
+    --signal:#74b0f0; --drop:#e0765c;
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
+    --m-top:#dbe2d9; --m-left:#aeb8ad; --m-right:#8f9b91;
+    --g-top:#33403a; --g-left:#242e29; --g-right:#1b2320;
+    --c-top:#7fa3c0; --c-left:#52708c; --c-right:#3d566c;
+    --sa-top:#dbe2d9; --sa-left:#aeb8ad; --sa-right:#8f9b91;
+    --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
+    --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
+  }
+  body.light{
+    --bg:#ccd4cb; --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
+    --signal:#1e4c8a; --drop:#8a3324;
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
+    --m-top:#75837a; --m-left:#4a574f; --m-right:#37433b;
+    --g-top:#e4eae1; --g-left:#cfd8ce; --g-right:#c0cabf;
+    --c-top:#8fa3ae; --c-left:#63798a; --c-right:#4c6172;
+    --sa-top:#7d8b81; --sa-left:#4f5c54; --sa-right:#3b473f;
+    --sb-top:#6d7b72; --sb-left:#44514a; --sb-right:#323e37;
+    --sc-top:#3f5b7e; --sc-left:#2a4260; --sc-right:#1e3350;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);display:flex;flex-direction:column;
+       font-family:ui-monospace,"SF Mono",Menlo,Consolas,monospace;font-size:12px}
+  header{display:flex;gap:8px;align-items:center;padding:8px 12px;border-bottom:1px solid var(--fg);flex:none;flex-wrap:wrap}
+  select,button,input{font:inherit;color:var(--fg);background:var(--bg);border:1px solid var(--fg);padding:3px 8px}
+  label{color:var(--fg3);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+  svg{flex:1;width:100%;min-height:0}
+  .note{padding:5px 12px;color:var(--fg3);font-size:9px;letter-spacing:.1em;text-transform:uppercase;
+        border-top:1px solid var(--rule)}
+</style>
+</head>
+<body>
+<header>
+  <label for="shape">Shape</label><select id="shape"></select>
+  <label for="w">w</label><input id="w" type="number" step="0.1" value="2" style="width:64px">
+  <label for="d">d</label><input id="d" type="number" step="0.1" value="2" style="width:64px">
+  <label for="h">h</label><input id="h" type="number" step="0.1" value="1.6" style="width:64px">
+  <button id="theme">Light</button>
+  <button id="grid">Grid</button>
+</header>
+<svg id="svg" aria-label="One shape, drawn large"></svg>
+<div class="note">Loads iso + shapes only. If a shape needs anything from pipeline-data.js, the contract is broken.</div>
+
+<script src="/pipeline/pipeline-iso.js"></script>
+<script src="/pipeline/pipeline-shapes.js"></script>
+<script>
+const svg=document.getElementById("svg");
+installDefs(svg);
+const world=el("g"); svg.appendChild(world);
+let gGrid=el("g"), gNode=el("g");
+world.appendChild(gGrid); world.appendChild(gNode);
+let showGrid=true;
+
+/* every custom field any shape reads, so one node can drive all of them */
+const base={id:"SANDBOX", key:"·", cols:12, rows:8, cells:8, fill:0.3, hatch:false};
+
+function drawGrid(){
+  gGrid.textContent="";
+  if(!showGrid) return;
+  for(let x=-5;x<=5;x++){const a=P(x,-5,0),b=P(x,5,0);
+    gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)"}));}
+  for(let y=-5;y<=5;y++){const a=P(-5,y,0),b=P(5,y,0);
+    gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)"}));}
+}
+function render(){
+  gNode.textContent="";
+  const n={...base, shape:sel.value, x:0, y:0,
+           w:+document.getElementById("w").value,
+           d:+document.getElementById("d").value,
+           h:+document.getElementById("h").value};
+  DRAW[n.shape](gNode,n);
+  fit();
+}
+function fit(){
+  const bb=world.getBBox(), r=svg.getBoundingClientRect();
+  if(!bb.width||!bb.height) return;
+  const k=Math.min((r.width-80)/bb.width,(r.height-80)/bb.height);
+  world.setAttribute("transform",
+    `translate(${r.width/2-(bb.x+bb.width/2)*k},${r.height/2-(bb.y+bb.height/2)*k}) scale(${k})`);
+}
+const sel=document.getElementById("shape");
+Object.keys(DRAW).sort().forEach(k=>{const o=document.createElement("option");o.value=o.textContent=k;sel.appendChild(o);});
+sel.value="tankrack";
+sel.onchange=render;
+["w","d","h"].forEach(i=>document.getElementById(i).oninput=render);
+document.getElementById("theme").onclick=e=>{
+  document.body.classList.toggle("light");
+  e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
+};
+document.getElementById("grid").onclick=()=>{showGrid=!showGrid;drawGrid();};
+window.addEventListener("resize",()=>{drawGrid();fit();});
+
+drawGrid(); render();
+/* the same single loop the real page runs, so TICKERS behave identically here */
+let last=performance.now();
+(function frame(now){
+  const dt=Math.min((now-last)/1000,.05); last=now;
+  TICKERS.forEach(f=>f(dt, now, 1));
+  requestAnimationFrame(frame);
+})(last);
+</script>
+</body>
+</html>

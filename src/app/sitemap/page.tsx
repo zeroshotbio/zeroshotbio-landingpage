@@ -28,6 +28,7 @@ const SECTIONS: Section[] = [
   {
     title: "Visualizations & interactive pages",
     links: [
+      { href: "/pipeline", label: "Aquarium to Atlas — the MiniFin pipeline map", note: "isometric; every number sourced, gaps marked" },
       { href: "/zebrafish_ontology", label: "ZFA Atlas — zebrafish anatomy ontology", note: "dataset menus on the anatomy graph" },
       { href: "/zfa_mapping", label: "ZSCAPE → ZFA mapping — Stage 1", note: "parallel-sets + side-by-side term table" },
       { href: "/danio_specimen_poster.html", label: "DANIO — interactive specimen poster" },
