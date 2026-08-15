@@ -61,7 +61,7 @@ const NODES = [
 /* ================= ROW 1 — THE FISH ================= */
 {id:"AQ", key:"1", group:"① The aquarium", groupMark:true, anchor:true, shape:"tankrack",
  name:"The aquarium", x:1.3, y:R1, w:2.6, d:2.0, h:1.6,
- sub:"recirculating racks · in-house colony", stat:"the colony",
+ sub:"recirculating racks · in-house colony", stat:"adult zebrafish",
  does:"Every cell in every dataset downstream was in one of these tanks. The colony is the actual capital asset of the company — an atlas is a claim about zebrafish development, and it is only as good as the fish that made it.",
  built:"Recirculating system, standard husbandry. Line is disputed for the worked example: the MiniFin front door says TU wildtype (and argues GRCz11 is the right reference because GRCz11 was derived from TU); the MegaFin design spec says Tg(fli1:egfp) or Tg(kdrl:egfp) angiogenesis reporters.",
  cond:"Two problems, and the second is general. The line conflict above is unresolved and matters — a fli1:egfp reporter carries a transgene the reference does not, and Zebrahub shows what that costs: its counting reference has three Zebrabow transgene features bolted on, and the recipe for them was never published. And nothing about tank, clutch or parentage travels with a cell into the matrix, so a batch effect originating in husbandry is invisible from the data side."},

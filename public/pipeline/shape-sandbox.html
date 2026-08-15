@@ -19,6 +19,7 @@
     --sa-top:#dbe2d9; --sa-left:#aeb8ad; --sa-right:#8f9b91;
     --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
     --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
+    --water:#4f8fd6; --fish:#f2f6f0; --gravel:#5b6a60; --plant:#6f9a72;
   }
   body.light{
     --bg:#ccd4cb; --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
@@ -34,6 +35,7 @@
     --sa-top:#7d8b81; --sa-left:#4f5c54; --sa-right:#3b473f;
     --sb-top:#6d7b72; --sb-left:#44514a; --sb-right:#323e37;
     --sc-top:#3f5b7e; --sc-left:#2a4260; --sc-right:#1e3350;
+    --water:#3a6ea8; --fish:#2a332c; --gravel:#8f9a8e; --plant:#6d8a6b;
   }
   *{box-sizing:border-box}
   html,body{height:100%}
@@ -82,6 +84,10 @@ function drawGrid(){
 }
 function render(){
   gNode.textContent="";
+  /* a shape that animates registers a ticker every time it is drawn, and the
+     sandbox redraws on every keystroke — drop the old ones or they pile up and
+     keep animating detached nodes */
+  TICKERS.length = 0;
   const n={...base, shape:sel.value, x:0, y:0,
            w:+document.getElementById("w").value,
            d:+document.getElementById("d").value,
