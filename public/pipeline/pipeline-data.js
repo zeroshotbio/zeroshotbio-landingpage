@@ -80,24 +80,24 @@ const NODES = [
  does:"Dead and unfertilised eggs are removed under a scope. The first cull on the whole map happens here, by hand, with a pipette.",
  built:"Visual screen.",
  cond:"No bench record and no count, so the denominator at the very start of the experiment is unknown. Every retention figure further down this map is conditional on a number nobody wrote down."},
-{id:"A4", key:"A4", group:"Breeding", shape:"arrayplate", name:"Stage and array", x:8.5, y:R1, w:1.6, d:1.2, h:0.18,
- sub:"6 embryos × 48 wells",
- does:"Embryos are checked for stage and distributed into the treatment plate before dosing.",
- built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
- cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish."},
+{id:"A5", key:"A5", group:"② The treatment plate", groupMark:true, shape:"echodispense", name:"Echo dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
+ sub:"acoustic, from the cherry-picking layout",
+ does:"Compound is fired into an empty 48-well plate by acoustic dispensing. The destination plate hangs inverted above the source and droplets travel upward into it; no tip ever touches the liquid. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before any fish exist.",
+ built:"Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; embryos arrive later.",
+ cond:"No Echo layout file is held on this instance, and neither is any dispense log. The step is here because it is how the bench works, not because an artefact records it — which matters, because this sheet is the only place the treatment assignment exists before it becomes a barcode. If it and the sample loading table ever disagreed, nothing downstream could tell. The dose it writes, 1 µM, appears in the design document and in no column of the delivered object."},
 
-{id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"plate96",
- name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36, cols:8, rows:6,
- sub:"one well = one condition = one future .obs row", stat:"48 wells · 43 recovered",
- does:"The experiment itself, and the only place in the pipeline where biology is manipulated. In the worked example, four conditions — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns — at twelve replicate wells each. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
+{id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
+ name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36,
+ sub:"one well = one condition = one future .obs row", stat:"48 wells · 4 × 12",
+ does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Drawn dosed and empty, which is what it is at this moment: four vertical bands of twelve replicate wells, compound in every one of them and not a fish in the building yet. In the worked example those four conditions are — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
  cond:"The label defect here is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin. And the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. This is the general shape of the problem: design intent and deposited object are two different artefacts, and they have to be reconciled by hand."},
 
-{id:"A5", key:"A5", group:"The experiment", shape:"tile", name:"Dose at 24 hpf", x:13.4, y:R1, w:0.72, d:0.72, h:0.5,
- sub:"1 µM · compound into embryo medium",
- does:"Compound goes into the water at 24 hours post fertilisation, when the body plan is laid down but organs are still forming and angiogenesis is active.",
- built:"Single dose, 1 µM for all three compounds; vehicle 0.1% DMSO. Confirmed against the design spec and the dataset front door.",
- cond:"Dose is nominal, not measured, and internal exposure is unknown and compound-dependent. Nothing downstream can distinguish 'the drug did nothing' from 'the drug never got in'. For scale: ChemFish dosed at 10–100 µM, which is 175,000–270,000× the IC50, precisely to remove that ambiguity — a different and equally defensible choice."},
+{id:"A4", key:"A4", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:2.0, d:1.55, h:0.22,
+ sub:"6 embryos per well, at 24 hpf",
+ does:"Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
+ built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
+ cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish."},
 {id:"A6", key:"A6", group:"The experiment", shape:"tile", name:"Incubate to 48 hpf", x:14.7, y:R1, w:0.72, d:0.72, h:0.58,
  sub:"24 hours of exposure",
  does:"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset.",
@@ -220,6 +220,11 @@ const NODES = [
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
  cond:"86.1% of transcripts land inside called cells; the remaining 13.9% is the ambient pool and it is dropped here rather than kept as a background profile. Barcode conventions are a live trap whenever matrices are compared: ZCL2's 18 nt barcodes need a 3 × 6 split to parse, and MegaFin's vendor-well barcodes have 0% overlap with the same library's raw-combinatorial rebuild — the same cells, unjoinable."},
+{id:"W", key:"D1", group:"Getting to a matrix", shape:"tile", follow:{a:"cb4"}, name:"Sample metadata join", x:9.3, y:R3+2.4, w:0.85, d:0.85, h:0.35,
+ sub:"which cell saw what",
+ does:"Carries the treatment plate forward: which barcode belongs to which sample, and therefore which compound each cell saw. It is the only thing on this row that came from the first row rather than from the row above.",
+ built:"In a combinatorial design this is free — the round-one barcode is the sample, so the join is a lookup. For the worked example it lands as bc1_well (48 values), parse_sample, sample and perturbation (4 values).",
+ cond:"Free here, expensive elsewhere. Hashed designs have to infer sample identity statistically and lose cells doing it — that is the demultiplex cull further along this row. Worth checking what actually survives the join: ChemFish records compound, dose, addition time and collection time, but its compare_against column, which names the intended control arm, is populated for only 20% of cells."},
 {id:"E", key:"C8", group:"The counting reference", shape:"tile", follow:{a:"cb1",b:"cb2"}, name:"The counting reference", x:5.05, y:R3-2.3, w:0.34, d:0.34, h:0.2,
  sub:"one assembly, four feature universes",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
@@ -235,11 +240,6 @@ const NODES = [
  does:"Re-counting the same library against a better annotation, as a second arm rather than a replacement.",
  built:"Lawson v4.3.2 is held at datasets/zebrafish/references/lawson_v4_3_2/. The one arm that exists was built with our own STARsolo on MegaFin Part 1 and recovered 345,651 cells against the vendor's 540,946 on the same library — 36% fewer, at a far harsher UMI floor (min retained 1,769 vs 232).",
  cond:"It is not 'the same cells in a different gene space'. The two arms differ by 195,295 cells, and six of the eight worst-hit samples lose more than 90% of theirs. A bridge exists but is thin — lawson_to_ensdarg.csv maps 7,238 of 36,351 Lawson genes to ENSDARG, 19.9%: enough to compare, nowhere near enough to concatenate. And the v4.3.2 gene-information table is still missing, so the GTF carries no biotypes."},
-{id:"W", key:"D1", group:"Getting to a matrix", shape:"tile", follow:{a:"cb4"}, name:"Sample metadata join", x:9.3, y:R3+2.4, w:0.85, d:0.85, h:0.35,
- sub:"which cell saw what",
- does:"Carries the treatment plate forward: which barcode belongs to which sample, and therefore which compound each cell saw. It is the only thing on this row that came from the first row rather than from the row above.",
- built:"In a combinatorial design this is free — the round-one barcode is the sample, so the join is a lookup. For the worked example it lands as bc1_well (48 values), parse_sample, sample and perturbation (4 values).",
- cond:"Free here, expensive elsewhere. Hashed designs have to infer sample identity statistically and lose cells doing it — that is the demultiplex cull further along this row. Worth checking what actually survives the join: ChemFish records compound, dose, addition time and collection time, but its compare_against column, which names the intended control arm, is populated for only 20% of cells."},
 
 {id:"UD", key:"5", group:"⑤ Unfiltered matrix", groupMark:true, anchor:true, shape:"matrix",
  name:"Unfiltered matrix", x:12.2, y:R3, w:2.5, d:2.5, h:2.0, cells:8, fill:0.09,
@@ -401,8 +401,8 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
 
 const EDGES = [
   {a:"AQ",b:"A1",kind:"fish"},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
-  {a:"A3",b:"A4",kind:"fish"},{a:"A4",b:"PL",kind:"fish"},{a:"PL",b:"A5",kind:"fish"},
-  {a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"A8",kind:"fish"},{a:"A8",b:"FX",kind:"fish"},
+  {a:"A3",b:"A5",kind:"fish"},{a:"A5",b:"PL",kind:"fish"},{a:"PL",b:"A4",kind:"fish"},
+  {a:"A4",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"A8",kind:"fish"},{a:"A8",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
@@ -694,4 +694,4 @@ const OVERVIEW = {
    independently by the vendor's own barcode-set description. What remains is
    genuinely undocumented — the breeding steps, the dissociation, and library
    prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","A8","B9","C1","C2"]);
+const UNVERIFIED = new Set(["A1","A2","A3","A5","A8","B9","C1","C2"]);

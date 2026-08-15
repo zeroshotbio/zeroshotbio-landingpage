@@ -564,70 +564,177 @@ function drawCullDish(g,n){
 DRAW.culldish = drawCullDish;
 
 
-/* ------------------------------------------------------------------
-   A4 · STAGE AND ARRAY
-   The 48-well treatment plate being loaded, six embryos to a well, a tip
-   working across it column by column. When the last well is filled the
-   plate empties and the sweep starts again.
+/* ==================================================================
+   THE PLATE SET — Echo dispense, the dosed plate, arraying into it.
 
-   Drawn 8 x 6, the physical geometry of a 48-well vessel. Note that the
-   Parse round-one barcode plate one row down holds the same 48 samples in
-   a 12 x 4 layout (rows A-D, cols 1-12) — a different plate, not a
-   contradiction. PL, being the same treatment plate as this node, is drawn
-   the same way.
+   Corrected causal order. Compound goes into an EMPTY 48-well plate by
+   acoustic dispensing from an Echo cherry-picking layout. The plate then
+   sits dosed. Embryos are added at 24 hpf, into wells that already
+   contain the compound. There is no separate "dosing" step after the
+   fish are in the plate — the fish arrive into the dose.
 
-   MARK_MISSING draws a few wells with a dashed ring in the discard colour.
-   That is an editorial mark, not a fact about this step: 48 wells are
-   loaded here and only 43 samples reach the object, and nothing in the
-   pipeline explains the difference. Set it to 0 to remove the claim.
+   All three shapes share PLATE_BANDS and the 8 x 6 = 48 geometry, so the
+   same plastic is recognisable across the three nodes.
 
    Requires ellipseAt() from the A2 clutch block.
+   ================================================================== */
+
+/* two columns each: vehicle, positive control, unknown, unknown */
+const PLATE_BANDS = [
+  {fill:"var(--fg)",                   op:.16},   // 0.1% DMSO vehicle
+  {fill:"var(--drop)",                 op:.5 },   // sorafenib, anti-angiogenic
+  {fill:"var(--water, var(--signal))", op:.5 },   // orlistat
+  {fill:"var(--plant, var(--fg2))",    op:.55},   // dapagliflozin
+];
+const PLATE_COLS=8, PLATE_ROWS=6;
+
+/* the well grid of any plate on this map */
+function plateWells(n, th){
+  const hw=n.w/2, hd=n.d/2, sx=n.w/PLATE_COLS, sy=n.d/PLATE_ROWS;
+  const R=Math.min(sx,sy)*0.38, out=[];
+  for(let j=0;j<PLATE_ROWS;j++)for(let i=0;i<PLATE_COLS;i++)
+    out.push({i,j,band:PLATE_BANDS[Math.floor(i/2)],
+              e:ellipseAt(n.x-hw+(i+0.5)*sx, n.y-hd+(j+0.5)*sy, th, R)});
+  return out;
+}
+function plateSlab(g,n,th,skin,sw){
+  const f=faces(n.x,n.y,n.w,n.d,th);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:skin[k],stroke:"var(--stroke)","stroke-width":sw})));
+  const inner=faces(n.x,n.y,n.w-0.1,n.d-0.1,th);
+  g.appendChild(el("polygon",{points:inner.top,fill:"var(--bg)","fill-opacity":".2",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
+  const nk=[P(n.x-n.w/2,n.y-n.d/2,th),P(n.x-n.w/2+0.18,n.y-n.d/2,th),
+            P(n.x-n.w/2,n.y-n.d/2+0.18,th)];
+  g.appendChild(el("polygon",{points:pts(nk),fill:"var(--stroke)","fill-opacity":".55"}));
+}
+function drawWell(g,w,dosed){
+  g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
+    fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
+    "stroke-width":".6","stroke-opacity":".55"}));
+  if(dosed){
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:w.band.fill,"fill-opacity":w.band.op}));
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:"none",stroke:"var(--fg)","stroke-width":".5","stroke-opacity":".3"}));
+  }
+}
+
+/* ------------------------------------------------------------------
+   A5 · ECHO DISPENSE   (replaces "Dose at 24 hpf")
+   Acoustic dispensing: the destination plate hangs INVERTED above the
+   source, and droplets are fired upward into it by a transducer under
+   the source well. No tip ever touches the liquid. That upward travel is
+   the one thing worth drawing here, because it is what makes the Echo
+   cherry-picking sheet — and therefore the whole treatment axis — a
+   per-well instruction rather than a pipetting plan.
+   ------------------------------------------------------------------ */
+function drawEchoDispense(g,n){
+  const th=0.12, gap=0.66;
+  const src={x:n.x,y:n.y,w:n.w,d:n.d}, dst={x:n.x,y:n.y,w:n.w,d:n.d};
+
+  /* source plate, four compounds in it */
+  plateSlab(g,src,th,SKIN.tile,1);
+  const swells=plateWells(src,th).filter(w=>w.j%2===0 && w.i%2===0);
+  swells.forEach(w=>drawWell(g,w,true));
+
+  /* transducer under the source */
+  const tz=faces(n.x-n.w*0.3,n.y+n.d*0.28,0.26,0.26,0.1);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:tz[k],fill:"var(--k-top)",stroke:"var(--stroke)","stroke-width":".8"})));
+
+  /* destination plate, inverted above */
+  const lift=el("g",{transform:`translate(0,${-(th+gap)*S*CZ})`});
+  plateSlab(lift,dst,th,SKIN.tile,1);
+  plateWells(dst,th).forEach(w=>lift.appendChild(el("ellipse",
+    {cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,fill:"var(--bg)","fill-opacity":".45",
+     stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".45"})));
+  g.appendChild(lift);
+
+  /* one droplet, fired upward */
+  const drop=el("ellipse",{rx:"2.2",ry:"2.9",fill:"var(--drop)","fill-opacity":"0"});
+  g.appendChild(drop);
+
+  const rise=(th+gap)*S*CZ, CYCLE=1.6;
+  let t=0, k=0;
+  const run=(dt)=>{
+    t+=dt;
+    if(t>CYCLE){ t-=CYCLE; k=(k+1)%swells.length; }
+    const w=swells[k], p=t/CYCLE, f=Math.min(1,p/0.75);
+    drop.setAttribute("cx",w.e.x);
+    drop.setAttribute("cy",(w.e.y-rise*(1-(1-f)*(1-f))).toFixed(1));
+    drop.setAttribute("fill-opacity",(f<1?0.85:0).toFixed(2));
+    drop.setAttribute("fill",w.band.fill);
+  };
+  run(0);
+  TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
+}
+DRAW.echodispense = drawEchoDispense;
+
+/* ------------------------------------------------------------------
+   ② THE TREATMENT PLATE
+   48 wells, dosed and empty. Four vertical bands of twelve replicates.
+   No embryos: at this point in the story there are none in it yet.
+
+   MARK_DEFECT brackets the fourth band, where the compound is spelled
+   two different ways in two different columns of the deposited object.
+   ------------------------------------------------------------------ */
+const MARK_DEFECT = true;
+
+function drawTreatmentPlate(g,n){
+  const th=n.h, sx=n.w/PLATE_COLS, hw=n.w/2, hd=n.d/2;
+  plateSlab(g,n,th,SKIN.anchor,1.6);
+  plateWells(n,th).forEach(w=>drawWell(g,w,true));
+  if(MARK_DEFECT){
+    const x0=n.x-hw+6*sx, x1=n.x-hw+8*sx;
+    const b=[[x0+0.02,n.y-hd+0.03],[x1-0.02,n.y-hd+0.03],
+             [x1-0.02,n.y+hd-0.03],[x0+0.02,n.y+hd-0.03]];
+    g.appendChild(el("polygon",{points:pts(b.map(p=>P(p[0],p[1],th))),
+      fill:"none",stroke:"var(--drop)","stroke-width":"1.1","stroke-opacity":".85",
+      "stroke-dasharray":"4 3"}));
+  }
+}
+DRAW.treatmentplate = drawTreatmentPlate;
+
+/* ------------------------------------------------------------------
+   A4 · ARRAY INTO THE DOSED PLATE, AT 24 HPF
+   The same 48 wells, already coloured, filling with six embryos each.
+   The fish arrive into the dose; nothing is added to them afterwards.
+
+   MARK_MISSING rings a few wells in the discard colour: 48 wells are
+   loaded and 43 samples reach the object, and nothing explains the
+   difference. Set it to 0 to drop the claim.
    ------------------------------------------------------------------ */
 const MARK_MISSING = 5;
 
 function drawArrayPlate(g,n){
-  const r=rng(67), cols=8, rows=6, th=n.h;
-  const sx=n.w/cols, sy=n.d/rows, R=Math.min(sx,sy)*0.38;
-  const hw=n.w/2, hd=n.d/2;
-  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+  const r=rng(67), th=n.h;
+  plateSlab(g,n,th,SKIN.tile,1);
+  const wells=plateWells(n,th);
 
-  /* the slab */
-  const f=faces(n.x,n.y,n.w,n.d,th);
-  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
-    {points:f[k],fill:SKIN.tile[k],stroke:"var(--stroke)",
-     "stroke-width":"1","stroke-opacity":".7"})));
-
-  /* which wells never make it downstream */
   const missing=new Set();
-  while(missing.size<MARK_MISSING) missing.add(Math.floor(r()*cols*rows));
+  while(missing.size<MARK_MISSING) missing.add(Math.floor(r()*wells.length));
 
-  /* wells, back to front */
-  const wells=[];
-  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
-    const wx=n.x-hw+(i+0.5)*sx, wy=n.y-hd+(j+0.5)*sy;
-    const e=ellipseAt(wx,wy,th,R);
-    g.appendChild(el("ellipse",{cx:e.x,cy:e.y,rx:e.rx,ry:e.ry,
-      fill:"var(--bg)","fill-opacity":".55",stroke:"var(--stroke)",
-      "stroke-width":".6","stroke-opacity":".5"}));
-    if(missing.has(j*cols+i))
-      g.appendChild(el("ellipse",{cx:e.x,cy:e.y,rx:e.rx*1.5,ry:e.ry*1.5,
+  const broods=[];
+  wells.forEach((w,idx)=>{
+    drawWell(g,w,true);
+    if(missing.has(idx))
+      g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*1.5,ry:w.e.ry*1.5,
         fill:"none",stroke:"var(--drop)","stroke-width":"1","stroke-opacity":".8",
         "stroke-dasharray":"2.5 2"}));
-
-    /* six embryos, ringed inside the well */
     const brood=el("g",{opacity:"0"});
     for(let k=0;k<6;k++){
-      const a=k*1.047+r()*0.3;
-      brood.appendChild(el("circle",{
-        cx:e.x+Math.cos(a)*e.rx*0.42, cy:e.y+Math.sin(a)*e.ry*0.42,
-        r:Math.max(.55,e.rx*0.17), fill:"var(--fg)","fill-opacity":".85"}));
+      const a=k*1.047+r()*0.35;
+      brood.appendChild(el("circle",{cx:w.e.x+Math.cos(a)*w.e.rx*0.44,
+        cy:w.e.y+Math.sin(a)*w.e.ry*0.44, r:Math.max(.55,w.e.rx*0.17),
+        fill:"var(--fg)","fill-opacity":".85"}));
     }
     g.appendChild(brood);
-    wells.push({brood,e,order:i*rows+j});     // filled column by column
-  }
-  wells.sort((a,b)=>a.order-b.order);
+    broods.push({brood,e:w.e,order:w.i*PLATE_ROWS+w.j});
+  });
+  broods.sort((a,b)=>a.order-b.order);
 
-  /* the tip that loads them */
+  /* the tip that carries them in */
   const pip=el("g",{});
   const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
               "stroke-width":".8","stroke-opacity":".85"};
@@ -637,26 +744,24 @@ function drawArrayPlate(g,n){
   tilt.appendChild(el("path",{d:"M -3.4 -40 L 3.4 -40 L 2.8 -56 L -2.8 -56 Z", ...skin}));
   pip.appendChild(tilt); g.appendChild(pip);
 
-  /* the sweep */
   const STEP=0.5, HOLD=2.5, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   let k=0, t=0, resting=0;
   const run=(dt)=>{
     if(resting>0){
       resting-=dt;
-      if(resting<=0){ wells.forEach(w=>w.brood.setAttribute("opacity","0")); k=0; t=0; }
-      pip.setAttribute("transform",`translate(${wells[wells.length-1].e.x},${wells[wells.length-1].e.y-46})`);
+      if(resting<=0){ broods.forEach(b=>b.brood.setAttribute("opacity","0")); k=0; t=0; }
       return;
     }
     t+=dt;
-    while(t>STEP && k<wells.length){
-      wells[k].brood.setAttribute("opacity","1");
+    while(t>STEP && k<broods.length){
+      broods[k].brood.setAttribute("opacity","1");
       k++; t-=STEP;
-      if(k>=wells.length){ resting=HOLD; return; }
+      if(k>=broods.length){ resting=HOLD; return; }
     }
-    const cur=wells[Math.min(k,wells.length-1)].e,
-          prev=wells[Math.max(0,k-1)].e, f2=ease(Math.min(1,t/STEP));
-    const x=prev.x+(cur.x-prev.x)*f2, y=prev.y+(cur.y-prev.y)*f2;
-    pip.setAttribute("transform",`translate(${x},${y-6-Math.sin(f2*Math.PI)*13})`);
+    const cur=broods[Math.min(k,broods.length-1)].e,
+          prev=broods[Math.max(0,k-1)].e, f=ease(Math.min(1,t/STEP));
+    pip.setAttribute("transform",
+      `translate(${prev.x+(cur.x-prev.x)*f},${prev.y+(cur.y-prev.y)*f-6-Math.sin(f*Math.PI)*13})`);
   };
   run(0);
   TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
