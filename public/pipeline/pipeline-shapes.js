@@ -27,7 +27,7 @@ const SKIN={
 const topOf = n => n.shape==="works"   ? n.h*0.96
                  : n.shape==="tankrack"? 1.4
                  : n.shape==="machine" ? 1.42
-                 : n.shape==="vials"   ? 0.82 : n.h;
+                 : n.shape==="vials"   ? n.h  : n.h;
 
 
 const drawTile =(g,n)=>paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile,n.hatch);
@@ -206,13 +206,197 @@ function drawPlate(g,n,skin){
 }
 const drawPlate96=(g,n)=>drawPlate(g,n,SKIN.anchor);
 const drawMiniplate=(g,n)=>drawPlate(g,n,SKIN.tile);
+/* ------------------------------------------------------------------
+   FIXED MATERIAL
+   The plate is filled, the cells stop moving, and it goes into the freezer.
+
+   Requires ellipseAt() from the clutch block and PLATE_BANDS / PLATE_ROWS /
+   plateWells() / plateSlab() / drawWell() from the plate set, so the same
+   plastic carries through from the Echo to here.
+
+   The plate stays opaque and is hidden by the DOOR, never by a fade. Cells
+   stop dead behind the tip rather than easing to a halt — fixation is not a
+   deceleration. The shell (top face, right flank, front frame) draws over the
+   plate once it starts moving in, which is done by reparenting the cart on
+   that state change rather than every frame.
+   ------------------------------------------------------------------ */
 function drawVials(g,n){
-  paint(g,n.x,n.y,n.w,n.d,0.2,SKIN.works);
-  const v=[];
-  for(let i=0;i<4;i++)for(let j=0;j<2;j++) v.push({x:n.x-n.w/2+0.35+i*0.38,y:n.y-n.d/2+0.42+j*0.66});
-  v.sort((a,b)=>(a.x+a.y)-(b.x+b.y));
-  v.forEach(t=>{const gg=el("g",{transform:`translate(0,${-0.2*S*CZ})`});
-    paint(gg,t.x,t.y,0.22,0.22,0.62,SKIN.cold); g.appendChild(gg);});
+  const r=rng(59);
+  const pw=n.w*0.58, pd=pw*0.79;
+  const plate={x:n.x-n.w*0.15, y:n.y+n.d*0.24, w:pw, d:pd};
+  const th=0.3;
+  const frz={x:n.x+n.w*0.2, y:n.y-n.d*0.24, w:n.w*0.3, d:n.d*0.24, h:n.h};
+
+  const snowflake=(host,pt2,R,op)=>{
+    const fl=el("g",{});
+    const line=(a,b,w,o)=>{
+      const p=pt2(a[0],a[1]), q=pt2(b[0],b[1]);
+      fl.appendChild(el("line",{x1:p[0],y1:p[1],x2:q[0],y2:q[1],
+        stroke:"var(--fg)","stroke-width":w,"stroke-opacity":o,"stroke-linecap":"round"}));
+    };
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3, dx=Math.cos(a), dy=Math.sin(a);
+      line([0,0],[dx*R,dy*R],1.5,op);
+      [[0.5,0.3],[0.78,0.2]].forEach(([f,len])=>{
+        const bx=dx*R*f, by=dy*R*f;
+        [0.62,-0.62].forEach(sw=>{
+          const ca=Math.cos(a+sw), sa=Math.sin(a+sw);
+          line([bx,by],[bx+ca*R*len, by+sa*R*len],1.1,op*0.9);
+        });
+      });
+    }
+    const hex=[];
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3;
+      hex.push(pt2(Math.cos(a)*R*0.16, Math.sin(a)*R*0.16));
+    }
+    fl.appendChild(el("polygon",{points:pts(hex),fill:"var(--fg)","fill-opacity":op*0.8}));
+    host.appendChild(fl);
+    return fl;
+  };
+
+  const interiorG=el("g",{}); g.appendChild(interiorG);
+
+  const doorY=frz.y+frz.d/2;
+  const D=(xv,zv)=>P(xv,doorY,zv);
+  const hwF=frz.w/2;
+  const dx0=frz.x-hwF+0.04, dx1=frz.x+hwF-0.04;
+  const dz0=frz.h*0.08, dz1=frz.h*0.9;
+  interiorG.appendChild(el("polygon",{
+    points:pts([D(dx0,dz1),D(dx1,dz1),D(dx1,dz0),D(dx0,dz0)]),
+    fill:"var(--bg)","fill-opacity":".95"}));
+  const inside=P(frz.x, frz.y, frz.h*0.42);
+
+  const cart=el("g",{});
+  g.appendChild(cart);
+  const pc=P(plate.x,plate.y,th*0.5);
+  plateSlab(cart,plate,th,SKIN.anchor,1.6);
+  const wells=plateWells(plate,th);
+  wells.forEach(w=>drawWell(cart,w,true));
+
+  const groups=wells.map(w=>{
+    const cells=[];
+    for(let k=0;k<7;k++){
+      const a=r()*6.283, rad=Math.sqrt(r())*w.e.rx*0.5;
+      const cx=w.e.x+Math.cos(a)*rad, cy=w.e.y+Math.sin(a)*rad*0.6;
+      const node=el("circle",{cx:cx,cy:cy,r:0.8,fill:"var(--fg)","fill-opacity":".8"});
+      cart.appendChild(node);
+      cells.push({node,cx,cy,ph:r()*6.283,ph2:r()*6.283,
+                  rate:3.4+r()*3.6, rate2:7+r()*6, amp:1.8+r()*1.6});
+    }
+    return {w,cells,order:w.i*PLATE_ROWS+w.j};
+  });
+  groups.sort((a,b)=>a.order-b.order);
+  if(!groups.length) return;
+
+  const shellG=el("g",{});
+  const ff=faces(frz.x,frz.y,frz.w,frz.d,frz.h);
+  ["right","top"].forEach(k=>shellG.appendChild(el("polygon",
+    {points:ff[k],fill:SKIN.cold[k],stroke:"var(--stroke)","stroke-width":"1.3"})));
+  snowflake(shellG,(u,v)=>P(frz.x+u, frz.y+v, frz.h), Math.min(frz.w,frz.d)*0.3, .5);
+  snowflake(shellG,(u,v)=>P(frz.x+hwF, frz.y+u, frz.h*0.55+v),
+            Math.min(frz.d,frz.h)*0.26, .45);
+
+  const F=(a,b,c,d)=>shellG.appendChild(el("polygon",{points:pts([D(a,d),D(b,d),D(b,c),D(a,c)]),
+    fill:SKIN.cold.left,stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".8"}));
+  F(frz.x-hwF, frz.x+hwF, 0,   dz0);
+  F(frz.x-hwF, frz.x+hwF, dz1, frz.h);
+  F(frz.x-hwF, dx0,       dz0, dz1);
+  F(dx1,       frz.x+hwF, dz0, dz1);
+
+  const pip=el("g",{});
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".8","stroke-opacity":".85"};
+  const tilt=el("g",{transform:"rotate(-15)"});
+  tilt.appendChild(el("path",{d:"M -.8 -1.5 L .8 -1.5 L 2.2 -12 L -2.2 -12 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.2 -12 L 2.2 -12 L 1.7 -40 L -1.7 -40 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -3.4 -40 L 3.4 -40 L 2.8 -56 L -2.8 -56 Z", ...skin}));
+  pip.appendChild(tilt); cart.appendChild(pip);
+
+  g.appendChild(shellG);
+
+  const door=el("polygon",{points:"0,0",fill:"var(--c-left)","fill-opacity":"1",
+    stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".9"});
+  g.appendChild(door);
+  const flake=el("g",{opacity:"0"}); g.appendChild(flake);
+  snowflake(flake,(u,v)=>D((dx0+dx1)/2+u,(dz0+dz1)/2+v),
+            Math.min(dx1-dx0,dz1-dz0)*0.3, .85);
+  const handle=el("line",{x1:D(dx1-0.05,frz.h*0.36)[0],y1:D(dx1-0.05,frz.h*0.36)[1],
+    x2:D(dx1-0.05,frz.h*0.62)[0],y2:D(dx1-0.05,frz.h*0.62)[1],
+    stroke:"var(--stroke)","stroke-width":"2.4","stroke-opacity":"0",
+    "stroke-linecap":"round"});
+  g.appendChild(handle);
+
+  const STEP=0.2;
+  const FILL=groups.length*STEP;
+  const SETTLE=0.6, SHRINK=1.8, CLOSE=0.9, HOLD=1.6, OPEN=0.7;
+  const CYCLE=FILL+SETTLE+SHRINK+CLOSE+HOLD+OPEN;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+
+  let t=0, stowed=null;
+  const run=(dt)=>{
+    t=(t+dt)%CYCLE;
+    const head=Math.floor(t/STEP);
+
+    const goingIn = t>FILL+SETTLE;
+    if(goingIn!==stowed){
+      stowed=goingIn;
+      if(goingIn) g.insertBefore(cart, shellG);
+      else        g.appendChild(cart);
+    }
+
+    groups.forEach((grp,i)=>{
+      const fixed = t>=FILL || i<head;
+      grp.cells.forEach(c=>{
+        if(fixed){
+          c.node.setAttribute("cx",c.cx); c.node.setAttribute("cy",c.cy);
+          c.node.setAttribute("fill-opacity",".28");
+          c.node.setAttribute("stroke","var(--fg)");
+          c.node.setAttribute("stroke-width",".55");
+          c.node.setAttribute("stroke-opacity",".9");
+        }else{
+          const jx=Math.sin(t*c.rate+c.ph)+0.6*Math.sin(t*c.rate2+c.ph2);
+          const jy=Math.cos(t*c.rate*0.83+c.ph2)+0.6*Math.cos(t*c.rate2*1.17+c.ph);
+          c.node.setAttribute("cx",(c.cx+jx*c.amp).toFixed(2));
+          c.node.setAttribute("cy",(c.cy+jy*c.amp*0.62).toFixed(2));
+          c.node.setAttribute("fill-opacity",".8");
+          c.node.setAttribute("stroke-opacity","0");
+        }
+      });
+    });
+
+    if(t<FILL){
+      const cur=groups[Math.min(head,groups.length-1)].w.e,
+            prev=groups[Math.max(0,head-1)].w.e,
+            f=ease(Math.min(1,(t-head*STEP)/(STEP*0.55)));
+      pip.setAttribute("opacity","1");
+      pip.setAttribute("transform",
+        `translate(${prev.x+(cur.x-prev.x)*f},${prev.y+(cur.y-prev.y)*f-5-Math.sin(f*Math.PI)*12})`);
+    } else pip.setAttribute("opacity","0");
+
+    const SC_END=Math.max(0.12,((dx1-dx0)*0.5)/plate.w);
+    let sc=1, e=0;
+    if(t>FILL+SETTLE){
+      e=ease(Math.min(1,(t-FILL-SETTLE)/SHRINK));
+      sc=1-(1-SC_END)*e;
+    }
+    const aimX=pc[0]+(inside[0]-pc[0])*e, aimY=pc[1]+(inside[1]-pc[1])*e;
+    cart.setAttribute("transform",
+      `translate(${(aimX-pc[0]*sc).toFixed(2)},${(aimY-pc[1]*sc).toFixed(2)}) scale(${sc.toFixed(3)})`);
+
+    let dq=0;
+    const tClose=FILL+SETTLE+SHRINK;
+    if(t>tClose && t<=tClose+CLOSE) dq=ease((t-tClose)/CLOSE);
+    else if(t>tClose+CLOSE && t<=tClose+CLOSE+HOLD) dq=1;
+    else if(t>tClose+CLOSE+HOLD) dq=1-ease((t-tClose-CLOSE-HOLD)/OPEN);
+    const edge=dx0+(dx1-dx0)*dq;
+    door.setAttribute("points",pts([D(dx0,dz1),D(edge,dz1),D(edge,dz0),D(dx0,dz0)]));
+    door.setAttribute("fill-opacity",(0.85*Math.min(1,dq*4)).toFixed(2));
+    flake.setAttribute("opacity",(dq>0.75?(dq-0.75)/0.25:0).toFixed(2));
+    handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 function drawMachine(g,n){
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);

@@ -119,7 +119,7 @@ const NODES = [
 
 {id:"FX", key:"2", group:"② Fixed material", groupMark:true, anchor:true, shape:"vials",
  lane:"r1-tail",
- name:"Fixed material", x:19.4, y:R1, w:1.8, d:1.5, h:1.0,
+ name:"Fixed material", x:19.4, y:R1, w:3.6, d:2.6, h:0.95,
  sub:"biology locked · four assay families downstream", stat:"the biology stops here",
  does:"Fixation and permeabilisation stop transcription dead. In combinatorial chemistries this also turns each cell into its own sealed reaction vessel, which is what lets the barcoding work without any microfluidics. It is the last moment on this map at which the sample is alive in any sense.",
  built:"Evercode WT fixation, a proprietary formaldehyde-based solution, for the worked example. Four assay families take it from here across the corpus: combinatorial split-pool on fixed cells (Parse), sci-RNA-seq3 on PFA-fixed nuclei with sci-Plex hashing, droplet 10x Chromium on whole cells, and Microwell-seq with three rounds of split-pool bead synthesis.",
@@ -418,9 +418,9 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
 const LANES = [
-  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.95, dir:+1},
+  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.25, dir:+1},
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:4.75, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:11.79, x1:22.00, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:10.69, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
