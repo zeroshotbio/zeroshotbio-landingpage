@@ -98,20 +98,12 @@ const NODES = [
  built:"A Beckman Echo 650 at the SPARC BioCentre, SickKids, 686 Bay Street, Toronto. Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; the embryos arrive later.",
  cond:"The cherry-picking sheet and the sample loading table disagree, and the disagreement starts here. This sheet is where treatment assignment first exists; the loading table is what the barcodes physically encode. Until the two are reconciled nothing downstream is trustworthy at treatment level, and neither sheet is on this instance, so it cannot be settled from here. Three more things about this step are unrecorded and are open questions for the bench: the actual transfer volume per well — 1 µM is in the design document and in no column of the object, and at 2.5 nL a droplet it is hundreds of droplets a well; whether the compound went in dry or into medium; and how long the plate then sat dosed before the embryos arrived. That last one is a real experimental variable — DMSO is hygroscopic and nanolitre volumes evaporate — and this map currently implies it was zero, because nothing records otherwise."},
 
-{id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
- lane:"r1-chem",
- name:"Treatment plate", x:10.8, y:R1, w:1.5, d:1.15, h:0.3, gap:0.9, labelBelow:true,
- sub:"one well = one condition = one future .obs row", stat:"48 wells · 4 × 12",
- does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Drawn dosed and empty, which is what it is at this moment: four vertical bands of twelve replicate wells, compound in every one of them and not a fish in the building yet. In the worked example those four conditions are — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
- built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
- cond:"The label defect here is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin. And the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. This is the general shape of the problem: design intent and deposited object are two different artefacts, and they have to be reconciled by hand."},
-
 {id:"A4", key:"A4", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:1.5, d:1.15, h:0.3,
  lane:"r1-tail",
- sub:"6 embryos per well, at 24 hpf",
- does:"Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
- built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
- cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held. Six embryos per well also means embryo identity is destroyed here, at the moment of arraying, and not later: the embryos never leave this well again. The design spec's speculative obs schema lists an embryo column as a batch covariate; that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
+ sub:"48 wells · 4 × 12 · 6 embryos each, at 24 hpf",
+ does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Four vertical bands of twelve replicate wells, compound already in every one of them, and now the fish. Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
+ built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM — sorafenib at 1 µM being the lowest concentration that visibly does something in zebrafish (pericardial edema). Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the finished dataset is fixed here. Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
+ cond:"The label defect on this plate is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin, and the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. 48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held. Six embryos per well also means embryo identity is destroyed here, at the moment of arraying, and not later: the embryos never leave this well again. The design spec's speculative obs schema lists an embryo column as a batch covariate; that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
 {id:"A5", key:"A5", group:"The experiment", shape:"incubator", name:"Incubate to 48 hpf", x:14.7, y:R1, w:1.0, d:0.85, h:0.9,
  lane:"r1-tail",
  sub:"24 hours of exposure",
@@ -125,7 +117,7 @@ const NODES = [
  built:"No protocol detail on this instance for the worked example; reagent, digest time and strainer size are recorded nowhere. Across the corpus the split is clean: sci-RNA-seq3 runs on PFA-fixed nuclei (ZSCAPE, ChemFish), while 10x, Microwell-seq and Parse all run on whole cells (Zebrahub, CellOracle, MIC-Drop-seq, ZCL2, MiniFin, MegaFin).",
  cond:"The most biased step in the wet lab and the least documented one. Cell types survive dissociation unequally, so atlas composition is partly a report on how tough each tissue is — and the mitochondrial cull two rows down then deletes the ones most stressed by it. The nuclei-or-cells fork is not a detail: nuclear transcripts are intron-rich, so it changes what the intron-handling stage on row 3 does, and it changes what a mitochondrial fraction even means."},
 
-{id:"FX", key:"3", group:"③ Fixed material", groupMark:true, anchor:true, shape:"vials",
+{id:"FX", key:"2", group:"② Fixed material", groupMark:true, anchor:true, shape:"vials",
  lane:"r1-tail",
  name:"Fixed material", x:19.4, y:R1, w:1.8, d:1.5, h:1.0,
  sub:"biology locked · four assay families downstream", stat:"the biology stops here",
@@ -202,7 +194,7 @@ const NODES = [
  cond:"Run metrics are only partly recoverable. Q30 and valid-barcode fraction survive in the vendor report (0.757 valid barcodes overall), but cluster density, per-lane yield and the lane count are not held anywhere on this instance. That is the norm, not the exception — no dataset in the corpus archives its run metrics alongside its counts."},
 
 /* ================= ROW 3 — THE MATRIX ================= */
-{id:"FQ", key:"4", group:"④ FASTQ", groupMark:true, anchor:true, shape:"heap",
+{id:"FQ", key:"3", group:"③ FASTQ", groupMark:true, anchor:true, shape:"heap",
  lane:"r3",
  name:"FASTQ", x:1.0, y:R3, w:2.7, d:2.7, h:0.7,
  sub:"paired-end · demultiplexed · usually gone", stat:"off-instance",
@@ -255,7 +247,7 @@ const NODES = [
  built:"Lawson v4.3.2 is held at datasets/zebrafish/references/lawson_v4_3_2/. The one arm that exists was built with our own STARsolo on MegaFin Part 1 and recovered 345,651 cells against the vendor's 540,946 on the same library — 36% fewer, at a far harsher UMI floor (min retained 1,769 vs 232).",
  cond:"It is not 'the same cells in a different gene space'. The two arms differ by 195,295 cells, and six of the eight worst-hit samples lose more than 90% of theirs. A bridge exists but is thin — lawson_to_ensdarg.csv maps 7,238 of 36,351 Lawson genes to ENSDARG, 19.9%: enough to compare, nowhere near enough to concatenate. And the v4.3.2 gene-information table is still missing, so the GTF carries no biotypes."},
 
-{id:"UD", key:"5", group:"⑤ Unfiltered matrix", groupMark:true, anchor:true, shape:"matrix",
+{id:"UD", key:"4", group:"④ Unfiltered matrix", groupMark:true, anchor:true, shape:"matrix",
  lane:"r3",
  name:"Unfiltered matrix", x:12.2, y:R3, w:2.5, d:2.5, h:2.0, cells:8, fill:0.09,
  sub:"every barcode × every gene · rarely delivered", stat:"almost never shipped",
@@ -299,7 +291,7 @@ const NODES = [
  built:"Node and link labels would use the plain-English phrasings on this row, never the internal step names.",
  cond:"It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact. Vendors emit settings, not tallies. Authors publish thresholds, not ledgers. CellOracle reports a comparison at 57,175 cells against a deposit of 72,870 — roughly 21.5% removed by QC and ambient-cluster steps that are never numerically specified. Every retention figure on this row is therefore a ratio between two objects, never a sum over stages."},
 
-{id:"FD", key:"6", group:"⑥ Filtered matrix", groupMark:true, anchor:true, shape:"matrix",
+{id:"FD", key:"5", group:"⑤ Filtered matrix", groupMark:true, anchor:true, shape:"matrix",
  lane:"r3",
  name:"Filtered matrix", x:22.0, y:R3, w:1.55, d:1.55, h:1.55, cells:6, fill:0.62,
  sub:"94,616 × 32,520 · median 3,198 UMI / 1,618 genes", stat:"the cells, as asserted",
@@ -319,14 +311,14 @@ const NODES = [
  built:"Carried in uns for the worked example: dataset MiniFIN-100k, genome GRcZ11, kit Evercode WT, pipeline split-pipe v1.7.1, run_date 2026-04-08, source Parse Biosciences.",
  cond:"Six fields, all true, and thinner than it looks — no Ensembl release, no reference checksum, no QC settings, no cell-calling parameters, no intron flag. Everything the reference and cull nodes on the row above had to reconstruct by hand is exactly what these six fields do not say. The corpus standard is stricter: every derived object must carry a reproducible build script and a uns['provenance'] stamp, and superseded objects are retained rather than overwritten."},
 
-{id:"H5", key:"7", group:"⑦ Published object", groupMark:true, anchor:true, shape:"monolith",
+{id:"H5", key:"6", group:"⑥ Published object", groupMark:true, anchor:true, shape:"monolith",
  lane:"r4",
  name:"Published object", x:4.6, y:R4, w:2.0, d:2.0, h:1.9,
  sub:"counts, metadata, provenance · no biology", stat:"complete and mute",
  does:"Counts, treatment metadata, provenance. Complete as a measurement and completely mute about biology — nothing in it says what any of these cells are.",
  built:"For the worked example: minifin_filtered.h5ad, 454 MiB, raw integer counts, symbol-native var_names with ENSDARG kept alongside in var['id'].",
  cond:"Two traps live in objects like this. The gene namespace is rarely stated and frequently assumed wrong: the worked example is symbol-native where MegaFin is ENSDARG-native, and Zebrahub was recorded in our own docs as symbols-needing-mapping when ENSDARG ids were in var['gene_ids'] the whole time. And QC columns go stale through conversion — DanioCell's obs carries nUMI, nGene, percent.mt and percent.ribo describing a 36,250-feature universe while X holds 30,121, so a 10% mitochondrial filter passes on obs while the matrix itself reaches 12.86%. A published QC guarantee, broken by a format change."},
-{id:"H5b", key:"E1", group:"⑦ Published object", shape:"ghost", follow:{a:"s2",b:"H5"}, name:"Second arm — not built", x:3.4, y:R4-2.5, w:1.2, d:1.2, h:1.2,
+{id:"H5b", key:"E1", group:"⑥ Published object", shape:"ghost", follow:{a:"s2",b:"H5"}, name:"Second arm — not built", x:3.4, y:R4-2.5, w:1.2, d:1.2, h:1.2,
  sub:"one arm only, for this run",
  does:"Where the second-annotation object would sit if it existed for this dataset.",
  built:"Nothing to build it from: the arm requires the reads, and they are not on this instance.",
@@ -400,14 +392,14 @@ const NODES = [
  built:"schema daniotype_kasperov_run/v1, beside a leaf assignment mapping every cell to its leaf. Tiers are cell_type_sub, cell_type_broad, tissue and self.",
  cond:"That tier ladder is inherited, not invented: it mirrors the four levels realized in ZSCAPE's obs — germ_layer 7, tissue 34, cell_type_broad 99, cell_type_sub 156 — which is the closest thing the field has to a shared depth scale. Other atlases ladder differently: ZCL2 runs cluster 143 → cell_type 41 → cell_lineage 10, Zebrahub coarse 10 → fine 154. A tier name only means something next to the vocabulary it came from."},
 
-{id:"LB", key:"8", group:"⑧ Labelled deliverable", groupMark:true, anchor:true, shape:"strata",
+{id:"LB", key:"7", group:"⑦ Labelled deliverable", groupMark:true, anchor:true, shape:"strata",
  lane:"r4",
  name:"Labelled deliverable", x:20.2, y:R4, w:2.0, d:2.0, h:1.9,
  sub:"267 leaves named · 114 nodes · every cell reachable", stat:"the first biological claim",
  does:"The same cells as the published object, sorted into named strata. On the worked example: 209 leaves resolved outright, 24 left region-unresolved, 34 subtype-unresolved, and 19 resolved finer than the expert did. Four rows from a fish tank, this is the first object on the map that makes a biological claim.",
  built:"Validated on the sealed key at 0.989 lenient for committed in-ontology calls and 0.904 across all GT-backed leaves; strict agreement 0.524 and 0.478. At node level, 0.989 and 0.916 on 77 GT-backed nodes.",
  cond:"Read the gap between lenient and strict before quoting either. Lineage recovery is expert-level; depth agreement is about half, and most of that gap is an ontology-axis mismatch rather than error — the expert labels the CNS by anatomical region using spatial lassoes, and region is not recoverable from markers, so the labeller says 'region-unresolved' instead of guessing. Which axis becomes primary is an open product decision, flagged rather than defaulted. And there is no labelled matrix: obs['cell_type'] on the published object is still 'unknown' for every cell. Anyone who wants labelled cells joins the deliverable to the leaf assignment themselves."},
-{id:"PR", key:"F4", group:"⑧ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R4, lane:"r4", w:0.8, d:0.8, h:0.55,
+{id:"PR", key:"F4", group:"⑦ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R4, lane:"r4", w:0.8, d:0.8, h:0.55,
  sub:"foundation model",
  does:"Where a labelled atlas stops being an analysis and becomes training data.",
  built:"Reads the deliverable directly. No copy, no re-label.",
@@ -427,7 +419,7 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    mirrors the lane so the map snakes. */
 const LANES = [
   {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.95, dir:+1},
-  {id:"r1-chem",  y:R1+2.0,   x0:2.61,  x1:9.95, dir:+1},
+  {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:4.75, dir:+1},
   {id:"r1-tail",  y:R1,       x0:11.79, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
@@ -439,9 +431,9 @@ const EDGES = [
   {a:"AQ",b:"A1",kind:"fish",straight:true},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
   /* the chemistry lane — no incoming edge from the colony on purpose: the
      compounds have nothing to do with our fish, and arrive from off-map */
-  {a:"CS",b:"ECHO",kind:"meta"},{a:"ECHO",b:"PL",kind:"meta"},
+  {a:"CS",b:"ECHO",kind:"meta"},
   /* the merge — the embryos go into wells that already hold compound */
-  {a:"A3",b:"A4",kind:"fish",straight:true},{a:"PL",b:"A4",kind:"meta",straight:true},
+  {a:"A3",b:"A4",kind:"fish",straight:true},{a:"ECHO",b:"A4",kind:"meta",straight:true},
   {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
@@ -713,14 +705,14 @@ purity           ${s.purity.toFixed(3)}`};},
 const OVERVIEW = {
   eyebrow:"Zebrafish single-cell · the platonic pipeline",
   title:"Aquarium to Atlas",
-  sub:"four rows · eight landmarks · one claim at the end",
+  sub:"four rows · seven landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
 <p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where.</p>
 <p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>
-<p>Eight landmarks are real things you could point at; everything between them is a step, drawn small. Outlines are roads not taken. Hatching means the stage destroys data.</p>
+<p>Seven landmarks are real things you could point at; everything between them is a step, drawn small. Outlines are roads not taken. Hatching means the stage destroys data.</p>
 <p>Beyond the row-1 fork, three dependencies do not follow the rows. Sample identity on row 3 was written chemically on row 2 and decided physically on row 1. The doublet threshold on row 3 is trying to measure a collision rate that loading density set on row 2. And the nuclei-or-cells choice on row 1 decides what the intron stage on row 3 does, and what a mitochondrial percentage even means.</p>`,
   built:`<p>General claims come from the corpus at <mark>/data/datasets/zebrafish/</mark>: nine dataset entries, seven carrying a full nine-section provenance record under <mark>&lt;DATASET&gt;/sources/README.md</mark> — ZSCAPE, ChemFish, DanioCell, Zebrahub, ZCL2, MIC-Drop-seq, CellOracle. Every record ends with the same seven cross-dataset provenance principles, which are the nearest thing to a written statement of this pipeline; the four that drive this map are quoted in the header of <mark>pipeline-data.js</mark>.</p>
 <p>Worked-example numbers come from that run's own artefacts — vendor run definition and QC report, the matrix itself, and the clustering, labelling and deliverable backups. Every source file is named in the same header comment.</p>
