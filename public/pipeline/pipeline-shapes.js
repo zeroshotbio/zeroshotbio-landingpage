@@ -283,3 +283,282 @@ function drawGhost(g,n){
 const DRAW={heap:drawHeap,matrix:drawMatrix,monolith:drawMonolith,strata:drawStrata,works:drawWorks,
   ghost:drawGhost,pylon:drawPylon,tile:drawTile,tankrack:drawTankRack,plate96:drawPlate96,
   miniplate:drawMiniplate,vials:drawVials,machine:drawMachine,dish:drawDish};
+
+
+/* ------------------------------------------------------------------
+   A1 · PAIR SET IN THE EVENING
+   A small breeding tank with the divider still in: one fish each side,
+   nosing at the partition they will be let through at first light.
+
+   Same three-pass rule as the aquarium — structure, edges, then fish on
+   top, unclipped. The divider is drawn with the structure, so both fish
+   stay visible in front of it; they sit on opposite sides of it along the
+   grid x axis, so in this projection they barely overlap it anyway.
+
+   Reuses fishSprite() and silhouette() from the aquarium block, which
+   must already be present in this file.
+   ------------------------------------------------------------------ */
+function drawBreedingTank(g,n){
+  const r=rng(23), hw=n.w/2, hd=n.d/2, th=n.h;
+  const floor=th*0.05, water=th*0.8;
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+  const cx=n.x, cy=n.y;
+
+  /* floor */
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy-hd,0),P(cx+hw,cy-hd,0),
+    P(cx+hw,cy+hd,0),P(cx-hw,cy+hd,0)),
+    fill:"var(--gravel, var(--fg2))","fill-opacity":".3"}));
+
+  /* far walls */
+  const farTint={fill:"var(--water, var(--signal))","fill-opacity":".15"};
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy-hd,water),P(cx+hw,cy-hd,water),
+    P(cx+hw,cy-hd,0),P(cx-hw,cy-hd,0)), ...farTint}));
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy-hd,water),P(cx-hw,cy+hd,water),
+    P(cx-hw,cy+hd,0),P(cx-hw,cy-hd,0)), ...farTint}));
+
+  /* gravel */
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy-hd,floor),P(cx+hw,cy-hd,floor),
+    P(cx+hw,cy+hd,floor),P(cx-hw,cy+hd,floor)),
+    fill:"var(--gravel, var(--fg2))","fill-opacity":".5"}));
+
+  /* evening: the room lights are off */
+  g.appendChild(el("polygon",{points:silhouette(cx,cy,n.w,n.d,th),
+    fill:"var(--bg)","fill-opacity":".22"}));
+
+  /* THE DIVIDER — a plate across the middle, with a tab to pull it by */
+  const dz=th*1.16;
+  g.appendChild(el("polygon",{points:quad(P(cx,cy-hd,dz),P(cx,cy+hd,dz),
+    P(cx,cy+hd,0),P(cx,cy-hd,0)),
+    fill:"var(--t-top)","fill-opacity":".9",stroke:"var(--stroke)",
+    "stroke-width":"1","stroke-opacity":".85"}));
+  const tabA=P(cx,cy-hd*0.34,dz), tabB=P(cx,cy+hd*0.34,dz);
+  g.appendChild(el("line",{x1:tabA[0],y1:tabA[1]-6,x2:tabB[0],y2:tabB[1]-6,
+    stroke:"var(--stroke)","stroke-width":"2.4","stroke-opacity":".9","stroke-linecap":"round"}));
+
+  /* surface and near glass */
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy-hd,water),P(cx+hw,cy-hd,water),
+    P(cx+hw,cy+hd,water),P(cx-hw,cy+hd,water)),
+    fill:"var(--water, var(--signal))","fill-opacity":".2",
+    stroke:"var(--water, var(--signal))","stroke-width":".8","stroke-opacity":".5"}));
+  const nearTint={fill:"var(--water, var(--signal))","fill-opacity":".07"};
+  g.appendChild(el("polygon",{points:quad(P(cx+hw,cy-hd,th),P(cx+hw,cy+hd,th),
+    P(cx+hw,cy+hd,0),P(cx+hw,cy-hd,0)), ...nearTint}));
+  g.appendChild(el("polygon",{points:quad(P(cx-hw,cy+hd,th),P(cx+hw,cy+hd,th),
+    P(cx+hw,cy+hd,0),P(cx-hw,cy+hd,0)), ...nearTint}));
+
+  /* edges */
+  const C=[[cx-hw,cy-hd],[cx+hw,cy-hd],[cx+hw,cy+hd],[cx-hw,cy+hd]];
+  const edge=(p,q,z1,z2,wid,op)=>{
+    const a=P(p[0],p[1],z1), b=P(q[0],q[1],z2);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--stroke)",
+      "stroke-width":wid,"stroke-opacity":op,"stroke-linecap":"round"}));
+  };
+  for(let i=0;i<4;i++){
+    edge(C[i],C[(i+1)%4],0,0,1,.5);
+    edge(C[i],C[(i+1)%4],th,th,1.4,.9);
+    edge(C[i],C[i],0,th,1.1,.75);
+  }
+
+  /* one fish each side, unclipped and drawn last */
+  const school=el("g",{}); g.appendChild(school);
+  const gap=n.w*0.09, margin=n.w*0.17;
+  const lanes=[
+    {x0:cx-hw+margin, x1:cx-gap},      // her side
+    {x0:cx+gap,       x1:cx+hw-margin} // his side
+  ];
+  const fish=lanes.map((L,i)=>{
+    const {node,tail}=fishSprite(0.5+r()*0.12);
+    school.appendChild(node);
+    return {node,tail,L,u:r(),v:0.3+r()*0.4,wz:0.3+r()*0.35,
+            dir:i?-1:1, speed:0.1+r()*0.1, phase:r()*6.28};
+  });
+  const by=cy-hd+n.d*0.3, bd=n.d*0.4;
+  const swim=(dt,now)=>{
+    fish.forEach(f=>{
+      f.u += f.dir*f.speed*dt;
+      if(f.u>1){f.u=1;f.dir=-1;} else if(f.u<0){f.u=0;f.dir=1;}
+      const bob=Math.sin(now/1000*1.3+f.phase)*0.015;
+      const [px,py]=P(f.L.x0+f.u*(f.L.x1-f.L.x0), by+f.v*bd,
+                      floor+0.1*th+f.wz*(water-floor-0.3*th)+bob);
+      f.node.setAttribute("transform",
+        `translate(${px},${py}) rotate(30) scale(${f.dir},1)`);
+      f.tail.setAttribute("transform",`rotate(${Math.sin(now/1000*6+f.phase)*15} -5.5 0)`);
+    });
+  };
+  swim(0, performance.now());
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; swim(dt,now); });
+}
+DRAW.breedingtank = drawBreedingTank;
+
+
+/* ------------------------------------------------------------------
+   A2 · THE CLUTCH
+   A round dish of one morning's eggs.
+
+   A circle on the ground plane projects to an axis-aligned ellipse in
+   this system — semi-axes R·S·cos30·√2 and R·S·0.5·√2 — so the dish is
+   drawn with real ellipses rather than faceted polygons. The near wall
+   is the lower half of the rim ellipse swept down to the lower half of
+   the floor ellipse.
+
+   Most eggs are clear with a dark embryo inside. A few are flat opaque
+   white: those are the unfertilised ones, and they are what gets picked
+   out by hand at the next step.
+   ------------------------------------------------------------------ */
+function ellipseAt(cx,cy,z,R){
+  const [x,y]=P(cx,cy,z);
+  return {x,y,rx:R*S*C30*Math.SQRT2, ry:R*S*0.5*Math.SQRT2};
+}
+function arcPts(e,from,to,n){
+  const out=[];
+  for(let i=0;i<=n;i++){
+    const f=from+(to-from)*(i/n);
+    out.push([e.x+e.rx*Math.cos(f), e.y+e.ry*Math.sin(f)]);
+  }
+  return out;
+}
+
+function drawClutch(g,n){
+  const r=rng(41), R=Math.min(n.w,n.d)/2*0.94, th=n.h;
+  const floor=ellipseAt(n.x,n.y,0,R);
+  const med  =ellipseAt(n.x,n.y,th*0.72,R*0.985);
+  const rim  =ellipseAt(n.x,n.y,th,R);
+
+  /* the dish itself: floor, then the near wall as a swept band */
+  g.appendChild(el("ellipse",{cx:floor.x,cy:floor.y,rx:floor.rx,ry:floor.ry,
+    fill:"var(--g-right)","fill-opacity":".8",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".45"}));
+  g.appendChild(el("polygon",{
+    points:pts([...arcPts(rim,0,Math.PI,26), ...arcPts(floor,Math.PI,0,26)]),
+    fill:"var(--g-top)","fill-opacity":".5",stroke:"none"}));
+
+  /* the eggs, drawn back to front */
+  const eggs=[];
+  for(let i=0;i<52;i++){
+    const a=r()*6.283, rad=Math.sqrt(r())*R*0.8;
+    const ex=n.x+Math.cos(a)*rad, ey=n.y+Math.sin(a)*rad;
+    eggs.push({ex,ey,z:th*(0.06+r()*0.1),size:2.6+r()*0.7,
+               dead:r()<0.11, ang:r()*6.283});
+  }
+  eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
+      .sort((a,b)=>a.p[1]-b.p[1])
+      .forEach(({e,p})=>{
+    if(e.dead){
+      /* unfertilised: flat and opaque */
+      g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
+        fill:"var(--fg)","fill-opacity":".82"}));
+      return;
+    }
+    g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
+      fill:"var(--fg)","fill-opacity":".16",
+      stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
+    /* the embryo, curled against one side of the chorion */
+    g.appendChild(el("circle",{
+      cx:p[0]+Math.cos(e.ang)*e.size*0.34, cy:p[1]+Math.sin(e.ang)*e.size*0.34,
+      r:e.size*0.44, fill:"var(--fg)","fill-opacity":".9"}));
+  });
+
+  /* medium above them, then the rim */
+  g.appendChild(el("ellipse",{cx:med.x,cy:med.y,rx:med.rx,ry:med.ry,
+    fill:"var(--water, var(--signal))","fill-opacity":".16"}));
+  g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.4","stroke-opacity":".9"}));
+}
+DRAW.clutch = drawClutch;
+
+
+/* ------------------------------------------------------------------
+   A3 · CULL THE UNFERTILISED
+   The same dish as A2, under a pipette that keeps picking the opaque
+   eggs out one at a time. The first cull on the whole map, done by hand.
+
+   The loop: descend, take one, lift, slide to the next. When the last
+   dead egg is gone the dish refills and it starts again — a repeating
+   demonstration rather than a state that runs out.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawCullDish(g,n){
+  const r=rng(53), R=Math.min(n.w,n.d)/2*0.94, th=n.h;
+  const floorE=ellipseAt(n.x,n.y,0,R),
+        medE  =ellipseAt(n.x,n.y,th*0.72,R*0.985),
+        rimE  =ellipseAt(n.x,n.y,th,R);
+
+  g.appendChild(el("ellipse",{cx:floorE.x,cy:floorE.y,rx:floorE.rx,ry:floorE.ry,
+    fill:"var(--g-right)","fill-opacity":".8",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".45"}));
+  g.appendChild(el("polygon",{
+    points:pts([...arcPts(rimE,0,Math.PI,26), ...arcPts(floorE,Math.PI,0,26)]),
+    fill:"var(--g-top)","fill-opacity":".5"}));
+
+  /* eggs — a handful of them dead, and those are the ones that get taken */
+  const eggs=[], dead=[];
+  for(let i=0;i<40;i++){
+    const a=r()*6.283, rad=Math.sqrt(r())*R*0.78;
+    eggs.push({ex:n.x+Math.cos(a)*rad, ey:n.y+Math.sin(a)*rad,
+               z:th*(0.06+r()*0.1), size:2.6+r()*0.7, dead:i<6, ang:r()*6.283});
+  }
+  eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
+      .sort((a,b)=>a.p[1]-b.p[1])
+      .forEach(({e,p})=>{
+    if(e.dead){
+      const node=el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)","fill-opacity":".82"});
+      g.appendChild(node);
+      dead.push({node,p,size:e.size});
+      return;
+    }
+    g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)",
+      "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
+    g.appendChild(el("circle",{cx:p[0]+Math.cos(e.ang)*e.size*0.34,
+      cy:p[1]+Math.sin(e.ang)*e.size*0.34, r:e.size*0.44,
+      fill:"var(--fg)","fill-opacity":".9"}));
+  });
+
+  g.appendChild(el("ellipse",{cx:medE.x,cy:medE.y,rx:medE.rx,ry:medE.ry,
+    fill:"var(--water, var(--signal))","fill-opacity":".16"}));
+  g.appendChild(el("ellipse",{cx:rimE.x,cy:rimE.y,rx:rimE.rx,ry:rimE.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.4","stroke-opacity":".9"}));
+
+  /* the pipette, drawn in screen space: tip at the origin, pointing down */
+  const pip=el("g",{});
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".9","stroke-opacity":".85"};
+  const tilt=el("g",{transform:"rotate(-15)"});
+  tilt.appendChild(el("path",{d:"M -1 -2 L 1 -2 L 2.6 -15 L -2.6 -15 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.6 -15 L 2.6 -15 L 2 -52 L -2 -52 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -4.2 -52 L 4.2 -52 L 3.4 -72 L -3.4 -72 Z", ...skin}));
+  const caught=el("circle",{cx:"0",cy:"-26",r:"2.8",fill:"var(--fg)",
+    "fill-opacity":"0"});
+  tilt.appendChild(caught);
+  pip.appendChild(tilt);
+  g.appendChild(pip);
+
+  /* the loop */
+  const HIGH=38, CYCLE=3.0, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  let i=0, t=0;
+  const swim=(dt)=>{
+    t+=dt;
+    if(t>CYCLE){
+      t-=CYCLE;
+      dead[i].node.setAttribute("fill-opacity","0");
+      i=(i+1)%dead.length;
+      if(i===0) dead.forEach(d=>d.node.setAttribute("fill-opacity",".82"));
+    }
+    const p=t/CYCLE, here=dead[i].p, next=dead[(i+1)%dead.length].p;
+    let lift=HIGH, x=here[0], y=here[1], grab=0;
+    if(p<0.3)        lift=HIGH*(1-ease(p/0.3));
+    else if(p<0.42){ lift=0; grab=(p-0.3)/0.12; }
+    else if(p<0.78){ lift=HIGH*ease((p-0.42)/0.36); grab=1; }
+    else {
+      const f=ease((p-0.78)/0.22);
+      x=here[0]+(next[0]-here[0])*f; y=here[1]+(next[1]-here[1])*f;
+      grab=1-f;
+    }
+    pip.setAttribute("transform",`translate(${x},${y-lift})`);
+    caught.setAttribute("fill-opacity", (grab*0.85).toFixed(2));
+    caught.setAttribute("cy", (-20-grab*14).toFixed(1));
+  };
+  swim(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; swim(dt); });
+}
+DRAW.culldish = drawCullDish;
