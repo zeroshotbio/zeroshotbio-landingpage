@@ -562,3 +562,103 @@ function drawCullDish(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; swim(dt); });
 }
 DRAW.culldish = drawCullDish;
+
+
+/* ------------------------------------------------------------------
+   A4 · STAGE AND ARRAY
+   The 48-well treatment plate being loaded, six embryos to a well, a tip
+   working across it column by column. When the last well is filled the
+   plate empties and the sweep starts again.
+
+   Drawn 8 x 6, the physical geometry of a 48-well vessel. Note that the
+   Parse round-one barcode plate one row down holds the same 48 samples in
+   a 12 x 4 layout (rows A-D, cols 1-12) — a different plate, not a
+   contradiction. PL, being the same treatment plate as this node, is drawn
+   the same way.
+
+   MARK_MISSING draws a few wells with a dashed ring in the discard colour.
+   That is an editorial mark, not a fact about this step: 48 wells are
+   loaded here and only 43 samples reach the object, and nothing in the
+   pipeline explains the difference. Set it to 0 to remove the claim.
+
+   Requires ellipseAt() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+const MARK_MISSING = 5;
+
+function drawArrayPlate(g,n){
+  const r=rng(67), cols=8, rows=6, th=n.h;
+  const sx=n.w/cols, sy=n.d/rows, R=Math.min(sx,sy)*0.38;
+  const hw=n.w/2, hd=n.d/2;
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+
+  /* the slab */
+  const f=faces(n.x,n.y,n.w,n.d,th);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:SKIN.tile[k],stroke:"var(--stroke)",
+     "stroke-width":"1","stroke-opacity":".7"})));
+
+  /* which wells never make it downstream */
+  const missing=new Set();
+  while(missing.size<MARK_MISSING) missing.add(Math.floor(r()*cols*rows));
+
+  /* wells, back to front */
+  const wells=[];
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++){
+    const wx=n.x-hw+(i+0.5)*sx, wy=n.y-hd+(j+0.5)*sy;
+    const e=ellipseAt(wx,wy,th,R);
+    g.appendChild(el("ellipse",{cx:e.x,cy:e.y,rx:e.rx,ry:e.ry,
+      fill:"var(--bg)","fill-opacity":".55",stroke:"var(--stroke)",
+      "stroke-width":".6","stroke-opacity":".5"}));
+    if(missing.has(j*cols+i))
+      g.appendChild(el("ellipse",{cx:e.x,cy:e.y,rx:e.rx*1.5,ry:e.ry*1.5,
+        fill:"none",stroke:"var(--drop)","stroke-width":"1","stroke-opacity":".8",
+        "stroke-dasharray":"2.5 2"}));
+
+    /* six embryos, ringed inside the well */
+    const brood=el("g",{opacity:"0"});
+    for(let k=0;k<6;k++){
+      const a=k*1.047+r()*0.3;
+      brood.appendChild(el("circle",{
+        cx:e.x+Math.cos(a)*e.rx*0.42, cy:e.y+Math.sin(a)*e.ry*0.42,
+        r:Math.max(.55,e.rx*0.17), fill:"var(--fg)","fill-opacity":".85"}));
+    }
+    g.appendChild(brood);
+    wells.push({brood,e,order:i*rows+j});     // filled column by column
+  }
+  wells.sort((a,b)=>a.order-b.order);
+
+  /* the tip that loads them */
+  const pip=el("g",{});
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".8","stroke-opacity":".85"};
+  const tilt=el("g",{transform:"rotate(-15)"});
+  tilt.appendChild(el("path",{d:"M -.8 -1.5 L .8 -1.5 L 2.2 -12 L -2.2 -12 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.2 -12 L 2.2 -12 L 1.7 -40 L -1.7 -40 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -3.4 -40 L 3.4 -40 L 2.8 -56 L -2.8 -56 Z", ...skin}));
+  pip.appendChild(tilt); g.appendChild(pip);
+
+  /* the sweep */
+  const STEP=0.1, HOLD=1.4, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  let k=0, t=0, resting=0;
+  const run=(dt)=>{
+    if(resting>0){
+      resting-=dt;
+      if(resting<=0){ wells.forEach(w=>w.brood.setAttribute("opacity","0")); k=0; t=0; }
+      pip.setAttribute("transform",`translate(${wells[wells.length-1].e.x},${wells[wells.length-1].e.y-46})`);
+      return;
+    }
+    t+=dt;
+    while(t>STEP && k<wells.length){
+      wells[k].brood.setAttribute("opacity","1");
+      k++; t-=STEP;
+      if(k>=wells.length){ resting=HOLD; return; }
+    }
+    const cur=wells[Math.min(k,wells.length-1)].e,
+          prev=wells[Math.max(0,k-1)].e, f2=ease(Math.min(1,t/STEP));
+    const x=prev.x+(cur.x-prev.x)*f2, y=prev.y+(cur.y-prev.y)*f2;
+    pip.setAttribute("transform",`translate(${x},${y-6-Math.sin(f2*Math.PI)*13})`);
+  };
+  run(0);
+  TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
+}
+DRAW.arrayplate = drawArrayPlate;
