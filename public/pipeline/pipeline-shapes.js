@@ -621,50 +621,109 @@ function drawWell(g,w,dosed){
 }
 
 /* ------------------------------------------------------------------
-   A5 · ECHO DISPENSE   (replaces "Dose at 24 hpf")
-   Acoustic dispensing: the destination plate hangs INVERTED above the
-   source, and droplets are fired upward into it by a transducer under
-   the source well. No tip ever touches the liquid. That upward travel is
-   the one thing worth drawing here, because it is what makes the Echo
-   cherry-picking sheet — and therefore the whole treatment axis — a
-   per-well instruction rather than a pipetting plan.
+   ECHO 650 DISPENSE
+   Acoustic dispensing, well by well, fast.
+
+   The destination plate hangs INVERTED above the source and droplets are
+   fired upward into it — no tip ever touches the liquid. The transducer
+   works one well at a time at a few hundred drops a second, so what you
+   see is a wave: the firing ring sweeps column by column, a dozen
+   droplets are in the air at once at different heights, and the plate
+   above fills with colour behind the wave as each well takes its dose.
+
+   Because the sweep runs column by column and the compounds are laid out
+   in vertical bands, the wave changes colour four times on its way
+   across. That is the treatment axis of the entire dataset being written,
+   in order, in about two seconds.
    ------------------------------------------------------------------ */
 function drawEchoDispense(g,n){
-  const th=0.12, gap=0.66;
+  const th=0.1, gap=1.55;
   const src={x:n.x,y:n.y,w:n.w,d:n.d}, dst={x:n.x,y:n.y,w:n.w,d:n.d};
 
-  /* source plate, four compounds in it */
+  /* source plate, compounds laid out in the same bands as the target */
   plateSlab(g,src,th,SKIN.tile,1);
-  const swells=plateWells(src,th).filter(w=>w.j%2===0 && w.i%2===0);
+  const swells=plateWells(src,th);
   swells.forEach(w=>drawWell(g,w,true));
 
-  /* transducer under the source */
-  const tz=faces(n.x-n.w*0.3,n.y+n.d*0.28,0.26,0.26,0.1);
-  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
-    {points:tz[k],fill:"var(--k-top)",stroke:"var(--stroke)","stroke-width":".8"})));
+  /* the transducer's firing position */
+  const ring=el("ellipse",{rx:"1",ry:"1",fill:"none",stroke:"var(--fg)",
+    "stroke-width":"1.3","stroke-opacity":"0"});
+  g.appendChild(ring);
 
-  /* destination plate, inverted above */
+  /* droplets in flight */
+  const rise=(th+gap)*S*CZ, POOL=26;
+  const flying=[];
+  for(let i=0;i<POOL;i++){
+    const d=el("ellipse",{rx:"1.9",ry:"2.5",fill:"var(--fg)","fill-opacity":"0"});
+    g.appendChild(d); flying.push(d);
+  }
+
+  /* destination plate, inverted above, filling as the wave passes */
   const lift=el("g",{transform:`translate(0,${-(th+gap)*S*CZ})`});
   plateSlab(lift,dst,th,SKIN.tile,1);
-  plateWells(dst,th).forEach(w=>lift.appendChild(el("ellipse",
-    {cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,fill:"var(--bg)","fill-opacity":".45",
-     stroke:"var(--stroke)","stroke-width":".5","stroke-opacity":".45"})));
+  const dwells=plateWells(dst,th).map(w=>{
+    lift.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
+      fill:"var(--bg)","fill-opacity":".5",stroke:"var(--stroke)",
+      "stroke-width":".5","stroke-opacity":".45"}));
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
+      fill:w.band.fill,"fill-opacity":"0"});
+    lift.appendChild(fill);
+    return {w,fill,rx:w.e.rx*0.86,ry:w.e.ry*0.86};
+  });
   g.appendChild(lift);
 
-  /* one droplet, fired upward */
-  const drop=el("ellipse",{rx:"2.2",ry:"2.9",fill:"var(--drop)","fill-opacity":"0"});
-  g.appendChild(drop);
+  /* fire order: column by column, so the wave crosses the four bands */
+  const order=swells.map((w,i)=>i)
+    .sort((a,b)=> (swells[a].i-swells[b].i) || (swells[a].j-swells[b].j));
+  const slot=[]; order.forEach((wellIdx,pos)=>slot[wellIdx]=pos);
 
-  const rise=(th+gap)*S*CZ, CYCLE=1.6;
-  let t=0, k=0;
+  /* LEAD: the well starts taking its colour this long BEFORE the droplet
+     formally expires, and the droplet dissolves across the same window, so
+     arrival reads as a merge rather than a hand-off with a gap in it. */
+  const STEP=0.042, LIFE=0.72, LEAD=0.45, POP=0.14, PAUSE=1.1;
+  const TOTAL=order.length*STEP+LIFE+PAUSE;
+  let t=0;
   const run=(dt)=>{
-    t+=dt;
-    if(t>CYCLE){ t-=CYCLE; k=(k+1)%swells.length; }
-    const w=swells[k], p=t/CYCLE, f=Math.min(1,p/0.75);
-    drop.setAttribute("cx",w.e.x);
-    drop.setAttribute("cy",(w.e.y-rise*(1-(1-f)*(1-f))).toFixed(1));
-    drop.setAttribute("fill-opacity",(f<1?0.85:0).toFixed(2));
-    drop.setAttribute("fill",w.band.fill);
+    t=(t+dt)%TOTAL;
+    const head=Math.floor(t/STEP);
+
+    /* the wave */
+    flying.forEach((node,k)=>{
+      const idx=head-k;
+      if(idx<0||idx>=order.length){ node.setAttribute("fill-opacity","0"); return; }
+      const age=t-idx*STEP;
+      if(age<0||age>LIFE){ node.setAttribute("fill-opacity","0"); return; }
+      const w=swells[order[idx]], f=age/LIFE;
+      node.setAttribute("cx",w.e.x);
+      node.setAttribute("cy",(w.e.y-rise*(1-(1-f)*(1-f))).toFixed(1));
+      node.setAttribute("fill",w.band.fill);
+      const fadeIn=f<0.06?f/0.06:1;
+      const merge=age>LIFE-LEAD ? Math.max(0,1-(age-(LIFE-LEAD))/LEAD) : 1;
+      node.setAttribute("fill-opacity",(fadeIn*merge).toFixed(2));
+    });
+
+    /* the plate above, filling behind it */
+    dwells.forEach((d,i)=>{
+      const pos=slot[i];
+      if(pos===undefined){ d.fill.setAttribute("fill-opacity","0"); return; }
+      const since=t-(pos*STEP+LIFE-LEAD);
+      if(since<0){ d.fill.setAttribute("fill-opacity","0"); return; }
+      const ramp=Math.min(1,since/LEAD);
+      const after=since-LEAD;
+      const pop=(after>=0&&after<POP) ? 1-after/POP : 0;
+      d.fill.setAttribute("rx",(d.rx*(1+0.4*pop)).toFixed(2));
+      d.fill.setAttribute("ry",(d.ry*(1+0.4*pop)).toFixed(2));
+      d.fill.setAttribute("fill-opacity",(d.w.band.op*ramp*(1+0.8*pop)).toFixed(2));
+    });
+
+    /* the transducer, under whichever well is firing */
+    if(head>=0&&head<order.length){
+      const w=swells[order[head]];
+      ring.setAttribute("cx",w.e.x); ring.setAttribute("cy",w.e.y);
+      ring.setAttribute("rx",(w.e.rx*1.5).toFixed(1));
+      ring.setAttribute("ry",(w.e.ry*1.5).toFixed(1));
+      ring.setAttribute("stroke-opacity",".75");
+    } else ring.setAttribute("stroke-opacity","0");
   };
   run(0);
   TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
@@ -697,7 +756,7 @@ function drawTreatmentPlate(g,n){
 DRAW.treatmentplate = drawTreatmentPlate;
 
 /* ------------------------------------------------------------------
-   A4 · ARRAY INTO THE DOSED PLATE, AT 24 HPF
+   ARRAY INTO THE DOSED PLATE, AT 24 HPF
    The same 48 wells, already coloured, filling with six embryos each.
    The fish arrive into the dose; nothing is added to them afterwards.
 
@@ -744,6 +803,8 @@ function drawArrayPlate(g,n){
   tilt.appendChild(el("path",{d:"M -3.4 -40 L 3.4 -40 L 2.8 -56 L -2.8 -56 Z", ...skin}));
   pip.appendChild(tilt); g.appendChild(pip);
 
+  /* slowed from the incoming 0.1/1.4: at 0.1 the tip blurred across the
+     plate. 0.5 s a well is ~26 s a sweep, which reads as pipetting. */
   const STEP=0.5, HOLD=2.5, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   let k=0, t=0, resting=0;
   const run=(dt)=>{
@@ -767,3 +828,299 @@ function drawArrayPlate(g,n){
   TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
 }
 DRAW.arrayplate = drawArrayPlate;
+
+
+/* ------------------------------------------------------------------
+   THE COMPOUNDS · COMPOUND SELECTION
+   Three people at a board, arguing about it.
+
+   The board is drawn as a quad in a constant-y plane, so anything written
+   on it is placed with P(x, yPlane, z) and lands on the surface correctly.
+   The four entries carry the PLATE_BANDS colours, so the same four things
+   are recognisable here, on the Echo source plate, and in the wells.
+
+   Most of the board is empty on purpose. The artefact this step leaves
+   behind is four values in one column; the reasoning behind them is not
+   recorded anywhere, and the picture should not pretend otherwise.
+
+   Requires PLATE_BANDS from the plate set block.
+   ------------------------------------------------------------------ */
+const MARK_ERASED = true;
+
+/* a person; the arm is returned separately so it can be moved */
+function personSprite(x, y, scale, flip){
+  const outer=el("g",{transform:`translate(${x},${y}) scale(${scale*(flip?-1:1)},${scale})`});
+  outer.appendChild(el("path",{
+    d:"M -3.7 0 L 3.7 0 L 2.7 -11 Q 2.7 -12.6 1.2 -12.9 L -1.2 -12.9 Q -2.7 -12.6 -2.7 -11 Z",
+    fill:"var(--fg)","fill-opacity":".72"}));
+  const arm=el("g",{});
+  arm.appendChild(el("path",{d:"M 0 0 L 9.4 -1.4 L 9.7 0.6 L 0 2.0 Z",
+    fill:"var(--fg)","fill-opacity":".72"}));
+  const armPivot=el("g",{transform:"translate(2.4,-11.6)"});
+  armPivot.appendChild(arm);
+  outer.appendChild(armPivot);
+  outer.appendChild(el("circle",{cx:"0",cy:"-16.4",r:"3.3",
+    fill:"var(--fg)","fill-opacity":".8"}));
+  return {node:outer, arm};
+}
+
+function drawWhiteboard(g,n){
+  const bw=n.w*0.72, yP=n.y-n.d/2, z0=0.34, z1=n.h;
+  const x0=n.x-bw/2-n.w*0.1, x1=x0+bw;
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+
+  /* legs */
+  [x0+0.12,x1-0.12].forEach(lx=>{
+    const a=P(lx,yP,0), b=P(lx,yP,z0+0.04);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:"var(--stroke)","stroke-width":"1.6","stroke-opacity":".8"}));
+  });
+
+  /* the board */
+  g.appendChild(el("polygon",{points:quad(P(x0,yP,z1),P(x1,yP,z1),P(x1,yP,z0),P(x0,yP,z0)),
+    fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
+    "stroke-width":"1.4","stroke-opacity":".9"}));
+
+  /* what was considered and dropped, and is recorded nowhere */
+  if(MARK_ERASED){
+    const r2=rng(131);
+    for(let i=0;i<7;i++){
+      const sx=x0+0.14+r2()*(bw-0.28), sz=z0+0.1+r2()*(z1-z0-0.2);
+      const a=P(sx,yP,sz), b=P(sx+0.1+r2()*0.22,yP,sz+(r2()-0.5)*0.04);
+      g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+        stroke:"var(--fg)","stroke-width":"2.6","stroke-opacity":".07",
+        "stroke-linecap":"round"}));
+    }
+  }
+
+  /* four entries, one column, in the colours they keep downstream */
+  const rows=PLATE_BANDS.length, top=z1-0.16, step=(top-z0-0.14)/(rows-1);
+  for(let i=0;i<rows;i++){
+    const z=top-i*step, gx=x0+0.16, c=P(gx,yP,z);
+    const hex=[];
+    for(let k=0;k<6;k++){
+      const a=k*Math.PI/3+Math.PI/6;
+      hex.push([c[0]+Math.cos(a)*4.0, c[1]+Math.sin(a)*4.0]);
+    }
+    g.appendChild(el("polygon",{points:pts(hex),fill:PLATE_BANDS[i].fill,
+      "fill-opacity":Math.max(.45,PLATE_BANDS[i].op),stroke:"var(--fg)",
+      "stroke-width":".7","stroke-opacity":".6"}));
+    const a=P(gx+0.14,yP,z), b=P(gx+0.14+bw*0.5,yP,z);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:"var(--fg)","stroke-width":"1.8","stroke-opacity":".55",
+      "stroke-linecap":"round"}));
+  }
+
+  /* three people, back to front, arms moving */
+  const r=rng(149), arms=[];
+  [{dx:-0.62,dy:0.42,flip:false,ph:0.0},
+   {dx: 0.06,dy:0.86,flip:false,ph:2.1},
+   {dx: 0.72,dy:0.34,flip:true, ph:4.0}]
+    .sort((a,b)=>a.dy-b.dy)
+    .forEach(f=>{
+      const p=P(n.x+f.dx, n.y+n.d/2*f.dy, 0);
+      const {node,arm}=personSprite(p[0],p[1],2.1+r()*0.3,f.flip);
+      g.appendChild(node);
+      arms.push({arm,ph:f.ph,rate:1.7+r()*1.1,span:46+r()*26});
+    });
+
+  /* gesturing, and the screen breathing very slightly */
+  let t=0;
+  const run=(dt)=>{
+    t+=dt;
+    arms.forEach(a=>{
+      const s=Math.sin(t*a.rate+a.ph)+0.35*Math.sin(t*a.rate*2.3+a.ph*1.7);
+      a.arm.setAttribute("transform",`rotate(${(-18+s*a.span).toFixed(1)})`);
+    });
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.whiteboard = drawWhiteboard;
+
+
+/* ------------------------------------------------------------------
+   INCUBATE TO 48 HPF
+   A closed box. Twenty-four hours happen inside it and nothing watches.
+
+   The door is drawn on the near-right face, which is a constant-x plane,
+   so everything on it is placed with P(x, y, z) and lands flat on the
+   surface. The window is genuinely dark: no plate visible, no embryos,
+   nothing. This step's whole condition is that no observation was made,
+   and a window with something legible behind it would contradict it.
+
+   The temperature readout shows dashes, not a number, because the
+   incubation temperature is not recorded in any artefact. It blinks as
+   though searching for a reading it will never get.
+   ------------------------------------------------------------------ */
+function drawIncubator(g,n){
+  const hw=n.w/2, hd=n.d/2, th=n.h;
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+  const F=(yv,zv)=>P(n.x+hw, yv, zv);          // a point on the door face
+
+  /* the cabinet */
+  const f=faces(n.x,n.y,n.w,n.d,th);
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:SKIN.works[k],stroke:"var(--stroke)","stroke-width":"1.3"})));
+
+  /* vents on the left flank */
+  for(let i=0;i<5;i++){
+    const z=th*(0.24+i*0.11);
+    const a=P(n.x-hw*0.72,n.y+hd,z), b=P(n.x+hw*0.72,n.y+hd,z);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".35"}));
+  }
+
+  /* the door */
+  const y0=n.y-hd+0.05, y1=n.y+hd-0.05, z0=th*0.05, z1=th*0.95;
+  g.appendChild(el("polygon",{points:quad(F(y0,z1),F(y1,z1),F(y1,z0),F(y0,z0)),
+    fill:"var(--k-top)","fill-opacity":".5",stroke:"var(--stroke)",
+    "stroke-width":"1","stroke-opacity":".8"}));
+
+  /* the window, showing nothing */
+  const wy0=y0+0.12, wy1=y1-0.12, wz0=th*0.44, wz1=th*0.84;
+  g.appendChild(el("polygon",{points:quad(F(wy0,wz1),F(wy1,wz1),F(wy1,wz0),F(wy0,wz0)),
+    fill:"var(--bg)","fill-opacity":".92",stroke:"var(--stroke)",
+    "stroke-width":"1.1","stroke-opacity":".85"}));
+  /* a sheen across the glass, so it reads as glass rather than a hole */
+  g.appendChild(el("polygon",{
+    points:pts([F(wy0+0.04,wz1),F(wy0+0.20,wz1),F(wy1-0.16,wz0),F(wy1-0.32,wz0)]),
+    fill:"var(--fg)","fill-opacity":".05"}));
+
+  /* handle */
+  const ha=F(y1-0.07,th*0.34), hb=F(y1-0.07,th*0.6);
+  g.appendChild(el("line",{x1:ha[0],y1:ha[1],x2:hb[0],y2:hb[1],
+    stroke:"var(--stroke)","stroke-width":"2.4","stroke-opacity":".9",
+    "stroke-linecap":"round"}));
+
+  /* the readout: dashes where a temperature would be */
+  const ry0=y0+0.1, ry1=y0+0.44, rz0=th*0.14, rz1=th*0.3;
+  g.appendChild(el("polygon",{points:quad(F(ry0,rz1),F(ry1,rz1),F(ry1,rz0),F(ry0,rz0)),
+    fill:"var(--bg)","fill-opacity":".85",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".6"}));
+  const dashes=[];
+  for(let i=0;i<3;i++){
+    const yy=ry0+0.07+i*0.1, z=(rz0+rz1)/2;
+    const a=F(yy,z), b=F(yy+0.055,z);
+    const d=el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:"var(--fg)","stroke-width":"1.6","stroke-opacity":".55",
+      "stroke-linecap":"round"});
+    g.appendChild(d); dashes.push(d);
+  }
+
+  /* twenty-four hours, running along the foot of the door */
+  const bz=th*0.085;
+  const back=F(y0+0.06,bz), full=F(y1-0.06,bz);
+  g.appendChild(el("line",{x1:back[0],y1:back[1],x2:full[0],y2:full[1],
+    stroke:"var(--fg)","stroke-width":"1.4","stroke-opacity":".18"}));
+  const bar=el("line",{x1:back[0],y1:back[1],x2:back[0],y2:back[1],
+    stroke:"var(--water, var(--signal))","stroke-width":"2.2","stroke-opacity":".9",
+    "stroke-linecap":"round"});
+  g.appendChild(bar);
+
+  const CYCLE=9.0;
+  let t=0;
+  const run=(dt)=>{
+    t=(t+dt)%CYCLE;
+    const p=t/CYCLE;
+    const e=F(y0+0.06+(y1-y0-0.12)*p, bz);
+    bar.setAttribute("x2",e[0]); bar.setAttribute("y2",e[1]);
+    bar.setAttribute("stroke-opacity",(p>0.97?0:0.9).toFixed(2));
+    const blink=(Math.sin(t*2.2)>0.75)?0.18:0.55;
+    dashes.forEach(d=>d.setAttribute("stroke-opacity",blink.toFixed(2)));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.incubator = drawIncubator;
+
+
+/* ------------------------------------------------------------------
+   COLLECT AND FIX
+   Six embryos go into a tube and one pool comes out.
+
+   Each of the six is drawn as a distinguishable thing: different size,
+   the embryo curled at a different angle inside its chorion. The moment
+   it enters the fixative it becomes three dots identical to everyone
+   else's. That collapse is the entire content of this step, and it is
+   irreversible — nothing downstream can tell which dot came from which
+   animal, because after this nothing recorded it.
+
+   Do not tint the dots by source and do not leave the embryos legible in
+   the suspension: that would imply a per-embryo identity the object does
+   not have and never could have. This is the step that made the design
+   spec's speculative embryo column impossible.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawCollectFix(g,n){
+  const r=rng(173), R=Math.min(n.w,n.d)/2*0.52, th=n.h*0.78;
+  const water=th*0.68, floorZ=th*0.04;
+  const floorE=ellipseAt(n.x,n.y,0,R),
+        waterE=ellipseAt(n.x,n.y,water,R*0.97),
+        rimE  =ellipseAt(n.x,n.y,th,R);
+
+  /* the tube */
+  g.appendChild(el("ellipse",{cx:floorE.x,cy:floorE.y,rx:floorE.rx,ry:floorE.ry,
+    fill:"var(--c-right)","fill-opacity":".8",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".5"}));
+  g.appendChild(el("polygon",{
+    points:pts([...arcPts(waterE,0,Math.PI,24), ...arcPts(floorE,Math.PI,0,24)]),
+    fill:"var(--c-top)","fill-opacity":".35"}));
+
+  /* the suspension: three identical dots per embryo, eighteen in all */
+  const dots=[];
+  for(let i=0;i<6;i++)for(let j=0;j<3;j++){
+    const a=r()*6.283, rad=Math.sqrt(r())*R*0.62;
+    const p=P(n.x+Math.cos(a)*rad, n.y+Math.sin(a)*rad, floorZ+0.06+r()*(water-floorZ-0.12));
+    const d=el("circle",{cx:p[0],cy:p[1],r:"2.1",fill:"var(--fg)",
+      "fill-opacity":"0"});
+    g.appendChild(d); dots.push({node:d,src:i});
+  }
+
+  /* surface, near wall, rim */
+  g.appendChild(el("ellipse",{cx:waterE.x,cy:waterE.y,rx:waterE.rx,ry:waterE.ry,
+    fill:"var(--c-top)","fill-opacity":".45",stroke:"var(--c-top)",
+    "stroke-width":".9","stroke-opacity":".6"}));
+  g.appendChild(el("polygon",{
+    points:pts([...arcPts(rimE,0,Math.PI,24), ...arcPts(floorE,Math.PI,0,24)]),
+    fill:"var(--g-top)","fill-opacity":".22"}));
+  g.appendChild(el("ellipse",{cx:rimE.x,cy:rimE.y,rx:rimE.rx,ry:rimE.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.3","stroke-opacity":".9"}));
+
+  /* the six, each one still itself */
+  const drop=[];
+  for(let i=0;i<6;i++){
+    const size=3.4+r()*1.3, ang=r()*6.283;
+    const off=(i-2.5)*0.055;
+    const node=el("g",{opacity:"0"});
+    node.appendChild(el("circle",{cx:"0",cy:"0",r:size,fill:"var(--fg)",
+      "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".8","stroke-opacity":".6"}));
+    node.appendChild(el("circle",{cx:Math.cos(ang)*size*0.34,cy:Math.sin(ang)*size*0.34,
+      r:size*0.45,fill:"var(--fg)","fill-opacity":".9"}));
+    g.appendChild(node);
+    drop.push({node,off,start:i*0.55});
+  }
+
+  const CYCLE=6.4, FALL=0.7, TOP=n.h*1.55;
+  let t=0;
+  const run=(dt)=>{
+    t=(t+dt)%CYCLE;
+    const fade = t>CYCLE-0.7 ? Math.max(0,(CYCLE-t)/0.7) : 1;
+    drop.forEach(d=>{
+      const lt=t-d.start;
+      if(lt<0 || lt>FALL){ d.node.setAttribute("opacity","0"); return; }
+      const f=lt/FALL, z=TOP+(water+0.04-TOP)*f*f;
+      const p=P(n.x+d.off, n.y+d.off*0.6, z);
+      d.node.setAttribute("opacity",(0.95*fade).toFixed(2));
+      d.node.setAttribute("transform",`translate(${p[0]},${p[1]})`);
+    });
+    dots.forEach(dd=>{
+      const landed = t > drop[dd.src].start+FALL;
+      dd.node.setAttribute("fill-opacity",(landed?0.6*fade:0).toFixed(2));
+    });
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.collectfix = drawCollectFix;
