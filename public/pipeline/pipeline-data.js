@@ -111,23 +111,17 @@ const NODES = [
  sub:"6 embryos per well, at 24 hpf",
  does:"Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
  built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
- cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held."},
+ cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held. Six embryos per well also means embryo identity is destroyed here, at the moment of arraying, and not later: the embryos never leave this well again. The design spec's speculative obs schema lists an embryo column as a batch covariate; that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
 {id:"A5", key:"A5", group:"The experiment", shape:"incubator", name:"Incubate to 48 hpf", x:14.7, y:R1, w:1.0, d:0.85, h:0.9,
  lane:"r1-tail",
  sub:"24 hours of exposure",
  does:"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset.",
  built:"Fixed 24→48 hpf window, single collection timepoint — stated in the design spec and used as the confirmed stage by every downstream asset.",
  cond:"No imaging or phenotype scoring in this window, so a transcriptomic result cannot be checked against what the embryo visibly did. Incubation temperature is not recorded in any artefact here."},
-{id:"A6", key:"A6", group:"Collection", shape:"collectfix", name:"Collect and fix", x:16.0, y:R1, w:0.8, d:0.8, h:1.0,
- lane:"r1-tail",
- sub:"euthanise, pool per well",
- does:"Embryos are euthanised and pooled within their well. From here the well is the unit, not the animal.",
- built:"Fixed collection at 48 hpf, single timepoint, confirmed in the design spec and re-confirmed by the clustering metadata, which records the stage as protocol-derived rather than guessed.",
- cond:"Six embryos go in, one pool comes out, and embryo identity is destroyed permanently. The design spec's speculative obs schema lists an embryo column as a batch covariate — that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
-{id:"A7", key:"A7", group:"Collection", shape:"tile", name:"Dissociate", x:17.3, y:R1, w:0.72, d:0.72, h:0.62,
+{id:"A6", key:"A6", group:"Collection", shape:"dissociate", name:"Dissociate", x:17.3, y:R1, w:1.7, d:1.15, h:0.3,
  lane:"r1-tail",
  sub:"whole cells or nuclei — the fork",
- does:"Enzymatic and mechanical dissociation into a suspension, then strained. The choice made here — intact cells or isolated nuclei — propagates through the entire rest of the map.",
+ does:"Embryos are euthanised in the well and the tissue is digested enzymatically into a suspension, then strained. They never leave the well they were arrayed into — there is no collection or pooling event, because the pooling already happened at arraying. The choice made here — intact cells or isolated nuclei — propagates through the entire rest of the map.",
  built:"No protocol detail on this instance for the worked example; reagent, digest time and strainer size are recorded nowhere. Across the corpus the split is clean: sci-RNA-seq3 runs on PFA-fixed nuclei (ZSCAPE, ChemFish), while 10x, Microwell-seq and Parse all run on whole cells (Zebrahub, CellOracle, MIC-Drop-seq, ZCL2, MiniFin, MegaFin).",
  cond:"The most biased step in the wet lab and the least documented one. Cell types survive dissociation unequally, so atlas composition is partly a report on how tough each tissue is — and the mitochondrial cull two rows down then deletes the ones most stressed by it. The nuclei-or-cells fork is not a detail: nuclear transcripts are intron-rich, so it changes what the intron-handling stage on row 3 does, and it changes what a mitochondrial fraction even means."},
 
@@ -432,9 +426,9 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
 const LANES = [
-  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.68, dir:+1},
-  {id:"r1-chem",  y:R1+2.0,   x0:2.49,  x1:9.68, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:11.37, x1:22.00, dir:+1},
+  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.95, dir:+1},
+  {id:"r1-chem",  y:R1+2.0,   x0:2.61,  x1:9.95, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:11.79, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -448,7 +442,7 @@ const EDGES = [
   {a:"CS",b:"ECHO",kind:"meta"},{a:"ECHO",b:"PL",kind:"meta"},
   /* the merge — the embryos go into wells that already hold compound */
   {a:"A3",b:"A4",kind:"fish",straight:true},{a:"PL",b:"A4",kind:"meta",straight:true},
-  {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"FX",kind:"fish"},
+  {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
@@ -738,10 +732,10 @@ const OVERVIEW = {
 <p class="cond">Two are open decisions rather than defects: whether cell-type identity or anatomical region is the primary axis, and whether a merge threshold validated on seven cases transfers.</p>`
 };
 
-/* Steps with no record of what was actually done on the worked example. A4-A7
-   were dropped from this set: plate format, dose, exposure window and
-   collection point are confirmed by the design spec and, for the plate,
+/* Steps with no record of what was actually done on the worked example. The
+   arraying and the exposure window were dropped from this set: plate format,
+   dose and window are confirmed by the design spec and, for the plate,
    independently by the vendor's own barcode-set description. What remains is
-   genuinely undocumented — the breeding steps, the dissociation, and library
-   prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","P2","A7","B9","C1","C2"]);
+   genuinely undocumented — the breeding steps, the Echo dispense, the
+   dissociation, and library prep. */
+const UNVERIFIED = new Set(["A1","A2","A3","P2","A6","B9","C1","C2"]);

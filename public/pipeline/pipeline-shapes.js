@@ -1036,91 +1036,132 @@ DRAW.incubator = drawIncubator;
 
 
 /* ------------------------------------------------------------------
-   COLLECT AND FIX
-   Six embryos go into a tube and one pool comes out.
+   DISSOCIATE
+   A 48 hpf larva coming apart into a suspension.
 
-   Each of the six is drawn as a distinguishable thing: different size,
-   the embryo curled at a different angle inside its chorion. The moment
-   it enters the fixative it becomes three dots identical to everyone
-   else's. That collapse is the entire content of this step, and it is
-   irreversible — nothing downstream can tell which dot came from which
-   animal, because after this nothing recorded it.
+   The animal is drawn as a few hundred dots arranged along a spine with a
+   yolk mass, a dense pigmented eye and a tail that tapers to nothing —
+   the shape a zebrafish actually is at this stage. Enzymatic digestion
+   loosens them and the whole thing disperses into an even cloud, then
+   reassembles and does it again.
 
-   Do not tint the dots by source and do not leave the embryos legible in
-   the suspension: that would imply a per-embryo identity the object does
-   not have and never could have. This is the step that made the design
-   spec's speculative embryo column impossible.
+   Three things are deliberate. The eye lets go last, because pigmented
+   retina is the toughest thing in the animal. A handful of clumps never
+   disperse at all. And the particles alternate form between cycles —
+   whole cells with a nucleus inside, then bare nuclei — because which of
+   those two this step produced is not written down, and the difference
+   propagates through the entire rest of the map.
 
-   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   This node follows the incubator directly: there is no collection event.
+   The embryos never leave the well, so euthanasia lives in this node's
+   `does` text rather than in a box of its own. Fixation order is
+   confirmed against Parse's own protocol — Evercode fixation begins with
+   a single-cell suspension — so the digestion comes first and ③ remains
+   the fixation landmark.
+
+   Requires ellipseAt() from the A2 clutch block.
    ------------------------------------------------------------------ */
-function drawCollectFix(g,n){
-  const r=rng(173), R=Math.min(n.w,n.d)/2*0.52, th=n.h*0.78;
-  const water=th*0.68, floorZ=th*0.04;
-  const floorE=ellipseAt(n.x,n.y,0,R),
-        waterE=ellipseAt(n.x,n.y,water,R*0.97),
-        rimE  =ellipseAt(n.x,n.y,th,R);
+function drawDissociate(g,n){
+  const r=rng(211);
+  const L=n.w*0.66, x0=n.x-L*0.5, y0=n.y-n.d*0.04;
+  const spine=t=>[x0+t*L, y0+0.055*Math.sin(t*Math.PI*1.5)];
+  const halfW=t=> t<0.22 ? 0.085 : 0.088*Math.pow(1-t,0.85)+0.008;
 
-  /* the tube */
-  g.appendChild(el("ellipse",{cx:floorE.x,cy:floorE.y,rx:floorE.rx,ry:floorE.ry,
-    fill:"var(--c-right)","fill-opacity":".8",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".5"}));
-  g.appendChild(el("polygon",{
-    points:pts([...arcPts(waterE,0,Math.PI,24), ...arcPts(floorE,Math.PI,0,24)]),
-    fill:"var(--c-top)","fill-opacity":".35"}));
+  /* the vessel it is happening in */
+  const vessel=ellipseAt(n.x,n.y,0,Math.min(n.w,n.d*1.5)*0.46);
+  g.appendChild(el("ellipse",{cx:vessel.x,cy:vessel.y,rx:vessel.rx,ry:vessel.ry,
+    fill:"var(--fg)","fill-opacity":".03",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".28"}));
 
-  /* the suspension: three identical dots per embryo, eighteen in all */
   const dots=[];
-  for(let i=0;i<6;i++)for(let j=0;j<3;j++){
-    const a=r()*6.283, rad=Math.sqrt(r())*R*0.62;
-    const p=P(n.x+Math.cos(a)*rad, n.y+Math.sin(a)*rad, floorZ+0.06+r()*(water-floorZ-0.12));
-    const d=el("circle",{cx:p[0],cy:p[1],r:"2.1",fill:"var(--fg)",
-      "fill-opacity":"0"});
-    g.appendChild(d); dots.push({node:d,src:i});
-  }
-
-  /* surface, near wall, rim */
-  g.appendChild(el("ellipse",{cx:waterE.x,cy:waterE.y,rx:waterE.rx,ry:waterE.ry,
-    fill:"var(--c-top)","fill-opacity":".45",stroke:"var(--c-top)",
-    "stroke-width":".9","stroke-opacity":".6"}));
-  g.appendChild(el("polygon",{
-    points:pts([...arcPts(rimE,0,Math.PI,24), ...arcPts(floorE,Math.PI,0,24)]),
-    fill:"var(--g-top)","fill-opacity":".22"}));
-  g.appendChild(el("ellipse",{cx:rimE.x,cy:rimE.y,rx:rimE.rx,ry:rimE.ry,
-    fill:"none",stroke:"var(--stroke)","stroke-width":"1.3","stroke-opacity":".9"}));
-
-  /* the six, each one still itself */
-  const drop=[];
-  for(let i=0;i<6;i++){
-    const size=3.4+r()*1.3, ang=r()*6.283;
-    const off=(i-2.5)*0.055;
-    const node=el("g",{opacity:"0"});
-    node.appendChild(el("circle",{cx:"0",cy:"0",r:size,fill:"var(--fg)",
-      "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".8","stroke-opacity":".6"}));
-    node.appendChild(el("circle",{cx:Math.cos(ang)*size*0.34,cy:Math.sin(ang)*size*0.34,
-      r:size*0.45,fill:"var(--fg)","fill-opacity":".9"}));
+  const push=(gx,gy,rad0,delay,opac,blue,stuck)=>{
+    const rad=rad0*0.5;   // half size: they should read as separate little cells
+    const home=P(gx,gy,0.02);
+    const a=r()*6.283, rad2=Math.sqrt(r());
+    const away=P(n.x+Math.cos(a)*rad2*n.w*0.44, n.y+Math.sin(a)*rad2*n.d*0.42, 0.02);
+    const node=el("g",{});
+    const cell=el("g",{});
+    cell.appendChild(el("circle",{cx:"0",cy:"0",r:rad*1.9,fill:"var(--fg)","fill-opacity":".2"}));
+    cell.appendChild(el("circle",{cx:"0",cy:"0",r:rad*0.85,
+      fill:blue?"var(--water, var(--signal))":"var(--fg)","fill-opacity":opac}));
+    const nuc=el("circle",{cx:"0",cy:"0",r:rad,
+      fill:blue?"var(--water, var(--signal))":"var(--fg)","fill-opacity":opac,opacity:"0"});
+    node.appendChild(cell); node.appendChild(nuc);
     g.appendChild(node);
-    drop.push({node,off,start:i*0.55});
+    dots.push({node,cell,nuc,home,away,delay,stuck});
+  };
+
+  /* body */
+  for(let i=0;i<430;i++){
+    const t=Math.pow(r(),0.8), sp=spine(t), u=(r()*2-1);
+    push(sp[0], sp[1]+u*halfW(t), 1.05+r()*0.5, t*0.5+r()*0.18,
+         0.5+r()*0.45, r()<0.16, false);
+  }
+  /* yolk */
+  for(let i=0;i<105;i++){
+    const a=r()*6.283, rad2=Math.sqrt(r()), sp=spine(0.2);
+    push(sp[0]+Math.cos(a)*rad2*0.075, sp[1]+0.055+Math.sin(a)*rad2*0.05,
+         1.2+r()*0.5, 0.16+r()*0.2, 0.55+r()*0.35, r()<0.1, false);
+  }
+  /* eye — dense, and the last thing to let go */
+  const eye=spine(0.07);
+  for(let i=0;i<62;i++){
+    const a=r()*6.283, rad2=Math.sqrt(r());
+    push(eye[0]+Math.cos(a)*rad2*0.045, eye[1]-0.035+Math.sin(a)*rad2*0.04,
+         1.1+r()*0.35, 0.62+r()*0.14, 0.75+r()*0.25, false, false);
+  }
+  /* clumps that never come apart */
+  for(let i=0;i<4;i++){
+    const t=0.25+r()*0.5, sp=spine(t);
+    for(let k=0;k<7;k++)
+      push(sp[0]+(r()-0.5)*0.05, sp[1]+(r()-0.5)*0.05, 1.3+r()*0.4,
+           0, 0.5+r()*0.3, false, true);
   }
 
-  const CYCLE=6.4, FALL=0.7, TOP=n.h*1.55;
-  let t=0;
+  /* pupil */
+  const ep=P(eye[0],eye[1]-0.035,0.03);
+  const pupil=el("circle",{cx:ep[0],cy:ep[1],r:"4.4",fill:"var(--bg)",
+    "fill-opacity":".85",stroke:"var(--fg)","stroke-width":"1.1","stroke-opacity":".6"});
+  g.appendChild(pupil);
+
+  const HOLD=1.3, GO=1.5, CLOUD=1.4, BACK=1.7;
+  const CYCLE=HOLD+GO+CLOUD+BACK;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  let t=0, cyc=0, lastForm=null;
   const run=(dt)=>{
-    t=(t+dt)%CYCLE;
-    const fade = t>CYCLE-0.7 ? Math.max(0,(CYCLE-t)/0.7) : 1;
-    drop.forEach(d=>{
-      const lt=t-d.start;
-      if(lt<0 || lt>FALL){ d.node.setAttribute("opacity","0"); return; }
-      const f=lt/FALL, z=TOP+(water+0.04-TOP)*f*f;
-      const p=P(n.x+d.off, n.y+d.off*0.6, z);
-      d.node.setAttribute("opacity",(0.95*fade).toFixed(2));
-      d.node.setAttribute("transform",`translate(${p[0]},${p[1]})`);
+    const was=Math.floor(t/CYCLE);
+    t+=dt;
+    if(Math.floor(t/CYCLE)!==was) cyc++;
+    const p=t%CYCLE;
+    const asNuclei = cyc%2===1;
+
+    /* the cell/nucleus swap changes once a cycle, not once a frame — writing
+       it per dot per frame was 2 of every 3 DOM writes this node makes, and
+       there are ~640 of them */
+    if(asNuclei!==lastForm){
+      lastForm=asNuclei;
+      dots.forEach(d=>{
+        d.cell.setAttribute("opacity", asNuclei?"0":"1");
+        d.nuc .setAttribute("opacity", asNuclei?"1":"0");
+      });
+    }
+    dots.forEach(d=>{
+      let f;
+      if(p<HOLD) f=0;
+      else if(p<HOLD+GO)      f=ease(Math.max(0,Math.min(1,(p-HOLD-d.delay*0.5)/(GO*0.75))));
+      else if(p<HOLD+GO+CLOUD) f=1;
+      else f=1-ease(Math.max(0,Math.min(1,(p-HOLD-GO-CLOUD-d.delay*0.3)/(BACK*0.7))));
+      if(d.stuck) f*=0.12;
+      const x=d.home[0]+(d.away[0]-d.home[0])*f,
+            y=d.home[1]+(d.away[1]-d.home[1])*f;
+      d.node.setAttribute("transform",`translate(${x},${y})`);
     });
-    dots.forEach(dd=>{
-      const landed = t > drop[dd.src].start+FALL;
-      dd.node.setAttribute("fill-opacity",(landed?0.6*fade:0).toFixed(2));
-    });
+    const intact=p<HOLD?1:(p<HOLD+GO? Math.max(0,1-(p-HOLD)/(GO*0.5)) :
+                 (p<HOLD+GO+CLOUD?0:Math.min(1,(p-HOLD-GO-CLOUD)/(BACK*0.6))));
+    pupil.setAttribute("fill-opacity",(0.85*intact).toFixed(2));
+    pupil.setAttribute("stroke-opacity",(0.6*intact).toFixed(2));
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
-DRAW.collectfix = drawCollectFix;
+DRAW.dissociate = drawDissociate;
