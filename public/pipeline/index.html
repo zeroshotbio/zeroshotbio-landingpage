@@ -125,16 +125,53 @@
   .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
          letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
 
+  /* the step strip — the mobile stand-in for the left index. Horizontal,
+     scrollable, one chip per step, group names as vertical dividers. */
+  .strip{display:none;flex:none;height:15dvh;min-height:66px;max-height:118px;
+         overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch}
+  .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
+        font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);
+        writing-mode:vertical-rl;text-orientation:mixed}
+  .chip{display:inline-flex;flex-direction:column;justify-content:center;gap:3px;
+        vertical-align:top;height:100%;min-width:88px;max-width:132px;
+        padding:6px 9px;border-right:1px solid var(--rule);text-align:left;
+        white-space:normal;-webkit-tap-highlight-color:transparent}
+  .chip .k{font-size:8px;letter-spacing:.12em;color:var(--fg3)}
+  .chip .n{font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
+  .chip.mark .n{font-weight:600}
+  .chip.on{background:var(--fg);color:var(--bg)}
+  .chip.on .k{color:var(--bg)}
+  .sheetclose{display:none}
+
   .mobtoggle{display:none}
   @media (max-width:900px){
     .body{flex-direction:column;position:relative}
-    aside{position:absolute;z-index:5;top:0;bottom:0;left:0;width:224px;transform:translateX(-100%);
-          transition:transform .18s ease}
-    aside.open{transform:none}
-    .stage{flex:none;height:46dvh;border-bottom:1px solid var(--fg)}
-    .reader{width:auto;flex:1;border-left:none}
-    .mobtoggle{display:inline-flex}
-    .stat{padding:4px 10px 6px}
+    /* the left index is replaced by the strip; the map gets the rest */
+    aside{display:none}
+    .stage{flex:1;min-height:0;border-bottom:none}
+    .strip{display:block}
+    .hint{display:none}
+    /* the reader becomes a sheet that rises only when something is selected */
+    .reader{position:absolute;left:0;right:0;bottom:0;top:auto;width:auto;z-index:6;
+            max-height:64dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(101%);transition:transform .2s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:5px;right:8px;
+                z-index:2;width:26px;height:26px;font-size:15px;line-height:1;
+                border:1px solid var(--fg);background:var(--panel);color:var(--fg)}
+    .mobtoggle{display:none}
+    .stat{padding:3px 9px 5px}
+    .stat .k{font-size:7.5px}
+    .stat .v{font-size:11px}
+    .ctl{padding:3px 7px;font-size:8.5px}
+    .zoom{top:6px;right:6px}
+    .zoom button{width:32px;height:32px;font-size:16px}
+  }
+  @media (max-width:900px) and (orientation:landscape){
+    .strip{height:22dvh;min-height:58px}
+    .reader{max-height:82dvh}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -164,7 +201,9 @@
       <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
       <div class="hint">Hover to preview · Click to keep · Click empty space to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
     </div>
-    <div class="reader">
+    <div class="strip" id="strip"></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
       <div class="tabs">
         <button class="tab on" data-tab="does">What it does</button>
         <button class="tab" data-tab="built">How it's built</button>

@@ -28,6 +28,13 @@ Check the script paths resolve (a route without a trailing slash will 404 them).
   }
 })();
 
+/* Phones get a different shape: no side panels, the map takes almost the whole
+   canvas, the step index becomes a strip along the bottom, and the reader
+   rises as a sheet only when something is selected. Layout is CSS; this flag
+   is only for the behaviour that CSS cannot express. */
+const TOUCH = window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+const PHONE = () => window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
+
 const svg=document.getElementById("svg");
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
@@ -191,8 +198,10 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
   DRAW[n.shape](g,n);
-  g.addEventListener("mouseenter",()=>show(n.id,false));
-  g.addEventListener("mouseleave",unhover);
+  if(!TOUCH){
+    g.addEventListener("mouseenter",()=>show(n.id,false));
+    g.addEventListener("mouseleave",unhover);
+  }
   g.addEventListener("focus",()=>show(n.id,false));
   g.addEventListener("blur",unhover);
   g.addEventListener("click",ev=>{ev.stopPropagation();show(n.id,true);});
@@ -309,10 +318,51 @@ function focusNode(id){
   const k=Math.max(0.75, Math.min(2.4, Math.min(r.width,r.height)*0.5/span));
   glideTo({fx:wx, fy:wy, k});
 }
-let drag=null;
-svg.addEventListener("pointerdown",e=>{anim=null;drag={x:e.clientX,y:e.clientY,vx:view.x,vy:view.y};svg.setPointerCapture(e.pointerId);svg.classList.add("drag");});
-svg.addEventListener("pointermove",e=>{if(!drag)return;view.x=drag.vx+(e.clientX-drag.x);view.y=drag.vy+(e.clientY-drag.y);applyView();});
-["pointerup","pointercancel"].forEach(t=>svg.addEventListener(t,()=>{drag=null;svg.classList.remove("drag");}));
+/* One pointer pans, two pinch. Pointer events cover mouse, pen and touch, so
+   this is the same code path on a phone as on a desktop — the only thing the
+   device changes is how many pointers show up. `moved` exists so that the
+   click at the end of a pan does not read as a click on empty canvas and
+   throw away the selection. */
+let drag=null, pinch=null, moved=0;
+const pointers=new Map();
+const localMid=()=>{
+  const [a,b]=[...pointers.values()], r=svg.getBoundingClientRect();
+  return {d:Math.hypot(a.x-b.x,a.y-b.y),
+          mx:(a.x+b.x)/2-r.left, my:(a.y+b.y)/2-r.top};
+};
+const startPinch=()=>{ const m=localMid();
+  pinch={...m, k:view.k, x:view.x, y:view.y}; drag=null; svg.classList.remove("drag"); };
+const startDrag=()=>{ const [p]=[...pointers.values()];
+  drag={x:p.x,y:p.y,vx:view.x,vy:view.y}; svg.classList.add("drag"); };
+
+svg.addEventListener("pointerdown",e=>{
+  anim=null; moved=0;
+  svg.setPointerCapture(e.pointerId);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size>=2) startPinch(); else startDrag();
+});
+svg.addEventListener("pointermove",e=>{
+  if(!pointers.has(e.pointerId)) return;
+  const was=pointers.get(e.pointerId);
+  moved+=Math.hypot(e.clientX-was.x, e.clientY-was.y);
+  pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
+  if(pointers.size>=2 && pinch){
+    const now=localMid();
+    const nk=Math.max(.15,Math.min(5, pinch.k*(now.d/Math.max(1,pinch.d))));
+    /* hold the world point that was under the first midpoint, and let the
+       midpoint carry it — so two fingers zoom and pan in one gesture */
+    const wx=(pinch.mx-pinch.x)/pinch.k, wy=(pinch.my-pinch.y)/pinch.k;
+    view.k=nk; view.x=now.mx-wx*nk; view.y=now.my-wy*nk; applyView();
+  } else if(drag){
+    view.x=drag.vx+(e.clientX-drag.x); view.y=drag.vy+(e.clientY-drag.y); applyView();
+  }
+});
+["pointerup","pointercancel"].forEach(t=>svg.addEventListener(t,e=>{
+  pointers.delete(e.pointerId);
+  if(pointers.size>=2) startPinch();
+  else if(pointers.size===1) startDrag();
+  else { drag=null; pinch=null; svg.classList.remove("drag"); }
+}));
 svg.addEventListener("wheel",e=>{
   e.preventDefault(); anim=null;
   const r=svg.getBoundingClientRect(),mx=e.clientX-r.left,my=e.clientY-r.top;
@@ -382,16 +432,44 @@ const aside=document.getElementById("aside");
   aside.innerHTML=html;
   aside.addEventListener("mouseleave",unhover);
   aside.querySelectorAll(".row").forEach(b=>{
-    b.addEventListener("mouseenter",()=>show(b.dataset.id,false));
-    b.addEventListener("mouseleave",unhover);
+    if(!TOUCH){
+      b.addEventListener("mouseenter",()=>show(b.dataset.id,false));
+      b.addEventListener("mouseleave",unhover);
+    }
     b.addEventListener("click",()=>{
       show(b.dataset.id,true); focusNode(b.dataset.id);
       if(window.innerWidth<=900) aside.classList.remove("open");
     });
   });
 })();
+/* the strip: the same sequence as the left index, laid along the bottom */
+const strip=document.getElementById("strip");
+(function buildStrip(){
+  let html="",g=null;
+  NODES.forEach(n=>{
+    if(n.group!==g){g=n.group;html+=`<span class="sgrp">${esc(g)}</span>`;}
+    html+=`<button class="chip${n.groupMark?" mark":""}" data-id="${n.id}">`+
+          `<span class="k">${esc(n.key)}</span><span class="nm n">${esc(n.name)}</span></button>`;
+  });
+  strip.innerHTML=html;
+  strip.querySelectorAll(".chip").forEach(b=>{
+    b.addEventListener("click",()=>{ show(b.dataset.id,true); focusNode(b.dataset.id); });
+  });
+})();
+
+const reader=document.getElementById("reader");
+/* on a phone the reader is a sheet: up when something is selected, gone
+   otherwise, so the map keeps the canvas */
+function syncSheet(){ reader.classList.toggle("open", !!current && PHONE()); }
+document.getElementById("sheetClose").addEventListener("click",release);
+window.addEventListener("resize",syncSheet);
+
 function paintIndex(){
   aside.querySelectorAll(".row").forEach(b=>b.classList.toggle("on",b.dataset.id===current));
+  strip.querySelectorAll(".chip").forEach(b=>b.classList.toggle("on",b.dataset.id===current));
+  const chip=current && strip.querySelector(`.chip[data-id="${current}"]`);
+  if(chip && chip.scrollIntoView) chip.scrollIntoView({block:"nearest",inline:"center"});
+  syncSheet();
   /* Nothing ever dims. Every object stays at full opacity at all times, which
      is what keeps the tracks hidden behind them; the selected one is picked out
      by a halo instead of by everything else fading. */
@@ -423,5 +501,5 @@ document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
 };
-svg.addEventListener("click",release);
+svg.addEventListener("click",()=>{ if(moved<8) release(); });
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
