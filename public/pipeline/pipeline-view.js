@@ -186,28 +186,45 @@ CARRIES.forEach((c,i)=>{
 
 /* nodes */
 
-/* The six-point outline of a node's box, painted in the page background before
-   the shape itself. Many shapes are deliberately translucent — glass tanks,
-   water, wells, sparse voxels — and a track running behind one of those showed
-   straight through it. This makes every object opaque to what is behind it, so
-   a dot passing under any of them disappears completely. */
-const maskOf = n => {
-  const hw=n.w/2, hd=n.d/2, h=topOf(n);
-  return pts([P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
-              P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)]);
-};
-
 const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
-  g.appendChild(el("polygon",{points:maskOf(n),fill:"var(--bg)"}));
   DRAW[n.shape](g,n);
   g.addEventListener("mouseenter",()=>show(n.id,false));
   g.addEventListener("focus",()=>show(n.id,false));
   g.addEventListener("click",ev=>{ev.stopPropagation();show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
+
+/* ============================================================
+   OCCLUSION
+   A track and the dot on it must vanish wherever a node stands. Painting an
+   opaque patch behind each node did that, but the patch was a solid
+   background-coloured hexagon sitting on top of the grid and bands, so every
+   object with translucent artwork wore a visible slab underneath it.
+
+   This does the same job by removing nothing and painting nothing: one
+   clip path, a huge rectangle with every node's silhouette punched out of it
+   by the even-odd rule, applied to the edge and dot layers only. Grid and
+   bands are untouched and show through translucent shapes again, exactly as
+   they did before the patch existed.
+   ============================================================ */
+(function occlude(){
+  const R=40000;
+  const sil=n=>{
+    const hw=n.w/2, hd=n.d/2, h=topOf(n);
+    return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
+            P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
+  };
+  let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
+  NODES.forEach(n=>{ d+=" M "+sil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  const cp=el("clipPath",{id:"nodeclip",clipPathUnits:"userSpaceOnUse"});
+  cp.appendChild(el("path",{d,"clip-rule":"evenodd"}));
+  defs.appendChild(cp);
+  gEdge.setAttribute("clip-path","url(#nodeclip)");
+  gDot .setAttribute("clip-path","url(#nodeclip)");
+})();
 
 /* ============================================================
    DOTS

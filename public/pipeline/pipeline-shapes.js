@@ -225,7 +225,7 @@ function drawVials(g,n){
   const pw=n.w*0.58, pd=pw*0.79;
   const plate={x:n.x-n.w*0.15, y:n.y+n.d*0.24, w:pw, d:pd};
   const th=0.3;
-  const frz={x:n.x+n.w*0.2, y:n.y-n.d*0.24, w:n.w*0.3, d:n.d*0.24, h:n.h};
+  const frz={x:n.x+n.w*0.08, y:n.y-n.d*0.24, w:n.w*0.82, d:n.d*0.62, h:n.h};
 
   const snowflake=(host,pt2,R,op)=>{
     const fl=el("g",{});
@@ -1349,3 +1349,138 @@ function drawDissociate(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.dissociate = drawDissociate;
+
+
+/* ------------------------------------------------------------------
+   THE LIBRARY
+   A wall of compounds, four of which come off the shelf.
+
+   The wall is a constant-y plane, so shelves and spines are placed with
+   P(x, yWall, z) and sit flat on it. Molecules travel in +y, toward the
+   viewer, gaining opacity and scale as they come forward. Most fade
+   before they get far; four make it the whole way, keep their
+   PLATE_BANDS colour and pick up a check.
+
+   The skeletal structures are schematic. They are NOT depictions of
+   sorafenib, orlistat or dapagliflozin — an approximate structure
+   labelled with a real compound name would be worse than a generic one.
+   Real skeletons need a proper depiction toolchain.
+
+   Requires PLATE_BANDS from the plate set block.
+   ------------------------------------------------------------------ */
+function moleculeGlyph(seed, fill){
+  const r=rng(seed), g=el("g",{});
+  const R=6.5;
+  const ring=(cx,cy)=>{
+    const pt=[];
+    for(let i=0;i<6;i++){
+      const a=i*Math.PI/3+0.2;
+      pt.push([cx+Math.cos(a)*R, cy+Math.sin(a)*R]);
+    }
+    g.appendChild(el("polygon",{points:pts(pt),fill:"none",stroke:fill,
+      "stroke-width":"1.3","stroke-linejoin":"round"}));
+    if(r()<0.6){
+      const i=Math.floor(r()*6), a=pt[i], b=pt[(i+1)%6];
+      const mx=(a[0]+b[0])/2, my=(a[1]+b[1])/2;
+      g.appendChild(el("line",{x1:a[0]*0.82+mx*0.18,y1:a[1]*0.82+my*0.18,
+        x2:b[0]*0.82+mx*0.18,y2:b[1]*0.82+my*0.18,
+        stroke:fill,"stroke-width":"1"}));
+    }
+    return pt;
+  };
+  const p1=ring(0,0);
+  if(r()<0.65){
+    const dx=R*1.72*(r()<0.5?1:-1), dy=(r()-0.5)*R*0.8;
+    ring(dx,dy);
+    g.appendChild(el("line",{x1:0,y1:0,x2:dx,y2:dy,stroke:fill,"stroke-width":"1.1"}));
+  }
+  const tails=1+Math.floor(r()*2);
+  for(let k=0;k<tails;k++){
+    const i=Math.floor(r()*6), a=p1[i];
+    const ex=a[0]*1.9+(r()-0.5)*4, ey=a[1]*1.9+(r()-0.5)*4;
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:ex,y2:ey,stroke:fill,
+      "stroke-width":"1.1","stroke-linecap":"round"}));
+    g.appendChild(el("circle",{cx:ex,cy:ey,r:1.5,fill:fill}));
+  }
+  return g;
+}
+
+function drawLibrary(g,n){
+  const r=rng(307);
+  const yW=n.y-n.d*0.46;
+  const x0=n.x-n.w*0.46, x1=n.x+n.w*0.46;
+  const z0=0.04, z1=n.h;
+  const W=(xv,zv)=>P(xv,yW,zv);
+  const quad=(a,b,c,d)=>pts([a,b,c,d]);
+
+  g.appendChild(el("polygon",{points:quad(W(x0,z1),W(x1,z1),W(x1,z0),W(x0,z0)),
+    fill:"var(--bg)","fill-opacity":".7",stroke:"var(--stroke)",
+    "stroke-width":"1.2","stroke-opacity":".8"}));
+
+  const shelves=5, sh=(z1-z0)/shelves;
+  for(let s2=0;s2<shelves;s2++){
+    const base=z0+s2*sh;
+    const a=W(x0,base), b=W(x1,base);
+    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+      stroke:"var(--stroke)","stroke-width":"1.4","stroke-opacity":".75"}));
+    let bx=x0+0.03;
+    while(bx<x1-0.04){
+      const bw=0.022+r()*0.03, bh=sh*(0.55+r()*0.38), lean=r()<0.07;
+      const tint=r();
+      const fill = tint<0.1 ? PLATE_BANDS[Math.floor(r()*PLATE_BANDS.length)].fill
+                            : "var(--fg)";
+      const op   = tint<0.1 ? 0.5 : 0.14+r()*0.24;
+      const top=base+0.012+bh, bot=base+0.012;
+      const sk=lean?0.012:0;
+      g.appendChild(el("polygon",{
+        points:quad(W(bx+sk,top),W(bx+bw+sk,top),W(bx+bw,bot),W(bx,bot)),
+        fill:fill,"fill-opacity":op,stroke:"var(--stroke)",
+        "stroke-width":".5","stroke-opacity":".45"}));
+      bx+=bw+0.006+r()*0.008;
+    }
+  }
+
+  const yFar=n.y+n.d*0.62, span=yFar-yW;
+  const picks=[];
+  for(let i=0;i<26;i++){
+    const chosen=i<PLATE_BANDS.length;
+    const fill=chosen?PLATE_BANDS[i].fill:"var(--fg)";
+    const node=el("g",{opacity:"0"});
+    const mol=el("g",{});
+    mol.appendChild(moleculeGlyph(311+i*13, fill));
+    node.appendChild(mol);
+    const tick=el("polyline",{points:"-4,0 -1,3.4 5,-4.2",fill:"none",
+      stroke:"var(--ok, #5aa46b)","stroke-width":"2.2","stroke-linecap":"round",
+      "stroke-linejoin":"round",opacity:"0",transform:"translate(11,-9)"});
+    node.appendChild(tick);
+    g.appendChild(node);
+    picks.push({node,tick,chosen,
+      x:(r()-0.5)*n.w*0.8, z:z0+0.12+r()*(z1-z0-0.24),
+      drop:(r()-0.4)*0.35,
+      reach: chosen ? 1 : 0.3+r()*0.34,
+      speed: chosen ? 0.075+r()*0.02 : 0.13+r()*0.12,
+      scale: 0.55+r()*0.25, spin:(r()-0.5)*26, p:r()});
+  }
+
+  const run=(dt)=>{
+    picks.forEach(m=>{
+      m.p+=m.speed*dt;
+      if(m.p>=1) m.p-=1;
+      const e=m.p*m.reach;
+      const p=P(n.x+m.x, yW+span*e, m.z+m.drop*e);
+      const near=e/Math.max(0.001,m.reach);
+      const grow=m.scale*(0.72+0.6*e);
+      let op;
+      if(m.chosen) op=Math.min(1,e/0.62)*(near>0.94?Math.max(0,(1-near)/0.06):1);
+      else op=Math.min(0.55,e/0.3)*Math.max(0,1-Math.max(0,(near-0.55)/0.45));
+      m.node.setAttribute("opacity",op.toFixed(2));
+      m.node.setAttribute("transform",
+        `translate(${p[0]},${p[1]}) rotate(${(m.spin*e).toFixed(1)}) scale(${grow.toFixed(3)})`);
+      m.tick.setAttribute("opacity",
+        (m.chosen && near>0.72 ? Math.min(1,(near-0.72)/0.12) : 0).toFixed(2));
+    });
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.library = drawLibrary;

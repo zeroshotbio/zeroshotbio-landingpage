@@ -84,14 +84,21 @@ const NODES = [
  does:"Dead and unfertilised eggs are removed under a scope. The first cull on the whole map happens here, by hand, with a pipette.",
  built:"Visual screen.",
  cond:"No bench record and no count, so the denominator at the very start of the experiment is unknown. Every retention figure further down this map is conditional on a number nobody wrote down."},
-{id:"CS", key:"P1", group:"The compounds", shape:"whiteboard", name:"Compound selection", x:7.0, y:R1, w:2.0, d:1.4, h:1.2,
+{id:"CS", key:"P1", group:"The compounds", shape:"whiteboard", name:"Compound selection", x:1.0, y:R1, w:2.0, d:1.4, h:1.2,
  lane:"r1-chem",
  sub:"4 picked from ~147,025",
  does:"Somebody decides what the experiment is about. Four compounds are chosen out of the SPARC library — 0.1% DMSO as the vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns — and written into a cherry-picking layout. Everything the finished atlas can possibly say about drug effect is bounded here, before any of it exists.",
  built:"A cherry-picking layout drawn against the SPARC BioCentre compound library, roughly 147,025 compounds. Four selected, twelve replicate wells each.",
  cond:"This is the only step on the whole map where a human decides what the question is, and it is the one step with no artefact behind it at all. Nothing in the pipeline records why these four — why sorafenib rather than another VEGFR inhibitor, why orlistat and dapagliflozin as the unknowns, what was considered and dropped. The choice is legible in the object as four values in one column, and the reasoning is nowhere. Every downstream claim about mechanism inherits it."},
 
-{id:"ECHO", key:"P2", group:"The compounds", shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
+{id:"LIBR", key:"P2", group:"The compounds", shape:"library", name:"The library", x:2.5, y:R1, w:2.2, d:1.5, h:1.5,
+ lane:"r1-chem", gap:0.4,
+ sub:"~147,025 compounds · SPARC BioCentre",
+ does:"The shelf the four came off. A screening library of roughly 147,025 compounds, held at the SPARC BioCentre and shared across everyone who books time there. Four are pulled; the rest of the wall is the part of the experiment that was never run.",
+ built:"External to this company and to this pipeline — nothing on this map produced it, and nothing on this map constrains what is in it. The four picked keep their colour from here all the way to the wells: vehicle, positive control, and the two unknowns.",
+ cond:"Four out of 147,025 is a selection ratio of about one in 36,800, and the map has no artefact recording how that cut was made. That is the same gap the selection step carries, seen from the other side: what is on this wall bounds everything the finished atlas can say about mechanism, and the reasoning that narrowed it is written down nowhere. The molecules drawn here are schematic — deliberately not depictions of sorafenib, orlistat or dapagliflozin, because an approximate structure under a real compound name would be worse than an honest generic one."},
+
+{id:"ECHO", key:"P3", group:"The compounds", shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9, gap:3.65,
  lane:"r1-chem",
  sub:"SPARC BioCentre · acoustic, from the cherry-picking layout",
  does:"Compound is fired into an empty 48-well plate without anything touching it. The destination plate is held inverted above the source and 2.5 nL droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists.",
@@ -104,13 +111,13 @@ const NODES = [
  does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Four vertical bands of twelve replicate wells, compound already in every one of them, and now the fish. Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM — sorafenib at 1 µM being the lowest concentration that visibly does something in zebrafish (pericardial edema). Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the finished dataset is fixed here. Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
  cond:"The label defect on this plate is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin, and the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. 48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held. Six embryos per well also means embryo identity is destroyed here, at the moment of arraying, and not later: the embryos never leave this well again. The design spec's speculative obs schema lists an embryo column as a batch covariate; that column does not exist in the delivered object and never could have. ZSCAPE and ChemFish keep per-embryo identity by hashing the nuclei instead, which is why they can model per-embryo variance and this design cannot."},
-{id:"A5", key:"A5", group:"The experiment", shape:"incubator", name:"Incubate to 48 hpf", x:14.7, y:R1, w:1.0, d:0.85, h:0.9,
+{id:"A5", key:"A5", group:"The experiment", shape:"incubator", name:"Incubate to 48 hpf", x:14.7, y:R1, w:2.0, d:1.7, h:1.8, gap:1.25,
  lane:"r1-tail",
  sub:"24 hours of exposure",
  does:"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset.",
  built:"Fixed 24→48 hpf window, single collection timepoint — stated in the design spec and used as the confirmed stage by every downstream asset.",
  cond:"No imaging or phenotype scoring in this window, so a transcriptomic result cannot be checked against what the embryo visibly did. Incubation temperature is not recorded in any artefact here."},
-{id:"A6", key:"A6", group:"Collection", shape:"dissociate", name:"Dissociate", x:17.3, y:R1, w:1.7, d:1.15, h:0.3,
+{id:"A6", key:"A6", group:"Collection", shape:"dissociate", name:"Dissociate", x:17.3, y:R1, w:2.55, d:1.725, h:0.45, gap:0.225,
  lane:"r1-tail",
  sub:"whole cells or nuclei — the fork",
  does:"Embryos are euthanised in the well and the tissue is digested enzymatically into a suspension, then strained. They never leave the well they were arrayed into — there is no collection or pooling event, because the pooling already happened at arraying. The choice made here — intact cells or isolated nuclei — propagates through the entire rest of the map.",
@@ -119,7 +126,7 @@ const NODES = [
 
 {id:"FX", key:"2", group:"② Fixed material", groupMark:true, anchor:true, shape:"vials",
  lane:"r1-tail",
- name:"Fixed material", x:19.4, y:R1, w:3.6, d:2.6, h:0.95,
+ name:"Fixed material", x:19.4, y:R1, w:2.52, d:1.82, h:0.665, gap:1.705,
  sub:"biology locked · four assay families downstream", stat:"the biology stops here",
  does:"Fixation and permeabilisation stop transcription dead. In combinatorial chemistries this also turns each cell into its own sealed reaction vessel, which is what lets the barcoding work without any microfluidics. It is the last moment on this map at which the sample is alive in any sense.",
  built:"Evercode WT fixation, a proprietary formaldehyde-based solution, for the worked example. Four assay families take it from here across the corpus: combinatorial split-pool on fixed cells (Parse), sci-RNA-seq3 on PFA-fixed nuclei with sci-Plex hashing, droplet 10x Chromium on whole cells, and Microwell-seq with three rounds of split-pool bead synthesis.",
@@ -419,8 +426,8 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    mirrors the lane so the map snakes. */
 const LANES = [
   {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.25, dir:+1},
-  {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:4.75, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:10.69, x1:22.00, dir:+1},
+  {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.75, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:10.25, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -431,7 +438,7 @@ const EDGES = [
   {a:"AQ",b:"A1",kind:"fish",straight:true},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
   /* the chemistry lane — no incoming edge from the colony on purpose: the
      compounds have nothing to do with our fish, and arrive from off-map */
-  {a:"CS",b:"ECHO",kind:"meta"},
+  {a:"CS",b:"LIBR",kind:"meta"},{a:"LIBR",b:"ECHO",kind:"meta"},
   /* the merge — the embryos go into wells that already hold compound */
   {a:"A3",b:"A4",kind:"fish",straight:true},{a:"ECHO",b:"A4",kind:"meta",straight:true},
   {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"FX",kind:"fish"},
@@ -730,4 +737,4 @@ const OVERVIEW = {
    independently by the vendor's own barcode-set description. What remains is
    genuinely undocumented — the breeding steps, the Echo dispense, the
    dissociation, and library prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","P2","A6","B9","C1","C2"]);
+const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B9","C1","C2"]);
