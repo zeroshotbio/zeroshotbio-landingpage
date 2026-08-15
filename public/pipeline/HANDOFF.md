@@ -39,7 +39,40 @@ keep this order.
 | `pipeline-view.js` | shared, frozen | Grid, bands, labels, edges, dots, camera, reader, index. |
 | `index.html` | shared | Markup, header stats, and the CSS variables that define both themes. |
 
-## State of the data — rewritten 2026-08-15
+## State of the data — generalised 2026-08-15 (second pass)
+
+The map was reframed from "one run" to **the platonic pipeline**, with MiniFin kept
+throughout as the worked example. General claims are sourced from the corpus at
+`/data/datasets/zebrafish/` — nine dataset entries, seven with a full nine-section
+provenance record under `<DATASET>/sources/README.md`, each ending in the same seven
+cross-dataset provenance principles. Four of those principles are quoted in the
+`pipeline-data.js` header and drive the row-3 and row-4 condition text.
+
+Nineteen changes went in. The structural ones:
+
+- **Four new nodes.** `G1` 3′ UTR handling and `G2` intron inclusion (row 3),
+  `G3` sample demultiplex — a real cull stage the map was missing, which exists only
+  for hashed designs — and `G4` label transfer, drawn as a ghost because it is the
+  road this pipeline deliberately does not take.
+- **The reference node was rewritten from one universe to four.** Same assembly,
+  four different answers to "which genes exist": BBI Ensembl 99 + 500 bp 3′
+  extension (32,031), Lawson v4.3.2 (36,250 names), plain Ensembl (32,520),
+  Zebrahub's custom Zebrabow build (32,057 + 3 transgenes).
+- **Every cull node now carries the corpus spread rather than one vendor's number** —
+  and says why those numbers are not comparable. The mitochondrial node is the
+  sharpest case: 25% / 15% / 10% / ~1% / none / one that matches zero genes.
+- **Header stats, `<title>` and OVERVIEW** were re-pitched from MiniFin to the corpus.
+
+Row-3/row-4 claims that changed on the evidence: reference release **cannot** be
+inferred from the data (the zebrafish gene set is identical across Ensembl 99–114);
+four of the seven external atlases are **label-transferred, not de novo called**; six
+of seven ship **no ontology ids** (Zebrahub is the exception); the four-tier
+`germ_layer / tissue / cell_type_broad / cell_type_sub` ladder is **inherited from
+ZSCAPE's realized obs**, not invented; and ground truth **disagrees with itself** —
+ZCL2 ships two published annotations of the same 143 clusters agreeing on cell type
+only 113 times.
+
+## State of the data — first pass, 2026-08-15
 
 `pipeline-data.js` was rewritten end to end against the artefacts on the instance.
 Every number now names its source in the file's header comment. The five open items

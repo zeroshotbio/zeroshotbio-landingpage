@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Aquarium to Labelled h5ad</title>
+<title>Aquarium to Atlas</title>
 <style>
   :root{
     /* ---- dark (default) ---- */
@@ -135,12 +135,12 @@
 <body>
 <div class="app">
   <header>
-    <div class="stat"><div class="k">Run</div><div class="v">MiniFin &middot; bench to model</div></div>
-    <div class="stat"><div class="k">Exposure</div><div class="v">24 → 48 hpf</div></div>
-    <div class="stat"><div class="k">Barcode rounds</div><div class="v">4</div></div>
-    <div class="stat"><div class="k">Reads</div><div class="v">3.66 B · 8 sublibraries</div></div>
-    <div class="stat"><div class="k">Cells called</div><div class="v">94,616</div></div>
-    <div class="stat"><div class="k">Leaves</div><div class="v">267 → 114 nodes</div></div>
+    <div class="stat"><div class="k">Map</div><div class="v">bench to labelled atlas</div></div>
+    <div class="stat"><div class="k">Corpus</div><div class="v">9 zebrafish atlases</div></div>
+    <div class="stat"><div class="k">Assay families</div><div class="v">4</div></div>
+    <div class="stat"><div class="k">Feature universes</div><div class="v">4 &middot; one assembly</div></div>
+    <div class="stat"><div class="k">Worked example</div><div class="v">MiniFin &middot; 94,616 cells</div></div>
+    <div class="stat"><div class="k">Leaves</div><div class="v">251 – 342</div></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
       <button class="ctl" id="btnPlay">Pause the flow</button>
@@ -152,7 +152,7 @@
   <div class="body">
     <aside id="aside"></aside>
     <div class="stage">
-      <svg id="svg" aria-label="Isometric map from the zebrafish aquarium to a labelled h5ad"></svg>
+      <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
       <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
       <div class="hint">Hover to read · Click a moving dot to inspect it · Drag to pan · Scroll to zoom</div>
     </div>
