@@ -39,16 +39,57 @@ const defs=installDefs(svg);
    ============================================================ */
 
 const world=el("g"); svg.appendChild(world);
-const gGrid=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gDot=el("g"),gNode=el("g"),gLabel=el("g");
+const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gDot=el("g"),gNode=el("g"),gLabel=el("g");
 /* paint order is the z order. The tracks and the dots on them sit behind the
    solid world absolutely: anything they pass under occludes them. */
-[gGrid,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
+[gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
-(()=>{const x0=-6,x1=25,y0=-5.5,y1=45;
+/* the extent of the ground plane, and of the ruler drawn around it */
+const GRID={x0:-6,x1:25,y0:-5.5,y1:45};
+
+(()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
     gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)","stroke-width":"1"}));}
   for(let y=Math.ceil(y0);y<=y1;y++){const a=P(x0,y,0),b=P(x1,y,0);
     gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)","stroke-width":"1"}));}
+})();
+
+/* ============================================================
+   COORDINATE RULER
+   Numbers along the two outer edges that meet at the top corner, so any
+   position on the map can be named. These are the SAME x and y that NODES
+   and LANES are authored in — read a number off the edge and it is the
+   value to put in the file. Ticks every unit, numbers every two.
+   Both rulers sit outside all content: the leftmost thing on the map is at
+   x = -1.85 and the topmost at y = -3.55, against edges at -6 and -5.5.
+   ============================================================ */
+(function ruler(){
+  const T=0.34, LBL=1.0;
+  const tick=(a,b,op)=>gAxis.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
+    stroke:"var(--fg)","stroke-opacity":op,"stroke-width":"1"}));
+  const num=(p,txt,rot,big)=>{
+    const g=el("g",{transform:`translate(${p[0]},${p[1]}) rotate(${rot})`});
+    const t=el("text",{x:0,y:3,"text-anchor":"middle","font-size":big?"10":"8",
+      "letter-spacing":big?"1.5":".4",fill:"var(--fg)","fill-opacity":big?".5":".38"});
+    t.textContent=txt; g.appendChild(t); gAxis.appendChild(g);
+  };
+  /* the axis lines themselves */
+  tick(P(GRID.x0,GRID.y0,0), P(GRID.x1,GRID.y0,0), ".2");
+  tick(P(GRID.x0,GRID.y0,0), P(GRID.x0,GRID.y1,0), ".2");
+  /* X runs down-right along y = y0; its numbers lie along that direction */
+  for(let x=Math.ceil(GRID.x0);x<=GRID.x1;x++){
+    const on=x%2===0;
+    tick(P(x,GRID.y0,0), P(x,GRID.y0-(on?T:T*0.5),0), on?".28":".16");
+    if(on) num(P(x,GRID.y0-LBL,0), String(x), 30);
+  }
+  /* Y runs down-left along x = x0; numbers stay upright by reading up-right */
+  for(let y=Math.ceil(GRID.y0);y<=GRID.y1;y++){
+    const on=y%2===0;
+    tick(P(GRID.x0,y,0), P(GRID.x0-(on?T:T*0.5),y,0), on?".28":".16");
+    if(on) num(P(GRID.x0-LBL,y,0), String(y), -30);
+  }
+  num(P(GRID.x1+1.5,GRID.y0-LBL,0), "X", 30, true);
+  num(P(GRID.x0-LBL,GRID.y1+1.5,0), "Y", -30, true);
 })();
 
 /* row bands — name runs along the band's bottom-right edge */
@@ -346,6 +387,12 @@ btnPlay.onclick=()=>{playing=!playing;syncPlay();}; syncPlay();
 document.getElementById("btnStep").onclick=()=>{playing=false;syncPlay();placeDots(.35);};
 document.getElementById("btnReset").onclick=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),820);};
 document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
+/* the ruler is a working tool, not part of the picture — one click hides it */
+let axes=true;
+const btnAxes=document.getElementById("btnAxes");
+const syncAxes=()=>{ gAxis.style.display=axes?"":"none";
+                     btnAxes.textContent=axes?"Hide axes":"Show axes"; };
+btnAxes.onclick=()=>{ axes=!axes; syncAxes(); }; syncAxes();
 document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
