@@ -54,13 +54,13 @@
      row 4  y=36   the labelling     ←
    x values below are seed order only — layoutRows() recomputes them.
    ============================================================ */
-const R1=0, R2=12.5, R3=25, R4=37.5;
+const R1=0, R2=13.2, R3=26.4, R4=39.6;
 
 const NODES = [
 
 /* ================= ROW 1 — THE FISH ================= */
 {id:"AQ", key:"1", group:"① The aquarium", groupMark:true, anchor:true, shape:"tankrack",
- lane:"r1-head",
+ lane:"r1-bio",
  name:"The aquarium", x:1.3, y:R1, w:2.6, d:2.0, h:1.6,
  sub:"recirculating racks · in-house colony", stat:"adult zebrafish",
  does:"Every cell in every dataset downstream was in one of these tanks. The colony is the actual capital asset of the company — an atlas is a claim about zebrafish development, and it is only as good as the fish that made it.",
@@ -423,16 +423,18 @@ const NODES = [
 
 const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
 
-/* Row 1 forks. The biology lane sits above the centreline, the chemistry lane
-   below it, and they meet exactly once — at the arraying step, which is back on
-   the centreline. Membership is explicit rather than inferred from y, because
-   two lanes share one row and inferring would interleave them. dir:-1 mirrors
-   the lane so the map snakes. */
+/* Row 1 runs as two parallel lines that meet once. The biology line — colony,
+   pair, clutch, cull — sits above the centreline; the chemistry line — the four
+   compounds, the Echo, the dosed plate — sits below it. Their spans are solved
+   so all three lanes share one gap scale, and so that the cull and the plate
+   land on the SAME x: the two merges into the arraying step are then mirror
+   images of each other. Membership is explicit rather than inferred from y,
+   because two lanes share one row and inferring would interleave them. dir:-1
+   mirrors the lane so the map snakes. */
 const LANES = [
-  {id:"r1-head",  y:R1,       x0:0.7,  x1:3.3,  dir:+1},
-  {id:"r1-bio",   y:R1-1.5,   x0:6.18, x1:10.03, dir:+1},
-  {id:"r1-chem",  y:R1+1.5,   x0:4.70, x1:11.50, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:12.90, x1:22.00, dir:+1},
+  {id:"r1-bio",   y:R1-1.5,   x0:0.70, x1:9.34,  dir:+1},
+  {id:"r1-chem",  y:R1+1.5,   x0:2.74, x1:10.14, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:11.98, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -445,7 +447,7 @@ const EDGES = [
      compounds have nothing to do with our fish, and arrive from off-map */
   {a:"CS",b:"ECHO",kind:"meta"},{a:"ECHO",b:"PL",kind:"meta"},
   /* the merge — the embryos go into wells that already hold compound */
-  {a:"A3",b:"A4",kind:"fish"},{a:"PL",b:"A4",kind:"meta"},
+  {a:"A3",b:"A4",kind:"fish",straight:true},{a:"PL",b:"A4",kind:"meta",straight:true},
   {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
@@ -480,7 +482,7 @@ const EDGES = [
 /* the four bands — what kind of work each row is.
    All four share the same x0/x1 gridlines, so the four titles line up
    along one diagonal on the bottom-right edge. */
-const BAND_W=[-2,24], BAND_H=[-2.7,3.8];
+const BAND_W=[-2,24], BAND_H=[-3.4,3.8];
 const BANDS = [R1,R2,R3,R4].map((r,i)=>({
   name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
   x0:BAND_W[0], x1:BAND_W[1], y0:r+BAND_H[0], y1:r+BAND_H[1]
@@ -720,7 +722,7 @@ const OVERVIEW = {
   sub:"four rows · eight landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
 <p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
-<p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology lane runs above the centreline — pair, clutch, cull — while a chemistry lane runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology lane comes out of our own tanks, while the chemistry lane simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
+<p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where.</p>
 <p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>

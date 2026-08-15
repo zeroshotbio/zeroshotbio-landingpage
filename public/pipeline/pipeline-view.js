@@ -44,7 +44,7 @@ const gGrid=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gDot=el("g"),gNo
    solid world absolutely: anything they pass under occludes them. */
 [gGrid,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
-(()=>{const x0=-6,x1=25,y0=-4.5,y1=43;
+(()=>{const x0=-6,x1=25,y0=-5.5,y1=45;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
     gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)","stroke-width":"1"}));}
   for(let y=Math.ceil(y0);y<=y1;y++){const a=P(x0,y,0),b=P(x1,y,0);
