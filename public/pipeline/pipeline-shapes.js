@@ -437,7 +437,7 @@ function drawClutch(g,n){
   for(let i=0;i<52;i++){
     const a=r()*6.283, rad=Math.sqrt(r())*R*0.8;
     const ex=n.x+Math.cos(a)*rad, ey=n.y+Math.sin(a)*rad;
-    eggs.push({ex,ey,z:th*(0.06+r()*0.1),size:2.6+r()*0.7,
+    eggs.push({ex,ey,z:th*(0.06+r()*0.1),size:1.3+r()*0.35,
                dead:r()<0.11, ang:r()*6.283});
   }
   eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
@@ -496,7 +496,7 @@ function drawCullDish(g,n){
   for(let i=0;i<40;i++){
     const a=r()*6.283, rad=Math.sqrt(r())*R*0.78;
     eggs.push({ex:n.x+Math.cos(a)*rad, ey:n.y+Math.sin(a)*rad,
-               z:th*(0.06+r()*0.1), size:2.6+r()*0.7, dead:i<6, ang:r()*6.283});
+               z:th*(0.06+r()*0.1), size:1.3+r()*0.35, dead:i<6, ang:r()*6.283});
   }
   eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
       .sort((a,b)=>a.p[1]-b.p[1])
@@ -527,7 +527,7 @@ function drawCullDish(g,n){
   tilt.appendChild(el("path",{d:"M -1 -2 L 1 -2 L 2.6 -15 L -2.6 -15 Z", ...skin}));
   tilt.appendChild(el("path",{d:"M -2.6 -15 L 2.6 -15 L 2 -52 L -2 -52 Z", ...skin}));
   tilt.appendChild(el("path",{d:"M -4.2 -52 L 4.2 -52 L 3.4 -72 L -3.4 -72 Z", ...skin}));
-  const caught=el("circle",{cx:"0",cy:"-26",r:"2.8",fill:"var(--fg)",
+  const caught=el("circle",{cx:"0",cy:"-26",r:"1.4",fill:"var(--fg)",
     "fill-opacity":"0"});
   tilt.appendChild(caught);
   pip.appendChild(tilt);
@@ -638,7 +638,7 @@ function drawArrayPlate(g,n){
   pip.appendChild(tilt); g.appendChild(pip);
 
   /* the sweep */
-  const STEP=0.1, HOLD=1.4, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const STEP=0.5, HOLD=2.5, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   let k=0, t=0, resting=0;
   const run=(dt)=>{
     if(resting>0){
