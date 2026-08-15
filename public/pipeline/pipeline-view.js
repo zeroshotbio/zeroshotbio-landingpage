@@ -192,7 +192,9 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   g.style.cursor="pointer";
   DRAW[n.shape](g,n);
   g.addEventListener("mouseenter",()=>show(n.id,false));
+  g.addEventListener("mouseleave",unhover);
   g.addEventListener("focus",()=>show(n.id,false));
+  g.addEventListener("blur",unhover);
   g.addEventListener("click",ev=>{ev.stopPropagation();show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
@@ -357,12 +359,17 @@ function inspect(r){
     `<h4>Note</h4><p>${s.note||"Real record, read off the stage output on the instance."}</p>`;
 }
 function show(id,pin){
-  if(pinned&&!pin&&pinned!==id) return;
+  if(pinned&&!pin&&pinned!==id) return;      // a pinned selection outranks a hover
   if(pin) pinned = pinned===id ? null : id;
   current = pinned || id;
   current?renderNode(current):renderOverview(); paintIndex();
 }
-svg.addEventListener("mouseleave",()=>{if(!pinned){current=null;renderOverview();paintIndex();}});
+/* Hovering is a preview and nothing more: the moment the pointer leaves the
+   thing it was over, the map goes back to nothing selected. Only a click pins,
+   and only a click on empty space or on the pinned item releases it. */
+function unhover(){ if(pinned) return; current=null; renderOverview(); paintIndex(); }
+function release(){ pinned=null; current=null; renderOverview(); paintIndex(); }
+svg.addEventListener("mouseleave",unhover);
 
 const aside=document.getElementById("aside");
 (function buildIndex(){
@@ -373,8 +380,10 @@ const aside=document.getElementById("aside");
           `<span class="nm">${esc(n.name)}</span><span class="n">${n.hatch?"cull":""}</span></button>`;
   });
   aside.innerHTML=html;
+  aside.addEventListener("mouseleave",unhover);
   aside.querySelectorAll(".row").forEach(b=>{
     b.addEventListener("mouseenter",()=>show(b.dataset.id,false));
+    b.addEventListener("mouseleave",unhover);
     b.addEventListener("click",()=>{
       show(b.dataset.id,true); focusNode(b.dataset.id);
       if(window.innerWidth<=900) aside.classList.remove("open");
@@ -414,5 +423,5 @@ document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
 };
-svg.addEventListener("click",()=>{if(pinned){pinned=null;current=null;renderOverview();paintIndex();}});
+svg.addEventListener("click",release);
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
