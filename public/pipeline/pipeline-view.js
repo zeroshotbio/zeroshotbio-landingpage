@@ -72,12 +72,17 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
     fill:"var(--fg)","fill-opacity":isA?".05":".03",stroke:"var(--fg)",
     "stroke-opacity":isA?".4":".28","stroke-width":"1","stroke-dasharray":isA?"6 4":"2 3"}));
-  const [px,py]=P(n.x, n.y-n.d/2, topOf(n));
+  /* labelBelow moves a landmark's name off its top-back edge and onto its
+     front edge, running down-left instead of up-right — for a landmark whose
+     usual placement collides with whatever is above it */
+  const lb = !!n.labelBelow;
+  const [px,py]= lb ? P(n.x, n.y+n.d/2, 0) : P(n.x, n.y-n.d/2, topOf(n));
   const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
-  const t=el("text",{x:isA?14:11,y:-3,"text-anchor":"start","font-size":isA?"20":"13",
+  const lx = (isA?14:11) * (lb?-1:1), la = lb?"end":"start";
+  const t=el("text",{x:lx,y:-3,"text-anchor":la,"font-size":isA?"20":"13",
     "letter-spacing":isA?"2.5":"1.6",fill:isA?"var(--fg)":"var(--fg2)"});
   t.textContent=n.name.toUpperCase(); g.appendChild(t);
-  const t2=el("text",{x:isA?14:11,y:isA?12:10,"text-anchor":"start",
+  const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2);
   gLabel.appendChild(g);
@@ -139,10 +144,23 @@ CARRIES.forEach((c,i)=>{
 });
 
 /* nodes */
+
+/* The six-point outline of a node's box, painted in the page background before
+   the shape itself. Many shapes are deliberately translucent — glass tanks,
+   water, wells, sparse voxels — and a track running behind one of those showed
+   straight through it. This makes every object opaque to what is behind it, so
+   a dot passing under any of them disappears completely. */
+const maskOf = n => {
+  const hw=n.w/2, hd=n.d/2, h=topOf(n);
+  return pts([P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
+              P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)]);
+};
+
 const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
+  g.appendChild(el("polygon",{points:maskOf(n),fill:"var(--bg)"}));
   DRAW[n.shape](g,n);
   const [lx,ly]=P(n.x,n.y,topOf(n));
   const pale = n.shape==="monolith"||n.shape==="strata"||n.shape==="machine";
@@ -312,7 +330,14 @@ const aside=document.getElementById("aside");
 })();
 function paintIndex(){
   aside.querySelectorAll(".row").forEach(b=>b.classList.toggle("on",b.dataset.id===current));
-  Object.entries(nodeEls).forEach(([id,g])=>{g.style.opacity=(current&&current!==id)?.4:1;});
+  /* Nothing ever dims. Every object stays at full opacity at all times, which
+     is what keeps the tracks hidden behind them; the selected one is picked out
+     by a halo instead of by everything else fading. */
+  Object.entries(nodeEls).forEach(([id,g])=>{
+    g.style.filter = (current===id)
+      ? "drop-shadow(0 0 4px var(--signal)) drop-shadow(0 0 11px var(--signal)) brightness(1.08)"
+      : "";
+  });
 }
 renderOverview();
 

@@ -100,7 +100,7 @@ const NODES = [
 
 {id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
  lane:"r1-chem",
- name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36,
+ name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36, labelBelow:true,
  sub:"one well = one condition = one future .obs row", stat:"48 wells · 4 × 12",
  does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Drawn dosed and empty, which is what it is at this moment: four vertical bands of twelve replicate wells, compound in every one of them and not a fish in the building yet. In the worked example those four conditions are — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
