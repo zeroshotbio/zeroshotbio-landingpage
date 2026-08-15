@@ -1124,137 +1124,6 @@ DRAW.whiteboard = drawWhiteboard;
 
 
 
-/* ------------------------------------------------------------------
-   DISSOCIATE
-   A 48 hpf larva coming apart into a suspension.
-
-   The animal is drawn as a few hundred dots arranged along a spine with a
-   yolk mass, a dense pigmented eye and a tail that tapers to nothing —
-   the shape a zebrafish actually is at this stage. Enzymatic digestion
-   loosens them and the whole thing disperses into an even cloud, then
-   reassembles and does it again.
-
-   Three things are deliberate. The eye lets go last, because pigmented
-   retina is the toughest thing in the animal. A handful of clumps never
-   disperse at all. And the particles alternate form between cycles —
-   whole cells with a nucleus inside, then bare nuclei — because which of
-   those two this step produced is not written down, and the difference
-   propagates through the entire rest of the map.
-
-   This node follows the incubator directly: there is no collection event.
-   The embryos never leave the well, so euthanasia lives in this node's
-   `does` text rather than in a box of its own. Fixation order is
-   confirmed against Parse's own protocol — Evercode fixation begins with
-   a single-cell suspension — so the digestion comes first and ③ remains
-   the fixation landmark.
-
-   Requires ellipseAt() from the A2 clutch block.
-   ------------------------------------------------------------------ */
-function drawDissociate(g,n){
-  const r=rng(211);
-  const L=n.w*0.66, x0=n.x-L*0.5, y0=n.y-n.d*0.04;
-  const spine=t=>[x0+t*L, y0+0.055*Math.sin(t*Math.PI*1.5)];
-  const halfW=t=> t<0.22 ? 0.085 : 0.088*Math.pow(1-t,0.85)+0.008;
-
-  /* the vessel it is happening in */
-  const vessel=ellipseAt(n.x,n.y,0,Math.min(n.w,n.d*1.5)*0.46);
-  g.appendChild(el("ellipse",{cx:vessel.x,cy:vessel.y,rx:vessel.rx,ry:vessel.ry,
-    fill:"var(--fg)","fill-opacity":".03",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".28"}));
-
-  const dots=[];
-  const push=(gx,gy,rad0,delay,opac,blue,stuck)=>{
-    const rad=rad0*0.5;   // half size: they should read as separate little cells
-    const home=P(gx,gy,0.02);
-    const a=r()*6.283, rad2=Math.sqrt(r());
-    const away=P(n.x+Math.cos(a)*rad2*n.w*0.44, n.y+Math.sin(a)*rad2*n.d*0.42, 0.02);
-    const node=el("g",{});
-    const cell=el("g",{});
-    cell.appendChild(el("circle",{cx:"0",cy:"0",r:rad*1.9,fill:"var(--fg)","fill-opacity":".2"}));
-    cell.appendChild(el("circle",{cx:"0",cy:"0",r:rad*0.85,
-      fill:blue?"var(--water, var(--signal))":"var(--fg)","fill-opacity":opac}));
-    const nuc=el("circle",{cx:"0",cy:"0",r:rad,
-      fill:blue?"var(--water, var(--signal))":"var(--fg)","fill-opacity":opac,opacity:"0"});
-    node.appendChild(cell); node.appendChild(nuc);
-    g.appendChild(node);
-    dots.push({node,cell,nuc,home,away,delay,stuck});
-  };
-
-  /* body */
-  for(let i=0;i<430;i++){
-    const t=Math.pow(r(),0.8), sp=spine(t), u=(r()*2-1);
-    push(sp[0], sp[1]+u*halfW(t), 1.05+r()*0.5, t*0.5+r()*0.18,
-         0.5+r()*0.45, r()<0.16, false);
-  }
-  /* yolk */
-  for(let i=0;i<105;i++){
-    const a=r()*6.283, rad2=Math.sqrt(r()), sp=spine(0.2);
-    push(sp[0]+Math.cos(a)*rad2*0.075, sp[1]+0.055+Math.sin(a)*rad2*0.05,
-         1.2+r()*0.5, 0.16+r()*0.2, 0.55+r()*0.35, r()<0.1, false);
-  }
-  /* eye — dense, and the last thing to let go */
-  const eye=spine(0.07);
-  for(let i=0;i<62;i++){
-    const a=r()*6.283, rad2=Math.sqrt(r());
-    push(eye[0]+Math.cos(a)*rad2*0.045, eye[1]-0.035+Math.sin(a)*rad2*0.04,
-         1.1+r()*0.35, 0.62+r()*0.14, 0.75+r()*0.25, false, false);
-  }
-  /* clumps that never come apart */
-  for(let i=0;i<4;i++){
-    const t=0.25+r()*0.5, sp=spine(t);
-    for(let k=0;k<7;k++)
-      push(sp[0]+(r()-0.5)*0.05, sp[1]+(r()-0.5)*0.05, 1.3+r()*0.4,
-           0, 0.5+r()*0.3, false, true);
-  }
-
-  /* pupil */
-  const ep=P(eye[0],eye[1]-0.035,0.03);
-  const pupil=el("circle",{cx:ep[0],cy:ep[1],r:"4.4",fill:"var(--bg)",
-    "fill-opacity":".85",stroke:"var(--fg)","stroke-width":"1.1","stroke-opacity":".6"});
-  g.appendChild(pupil);
-
-  const HOLD=1.3, GO=1.5, CLOUD=1.4, BACK=1.7;
-  const CYCLE=HOLD+GO+CLOUD+BACK;
-  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  let t=0, cyc=0, lastForm=null;
-  const run=(dt)=>{
-    const was=Math.floor(t/CYCLE);
-    t+=dt;
-    if(Math.floor(t/CYCLE)!==was) cyc++;
-    const p=t%CYCLE;
-    const asNuclei = cyc%2===1;
-
-    /* the cell/nucleus swap changes once a cycle, not once a frame — writing
-       it per dot per frame was 2 of every 3 DOM writes this node makes, and
-       there are ~640 of them */
-    if(asNuclei!==lastForm){
-      lastForm=asNuclei;
-      dots.forEach(d=>{
-        d.cell.setAttribute("opacity", asNuclei?"0":"1");
-        d.nuc .setAttribute("opacity", asNuclei?"1":"0");
-      });
-    }
-    dots.forEach(d=>{
-      let f;
-      if(p<HOLD) f=0;
-      else if(p<HOLD+GO)      f=ease(Math.max(0,Math.min(1,(p-HOLD-d.delay*0.5)/(GO*0.75))));
-      else if(p<HOLD+GO+CLOUD) f=1;
-      else f=1-ease(Math.max(0,Math.min(1,(p-HOLD-GO-CLOUD-d.delay*0.3)/(BACK*0.7))));
-      if(d.stuck) f*=0.12;
-      const x=d.home[0]+(d.away[0]-d.home[0])*f,
-            y=d.home[1]+(d.away[1]-d.home[1])*f;
-      d.node.setAttribute("transform",`translate(${x},${y})`);
-    });
-    const intact=p<HOLD?1:(p<HOLD+GO? Math.max(0,1-(p-HOLD)/(GO*0.5)) :
-                 (p<HOLD+GO+CLOUD?0:Math.min(1,(p-HOLD-GO-CLOUD)/(BACK*0.6))));
-    pupil.setAttribute("fill-opacity",(0.85*intact).toFixed(2));
-    pupil.setAttribute("stroke-opacity",(0.6*intact).toFixed(2));
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
-}
-DRAW.dissociate = drawDissociate;
-
 
 /* ------------------------------------------------------------------
    THE LIBRARY
@@ -1395,30 +1264,65 @@ DRAW.library = drawLibrary;
    INCUBATE TO 48 HPF
    One dosed well, twenty-four hours in, with nobody watching.
 
-   Six larvae, each rebuilt every frame from a spine — a travelling sine
-   whose amplitude grows toward the tail, which is how a fish actually
-   swims. Each has its own position, heading, stroke rate and phase, so
-   they never beat in unison. Body coordinates (t along the spine, u
-   across it) place the eye and the yolk, so those follow the undulation
-   for free.
+   APPLY BEFORE DISSOCIATE. That node uses larvaSix(), larvaSwim(),
+   larvaPut() and larvaBeat() from here and does not redefine them, and
+   it seeds larvaSix() with the same 401, so the two wells are literally
+   identical at rest. Their nodes must also carry the same w and d or the
+   match breaks.
 
-   WHAT THIS DELIBERATELY DOES NOT CLAIM. The molecules are not attached
-   to the animals. They drift on their own paths, evenly spread, and the
-   larvae pass across them. Internal exposure was never measured, and the
-   arraying step makes the same point by leaving its embryos untinted. If
-   a later pass sticks molecules to the fish, or brightens the ones
-   overlapping a body, the map starts asserting absorption the experiment
-   did not record. Keep the two nodes consistent.
+   larvaSix() lays out six larvae from one seed, each on its own slow
+   orbit of the well; larvaSwim() moves a fish along that orbit and turns
+   it to face where it is going; larvaPut() maps body coordinates — t
+   along the spine, u across it — to grid coordinates with a travelling
+   sine whose amplitude grows toward the tail, which is how a fish
+   actually swims. Orbits differ in radius, direction and speed, so the
+   six drift apart and past each other instead of holding formation; the
+   ow term in larvaSix sets that pace.
 
-   The condition text carries what the picture cannot: no imaging or
-   phenotype scoring in this window, and no recorded incubation
-   temperature.
+   WHAT THIS DELIBERATELY DOES NOT CLAIM. The molecules drift on their own
+   paths and are not attached to the animals. Internal exposure was never
+   measured, and the arraying step makes the same point by leaving its
+   embryos untinted. Do not brighten the molecules that happen to overlap
+   a body — that would assert absorption the experiment did not record,
+   and the two nodes have to stay consistent.
 
    Requires moleculeGlyph() from the library block, PLATE_BANDS from the
    plate set, and ellipseAt() from the clutch block.
    ------------------------------------------------------------------ */
+function larvaSix(n, seed){
+  const r=rng(seed), wellR=Math.min(n.w*0.5, n.d*0.62), out=[];
+  for(let i=0;i<6;i++){
+    const L=n.w*0.3*(0.85+r()*0.3);
+    out.push({L,
+      orb: wellR*(0.3+0.48*((i+r()*0.8)/6)),      // spread across the well
+      oph: (i/6)*6.283+r()*0.6,
+      ow : (0.055+r()*0.06)*(r()<0.5?-1:1),        // slow, either way round
+      bob: 0.05+r()*0.05,
+      rate:1.8+r()*1.4, ph:r()*6.283,
+      w0:L*0.2, amp:L*0.13, cx:n.x, cy:n.y, head:0});
+  }
+  return out;
+}
+/* one slow lap of the well; the body is turned to face where it is going */
+function larvaSwim(f, n, T){
+  const th=f.oph+T*f.ow;
+  const rad=f.orb*(1+f.bob*Math.sin(T*0.23+f.oph));
+  f.cx=n.x+Math.cos(th)*rad;
+  f.cy=n.y+Math.sin(th)*rad*0.72;
+  f.head=th+Math.sign(f.ow)*Math.PI/2-Math.PI;
+}
+/* body coordinates -> grid coordinates. t runs head to tail, u across. */
+function larvaPut(f,t,u,beat){
+  const ca=Math.cos(f.head), sa=Math.sin(f.head);
+  const bend=(0.05+0.95*Math.pow(t,1.7))*f.amp*Math.sin(t*7-beat);
+  const hw = t<0.2 ? f.w0*0.85 : Math.max(f.L*0.012, f.w0*Math.pow(1-t,0.8));
+  const lx=(t-0.5)*f.L, ly=bend+u*hw;
+  return [f.cx+lx*ca-ly*sa, f.cy+(lx*sa+ly*ca)*0.72];
+}
+const larvaBeat=(f,T)=>T*f.rate*2.4+f.ph;
+
 function drawIncubate(g,n){
-  const r=rng(401);
+  const r=rng(9001);
   const band=PLATE_BANDS[(n.band!==undefined?n.band:1)];
   const wellR=Math.min(n.w*0.5, n.d*0.62);
 
@@ -1427,33 +1331,23 @@ function drawIncubate(g,n){
     fill:"var(--water, var(--signal))","fill-opacity":".08",
     stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".35"}));
 
-  /* six larvae, each with its own place, heading and stroke */
-  const fish=[];
-  for(let i=0;i<6;i++){
-    const a=(i/6)*6.283+r()*0.7, rad=Math.sqrt(r())*wellR*0.56;
-    const L=n.w*0.3*(0.85+r()*0.3);
+  const fish=larvaSix(n,401).map(f=>{
     const body=el("polygon",{fill:"var(--fg)","fill-opacity":".4",
       stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".7"});
-    const yolk=el("ellipse",{rx:(L*0.09*S*C30*1.4).toFixed(1),
-      ry:(L*0.09*S*0.5*1.4).toFixed(1),fill:"var(--fg)","fill-opacity":".28"});
-    const eye=el("circle",{r:(L*0.055*S*0.9).toFixed(1),fill:"var(--fg)","fill-opacity":".95"});
+    const yolk=el("ellipse",{rx:(f.L*0.09*S*C30*1.4).toFixed(1),
+      ry:(f.L*0.09*S*0.5*1.4).toFixed(1),fill:"var(--fg)","fill-opacity":".28"});
+    const eye=el("circle",{r:(f.L*0.055*S*0.9).toFixed(1),fill:"var(--fg)","fill-opacity":".95"});
     g.appendChild(body); g.appendChild(yolk); g.appendChild(eye);
-    fish.push({body,yolk,eye,L,
-      cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
-      head:r()*6.283, rate:1.8+r()*1.4, ph:r()*6.283,
-      w0:L*0.2, amp:L*0.13});
-  }
+    return {...f, body, yolk, eye};
+  });
 
-  /* a handful of molecules, spread evenly, drifting on their own */
-  const mols=[];
-  const M=9;
+  const M=9, mols=[];
   for(let i=0;i<M;i++){
     const a=(i/M)*6.283+r()*0.45, rad=(0.32+0.55*((i%3)/2))*wellR;
     const node=el("g",{opacity:".78"});
     node.appendChild(moleculeGlyph(409+i*23, band.fill));
     g.appendChild(node);
-    mols.push({node,
-      cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
+    mols.push({node, cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
       ph:r()*6.283, rate:0.32+r()*0.3, span:0.05+r()*0.05,
       sc:0.34+r()*0.1, spin:(r()-0.5)*26});
   }
@@ -1462,20 +1356,20 @@ function drawIncubate(g,n){
   const run=(dt,now)=>{
     const T=now/1000;
     fish.forEach(f=>{
-      const ca=Math.cos(f.head), sa=Math.sin(f.head);
-      const put=(t,u)=>{
-        const bend=(0.05+0.95*Math.pow(t,1.7))*f.amp*Math.sin(t*7-T*f.rate*2.4-f.ph);
-        const hw = t<0.2 ? f.w0*0.85 : Math.max(f.L*0.012, f.w0*Math.pow(1-t,0.8));
-        const lx=(t-0.5)*f.L, ly=bend+u*hw;
-        return P(f.cx+lx*ca-ly*sa, f.cy+(lx*sa+ly*ca)*0.72, 0.02);
-      };
+      larvaSwim(f,n,T);
+      const beat=larvaBeat(f,T);
       const up=[], dn=[];
-      for(let i=0;i<=N;i++){ const t=i/N; up.push(put(t,1)); dn.push(put(t,-1)); }
+      for(let i=0;i<=N;i++){
+        const t=i/N;
+        const a=larvaPut(f,t, 1,beat), b=larvaPut(f,t,-1,beat);
+        up.push(P(a[0],a[1],0.02)); dn.push(P(b[0],b[1],0.02));
+      }
       f.body.setAttribute("points",pts([...up,...dn.reverse()]));
-      const yp=put(0.22,0.45); f.yolk.setAttribute("cx",yp[0]); f.yolk.setAttribute("cy",yp[1]);
-      const ep=put(0.09,-0.4); f.eye.setAttribute("cx",ep[0]);  f.eye.setAttribute("cy",ep[1]);
+      const y=larvaPut(f,0.22,0.45,beat), yp=P(y[0],y[1],0.02);
+      f.yolk.setAttribute("cx",yp[0]); f.yolk.setAttribute("cy",yp[1]);
+      const e2=larvaPut(f,0.09,-0.4,beat), ep=P(e2[0],e2[1],0.02);
+      f.eye.setAttribute("cx",ep[0]); f.eye.setAttribute("cy",ep[1]);
     });
-
     mols.forEach(m=>{
       const p=P(m.cx+Math.sin(T*m.rate+m.ph)*m.span,
                 m.cy+Math.cos(T*m.rate*0.83+m.ph)*m.span*0.7, 0.02);
@@ -1487,3 +1381,142 @@ function drawIncubate(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
 }
 DRAW.incubate = drawIncubate;
+
+
+/* ------------------------------------------------------------------
+   DISSOCIATE
+   The same well, one step later, coming apart.
+
+   REQUIRES the incubate block above for larvaSix(), larvaSwim(),
+   larvaPut() and larvaBeat(). Same seed, same w and d, so at rest this
+   node is the incubation well minus the compound — identical bodies in
+   identical poses. Digestion crossfades the bodies out and a cloud of
+   dots in; the dots sit in body coordinates, so they start exactly inside
+   the silhouette they came from.
+
+   Dispersal is radial. Each dot travels outward from the centre of the
+   well along its own bearing, and its final radius is drawn
+   area-uniformly with a bias toward where it started — so a dot near the
+   middle stays near the middle, one near the edge ends up further out,
+   and the cloud covers the dish evenly instead of crossing over itself.
+
+   The larvae swim their orbits until digestion starts; at that instant
+   both the tail beat and the orbit freeze. Nothing moves after that
+   except a small Brownian jitter in the cloud. If the tail wave or the
+   drift reappears in the dispersed cells, the freeze has been lost.
+
+   TWO THINGS TO PRESERVE. The eye dots let go last — pigmented retina is
+   the toughest structure in the larva, and that asymmetry is the
+   condition: cell types survive digestion unequally, so atlas composition
+   is partly a report on how tough each tissue is. And a few clumps never
+   disperse; they move about a sixth of the way and stop.
+
+   Ordering, confirmed against Parse's protocol: Evercode fixation begins
+   with a single cell suspension, so dissociation is the enzymatic
+   digestion and it comes FIRST. Fixation is the landmark downstream.
+   ------------------------------------------------------------------ */
+function drawDissociate(g,n){
+  const r=rng(211);
+  const wellR=Math.min(n.w*0.5, n.d*0.62);
+
+  const vessel=ellipseAt(n.x,n.y,0,wellR);
+  g.appendChild(el("ellipse",{cx:vessel.x,cy:vessel.y,rx:vessel.rx,ry:vessel.ry,
+    fill:"var(--fg)","fill-opacity":".03",
+    stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".3"}));
+
+  const fish=larvaSix(n,401).map(f=>{
+    const body=el("polygon",{fill:"var(--fg)","fill-opacity":".4",
+      stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".7"});
+    const yolk=el("ellipse",{rx:(f.L*0.09*S*C30*1.4).toFixed(1),
+      ry:(f.L*0.09*S*0.5*1.4).toFixed(1),fill:"var(--fg)","fill-opacity":".28"});
+    const eye=el("circle",{r:(f.L*0.055*S*0.9).toFixed(1),fill:"var(--fg)","fill-opacity":".95"});
+    g.appendChild(body); g.appendChild(yolk); g.appendChild(eye);
+    const o={...f, body, yolk, eye, frozen:0};
+    larvaSwim(o,n,0);
+    return o;
+  });
+
+  const dots=[];
+  fish.forEach(f=>{
+    const add=(t,u,size,delay,op)=>{
+      const home=larvaPut(f,t,u,0);
+      const dx=home[0]-n.x, dy=(home[1]-n.y)/0.72;
+      const ang=Math.atan2(dy,dx), hr=Math.min(1,Math.hypot(dx,dy)/wellR);
+      const q=Math.min(1, hr*0.4 + 0.6*r());
+      const R2=wellR*1.04*Math.sqrt(q);
+      const a2=ang+(r()-0.5)*1.05;
+      const node=el("circle",{r:size,fill:"var(--fg)","fill-opacity":op,opacity:"0"});
+      g.appendChild(node);
+      dots.push({node,f,t,u,delay,stuck:false,
+        ax:n.x+Math.cos(a2)*R2, ay:n.y+Math.sin(a2)*R2*0.72,
+        jr:0.006+r()*0.01, jp:r()*6.283, js:0.5+r()*1.1});
+    };
+    for(let k=0;k<76;k++) add(Math.pow(r(),0.8), r()*2-1, 0.27+r()*0.16, r()*0.42, 0.42+r()*0.5);
+    for(let k=0;k<18;k++) add(0.18+r()*0.1, 0.2+r()*0.7, 0.3+r()*0.15, 0.1+r()*0.18, 0.45+r()*0.4);
+    for(let k=0;k<16;k++) add(0.07+r()*0.05, -0.55+r()*0.35, 0.3+r()*0.13, 0.6+r()*0.14, 0.75+r()*0.25);
+    for(let k=0;k<6;k++){ add(0.3+r()*0.45, r()*2-1, 0.32+r()*0.13, 0, 0.45+r()*0.35);
+                          dots[dots.length-1].stuck=true; }
+  });
+
+  const HOLD=2.2, GO=2.0, CLOUD=1.7, BACK=2.2;
+  const CYCLE=HOLD+GO+CLOUD+BACK;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  let t=0, live=true;
+
+  const run=(dt,now)=>{
+    t=(t+dt)%CYCLE;
+    const T=now/1000, intact=t<HOLD;
+
+    if(intact!==live){
+      live=intact;
+      if(!intact) fish.forEach(f=>f.frozen=larvaBeat(f,T));
+    }
+    /* they swim until digestion starts, then everything about the pose holds */
+    fish.forEach(f=>{
+      if(intact) larvaSwim(f,n,T);
+      f.beat = intact ? larvaBeat(f,T) : f.frozen;
+    });
+
+    const solid = t<HOLD ? 1
+      : t<HOLD+GO ? Math.max(0,1-(t-HOLD)/(GO*0.3))
+      : t<HOLD+GO+CLOUD ? 0
+      : Math.min(1,Math.max(0,(t-HOLD-GO-CLOUD-BACK*0.6)/(BACK*0.4)));
+
+    const N=30;
+    fish.forEach(f=>{
+      f.body.setAttribute("opacity",solid.toFixed(2));
+      f.yolk.setAttribute("opacity",solid.toFixed(2));
+      f.eye.setAttribute("opacity",solid.toFixed(2));
+      if(solid<=0.01) return;
+      const up=[], dn=[];
+      for(let i=0;i<=N;i++){
+        const tt=i/N;
+        const a=larvaPut(f,tt, 1,f.beat), b=larvaPut(f,tt,-1,f.beat);
+        up.push(P(a[0],a[1],0.02)); dn.push(P(b[0],b[1],0.02));
+      }
+      f.body.setAttribute("points",pts([...up,...dn.reverse()]));
+      const y=larvaPut(f,0.22,0.45,f.beat), yp=P(y[0],y[1],0.02);
+      f.yolk.setAttribute("cx",yp[0]); f.yolk.setAttribute("cy",yp[1]);
+      const e2=larvaPut(f,0.09,-0.4,f.beat), ep=P(e2[0],e2[1],0.02);
+      f.eye.setAttribute("cx",ep[0]); f.eye.setAttribute("cy",ep[1]);
+    });
+
+    dots.forEach(d=>{
+      let e;
+      if(t<HOLD) e=0;
+      else if(t<HOLD+GO)       e=ease(Math.max(0,Math.min(1,(t-HOLD-d.delay*0.5)/(GO*0.68))));
+      else if(t<HOLD+GO+CLOUD) e=1;
+      else e=1-ease(Math.max(0,Math.min(1,(t-HOLD-GO-CLOUD-d.delay*0.25)/(BACK*0.62))));
+      if(d.stuck) e*=0.16;
+      const home=larvaPut(d.f,d.t,d.u,d.f.beat);
+      const jx=e*d.jr*Math.sin(T*d.js+d.jp), jy=e*d.jr*Math.cos(T*d.js*0.9+d.jp);
+      const p=P(home[0]+(d.ax-home[0])*e+jx, home[1]+(d.ay-home[1])*e+jy, 0.02);
+      d.node.setAttribute("cx",p[0].toFixed(2));
+      d.node.setAttribute("cy",p[1].toFixed(2));
+      d.node.setAttribute("opacity",(1-solid).toFixed(2));
+    });
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.dissociate = drawDissociate;
