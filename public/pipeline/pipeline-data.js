@@ -429,10 +429,10 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    two lanes share one row and inferring would interleave them. dir:-1 mirrors
    the lane so the map snakes. */
 const LANES = [
-  {id:"r1-head",  y:R1,       x0:0.7,  x1:5.2,  dir:+1},
-  {id:"r1-bio",   y:R1-1.5,   x0:6.4,  x1:13.6, dir:+1},
-  {id:"r1-chem",  y:R1+1.5,   x0:6.4,  x1:13.6, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:15.0, x1:22.0, dir:+1},
+  {id:"r1-head",  y:R1,       x0:0.7,  x1:3.3,  dir:+1},
+  {id:"r1-bio",   y:R1-1.5,   x0:6.18, x1:10.03, dir:+1},
+  {id:"r1-chem",  y:R1+1.5,   x0:4.70, x1:11.50, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:12.90, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -440,7 +440,7 @@ const LANES = [
 
 const EDGES = [
   /* the biology lane */
-  {a:"AQ",b:"A1",kind:"fish"},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
+  {a:"AQ",b:"A1",kind:"fish",straight:true},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
   /* the chemistry lane — no incoming edge from the colony on purpose: the
      compounds have nothing to do with our fish, and arrive from off-map */
   {a:"CS",b:"ECHO",kind:"meta"},{a:"ECHO",b:"PL",kind:"meta"},
@@ -488,10 +488,10 @@ const BANDS = [R1,R2,R3,R4].map((r,i)=>({
 
 /* one carry: the map runs out at the end, into everything that comes after */
 const CARRIES = [
-  /* the compound library is not ours and is not on this map */
-  {x0:0.5,y0:R1+7.5,x1:6.2,y1:R1+2.0, fade:"in", kind:"meta",
-   from:"the SPARC compound library", to:"compound selection"},
-  /* and the map runs out at the end, into everything that comes after */
+  /* one carry only: the map runs out at the end, into everything after it.
+     The chemistry lane simply begins — it has no incoming line, because the
+     compound library is not part of this pipeline and drawing a thread back
+     to it implied a handover that does not happen. */
   {x0:-0.6,y0:R4,x1:-4.6,y1:R4, fade:"out", kind:"call",
    from:"PRISM handoff", to:"everything after this map"},
 ];
@@ -720,7 +720,7 @@ const OVERVIEW = {
   sub:"four rows · eight landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
 <p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
-<p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology lane runs above the centreline — pair, clutch, cull — while a chemistry lane runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology lane comes out of our own tanks, the chemistry lane fades in from off-map, because the compounds are not ours. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
+<p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology lane runs above the centreline — pair, clutch, cull — while a chemistry lane runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology lane comes out of our own tanks, while the chemistry lane simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where.</p>
 <p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>

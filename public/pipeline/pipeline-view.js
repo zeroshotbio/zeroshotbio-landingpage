@@ -39,8 +39,10 @@ const defs=installDefs(svg);
    ============================================================ */
 
 const world=el("g"); svg.appendChild(world);
-const gGrid=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gNode=el("g"),gLabel=el("g"),gDot=el("g");
-[gGrid,gBand,gPlinth,gEdge,gNode,gLabel,gDot].forEach(g=>world.appendChild(g));
+const gGrid=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gDot=el("g"),gNode=el("g"),gLabel=el("g");
+/* paint order is the z order. The tracks and the dots on them sit behind the
+   solid world absolutely: anything they pass under occludes them. */
+[gGrid,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 (()=>{const x0=-6,x1=25,y0=-4.5,y1=43;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -105,7 +107,11 @@ function makeGeom(pp){
 EDGES.forEach(e=>{
   const A=byId[e.a],B=byId[e.b];
   const mx=(A.x+B.x)/2;
-  const raw = Math.abs(A.y-B.y)<0.05 ? [[A.x,A.y],[B.x,B.y]] : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
+  /* straight:true forces a direct run even across lanes — for a fork or a
+     merge, where the elbow reads as a detour rather than as routing */
+  const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
+    ? [[A.x,A.y],[B.x,B.y]]
+    : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
   const pp=raw.map(p=>P(p[0],p[1],0.02));
   const faint = e.kind==="drop"||e.kind==="score";
   const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
