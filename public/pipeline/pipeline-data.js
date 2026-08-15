@@ -54,7 +54,7 @@
      row 4  y=36   the labelling     ←
    x values below are seed order only — layoutRows() recomputes them.
    ============================================================ */
-const R1=0, R2=13.2, R3=26.4, R4=39.6;
+const R1=0, R2=13.6, R3=27.2, R4=40.8;
 
 const NODES = [
 
@@ -100,7 +100,7 @@ const NODES = [
 
 {id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
  lane:"r1-chem",
- name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36, labelBelow:true,
+ name:"Treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36, labelBelow:true,
  sub:"one well = one condition = one future .obs row", stat:"48 wells · 4 × 12",
  does:"The experiment itself, and the only place in the pipeline where biology is manipulated. Drawn dosed and empty, which is what it is at this moment: four vertical bands of twelve replicate wells, compound in every one of them and not a fish in the building yet. In the worked example those four conditions are — 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns. Every well becomes a sample barcode in round one of the chemistry, so the entire treatment axis of the final dataset is decided here, physically.",
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
@@ -432,9 +432,9 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
 const LANES = [
-  {id:"r1-bio",   y:R1-1.5,   x0:0.70, x1:9.21,  dir:+1},
-  {id:"r1-chem",  y:R1+1.5,   x0:1.43, x1:10.01, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:11.78, x1:22.00, dir:+1},
+  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:7.93, dir:+1},
+  {id:"r1-chem",  y:R1+2.0,   x0:-0.41, x1:8.73, dir:+1},
+  {id:"r1-tail",  y:R1,       x0:10.90, x1:22.00, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -482,7 +482,7 @@ const EDGES = [
 /* the four bands — what kind of work each row is.
    All four share the same x0/x1 gridlines, so the four titles line up
    along one diagonal on the bottom-right edge. */
-const BAND_W=[-2,24], BAND_H=[-3.4,3.8];
+const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
 const BANDS = [R1,R2,R3,R4].map((r,i)=>({
   name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
   x0:BAND_W[0], x1:BAND_W[1], y0:r+BAND_H[0], y1:r+BAND_H[1]
