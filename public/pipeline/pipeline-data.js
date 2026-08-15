@@ -80,11 +80,11 @@ const NODES = [
  does:"Dead and unfertilised eggs are removed under a scope. The first cull on the whole map happens here, by hand, with a pipette.",
  built:"Visual screen.",
  cond:"No bench record and no count, so the denominator at the very start of the experiment is unknown. Every retention figure further down this map is conditional on a number nobody wrote down."},
-{id:"A5", key:"A5", group:"② The treatment plate", groupMark:true, shape:"echodispense", name:"Echo dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
- sub:"acoustic, from the cherry-picking layout",
- does:"Compound is fired into an empty 48-well plate by acoustic dispensing. The destination plate hangs inverted above the source and droplets travel upward into it; no tip ever touches the liquid. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before any fish exist.",
- built:"Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; embryos arrive later.",
- cond:"No Echo layout file is held on this instance, and neither is any dispense log. The step is here because it is how the bench works, not because an artefact records it — which matters, because this sheet is the only place the treatment assignment exists before it becomes a barcode. If it and the sample loading table ever disagreed, nothing downstream could tell. The dose it writes, 1 µM, appears in the design document and in no column of the delivered object."},
+{id:"A4", key:"A4", group:"② The treatment plate", groupMark:true, shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9,
+ sub:"SPARC BioCentre · acoustic, from the cherry-picking layout",
+ does:"Compound is fired into an empty 48-well plate without anything touching it. The destination plate is held inverted above the source and 2.5 nL droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists.",
+ built:"A Beckman Echo 650 at the SPARC BioCentre, SickKids, 686 Bay Street, Toronto. Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; the embryos arrive later.",
+ cond:"The cherry-picking sheet and the sample loading table disagree, and the disagreement starts here. This sheet is where treatment assignment first exists; the loading table is what the barcodes physically encode. Until the two are reconciled nothing downstream is trustworthy at treatment level, and neither sheet is on this instance, so it cannot be settled from here. Three more things about this step are unrecorded and are open questions for the bench: the actual transfer volume per well — 1 µM is in the design document and in no column of the object, and at 2.5 nL a droplet it is hundreds of droplets a well; whether the compound went in dry or into medium; and how long the plate then sat dosed before the embryos arrived. That last one is a real experimental variable — DMSO is hygroscopic and nanolitre volumes evaporate — and this map currently implies it was zero, because nothing records otherwise."},
 
 {id:"PL", key:"2", group:"② The treatment plate", groupMark:true, anchor:true, shape:"treatmentplate",
  name:"The treatment plate", x:10.8, y:R1, w:2.6, d:2.0, h:0.36,
@@ -93,11 +93,11 @@ const NODES = [
  built:"48-well format, 4 conditions × 12 replicate wells, single dose of 1 µM. Sorafenib at 1 µM is the lowest concentration that visibly does something in zebrafish (pericardial edema).",
  cond:"The label defect here is specific and checkable: obs['sample'] misspells the compound as Dapaglifozan while obs['perturbation'] spells it Dapagliflozin. And the dose is recorded nowhere in the object or the vendor report — 1 µM comes from the design document alone. This is the general shape of the problem: design intent and deposited object are two different artefacts, and they have to be reconciled by hand."},
 
-{id:"A4", key:"A4", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:2.0, d:1.55, h:0.22,
+{id:"A5", key:"A5", group:"The experiment", shape:"arrayplate", name:"Array into the dosed plate", x:13.4, y:R1, w:2.0, d:1.55, h:0.22,
  sub:"6 embryos per well, at 24 hpf",
  does:"Embryos are checked for stage and distributed six to a well, into wells that already contain compound. The fish arrive into the dose — there is no separate dosing step afterwards, and 24 hpf is the moment of arrival rather than the moment of addition.",
  built:"Confirmed for the worked example, not assumed: 48 wells and 6 embryos per well are in the MegaFIN 100k column of the design spec, and split-pipe's own run definition independently agrees — round-one barcode set n141_R1_v3_8 is described as '96 barcodes, 48 wells; rows A-D, cols 1-12'. Note that those are two different plates holding the same 48 samples: the treatment vessel here is a physical 48-well plate, 8 by 6, while the Parse round-one plate a row down lays the same samples out 12 by 4.",
- cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish."},
+ cond:"48 wells were loaded; 43 samples reach the object. The five missing wells are unexplained by any artefact here. Pooling embryos per well is a design choice with a cost — Zebrahub took the opposite one and optimised its dissociation specifically to avoid pooling, so every cell there traces to a named individual fish. Whether this arraying was done by hand or with a multichannel is not recorded either, and it bears on how tightly the six-per-well count actually held."},
 {id:"A6", key:"A6", group:"The experiment", shape:"tile", name:"Incubate to 48 hpf", x:14.7, y:R1, w:0.72, d:0.72, h:0.58,
  sub:"24 hours of exposure",
  does:"Twenty-four hours in which the drug either does something or does not. This window is the entire causal content of the dataset.",
@@ -401,8 +401,8 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
 
 const EDGES = [
   {a:"AQ",b:"A1",kind:"fish"},{a:"A1",b:"A2",kind:"fish"},{a:"A2",b:"A3",kind:"fish"},
-  {a:"A3",b:"A5",kind:"fish"},{a:"A5",b:"PL",kind:"fish"},{a:"PL",b:"A4",kind:"fish"},
-  {a:"A4",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"A8",kind:"fish"},{a:"A8",b:"FX",kind:"fish"},
+  {a:"A3",b:"A4",kind:"fish"},{a:"A4",b:"PL",kind:"fish"},{a:"PL",b:"A5",kind:"fish"},
+  {a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"A8",kind:"fish"},{a:"A8",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
@@ -694,4 +694,4 @@ const OVERVIEW = {
    independently by the vendor's own barcode-set description. What remains is
    genuinely undocumented — the breeding steps, the dissociation, and library
    prep. */
-const UNVERIFIED = new Set(["A1","A2","A3","A5","A8","B9","C1","C2"]);
+const UNVERIFIED = new Set(["A1","A2","A3","A4","A8","B9","C1","C2"]);
