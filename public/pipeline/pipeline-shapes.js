@@ -1123,101 +1123,6 @@ function drawWhiteboard(g,n){
 DRAW.whiteboard = drawWhiteboard;
 
 
-/* ------------------------------------------------------------------
-   INCUBATE TO 48 HPF
-   A closed box. Twenty-four hours happen inside it and nothing watches.
-
-   The door is drawn on the near-right face, which is a constant-x plane,
-   so everything on it is placed with P(x, y, z) and lands flat on the
-   surface. The window is genuinely dark: no plate visible, no embryos,
-   nothing. This step's whole condition is that no observation was made,
-   and a window with something legible behind it would contradict it.
-
-   The temperature readout shows dashes, not a number, because the
-   incubation temperature is not recorded in any artefact. It blinks as
-   though searching for a reading it will never get.
-   ------------------------------------------------------------------ */
-function drawIncubator(g,n){
-  const hw=n.w/2, hd=n.d/2, th=n.h;
-  const quad=(a,b,c,d)=>pts([a,b,c,d]);
-  const F=(yv,zv)=>P(n.x+hw, yv, zv);          // a point on the door face
-
-  /* the cabinet */
-  const f=faces(n.x,n.y,n.w,n.d,th);
-  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
-    {points:f[k],fill:SKIN.works[k],stroke:"var(--stroke)","stroke-width":"1.3"})));
-
-  /* vents on the left flank */
-  for(let i=0;i<5;i++){
-    const z=th*(0.24+i*0.11);
-    const a=P(n.x-hw*0.72,n.y+hd,z), b=P(n.x+hw*0.72,n.y+hd,z);
-    g.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
-      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".35"}));
-  }
-
-  /* the door */
-  const y0=n.y-hd+0.05, y1=n.y+hd-0.05, z0=th*0.05, z1=th*0.95;
-  g.appendChild(el("polygon",{points:quad(F(y0,z1),F(y1,z1),F(y1,z0),F(y0,z0)),
-    fill:"var(--k-top)","fill-opacity":".5",stroke:"var(--stroke)",
-    "stroke-width":"1","stroke-opacity":".8"}));
-
-  /* the window, showing nothing */
-  const wy0=y0+0.12, wy1=y1-0.12, wz0=th*0.44, wz1=th*0.84;
-  g.appendChild(el("polygon",{points:quad(F(wy0,wz1),F(wy1,wz1),F(wy1,wz0),F(wy0,wz0)),
-    fill:"var(--bg)","fill-opacity":".92",stroke:"var(--stroke)",
-    "stroke-width":"1.1","stroke-opacity":".85"}));
-  /* a sheen across the glass, so it reads as glass rather than a hole */
-  g.appendChild(el("polygon",{
-    points:pts([F(wy0+0.04,wz1),F(wy0+0.20,wz1),F(wy1-0.16,wz0),F(wy1-0.32,wz0)]),
-    fill:"var(--fg)","fill-opacity":".05"}));
-
-  /* handle */
-  const ha=F(y1-0.07,th*0.34), hb=F(y1-0.07,th*0.6);
-  g.appendChild(el("line",{x1:ha[0],y1:ha[1],x2:hb[0],y2:hb[1],
-    stroke:"var(--stroke)","stroke-width":"2.4","stroke-opacity":".9",
-    "stroke-linecap":"round"}));
-
-  /* the readout: dashes where a temperature would be */
-  const ry0=y0+0.1, ry1=y0+0.44, rz0=th*0.14, rz1=th*0.3;
-  g.appendChild(el("polygon",{points:quad(F(ry0,rz1),F(ry1,rz1),F(ry1,rz0),F(ry0,rz0)),
-    fill:"var(--bg)","fill-opacity":".85",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".6"}));
-  const dashes=[];
-  for(let i=0;i<3;i++){
-    const yy=ry0+0.07+i*0.1, z=(rz0+rz1)/2;
-    const a=F(yy,z), b=F(yy+0.055,z);
-    const d=el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
-      stroke:"var(--fg)","stroke-width":"1.6","stroke-opacity":".55",
-      "stroke-linecap":"round"});
-    g.appendChild(d); dashes.push(d);
-  }
-
-  /* twenty-four hours, running along the foot of the door */
-  const bz=th*0.085;
-  const back=F(y0+0.06,bz), full=F(y1-0.06,bz);
-  g.appendChild(el("line",{x1:back[0],y1:back[1],x2:full[0],y2:full[1],
-    stroke:"var(--fg)","stroke-width":"1.4","stroke-opacity":".18"}));
-  const bar=el("line",{x1:back[0],y1:back[1],x2:back[0],y2:back[1],
-    stroke:"var(--water, var(--signal))","stroke-width":"2.2","stroke-opacity":".9",
-    "stroke-linecap":"round"});
-  g.appendChild(bar);
-
-  const CYCLE=9.0;
-  let t=0;
-  const run=(dt)=>{
-    t=(t+dt)%CYCLE;
-    const p=t/CYCLE;
-    const e=F(y0+0.06+(y1-y0-0.12)*p, bz);
-    bar.setAttribute("x2",e[0]); bar.setAttribute("y2",e[1]);
-    bar.setAttribute("stroke-opacity",(p>0.97?0:0.9).toFixed(2));
-    const blink=(Math.sin(t*2.2)>0.75)?0.18:0.55;
-    dashes.forEach(d=>d.setAttribute("stroke-opacity",blink.toFixed(2)));
-  };
-  run(0);
-  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
-}
-DRAW.incubator = drawIncubator;
-
 
 /* ------------------------------------------------------------------
    DISSOCIATE
@@ -1484,3 +1389,101 @@ function drawLibrary(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.library = drawLibrary;
+
+
+/* ------------------------------------------------------------------
+   INCUBATE TO 48 HPF
+   One dosed well, twenty-four hours in, with nobody watching.
+
+   Six larvae, each rebuilt every frame from a spine — a travelling sine
+   whose amplitude grows toward the tail, which is how a fish actually
+   swims. Each has its own position, heading, stroke rate and phase, so
+   they never beat in unison. Body coordinates (t along the spine, u
+   across it) place the eye and the yolk, so those follow the undulation
+   for free.
+
+   WHAT THIS DELIBERATELY DOES NOT CLAIM. The molecules are not attached
+   to the animals. They drift on their own paths, evenly spread, and the
+   larvae pass across them. Internal exposure was never measured, and the
+   arraying step makes the same point by leaving its embryos untinted. If
+   a later pass sticks molecules to the fish, or brightens the ones
+   overlapping a body, the map starts asserting absorption the experiment
+   did not record. Keep the two nodes consistent.
+
+   The condition text carries what the picture cannot: no imaging or
+   phenotype scoring in this window, and no recorded incubation
+   temperature.
+
+   Requires moleculeGlyph() from the library block, PLATE_BANDS from the
+   plate set, and ellipseAt() from the clutch block.
+   ------------------------------------------------------------------ */
+function drawIncubate(g,n){
+  const r=rng(401);
+  const band=PLATE_BANDS[(n.band!==undefined?n.band:1)];
+  const wellR=Math.min(n.w*0.5, n.d*0.62);
+
+  const vessel=ellipseAt(n.x,n.y,0,wellR);
+  g.appendChild(el("ellipse",{cx:vessel.x,cy:vessel.y,rx:vessel.rx,ry:vessel.ry,
+    fill:"var(--water, var(--signal))","fill-opacity":".08",
+    stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".35"}));
+
+  /* six larvae, each with its own place, heading and stroke */
+  const fish=[];
+  for(let i=0;i<6;i++){
+    const a=(i/6)*6.283+r()*0.7, rad=Math.sqrt(r())*wellR*0.56;
+    const L=n.w*0.3*(0.85+r()*0.3);
+    const body=el("polygon",{fill:"var(--fg)","fill-opacity":".4",
+      stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".7"});
+    const yolk=el("ellipse",{rx:(L*0.09*S*C30*1.4).toFixed(1),
+      ry:(L*0.09*S*0.5*1.4).toFixed(1),fill:"var(--fg)","fill-opacity":".28"});
+    const eye=el("circle",{r:(L*0.055*S*0.9).toFixed(1),fill:"var(--fg)","fill-opacity":".95"});
+    g.appendChild(body); g.appendChild(yolk); g.appendChild(eye);
+    fish.push({body,yolk,eye,L,
+      cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
+      head:r()*6.283, rate:1.8+r()*1.4, ph:r()*6.283,
+      w0:L*0.2, amp:L*0.13});
+  }
+
+  /* a handful of molecules, spread evenly, drifting on their own */
+  const mols=[];
+  const M=9;
+  for(let i=0;i<M;i++){
+    const a=(i/M)*6.283+r()*0.45, rad=(0.32+0.55*((i%3)/2))*wellR;
+    const node=el("g",{opacity:".78"});
+    node.appendChild(moleculeGlyph(409+i*23, band.fill));
+    g.appendChild(node);
+    mols.push({node,
+      cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
+      ph:r()*6.283, rate:0.32+r()*0.3, span:0.05+r()*0.05,
+      sc:0.34+r()*0.1, spin:(r()-0.5)*26});
+  }
+
+  const N=30;
+  const run=(dt,now)=>{
+    const T=now/1000;
+    fish.forEach(f=>{
+      const ca=Math.cos(f.head), sa=Math.sin(f.head);
+      const put=(t,u)=>{
+        const bend=(0.05+0.95*Math.pow(t,1.7))*f.amp*Math.sin(t*7-T*f.rate*2.4-f.ph);
+        const hw = t<0.2 ? f.w0*0.85 : Math.max(f.L*0.012, f.w0*Math.pow(1-t,0.8));
+        const lx=(t-0.5)*f.L, ly=bend+u*hw;
+        return P(f.cx+lx*ca-ly*sa, f.cy+(lx*sa+ly*ca)*0.72, 0.02);
+      };
+      const up=[], dn=[];
+      for(let i=0;i<=N;i++){ const t=i/N; up.push(put(t,1)); dn.push(put(t,-1)); }
+      f.body.setAttribute("points",pts([...up,...dn.reverse()]));
+      const yp=put(0.22,0.45); f.yolk.setAttribute("cx",yp[0]); f.yolk.setAttribute("cy",yp[1]);
+      const ep=put(0.09,-0.4); f.eye.setAttribute("cx",ep[0]);  f.eye.setAttribute("cy",ep[1]);
+    });
+
+    mols.forEach(m=>{
+      const p=P(m.cx+Math.sin(T*m.rate+m.ph)*m.span,
+                m.cy+Math.cos(T*m.rate*0.83+m.ph)*m.span*0.7, 0.02);
+      m.node.setAttribute("transform",
+        `translate(${p[0]},${p[1]}) rotate(${(Math.sin(T*0.5+m.ph)*m.spin).toFixed(1)}) scale(${m.sc})`);
+    });
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.incubate = drawIncubate;
