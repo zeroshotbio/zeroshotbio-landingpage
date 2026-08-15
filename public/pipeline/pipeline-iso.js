@@ -75,6 +75,11 @@ function layoutRows(NODES, LANES, MIRROR){
   (function place(){
     const GAP_MINOR=0.6, GAP_MAJOR=1.5;
     const big=n=>n.anchor||n.shape==="works"||n.shape==="machine";
+    /* a node may set gap:<constant> to override the space BEFORE it, for the
+       case where the major/minor rule pushes two things apart that belong
+       together. The lane still scales it with everything else. */
+    const gapFor=(a,b)=> b.gap!==undefined ? b.gap
+                       : ((big(a)||big(b)) ? GAP_MAJOR : GAP_MINOR);
     LANES.forEach(L=>{
       const on=NODES.filter(n=>n.lane===L.id && !n.follow).sort((a,b)=>a.x-b.x);
       if(!on.length) return;
@@ -83,7 +88,7 @@ function layoutRows(NODES, LANES, MIRROR){
       if(on.length<2) return;
       let sw=on[0].w; const gaps=[];
       for(let i=1;i<on.length;i++){
-        gaps.push((big(on[i])||big(on[i-1]))?GAP_MAJOR:GAP_MINOR); sw+=on[i].w;
+        gaps.push(gapFor(on[i-1],on[i])); sw+=on[i].w;
       }
       const k=Math.max(0.25,(L.x1-L.x0-sw)/gaps.reduce((a,b)=>a+b,0));
       for(let i=1;i<on.length;i++){

@@ -81,7 +81,7 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const lx = (isA?14:11) * (lb?-1:1), la = lb?"end":"start";
   const t=el("text",{x:lx,y:-3,"text-anchor":la,"font-size":isA?"20":"13",
     "letter-spacing":isA?"2.5":"1.6",fill:isA?"var(--fg)":"var(--fg2)"});
-  t.textContent=n.key+" · "+n.name.toUpperCase(); g.appendChild(t);
+  t.textContent=n.name.toUpperCase(); g.appendChild(t);
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2);
