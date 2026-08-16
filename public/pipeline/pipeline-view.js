@@ -463,7 +463,12 @@ const strip=document.getElementById("strip");
 const reader=document.getElementById("reader");
 /* on a phone the reader is a sheet: up when something is selected, gone
    otherwise, so the map keeps the canvas */
-function syncSheet(){ reader.classList.toggle("open", !!current && PHONE()); }
+function syncSheet(){
+  const open = !!current && PHONE();
+  reader.classList.toggle("open", open);
+  /* the strip shrinks to a rule of keys so the reader gets the height */
+  strip.classList.toggle("mini", open);
+}
 document.getElementById("sheetClose").addEventListener("click",release);
 window.addEventListener("resize",syncSheet);
 

@@ -25,6 +25,7 @@
     --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
 
     --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
+    --strip-mini:28px;                   /* what it collapses to while reading */
     --txt-mono:#131816;  /* text over the pale monolith / strata */
     --txt-box:#dfe6df;   /* text over everything else */
 
@@ -128,9 +129,18 @@
 
   /* the step strip — the mobile stand-in for the left index. Horizontal,
      scrollable, one chip per step, group names as vertical dividers. */
-  .strip{display:none;flex:none;height:var(--strip-h);
+  .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
          overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
          border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch}
+  /* while the reader is up the strip collapses to a rule of keys — enough to
+     keep a sense of where you are in the sequence, and to jump, without
+     spending the height the text needs */
+  .strip.mini{height:var(--strip-mini)}
+  .strip.mini .sgrp{display:none}
+  .strip.mini .chip{min-width:0;max-width:none;padding:0 9px;justify-content:center;gap:0}
+  .strip.mini .chip .n{display:none}
+  .strip.mini .chip .k{font-size:9.5px;letter-spacing:.14em;color:var(--fg2)}
+  .strip.mini .chip.on .k{color:var(--bg)}
   .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
         font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);
         writing-mode:vertical-rl;text-orientation:mixed}
@@ -159,9 +169,9 @@
     /* the reader does not cover the map: it grows the footer instead, sitting
        directly on top of the strip and adding at most another fifth of the
        screen, so the strip stays reachable while you read */
-    .reader{position:absolute;left:0;right:0;bottom:var(--strip-h);top:auto;width:auto;z-index:6;
-            max-height:20dvh;border-left:none;border-top:1px solid var(--fg);
-            transform:translateY(calc(101% + var(--strip-h)));transition:transform .22s ease;
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:34dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
             box-shadow:0 -10px 26px rgba(0,0,0,.28)}
     .reader.open{transform:none}
     .tabs{padding-right:46px}
@@ -177,7 +187,7 @@
   }
   @media (max-width:900px) and (orientation:landscape){
     :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
-    .reader{max-height:34dvh}
+    .reader{max-height:48dvh}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
