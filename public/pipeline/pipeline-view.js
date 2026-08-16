@@ -405,13 +405,17 @@ const startPinch=()=>{ const m=localMid();
 const startDrag=()=>{ const [p]=[...pointers.values()];
   drag={x:p.x,y:p.y,vx:view.x,vy:view.y}; svg.classList.add("drag"); };
 
+/* The pan deliberately does NOT take pointer capture. Capturing on the <svg>
+   root routes the click that ends the gesture to the root as well, so every
+   listener on an SVG child — pin a node, inspect a dot, open a name for
+   editing — silently never fires. Tracking the gesture on the window instead
+   keeps panning working past the edge of the canvas and leaves clicks alone. */
 svg.addEventListener("pointerdown",e=>{
   anim=null; moved=0;
-  svg.setPointerCapture(e.pointerId);
   pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
   if(pointers.size>=2) startPinch(); else startDrag();
 });
-svg.addEventListener("pointermove",e=>{
+window.addEventListener("pointermove",e=>{
   if(!pointers.has(e.pointerId)) return;
   const was=pointers.get(e.pointerId);
   moved+=Math.hypot(e.clientX-was.x, e.clientY-was.y);
@@ -427,7 +431,8 @@ svg.addEventListener("pointermove",e=>{
     view.x=drag.vx+(e.clientX-drag.x); view.y=drag.vy+(e.clientY-drag.y); applyView();
   }
 });
-["pointerup","pointercancel"].forEach(t=>svg.addEventListener(t,e=>{
+["pointerup","pointercancel"].forEach(t=>window.addEventListener(t,e=>{
+  if(!pointers.has(e.pointerId)) return;
   pointers.delete(e.pointerId);
   if(pointers.size>=2) startPinch();
   else if(pointers.size===1) startDrag();
@@ -902,17 +907,17 @@ function pushRemote(){
       const box=el("rect",{x:bb.x-px,y:bb.y-py,width:bb.width+px*2,height:bb.height+py*2,
                            class:"thandle"});
       host.insertBefore(box,e);
-      box.addEventListener("click",ev=>{
+      box.addEventListener("pointerdown",ev=>{
         if(!texting) return;
-        ev.stopPropagation();
+        ev.stopPropagation(); ev.preventDefault();
         edit(targetFor(key), box.getBoundingClientRect());
       });
     }
     /* the glyphs stay clickable too, for anything with no measurable box */
     e.style.pointerEvents="all";
-    e.addEventListener("click",ev=>{
+    e.addEventListener("pointerdown",ev=>{
       if(!texting) return;
-      ev.stopPropagation();
+      ev.stopPropagation(); ev.preventDefault();
       edit(targetFor(key), e.getBoundingClientRect());
     });
   });
