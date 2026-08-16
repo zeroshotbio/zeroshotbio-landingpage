@@ -169,7 +169,11 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
      front edge, running down-left instead of up-right — for a landmark whose
      usual placement collides with whatever is above it */
   const lb = !!n.labelBelow;
-  const [px,py]= lb ? P(n.x, n.y+n.d/2, 0) : P(n.x, n.y-n.d/2, topOf(n));
+  /* lab:{dx,dy} applies here exactly as it does to a step name. It did not,
+     once, and a landmark's name silently snapped back to its computed place on
+     every reload while the offset sat in the store looking saved. */
+  const lo = n.lab || {}, ex = n.x+(lo.dx||0), ey = lo.dy||0;
+  const [px,py]= lb ? P(ex, n.y+n.d/2+ey, 0) : P(ex, n.y-n.d/2+ey, topOf(n));
   const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
   const lx = (isA?14:11) * (lb?-1:1), la = lb?"end":"start";
   const t=el("text",{x:lx,y:-3,"text-anchor":la,"font-size":isA?"20":"13",
@@ -633,6 +637,13 @@ function stash(){
   try{ localStorage.setItem(EDIT_KEY,JSON.stringify({...payload(),at:Date.now()})); }catch(err){}
 }
 function markDirty(){ dirty=true; stash(); syncSaveBar(); }
+/* take the shared copy's own timestamp after a successful write, so the next
+   load does not read its own save as somebody else's and reload over it */
+function adoptStamp(at){
+  if(!at) return;
+  try{ const j=JSON.parse(localStorage.getItem(EDIT_KEY)||"{}");
+       j.at=at; localStorage.setItem(EDIT_KEY,JSON.stringify(j)); }catch(err){}
+}
 function syncSaveBar(){
   const on = editing || texting || dirty;
   document.body.classList.toggle("haschanges", on);
@@ -875,6 +886,7 @@ function pushRemote(){
     stash();
     pushRemote().then(res=>{
       if(res && res.ok){
+        adoptStamp(res.at);
         dirty=false; syncSaveBar();
         toast("Saved — this is the new default now. It will still be here after a refresh.");
       }else{
@@ -969,10 +981,12 @@ function pushRemote(){
     pinned=null; current=null; paintIndex();
     read.innerHTML=
       `<div class="eyebrow">Save all changes</div>`+
-      `<div class="title">${nMove} moved · ${nWord} reworded</div>`+
+      `<div class="title">${nMove} object${nMove===1?"":"s"} moved · `+
+      `${nWord} string${nWord===1?"":"s"} rewritten</div>`+
       `<div class="sub">${state==="done"
         ? "confirmed — this is the default now, for every browser"
-        : "kept in this browser · not the shared default until you confirm"}</div>`+
+        : "everything currently in force, not just this sitting · "+
+          "kept in this browser until you confirm"}</div>`+
       (state==="done"
         ? `<p class="savedone">Written to the shared copy. It survives a refresh, and anyone `+
           `opening the page gets it. Steven bakes it into the data file from here so it lives `+
@@ -995,6 +1009,7 @@ function pushRemote(){
     if(go){ go.textContent="Saving…"; go.disabled=true; }
     pushRemote().then(res=>{
       if(res && res.ok){
+        adoptStamp(res.at);
         dirty=false; syncSaveBar(); panel("done");
         toast("Confirmed — saved as the new default. It will still be here after a refresh.");
       }else{
