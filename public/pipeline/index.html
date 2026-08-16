@@ -140,6 +140,14 @@
   svg.texting text:hover{fill:var(--signal)!important}
   body.texting .read [data-tf]{cursor:text;outline:1px dashed var(--rule);outline-offset:3px}
   body.texting .read [data-tf]:hover{outline-color:var(--signal);background:rgba(116,176,240,.07)}
+  /* a box round every string on the map, so the mode shows its own reach and
+     an 8.6px label is a target rather than a dare */
+  .thandle{display:none;pointer-events:none;fill:transparent;stroke:var(--signal);
+           stroke-width:1;stroke-opacity:.45;stroke-dasharray:3 3}
+  svg.texting .thandle{display:block;pointer-events:all;cursor:text}
+  svg.texting .thandle:hover{fill:var(--signal);fill-opacity:.14;stroke-opacity:1;stroke-dasharray:none}
+  .tefoot .go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .tefoot .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
   .tedit{display:none;position:fixed;z-index:60;width:min(430px,calc(100vw - 24px));
          background:var(--panel);border:1px solid var(--signal);
          box-shadow:0 12px 34px rgba(0,0,0,.42)}
@@ -293,7 +301,7 @@
         <div class="tehead"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
         <textarea id="teIn" spellcheck="true" rows="1"></textarea>
         <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
-             <button class="ctl" id="teOk">Keep</button></div>
+             <button class="ctl go" id="teOk">Save</button></div>
       </div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>

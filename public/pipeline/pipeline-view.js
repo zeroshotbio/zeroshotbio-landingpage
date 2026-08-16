@@ -811,7 +811,7 @@ function pushRemote(){
   /* write the field, then repaint only what renders it */
   function commit(t,v){
     v=v.replace(/\s+$/,"");
-    if(!v || v===valueOf(t)) return;
+    if(!v || v===valueOf(t)) return false;
     if(t.kind==="band"){
       BANDS[t.i].name=v; recordText("band",t.i,null,v);
       if(textEls["band:"+t.i]) textEls["band:"+t.i].textContent=v.toUpperCase();
@@ -832,6 +832,7 @@ function pushRemote(){
       if(current===t.id) renderNode(t.id);
     }
     markDirty();
+    return true;
   }
 
   /* fixed to the viewport, not to the map — the same popover has to reach a
@@ -853,14 +854,28 @@ function pushRemote(){
       + " — " + (FIELD[t.kind==="band"?"band":t.f]||t.f);
     inp.value=valueOf(t);
     inp.rows = long?9:1;
-    teHint.textContent = long ? "Shift-Enter for a new line · Enter to keep · Esc to cancel"
-                              : "Enter to keep · Esc to cancel";
+    teHint.textContent = long ? "Shift-Enter for a new line · Enter to save · Esc to cancel"
+                              : "Enter to save · Esc to cancel";
     place(rect);
     inp.focus(); inp.select();
   }
+  /* Save on the popover goes all the way through: write the field, keep it in
+     this browser, push it to the shared copy, and say which of those happened.
+     There is no separate step to remember. */
   function close(save){
-    if(open && save) commit(open,inp.value);
+    const t=open, v=inp.value;
     open=null; pop.classList.remove("on");
+    if(!t || !save) return;
+    if(!commit(t,v)) return;
+    stash();
+    pushRemote().then(res=>{
+      if(res && res.ok){
+        dirty=false; syncSaveBar();
+        toast("Saved — this is the new default now. It will still be here after a refresh.");
+      }else{
+        toast("Kept in this browser only — the shared store could not be reached.",true,6000);
+      }
+    });
   }
   inp.addEventListener("keydown",e=>{
     if(e.key==="Escape"){ e.preventDefault(); close(false); }
@@ -869,15 +884,36 @@ function pushRemote(){
   document.getElementById("teOk").onclick=()=>close(true);
   document.getElementById("teX").onclick=()=>close(false);
 
-  /* every <text> the map registered becomes a target */
+  const targetFor=key => key.startsWith("band:")
+    ? {kind:"band",i:+key.slice(5),f:"band"}
+    : {kind:"node",id:key.split(":")[0],f:key.split(":")[1]};
+
+  /* Every string on the map gets a box, not just its glyphs. A step name is
+     8.6px tall, so hit-testing the letters themselves meant landing the pointer
+     on an actual stroke — which read as the mode not working at all. The box is
+     drawn behind the text in the same group, so it inherits the rotation and
+     lines up with the words; in text mode it lights up on hover and is what you
+     actually click. */
   Object.entries(textEls).forEach(([key,e])=>{
+    const host=e.parentNode;
+    let bb=null; try{ bb=e.getBBox(); }catch(err){}
+    if(host && bb && bb.width){
+      const px=4, py=2;
+      const box=el("rect",{x:bb.x-px,y:bb.y-py,width:bb.width+px*2,height:bb.height+py*2,
+                           class:"thandle"});
+      host.insertBefore(box,e);
+      box.addEventListener("click",ev=>{
+        if(!texting) return;
+        ev.stopPropagation();
+        edit(targetFor(key), box.getBoundingClientRect());
+      });
+    }
+    /* the glyphs stay clickable too, for anything with no measurable box */
     e.style.pointerEvents="all";
     e.addEventListener("click",ev=>{
       if(!texting) return;
       ev.stopPropagation();
-      const t = key.startsWith("band:") ? {kind:"band",i:+key.slice(5),f:"band"}
-              : {kind:"node",id:key.split(":")[0],f:key.split(":")[1]};
-      edit(t, e.getBoundingClientRect());
+      edit(targetFor(key), e.getBoundingClientRect());
     });
   });
   /* and every tagged block in the reader */
