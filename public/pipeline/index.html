@@ -79,8 +79,25 @@
   .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
 
   .body{display:flex;flex:1;min-height:0}
-  aside{width:238px;flex:none;border-right:1px solid var(--fg);overflow-y:auto;padding-bottom:24px;
-        background:var(--bg);-webkit-user-select:none;user-select:none}
+  aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
+        padding-bottom:24px;background:var(--bg);-webkit-user-select:none;user-select:none}
+  /* Either column can be dragged shut. What is left behind is the grip itself,
+     a full-height sliver carrying an arrow that points the way back — so it is
+     obvious the panel is still there rather than gone. */
+  .grip{flex:none;width:9px;position:relative;cursor:col-resize;background:var(--panel2);
+        border-right:1px solid var(--fg);-webkit-user-select:none;user-select:none}
+  .grip:hover,.grip:focus-visible{background:var(--signal)}
+  .grip span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+             width:3px;height:34px;border-radius:2px;background:var(--fg3)}
+  .grip:hover span{background:var(--bg)}
+  /* collapsed: the sliver widens a touch and the pill becomes a chevron */
+  .grip.shut{cursor:pointer;background:var(--bg);width:16px}
+  .grip.shut:hover{background:var(--signal)}
+  .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
+  .grip.shut:hover span{color:var(--bg)}
+  .grip.shut::after{content:"";position:absolute;inset:0;
+                    background:repeating-linear-gradient(var(--rule) 0 1px,transparent 1px 5px);
+                    opacity:.35;pointer-events:none}
   .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
   .grp.mark{color:var(--fg)}
   .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
@@ -172,6 +189,26 @@
   .tefoot{display:flex;align-items:center;gap:10px;padding:6px 8px;border-top:1px solid var(--rule)}
   #teHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
 
+  /* ---- edit visual ---- */
+  .ask{display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.42);
+       align-items:center;justify-content:center;padding:18px}
+  .ask.on{display:flex}
+  .askbox{width:min(600px,100%);background:var(--panel);border:1px solid var(--signal);
+          box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .askbox textarea{display:block;width:100%;resize:vertical;min-height:150px;max-height:52dvh;
+                   background:var(--bg);color:var(--fg);border:none;outline:none;
+                   padding:12px 13px;font:inherit;font-size:12px;line-height:1.6}
+  .askfoot{display:flex;align-items:center;gap:12px;padding:8px 10px;border-top:1px solid var(--rule)}
+  #askHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  .askwait{display:none;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--rule);
+           font-size:11px;color:var(--fg2)}
+  .askwait.on{display:flex}
+  .askwait #askState{flex:1}
+  .spin{width:13px;height:13px;flex:none;border:2px solid var(--rule);border-top-color:var(--signal);
+        border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
   /* ---- confirmation ---- */
   .toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
          z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;
@@ -188,12 +225,8 @@
   .savedone{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
   svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
 
-  .reader{width:352px;flex:none;border-left:1px solid var(--fg);display:flex;flex-direction:column;
-          background:var(--panel);min-height:0}
-  .tabs{display:flex;flex:none;border-bottom:1px solid var(--fg)}
-  .tab{flex:1;padding:6px 4px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;border-right:1px solid var(--rule)}
-  .tab:last-child{border-right:none}
-  .tab.on{background:var(--fg);color:var(--bg)}
+  .reader{width:var(--reader-w,352px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
   /* the one place selection is wanted: the prose, and the blocks Save prints
      for pasting back into the data file */
   .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
@@ -251,6 +284,7 @@
     .body{flex-direction:column;position:relative}
     /* the left index is replaced by the strip; the map gets the rest */
     aside{display:none}
+    .grip{display:none}
     .stage{flex:1;min-height:0;border-bottom:none}
     .strip{display:block;height:var(--strip-h)}
     .hint{display:none}
@@ -262,12 +296,11 @@
             transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
             box-shadow:0 -10px 26px rgba(0,0,0,.28)}
     .reader.open{transform:none}
-    .tabs{padding-right:46px}
     .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
                 z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
                 border:none;border-left:1px solid var(--fg);
                 background:var(--fg);color:var(--bg)}
-    .read{padding:10px 14px 16px}
+    .read{padding:36px 14px 16px}      /* clear of the close button */
     .mobtoggle{display:none}
     .fitonly{display:grid}
     .stepnav{top:8px;right:8px;gap:10px}
@@ -297,12 +330,14 @@
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
       <button class="ctl" id="btnText">Edit text</button>
+      <button class="ctl" id="btnVisual">Edit visual</button>
       <button class="ctl edonly" id="btnSave">Save all changes</button>
       <button class="ctl edonly" id="btnDiscard">Discard</button>
     </div>
   </header>
   <div class="body">
     <aside id="aside"></aside>
+    <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
     <div class="stage">
       <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
       <div class="stepnav">
@@ -318,15 +353,28 @@
         <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
              <button class="ctl go" id="teOk">Save as default</button></div>
       </div>
+      <!-- Edit visual: describe a new drawing, send it to the instance, wait -->
+      <div class="ask" id="ask" role="dialog" aria-label="Describe a new visual">
+        <div class="askbox">
+          <div class="tehead"><span id="askWhat"></span><button id="askX" aria-label="Close">×</button></div>
+          <textarea id="askIn" spellcheck="true" rows="7"
+            placeholder="Describe the drawing you want.&#10;&#10;e.g. the aquarium should have a heater on the back wall with a little&#10;stream of bubbles rising off it, and one fish should hang near it"></textarea>
+          <div class="askfoot">
+            <span id="askHint">Sent to whoever is working on the map · the page reloads itself when it lands</span>
+            <button class="ctl go" id="askGo">Send</button>
+          </div>
+          <div class="askwait" id="askWait">
+            <span class="spin"></span><span id="askState">Waiting…</span>
+            <button class="ctl" id="askHide">Hide</button>
+          </div>
+        </div>
+      </div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
     <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
     <div class="reader" id="reader">
       <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
-      <div class="tabs">
-        <button class="tab on" data-tab="does">What it does</button>
-        <button class="tab" data-tab="built">How it's built</button>
-      </div>
       <div class="read" id="read"></div>
     </div>
   </div>

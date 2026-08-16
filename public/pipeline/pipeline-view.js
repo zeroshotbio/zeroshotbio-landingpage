@@ -458,7 +458,7 @@ document.getElementById("zout").onclick=()=>zoomBy(.8);
    READER
    ============================================================ */
 const read=document.getElementById("read");
-let tab="does", pinned=null, current=null;
+let pinned=null, current=null;
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
 const TF=(id,f)=>`data-tid="${id}" data-tf="${f}"`;
@@ -467,9 +467,9 @@ function renderOverview(){
   read.innerHTML=`<div class="eyebrow" ${TF(O,"eyebrow")}>${o.eyebrow}</div>`+
     `<div class="title big" ${TF(O,"title")}>${o.title}</div>`+
     `<div class="sub" ${TF(O,"sub")}>${o.sub}</div>`+
-    (tab==="does" ? `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
-                    `<h4>Condition</h4><div ${TF(O,"cond")}>${o.cond}</div>`
-      : `<h4>How it's built</h4><div ${TF(O,"built")}>${o.built}</div><h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`);
+    `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
+    `<h4>Condition</h4><div ${TF(O,"cond")}>${o.cond}</div>`+
+    `<h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`;
 }
 function renderNode(id){
   const n=byId[id];
@@ -477,12 +477,10 @@ function renderNode(id){
     `<div class="title${n.anchor?" big":""}" ${TF(id,"name")}>${esc(n.name)}</div>`+
     `<div class="sub" ${TF(id,"sub")}>${esc(n.sub)}</div>`+
     (UNVERIFIED.has(n.key)?`<div class="unver">unverified with Patrick</div>`:"")+
-    (tab==="does" ? `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
-                    `<h4>Condition</h4><p class="cond" ${TF(id,"cond")}>${n.cond}</p>`
-      : `<h4>How it's built</h4><p ${TF(id,"built")}>${n.built}</p>`+
-        `<dl class="kv"><dt>Marker</dt><dd>${n.key}</dd></dl>`+
-        `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
-        `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`);
+    `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
+    `<h4>Condition</h4><p class="cond" ${TF(id,"cond")}>${n.cond}</p>`+
+    `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
+    `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`;
 }
 function inspect(r){
   const s=SNIPPETS[r.e.kind]();
@@ -571,10 +569,6 @@ function paintIndex(){
 }
 renderOverview();
 
-document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
-  document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
-  t.classList.add("on");tab=t.dataset.tab;current?renderNode(current):renderOverview();
-});
 /* the flow runs unless the machine asks it not to — there is no longer a
    button for it, and nothing else turns it off */
 const resetView=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),1100);};
@@ -591,6 +585,70 @@ document.getElementById("btnTheme").onclick=e=>{
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
 };
 svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
+
+/* ============================================================
+   THE SIDE COLUMNS
+   Both are draggable shut. Drag the grip to resize, drag it far enough and
+   it snaps closed, or just click it. What is left is the grip: a full-height
+   sliver with an arrow pointing the way back, so a closed panel reads as
+   folded away rather than as missing. Widths persist.
+   ============================================================ */
+(function panels(){
+  const PANEL_KEY="pipeline.panels";
+  const root=document.body;
+  const P_=[{grip:"gripL", el:aside,  varn:"--aside-w",  def:238, min:150, max:460, side:1, open:"‹", shut:"›"},
+            {grip:"gripR", el:reader, varn:"--reader-w", def:352, min:220, max:620, side:-1, open:"›", shut:"‹"}];
+  let saved={}; try{ saved=JSON.parse(localStorage.getItem(PANEL_KEY)||"{}"); }catch(err){}
+
+  P_.forEach(p=>{
+    p.node=document.getElementById(p.grip);
+    if(!p.node) return;
+    p.arrow=p.node.querySelector("span") || p.node.appendChild(document.createElement("span"));
+    p.w = typeof saved[p.grip]==="number" ? saved[p.grip] : p.def;
+    apply(p);
+
+    let from=null;
+    p.node.addEventListener("pointerdown",ev=>{
+      ev.preventDefault();
+      if(p.node.setPointerCapture) p.node.setPointerCapture(ev.pointerId);
+      from={x:ev.clientX, w:p.w, moved:0};
+    });
+    p.node.addEventListener("pointermove",ev=>{
+      if(!from) return;
+      const d=(ev.clientX-from.x)*p.side;
+      from.moved=Math.max(from.moved,Math.abs(ev.clientX-from.x));
+      /* below the minimum it does not squeeze, it shuts */
+      const want=from.w+d;
+      p.w = want < p.min*0.6 ? 0 : Math.max(p.min, Math.min(p.max, want));
+      apply(p);
+    });
+    ["pointerup","pointercancel"].forEach(t=>p.node.addEventListener(t,()=>{
+      if(!from) return;
+      /* a press that did not travel is a toggle */
+      if(from.moved<4) p.w = p.w ? 0 : (typeof saved[p.grip+"_last"]==="number"?saved[p.grip+"_last"]:p.def);
+      from=null; apply(p); store();
+    }));
+    p.node.addEventListener("keydown",ev=>{
+      if(ev.key!=="Enter" && ev.key!==" ") return;
+      ev.preventDefault();
+      p.w = p.w ? 0 : p.def; apply(p); store();
+    });
+  });
+
+  function apply(p){
+    root.style.setProperty(p.varn, p.w+"px");
+    const shut=!p.w;
+    p.node.classList.toggle("shut",shut);
+    p.arrow.textContent = shut ? p.shut : "";
+    p.node.setAttribute("aria-label",(shut?"Show ":"Hide ")+(p.side>0?"the index":"the reader"));
+  }
+  function store(){
+    const out={};
+    P_.forEach(p=>{ out[p.grip]=p.w; if(p.w) out[p.grip+"_last"]=p.w; });
+    saved=Object.assign(saved,out);
+    try{ localStorage.setItem(PANEL_KEY,JSON.stringify(saved)); }catch(err){}
+  }
+})();
 
 /* ============================================================
    WALKING THE SEQUENCE
@@ -1075,6 +1133,105 @@ function pushRemote(){
     toast("A newer shared version is available — reloading.");
     setTimeout(()=>location.reload(), 900);
   }).catch(()=>{});
+})();
+
+/* ============================================================
+   EDIT VISUAL
+   The map's shapes are hand-written code, so this one cannot be done in the
+   page. What it does instead is queue the request: describe the drawing you
+   want, send it, and the instance picks it up, writes the shape and marks it
+   done. The page watches its own request and reloads itself the moment that
+   happens — so the loop closes here rather than in a chat window.
+   ============================================================ */
+(function askVisual(){
+  const btn=document.getElementById("btnVisual"), box=document.getElementById("ask");
+  if(!btn||!box) return;
+  const inp=document.getElementById("askIn"), what=document.getElementById("askWhat"),
+        go=document.getElementById("askGo"), wait=document.getElementById("askWait"),
+        state=document.getElementById("askState"), hint=document.getElementById("askHint");
+  const WATCH_KEY="pipeline.pending";
+  let timer=null;
+
+  const targetOf=()=>{
+    const n=current&&byId[current];
+    return n?{id:n.id,key:n.key,name:n.name,shape:n.shape}:null;
+  };
+  function open(){
+    const t=targetOf();
+    what.textContent = t ? `New drawing for ${t.key} · ${t.name}  (shape "${t.shape}")`
+                         : "New drawing — nothing selected, so say which step you mean";
+    box.classList.add("on"); inp.focus();
+  }
+  function close(){ box.classList.remove("on"); }
+  btn.onclick=open;
+  document.getElementById("askX").onclick=close;
+  document.getElementById("askHide").onclick=close;
+  box.addEventListener("pointerdown",ev=>{ if(ev.target===box) close(); });
+  inp.addEventListener("keydown",ev=>{
+    if(ev.key==="Escape"){ ev.preventDefault(); close(); }
+    else if(ev.key==="Enter" && (ev.metaKey||ev.ctrlKey)){ ev.preventDefault(); send(); }
+  });
+
+  function send(){
+    const text=inp.value.trim();
+    if(!text){ inp.focus(); return; }
+    if(typeof fetch!=="function"){ toast("No connection — nothing was sent.",true,5000); return; }
+    go.disabled=true; go.textContent="Sending…";
+    fetch("/api/pipeline_prompts",{method:"POST",
+        headers:{"content-type":"application/json"},
+        body:JSON.stringify({text,target:targetOf()})})
+      .then(r=>r.json())
+      .then(j=>{
+        go.disabled=false; go.textContent="Send";
+        if(!j || !j.ok){ toast("Could not send that — the queue did not take it.",true,6000); return; }
+        inp.value="";
+        toast("Prompt sent. Go talk to the instance — this page will reload itself when the new drawing lands.",false,7000);
+        begin(j.prompt.id);
+      })
+      .catch(()=>{ go.disabled=false; go.textContent="Send";
+                   toast("Could not reach the queue — nothing was sent.",true,6000); });
+  }
+  go.onclick=send;
+
+  /* Watch one request. Survives a reload, so closing the tab and coming back
+     picks the wait up again rather than losing it. */
+  function begin(id){
+    try{ localStorage.setItem(WATCH_KEY,JSON.stringify({id,since:Date.now()})); }catch(err){}
+    watch(id);
+  }
+  function stop(){
+    try{ localStorage.removeItem(WATCH_KEY); }catch(err){}
+    clearInterval(timer); timer=null; wait.classList.remove("on"); hint.style.display="";
+  }
+  function watch(id){
+    wait.classList.add("on"); hint.style.display="none";
+    state.textContent="Queued — waiting for the instance to pick it up";
+    clearInterval(timer);
+    timer=setInterval(()=>{
+      fetch("/api/pipeline_prompts?id="+encodeURIComponent(id),{cache:"no-store"})
+        .then(r=>r.json()).then(j=>{
+          const p=(j.prompts||[])[0];
+          if(!p) return;
+          if(p.status==="working") state.textContent="Being drawn now…";
+          else if(p.status==="done"){
+            stop();
+            toast((p.note?p.note+" — ":"")+"new drawing is in. Reloading.",false,4000);
+            setTimeout(()=>location.reload(), 1600);
+          }else if(p.status==="dropped"){
+            stop();
+            toast("That request was dropped"+(p.note?": "+p.note:"")+".",true,8000);
+          }
+        }).catch(()=>{});
+    }, 6000);
+  }
+  /* pick a wait back up after a refresh */
+  (function resume(){
+    if(typeof fetch!=="function") return;
+    let p=null; try{ p=JSON.parse(localStorage.getItem(WATCH_KEY)||"null"); }catch(err){}
+    if(!p||!p.id) return;
+    if(Date.now()-p.since > 6*3600*1000) return stop();   // gone stale, let it go
+    watch(p.id);
+  })();
 })();
 
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
