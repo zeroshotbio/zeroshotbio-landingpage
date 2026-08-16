@@ -757,3 +757,15 @@ const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B9","C1","C2"]);
    ============================================================ */
 const OFFSETS = {
 };
+
+/* ============================================================
+   TEXT — wording overrides, applied before anything is drawn.
+   Authored in the page's "Edit text" mode and pasted back here. Only
+   what has actually been changed appears; everything else reads from the
+   node, band and OVERVIEW definitions above.
+     nodes:{ <id>:{ name, sub, stat, group, does, built, cond } }
+     bands:{ <index>: "ROW TITLE" }
+     overview:{ title, sub, eyebrow, does, built, cond }
+   ============================================================ */
+const TEXT = {
+};

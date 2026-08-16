@@ -39,14 +39,38 @@ const svg=document.getElementById("svg");
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
-/* Fine positioning on top of the lane engine. OFFSETS in the data file is the
-   committed table; anything dragged in Edit positions mode is held in local
-   storage and wins over it while it is being tuned, so the two never stack —
-   once a session is pasted back into OFFSETS the local copy is identical to it
-   and clearing it changes nothing. */
+/* ============================================================
+   EDITS
+   Two committed tables live in the data file — OFFSETS for fine positioning
+   on top of the lane engine, TEXT for wording. Anything changed in the page's
+   own edit modes is held under one local-storage key and WINS OVER the
+   committed tables while it is being tuned, so the two never stack: once a
+   session has been baked back into the file the local copy is identical to it
+   and clearing it changes nothing.
+   ============================================================ */
+const EDIT_KEY="pipeline.edits";
 const BAKED = (typeof OFFSETS!=="undefined") ? OFFSETS : {};
-const LIVE = (()=>{ try{ const s=localStorage.getItem("pipeline.offsets");
-                         return s?JSON.parse(s):BAKED; }catch(err){ return BAKED; } })();
+const BAKED_TEXT = (typeof TEXT!=="undefined") ? TEXT : {};
+const EDITS = (()=>{
+  const base={offsets:BAKED, text:BAKED_TEXT};
+  try{
+    const s=localStorage.getItem(EDIT_KEY);
+    if(s){ const j=JSON.parse(s); return {offsets:j.offsets||{}, text:j.text||{}, at:j.at}; }
+    /* the first cut of this tool stored positions alone under its own key */
+    const old=localStorage.getItem("pipeline.offsets");
+    if(old) return {offsets:JSON.parse(old), text:BAKED_TEXT};
+  }catch(err){}
+  return base;
+})();
+const LIVE = EDITS.offsets||{};
+const LIVE_TEXT = EDITS.text||{};
+
+/* wording overrides land on the data objects before anything is drawn, so the
+   map, the index, the strip and the reader all pick them up for free */
+Object.entries(LIVE_TEXT.nodes||{}).forEach(([id,f])=>{ if(byId[id]) Object.assign(byId[id],f); });
+Object.entries(LIVE_TEXT.bands||{}).forEach(([i,v])=>{ if(BANDS[i]) BANDS[i].name=v; });
+Object.entries(LIVE_TEXT.overview||{}).forEach(([k,v])=>{ OVERVIEW[k]=v; });
+
 NODES.forEach(n=>{
   const o=LIVE[n.id];
   if(o){
@@ -57,8 +81,8 @@ NODES.forEach(n=>{
   /* where this node was actually drawn, and how far it has been dragged since */
   n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
 });
-/* every object the editor can pick up, keyed by node */
-const plinthEls={}, labelEls={};
+/* every object the editors can pick up */
+const plinthEls={}, labelEls={}, textEls={};
 
 const defs=installDefs(svg);
 
@@ -131,7 +155,7 @@ BANDS.forEach(b=>{
   const t=el("text",{x:0,y:17,"text-anchor":"middle","font-size":"16","letter-spacing":"4",
     fill:"var(--fg3)"});
   t.textContent=b.name.toUpperCase(); g.appendChild(t);
-  gLabel.appendChild(g);
+  gLabel.appendChild(g); textEls["band:"+BANDS.indexOf(b)]=t;
 });
 
 /* plinths; landmark names run along the landmark's bottom-left edge */
@@ -150,10 +174,10 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const lx = (isA?14:11) * (lb?-1:1), la = lb?"end":"start";
   const t=el("text",{x:lx,y:-3,"text-anchor":la,"font-size":isA?"20":"13",
     "letter-spacing":isA?"2.5":"1.6",fill:isA?"var(--fg)":"var(--fg2)"});
-  t.textContent=n.name.toUpperCase(); g.appendChild(t);
+  t.textContent=n.name.toUpperCase(); g.appendChild(t); textEls[n.id+":name"]=t;
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
-  t2.textContent=n.stat; g.appendChild(t2);
+  t2.textContent=n.stat; g.appendChild(t2); textEls[n.id+":stat"]=t2;
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
@@ -171,7 +195,7 @@ NODES.filter(n=>!n.anchor && n.shape!=="works" && n.shape!=="machine").forEach(n
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
   t.textContent=n.key+" · "+n.name; g.appendChild(t); gLabel.appendChild(g);
-  labelEls[n.id]=g;
+  labelEls[n.id]=g; textEls[n.id+":name"]=t;
 });
 
 /* edges */
@@ -231,8 +255,6 @@ CARRIES.forEach((c,i)=>{
 
 /* nodes */
 
-/* declared here because the node listeners close over it */
-let editing=false;
 const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
@@ -430,19 +452,25 @@ const read=document.getElementById("read");
 let tab="does", pinned=null, current=null;
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
+const TF=(id,f)=>`data-tid="${id}" data-tf="${f}"`;
 function renderOverview(){
-  const o=OVERVIEW;
-  read.innerHTML=`<div class="eyebrow">${o.eyebrow}</div><div class="title big">${o.title}</div><div class="sub">${o.sub}</div>`+
-    (tab==="does" ? `<h4>The story</h4>${o.does}<h4>Condition</h4>${o.cond}`
-      : `<h4>How it's built</h4>${o.built}<h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`);
+  const o=OVERVIEW, O="__overview__";
+  read.innerHTML=`<div class="eyebrow" ${TF(O,"eyebrow")}>${o.eyebrow}</div>`+
+    `<div class="title big" ${TF(O,"title")}>${o.title}</div>`+
+    `<div class="sub" ${TF(O,"sub")}>${o.sub}</div>`+
+    (tab==="does" ? `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
+                    `<h4>Condition</h4><div ${TF(O,"cond")}>${o.cond}</div>`
+      : `<h4>How it's built</h4><div ${TF(O,"built")}>${o.built}</div><h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`);
 }
 function renderNode(id){
   const n=byId[id];
-  read.innerHTML=`<div class="eyebrow">${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+
-    `<div class="title${n.anchor?" big":""}">${esc(n.name)}</div><div class="sub">${esc(n.sub)}</div>`+
+  read.innerHTML=`<div class="eyebrow" ${TF(id,"group")}>${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+
+    `<div class="title${n.anchor?" big":""}" ${TF(id,"name")}>${esc(n.name)}</div>`+
+    `<div class="sub" ${TF(id,"sub")}>${esc(n.sub)}</div>`+
     (UNVERIFIED.has(n.key)?`<div class="unver">unverified with Patrick</div>`:"")+
-    (tab==="does" ? `<h4>What it does</h4><p>${n.does}</p><h4>Condition</h4><p class="cond">${n.cond}</p>`
-      : `<h4>How it's built</h4><p>${n.built}</p>`+
+    (tab==="does" ? `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
+                    `<h4>Condition</h4><p class="cond" ${TF(id,"cond")}>${n.cond}</p>`
+      : `<h4>How it's built</h4><p ${TF(id,"built")}>${n.built}</p>`+
         `<dl class="kv"><dt>Marker</dt><dd>${n.key}</dd></dl>`+
         `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
         `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`);
@@ -538,12 +566,9 @@ document.querySelectorAll(".tab").forEach(t=>t.onclick=()=>{
   document.querySelectorAll(".tab").forEach(x=>x.classList.remove("on"));
   t.classList.add("on");tab=t.dataset.tab;current?renderNode(current):renderOverview();
 });
-const btnPlay=document.getElementById("btnPlay");
-const syncPlay=()=>btnPlay.textContent=playing?"Pause the flow":"Resume the flow";
-btnPlay.onclick=()=>{playing=!playing;syncPlay();}; syncPlay();
-document.getElementById("btnStep").onclick=()=>{playing=false;syncPlay();placeDots(.35);};
+/* the flow runs unless the machine asks it not to — there is no longer a
+   button for it, and nothing else turns it off */
 const resetView=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),1100);};
-document.getElementById("btnReset").onclick=resetView;
 document.getElementById("zfit").onclick=resetView;
 document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
 /* the ruler is a working tool, not part of the picture — one click hides it */
@@ -559,6 +584,85 @@ document.getElementById("btnTheme").onclick=e=>{
 svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
 
 /* ============================================================
+   SAVING
+   One store for both modes. Confirming writes it to the shared back end so it
+   becomes the default for everyone; local storage always holds a copy, so an
+   edit survives a refresh whether or not the back end is reachable.
+   ============================================================ */
+let editing=false, texting=false, setPosMode=null, setTextMode=null, dirty=false;
+const r2=v=>Math.round(v*100)/100;
+
+/* the committed table plus this session */
+function totalOffset(n){
+  const b=LIVE[n.id]||{}, o={};
+  const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
+  const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
+  if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
+  return o;
+}
+function collectOffsets(){
+  const out={};
+  NODES.forEach(n=>{ const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  return out;
+}
+/* Wording is recorded as it is changed rather than diffed afterwards — the
+   originals are gone the moment an override is applied on load, so there is
+   nothing left to diff against. Seeded with whatever was already in force. */
+const SESSION_TEXT={ nodes:JSON.parse(JSON.stringify(LIVE_TEXT.nodes||{})),
+                     bands:JSON.parse(JSON.stringify(LIVE_TEXT.bands||{})),
+                     overview:JSON.parse(JSON.stringify(LIVE_TEXT.overview||{})) };
+function recordText(scope,key,field,value){
+  if(scope==="band") SESSION_TEXT.bands[key]=value;
+  else if(scope==="overview") SESSION_TEXT.overview[field]=value;
+  else (SESSION_TEXT.nodes[key]=SESSION_TEXT.nodes[key]||{})[field]=value;
+}
+function collectText(){
+  const out={};
+  ["nodes","bands","overview"].forEach(k=>{
+    if(Object.keys(SESSION_TEXT[k]).length) out[k]=SESSION_TEXT[k];
+  });
+  return out;
+}
+function payload(){ return {offsets:collectOffsets(), text:collectText()}; }
+function stash(){
+  try{ localStorage.setItem(EDIT_KEY,JSON.stringify({...payload(),at:Date.now()})); }catch(err){}
+}
+function markDirty(){ dirty=true; stash(); syncSaveBar(); }
+function syncSaveBar(){
+  const on = editing || texting || dirty;
+  document.body.classList.toggle("haschanges", on);
+}
+/* a short confirmation, in the corner of the map */
+const toastEl=document.getElementById("toast");
+let toastT=null;
+function toast(msg,warn,ms){
+  if(!toastEl) return;
+  toastEl.textContent=msg;
+  toastEl.classList.toggle("warn",!!warn);
+  toastEl.classList.add("on");
+  clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("on"), ms||3400);
+}
+/* the shared back end. A read failure is silent — the map falls back to the
+   tables baked into the data file. A write failure is not: the whole point of
+   Confirm is being told whether it stuck. */
+const EDIT_PASS="pipeline.editkey";
+function pushRemote(){
+  if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
+  let key=""; try{ key=localStorage.getItem(EDIT_PASS)||""; }catch(err){}
+  if(!key){
+    key=prompt("Save key for the shared copy\n\n(the site password, or PIPELINE_EDIT_KEY if one is set)")||"";
+    if(!key) return Promise.resolve({ok:false,error:"no_key"});
+    try{ localStorage.setItem(EDIT_PASS,key); }catch(err){}
+  }
+  return fetch("/api/pipeline_edits",{method:"POST",
+      headers:{"content-type":"application/json","x-edit-key":key},
+      body:JSON.stringify(payload())})
+    .then(r=>r.json().then(j=>({...j,status:r.status})))
+    .then(j=>{ if(j.status===401){ try{ localStorage.removeItem(EDIT_PASS); }catch(err){} } return j; })
+    .catch(err=>({ok:false,error:"unreachable"}));
+}
+
+/* ============================================================
    EDIT POSITIONS
    A tuning mode. Everything the map draws is placed from world coordinates,
    and the projection is affine, so dragging is exact rather than approximate:
@@ -572,8 +676,6 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
    ============================================================ */
 (function editor(){
   const btnEdit=document.getElementById("btnEdit");
-  const btnSave=document.getElementById("btnSave");
-  const btnDrop=document.getElementById("btnDiscard");
   if(!btnEdit) return;                       // the page can ship without the tool
   const hint=document.querySelector(".hint");
   const hint0=hint?hint.textContent:"";
@@ -653,11 +755,11 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
     refresh(null);
     /* painter order is (x+y); something dragged far enough changes places */
     NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
-    stash();
+    markDirty();
   }
   function say(n){
     if(!hint) return;
-    const o=n?total(n):{};
+    const o=n?totalOffset(n):{};
     hint.textContent = n
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
@@ -675,57 +777,227 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
     ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
   });
 
-  /* the committed table plus this session, which is what gets pasted back */
-  function total(n){
-    const b=LIVE[n.id]||{}, o={};
-    const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
-    const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
-    if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
-    return o;
-  }
-  function collect(){
-    const out={};
-    NODES.forEach(n=>{ const o=total(n); if(Object.keys(o).length) out[n.id]=o; });
-    return out;
-  }
-  function stash(){
-    try{ localStorage.setItem("pipeline.offsets",JSON.stringify(collect())); }catch(err){}
-  }
-  function asSource(o){
-    const rows=Object.entries(o).map(([id,v])=>
-      `  ${id}:{${Object.entries(v).map(([k,x])=>k+":"+x).join(",")}},`);
-    return "const OFFSETS = {\n"+rows.join("\n")+(rows.length?"\n":"")+"};";
-  }
-
+  setPosMode=setMode;
   function setMode(on){
+    if(on && texting) setTextMode(false);
     editing=on;
     svg.classList.toggle("editing",on);
     document.body.classList.toggle("editing",on);
-    btnEdit.textContent=on?"Done editing":"Edit positions";
+    btnEdit.textContent=on?"Done moving":"Edit positions";
+    syncSaveBar();
     if(on){ release(); say(null); }
     else if(hint) hint.textContent=hint0;
   }
   btnEdit.onclick=()=>setMode(!editing);
+})();
 
-  btnSave.onclick=()=>{
-    const o=collect(), src=asSource(o);
-    stash();
-    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(src).catch(()=>{});
-    console.log(src);
-    pinned=null; current=null; paintIndex();
-    read.innerHTML=`<div class="eyebrow">Edit positions</div>`+
-      `<div class="title">${Object.keys(o).length} object${Object.keys(o).length===1?"":"s"} moved</div>`+
-      `<div class="sub">copied to the clipboard, and kept in this browser until it is baked in</div>`+
-      `<h4>Paste this over OFFSETS in pipeline-data.js</h4><div class="snip">${esc(src)}</div>`+
-      `<h4>Note</h4><p>These are nudges relative to what the lane engine computed, not absolute `+
-      `coordinates, so they survive a row being re-solved or a step being inserted. `+
-      `Discard throws away everything not yet baked in.</p>`;
+/* ============================================================
+   EDIT TEXT
+   Every string on the page comes from a field on a data object, so editing
+   one is: change the field, then repaint the few places that render it. One
+   popover does the typing, anchored to whatever was clicked — on the map, or
+   in the reader, or on a band title.
+   ============================================================ */
+(function texteditor(){
+  const btnText=document.getElementById("btnText");
+  if(!btnText) return;
+  const pop=document.getElementById("tedit"), inp=document.getElementById("teIn"),
+        what=document.getElementById("teWhat"), teHint=document.getElementById("teHint");
+  const LONG={does:1,built:1,cond:1};
+  const FIELD={name:"Name",sub:"Subtitle",stat:"Landmark line",group:"Group",
+               does:"What it does",built:"How it's built",cond:"Condition",
+               title:"Title",eyebrow:"Eyebrow",band:"Row title"};
+  let open=null;
+
+  const bandName=i=>BANDS[i]?BANDS[i].name:"";
+  function valueOf(t){
+    if(t.kind==="band") return bandName(t.i);
+    if(t.id==="__overview__") return OVERVIEW[t.f]||"";
+    return byId[t.id]?(byId[t.id][t.f]||""):"";
+  }
+  /* write the field, then repaint only what renders it */
+  function commit(t,v){
+    v=v.replace(/\s+$/,"");
+    if(!v || v===valueOf(t)) return;
+    if(t.kind==="band"){
+      BANDS[t.i].name=v; recordText("band",t.i,null,v);
+      if(textEls["band:"+t.i]) textEls["band:"+t.i].textContent=v.toUpperCase();
+    }else if(t.id==="__overview__"){
+      OVERVIEW[t.f]=v; recordText("overview",null,t.f,v); if(!current) renderOverview();
+    }else{
+      recordText("node",t.id,t.f,v);
+      const n=byId[t.id]; n[t.f]=v;
+      const el0=textEls[t.id+":"+t.f];
+      if(el0) el0.textContent = t.f==="stat" ? v
+              : (n.anchor||n.shape==="works"||n.shape==="machine") ? v.toUpperCase()
+              : n.key+" · "+v;
+      if(t.f==="name"){
+        const row=aside.querySelector(`.row[data-id="${t.id}"] .nm`);   if(row) row.textContent=v;
+        const chip=strip.querySelector(`.chip[data-id="${t.id}"] .nm`); if(chip) chip.textContent=v;
+        nodeEls[t.id].setAttribute("aria-label",v);
+      }
+      if(current===t.id) renderNode(t.id);
+    }
+    markDirty();
+  }
+
+  /* fixed to the viewport, not to the map — the same popover has to reach a
+     band title out on the canvas and a paragraph over in the reader */
+  function place(rect){
+    pop.classList.add("on");
+    const W=window.innerWidth||1200, H=window.innerHeight||800;
+    const w=pop.offsetWidth||420, h=pop.offsetHeight||160;
+    let x=rect.left+rect.width/2-w/2, y=rect.bottom+10;
+    if(y+h>H-10) y=Math.max(10,rect.top-h-10);
+    pop.style.left=Math.max(10,Math.min(W-w-10,x))+"px";
+    pop.style.top=Math.max(10,y)+"px";
+  }
+  function edit(t,rect){
+    open=t;
+    const long=!!LONG[t.f];
+    what.textContent = (t.kind==="band" ? "Row title"
+      : (t.id==="__overview__" ? "Overview" : byId[t.id].key+" · "+byId[t.id].name))
+      + " — " + (FIELD[t.kind==="band"?"band":t.f]||t.f);
+    inp.value=valueOf(t);
+    inp.rows = long?9:1;
+    teHint.textContent = long ? "Shift-Enter for a new line · Enter to keep · Esc to cancel"
+                              : "Enter to keep · Esc to cancel";
+    place(rect);
+    inp.focus(); inp.select();
+  }
+  function close(save){
+    if(open && save) commit(open,inp.value);
+    open=null; pop.classList.remove("on");
+  }
+  inp.addEventListener("keydown",e=>{
+    if(e.key==="Escape"){ e.preventDefault(); close(false); }
+    else if(e.key==="Enter" && !e.shiftKey){ e.preventDefault(); close(true); }
+  });
+  document.getElementById("teOk").onclick=()=>close(true);
+  document.getElementById("teX").onclick=()=>close(false);
+
+  /* every <text> the map registered becomes a target */
+  Object.entries(textEls).forEach(([key,e])=>{
+    e.style.pointerEvents="all";
+    e.addEventListener("click",ev=>{
+      if(!texting) return;
+      ev.stopPropagation();
+      const t = key.startsWith("band:") ? {kind:"band",i:+key.slice(5),f:"band"}
+              : {kind:"node",id:key.split(":")[0],f:key.split(":")[1]};
+      edit(t, e.getBoundingClientRect());
+    });
+  });
+  /* and every tagged block in the reader */
+  read.addEventListener("click",ev=>{
+    if(!texting) return;
+    const host=ev.target.closest?ev.target.closest("[data-tf]"):null;
+    if(!host) return;
+    ev.stopPropagation();
+    edit({kind:"node",id:host.dataset.tid,f:host.dataset.tf}, host.getBoundingClientRect());
+  });
+
+  const hint=document.querySelector(".hint"), hint0=hint?hint.textContent:"";
+  setTextMode=on=>{
+    if(on && editing) setPosMode(false);
+    texting=on;
+    svg.classList.toggle("texting",on);
+    document.body.classList.toggle("texting",on);
+    btnText.textContent=on?"Done editing text":"Edit text";
+    syncSaveBar();
+    if(hint) hint.textContent = on
+      ? "Click any name, row title or paragraph to rewrite it · select a step first to reach its prose"
+      : hint0;
+    if(!on) close(false);
   };
+  btnText.onclick=()=>setTextMode(!texting);
+})();
+
+/* ============================================================
+   SAVE ALL CHANGES
+   Two steps on purpose. The first shows exactly what is about to become the
+   default and what it will look like in the file; the second commits it and
+   says so. Nothing reaches the shared copy without the second click.
+   ============================================================ */
+(function saving(){
+  const btnSave=document.getElementById("btnSave"), btnDrop=document.getElementById("btnDiscard");
+  if(!btnSave) return;
+
+  const asSource=(o,name)=>{
+    const rows=Object.entries(o).map(([k,v])=>
+      `  ${/^[A-Za-z_$][\w$]*$/.test(k)?k:JSON.stringify(k)}: ${JSON.stringify(v)},`);
+    return `const ${name} = {\n`+rows.join("\n")+(rows.length?"\n":"")+"};";
+  };
+  const countText=t=>Object.keys(t.nodes||{}).reduce((a,id)=>a+Object.keys(t.nodes[id]).length,0)
+                    +Object.keys(t.bands||{}).length+Object.keys(t.overview||{}).length;
+
+  function panel(state){
+    const p=payload(), nMove=Object.keys(p.offsets).length, nWord=countText(p.text);
+    pinned=null; current=null; paintIndex();
+    read.innerHTML=
+      `<div class="eyebrow">Save all changes</div>`+
+      `<div class="title">${nMove} moved · ${nWord} reworded</div>`+
+      `<div class="sub">${state==="done"
+        ? "confirmed — this is the default now, for every browser"
+        : "kept in this browser · not the shared default until you confirm"}</div>`+
+      (state==="done"
+        ? `<p class="savedone">Written to the shared copy. It survives a refresh, and anyone `+
+          `opening the page gets it. Steven bakes it into the data file from here so it lives `+
+          `in the repo rather than only in the store.</p>`
+        : `<div class="savebar"><button class="ctl go" id="svGo">Confirm and set as default</button>`+
+          `<button class="ctl" id="svNo">Not yet</button></div>`)+
+      (nMove?`<h4>Positions</h4><div class="snip">${esc(asSource(p.offsets,"OFFSETS"))}</div>`:"")+
+      (nWord?`<h4>Wording</h4><div class="snip">${esc(asSource(p.text,"TEXT"))}</div>`:"")+
+      (!nMove&&!nWord?`<h4>Nothing to save</h4><p>No position and no wording differs from the file.</p>`:"")+
+      `<h4>Note</h4><p>Positions are nudges relative to what the lane engine computed, never `+
+      `absolute coordinates, so they survive a row being re-solved or a step being inserted.</p>`;
+    const go=document.getElementById("svGo"), no=document.getElementById("svNo");
+    if(go) go.onclick=confirmSave;
+    if(no) no.onclick=()=>{ renderOverview(); };
+  }
+
+  function confirmSave(){
+    stash();                                   // this browser, immediately
+    const go=document.getElementById("svGo");
+    if(go){ go.textContent="Saving…"; go.disabled=true; }
+    pushRemote().then(res=>{
+      if(res && res.ok){
+        dirty=false; syncSaveBar(); panel("done");
+        toast("Confirmed — saved as the new default. It will still be here after a refresh.");
+      }else{
+        panel("pending");
+        const why = res && res.error==="not_configured"
+          ? "the shared store is not switched on yet — set PIPELINE_EDIT_KEY in Vercel"
+          : res && res.error==="unauthorized" ? "that key was not accepted"
+          : res && res.error==="no_key" ? "no key given"
+          : res && res.error==="too_large" ? "too big for one record"
+          : "the shared store could not be reached";
+        toast("Kept in this browser only — "+why+".", true, 6000);
+      }
+    });
+  }
+
+  btnSave.onclick=()=>panel("pending");
   btnDrop.onclick=()=>{
-    if(!confirm("Throw away every position moved since the last bake-in?")) return;
-    try{ localStorage.removeItem("pipeline.offsets"); }catch(err){}
+    if(!confirm("Throw away every change since the last confirmed save?")) return;
+    try{ localStorage.removeItem(EDIT_KEY); localStorage.removeItem("pipeline.offsets"); }catch(err){}
     location.reload();
   };
+})();
+
+/* The shared copy is the default for everyone, so pull it after first paint
+   and take it if this browser has nothing newer of its own. A failure here is
+   silent: the map is already drawn from the tables in the data file. */
+(function pull(){
+  if(typeof fetch!=="function") return;
+  const mine=EDITS.at||0;
+  fetch("/api/pipeline_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
+    if(!doc || doc.error || !doc.at || doc.at<=mine) return;
+    if(dirty) return;                          // never overwrite work in progress
+    try{ localStorage.setItem(EDIT_KEY,JSON.stringify(
+      {offsets:doc.offsets||{}, text:doc.text||{}, at:doc.at})); }catch(err){}
+    toast("A newer shared version is available — reloading.");
+    setTimeout(()=>location.reload(), 900);
+  }).catch(()=>{});
 })();
 
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);

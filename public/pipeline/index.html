@@ -105,7 +105,7 @@
 
   /* ---- edit positions ---- */
   .edonly{display:none}
-  body.editing .edonly{display:block}
+  body.haschanges .edonly{display:block}
   body.editing #btnEdit{background:var(--signal);color:var(--bg);border-color:var(--signal)}
   body.editing .hint{color:var(--signal);text-transform:none;font-size:10px;letter-spacing:.04em}
   /* the handles are inert until the mode is on: hit-testing stays exactly as
@@ -121,6 +121,44 @@
   svg.editing{cursor:default}
   svg.editing g[role=button]{cursor:move}
   svg.editing g:hover>.ehandle{fill-opacity:.16;stroke-opacity:1;stroke-dasharray:none}
+
+  /* ---- edit text ---- */
+  body.texting #btnText{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  /* every editable string gets a dotted underline so the mode shows you its
+     own reach — on the map and in the reader alike */
+  svg.texting text{cursor:text}
+  svg.texting text:hover{fill:var(--signal)!important}
+  body.texting .read [data-tf]{cursor:text;outline:1px dashed var(--rule);outline-offset:3px}
+  body.texting .read [data-tf]:hover{outline-color:var(--signal);background:rgba(116,176,240,.07)}
+  .tedit{display:none;position:fixed;z-index:60;width:min(430px,calc(100vw - 24px));
+         background:var(--panel);border:1px solid var(--signal);
+         box-shadow:0 12px 34px rgba(0,0,0,.42)}
+  .tedit.on{display:block}
+  .tehead{display:flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;
+          border-bottom:1px solid var(--rule);font-size:8.5px;letter-spacing:.14em;
+          text-transform:uppercase;color:var(--fg3)}
+  .tehead span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tehead button{width:22px;height:20px;font-size:16px;line-height:1;color:var(--fg2)}
+  .tedit textarea{display:block;width:100%;resize:vertical;min-height:34px;max-height:46dvh;
+                  background:var(--bg);color:var(--fg);border:none;outline:none;
+                  padding:9px 10px;font:inherit;font-size:11.5px;line-height:1.55}
+  .tefoot{display:flex;align-items:center;gap:10px;padding:6px 8px;border-top:1px solid var(--rule)}
+  #teHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+
+  /* ---- confirmation ---- */
+  .toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
+         z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;
+         background:var(--fg);color:var(--bg);padding:9px 16px;font-size:11px;
+         letter-spacing:.04em;max-width:min(520px,86%);text-align:center;
+         box-shadow:0 10px 28px rgba(0,0,0,.4)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .toast.warn{background:var(--drop);color:#fff}
+  .savebar{display:flex;gap:8px;align-items:center;margin:14px 0 4px}
+  .savebar .ctl{border:1px solid var(--fg);padding:6px 12px;font-size:9.5px;letter-spacing:.12em;
+                text-transform:uppercase}
+  .savebar .go{background:var(--fg);color:var(--bg)}
+  .savebar .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  .savedone{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
   svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
 
   .reader{width:352px;flex:none;border-left:1px solid var(--fg);display:flex;flex-direction:column;
@@ -223,13 +261,11 @@
     <div class="stat"><div class="k">Leaves</div><div class="v">251 – 342</div></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
-      <button class="ctl" id="btnPlay">Pause the flow</button>
-      <button class="ctl" id="btnStep">Trace one step</button>
       <button class="ctl" id="btnAxes">Hide axes</button>
       <button class="ctl" id="btnTheme">Light</button>
-      <button class="ctl" id="btnReset">Reset view</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
-      <button class="ctl edonly" id="btnSave">Save positions</button>
+      <button class="ctl" id="btnText">Edit text</button>
+      <button class="ctl edonly" id="btnSave">Save all changes</button>
       <button class="ctl edonly" id="btnDiscard">Discard</button>
     </div>
   </header>
@@ -239,6 +275,14 @@
       <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
       <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" class="fitonly" aria-label="Reset view">⤾</button></div>
       <div class="hint">Hover to preview · Click to keep · Click empty space to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
+      <!-- the text editor: one popover, anchored to whatever was clicked -->
+      <div class="tedit" id="tedit">
+        <div class="tehead"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
+        <textarea id="teIn" spellcheck="true" rows="1"></textarea>
+        <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
+             <button class="ctl" id="teOk">Keep</button></div>
+      </div>
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
     </div>
     <div class="strip" id="strip"></div>
     <div class="reader" id="reader">
