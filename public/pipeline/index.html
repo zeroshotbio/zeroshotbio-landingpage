@@ -106,7 +106,16 @@
       -webkit-user-select:none;user-select:none;
       -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   svg.drag{cursor:grabbing}
-  .zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px}
+  /* walk the sequence: keyboard on a desktop, these on anything. Round, so
+     they read as buttons rather than as part of the drawing. */
+  .stepnav{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:5}
+  .stepnav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
+                  background:var(--bg);color:var(--fg);display:grid;place-items:center;
+                  font-size:18px;line-height:1;padding-bottom:2px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  .stepnav button:hover,.stepnav button:focus-visible{background:var(--fg);color:var(--bg)}
+  .stepnav button:active{transform:scale(.92)}
+  .zoom{position:absolute;top:56px;right:10px;display:flex;flex-direction:column;gap:5px}
   .zoom button{width:24px;height:24px;border:1px solid var(--fg);display:grid;place-items:center;
                background:var(--bg);font-size:13px;line-height:1}
   .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
@@ -261,7 +270,9 @@
     .read{padding:10px 14px 16px}
     .mobtoggle{display:none}
     .fitonly{display:grid}
-    .zoom{top:6px;right:6px;gap:6px}
+    .stepnav{top:8px;right:8px;gap:10px}
+    .stepnav button{width:44px;height:44px;font-size:23px}
+    .zoom{top:60px;right:8px;gap:6px}
     .zoom button{width:34px;height:34px;font-size:17px}
   }
   @media (max-width:900px) and (orientation:landscape){
@@ -294,8 +305,12 @@
     <aside id="aside"></aside>
     <div class="stage">
       <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
+      <div class="stepnav">
+        <button id="stPrev" aria-label="Previous step">‹</button>
+        <button id="stNext" aria-label="Next step">›</button>
+      </div>
       <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" class="fitonly" aria-label="Reset view">⤾</button></div>
-      <div class="hint">Hover to preview · Click to keep · Click empty space to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
+      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
       <!-- the text editor: one popover, anchored to whatever was clicked -->
       <div class="tedit" id="tedit">
         <div class="tehead"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>

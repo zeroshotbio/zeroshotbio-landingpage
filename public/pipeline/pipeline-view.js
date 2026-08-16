@@ -593,6 +593,37 @@ document.getElementById("btnTheme").onclick=e=>{
 svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
 
 /* ============================================================
+   WALKING THE SEQUENCE
+   The index and the strip are both in NODES order, which is the reading
+   order, so stepping is just moving through that array. Arrow keys on a
+   desktop, two round buttons on anything — a phone has no keyboard and the
+   strip is a scroll rather than a walk.
+   ============================================================ */
+function goTo(id){
+  const n=byId[id]; if(!n) return;
+  pinned=id; current=id;                       // always land on it, never toggle off
+  renderNode(id); paintIndex(); focusNode(id);
+}
+function stepBy(d){
+  if(!NODES.length) return;
+  /* nothing selected yet: forward starts at the first, back at the last */
+  const at = current ? NODES.findIndex(n=>n.id===current) : (d>0 ? -1 : 0);
+  const to = ((at+d)%NODES.length + NODES.length) % NODES.length;
+  goTo(NODES[to].id);
+}
+document.getElementById("stNext").onclick=()=>stepBy(1);
+document.getElementById("stPrev").onclick=()=>stepBy(-1);
+window.addEventListener("keydown",e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  /* never while something is being typed into — the text editor owns its keys */
+  const t=e.target, tag=t&&t.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA"||(t&&t.isContentEditable)) return;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); stepBy(1); }
+  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); stepBy(-1); }
+  else if(e.key==="Escape"){ release(); }
+});
+
+/* ============================================================
    SAVING
    One store for both modes. Confirming writes it to the shared back end so it
    becomes the default for everyone; local storage always holds a copy, so an
