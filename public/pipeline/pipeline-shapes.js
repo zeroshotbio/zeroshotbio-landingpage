@@ -282,7 +282,7 @@ function drawVials(g,n){
       const node=el("circle",{cx:cx,cy:cy,r:0.8,fill:"var(--fg)","fill-opacity":".8"});
       cart.appendChild(node);
       cells.push({node,cx,cy,ph:r()*6.283,ph2:r()*6.283,
-                  rate:3.4+r()*3.6, rate2:7+r()*6, amp:1.8+r()*1.6});
+                  rate:1.6+r()*1.6, rate2:3.2+r()*2.6, amp:0.45+r()*0.4});
     }
     return {w,cells,order:w.i*PLATE_ROWS+w.j};
   });
@@ -327,7 +327,7 @@ function drawVials(g,n){
     "stroke-linecap":"round"});
   g.appendChild(handle);
 
-  const STEP=0.2;
+  const STEP=0.5;                 // same pace as the tip on the arraying step
   const FILL=groups.length*STEP;
   const SETTLE=0.6, SHRINK=1.8, CLOSE=0.9, HOLD=1.6, OPEN=0.7;
   const CYCLE=FILL+SETTLE+SHRINK+CLOSE+HOLD+OPEN;
@@ -624,23 +624,41 @@ function drawClutch(g,n){
     eggs.push({ex,ey,z:th*(0.06+r()*0.1),size:1.3+r()*0.35,
                dead:r()<0.11, ang:r()*6.283});
   }
+  /* every egg gets its own slow drift — a clutch in medium is never still */
+  const drift=[];
   eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
       .sort((a,b)=>a.p[1]-b.p[1])
       .forEach(({e,p})=>{
+    const node=el("g",{});
     if(e.dead){
       /* unfertilised: flat and opaque */
-      g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
+      node.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
         fill:"var(--fg)","fill-opacity":".82"}));
-      return;
+    }else{
+      node.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
+        fill:"var(--fg)","fill-opacity":".16",
+        stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
+      /* the embryo, curled against one side of the chorion */
+      node.appendChild(el("circle",{
+        cx:p[0]+Math.cos(e.ang)*e.size*0.34, cy:p[1]+Math.sin(e.ang)*e.size*0.34,
+        r:e.size*0.44, fill:"var(--fg)","fill-opacity":".9"}));
     }
-    g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,
-      fill:"var(--fg)","fill-opacity":".16",
-      stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
-    /* the embryo, curled against one side of the chorion */
-    g.appendChild(el("circle",{
-      cx:p[0]+Math.cos(e.ang)*e.size*0.34, cy:p[1]+Math.sin(e.ang)*e.size*0.34,
-      r:e.size*0.44, fill:"var(--fg)","fill-opacity":".9"}));
+    g.appendChild(node);
+    drift.push({node, ax:0.5+r()*0.9, ay:0.35+r()*0.6,
+                r1:0.45+r()*0.7, r2:0.6+r()*0.9, p1:r()*6.283, p2:r()*6.283});
   });
+  let ct=0;
+  const runClutch=(dt)=>{
+    ct+=dt;
+    drift.forEach(d=>{
+      const x=Math.sin(ct*d.r1+d.p1)+0.5*Math.sin(ct*d.r2*1.7+d.p2);
+      const y=Math.cos(ct*d.r2+d.p2)+0.5*Math.cos(ct*d.r1*1.9+d.p1);
+      d.node.setAttribute("transform",
+        `translate(${(x*d.ax).toFixed(2)},${(y*d.ay).toFixed(2)})`);
+    });
+  };
+  runClutch(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; runClutch(dt); });
 
   /* medium above them, then the rim */
   g.appendChild(el("ellipse",{cx:med.x,cy:med.y,rx:med.rx,ry:med.ry,
@@ -682,20 +700,28 @@ function drawCullDish(g,n){
     eggs.push({ex:n.x+Math.cos(a)*rad, ey:n.y+Math.sin(a)*rad,
                z:th*(0.06+r()*0.1), size:1.3+r()*0.35, dead:i<6, ang:r()*6.283});
   }
+  /* same drift as the clutch — it is the same dish one step later. The pipette
+     keeps aiming at each egg's home point, not its drifted one; at this
+     amplitude the difference is under a pixel. */
+  const drift=[];
   eggs.map(e=>({e,p:P(e.ex,e.ey,e.z)}))
       .sort((a,b)=>a.p[1]-b.p[1])
       .forEach(({e,p})=>{
+    const node=el("g",{});
     if(e.dead){
-      const node=el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)","fill-opacity":".82"});
-      g.appendChild(node);
-      dead.push({node,p,size:e.size});
-      return;
+      const c=el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)","fill-opacity":".82"});
+      node.appendChild(c);
+      dead.push({node:c,p,size:e.size});
+    }else{
+      node.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)",
+        "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
+      node.appendChild(el("circle",{cx:p[0]+Math.cos(e.ang)*e.size*0.34,
+        cy:p[1]+Math.sin(e.ang)*e.size*0.34, r:e.size*0.44,
+        fill:"var(--fg)","fill-opacity":".9"}));
     }
-    g.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)",
-      "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
-    g.appendChild(el("circle",{cx:p[0]+Math.cos(e.ang)*e.size*0.34,
-      cy:p[1]+Math.sin(e.ang)*e.size*0.34, r:e.size*0.44,
-      fill:"var(--fg)","fill-opacity":".9"}));
+    g.appendChild(node);
+    drift.push({node, ax:0.5+r()*0.9, ay:0.35+r()*0.6,
+                r1:0.45+r()*0.7, r2:0.6+r()*0.9, p1:r()*6.283, p2:r()*6.283});
   });
 
   g.appendChild(el("ellipse",{cx:medE.x,cy:medE.y,rx:medE.rx,ry:medE.ry,
@@ -719,9 +745,15 @@ function drawCullDish(g,n){
 
   /* the loop */
   const HIGH=38, CYCLE=3.0, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  let i=0, t=0;
+  let i=0, t=0, ct=0;
   const swim=(dt)=>{
-    t+=dt;
+    t+=dt; ct+=dt;
+    drift.forEach(d=>{
+      const x=Math.sin(ct*d.r1+d.p1)+0.5*Math.sin(ct*d.r2*1.7+d.p2);
+      const y=Math.cos(ct*d.r2+d.p2)+0.5*Math.cos(ct*d.r1*1.9+d.p1);
+      d.node.setAttribute("transform",
+        `translate(${(x*d.ax).toFixed(2)},${(y*d.ay).toFixed(2)})`);
+    });
     if(t>CYCLE){
       t-=CYCLE;
       dead[i].node.setAttribute("fill-opacity","0");
@@ -821,15 +853,38 @@ function drawWell(g,w,dosed){
    in order, in about two seconds.
    ------------------------------------------------------------------ */
 function drawEchoDispense(g,n){
-  const th=0.1, gap=1.55;
+  const th=0.1, gap=1.55, CH=0.34;
+  const lift=CH*S*CZ;                       // the deck sits on the chassis
   const src={x:n.x,y:n.y,w:n.w,d:n.d}, dst={x:n.x,y:n.y,w:n.w,d:n.d};
 
-  /* source plate, compounds laid out in the same bands as the target */
-  plateSlab(g,src,th,SKIN.tile,1);
-  const swells=plateWells(src,th);
-  swells.forEach(w=>drawWell(g,w,true));
+  /* THE INSTRUMENT. The source is not a second plate sitting in mid-air: it is
+     a microplate recessed into the deck of a machine, with the transducer
+     under it. Draw the chassis first so the whole node reads as apparatus. */
+  paint(g,n.x,n.y,n.w*1.16,n.d*1.34,CH,SKIN.works);
+  const lipT=faces(n.x,n.y,n.w*1.04,n.d*1.16,CH);
+  g.appendChild(el("polygon",{points:lipT.top,fill:"var(--bg)","fill-opacity":".5",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".6"}));
+  /* a panel on the near face, with a light that pulses as it fires */
+  const py=n.y+n.d*0.67, pf=(xv,zv)=>P(xv,py,zv);
+  const px0=n.x-n.w*0.42, px1=n.x-n.w*0.06;
+  g.appendChild(el("polygon",{
+    points:pts([pf(px0,CH*0.78),pf(px1,CH*0.78),pf(px1,CH*0.24),pf(px0,CH*0.24)]),
+    fill:"var(--bg)","fill-opacity":".6",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".6"}));
+  const lamps=[0,1,2].map(i=>{
+    const c=pf(px0+0.07+i*0.1, CH*0.51);
+    const e2=el("circle",{cx:c[0],cy:c[1],r:"1.7",fill:"var(--fg)","fill-opacity":".3"});
+    g.appendChild(e2); return e2;
+  });
 
-  /* the transducer's firing position */
+  /* the source plate, recessed into the deck */
+  const deck=el("g",{transform:`translate(0,${-lift})`});
+  plateSlab(deck,src,th,SKIN.tile,1);
+  const swells=plateWells(src,th);
+  swells.forEach(w=>drawWell(deck,w,true));
+  g.appendChild(deck);
+
+  /* where the transducer is aimed */
   const ring=el("ellipse",{rx:"1",ry:"1",fill:"none",stroke:"var(--fg)",
     "stroke-width":"1.3","stroke-opacity":"0"});
   g.appendChild(ring);
@@ -843,18 +898,18 @@ function drawEchoDispense(g,n){
   }
 
   /* destination plate, inverted above, filling as the wave passes */
-  const lift=el("g",{transform:`translate(0,${-(th+gap)*S*CZ})`});
-  plateSlab(lift,dst,th,SKIN.tile,1);
+  const above=el("g",{transform:`translate(0,${-(lift+(th+gap)*S*CZ)})`});
+  plateSlab(above,dst,th,SKIN.tile,1);
   const dwells=plateWells(dst,th).map(w=>{
-    lift.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
+    above.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx,ry:w.e.ry,
       fill:"var(--bg)","fill-opacity":".5",stroke:"var(--stroke)",
       "stroke-width":".5","stroke-opacity":".45"}));
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:w.e.rx*0.86,ry:w.e.ry*0.86,
       fill:w.band.fill,"fill-opacity":"0"});
-    lift.appendChild(fill);
+    above.appendChild(fill);
     return {w,fill,rx:w.e.rx*0.86,ry:w.e.ry*0.86};
   });
-  g.appendChild(lift);
+  g.appendChild(above);
 
   /* fire order: column by column, so the wave crosses the four bands */
   const order=swells.map((w,i)=>i)
@@ -879,7 +934,7 @@ function drawEchoDispense(g,n){
       if(age<0||age>LIFE){ node.setAttribute("fill-opacity","0"); return; }
       const w=swells[order[idx]], f=age/LIFE;
       node.setAttribute("cx",w.e.x);
-      node.setAttribute("cy",(w.e.y-rise*(1-(1-f)*(1-f))).toFixed(1));
+      node.setAttribute("cy",(w.e.y-lift-rise*(1-(1-f)*(1-f))).toFixed(1));
       node.setAttribute("fill",w.band.fill);
       const fadeIn=f<0.06?f/0.06:1;
       const merge=age>LIFE-LEAD ? Math.max(0,1-(age-(LIFE-LEAD))/LEAD) : 1;
@@ -903,11 +958,14 @@ function drawEchoDispense(g,n){
     /* the transducer, under whichever well is firing */
     if(head>=0&&head<order.length){
       const w=swells[order[head]];
-      ring.setAttribute("cx",w.e.x); ring.setAttribute("cy",w.e.y);
+      ring.setAttribute("cx",w.e.x); ring.setAttribute("cy",w.e.y-lift);
       ring.setAttribute("rx",(w.e.rx*1.5).toFixed(1));
       ring.setAttribute("ry",(w.e.ry*1.5).toFixed(1));
       ring.setAttribute("stroke-opacity",".75");
-    } else ring.setAttribute("stroke-opacity","0");
+      lamps.forEach((L,i)=>L.setAttribute("fill-opacity",
+        ((head+i)%3===0 ? 0.9 : 0.25).toFixed(2)));
+    } else { ring.setAttribute("stroke-opacity","0");
+             lamps.forEach(L=>L.setAttribute("fill-opacity",".2")); }
   };
   run(0);
   TICKERS.push((dt,now,z)=>{ if(z<0.7) return; run(dt); });
@@ -966,14 +1024,18 @@ function drawArrayPlate(g,n){
         fill:"none",stroke:"var(--drop)","stroke-width":"1","stroke-opacity":".8",
         "stroke-dasharray":"2.5 2"}));
     const brood=el("g",{opacity:"0"});
+    const kids=[];
     for(let k=0;k<6;k++){
       const a=k*1.047+r()*0.35;
-      brood.appendChild(el("circle",{cx:w.e.x+Math.cos(a)*w.e.rx*0.44,
+      const c=el("circle",{cx:w.e.x+Math.cos(a)*w.e.rx*0.44,
         cy:w.e.y+Math.sin(a)*w.e.ry*0.44, r:Math.max(.55,w.e.rx*0.17),
-        fill:"var(--fg)","fill-opacity":".85"}));
+        fill:"var(--fg)","fill-opacity":".85"});
+      brood.appendChild(c);
+      kids.push({c, ax:0.35+r()*0.5, ay:0.25+r()*0.35,
+                 r1:0.5+r()*0.8, r2:0.7+r()*1.0, p1:r()*6.283, p2:r()*6.283});
     }
     g.appendChild(brood);
-    broods.push({brood,e:w.e,order:w.i*PLATE_ROWS+w.j});
+    broods.push({brood,kids,e:w.e,order:w.i*PLATE_ROWS+w.j});
   });
   broods.sort((a,b)=>a.order-b.order);
 
@@ -990,8 +1052,16 @@ function drawArrayPlate(g,n){
   /* slowed from the incoming 0.1/1.4: at 0.1 the tip blurred across the
      plate. 0.5 s a well is ~26 s a sweep, which reads as pipetting. */
   const STEP=0.5, HOLD=2.5, ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  let k=0, t=0, resting=0;
+  let k=0, t=0, resting=0, ct=0;
   const run=(dt)=>{
+    /* six live embryos in a well are never still */
+    ct+=dt;
+    broods.forEach(b=>b.kids.forEach(d=>{
+      const x=Math.sin(ct*d.r1+d.p1)+0.5*Math.sin(ct*d.r2*1.6+d.p2);
+      const y=Math.cos(ct*d.r2+d.p2)+0.5*Math.cos(ct*d.r1*1.8+d.p1);
+      d.c.setAttribute("transform",
+        `translate(${(x*d.ax).toFixed(2)},${(y*d.ay).toFixed(2)})`);
+    }));
     if(resting>0){
       resting-=dt;
       if(resting<=0){ broods.forEach(b=>b.brood.setAttribute("opacity","0")); k=0; t=0; }
@@ -1214,7 +1284,8 @@ function drawLibrary(g,n){
     }
   }
 
-  const yFar=n.y+n.d*0.62, span=yFar-yW;
+  /* they come a long way off the wall: the far end is what sells "picked" */
+  const yFar=n.y+n.d*1.04, span=yFar-yW;
   const picks=[];
   for(let i=0;i<26;i++){
     const chosen=i<PLATE_BANDS.length;
@@ -1231,8 +1302,8 @@ function drawLibrary(g,n){
     picks.push({node,tick,chosen,
       x:(r()-0.5)*n.w*0.8, z:z0+0.12+r()*(z1-z0-0.24),
       drop:(r()-0.4)*0.35,
-      reach: chosen ? 1 : 0.3+r()*0.34,
-      speed: chosen ? 0.075+r()*0.02 : 0.13+r()*0.12,
+      reach: chosen ? 1 : 0.55+r()*0.4,
+      speed: chosen ? 0.13+r()*0.035 : 0.22+r()*0.2,
       scale: 0.55+r()*0.25, spin:(r()-0.5)*26, p:r()});
   }
 
@@ -1449,7 +1520,7 @@ function drawDissociate(g,n){
       g.appendChild(node);
       dots.push({node,f,t,u,delay,stuck:false,
         ax:n.x+Math.cos(a2)*R2, ay:n.y+Math.sin(a2)*R2*0.72,
-        jr:0.006+r()*0.01, jp:r()*6.283, js:0.5+r()*1.1});
+        jr:0.024+r()*0.03, jp:r()*6.283, js:1.7+r()*2.4});
     };
     for(let k=0;k<76;k++) add(Math.pow(r(),0.8), r()*2-1, 0.27+r()*0.16, r()*0.42, 0.42+r()*0.5);
     for(let k=0;k<18;k++) add(0.18+r()*0.1, 0.2+r()*0.7, 0.3+r()*0.15, 0.1+r()*0.18, 0.45+r()*0.4);
@@ -1509,7 +1580,10 @@ function drawDissociate(g,n){
       else e=1-ease(Math.max(0,Math.min(1,(t-HOLD-GO-CLOUD-d.delay*0.25)/(BACK*0.62))));
       if(d.stuck) e*=0.16;
       const home=larvaPut(d.f,d.t,d.u,d.f.beat);
-      const jx=e*d.jr*Math.sin(T*d.js+d.jp), jy=e*d.jr*Math.cos(T*d.js*0.9+d.jp);
+      /* Brownian jitter, and it is the point: once they are loose they never
+         stop moving until something fixes them */
+      const jx=e*d.jr*(Math.sin(T*d.js+d.jp)+0.6*Math.sin(T*d.js*2.7+d.jp*1.3));
+      const jy=e*d.jr*(Math.cos(T*d.js*0.9+d.jp)+0.6*Math.cos(T*d.js*2.3+d.jp*0.7));
       const p=P(home[0]+(d.ax-home[0])*e+jx, home[1]+(d.ay-home[1])*e+jy, 0.02);
       d.node.setAttribute("cx",p[0].toFixed(2));
       d.node.setAttribute("cy",p[1].toFixed(2));
@@ -1520,3 +1594,108 @@ function drawDissociate(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
 }
 DRAW.dissociate = drawDissociate;
+
+
+/* ------------------------------------------------------------------
+   FIXATION
+   The same well as dissociation, at its last moment, and then it stops.
+
+   This is the dissociated cloud — loose cells jittering hard, because
+   that is what a fresh suspension does — under a pipette that comes down,
+   releases fixative, and ends it. The jitter decays to nothing over about
+   a second and every cell picks up an outline: the same "fixed" reading
+   the plate uses one step later.
+
+   The stillness is the content. Everything upstream of here is a live
+   thing changing while you watch it; everything downstream is a
+   measurement of something that has stopped. This is the boundary.
+
+   Requires ellipseAt() from the clutch block.
+   ------------------------------------------------------------------ */
+function drawFixation(g,n){
+  const r=rng(613);
+  const wellR=Math.min(n.w*0.5, n.d*0.62);
+
+  const vessel=ellipseAt(n.x,n.y,0,wellR);
+  g.appendChild(el("ellipse",{cx:vessel.x,cy:vessel.y,rx:vessel.rx,ry:vessel.ry,
+    fill:"var(--fg)","fill-opacity":".03",
+    stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".3"}));
+
+  /* the suspension, spread area-uniformly across the dish */
+  const cells=[];
+  for(let i=0;i<420;i++){
+    const a=r()*6.283, rad=Math.sqrt(r())*wellR*1.02;
+    const home=P(n.x+Math.cos(a)*rad, n.y+Math.sin(a)*rad*0.72, 0.02);
+    const node=el("circle",{cx:home[0],cy:home[1],r:(0.28+r()*0.16).toFixed(2),
+      fill:"var(--fg)","fill-opacity":(0.42+r()*0.45).toFixed(2)});
+    g.appendChild(node);
+    cells.push({node,hx:home[0],hy:home[1],
+      jr:1.5+r()*2.2, jp:r()*6.283, js:1.7+r()*2.4});
+  }
+
+  /* the pipette, and the drop it lets go of */
+  const pip=el("g",{});
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".8","stroke-opacity":".85"};
+  const tilt=el("g",{transform:"rotate(-15)"});
+  tilt.appendChild(el("path",{d:"M -.8 -1.5 L .8 -1.5 L 2.2 -12 L -2.2 -12 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.2 -12 L 2.2 -12 L 1.7 -40 L -1.7 -40 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -3.4 -40 L 3.4 -40 L 2.8 -56 L -2.8 -56 Z", ...skin}));
+  pip.appendChild(tilt); g.appendChild(pip);
+  const centre=P(n.x,n.y,0.02);
+  const drop=el("circle",{r:"2.6",fill:"var(--c-top)","fill-opacity":"0"});
+  g.appendChild(drop);
+  /* the fixative spreading out from where it landed */
+  const wash=el("ellipse",{cx:centre[0],cy:centre[1],rx:"0",ry:"0",
+    fill:"none",stroke:"var(--c-top)","stroke-width":"1.4","stroke-opacity":"0"});
+  g.appendChild(wash);
+
+  const IN=1.4, FALL=0.45, SET=1.1, STILL=2.4, OUT=0.8;
+  const CYCLE=IN+FALL+SET+STILL+OUT;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const HIGH=52;
+  let t=0;
+  const run=(dt,now)=>{
+    t=(t+dt)%CYCLE;
+    const T=now/1000;
+
+    /* how alive the suspension still is: 1 before the drop lands, 0 after */
+    let live=1, dq=0;
+    if(t<IN) live=1;
+    else if(t<IN+FALL) live=1;
+    else if(t<IN+FALL+SET){ const f=(t-IN-FALL)/SET; live=1-ease(f); dq=ease(f); }
+    else if(t<IN+FALL+SET+STILL){ live=0; dq=1; }
+    else { const f=(t-IN-FALL-SET-STILL)/OUT; live=ease(f); dq=1-ease(f); }
+
+    cells.forEach(c=>{
+      const jx=live*c.jr*(Math.sin(T*c.js+c.jp)+0.6*Math.sin(T*c.js*2.7+c.jp*1.3));
+      const jy=live*c.jr*(Math.cos(T*c.js*0.9+c.jp)+0.6*Math.cos(T*c.js*2.3+c.jp*0.7));
+      c.node.setAttribute("cx",(c.hx+jx).toFixed(2));
+      c.node.setAttribute("cy",(c.hy+jy*0.72).toFixed(2));
+      c.node.setAttribute("stroke", dq>0.05 ? "var(--fg)" : "none");
+      c.node.setAttribute("stroke-width",".45");
+      c.node.setAttribute("stroke-opacity",(dq*0.85).toFixed(2));
+    });
+
+    /* the tip comes down, lets go, and lifts away */
+    let lift=HIGH, dropOp=0, dropY=0;
+    if(t<IN) lift=HIGH*(1-ease(t/IN));
+    else if(t<IN+FALL){
+      const f=(t-IN)/FALL;
+      lift=0; dropOp=f<0.85?0.9:0; dropY=f*f*26;
+    } else if(t<IN+FALL+SET+STILL) lift=0;
+    else lift=HIGH*ease((t-IN-FALL-SET-STILL)/OUT);
+    pip.setAttribute("transform",`translate(${centre[0]},${centre[1]-lift-4})`);
+    drop.setAttribute("cx",centre[0]);
+    drop.setAttribute("cy",(centre[1]-26+dropY).toFixed(1));
+    drop.setAttribute("fill-opacity",dropOp.toFixed(2));
+
+    const wr = dq<1 ? dq : Math.max(0,1-(t-IN-FALL-SET)/STILL);
+    wash.setAttribute("rx",(vessel.rx*Math.min(1,dq*1.3)).toFixed(1));
+    wash.setAttribute("ry",(vessel.ry*Math.min(1,dq*1.3)).toFixed(1));
+    wash.setAttribute("stroke-opacity",(dq<1?0.5*dq:Math.max(0,0.5*wr)).toFixed(2));
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.fixation = drawFixation;

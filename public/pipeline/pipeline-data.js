@@ -124,13 +124,20 @@ const NODES = [
  built:"Drawn as the same well as the incubation step one place back — same six larvae, same seed, same poses — with the compound gone and the bodies coming apart. No protocol detail on this instance for the worked example; reagent, digest time and strainer size are recorded nowhere. Across the corpus the split is clean: sci-RNA-seq3 runs on PFA-fixed nuclei (ZSCAPE, ChemFish), while 10x, Microwell-seq and Parse all run on whole cells (Zebrahub, CellOracle, MIC-Drop-seq, ZCL2, MiniFin, MegaFin).",
  cond:"The most biased step in the wet lab and the least documented one. Cell types survive dissociation unequally, so atlas composition is partly a report on how tough each tissue is — and the mitochondrial cull two rows down then deletes the ones most stressed by it. The nuclei-or-cells fork is not a detail: nuclear transcripts are intron-rich, so it changes what the intron-handling stage on row 3 does, and it changes what a mitochondrial fraction even means."},
 
+{id:"A7", key:"A7", group:"Collection", shape:"fixation", name:"Fix the suspension", x:18.5, y:R1, w:2.0, d:1.5, h:0.14, gap:0.5,
+ lane:"r1-tail",
+ sub:"formaldehyde · the moment the cells stop",
+ does:"The last instant anything on this map is alive. Fixative goes into the suspension and transcription stops dead, so whatever each cell happened to be expressing when the drop landed is what the atlas will report it was expressing forever after. In combinatorial chemistries it does a second job at the same time: it turns every cell into its own sealed reaction vessel, which is the whole reason split-pool barcoding can work with no microfluidics at all.",
+ built:"Evercode WT fixation, a proprietary formaldehyde-based solution, for the worked example. Drawn as the same well as the step before it — same suspension, same seed — at the instant the jitter stops. Across the corpus the reagent differs but the moment does not: sci-RNA-seq3 fixes nuclei in PFA, Parse fixes whole cells, and 10x skips this step entirely and runs the suspension live, which is why a 10x sample cannot wait.",
+ cond:"Fixation efficiency is not measured per sample anywhere in the corpus. A poorly fixed well contributes ambient RNA rather than cells, and because no per-stage drop count survives from any QC chain, that surfaces only as an unexplained low yield with no way to attribute it. How long the suspension sat between dissociation and this drop is also unrecorded, and it is exactly the interval in which a stressed cell rewrites its own transcriptome."},
+
 {id:"FX", key:"2", group:"② Fixed material", groupMark:true, anchor:true, shape:"vials",
  lane:"r1-tail",
  name:"Fixed material", x:19.4, y:R1, w:2.52, d:1.82, h:0.665, gap:1.98,
- sub:"biology locked · four assay families downstream", stat:"the biology stops here",
- does:"Fixation and permeabilisation stop transcription dead. In combinatorial chemistries this also turns each cell into its own sealed reaction vessel, which is what lets the barcoding work without any microfluidics. It is the last moment on this map at which the sample is alive in any sense.",
+ sub:"fixed, plated and cold · four assay families downstream", stat:"the biology has stopped",
+ does:"Fixed material, plated and put away. Nothing in this freezer is alive and nothing in it changes, which is precisely what makes it useful: samples collected weeks apart can wait here and then be barcoded together in a single run, so the day a sample was collected stops being a batch effect. Everything upstream of this point is a living thing changing while you watch it; everything downstream is a measurement of something that has already stopped.",
  built:"Evercode WT fixation, a proprietary formaldehyde-based solution, for the worked example. Four assay families take it from here across the corpus: combinatorial split-pool on fixed cells (Parse), sci-RNA-seq3 on PFA-fixed nuclei with sci-Plex hashing, droplet 10x Chromium on whole cells, and Microwell-seq with three rounds of split-pool bead synthesis.",
- cond:"Fixation efficiency is not measured per sample anywhere in the corpus. A poorly fixed well contributes ambient RNA rather than cells, and because no per-stage drop count survives from any QC chain, that surfaces only as an unexplained low yield with no way to attribute it."},
+ cond:"How long any given plate actually waited here is not recorded anywhere, and fixed material does not keep indefinitely — the vendor quotes months, not years, and permeabilised cells leak. For the worked example collection and library prep are close enough together that it does not matter; for a dataset assembled from several collections it is a real variable that nothing on this instance pins down. Storage temperature is likewise unrecorded."},
 
 /* ================= ROW 2 — THE CHEMISTRY ================= */
 {id:"B0", key:"B1", group:"Combinatorial barcoding", shape:"tile", name:"Count and loading table", x:0.7, y:R2, lane:"r2", w:0.72, d:0.72, h:0.44,
@@ -425,9 +432,9 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
 const LANES = [
-  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.25, dir:+1},
-  {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.75, dir:+1},
-  {id:"r1-tail",  y:R1,       x0:10.25, x1:22.00, dir:+1},
+  {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.00, dir:+1},
+  {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
+  {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
   {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
@@ -441,7 +448,7 @@ const EDGES = [
   {a:"CS",b:"LIBR",kind:"meta"},{a:"LIBR",b:"ECHO",kind:"meta"},
   /* the merge — the embryos go into wells that already hold compound */
   {a:"A3",b:"A4",kind:"fish",straight:true},{a:"ECHO",b:"A4",kind:"meta",straight:true},
-  {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"FX",kind:"fish"},
+  {a:"A4",b:"A5",kind:"fish"},{a:"A5",b:"A6",kind:"fish"},{a:"A6",b:"A7",kind:"fish"},{a:"A7",b:"FX",kind:"fish"},
 
   {a:"B0",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
