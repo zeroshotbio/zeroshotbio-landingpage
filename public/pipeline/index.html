@@ -213,6 +213,18 @@
          box-shadow:0 10px 28px rgba(0,0,0,.4)}
   .toast.on{opacity:1;transform:translate(-50%,0)}
   .toast.warn{background:var(--drop);color:#fff}
+  /* A change shipped while this page was open. Not a toast — it does not go
+     away on a timer, because the page is now out of date until it is reloaded. */
+  .newver{display:none;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+          z-index:40;align-items:center;gap:12px;max-width:min(560px,90%);
+          background:var(--panel);border:1px solid var(--signal);padding:9px 10px 9px 15px;
+          box-shadow:0 12px 32px rgba(0,0,0,.45);font-size:11px}
+  .newver.on{display:flex}
+  .newver span{flex:1}
+  .newver .ctl{border:1px solid var(--fg);padding:5px 11px;font-size:9px;letter-spacing:.12em;
+               text-transform:uppercase;white-space:nowrap}
+  .newver .go{background:var(--fg);color:var(--bg)}
+  .newver .go:hover{background:var(--signal);border-color:var(--signal)}
   .savebar{display:flex;gap:8px;align-items:center;margin:14px 0 4px}
   .savebar .ctl{border:1px solid var(--fg);padding:6px 12px;font-size:9.5px;letter-spacing:.12em;
                 text-transform:uppercase}
@@ -355,6 +367,12 @@
         </div>
       </div>
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
+      <!-- somebody else's change landed while this page was open -->
+      <div class="newver" id="newver" role="status" aria-live="polite">
+        <span id="newverWhat">The map has been updated.</span>
+        <button class="ctl go" id="newverGo">Refresh</button>
+        <button class="ctl" id="newverNo" aria-label="Dismiss">Later</button>
+      </div>
     </div>
     <div class="strip" id="strip"></div>
     <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>

@@ -1230,6 +1230,37 @@ function pushRemote(){
         }).catch(()=>{});
     }, 6000);
   }
+  /* Every open copy of the page, not just the one that asked. When a request
+     is finished the map has changed underneath anyone reading it, so say so —
+     and let them choose the moment, since an unannounced reload under someone
+     mid-sentence is worse than a stale map. The page that made the request is
+     the exception: it asked, so it reloads itself. */
+  (function others(){
+    if(typeof fetch!=="function") return;
+    const bar=document.getElementById("newver");
+    if(!bar) return;
+    const since=Date.now();
+    let told=false;
+    document.getElementById("newverGo").onclick=()=>location.reload();
+    document.getElementById("newverNo").onclick=()=>bar.classList.remove("on");
+    setInterval(()=>{
+      if(told) return;
+      fetch("/api/pipeline_prompts",{cache:"no-store"}).then(r=>r.json()).then(j=>{
+        const fresh=(j.prompts||[]).filter(p=>p.status==="done" && p.updated>since);
+        if(!fresh.length) return;
+        let mine=null; try{ mine=JSON.parse(localStorage.getItem(WATCH_KEY)||"null"); }catch(err){}
+        /* the requester's own page handles itself, above */
+        if(mine && fresh.some(p=>p.id===mine.id)) return;
+        told=true;
+        document.getElementById("newverWhat").textContent =
+          fresh.length===1 && fresh[0].note
+            ? "The map has been updated — "+fresh[0].note
+            : "The map has been updated"+(fresh.length>1?` (${fresh.length} changes)`:"")+".";
+        bar.classList.add("on");
+      }).catch(()=>{});
+    }, 45000);
+  })();
+
   /* pick a wait back up after a refresh */
   (function resume(){
     if(typeof fetch!=="function") return;

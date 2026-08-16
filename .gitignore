@@ -63,3 +63,4 @@ daniotype_data/meta_reasoner_replay/
 *.local
 # pipeline viz build artefact — regenerate with public/pipeline/build.sh
 /public/pipeline/pipeline-standalone.html
+.pipeline-daemon/

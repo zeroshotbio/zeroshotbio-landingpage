@@ -1,0 +1,32 @@
+# The /pipeline "Edit visual" listener.
+#
+#   sudo cp scripts/pipeline_daemon.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now pipeline_daemon
+#   journalctl -u pipeline_daemon -f
+#
+# It runs as ssm-user because it needs that user's claude.ai login (under
+# ~/.claude) and the repo's git credentials. ANTHROPIC_API_KEY is deliberately
+# NOT set: it would take precedence over the claude.ai login, and the key on
+# this box has no credit.
+
+[Unit]
+Description=zeroshot.bio /pipeline Edit-visual listener
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=ssm-user
+WorkingDirectory=/data/zeroshotbio-landingpage
+Environment=HOME=/home/ssm-user
+Environment=PATH=/home/ssm-user/.local/bin:/usr/local/bin:/usr/bin:/bin
+Environment=BASE=https://www.zeroshot.bio
+ExecStart=/usr/bin/env node scripts/pipeline_daemon.mjs --every 20 --model sonnet
+Restart=always
+RestartSec=15
+# one request at a time, and a request cannot run forever
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
