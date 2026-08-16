@@ -745,3 +745,15 @@ const OVERVIEW = {
    genuinely undocumented — the breeding steps, the Echo dispense, the
    dissociation, and library prep. */
 const UNVERIFIED = new Set(["A1","A2","A3","P3","A6","B9","C1","C2"]);
+
+/* ============================================================
+   OFFSETS — fine positioning, applied straight after layoutRows().
+   Authored by dragging in the page's own "Edit positions" mode and pasted
+   back here. Everything in this table is a NUDGE relative to what the lane
+   engine computed, never an absolute coordinate, so re-solving a lane or
+   inserting a step carries these along instead of fighting them.
+     dx, dy    move the object, in world units
+     ldx, ldy  move its name, on top of whatever lab:{} the node carries
+   ============================================================ */
+const OFFSETS = {
+};

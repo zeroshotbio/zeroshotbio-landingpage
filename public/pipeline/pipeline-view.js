@@ -39,6 +39,27 @@ const svg=document.getElementById("svg");
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
+/* Fine positioning on top of the lane engine. OFFSETS in the data file is the
+   committed table; anything dragged in Edit positions mode is held in local
+   storage and wins over it while it is being tuned, so the two never stack —
+   once a session is pasted back into OFFSETS the local copy is identical to it
+   and clearing it changes nothing. */
+const BAKED = (typeof OFFSETS!=="undefined") ? OFFSETS : {};
+const LIVE = (()=>{ try{ const s=localStorage.getItem("pipeline.offsets");
+                         return s?JSON.parse(s):BAKED; }catch(err){ return BAKED; } })();
+NODES.forEach(n=>{
+  const o=LIVE[n.id];
+  if(o){
+    n.x+=o.dx||0; n.y+=o.dy||0;
+    if(o.ldx||o.ldy) n.lab={dx:((n.lab&&n.lab.dx)||0)+(o.ldx||0),
+                            dy:((n.lab&&n.lab.dy)||0)+(o.ldy||0)};
+  }
+  /* where this node was actually drawn, and how far it has been dragged since */
+  n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
+});
+/* every object the editor can pick up, keyed by node */
+const plinthEls={}, labelEls={};
+
 const defs=installDefs(svg);
 
 /* ============================================================
@@ -117,7 +138,7 @@ BANDS.forEach(b=>{
 NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const isA=!!n.anchor, pad=isA?0.55:0.4, hw=n.w/2+pad, hd=n.d/2+pad;
   const c=[[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],[n.x+hw,n.y+hd],[n.x-hw,n.y+hd]];
-  gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
+  plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
     fill:"var(--fg)","fill-opacity":isA?".05":".03",stroke:"var(--fg)",
     "stroke-opacity":isA?".4":".28","stroke-width":"1","stroke-dasharray":isA?"6 4":"2 3"}));
   /* labelBelow moves a landmark's name off its top-back edge and onto its
@@ -133,7 +154,7 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2);
-  gLabel.appendChild(g);
+  gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
 /* every step emits its name from its top-right corner, running up and to the right
@@ -150,6 +171,7 @@ NODES.filter(n=>!n.anchor && n.shape!=="works" && n.shape!=="machine").forEach(n
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
   t.textContent=n.key+" · "+n.name; g.appendChild(t); gLabel.appendChild(g);
+  labelEls[n.id]=g;
 });
 
 /* edges */
@@ -161,24 +183,36 @@ function makeGeom(pp){
     segs.push({from:pp[k-1],dx,dy,l,at:len}); len+=l;}
   return {segs,len};
 }
-EDGES.forEach(e=>{
-  const A=byId[e.a],B=byId[e.b];
-  const mx=(A.x+B.x)/2;
+/* One <g> per edge so a route can be redrawn on its own when the editor moves
+   a node — the number of elbows changes when two nodes come level, so the run
+   is rebuilt rather than patched. */
+function routeOf(e){
+  const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
   /* straight:true forces a direct run even across lanes — for a fork or a
      merge, where the elbow reads as a detour rather than as routing */
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
-  const pp=raw.map(p=>P(p[0],p[1],0.02));
-  const faint = e.kind==="drop"||e.kind==="score";
+  return raw.map(p=>P(p[0],p[1],0.02));
+}
+function paintEdge(rec){
+  const host=rec.host;
+  [...(host.children||[])].forEach(c=>host.removeChild(c));
+  const pp=routeOf(rec);
+  const faint = rec.kind==="drop"||rec.kind==="score";
   const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
     "stroke-width":faint?"1":"1.3","stroke-opacity":faint?".35":".7"});
-  if(e.dash) path.setAttribute("stroke-dasharray","5 4");
-  gEdge.appendChild(path);
-  pp.slice(1,-1).forEach(c=>gEdge.appendChild(el("rect",
+  if(rec.dash) path.setAttribute("stroke-dasharray","5 4");
+  host.appendChild(path);
+  pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
     {x:c[0]-2.4,y:c[1]-2.4,width:4.8,height:4.8,transform:`rotate(45 ${c[0]} ${c[1]})`,
      fill:"var(--edge)","fill-opacity":".5"})));
-  edgeGeom.push({...e,...makeGeom(pp),fromName:byId[e.a].name,toName:byId[e.b].name});
+  const g=makeGeom(pp); rec.segs=g.segs; rec.len=g.len;
+}
+EDGES.forEach(e=>{
+  const rec={...e,host:gEdge.appendChild(el("g")),
+             fromName:byId[e.a].name,toName:byId[e.b].name};
+  paintEdge(rec); edgeGeom.push(rec);
 });
 
 /* carries — fade to and from nothing */
@@ -197,18 +231,20 @@ CARRIES.forEach((c,i)=>{
 
 /* nodes */
 
+/* declared here because the node listeners close over it */
+let editing=false;
 const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
   DRAW[n.shape](g,n);
   if(!TOUCH){
-    g.addEventListener("mouseenter",()=>show(n.id,false));
-    g.addEventListener("mouseleave",unhover);
+    g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
+    g.addEventListener("mouseleave",()=>{ if(!editing) unhover(); });
   }
-  g.addEventListener("focus",()=>show(n.id,false));
-  g.addEventListener("blur",unhover);
-  g.addEventListener("click",ev=>{ev.stopPropagation();show(n.id,true);});
+  g.addEventListener("focus",()=>{ if(!editing) show(n.id,false); });
+  g.addEventListener("blur",()=>{ if(!editing) unhover(); });
+  g.addEventListener("click",ev=>{ev.stopPropagation(); if(!editing) show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
 
@@ -225,17 +261,22 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
    bands are untouched and show through translucent shapes again, exactly as
    they did before the patch existed.
    ============================================================ */
-(function occlude(){
+const nodeSil=n=>{
+  const hw=n.w/2, hd=n.d/2, h=topOf(n);
+  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
+          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
+};
+const clipPathEl=el("path",{"clip-rule":"evenodd"});
+function rebuildClip(){
   const R=40000;
-  const sil=n=>{
-    const hw=n.w/2, hd=n.d/2, h=topOf(n);
-    return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
-            P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
-  };
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
-  NODES.forEach(n=>{ d+=" M "+sil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  NODES.forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  clipPathEl.setAttribute("d",d);
+}
+(function occlude(){
   const cp=el("clipPath",{id:"nodeclip",clipPathUnits:"userSpaceOnUse"});
-  cp.appendChild(el("path",{d,"clip-rule":"evenodd"}));
+  rebuildClip();
+  cp.appendChild(clipPathEl);
   defs.appendChild(cp);
   gEdge.setAttribute("clip-path","url(#nodeclip)");
   gDot .setAttribute("clip-path","url(#nodeclip)");
@@ -515,5 +556,176 @@ document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
 };
-svg.addEventListener("click",()=>{ if(moved<8) release(); });
+svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
+
+/* ============================================================
+   EDIT POSITIONS
+   A tuning mode. Everything the map draws is placed from world coordinates,
+   and the projection is affine, so dragging is exact rather than approximate:
+   a screen delta divides straight back into a world delta, and moving an
+   object is a translate on the group it was drawn into. Nothing is
+   re-rendered and no ticker is disturbed.
+
+   What comes out is a table of NUDGES, not coordinates — dx/dy relative to
+   whatever layoutRows() computed. Paste it into OFFSETS in the data file and
+   it survives re-solving a lane or inserting a step.
+   ============================================================ */
+(function editor(){
+  const btnEdit=document.getElementById("btnEdit");
+  const btnSave=document.getElementById("btnSave");
+  const btnDrop=document.getElementById("btnDiscard");
+  if(!btnEdit) return;                       // the page can ship without the tool
+  const hint=document.querySelector(".hint");
+  const hint0=hint?hint.textContent:"";
+  const SNAP=0.05, r2=v=>Math.round(v*100)/100;
+
+  /* screen pixels -> world units, on the ground plane. Inverse of P. */
+  const toWorld=(dsx,dsy)=>{
+    const a=dsx/(S*C30), b=dsy/(S*0.5);
+    return [(a+b)/2, (b-a)/2];
+  };
+  const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
+
+  /* a dashed footprint on every node and a box round every name, so the whole
+     map reads as pick-up-able the moment the mode is on */
+  NODES.forEach(n=>{
+    const o=el("polygon",{points:pts(nodeSil(n)),class:"ehandle"});
+    nodeEls[n.id].appendChild(o);
+    const L=labelEls[n.id];
+    if(!L) return;
+    let bb; try{ bb=L.getBBox(); }catch(err){ bb=null; }
+    if(!bb || !bb.width) return;
+    const pad=3;
+    const box={x:bb.x-pad,y:bb.y-pad,width:bb.width+pad*2,height:bb.height+pad*2};
+    L.appendChild(el("rect",{...box,class:"ehandle lab"}));
+    L.appendChild(el("rect",{...box,class:"ehit","data-id":n.id}));
+  });
+
+  /* redraw whatever a moved node touches. Mid-drag only its own routes are
+     rebuilt; the full pass runs once on release. */
+  function refresh(id){
+    rebuildClip();
+    /* carries have no host: they run to and from off-map and are authored in
+       absolute coordinates, so no node move can change them */
+    edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
+    placeDots(0);
+  }
+  function reposition(n){
+    const dx=n.x-n._px, dy=n.y-n._py;
+    const t=(dx||dy)?shift(dx,dy):"";
+    nodeEls[n.id].setAttribute("transform",t);
+    if(plinthEls[n.id]) plinthEls[n.id].setAttribute("transform",t);
+    if(labelEls[n.id])  labelEls[n.id].setAttribute("transform",
+      (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+labelEls[n.id].dataset.base
+                             : labelEls[n.id].dataset.base);
+  }
+
+  /* a label group already carries its own translate+rotate; keep it so the
+     drag transform can be composed in front of it */
+  Object.entries(labelEls).forEach(([id,L])=>{ L.dataset.base=L.getAttribute("transform")||""; });
+
+  let grab=null;
+  function begin(ev,n,mode){
+    if(!editing) return;
+    ev.stopPropagation(); ev.preventDefault();
+    const el0=ev.currentTarget;
+    if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
+    grab={n,mode,px:ev.clientX,py:ev.clientY,
+          ox:n.x,oy:n.y,olx:n._lx,oly:n._ly,el:el0};
+    (mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.add("picked");
+  }
+  function move(ev){
+    if(!grab) return;
+    const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
+    const q=v=>Math.round(v/SNAP)*SNAP;
+    const n=grab.n;
+    if(grab.mode==="label"){ n._lx=r2(grab.olx+q(dx)); n._ly=r2(grab.oly+q(dy)); }
+    else { n.x=r2(grab.ox+q(dx)); n.y=r2(grab.oy+q(dy)); }
+    reposition(n);
+    if(grab.mode!=="label") refresh(n.id);
+    say(n);
+  }
+  function end(){
+    if(!grab) return;
+    const n=grab.n;
+    (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
+    grab=null;
+    refresh(null);
+    /* painter order is (x+y); something dragged far enough changes places */
+    NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
+    stash();
+  }
+  function say(n){
+    if(!hint) return;
+    const o=n?total(n):{};
+    hint.textContent = n
+      ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
+        `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
+        (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
+      : "Drag any object or any name · release to keep · Save positions when done";
+  }
+
+  NODES.forEach(n=>{
+    nodeEls[n.id].addEventListener("pointerdown",ev=>begin(ev,n,"node"));
+    nodeEls[n.id].addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>nodeEls[n.id].addEventListener(t,end));
+    const L=labelEls[n.id]; if(!L) return;
+    L.addEventListener("pointerdown",ev=>begin(ev,n,"label"));
+    L.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
+  });
+
+  /* the committed table plus this session, which is what gets pasted back */
+  function total(n){
+    const b=LIVE[n.id]||{}, o={};
+    const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
+    const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
+    if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
+    return o;
+  }
+  function collect(){
+    const out={};
+    NODES.forEach(n=>{ const o=total(n); if(Object.keys(o).length) out[n.id]=o; });
+    return out;
+  }
+  function stash(){
+    try{ localStorage.setItem("pipeline.offsets",JSON.stringify(collect())); }catch(err){}
+  }
+  function asSource(o){
+    const rows=Object.entries(o).map(([id,v])=>
+      `  ${id}:{${Object.entries(v).map(([k,x])=>k+":"+x).join(",")}},`);
+    return "const OFFSETS = {\n"+rows.join("\n")+(rows.length?"\n":"")+"};";
+  }
+
+  function setMode(on){
+    editing=on;
+    svg.classList.toggle("editing",on);
+    document.body.classList.toggle("editing",on);
+    btnEdit.textContent=on?"Done editing":"Edit positions";
+    if(on){ release(); say(null); }
+    else if(hint) hint.textContent=hint0;
+  }
+  btnEdit.onclick=()=>setMode(!editing);
+
+  btnSave.onclick=()=>{
+    const o=collect(), src=asSource(o);
+    stash();
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(src).catch(()=>{});
+    console.log(src);
+    pinned=null; current=null; paintIndex();
+    read.innerHTML=`<div class="eyebrow">Edit positions</div>`+
+      `<div class="title">${Object.keys(o).length} object${Object.keys(o).length===1?"":"s"} moved</div>`+
+      `<div class="sub">copied to the clipboard, and kept in this browser until it is baked in</div>`+
+      `<h4>Paste this over OFFSETS in pipeline-data.js</h4><div class="snip">${esc(src)}</div>`+
+      `<h4>Note</h4><p>These are nudges relative to what the lane engine computed, not absolute `+
+      `coordinates, so they survive a row being re-solved or a step being inserted. `+
+      `Discard throws away everything not yet baked in.</p>`;
+  };
+  btnDrop.onclick=()=>{
+    if(!confirm("Throw away every position moved since the last bake-in?")) return;
+    try{ localStorage.removeItem("pipeline.offsets"); }catch(err){}
+    location.reload();
+  };
+})();
+
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
