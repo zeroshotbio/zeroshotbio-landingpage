@@ -70,10 +70,9 @@
 
   .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
   header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
-  .stat{padding:5px 14px 7px;border-right:1px solid var(--rule);white-space:nowrap}
-  .stat .k{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3)}
-  .stat .v{font-size:13px}
-  .controls{margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 10px;flex:none}
+  /* the header is a toolbar now — the run's numbers used to sit along it and
+     were the first thing removed once the map itself carried them */
+  .controls{display:flex;align-items:center;gap:6px;padding:6px 10px;flex:none}
   .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
        text-transform:uppercase;white-space:nowrap}
   .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
@@ -311,12 +310,6 @@
 <body>
 <div class="app">
   <header>
-    <div class="stat"><div class="k">Map</div><div class="v">bench to labelled atlas</div></div>
-    <div class="stat"><div class="k">Corpus</div><div class="v">9 zebrafish atlases</div></div>
-    <div class="stat"><div class="k">Assay families</div><div class="v">4</div></div>
-    <div class="stat"><div class="k">Feature universes</div><div class="v">4 &middot; one assembly</div></div>
-    <div class="stat"><div class="k">Worked example</div><div class="v">MiniFin &middot; 94,616 cells</div></div>
-    <div class="stat"><div class="k">Leaves</div><div class="v">251 – 342</div></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
       <button class="ctl" id="btnAxes">Hide axes</button>
