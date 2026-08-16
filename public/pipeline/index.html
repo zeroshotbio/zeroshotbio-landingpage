@@ -132,9 +132,6 @@
                   box-shadow:0 2px 8px rgba(0,0,0,.22)}
   .stepnav button:hover,.stepnav button:focus-visible{background:var(--fg);color:var(--bg)}
   .stepnav button:active{transform:scale(.92)}
-  .zoom{position:absolute;top:56px;right:10px;display:flex;flex-direction:column;gap:5px}
-  .zoom button{width:24px;height:24px;border:1px solid var(--fg);display:grid;place-items:center;
-               background:var(--bg);font-size:13px;line-height:1}
   .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
         letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none;
         -webkit-user-select:none;user-select:none}
@@ -275,7 +272,6 @@
   .chip.on{background:var(--fg);color:var(--bg)}
   .chip.on .k{color:var(--bg)}
   .sheetclose{display:none}
-  .fitonly{display:none}
 
   .mobtoggle{display:none}
   @media (max-width:900px){
@@ -302,11 +298,8 @@
                 background:var(--fg);color:var(--bg)}
     .read{padding:36px 14px 16px}      /* clear of the close button */
     .mobtoggle{display:none}
-    .fitonly{display:grid}
     .stepnav{top:8px;right:8px;gap:10px}
     .stepnav button{width:44px;height:44px;font-size:23px}
-    .zoom{top:60px;right:8px;gap:6px}
-    .zoom button{width:34px;height:34px;font-size:17px}
   }
   @media (max-width:900px) and (orientation:landscape){
     :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
@@ -344,8 +337,7 @@
         <button id="stPrev" aria-label="Previous step">‹</button>
         <button id="stNext" aria-label="Next step">›</button>
       </div>
-      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" class="fitonly" aria-label="Reset view">⤾</button></div>
-      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
+      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Home to fit the map · Drag to pan · Scroll or pinch to zoom</div>
       <!-- the text editor: one popover, anchored to whatever was clicked -->
       <div class="tedit" id="tedit">
         <div class="tehead"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>

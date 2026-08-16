@@ -337,13 +337,22 @@ function placeDots(dt){
   });
 }
 let playing=!window.matchMedia("(prefers-reduced-motion: reduce)").matches, last=performance.now();
+/* below this the map is a thumbnail and motion is not legible anyway. The
+   manual zoom floor is 0.15, so in practice this only bites on a fit view in a
+   very small window. */
+const MOTION_MIN=0.10;
 /* started at the end of the file, once the camera exists */
 function frame(now){
   const dt=Math.min((now-last)/1000,.05); last=now;
   stepCamera(now);
   placeDots(playing?dt:0);
-  /* everything shape-authored that moves lives here; it gets pause and zoom for free */
-  if(playing) TICKERS.forEach(f=>f(dt, now, view.k));
+  /* Everything shape-authored that moves lives here. The zoom gate is central:
+     each shape ships its own `if(k<0.7) return`, written when the map was a
+     third of its present size — at today's extent the whole map fits at k≈0.4
+     on a desktop and 0.12 on a phone, so every one of those gates was firing at
+     the DEFAULT view and the map arrived frozen. Handing the tickers a value
+     that never trips their own test moves the decision here, to one number. */
+  if(playing && view.k >= MOTION_MIN) TICKERS.forEach(f=>f(dt, now, 1));
   requestAnimationFrame(frame);
 }
 
@@ -448,11 +457,6 @@ svg.addEventListener("wheel",e=>{
   const nk=Math.max(.15,Math.min(5,view.k*Math.exp(-e.deltaY*.0016)));
   view.x=mx-(mx-view.x)*(nk/view.k);view.y=my-(my-view.y)*(nk/view.k);view.k=nk;applyView();
 },{passive:false});
-const zoomBy=f=>{const r=svg.getBoundingClientRect(),mx=r.width/2,my=r.height/2;
-  const nk=Math.max(.15,Math.min(5,view.k*f));
-  view.x=mx-(mx-view.x)*(nk/view.k);view.y=my-(my-view.y)*(nk/view.k);view.k=nk;applyView();};
-document.getElementById("zin").onclick=()=>zoomBy(1.25);
-document.getElementById("zout").onclick=()=>zoomBy(.8);
 
 /* ============================================================
    READER
@@ -571,8 +575,9 @@ renderOverview();
 
 /* the flow runs unless the machine asks it not to — there is no longer a
    button for it, and nothing else turns it off */
+/* no button for this any more — scroll and pinch do the zooming, and stepping
+   through the sequence re-centres. Home is the way back to the whole map. */
 const resetView=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),1100);};
-document.getElementById("zfit").onclick=resetView;
 document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
 /* the ruler is a working tool, not part of the picture — one click hides it */
 let axes=!PHONE();     /* the ruler earns its space on a desktop, not a phone */
@@ -679,6 +684,7 @@ window.addEventListener("keydown",e=>{
   if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); stepBy(1); }
   else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); stepBy(-1); }
   else if(e.key==="Escape"){ release(); }
+  else if(e.key==="Home"||e.key==="0"){ e.preventDefault(); resetView(); }
 });
 
 /* ============================================================
