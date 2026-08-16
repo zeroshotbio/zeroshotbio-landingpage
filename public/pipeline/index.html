@@ -24,6 +24,7 @@
     --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
     --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
 
+    --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
     --txt-mono:#131816;  /* text over the pale monolith / strata */
     --txt-box:#dfe6df;   /* text over everything else */
 
@@ -127,7 +128,7 @@
 
   /* the step strip — the mobile stand-in for the left index. Horizontal,
      scrollable, one chip per step, group names as vertical dividers. */
-  .strip{display:none;flex:none;height:15dvh;min-height:66px;max-height:118px;
+  .strip{display:none;flex:none;height:var(--strip-h);
          overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
          border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch}
   .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
@@ -143,35 +144,40 @@
   .chip.on{background:var(--fg);color:var(--bg)}
   .chip.on .k{color:var(--bg)}
   .sheetclose{display:none}
+  .fitonly{display:none}
 
   .mobtoggle{display:none}
   @media (max-width:900px){
+    /* no header at all: every pixel goes to the map */
+    header{display:none}
     .body{flex-direction:column;position:relative}
     /* the left index is replaced by the strip; the map gets the rest */
     aside{display:none}
     .stage{flex:1;min-height:0;border-bottom:none}
-    .strip{display:block}
+    .strip{display:block;height:var(--strip-h)}
     .hint{display:none}
-    /* the reader becomes a sheet that rises only when something is selected */
-    .reader{position:absolute;left:0;right:0;bottom:0;top:auto;width:auto;z-index:6;
-            max-height:64dvh;border-left:none;border-top:1px solid var(--fg);
-            transform:translateY(101%);transition:transform .2s ease;
+    /* the reader does not cover the map: it grows the footer instead, sitting
+       directly on top of the strip and adding at most another fifth of the
+       screen, so the strip stays reachable while you read */
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-h);top:auto;width:auto;z-index:6;
+            max-height:20dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-h)));transition:transform .22s ease;
             box-shadow:0 -10px 26px rgba(0,0,0,.28)}
     .reader.open{transform:none}
-    .sheetclose{display:grid;place-items:center;position:absolute;top:5px;right:8px;
-                z-index:2;width:26px;height:26px;font-size:15px;line-height:1;
-                border:1px solid var(--fg);background:var(--panel);color:var(--fg)}
+    .tabs{padding-right:46px}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:10px 14px 16px}
     .mobtoggle{display:none}
-    .stat{padding:3px 9px 5px}
-    .stat .k{font-size:7.5px}
-    .stat .v{font-size:11px}
-    .ctl{padding:3px 7px;font-size:8.5px}
-    .zoom{top:6px;right:6px}
-    .zoom button{width:32px;height:32px;font-size:16px}
+    .fitonly{display:grid}
+    .zoom{top:6px;right:6px;gap:6px}
+    .zoom button{width:34px;height:34px;font-size:17px}
   }
   @media (max-width:900px) and (orientation:landscape){
-    .strip{height:22dvh;min-height:58px}
-    .reader{max-height:82dvh}
+    :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
+    .reader{max-height:34dvh}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -198,7 +204,7 @@
     <aside id="aside"></aside>
     <div class="stage">
       <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
-      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button></div>
+      <div class="zoom"><button id="zin" aria-label="Zoom in">+</button><button id="zout" aria-label="Zoom out">−</button><button id="zfit" class="fitonly" aria-label="Reset view">⤾</button></div>
       <div class="hint">Hover to preview · Click to keep · Click empty space to clear · Click a dot to inspect it · Drag to pan · Scroll to zoom</div>
     </div>
     <div class="strip" id="strip"></div>

@@ -296,7 +296,7 @@ function fit(){ anim=null; setFocus(fitTarget()); }
 
 /* glide the camera: interpolate the focus point linearly and the zoom
    geometrically, which keeps the apparent motion even through a big scale change */
-function glideTo(target, ms=780){
+function glideTo(target, ms=1200){
   const [cx,cy]=centre();
   anim={t0:performance.now(), ms,
         from:{fx:(cx-view.x)/view.k, fy:(cy-view.y)/view.k, k:view.k},
@@ -305,7 +305,8 @@ function glideTo(target, ms=780){
 function stepCamera(now){
   if(!anim) return;
   const p=Math.min(1,(now-anim.t0)/anim.ms);
-  const e=p<0.5 ? 4*p*p*p : 1-Math.pow(-2*p+2,3)/2;
+  /* quadratic in/out rather than cubic: same shape, much less punch at the ends */
+  const e=p<0.5 ? 2*p*p : 1-Math.pow(-2*p+2,2)/2;
   const f=anim.from, t=anim.to;
   setFocus({fx:f.fx+(t.fx-f.fx)*e, fy:f.fy+(t.fy-f.fy)*e, k:f.k*Math.pow(t.k/f.k,e)});
   if(p>=1) anim=null;
@@ -315,7 +316,9 @@ function focusNode(id){
   const r=svg.getBoundingClientRect();
   const [wx,wy]=P(n.x, n.y, (n.h||0.5)/2);
   const span=Math.max(70,(n.w+n.d)*S*C30);
-  const k=Math.max(0.75, Math.min(2.4, Math.min(r.width,r.height)*0.5/span));
+  /* stop well short of filling the frame — a step should arrive with its
+     neighbours still in view, so the sequence stays legible */
+  const k=Math.max(0.6, Math.min(1.5, Math.min(r.width,r.height)*0.34/span));
   glideTo({fx:wx, fy:wy, k});
 }
 /* One pointer pans, two pinch. Pointer events cover mouse, pen and touch, so
@@ -489,10 +492,12 @@ const btnPlay=document.getElementById("btnPlay");
 const syncPlay=()=>btnPlay.textContent=playing?"Pause the flow":"Resume the flow";
 btnPlay.onclick=()=>{playing=!playing;syncPlay();}; syncPlay();
 document.getElementById("btnStep").onclick=()=>{playing=false;syncPlay();placeDots(.35);};
-document.getElementById("btnReset").onclick=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),820);};
+const resetView=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),1100);};
+document.getElementById("btnReset").onclick=resetView;
+document.getElementById("zfit").onclick=resetView;
 document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
 /* the ruler is a working tool, not part of the picture — one click hides it */
-let axes=true;
+let axes=!PHONE();     /* the ruler earns its space on a desktop, not a phone */
 const btnAxes=document.getElementById("btnAxes");
 const syncAxes=()=>{ gAxis.style.display=axes?"":"none";
                      btnAxes.textContent=axes?"Hide axes":"Show axes"; };
