@@ -223,9 +223,11 @@ const drawMiniplate=(g,n)=>drawPlate(g,n,SKIN.tile);
 function drawVials(g,n){
   const r=rng(59);
   const pw=n.w*0.58, pd=pw*0.79;
-  const plate={x:n.x-n.w*0.15, y:n.y+n.d*0.24, w:pw, d:pd};
+  /* the plate stands well clear of the freezer at rest — it is drawn in front
+     of the shell until it is stowed, so any shared ground cuts into the door */
+  const plate={x:n.x-n.w*0.15, y:n.y+n.d*0.50, w:pw, d:pd};
   const th=0.3;
-  const frz={x:n.x+n.w*0.08, y:n.y-n.d*0.24, w:n.w*0.82, d:n.d*0.62, h:n.h};
+  const frz={x:n.x+n.w*0.08, y:n.y-n.d*0.42, w:n.w*0.82, d:n.d*0.62, h:n.h};
 
   const snowflake=(host,pt2,R,op)=>{
     const fl=el("g",{});
@@ -1650,10 +1652,13 @@ function drawFixation(g,n){
     fill:"none",stroke:"var(--c-top)","stroke-width":"1.4","stroke-opacity":"0"});
   g.appendChild(wash);
 
-  const IN=1.4, FALL=0.45, SET=1.1, STILL=2.4, OUT=0.8;
+  const IN=1.6, FALL=0.6, SET=1.1, STILL=2.4, OUT=0.9;
   const CYCLE=IN+FALL+SET+STILL+OUT;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const HIGH=52;
+  /* HIGH is where the tip enters from, LOW where it stops — it never comes
+     down onto the cells, it stands off and lets go. TIP is the mouth of the
+     dropper at rest, which is where the drop has to be born. */
+  const HIGH=76, LOW=27, TIP=LOW+1.5;
   let t=0;
   const run=(dt,now)=>{
     t=(t+dt)%CYCLE;
@@ -1682,12 +1687,13 @@ function drawFixation(g,n){
     if(t<IN) lift=HIGH*(1-ease(t/IN));
     else if(t<IN+FALL){
       const f=(t-IN)/FALL;
-      lift=0; dropOp=f<0.85?0.9:0; dropY=f*f*26;
+      lift=0; dropOp=f<0.9?0.9:0; dropY=f*f*TIP;   // leaves the mouth, accelerates in
     } else if(t<IN+FALL+SET+STILL) lift=0;
     else lift=HIGH*ease((t-IN-FALL-SET-STILL)/OUT);
-    pip.setAttribute("transform",`translate(${centre[0]},${centre[1]-lift-4})`);
+    pip.setAttribute("transform",`translate(${centre[0]},${centre[1]-lift-LOW})`);
+    pip.setAttribute("opacity",(1-0.9*(lift/HIGH)).toFixed(2));
     drop.setAttribute("cx",centre[0]);
-    drop.setAttribute("cy",(centre[1]-26+dropY).toFixed(1));
+    drop.setAttribute("cy",(centre[1]-TIP+dropY).toFixed(1));
     drop.setAttribute("fill-opacity",dropOp.toFixed(2));
 
     const wr = dq<1 ? dq : Math.max(0,1-(t-IN-FALL-SET)/STILL);

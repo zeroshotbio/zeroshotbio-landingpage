@@ -141,7 +141,11 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
 NODES.filter(n=>!n.anchor && n.shape!=="works" && n.shape!=="machine").forEach(n=>{
   let row=ROWS[0]; ROWS.forEach(r=>{ if(Math.abs(n.y-r)<Math.abs(n.y-row)) row=r; });
   const below = n.y-row > 1;                       // sits under its row: name goes down-left
-  const [bx,by] = below ? P(n.x, n.y+n.d/2, n.h) : P(n.x, n.y-n.d/2, n.h);
+  /* lab:{dx,dy} nudges the emission point in world units without touching the
+     orientation — for a name that lands on top of something. Absent, nothing
+     changes. */
+  const lo = n.lab || {}, ex = n.x+(lo.dx||0);
+  const [bx,by] = below ? P(ex, n.y+n.d/2+(lo.dy||0), n.h) : P(ex, n.y-n.d/2+(lo.dy||0), n.h);
   const g=el("g",{transform:`translate(${bx},${by}) rotate(-30)`});
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
