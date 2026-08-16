@@ -62,7 +62,8 @@
   body{margin:0;background:var(--bg);color:var(--fg);
        font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
        font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
-  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;
+         -webkit-user-select:none;user-select:none}
   ::-webkit-scrollbar{width:7px;height:7px}
   ::-webkit-scrollbar-thumb{background:var(--rule)}
   ::-webkit-scrollbar-track{background:transparent}
@@ -78,7 +79,8 @@
   .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
 
   .body{display:flex;flex:1;min-height:0}
-  aside{width:238px;flex:none;border-right:1px solid var(--fg);overflow-y:auto;padding-bottom:24px;background:var(--bg)}
+  aside{width:238px;flex:none;border-right:1px solid var(--fg);overflow-y:auto;padding-bottom:24px;
+        background:var(--bg);-webkit-user-select:none;user-select:none}
   .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
   .grp.mark{color:var(--fg)}
   .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
@@ -95,13 +97,21 @@
   .row.on .n{color:var(--bg)}
 
   .stage{flex:1;position:relative;min-width:0;overflow:hidden}
-  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab}
+  /* Panning is a drag across a canvas covered in <text>, and a drag across text
+     is a text selection as far as the browser is concerned — so the map picked
+     up a blue smear on every pan. Nothing on the map is meant to be selected
+     with the cursor; the prose in the reader still is, because that is a
+     different element and is left alone. */
+  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+      -webkit-user-select:none;user-select:none;
+      -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
   svg.drag{cursor:grabbing}
   .zoom{position:absolute;top:10px;right:10px;display:flex;flex-direction:column;gap:5px}
   .zoom button{width:24px;height:24px;border:1px solid var(--fg);display:grid;place-items:center;
                background:var(--bg);font-size:13px;line-height:1}
   .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
-        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none}
+        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none;
+        -webkit-user-select:none;user-select:none}
 
   /* ---- edit positions ---- */
   .edonly{display:none}
@@ -167,7 +177,9 @@
   .tab{flex:1;padding:6px 4px;font-size:9px;letter-spacing:.13em;text-transform:uppercase;border-right:1px solid var(--rule)}
   .tab:last-child{border-right:none}
   .tab.on{background:var(--fg);color:var(--bg)}
-  .read{padding:14px 16px 40px;overflow-y:auto;flex:1}
+  /* the one place selection is wanted: the prose, and the blocks Save prints
+     for pasting back into the data file */
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
   .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
   .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
   .title.big{font-size:24px}
@@ -189,7 +201,8 @@
      scrollable, one chip per step, group names as vertical dividers. */
   .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
          overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
-         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch}
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch;
+         -webkit-user-select:none;user-select:none}
   /* while the reader is up the strip collapses to a rule of keys — enough to
      keep a sense of where you are in the sequence, and to jump, without
      spending the height the text needs */
