@@ -644,21 +644,14 @@ function toast(msg,warn,ms){
 }
 /* the shared back end. A read failure is silent — the map falls back to the
    tables baked into the data file. A write failure is not: the whole point of
-   Confirm is being told whether it stuck. */
-const EDIT_PASS="pipeline.editkey";
+   Confirm is being told whether it stuck. No key: this is a preview space, and
+   Confirm is meant to be one click. */
 function pushRemote(){
   if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
-  let key=""; try{ key=localStorage.getItem(EDIT_PASS)||""; }catch(err){}
-  if(!key){
-    key=prompt("Save key for the shared copy\n\n(the site password, or PIPELINE_EDIT_KEY if one is set)")||"";
-    if(!key) return Promise.resolve({ok:false,error:"no_key"});
-    try{ localStorage.setItem(EDIT_PASS,key); }catch(err){}
-  }
   return fetch("/api/pipeline_edits",{method:"POST",
-      headers:{"content-type":"application/json","x-edit-key":key},
+      headers:{"content-type":"application/json"},
       body:JSON.stringify(payload())})
     .then(r=>r.json().then(j=>({...j,status:r.status})))
-    .then(j=>{ if(j.status===401){ try{ localStorage.removeItem(EDIT_PASS); }catch(err){} } return j; })
     .catch(err=>({ok:false,error:"unreachable"}));
 }
 
@@ -965,11 +958,8 @@ function pushRemote(){
         toast("Confirmed — saved as the new default. It will still be here after a refresh.");
       }else{
         panel("pending");
-        const why = res && res.error==="not_configured"
-          ? "the shared store is not switched on yet — set PIPELINE_EDIT_KEY in Vercel"
-          : res && res.error==="unauthorized" ? "that key was not accepted"
-          : res && res.error==="no_key" ? "no key given"
-          : res && res.error==="too_large" ? "too big for one record"
+        const why = res && res.error==="too_large" ? "too big for one record"
+          : res && res.error==="write_failed" ? "the shared store rejected the write"
           : "the shared store could not be reached";
         toast("Kept in this browser only — "+why+".", true, 6000);
       }

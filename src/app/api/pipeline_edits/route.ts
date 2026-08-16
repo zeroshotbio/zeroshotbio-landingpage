@@ -5,13 +5,11 @@
 // zeroshot_dataroom_visitor_tracking DynamoDB table under a single fixed id,
 // so no new table is provisioned.
 //
-// Reads are public: the map fetches this on load so a confirmed change is the
-// new default for everyone, not just for the browser that made it.
-// Writes need a key. /pipeline is NOT behind the Basic-Auth middleware, so an
-// unguarded POST here would let anyone rewrite the page. PIPELINE_EDIT_KEY is
-// the dedicated one; KASPEROV_BASIC_PASSWORD is accepted as well so the tool
-// works with the password that is already set. With neither configured this
-// route refuses to write at all rather than defaulting open.
+// Reads and writes are both open, deliberately. This is a preview space rather
+// than a production site, and Confirm is meant to be one click — so there is no
+// key on the write path. The only limits are structural: one fixed record, and
+// a size cap so a payload cannot exceed what DynamoDB will store.
+// If this map ever goes somewhere public, put a key back on POST.
 
 import { NextRequest, NextResponse } from "next/server";
 import {
@@ -35,21 +33,6 @@ const TABLE_NAME =
 const ITEM_ID = "pipeline_map::edits";
 const MAX_BYTES = 320_000; // DynamoDB caps an item at 400KB
 
-// Length, not timing, is the only thing a mismatch is allowed to leak.
-function sameSecret(given: string, want: string) {
-  if (given.length !== want.length) return false;
-  let diff = 0;
-  for (let i = 0; i < given.length; i++) diff |= given.charCodeAt(i) ^ want.charCodeAt(i);
-  return diff === 0;
-}
-function keyAccepted(given: string | null) {
-  const keys = [process.env.PIPELINE_EDIT_KEY, process.env.KASPEROV_BASIC_PASSWORD]
-    .filter((k): k is string => !!k && k.length > 0);
-  if (!keys.length) return "not_configured" as const;
-  if (!given) return "missing" as const;
-  return keys.some((k) => sameSecret(given, k)) ? "ok" : "bad";
-}
-
 // GET /api/pipeline_edits → { offsets, text, at, by } or nulls if nothing saved
 export async function GET() {
   try {
@@ -71,18 +54,8 @@ export async function GET() {
   }
 }
 
-// POST /api/pipeline_edits  { offsets, text }  with header x-edit-key
+// POST /api/pipeline_edits  { offsets, text }
 export async function POST(request: NextRequest) {
-  const verdict = keyAccepted(request.headers.get("x-edit-key"));
-  if (verdict === "not_configured")
-    return NextResponse.json(
-      { ok: false, error: "not_configured",
-        detail: "Set PIPELINE_EDIT_KEY in the Vercel project to enable saving." },
-      { status: 503 }
-    );
-  if (verdict !== "ok")
-    return NextResponse.json({ ok: false, error: "unauthorized" }, { status: 401 });
-
   let body: { offsets?: unknown; text?: unknown };
   try {
     body = await request.json();
