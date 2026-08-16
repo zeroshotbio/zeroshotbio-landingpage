@@ -11,6 +11,11 @@
  *   INDEX=/path/to/other.html node scripts/pipeline_test/realdom.js
  *
  * Needs jsdom:  npm install --no-save jsdom
+ *
+ * Deliberately NOT in package.json. It is a local test dependency, the build
+ * does not want it, and adding it without regenerating package-lock.json makes
+ * `npm ci` fail on Vercel — which is a far worse failure than not having the
+ * test.
  */
 const fs=require("fs"), path=require("path");
 const {JSDOM, VirtualConsole}=require("jsdom");
