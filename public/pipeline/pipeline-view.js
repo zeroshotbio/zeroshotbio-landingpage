@@ -472,7 +472,6 @@ function renderOverview(){
     `<div class="title big" ${TF(O,"title")}>${o.title}</div>`+
     `<div class="sub" ${TF(O,"sub")}>${o.sub}</div>`+
     `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
-    `<h4>Condition</h4><div ${TF(O,"cond")}>${o.cond}</div>`+
     `<h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`;
 }
 function renderNode(id){
@@ -482,7 +481,6 @@ function renderNode(id){
     `<div class="sub" ${TF(id,"sub")}>${esc(n.sub)}</div>`+
     (UNVERIFIED.has(n.key)?`<div class="unver">unverified with Patrick</div>`:"")+
     `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
-    `<h4>Condition</h4><p class="cond" ${TF(id,"cond")}>${n.cond}</p>`+
     `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
     `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`;
 }
@@ -932,10 +930,9 @@ feature("edit text", function(){
   if(!btnText) return;
   const pop=document.getElementById("tedit"), inp=document.getElementById("teIn"),
         what=document.getElementById("teWhat"), teHint=document.getElementById("teHint");
-  const LONG={does:1,built:1,cond:1};
+  const LONG={does:1};
   const FIELD={name:"Name",sub:"Subtitle",stat:"Landmark line",group:"Group",
-               does:"What it does",built:"How it's built",cond:"Condition",
-               title:"Title",eyebrow:"Eyebrow",band:"Row title"};
+               does:"What it does",title:"Title",eyebrow:"Eyebrow",band:"Row title"};
   let open=null;
 
   const bandName=i=>BANDS[i]?BANDS[i].name:"";
