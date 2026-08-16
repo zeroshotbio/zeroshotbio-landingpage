@@ -713,7 +713,13 @@ function drawCullDish(g,n){
     if(e.dead){
       const c=el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)","fill-opacity":".82"});
       node.appendChild(c);
-      dead.push({node:c,p,size:e.size});
+      /* a duller, warmer twin sits over it, hidden until the pipette takes
+         this one — it's what lets a culled egg read as culled instead of
+         just gone. Reuses --drop, the same tone the map already uses for
+         everything discarded upstream. */
+      const warn=el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--drop)","fill-opacity":"0"});
+      node.appendChild(warn);
+      dead.push({node:c,warn,p,size:e.size});
     }else{
       node.appendChild(el("circle",{cx:p[0],cy:p[1],r:e.size,fill:"var(--fg)",
         "fill-opacity":".16",stroke:"var(--fg)","stroke-width":".7","stroke-opacity":".55"}));
@@ -759,8 +765,12 @@ function drawCullDish(g,n){
     if(t>CYCLE){
       t-=CYCLE;
       dead[i].node.setAttribute("fill-opacity","0");
+      dead[i].warn.setAttribute("fill-opacity","0");
       i=(i+1)%dead.length;
-      if(i===0) dead.forEach(d=>d.node.setAttribute("fill-opacity",".82"));
+      if(i===0) dead.forEach(d=>{
+        d.node.setAttribute("fill-opacity",".82");
+        d.warn.setAttribute("fill-opacity","0");
+      });
     }
     const p=t/CYCLE, here=dead[i].p, next=dead[(i+1)%dead.length].p;
     let lift=HIGH, x=here[0], y=here[1], grab=0;
@@ -771,6 +781,14 @@ function drawCullDish(g,n){
       const f=ease((p-0.78)/0.22);
       x=here[0]+(next[0]-here[0])*f; y=here[1]+(next[1]-here[1])*f;
       grab=1-f;
+    }
+    /* the egg at rest turns before it lifts: fg drains out while --drop
+       rises and falls under it, so the last thing seen at that spot is a
+       duller, warmer dot rather than a healthy one just switching off. */
+    if(p>=0.3){
+      const fp=Math.min(1,(p-0.3)/0.48);
+      dead[i].node.setAttribute("fill-opacity",(0.82*(1-fp)).toFixed(2));
+      dead[i].warn.setAttribute("fill-opacity",(Math.sin(fp*Math.PI)*0.42).toFixed(2));
     }
     pip.setAttribute("transform",`translate(${x},${y-lift})`);
     caught.setAttribute("fill-opacity", (grab*0.85).toFixed(2));
