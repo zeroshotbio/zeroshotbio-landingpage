@@ -110,6 +110,9 @@ VERIFY, in this order, and do not skip any of it
   node scripts/pipeline_test/validate.js     structure, every shape renders, no orphans
   node scripts/pipeline_test/runview.js      runs all four files and drives every
                                              ticker for 2400 frames; must print no FAIL
+  node scripts/pipeline_test/realdom.js      loads the real page in jsdom and checks it
+                                             animates and the camera moves; must exit 0.
+                                             If jsdom is missing: npm install --no-save jsdom
   cd public/pipeline && ./build.sh           regenerates the standalone artifact
   npx next build                             must compile
 If any of those fail, fix the cause. Do not commit failing work.

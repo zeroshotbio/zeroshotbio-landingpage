@@ -19,6 +19,25 @@ const nextConfig = {
       { source: '/pipeline', destination: '/pipeline/index.html' },
     ]
   },
+
+  // The /pipeline shell and its four scripts are ONE unit: the HTML names the
+  // elements the scripts reach for. Cache them independently and a browser can
+  // end up running today's scripts against last week's HTML, which is not a
+  // degraded page — a script that cannot find an element it wants stops, and
+  // everything after that point in the file never runs. Revalidate every load;
+  // they are small and 304s are cheap.
+  async headers() {
+    return [
+      {
+        source: '/pipeline/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/pipeline',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+    ]
+  },
 }
 
 module.exports = nextConfig

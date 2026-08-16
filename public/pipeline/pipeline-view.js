@@ -592,13 +592,33 @@ document.getElementById("btnTheme").onclick=e=>{
 svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
 
 /* ============================================================
+   START THE MAP
+   Deliberately before every optional feature below. A browser holding a stale
+   index.html against fresh scripts will not find an element one of them wants,
+   and until this line moved up here that single null took the whole tail of the
+   file with it — including this loop. The symptom was a map that drew, listed
+   and highlighted perfectly and then sat frozen, with the camera refusing to
+   move, which reads as anything but a missing button.
+   ============================================================ */
+placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
+
+/* Each block below is a feature, not a dependency. One that cannot find what it
+   needs says so and stands down; the map and everything else keep working. */
+function feature(name, fn){
+  try{ fn(); }
+  catch(err){
+    console.error(`pipeline: "${name}" did not start — the map is fine, that feature is not.`, err);
+  }
+}
+
+/* ============================================================
    THE SIDE COLUMNS
    Both are draggable shut. Drag the grip to resize, drag it far enough and
    it snaps closed, or just click it. What is left is the grip: a full-height
    sliver with an arrow pointing the way back, so a closed panel reads as
    folded away rather than as missing. Widths persist.
    ============================================================ */
-(function panels(){
+feature("side columns", function(){
   const PANEL_KEY="pipeline.panels";
   const root=document.body;
   const P_=[{grip:"gripL", el:aside,  varn:"--aside-w",  def:238, min:150, max:460, side:1, open:"‹", shut:"›"},
@@ -653,7 +673,7 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
     saved=Object.assign(saved,out);
     try{ localStorage.setItem(PANEL_KEY,JSON.stringify(saved)); }catch(err){}
   }
-})();
+});
 
 /* ============================================================
    WALKING THE SEQUENCE
@@ -662,6 +682,22 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
    desktop, two round buttons on anything — a phone has no keyboard and the
    strip is a scroll rather than a walk.
    ============================================================ */
+feature("walk the sequence", function(){
+const next=document.getElementById("stNext"), prev=document.getElementById("stPrev");
+if(next) next.onclick=()=>stepBy(1);
+if(prev) prev.onclick=()=>stepBy(-1);
+window.addEventListener("keydown",e=>{
+  if(e.metaKey||e.ctrlKey||e.altKey) return;
+  /* never while something is being typed into — the text editor owns its keys */
+  const t=e.target, tag=t&&t.tagName;
+  if(tag==="INPUT"||tag==="TEXTAREA"||(t&&t.isContentEditable)) return;
+  if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); stepBy(1); }
+  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); stepBy(-1); }
+  else if(e.key==="Escape"){ release(); }
+  else if(e.key==="Home"||e.key==="0"){ e.preventDefault(); resetView(); }
+});
+});
+
 function goTo(id){
   const n=byId[id]; if(!n) return;
   pinned=id; current=id;                       // always land on it, never toggle off
@@ -674,18 +710,7 @@ function stepBy(d){
   const to = ((at+d)%NODES.length + NODES.length) % NODES.length;
   goTo(NODES[to].id);
 }
-document.getElementById("stNext").onclick=()=>stepBy(1);
-document.getElementById("stPrev").onclick=()=>stepBy(-1);
-window.addEventListener("keydown",e=>{
-  if(e.metaKey||e.ctrlKey||e.altKey) return;
-  /* never while something is being typed into — the text editor owns its keys */
-  const t=e.target, tag=t&&t.tagName;
-  if(tag==="INPUT"||tag==="TEXTAREA"||(t&&t.isContentEditable)) return;
-  if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); stepBy(1); }
-  else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); stepBy(-1); }
-  else if(e.key==="Escape"){ release(); }
-  else if(e.key==="Home"||e.key==="0"){ e.preventDefault(); resetView(); }
-});
+
 
 /* ============================================================
    SAVING
@@ -778,7 +803,7 @@ function pushRemote(){
    whatever layoutRows() computed. Paste it into OFFSETS in the data file and
    it survives re-solving a lane or inserting a step.
    ============================================================ */
-(function editor(){
+feature("edit positions", function(){
   const btnEdit=document.getElementById("btnEdit");
   if(!btnEdit) return;                       // the page can ship without the tool
   const hint=document.querySelector(".hint");
@@ -893,7 +918,7 @@ function pushRemote(){
     else if(hint) hint.textContent=hint0;
   }
   btnEdit.onclick=()=>setMode(!editing);
-})();
+});
 
 /* ============================================================
    EDIT TEXT
@@ -902,7 +927,7 @@ function pushRemote(){
    popover does the typing, anchored to whatever was clicked — on the map, or
    in the reader, or on a band title.
    ============================================================ */
-(function texteditor(){
+feature("edit text", function(){
   const btnText=document.getElementById("btnText");
   if(!btnText) return;
   const pop=document.getElementById("tedit"), inp=document.getElementById("teIn"),
@@ -1051,7 +1076,7 @@ function pushRemote(){
     if(!on) close(false);
   };
   btnText.onclick=()=>setTextMode(!texting);
-})();
+});
 
 /* ============================================================
    SAVE ALL CHANGES
@@ -1059,7 +1084,7 @@ function pushRemote(){
    default and what it will look like in the file; the second commits it and
    says so. Nothing reaches the shared copy without the second click.
    ============================================================ */
-(function saving(){
+feature("saving", function(){
   const btnSave=document.getElementById("btnSave"), btnDrop=document.getElementById("btnDiscard");
   if(!btnSave) return;
 
@@ -1123,12 +1148,12 @@ function pushRemote(){
     try{ localStorage.removeItem(EDIT_KEY); localStorage.removeItem("pipeline.offsets"); }catch(err){}
     location.reload();
   };
-})();
+});
 
 /* The shared copy is the default for everyone, so pull it after first paint
    and take it if this browser has nothing newer of its own. A failure here is
    silent: the map is already drawn from the tables in the data file. */
-(function pull(){
+feature("shared copy", function(){
   if(typeof fetch!=="function") return;
   const mine=EDITS.at||0;
   fetch("/api/pipeline_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
@@ -1139,7 +1164,7 @@ function pushRemote(){
     toast("A newer shared version is available — reloading.");
     setTimeout(()=>location.reload(), 900);
   }).catch(()=>{});
-})();
+});
 
 /* ============================================================
    EDIT VISUAL
@@ -1149,7 +1174,7 @@ function pushRemote(){
    done. The page watches its own request and reloads itself the moment that
    happens — so the loop closes here rather than in a chat window.
    ============================================================ */
-(function askVisual(){
+feature("edit visual", function(){
   const btn=document.getElementById("btnVisual"), box=document.getElementById("ask");
   if(!btn||!box) return;
   const inp=document.getElementById("askIn"), what=document.getElementById("askWhat"),
@@ -1269,6 +1294,5 @@ function pushRemote(){
     if(Date.now()-p.since > 6*3600*1000) return stop();   // gone stale, let it go
     watch(p.id);
   })();
-})();
+});
 
-placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);

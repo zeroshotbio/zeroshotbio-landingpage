@@ -33,7 +33,8 @@ awk '/<script src="\/pipeline\//{exit} {print}' "$SRC" > "$TMP"
   done
 } >> "$TMP"
 
-awk 'f{print} /<script src="\/pipeline\/pipeline-view.js"><\/script>/{f=1}' "$SRC" >> "$TMP"
+# the src carries a ?v=<sha> cache-buster, so match the file name, not the whole tag
+awk 'f{print} /<script src="\/pipeline\/pipeline-view\.js/{f=1}' "$SRC" >> "$TMP"
 
 mv "$TMP" "$OUT"
 trap - EXIT
