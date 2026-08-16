@@ -113,6 +113,8 @@ VERIFY, in this order, and do not skip any of it
   cd public/pipeline && ./build.sh           regenerates the standalone artifact
   npx next build                             must compile
 If any of those fail, fix the cause. Do not commit failing work.
+You have a shell for exactly these — node, npx, git, cd, ls, cat, grep, sed and
+build.sh. Nothing else is available, so do not plan around anything else.
 
 THEN SHIP IT
 Commit only files under public/pipeline (plus scripts/pipeline_test if you genuinely
@@ -130,8 +132,19 @@ function runClaude(prompt) {
   return new Promise((resolve) => {
     const env = { ...process.env };
     delete env.ANTHROPIC_API_KEY; // takes precedence over the claude.ai login, and is dry
+    /* acceptEdits auto-approves file edits and nothing else, so a headless run
+       stalls the moment it needs a shell — which is immediately, because it is
+       required to verify before committing. The allowlist is the commands the
+       task actually needs. It is not a security boundary (this daemon already
+       grants "commit and push to main") but it does keep an odd request from
+       casually reaching for the network or for anything outside the repo. */
+    const TOOLS = ["Edit", "Write", "Read", "Glob", "Grep",
+                   "Bash(node:*)", "Bash(npx:*)", "Bash(git:*)", "Bash(cd:*)",
+                   "Bash(ls:*)", "Bash(cat:*)", "Bash(grep:*)", "Bash(sed:*)",
+                   "Bash(./build.sh)", "Bash(public/pipeline/build.sh)"];
     const child = spawn("claude",
-      ["-p", prompt, "--permission-mode", "acceptEdits", "--model", MODEL],
+      ["-p", prompt, "--permission-mode", "acceptEdits", "--model", MODEL,
+       "--allowedTools", ...TOOLS],
       { cwd: REPO, env, stdio: ["ignore", "pipe", "pipe"] });
     let out = "", err = "";
     child.stdout.on("data", (d) => (out += d));
