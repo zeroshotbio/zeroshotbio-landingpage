@@ -1,28 +1,36 @@
 <!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta name="description" content="MiniFin rebuild: the built GRCz11/Ensembl-99 arm beside the staged GRCz12tu/Ensembl-2025_12 arm, stage by stage.">
+<meta name="description" content="MiniFin rebuild: the built GRCz11/Ensembl-99 arm beside the staged GRCz12tu/Ensembl-2025_12 arm, stage by stage, marked same vs different.">
 <title>GRCz12 Arm Comparison</title>
 <style>
-  /* Tokens from zeroshot.bio/pipeline. Dark is native, so :root is dark and
-     light is the override — mirrored consistently across all three theme
-     states so the un-stamped default resolves correctly. */
+  /* Tokens from zeroshot.bio/pipeline. Dark is native, so :root is dark and light
+     is the override — mirrored across all three theme states so the un-stamped
+     default resolves correctly.
+     --s1/--s2 are the chart series. Validated with the dataviz validator against
+     each mode's own surface: all six checks pass in both. Tritan separation is
+     the weak axis for an aqua/blue pair, so every bar is direct-labelled and the
+     row order is fixed — identity never rests on hue alone. */
   :root{
     --bg:#131816; --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
     --signal:#74b0f0; --drop:#e0765c; --ok:#5aa46b;
+    --s1:#199e70; --s2:#3987e5;
   }
   @media (prefers-color-scheme:light){
     :root:not([data-theme="dark"]){
       --bg:#ccd4cb; --fg:#161e19; --fg2:#4c5a52; --fg3:#6b7972; --rule:#98a498;
       --signal:#1e4c8a; --drop:#8a3324; --ok:#2f6a3d;
+      --s1:#14805a; --s2:#1c5cab;
     }
   }
   :root[data-theme="light"]{
     --bg:#ccd4cb; --fg:#161e19; --fg2:#4c5a52; --fg3:#6b7972; --rule:#98a498;
     --signal:#1e4c8a; --drop:#8a3324; --ok:#2f6a3d;
+    --s1:#14805a; --s2:#1c5cab;
   }
   :root[data-theme="dark"]{
     --bg:#131816; --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
     --signal:#74b0f0; --drop:#e0765c; --ok:#5aa46b;
+    --s1:#199e70; --s2:#3987e5;
   }
 
   *{box-sizing:border-box}
@@ -32,9 +40,11 @@
     font-size:12px;line-height:1.55;-webkit-font-smoothing:antialiased;
     font-variant-numeric:tabular-nums;
   }
-  .wrap{max-width:1080px;margin:0 auto;padding:0 22px 80px}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 22px 80px}
 
-  /* ---- head ---- */
+  /* the one grid every row shares, so both columns stay locked to the spine */
+  .g{display:grid;grid-template-columns:1fr 156px 1fr;gap:0 18px}
+
   header{display:flex;align-items:baseline;gap:16px;flex-wrap:wrap;padding:30px 0 6px}
   .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
   h1{font-size:23px;margin:4px 0 0;letter-spacing:.01em;font-weight:600}
@@ -45,54 +55,91 @@
   button:hover,button:focus-visible{color:var(--fg)}
   button:focus-visible{outline:1px solid var(--signal);outline-offset:3px}
 
-  /* ---- arm names, sitting over their columns ---- */
-  .arms{display:grid;grid-template-columns:1fr 118px 1fr;gap:0 20px;
-        margin-top:26px;padding-bottom:9px;border-bottom:1px solid var(--fg)}
+  /* how to read the spine */
+  .key{display:flex;gap:18px;flex-wrap:wrap;padding:14px 0 10px;font-size:9.5px;color:var(--fg3)}
+  .key b{font-weight:400;font-size:11px;margin-right:5px}
+  .key .same b{color:var(--fg2)}
+  .key .diff b{color:var(--signal)}
+  .key .only b{color:var(--fg3)}
+
+  .arms{padding-bottom:9px;border-bottom:1px solid var(--fg)}
   .arms .a{font-size:12.5px;letter-spacing:.02em}
-  .arms .a .st{display:block;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
+  .arms .st{display:block;font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;margin-top:3px}
   .arms .l{text-align:right}
   .arms .l .st{color:var(--ok)}
   .arms .r .st{color:var(--signal)}
 
-  /* ---- the spine ---- */
-  .flow{position:relative;padding-top:4px}
+  /* ---- spine ---- */
+  .flow{position:relative;padding-top:2px}
   .flow::before{content:"";position:absolute;left:50%;transform:translateX(-50%);
                 top:0;bottom:0;width:1px;background:var(--rule)}
 
-  .stage{display:grid;grid-template-columns:1fr 118px 1fr;gap:0 20px;
-         align-items:start;padding:20px 0}
-  .mid{position:relative;text-align:center;background:var(--bg);padding:3px 0 5px}
-  .mid .num{display:block;font-size:8.5px;letter-spacing:.14em;color:var(--fg3)}
-  .mid .nm{display:block;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
-           margin-top:2px;line-height:1.3}
+  .sh{padding:22px 0 8px}
+  .sh .t{grid-column:2;text-align:center;background:var(--bg);padding:3px 0 4px}
+  .sh .num{display:block;font-size:8.5px;letter-spacing:.14em;color:var(--fg3)}
+  .sh .nm{display:block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin-top:1px}
 
-  .l{text-align:right}
-  .r{text-align:left}
-
-  /* a detail line: muted label, then the value. No boxes anywhere. */
-  .d{display:block;font-size:11px;padding:1.5px 0;color:var(--fg)}
-  .d .k{color:var(--fg3);font-size:9.5px;letter-spacing:.06em;text-transform:uppercase}
-  .l .d .k{margin-right:7px}
-  .r .d .k{margin-right:7px}
-  .d.q{color:var(--fg2);font-size:10.5px}
-  .d.warn{color:var(--drop);font-size:10.5px}
-  .d.pend{color:var(--fg3);font-size:10.5px}
+  /* a comparison row: value | what is being compared + verdict | value */
+  .row{align-items:baseline;padding:2.5px 0}
+  .row:hover .mk{color:var(--fg)}
+  .lv{text-align:right;font-size:11px}
+  .rv{text-align:left;font-size:11px}
+  .mk{text-align:center;background:var(--bg);padding:1px 3px}
+  .mk .p{display:block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);line-height:1.3}
+  .mk .m{display:block;font-size:9.5px;line-height:1.3}
+  .row.same .m{color:var(--fg2)}
+  .row.diff .m{color:var(--signal)}
+  .row.only .m{color:var(--fg3)}
+  .row.only .rv{color:var(--fg3)}
+  .row.same .rv{color:var(--fg2)}
   em{font-style:normal;color:var(--fg3)}
   b{font-weight:600}
+  .warn{color:var(--drop)}
 
-  .state{font-size:9px;letter-spacing:.13em;text-transform:uppercase}
-  .state.ok{color:var(--ok)}
-  .state.live{color:var(--signal)}
-  .state.pend{color:var(--fg3)}
+  /* left-column asides: notes and the per-sublibrary table */
+  .aside{grid-column:1;text-align:right;font-size:10.5px;color:var(--fg2);padding:5px 0 0;line-height:1.6}
+  .raside{grid-column:3;text-align:left;font-size:10.5px;color:var(--fg3);padding:5px 0 0;line-height:1.6}
 
-  /* ---- what turns one stage into the next: on the spine, between stages ---- */
-  .xf{text-align:center;padding:6px 0}
-  .xf span{display:inline-block;background:var(--bg);padding:3px 16px;max-width:430px;
-           font-size:9.5px;color:var(--fg3);letter-spacing:.02em;line-height:1.5}
+  .tw{grid-column:1;overflow-x:auto;padding:9px 0 2px}
+  table{border-collapse:collapse;width:100%;font-size:10px;min-width:330px}
+  caption{caption-side:top;text-align:right;font-size:8.5px;letter-spacing:.1em;
+          text-transform:uppercase;color:var(--fg3);padding-bottom:5px}
+  th,td{padding:2.5px 7px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+  th{font-size:8px;letter-spacing:.09em;text-transform:uppercase;color:var(--fg3);font-weight:400}
+  tbody tr:last-child td{border-bottom:1px solid var(--fg)}
+  tfoot td{border-bottom:none;color:var(--fg);font-weight:600;padding-top:4px}
+  td.hi{color:var(--fg);font-weight:600}
+
+  /* ---- transformation, on the spine ---- */
+  .xf{text-align:center;padding:7px 0}
+  .xf span{display:inline-block;background:var(--bg);padding:3px 16px;max-width:440px;
+           font-size:9.5px;color:var(--fg3);line-height:1.5}
   .xf b{color:var(--signal);font-weight:400}
 
+  /* ---- the stage figure ---- */
+  .fig{margin:20px 0 4px;padding:16px 0 4px;border-top:1px solid var(--rule)}
+  .fig h3{font-size:11px;margin:0 0 3px;font-weight:600;letter-spacing:.02em}
+  .fig .cap{font-size:10px;color:var(--fg2);margin:0 0 13px;max-width:78ch;line-height:1.6}
+  .lgd{display:flex;gap:16px;flex-wrap:wrap;font-size:9.5px;color:var(--fg2);margin-bottom:12px}
+  .lgd span{display:flex;align-items:center;gap:6px}
+  .sw{width:16px;height:7px;flex:none;border-radius:2px}
+  .sw.a{background:var(--s1)} .sw.b{background:var(--s2)}
+
+  .bars{display:grid;grid-template-columns:132px 1fr 52px;gap:3px 12px;align-items:center}
+  .bl{font-size:10px;color:var(--fg2);text-align:right;line-height:1.3}
+  .bg{display:flex;flex-direction:column;gap:2px}      /* 2px surface gap between the pair */
+  .bar{display:flex;align-items:center;gap:7px}
+  .bar i{display:block;height:7px;min-width:2px;border-radius:0 3px 3px 0;flex:none}
+  .bar.a i{background:var(--s1)} .bar.b i{background:var(--s2)}
+  .bar span{font-size:9.5px;color:var(--fg2);white-space:nowrap}
+  .bar.a span{color:var(--fg)}
+  .br{font-size:9.5px;color:var(--fg3);text-align:right;white-space:nowrap}
+  .br.up{color:var(--signal)}
+  .br.eq{color:var(--fg2)}
+  .bars .rowsep{grid-column:1/-1;height:1px;background:var(--rule);opacity:.5;margin:3px 0}
+
   /* ---- notes ---- */
-  .notes{margin-top:44px;border-top:1px solid var(--fg);padding-top:16px}
+  .notes{margin-top:40px;border-top:1px solid var(--fg);padding-top:16px}
   .notes h2{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
             font-weight:400;margin:0 0 12px}
   .n{display:grid;grid-template-columns:18px 1fr;gap:12px;padding:9px 0;
@@ -101,22 +148,26 @@
   .n .i{color:var(--drop);font-size:9.5px;padding-top:2px}
   .n b{color:var(--fg)}
 
-  footer{margin-top:34px;border-top:1px solid var(--rule);padding-top:13px;
+  footer{margin-top:32px;border-top:1px solid var(--rule);padding-top:13px;
          color:var(--fg3);font-size:10px;line-height:1.8}
   code{font-size:.95em}
 
-  @media (max-width:820px){
+  @media (max-width:900px){
     .flow::before{display:none}
-    .arms{display:none}
-    .stage{grid-template-columns:1fr;gap:8px;padding:18px 0;border-bottom:1px solid var(--rule)}
-    .mid{text-align:left;padding:0 0 4px}
-    .mid .nm{font-size:12px}
-    .l,.r{text-align:left}
-    .l::before{content:"GRCz11 / rel-99";display:block;font-size:8.5px;letter-spacing:.14em;
-               text-transform:uppercase;color:var(--ok);margin-bottom:3px}
-    .r::before{content:"GRCz12tu / 2025_12";display:block;font-size:8.5px;letter-spacing:.14em;
-               text-transform:uppercase;color:var(--signal);margin:9px 0 3px}
+    .arms,.key{display:none}
+    .g{grid-template-columns:1fr;gap:2px}
+    .sh{padding:20px 0 6px;border-top:1px solid var(--fg)}
+    .sh .t{grid-column:1;text-align:left;padding:0}
+    .row{padding:6px 0;border-bottom:1px dotted var(--rule)}
+    .lv,.rv{text-align:left}
+    .mk{text-align:left;padding:0}
+    .mk .p{display:inline;margin-right:8px}
+    .mk .m{display:inline}
+    .lv::before{content:"GRCz11 ";color:var(--ok);font-size:8.5px;letter-spacing:.1em}
+    .rv::before{content:"GRCz12tu ";color:var(--signal);font-size:8.5px;letter-spacing:.1em}
+    .aside,.raside,.tw{grid-column:1;text-align:left}
     .xf{display:none}
+    .bars{grid-template-columns:96px 1fr 46px}
   }
 </style>
 </head>
@@ -127,172 +178,261 @@
   <div class="grow">
     <div class="eyebrow">Zeroshot Bio · MiniFin rebuild</div>
     <h1>GRCz12</h1>
-    <p class="sub">One dataset, two references. Left is built and published. Right is staged and gated —
-    everything below the reference is work not yet run.</p>
+    <p class="sub">One dataset, two references. The spine names what is being compared and whether it
+    moved. Most of this pipeline is deliberately identical — that is the experiment's design.</p>
   </div>
   <button id="themeBtn">Light</button>
 </header>
 
-<div class="arms">
+<div class="key">
+  <span class="same"><b>=</b>Held fixed — same value both sides, by design</span>
+  <span class="diff"><b>Δ</b>Genuinely different — the delta is shown</span>
+  <span class="only"><b>·</b>One side only — not yet run</span>
+</div>
+
+<div class="arms g">
   <div class="a l">GRCz11 / Ensembl 99<span class="st">Built · in Silver</span></div>
-  <div class="mid"></div>
+  <div></div>
   <div class="a r">GRCz12tu / Ensembl 2025_12<span class="st">Staged · not started</span></div>
 </div>
 
 <div class="flow">
 
-  <!-- 01 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Files</span><b>16</b> · 8 sublibraries <em>(3 → 3b)</em></span>
-      <span class="d"><span class="k">Reads</span><b>3,655,719,111</b></span>
-      <span class="d"><span class="k">Size</span>209.5 GiB</span>
-      <span class="d q">md5 16/16 against the delivery manifest</span>
-      <span class="d q"><code>bronze/minifin/raw/fastq/</code></span>
-    </div>
-    <div class="mid"><span class="num">01</span><span class="nm">FASTQ in</span></div>
-    <div class="r">
-      <span class="d"><span class="state ok">Ready</span></span>
-      <span class="d">The same <b>16</b> files</span>
-      <span class="d q">No re-fetch — reads are reference-independent</span>
-    </div>
-  </section>
+  <!-- ══ 01 ══ -->
+  <div class="sh g"><div class="t"><span class="num">01</span><span class="nm">FASTQ in</span></div></div>
+  <div class="row same g"><div class="lv"><b>16</b></div><div class="mk"><span class="p">Files</span><span class="m">=</span></div><div class="rv"><b>16</b></div></div>
+  <div class="row same g"><div class="lv"><b>8</b> <em>(3 → 3b)</em></div><div class="mk"><span class="p">Sublibraries</span><span class="m">=</span></div><div class="rv"><b>8</b></div></div>
+  <div class="row same g"><div class="lv"><b>3,655,719,111</b></div><div class="mk"><span class="p">Reads</span><span class="m">=</span></div><div class="rv"><b>3,655,719,111</b></div></div>
+  <div class="row same g"><div class="lv">209.5 GiB</div><div class="mk"><span class="p">Size</span><span class="m">=</span></div><div class="rv">209.5 GiB</div></div>
+  <div class="row same g"><div class="lv">md5 16/16 pass</div><div class="mk"><span class="p">Verified</span><span class="m">=</span></div><div class="rv">same objects</div></div>
+  <div class="g"><div class="raside">Reads are reference-independent — nothing is re-fetched.</div></div>
 
   <div class="xf"><span>STAR <code>genomeGenerate</code> · <b>sjdbOverhang 63</b> (read length 64 − 1)</span></div>
 
-  <!-- 02 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Assembly</span>GRCz11 primary</span>
-      <span class="d"><span class="k">Annotation</span>Ensembl release 99</span>
-      <span class="d"><span class="k">Genes</span><b>32,520</b> indexed</span>
-      <span class="d"><span class="k">gene_name</span><b>32,520 / 32,520 — 100.00%</b>, every biotype</span>
-      <span class="d"><span class="k">MT</span>13 protein-coding · 2 rRNA · 22 tRNA</span>
-      <span class="d q">STAR 2.7.11b pinned · built in 405 s</span>
+  <!-- ══ 02 ══ -->
+  <div class="sh g"><div class="t"><span class="num">02</span><span class="nm">Reference</span></div></div>
+  <div class="row diff g"><div class="lv">GRCz11 primary</div><div class="mk"><span class="p">Assembly</span><span class="m">Δ</span></div><div class="rv">GRCz12tu T2T</div></div>
+  <div class="row diff g"><div class="lv"><b>993</b></div><div class="mk"><span class="p">Sequences</span><span class="m">Δ −967</span></div><div class="rv"><b>26</b> <em>(0 scaffolds)</em></div></div>
+  <div class="row diff g"><div class="lv">Ensembl 99</div><div class="mk"><span class="p">Annotation</span><span class="m">Δ</span></div><div class="rv">Ensembl 2025_12</div></div>
+  <div class="row diff g"><div class="lv"><b>32,520</b></div><div class="mk"><span class="p">Gene records</span><span class="m">Δ +28,448</span></div><div class="rv"><b>60,968</b></div></div>
+  <div class="row diff g"><div class="lv"><b>25,432</b></div><div class="mk"><span class="p">Protein-coding</span><span class="m">Δ +1,266</span></div><div class="rv"><b>26,698</b></div></div>
+  <div class="row diff g"><div class="lv"><b>100.00%</b> <em>all biotypes</em></div><div class="mk"><span class="p">gene_name</span><span class="m">Δ −66.14 pts</span></div><div class="rv"><b>33.86%</b> <em>77.3% of coding</em></div></div>
+  <div class="row diff g"><div class="lv"><code>ENSDARG00000…</code></div><div class="mk"><span class="p">ID series</span><span class="m">Δ disjoint</span></div><div class="rv"><code>ENSDARG0016…</code></div></div>
+  <div class="row same g"><div class="lv"><b>37</b></div><div class="mk"><span class="p">MT records</span><span class="m">=</span></div><div class="rv"><b>37</b></div></div>
+  <div class="row same g"><div class="lv">13 / 2 / 22</div><div class="mk"><span class="p">MT make-up</span><span class="m">=</span></div><div class="rv">13 / 2 / 22</div></div>
+  <div class="row same g"><div class="lv"><b>63</b></div><div class="mk"><span class="p">sjdbOverhang</span><span class="m">=</span></div><div class="rv"><b>63</b></div></div>
+  <div class="row same g"><div class="lv">14 · sparseD 1</div><div class="mk"><span class="p">SAindexNbases</span><span class="m">=</span></div><div class="rv">14 · sparseD 1</div></div>
+  <div class="row same g"><div class="lv"><b>2.7.11b</b> pinned</div><div class="mk"><span class="p">STAR</span><span class="m">=</span></div><div class="rv"><b>2.7.11b</b></div></div>
+  <div class="row only g"><div class="lv">Built · 405 s</div><div class="mk"><span class="p">Index</span><span class="m">·</span></div><div class="rv">Not built</div></div>
+  <div class="g"><div class="raside">GTF md5 PASS. FASTA content-verified against its <code>.fai</code>, 26/26 —
+    no published md5 exists for the <code>.bgz</code>, so byte-level is unverified.</div></div>
+
+  <!-- the stage figure -->
+  <section class="fig">
+    <h3>Gene counts by biotype class</h3>
+    <p class="cap">The 32,520 → 60,968 headline is where the illusion lives. Hold the class fixed and it
+    resolves: protein-coding is near-flat, while a single collapsed <code>lncRNA</code> catalogue absorbs
+    almost the whole increase. Both columns sum exactly to their annotation's total.</p>
+    <div class="lgd">
+      <span><i class="sw a"></i>GRCz11 / Ensembl 99</span>
+      <span><i class="sw b"></i>GRCz12tu / Ensembl 2025_12</span>
+      <span style="color:var(--fg3)">Bars share one linear scale · every value labelled</span>
     </div>
-    <div class="mid"><span class="num">02</span><span class="nm">Reference</span></div>
-    <div class="r">
-      <span class="d"><span class="state live">Verified · gates passed</span></span>
-      <span class="d"><span class="k">Assembly</span>GRCz12tu T2T · 26 sequences, 0 scaffolds</span>
-      <span class="d"><span class="k">Annotation</span>Ensembl 2025_12</span>
-      <span class="d"><span class="k">Genes</span><b>60,968</b> records · 26,698 coding</span>
-      <span class="d"><span class="k">Gate A</span><b>20,641 / 60,968 — 33.86%</b> named<br>
-        <em>77.3% of protein-coding · 0% of everything else</em></span>
-      <span class="d"><span class="k">Gate B</span>MT present, 16,596 bp<br>
-        <b>13</b> protein-coding · <b>2</b> Mt_rRNA · <b>22</b> Mt_tRNA</span>
-      <span class="d q">GTF md5 PASS · FASTA content-verified against its <code>.fai</code>,
-        26/26 — no published md5 exists for the <code>.bgz</code></span>
-      <span class="d pend">Index not built</span>
+    <div class="bars">
+      <div class="bl">Long non-coding<br><em style="font-size:9px">lncRNA / lincRNA + 4</em></div>
+      <div class="bg">
+        <div class="bar a"><i style="width:12.0%"></i><span>3,274</span></div>
+        <div class="bar b"><i style="width:100%"></i><span>27,249</span></div>
+      </div>
+      <div class="br up">×8.3</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">Protein-coding</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:93.3%"></i><span>25,432</span></div>
+        <div class="bar b"><i style="width:98.0%"></i><span>26,698</span></div>
+      </div>
+      <div class="br">×1.05</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">rRNA</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:7.2%"></i><span>1,966</span></div>
+        <div class="bar b"><i style="width:15.2%"></i><span>4,146</span></div>
+      </div>
+      <div class="br up">×2.1</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">snRNA</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:2.0%"></i><span>541</span></div>
+        <div class="bar b"><i style="width:5.1%"></i><span>1,401</span></div>
+      </div>
+      <div class="br up">×2.6</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">miRNA</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:1.6%"></i><span>434</span></div>
+        <div class="bar b"><i style="width:2.0%"></i><span>544</span></div>
+      </div>
+      <div class="br">×1.25</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">Pseudogene<br><em style="font-size:9px">all classes</em></div>
+      <div class="bg">
+        <div class="bar a"><i style="width:1.2%"></i><span>325</span></div>
+        <div class="bar b"><i style="width:0.8%"></i><span>225</span></div>
+      </div>
+      <div class="br">×0.69</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">snoRNA</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:0.9%"></i><span>247</span></div>
+        <div class="bar b"><i style="width:1.1%"></i><span>308</span></div>
+      </div>
+      <div class="br">×1.25</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">IG / TR segments</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:0.6%"></i><span>150</span></div>
+        <div class="bar b"><i style="width:1.0%"></i><span>260</span></div>
+      </div>
+      <div class="br up">×1.73</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">misc_RNA</div>
+      <div class="bg">
+        <div class="bar a"><i style="width:0.35%"></i><span>94</span></div>
+        <div class="bar b"><i style="width:0.35%"></i><span>94</span></div>
+      </div>
+      <div class="br eq">same</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">Other<br><em style="font-size:9px">scaRNA, ribozyme, TEC…</em></div>
+      <div class="bg">
+        <div class="bar a"><i style="width:0.12%"></i><span>33</span></div>
+        <div class="bar b"><i style="width:0.07%"></i><span>19</span></div>
+      </div>
+      <div class="br">×0.58</div>
+      <div class="rowsep"></div>
+
+      <div class="bl">Mitochondrial<br><em style="font-size:9px">Mt_rRNA + Mt_tRNA</em></div>
+      <div class="bg">
+        <div class="bar a"><i style="width:0.09%"></i><span>24</span></div>
+        <div class="bar b"><i style="width:0.09%"></i><span>24</span></div>
+      </div>
+      <div class="br eq">same</div>
     </div>
+    <p class="cap" style="margin:14px 0 0">Long non-coding is one <code>lncRNA</code> biotype on the right
+    against <code>lincRNA</code> + <code>processed_transcript</code> + <code>antisense</code> +
+    <code>sense_intronic</code> + <code>sense_overlapping</code> on the left — the same biology under a
+    changed vocabulary. Measured directly on both GTFs; columns total 32,520 and 60,968.</p>
   </section>
 
   <div class="xf"><span>STARsolo <code>CB_UMI_Complex</code>, per sublibrary · <b>outFilterMultimapNmax 10</b>, pinned</span></div>
 
-  <!-- 03 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Runs</span>8, one per sublibrary</span>
-      <span class="d"><span class="k">Unique</span><b>1,733,293,305</b> — 47.41%</span>
-      <span class="d"><span class="k">Genome</span><b>70.34%</b>, weighted over all 8</span>
-      <span class="d"><span class="k">Output</span>Gene + GeneFull × Unique + EM</span>
-      <span class="d q">2.69 h wall · no BAM written</span>
-    </div>
-    <div class="mid"><span class="num">03</span><span class="nm">Align</span></div>
-    <div class="r">
-      <span class="d"><span class="state pend">Pending</span></span>
-      <span class="d pend">Every STARsolo setting carries over — barcode geometry is a property
-        of the library, not the genome</span>
-    </div>
-  </section>
+  <!-- ══ 03 ══ -->
+  <div class="sh g"><div class="t"><span class="num">03</span><span class="nm">Align</span></div></div>
+  <div class="row same g"><div class="lv"><code>CB_UMI_Complex</code></div><div class="mk"><span class="p">soloType</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">bc3 + bc2 + bc1</div><div class="mk"><span class="p">Barcode geometry</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">141 · 96 · 96</div><div class="mk"><span class="p">Whitelists</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv"><code>EditDist_2</code></div><div class="mk"><span class="p">CB matching</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv"><b>10</b></div><div class="mk"><span class="p">Multimap cap</span><span class="m">=</span></div><div class="rv"><b>10</b></div></div>
+  <div class="row same g"><div class="lv">Gene + GeneFull</div><div class="mk"><span class="p">Features</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">Unique + EM</div><div class="mk"><span class="p">Policies</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row only g"><div class="lv"><b>1,733,293,305</b> — 47.41%</div><div class="mk"><span class="p">Uniquely mapped</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv"><b>70.34%</b> weighted</div><div class="mk"><span class="p">Genome rate</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv">8 runs · 2.69 h</div><div class="mk"><span class="p">Execution</span><span class="m">·</span></div><div class="rv">Not started</div></div>
+
+  <div class="tw g">
+    <table>
+      <caption>Why the baseline is weighted, not a single sublibrary</caption>
+      <thead><tr><th>Sublib</th><th>Reads</th><th>Uniq %</th><th>Multi %</th><th>Genome %</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>420,996,131</td><td>47.61</td><td>24.26</td><td class="hi">71.87</td></tr>
+        <tr><td>2</td><td>456,929,877</td><td>47.35</td><td>23.06</td><td>70.41</td></tr>
+        <tr><td>3b</td><td>430,354,155</td><td>51.88</td><td>26.25</td><td class="hi">78.13</td></tr>
+        <tr><td>4</td><td>491,944,196</td><td>48.59</td><td>22.09</td><td>70.68</td></tr>
+        <tr><td>5</td><td>453,261,795</td><td>46.95</td><td>22.18</td><td>69.13</td></tr>
+        <tr><td>6</td><td>470,748,221</td><td>46.19</td><td>22.08</td><td>68.27</td></tr>
+        <tr><td>7</td><td>486,116,660</td><td>46.91</td><td>21.98</td><td>68.89</td></tr>
+        <tr><td>8</td><td>445,368,076</td><td>43.99</td><td>21.93</td><td class="hi">65.92</td></tr>
+      </tbody>
+      <tfoot><tr><td>Weighted</td><td>3,655,719,111</td><td>47.41</td><td>22.93</td><td>70.34</td></tr></tfoot>
+    </table>
+    <div class="aside" style="padding-top:7px">Spread is <b>12.21 points</b>, 78.13 (3b) down to 65.92 (8) —
+    wider than any plausible arm-level effect. <b>71.87</b> is sublibrary 1 alone; quoting it as the dataset
+    baseline is the error decision 16 corrects. The weighted figure is <b>70.34%</b>.</div>
+  </div>
+  <div class="g"><div class="raside" style="padding-top:9px">Expect <code>genome%</code> to move for reasons
+    that are not biology — a 26-sequence T2T assembly against 993 changes what a fixed threshold means
+    (decision 23).</div></div>
 
   <div class="xf"><span>Raw matrices, cell level · <b>umi_floor 0</b> — no cell calling, ambient tail intact</span></div>
 
-  <!-- 04 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Genes</span>32,520</span>
-      <span class="d"><span class="k">Filtering</span>None</span>
-      <span class="d"><span class="k">Presence</span><b>352,341 / 352,341 — 100.000%</b>, 0 absent</span>
-      <span class="d warn">Sublibrary 1 against Parse's <code>__s2</code> only — not a whole-dataset figure</span>
-      <span class="d q"><b>2,743,021</b> is <em>Parse's</em> delivered row count across all
-        sublibraries, not ours and not the denominator above</span>
-      <span class="d q">Our own row count is scratch-only, unmanifested</span>
-      <span class="d q">Counts run <b>above</b> Parse — median 1.107–1.130; by saturation
-        1.079 / 0.931 / 1.189, <b>not constant</b></span>
-    </div>
-    <div class="mid"><span class="num">04</span><span class="nm">Unfiltered DGE</span></div>
-    <div class="r">
-      <span class="d"><span class="state pend">Pending</span></span>
-      <span class="d pend">The presence test re-runs unchanged — it keys on barcodes, which
-        are reference-independent</span>
-    </div>
-  </section>
+  <!-- ══ 04 ══ -->
+  <div class="sh g"><div class="t"><span class="num">04</span><span class="nm">Unfiltered DGE</span></div></div>
+  <div class="row same g"><div class="lv"><b>0</b> — no filtering</div><div class="mk"><span class="p">umi_floor</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">barcode-keyed</div><div class="mk"><span class="p">Parse control</span><span class="m">=</span></div><div class="rv">still valid</div></div>
+  <div class="row only g"><div class="lv"><b>32,520</b></div><div class="mk"><span class="p">Genes</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv"><b>352,341 / 352,341</b> — 100.000%</div><div class="mk"><span class="p">Presence</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="g"><div class="aside">
+    <span class="warn">Presence is sublibrary 1 against Parse's <code>__s2</code> only — not a whole-dataset figure.</span><br>
+    <b>2,743,021</b> is <em>Parse's</em> delivered row count across all sublibraries, not ours and not the
+    denominator above. Our own row count is scratch-only, unmanifested.<br>
+    Counts run <b>above</b> Parse — median 1.107–1.130; by saturation 1.079 / 0.931 / 1.189,
+    <b>not constant</b>.</div></div>
 
   <div class="xf"><span>Sum barcodes sharing a well · <b>collapse_key = well</b></span></div>
 
-  <!-- 05 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Wells</span><b>48</b></span>
-      <span class="d"><span class="k">Matrices</span><b>8</b> — 2 features × 2 policies × 2 barcode layers</span>
-      <span class="d q">The 45 extra bc1 barcodes carry 1.03–1.24% of counts</span>
-    </div>
-    <div class="mid"><span class="num">05</span><span class="nm">Collapse</span></div>
-    <div class="r"><span class="d"><span class="state pend">Pending</span></span></div>
-  </section>
+  <!-- ══ 05 ══ -->
+  <div class="sh g"><div class="t"><span class="num">05</span><span class="nm">Collapse</span></div></div>
+  <div class="row same g"><div class="lv">well</div><div class="mk"><span class="p">collapse_key</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">all141 · parse96</div><div class="mk"><span class="p">Barcode layers</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row only g"><div class="lv"><b>48</b></div><div class="mk"><span class="p">Wells</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv"><b>8</b> <em>2 × 2 × 2</em></div><div class="mk"><span class="p">Matrices</span><span class="m">·</span></div><div class="rv">Pending</div></div>
 
   <div class="xf"><span>Aggregate wells by sample map · read from <b>run-proc-def.json</b>, never derived</span></div>
 
-  <!-- 06 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Samples</span><b>48 wells → 43 samples</b></span>
-      <span class="d q">5 span two wells and are summed · the <code>all-sample</code> entry excluded</span>
-      <span class="d"><span class="k">Cross-check</span>48 checked · <b>0</b> mismatches</span>
-      <span class="d"><span class="k">vs Parse</span>Spearman <b>+0.9493</b> on totals</span>
-      <span class="d q">But absolute counts run 1.32–1.89× above Parse's</span>
-    </div>
-    <div class="mid"><span class="num">06</span><span class="nm">Samples</span></div>
-    <div class="r">
-      <span class="d"><span class="state pend">Pending</span></span>
-      <span class="d pend">Last stage that compares cleanly without a crossmap</span>
-    </div>
-  </section>
+  <!-- ══ 06 ══ -->
+  <div class="sh g"><div class="t"><span class="num">06</span><span class="nm">Samples</span></div></div>
+  <div class="row same g"><div class="lv"><code>run-proc-def.json</code></div><div class="mk"><span class="p">Sample map</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row same g"><div class="lv">row-major</div><div class="mk"><span class="p">Well numbering</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row only g"><div class="lv"><b>48 → 43</b></div><div class="mk"><span class="p">Samples</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv">48 checked · <b>0</b> mismatches</div><div class="mk"><span class="p">Cross-check</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv">Spearman <b>+0.9493</b></div><div class="mk"><span class="p">vs Parse</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="g"><div class="aside">5 samples span two wells and are summed; the <code>all-sample</code> entry
+    is excluded. Absolute counts run 1.32–1.89× above Parse's.</div>
+    <div class="raside">Last stage that compares cleanly without a crossmap.</div></div>
 
   <div class="xf"><span>Write AnnData, upload to Silver · <b>X is an alias</b> for <code>GeneFull_EM_all141</code></span></div>
 
-  <!-- 07 -->
-  <section class="stage">
-    <div class="l">
-      <span class="d"><span class="k">Shape</span><b>43 × 32,520</b></span>
-      <span class="d"><span class="k">Layers</span><b>8</b></span>
-      <span class="d"><span class="k">Object</span>40,307,760 B · confirmed in bucket</span>
-      <span class="d q"><code>zsb-silver-warehouse/minifin/</code></span>
-      <span class="d q">sha256 <code>744624de53bf365b…</code></span>
-      <span class="d warn">A −0.0130 drift under EM remains unexplained</span>
-    </div>
-    <div class="mid"><span class="num">07</span><span class="nm">.h5ad in Silver</span></div>
-    <div class="r">
-      <span class="d"><span class="state pend">Pending</span></span>
-      <span class="d pend">The standing "no stage 05 for GRCz12tu" rule was written against the
-        <b>NCBI</b> arm. Both gates clear those grounds here — but whether this arm runs
-        is an open decision, not yet made.</span>
-    </div>
-  </section>
+  <!-- ══ 07 ══ -->
+  <div class="sh g"><div class="t"><span class="num">07</span><span class="nm">.h5ad in Silver</span></div></div>
+  <div class="row same g"><div class="lv"><b>8</b></div><div class="mk"><span class="p">Layers</span><span class="m">=</span></div><div class="rv"><b>8</b> planned</div></div>
+  <div class="row same g"><div class="lv"><code>GeneFull_EM_all141</code></div><div class="mk"><span class="p">X alias</span><span class="m">=</span></div><div class="rv">carries over</div></div>
+  <div class="row only g"><div class="lv"><b>43 × 32,520</b></div><div class="mk"><span class="p">Shape</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="row only g"><div class="lv">40,307,760 B · in bucket</div><div class="mk"><span class="p">Object</span><span class="m">·</span></div><div class="rv">Pending</div></div>
+  <div class="g"><div class="aside"><span class="warn">A −0.0130 drift under EM remains unexplained.</span><br>
+    sha256 <code>744624de53bf365b…</code></div>
+    <div class="raside">The standing "no stage 05 for GRCz12tu" rule was written against the <b>NCBI</b> arm.
+    Both gates clear those grounds here — but whether this arm runs is an open decision, not yet made.</div></div>
 
 </div>
 
 <section class="notes">
   <h2>Three things that mislead if read straight</h2>
   <div class="n"><span class="i">1</span><span><b>Gene counts are biotype-dependent.</b>
-    Protein-coding is near-flat — 25,432 → 26,698, up 5.0%. The 32,520 → 60,968 headline is a
-    vocabulary change: GRCz12tu collapses non-coding into one <code>lncRNA</code> catalogue of 27,249,
-    where rel-99's equivalent classes total 3,274. Hold biotype fixed or the comparison means nothing.</span></div>
+    Protein-coding is near-flat — 25,432 → 26,698, up 5.0%. The 32,520 → 60,968 headline is a vocabulary
+    change, charted above. Hold biotype fixed or the comparison means nothing.</span></div>
   <div class="n"><span class="i">2</span><span><b>The ID series is disjoint.</b>
-    All 60,968 GRCz12tu IDs are <code>ENSDARG0016…</code>; the classic <code>ENSDARG00000…</code> count
-    is exactly 0. An ID join to rel-99 returns <b>no rows</b> — and fails silently, as an empty frame
-    rather than an error. A crossmap is required. Symbol is the only alternative, and since rel-99 names
-    100.00% of its genes, that ceiling is entirely the GRCz12tu side's.</span></div>
+    All 60,968 GRCz12tu IDs are <code>ENSDARG0016…</code>; the classic <code>ENSDARG00000…</code> count is
+    exactly 0. An ID join to rel-99 returns <b>no rows</b> — and fails silently, as an empty frame rather
+    than an error. A crossmap is required. Symbol is the only alternative, and since rel-99 names 100.00%
+    of its genes, that ceiling is entirely the GRCz12tu side's.</span></div>
   <div class="n"><span class="i">3</span><span><b>MT naming is inconsistent.</b>
     Only 11 of 37 MT genes are named, mixing <code>MT-ND1</code> with bare <code>ATP8</code>,
     <code>ND3</code>. An <code>^MT-</code> symbol filter would silently capture a third of the mito
@@ -301,9 +441,10 @@
 
 <footer>
   Left column read from the stage manifests, the decisions log and the published object in Silver.
-  rel-99 biotypes, <code>gene_name</code> coverage and MT counts re-measured on the exact GTF stage 01
-  built the index from. Right column measured on the staged files today. Nothing was run to produce this
-  page — no index, no alignment; <code>index_grcz12tu_ncbi</code> untouched.
+  Biotype counts, <code>gene_name</code> coverage and MT composition measured directly on both GTFs —
+  rel-99 from the exact file stage 01 built the index from, sha256 confirmed. Per-sublibrary rates
+  computed from <code>stage02_manifest.json</code>. Nothing was run to produce this page — no index,
+  no alignment; <code>index_grcz12tu_ncbi</code> untouched.
 </footer>
 
 </div>
