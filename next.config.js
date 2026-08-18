@@ -13,10 +13,18 @@ const nextConfig = {
   // ABSOLUTE (/pipeline/pipeline-iso.js) because this route has no trailing
   // slash — relative paths would resolve against / and 404.
   // Contract + ownership split: public/pipeline/HANDOFF.md
+  // /grcz12 is a self-contained static page in public/grcz12.html — inline CSS and
+  // one inline script, no assets, no build step, so it needs no absolute-path care
+  // the way /pipeline does. It is a provenance page: the built GRCz11/Ensembl-99 arm
+  // beside the staged GRCz12tu/Ensembl-2025_12 arm, borrowing /pipeline's tokens.
+  // SOURCE: regenerated on-instance from the s3-bronze stage manifests + decisions
+  // log; every figure is read from an artefact, and unrecoverable ones are marked
+  // rather than inferred. Re-copy its output here and push to redeploy.
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
       { source: '/pipeline', destination: '/pipeline/index.html' },
+      { source: '/grcz12', destination: '/grcz12.html' },
     ]
   },
 

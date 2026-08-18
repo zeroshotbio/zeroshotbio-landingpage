@@ -1,0 +1,687 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="description" content="MiniFin rebuild: the built GRCz11/Ensembl-99 arm beside the staged GRCz12tu/Ensembl-2025_12 arm, stage by stage.">
+<title>GRCz12 Arm Comparison</title>
+<style>
+  /* ------------------------------------------------------------------
+     Tokens lifted from zeroshot.bio/pipeline so the two pages read as
+     one system. Dark is the design's native state, so :root carries the
+     dark palette and the light variants are the overrides — the mirror
+     of the usual pattern, applied consistently across all three theme
+     states (unstamped+media, [data-theme=light], [data-theme=dark]).
+     ------------------------------------------------------------------ */
+  :root{
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --signal:#74b0f0;   /* the live/measured accent */
+    --drop:#e0765c;     /* caveat, unrecoverable, hazard */
+    --ok:#5aa46b;       /* verified, passed */
+    --pend:#7d8a81;     /* queued work */
+    --shadow:rgba(0,0,0,.42);
+    --wash:rgba(116,176,240,.07);
+    --dropwash:rgba(224,118,92,.07);
+    --okwash:rgba(90,164,107,.08);
+  }
+  @media (prefers-color-scheme:light){
+    :root:not([data-theme="dark"]){
+      --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+      --fg:#161e19; --fg2:#4c5a52; --fg3:#6b7972; --rule:#98a498;
+      --signal:#1e4c8a; --drop:#8a3324; --ok:#2f6a3d; --pend:#6b7972;
+      --shadow:rgba(20,30,24,.18);
+      --wash:rgba(30,76,138,.08);
+      --dropwash:rgba(138,51,36,.08);
+      --okwash:rgba(47,106,61,.10);
+    }
+  }
+  :root[data-theme="light"]{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#6b7972; --rule:#98a498;
+    --signal:#1e4c8a; --drop:#8a3324; --ok:#2f6a3d; --pend:#6b7972;
+    --shadow:rgba(20,30,24,.18);
+    --wash:rgba(30,76,138,.08);
+    --dropwash:rgba(138,51,36,.08);
+    --okwash:rgba(47,106,61,.10);
+  }
+  :root[data-theme="dark"]{
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --signal:#74b0f0; --drop:#e0765c; --ok:#5aa46b; --pend:#7d8a81;
+    --shadow:rgba(0,0,0,.42);
+    --wash:rgba(116,176,240,.07);
+    --dropwash:rgba(224,118,92,.07);
+    --okwash:rgba(90,164,107,.08);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--bg);color:var(--fg);
+    font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+    font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased;
+    font-variant-numeric:tabular-nums;
+  }
+  .wrap{max-width:1180px;margin:0 auto;padding:0 18px 90px}
+
+  /* ---- masthead ---- */
+  header{border-bottom:1px solid var(--fg);margin-bottom:0;padding:22px 0 16px}
+  .mast{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap}
+  .mast .grow{flex:1;min-width:280px}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  h1{font-size:27px;margin:5px 0 3px;line-height:1.15;letter-spacing:.01em;text-wrap:balance;font-weight:600}
+  .sub{color:var(--fg2);font-size:11.5px;margin:0;max-width:66ch}
+  .ctl{border:1px solid var(--fg);padding:5px 10px;font:inherit;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap;background:none;color:inherit;cursor:pointer}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+  .ctl:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+
+  /* the preview banner: this page is not the published one */
+  .banner{display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+          border:1px solid var(--drop);background:var(--dropwash);
+          padding:8px 12px;margin:16px 0 0;font-size:10.5px;color:var(--fg2)}
+  .banner b{color:var(--drop);font-weight:400;letter-spacing:.1em;text-transform:uppercase;font-size:9px}
+
+  /* ---- legend ---- */
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;
+          padding:11px 0;border-bottom:1px solid var(--rule);font-size:9.5px;color:var(--fg3)}
+  .lg{display:flex;align-items:center;gap:6px;letter-spacing:.1em;text-transform:uppercase}
+  .sw{width:15px;height:9px;flex:none;border:1px solid currentColor}
+  .sw.ok{color:var(--ok);background:var(--okwash)}
+  .sw.live{color:var(--signal);background:var(--wash)}
+  .sw.pend{color:var(--pend);background:none;border-style:dashed}
+
+  /* ---- column heads: sticky so the arms stay named while you scroll ---- */
+  .heads{position:sticky;top:0;z-index:4;background:var(--bg);
+         border-bottom:1px solid var(--fg);padding-top:12px}
+  .pair{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:stretch}
+  .colhead{padding:9px 12px 11px;border:1px solid var(--rule);border-bottom:none;background:var(--panel)}
+  .colhead .who{font-size:13.5px;letter-spacing:.02em;margin:3px 0 4px}
+  .colhead .st{font-size:9px;letter-spacing:.13em;text-transform:uppercase}
+  .colhead.left{border-top:2px solid var(--ok)}
+  .colhead.left .st{color:var(--ok)}
+  .colhead.right{border-top:2px solid var(--signal)}
+  .colhead.right .st{color:var(--signal)}
+  .colhead .meta{color:var(--fg3);font-size:10px;margin-top:5px}
+
+  /* ---- a stage: full-width head, then the two counterpart cards ---- */
+  .stage{padding-top:20px}
+  .stagehead{display:flex;align-items:baseline;gap:11px;flex-wrap:wrap;
+             padding-bottom:7px;margin-bottom:11px;border-bottom:1px solid var(--fg)}
+  .stagenum{font-size:9px;letter-spacing:.14em;color:var(--bg);background:var(--fg);
+            padding:2px 6px;flex:none}
+  .stagehead h2{font-size:15.5px;margin:0;letter-spacing:.02em;font-weight:600}
+  .stagehead .what{color:var(--fg3);font-size:10.5px;flex:1;min-width:200px}
+
+  .card{border:1px solid var(--rule);background:var(--panel);padding:12px 13px 13px;
+        display:flex;flex-direction:column;gap:9px}
+  .card.done{border-left:2px solid var(--ok)}
+  .card.live{border-left:2px solid var(--signal)}
+  .card.pending{border-style:dashed;background:none;color:var(--fg3);opacity:.72}
+  .card.pending .kv dd{color:var(--fg3)}
+  .card.pending .cardtop .h{color:var(--fg2)}
+
+  .cardtop{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+  .cardtop .h{font-size:11.5px;letter-spacing:.03em;flex:1;min-width:120px}
+  .chip{font-size:8px;letter-spacing:.13em;text-transform:uppercase;padding:2px 6px;
+        border:1px solid currentColor;flex:none;white-space:nowrap}
+  .chip.ok{color:var(--ok);background:var(--okwash)}
+  .chip.live{color:var(--signal);background:var(--wash)}
+  .chip.pend{color:var(--pend);border-style:dashed}
+  .chip.warn{color:var(--drop);background:var(--dropwash)}
+
+  /* key/value rows — the pipeline page's .kv, widened for longer keys */
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv:last-of-type{border-bottom:none}
+  .kv dt{width:118px;flex:none;color:var(--fg3);font-size:9.5px;letter-spacing:.06em;
+         text-transform:uppercase;padding-top:1px}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .kv dd b{font-weight:600;color:var(--fg)}
+  .card.pending .kv dd b{color:var(--fg2)}
+
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:7px 9px;font-size:10px;
+        white-space:pre;overflow-x:auto;line-height:1.6;color:var(--fg2)}
+  .note{color:var(--fg3);font-size:10px;line-height:1.55}
+  .note.cond{border-left:2px solid var(--drop);padding-left:9px;color:var(--fg2)}
+  .note.good{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
+
+  /* a value we could not recover from git — never inferred, always marked */
+  .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8px;
+         letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;white-space:nowrap}
+
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+
+  /* ---- the transformation band between two stages ---- */
+  .xform{display:grid;grid-template-columns:1fr auto 1fr;gap:12px;align-items:center;
+         margin:16px 0 0;padding:0}
+  .xline{height:1px;background:repeating-linear-gradient(90deg,var(--rule) 0 5px,transparent 5px 9px)}
+  .xbody{border:1px solid var(--rule);background:var(--panel2);padding:7px 12px;text-align:center;
+         max-width:640px}
+  .xbody .op{font-size:10.5px;color:var(--fg);letter-spacing:.02em}
+  .xbody .op::before{content:"↓ ";color:var(--fg3)}
+  .xbody .prm{font-size:9.5px;color:var(--fg3);margin-top:3px}
+  .xbody .prm b{color:var(--signal);font-weight:400}
+
+  /* ---- tables ---- */
+  .tw{overflow-x:auto;border:1px solid var(--rule);background:var(--bg)}
+  table{border-collapse:collapse;width:100%;font-size:10.5px;min-width:340px}
+  th,td{padding:4px 8px;text-align:right;border-bottom:1px solid var(--rule);white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  thead th{font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);
+           background:var(--panel2);position:sticky;top:0}
+  tbody tr:last-child td{border-bottom:none}
+  td.em{color:var(--fg);font-weight:600}
+
+  /* ---- caveats ---- */
+  .caveats{margin-top:34px;border-top:1px solid var(--fg);padding-top:16px}
+  .cvgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(290px,1fr));gap:12px;margin-top:11px}
+  .cv{border:1px solid var(--drop);border-left-width:2px;background:var(--dropwash);padding:10px 12px}
+  .cv h3{font-size:10.5px;margin:0 0 5px;letter-spacing:.03em;color:var(--drop);font-weight:600}
+  .cv p{margin:0 0 6px;font-size:10.5px;color:var(--fg2);line-height:1.55}
+  .cv p:last-child{margin-bottom:0}
+  .cv .rule{font-size:10px;color:var(--fg);border-top:1px dotted var(--rule);padding-top:6px;margin-top:7px}
+
+  h2.sec{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+         font-weight:400;margin:0}
+
+  footer{margin-top:34px;border-top:1px solid var(--rule);padding-top:14px;
+         color:var(--fg3);font-size:10px;line-height:1.7}
+  footer .kv dt{width:150px}
+  footer .kv dd{color:var(--fg2)}
+
+  @media (max-width:860px){
+    .pair{grid-template-columns:1fr;gap:10px}
+    .heads{position:static}
+    .colhead{border-bottom:1px solid var(--rule)}
+    .xform{grid-template-columns:1fr;gap:7px}
+    .xline{display:none}
+    .kv{flex-direction:column;gap:1px}
+    .kv dt{width:auto}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="mast">
+    <div class="grow">
+      <div class="eyebrow">Zeroshot Bio · MiniFin rebuild · stage-by-stage</div>
+      <h1>GRCz12</h1>
+      <p class="sub">One dataset, two references. The left arm is built, verified and published.
+      The right arm is staged and gated — every step below the reference is work not yet run.</p>
+    </div>
+    <button class="ctl" id="themeBtn" aria-label="Switch theme">Light</button>
+  </div>
+
+  <div class="banner">
+    <b>Read, not run</b>
+    <span>No pipeline stage was executed to build this page. Every number is read from a stage manifest,
+    the decisions log, the S3 object itself, or measured directly on the two GTFs on disk. Where a figure
+    could not be recovered it is <span class="unver">marked</span>, never inferred.</span>
+  </div>
+</header>
+
+<div class="legend">
+  <span class="lg"><span class="sw ok"></span>Done &amp; verified</span>
+  <span class="lg"><span class="sw live"></span>Staged / gated today</span>
+  <span class="lg"><span class="sw pend"></span>Pending — the work queue</span>
+  <span class="lg" style="color:var(--drop)"><span class="unver">mark</span>&nbsp;Not recoverable from git — never inferred</span>
+</div>
+
+<!-- ============ column heads ============ -->
+<div class="heads">
+  <div class="pair">
+    <div class="colhead left">
+      <div class="st">◀ Done · published to Silver</div>
+      <div class="who">GRCz11 / Ensembl 99</div>
+      <div class="meta">Assembly GRCz11 · annotation Ensembl release 99 · 32,520 genes<br>
+      arm <code>ensembl99</code> — not being rebuilt</div>
+    </div>
+    <div class="colhead right">
+      <div class="st">Staged · not started ▶</div>
+      <div class="who">GRCz12tu / Ensembl 2025_12</div>
+      <div class="meta">Assembly GRCz12tu (<code>GCA_049306965.1</code>) · Ensembl genebuild 2025_12 · 60,968 genes<br>
+      arm <code>grcz12tu_ensembl</code> — distinct from <code>grcz12tu_ncbi</code></div>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 01 FASTQ ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">01</span><h2>FASTQ in</h2>
+    <span class="what">The same reads feed both arms. Nothing is re-fetched, re-trimmed or re-hashed.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">Delivered reads, md5-verified</span><span class="chip ok">Verified</span></div>
+      <dl class="kv"><dt>Files</dt><dd><b>16</b> <code>.fastq.gz</code> — 8 sublibraries × R1/R2</dd></dl>
+      <dl class="kv"><dt>Sublibraries</dt><dd>1, 2, <b>3b</b>, 4, 5, 6, 7, 8 &nbsp;<span style="color:var(--fg3)">(3 was resequenced as 3b)</span></dd></dl>
+      <dl class="kv"><dt>Bytes</dt><dd>224,908,196,001 &nbsp;<span style="color:var(--fg3)">(209.5 GiB)</span></dd></dl>
+      <dl class="kv"><dt>Reads consumed</dt><dd><b>3,655,719,111</b> read pairs into STARsolo</dd></dl>
+      <dl class="kv"><dt>Source</dt><dd><code>s3://zsb-bronze-fortknox/minifin/raw/fastq/</code></dd></dl>
+      <dl class="kv"><dt>Verification</dt><dd>All 16 checked against the delivery's own manifest
+        <code>SO11332_Zeroshot_Bio_fq_md5sum.txt</code> — <b>16/16 pass</b></dd></dl>
+      <dl class="kv"><dt>Barcodes</dt><dd>bc1 <b>141</b> rows (<code>n141_R1_v3_8</code>) · bc2 <b>96</b> (<code>v1</code>) · bc3 <b>96</b> (<code>R3_v3</code>)</dd></dl>
+      <p class="note cond">R1 is 64 nt, R2 is 58 nt with <b>zero</b> margin against the 58 nt amplicon.
+      These FASTQs are never trimmed — decision 4.</p>
+    </article>
+    <article class="card live">
+      <div class="cardtop"><span class="h">Identical input — shared, not duplicated</span><span class="chip ok">Ready</span></div>
+      <dl class="kv"><dt>Files</dt><dd>The same <b>16</b> files. The arms differ only below this line.</dd></dl>
+      <dl class="kv"><dt>Re-fetch</dt><dd><b>Not required.</b> Reads are reference-independent.</dd></dl>
+      <dl class="kv"><dt>Barcodes</dt><dd>Unchanged — chemistry is a property of the library, not the genome.</dd></dl>
+      <p class="note good">This stage is already satisfied for the right arm. The comparison starts
+      at the reference, which is what makes it a clean single-variable test.</p>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">STAR <code>--runMode genomeGenerate</code> — FASTA + GTF become a splice-aware index</div>
+    <div class="prm">key choice: <b>sjdbOverhang 63</b> = read length 64 − 1 · <b>genomeSAindexNbases 14</b> · <b>genomeSAsparseD 1</b></div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 02 REFERENCE + INDEX ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">02</span><h2>Reference + index</h2>
+    <span class="what">The single variable in the whole comparison. Everything downstream is held fixed.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">Built, 32,520 genes indexed</span><span class="chip ok">Index complete</span></div>
+      <dl class="kv"><dt>Assembly</dt><dd><b>GRCz11</b> primary assembly<br>
+        <code>Danio_rerio.GRCz11.dna.primary_assembly.fa</code> · 1,396,428,203 B</dd></dl>
+      <dl class="kv"><dt>Annotation</dt><dd><b>Ensembl release 99</b><br><code>Danio_rerio.GRCz11.99.gtf.gz</code> · 18,018,295 B</dd></dl>
+      <dl class="kv"><dt>Gene count</dt><dd><b>32,520</b> indexed — asserted equal to expected, not merely reported</dd></dl>
+      <dl class="kv"><dt>Index params</dt><dd>sjdbOverhang <b>63</b> · genomeSAindexNbases <b>14</b> · genomeSAsparseD <b>1</b><br>
+        runThreadN 16 · RAM cap 64 GB · STAR <b>2.7.11b</b> (pinned, asserted before build)</dd></dl>
+      <dl class="kv"><dt>Build</dt><dd>405.1 s → <code>/data/scratch/minifin_rebuild/index_ensembl99</code></dd></dl>
+      <div class="snip">gtf  sha256 9492558f386f99bf…f2fbd07  ✓ re-verified on disk today
+fasta sha256 fe3e5b1b3735cc98…356d8b15</div>
+      <p class="note">Shares one GRCz11 FASTA with the <code>lawson</code> arm — the two differ by
+      annotation only. Every <code>genomeGenerate</code> parameter was passed explicitly; none defaulted.</p>
+    </article>
+    <article class="card live">
+      <div class="cardtop"><span class="h">Reference staged &amp; verified · index not built</span><span class="chip live">Gates passed</span></div>
+      <dl class="kv"><dt>Assembly</dt><dd><b>GRCz12tu</b> T2T · <code>GCA_049306965.1</code><br>26 sequences · 1,448,808,562 bp · <b>0</b> unplaced scaffolds</dd></dl>
+      <dl class="kv"><dt>Annotation</dt><dd><b>Ensembl genebuild 2025_12</b> · <code>genes.gtf.gz</code> · 17,189,213 B</dd></dl>
+      <dl class="kv"><dt>Gene count</dt><dd><b>60,968</b> gene records · 26,698 protein-coding
+        <span style="color:var(--drop)">— see caveat 1 before comparing to 32,520</span></dd></dl>
+      <dl class="kv"><dt>Staged to</dt><dd><code>/data/scratch/refs/ensembl_grcz12tu/</code> · 8 files · 392,047,389 B</dd></dl>
+      <dl class="kv"><dt>Verification</dt><dd>
+        <code>genes.gtf.gz</code> <b style="color:var(--ok)">md5 PASS</b> vs <code>geneset.md5sum.txt</code><br>
+        <code>chromosomes.tsv.gz</code> <b style="color:var(--ok)">md5 PASS</b> vs <code>genome.md5sum.txt</code><br>
+        <code>unmasked.fa.bgz</code> <b style="color:var(--signal)">content PASS</b> — byte-level unverified</dd></dl>
+      <p class="note cond">The manifest publishes an md5 for <code>unmasked.fa.<b>gz</b></code> but only
+      <code>.<b>bgz</b></code> is served. bgzip is a different byte stream over identical content, so the
+      published md5 <em>cannot</em> match. Verified instead by streaming the file and diffing every
+      sequence name and length against the shipped <code>.fai</code>: <b>26/26 exact</b>, 1,448,808,562 bp,
+      <code>gzip -t</code> clean.</p>
+      <dl class="kv"><dt>Index</dt><dd><span class="chip pend">Not built</span> — the same STAR params would apply unchanged</dd></dl>
+    </article>
+  </div>
+
+  <!-- the two gates -->
+  <div class="pair" style="margin-top:14px">
+    <article class="card done">
+      <div class="cardtop"><span class="h">Gate reference — measured on rel-99 today</span><span class="chip ok">Baseline</span></div>
+      <dl class="kv"><dt>gene_name</dt><dd><b>32,520 / 32,520 — 100.00%</b>. Every gene, every biotype,
+        no exceptions — coding and non-coding alike.</dd></dl>
+      <dl class="kv"><dt>Gene IDs</dt><dd>Classic <code>ENSDARG00000…</code> series — the base all our maps join on</dd></dl>
+      <dl class="kv"><dt>MT</dt><dd><b>37</b> records — 13 protein-coding, 2 <code>Mt_rRNA</code>, 22 <code>Mt_tRNA</code></dd></dl>
+      <p class="note good">Mito fraction is measurable and symbol joins are <b>total</b>. Because this side
+      names everything, <b>any symbol-join shortfall against the right arm is entirely attributable to the
+      GRCz12tu side</b> — this column contributes no loss of its own. That is the sharpest available framing
+      of Gate A, and it is why this arm is the QC reference.</p>
+    </article>
+    <article class="card live">
+      <div class="cardtop"><span class="h">Gate A + Gate B — both passed</span><span class="chip live">Blockers lifted</span></div>
+      <dl class="kv"><dt>Gate A</dt><dd><b>20,641 / 60,968 = 33.86%</b> carry <code>gene_name</code><br>
+        <span style="color:var(--fg3)">protein-coding <b style="color:var(--fg)">77.3%</b> (20,641/26,698) · every other biotype <b style="color:var(--fg)">0%</b></span></dd></dl>
+      <dl class="kv"><dt>Gate B</dt><dd>MT present in FASTA, 16,596 bp, matches <code>.fai</code><br>
+        <b>13</b> protein-coding · <b>2</b> <code>Mt_rRNA</code> · <b>22</b> <code>Mt_tRNA</code> = <b>37</b> — exactly as expected</dd></dl>
+      <dl class="kv"><dt>Gene IDs</dt><dd><b>60,968 / 60,968</b> are <code>ENSDARG0016…</code> · classic series count is <b>0</b>
+        <span style="color:var(--drop)">— see caveat 2</span></dd></dl>
+      <p class="note good">Both blockers that held the NCBI GRCz12tu arm out of Silver are gone here:
+      it has symbols (decision 27 had zero) and it has an annotated MT (decision 19 had none).
+      That is the entire case for spending the ~4 hours.</p>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">STARsolo <code>CB_UMI_Complex</code>, one run per sublibrary — reads become per-cell counts</div>
+    <div class="prm">key choice: <b>outFilterMultimapNmax 10</b> (pinned — changing it invalidates all 24 runs) · <b>EditDist_2</b> barcode matching · <b>outSAMtype None</b>, no BAM written</div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 03 ALIGN ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">03</span><h2>Align</h2>
+    <span class="what">8 runs per arm. Both features and both counting policies are produced in one pass.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">8 sublibraries aligned</span><span class="chip ok">2.69 h wall</span></div>
+      <dl class="kv"><dt>Barcode</dt><dd>CB = <b>bc3+bc2+bc1</b> at <code>0_10_0_17</code>, <code>0_30_0_37</code>, <code>0_50_0_57</code> · UMI <code>0_0_0_9</code></dd></dl>
+      <dl class="kv"><dt>Features</dt><dd><b>Gene</b> and <b>GeneFull</b> — both, exon-only and exon+intron</dd></dl>
+      <dl class="kv"><dt>Policies</dt><dd><b>Unique</b> and <b>EM</b> — both, multimapper-excluded and EM-apportioned</dd></dl>
+      <dl class="kv"><dt>Aggregate</dt><dd>3,655,719,111 reads → <b>1,733,293,305</b> uniquely mapped (<b>47.41%</b>)<br>
+        genome rate <b>70.34%</b> weighted over all 8 — not 71.8%, which was sublib 1 alone (decision 16)</dd></dl>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Sublib</th><th>Input reads</th><th>Uniq %</th><th>Multi %</th><th>&gt;loci %</th><th>Valid CB</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td>420,996,131</td><td>47.61</td><td>24.26</td><td>2.78</td><td>0.7607</td></tr>
+            <tr><td>2</td><td>456,929,877</td><td>47.35</td><td>23.06</td><td>2.67</td><td>0.7601</td></tr>
+            <tr><td>3b</td><td>430,354,155</td><td class="em">51.88</td><td>26.25</td><td>3.02</td><td>0.7689</td></tr>
+            <tr><td>4</td><td>491,944,196</td><td>48.59</td><td>22.09</td><td>2.61</td><td>0.7837</td></tr>
+            <tr><td>5</td><td>453,261,795</td><td>46.95</td><td>22.18</td><td>2.66</td><td>0.7834</td></tr>
+            <tr><td>6</td><td>470,748,221</td><td>46.19</td><td>22.08</td><td>2.61</td><td>0.7767</td></tr>
+            <tr><td>7</td><td>486,116,660</td><td>46.91</td><td>21.98</td><td>2.61</td><td>0.7799</td></tr>
+            <tr><td>8</td><td>445,368,076</td><td class="em">43.99</td><td>21.93</td><td>2.71</td><td class="em">0.7874</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note">Peak RSS 16.2 GiB. The 12.2-point spread across sublibraries is wider than any
+      plausible arm-level effect — which is exactly why the dataset baseline is the weighted figure.</p>
+    </article>
+    <article class="card pending">
+      <div class="cardtop"><span class="h">Alignment</span><span class="chip pend">Pending</span></div>
+      <dl class="kv"><dt>Runs</dt><dd>8 sublibraries × 1 arm — not started</dd></dl>
+      <dl class="kv"><dt>Parameters</dt><dd>Every STARsolo setting carries over unchanged. The barcode
+        geometry, whitelists and multimap cap are properties of the library, not the reference.</dd></dl>
+      <dl class="kv"><dt>Estimate</dt><dd>~2.7 h by analogy with the left arm — <span class="unver">not measured</span></dd></dl>
+      <p class="note">Expect <code>genome%</code> to move for reasons that are <em>not</em> biology:
+      GRCz12tu is a 26-sequence T2T assembly against GRCz11's 993, and decision 23 records that
+      <code>genome%</code> is not comparable across assemblies at a fixed threshold.</p>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">STARsolo raw matrices — the cell-level object, one row per observed barcode</div>
+    <div class="prm">key choice: <b>umi_floor 0</b> — no cell calling, no UMI floor, no gene filter. The ambient tail stays intact.</div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 04 UNFILTERED DGE ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">04</span><h2>Unfiltered DGE</h2>
+    <span class="what">The cell-level object, and the point where we check ourselves against Parse.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">Every observed barcode retained</span><span class="chip ok">Presence 100.000%</span></div>
+      <dl class="kv"><dt>Genes</dt><dd><b>32,520</b></dd></dl>
+      <dl class="kv"><dt>Filtering</dt><dd><b>None.</b> <code>umi_floor: 0</code> — filtering is a downstream judgment call,
+        deliberately not baked into the raw record</dd></dl>
+      <dl class="kv"><dt>Our row count</dt><dd><span class="unver">Scratch-only, unmanifested</span> — the cell-level
+        object lives in the solo output and was never written to a manifest. Recoverable by re-running, not by reading.</dd></dl>
+      <dl class="kv"><dt>Parse's set</dt><dd><b>2,743,021</b> rows — <b>Parse's</b> delivered
+        <code>cell_metadata.csv</code>, summed across all sublibraries. Their number, not ours, and
+        carrying their hidden <code>≥10</code> UMI floor.</dd></dl>
+      <dl class="kv"><dt>Presence vs Parse</dt><dd><b>352,341 / 352,341 = 100.000%</b> of Parse's cells found · <b>0</b> absent</dd></dl>
+      <dl class="kv"><dt>Scope</dt><dd><b>Sublibrary 1 only</b>, against Parse's <code>__s2</code>. GeneFull/Unique,
+        both sides at their floor of 10.<br>
+        <span style="color:var(--drop)">This is a one-sublibrary result. It is not a whole-dataset presence figure,
+        and 2,743,021 is not its denominator — 352,341 is.</span></dd></dl>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Against Parse's <code>__s2</code></th><th>Cells</th><th>Rate</th></tr></thead>
+          <tbody>
+            <tr><td>Present in ours at any count</td><td class="em">352,341</td><td class="em">100.000%</td></tr>
+            <tr><td>Absent from ours entirely</td><td class="em">0</td><td>—</td></tr>
+            <tr><td>Recovered at floor 10</td><td>347,982</td><td>98.763%</td></tr>
+            <tr><td>Present but below floor (1–9)</td><td>4,359</td><td>1.237%</td></tr>
+            <tr><td>Extra — ours, not theirs</td><td>29,748</td><td>—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note good"><b>The headline is 100.000%, not 98.763%.</b> The 1.237% "miss" contains no
+      missing cells — all 4,359 are present carrying 1–9 UMIs and sit below a threshold. Presence is
+      whether the pipeline found the cell; recovery is where two floors sit on two count distributions.
+      Miss rate collapses to exactly 0.00% above 20 UMIs — a boundary effect, not a join error.</p>
+      <p class="note cond"><b>Counts: we run above Parse, not below — and there is no single ratio to quote.</b><br>
+      The median ours/Parse ratio is <b>1.107–1.130</b> across every bc3 row. Conditioned on saturation
+      (<code>mread_count/tscp_count</code>, which is in Parse's own metadata) it moves to
+      <b>1.079 / 0.931 / 1.189</b> over the bins measured — <b>non-monotone, and not constant across
+      saturation</b>. Any one of those presented as "the" agreement figure would be a choice of bin
+      dressed as a measurement, which is why the log carries the spread and the condition instead of a
+      headline number.</p>
+    </article>
+    <article class="card pending">
+      <div class="cardtop"><span class="h">Unfiltered DGE</span><span class="chip pend">Pending</span></div>
+      <dl class="kv"><dt>Genes</dt><dd>60,968 expected, if STAR indexes every gene — <span class="unver">not measured</span></dd></dl>
+      <dl class="kv"><dt>Filtering</dt><dd><code>umi_floor: 0</code> carries over — same raw-record policy</dd></dl>
+      <dl class="kv"><dt>Parse check</dt><dd>The presence test re-runs unchanged: it keys on barcodes,
+        which are reference-independent, so it stays a valid control on this arm.</dd></dl>
+      <p class="note">Gene-level agreement with Parse is <em>not</em> directly comparable here —
+      Parse's DGE is built on GRCz11. Any per-gene comparison crosses the ID boundary in caveat 2.</p>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">Sum barcodes sharing a well — 10.4 M barcode space collapses to 48 columns</div>
+    <div class="prm">key choice: <b>collapse_key = well</b>, not stype · two barcode layers kept side by side: <b>all141</b> and <b>parse96</b></div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 05 COLLAPSE ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">05</span><h2>Collapse</h2>
+    <span class="what">Barcodes to wells. Eight matrices per arm, because no counting choice is thrown away.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">48 wells · 8 matrices</span><span class="chip ok">Totals conserved</span></div>
+      <dl class="kv"><dt>Wells</dt><dd><b>48</b></dd></dl>
+      <dl class="kv"><dt>Genes</dt><dd><b>32,520</b> in every matrix</dd></dl>
+      <dl class="kv"><dt>Matrices</dt><dd><b>8</b> = 2 features × 2 policies × 2 barcode layers</dd></dl>
+      <dl class="kv"><dt>Barcode space</dt><dd><code>all141</code> 10,395,648 (141×96×768) · <code>parse96</code> 7,077,888 (96×96×768)</dd></dl>
+      <div class="tw">
+        <table>
+          <thead><tr><th>Feature / policy</th><th>all141 counts</th><th>parse96 counts</th></tr></thead>
+          <tbody>
+            <tr><td>Gene / Unique</td><td>449,426,710</td><td>444,612,708</td></tr>
+            <tr><td>Gene / EM</td><td>495,868,845</td><td>490,423,779</td></tr>
+            <tr><td>GeneFull / Unique</td><td>687,052,934</td><td>679,770,120</td></tr>
+            <tr><td>GeneFull / EM</td><td class="em">779,207,043</td><td>770,682,926</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <p class="note"><code>parse96</code> is the 96 bc1 barcodes Parse actually used (stype T or R),
+      applied as a filter over the <em>same</em> alignment — not a separate run. The 45 extras carry
+      <b>1.03–1.24%</b> of counts, stably (decision 10).</p>
+    </article>
+    <article class="card pending">
+      <div class="cardtop"><span class="h">Collapse</span><span class="chip pend">Pending</span></div>
+      <dl class="kv"><dt>Wells</dt><dd>48 expected — well geometry is a property of the plate</dd></dl>
+      <dl class="kv"><dt>Matrices</dt><dd>8, same 2×2×2 fan-out</dd></dl>
+      <dl class="kv"><dt>Carried item</dt><dd>The stage-03 layer-loop hoist (~2× — the read+decode runs
+        twice per sublibrary for no reason) is still unbuilt. Worth landing <em>before</em> this arm runs.</dd></dl>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">Aggregate wells into samples using Parse's own run definition</div>
+    <div class="prm">key choice: sample map read from <b>run-proc-def.json</b>, never derived · well numbering <b>row-major</b> · 5 multi-well samples summed</div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 06 SAMPLES ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">06</span><h2>Samples</h2>
+    <span class="what">48 wells become 43 samples. The mapping is read, not inferred.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">48 wells → 43 samples</span><span class="chip ok">0 mismatches</span></div>
+      <dl class="kv"><dt>Samples</dt><dd><b>43</b> real, from 44 entries — the <code>all-sample</code> meta entry is
+        excluded and reported, not silently dropped</dd></dl>
+      <dl class="kv"><dt>Multi-well</dt><dd><b>5</b> samples span two wells and are summed:<br>
+        <code>Ctrl_2</code> A2,A6 · <code>Dapaglifozan_2</code> A7–A8 · <code>Dapaglifozan_5</code> A11–A12 ·
+        <code>Orlistat_2</code> B2,B6 · <code>Sorafenib_3</code> B9,B12</dd></dl>
+      <dl class="kv"><dt>Cross-check</dt><dd>48 wells checked · <b>0</b> mismatches · <b>0</b> declared-but-unobserved</dd></dl>
+      <dl class="kv"><dt>Numbering</dt><dd><b>Row-major</b>, verified against Parse's 94,616 filtered cells.
+        Column-major agrees only where the two coincide — so it was tested, not assumed.</dd></dl>
+      <dl class="kv"><dt>vs Parse</dt><dd>Per-sample totals correlate at Spearman <b>+0.9493</b></dd></dl>
+      <p class="note cond">Correlation is high but <b>absolute counts run 1.32–1.89× above Parse's</b>.
+      Totals are not comparable to Parse without naming the layer. Conservation through aggregation
+      is asserted, not assumed.</p>
+    </article>
+    <article class="card pending">
+      <div class="cardtop"><span class="h">Samples</span><span class="chip pend">Pending</span></div>
+      <dl class="kv"><dt>Samples</dt><dd>43 expected — the sample map is reference-independent</dd></dl>
+      <dl class="kv"><dt>vs Parse</dt><dd>Spearman re-computable on totals. Valid, because per-sample
+        totals do not require a gene join.</dd></dl>
+      <p class="note good">This is the last stage that compares cleanly across arms without a crossmap.
+      Everything gene-level above it needs caveat 2 resolved first.</p>
+    </article>
+  </div>
+</section>
+
+<div class="xform">
+  <div class="xline"></div>
+  <div class="xbody">
+    <div class="op">Write AnnData, upload to Silver — 8 layers in one object</div>
+    <div class="prm">key choice: <b>X is an alias</b> for <code>GeneFull_EM_all141</code>, not a primary · all four counting combinations ship</div>
+  </div>
+  <div class="xline"></div>
+</div>
+
+<!-- ============ 07 H5AD ============ -->
+<section class="stage">
+  <div class="stagehead">
+    <span class="stagenum">07</span><h2>.h5ad in Silver</h2>
+    <span class="what">The published artefact. Confirmed present in the bucket, not just written locally.</span>
+  </div>
+  <div class="pair">
+    <article class="card done">
+      <div class="cardtop"><span class="h">43 × 32,520 · 8 layers</span><span class="chip ok">In Silver</span></div>
+      <dl class="kv"><dt>Shape</dt><dd><b>43 samples × 32,520 genes</b></dd></dl>
+      <dl class="kv"><dt>Layers</dt><dd><b>8</b> — <code>{Gene, GeneFull} × {Unique, EM} × {all141, parse96}</code></dd></dl>
+      <dl class="kv"><dt>X</dt><dd>alias for <code>GeneFull_EM_all141</code></dd></dl>
+      <dl class="kv"><dt>Object</dt><dd><code>s3://zsb-silver-warehouse/minifin/minifin_rebuild_ensembl99.h5ad</code><br>
+        40,307,760 B — <b>confirmed in bucket</b>, size matches manifest exactly</dd></dl>
+      <div class="snip">sha256 744624de53bf365b9a1e26a8b12c8b06ea09d9622b63010991420b9ea4e1927e</div>
+      <dl class="kv"><dt>Filtering</dt><dd>None — ambient tail intact all the way to the published object</dd></dl>
+      <p class="note cond"><b>One open item rides with this object.</b> A residual <b>−0.0130</b> drift in
+      the paired identical-boundary population under EM (vs −0.0055 under Unique) is <b>unexplained</b>
+      and recorded as such rather than rationalised.</p>
+    </article>
+    <article class="card pending">
+      <div class="cardtop"><span class="h">.h5ad</span><span class="chip pend">Pending</span></div>
+      <dl class="kv"><dt>Shape</dt><dd>43 × 60,968 expected — <span class="unver">not measured</span></dd></dl>
+      <dl class="kv"><dt>Layers</dt><dd>8, same fan-out</dd></dl>
+      <dl class="kv"><dt>Status change</dt><dd>The standing "no stage 05 for GRCz12tu" rule was written
+        against the <b>NCBI</b> arm, for a join hazard and a zero mito fraction. <b>Both gates above
+        clear those two conditions for this arm</b> — but the rule should be re-decided explicitly, not
+        assumed lapsed.</dd></dl>
+    </article>
+  </div>
+</section>
+
+<!-- ============ CAVEATS ============ -->
+<section class="caveats">
+  <h2 class="sec">Three things that will mislead if read straight off the page</h2>
+  <div class="cvgrid">
+
+    <div class="cv">
+      <h3>1 · Gene counts are biotype-dependent</h3>
+      <p>Protein-coding is near-flat: <b>25,432 → 26,698</b>, up 5.0%. The headline
+      <b>32,520 → 60,968</b> is a vocabulary change, not new biology.</p>
+      <p>GRCz12tu collapses non-coding annotation into a single <code>lncRNA</code> catalogue of
+      <b>27,249</b> records. Rel-99 has no <code>lncRNA</code> biotype at all — its equivalent classes
+      (<code>lincRNA</code> 1,493 + <code>processed_transcript</code> 1,045 + <code>antisense</code> 672 +
+      <code>sense_intronic</code> 57 + <code>sense_overlapping</code> 7) total <b>3,274</b>.</p>
+      <p class="rule">Any gene-count comparison across these two references is meaningless unless
+      biotype is held fixed. Both sides measured directly on the two GTFs.</p>
+    </div>
+
+    <div class="cv">
+      <h3>2 · The ID series is disjoint</h3>
+      <p>All <b>60,968</b> GRCz12tu gene IDs are the new <code>ENSDARG0016…</code> series. The classic
+      <code>ENSDARG00000…</code> count in that file is <b>exactly 0</b>.</p>
+      <p>The two numeric ranges do not overlap, so an ID join to rel-99 returns <b>no rows</b> — not
+      fewer rows, none. This fails silently: a merge produces an empty frame, not an error.</p>
+      <p class="rule">A crossmap is required before any ID-keyed comparison. Symbol is the only
+      no-crossmap path, and <b>the ceiling on it is entirely a property of the GRCz12tu side</b>:
+      rel-99 names <b>100.00%</b> of its 32,520 genes across every biotype, so nothing is lost there.
+      The join is capped at 77.3% of protein-coding and 0% of everything else purely by what the
+      2025_12 build does and does not name.</p>
+    </div>
+
+    <div class="cv">
+      <h3>3 · MT naming is inconsistent</h3>
+      <p>Only <b>11 of 37</b> MT genes carry a <code>gene_name</code>, and the naming mixes conventions:
+      <code>MT-ND1</code>, <code>MT-CO1</code> alongside bare <code>ATP8</code>, <code>ND3</code>,
+      <code>ND4L</code>.</p>
+      <p>A mito-fraction filter keyed on an <code>^MT-</code> symbol prefix would silently capture
+      roughly a third of the mito transcriptome and report a plausible-looking wrong number.</p>
+      <p class="rule">Key mito fraction on <code>seqname == "MT"</code> or on the <code>Mt_</code>
+      biotype prefix. Never on a symbol match.</p>
+    </div>
+
+  </div>
+</section>
+
+<footer>
+  <h2 class="sec">Provenance</h2>
+  <dl class="kv"><dt>Repo</dt><dd><code>/data/s3-bronze</code> · main @ <b>4304720</b> · local = origin, clean tree</dd></dl>
+  <dl class="kv"><dt>Left column from</dt><dd><code>results/stage0{0,1,2,3,4,5}_manifest.json</code>,
+    the decisions log (29 entries), <code>TRAPS.md</code>, and the published provenance JSON in Silver</dd></dl>
+  <dl class="kv"><dt>Re-measured today</dt><dd>rel-99 biotypes, <code>gene_name</code> coverage and MT counts,
+    read from <code>Danio_rerio.GRCz11.99.gtf.gz</code> — sha256 confirmed identical to the file
+    stage 01 built the index from</dd></dl>
+  <dl class="kv"><dt>Right column from</dt><dd><code>/data/scratch/refs/ensembl_grcz12tu/</code>, staged
+    and verified today. Gate A and Gate B measured directly on <code>genes.gtf.gz</code> and
+    <code>unmasked.fa.bgz</code>.</dd></dl>
+  <dl class="kv"><dt>Not run</dt><dd>No index built, no alignment started, nothing published to prod.
+    <code>index_grcz12tu_ncbi</code> untouched.</dd></dl>
+</footer>
+
+</div>
+
+<script>
+(function(){
+  var btn = document.getElementById('themeBtn');
+  var root = document.documentElement;
+  function current(){
+    var stamped = root.getAttribute('data-theme');
+    if (stamped) return stamped;
+    return window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+  }
+  function label(){ btn.textContent = current() === 'dark' ? 'Light' : 'Dark'; }
+  btn.addEventListener('click', function(){
+    root.setAttribute('data-theme', current() === 'dark' ? 'light' : 'dark');
+    label();
+  });
+  window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', label);
+  label();
+})();
+</script>
+</body></html>
