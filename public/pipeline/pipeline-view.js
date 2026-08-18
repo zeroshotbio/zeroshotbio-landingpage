@@ -1448,7 +1448,40 @@ feature("edit visual", function(){
         go=document.getElementById("askGo"), wait=document.getElementById("askWait"),
         state=document.getElementById("askState"), hint=document.getElementById("askHint");
   const WATCH_KEY="pipeline.pending";
-  let timer=null;
+  let timer=null, ageT=null;
+
+  /* THE WAIT IS NOT A MODAL.
+     A request takes minutes, and the point of queueing it from the page is that
+     you carry on using the map while it is drawn. So the state lives in a pill
+     in the corner of the canvas: the dialogue can be closed, the panels moved,
+     a step read, the page even reloaded, and the wait is still there. */
+  const pill=document.getElementById("work"),
+        pillWhat=document.getElementById("workWhat"),
+        pillAge=document.getElementById("workAge");
+  function pillOn(msg,since){
+    if(!pill) return;
+    pill.classList.add("on");
+    if(pillWhat) pillWhat.textContent=msg;
+    clearInterval(ageT);
+    const tick=()=>{ if(!pillAge) return;
+      const s=Math.max(0,Math.round((Date.now()-(since||Date.now()))/1000));
+      pillAge.textContent = s<60 ? s+"s" : Math.floor(s/60)+"m "+(s%60)+"s"; };
+    tick(); ageT=setInterval(tick,1000);
+  }
+  function pillOff(){
+    if(pill) pill.classList.remove("on");
+    clearInterval(ageT); ageT=null;
+  }
+  /* Ready is an offer, not an interruption. Reloading out from under somebody
+     who is mid-sentence in the reader — or mid-drag in an edit mode — costs
+     them more than a stale drawing does, so the finished request raises the
+     same bar every other open copy of the page gets, and they pick the moment. */
+  function offerRefresh(note){
+    const bar=document.getElementById("newver"), what=document.getElementById("newverWhat");
+    if(!bar || !what){ toast("Your new drawing is in — refresh to see it.",false,9000); return; }
+    what.textContent = "Your new drawing is ready" + (note ? " — "+note : "") + ".";
+    bar.classList.add("on");
+  }
 
   const targetOf=()=>{
     const n=current&&byId[current];
@@ -1483,7 +1516,7 @@ feature("edit visual", function(){
         go.disabled=false; go.textContent="Send";
         if(!j || !j.ok){ toast("Could not send that — the queue did not take it.",true,6000); return; }
         inp.value="";
-        toast("Prompt sent. Go talk to the instance — this page will reload itself when the new drawing lands.",false,7000);
+        toast("Sent. Carry on with the map — it is drawn on the instance and the corner will tell you when it is ready.",false,7000);
         begin(j.prompt.id);
       })
       .catch(()=>{ go.disabled=false; go.textContent="Send";
@@ -1500,28 +1533,37 @@ feature("edit visual", function(){
   function stop(){
     try{ localStorage.removeItem(WATCH_KEY); }catch(err){}
     clearInterval(timer); timer=null; wait.classList.remove("on"); hint.style.display="";
+    pillOff();
   }
-  function watch(id){
+  function watch(id,since){
+    since=since||Date.now();
     wait.classList.add("on"); hint.style.display="none";
-    state.textContent="Queued — waiting for the instance to pick it up";
+    state.textContent="Queued — the instance picks this up within a few seconds";
+    pillOn("Queued",since);
     clearInterval(timer);
     timer=setInterval(()=>{
       fetch("/api/pipeline_prompts?id="+encodeURIComponent(id),{cache:"no-store"})
         .then(r=>r.json()).then(j=>{
           const p=(j.prompts||[])[0];
           if(!p) return;
-          if(p.status==="working") state.textContent="Being drawn now…";
-          else if(p.status==="done"){
-            stop();
-            toast((p.note?p.note+" — ":"")+"new drawing is in. Reloading.",false,4000);
-            setTimeout(()=>location.reload(), 1600);
+          if(p.status==="working"){
+            state.textContent="Being drawn now — usually two or three minutes";
+            pillOn("Drawing your visual",since);
+          }else if(p.status==="done"){
+            stop(); close();
+            offerRefresh(p.note||"");
           }else if(p.status==="dropped"){
             stop();
-            toast("That request was dropped"+(p.note?": "+p.note:"")+".",true,8000);
+            toast("That request was dropped"+(p.note?": "+p.note:"")+".",true,9000);
           }
         }).catch(()=>{});
-    }, 6000);
+    }, 4000);
   }
+  /* the pill's × stops watching, it does not cancel the work — the instance is
+     already drawing, and pretending otherwise would be a lie */
+  if(document.getElementById("workX"))
+    document.getElementById("workX").onclick=()=>{ stop();
+      toast("Not watching any more — the drawing still lands, and the page will say so.",false,6000); };
   /* Every open copy of the page, not just the one that asked. When a request
      is finished the map has changed underneath anyone reading it, so say so —
      and let them choose the moment, since an unannounced reload under someone
@@ -1559,7 +1601,7 @@ feature("edit visual", function(){
     let p=null; try{ p=JSON.parse(localStorage.getItem(WATCH_KEY)||"null"); }catch(err){}
     if(!p||!p.id) return;
     if(Date.now()-p.since > 6*3600*1000) return stop();   // gone stale, let it go
-    watch(p.id);
+    watch(p.id,p.since);
   })();
 });
 

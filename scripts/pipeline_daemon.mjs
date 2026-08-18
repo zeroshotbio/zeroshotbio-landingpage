@@ -11,7 +11,7 @@
  *   node scripts/pipeline_daemon.mjs                 poll forever
  *   node scripts/pipeline_daemon.mjs --once          drain what is waiting, exit
  *   node scripts/pipeline_daemon.mjs --dry           do everything except run Claude
- *   node scripts/pipeline_daemon.mjs --every 30      seconds between polls
+ *   node scripts/pipeline_daemon.mjs --every 10      seconds between polls
  *
  * ANTHROPIC_API_KEY is stripped from the child: on this box it takes precedence
  * over the claude.ai login and has no credit, so the run would fail instantly.
@@ -41,9 +41,9 @@ const val = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] :
 
 const ONCE = flag("--once");
 const DRY = flag("--dry");
-const EVERY = Math.max(10, Number(val("--every", 20))) * 1000;
+const EVERY = Math.max(5, Number(val("--every", 10))) * 1000;
 const TIMEOUT = Math.max(60, Number(val("--timeout", 900))) * 1000;
-const MODEL = val("--model", "sonnet");
+const MODEL = val("--model", "opus");
 const MAX_PER_HOUR = Number(val("--max-per-hour", 6));
 
 const LOGDIR = path.join(REPO, ".pipeline-daemon");
@@ -106,15 +106,23 @@ RULES, all of them load-bearing
 - Positions are world units. P(x, y, z) projects them. S = 42 px per unit.
 - Keep the existing comment voice: explain why, not what.
 
+SOMEBODY IS WAITING ON THIS. The request was made from the page and that page is
+showing a progress pill until you finish, so keep the change tight and shippable
+rather than opening it out into a redesign. Do the thing that was asked.
+
 VERIFY, in this order, and do not skip any of it
   node scripts/pipeline_test/validate.js     structure, every shape renders, no orphans
   node scripts/pipeline_test/runview.js      runs all four files and drives every
                                              ticker for 2400 frames; must print no FAIL
+  REDUCE=1 node scripts/pipeline_test/runview.js   the same, with the browser asking
+                                             for reduced motion; must print no FAIL
   node scripts/pipeline_test/realdom.js      loads the real page in jsdom and checks it
                                              animates and the camera moves; must exit 0.
                                              If jsdom is missing: npm install --no-save jsdom
   cd public/pipeline && ./build.sh           regenerates the standalone artifact
-  npx next build                             must compile
+Only if you changed something OUTSIDE public/pipeline, also run `npx next build`.
+Nothing under public/pipeline is compiled by Next, so that build cannot tell you
+anything about a shape and costs minutes the person is watching tick by.
 If any of those fail, fix the cause. Do not commit failing work.
 You have a shell for exactly these — node, npx, git, cd, ls, cat, grep, sed and
 build.sh. Nothing else is available, so do not plan around anything else.

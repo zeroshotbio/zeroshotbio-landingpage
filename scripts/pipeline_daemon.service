@@ -20,9 +20,11 @@ Type=simple
 User=ssm-user
 WorkingDirectory=/data/zeroshotbio-landingpage
 Environment=HOME=/home/ssm-user
-Environment=PATH=/home/ssm-user/.local/bin:/usr/local/bin:/usr/bin:/bin
+# node lives under nvm, which is NOT on a login-free PATH — without this the
+# unit starts, cannot find node, and restarts forever
+Environment=PATH=/home/ssm-user/.nvm/versions/node/v24.16.0/bin:/home/ssm-user/.local/bin:/usr/local/bin:/usr/bin:/bin
 Environment=BASE=https://www.zeroshot.bio
-ExecStart=/usr/bin/env node scripts/pipeline_daemon.mjs --every 20 --model sonnet
+ExecStart=/usr/bin/env node scripts/pipeline_daemon.mjs --every 10 --model opus
 Restart=always
 RestartSec=15
 # one request at a time, and a request cannot run forever
