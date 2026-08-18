@@ -611,6 +611,12 @@ console.log("done");
     gets++;
     return Promise.resolve({status:200,json:()=>Promise.resolve(THEIRS)});
   };
+  /* work this browser was holding before this sitting began — a change made,
+     then the page refreshed before it was ever confirmed. The shared copy has
+     never seen it, so the merge has to carry it rather than defer. */
+  vm.runInContext(`SESSION_TEXT.nodes.A7={name:"held from before the refresh"};
+                   LIVE.A7={dx:0.7};
+                   seedUnpublished(${JSON.stringify(THEIRS)})`,sandbox);
   vm.runInContext("pushRemote()",sandbox).then(res=>{
     const t=(posted&&posted.text&&posted.text.nodes)||{}, o=(posted&&posted.offsets)||{};
     console.log("\nconcurrent save — read before write:", gets===1);
@@ -626,6 +632,10 @@ console.log("done");
     if(!(t.A5&&t.A5.name==="Hold at 28.5 C")) console.log("FAIL — our own edit was lost in the merge");
     console.log("our own drag still lands:", !!(o.A5&&o.A5.dx));
     if(!(o.A5&&o.A5.dx)) console.log("FAIL — our own move was lost in the merge");
+    console.log("unpublished local work carried:", t.A7&&t.A7.name==="held from before the refresh",
+                "·", !!(o.A7&&o.A7.dx===0.7));
+    if(!(t.A7&&t.A7.name==="held from before the refresh")||!(o.A7&&o.A7.dx===0.7))
+      console.log("FAIL — a change made before a refresh was dropped by the merge");
     console.log("reported as merged:", res&&res.kept, "field(s) of theirs carried through");
     if(!(res&&res.kept>=3)) console.log("FAIL — the merge was not reported to the person saving");
     const local=JSON.parse(sandbox.localStorage.getItem("pipeline.edits")||"{}");

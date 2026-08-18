@@ -746,6 +746,28 @@ const SESSION_TEXT={ nodes:JSON.parse(JSON.stringify(LIVE_TEXT.nodes||{})),
 const TOUCHED={ nodes:{}, bands:{}, overview:{} };
 /* an object counts as moved here only if it has left where it was drawn */
 const movedHere = n => !!(n && ((n.x-n._px) || (n.y-n._py) || n._lx || n._ly));
+/* objects whose local nudge was never published — see seedUnpublished */
+const HELD={};
+const ours = n => movedHere(n) || !!HELD[n.id];
+/* Work this browser is holding that the shared copy has never seen. It arrives
+   from local storage as part of the state the page loads with, so it is
+   indistinguishable from everything else in force until the shared copy is
+   read — at which point whatever DIFFERS is, by definition, ours and unsent.
+   Marking it touched is what keeps a change made before a refresh from being
+   quietly dropped by the merge on the next save. Fields we hold identical to
+   the shared copy stay untouched, so somebody else editing them later still
+   wins. */
+const differs=(a,b)=>JSON.stringify(a===undefined?null:a)!==JSON.stringify(b===undefined?null:b);
+function seedUnpublished(doc){
+  const rt=doc.text||{}, ro=doc.offsets||{};
+  Object.entries(SESSION_TEXT.nodes).forEach(([id,f])=>Object.entries(f).forEach(([k,v])=>{
+    if(differs(v,((rt.nodes||{})[id]||{})[k])) (TOUCHED.nodes[id]=TOUCHED.nodes[id]||{})[k]=1; }));
+  Object.entries(SESSION_TEXT.bands).forEach(([i,v])=>{
+    if(differs(v,(rt.bands||{})[i])) TOUCHED.bands[i]=1; });
+  Object.entries(SESSION_TEXT.overview).forEach(([k,v])=>{
+    if(differs(v,(rt.overview||{})[k])) TOUCHED.overview[k]=1; });
+  Object.keys(LIVE).forEach(id=>{ if(differs(LIVE[id],ro[id])) HELD[id]=1; });
+}
 function recordText(scope,key,field,value){
   if(scope==="band"){ SESSION_TEXT.bands[key]=value; TOUCHED.bands[key]=1; }
   else if(scope==="overview"){ SESSION_TEXT.overview[field]=value; TOUCHED.overview[field]=1; }
@@ -819,7 +841,7 @@ function mergeOnto(doc){
   const same=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
   let kept=0;
   Object.entries(out.offsets).forEach(([id,o])=>{
-    if(!movedHere(byId[id]) && !same(o,(mine.offsets||{})[id])) kept++; });
+    if(!ours(byId[id]||{id}) && !same(o,(mine.offsets||{})[id])) kept++; });
   const mt=mine.text||{};
   Object.entries(out.text.nodes).forEach(([id,f])=>Object.entries(f).forEach(([k,v])=>{
     if(!(TOUCHED.nodes[id]&&TOUCHED.nodes[id][k]) && !same(v,((mt.nodes||{})[id]||{})[k])) kept++; }));
@@ -829,7 +851,7 @@ function mergeOnto(doc){
     if(!TOUCHED.overview[k] && !same(v,(mt.overview||{})[k])) kept++; });
   /* now ours, and only the parts of ours somebody actually authored here */
   NODES.forEach(n=>{
-    if(!movedHere(n)) return;
+    if(!ours(n)) return;
     const o=(mine.offsets||{})[n.id];
     if(o) out.offsets[n.id]=o; else delete out.offsets[n.id];
   });
@@ -1314,8 +1336,10 @@ feature("shared copy", function(){
   if(typeof fetch!=="function") return;
   const mine=EDITS.at||0;
   fetch("/api/pipeline_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
-    if(!doc || doc.error || !doc.at || doc.at<=mine) return;
-    if(dirty) return;                          // never overwrite work in progress
+    if(!doc || doc.error || !doc.at) return;
+    /* keeping ours: mark whatever the shared copy has never seen, so the merge
+       on the way out carries it rather than deferring to the store */
+    if(doc.at<=mine || dirty) return seedUnpublished(doc);
     try{ localStorage.setItem(EDIT_KEY,JSON.stringify(
       {offsets:doc.offsets||{}, text:doc.text||{}, at:doc.at})); }catch(err){}
     toast("A newer shared version is available — reloading.");
