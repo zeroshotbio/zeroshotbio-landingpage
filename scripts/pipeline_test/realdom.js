@@ -98,8 +98,76 @@ setTimeout(()=>{
       if(bad.length){ console.log("\nFAIL — "+bad.join("; "));
         errs.slice(0,3).forEach(e=>console.log(e.split("\n").slice(0,7).join("\n")+"\n"));
         dom.window.close(); process.exit(1); }
-      console.log("\nreal DOM: loads, animates, and the camera moves");
+      const boxBad=editorWindow(w);
+      if(boxBad.length){ console.log("\nFAIL — "+boxBad.join("; "));
+        dom.window.close(); process.exit(1); }
+      console.log("\nreal DOM: loads, animates, the camera moves, and the editor is a window");
       dom.window.close();
     },900);
   },600);
 },1500);
+
+
+/* ============================================================
+   THE TEXT EDITOR IS A WINDOW
+   Only worth testing against the real shell: the head, the grip and the flex
+   column all live in index.html, and the stub harness invents any element it
+   is asked for — which is exactly how a box with no grip would pass there and
+   fail here.
+   ============================================================ */
+function editorWindow(w){
+  const bad=[], d=w.document;
+  const pop=d.getElementById("tedit"), head=pop&&pop.querySelector(".tehead"),
+        grip=d.getElementById("teGrip");
+  if(!pop||!head||!grip){ return ["the shell has no draggable editor: "+
+    [!pop&&"#tedit",!head&&".tehead",!grip&&"#teGrip"].filter(Boolean).join(" ")]; }
+  const pt=(t,x,y)=>new w.MouseEvent(t,{bubbles:true,clientX:x,clientY:y,button:0});
+  const num=v=>parseFloat(v||"0");
+
+  d.getElementById("btnText").click();                       // into text mode
+  const edits0=w.localStorage.getItem("pipeline.edits")||"";
+  const handle=d.querySelector("#svg .thandle");
+  if(!handle) return ["no clickable string boxes in text mode"];
+  handle.dispatchEvent(pt("pointerdown",10,10));
+  if(!pop.classList.contains("on")) return ["clicking a string did not open the editor"];
+  const w0=num(pop.style.width), h0=num(pop.style.height),
+        x0=num(pop.style.left),  y0=num(pop.style.top);
+  console.log(`\neditor opened at ${x0},${y0} sized ${w0}x${h0}`);
+  if(!(w0>0&&h0>0)) bad.push("the editor opened with no size of its own");
+
+  head.dispatchEvent(pt("pointerdown",100,100));
+  head.dispatchEvent(pt("pointermove",160,140));
+  head.dispatchEvent(pt("pointerup",160,140));
+  const x1=num(pop.style.left), y1=num(pop.style.top);
+  console.log(`dragged by the head -> ${x1},${y1} (want ${x0+60},${y0+40})`);
+  if(Math.abs(x1-(x0+60))>1||Math.abs(y1-(y0+40))>1) bad.push("dragging the head does not move the editor");
+  if(num(pop.style.width)!==w0) bad.push("dragging the head resized it");
+
+  grip.dispatchEvent(pt("pointerdown",0,0));
+  grip.dispatchEvent(pt("pointermove",80,60));
+  grip.dispatchEvent(pt("pointerup",80,60));
+  const w1=num(pop.style.width), h1=num(pop.style.height);
+  console.log(`pulled the grip -> ${w1}x${h1} (want ${w0+80}x${h0+60})`);
+  if(Math.abs(w1-(w0+80))>1||Math.abs(h1-(h0+60))>1) bad.push("the corner grip does not resize the editor");
+  if(num(pop.style.left)!==x1) bad.push("resizing moved the editor");
+
+  const saved=JSON.parse(w.localStorage.getItem("pipeline.tedit.box")||"null");
+  console.log("remembered:", JSON.stringify(saved));
+  if(!saved||saved.w!==w1||saved.x!==x1) bad.push("the box was not remembered");
+  /* geometry is furniture, not content: moving the editor must leave the edits
+     payload — the thing that reaches the shared copy — exactly as it was */
+  if((w.localStorage.getItem("pipeline.edits")||"")!==edits0)
+    bad.push("moving the editor changed the edits payload");
+
+  d.getElementById("teX").click();
+  const other=[...d.querySelectorAll("#svg .thandle")][4];
+  if(other){
+    other.dispatchEvent(pt("pointerdown",10,10));
+    console.log(`reopened at ${num(pop.style.left)},${num(pop.style.top)} sized `+
+                `${num(pop.style.width)}x${num(pop.style.height)}`);
+    if(num(pop.style.left)!==x1||num(pop.style.width)!==w1)
+      bad.push("the editor jumped back instead of staying where it was put");
+    d.getElementById("teX").click();
+  }
+  return bad;
+}

@@ -170,20 +170,34 @@
   svg.texting .thandle:hover{fill:var(--signal);fill-opacity:.14;stroke-opacity:1;stroke-dasharray:none}
   .tefoot .go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
   .tefoot .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  /* The text editor is a window, not a tooltip: the head drags it, the corner
+     grip resizes it, and the textarea takes whatever room is left. Width and
+     height are set inline by the view from a remembered box, so the flex
+     column below is what makes the middle stretch instead of the box growing. */
   .tedit{display:none;position:fixed;z-index:60;width:min(430px,calc(100vw - 24px));
          background:var(--panel);border:1px solid var(--signal);
          box-shadow:0 12px 34px rgba(0,0,0,.42)}
-  .tedit.on{display:block}
+  .tedit.on{display:flex;flex-direction:column}
   .tehead{display:flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;
           border-bottom:1px solid var(--rule);font-size:8.5px;letter-spacing:.14em;
-          text-transform:uppercase;color:var(--fg3)}
+          text-transform:uppercase;color:var(--fg3);flex:0 0 auto;
+          cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tehead:hover{color:var(--fg2)}
   .tehead span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-  .tehead button{width:22px;height:20px;font-size:16px;line-height:1;color:var(--fg2)}
-  .tedit textarea{display:block;width:100%;resize:vertical;min-height:34px;max-height:46dvh;
+  .tehead button{width:22px;height:20px;font-size:16px;line-height:1;color:var(--fg2);
+                 cursor:pointer}
+  .tedit textarea{display:block;width:100%;flex:1 1 auto;min-height:0;max-height:none;
+                  resize:none;
                   background:var(--bg);color:var(--fg);border:none;outline:none;
                   padding:9px 10px;font:inherit;font-size:11.5px;line-height:1.55}
-  .tefoot{display:flex;align-items:center;gap:10px;padding:6px 8px;border-top:1px solid var(--rule)}
+  .tefoot{display:flex;align-items:center;gap:10px;padding:6px 22px 6px 8px;flex:0 0 auto;
+          border-top:1px solid var(--rule);position:relative}
   #teHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  /* the corner grip: diagonal rules, the usual signal for "pull me" */
+  .tegrip{position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:1;
+          cursor:nwse-resize;touch-action:none;opacity:.55;
+          background:repeating-linear-gradient(135deg,transparent 0 3px,var(--fg3) 3px 4px)}
+  .tegrip:hover{opacity:1;background:repeating-linear-gradient(135deg,transparent 0 3px,var(--signal) 3px 4px)}
 
   /* ---- edit visual ---- */
   .ask{display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.42);
@@ -345,10 +359,11 @@
       <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Home to fit the map · Drag to pan · Scroll or pinch to zoom</div>
       <!-- the text editor: one popover, anchored to whatever was clicked -->
       <div class="tedit" id="tedit">
-        <div class="tehead"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
+        <div class="tehead" title="Drag to move · double-click to let it follow what you click again"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
         <textarea id="teIn" spellcheck="true" rows="1"></textarea>
         <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
-             <button class="ctl go" id="teOk">Save as default</button></div>
+             <button class="ctl go" id="teOk">Save as default</button>
+             <div class="tegrip" id="teGrip" role="button" tabindex="-1" aria-label="Resize the editor"></div></div>
       </div>
       <!-- Edit visual: describe a new drawing, send it to the instance, wait -->
       <div class="ask" id="ask" role="dialog" aria-label="Describe a new visual">
@@ -383,9 +398,9 @@
   </div>
 </div>
 
-<script src="/pipeline/pipeline-iso.js?v=146fe990"></script>
-<script src="/pipeline/pipeline-shapes.js?v=146fe990"></script>
-<script src="/pipeline/pipeline-data.js?v=146fe990"></script>
-<script src="/pipeline/pipeline-view.js?v=146fe990"></script>
+<script src="/pipeline/pipeline-iso.js?v=c8e62e48"></script>
+<script src="/pipeline/pipeline-shapes.js?v=c8e62e48"></script>
+<script src="/pipeline/pipeline-data.js?v=c8e62e48"></script>
+<script src="/pipeline/pipeline-view.js?v=c8e62e48"></script>
 </body>
 </html>

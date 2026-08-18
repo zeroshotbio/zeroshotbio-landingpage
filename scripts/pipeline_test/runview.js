@@ -585,3 +585,63 @@ console.log("done");
 
   console.log("edit mode round-trip ok");
 })();
+
+/* ============================================================
+   TWO PEOPLE, ONE RECORD
+   The shared copy is a single document written whole, so the second Save used
+   to flatten the first. This drives a save against a store that has moved on
+   underneath it and asserts that the other person's work comes back out the
+   other side — including on a node this session also edited, which is where
+   field-level merging earns its keep.
+   ============================================================ */
+(function concurrent(){
+  if(process.env.SEED_EDITS) return;
+  const THEIRS = {
+    offsets:{ AQ:{dx:0.9} },                       // an object we never touched
+    text:{ nodes:{ A6:{name:"Patrick's rename"},   // a node we never touched
+                   A5:{sub:"patrick's subtitle"} } },  // a FIELD we never touched,
+    at: Date.now()                                     // on a node we renamed
+  };
+  let posted=null, gets=0;
+  sandbox.fetch=(url,opt)=>{
+    if(String(url).indexOf("pipeline_edits")<0)
+      return Promise.reject(new Error("no network in the harness"));
+    if(opt&&opt.method==="POST"){ posted=JSON.parse(opt.body);
+      return Promise.resolve({status:200,json:()=>Promise.resolve({ok:true,at:THEIRS.at+1})}); }
+    gets++;
+    return Promise.resolve({status:200,json:()=>Promise.resolve(THEIRS)});
+  };
+  vm.runInContext("pushRemote()",sandbox).then(res=>{
+    const t=(posted&&posted.text&&posted.text.nodes)||{}, o=(posted&&posted.offsets)||{};
+    console.log("\nconcurrent save — read before write:", gets===1);
+    if(gets!==1) console.log("FAIL — the save did not read the shared copy first");
+    console.log("their untouched object kept:", o.AQ&&o.AQ.dx===0.9);
+    if(!(o.AQ&&o.AQ.dx===0.9)) console.log("FAIL — a save flattened somebody else's position");
+    console.log("their untouched node kept:", t.A6&&t.A6.name==="Patrick's rename");
+    if(!(t.A6&&t.A6.name==="Patrick's rename")) console.log("FAIL — a save flattened somebody else's rename");
+    console.log("their field on OUR node kept:", t.A5&&t.A5.sub==="patrick's subtitle");
+    if(!(t.A5&&t.A5.sub==="patrick's subtitle"))
+      console.log("FAIL — merging is whole-node, not per-field");
+    console.log("our own rename still lands:", t.A5&&t.A5.name==="Hold at 28.5 C");
+    if(!(t.A5&&t.A5.name==="Hold at 28.5 C")) console.log("FAIL — our own edit was lost in the merge");
+    console.log("our own drag still lands:", !!(o.A5&&o.A5.dx));
+    if(!(o.A5&&o.A5.dx)) console.log("FAIL — our own move was lost in the merge");
+    console.log("reported as merged:", res&&res.kept, "field(s) of theirs carried through");
+    if(!(res&&res.kept>=3)) console.log("FAIL — the merge was not reported to the person saving");
+    const local=JSON.parse(sandbox.localStorage.getItem("pipeline.edits")||"{}");
+    if(!(local.text&&local.text.nodes&&local.text.nodes.A6))
+      console.log("FAIL — the merged document was not kept in this browser");
+
+    /* and if the shared copy cannot be read, nothing may be written at all */
+    posted=null;
+    sandbox.fetch=(url,opt)=>(opt&&opt.method==="POST")
+      ? Promise.resolve({status:200,json:()=>Promise.resolve({ok:true,at:1})})
+      : Promise.reject(new Error("read down"));
+    return vm.runInContext("pushRemote()",sandbox).then(r2=>{
+      console.log("read down -> wrote nothing:", posted===null, "· reported:", r2&&r2.error);
+      if(posted!==null) console.log("FAIL — a blind write went out when the read failed");
+      if(!(r2&&r2.error)) console.log("FAIL — a failed save was reported as a success");
+      console.log("concurrent save ok");
+    });
+  }).catch(e=>console.log("FAIL — concurrent save threw:",e.message));
+})();

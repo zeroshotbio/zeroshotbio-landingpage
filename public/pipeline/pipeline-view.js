@@ -738,10 +738,19 @@ function collectOffsets(){
 const SESSION_TEXT={ nodes:JSON.parse(JSON.stringify(LIVE_TEXT.nodes||{})),
                      bands:JSON.parse(JSON.stringify(LIVE_TEXT.bands||{})),
                      overview:JSON.parse(JSON.stringify(LIVE_TEXT.overview||{})) };
+/* WHAT THIS SITTING ACTUALLY CHANGED, as opposed to what it merely holds.
+   SESSION_TEXT is seeded with everything already in force, so it cannot tell
+   the two apart — and the difference is the whole of the merge on the way out:
+   only a field somebody typed in this browser is allowed to land on top of the
+   shared copy. Everything else defers to whatever is there when we write. */
+const TOUCHED={ nodes:{}, bands:{}, overview:{} };
+/* an object counts as moved here only if it has left where it was drawn */
+const movedHere = n => !!(n && ((n.x-n._px) || (n.y-n._py) || n._lx || n._ly));
 function recordText(scope,key,field,value){
-  if(scope==="band") SESSION_TEXT.bands[key]=value;
-  else if(scope==="overview") SESSION_TEXT.overview[field]=value;
-  else (SESSION_TEXT.nodes[key]=SESSION_TEXT.nodes[key]||{})[field]=value;
+  if(scope==="band"){ SESSION_TEXT.bands[key]=value; TOUCHED.bands[key]=1; }
+  else if(scope==="overview"){ SESSION_TEXT.overview[field]=value; TOUCHED.overview[field]=1; }
+  else { (SESSION_TEXT.nodes[key]=SESSION_TEXT.nodes[key]||{})[field]=value;
+         (TOUCHED.nodes[key]=TOUCHED.nodes[key]||{})[field]=1; }
 }
 function collectText(){
   const out={};
@@ -776,17 +785,87 @@ function toast(msg,warn,ms){
   toastEl.classList.add("on");
   clearTimeout(toastT); toastT=setTimeout(()=>toastEl.classList.remove("on"), ms||3400);
 }
+/* what to say when the save landed on top of somebody else's work rather than
+   over it — the count is fields of theirs this write carried through unharmed */
+function mergeNote(msg,res){
+  if(!res || !res.kept) return msg;
+  return msg + ` Someone else saved ${res.kept} change${res.kept===1?"":"s"} while you `
+       + `were working — kept, not overwritten. Refresh to see them.`;
+}
+
 /* the shared back end. A read failure is silent — the map falls back to the
    tables baked into the data file. A write failure is not: the whole point of
    Confirm is being told whether it stuck. No key: this is a preview space, and
-   Confirm is meant to be one click. */
-function pushRemote(){
-  if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
+   Confirm is meant to be one click.
+
+   TWO PEOPLE EDIT THIS MAP AT ONCE, so a save is a merge, never a replacement.
+   The record is one document and the write is a whole-document Put, which used
+   to mean the second person to press Save silently flattened the first. Now
+   every save reads the shared copy first and lays only the fields THIS sitting
+   touched on top of it. Somebody else's rename of a different step, or drag of
+   a different object, survives our write untouched — and if it was the same
+   field, the later save wins, which is the only sane answer for one field.
+
+   A read failure aborts the write. Keeping a change in this browser is
+   recoverable — it is still in local storage and still on screen — while
+   overwriting somebody else's sitting is not. */
+function mergeOnto(doc){
+  const mine=payload();
+  const rt=doc.text||{};
+  const out={ offsets:{...(doc.offsets||{})},
+              text:{ nodes:{...(rt.nodes||{})}, bands:{...(rt.bands||{})},
+                     overview:{...(rt.overview||{})} } };
+  /* how much of theirs a blind write would have thrown away */
+  const same=(a,b)=>JSON.stringify(a===undefined?null:a)===JSON.stringify(b===undefined?null:b);
+  let kept=0;
+  Object.entries(out.offsets).forEach(([id,o])=>{
+    if(!movedHere(byId[id]) && !same(o,(mine.offsets||{})[id])) kept++; });
+  const mt=mine.text||{};
+  Object.entries(out.text.nodes).forEach(([id,f])=>Object.entries(f).forEach(([k,v])=>{
+    if(!(TOUCHED.nodes[id]&&TOUCHED.nodes[id][k]) && !same(v,((mt.nodes||{})[id]||{})[k])) kept++; }));
+  Object.entries(out.text.bands).forEach(([i,v])=>{
+    if(!TOUCHED.bands[i] && !same(v,(mt.bands||{})[i])) kept++; });
+  Object.entries(out.text.overview).forEach(([k,v])=>{
+    if(!TOUCHED.overview[k] && !same(v,(mt.overview||{})[k])) kept++; });
+  /* now ours, and only the parts of ours somebody actually authored here */
+  NODES.forEach(n=>{
+    if(!movedHere(n)) return;
+    const o=(mine.offsets||{})[n.id];
+    if(o) out.offsets[n.id]=o; else delete out.offsets[n.id];
+  });
+  Object.entries(TOUCHED.nodes).forEach(([id,fs])=>Object.keys(fs).forEach(f=>{
+    (out.text.nodes[id]=out.text.nodes[id]||{})[f]=SESSION_TEXT.nodes[id][f]; }));
+  Object.keys(TOUCHED.bands).forEach(i=>{ out.text.bands[i]=SESSION_TEXT.bands[i]; });
+  Object.keys(TOUCHED.overview).forEach(f=>{ out.text.overview[f]=SESSION_TEXT.overview[f]; });
+  ["nodes","bands","overview"].forEach(k=>{ if(!Object.keys(out.text[k]).length) delete out.text[k]; });
+  return {body:out, kept};
+}
+/* after a merged write this browser is behind the store by whatever it just
+   inherited, so keep the merged document rather than our half of it */
+function adoptMerged(body,at){
+  try{ localStorage.setItem(EDIT_KEY,JSON.stringify(
+    {offsets:body.offsets||{}, text:body.text||{}, at:at||Date.now()})); }catch(err){}
+}
+function put(body){
   return fetch("/api/pipeline_edits",{method:"POST",
       headers:{"content-type":"application/json"},
-      body:JSON.stringify(payload())})
+      body:JSON.stringify(body)})
     .then(r=>r.json().then(j=>({...j,status:r.status})))
     .catch(err=>({ok:false,error:"unreachable"}));
+}
+function pushRemote(){
+  if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
+  return fetch("/api/pipeline_edits",{cache:"no-store"})
+    .then(r=>r.json()).catch(()=>null)
+    .then(doc=>{
+      if(!doc || doc.error) return {ok:false,error:"unreachable"};
+      if(!doc.at) return put(payload());          // nothing shared yet: publish ours whole
+      const m=mergeOnto(doc);
+      return put(m.body).then(res=>{
+        if(res && res.ok && m.kept) adoptMerged(m.body,res.at);
+        return {...res, kept:m.kept};
+      });
+    });
 }
 
 /* ============================================================
@@ -968,17 +1047,96 @@ feature("edit text", function(){
     return true;
   }
 
-  /* fixed to the viewport, not to the map — the same popover has to reach a
-     band title out on the canvas and a paragraph over in the reader */
-  function place(rect){
-    pop.classList.add("on");
+  /* ============================================================
+     THE POPOVER IS A WINDOW
+     Fixed to the viewport, not to the map — the same box has to reach a band
+     title out on the canvas and a paragraph over in the reader. Until it is
+     touched it behaves as before, opening next to whatever was clicked and
+     sized to the field. The moment it is dragged or pulled bigger it stops
+     following: a box you placed yourself is furniture, and having it jump on
+     every click is the thing that made long prose hard to work on.
+
+     Geometry is per-browser furniture, never content, so it lives under its own
+     key and is not part of the edits payload — resizing the editor must not
+     look like an unsaved change or reach the shared copy.
+     ============================================================ */
+  const BOX_KEY="pipeline.tedit.box", MINW=280, MINH=140;
+  let box=null;
+  try{ box=JSON.parse(localStorage.getItem(BOX_KEY)||"null"); }catch(err){}
+  if(box && !(box.w>0 && box.h>0)) box=null;
+  const saveBox=()=>{ try{ localStorage.setItem(BOX_KEY,JSON.stringify(box)); }catch(err){} };
+  function clamp(b){
     const W=window.innerWidth||1200, H=window.innerHeight||800;
-    const w=pop.offsetWidth||420, h=pop.offsetHeight||160;
+    b.w=Math.max(MINW,Math.min(b.w,W-20));
+    b.h=Math.max(MINH,Math.min(b.h,H-20));
+    b.x=Math.max(10,Math.min(b.x,W-b.w-10));
+    b.y=Math.max(10,Math.min(b.y,H-b.h-10));
+    return b;
+  }
+  function applyBox(b){
+    pop.style.left=b.x+"px"; pop.style.top=b.y+"px";
+    pop.style.width=b.w+"px"; pop.style.height=b.h+"px";
+  }
+  function place(rect,long){
+    pop.classList.add("on");
+    if(box){ applyBox(clamp(box)); return; }          // where you left it
+    const W=window.innerWidth||1200, H=window.innerHeight||800;
+    const w=Math.min(430,W-24), h=Math.min(long?330:186,H-40);
     let x=rect.left+rect.width/2-w/2, y=rect.bottom+10;
     if(y+h>H-10) y=Math.max(10,rect.top-h-10);
-    pop.style.left=Math.max(10,Math.min(W-w-10,x))+"px";
-    pop.style.top=Math.max(10,y)+"px";
+    applyBox(clamp({x,y,w,h}));
   }
+
+  /* Drag by the head, resize by the corner. Pointer capture rather than
+     window listeners, so a fast drag that leaves the 18px grip does not drop
+     the gesture, and one code path covers mouse, pen and touch. */
+  (function furniture(){
+    const head=pop.querySelector(".tehead"), grip=document.getElementById("teGrip");
+    let mode=null, sx=0, sy=0, s0=null;
+    /* what we set is what we read back — style first, measurement only as a
+       fallback for the first gesture after an open that did not size it */
+    const here=()=>({x:parseFloat(pop.style.left)||0, y:parseFloat(pop.style.top)||0,
+                     w:parseFloat(pop.style.width)||pop.offsetWidth||MINW,
+                     h:parseFloat(pop.style.height)||pop.offsetHeight||MINH});
+    function start(ev,m){
+      if(ev.button!==undefined && ev.button!==0) return;
+      mode=m; sx=ev.clientX; sy=ev.clientY; s0=here();
+      ev.preventDefault(); ev.stopPropagation();
+      try{ ev.currentTarget.setPointerCapture(ev.pointerId); }catch(err){}
+    }
+    function move(ev){
+      if(!mode) return;
+      ev.preventDefault();
+      const dx=ev.clientX-sx, dy=ev.clientY-sy;
+      box=clamp(mode==="move" ? {x:s0.x+dx, y:s0.y+dy, w:s0.w, h:s0.h}
+                              : {x:s0.x, y:s0.y, w:s0.w+dx, h:s0.h+dy});
+      applyBox(box);
+    }
+    function end(ev){
+      if(!mode) return;
+      mode=null; saveBox();
+      try{ ev.currentTarget.releasePointerCapture(ev.pointerId); }catch(err){}
+    }
+    function wire(elm,m){
+      if(!elm) return;
+      elm.addEventListener("pointerdown",ev=>{
+        if(m==="move" && ev.target.closest && ev.target.closest("button")) return;
+        start(ev,m);
+      });
+      elm.addEventListener("pointermove",move);
+      ["pointerup","pointercancel"].forEach(t=>elm.addEventListener(t,end));
+    }
+    wire(head,"move"); wire(grip,"size");
+    /* double-click the head to hand it back to the map */
+    if(head) head.addEventListener("dblclick",ev=>{
+      if(ev.target.closest && ev.target.closest("button")) return;
+      box=null; try{ localStorage.removeItem(BOX_KEY); }catch(err){}
+      toast("The editor will follow what you click again, at its own size.");
+    });
+    window.addEventListener("resize",()=>{
+      if(box && pop.classList.contains("on")) applyBox(clamp(box));
+    });
+  })();
   function edit(t,rect){
     open=t;
     const long=!!LONG[t.f];
@@ -989,7 +1147,7 @@ feature("edit text", function(){
     inp.rows = long?9:1;
     teHint.textContent = long ? "Shift-Enter for a new line · Enter to save · Esc to cancel"
                               : "Enter to save · Esc to cancel";
-    place(rect);
+    place(rect,long);
     inp.focus(); inp.select();
   }
   /* Save on the popover goes all the way through: write the field, keep it in
@@ -1005,7 +1163,8 @@ feature("edit text", function(){
       if(res && res.ok){
         adoptStamp(res.at);
         dirty=false; syncSaveBar();
-        toast("Saved — this is the new default now. It will still be here after a refresh.");
+        toast(mergeNote("Saved — this is the new default now. It will still be here after a refresh.",res),
+              false, res.kept?8000:0);
       }else{
         toast("Kept in this browser only — the shared store could not be reached.",true,6000);
       }
@@ -1128,7 +1287,8 @@ feature("saving", function(){
       if(res && res.ok){
         adoptStamp(res.at);
         dirty=false; syncSaveBar(); panel("done");
-        toast("Confirmed — saved as the new default. It will still be here after a refresh.");
+        toast(mergeNote("Confirmed — saved as the new default. It will still be here after a refresh.",res),
+              false, res.kept?8000:0);
       }else{
         panel("pending");
         const why = res && res.error==="too_large" ? "too big for one record"
