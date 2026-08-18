@@ -63,6 +63,7 @@ const byIdEl = {};
 mkEl("stage").appendChild(byIdEl["svg"]);
 ["gripL","gripR"].forEach(id=>byIdEl[id].appendChild(mkEl("span")));          // the svg always has a parent in the page
 
+const MQ={};
 const sandbox = {
   console,
   Math, JSON, Object, Array, String, Number, Boolean, Set, Map, Error, Date, RegExp,
@@ -75,7 +76,10 @@ const sandbox = {
     body: mkEl("body"),
     addEventListener(){},
   },
-  window: { matchMedia: q => ({matches: /coarse|max-width/.test(q) ? false : false, media:q}),
+  window: { matchMedia: q => (MQ[q] = MQ[q] || {
+              matches: /reduced-motion/.test(q) ? !!process.env.REDUCE : false, media:q,
+              _ls:[], addEventListener(t,fn){ this._ls.push(fn); },
+              set(v){ this.matches=v; this._ls.forEach(f=>f(this)); } }),
             innerWidth: 1400, innerHeight: 800,
             _ls:{}, addEventListener(t,fn){ (this._ls[t]=this._ls[t]||[]).push(fn); },
             fire(t,ev){ (this._ls[t]||[]).forEach(fn=>fn(Object.assign(
@@ -226,7 +230,11 @@ if (tickErr) console.log("FAIL — a ticker threw: " + tickErr.message + "\n  " 
   const min=vm.runInContext("MOTION_MIN",sandbox);
   console.log(`fit view sits at zoom ${k.toFixed(2)}, motion stops below ${min}`);
   if(k<min) console.log("FAIL — the map is frozen at the view it opens at");
-  // and the per-shape gates must not be able to override it
+  // and the per-shape gates must not be able to override it. This is about the
+  // ZOOM gate, so take motion out of the question first — under REDUCE the map
+  // is legitimately paused and every probe below would read as frozen.
+  const wasPlaying=vm.runInContext("playing",sandbox);
+  vm.runInContext("setMotion(true,false)",sandbox);
   let ran=0;
   const T=vm.runInContext("TICKERS",sandbox);
   const probe=(dt,now,z)=>{ if(z<0.7) return; ran++; };
@@ -237,10 +245,80 @@ if (tickErr) console.log("FAIL — a ticker threw: " + tickErr.message + "\n  " 
                 vm.runInContext("frame(1000)",sandbox); return ran===1; };
   const desktop=at(0.44), phone=at(0.12), tiny=at(0.05);
   T.pop();
+  vm.runInContext(`setMotion(${wasPlaying},false)`,sandbox);
   console.log(`moving at desktop fit (0.44): ${desktop} · phone fit (0.12): ${phone} · thumbnail (0.05): ${tiny}`);
   if(!desktop) console.log("FAIL — frozen at the zoom a desktop opens at");
   if(!phone)   console.log("FAIL — frozen at the zoom a phone opens at");
   if(tiny)     console.log("FAIL — still animating when the map is a thumbnail");
+})();
+
+/* ============================================================
+   A STILL MAP MUST BE ABLE TO MOVE AGAIN
+   `playing` was read once from prefers-reduced-motion into a variable nothing
+   could set back, and the control that could have was dropped from the toolbar
+   — so a browser answering "reduce" got a map that never moved again and never
+   said why. Both halves are tested: the preference changing under a running
+   page, and a person overriding it.
+   ============================================================ */
+(function motion(){
+  const dot=vm.runInContext("DOTS[0].node",sandbox);
+  const where=()=>dot.attrs.transform;
+  const play=()=>vm.runInContext("playing",sandbox);
+  const drive=()=>{ vm.runInContext("view.k=1; frame(3000)",sandbox);
+                    vm.runInContext("frame(3040)",sandbox); };
+  const mq=MQ["(prefers-reduced-motion: reduce)"];
+
+  console.log(`\nmotion: starts ${play()?"running":"paused"} (system asks for reduce: ${!!mq.matches})`);
+  if(play()===mq.matches) console.log("FAIL — the map ignored the system motion preference");
+
+  /* the preference flipping mid-session — a laptop entering battery saver */
+  mq.set(!mq.matches);
+  console.log(`system flipped -> ${play()?"running":"paused"} (reduce: ${!!mq.matches})`);
+  if(play()===mq.matches) console.log("FAIL — the map did not follow the preference changing under it");
+  mq.set(!mq.matches);
+  if(play()===mq.matches) console.log("FAIL — the map did not follow the preference changing back");
+
+  /* whatever it is now, a person must be able to say otherwise, and it sticks */
+  const was=play(), btn=byIdEl["btnMotion"];
+  if(!btn||!btn.onclick) return console.log("FAIL — there is no motion control on the toolbar");
+  const label=btn._txt;
+  btn.fire("click",{});
+  console.log(`clicked "${label}" -> ${play()?"running":"paused"}`,
+              `· remembered as ${sandbox.localStorage.getItem("pipeline.motion")}`);
+  if(play()===was) console.log("FAIL — the motion control does not change anything");
+  if(sandbox.localStorage.getItem("pipeline.motion")!==(play()?"on":"off"))
+    console.log("FAIL — the choice was not remembered");
+
+  /* and running means the dots actually advance */
+  if(!play()) btn.fire("click",{});
+  const p0=where(); drive();
+  console.log("dots advance when running:", p0!==where());
+  if(p0===where()) console.log("FAIL — the map says it is running and nothing moves");
+  btn.fire("click",{});
+  const p1=where(); drive();
+  if(p1!==where()) console.log("FAIL — paused and still moving");
+  btn.fire("click",{});                                   // leave it running
+})();
+
+/* One shape going wrong must cost that shape, not the whole map: a throw used
+   to escape the frame and the loop was never scheduled again. */
+(function badTicker(){
+  const T=vm.runInContext("TICKERS",sandbox);
+  const n0=T.length;
+  let after=0;
+  T.push(()=>{ throw new Error("a shape blew up"); });
+  T.push(()=>{ after++; });
+  const realErr=console.error; sandbox.console={...console, error(){}};
+  vm.runInContext("view.k=1; frame(4000)",sandbox);
+  vm.runInContext("frame(4040)",sandbox);
+  sandbox.console=console;
+  const diag=vm.runInContext("window.pipelineDiag()",sandbox);
+  console.log(`throwing shape dropped: ${T.length===n0+1} · its neighbours still ran: ${after>=2}`+
+              ` · loop still counting frames: ${diag.frames>0}`);
+  if(T.length!==n0+1) console.log("FAIL — a throwing ticker was not dropped");
+  if(after<2) console.log("FAIL — one bad shape stopped the others");
+  if(!diag.droppedTickers) console.log("FAIL — the drop is not reported in the diagnostic");
+  T.pop();
 })();
 
 // the mobile strip must carry the same sequence as the left index

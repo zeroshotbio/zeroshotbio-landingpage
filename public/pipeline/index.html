@@ -72,7 +72,7 @@
   header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
   /* the header is a toolbar now — the run's numbers used to sit along it and
      were the first thing removed once the map itself carried them */
-  .controls{display:flex;align-items:center;gap:6px;padding:6px 10px;flex:none}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;flex:none}
   .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
        text-transform:uppercase;white-space:nowrap}
   .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
@@ -339,6 +339,7 @@
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
       <button class="ctl" id="btnAxes">Hide axes</button>
+      <button class="ctl" id="btnMotion" aria-pressed="false">Pause motion</button>
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
       <button class="ctl" id="btnText">Edit text</button>
@@ -398,9 +399,9 @@
   </div>
 </div>
 
-<script src="/pipeline/pipeline-iso.js?v=c8e62e48"></script>
-<script src="/pipeline/pipeline-shapes.js?v=c8e62e48"></script>
-<script src="/pipeline/pipeline-data.js?v=c8e62e48"></script>
-<script src="/pipeline/pipeline-view.js?v=c8e62e48"></script>
+<script src="/pipeline/pipeline-iso.js?v=ca7ec4c3"></script>
+<script src="/pipeline/pipeline-shapes.js?v=ca7ec4c3"></script>
+<script src="/pipeline/pipeline-data.js?v=ca7ec4c3"></script>
+<script src="/pipeline/pipeline-view.js?v=ca7ec4c3"></script>
 </body>
 </html>

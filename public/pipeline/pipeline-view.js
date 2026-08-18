@@ -336,25 +336,91 @@ function placeDots(dt){
     if(r.e.carry) r.node.setAttribute("opacity", r.e.carry==="out" ? (1-r.t).toFixed(2) : r.t.toFixed(2));
   });
 }
-let playing=!window.matchMedia("(prefers-reduced-motion: reduce)").matches, last=performance.now();
+/* ============================================================
+   MOTION
+   The map used to read this preference once, at load, into a variable nothing
+   could ever set back — the Pause control that could have was dropped from the
+   toolbar when the header became a strip. Anyone whose browser answers "reduce"
+   therefore got a map that draws, lists, highlights and edits perfectly and
+   never moves again, with nothing on the page saying why or offering a way
+   back. And the answer is not fixed for the life of a machine: a laptop
+   entering battery saver flips it mid-session on several browsers, which is
+   exactly the "frozen every other refresh" this is being written for.
+
+   So: the system preference is the DEFAULT, not the verdict. It is re-read
+   whenever it changes, a person can override it either way, and the override
+   is remembered. Motion off is a state the page admits to rather than a state
+   it sits in silently.
+   ============================================================ */
+const MOTION_KEY="pipeline.motion";
+const mqReduce = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)"))
+              || {matches:false};
+let motionChoice=null; try{ motionChoice=localStorage.getItem(MOTION_KEY); }catch(err){}
+let onMotion=null;                       // the toolbar button follows this
+let playing = motionChoice ? motionChoice==="on" : !mqReduce.matches;
+function setMotion(on,remember){
+  playing=!!on;
+  if(remember){
+    motionChoice = on?"on":"off";
+    try{ localStorage.setItem(MOTION_KEY,motionChoice); }catch(err){}
+  }
+  if(onMotion) onMotion();
+}
+if(mqReduce.addEventListener)
+  mqReduce.addEventListener("change",()=>{ if(!motionChoice) setMotion(!mqReduce.matches,false); });
+else if(mqReduce.addListener)
+  mqReduce.addListener(()=>{ if(!motionChoice) setMotion(!mqReduce.matches,false); });
+
+let last=performance.now();
 /* below this the map is a thumbnail and motion is not legible anyway. The
    manual zoom floor is 0.15, so in practice this only bites on a fit view in a
    very small window. */
 const MOTION_MIN=0.10;
+/* Everything shape-authored that moves runs from here. The zoom gate is
+   central: each shape ships its own `if(k<0.7) return`, written when the map
+   was a third of its present size — at today's extent the whole map fits at
+   k≈0.4 on a desktop and 0.12 on a phone, so every one of those gates was
+   firing at the DEFAULT view and the map arrived frozen. Handing the tickers a
+   value that never trips their own test moves the decision here, to one number.
+
+   A ticker that throws is dropped rather than allowed to take the frame with
+   it. One shape going wrong should cost that shape, not the whole map. */
+const DROPPED=[];
+function runTickers(dt,now){
+  for(let i=0;i<TICKERS.length;i++){
+    try{ TICKERS[i](dt,now,1); }
+    catch(err){
+      console.error(`pipeline: a shape's animation threw and was dropped — the map keeps running.`,err);
+      DROPPED.push({i,err:String((err&&err.message)||err)});
+      TICKERS.splice(i,1); i--;
+    }
+  }
+}
 /* started at the end of the file, once the camera exists */
+let frames=0, lastErr=null;
 function frame(now){
-  const dt=Math.min((now-last)/1000,.05); last=now;
-  stepCamera(now);
-  placeDots(playing?dt:0);
-  /* Everything shape-authored that moves lives here. The zoom gate is central:
-     each shape ships its own `if(k<0.7) return`, written when the map was a
-     third of its present size — at today's extent the whole map fits at k≈0.4
-     on a desktop and 0.12 on a phone, so every one of those gates was firing at
-     the DEFAULT view and the map arrived frozen. Handing the tickers a value
-     that never trips their own test moves the decision here, to one number. */
-  if(playing && view.k >= MOTION_MIN) TICKERS.forEach(f=>f(dt, now, 1));
+  const dt=Math.min((now-last)/1000,.05); last=now; frames++;
+  /* NOTHING in here may stop the loop being scheduled again. A throw used to
+     end the animation for the rest of the session, which is indistinguishable
+     from a frozen map and impossible to get back without a refresh. */
+  try{
+    stepCamera(now);
+    placeDots(playing?dt:0);
+    if(playing && view.k >= MOTION_MIN) runTickers(dt,now);
+  }catch(err){
+    if(!lastErr) console.error("pipeline: a frame threw — the loop keeps running.",err);
+    lastErr=err;
+  }
   requestAnimationFrame(frame);
 }
+/* one line to paste back when the map looks stuck */
+window.pipelineDiag=()=>({
+  moving: playing && view.k>=MOTION_MIN,
+  playing, choice:motionChoice||"(system)", systemAsksForReduce:!!mqReduce.matches,
+  zoom:+(view.k||0).toFixed(3), motionFloor:MOTION_MIN,
+  frames, dots:DOTS.length, tickers:TICKERS.length, droppedTickers:DROPPED.length,
+  lastError:lastErr?String(lastErr.message||lastErr):null
+});
 
 /* ============================================================
    PAN AND ZOOM
@@ -890,6 +956,24 @@ function pushRemote(){
     });
 }
 
+/* The motion control. The map is allowed to be still — what it is not allowed
+   to be is still with no explanation and no way back. */
+feature("motion", function(){
+  const btn=document.getElementById("btnMotion");
+  const hint=document.querySelector(".hint"), hint0=hint?hint.textContent:"";
+  onMotion=()=>{
+    if(btn) btn.textContent = playing ? "Pause motion" : "Play motion";
+    if(btn) btn.setAttribute("aria-pressed", playing?"false":"true");
+    if(hint && !texting && !editing)
+      hint.textContent = playing ? hint0
+        : (mqReduce.matches && motionChoice!=="off"
+            ? "Motion is paused because this browser asks for reduced motion — press Play motion to run it anyway"
+            : "Motion is paused — press Play motion to start it");
+  };
+  if(btn) btn.onclick=()=>setMotion(!playing,true);
+  onMotion();
+});
+
 /* ============================================================
    EDIT POSITIONS
    A tuning mode. Everything the map draws is placed from world coordinates,
@@ -1014,6 +1098,7 @@ feature("edit positions", function(){
     btnEdit.textContent=on?"Done moving":"Edit positions";
     syncSaveBar();
     if(on){ release(); say(null); }
+    else if(onMotion) onMotion();
     else if(hint) hint.textContent=hint0;
   }
   btnEdit.onclick=()=>setMode(!editing);
@@ -1248,9 +1333,10 @@ feature("edit text", function(){
     document.body.classList.toggle("texting",on);
     btnText.textContent=on?"Done editing text":"Edit text";
     syncSaveBar();
-    if(hint) hint.textContent = on
-      ? "Click any name, row title or paragraph to rewrite it · select a step first to reach its prose"
-      : hint0;
+    if(hint && on)
+      hint.textContent="Click any name, row title or paragraph to rewrite it · select a step first to reach its prose";
+    else if(onMotion) onMotion();
+    else if(hint) hint.textContent=hint0;
     if(!on) close(false);
   };
   btnText.onclick=()=>setTextMode(!texting);
