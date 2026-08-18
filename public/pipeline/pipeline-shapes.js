@@ -400,13 +400,256 @@ function drawVials(g,n){
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
+/* ------------------------------------------------------------------
+   THE SEQUENCER
+   A chassis with the deck of a liquid handler on it, because that is what
+   sequencing by synthesis is: a fluidics robot that flows one base in,
+   photographs the flow cell, washes it off and does it again. One turn of
+   the animation is four such cycles — the gantry fetches a different
+   reagent each time and the clusters image in that reagent's colour, which
+   is the four-colour chemistry and the only reason there are four bottles.
+
+   Every level, tint and lamp here is a pure function of t modulo four
+   cycles, so nothing accumulates. That matters more than it sounds: this
+   ticker runs for as long as the page is open, and a drifting reagent
+   level would end up either empty or through the roof.
+
+   paint() builds a box from the floor up and everything on a machine sits
+   on the deck, so the boxes go through prism(), which is the same three
+   faces lifted to an arbitrary z. The moving parts are built once at their
+   home position and then translated: the gantry only ever travels one axis
+   at a time, so a screen-space translate is exact, not an approximation.
+   ------------------------------------------------------------------ */
 function drawMachine(g,n){
-  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
-  const gg=el("g",{transform:`translate(0,${-n.h*S*CZ})`});
-  paint(gg,n.x-0.45,n.y-0.2,1.0,0.7,0.42,SKIN.monolith); g.appendChild(gg);
-  const f=faces(n.x+0.5,n.y+n.d/2,0.7,0.02,0.5);
-  g.appendChild(el("polygon",{points:f.left,fill:"var(--signal)","fill-opacity":".7",
-    stroke:"var(--stroke)","stroke-width":"1"}));
+  const r=rng(907);
+  const X=f=>n.x+f*n.w, Y=f=>n.y+f*n.d, deck=n.h;
+  /* topOf() promises a machine reaches 1.42 and both the label anchor and
+     the occlusion clip believe it, so the tower is sized to land there */
+  const towerH=Math.max(0.24,1.42-deck);
+  /* the four reagents, in the order the run calls for them */
+  const BASE=["var(--signal)","var(--drop)","var(--ok)","var(--c-top)"];
+
+  const boxAt=(x,y,w,d,z0,z1)=>{
+    const hw=w/2,hd=d/2;
+    return {top:pts([P(x-hw,y-hd,z1),P(x+hw,y-hd,z1),P(x+hw,y+hd,z1),P(x-hw,y+hd,z1)]),
+            right:pts([P(x+hw,y-hd,z1),P(x+hw,y+hd,z1),P(x+hw,y+hd,z0),P(x+hw,y-hd,z0)]),
+            left:pts([P(x-hw,y+hd,z1),P(x+hw,y+hd,z1),P(x+hw,y+hd,z0),P(x-hw,y+hd,z0)])};
+  };
+  const prism=(gg,x,y,w,d,z0,z1,s)=>{
+    const b=boxAt(x,y,w,d,z0,z1);
+    ["left","right","top"].forEach(k=>gg.appendChild(el("polygon",{points:b[k],fill:s[k],
+      "fill-opacity":s.fo||1,stroke:"var(--stroke)","stroke-width":s.sw||1,"stroke-opacity":s.so||1})));
+    return b;
+  };
+  /* appendChild is not obliged to hand the node back and the structural
+     validator's DOM stub does not, so every reference kept here goes through
+     this rather than through the return value */
+  const add=(gg,e)=>{ gg.appendChild(e); return e; };
+  const DX=dx=>`translate(${(dx*S*C30).toFixed(2)},${(dx*S*0.5).toFixed(2)})`;
+  const DY=dy=>`translate(${(-dy*S*C30).toFixed(2)},${(dy*S*0.5).toFixed(2)})`;
+  const DZ=dz=>`translate(0,${(-dz*S*CZ).toFixed(2)})`;
+
+  /* ---- chassis, and the lit vent along its front ---- */
+  paint(g,n.x,n.y,n.w,n.d,deck,SKIN.works);
+  const vent=add(g,el("polygon",
+    {points:faces(X(0.23),n.y+n.d/2,n.w*0.32,0.02,deck*0.5).left,
+     fill:"var(--signal)","fill-opacity":".7",stroke:"var(--stroke)","stroke-width":"1"}));
+
+  /* ---- optics tower, back left, carrying the run readout and the lamp ---- */
+  const tx=X(-0.205), ty=Y(-0.143), tw=n.w*0.455, td=n.d*0.5, tz=deck+towerH;
+  prism(g,tx,ty,tw,td,deck,tz,SKIN.monolith);
+  /* the readout lives a hair proud of the tower's front face, so it can never
+     be swallowed by the face it is painted on */
+  const fy0=ty+td/2+0.002;
+  const quad=(x0,x1,z0,z1)=>pts([P(x0,fy0,z1),P(x1,fy0,z1),P(x1,fy0,z0),P(x0,fy0,z0)]);
+  const qx0=tx-tw*0.34, qx1=tx+tw*0.36, qz0=deck+towerH*0.36, qz1=deck+towerH*0.68;
+  g.appendChild(el("polygon",{points:quad(qx0,qx1,qz0,qz1),fill:"var(--bg)","fill-opacity":".8",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  const bx0=qx0+(qx1-qx0)*0.08, bx1=qx1-(qx1-qx0)*0.08;
+  const bz0=qz0+(qz1-qz0)*0.22, bz1=qz1-(qz1-qz0)*0.22;
+  g.appendChild(el("polygon",{points:quad(bx0,bx1,bz0,bz1),fill:"var(--fg)","fill-opacity":".12"}));
+  const bar=add(g,el("polygon",{points:quad(bx0,bx0,bz0,bz1),fill:"var(--signal)",
+    "fill-opacity":".75"}));
+  /* the lamp's glow is a gradient rather than a flat disc, because a flat disc
+     at this size reads as a second, larger lamp. installDefs() lives in the
+     projection and is called once per <svg>, so this one carries its own — a
+     gradient is legal wherever it is declared, and the id is uniqued the same
+     way the tank clip paths are. */
+  const lp=P(tx+tw*0.31,ty+td*0.26,tz), gid=`lamp${++UID}`;
+  const grad=el("radialGradient",{id:gid});
+  const stops=[["0%",".9"],["55%",".35"],["100%","0"]].map(([o,a])=>{
+    const s=el("stop",{offset:o,"stop-color":"var(--signal)","stop-opacity":a});
+    grad.appendChild(s); return s;
+  });
+  g.appendChild(grad);
+  const halo=add(g,el("circle",{cx:lp[0].toFixed(1),cy:lp[1].toFixed(1),r:"4",
+    fill:`url(#${gid})`,"fill-opacity":".05"}));
+  const lamp=add(g,el("circle",{cx:lp[0].toFixed(1),cy:lp[1].toFixed(1),r:"2.3",
+    fill:"var(--signal)","fill-opacity":".3",stroke:"var(--stroke)","stroke-width":".6",
+    "stroke-opacity":".6"}));
+
+  /* ---- reagent bay, back right: four bottles with a level that can move ----
+     Open-necked on purpose: there is 0.42 of headroom under the height topOf()
+     promises, the bridge and the tip have to pass over this row inside it, and
+     a cap is the one thing here the tip would have to go through. */
+  const bay=[], bw=n.w*0.075, bd=n.d*0.11, bh=0.20;
+  for(let i=0;i<4;i++){
+    const bx=X(0.075+i*0.113), by=Y(-0.30);
+    prism(g,bx,by,bw,bd,deck,deck+bh,SKIN.glass);
+    /* the liquid is drawn after the glass and carries no stroke, so it reads
+       as being seen through the bottle rather than painted on it */
+    const liq=["left","right","top"].map(()=>add(g,el("polygon",
+      {fill:BASE[i],"fill-opacity":".55"})));
+    /* and a label band, so the bay still reads as four different reagents
+       when the one in use is nearly drained */
+    const ly=by+bd/2+0.002;
+    g.appendChild(el("polygon",{points:pts([P(bx-bw*0.4,ly,deck+0.15),P(bx+bw*0.4,ly,deck+0.15),
+      P(bx+bw*0.4,ly,deck+0.115),P(bx-bw*0.4,ly,deck+0.115)]),fill:BASE[i],"fill-opacity":".8"}));
+    bay.push({x:bx,y:by,liq});
+  }
+
+  /* ---- flow cell, front centre: the glass, the wash, and the clusters ----
+     Kept to the right of the tower's footprint rather than centred on the
+     deck: overlapping footprints in this projection means one object growing
+     out of the other, and there is no depth sort here to save it. */
+  const fx=X(0.21), fy=Y(0.22), fw=n.w*0.38, fd=n.d*0.34, fz=deck+0.055;
+  prism(g,fx,fy,fw,fd,deck,fz,SKIN.glass);
+  const tint=add(g,el("polygon",{points:boxAt(fx,fy,fw*0.9,fd*0.86,fz,fz).top,
+    fill:BASE[0],"fill-opacity":"0"}));
+  const cl=[];
+  for(let a=0;a<7;a++)for(let b=0;b<4;b++){
+    const u=(a+0.5)/7-0.5, v=(b+0.5)/4-0.5;
+    const p=P(fx+u*fw*0.84, fy+v*fd*0.78, fz+0.002);
+    cl.push({u:u+0.5, k:0.45+r()*0.55,
+      node:add(g,el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),
+        r:(0.9+r()*0.5).toFixed(1),fill:"var(--fg)","fill-opacity":"0"}))});
+  }
+  /* the camera pass — built at the left edge of the cell and driven across it */
+  const scan=el("g",{opacity:"0"}); g.appendChild(scan);
+  const sx=fx-fw*0.44, span=fw*0.88;
+  scan.appendChild(el("polygon",{points:boxAt(sx,fy,n.w*0.05,fd*1.04,fz,fz+0.001).top,
+    fill:"var(--signal)","fill-opacity":".45"}));
+  prism(scan,sx,fy,n.w*0.028,fd*1.04,fz,fz+0.10,SKIN.sC);
+
+  /* ---- the gantry: a bridge that travels in x, a head that rides it in y ----
+     Dimensioned off the 0.42 of headroom: beam clear of the bottles, tip clear
+     of the beam, and the top of it still under the 1.42 the rest of the map
+     has been told this machine reaches. */
+  const gan=el("g",{}); g.appendChild(gan);
+  const gx=X(0.055), pz=deck+0.31;
+  [Y(-0.46),Y(0.46)].forEach(py=>prism(gan,gx,py,n.w*0.035,n.d*0.05,deck,pz,SKIN.works));
+  prism(gan,gx,n.y,n.w*0.045,n.d*0.95,pz,pz+0.075,SKIN.monolith);
+  const head=el("g",{}); gan.appendChild(head);
+  prism(head,gx,n.y,n.w*0.075,n.d*0.11,pz-0.055,pz+0.02,SKIN.monolith);
+  const tip=el("g",{}); head.appendChild(tip);
+  prism(tip,gx,n.y,n.w*0.03,n.d*0.045,pz-0.095,pz-0.04,SKIN.works);
+  const mouth=P(gx,n.y,pz-0.10);
+  const charge=add(tip,el("circle",{cx:mouth[0].toFixed(1),cy:mouth[1].toFixed(1),
+    r:"1.4",fill:BASE[0],"fill-opacity":"0"}));
+  /* the drop is not on the gantry: it is let go of, and after that the arm's
+     motion is none of its business */
+  const drop=add(g,el("circle",{r:"2",fill:BASE[0],"fill-opacity":"0"}));
+
+  const HOME=0.7, REACH=1.3, DIP=1.1, MOVE=1.4, POUR=0.9, IMG=2.6, WASH=1.5;
+  const t1=HOME, t2=t1+REACH, t3=t2+DIP, t4=t3+MOVE, t5=t4+POUR, t6=t5+IMG;
+  const CYCLE=t6+WASH, LOOP=CYCLE*4;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const c01=x=>Math.max(0,Math.min(1,x));
+  /* down, hold, up — the tip in a bottle and the tip over the flow cell are
+     the same move at two depths */
+  const dive=f=> f<0.3 ? ease(f/0.3) : f<0.7 ? 1 : 1-ease((f-0.7)/0.3);
+  const hx=X(0.055), hy=Y(0.40);            // where the arm parks between cycles
+  const inX=fx-fw*0.20, inY=fy-fd*0.28;     // the inlet it dispenses into
+
+  let t=0;
+  const run=(dt,now)=>{
+    t=(t+dt)%LOOP;
+    const i=Math.floor(t/CYCLE)%4, u=t%CYCLE, col=BASE[i], T=now/1000;
+    const b=bay[i];
+
+    /* park -> reagent -> inlet -> clear of the camera -> park */
+    const KF=[[0,hx,hy],[t1,hx,hy],[t2,b.x,b.y],[t3,b.x,b.y],[t4,inX,inY],[t5,inX,inY],
+              [t5+IMG*0.3,inX,Y(-0.36)],[t6,inX,Y(-0.36)],[CYCLE,hx,hy]];
+    let px=hx, py=hy;
+    for(let k=1;k<KF.length;k++){
+      if(u<=KF[k][0]){
+        const a=KF[k-1], c=KF[k], f=ease(c01((u-a[0])/Math.max(1e-6,c[0]-a[0])));
+        px=a[1]+(c[1]-a[1])*f; py=a[2]+(c[2]-a[2])*f; break;
+      }
+    }
+    gan.setAttribute("transform",DX(px-gx));
+    head.setAttribute("transform",DY(py-n.y));
+
+    /* into the bottle far enough to touch what is in it; over the flow cell it
+       only nods, because a dispense is made from a standoff and the drop has
+       to have somewhere to fall from */
+    let down=0;
+    if(u>=t2&&u<t3)      down=dive((u-t2)/DIP)*0.105;
+    else if(u>=t4&&u<t5) down=dive((u-t4)/POUR)*0.035;
+    tip.setAttribute("transform",DZ(-down));
+
+    const held = u<t2 ? 0
+      : u<t3 ? ease(c01((u-t2)/(DIP*0.7)))
+      : u<t4 ? 1
+      : u<t5 ? 1-ease(c01((u-t4)/(POUR*0.6))) : 0;
+    charge.setAttribute("fill",col);
+    charge.setAttribute("fill-opacity",(held*0.9).toFixed(2));
+
+    /* only the bottle in use moves, and it is back where it started before the
+       next cycle asks for it */
+    bay.forEach((o,j)=>{
+      const gone = (j!==i||u<=t2) ? 0
+        : u<t3 ? ease(c01((u-t2)/(DIP*0.7)))
+        : 1-ease(c01((u-t3)/(MOVE+POUR+IMG)));
+      const q=boxAt(o.x,o.y,bw*0.78,bd*0.78,deck+0.012,deck+0.012+bh*(0.62-0.2*gone));
+      o.liq[0].setAttribute("points",q.left);
+      o.liq[1].setAttribute("points",q.right);
+      o.liq[2].setAttribute("points",q.top);
+    });
+
+    let dop=0;
+    if(u>=t4+POUR*0.25&&u<t4+POUR*0.72){
+      const f=c01((u-t4-POUR*0.25)/(POUR*0.47));
+      const z0=pz-0.135, p=P(inX,inY,z0+(fz+0.008-z0)*f*f);   // the tip's mouth, mid-nod
+      drop.setAttribute("cx",p[0].toFixed(1)); drop.setAttribute("cy",p[1].toFixed(1));
+      dop=0.9;
+    }
+    drop.setAttribute("fill",col);
+    drop.setAttribute("fill-opacity",dop.toFixed(2));
+
+    const wet = u<t4+POUR*0.55 ? 0
+      : u<t6 ? ease(c01((u-t4-POUR*0.55)/0.6))
+      : 1-ease(c01((u-t6)/(WASH*0.8)));
+    tint.setAttribute("fill",col);
+    tint.setAttribute("fill-opacity",(wet*0.3).toFixed(2));
+
+    /* imaging: the camera crosses once and each cluster reads out as it goes
+       past, then the wash takes the whole field back down to nothing */
+    const shot=u>=t5&&u<t6, s=shot?c01((u-t5)/(IMG*0.86)):0;
+    scan.setAttribute("opacity",shot?"1":"0");
+    scan.setAttribute("transform",DX(s*span));
+    const fade = u<t6 ? 1 : 1-ease(c01((u-t6)/(WASH*0.9)));
+    cl.forEach(c=>{
+      const on = shot ? c01((s-c.u)*7) : (u>=t6?1:0);
+      c.node.setAttribute("fill",col);
+      c.node.setAttribute("fill-opacity",(on*fade*c.k).toFixed(2));
+    });
+
+    /* the lamp is the only thing on this map that blinks, so it is kept rare:
+       two short pulses as a cycle starts, then a steady breath while the
+       camera is actually running */
+    const beat=Math.max(u<0.16||(u>0.3&&u<0.46)?1:0, shot?(0.5+0.5*Math.sin(T*5))*0.8:0);
+    const lit=shot?col:"var(--signal)";
+    lamp.setAttribute("fill",lit);
+    lamp.setAttribute("fill-opacity",(0.28+0.72*beat).toFixed(2));
+    stops.forEach(s=>s.setAttribute("stop-color",lit));
+    halo.setAttribute("r",(4+8*beat).toFixed(1));
+    halo.setAttribute("fill-opacity",(0.06+0.5*beat).toFixed(2));
+    vent.setAttribute("fill-opacity",(0.5+0.28*beat).toFixed(2));
+    bar.setAttribute("points",quad(bx0,bx0+(bx1-bx0)*(u/CYCLE),bz0,bz1));
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
 }
 function drawHeap(g,n){
   const r=rng(19),boxes=[];
