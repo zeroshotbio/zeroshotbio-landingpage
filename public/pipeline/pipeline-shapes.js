@@ -1432,11 +1432,20 @@ function drawIncubate(g,n){
     return {...f, body, yolk, eye};
   });
 
+  /* ONE compound, drawn nine times. The seed is fixed rather than stepped per
+     molecule because a well holds a single compound: nine different structures
+     in one well said the opposite of what the step is about, and this is the
+     dose the fish are sitting in. Size and rotation still vary — that is the
+     same molecule at a different distance and angle, not a different molecule.
+     432 is one of the structures that was already in this well: two rings, a
+     double bond in each, two tails. Colour still comes from the plate band, so
+     it stays the compound's own colour wherever this well is drawn. */
+  const COMPOUND=432;
   const M=9, mols=[];
   for(let i=0;i<M;i++){
     const a=(i/M)*6.283+r()*0.45, rad=(0.32+0.55*((i%3)/2))*wellR;
     const node=el("g",{opacity:".78"});
-    node.appendChild(moleculeGlyph(409+i*23, band.fill));
+    node.appendChild(moleculeGlyph(COMPOUND, band.fill));
     g.appendChild(node);
     mols.push({node, cx:n.x+Math.cos(a)*rad, cy:n.y+Math.sin(a)*rad*0.72,
       ph:r()*6.283, rate:0.32+r()*0.3, span:0.05+r()*0.05,
