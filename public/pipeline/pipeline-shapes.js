@@ -546,9 +546,13 @@ function drawMachine(g,n){
   const mouth=P(gx,n.y,pz-0.10);
   const charge=add(tip,el("circle",{cx:mouth[0].toFixed(1),cy:mouth[1].toFixed(1),
     r:"1.4",fill:BASE[0],"fill-opacity":"0"}));
-  /* the drop is not on the gantry: it is let go of, and after that the arm's
-     motion is none of its business */
-  const drop=add(g,el("circle",{r:"2",fill:BASE[0],"fill-opacity":"0"}));
+  /* The drop is not on the gantry: it is let go of, and after that the arm's
+     motion is none of its business. It is still born at the mouth rather than
+     nowhere — an element with no cx/cy sits at the SVG origin, and since the
+     selection halo is a CSS filter whose region is this group's bounding box,
+     one loose circle there stretched the halo from here to the origin. */
+  const drop=add(g,el("circle",{cx:mouth[0].toFixed(1),cy:mouth[1].toFixed(1),
+    r:"2",fill:BASE[0],"fill-opacity":"0"}));
 
   const HOME=0.7, REACH=1.3, DIP=1.1, MOVE=1.4, POUR=0.9, IMG=2.6, WASH=1.5;
   const t1=HOME, t2=t1+REACH, t3=t2+DIP, t4=t3+MOVE, t5=t4+POUR, t6=t5+IMG;
@@ -1147,16 +1151,25 @@ function drawEchoDispense(g,n){
   swells.forEach(w=>drawWell(deck,w,true));
   g.appendChild(deck);
 
+  /* Anything the ticker will move still has to be BORN somewhere. An element
+     with no cx/cy sits at the SVG origin, which is nowhere near this machine —
+     invisible, because these start at zero opacity, but not absent: the
+     selection halo is a CSS filter and its region is the group's bounding box,
+     so a couple of dozen droplets parked at the origin stretched that box
+     across the map. Home is over the first source well, where the wave starts. */
+  const home=swells[0].e, homeY=(home.y-lift).toFixed(1);
+
   /* where the transducer is aimed */
-  const ring=el("ellipse",{rx:"1",ry:"1",fill:"none",stroke:"var(--fg)",
-    "stroke-width":"1.3","stroke-opacity":"0"});
+  const ring=el("ellipse",{cx:home.x.toFixed(1),cy:homeY,rx:"1",ry:"1",
+    fill:"none",stroke:"var(--fg)","stroke-width":"1.3","stroke-opacity":"0"});
   g.appendChild(ring);
 
   /* droplets in flight */
   const rise=(th+gap)*S*CZ, POOL=26;
   const flying=[];
   for(let i=0;i<POOL;i++){
-    const d=el("ellipse",{rx:"1.9",ry:"2.5",fill:"var(--fg)","fill-opacity":"0"});
+    const d=el("ellipse",{cx:home.x.toFixed(1),cy:homeY,rx:"1.9",ry:"2.5",
+      fill:"var(--fg)","fill-opacity":"0"});
     g.appendChild(d); flying.push(d);
   }
 

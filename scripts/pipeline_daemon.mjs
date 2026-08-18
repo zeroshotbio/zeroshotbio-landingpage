@@ -106,6 +106,11 @@ RULES, all of them load-bearing
 - A new shape is a function drawX(g, n) registered as DRAW.x = drawX.
 - Anything that animates registers a ticker: TICKERS.push((dt, now, k) => ...).
   Never start your own requestAnimationFrame loop.
+- Anything the ticker will move must still be BORN somewhere: give every element
+  real coordinates when you create it, even if it starts invisible. An element
+  with no cx/cy (or points, or x/y) sits at the SVG origin, and the selection
+  halo is a CSS filter whose region is the group's bounding box — so one loose
+  circle stretches the halo across the map. validate.js fails on this.
 - Positions are world units. P(x, y, z) projects them. S = 42 px per unit.
 - Keep the existing comment voice: explain why, not what.
 

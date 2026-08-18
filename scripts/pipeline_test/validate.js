@@ -7,11 +7,25 @@ const fs = require("fs"), path = require("path"), vm = require("vm");
 const DIR = path.resolve(__dirname, "../../public/pipeline");
 
 let elCount = 0;
-const fakeEl = () => ({ appendChild(){ elCount++; }, setAttribute(){}, style:{} });
+/* The stub records what a shape actually asked for. It used to throw the
+   attributes away, which made it blind to the one thing a drawing can get
+   wrong without erroring: emitting an element and never telling it where to
+   go. An unplaced element sits at the SVG origin — a long way from any node —
+   and the selection halo is a CSS filter, whose region is the group's bounding
+   box, so one stray circle turns the halo into a box the size of the map and
+   hands the browser a raster it will not keep repainting. That is what the
+   sequencer's loose drop did. */
+const fakeEl = (tag) => ({
+  tag, attrs: {}, kids: [],
+  appendChild(c){ elCount++; if (c && c.tag) this.kids.push(c); return c; },
+  setAttribute(k, v){ this.attrs[k] = String(v); },
+  getAttribute(k){ return this.attrs[k]; },
+  style: {},
+});
 const sandbox = {
   console,
   Math, JSON, Object, Array, String, Number, Boolean, Set, Map, Error,
-  document: { createElementNS: () => fakeEl(), createElement: () => fakeEl() },
+  document: { createElementNS: (ns, t) => fakeEl(t), createElement: (t) => fakeEl(t) },
   window: {},
   performance: { now: () => 0 },
 };
@@ -28,6 +42,7 @@ const G = vm.runInContext(
 const { NODES, EDGES, BANDS, CARRIES, SNIPPETS, OVERVIEW, ROWS, LANES, MIRROR, DRAW, UNVERIFIED } = G;
 sandbox.layoutRows = G.layoutRows;
 const fail = [], warn = [];
+const CHECK_PLACEMENT = [];
 const byId = Object.fromEntries(NODES.map(n => [n.id, n]));
 
 // required fields
@@ -110,7 +125,8 @@ LANES.forEach((L, ri) => {
 
 // every shape actually renders without throwing, and every payload builds
 NODES.forEach(n => {
-  try { DRAW[n.shape](fakeEl(), n); }
+  const root = fakeEl("g");
+  try { DRAW[n.shape](root, n); CHECK_PLACEMENT.push([n, root]); }
   catch (err) { fail.push(`${n.id} (${n.shape}) threw while drawing: ${err.message}`); }
 });
 Object.keys(SNIPPETS).forEach(k => {
@@ -130,6 +146,29 @@ NODES.forEach(n => {
   ["does","built","cond"].forEach(k => {
     if (/<(?!\/?(mark|em|strong|p|br)\b)/.test(n[k])) warn.push(`${n.id}.${k}: unexpected raw tag`);
   });
+});
+
+/* ---- every drawn element must know where it is ---- */
+const NEEDS = { circle:["cx","cy"], ellipse:["cx","cy"], rect:["x","y"],
+                line:["x1","y1","x2","y2"], path:["d"], polygon:["points"],
+                polyline:["points"], text:["x","y"], image:["x","y"] };
+const placed = (e) => {
+  const need = NEEDS[e.tag];
+  if (!need) return true;
+  if (e.attrs.transform) return true;            // placed by its own transform
+  if (!need.every(k => e.attrs[k] !== undefined && e.attrs[k] !== "")) return false;
+  const p = e.attrs.points;
+  if (p !== undefined && (!p.trim() || /^0[ ,]0$/.test(p.trim()))) return false;
+  return true;
+};
+CHECK_PLACEMENT.forEach(([n, root]) => {
+  const loose = [];
+  (function walk(e){ (e.kids || []).forEach(c => { if (!placed(c)) loose.push(c.tag); walk(c); }); })(root);
+  if (loose.length)
+    fail.push(`${n.id} (${n.shape}): ${loose.length} element(s) drawn with no position — ` +
+              `${[...new Set(loose)].join(", ")}. They sit at the origin and drag the ` +
+              `selection halo out with them; give them a home in the build and let the ` +
+              `ticker move them from there.`);
 });
 
 console.log(`\n${NODES.length} nodes, ${EDGES.length} edges, ${Object.keys(SNIPPETS).length} payload kinds, ${elCount} SVG elements emitted`);
