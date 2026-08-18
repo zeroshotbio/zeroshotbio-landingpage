@@ -120,7 +120,7 @@ VERIFY, in this order, and do not skip any of it
                                              animates and the camera moves; must exit 0.
                                              If jsdom is missing: npm install --no-save jsdom
   cd public/pipeline && ./build.sh           regenerates the standalone artifact
-Only if you changed something OUTSIDE public/pipeline, also run `npx next build`.
+Only if you changed something OUTSIDE public/pipeline, also run npx next build.
 Nothing under public/pipeline is compiled by Next, so that build cannot tell you
 anything about a shape and costs minutes the person is watching tick by.
 If any of those fail, fix the cause. Do not commit failing work.
