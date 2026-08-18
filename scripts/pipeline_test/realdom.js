@@ -43,7 +43,25 @@ Element.prototype.getBoundingClientRect = function(){
 if(!Element.prototype.setPointerCapture) Element.prototype.setPointerCapture=function(){};
 if(!Element.prototype.releasePointerCapture) Element.prototype.releasePointerCapture=function(){};
 if(!Element.prototype.scrollIntoView) Element.prototype.scrollIntoView=function(){};
-window.fetch = () => Promise.reject(new Error("no network in this harness"));
+/* a queue the test can drive: everything else still has no network */
+window.__q = { rows: [], posted: [] };
+window.fetch = (url, opt) => {
+  url = String(url);
+  if (url.indexOf("pipeline_prompts") >= 0) {
+    if (opt && opt.method === "POST") {
+      const b = JSON.parse(opt.body);
+      const id = "pq" + (window.__q.posted.length + 1);
+      window.__q.posted.push(b);
+      window.__q.rows.unshift({ id, text: b.text, target: b.target || null,
+                                status: "queued", at: Date.now(), updated: Date.now() });
+      return Promise.resolve({ json: () => Promise.resolve({ ok: true, prompt: { id } }) });
+    }
+    return Promise.resolve({ json: () => Promise.resolve({ prompts: window.__q.rows }) });
+  }
+  if (url.indexOf("pipeline-shapes.js") >= 0)
+    return Promise.resolve({ headers: { get: () => window.__q.etag || "tag-1" } });
+  return Promise.reject(new Error("no network in this harness"));
+};
 <\/script>`;
 html=html.replace("</head>", SHIM+"</head>");
 
@@ -101,8 +119,13 @@ setTimeout(()=>{
       const boxBad=editorWindow(w);
       if(boxBad.length){ console.log("\nFAIL — "+boxBad.join("; "));
         dom.window.close(); process.exit(1); }
-      console.log("\nreal DOM: loads, animates, the camera moves, and the editor is a window");
-      dom.window.close();
+      stacking(w, bad2=>{
+        if(bad2.length){ console.log("\nFAIL — "+bad2.join("; "));
+          dom.window.close(); process.exit(1); }
+        console.log("\nreal DOM: loads, animates, the camera moves, the editor is a window,");
+        console.log("          and requests stack, number themselves and wait for the deploy");
+        dom.window.close();
+      });
     },900);
   },600);
 },1500);
@@ -170,4 +193,70 @@ function editorWindow(w){
     d.getElementById("teX").click();
   }
   return bad;
+}
+
+
+/* ============================================================
+   REQUESTS STACK
+   Several drawings can be in flight at once — they queue on the instance and
+   are drawn one at a time — so each gets a row numbered by its place in that
+   queue. And "done" is not "visible": the queue says done when the commit is
+   pushed, the page is served by a CDN that needs a minute or two more, so the
+   finished request waits for the asset itself to change before it claims the
+   drawing is live. Both are real-DOM behaviour: rows are built with innerHTML.
+   ============================================================ */
+function stacking(w, then){
+  const bad=[], d=w.document, q=w.__q;
+  const rows=()=>[...d.querySelectorAll("#works .work")];
+  const text=()=>rows().map(r=>r.querySelector(".worknum").textContent+" "+
+                               r.querySelector(".worktext").textContent);
+  const send=t=>{ d.getElementById("btnVisual").click();
+                  d.getElementById("askIn").value=t;
+                  d.getElementById("askGo").click(); };
+
+  send("make the sequencer glow");
+  setTimeout(()=>{
+    send("give the aquarium a heater");
+    setTimeout(()=>{
+      console.log("\nqueued two:", JSON.stringify(text()));
+      if(rows().length!==2) bad.push("two requests did not make two rows");
+      if(d.getElementById("ask").classList.contains("on"))
+        bad.push("the dialogue stayed open, so the next request cannot be written");
+      const nums=rows().map(r=>r.querySelector(".worknum").textContent);
+      if(nums.join()!=="1,2") bad.push("the rows are not numbered by their place in the queue: "+nums);
+      if(!/ahead|queued/.test(text()[1]||"")) bad.push("the second row does not say it is waiting");
+
+      /* the instance picks the first one up */
+      q.rows[q.rows.length-1].status="working";
+      setTimeout(()=>{
+        console.log("first picked up:", JSON.stringify(text()[0]));
+        if(!/drawing now/i.test(text()[0]||"")) bad.push("a row being drawn does not say so");
+
+        /* and finishes: pushed, but not yet live */
+        q.rows[q.rows.length-1].status="done";
+        q.rows[q.rows.length-1].note="pipeline: a glowing sequencer";
+        q.rows[q.rows.length-1].updated=Date.now();
+        setTimeout(()=>{
+          const bar=d.getElementById("newver"), said=()=>d.getElementById("newverWhat").textContent;
+          console.log("pushed ->", JSON.stringify(said()));
+          if(!bar.classList.contains("on")) bad.push("a finished request said nothing");
+          if(!/goes live/i.test(said())) bad.push("the offer does not warn that the deploy takes longer");
+          if(rows().length!==1) bad.push("the finished row did not leave the stack");
+          if(rows()[0] && rows()[0].querySelector(".worknum").textContent!=="1")
+            bad.push("the remaining row did not move up the queue");
+
+          /* now the deploy lands: the asset changes under it */
+          q.etag="tag-2";
+          setTimeout(()=>{
+            console.log("deployed ->", JSON.stringify(said()));
+            if(!/is live/i.test(said())) bad.push("the page never noticed the deploy going live");
+            const kept=JSON.parse(w.localStorage.getItem("pipeline.pending")||"[]");
+            if(!Array.isArray(kept)||kept.length!==1)
+              bad.push("the surviving wait was not kept for a reload: "+JSON.stringify(kept));
+            then(bad);
+          },11000);
+        },4600);
+      },4600);
+    },4600);
+  },600);
 }

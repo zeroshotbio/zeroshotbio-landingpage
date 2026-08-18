@@ -1445,42 +1445,173 @@ feature("edit visual", function(){
   const btn=document.getElementById("btnVisual"), box=document.getElementById("ask");
   if(!btn||!box) return;
   const inp=document.getElementById("askIn"), what=document.getElementById("askWhat"),
-        go=document.getElementById("askGo"), wait=document.getElementById("askWait"),
-        state=document.getElementById("askState"), hint=document.getElementById("askHint");
-  const WATCH_KEY="pipeline.pending";
-  let timer=null, ageT=null;
+        go=document.getElementById("askGo"), hint=document.getElementById("askHint");
+  /* the dialogue's own spinner is gone: it was the wait living inside the thing
+     that started it, which is exactly what the corner stack replaced */
+  /* ============================================================
+     WAITING FOR SEVERAL AT ONCE
+     A drawing is minutes of work on the instance, so the sensible way to use
+     this is to fire off three or four and carry on reading the map. They queue
+     there and are drawn one at a time, in the order they arrived — so each one
+     gets its own row in the corner, numbered by its place in that queue, and
+     the rows survive the dialogue closing and the page reloading.
 
-  /* THE WAIT IS NOT A MODAL.
-     A request takes minutes, and the point of queueing it from the page is that
-     you carry on using the map while it is drawn. So the state lives in a pill
-     in the corner of the canvas: the dialogue can be closed, the panels moved,
-     a step read, the page even reloaded, and the wait is still there. */
-  const pill=document.getElementById("work"),
-        pillWhat=document.getElementById("workWhat"),
-        pillAge=document.getElementById("workAge");
-  function pillOn(msg,since){
-    if(!pill) return;
-    pill.classList.add("on");
-    if(pillWhat) pillWhat.textContent=msg;
-    clearInterval(ageT);
-    const tick=()=>{ if(!pillAge) return;
-      const s=Math.max(0,Math.round((Date.now()-(since||Date.now()))/1000));
-      pillAge.textContent = s<60 ? s+"s" : Math.floor(s/60)+"m "+(s%60)+"s"; };
-    tick(); ageT=setInterval(tick,1000);
+     Nothing here cancels anything. Once a request is on the queue the instance
+     owns it; a row's × stops WATCHING it, which is a different thing, and says
+     so rather than implying the work stopped.
+     ============================================================ */
+  const WATCH_KEY="pipeline.pending";
+  const works=document.getElementById("works");
+  let watching=[];                 // [{id, since, label}]
+  let rows={};                     // id -> the queue row last seen
+  let poll=null, clock=null;
+
+  /* how long one of these actually takes, learned from the queue's own history
+     rather than asserted. Anything absurd is an abandoned row, not a drawing. */
+  let etaMin=6;                    // until the queue has enough history to say
+  function learnEta(list){
+    const done=list.filter(p=>p.status==="done" && p.updated>p.at)
+                   .map(p=>(p.updated-p.at)/60000).filter(m=>m>0.5 && m<30).slice(0,10);
+    if(done.length>=2) etaMin=Math.max(2,Math.round(done.reduce((a,b)=>a+b,0)/done.length));
   }
-  function pillOff(){
-    if(pill) pill.classList.remove("on");
-    clearInterval(ageT); ageT=null;
+  const DEPLOY_MIN=2;              // Vercel, after the push
+
+  (function load(){
+    try{
+      const raw=JSON.parse(localStorage.getItem(WATCH_KEY)||"null");
+      if(Array.isArray(raw)) watching=raw;
+      else if(raw && raw.id) watching=[raw];        // the one-at-a-time format
+    }catch(err){}
+    /* a wait older than six hours is somebody's abandoned tab */
+    watching=watching.filter(w=>w && w.id && Date.now()-(w.since||0) < 6*3600*1000);
+  })();
+  const save=()=>{ try{ localStorage.setItem(WATCH_KEY,JSON.stringify(watching)); }catch(err){} };
+
+  const mins=m=>m<1?"under a minute":(m===1?"about a minute":`about ${m} minutes`);
+  const age=t=>{ const s=Math.max(0,Math.round((Date.now()-t)/1000));
+                 return s<60 ? s+"s" : Math.floor(s/60)+"m "+String(s%60).padStart(2,"0")+"s"; };
+
+  /* the open queue, oldest first — that IS the order the instance works in, so
+     it is also the numbering people see */
+  function openOrder(){
+    return Object.values(rows).filter(p=>p.status==="queued"||p.status==="working")
+                              .sort((a,b)=>a.at-b.at);
   }
-  /* Ready is an offer, not an interruption. Reloading out from under somebody
-     who is mid-sentence in the reader — or mid-drag in an edit mode — costs
-     them more than a stale drawing does, so the finished request raises the
-     same bar every other open copy of the page gets, and they pick the moment. */
-  function offerRefresh(note){
-    const bar=document.getElementById("newver"), what=document.getElementById("newverWhat");
-    if(!bar || !what){ toast("Your new drawing is in — refresh to see it.",false,9000); return; }
-    what.textContent = "Your new drawing is ready" + (note ? " — "+note : "") + ".";
-    bar.classList.add("on");
+  function render(){
+    if(!works) return;
+    works.innerHTML="";
+    const order=openOrder().map(p=>p.id);
+    const mine=watching.slice().sort((a,b)=>{
+      const ia=order.indexOf(a.id), ib=order.indexOf(b.id);
+      return (ia<0?99:ia)-(ib<0?99:ib);
+    });
+    mine.forEach(w=>{
+      const p=rows[w.id], pos=order.indexOf(w.id), ahead=pos<0?0:pos;
+      const working = p && p.status==="working";
+      const row=document.createElement("div");
+      row.className="work"+(working?"":" queued");
+      row.dataset.id=w.id;
+      const label=w.label?`<b>${esc(w.label)}</b> · `:"";
+      const said = working
+        ? `${label}drawing now — ${mins(etaMin)}`
+        : ahead>0 ? `${label}waiting · ${ahead} ahead — starts in ${mins(ahead*etaMin)}`
+                  : `${label}queued — picked up within seconds`;
+      row.innerHTML =
+        `<span class="worknum">${pos<0?"·":pos+1}</span>`+
+        `<span class="workbar"><span></span></span>`+
+        `<span class="worktext">${said}</span>`+
+        `<span class="workage">${age(w.since)}</span>`+
+        `<button aria-label="Stop watching this request">×</button>`;
+      const x=row.querySelector("button");
+      if(x) x.onclick=()=>{
+        forget(w.id);
+        toast("Not watching that one any more — it is still being drawn, and the map will say when it lands.",false,7000);
+      };
+      works.appendChild(row);
+    });
+    if(!clock && watching.length) clock=setInterval(render,1000);
+    if(clock && !watching.length){ clearInterval(clock); clock=null; }
+  }
+  function begin(id,label){
+    watching.push({id,since:Date.now(),label:label||""});
+    save(); render(); ensurePoll(); baseline();
+  }
+  function forget(id){
+    watching=watching.filter(w=>w.id!==id);
+    save(); render();
+    if(!watching.length && poll){ clearInterval(poll); poll=null; }
+  }
+
+  /* ---- what "ready" means ----
+     The queue says done the moment the commit is pushed, but the page you are
+     looking at is served by Vercel, which needs a minute or two more to build
+     and go live. Refreshing in that window shows the OLD drawing and reads as
+     the request having failed — so say the wait out loud, and then check for
+     the deploy rather than guessing: the asset carries an ETag, and when it
+     changes the new drawing is genuinely live. */
+  let baseTag=null, deployT=null;
+  const SHAPES="/pipeline/pipeline-shapes.js";
+  function baseline(){
+    if(baseTag || typeof fetch!=="function") return;
+    fetch(SHAPES,{method:"HEAD",cache:"no-store"})
+      .then(r=>{ baseTag=r.headers.get("etag")||r.headers.get("last-modified")||"none"; })
+      .catch(()=>{});
+  }
+  function bar(msg,go){
+    const el0=document.getElementById("newver"), what0=document.getElementById("newverWhat");
+    if(!el0||!what0){ toast(msg,false,9000); return; }
+    what0.textContent=msg;
+    const b=document.getElementById("newverGo");
+    if(b) b.textContent = go || "Refresh";
+    el0.classList.add("on");
+  }
+  function landed(p){
+    forget(p.id);
+    const n=(p.note||"").trim();
+    bar(`Drawing pushed${n?" — "+n:""}. It goes live ${mins(DEPLOY_MIN)} after this; refresh then.`,
+        "Refresh anyway");
+    watchDeploy();
+  }
+  /* poll the asset itself until it changes, then upgrade the message. Give up
+     after five minutes rather than saying "nearly there" forever. */
+  function watchDeploy(){
+    if(deployT || typeof fetch!=="function") return;
+    const gaveUp=Date.now()+5*60*1000;
+    deployT=setInterval(()=>{
+      fetch(SHAPES,{method:"HEAD",cache:"no-store"}).then(r=>{
+        const tag=r.headers.get("etag")||r.headers.get("last-modified")||"none";
+        if(baseTag && tag===baseTag){
+          if(Date.now()>gaveUp){ clearInterval(deployT); deployT=null;
+            bar("Your new drawing should be live — refresh to see it."); }
+          return;
+        }
+        clearInterval(deployT); deployT=null; baseTag=tag;
+        bar("Your new drawing is live — refresh to see it.");
+      }).catch(()=>{});
+    }, 10000);
+  }
+
+  function ensurePoll(){
+    if(poll || typeof fetch!=="function") return;
+    const beat=()=>{
+      fetch("/api/pipeline_prompts",{cache:"no-store"}).then(r=>r.json()).then(j=>{
+        const list=j.prompts||[];
+        learnEta(list);
+        rows={}; list.forEach(p=>rows[p.id]=p);
+        watching.slice().forEach(w=>{
+          const p=rows[w.id];
+          if(!p) return;
+          if(p.status==="done") landed(p);
+          else if(p.status==="dropped"){
+            forget(w.id);
+            toast("That request was dropped"+(p.note?": "+p.note:"")+".",true,9000);
+          }
+        });
+        render();
+      }).catch(()=>{});
+    };
+    beat();
+    poll=setInterval(beat,4000);
   }
 
   const targetOf=()=>{
@@ -1491,6 +1622,12 @@ feature("edit visual", function(){
     const t=targetOf();
     what.textContent = t ? `New drawing for ${t.key} · ${t.name}  (shape "${t.shape}")`
                          : "New drawing — nothing selected, so say which step you mean";
+    /* say the cost before the request, not after: this is minutes of work on
+       the instance, and knowing that is what makes queueing several of them the
+       obvious move rather than a surprise */
+    if(hint) hint.textContent =
+      `Drawn on the instance in ${mins(etaMin)}, live ${mins(DEPLOY_MIN)} after that · `+
+      `send as many as you like — they queue up and stack in the corner`;
     box.classList.add("on"); inp.focus();
   }
   function close(){ box.classList.remove("on"); }
@@ -1507,63 +1644,28 @@ feature("edit visual", function(){
     const text=inp.value.trim();
     if(!text){ inp.focus(); return; }
     if(typeof fetch!=="function"){ toast("No connection — nothing was sent.",true,5000); return; }
+    const t=targetOf();
     go.disabled=true; go.textContent="Sending…";
     fetch("/api/pipeline_prompts",{method:"POST",
         headers:{"content-type":"application/json"},
-        body:JSON.stringify({text,target:targetOf()})})
+        body:JSON.stringify({text,target:t})})
       .then(r=>r.json())
       .then(j=>{
         go.disabled=false; go.textContent="Send";
         if(!j || !j.ok){ toast("Could not send that — the queue did not take it.",true,6000); return; }
         inp.value="";
-        toast("Sent. Carry on with the map — it is drawn on the instance and the corner will tell you when it is ready.",false,7000);
-        begin(j.prompt.id);
+        /* out of the way immediately: the dialogue is for writing requests, and
+           the next one can be written the moment this one is on the queue */
+        close();
+        begin(j.prompt.id, t?t.key+" · "+t.name:"");
+        toast(`Queued. Drawing takes ${mins(etaMin)}, plus ${mins(DEPLOY_MIN)} to go live — `+
+              `send more if you want, they stack in the corner.`,false,8000);
       })
       .catch(()=>{ go.disabled=false; go.textContent="Send";
                    toast("Could not reach the queue — nothing was sent.",true,6000); });
   }
   go.onclick=send;
 
-  /* Watch one request. Survives a reload, so closing the tab and coming back
-     picks the wait up again rather than losing it. */
-  function begin(id){
-    try{ localStorage.setItem(WATCH_KEY,JSON.stringify({id,since:Date.now()})); }catch(err){}
-    watch(id);
-  }
-  function stop(){
-    try{ localStorage.removeItem(WATCH_KEY); }catch(err){}
-    clearInterval(timer); timer=null; wait.classList.remove("on"); hint.style.display="";
-    pillOff();
-  }
-  function watch(id,since){
-    since=since||Date.now();
-    wait.classList.add("on"); hint.style.display="none";
-    state.textContent="Queued — the instance picks this up within a few seconds";
-    pillOn("Queued",since);
-    clearInterval(timer);
-    timer=setInterval(()=>{
-      fetch("/api/pipeline_prompts?id="+encodeURIComponent(id),{cache:"no-store"})
-        .then(r=>r.json()).then(j=>{
-          const p=(j.prompts||[])[0];
-          if(!p) return;
-          if(p.status==="working"){
-            state.textContent="Being drawn now — usually two or three minutes";
-            pillOn("Drawing your visual",since);
-          }else if(p.status==="done"){
-            stop(); close();
-            offerRefresh(p.note||"");
-          }else if(p.status==="dropped"){
-            stop();
-            toast("That request was dropped"+(p.note?": "+p.note:"")+".",true,9000);
-          }
-        }).catch(()=>{});
-    }, 4000);
-  }
-  /* the pill's × stops watching, it does not cancel the work — the instance is
-     already drawing, and pretending otherwise would be a lie */
-  if(document.getElementById("workX"))
-    document.getElementById("workX").onclick=()=>{ stop();
-      toast("Not watching any more — the drawing still lands, and the page will say so.",false,6000); };
   /* Every open copy of the page, not just the one that asked. When a request
      is finished the map has changed underneath anyone reading it, so say so —
      and let them choose the moment, since an unannounced reload under someone
@@ -1580,11 +1682,12 @@ feature("edit visual", function(){
     setInterval(()=>{
       if(told) return;
       fetch("/api/pipeline_prompts",{cache:"no-store"}).then(r=>r.json()).then(j=>{
-        const fresh=(j.prompts||[]).filter(p=>p.status==="done" && p.updated>since);
+        let fresh=(j.prompts||[]).filter(p=>p.status==="done" && p.updated>since);
         if(!fresh.length) return;
-        let mine=null; try{ mine=JSON.parse(localStorage.getItem(WATCH_KEY)||"null"); }catch(err){}
-        /* the requester's own page handles itself, above */
-        if(mine && fresh.some(p=>p.id===mine.id)) return;
+        /* the pages that asked handle their own, above — including the deploy
+           wait, which this bar knows nothing about */
+        if(fresh.every(p=>watching.some(w=>w.id===p.id))) return;
+        fresh=fresh.filter(p=>!watching.some(w=>w.id===p.id));
         told=true;
         document.getElementById("newverWhat").textContent =
           fresh.length===1 && fresh[0].note
@@ -1595,13 +1698,11 @@ feature("edit visual", function(){
     }, 45000);
   })();
 
-  /* pick a wait back up after a refresh */
+  /* pick the waits back up after a refresh — all of them, with their original
+     clocks, because the queue kept working while the page was gone */
   (function resume(){
-    if(typeof fetch!=="function") return;
-    let p=null; try{ p=JSON.parse(localStorage.getItem(WATCH_KEY)||"null"); }catch(err){}
-    if(!p||!p.id) return;
-    if(Date.now()-p.since > 6*3600*1000) return stop();   // gone stale, let it go
-    watch(p.id,p.since);
+    if(!watching.length) return;
+    save(); render(); ensurePoll(); baseline();
   })();
 });
 

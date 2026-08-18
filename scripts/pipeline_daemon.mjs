@@ -42,9 +42,12 @@ const val = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] :
 const ONCE = flag("--once");
 const DRY = flag("--dry");
 const EVERY = Math.max(5, Number(val("--every", 10))) * 1000;
-const TIMEOUT = Math.max(60, Number(val("--timeout", 900))) * 1000;
+/* 15 minutes was not enough: the first rich request — a sequencer with moving
+   parts — was still verifying when the kill landed, with the drawing finished
+   and uncommitted. A drawing is allowed to take as long as a drawing takes. */
+const TIMEOUT = Math.max(60, Number(val("--timeout", 1500))) * 1000;
 const MODEL = val("--model", "opus");
-const MAX_PER_HOUR = Number(val("--max-per-hour", 6));
+const MAX_PER_HOUR = Number(val("--max-per-hour", 12));
 
 const LOGDIR = path.join(REPO, ".pipeline-daemon");
 mkdirSync(LOGDIR, { recursive: true });
@@ -184,17 +187,24 @@ async function handle(p) {
   }
   recent.push(Date.now());
 
-  await move(p.id, "working");
-
   // start clean, so "did anything ship" is an honest question
   let dirty = "";
   try { dirty = sh("git status --porcelain -- public/pipeline scripts"); } catch {}
   if (dirty) {
-    log("    working tree is dirty — refusing to run on top of it");
-    await move(p.id, "dropped", "The repo had uncommitted changes; the request was not run.");
+    /* Somebody is working in the repo. That is not this request's fault and it
+       is usually over in minutes, so hold it in the queue rather than throwing
+       it away — the page keeps showing it as waiting. Only give up if the tree
+       has been busy for long enough that nobody is coming back to it. */
+    const held = Date.now() - p.at;
+    log(`    working tree is dirty — holding ${p.id} in the queue (${Math.round(held / 60000)}m)`);
+    if (held > 20 * 60_000) {
+      await move(p.id, "queued");   // clear "working" if we ever set it
+      await move(p.id, "dropped", "Somebody was working in the repo for twenty minutes; send it again.");
+    }
     return;
   }
   const before = head();
+  await move(p.id, "working");
 
   if (DRY) {
     log("    --dry, not running claude");
@@ -216,8 +226,26 @@ async function handle(p) {
   } catch (e) { log("    git check failed: " + e.message); }
 
   if (after === before) {
+    /* Nothing shipped — but the run may have left a half-written file behind,
+       and a dirty tree blocks every request after it. Keep the work as a patch
+       (the first timeout killed a finished drawing, which was worth having) and
+       put the tree back. */
+    let left = "";
+    try { left = sh("git status --porcelain -- public/pipeline scripts"); } catch {}
+    if (left) {
+      const patch = path.join(LOGDIR, `${p.id}.patch`);
+      try {
+        appendFileSync(patch, sh("git diff -- public/pipeline scripts"));
+        sh("git checkout -- public/pipeline scripts");
+        log(`    left the tree dirty — kept it at ${patch} and reset`);
+      } catch (e) { log("    could not clear the tree: " + e.message); }
+    }
+    const why = code === null
+      ? `It ran past the ${Math.round(TIMEOUT / 60000)}-minute limit and was stopped` +
+        (left ? ", with unfinished work kept on the instance" : "") + "."
+      : (tail || "Nothing was changed. See the daemon log.");
     log("    nothing committed");
-    await move(p.id, "dropped", tail || "Nothing was changed. See the daemon log.");
+    await move(p.id, "dropped", why);
     return;
   }
   if (!pushed) {

@@ -669,64 +669,8 @@ console.log("done");
   console.log("edit mode round-trip ok");
 })();
 
-/* ============================================================
-   A REQUEST YOU CAN WALK AWAY FROM
-   The wait used to live inside the dialogue that started it and end in an
-   unannounced location.reload(). A drawing takes minutes: the state belongs in
-   a pill on the canvas that survives the dialogue being closed, and the finish
-   belongs in an offer to refresh, not a refresh.
-   ============================================================ */
-(function waiting(){
-  if(process.env.SEED_EDITS) return;
-  let status="queued";
-  /* later sections install their own stubs at load time, and this one runs on
-     microtasks after them — so put ours back before every step */
-  const mine=(url,opt)=>{
-    if(String(url).indexOf("pipeline_prompts")<0) return Promise.reject(new Error("no network"));
-    if(opt&&opt.method==="POST")
-      return Promise.resolve({json:()=>Promise.resolve({ok:true,prompt:{id:"pw1"}})});
-    return Promise.resolve({json:()=>Promise.resolve(
-      {prompts:[{id:"pw1",status,updated:Date.now(),note:"pipeline: a nicer aquarium"}]})});
-  };
-  sandbox.fetch=mine;
-  const pill=byIdEl["work"], what=byIdEl["workWhat"], bar=byIdEl["newver"];
-  const E=id=>sandbox.document.getElementById(id);
-  /* a poll is fetch -> json -> handler, so a few microtasks per step */
-  const flush=()=>{ let p=Promise.resolve(); for(let i=0;i<10;i++) p=p.then(); return p; };
-
-  byIdEl["btnVisual"].fire("click",{});
-  byIdEl["askIn"].value="make the tanks glow";
-  byIdEl["askGo"].fire("click",{});
-  flush().then(()=>{
-    console.log(`\nwaiting: pill up on send: ${pill.classList.contains("on")} · says "${what._txt}"`);
-    if(!pill.classList.contains("on")) console.log("FAIL — nothing on the canvas says a request is in flight");
-
-    /* the dialogue is closed and the wait must not go with it */
-    byIdEl["askX"].fire("click",{});
-    console.log("pill survives closing the dialogue:", pill.classList.contains("on"));
-    if(!pill.classList.contains("on")) console.log("FAIL — closing the dialogue killed the wait");
-
-    sandbox.fetch=mine; status="working"; fireIntervals();
-    return flush();
-  }).then(()=>{
-    console.log(`picked up -> "${what._txt}"`);
-    if(!/drawing/i.test(what._txt||"")) console.log("FAIL — the pill does not report it being worked on");
-
-    const before=sandbox.location._reloads;
-    sandbox.fetch=mine; status="done"; fireIntervals();
-    return flush().then(()=>({before}));
-  }).then(({before})=>{
-    console.log(`finished -> pill down: ${!pill.classList.contains("on")}`,
-                `· offer shown: ${bar.classList.contains("on")}`,
-                `· said: "${(E("newverWhat")._txt||"").slice(0,52)}"`);
-    if(pill.classList.contains("on")) console.log("FAIL — the pill stayed up after the drawing landed");
-    if(!bar.classList.contains("on")) console.log("FAIL — a finished request never offered the refresh");
-    if(sandbox.location._reloads>before) console.log("FAIL — it reloaded the page out from under the reader");
-    if(sandbox.localStorage.getItem("pipeline.pending"))
-      console.log("FAIL — a finished request is still being watched");
-    console.log("waiting ok");
-  });
-})();
+/* The wait now stacks and renders real rows, so it is tested in realdom.js
+   where innerHTML actually builds children. */
 
 /* ============================================================
    TWO PEOPLE, ONE RECORD
