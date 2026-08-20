@@ -1,0 +1,160 @@
+{
+ "file": "artifacts/zfa_menu.v1.json",
+ "version": "zfa_menu.v1",
+ "menu_version_hash": "dec9f7289d7c378815ef8db29a1ab2013c13cb04ed4c5d01735be6b07afcf0a6",
+ "n_terms": 3107,
+ "rule": "non-obsolete ZFA: terms only (ZFS/CL/TAO excluded). Both our labeller and Commit MUST select identity/anatomy from this exact set; verify by matching menu_version_hash.",
+ "source": {
+  "obo": "data/ontologies/zfa.obo",
+  "obo_sha256": "58c5f1a00c435bef895b9ad7f931cde6a88a01d068f48123558b6907c9f4fa7b",
+  "release": "releases/2026-06-02",
+  "obo_date_stamp": "12:05:2026 09:24"
+ },
+ "caro_breakdown": {
+  "cell": 650,
+  "tissue": 869,
+  "multi_tissue_structure": 645,
+  "organ": 416,
+  "above-roots": 527
+ },
+ "branches": {
+  "cell": {
+   "n": 650,
+   "caro_strata": [
+    "cell"
+   ],
+   "note": "CARO 'cell' stratum \u2014 terms naming a cell type."
+  },
+  "anatomical_structure": {
+   "n": 1930,
+   "caro_strata": [
+    "tissue",
+    "multi_tissue_structure",
+    "organ"
+   ],
+   "breakdown": {
+    "tissue": 869,
+    "multi_tissue_structure": 645,
+    "organ": 416
+   },
+   "note": "CARO tissue / multi-tissue-structure / organ strata."
+  },
+  "neither": {
+   "n": 527,
+   "caro_strata": [
+    "above-roots"
+   ],
+   "note": "Terms sitting above the CARO roots \u2014 they resolve to neither branch. Mostly developmental-stage-scoped and whole-organism-level anatomy."
+  }
+ },
+ "sample_terms": [
+  {
+   "id": "ZFA:0100000",
+   "name": "zebrafish anatomical entity",
+   "caro": "above-roots",
+   "depth": 0
+  },
+  {
+   "id": "ZFA:0000037",
+   "name": "anatomical structure",
+   "caro": "above-roots",
+   "depth": 1
+  },
+  {
+   "id": "ZFA:0001093",
+   "name": "unspecified",
+   "caro": "above-roots",
+   "depth": 1
+  },
+  {
+   "id": "ZFA:0000020",
+   "name": "extraembryonic structure",
+   "caro": "above-roots",
+   "depth": 2
+  },
+  {
+   "id": "ZFA:0001343",
+   "name": "telencephalon diencephalon boundary",
+   "caro": "above-roots",
+   "depth": 2
+  },
+  {
+   "id": "ZFA:0000000",
+   "name": "Brachet's cleft",
+   "caro": "above-roots",
+   "depth": 3
+  },
+  {
+   "id": "ZFA:0000516",
+   "name": "periventricular grey zone",
+   "caro": "tissue",
+   "depth": 3
+  },
+  {
+   "id": "ZFA:0000005",
+   "name": "artery",
+   "caro": "multi_tissue_structure",
+   "depth": 4
+  },
+  {
+   "id": "ZFA:0000597",
+   "name": "telencephalic white matter",
+   "caro": "multi_tissue_structure",
+   "depth": 4
+  },
+  {
+   "id": "ZFA:0000011",
+   "name": "caudal artery",
+   "caro": "multi_tissue_structure",
+   "depth": 5
+  },
+  {
+   "id": "ZFA:0000052",
+   "name": "dorsal actinotrichium",
+   "caro": "organ",
+   "depth": 6
+  },
+  {
+   "id": "ZFA:0000167",
+   "name": "anal fin skeleton",
+   "caro": "above-roots",
+   "depth": 7
+  },
+  {
+   "id": "ZFA:0000223",
+   "name": "infraorbital 1",
+   "caro": "organ",
+   "depth": 8
+  },
+  {
+   "id": "ZFA:0000557",
+   "name": "preural 1 vertebra",
+   "caro": "organ",
+   "depth": 9
+  },
+  {
+   "id": "ZFA:0005186",
+   "name": "CoB",
+   "caro": "cell",
+   "depth": 10
+  }
+ ],
+ "sample_note": "Fifteen terms spread across the ontology depth range (shortest is_a distance to a root), not the alphabetical head.",
+ "depth_range": {
+  "min": 0,
+  "max": 10
+ },
+ "depth_histogram": {
+  "0": 1,
+  "1": 6,
+  "2": 77,
+  "3": 666,
+  "4": 663,
+  "5": 753,
+  "6": 368,
+  "7": 233,
+  "8": 108,
+  "9": 198,
+  "10": 34
+ }
+}

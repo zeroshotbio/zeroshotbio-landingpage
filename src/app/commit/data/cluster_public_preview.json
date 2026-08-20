@@ -1,0 +1,65 @@
+{
+ "file": "inputs/cluster_public.csv",
+ "columns": [
+  "cluster_id",
+  "n_cells"
+ ],
+ "column_dtypes": {
+  "cluster_id": "string",
+  "n_cells": "integer"
+ },
+ "total_rows": 112,
+ "preview_rows": 12,
+ "restriction": "Restricted view. The source file carries additional label-tier columns which are withheld from the challenge; only the identifier and cell count are shown.",
+ "total_cells": 209639,
+ "rows": [
+  {
+   "cluster_id": "C001",
+   "n_cells": 457
+  },
+  {
+   "cluster_id": "C002",
+   "n_cells": 873
+  },
+  {
+   "cluster_id": "C003",
+   "n_cells": 93
+  },
+  {
+   "cluster_id": "C004",
+   "n_cells": 525
+  },
+  {
+   "cluster_id": "C005",
+   "n_cells": 107
+  },
+  {
+   "cluster_id": "C006",
+   "n_cells": 323
+  },
+  {
+   "cluster_id": "C007",
+   "n_cells": 863
+  },
+  {
+   "cluster_id": "C008",
+   "n_cells": 165
+  },
+  {
+   "cluster_id": "C009",
+   "n_cells": 55
+  },
+  {
+   "cluster_id": "C010",
+   "n_cells": 335
+  },
+  {
+   "cluster_id": "C011",
+   "n_cells": 358
+  },
+  {
+   "cluster_id": "C012",
+   "n_cells": 520
+  }
+ ]
+}

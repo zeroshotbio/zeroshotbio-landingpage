@@ -1,0 +1,57 @@
+{
+ "bundle": "commit_challenge",
+ "built_by": "scripts/build_commit_challenge_asset.py",
+ "source_row": "/data/scratch/zlabel/datasets/zscape_commit_gold",
+ "benchmark": {
+  "clusters": 112,
+  "timepoint_hpf": 48,
+  "arm": "control",
+  "clustering": "GIVEN \u00b7 FROZEN (ZSCAPE-published partition; we do not re-cluster)",
+  "menu_version_hash": "dec9f7289d7c378815ef8db29a1ab2013c13cb04ed4c5d01735be6b07afcf0a6"
+ },
+ "not_blind_caveat": "We authored the gold labels; Commit did not. Any score from this row is a self-consistency / ceiling check, not an independent benchmark (dataset LEDGER #1).",
+ "files": [
+  {
+   "file": "zscape_gold_48hpf.h5ad",
+   "bytes": 482783838,
+   "size_human": "460.4 MB",
+   "sha256": "066c8d5571309bbe8f4b4dec5c8ac4a8e4f23555ba8705c32437bfbf5e5e51e6",
+   "sha256_source": "CHECKSUMS.txt (recorded at ingest)",
+   "shape": "209,639 cells x 32,031 genes",
+   "description": "The expression matrix. 48 hpf control arm, the frozen 112-cluster partition, raw counts in layers['counts'] and log1p CP10k in X."
+  },
+  {
+   "file": "gold_features.csv",
+   "bytes": 118563,
+   "size_human": "115.8 KB",
+   "sha256": "9da9cb68a6c5651950c9051f2a33492e70fb9f25d280fbb151a9d35190952e07",
+   "sha256_source": "CHECKSUMS.txt (recorded at ingest)",
+   "shape": "112 rows x 10 columns",
+   "description": "Per-cluster marker evidence: three ordered 50-gene lists plus QC. This is the primary challenge input.",
+   "columns_withheld": 1,
+   "withheld_note": "One column of ZSCAPE's own published marker calls is excluded from the challenge input and from this bundle: the answer key was translated from ZSCAPE's annotations, so their marker calls are downstream of the key."
+  },
+  {
+   "file": "inputs/cluster_public.csv",
+   "bytes": 8548,
+   "size_human": "8.3 KB",
+   "sha256": "62e2870aa24d647b5a12d8ae67a1f5638d3a968c9478b40ae8af9f8c867fb453",
+   "sha256_source": "computed by this build",
+   "shape": "112 rows x 2 columns exposed",
+   "description": "Cluster roster. Only the identifier and the cell count are exposed as challenge input.",
+   "columns_in_source": 6,
+   "columns_exposed": 2,
+   "columns_withheld": 4,
+   "withheld_note": "Four ZSCAPE label-tier columns exist in the source file and are withheld. Their values and their names are both absent from this bundle; the page names them in its own copy. The answer key was translated from these columns, so exposing them would hand over the answer."
+  },
+  {
+   "file": "artifacts/zfa_menu.v1.json",
+   "bytes": 299108,
+   "size_human": "292.1 KB",
+   "sha256": "d75ac321ec1803fd7196c2286f77000cb43cbd56734a420bd825b37ed7aaec87",
+   "sha256_source": "computed by this build",
+   "shape": "3,107 terms",
+   "description": "The frozen answer space. Every label, both sides, must be one of these ZFA terms \u2014 parity is proven by matching the menu hash."
+  }
+ ]
+}

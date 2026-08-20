@@ -1,0 +1,118 @@
+{
+ "file": "zscape_gold_48hpf.h5ad",
+ "sha256": "066c8d5571309bbe8f4b4dec5c8ac4a8e4f23555ba8705c32437bfbf5e5e51e6",
+ "shape": {
+  "cells": 209639,
+  "genes": 32031
+ },
+ "clusters": 112,
+ "cluster_obs_key": "cluster_id",
+ "timepoint_hpf": 48,
+ "arm": "control",
+ "X": {
+  "contents": "log1p CP10k",
+  "dtype": "float32"
+ },
+ "layers": {
+  "present": [
+   "counts"
+  ],
+  "counts_dtype": "uint16",
+  "note": "layers['counts'] holds the integer counts."
+ },
+ "obs_columns": [
+  "Size_Factor",
+  "cell_id",
+  "cluster_id",
+  "embryo",
+  "expt",
+  "gene_target",
+  "n.umi",
+  "num_genes_expressed",
+  "perc_mitochondrial_umis",
+  "timepoint"
+ ],
+ "obs_columns_note": "Label-tier columns are withheld from this bundle and are not listed.",
+ "uns_keys": [
+  "dropped_clusters",
+  "hvg",
+  "log1p",
+  "neighbors",
+  "pca",
+  "processing",
+  "umap"
+ ],
+ "uns_note": "uns['dropped_clusters'] is keyed by ZSCAPE label name \u2014 the count is reported below, the names are withheld from this bundle.",
+ "processing": {
+  "counts_layer_dtype": "uint16",
+  "hvg_batch_key": "embryo",
+  "hvg_flavor": "seurat",
+  "hvg_subset": false,
+  "min_cells_per_cluster": 50,
+  "n_hvg": 2000,
+  "n_pcs": 50,
+  "note": "X is log1p of counts-per-10k. layers['counts'] is the untouched raw integers. Highly variable genes are flagged in var, never subset. obsm X_umap_zscape* is ZSCAPE's published embedding, unmodified.",
+  "seed": 20260726,
+  "source_h5ad": "zscape_reference.h5ad",
+  "stage_hpf": 48.0,
+  "target_sum": 10000.0,
+  "upstream_qc": "Applied by ZSCAPE before this file: n.umi >= 100, perc_mitochondrial_umis <= 25, hash top_to_second_best_ratio >= 5. Do not re-filter."
+ },
+ "obsm_keys": [
+  "X_pca",
+  "X_umap",
+  "X_umap_zscape",
+  "X_umap_zscape_3d"
+ ],
+ "inclusion_rule": {
+  "threshold": "clusters with >= 50 cells",
+  "threshold_from_file": 50,
+  "included": 112,
+  "excluded_upstream": 26,
+  "excluded_count_verified_from": "uns['dropped_clusters'] \u2014 26 entries",
+  "excluded_names_withheld": true,
+  "note": "26 clusters were excluded upstream (below the 50-cell threshold) before the challenge set was cut. The file DOES retain them, in uns['dropped_clusters'], keyed by ZSCAPE label name \u2014 so those names are deliberately withheld from this bundle. They are not answers to any scored cluster (the 26 are excluded), but they are ZSCAPE label vocabulary, which the challenge withholds. ZSCAPE's own thresholds (UMI >= 100, mito < 25%, hash ratio >= 5) are already enforced upstream \u2014 double-filtering is an explicit failure mode."
+ },
+ "validation_checks": [
+  {
+   "check": "shape 209,639 x 32,031",
+   "verdict": "PASS"
+  },
+  {
+   "check": "112 cluster labels present (named obs key)",
+   "verdict": "PASS"
+  },
+  {
+   "check": "layers['counts'] integer",
+   "verdict": "PASS"
+  },
+  {
+   "check": "X is log1p CP10k",
+   "verdict": "PASS"
+  },
+  {
+   "check": "2,000 HVGs flagged in var",
+   "verdict": "PASS"
+  },
+  {
+   "check": "HVGs flagged, NOT subset (full width)",
+   "verdict": "PASS"
+  },
+  {
+   "check": "PCA present (obsm)",
+   "verdict": "PASS"
+  },
+  {
+   "check": "our UMAP present (obsm)",
+   "verdict": "PASS"
+  },
+  {
+   "check": "ZSCAPE published embedding present (obsm)",
+   "verdict": "PASS"
+  }
+ ],
+ "provenance": {
+  "from_validation_artifact": "sha256, shape, cluster key, validation checks",
+  "from_file_metadata": "h5py metadata read (group keys + dtypes only; no matrix data loaded)"
+ }
+}

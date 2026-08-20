@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-// Gate the DanioType wizard AND the /patrick R4b decision dashboard — their pages,
+// Gate the DanioType wizard, the /commit challenge page, AND the /patrick R4b decision dashboard — their pages,
 // API routes, and data-asset routes — behind HTTP Basic Auth. Every other route on
 // the site stays public. One shared password, env-var'd (KASPEROV_BASIC_PASSWORD);
 // the username is ignored (leave it blank). After one browser login the same URL
@@ -23,6 +23,8 @@ export const config = {
     "/patrick/:path*",
     "/zebrafish_ontology",
     "/zebrafish_ontology/:path*",
+    "/commit",
+    "/commit/:path*",
   ],
 };
 

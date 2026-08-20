@@ -1,0 +1,578 @@
+{
+ "source": "inputs/cluster_public.csv",
+ "n_clusters": 112,
+ "total_cells": 209639,
+ "threshold": 50,
+ "stats": {
+  "min": 55,
+  "max": 17491,
+  "median": 688,
+  "p25": 269,
+  "p75": 1639,
+  "mean": 1871.8
+ },
+ "clusters": [
+  {
+   "cluster_id": "C075",
+   "n_cells": 17491
+  },
+  {
+   "cluster_id": "C082",
+   "n_cells": 13807
+  },
+  {
+   "cluster_id": "C026",
+   "n_cells": 12772
+  },
+  {
+   "cluster_id": "C104",
+   "n_cells": 10301
+  },
+  {
+   "cluster_id": "C095",
+   "n_cells": 9926
+  },
+  {
+   "cluster_id": "C055",
+   "n_cells": 9582
+  },
+  {
+   "cluster_id": "C033",
+   "n_cells": 9414
+  },
+  {
+   "cluster_id": "C039",
+   "n_cells": 7698
+  },
+  {
+   "cluster_id": "C019",
+   "n_cells": 6526
+  },
+  {
+   "cluster_id": "C061",
+   "n_cells": 5618
+  },
+  {
+   "cluster_id": "C060",
+   "n_cells": 5477
+  },
+  {
+   "cluster_id": "C062",
+   "n_cells": 4852
+  },
+  {
+   "cluster_id": "C058",
+   "n_cells": 4816
+  },
+  {
+   "cluster_id": "C048",
+   "n_cells": 4771
+  },
+  {
+   "cluster_id": "C021",
+   "n_cells": 4101
+  },
+  {
+   "cluster_id": "C063",
+   "n_cells": 3836
+  },
+  {
+   "cluster_id": "C049",
+   "n_cells": 3631
+  },
+  {
+   "cluster_id": "C045",
+   "n_cells": 3234
+  },
+  {
+   "cluster_id": "C110",
+   "n_cells": 3204
+  },
+  {
+   "cluster_id": "C106",
+   "n_cells": 3070
+  },
+  {
+   "cluster_id": "C059",
+   "n_cells": 2995
+  },
+  {
+   "cluster_id": "C029",
+   "n_cells": 2897
+  },
+  {
+   "cluster_id": "C086",
+   "n_cells": 2746
+  },
+  {
+   "cluster_id": "C090",
+   "n_cells": 2070
+  },
+  {
+   "cluster_id": "C105",
+   "n_cells": 1886
+  },
+  {
+   "cluster_id": "C031",
+   "n_cells": 1747
+  },
+  {
+   "cluster_id": "C038",
+   "n_cells": 1712
+  },
+  {
+   "cluster_id": "C078",
+   "n_cells": 1687
+  },
+  {
+   "cluster_id": "C109",
+   "n_cells": 1639
+  },
+  {
+   "cluster_id": "C067",
+   "n_cells": 1632
+  },
+  {
+   "cluster_id": "C108",
+   "n_cells": 1591
+  },
+  {
+   "cluster_id": "C053",
+   "n_cells": 1542
+  },
+  {
+   "cluster_id": "C083",
+   "n_cells": 1419
+  },
+  {
+   "cluster_id": "C085",
+   "n_cells": 1415
+  },
+  {
+   "cluster_id": "C042",
+   "n_cells": 1397
+  },
+  {
+   "cluster_id": "C032",
+   "n_cells": 1379
+  },
+  {
+   "cluster_id": "C017",
+   "n_cells": 1356
+  },
+  {
+   "cluster_id": "C071",
+   "n_cells": 1336
+  },
+  {
+   "cluster_id": "C057",
+   "n_cells": 1264
+  },
+  {
+   "cluster_id": "C112",
+   "n_cells": 1153
+  },
+  {
+   "cluster_id": "C099",
+   "n_cells": 1106
+  },
+  {
+   "cluster_id": "C093",
+   "n_cells": 1073
+  },
+  {
+   "cluster_id": "C064",
+   "n_cells": 1027
+  },
+  {
+   "cluster_id": "C084",
+   "n_cells": 1016
+  },
+  {
+   "cluster_id": "C014",
+   "n_cells": 1000
+  },
+  {
+   "cluster_id": "C024",
+   "n_cells": 936
+  },
+  {
+   "cluster_id": "C002",
+   "n_cells": 873
+  },
+  {
+   "cluster_id": "C007",
+   "n_cells": 863
+  },
+  {
+   "cluster_id": "C034",
+   "n_cells": 851
+  },
+  {
+   "cluster_id": "C077",
+   "n_cells": 821
+  },
+  {
+   "cluster_id": "C070",
+   "n_cells": 806
+  },
+  {
+   "cluster_id": "C066",
+   "n_cells": 793
+  },
+  {
+   "cluster_id": "C044",
+   "n_cells": 771
+  },
+  {
+   "cluster_id": "C051",
+   "n_cells": 759
+  },
+  {
+   "cluster_id": "C097",
+   "n_cells": 692
+  },
+  {
+   "cluster_id": "C016",
+   "n_cells": 688
+  },
+  {
+   "cluster_id": "C025",
+   "n_cells": 670
+  },
+  {
+   "cluster_id": "C100",
+   "n_cells": 652
+  },
+  {
+   "cluster_id": "C068",
+   "n_cells": 647
+  },
+  {
+   "cluster_id": "C052",
+   "n_cells": 602
+  },
+  {
+   "cluster_id": "C096",
+   "n_cells": 556
+  },
+  {
+   "cluster_id": "C094",
+   "n_cells": 539
+  },
+  {
+   "cluster_id": "C004",
+   "n_cells": 525
+  },
+  {
+   "cluster_id": "C012",
+   "n_cells": 520
+  },
+  {
+   "cluster_id": "C037",
+   "n_cells": 513
+  },
+  {
+   "cluster_id": "C080",
+   "n_cells": 509
+  },
+  {
+   "cluster_id": "C101",
+   "n_cells": 480
+  },
+  {
+   "cluster_id": "C001",
+   "n_cells": 457
+  },
+  {
+   "cluster_id": "C030",
+   "n_cells": 452
+  },
+  {
+   "cluster_id": "C054",
+   "n_cells": 446
+  },
+  {
+   "cluster_id": "C022",
+   "n_cells": 426
+  },
+  {
+   "cluster_id": "C088",
+   "n_cells": 419
+  },
+  {
+   "cluster_id": "C047",
+   "n_cells": 418
+  },
+  {
+   "cluster_id": "C035",
+   "n_cells": 412
+  },
+  {
+   "cluster_id": "C081",
+   "n_cells": 405
+  },
+  {
+   "cluster_id": "C011",
+   "n_cells": 358
+  },
+  {
+   "cluster_id": "C010",
+   "n_cells": 335
+  },
+  {
+   "cluster_id": "C015",
+   "n_cells": 328
+  },
+  {
+   "cluster_id": "C006",
+   "n_cells": 323
+  },
+  {
+   "cluster_id": "C092",
+   "n_cells": 315
+  },
+  {
+   "cluster_id": "C089",
+   "n_cells": 296
+  },
+  {
+   "cluster_id": "C107",
+   "n_cells": 293
+  },
+  {
+   "cluster_id": "C018",
+   "n_cells": 275
+  },
+  {
+   "cluster_id": "C076",
+   "n_cells": 269
+  },
+  {
+   "cluster_id": "C013",
+   "n_cells": 262
+  },
+  {
+   "cluster_id": "C065",
+   "n_cells": 261
+  },
+  {
+   "cluster_id": "C069",
+   "n_cells": 260
+  },
+  {
+   "cluster_id": "C036",
+   "n_cells": 251
+  },
+  {
+   "cluster_id": "C027",
+   "n_cells": 244
+  },
+  {
+   "cluster_id": "C023",
+   "n_cells": 239
+  },
+  {
+   "cluster_id": "C079",
+   "n_cells": 235
+  },
+  {
+   "cluster_id": "C111",
+   "n_cells": 196
+  },
+  {
+   "cluster_id": "C103",
+   "n_cells": 190
+  },
+  {
+   "cluster_id": "C028",
+   "n_cells": 180
+  },
+  {
+   "cluster_id": "C008",
+   "n_cells": 165
+  },
+  {
+   "cluster_id": "C102",
+   "n_cells": 164
+  },
+  {
+   "cluster_id": "C087",
+   "n_cells": 143
+  },
+  {
+   "cluster_id": "C098",
+   "n_cells": 137
+  },
+  {
+   "cluster_id": "C074",
+   "n_cells": 123
+  },
+  {
+   "cluster_id": "C005",
+   "n_cells": 107
+  },
+  {
+   "cluster_id": "C091",
+   "n_cells": 103
+  },
+  {
+   "cluster_id": "C003",
+   "n_cells": 93
+  },
+  {
+   "cluster_id": "C043",
+   "n_cells": 93
+  },
+  {
+   "cluster_id": "C020",
+   "n_cells": 90
+  },
+  {
+   "cluster_id": "C050",
+   "n_cells": 88
+  },
+  {
+   "cluster_id": "C046",
+   "n_cells": 86
+  },
+  {
+   "cluster_id": "C041",
+   "n_cells": 85
+  },
+  {
+   "cluster_id": "C040",
+   "n_cells": 78
+  },
+  {
+   "cluster_id": "C073",
+   "n_cells": 78
+  },
+  {
+   "cluster_id": "C056",
+   "n_cells": 70
+  },
+  {
+   "cluster_id": "C072",
+   "n_cells": 58
+  },
+  {
+   "cluster_id": "C009",
+   "n_cells": 55
+  }
+ ],
+ "sizes_sorted_desc": [
+  17491,
+  13807,
+  12772,
+  10301,
+  9926,
+  9582,
+  9414,
+  7698,
+  6526,
+  5618,
+  5477,
+  4852,
+  4816,
+  4771,
+  4101,
+  3836,
+  3631,
+  3234,
+  3204,
+  3070,
+  2995,
+  2897,
+  2746,
+  2070,
+  1886,
+  1747,
+  1712,
+  1687,
+  1639,
+  1632,
+  1591,
+  1542,
+  1419,
+  1415,
+  1397,
+  1379,
+  1356,
+  1336,
+  1264,
+  1153,
+  1106,
+  1073,
+  1027,
+  1016,
+  1000,
+  936,
+  873,
+  863,
+  851,
+  821,
+  806,
+  793,
+  771,
+  759,
+  692,
+  688,
+  670,
+  652,
+  647,
+  602,
+  556,
+  539,
+  525,
+  520,
+  513,
+  509,
+  480,
+  457,
+  452,
+  446,
+  426,
+  419,
+  418,
+  412,
+  405,
+  358,
+  335,
+  328,
+  323,
+  315,
+  296,
+  293,
+  275,
+  269,
+  262,
+  261,
+  260,
+  251,
+  244,
+  239,
+  235,
+  196,
+  190,
+  180,
+  165,
+  164,
+  143,
+  137,
+  123,
+  107,
+  103,
+  93,
+  93,
+  90,
+  88,
+  86,
+  85,
+  78,
+  78,
+  70,
+  58,
+  55
+ ]
+}
