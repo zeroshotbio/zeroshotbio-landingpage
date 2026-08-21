@@ -17,25 +17,20 @@
 // component carries a scoped <style> block (all class names prefixed `cio-`). Everything else on
 // /commit stays inline, matching the rest of the repo.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, nfmt } from "./theme";
+import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, IN_GREEN, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
-import FEATURES from "./data/gold_features_preview.json";
 import CLUSTER from "./data/cluster_public_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
 
-// The worked cluster. C001 is the first row, but its family list is byte-identical to its enriched
-// list (true for 56 of 112 clusters), which would render two of the three signals as the same four
-// chips. C004 is the first preview row where all three lists are full and genuinely distinct.
-// Kept in lockstep with EXAMPLE_CLUSTER in scripts/build_commit_challenge_asset.py, which cuts the
-// matrix corner from the same cluster.
+// The worked cluster, used only for the matrix corner now that the per-cluster gene chips are
+// gone. Kept in lockstep with EXAMPLE_CLUSTER in scripts/build_commit_challenge_asset.py, which
+// cuts that corner from the same cluster.
 const EXAMPLE_CLUSTER = "C004";
 
 const FILES: Record<string, any> = Object.fromEntries(
   (MANIFEST as any).files.map((f: any) => [f.file, f])
 );
-const ROWS = (FEATURES as any).rows as any[];
-const EX = ROWS.find((r) => r.cluster_id === EXAMPLE_CLUSTER) ?? null;
 const ANSWER = (MENU as any).example_answer ?? null;
 const WINDOW = (H5AD as any).matrix_window ?? null;
 
@@ -44,12 +39,23 @@ const CONF_TIERS = ["Germ layer", "Tissue", "Cell type — broad", "Cell type �
 // The three ranked lists, in plain English. What each one IS, not how it was computed — the
 // divergence reading on `family` is the one documented in the row's own merging SPEC.
 const LISTS: { col: string; tag: string; blurb: string }[] = [
-  { col: "top_50_markers", tag: "enriched",
-    blurb: "Turned up here more than anywhere else in the set: the cluster's positive signature." },
-  { col: "bottom_50_markers", tag: "depleted",
-    blurb: "Expressed across the rest of the set but not here — absence used as evidence." },
-  { col: "family_50_markers", tag: "family",
-    blurb: "The same ranking against near-neighbour clusters. Matching enriched means no separable sibling structure; diverging means there is." },
+  { col: "top_50_markers", tag: "Enriched DEGs",
+    blurb: "DEGs up-expressed here more than anywhere else in the set — the cluster's positive signature." },
+  { col: "bottom_50_markers", tag: "Depleted DEGs",
+    blurb: "DEGs down-expressed here relative to the rest of the set. Absence used as evidence: what a cluster conspicuously lacks narrows it as much as what it has." },
+  { col: "family_50_markers", tag: "Family DEGs",
+    blurb: "The same ranking recomputed against a contrast group of related clusters rather than against the whole set." },
+];
+
+// The QC columns, each on its own row. What the number measures, not a value — a single cluster's
+// figure taught nothing, and the file window in §3 already shows real rows.
+const QC: { col: string; blurb: string }[] = [
+  { col: "mean_umi",
+    blurb: "Average transcript molecules counted per cell. Sequencing depth — low means less evidence per cell, and a thinner basis for any call." },
+  { col: "mean_genes_expressed",
+    blurb: "Average distinct genes detected per cell. Library complexity, which separates transcriptionally rich cells from sparse ones." },
+  { col: "pct_mitochondrial",
+    blurb: "Share of counts coming from mitochondrial genes. A stress and viability signal; elevated values often mark dying or damaged cells." },
 ];
 
 // ── indentation scale — the waterfall ──────────────────────────────────────
@@ -94,7 +100,7 @@ function ColName({ children }: { children: React.ReactNode }) {
 }
 
 function FileSection({ n, name, shape, blurb, children }: {
-  n: number; name: string; shape?: string; blurb: string; children: React.ReactNode;
+  n: number; name: string; shape?: string; blurb?: string; children: React.ReactNode;
 }) {
   return (
     <div style={{ padding: "17px 0", borderTop: `1px solid ${RULE}` }}>
@@ -103,30 +109,10 @@ function FileSection({ n, name, shape, blurb, children }: {
         <FileName name={name} shape={shape} />
       </div>
       <div style={{ paddingLeft: IND_1 + 11 }}>
-        <div style={{ fontSize: 12, color: MUTED, margin: "7px 0 11px", lineHeight: 1.5 }}>{blurb}</div>
-        {children}
+        {blurb && <div style={{ fontSize: 12, color: MUTED, margin: "7px 0 11px", lineHeight: 1.5 }}>{blurb}</div>}
+        <div style={{ marginTop: blurb ? 0 : 11 }}>{children}</div>
       </div>
     </div>
-  );
-}
-
-// The bundle's `more_label` counts from the 8 genes it previews; this figure shows 4, so the
-// remainder is recomputed from n_total rather than reused — otherwise 4 chips + "+42 more" would
-// claim 46 genes for a 50-gene list.
-function Chips({ list, show }: { list: { shown: string[]; n_total: number }; show: number }) {
-  const genes = list.shown.slice(0, show);
-  const more = list.n_total - genes.length;
-  if (!genes.length) return <span style={{ fontSize: 12, color: FAINT, fontStyle: "italic" }}>none for this cluster</span>;
-  return (
-    <span style={{ display: "inline-flex", flexWrap: "wrap", gap: 4, alignItems: "center" }}>
-      {genes.map((g) => (
-        <span key={g} style={{ fontFamily: MONO, fontSize: 10.5, background: "#f1efeb", color: "#5a544c",
-                               border: `1px solid ${RULE}`, borderRadius: 4, padding: "2px 6px" }}>
-          {g}
-        </span>
-      ))}
-      {more > 0 && <span style={{ fontFamily: MONO, fontSize: 10, color: FAINT }}>+{more} more</span>}
-    </span>
   );
 }
 
@@ -171,12 +157,27 @@ function ColHead({ side, title, sub }: { side: string; title?: string; sub: stri
   const isOut = side === "output";
   return (
     <div style={{ marginBottom: 4 }}>
-      <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 1.1, textTransform: "uppercase",
-                    color: isOut ? ACCENT : MUTED }}>
+      <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: 1.6, textTransform: "uppercase",
+                    color: isOut ? ACCENT : IN_GREEN }}>
         {side}
       </div>
       {title && <div style={{ fontSize: 16, fontWeight: 650, color: INK, marginTop: 5, letterSpacing: -0.2 }}>{title}</div>}
       <div style={{ fontSize: 12.5, color: MUTED, marginTop: title ? 3 : 7, lineHeight: 1.5 }}>{sub}</div>
+    </div>
+  );
+}
+
+// One field of a file: the column name, the plain-English name beneath it, then what it means.
+function Field({ col, tag, blurb }: { col: string; tag?: string; blurb: string }) {
+  return (
+    <div style={{ marginBottom: 14 }}>
+      <ColName>{col}</ColName>
+      <div style={{ paddingLeft: IND_2 }}>
+        {tag && (
+          <div style={{ fontSize: 12, fontWeight: 650, color: INK, margin: "6px 0 4px" }}>{tag}</div>
+        )}
+        <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55, marginTop: tag ? 0 : 6 }}>{blurb}</div>
+      </div>
     </div>
   );
 }
@@ -260,80 +261,46 @@ export default function InputOutputFigure() {
 
       <div className="cio-grid" style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, overflow: "hidden" }}>
 
-        {/* ── INPUT — the three evidence files ──────────────────────── */}
+        {/* ── INPUT — the three evidence files, matrix first ───────── */}
         <div className="cio-col cio-col--in">
-          <ColHead side="input" sub={`The files we deliver. Using Cluster ${EXAMPLE_CLUSTER.replace(/^C/, "")} as an example:`} />
+          <ColHead side="input" sub="The three files delivered as evidence." />
 
-          <FileSection n={1} name="gold_features.csv" shape={gf?.shape}
-                       blurb="One row per cluster. The evidence file — three ranked gene lists and the QC behind them.">
-            {LISTS.map((l) => (
-              <div key={l.col} style={{ marginBottom: 14 }}>
-                <ColName>{l.col}</ColName>
-                <div style={{ paddingLeft: IND_2 }}>
-                  <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, margin: "6px 0 4px" }}>
-                    {l.tag}
-                  </div>
-                  <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.5, marginBottom: 7 }}>{l.blurb}</div>
-                  <div style={{ paddingLeft: IND_3 }}>{EX ? <Chips list={EX[l.col]} show={4} /> : null}</div>
-                </div>
-              </div>
-            ))}
-
-            <div style={{ marginTop: 16 }}>
-              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-                {["mean_umi", "mean_genes_expressed", "pct_mitochondrial"].map((c) => (
-                  <ColName key={c}>{c}</ColName>
-                ))}
-              </div>
-              <div style={{ paddingLeft: IND_2 }}>
-                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, margin: "6px 0 6px" }}>
-                  qc statistics
-                </div>
-                <div style={{ paddingLeft: IND_3, display: "flex", gap: 20, flexWrap: "wrap" }}>
-                  {EX
-                    ? ([["mean UMI", EX.mean_umi], ["mean genes", EX.mean_genes_expressed], ["% mito", EX.pct_mitochondrial]] as [string, number][])
-                        .map(([k, v]) => (
-                          <div key={k}>
-                            <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", color: FAINT }}>{k}</div>
-                            <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>{v}</div>
-                          </div>
-                        ))
-                    : null}
-                </div>
-              </div>
-            </div>
-          </FileSection>
-
-          <FileSection n={2} name="inputs/cluster_public.csv" shape={cp?.shape}
-                       blurb="The roster — the authoritative list of which clusters exist. Both surviving columns also appear in gold_features.csv, so it adds no evidence; it fixes the set.">
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
-              <ColName>cluster_id</ColName>
-              <ColName>n_cells</ColName>
-            </div>
-            <div style={{ paddingLeft: IND_2 }}>
-              <div style={{ paddingLeft: 0, marginTop: 8, display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
-                <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{EX?.cluster_id ?? "—"}</span>
-                <span style={{ fontFamily: MONO, fontSize: 12, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                  {EX ? `${nfmt(EX.n_cells)} cells` : ""}
-                </span>
-              </div>
-              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 6, lineHeight: 1.5 }}>
-                The id is opaque — no ordering, no meaning beyond identity. It is a handle to answer
-                against, not a hint.
-              </div>
-            </div>
-          </FileSection>
-
-          <FileSection n={3} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
-                       blurb="The matrix itself, if you would rather compute your own evidence than take ours.">
+          <FileSection n={1} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
+                       blurb="The expression matrix. Every cell, every gene — compute your own evidence from it if you would rather not take ours.">
             <ColName>{(WINDOW as any)?.layer ?? "layers['counts']"}</ColName>
             <div style={{ paddingLeft: IND_2 }}>
               <MatrixWindow />
-              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.5 }}>
+              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.55 }}>
                 {WINDOW
-                  ? <>Five cells of {EXAMPLE_CLUSTER} against its own top five markers — real counts, mostly zero. That sparsity is the problem, and it runs the full {matrix}.</>
+                  ? <>Five cells against five genes — Cluster {EXAMPLE_CLUSTER.replace(/^C0*/, "")} as an example. Real counts, and mostly zero. That sparsity is the problem, and it runs the full {matrix}.</>
                   : <>Raw integer counts, alongside log1p CP10k in X.</>}
               </div>
+            </div>
+          </FileSection>
+
+          <FileSection n={2} name="gold_features.csv">
+            <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.55 }}>
+              One row per cluster. Differentially expressed genes — <strong>DEGs</strong>, the genes
+              whose expression separates this cluster from others — ranked three ways, plus the
+              quality statistics behind them.
+            </div>
+            {LISTS.map((l) => <Field key={l.col} col={l.col} tag={l.tag} blurb={l.blurb} />)}
+            <div style={{ height: 4 }} />
+            {QC.map((q) => <Field key={q.col} col={q.col} blurb={q.blurb} />)}
+          </FileSection>
+
+          <FileSection n={3} name="cluster_public.csv"
+                       blurb="The answer sheet's row headings: the definitive list of which clusters exist, and therefore which ones you owe an answer for.">
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 9 }}>
+              <ColName>cluster_id</ColName>
+              <ColName>n_cells</ColName>
+            </div>
+            <div style={{ paddingLeft: IND_2, fontSize: 11.5, color: MUTED, lineHeight: 1.55 }}>
+              {nfmt((CLUSTER as any).total_rows)} rows, one per cluster. The id is opaque — no
+              ordering, no meaning beyond identity — and the cell count says how much evidence
+              stands behind that row. Both columns also appear in{" "}
+              <code style={{ fontFamily: MONO, fontSize: 10.5 }}>gold_features.csv</code>; this file
+              is the roster, not a second source.
             </div>
           </FileSection>
         </div>

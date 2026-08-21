@@ -27,6 +27,11 @@ export const FILE = "#a8501b";
 export const FILE_BG = "#fdf6f1";
 export const FILE_BD = "#f0e2d6";
 
+// The INPUT side marker. A deep green against the warm paper — 4.98:1 on card, and already in the
+// wizard's palette (THEME.research). OUTPUT keeps ACCENT teal, so the two sides are the same weight
+// and differ only in hue.
+export const IN_GREEN = "#15803d";
+
 // Single-series magnitude (the cluster-size histogram). One hue, no categorical identity to carry.
 export const SERIES = "#0e7490";
 

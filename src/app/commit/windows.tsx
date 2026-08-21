@@ -20,13 +20,18 @@ const FILES: Record<string, any> = Object.fromEntries(
 );
 
 // ── window chrome ──────────────────────────────────────────────────────────
-function Window({ file, kicker, children }: { file: string; kicker: string; children: React.ReactNode }) {
+// `file` is the manifest key (our row's path); `display` is what a contestant actually receives —
+// cluster_public.csv ships as a file, not as inputs/cluster_public.csv.
+function Window({ file, display, kicker, children }: {
+  file: string; display?: string; kicker: string; children: React.ReactNode;
+}) {
   const f = FILES[file];
+  const name = display ?? file;
   return (
     <section style={{ ...card, marginBottom: 22 }}>
       <header style={{ padding: "14px 18px", borderBottom: `1px solid ${RULE}`, background: "#faf9f7" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 16, flexWrap: "wrap" }}>
-          <div style={{ fontFamily: MONO, fontSize: 13.5, fontWeight: 700, color: INK }}>{file}</div>
+          <div style={{ fontFamily: MONO, fontSize: 13.5, fontWeight: 700, color: INK }}>{name}</div>
           <div style={{ fontFamily: MONO, fontSize: 11, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
             {f.size_human} · {f.shape}
           </div>
@@ -131,6 +136,7 @@ export function ClusterPublicWindow() {
   return (
     <Window
       file="inputs/cluster_public.csv"
+      display="cluster_public.csv"
       kicker="The roster. Which clusters exist, and how many cells are in each."
     >
       <div style={{ ...scroll, maxHeight: 300, overflowY: "auto" }}>
