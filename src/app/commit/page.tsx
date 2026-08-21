@@ -135,10 +135,11 @@ export default function CommitChallengePage() {
 
         </div>
 
-        {/* The figure breaks out of the 900px measure — it is two tall columns, and at the body
-            width they crush. 2.2x the section, still centred, still gutter-padded, and it collapses
-            to one column under 980px where the extra width stops helping. */}
-        <div style={{ maxWidth: 2000, margin: "38px auto 0", padding: "0 24px" }}>
+        {/* The figure breaks out of the page's 900px measure. It was 2000 when input and output
+            sat side by side and each panel got half; stacked, a panel gets the whole width, so the
+            same number would run prose to twice the intended measure. 1500 keeps a stacked panel
+            wider than the old side-by-side one without stretching the lines. */}
+        <div style={{ maxWidth: 1500, margin: "38px auto 0", padding: "0 24px" }}>
           <InputOutputFigure />
         </div>
       </header>

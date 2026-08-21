@@ -97,8 +97,9 @@ function ColName({ children }: { children: React.ReactNode }) {
   );
 }
 
-function FileSection({ n, name, shape, blurb, children }: {
-  n: number; name: string; shape?: string; blurb?: string; children: React.ReactNode;
+function FileSection({ n, name, shape, blurb, children, window: win }: {
+  n: number; name: string; shape?: string; blurb?: React.ReactNode;
+  children: React.ReactNode; window?: React.ReactNode;
 }) {
   return (
     <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
@@ -108,8 +109,19 @@ function FileSection({ n, name, shape, blurb, children }: {
         <FileName name={name} shape={shape} />
       </div>
       <div style={{ paddingLeft: IND_1 + 11 }}>
-        {blurb && <div style={{ fontSize: 12, color: MUTED, margin: "7px 0 11px", lineHeight: 1.5 }}>{blurb}</div>}
-        <div style={{ marginTop: blurb ? 0 : 11 }}>{children}</div>
+        {blurb && (
+          <div style={{ fontSize: 12, color: MUTED, margin: "7px 0 12px", lineHeight: 1.5, maxWidth: 720 }}>
+            {blurb}
+          </div>
+        )}
+        {win ? (
+          <div className="cio-split" style={{ marginTop: blurb ? 0 : 11 }}>
+            <div>{children}</div>
+            <div>{win}</div>
+          </div>
+        ) : (
+          <div style={{ marginTop: blurb ? 0 : 11 }}>{children}</div>
+        )}
       </div>
     </div>
   );
@@ -383,15 +395,14 @@ export default function InputOutputFigure() {
         // scoped to this figure; inline styles cannot carry media queries
         dangerouslySetInnerHTML={{
           __html: `
-.cio-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:start}
-.cio-mid{display:flex;align-items:center;justify-content:center;padding:64px 20px 0}
-.cio-arrow{color:${FAINT};font-size:24px;line-height:1;transform:none}
+.cio-grid{display:block}
+.cio-mid{display:flex;align-items:center;justify-content:center;padding:14px 0}
+.cio-arrow{color:${FAINT};font-size:24px;line-height:1;transform:rotate(90deg)}
 .cio-panel{background:${PANEL};border:1px solid ${PANEL_BD};border-radius:14px;padding:20px 20px 8px;min-width:0}
-@media (max-width: 980px){
-  .cio-grid{grid-template-columns:1fr}
-  .cio-mid{padding:16px 0}
-  .cio-arrow{transform:rotate(90deg)}
-}`,
+/* Inside a file box: what the columns ARE on the left, the window into the file on the right.
+   Side by side because stacking them made the input panel taller than the output twice over. */
+.cio-split{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:22px;align-items:start}
+@media (max-width: 1100px){ .cio-split{grid-template-columns:1fr;gap:14px} }`,
         }}
       />
 
@@ -402,38 +413,41 @@ export default function InputOutputFigure() {
           <ColHead side="input" sub="Three files. The matrix, the features derived from it, and the menu every answer is drawn from." />
 
           <FileSection n={1} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
-                       blurb="The expression matrix. Every cell, every gene — compute your own evidence from it if you would rather not take ours.">
-            <ColName>{(WINDOW as any)?.layer ?? "layers['counts']"}</ColName>
-            <div style={{ paddingLeft: IND_2 }}>
-              <MatrixWindow />
-              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.55 }}>
-                {WINDOW
-                  ? <>Five cells against five genes — Cluster {EXAMPLE_CLUSTER.replace(/^C0*/, "")} as an example. Real counts, and mostly zero. That sparsity is the problem, and it runs the full {matrix}.</>
-                  : <>Raw integer counts, alongside log1p CP10k in X.</>}
-              </div>
+                       blurb="The expression matrix. Every cell, every gene — compute your own evidence from it if you would rather not take ours."
+                       window={<>
+                         <MatrixWindow />
+                         <div style={{ fontSize: 11, color: FAINT, marginTop: 8, lineHeight: 1.55 }}>
+                           {WINDOW
+                             ? <>Five cells against five genes — Cluster {EXAMPLE_CLUSTER.replace(/^C0*/, "")} as an example. Real counts, and mostly zero.</>
+                             : null}
+                         </div>
+                       </>}>
+            <FieldRow min={200} items={[
+              { col: (WINDOW as any)?.layer ?? "layers['counts']",
+                blurb: "Raw integer counts, exactly as sequenced. log1p CP10k sits alongside it in X, and ZSCAPE's published embedding in obsm." },
+            ]} />
+            <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55 }}>
+              Sparsity is the problem this file poses: most gene-by-cell entries are zero, across
+              all {matrix} of it.
             </div>
           </FileSection>
 
-          <FileSection n={2} name="gold_features.csv">
-            <div style={{ fontSize: 12, color: MUTED, marginBottom: 12, lineHeight: 1.55 }}>
-              One row per cluster. Differentially expressed genes — <strong>DEGs</strong>, the genes
-              whose expression separates this cluster from others — ranked three ways, plus the
-              quality statistics behind them.
-            </div>
-            <FieldRow items={LISTS} min={210} />
-            <FieldRow items={QC} min={190} />
-            <GoldFeaturesWindow />
+          <FileSection n={2} name="gold_features.csv" window={<GoldFeaturesWindow />}
+                       blurb={<>One row per cluster. Differentially expressed genes — <strong>DEGs</strong>, the genes whose expression separates this cluster from others — ranked three ways, plus the quality statistics behind them.</>}>
+
+            <FieldRow items={LISTS} min={165} />
+            <FieldRow items={QC} min={165} />
           </FileSection>
 
           <FileSection n={3} name="zfa_menu.v1.json" shape={`${nfmt((MENU as any).n_terms)} terms`}
-                       blurb="The answer space. Every label you return must be one of these terms, so this file is as much an input as the evidence is.">
+                       blurb="The answer space. Every label you return must be one of these terms, so this file is as much an input as the evidence is."
+                       window={<ZfaMenuWindow />}>
             <FieldRow min={200} items={[
               { col: "id", blurb: "The ZFA identifier you actually submit. An answer is this string; a term that is not on the menu is not an answer." },
               { col: "name", blurb: "The anatomy term the identifier stands for. Scoring reads the identifier, so a synonym is never punished for being one." },
               { col: "caro", blurb: "Which branch the term sits in — cell, anatomical structure, or above the roots. This is what makes the two answer axes separable." },
             ]} />
-            <ZfaMenuWindow />
-            <div style={{ paddingLeft: 0, marginTop: 10, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
+            <div style={{ paddingLeft: 0, marginTop: 4, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
               Frozen against ZFA {(MENU as any).source?.release?.replace("releases/", "")}. Both
               sides select from this exact list; matching its content hash is how that parity is
               proven.
@@ -450,7 +464,7 @@ export default function InputOutputFigure() {
         <div className="cio-panel">
           <ColHead side="output" title="What you must return" sub="Per cluster. One answer, four parts." />
 
-          <OutRow n={1} label="one ZFA identifier">
+          <OutRow n={1} label="One ZFA identifier">
             {ANSWER ? (
               <Example>
                 <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: ACCENT }}>{ANSWER.term.id}</span>
@@ -463,7 +477,7 @@ export default function InputOutputFigure() {
             </div>
           </OutRow>
 
-          <OutRow n={2} label="both axis terms">
+          <OutRow n={2} label="Both axis terms">
             <OutField label="cell-type axis" note="what the cells are">
               <Example mono>
                 <span style={{ color: FAINT, fontStyle: "italic" }}>null</span>
@@ -483,7 +497,7 @@ export default function InputOutputFigure() {
             </div>
           </OutRow>
 
-          <OutRow n={3} label="ancestor chain">
+          <OutRow n={3} label="Ancestor chain">
             {ANSWER ? (
               <Example mono>
                 <div>
@@ -507,7 +521,7 @@ export default function InputOutputFigure() {
             </div>
           </OutRow>
 
-          <OutRow n={4} label="confidence score and tier">
+          <OutRow n={4} label="Confidence score and tier">
             <div style={{ fontSize: 12, color: INK, lineHeight: 1.6, marginBottom: 12 }}>
               A numeric score plus a tier from a closed list, both derived from a documented rubric.
             </div>
@@ -521,8 +535,31 @@ export default function InputOutputFigure() {
               note="returned with every answer"
               blurb="Each answer carries the individual signal values alongside the tier, so the score can be audited rather than taken on faith."
             />
-            <div style={{ fontSize: 11.5, color: FAINT, lineHeight: 1.55, marginTop: 2 }}>
-              It is a working rubric, not a calibrated probability.
+            {/* The rubric is the contestant's deliverable, so no weights, boundaries or scores
+                are invented here. What CAN be shown is the shape the answer has to arrive in —
+                every slot the contestant fills marked as theirs. */}
+            <div style={{ marginTop: 4 }}>
+              <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.9,
+                            textTransform: "uppercase", color: "#7fa8b5", marginBottom: 4 }}>
+                For example — the shape, not the values
+              </div>
+              <div style={{ background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
+                            padding: "11px 13px", fontFamily: MONO, fontSize: 11, lineHeight: 1.7,
+                            color: INK, overflowX: "auto" }}>
+                <div><span style={{ color: MUTED }}>score</span> : <span style={{ color: FAINT }}>&lt;your scale&gt;</span></div>
+                <div><span style={{ color: MUTED }}>tier</span> &nbsp;: <span style={{ color: FAINT }}>&lt;one of your closed list&gt;</span></div>
+                <div style={{ color: MUTED }}>signals :</div>
+                <div style={{ paddingLeft: 14 }}>
+                  <div><span style={{ color: MUTED }}>marker_coherence</span> &nbsp; : <span style={{ color: FAINT }}>&lt;value&gt;</span></div>
+                  <div><span style={{ color: MUTED }}>reference_corroboration</span> : <span style={{ color: FAINT }}>&lt;value&gt;</span></div>
+                  <div><span style={{ color: MUTED }}>ontology_convergence</span> &nbsp; : <span style={{ color: FAINT }}>&lt;value&gt;</span></div>
+                </div>
+              </div>
+              <div style={{ fontSize: 11, color: FAINT, marginTop: 7, lineHeight: 1.55 }}>
+                Slot names follow the signals named above; the scale, the tier list and the
+                weighting are yours. Nothing here is a suggested value — it is a working rubric,
+                not a calibrated probability.
+              </div>
             </div>
           </OutRow>
         </div>
