@@ -68,10 +68,21 @@ export default function CommitChallengePage() {
           <h1 style={{ fontSize: 43, fontWeight: 680, margin: "16px 0 0", letterSpacing: -1.1, lineHeight: 1.1 }}>
             The Commit Challenge
           </h1>
-          <p style={{ fontSize: 17.5, color: "#5a544c", margin: "17px 0 0", lineHeight: 1.58, maxWidth: 620 }}>
-            One hundred and twelve clusters of 48-hour zebrafish, already partitioned and frozen.
-            Markers in. One ontology identifier out. No free text, no second guess.
-          </p>
+          <div style={{ maxWidth: 660, marginTop: 17 }}>
+            <p style={{ fontSize: 17.5, color: "#5a544c", margin: 0, lineHeight: 1.58 }}>
+              One hundred and twelve clusters of 48-hour zebrafish, already partitioned and frozen.
+            </p>
+            <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
+              Each input cluster arrives as three DEG marker lists, per-cluster QC, and the full
+              expression matrix — no names, no annotations.
+            </p>
+            <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
+              Each output answer should leave as a single ontology identifier picked from a{" "}
+              {nfmt((MENU as any).n_terms)} menu of ZFA-derived terms. Each answer should carry both
+              axis terms — what the cells are and where they sit anatomically, plus the ancestor
+              chain and a confidence tier.
+            </p>
+          </div>
 
           <div style={{ display: "flex", gap: 38, flexWrap: "wrap", marginTop: 36 }}>
             <Stat k="clusters" v={nfmt(B.clusters)} sub="given · frozen" />
