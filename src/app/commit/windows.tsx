@@ -14,6 +14,7 @@
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, card, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
+import { FieldRow, GoldFeaturesRows, ZfaMenuRows, MatrixWindow, GF_FIELDS, MENU_FIELDS, EXAMPLE_CLUSTER } from "./parts";
 import FEATURES from "./data/gold_features_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
@@ -59,6 +60,18 @@ const td: React.CSSProperties = {
   fontFamily: MONO, fontSize: 11.5, color: INK, padding: "7px 14px",
   borderBottom: "1px solid #f2efeb", whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums",
 };
+function Band({ label, children, last = false }: { label: string; children: React.ReactNode; last?: boolean }) {
+  return (
+    <div style={{ padding: "14px 18px", borderBottom: last ? "none" : `1px solid ${RULE}` }}>
+      <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.6,
+                    textTransform: "uppercase", color: MUTED, marginBottom: 10 }}>
+        {label}
+      </div>
+      {children}
+    </div>
+  );
+}
+
 const footRow: React.CSSProperties = {
   padding: "10px 18px", fontSize: 11.5, color: FAINT, borderTop: `1px solid ${RULE}`, background: "#faf9f7",
 };
@@ -74,56 +87,16 @@ export function GoldFeaturesWindow() {
       file="gold_features.csv"
       kicker="The primary input. One row per cluster: three ordered 50-gene marker lists plus per-cluster QC."
     >
-      {/* schema */}
-      <div style={{ padding: "14px 18px", borderBottom: `1px solid ${RULE}` }}>
-        <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, marginBottom: 9 }}>
-          schema · {cols.length} columns
-        </div>
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(232px, 1fr))", gap: "7px 20px" }}>
-          {cols.map((c: any) => (
-            <div key={c.column} style={{ display: "flex", justifyContent: "space-between", gap: 10, borderBottom: "1px solid #f2efeb", paddingBottom: 5 }}>
-              <span style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK }}>{c.column}</span>
-              <span style={{ fontFamily: MONO, fontSize: 10, color: FAINT, textAlign: "right" }}>
-                {c.genes_per_row ? `list · ${c.genes_per_row.min}–${c.genes_per_row.max} genes` : c.dtype}
-              </span>
-            </div>
-          ))}
-        </div>
-      </div>
+      <Band label={`what each column is · ${cols.length} shipped`}>
+        <FieldRow items={GF_FIELDS} min={220} />
+      </Band>
 
-      {/* example rows */}
-      <div style={scroll}>
-        <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 620 }}>
-          <thead>
-            <tr>
-              <th style={th}>cluster_id</th><th style={th}>n_cells</th>
-              <th style={th}>top_50_markers</th><th style={th}>mean_umi</th><th style={th}>pct_mito</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.cluster_id}>
-                <td style={{ ...td, fontWeight: 700 }}>{r.cluster_id}</td>
-                <td style={td}>{nfmt(r.n_cells)}</td>
-                <td style={{ ...td, whiteSpace: "normal", minWidth: 340 }}>
-                  {r.top_50_markers.shown.map((g: string, i: number) => (
-                    <span key={g} style={{ color: i < 3 ? INK : MUTED }}>
-                      {g}<span style={{ color: FAINT }}>{i < r.top_50_markers.shown.length - 1 ? ";" : ""}</span>
-                    </span>
-                  ))}
-                  <span style={{ color: ACCENT, fontWeight: 700, marginLeft: 6 }}>{r.top_50_markers.more_label}</span>
-                </td>
-                <td style={td}>{r.mean_umi}</td>
-                <td style={td}>{r.pct_mitochondrial}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+      <Band label="the file" last>
+        <GoldFeaturesRows />
+      </Band>
+
       <div style={footRow}>
-        Showing {rows.length} of {nfmt((FEATURES as any).total_rows)} rows, and the first{" "}
-        {(FEATURES as any).markers_shown_per_list} genes of one of the three marker lists. The file
-        carries all 50, in rank order, for each of{" "}
+        Gene lists are truncated for display. The file carries all 50, in rank order, for each of{" "}
         {markerCols.map((c, i) => (
           <span key={c}><code style={{ fontFamily: MONO }}>{c}</code>{i < markerCols.length - 1 ? ", " : ""}</span>
         ))}.
@@ -157,6 +130,18 @@ export function ZfaMenuWindow() {
         ))}
       </div>
 
+      <Band label="what each field is">
+        <FieldRow items={MENU_FIELDS} min={210} />
+      </Band>
+
+      <Band label="the file · first and last terms, as stored">
+        <ZfaMenuRows />
+      </Band>
+
+      <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.6,
+                    textTransform: "uppercase", color: MUTED, padding: "14px 18px 8px" }}>
+        sampled across the depth range
+      </div>
       <div style={{ ...scroll, maxHeight: 330, overflowY: "auto" }}>
         <table style={{ borderCollapse: "collapse", width: "100%", minWidth: 520 }}>
           <thead>
@@ -236,6 +221,18 @@ export function H5adWindow() {
           ))}
         </div>
       </div>
+
+      <Band label={`a corner of the matrix · cluster ${EXAMPLE_CLUSTER.replace(/^C0*/, "")}`}>
+        <FieldRow min={260} items={[
+          { col: "layers['counts']",
+            blurb: "Raw integer counts, exactly as sequenced. log1p CP10k sits alongside in X, and ZSCAPE's published embedding in obsm." },
+        ]} />
+        <MatrixWindow />
+        <div style={{ fontSize: 11.5, color: MUTED, marginTop: 9, lineHeight: 1.55 }}>
+          Five cells against that cluster&apos;s own top five markers. Real counts, and mostly zero
+          — sparsity is the problem this file poses, across the whole of it.
+        </div>
+      </Band>
 
       <div style={{ padding: "14px 18px" }}>
         <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, marginBottom: 9 }}>

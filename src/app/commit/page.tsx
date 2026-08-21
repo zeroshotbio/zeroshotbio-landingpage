@@ -15,7 +15,7 @@ import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
 import { MenuCompositionFigure } from "./figures";
 import ScoringSection from "./scoring";
-import InputOutputFigure from "./inputoutput";
+import OutputFigure from "./output";
 import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
@@ -135,12 +135,10 @@ export default function CommitChallengePage() {
 
         </div>
 
-        {/* The figure breaks out of the page's 900px measure. It was 2000 when input and output
-            sat side by side and each panel got half; stacked, a panel gets the whole width, so the
-            same number would run prose to twice the intended measure. 1500 keeps a stacked panel
-            wider than the old side-by-side one without stretching the lines. */}
-        <div style={{ maxWidth: 1500, margin: "38px auto 0", padding: "0 24px" }}>
-          <InputOutputFigure />
+        {/* Slightly wider than the prose measure — the answer parts carry examples that want a
+            little room — but nothing like the width the two-panel version needed. */}
+        <div style={{ maxWidth: 1080, margin: "38px auto 0", padding: "0 24px" }}>
+          <OutputFigure />
         </div>
       </header>
 
