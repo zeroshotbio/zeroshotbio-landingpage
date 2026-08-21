@@ -114,6 +114,7 @@ export function ZfaMenuWindow() {
   return (
     <Window
       file="artifacts/zfa_menu.v1.json"
+      display="zfa_menu.v1.json"
       kicker="The answer space. Every label you submit must be one of these terms — selected by identifier, not typed as free text."
     >
       <div style={{ padding: "14px 18px", borderBottom: `1px solid ${RULE}`, display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))", gap: 14 }}>

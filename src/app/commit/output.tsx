@@ -49,7 +49,7 @@ function Example({ children, mono = false }: { children: React.ReactNode; mono?:
     <div>
       <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.9,
                     textTransform: "uppercase", color: "#7fa8b5", marginBottom: 4 }}>
-        For example
+        For Example
       </div>
       <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
                     background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
@@ -167,7 +167,7 @@ export default function OutputFigure() {
             <div style={{ marginTop: 4 }}>
               <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.9,
                             textTransform: "uppercase", color: "#7fa8b5", marginBottom: 4 }}>
-                For example — the shape, not the values
+                For Example
               </div>
               <div style={{ background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
                             padding: "11px 13px", fontFamily: MONO, fontSize: 11, lineHeight: 1.7,

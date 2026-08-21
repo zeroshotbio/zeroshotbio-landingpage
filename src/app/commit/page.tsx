@@ -16,6 +16,7 @@ import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./them
 import { MenuCompositionFigure } from "./figures";
 import ScoringSection from "./scoring";
 import OutputFigure from "./output";
+import Overview from "./overview";
 import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
@@ -132,6 +133,8 @@ export default function CommitChallengePage() {
             <Stat k="genes" v={nfmt((H5AD as any).shape.genes)} sub="full width, not subset" />
             <Stat k="answer space" v={nfmt((MENU as any).n_terms)} sub="ZFA terms, frozen" />
           </div>
+
+          <Overview />
 
         </div>
 
