@@ -66,6 +66,14 @@ PREVIEW_ROWS_FEATURES = 5
 MARKERS_SHOWN = 8
 N_SAMPLE_TERMS = 15
 
+# The worked example shown on /commit's input→output figure. Chosen to be structurally UNLIKELY to
+# be an answer to any scored cluster: a tissue-level region at depth 3, not a leaf cell type. The
+# builder cannot verify this against the key (it must never read _HELDOUT/), so the check is done
+# by the operator against the rendered page, outside this script — see the leakage-check step in
+# the commit that introduced the figure. Verified 2026-08-21: neither this term nor any node of its
+# ancestor chain appears in the key, by id or by name.
+EXAMPLE_TERM_ID = "ZFA:0000516"
+
 
 def log(*a):
     print(*a, flush=True)
@@ -308,6 +316,63 @@ def parse_obo_isa(path):
     return parents
 
 
+def parse_obo_graph(path):
+    """id -> {name, is_a[], part_of[]}. The ancestor chain walks is_a first, then part_of, which is
+    the same precedence the ontology itself uses for anatomical containment."""
+    g, cur = {}, None
+    with _read(path) as fh:
+        for line in fh:
+            line = line.rstrip("\n")
+            if line == "[Term]":
+                cur = None
+            elif line.startswith("id: "):
+                cur = line[4:].strip()
+                g.setdefault(cur, {"name": "", "is_a": [], "part_of": []})
+            elif cur:
+                if line.startswith("name: "):
+                    g[cur]["name"] = line[6:].strip()
+                elif line.startswith("is_a: "):
+                    g[cur]["is_a"].append(line[6:].split("!")[0].strip())
+                elif line.startswith("relationship: part_of "):
+                    g[cur]["part_of"].append(
+                        line[len("relationship: part_of "):].split("!")[0].strip())
+    return g
+
+
+def build_example_answer(menu, depths, graph):
+    """The worked example for the input->output figure: one menu term plus its real ancestor chain.
+    Everything here is read from the public menu + the public ontology; nothing is invented, and if
+    the chosen term is not on the menu this returns None rather than substituting one."""
+    by_id = {t["id"]: t for t in menu["terms"]}
+    t = by_id.get(EXAMPLE_TERM_ID)
+    if t is None:
+        return None
+
+    chain, seen = [t["id"]], {t["id"]}
+    while len(chain) < 6:
+        node = graph.get(chain[-1], {})
+        nxt = [p for p in (node.get("is_a") or node.get("part_of") or [])
+               if p in graph and p not in seen]
+        if not nxt:
+            break
+        chain.append(nxt[0])
+        seen.add(nxt[0])
+
+    return {
+        "term": {"id": t["id"], "name": t["name"], "caro": t["caro"],
+                 "depth": depths.get(t["id"])},
+        "on_menu": True,
+        "ancestor_chain": [
+            {"id": c, "name": graph[c]["name"], "depth": depths.get(c)} for c in chain
+        ],
+        "selection_note": (
+            "A tissue-level region, deliberately not a leaf cell type — chosen so the worked "
+            "example cannot double as a hint. Its ancestor chain is read from the same ZFA release "
+            "the menu is frozen against."
+        ),
+    }
+
+
 def compute_depths(ids, parents):
     """Shortest is_a distance to a root. Iterative + memoised; cycle-safe."""
     depth, visiting = {}, set()
@@ -361,9 +426,11 @@ def build_zfa_menu(menu, banned_label_strings):
     # depth, for spreading the samples rather than taking the alphabetical head
     depths = {}
     depth_available = os.path.exists(OBO)
+    graph = {}
     if depth_available:
         parents = parse_obo_isa(OBO)
         depths = compute_depths([t["id"] for t in terms], parents)
+        graph = parse_obo_graph(OBO)
 
     # exclude any term whose name collides with a known label string, so the bundle-wide leakage
     # assertion is absolute rather than caveated. The menu itself is a public input and legitimately
@@ -426,6 +493,9 @@ def build_zfa_menu(menu, banned_label_strings):
         dvals = [depths.get(t["id"], 0) for t in terms]
         out["depth_range"] = {"min": min(dvals), "max": max(dvals)}
         out["depth_histogram"] = {str(k): dvals.count(k) for k in sorted(set(dvals))}
+        ex = build_example_answer(menu, depths, graph)
+        if ex:
+            out["example_answer"] = ex
     return out
 
 

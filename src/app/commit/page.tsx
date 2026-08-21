@@ -14,6 +14,7 @@
 import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
 import { ClusterSizeFigure, MenuCompositionFigure } from "./figures";
+import InputOutputFigure from "./inputoutput";
 import { GoldFeaturesWindow, ClusterPublicWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
@@ -89,6 +90,10 @@ export default function CommitChallengePage() {
             <Stat k="cells" v={nfmt((H5AD as any).shape.cells)} sub={`${B.timepoint_hpf} hpf · ${B.arm} arm`} />
             <Stat k="genes" v={nfmt((H5AD as any).shape.genes)} sub="full width, not subset" />
             <Stat k="answer space" v={nfmt((MENU as any).n_terms)} sub="ZFA terms, frozen" />
+          </div>
+
+          <div style={{ marginTop: 38 }}>
+            <InputOutputFigure />
           </div>
         </div>
       </header>

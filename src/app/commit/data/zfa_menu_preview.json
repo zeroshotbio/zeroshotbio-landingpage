@@ -156,5 +156,37 @@
   "8": 108,
   "9": 198,
   "10": 34
+ },
+ "example_answer": {
+  "term": {
+   "id": "ZFA:0000516",
+   "name": "periventricular grey zone",
+   "caro": "tissue",
+   "depth": 3
+  },
+  "on_menu": true,
+  "ancestor_chain": [
+   {
+    "id": "ZFA:0000516",
+    "name": "periventricular grey zone",
+    "depth": 3
+   },
+   {
+    "id": "ZFA:0001477",
+    "name": "portion of tissue",
+    "depth": 2
+   },
+   {
+    "id": "ZFA:0000037",
+    "name": "anatomical structure",
+    "depth": 1
+   },
+   {
+    "id": "ZFA:0100000",
+    "name": "zebrafish anatomical entity",
+    "depth": 0
+   }
+  ],
+  "selection_note": "A tissue-level region, deliberately not a leaf cell type \u2014 chosen so the worked example cannot double as a hint. Its ancestor chain is read from the same ZFA release the menu is frozen against."
  }
 }
