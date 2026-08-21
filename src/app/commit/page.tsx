@@ -92,9 +92,13 @@ export default function CommitChallengePage() {
             <Stat k="answer space" v={nfmt((MENU as any).n_terms)} sub="ZFA terms, frozen" />
           </div>
 
-          <div style={{ marginTop: 38 }}>
-            <InputOutputFigure />
-          </div>
+        </div>
+
+        {/* The figure breaks out of the 900px measure — it is two tall columns, and at the body
+            width they crush. 1.6x the section, still centred, still gutter-padded, and it collapses
+            to one column under 980px where the extra width stops helping. */}
+        <div style={{ maxWidth: 1440, margin: "38px auto 0", padding: "0 24px" }}>
+          <InputOutputFigure />
         </div>
       </header>
 

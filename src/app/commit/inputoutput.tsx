@@ -17,7 +17,7 @@
 // component carries a scoped <style> block (all class names prefixed `cio-`). Everything else on
 // /commit stays inline, matching the rest of the repo.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, IN_GREEN, nfmt } from "./theme";
+import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, PANEL, PANEL_BD, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
@@ -102,7 +102,8 @@ function FileSection({ n, name, shape, blurb, children }: {
   n: number; name: string; shape?: string; blurb?: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ padding: "17px 0", borderTop: `1px solid ${RULE}` }}>
+    <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
+                  padding: "16px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
         <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: FAINT, minWidth: 11 }}>{n}</span>
         <FileName name={name} shape={shape} />
@@ -131,7 +132,8 @@ function OutRow({ n, label, file, children }: {
   n: number; label: string; file?: string; children: React.ReactNode;
 }) {
   return (
-    <div style={{ padding: "15px 0", borderTop: `1px solid ${RULE}` }}>
+    <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
+                  padding: "16px 18px", marginBottom: 12 }}>
       <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
         <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: FAINT, minWidth: 11 }}>{n}</span>
         {file ? <FileName name={file} /> : (
@@ -155,9 +157,9 @@ function OutRow({ n, label, file, children }: {
 function ColHead({ side, title, sub }: { side: string; title?: string; sub: string }) {
   const isOut = side === "output";
   return (
-    <div style={{ marginBottom: 4 }}>
+    <div style={{ marginBottom: 16, paddingLeft: 2 }}>
       <div style={{ fontFamily: MONO, fontSize: 15, fontWeight: 700, letterSpacing: 1.6, textTransform: "uppercase",
-                    color: isOut ? ACCENT : IN_GREEN }}>
+                    color: isOut ? ACCENT : FILE }}>
         {side}
       </div>
       {title && <div style={{ fontSize: 16, fontWeight: 650, color: INK, marginTop: 5, letterSpacing: -0.2 }}>{title}</div>}
@@ -242,23 +244,21 @@ export default function InputOutputFigure() {
         dangerouslySetInnerHTML={{
           __html: `
 .cio-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch}
-.cio-mid{display:flex;align-items:center;justify-content:center;padding:0 22px}
-.cio-arrow{color:${FAINT};font-size:19px;line-height:1;transform:none}
-.cio-col{padding:24px 26px;min-width:0}
-.cio-col--in{border-right:1px solid ${RULE}}
-@media (max-width: 820px){
+.cio-mid{display:flex;align-items:center;justify-content:center;padding:0 20px}
+.cio-arrow{color:${FAINT};font-size:24px;line-height:1;transform:none}
+.cio-panel{background:${PANEL};border:1px solid ${PANEL_BD};border-radius:14px;padding:20px 20px 8px;min-width:0}
+@media (max-width: 980px){
   .cio-grid{grid-template-columns:1fr}
-  .cio-col--in{border-right:none;border-bottom:1px solid ${RULE}}
-  .cio-mid{padding:14px 0}
+  .cio-mid{padding:16px 0}
   .cio-arrow{transform:rotate(90deg)}
 }`,
         }}
       />
 
-      <div className="cio-grid" style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, overflow: "hidden" }}>
+      <div className="cio-grid">
 
         {/* ── INPUT — the three evidence files, matrix first ───────── */}
-        <div className="cio-col cio-col--in">
+        <div className="cio-panel">
           <ColHead side="input" sub="Three files. The matrix, the features derived from it, and the menu every answer is drawn from." />
 
           <FileSection n={1} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
@@ -307,7 +307,7 @@ export default function InputOutputFigure() {
         </div>
 
         {/* ── OUTPUT ────────────────────────────────────────────────── */}
-        <div className="cio-col">
+        <div className="cio-panel">
           <ColHead side="output" title="What you must return" sub="Per cluster. One answer, four parts." />
 
           <OutRow n={1} label="one zfa identifier">

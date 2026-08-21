@@ -27,10 +27,10 @@ export const FILE = "#a8501b";
 export const FILE_BG = "#fdf6f1";
 export const FILE_BD = "#f0e2d6";
 
-// The INPUT side marker. A deep green against the warm paper — 4.98:1 on card, and already in the
-// wizard's palette (THEME.research). OUTPUT keeps ACCENT teal, so the two sides are the same weight
-// and differ only in hue.
-export const IN_GREEN = "#15803d";
+// The two panel surfaces. The figure is a grey field holding white sub-boxes, so a file reads as
+// an object sitting IN the delivery rather than as another band of the same card.
+export const PANEL = "#eeece8";
+export const PANEL_BD = "#e0dbd4";
 
 // Single-series magnitude (the cluster-size histogram). One hue, no categorical identity to carry.
 export const SERIES = "#0e7490";
