@@ -63,6 +63,11 @@ WITHHELD_FEATURE_COL = "zscape_published_markers"
 
 PREVIEW_ROWS_CLUSTER = 12
 PREVIEW_ROWS_FEATURES = 5
+# head/tail slices for the on-page file windows: enough rows to show the shape, then an elision,
+# then the real last rows — so the window reflects the file's actual extent rather than its top.
+WINDOW_HEAD = 3
+WINDOW_TAIL = 2
+WINDOW_GENES = 2
 MARKERS_SHOWN = 8
 N_SAMPLE_TERMS = 15
 
@@ -297,8 +302,29 @@ def build_gold_features(header, rows):
                 rec[c] = v
         examples.append(rec)
 
+    def window_cell(col, raw):
+        if col in marker_cols:
+            genes = split_markers(raw)
+            head = ";".join(genes[:WINDOW_GENES])
+            return {"text": head, "more": max(0, len(genes) - WINDOW_GENES), "n": len(genes)}
+        return {"text": raw}
+
+    def window_row(r):
+        return {c: window_cell(c, r[idx[c]]) for c in cols}
+
+    window = {
+        "columns": cols,
+        "head": [window_row(r) for r in rows[:WINDOW_HEAD]],
+        "tail": [window_row(r) for r in rows[-WINDOW_TAIL:]],
+        "elided_rows": max(0, len(rows) - WINDOW_HEAD - WINDOW_TAIL),
+        "total_rows": len(rows),
+        "total_columns": len(cols),
+        "genes_shown": WINDOW_GENES,
+    }
+
     return {
         "file": "gold_features.csv",
+        "window": window,
         "total_rows": len(rows),
         "total_columns": len(header),
         "columns_in_challenge_input": len(cols),
@@ -482,8 +508,20 @@ def build_zfa_menu(menu, banned_label_strings):
         samples = [{"id": t["id"], "name": t["name"], "caro": t["caro"]}
                    for t in pool[::step][:N_SAMPLE_TERMS]]
 
+    def term_row(t):
+        return {"id": t["id"], "name": t["name"], "caro": t["caro"],
+                "n_synonyms": t.get("n_synonyms")}
+
     out = {
         "file": "artifacts/zfa_menu.v1.json",
+        "window": {
+            "fields": ["id", "name", "caro", "n_synonyms"],
+            "head": [term_row(t) for t in terms[:WINDOW_HEAD]],
+            "tail": [term_row(t) for t in terms[-WINDOW_TAIL:]],
+            "elided_rows": max(0, len(terms) - WINDOW_HEAD - WINDOW_TAIL),
+            "total_rows": len(terms),
+            "order": "file order — ascending ZFA id",
+        },
         "version": menu["version"],
         "menu_version_hash": menu["menu_version_hash"],
         "n_terms": menu["n_terms"],
@@ -755,12 +793,31 @@ def leakage_guard(out_dir, label_strings, published_marker_runs):
             blob = fh.read()
         low = blob.lower()
         scanned.append(fn)
+
+        # PUBLIC-INPUT CARVE-OUT, mirroring the one in the row's own LEDGER #1.
+        # zfa_menu_preview.json's `window` block reproduces the literal first and last rows of the
+        # frozen menu — a file the contestant receives WHOLE, all 3,107 terms. Anatomy vocabulary
+        # necessarily overlaps ZSCAPE's label vocabulary there ("heart valve endothelial cell"
+        # contains two withheld tissue words), and suppressing those rows would misrepresent the
+        # file rather than protect anything. So label-string patterns do not apply to that block —
+        # and ONLY to that block. Column names and published-marker runs still do, everywhere, and
+        # every other file stays fully covered.
+        label_low = low
+        if fn == "zfa_menu_preview.json":
+            try:
+                obj = json.loads(blob)
+                if "window" in obj:
+                    label_low = json.dumps({k: v for k, v in obj.items() if k != "window"}).lower()
+            except Exception:
+                pass
+
         for kind, pat in patterns:
             p = pat.lower()
             if not p or len(p) < 3:
                 continue
             # word-boundary match so short germ-layer words don't fire on substrings
-            if re.search(r"(?<![a-z0-9])" + re.escape(p) + r"(?![a-z0-9])", low):
+            hay = label_low if kind == "label-string" else low
+            if re.search(r"(?<![a-z0-9])" + re.escape(p) + r"(?![a-z0-9])", hay):
                 hits.append({"file": fn, "kind": kind, "pattern": pat})
     return scanned, patterns, hits
 

@@ -127,12 +127,19 @@ export default function CommitChallengePage() {
             identifier, and a term that is not on the menu is not an answer. Both sides draw from
             the same list, and the list&apos;s content hash is how that parity is proven.
           </p>
-          <p style={{ margin: 0 }}>
+          <p style={{ margin: "0 0 17px" }}>
             Each answer carries three things beyond the identifier itself — <strong>both axis
             terms</strong> (what the cells are, and where they are), the <strong>ancestor
-            chain</strong> back up the ontology, and a <strong>confidence tier</strong>. The chain
-            is what makes a near-miss legible instead of merely wrong, and the tier is where you say
-            so when the evidence will not carry you to a leaf.
+            chain</strong> back up the ontology, and a <strong>confidence score and tier</strong>
+            from a rubric you define and publish. The chain is what makes a near-miss legible
+            instead of merely wrong, and the rubric is what lets a reader weigh a call rather than
+            take it.
+          </p>
+          <p style={{ margin: 0 }}>
+            And alongside all of it, <strong>the references used</strong> and an{" "}
+            <strong>evidentiary statement citing only retrieved evidence</strong>. That is the part
+            that makes the rest auditable: without it a label is an assertion, and the difference
+            between a method that reasoned and a method that guessed well is invisible.
           </p>
         </div>
 

@@ -1,5 +1,50 @@
 {
  "file": "artifacts/zfa_menu.v1.json",
+ "window": {
+  "fields": [
+   "id",
+   "name",
+   "caro",
+   "n_synonyms"
+  ],
+  "head": [
+   {
+    "id": "ZFA:0000000",
+    "name": "Brachet's cleft",
+    "caro": "above-roots",
+    "n_synonyms": 0
+   },
+   {
+    "id": "ZFA:0000001",
+    "name": "Kupffer's vesicle",
+    "caro": "above-roots",
+    "n_synonyms": 1
+   },
+   {
+    "id": "ZFA:0000003",
+    "name": "adaxial cell",
+    "caro": "cell",
+    "n_synonyms": 1
+   }
+  ],
+  "tail": [
+   {
+    "id": "ZFA:0009404",
+    "name": "heart valve endothelial cell",
+    "caro": "cell",
+    "n_synonyms": 2
+   },
+   {
+    "id": "ZFA:0100000",
+    "name": "zebrafish anatomical entity",
+    "caro": "above-roots",
+    "n_synonyms": 0
+   }
+  ],
+  "elided_rows": 3102,
+  "total_rows": 3107,
+  "order": "file order \u2014 ascending ZFA id"
+ },
  "version": "zfa_menu.v1",
  "menu_version_hash": "dec9f7289d7c378815ef8db29a1ab2013c13cb04ed4c5d01735be6b07afcf0a6",
  "n_terms": 3107,

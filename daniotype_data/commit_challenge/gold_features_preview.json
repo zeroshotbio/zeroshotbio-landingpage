@@ -1,5 +1,201 @@
 {
  "file": "gold_features.csv",
+ "window": {
+  "columns": [
+   "cluster_id",
+   "n_cells",
+   "n_cells_used",
+   "top_50_markers",
+   "bottom_50_markers",
+   "family_50_markers",
+   "mean_umi",
+   "mean_genes_expressed",
+   "pct_mitochondrial"
+  ],
+  "head": [
+   {
+    "cluster_id": {
+     "text": "C001"
+    },
+    "n_cells": {
+     "text": "457"
+    },
+    "n_cells_used": {
+     "text": "457"
+    },
+    "top_50_markers": {
+     "text": "apoltp;slc22a7b.4",
+     "more": 48,
+     "n": 50
+    },
+    "bottom_50_markers": {
+     "text": "aep1;omc2",
+     "more": 48,
+     "n": 50
+    },
+    "family_50_markers": {
+     "text": "apoltp;slc22a7b.4",
+     "more": 48,
+     "n": 50
+    },
+    "mean_umi": {
+     "text": "477.0"
+    },
+    "mean_genes_expressed": {
+     "text": "327.7"
+    },
+    "pct_mitochondrial": {
+     "text": "3.96"
+    }
+   },
+   {
+    "cluster_id": {
+     "text": "C002"
+    },
+    "n_cells": {
+     "text": "873"
+    },
+    "n_cells_used": {
+     "text": "873"
+    },
+    "top_50_markers": {
+     "text": "hpdb;vcanb",
+     "more": 48,
+     "n": 50
+    },
+    "bottom_50_markers": {
+     "text": "epas1a;anxa2a",
+     "more": 48,
+     "n": 50
+    },
+    "family_50_markers": {
+     "text": "hpdb;vcanb",
+     "more": 48,
+     "n": 50
+    },
+    "mean_umi": {
+     "text": "351.9"
+    },
+    "mean_genes_expressed": {
+     "text": "264.3"
+    },
+    "pct_mitochondrial": {
+     "text": "1.86"
+    }
+   },
+   {
+    "cluster_id": {
+     "text": "C003"
+    },
+    "n_cells": {
+     "text": "93"
+    },
+    "n_cells_used": {
+     "text": "93"
+    },
+    "top_50_markers": {
+     "text": "grp;gfral",
+     "more": 27,
+     "n": 29
+    },
+    "bottom_50_markers": {
+     "text": "",
+     "more": 0,
+     "n": 0
+    },
+    "family_50_markers": {
+     "text": "atp1b1b;fxyd11",
+     "more": 48,
+     "n": 50
+    },
+    "mean_umi": {
+     "text": "381.5"
+    },
+    "mean_genes_expressed": {
+     "text": "283.9"
+    },
+    "pct_mitochondrial": {
+     "text": "3.34"
+    }
+   }
+  ],
+  "tail": [
+   {
+    "cluster_id": {
+     "text": "C111"
+    },
+    "n_cells": {
+     "text": "196"
+    },
+    "n_cells_used": {
+     "text": "196"
+    },
+    "top_50_markers": {
+     "text": "ngs;sncga",
+     "more": 48,
+     "n": 50
+    },
+    "bottom_50_markers": {
+     "text": "anxa1c;evplb",
+     "more": 17,
+     "n": 19
+    },
+    "family_50_markers": {
+     "text": "col9a1b;cmn",
+     "more": 48,
+     "n": 50
+    },
+    "mean_umi": {
+     "text": "803.2"
+    },
+    "mean_genes_expressed": {
+     "text": "472.3"
+    },
+    "pct_mitochondrial": {
+     "text": "2.7"
+    }
+   },
+   {
+    "cluster_id": {
+     "text": "C112"
+    },
+    "n_cells": {
+     "text": "1153"
+    },
+    "n_cells_used": {
+     "text": "1153"
+    },
+    "top_50_markers": {
+     "text": "krt4;cyt1l",
+     "more": 48,
+     "n": 50
+    },
+    "bottom_50_markers": {
+     "text": "dgkh;glra4a",
+     "more": 48,
+     "n": 50
+    },
+    "family_50_markers": {
+     "text": "cyt1l;krt4",
+     "more": 48,
+     "n": 50
+    },
+    "mean_umi": {
+     "text": "561.4"
+    },
+    "mean_genes_expressed": {
+     "text": "348.4"
+    },
+    "pct_mitochondrial": {
+     "text": "8.24"
+    }
+   }
+  ],
+  "elided_rows": 107,
+  "total_rows": 112,
+  "total_columns": 9,
+  "genes_shown": 2
+ },
  "total_rows": 112,
  "total_columns": 10,
  "columns_in_challenge_input": 9,

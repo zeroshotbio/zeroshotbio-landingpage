@@ -19,6 +19,7 @@
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, PANEL, PANEL_BD, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
+import FEATURES from "./data/gold_features_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
 
@@ -32,8 +33,6 @@ const FILES: Record<string, any> = Object.fromEntries(
 );
 const ANSWER = (MENU as any).example_answer ?? null;
 const WINDOW = (H5AD as any).matrix_window ?? null;
-
-const CONF_TIERS = ["Germ layer", "Tissue", "Cell type — broad", "Cell type — sub"];
 
 // The three ranked lists, in plain English. What each one IS, not how it was computed — the
 // divergence reading on `family` is the one documented in the row's own merging SPEC.
@@ -116,18 +115,6 @@ function FileSection({ n, name, shape, blurb, children }: {
   );
 }
 
-function SubItem({ tag, note, children }: { tag: string; note?: string; children: React.ReactNode }) {
-  return (
-    <div style={{ marginBottom: 9 }}>
-      <div style={{ display: "flex", gap: 8, alignItems: "baseline", marginBottom: 4 }}>
-        <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, color: INK }}>{tag}</span>
-        {note && <span style={{ fontSize: 11, color: FAINT }}>{note}</span>}
-      </div>
-      {children}
-    </div>
-  );
-}
-
 function OutRow({ n, label, file, children }: {
   n: number; label: string; file?: string; children: React.ReactNode;
 }) {
@@ -181,6 +168,107 @@ function Field({ col, blurb }: { col: string; blurb: string }) {
   );
 }
 
+// A window into a delimited file: real head rows, an elision that states how many rows it stands
+// for, then the real last rows. The footer carries the file's true extent, so nothing about the
+// window implies the file is only this big.
+function FileWindow({ cols, rows, elided, footer, colStyle }: {
+  cols: string[];
+  rows: (React.ReactNode[] | null)[];   // null marks the elision row
+  elided: number;
+  footer: string;
+  colStyle?: (c: string) => React.CSSProperties;
+}) {
+  return (
+    <div style={{ marginTop: 10, border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ borderCollapse: "collapse", width: "100%" }}>
+          <thead>
+            <tr>
+              {cols.map((c) => (
+                <th key={c} title={c}
+                    style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, color: MUTED, textAlign: "left",
+                             padding: "7px 9px", borderBottom: `1px solid ${RULE}`, whiteSpace: "nowrap",
+                             ...(colStyle?.(c) ?? {}) }}>
+                  {c}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((r, i) =>
+              r === null ? (
+                <tr key={`gap-${i}`}>
+                  <td colSpan={cols.length}
+                      style={{ fontFamily: MONO, fontSize: 9.5, color: FAINT, textAlign: "center",
+                               padding: "6px 9px", background: "#f7f5f2",
+                               borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
+                    ⋯ {nfmt(elided)} more rows
+                  </td>
+                </tr>
+              ) : (
+                <tr key={i}>
+                  {r.map((cell, j) => (
+                    <td key={cols[j]}
+                        style={{ fontFamily: MONO, fontSize: 10, color: INK, padding: "5px 9px",
+                                 borderTop: i === 0 ? "none" : "1px solid #f2efeb",
+                                 whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              )
+            )}
+          </tbody>
+        </table>
+      </div>
+      <div style={{ fontFamily: MONO, fontSize: 9, color: FAINT, padding: "6px 9px",
+                    borderTop: `1px solid ${RULE}`, background: "#faf8f5" }}>
+        {footer}
+      </div>
+    </div>
+  );
+}
+
+// gold_features.csv — every shipped column, so the window shows the file's real organisation.
+// Gene lists are cut to their first genes with the remainder counted, because a 50-gene cell would
+// be the only thing on screen.
+function GoldFeaturesWindow() {
+  const w = (FEATURES as any).window;
+  if (!w) return null;
+  // An empty marker cell is a real property of the file (C003 has no depleted list), so it gets an
+  // explicit em dash — a blank td reads as a rendering fault rather than as data.
+  const cell = (c: any) => {
+    if (c.text === "" ) return <span style={{ color: FAINT }}>—</span>;
+    return c.more
+      ? <>{c.text}<span style={{ color: FAINT }}>;…+{c.more}</span></>
+      : <>{c.text}</>;
+  };
+  const mk = (r: any) => w.columns.map((c: string) => cell(r[c]));
+  return (
+    <FileWindow
+      cols={w.columns}
+      rows={[...w.head.map(mk), null, ...w.tail.map(mk)]}
+      elided={w.elided_rows}
+      footer={`${nfmt(w.total_rows)} rows × ${w.total_columns} columns · gene lists cut to the first ${w.genes_shown}, all 50 ship`}
+    />
+  );
+}
+
+// zfa_menu.v1.json — the terms array, in file order.
+function ZfaMenuWindow() {
+  const w = (MENU as any).window;
+  if (!w) return null;
+  const mk = (t: any) => [t.id, t.name, t.caro.replace(/_/g, " "), String(t.n_synonyms ?? "")];
+  return (
+    <FileWindow
+      cols={w.fields}
+      rows={[...w.head.map(mk), null, ...w.tail.map(mk)]}
+      elided={w.elided_rows}
+      footer={`${nfmt(w.total_rows)} terms · ${w.order}`}
+    />
+  );
+}
+
 // ── the 5x5 matrix corner ──────────────────────────────────────────────────
 // A real slice, not a mock: the first five cells of the worked cluster against that cluster's own
 // top five markers, as raw integer counts. Zeros stay muted so the sparsity is the visible fact.
@@ -226,6 +314,41 @@ function MatrixWindow() {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+}
+
+// An example value, given the same treatment wherever one appears — so "this is a concrete
+// instance" reads identically in every box rather than only in the first.
+function Example({ children, mono = false }: { children: React.ReactNode; mono?: boolean }) {
+  return (
+    <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
+                  background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
+                  padding: "7px 11px",
+                  fontFamily: mono ? MONO : undefined, fontSize: mono ? 11.5 : 12.5, color: INK }}>
+      {children}
+    </div>
+  );
+}
+
+// One axis / one part, with its own left edge; detail steps in and down beneath it.
+function OutField({ label, note, children, blurb }: {
+  label: string; note?: string; children?: React.ReactNode; blurb?: string;
+}) {
+  return (
+    <div style={{ marginBottom: 13 }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: INK }}>{label}</span>
+        {note && <span style={{ fontSize: 11, color: FAINT }}>· {note}</span>}
+      </div>
+      <div style={{ paddingLeft: IND_2, marginTop: 6 }}>
+        {children}
+        {blurb && (
+          <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55, marginTop: children ? 6 : 0 }}>
+            {blurb}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -283,6 +406,7 @@ export default function InputOutputFigure() {
             {LISTS.map((l) => <Field key={l.col} col={l.col} blurb={l.blurb} />)}
             <div style={{ height: 4 }} />
             {QC.map((q) => <Field key={q.col} col={q.col} blurb={q.blurb} />)}
+            <GoldFeaturesWindow />
           </FileSection>
 
           <FileSection n={3} name="zfa_menu.v1.json" shape={`${nfmt((MENU as any).n_terms)} terms`}
@@ -293,7 +417,8 @@ export default function InputOutputFigure() {
                    blurb="The human-readable anatomy term the identifier stands for. Scored on the identifier, so a synonym is never punished for being a synonym." />
             <Field col="caro"
                    blurb="Which branch the term sits in — a cell type, an anatomical structure, or above the roots. This is what makes the two answer axes separable." />
-            <div style={{ paddingLeft: 0, marginTop: 2, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
+            <ZfaMenuWindow />
+            <div style={{ paddingLeft: 0, marginTop: 10, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
               Frozen against ZFA {(MENU as any).source?.release?.replace("releases/", "")}. Both
               sides select from this exact list; matching its content hash is how that parity is
               proven.
@@ -310,71 +435,79 @@ export default function InputOutputFigure() {
         <div className="cio-panel">
           <ColHead side="output" title="What you must return" sub="Per cluster. One answer, four parts." />
 
-          <OutRow n={1} label="one zfa identifier">
+          <OutRow n={1} label="one ZFA identifier">
             {ANSWER ? (
-              <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
-                            background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7, padding: "7px 11px" }}>
+              <Example>
                 <span style={{ fontFamily: MONO, fontSize: 12, fontWeight: 700, color: ACCENT }}>{ANSWER.term.id}</span>
-                <span style={{ fontSize: 12.5, color: INK }}>{ANSWER.term.name}</span>
-              </div>
+                <span>{ANSWER.term.name}</span>
+              </Example>
             ) : null}
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 7, lineHeight: 1.5 }}>
-              Selected from the {nfmt((MENU as any).n_terms)}-term menu on the left, not written.
+            <div style={{ fontSize: 11.5, color: MUTED, marginTop: 8, lineHeight: 1.55 }}>
+              Selected from the {nfmt((MENU as any).n_terms)}-term menu on the left, not written. It
+              must be a term from the candidate evidence, or an ancestor of one.
             </div>
           </OutRow>
 
           <OutRow n={2} label="both axis terms">
-            <SubItem tag="cell-type axis" note="what the cells are">
-              <span style={{ fontSize: 12.5, color: FAINT, fontStyle: "italic" }}>
-                null — evidence did not support a call
-              </span>
-            </SubItem>
-            <SubItem tag="anatomical axis" note="where they sit">
+            <OutField label="cell-type axis" note="what the cells are">
+              <Example mono>
+                <span style={{ color: FAINT, fontStyle: "italic" }}>null</span>
+                <span style={{ color: MUTED }}>— evidence did not support a call</span>
+              </Example>
+            </OutField>
+            <OutField label="anatomical axis" note="where they sit">
               {ANSWER ? (
-                <span style={{ fontFamily: MONO, fontSize: 11.5, color: INK }}>
-                  {ANSWER.term.id} <span style={{ fontFamily: "inherit", color: MUTED }}>{ANSWER.term.name}</span>
-                </span>
+                <Example mono>
+                  <span style={{ fontWeight: 700, color: ACCENT }}>{ANSWER.term.id}</span>
+                  <span style={{ color: MUTED }}>{ANSWER.term.name}</span>
+                </Example>
               ) : null}
-            </SubItem>
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 2, lineHeight: 1.5 }}>
+            </OutField>
+            <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55 }}>
               Either axis may be null. Saying so is an answer; guessing is not.
             </div>
           </OutRow>
 
           <OutRow n={3} label="ancestor chain">
             {ANSWER ? (
-              <div>
-                {ANSWER.ancestor_chain.map((node: any, i: number) => (
-                  <div key={node.id} style={{ display: "flex", gap: 9, alignItems: "baseline", padding: "3px 0" }}>
-                    <span style={{ fontFamily: MONO, fontSize: 9, color: FAINT, minWidth: 18 }}>d{node.depth}</span>
-                    <span style={{ color: "#ddd8d1", fontSize: 11 }}>{i === 0 ? "•" : "↑"}</span>
-                    <span style={{ fontSize: 12.5, color: i === 0 ? INK : MUTED, fontWeight: i === 0 ? 600 : 400 }}>
-                      {node.name}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <Example mono>
+                <div>
+                  {ANSWER.ancestor_chain.map((node: any, i: number) => (
+                    <div key={node.id} style={{ display: "flex", gap: 9, alignItems: "baseline", padding: "2px 0" }}>
+                      <span style={{ fontSize: 9, color: FAINT, minWidth: 18 }}>d{node.depth}</span>
+                      <span style={{ color: "#c9d9de" }}>{i === 0 ? "•" : "↑"}</span>
+                      <span style={{ fontFamily: "ui-sans-serif, system-ui, sans-serif", fontSize: 12.5,
+                                     color: i === 0 ? INK : MUTED, fontWeight: i === 0 ? 600 : 400 }}>
+                        {node.name}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </Example>
             ) : null}
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 6, lineHeight: 1.5 }}>
-              The path back toward the root. It is what makes a near-miss legible instead of merely
-              wrong.
+            <div style={{ fontSize: 11.5, color: MUTED, marginTop: 8, lineHeight: 1.55 }}>
+              The full <code style={{ fontFamily: MONO, fontSize: 10.5 }}>is_a</code> and{" "}
+              <code style={{ fontFamily: MONO, fontSize: 10.5 }}>part_of</code> path, including
+              multi-parent terms. It records whether the answer generalised, and how far.
             </div>
           </OutRow>
 
-          <OutRow n={4} label="confidence tier">
-            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
-              {CONF_TIERS.map((t, i) => (
-                <span key={t} style={{ fontFamily: MONO, fontSize: 10, color: i === 3 ? INK : MUTED,
-                                       background: i === 3 ? "#f1efeb" : "transparent",
-                                       border: `1px solid ${i === 3 ? "#ddd8d1" : RULE}`,
-                                       borderRadius: 999, padding: "3px 9px" }}>
-                  {t}
-                </span>
-              ))}
+          <OutRow n={4} label="confidence score and tier">
+            <div style={{ fontSize: 12, color: INK, lineHeight: 1.6, marginBottom: 12 }}>
+              A numeric score plus a tier from a closed list, both derived from a documented rubric.
             </div>
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 7, lineHeight: 1.5 }}>
-              A closed list. Conclude at the deepest tier the evidence supports — abstention is
-              credited at the tier you reached, so stopping early costs less than overreaching.
+            <OutField
+              label="the rubric"
+              note="yours to define and publish"
+              blurb="The signals it scores, their weights, and where the tier boundaries fall are the contestant's to specify. Signals are expected to be citable — marker coherence, reference corroboration, ontology convergence."
+            />
+            <OutField
+              label="per-signal values"
+              note="returned with every answer"
+              blurb="Each answer carries the individual signal values alongside the tier, so the score can be audited rather than taken on faith."
+            />
+            <div style={{ fontSize: 11.5, color: FAINT, lineHeight: 1.55, marginTop: 2 }}>
+              It is a working rubric, not a calibrated probability.
             </div>
           </OutRow>
         </div>
