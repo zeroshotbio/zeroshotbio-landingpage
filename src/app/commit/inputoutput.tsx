@@ -115,28 +115,17 @@ function FileSection({ n, name, shape, blurb, children }: {
   );
 }
 
-function OutRow({ n, label, file, children }: {
-  n: number; label: string; file?: string; children: React.ReactNode;
+function OutRow({ n, label, children }: {
+  n: number; label: string; children: React.ReactNode;
 }) {
   return (
     <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
                   padding: "16px 18px", marginBottom: 12 }}>
-      <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
-        <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: FAINT, minWidth: 11 }}>{n}</span>
-        {file ? <FileName name={file} /> : (
-          <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED }}>
-            {label}
-          </span>
-        )}
+      <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: ACCENT, minWidth: 13 }}>{n}</span>
+        <span style={{ fontSize: 15.5, fontWeight: 650, color: INK, letterSpacing: -0.2 }}>{label}</span>
       </div>
-      <div style={{ paddingLeft: IND_1 + 11 }}>
-        {file && (
-          <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED, margin: "8px 0 9px" }}>
-            {label}
-          </div>
-        )}
-        <div style={{ marginTop: file ? 0 : 9 }}>{children}</div>
-      </div>
+      <div style={{ paddingLeft: IND_1 + 13, marginTop: 11 }}>{children}</div>
     </div>
   );
 }
@@ -151,6 +140,24 @@ function ColHead({ side, title, sub }: { side: string; title?: string; sub: stri
       </div>
       {title && <div style={{ fontSize: 16, fontWeight: 650, color: INK, marginTop: 5, letterSpacing: -0.2 }}>{title}</div>}
       <div style={{ fontSize: 12.5, color: MUTED, marginTop: title ? 3 : 7, lineHeight: 1.5 }}>{sub}</div>
+    </div>
+  );
+}
+
+// A row of fields, each in its own small box. Used where a file groups columns that belong
+// together — the three ranked lists, the three QC statistics, the menu's three term fields — so
+// the grouping is visible instead of implied by reading order.
+function FieldRow({ items, min = 190 }: { items: { col: string; blurb: string }[]; min?: number }) {
+  return (
+    <div style={{ display: "grid", gridTemplateColumns: `repeat(auto-fit, minmax(${min}px, 1fr))`,
+                  gap: 9, marginBottom: 12 }}>
+      {items.map((f) => (
+        <div key={f.col} style={{ background: "#faf8f5", border: `1px solid ${RULE}`, borderRadius: 8,
+                                  padding: "11px 12px" }}>
+          <ColName>{f.col}</ColName>
+          <div style={{ fontSize: 11, color: MUTED, lineHeight: 1.5, marginTop: 7 }}>{f.blurb}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -171,58 +178,62 @@ function Field({ col, blurb }: { col: string; blurb: string }) {
 // A window into a delimited file: real head rows, an elision that states how many rows it stands
 // for, then the real last rows. The footer carries the file's true extent, so nothing about the
 // window implies the file is only this big.
-function FileWindow({ cols, rows, elided, footer, colStyle }: {
+function FileWindow({ cols, rows, elided, footer, elideLabel = "..." }: {
   cols: string[];
   rows: (React.ReactNode[] | null)[];   // null marks the elision row
   elided: number;
   footer: string;
-  colStyle?: (c: string) => React.CSSProperties;
+  elideLabel?: string;
 }) {
   return (
-    <div style={{ marginTop: 10, border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
-      <div style={{ overflowX: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr>
-              {cols.map((c) => (
-                <th key={c} title={c}
-                    style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, color: MUTED, textAlign: "left",
-                             padding: "7px 9px", borderBottom: `1px solid ${RULE}`, whiteSpace: "nowrap",
-                             ...(colStyle?.(c) ?? {}) }}>
-                  {c}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((r, i) =>
-              r === null ? (
-                <tr key={`gap-${i}`}>
-                  <td colSpan={cols.length}
-                      style={{ fontFamily: MONO, fontSize: 9.5, color: FAINT, textAlign: "center",
-                               padding: "6px 9px", background: "#f7f5f2",
-                               borderTop: `1px solid ${RULE}`, borderBottom: `1px solid ${RULE}` }}>
-                    ⋯ {nfmt(elided)} more rows
-                  </td>
-                </tr>
-              ) : (
-                <tr key={i}>
-                  {r.map((cell, j) => (
-                    <td key={cols[j]}
-                        style={{ fontFamily: MONO, fontSize: 10, color: INK, padding: "5px 9px",
-                                 borderTop: i === 0 ? "none" : "1px solid #f2efeb",
-                                 whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
-                      {cell}
-                    </td>
-                  ))}
-                </tr>
-              )
-            )}
-          </tbody>
-        </table>
+    <div style={{ marginTop: 11 }}>
+      <div style={{ border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
+        <div style={{ overflowX: "auto" }}>
+          <table style={{ borderCollapse: "collapse", width: "100%" }}>
+            <thead>
+              <tr>
+                {cols.map((c) => (
+                  <th key={c} title={c}
+                      style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, color: MUTED, textAlign: "left",
+                               padding: "7px 9px", borderBottom: `1px solid ${RULE}`, whiteSpace: "nowrap" }}>
+                    {c}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) =>
+                r === null ? (
+                  // The elision is a ROW of the file, not a banner across it: the marker sits in
+                  // the identifier column, exactly where the omitted ids would be.
+                  <tr key={`gap-${i}`} title={`${nfmt(elided)} rows not shown`}>
+                    {cols.map((c, j) => (
+                      <td key={c}
+                          style={{ fontFamily: MONO, fontSize: 11, color: FAINT, padding: "5px 9px",
+                                   borderTop: "1px solid #f2efeb", letterSpacing: 1 }}>
+                        {j === 0 ? elideLabel : ""}
+                      </td>
+                    ))}
+                  </tr>
+                ) : (
+                  <tr key={i}>
+                    {r.map((cell, j) => (
+                      <td key={cols[j]}
+                          style={{ fontFamily: MONO, fontSize: 10, color: INK, padding: "5px 9px",
+                                   borderTop: i === 0 ? "none" : "1px solid #f2efeb",
+                                   whiteSpace: "nowrap", fontVariantNumeric: "tabular-nums" }}>
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
+                )
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <div style={{ fontFamily: MONO, fontSize: 9, color: FAINT, padding: "6px 9px",
-                    borderTop: `1px solid ${RULE}`, background: "#faf8f5" }}>
+      {/* the file's extent is a fact ABOUT the table, so it sits outside it */}
+      <div style={{ fontFamily: MONO, fontSize: 9, color: FAINT, marginTop: 7, lineHeight: 1.5 }}>
         {footer}
       </div>
     </div>
@@ -322,11 +333,17 @@ function MatrixWindow() {
 // instance" reads identically in every box rather than only in the first.
 function Example({ children, mono = false }: { children: React.ReactNode; mono?: boolean }) {
   return (
-    <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
-                  background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
-                  padding: "7px 11px",
-                  fontFamily: mono ? MONO : undefined, fontSize: mono ? 11.5 : 12.5, color: INK }}>
-      {children}
+    <div>
+      <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.9,
+                    textTransform: "uppercase", color: "#7fa8b5", marginBottom: 4 }}>
+        For example
+      </div>
+      <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
+                    background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7,
+                    padding: "7px 11px",
+                    fontFamily: mono ? MONO : undefined, fontSize: mono ? 11.5 : 12.5, color: INK }}>
+        {children}
+      </div>
     </div>
   );
 }
@@ -366,8 +383,8 @@ export default function InputOutputFigure() {
         // scoped to this figure; inline styles cannot carry media queries
         dangerouslySetInnerHTML={{
           __html: `
-.cio-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:stretch}
-.cio-mid{display:flex;align-items:center;justify-content:center;padding:0 20px}
+.cio-grid{display:grid;grid-template-columns:1fr auto 1fr;gap:0;align-items:start}
+.cio-mid{display:flex;align-items:center;justify-content:center;padding:64px 20px 0}
 .cio-arrow{color:${FAINT};font-size:24px;line-height:1;transform:none}
 .cio-panel{background:${PANEL};border:1px solid ${PANEL_BD};border-radius:14px;padding:20px 20px 8px;min-width:0}
 @media (max-width: 980px){
@@ -403,20 +420,18 @@ export default function InputOutputFigure() {
               whose expression separates this cluster from others — ranked three ways, plus the
               quality statistics behind them.
             </div>
-            {LISTS.map((l) => <Field key={l.col} col={l.col} blurb={l.blurb} />)}
-            <div style={{ height: 4 }} />
-            {QC.map((q) => <Field key={q.col} col={q.col} blurb={q.blurb} />)}
+            <FieldRow items={LISTS} min={210} />
+            <FieldRow items={QC} min={190} />
             <GoldFeaturesWindow />
           </FileSection>
 
           <FileSection n={3} name="zfa_menu.v1.json" shape={`${nfmt((MENU as any).n_terms)} terms`}
                        blurb="The answer space. Every label you return must be one of these terms, so this file is as much an input as the evidence is.">
-            <Field col="id"
-                   blurb="The ZFA identifier you actually submit. An answer is this string; a term that is not on the menu is not an answer." />
-            <Field col="name"
-                   blurb="The human-readable anatomy term the identifier stands for. Scored on the identifier, so a synonym is never punished for being a synonym." />
-            <Field col="caro"
-                   blurb="Which branch the term sits in — a cell type, an anatomical structure, or above the roots. This is what makes the two answer axes separable." />
+            <FieldRow min={200} items={[
+              { col: "id", blurb: "The ZFA identifier you actually submit. An answer is this string; a term that is not on the menu is not an answer." },
+              { col: "name", blurb: "The anatomy term the identifier stands for. Scoring reads the identifier, so a synonym is never punished for being one." },
+              { col: "caro", blurb: "Which branch the term sits in — cell, anatomical structure, or above the roots. This is what makes the two answer axes separable." },
+            ]} />
             <ZfaMenuWindow />
             <div style={{ paddingLeft: 0, marginTop: 10, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
               Frozen against ZFA {(MENU as any).source?.release?.replace("releases/", "")}. Both

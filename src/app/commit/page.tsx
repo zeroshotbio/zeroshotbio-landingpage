@@ -13,7 +13,8 @@
 // Gated by src/middleware.ts (Basic Auth), same as /daniotype_kasperov.
 import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
-import { ClusterSizeFigure, MenuCompositionFigure } from "./figures";
+import { MenuCompositionFigure } from "./figures";
+import ScoringSection from "./scoring";
 import InputOutputFigure from "./inputoutput";
 import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
@@ -71,7 +72,7 @@ export default function CommitChallengePage() {
           </h1>
           <div style={{ maxWidth: 660, marginTop: 17 }}>
             <p style={{ fontSize: 17.5, color: "#5a544c", margin: 0, lineHeight: 1.58 }}>
-              {nfmt(B.clusters)} clusters of 48-hour zebrafish, already partitioned and frozen.
+              {nfmt(B.clusters)} clusters of 48-hour zebrafish from ZSCAPE.
             </p>
             <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
               Each input cluster arrives as three DEG marker lists, per-cluster QC, and the full
@@ -85,6 +86,46 @@ export default function CommitChallengePage() {
             </p>
           </div>
 
+
+          {/* The framing prose is real but not everyone needs it first. Native <details> so it
+              works without client JS and stays keyboard- and screen-reader-navigable. */}
+          <details style={{ marginTop: 22, maxWidth: 660 }}>
+            <summary style={{ cursor: "pointer", fontFamily: MONO, fontSize: 11, fontWeight: 700,
+                              letterSpacing: 0.7, textTransform: "uppercase", color: ACCENT,
+                              listStyle: "none", display: "inline-flex", gap: 8, alignItems: "center",
+                              border: `1px solid ${RULE}`, background: "#fffefd",
+                              borderRadius: 8, padding: "9px 14px" }}>
+              <span style={{ fontSize: 13, lineHeight: 1 }}>▸</span> The challenge, stated
+            </summary>
+            <div style={{ fontSize: 14.5, lineHeight: 1.72, color: "#3f3a34", marginTop: 16,
+                          paddingLeft: 15, borderLeft: `2px solid ${RULE}` }}>
+              <p style={{ margin: "0 0 15px" }}>The set is ZSCAPE&apos;s published gold partition of the 48 hpf control arm:{" "}
+            <strong>{nfmt(B.clusters)} clusters</strong> covering{" "}
+            <strong>{nfmt((H5AD as any).shape.cells)} cells</strong>, every cluster clearing a{" "}
+            {INCL.threshold_from_file}-cell floor. {INCL.excluded_upstream} smaller clusters were
+            dropped upstream before the set was cut.</p>
+              <p style={{ margin: "0 0 15px" }}><strong>The clustering is given.</strong> You do not re-cluster it, and you do not
+            re-filter it — ZSCAPE&apos;s quality thresholds are already applied, and applying your
+            own on top is a failure mode, not a refinement. The partition is the one thing both
+            sides hold fixed, so that a disagreement is about biology rather than about where the
+            boundaries fell.</p>
+              <p style={{ margin: "0 0 15px" }}>For each cluster you return <strong>one ZFA identifier</strong>, selected from a frozen
+            menu of {nfmt((MENU as any).n_terms)} terms. Selected, not written: an answer is an
+            identifier, and a term that is not on the menu is not an answer. Both sides draw from
+            the same list, and the list&apos;s content hash is how that parity is proven.</p>
+              <p style={{ margin: "0 0 15px" }}>Each answer carries three things beyond the identifier itself — <strong>both axis
+            terms</strong> (what the cells are, and where they are), the <strong>ancestor
+            chain</strong> back up the ontology, and a <strong>confidence score and tier</strong>
+            from a rubric you define and publish. The chain is what makes a near-miss legible
+            instead of merely wrong, and the rubric is what lets a reader weigh a call rather than
+            take it.</p>
+              <p style={{ margin: "0" }}>And alongside all of it, <strong>the references used</strong> and an{" "}
+            <strong>evidentiary statement citing only retrieved evidence</strong>. That is the part
+            that makes the rest auditable: without it a label is an assertion, and the difference
+            between a method that reasoned and a method that guessed well is invisible.</p>
+            </div>
+          </details>
+
           <div style={{ display: "flex", gap: 38, flexWrap: "wrap", marginTop: 36 }}>
             <Stat k="clusters" v={nfmt(B.clusters)} sub="given · frozen" />
             <Stat k="cells" v={nfmt((H5AD as any).shape.cells)} sub={`${B.timepoint_hpf} hpf · ${B.arm} arm`} />
@@ -95,167 +136,17 @@ export default function CommitChallengePage() {
         </div>
 
         {/* The figure breaks out of the 900px measure — it is two tall columns, and at the body
-            width they crush. 1.6x the section, still centred, still gutter-padded, and it collapses
+            width they crush. 2.2x the section, still centred, still gutter-padded, and it collapses
             to one column under 980px where the extra width stops helping. */}
-        <div style={{ maxWidth: 1440, margin: "38px auto 0", padding: "0 24px" }}>
+        <div style={{ maxWidth: 2000, margin: "38px auto 0", padding: "0 24px" }}>
           <InputOutputFigure />
         </div>
       </header>
 
-      {/* ── 01 the challenge ──────────────────────────────────────────── */}
-      <div style={section}>
-        <SectionHead n="01" title="The challenge, stated" />
-
-        <div style={{ fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 660 }}>
-          <p style={{ margin: "0 0 17px" }}>
-            The set is ZSCAPE&apos;s published gold partition of the 48 hpf control arm:{" "}
-            <strong>{nfmt(B.clusters)} clusters</strong> covering{" "}
-            <strong>{nfmt((H5AD as any).shape.cells)} cells</strong>, every cluster clearing a{" "}
-            {INCL.threshold_from_file}-cell floor. {INCL.excluded_upstream} smaller clusters were
-            dropped upstream before the set was cut.
-          </p>
-          <p style={{ margin: "0 0 17px" }}>
-            <strong>The clustering is given.</strong> You do not re-cluster it, and you do not
-            re-filter it — ZSCAPE&apos;s quality thresholds are already applied, and applying your
-            own on top is a failure mode, not a refinement. The partition is the one thing both
-            sides hold fixed, so that a disagreement is about biology rather than about where the
-            boundaries fell.
-          </p>
-          <p style={{ margin: "0 0 17px" }}>
-            For each cluster you return <strong>one ZFA identifier</strong>, selected from a frozen
-            menu of {nfmt((MENU as any).n_terms)} terms. Selected, not written: an answer is an
-            identifier, and a term that is not on the menu is not an answer. Both sides draw from
-            the same list, and the list&apos;s content hash is how that parity is proven.
-          </p>
-          <p style={{ margin: "0 0 17px" }}>
-            Each answer carries three things beyond the identifier itself — <strong>both axis
-            terms</strong> (what the cells are, and where they are), the <strong>ancestor
-            chain</strong> back up the ontology, and a <strong>confidence score and tier</strong>
-            from a rubric you define and publish. The chain is what makes a near-miss legible
-            instead of merely wrong, and the rubric is what lets a reader weigh a call rather than
-            take it.
-          </p>
-          <p style={{ margin: 0 }}>
-            And alongside all of it, <strong>the references used</strong> and an{" "}
-            <strong>evidentiary statement citing only retrieved evidence</strong>. That is the part
-            that makes the rest auditable: without it a label is an assertion, and the difference
-            between a method that reasoned and a method that guessed well is invisible.
-          </p>
-        </div>
-
-        {/* scoring callout */}
-        <div style={{ ...card, marginTop: 30, padding: "22px 24px", background: "#fbfaf8" }}>
-          <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: MUTED }}>
-            how it is scored
-          </div>
-          <p style={{ fontSize: 14.5, lineHeight: 1.65, color: "#3f3a34", margin: "11px 0 18px", maxWidth: 640 }}>
-            By identifier, against a key you never see, resolved on the anatomy ontology and
-            measured as graph distance — <strong>not</strong> string match. A synonym is not
-            punished for being a synonym. Credit is <strong>asymmetric</strong>: being too specific
-            and being too broad are not the same error.
-          </p>
-
-          <div style={{ display: "grid", gap: 1, background: RULE, border: `1px solid ${RULE}`, borderRadius: 9, overflow: "hidden" }}>
-            {[
-              ["full", "#3f6b55", "your term is a cell type sitting under the key's region", "The evidence took you further down than the key went. You are not penalised for it."],
-              ["half", "#a16207", "you name the region, the key names a cell type", "Right neighbourhood, stopped short. Upward compression is the error this benchmark is built to catch."],
-              ["zero", "#9a3b3b", "anything else", "Sibling and over-broad cases are decided against label sets, not one string."],
-            ].map(([tier, color, claim, note]) => (
-              <div key={tier as string} style={{ background: "#fffefd", padding: "13px 17px", display: "flex", gap: 15, alignItems: "flex-start" }}>
-                <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase",
-                               color: color as string, minWidth: 42, paddingTop: 2 }}>
-                  {tier}
-                </span>
-                <div>
-                  <div style={{ fontSize: 13.5, color: INK, fontWeight: 550 }}>{claim}</div>
-                  <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3, lineHeight: 1.5 }}>{note}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <div style={{ fontSize: 12, color: FAINT, marginTop: 14, lineHeight: 1.55 }}>
-            The exact weights of the external rule are a versioned placeholder — the shape of the
-            credit is fixed, the numbers are not yet published, and they are deliberately not
-            guessed here.
-          </div>
-        </div>
-      </div>
-
-      <div style={section}><hr style={rule} /></div>
-
-      {/* ── 02 sees / does not see ────────────────────────────────────── */}
+      {/* ── 01 the files ──────────────────────────────────────────────── */}
       <div style={section}>
         <SectionHead
-          n="02"
-          title="What you are given, and what you are not"
-          lede="The withheld fields are all ZSCAPE's own annotations. They are held back for one reason, and it is worth stating plainly."
-        />
-
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(292px, 1fr))", gap: 20 }}>
-          {/* given */}
-          <div style={{ ...card, padding: "20px 22px" }}>
-            <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "#3f6b55", marginBottom: 15 }}>
-              ✓ given to you
-            </div>
-            {[
-              ["gold_features.csv", "Three ordered 50-gene marker lists per cluster — enriched, depleted, and family-level — plus UMI, gene-count and mitochondrial QC."],
-              ["artifacts/zfa_menu.v1.json", `The full ${nfmt((MENU as any).n_terms)}-term answer space, with each term's CARO stratum and synonym count.`],
-              ["zscape_gold_48hpf.h5ad", "The whole matrix — raw counts, log1p CP10k, PCA, and ZSCAPE's published embedding. Compute whatever else you want."],
-            ].map(([f, d]) => (
-              <div key={f as string} style={{ marginBottom: 14 }}>
-                <div style={{ fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK }}>{f}</div>
-                <div style={{ fontSize: 12.5, color: MUTED, marginTop: 3, lineHeight: 1.55 }}>{d}</div>
-              </div>
-            ))}
-          </div>
-
-          {/* withheld */}
-          <div style={{ ...card, padding: "20px 22px", background: "#fbfaf8" }}>
-            <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: "#9a3b3b", marginBottom: 15 }}>
-              ✕ withheld
-            </div>
-            {[
-              ["four ZSCAPE label columns",
-               "zscape_sub_cell_type · zscape_broad_cell_type · zscape_tissue · germ_layer",
-               "Present in our copy of the roster file, stripped from yours. The key was translated from these columns, so handing them over would hand over the answer."],
-              ["zscape_published_markers",
-               "a tenth column of gold_features.csv",
-               "ZSCAPE's own marker calls for each cluster. Downstream of the annotations the key came from, so it is downstream of the key."],
-              ["the excluded-cluster names",
-               "uns['dropped_clusters']",
-               `The ${INCL.excluded_upstream} sub-threshold clusters are keyed by ZSCAPE label name. They are not answers to anything scored, but they are ZSCAPE's label vocabulary, so they go too.`],
-              ["the key itself",
-               "gold_labels.csv",
-               "Quarantined at ingest. Only the scoring stage ever reads it."],
-            ].map(([f, sub, d]) => (
-              <div key={f as string} style={{ marginBottom: 15 }}>
-                <div style={{ fontSize: 12.5, fontWeight: 650, color: INK }}>{f}</div>
-                <div style={{ fontFamily: MONO, fontSize: 10.5, color: FAINT, marginTop: 3, wordBreak: "break-word" }}>{sub}</div>
-                <div style={{ fontSize: 12.5, color: MUTED, marginTop: 5, lineHeight: 1.55 }}>{d}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div style={{ ...card, marginTop: 20, padding: "18px 22px", borderLeft: `3px solid ${ACCENT}` }}>
-          <div style={{ fontSize: 14.5, lineHeight: 1.65, color: "#3f3a34" }}>
-            <strong>Why any of this is withheld.</strong> Not to make the task harder for its own
-            sake. A method that reads ZSCAPE&apos;s existing annotations is not doing the thing
-            being measured — and it does not survive contact with the datasets this is meant to
-            generalise to. MiniFin and MegaFin have no equivalent field. Nothing to match against,
-            no published marker list, no label tier to fall back on. If a method only works where
-            someone has already done the labelling, it does not work.
-          </div>
-        </div>
-      </div>
-
-      <div style={section}><hr style={rule} /></div>
-
-      {/* ── 03 the files ──────────────────────────────────────────────── */}
-      <div style={section}>
-        <SectionHead
-          n="03"
+          n="01"
           title="The three files"
           lede="Each window below shows a file as it ships — its size, its content hash, its real shape, and a live slice of what is inside it."
         />
@@ -266,15 +157,20 @@ export default function CommitChallengePage() {
 
       <div style={section}><hr style={rule} /></div>
 
-      {/* ── 04 figures ────────────────────────────────────────────────── */}
+      {/* ── 04 the answer space ─────────────────────────────────────── */}
       <div style={section}>
-        <SectionHead n="04" title="The shape of the problem" lede="Two things worth knowing before you start." />
-        <div style={{ ...card, padding: "26px 28px", marginBottom: 22 }}>
-          <ClusterSizeFigure />
-        </div>
+        <SectionHead n="02" title="The answer space" lede="What the 3,107 terms are made of." />
         <div style={{ ...card, padding: "26px 28px" }}>
           <MenuCompositionFigure />
         </div>
+      </div>
+
+      <div style={section}><hr style={rule} /></div>
+
+      {/* ── 05 how it is scored ──────────────────────────────────────── */}
+      <div style={section}>
+        <SectionHead n="03" title="How it is scored" />
+        <ScoringSection />
       </div>
 
       {/* ── footer ────────────────────────────────────────────────────── */}
