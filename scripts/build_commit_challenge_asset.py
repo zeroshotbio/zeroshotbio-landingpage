@@ -74,6 +74,12 @@ N_SAMPLE_TERMS = 15
 # ancestor chain appears in the key, by id or by name.
 EXAMPLE_TERM_ID = "ZFA:0000516"
 
+# The cluster used as the worked example on the page. C001 is the first row, but its family list is
+# byte-identical to its enriched list (true for 56 of 112 clusters), and C003's depleted list is
+# empty — C004 is the first preview row where all three lists are full and genuinely distinct.
+EXAMPLE_CLUSTER = "C004"
+MATRIX_WINDOW = 5
+
 
 def log(*a):
     print(*a, flush=True)
@@ -602,6 +608,95 @@ def build_h5ad_summary(n_clusters, total_cells):
     }
 
 
+# --------------------------------------------------------------------------- 5b. matrix window
+def build_matrix_window(gf_header, gf_rows):
+    """A real NxN corner of the counts matrix, for the page's matrix visual.
+
+    Reads only what it needs: the cluster codes, the gene-symbol index, and N CSR rows. The 483 MB
+    of matrix data is never loaded — each row is a slice of a few hundred values. Returns None if
+    anything is missing rather than fabricating a grid."""
+    try:
+        import h5py
+        import numpy as np
+    except Exception:
+        return None
+
+    # the genes to show: the example cluster's own top markers, so the window is not a random corner
+    idx = {c: gf_header.index(c) for c in gf_header}
+    row = next((r for r in gf_rows if r[idx["cluster_id"]] == EXAMPLE_CLUSTER), None)
+    if row is None:
+        return None
+    want_genes = split_markers(row[idx["top_50_markers"]])[:MATRIX_WINDOW]
+    if len(want_genes) < MATRIX_WINDOW:
+        return None
+
+    try:
+        with h5py.File(H5AD, "r") as f:
+            cats = [c.decode() if isinstance(c, bytes) else str(c)
+                    for c in f["obs"]["cluster_id"]["categories"][:]]
+            if EXAMPLE_CLUSTER not in cats:
+                return None
+            code = cats.index(EXAMPLE_CLUSTER)
+            codes = f["obs"]["cluster_id"]["codes"][:]
+            cell_rows = np.where(codes == code)[0][:MATRIX_WINDOW]
+            if len(cell_rows) < MATRIX_WINDOW:
+                return None
+
+            syms = [c.decode() if isinstance(c, bytes) else str(c)
+                    for c in f["var"]["gene_symbol"]["categories"][:]]
+            sym_codes = f["var"]["gene_symbol"]["codes"][:]
+            pos = {}
+            for gi, sc in enumerate(sym_codes):
+                nm = syms[sc]
+                if nm in want_genes and nm not in pos:
+                    pos[nm] = gi
+            if any(g not in pos for g in want_genes):
+                return None
+            cols = [pos[g] for g in want_genes]
+
+            # obs['cell_id'] is a nullable-string array here, not a categorical — the same newer
+            # encoding the sibling builder reads h5py-direct for. Handle both shapes.
+            cell_ids = None
+            if "cell_id" in f["obs"]:
+                node = f["obs"]["cell_id"]
+                dec = lambda v: v.decode() if isinstance(v, bytes) else str(v)
+                if hasattr(node, "keys"):
+                    if "categories" in node:
+                        cc = [dec(c) for c in node["categories"][:]]
+                        cell_ids = [cc[node["codes"][i]] for i in cell_rows]
+                    elif "values" in node:
+                        vals_ = node["values"]
+                        cell_ids = [dec(vals_[int(i)]) for i in cell_rows]
+                else:
+                    cell_ids = [dec(node[int(i)]) for i in cell_rows]
+
+            grp = f["layers"]["counts"]
+            indptr = grp["indptr"]
+            values = []
+            for r in cell_rows:
+                lo, hi = int(indptr[r]), int(indptr[r + 1])
+                ind = grp["indices"][lo:hi]
+                dat = grp["data"][lo:hi]
+                lookup = dict(zip(ind.tolist(), dat.tolist()))
+                values.append([int(lookup.get(c, 0)) for c in cols])
+    except Exception:
+        return None
+
+    return {
+        "cluster": EXAMPLE_CLUSTER,
+        "layer": "layers['counts']",
+        "genes": want_genes,
+        "cells": [str(c) for c in (cell_ids or [f"cell {i + 1}" for i in range(MATRIX_WINDOW)])],
+        "cell_row_index": [int(r) for r in cell_rows],
+        "values": values,
+        "note": (
+            "A real %dx%d corner: the first %d cells of %s, against that cluster's own top %d "
+            "markers. Raw integer counts, exactly as stored."
+            % (MATRIX_WINDOW, MATRIX_WINDOW, MATRIX_WINDOW, EXAMPLE_CLUSTER, MATRIX_WINDOW)
+        ),
+    }
+
+
 # --------------------------------------------------------------------------- 6. size distribution
 def build_size_distribution(header, rows):
     i_id, i_n = header.index("cluster_id"), header.index("n_cells")
@@ -735,6 +830,13 @@ def main():
 
     log("\nbuilding…")
     h5 = build_h5ad_summary(n_clusters, total_cells)
+    mw = build_matrix_window(gf_header, gf_rows)
+    if mw:
+        h5["matrix_window"] = mw
+        log(f"  matrix window: {MATRIX_WINDOW}x{MATRIX_WINDOW} from {EXAMPLE_CLUSTER} "
+            f"({', '.join(mw['genes'])})")
+    else:
+        log("  matrix window: unavailable — omitted rather than fabricated")
     shape = (h5["shape"]["cells"], h5["shape"]["genes"])
     outputs = {
         "manifest.json": build_manifest(recorded, n_clusters, gf_header, gf_rows, menu, shape),

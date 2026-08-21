@@ -114,5 +114,68 @@
  "provenance": {
   "from_validation_artifact": "sha256, shape, cluster key, validation checks",
   "from_file_metadata": "h5py metadata read (group keys + dtypes only; no matrix data loaded)"
+ },
+ "matrix_window": {
+  "cluster": "C004",
+  "layer": "layers['counts']",
+  "genes": [
+   "mipa",
+   "capn3a",
+   "crygmx",
+   "lim2.4",
+   "cryba1l2"
+  ],
+  "cells": [
+   "A06_C08_P04-E03_LIG154",
+   "A06_C10_P04-G01_LIG106",
+   "A06_C12_P04-H01_LIG113",
+   "B04_E06_P04-E03_LIG168",
+   "C06_C04_P04-D01_LIG172"
+  ],
+  "cell_row_index": [
+   17333,
+   17410,
+   17511,
+   17527,
+   18415
+  ],
+  "values": [
+   [
+    0,
+    1,
+    0,
+    0,
+    0
+   ],
+   [
+    3,
+    2,
+    1,
+    0,
+    1
+   ],
+   [
+    0,
+    4,
+    1,
+    0,
+    0
+   ],
+   [
+    2,
+    5,
+    0,
+    1,
+    1
+   ],
+   [
+    0,
+    6,
+    1,
+    0,
+    4
+   ]
+  ],
+  "note": "A real 5x5 corner: the first 5 cells of C004, against that cluster's own top 5 markers. Raw integer counts, exactly as stored."
  }
 }
