@@ -18,7 +18,8 @@
    "sha256": "066c8d5571309bbe8f4b4dec5c8ac4a8e4f23555ba8705c32437bfbf5e5e51e6",
    "sha256_source": "CHECKSUMS.txt (recorded at ingest)",
    "shape": "209,639 cells x 32,031 genes",
-   "description": "The expression matrix. 48 hpf control arm, the frozen 112-cluster partition, raw counts in layers['counts'] and log1p CP10k in X."
+   "description": "The expression matrix. 48 hpf control arm, the frozen 112-cluster partition, raw counts in layers['counts'] and log1p CP10k in X.",
+   "shipped": true
   },
   {
    "file": "gold_features.csv",
@@ -28,6 +29,7 @@
    "sha256_source": "CHECKSUMS.txt (recorded at ingest)",
    "shape": "112 rows x 9 columns shipped",
    "description": "Per-cluster marker evidence: three ordered 50-gene lists plus QC. This is the primary challenge input.",
+   "shipped": true,
    "columns_in_source": 10,
    "columns_shipped": 9,
    "columns_withheld": 1,
@@ -40,10 +42,12 @@
    "sha256": "62e2870aa24d647b5a12d8ae67a1f5638d3a968c9478b40ae8af9f8c867fb453",
    "sha256_source": "computed by this build",
    "shape": "112 rows x 2 columns exposed",
-   "description": "Cluster roster. Only the identifier and the cell count are exposed as challenge input.",
+   "description": "NOT SHIPPED. Built as the public-facing slice of the answer key: take the key, drop the answer columns, keep the descriptive ones. The four ZSCAPE label columns survived that cut because the deterministic name-match tier was then considered a legitimate baseline rather than leakage. With those four withheld, what remains is cluster_id + n_cells \u2014 both already in gold_features.csv \u2014 so the file is redundant and is not part of the delivery. Still read here as the source for the cluster-size distribution.",
+   "shipped": false,
    "columns_in_source": 6,
    "columns_exposed": 2,
    "columns_withheld": 4,
+   "redundant_with": "gold_features.csv (cluster_id, n_cells \u2014 byte-identical)",
    "withheld_note": "Four ZSCAPE label-tier columns exist in the source file and are withheld. Their values and their names are both absent from this bundle; the page names them in its own copy. The answer key was translated from these columns, so exposing them would hand over the answer."
   },
   {
@@ -53,7 +57,8 @@
    "sha256": "d75ac321ec1803fd7196c2286f77000cb43cbd56734a420bd825b37ed7aaec87",
    "sha256_source": "computed by this build",
    "shape": "3,107 terms",
-   "description": "The frozen answer space. Every label, both sides, must be one of these ZFA terms \u2014 parity is proven by matching the menu hash."
+   "description": "The frozen answer space. Every label, both sides, must be one of these ZFA terms \u2014 parity is proven by matching the menu hash.",
+   "shipped": true
   }
  ]
 }

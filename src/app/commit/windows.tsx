@@ -1,7 +1,11 @@
 // The four file windows on /commit.
 //
-// These render the challenge inputs AS THE CONTESTANT RECEIVES THEM — the columns that ship, the
-// rows that ship, nothing else. Anything withheld is named once, in the "what you are not given"
+// These render the challenge inputs AS THE CONTESTANT RECEIVES THEM — the files that ship, the
+// columns that ship, the rows that ship, nothing else. cluster_public.csv has no window because it
+// is no longer part of the delivery: once its four ZSCAPE label columns are withheld, the two that
+// remain (cluster_id, n_cells) are byte-identical to columns of gold_features.csv. The builder
+// still reads it as the source for the cluster-size distribution; the manifest marks it
+// shipped:false. Anything withheld is named once, in the "what you are not given"
 // column of the page, and never appears here; a window that listed the held-back fields would stop
 // being a window into the file and start being a description of our copy of it.
 //
@@ -10,7 +14,6 @@
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, card, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
-import CLUSTER from "./data/cluster_public_preview.json";
 import FEATURES from "./data/gold_features_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
@@ -20,8 +23,7 @@ const FILES: Record<string, any> = Object.fromEntries(
 );
 
 // ── window chrome ──────────────────────────────────────────────────────────
-// `file` is the manifest key (our row's path); `display` is what a contestant actually receives —
-// cluster_public.csv ships as a file, not as inputs/cluster_public.csv.
+// `file` is the manifest key (our row's path); `display` is what a contestant actually receives.
 function Window({ file, display, kicker, children }: {
   file: string; display?: string; kicker: string; children: React.ReactNode;
 }) {
@@ -130,40 +132,7 @@ export function GoldFeaturesWindow() {
   );
 }
 
-// ── 2. inputs/cluster_public.csv ───────────────────────────────────────────
-export function ClusterPublicWindow() {
-  const rows = (CLUSTER as any).rows as any[];
-  return (
-    <Window
-      file="inputs/cluster_public.csv"
-      display="cluster_public.csv"
-      kicker="The roster. Which clusters exist, and how many cells are in each."
-    >
-      <div style={{ ...scroll, maxHeight: 300, overflowY: "auto" }}>
-        <table style={{ borderCollapse: "collapse", width: "100%" }}>
-          <thead>
-            <tr><th style={th}>cluster_id</th><th style={th}>n_cells</th></tr>
-          </thead>
-          <tbody>
-            {rows.map((r) => (
-              <tr key={r.cluster_id}>
-                <td style={{ ...td, fontWeight: 700 }}>{r.cluster_id}</td>
-                <td style={td}>{nfmt(r.n_cells)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-      <div style={footRow}>
-        Showing {rows.length} of {nfmt((CLUSTER as any).total_rows)} rows ·{" "}
-        {nfmt((CLUSTER as any).total_cells)} cells in total. Cluster ids are opaque: C001 through
-        C112 carry no ordering and no meaning beyond identity.
-      </div>
-    </Window>
-  );
-}
-
-// ── 3. artifacts/zfa_menu.v1.json ──────────────────────────────────────────
+// ── 2. artifacts/zfa_menu.v1.json ──────────────────────────────────────────
 export function ZfaMenuWindow() {
   const terms = (MENU as any).sample_terms as any[];
   const src = (MENU as any).source;
@@ -226,7 +195,7 @@ export function ZfaMenuWindow() {
   );
 }
 
-// ── 4. zscape_gold_48hpf.h5ad ──────────────────────────────────────────────
+// ── 3. zscape_gold_48hpf.h5ad ──────────────────────────────────────────────
 export function H5adWindow() {
   const h = H5AD as any;
   const checks = h.validation_checks as any[];

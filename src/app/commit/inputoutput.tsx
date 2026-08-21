@@ -19,7 +19,6 @@
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, IN_GREEN, nfmt } from "./theme";
 import MANIFEST from "./data/manifest.json";
-import CLUSTER from "./data/cluster_public_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
 
@@ -38,12 +37,12 @@ const CONF_TIERS = ["Germ layer", "Tissue", "Cell type — broad", "Cell type �
 
 // The three ranked lists, in plain English. What each one IS, not how it was computed — the
 // divergence reading on `family` is the one documented in the row's own merging SPEC.
-const LISTS: { col: string; tag: string; blurb: string }[] = [
-  { col: "top_50_markers", tag: "Enriched DEGs",
+const LISTS: { col: string; blurb: string }[] = [
+  { col: "top_50_markers",
     blurb: "DEGs up-expressed here more than anywhere else in the set — the cluster's positive signature." },
-  { col: "bottom_50_markers", tag: "Depleted DEGs",
+  { col: "bottom_50_markers",
     blurb: "DEGs down-expressed here relative to the rest of the set. Absence used as evidence: what a cluster conspicuously lacks narrows it as much as what it has." },
-  { col: "family_50_markers", tag: "Family DEGs",
+  { col: "family_50_markers",
     blurb: "The same ranking recomputed against a contrast group of related clusters rather than against the whole set." },
 ];
 
@@ -167,16 +166,14 @@ function ColHead({ side, title, sub }: { side: string; title?: string; sub: stri
   );
 }
 
-// One field of a file: the column name, the plain-English name beneath it, then what it means.
-function Field({ col, tag, blurb }: { col: string; tag?: string; blurb: string }) {
+// One field of a file: the column name, then what it is. No restated label in between — the
+// sentence already says what the column holds, and a heading above it only said it twice.
+function Field({ col, blurb }: { col: string; blurb: string }) {
   return (
     <div style={{ marginBottom: 14 }}>
       <ColName>{col}</ColName>
       <div style={{ paddingLeft: IND_2 }}>
-        {tag && (
-          <div style={{ fontSize: 12, fontWeight: 650, color: INK, margin: "6px 0 4px" }}>{tag}</div>
-        )}
-        <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55, marginTop: tag ? 0 : 6 }}>{blurb}</div>
+        <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55, marginTop: 6 }}>{blurb}</div>
       </div>
     </div>
   );
@@ -234,7 +231,6 @@ function MatrixWindow() {
 // ── the figure ─────────────────────────────────────────────────────────────
 export default function InputOutputFigure() {
   const gf = FILES["gold_features.csv"];
-  const cp = FILES["inputs/cluster_public.csv"];
   const h5 = FILES["zscape_gold_48hpf.h5ad"];
   const menuFile = FILES["artifacts/zfa_menu.v1.json"];
   const matrix = `${nfmt((H5AD as any).shape.cells)} × ${nfmt((H5AD as any).shape.genes)}`;
@@ -263,7 +259,7 @@ export default function InputOutputFigure() {
 
         {/* ── INPUT — the three evidence files, matrix first ───────── */}
         <div className="cio-col cio-col--in">
-          <ColHead side="input" sub="The three files delivered as evidence." />
+          <ColHead side="input" sub="Three files. The matrix, the features derived from it, and the menu every answer is drawn from." />
 
           <FileSection n={1} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
                        blurb="The expression matrix. Every cell, every gene — compute your own evidence from it if you would rather not take ours.">
@@ -284,23 +280,23 @@ export default function InputOutputFigure() {
               whose expression separates this cluster from others — ranked three ways, plus the
               quality statistics behind them.
             </div>
-            {LISTS.map((l) => <Field key={l.col} col={l.col} tag={l.tag} blurb={l.blurb} />)}
+            {LISTS.map((l) => <Field key={l.col} col={l.col} blurb={l.blurb} />)}
             <div style={{ height: 4 }} />
             {QC.map((q) => <Field key={q.col} col={q.col} blurb={q.blurb} />)}
           </FileSection>
 
-          <FileSection n={3} name="cluster_public.csv"
-                       blurb="The answer sheet's row headings: the definitive list of which clusters exist, and therefore which ones you owe an answer for.">
-            <div style={{ display: "flex", gap: 5, flexWrap: "wrap", marginBottom: 9 }}>
-              <ColName>cluster_id</ColName>
-              <ColName>n_cells</ColName>
-            </div>
-            <div style={{ paddingLeft: IND_2, fontSize: 11.5, color: MUTED, lineHeight: 1.55 }}>
-              {nfmt((CLUSTER as any).total_rows)} rows, one per cluster. The id is opaque — no
-              ordering, no meaning beyond identity — and the cell count says how much evidence
-              stands behind that row. Both columns also appear in{" "}
-              <code style={{ fontFamily: MONO, fontSize: 10.5 }}>gold_features.csv</code>; this file
-              is the roster, not a second source.
+          <FileSection n={3} name="zfa_menu.v1.json" shape={`${nfmt((MENU as any).n_terms)} terms`}
+                       blurb="The answer space. Every label you return must be one of these terms, so this file is as much an input as the evidence is.">
+            <Field col="id"
+                   blurb="The ZFA identifier you actually submit. An answer is this string; a term that is not on the menu is not an answer." />
+            <Field col="name"
+                   blurb="The human-readable anatomy term the identifier stands for. Scored on the identifier, so a synonym is never punished for being a synonym." />
+            <Field col="caro"
+                   blurb="Which branch the term sits in — a cell type, an anatomical structure, or above the roots. This is what makes the two answer axes separable." />
+            <div style={{ paddingLeft: 0, marginTop: 2, fontSize: 11.5, color: FAINT, lineHeight: 1.55 }}>
+              Frozen against ZFA {(MENU as any).source?.release?.replace("releases/", "")}. Both
+              sides select from this exact list; matching its content hash is how that parity is
+              proven.
             </div>
           </FileSection>
         </div>
@@ -314,7 +310,7 @@ export default function InputOutputFigure() {
         <div className="cio-col">
           <ColHead side="output" title="What you must return" sub="Per cluster. One answer, four parts." />
 
-          <OutRow n={1} label="one zfa identifier" file="artifacts/zfa_menu.v1.json">
+          <OutRow n={1} label="one zfa identifier">
             {ANSWER ? (
               <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
                             background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7, padding: "7px 11px" }}>
@@ -323,8 +319,7 @@ export default function InputOutputFigure() {
               </div>
             ) : null}
             <div style={{ fontSize: 11.5, color: FAINT, marginTop: 7, lineHeight: 1.5 }}>
-              The fourth delivered file is the answer space itself: {nfmt((MENU as any).n_terms)}{" "}
-              frozen terms. Selected, not written — a term that is not on the menu is not an answer.
+              Selected from the {nfmt((MENU as any).n_terms)}-term menu on the left, not written.
             </div>
           </OutRow>
 

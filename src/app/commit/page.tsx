@@ -15,7 +15,7 @@ import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
 import { ClusterSizeFigure, MenuCompositionFigure } from "./figures";
 import InputOutputFigure from "./inputoutput";
-import { GoldFeaturesWindow, ClusterPublicWindow, ZfaMenuWindow, H5adWindow } from "./windows";
+import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
@@ -189,7 +189,6 @@ export default function CommitChallengePage() {
             </div>
             {[
               ["gold_features.csv", "Three ordered 50-gene marker lists per cluster — enriched, depleted, and family-level — plus UMI, gene-count and mitochondrial QC."],
-              ["inputs/cluster_public.csv", "The roster: which clusters exist and how big each one is."],
               ["artifacts/zfa_menu.v1.json", `The full ${nfmt((MENU as any).n_terms)}-term answer space, with each term's CARO stratum and synonym count.`],
               ["zscape_gold_48hpf.h5ad", "The whole matrix — raw counts, log1p CP10k, PCA, and ZSCAPE's published embedding. Compute whatever else you want."],
             ].map(([f, d]) => (
@@ -246,13 +245,12 @@ export default function CommitChallengePage() {
       <div style={section}>
         <SectionHead
           n="03"
-          title="The files"
-          lede="Each window below shows the file as it ships — its size, its content hash, its real shape, and a live slice of what is inside it."
+          title="The three files"
+          lede="Each window below shows a file as it ships — its size, its content hash, its real shape, and a live slice of what is inside it."
         />
-        <GoldFeaturesWindow />
-        <ClusterPublicWindow />
-        <ZfaMenuWindow />
         <H5adWindow />
+        <GoldFeaturesWindow />
+        <ZfaMenuWindow />
       </div>
 
       <div style={section}><hr style={rule} /></div>

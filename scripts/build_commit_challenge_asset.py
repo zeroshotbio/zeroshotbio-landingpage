@@ -150,7 +150,7 @@ def split_markers(cell):
 
 # --------------------------------------------------------------------------- 1. manifest
 def build_manifest(recorded, n_clusters, gold_header, gold_rows, menu, h5_shape):
-    def entry(path, display, desc, shape, extra=None):
+    def entry(path, display, desc, shape, extra=None, shipped=True):
         base = os.path.basename(path)
         rec = recorded.get(base)
         e = {
@@ -161,6 +161,7 @@ def build_manifest(recorded, n_clusters, gold_header, gold_rows, menu, h5_shape)
             "sha256_source": "CHECKSUMS.txt (recorded at ingest)" if rec else "computed by this build",
             "shape": shape,
             "description": desc,
+            "shipped": shipped,
         }
         if extra:
             e.update(extra)
@@ -199,18 +200,24 @@ def build_manifest(recorded, n_clusters, gold_header, gold_rows, menu, h5_shape)
                        "ZSCAPE's annotations, so their marker calls are downstream of the key."
                    )}),
             entry(CLUSTER_PUBLIC, "inputs/cluster_public.csv",
-                  "Cluster roster. Only the identifier and the cell count are exposed as challenge "
-                  "input.",
+                  "NOT SHIPPED. Built as the public-facing slice of the answer key: take the key, "
+                  "drop the answer columns, keep the descriptive ones. The four ZSCAPE label "
+                  "columns survived that cut because the deterministic name-match tier was then "
+                  "considered a legitimate baseline rather than leakage. With those four withheld, "
+                  "what remains is cluster_id + n_cells — both already in gold_features.csv — so "
+                  "the file is redundant and is not part of the delivery. Still read here as the "
+                  "source for the cluster-size distribution.",
                   f"{n_clusters:,} rows x 2 columns exposed",
                   {"columns_in_source": 6,
                    "columns_exposed": 2,
                    "columns_withheld": 4,
+                   "redundant_with": "gold_features.csv (cluster_id, n_cells — byte-identical)",
                    "withheld_note": (
                        "Four ZSCAPE label-tier columns exist in the source file and are withheld. "
                        "Their values and their names are both absent from this bundle; the page "
                        "names them in its own copy. The answer key was translated from these "
                        "columns, so exposing them would hand over the answer."
-                   )}),
+                   )}, shipped=False),
             entry(ZFA_MENU, "artifacts/zfa_menu.v1.json",
                   "The frozen answer space. Every label, both sides, must be one of these ZFA "
                   "terms — parity is proven by matching the menu hash.",
