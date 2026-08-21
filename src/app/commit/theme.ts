@@ -19,6 +19,14 @@ export const CARD = "#fffefd";
 // Assigned in fixed order and never cycled. Do not substitute by eye — re-run the validator.
 export const CAT = ["#0369a1", "#c2410c", "#6d28d9"] as const;
 
+// File names — the artefacts that actually ship. A warm rust, one step lower in chroma than the
+// chart orange so it reads as a category marker rather than an alert; 5.10:1 on the code-chip
+// background, 5.45:1 on card. Files wear it; COLUMNS inside a file stay neutral ink, so the
+// distinction between "a file you receive" and "a field within it" is carried by colour.
+export const FILE = "#a8501b";
+export const FILE_BG = "#fdf6f1";
+export const FILE_BD = "#f0e2d6";
+
 // Single-series magnitude (the cluster-size histogram). One hue, no categorical identity to carry.
 export const SERIES = "#0e7490";
 

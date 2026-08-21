@@ -1,19 +1,26 @@
-// The input→output figure: what a labeller is handed, and what it must hand back.
+// The input→output figure: the files we hand to Commit, and the answer they must come back with.
 //
 // The glanceable version of the masthead subtitle — the shape of the task without reading §1. The
-// middle is deliberately empty: what happens between the two columns is the contest.
+// middle is deliberately empty: what happens there is the contest.
 //
-// Every concrete value traces to src/app/commit/data/. The worked cluster is looked up by id
-// rather than by row position, and if a field is missing the label renders without an example
-// instead of inventing one — the 5x5 matrix corner simply does not render if the builder could not
-// read it.
+// ORGANISED BY FILE, not by topic. Every section is led by the artefact that supplies it, because
+// "what is actually delivered" is the thing this figure exists to answer. Two colour rules carry
+// the hierarchy: a FILE wears rust and sits flush left with the section number; a COLUMN inside
+// that file stays neutral ink and sits one step in. Content indents again past that, so the eye
+// reads file → field → value as a waterfall.
+//
+// Every concrete value traces to src/app/commit/data/. If a field is missing the label renders
+// without an example rather than inventing one — the 5x5 matrix corner simply does not render if
+// the builder could not read it.
 //
 // Responsive behaviour needs real media queries, which inline styles cannot express, so this one
 // component carries a scoped <style> block (all class names prefixed `cio-`). Everything else on
 // /commit stays inline, matching the rest of the repo.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, nfmt } from "./theme";
+import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, FILE_BG, FILE_BD, nfmt } from "./theme";
+import MANIFEST from "./data/manifest.json";
 import FEATURES from "./data/gold_features_preview.json";
+import CLUSTER from "./data/cluster_public_preview.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
 
@@ -24,6 +31,9 @@ import H5AD from "./data/h5ad_summary.json";
 // matrix corner from the same cluster.
 const EXAMPLE_CLUSTER = "C004";
 
+const FILES: Record<string, any> = Object.fromEntries(
+  (MANIFEST as any).files.map((f: any) => [f.file, f])
+);
 const ROWS = (FEATURES as any).rows as any[];
 const EX = ROWS.find((r) => r.cluster_id === EXAMPLE_CLUSTER) ?? null;
 const ANSWER = (MENU as any).example_answer ?? null;
@@ -42,33 +52,60 @@ const LISTS: { col: string; tag: string; blurb: string }[] = [
     blurb: "The same ranking against near-neighbour clusters. Matching enriched means no separable sibling structure; diverging means there is." },
 ];
 
+// ── indentation scale — the waterfall ──────────────────────────────────────
+const IND_1 = 19;   // section descriptor, under the file name
+const IND_2 = 19;   // column name, under the descriptor
+const IND_3 = 15;   // values, under the column name
+
 // ── atoms ──────────────────────────────────────────────────────────────────
 
-// A code-set identifier — a column or layer name, the thing that actually arrives. Boxed so the
-// name is the emphasis of its row and the prose reads as annotation on it.
-function Code({ children, strong = false }: { children: React.ReactNode; strong?: boolean }) {
+// A file that actually ships. Flush left with the section number, rust, and the only element at
+// this level — so scanning the left edge alone enumerates the delivery.
+function FileName({ name, shape }: { name: string; shape?: string }) {
+  return (
+    <div style={{ display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+      <code style={{
+        fontFamily: MONO, fontSize: 12.5, fontWeight: 700, color: FILE,
+        background: FILE_BG, border: `1px solid ${FILE_BD}`, borderRadius: 5,
+        padding: "4px 9px", whiteSpace: "nowrap",
+      }}>
+        {name}
+      </code>
+      {shape && (
+        <span style={{ fontFamily: MONO, fontSize: 10.5, color: FAINT, fontVariantNumeric: "tabular-nums" }}>
+          {shape}
+        </span>
+      )}
+    </div>
+  );
+}
+
+// A field WITHIN a file — neutral, so it never competes with the file above it.
+function ColName({ children }: { children: React.ReactNode }) {
   return (
     <code style={{
-      fontFamily: MONO, fontSize: strong ? 12 : 11,
-      fontWeight: 700, color: INK,
-      background: "#f4f2ef", border: `1px solid ${RULE}`, borderRadius: 5,
-      padding: strong ? "4px 8px" : "2px 6px", whiteSpace: "nowrap",
+      fontFamily: MONO, fontSize: 11.5, fontWeight: 700, color: INK,
+      background: "#f4f2ef", border: `1px solid ${RULE}`, borderRadius: 4,
+      padding: "2px 7px", whiteSpace: "nowrap",
     }}>
       {children}
     </code>
   );
 }
 
-function Row({ n, label, children }: { n: number; label: string; children: React.ReactNode }) {
+function FileSection({ n, name, shape, blurb, children }: {
+  n: number; name: string; shape?: string; blurb: string; children: React.ReactNode;
+}) {
   return (
-    <div style={{ padding: "15px 0", borderTop: `1px solid ${RULE}` }}>
-      <div style={{ display: "flex", gap: 9, alignItems: "baseline", marginBottom: 9 }}>
+    <div style={{ padding: "17px 0", borderTop: `1px solid ${RULE}` }}>
+      <div style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
         <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: FAINT, minWidth: 11 }}>{n}</span>
-        <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED }}>
-          {label}
-        </span>
+        <FileName name={name} shape={shape} />
       </div>
-      <div style={{ paddingLeft: 20 }}>{children}</div>
+      <div style={{ paddingLeft: IND_1 + 11 }}>
+        <div style={{ fontSize: 12, color: MUTED, margin: "7px 0 11px", lineHeight: 1.5 }}>{blurb}</div>
+        {children}
+      </div>
     </div>
   );
 }
@@ -105,6 +142,31 @@ function SubItem({ tag, note, children }: { tag: string; note?: string; children
   );
 }
 
+function OutRow({ n, label, file, children }: {
+  n: number; label: string; file?: string; children: React.ReactNode;
+}) {
+  return (
+    <div style={{ padding: "15px 0", borderTop: `1px solid ${RULE}` }}>
+      <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
+        <span style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, color: FAINT, minWidth: 11 }}>{n}</span>
+        {file ? <FileName name={file} /> : (
+          <span style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED }}>
+            {label}
+          </span>
+        )}
+      </div>
+      <div style={{ paddingLeft: IND_1 + 11 }}>
+        {file && (
+          <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.7, textTransform: "uppercase", color: MUTED, margin: "8px 0 9px" }}>
+            {label}
+          </div>
+        )}
+        <div style={{ marginTop: file ? 0 : 9 }}>{children}</div>
+      </div>
+    </div>
+  );
+}
+
 function ColHead({ side, title, sub }: { side: string; title?: string; sub: string }) {
   const isOut = side === "output";
   return (
@@ -128,7 +190,7 @@ function MatrixWindow() {
   const cellW = 42;
 
   return (
-    <div style={{ marginTop: 11, display: "inline-block", border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
+    <div style={{ marginTop: 10, display: "inline-block", border: `1px solid ${RULE}`, borderRadius: 8, overflow: "hidden", background: "#fdfcfb" }}>
       <table style={{ borderCollapse: "collapse" }}>
         <thead>
           <tr>
@@ -170,10 +232,14 @@ function MatrixWindow() {
 
 // ── the figure ─────────────────────────────────────────────────────────────
 export default function InputOutputFigure() {
+  const gf = FILES["gold_features.csv"];
+  const cp = FILES["inputs/cluster_public.csv"];
+  const h5 = FILES["zscape_gold_48hpf.h5ad"];
+  const menuFile = FILES["artifacts/zfa_menu.v1.json"];
   const matrix = `${nfmt((H5AD as any).shape.cells)} × ${nfmt((H5AD as any).shape.genes)}`;
 
   return (
-    <section className="cio-wrap" aria-label="What a labeller is given, and what it must return">
+    <section className="cio-wrap" aria-label="The files delivered for the challenge, and the answer required">
       <style
         // scoped to this figure; inline styles cannot carry media queries
         dangerouslySetInnerHTML={{
@@ -194,65 +260,82 @@ export default function InputOutputFigure() {
 
       <div className="cio-grid" style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 12, overflow: "hidden" }}>
 
-        {/* ── INPUT ─────────────────────────────────────────────────── */}
+        {/* ── INPUT — the three evidence files ──────────────────────── */}
         <div className="cio-col cio-col--in">
-          <ColHead side="input" sub={`Using Cluster ${EXAMPLE_CLUSTER.replace(/^C/, "")} as an example:`} />
+          <ColHead side="input" sub={`The files we deliver. Using Cluster ${EXAMPLE_CLUSTER.replace(/^C/, "")} as an example:`} />
 
-          <Row n={1} label="three ranked gene lists">
+          <FileSection n={1} name="gold_features.csv" shape={gf?.shape}
+                       blurb="One row per cluster. The evidence file — three ranked gene lists and the QC behind them.">
             {LISTS.map((l) => (
-              <div key={l.col} style={{ marginBottom: 13 }}>
-                <div style={{ display: "flex", gap: 8, alignItems: "baseline", flexWrap: "wrap", marginBottom: 5 }}>
-                  <Code strong>{l.col}</Code>
-                  <span style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0.5, textTransform: "uppercase", color: MUTED }}>
+              <div key={l.col} style={{ marginBottom: 14 }}>
+                <ColName>{l.col}</ColName>
+                <div style={{ paddingLeft: IND_2 }}>
+                  <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, margin: "6px 0 4px" }}>
                     {l.tag}
-                  </span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.5, marginBottom: 7 }}>{l.blurb}</div>
+                  <div style={{ paddingLeft: IND_3 }}>{EX ? <Chips list={EX[l.col]} show={4} /> : null}</div>
                 </div>
-                <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.5, marginBottom: 6 }}>{l.blurb}</div>
-                {EX ? <Chips list={EX[l.col]} show={4} /> : null}
               </div>
             ))}
-          </Row>
 
-          <Row n={2} label="qc statistics">
-            <div style={{ display: "flex", gap: 20, flexWrap: "wrap" }}>
-              {EX
-                ? ([["mean UMI", EX.mean_umi], ["mean genes", EX.mean_genes_expressed], ["% mito", EX.pct_mitochondrial]] as [string, number][])
-                    .map(([k, v]) => (
-                      <div key={k}>
-                        <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", color: FAINT }}>{k}</div>
-                        <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>{v}</div>
-                      </div>
-                    ))
-                : <div style={{ fontSize: 12.5, color: MUTED }}>mean UMI · mean genes expressed · % mitochondrial</div>}
+            <div style={{ marginTop: 16 }}>
+              <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+                {["mean_umi", "mean_genes_expressed", "pct_mitochondrial"].map((c) => (
+                  <ColName key={c}>{c}</ColName>
+                ))}
+              </div>
+              <div style={{ paddingLeft: IND_2 }}>
+                <div style={{ fontFamily: MONO, fontSize: 10, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED, margin: "6px 0 6px" }}>
+                  qc statistics
+                </div>
+                <div style={{ paddingLeft: IND_3, display: "flex", gap: 20, flexWrap: "wrap" }}>
+                  {EX
+                    ? ([["mean UMI", EX.mean_umi], ["mean genes", EX.mean_genes_expressed], ["% mito", EX.pct_mitochondrial]] as [string, number][])
+                        .map(([k, v]) => (
+                          <div key={k}>
+                            <div style={{ fontFamily: MONO, fontSize: 9, letterSpacing: 0.5, textTransform: "uppercase", color: FAINT }}>{k}</div>
+                            <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>{v}</div>
+                          </div>
+                        ))
+                    : null}
+                </div>
+              </div>
             </div>
-          </Row>
+          </FileSection>
 
-          <Row n={3} label="cluster identity">
-            <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
-              <Code strong>{EX?.cluster_id ?? "cluster_id"}</Code>
-              <span style={{ fontFamily: MONO, fontSize: 12.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                {EX ? `${nfmt(EX.n_cells)} cells` : "n_cells"}
-              </span>
+          <FileSection n={2} name="inputs/cluster_public.csv" shape={cp?.shape}
+                       blurb="The roster — the authoritative list of which clusters exist. Both surviving columns also appear in gold_features.csv, so it adds no evidence; it fixes the set.">
+            <div style={{ display: "flex", gap: 5, flexWrap: "wrap" }}>
+              <ColName>cluster_id</ColName>
+              <ColName>n_cells</ColName>
             </div>
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 6, lineHeight: 1.5 }}>
-              The id is opaque — it carries no ordering and no meaning beyond identity.
+            <div style={{ paddingLeft: IND_2 }}>
+              <div style={{ paddingLeft: 0, marginTop: 8, display: "flex", gap: 10, alignItems: "baseline", flexWrap: "wrap" }}>
+                <span style={{ fontFamily: MONO, fontSize: 13, fontWeight: 700, color: INK }}>{EX?.cluster_id ?? "—"}</span>
+                <span style={{ fontFamily: MONO, fontSize: 12, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
+                  {EX ? `${nfmt(EX.n_cells)} cells` : ""}
+                </span>
+              </div>
+              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 6, lineHeight: 1.5 }}>
+                The id is opaque — no ordering, no meaning beyond identity. It is a handle to answer
+                against, not a hint.
+              </div>
             </div>
-          </Row>
+          </FileSection>
 
-          <Row n={4} label="the full expression matrix">
-            <div style={{ display: "flex", gap: 9, alignItems: "baseline", flexWrap: "wrap" }}>
-              <Code strong>{(WINDOW as any)?.layer ?? "layers['counts']"}</Code>
-              <span style={{ fontFamily: MONO, fontSize: 12.5, color: MUTED, fontVariantNumeric: "tabular-nums" }}>
-                {matrix}
-              </span>
+          <FileSection n={3} name="zscape_gold_48hpf.h5ad" shape={h5?.shape}
+                       blurb="The matrix itself, if you would rather compute your own evidence than take ours.">
+            <ColName>{(WINDOW as any)?.layer ?? "layers['counts']"}</ColName>
+            <div style={{ paddingLeft: IND_2 }}>
+              <MatrixWindow />
+              <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.5 }}>
+                {WINDOW
+                  ? <>Five cells of {EXAMPLE_CLUSTER} against its own top five markers — real counts, mostly zero. That sparsity is the problem, and it runs the full {matrix}.</>
+                  : <>Raw integer counts, alongside log1p CP10k in X.</>}
+              </div>
             </div>
-            <MatrixWindow />
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 8, lineHeight: 1.5 }}>
-              {WINDOW
-                ? <>Five cells of {EXAMPLE_CLUSTER} against its own top five markers — real counts, mostly zero. That sparsity is the problem: the whole matrix is {matrix}, and it is there if you would rather compute your own evidence than take ours.</>
-                : <>Raw counts and log1p CP10k, for every cluster at once — there if you would rather compute your own evidence than take ours.</>}
-            </div>
-          </Row>
+          </FileSection>
         </div>
 
         {/* ── the empty middle ──────────────────────────────────────── */}
@@ -264,7 +347,7 @@ export default function InputOutputFigure() {
         <div className="cio-col">
           <ColHead side="output" title="What you must return" sub="Per cluster. One answer, four parts." />
 
-          <Row n={1} label="one zfa identifier">
+          <OutRow n={1} label="one zfa identifier" file="artifacts/zfa_menu.v1.json">
             {ANSWER ? (
               <div style={{ display: "inline-flex", gap: 9, alignItems: "baseline", flexWrap: "wrap",
                             background: "#eef6f8", border: "1px solid #cfe4ea", borderRadius: 7, padding: "7px 11px" }}>
@@ -273,12 +356,12 @@ export default function InputOutputFigure() {
               </div>
             ) : null}
             <div style={{ fontSize: 11.5, color: FAINT, marginTop: 7, lineHeight: 1.5 }}>
-              Selected from the frozen {nfmt((MENU as any).n_terms)}-term menu, not written. A term
-              that is not on the menu is not an answer.
+              The fourth delivered file is the answer space itself: {nfmt((MENU as any).n_terms)}{" "}
+              frozen terms. Selected, not written — a term that is not on the menu is not an answer.
             </div>
-          </Row>
+          </OutRow>
 
-          <Row n={2} label="both axis terms">
+          <OutRow n={2} label="both axis terms">
             <SubItem tag="cell-type axis" note="what the cells are">
               <span style={{ fontSize: 12.5, color: FAINT, fontStyle: "italic" }}>
                 null — evidence did not support a call
@@ -294,9 +377,9 @@ export default function InputOutputFigure() {
             <div style={{ fontSize: 11.5, color: FAINT, marginTop: 2, lineHeight: 1.5 }}>
               Either axis may be null. Saying so is an answer; guessing is not.
             </div>
-          </Row>
+          </OutRow>
 
-          <Row n={3} label="ancestor chain">
+          <OutRow n={3} label="ancestor chain">
             {ANSWER ? (
               <div>
                 {ANSWER.ancestor_chain.map((node: any, i: number) => (
@@ -314,9 +397,9 @@ export default function InputOutputFigure() {
               The path back toward the root. It is what makes a near-miss legible instead of merely
               wrong.
             </div>
-          </Row>
+          </OutRow>
 
-          <Row n={4} label="confidence tier">
+          <OutRow n={4} label="confidence tier">
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {CONF_TIERS.map((t, i) => (
                 <span key={t} style={{ fontFamily: MONO, fontSize: 10, color: i === 3 ? INK : MUTED,
@@ -331,7 +414,7 @@ export default function InputOutputFigure() {
               A closed list. Conclude at the deepest tier the evidence supports — abstention is
               credited at the tier you reached, so stopping early costs less than overreaching.
             </div>
-          </Row>
+          </OutRow>
         </div>
       </div>
     </section>

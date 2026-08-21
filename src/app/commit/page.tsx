@@ -71,7 +71,7 @@ export default function CommitChallengePage() {
           </h1>
           <div style={{ maxWidth: 660, marginTop: 17 }}>
             <p style={{ fontSize: 17.5, color: "#5a544c", margin: 0, lineHeight: 1.58 }}>
-              One hundred and twelve clusters of 48-hour zebrafish, already partitioned and frozen.
+              {nfmt(B.clusters)} clusters of 48-hour zebrafish, already partitioned and frozen.
             </p>
             <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
               Each input cluster arrives as three DEG marker lists, per-cluster QC, and the full

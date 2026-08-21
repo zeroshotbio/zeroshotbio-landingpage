@@ -26,8 +26,10 @@
    "size_human": "115.8 KB",
    "sha256": "9da9cb68a6c5651950c9051f2a33492e70fb9f25d280fbb151a9d35190952e07",
    "sha256_source": "CHECKSUMS.txt (recorded at ingest)",
-   "shape": "112 rows x 10 columns",
+   "shape": "112 rows x 9 columns shipped",
    "description": "Per-cluster marker evidence: three ordered 50-gene lists plus QC. This is the primary challenge input.",
+   "columns_in_source": 10,
+   "columns_shipped": 9,
    "columns_withheld": 1,
    "withheld_note": "One column of ZSCAPE's own published marker calls is excluded from the challenge input and from this bundle: the answer key was translated from ZSCAPE's annotations, so their marker calls are downstream of the key."
   },

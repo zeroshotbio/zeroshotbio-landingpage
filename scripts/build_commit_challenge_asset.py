@@ -189,8 +189,10 @@ def build_manifest(recorded, n_clusters, gold_header, gold_rows, menu, h5_shape)
             entry(GOLD_FEATURES, "gold_features.csv",
                   "Per-cluster marker evidence: three ordered 50-gene lists plus QC. "
                   "This is the primary challenge input.",
-                  f"{len(gold_rows):,} rows x {len(gold_header)} columns",
-                  {"columns_withheld": 1,
+                  f"{len(gold_rows):,} rows x {len(gold_header) - 1} columns shipped",
+                  {"columns_in_source": len(gold_header),
+                   "columns_shipped": len(gold_header) - 1,
+                   "columns_withheld": 1,
                    "withheld_note": (
                        "One column of ZSCAPE's own published marker calls is excluded from the "
                        "challenge input and from this bundle: the answer key was translated from "
