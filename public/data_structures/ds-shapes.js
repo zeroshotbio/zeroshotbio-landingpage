@@ -176,9 +176,8 @@ DRAW.vault = (g, n) => {
 /* ============================================================
    FLOOR — a git repository, seen from above.
 
-   Drawn as a machine floor rather than a container: single wall, hatched
-   margin, and a rail along the bottom carrying the commands the repo
-   exposes. The cells inside are their own nodes so each one can be read.
+   Drawn as a machine floor rather than a container: single wall and a hatched
+   margin. The cells inside are their own nodes so each one can be read.
 
    A repo with nothing implemented gets the dashed wall — the plan of a
    building that has been surveyed but not built.
@@ -193,22 +192,10 @@ DRAW.floor = (g, n) => {
   plate(g, n.x, n.y, n.w - 0.5, n.h - 0.5, { fill: "url(#pHl)", stroke: ink, sw: 0.6, so: 0.28 });
   const top = titlebar(g, n, n.repo, n.right);
 
-  /* the command rail */
-  if (n.rail && n.rail.length) {
-    const ry = n.y + n.h / 2 - 1.15, RH = 1.9;
-    plate(g, n.x, ry, n.w - 1.2, RH, { fill: "var(--bg)", fo: 0.7, stroke: ink, sw: 0.8, so: 0.45 })
-      .classList.add("fine");
-    const x0 = n.x - n.w / 2 + 0.6, span = (n.w - 1.2) / n.rail.length;
-    n.rail.forEach((c, i) => {
-      const cx = x0 + span * (i + 0.5);
-      label(g, cx, ry, c, { size: 8.8, fill: stub ? "var(--fg3)" : "var(--fg)", ls: 0.05 });
-      if (i) add(g, "line", {
-        x1: P(x0 + span * i, ry - RH / 2)[0], y1: P(x0 + span * i, ry - RH / 2)[1],
-        x2: P(x0 + span * i, ry + RH / 2)[0], y2: P(x0 + span * i, ry + RH / 2)[1],
-        stroke: ink, "stroke-width": 0.7, "stroke-opacity": 0.35
-      }).classList.add("fine");
-    });
-  }
+  /* No command rail. It used to run along the bottom of every floor listing
+     fetch / convert / build / publish — which is the same four words as the
+     four cells stacked above it. One of them had to go, and the cells are the
+     ones carrying the figures. */
   return top;
 };
 

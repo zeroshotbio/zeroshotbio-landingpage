@@ -26,8 +26,8 @@ let picked = null, hovered = null, motion = true, axes = true;
    ============================================================ */
 const root  = el("g");
 const gGrid = el("g"), gBand = el("g"), gContent = el("g");
-const gWire = el("g"), gNode = el("g"), gLabel = el("g"), gDot = el("g");
-[gWire, gNode, gLabel, gDot].forEach(g => gContent.appendChild(g));
+const gZone = el("g"), gWire = el("g"), gNode = el("g"), gLabel = el("g"), gDot = el("g");
+[gZone, gWire, gNode, gLabel, gDot].forEach(g => gContent.appendChild(g));
 /* gContent is separate from the grid and the registers so that fit() can
    frame the drawing rather than the paper it is drawn on. The grid runs well
    past the stations on every side on purpose — a plan whose grid stops at the
@@ -64,23 +64,37 @@ svg.appendChild(root);
 })();
 
 /* ============================================================
-   COLUMN HEADERS
+   ZONES
 
-   This replaces the ruled bands the map used to carry. The bands were
-   horizontal registers, which made sense when the flow ran left to right;
-   with the flow running top to bottom they would cut across every column at
-   once and say nothing. Three headers, one per column, and no rules.
+   The two systems the map spans, drawn as very translucent dotted enclosures
+   behind everything else. Left: the S3 account. Right: the GitHub org — which
+   takes in both the transform column and the contract rail, because
+   zsb-medallion is a repository like the rest of them and only looks separate
+   because it is not a hop.
 
-   They are also the ONLY free-floating strings on the canvas. Every other
-   label on this map now lives inside a box that owns it — a title bar, a
-   cell, a treemap tile — which is what stops a station name from landing on
-   top of whatever happens to be behind it.
+   This is the distinction the map most needed and least had. Every station up
+   to now looked like the same kind of object; in fact half of them are
+   buckets somebody pays for by the terabyte-month and half are source trees.
+   The conduits crossing the gap between the two boxes are, quite literally,
+   the only places this architecture moves anything between the two.
+
+   Deliberately faint. They are here to be noticed second, after the stations
+   and before the wiring — a ground, not a frame.
    ============================================================ */
-COLUMNS.forEach(C => {
-  /* into gLabel, not gBand: gBand sits outside gContent and is excluded from
-     fit(), so a header drawn there gets cropped off the top of the view. */
-  label(gLabel, C.x, C.y, C.name,
-    { size: 9.6, fill: "var(--fg3)", ls: 0.16, upper: true });
+ZONES.forEach(Z => {
+  const [x0, y0] = P(Z.x0, Z.y0), [x1, y1] = P(Z.x1, Z.y1);
+  add(gZone, "rect", {
+    x: x0, y: y0, width: x1 - x0, height: y1 - y0,
+    fill: "var(--fg)", "fill-opacity": ".022",
+    stroke: "var(--fg3)", "stroke-width": 1.4, "stroke-opacity": ".34",
+    "stroke-dasharray": "9 8"
+  });
+  /* spaced off lineH like every other stack on the map, and set far enough
+     inside the corner that the sub-line clears the first station's title bar */
+  label(gZone, Z.x0 + 0.9, Z.y0 + 0.5 + lineH(11) / 2, Z.name,
+    { size: 11, anchor: "start", fill: "var(--fg3)", ls: 0.18, upper: true });
+  if (Z.sub) label(gZone, Z.x0 + 0.9, Z.y0 + 0.5 + lineH(11) + lineH(9) / 2, Z.sub,
+    { size: 9, anchor: "start", fill: "var(--fg3)", fo: 0.75 });
 });
 
 /* ============================================================
@@ -256,7 +270,7 @@ LIVE_RUNS.forEach((poly, i) => {
   });
   TICKERS.push(dt => {
     dots.forEach(d => {
-      d.t = (d.t + dt * 0.55 / Math.max(L, 1)) % 1;
+      d.t = (d.t + dt * 1.1 / Math.max(L, 1)) % 1;
       const [x, y] = pointAt(poly, d.t), [px, py] = P(x, y);
       d.c.setAttribute("cx", px); d.c.setAttribute("cy", py);
     });

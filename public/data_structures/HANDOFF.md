@@ -50,37 +50,34 @@ fonts. Top-level `const` in one file is visible to later files.
 
 | File | Owner | What it is |
 |---|---|---|
-| `ds-data.js` | **on-instance** | COLUMNS, NODES, EDGES, CARRIES, SNIPPETS, OVERVIEW. Every fact, number, key and payload. |
+| `ds-data.js` | **on-instance** | ZONES, NODES, EDGES, CARRIES, SNIPPETS, OVERVIEW. Every fact, number, key and payload. |
 | `ds-shapes.js` | rendering side | One draw function per shape, plus TIER and the title bar. |
 | `ds-plan.js` | rendering side | Projection, plate/label, squarify, routing, ticker registry, byte formatting. |
-| `ds-view.js` | shared | Grid, column headers, conduits, dots, camera, label tiers, reader, index. |
+| `ds-view.js` | shared | Grid, zones, conduits, dots, camera, label tiers, reader, index. |
 | `index.html` | shared | Markup and the CSS variables that define both themes. |
 
 ## The layout
 
-Three columns, read top to bottom.
+Two enclosures, three columns, read top to bottom.
 
 ```
-   THE BUCKETS          THE TRANSFORMS        CONTRACT
-   x = 13               x = 46                x = 64
-
-   ┌──────────┐
-   │  BRONZE  │──read──┐
-   └──────────┘        └──▶┌────────────┐
-                            │ zsb-bronze │◀── imports ──┐
-                       ┌────└────────────┘              │
-                    [empty bay]                         │
-   ┌──────────┐        │                                │
-   │  SILVER  │◀───────┘                          ┌───────────┐
-   └──────────┘──read──┐                          │    zsb-   │
-                       └──▶┌────────────┐◀────────│ medallion │
-                       ┌───└ zsb-silver ┘         │           │
-   ┌──────────┐        │                          └───────────┘
-   │   GOLD   │◀───────┘                                │
-   └──────────┘──read──┐                                │
-                       └──▶┌────────────┐◀── imports ───┘
-                           │  zsb-gold  │
-                           └────────────┘
+  ┌╌╌ AWS S3 ╌╌╌╌╌╌╌┐        ┌╌╌ GitHub ╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┐
+  ╎                 ╎        ╎                               ╎
+  ╎  ┌──────────┐   ╎        ╎                               ╎
+  ╎  │  BRONZE  │───╎──read──╎──▶┌────────────┐              ╎
+  ╎  └──────────┘   ╎        ╎   │ zsb-bronze │◀── imports ─┐╎
+  ╎                 ╎   ┌────╎───└────────────┘             │╎
+  ╎              [empty bay] ╎                              │╎
+  ╎  ┌──────────┐   ╎   │    ╎                        ┌───────────┐
+  ╎  │  SILVER  │◀──╎───┘    ╎                        │    zsb-   │
+  ╎  └──────────┘───╎──read──╎──▶┌────────────┐◀──────│ medallion │
+  ╎                 ╎   ┌────╎───└ zsb-silver ┘       │           │
+  ╎  ┌──────────┐   ╎   │    ╎                        └───────────┘
+  ╎  │   GOLD   │◀──╎───┘    ╎                              │╎
+  ╎  └──────────┘───╎──read──╎──▶┌────────────┐◀── imports ─┘╎
+  ╎                 ╎        ╎   │  zsb-gold  │               ╎
+  └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘        ╎   └────────────┘               ╎
+                             └╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌╌┘
 ```
 
 Each hop is **two conduits**: out of a bucket's right wall, right and down into
@@ -95,6 +92,25 @@ reason the middle column is offset half a station down from the left one.
 `zsb-medallion` is a rail rather than a station, because it is not a stage: it
 touches no bucket and moves no bytes. It runs the full height of the transform
 column and taps left into each repo.
+
+## Zones
+
+Two translucent dotted enclosures, drawn behind everything in `gZone`, the
+first layer of `gContent`. Left is the S3 account; right is the GitHub org.
+
+This is the distinction the map most needed and longest went without. Every
+station looked like the same kind of object, when in fact half of them are
+buckets somebody pays for by the terabyte-month and half are source trees.
+The conduits crossing the gap between the two boxes are, literally, the only
+places this architecture moves anything between the two systems.
+
+The GitHub zone takes in the contract rail as well as the transform column,
+because `zsb-medallion` is a repository like the other three and only sits
+apart because it is not a hop. The empty bay falls in the gap between the two
+boxes, which is apt: it is a missing S3 prefix, so it is in neither.
+
+Keep them faint. They are a ground, not a frame — noticed second, after the
+stations and before the wiring.
 
 ## Naming
 
@@ -271,6 +287,10 @@ If you add a label that must persist at overview zoom, give it a font size of
   rather than as a structure. The tiers are a stack; drawing them as a stack is
   what makes "bronze, then silver, then gold" a thing you see instead of a thing
   you follow.
+- **Re-add a command rail along the bottom of a floor.** There was one, listing
+  `fetch / convert / build / publish` — the same four words as the four cells
+  stacked directly above it. The cells are the ones carrying the figures, so
+  the rail was the copy that went.
 - **Put a station name outside its own box.** Every station carries its name in
   its title bar. The external name plates this map used to have were a second
   copy of a string already on screen, and they were the only thing on the canvas
