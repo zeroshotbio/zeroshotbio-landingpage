@@ -62,7 +62,8 @@ export default function InputSection() {
       <p style={{ ...prose, margin: "0 0 12px" }}>
         Three files arrive for the run as a whole, not one per cluster. Between them they say which
         clusters exist, what evidence stands behind each one, and what your labeller is allowed to
-        answer with. Nothing else is supplied, and nothing in them names a cell type.
+        answer with. Nothing else is supplied, and none of them says what any cluster is — the menu
+        names cell types, but it names all 3,107 possibilities without attaching one to a cluster.
       </p>
 
       {/* ── the matrix ─────────────────────────────────────────────── */}

@@ -19,7 +19,7 @@ function Part({ n, title, children, example }: {
         <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, color: FAINT, marginRight: 11 }}>
           {n}
         </span>
-        {title}
+        {" "}{title}
       </h3>
       <div style={prose}>{children}</div>
       {example && (

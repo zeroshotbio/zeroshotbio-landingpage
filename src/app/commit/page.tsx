@@ -68,7 +68,7 @@ export default function CommitChallengePage() {
             </p>
             <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
               Each output cluster label should leave as a single ontology identifier picked from a{" "}
-              {nfmt((MENU as any).n_terms)} menu of ZFA-derived terms. Each label should carry both
+              {nfmt((MENU as any).n_terms)}-term menu of ZFA-derived terms. Each label should carry both
               axis terms — what the cells are and where they sit anatomically, plus the ancestor
               chain and a confidence tier.
             </p>

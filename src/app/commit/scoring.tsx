@@ -105,10 +105,10 @@ export default function ScoringSection() {
         graded number cannot quietly carry the result.
       </p>
       <p style={{ ...prose, margin: "0 0 15px" }}>
-        Not every cluster is scored the same way. The key carries per-cluster review metadata, and
-        the one that gates scoring is{" "}
+        Not every cluster is a clean test. The key carries per-cluster review metadata, and the
+        field that marks the hard ones is{" "}
         <code style={{ fontFamily: MONO, fontSize: 13.5 }}>evidence_ambiguous</code> — a boolean,
-        true on <strong>31 of the 112</strong> clusters, marking those where the reviewers could not
+        true on <strong>31 of the 112</strong> clusters, recording where the reviewers could not
         settle the call from the evidence available.
       </p>
       <p style={{ ...prose, margin: 0 }}>
@@ -117,8 +117,8 @@ export default function ScoringSection() {
         broader on 24, narrower on 16) and separate{" "}
         <code style={{ fontFamily: MONO, fontSize: 13.5 }}>identity_agreement</code> and{" "}
         <code style={{ fontFamily: MONO, fontSize: 13.5 }}>anatomy_agreement</code> fields, each
-        unanimous on roughly 80 clusters and split on the rest. Which clusters were excluded, and on
-        what basis, is reported with the score.
+        unanimous on roughly 80 clusters and split on the rest. Whichever clusters are set aside,
+        and on what basis, is reported with the score.
       </p>
 
       <p style={{ ...prose, fontSize: 14, color: MUTED, margin: "30px 0 0", paddingTop: 18,
@@ -126,7 +126,8 @@ export default function ScoringSection() {
         <strong style={{ color: INK }}>Not yet finalised.</strong> The shape of the credit is fixed
         and stated above. Still to be published: the exact weights, what counts as a region that is{" "}
         <em>not overly broad</em>, the containment test that decides whether one term sits inside
-        another, and the definition of the accepted answer sets. They are deliberately not guessed
+        another, the definition of the accepted answer sets, and which review flags exclude a
+        cluster from scoring rather than merely annotating it. They are deliberately not guessed
         here.
       </p>
     </>
