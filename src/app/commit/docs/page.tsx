@@ -13,8 +13,8 @@
 import React from "react";
 import Link from "next/link";
 import DocsRail from "./rail";
-import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "../theme";
-import { MenuCompositionFigure } from "../figures";
+import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, nfmt } from "../theme";
+import AnswerSpaceSection from "./answerspace";
 import InputSection from "./input";
 import OutputSection from "./output";
 import ScoringSection from "../scoring";
@@ -161,12 +161,7 @@ export default function CommitDocsPage() {
           </Section>
 
           <Section id="answer-space" n="05" title="The answer space">
-            <p style={{ ...prose, margin: "0 0 24px" }}>
-              What the {nfmt((MENU as any).n_terms)} selectable terms are made of.
-            </p>
-            <div style={{ ...card, padding: "26px 28px" }}>
-              <MenuCompositionFigure />
-            </div>
+            <AnswerSpaceSection />
           </Section>
 
           <div style={{ borderTop: `1px solid ${RULE}`, paddingTop: 18 }}>

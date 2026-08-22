@@ -67,9 +67,9 @@ export default function Overview() {
           color={FILE}
           icon={<IconInput />}
           lines={[
-            "Three ranked DEG lists per cluster",
-            "Per-cluster QC statistics",
-            `The full expression matrix — ${cells} cells`,
+            "Three ranked DEG lists for the cluster",
+            "That cluster's QC statistics",
+            `The expression matrix, for the run — ${cells} cells`,
             "No names, no annotations",
           ]}
         />
@@ -81,15 +81,15 @@ export default function Overview() {
           color={ACCENT}
           icon={<IconOutput />}
           lines={[
-            `One ZFA identifier, from ${terms}`,
-            "Both axis terms — the cell type, and the structure it sits in",
+            `One ZFA identifier for the cluster, from ${terms}`,
+            "Both axis terms — the cell type, and where it sits",
             "The ancestor chain back to the root",
             "A confidence score and tier",
           ]}
         />
       </div>
       <div style={{ fontSize: 11.5, color: FAINT, marginTop: 12, lineHeight: 1.55, maxWidth: 660 }}>
-        Per cluster, 112 times. What happens between the two boxes is the contest.
+One cluster in, one label out — 112 times. What happens between the two boxes is the contest.
       </div>
 
       {/* the rule, at a glance — same header treatment as the two boxes above, its own colour */}

@@ -67,8 +67,8 @@ export default function CommitChallengePage() {
               expression matrix — no names, no annotations.
             </p>
             <p style={{ fontSize: 15.5, color: "#5a544c", margin: "15px 0 0", lineHeight: 1.62 }}>
-              Each output answer should leave as a single ontology identifier picked from a{" "}
-              {nfmt((MENU as any).n_terms)} menu of ZFA-derived terms. Each answer should carry both
+              Each output cluster label should leave as a single ontology identifier picked from a{" "}
+              {nfmt((MENU as any).n_terms)} menu of ZFA-derived terms. Each label should carry both
               axis terms — what the cells are and where they sit anatomically, plus the ancestor
               chain and a confidence tier.
             </p>
