@@ -32,6 +32,12 @@ export const FILE_BD = "#f0e2d6";
 export const PANEL = "#eeece8";
 export const PANEL_BD = "#e0dbd4";
 
+// Scoring outcomes. STATUS colours: they never carry meaning alone — every use ships with the
+// word ("full", "half", "zero") beside it.
+export const SC_FULL = "#3f6b55";
+export const SC_HALF = "#a16207";
+export const SC_ZERO = "#9a3b3b";
+
 // Single-series magnitude (the cluster-size histogram). One hue, no categorical identity to carry.
 export const SERIES = "#0e7490";
 

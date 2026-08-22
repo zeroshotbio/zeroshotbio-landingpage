@@ -10,13 +10,8 @@
 // type contained in it. Where the key already names a cell type, a narrower cell type is zero —
 // "deeper is free" is not the rule and must not be implied.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, PANEL, PANEL_BD, card } from "./theme";
-
-// Outcome colours are STATUS, not categorical: each ships with its word and its position, never
-// carrying meaning by colour alone.
-const FULL = "#3f6b55";
-const HALF = "#a16207";
-const ZERO = "#9a3b3b";
+import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, PANEL, PANEL_BD, card,
+         SC_FULL as FULL, SC_HALF as HALF, SC_ZERO as ZERO } from "./theme";
 
 const OUTCOMES = [
   {
