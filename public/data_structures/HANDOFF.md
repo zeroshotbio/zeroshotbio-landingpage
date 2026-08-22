@@ -91,7 +91,8 @@ reason the middle column is offset half a station down from the left one.
 
 `zsb-medallion` is a rail rather than a station, because it is not a stage: it
 touches no bucket and moves no bytes. It runs the full height of the transform
-column and taps left into each repo.
+column and taps left into each repo. Each tap carries the contract version that
+repo actually pins — see the second-pass notes below; they are not all the same.
 
 ## Zones
 
@@ -175,6 +176,49 @@ way until somebody widens the role:
 **The finding the map is built around**: `zsb-bronze`'s committed changelog
 describes a `v1` silver release dated 2026-08-22, and the warehouse has no
 `minifin/v1/` prefix. Of the four hops the architecture describes, one has run.
+
+## The state of the data — second pass, 2026-08-22 (later the same day)
+
+The four repos were re-pulled after a run of work from Darien and the whole map
+re-read against them.
+
+```
+repos      re-pulled at
+             zsb-medallion 2d165be   zsb-bronze 0414ac4
+             zsb-silver    b4253a2   zsb-gold   59dabde
+```
+
+**The buckets came back byte-for-byte identical.** Bronze 1,258 objects /
+7,730,616,859,647 B, silver 79 / 16,592,799,338 B with the same three prefixes at
+the same sizes, gold still refusing both `ListBucket` and `HeadBucket`, and still
+no `minifin/v1/`. The entire left column of the map, and its central argument,
+stands as drawn. Every figure that moved is in the repo column — so when you
+refresh this page, re-read both sides but expect the movement on the right.
+
+What changed, and what it cost the map:
+
+| Was on the map | Now |
+| --- | --- |
+| "There is no CI that runs the tests" | All four repos have `ci.yml` running `make verify` on push + PR to main. The private `zsb-medallion` dependency — the recorded blocker — installs through a per-run GitHub App token. **Claim retired.** |
+| "AGENTS.md still says branch off `zsb-minifin`" | Fixed; it says `main`. **Claim retired.** |
+| "console has no consumers" | `zsb-bronze` bumped to `v0.5.0` and imports it in the CLI, fetch and publish. **Claim retired.** |
+| `115 commits · 3,880 LOC` | `139 commits · 4,358 LOC` (2,511 in `minifin/`) |
+| cells `convert` / `build` | `process convert` / `process build` — the CLI grew a `process` group, plus a `process all` |
+| — | **New:** the three transforms no longer share one contract version. Bronze pins `v0.5.0`, silver and gold still pin `v0.4.0`. |
+
+That last one is the only new *shape* on the page. `DRAW.spine`'s `n.taps` used to
+be a list of y positions; a tap is now `{y, pin}` and renders the pinned version
+under the word `imports`, stroked in `--drop` when the pin is behind the rail's own
+version (`n.right`). Plain numbers still work. It is drawn rather than written up
+because "three consumers of one contract are on two versions of it" is a fact
+about the wiring, and belongs on the wiring.
+
+Note also that `zsb-silver` took twelve commits and `zsb-gold` six, and **between
+them they did not change one line of any transform** — all CI, Makefiles,
+lockfiles and `.gitignore`s. Both now have an excellent gate around three
+functions that raise. Worth keeping an eye on across refreshes: the tooling is
+moving and the three gates are not, which is what you would expect, because the
+gates are conventions and sign-offs and no amount of tooling closes them.
 
 ## The shape contract
 

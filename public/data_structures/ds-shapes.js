@@ -264,16 +264,29 @@ DRAW.spine = (g, n) => {
     });
   }
 
-  /* Tap stubs reaching LEFT out of the rail into each transform repo. */
-  (n.taps || []).forEach(ty => {
+  /* Tap stubs reaching LEFT out of the rail into each transform repo.
+     A tap is {y, pin} — the version of the contract that repo actually pins,
+     which is not the same answer for all three of them. The rail is at
+     v0.5.0; zsb-bronze has moved to it and the other two have not. That used
+     to be a sentence in the reader; it is drawn here instead, because "the
+     three consumers of one contract are not on the same version of it" is a
+     fact about the wiring and belongs on the wiring. A tap whose pin is
+     behind the rail is stroked in the drop colour. */
+  (n.taps || []).forEach(t => {
+    const tap = typeof t === "number" ? { y: t } : t;
+    const ty = tap.y, behind = tap.pin && n.right && tap.pin !== n.right;
+    const tint = behind ? "var(--drop)" : ink;
     const x0 = n.x - n.w / 2, x1 = x0 - (n.tapLen || 3);
     add(g, "path", {
       d: path([[x0, ty], [x1, ty]]),
-      stroke: ink, "stroke-width": 1.2, "stroke-opacity": 0.5, "stroke-dasharray": "3 3", fill: "none"
+      stroke: tint, "stroke-width": 1.2, "stroke-opacity": behind ? 0.75 : 0.5,
+      "stroke-dasharray": "3 3", fill: "none"
     });
     const [cx, cy] = P(x1, ty);
-    add(g, "circle", { cx, cy, r: 2.8, fill: "var(--bg)", stroke: ink, "stroke-width": 1.1 });
+    add(g, "circle", { cx, cy, r: 2.8, fill: "var(--bg)", stroke: tint, "stroke-width": 1.1 });
     label(g, (x0 + x1) / 2, ty - 0.75, "imports", { size: 8, fill: "var(--fg3)" });
+    if (tap.pin) label(g, (x0 + x1) / 2, ty + 0.75, tap.pin,
+      { size: 8, fill: behind ? "var(--drop)" : "var(--fg3)" });
   });
 };
 
