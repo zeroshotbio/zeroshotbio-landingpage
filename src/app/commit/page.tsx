@@ -14,11 +14,8 @@
 import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
 import { MenuCompositionFigure } from "./figures";
-import ScoringSection from "./scoring";
-import OutputFigure from "./output";
-import DetailModal from "./modal";
+import Link from "next/link";
 import Overview from "./overview";
-import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "./windows";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
@@ -33,17 +30,6 @@ const B = (MANIFEST as any).benchmark;
 const INCL = (H5AD as any).inclusion_rule;
 
 // ── small parts ────────────────────────────────────────────────────────────
-function SectionHead({ n, title, lede }: { n: string; title: string; lede?: string }) {
-  return (
-    <div style={{ marginBottom: 20 }}>
-      <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8, textTransform: "uppercase", color: ACCENT }}>
-        {n}
-      </div>
-      <h2 style={{ fontSize: 23, fontWeight: 650, color: INK, margin: "8px 0 0", letterSpacing: -0.35 }}>{title}</h2>
-      {lede && <p style={{ fontSize: 14.5, color: MUTED, margin: "9px 0 0", lineHeight: 1.62, maxWidth: 660 }}>{lede}</p>}
-    </div>
-  );
-}
 
 function Stat({ k, v, sub }: { k: string; v: string; sub?: string }) {
   return (
@@ -99,79 +85,49 @@ export default function CommitChallengePage() {
 
           <Overview />
 
-          {/* All four details together, under the boxes they expand. Each opens over the page
-              rather than pushing it down — the summary above is the page, and this is the
-              reference behind it. */}
-          <div style={{ marginTop: 26 }}>
+          {/* The one real visual on this page: the answer space, by branch. It earns its place
+              here because the shape of the menu is part of understanding the task, not detail. */}
+          <div style={{ ...card, padding: "24px 26px", marginTop: 26 }}>
+            <MenuCompositionFigure />
+          </div>
+
+          {/* Every one of these lands on the same reference, at the section it names. The
+              detail is a page you can link to and come back from, not a layer over this one. */}
+          <div style={{ marginTop: 30 }}>
             <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
                           textTransform: "uppercase", color: MUTED, marginBottom: 11 }}>
-              in detail
+              read the detail
             </div>
-
-            <DetailModal label="The Challenge, In detail" hint="the task, stated in full">
-              <div style={{ fontSize: 15, lineHeight: 1.72, color: "#3f3a34", maxWidth: 680 }}>
-                <p style={{ margin: "0 0 15px" }}>The set is ZSCAPE&apos;s published gold partition of the 48 hpf control arm:{" "}
-            <strong>{nfmt(B.clusters)} clusters</strong> covering{" "}
-            <strong>{nfmt((H5AD as any).shape.cells)} cells</strong>, every cluster clearing a{" "}
-            {INCL.threshold_from_file}-cell floor. {INCL.excluded_upstream} smaller clusters were
-            dropped upstream before the set was cut.</p>
-              <p style={{ margin: "0 0 15px" }}><strong>The clustering is given.</strong> You do not re-cluster it, and you do not
-            re-filter it — ZSCAPE&apos;s quality thresholds are already applied, and applying your
-            own on top is a failure mode, not a refinement. The partition is the one thing both
-            sides hold fixed, so that a disagreement is about biology rather than about where the
-            boundaries fell.</p>
-              <p style={{ margin: "0 0 15px" }}>For each cluster you return <strong>one ZFA identifier</strong>, selected from a frozen
-            menu of {nfmt((MENU as any).n_terms)} terms. Selected, not written: an answer is an
-            identifier, and a term that is not on the menu is not an answer. Both sides draw from
-            the same list, and the list&apos;s content hash is how that parity is proven.</p>
-              <p style={{ margin: "0 0 15px" }}>Each answer carries three things beyond the identifier itself — <strong>both axis
-            terms</strong> (what the cells are, and where they are), the <strong>ancestor
-            chain</strong> back up the ontology, and a <strong>confidence score and tier</strong>
-            from a rubric you define and publish. The chain is what makes a near-miss legible
-            instead of merely wrong, and the rubric is what lets a reader weigh a call rather than
-            take it.</p>
-              <p style={{ margin: "0" }}>And alongside all of it, <strong>the references used</strong> and an{" "}
-            <strong>evidentiary statement citing only retrieved evidence</strong>. That is the part
-            that makes the rest auditable: without it a label is an assertion, and the difference
-            between a method that reasoned and a method that guessed well is invisible.</p>
-              </div>
-            </DetailModal>
-
-            <DetailModal label="The input — the three files" hint="every column, every field">
-              <div style={{ fontSize: 13.5, color: MUTED, lineHeight: 1.6, marginBottom: 20, maxWidth: 680 }}>
-                Each window shows a file as it ships — its size, its content hash, its real shape,
-                and a live slice of what is inside it.
-              </div>
-              <H5adWindow />
-              <GoldFeaturesWindow />
-              <ZfaMenuWindow />
-            </DetailModal>
-
-            <DetailModal label="The output — what you must return" hint="one answer, four parts">
-              <OutputFigure />
-            </DetailModal>
-
-            <DetailModal label="How it is scored, in detail" hint="the rule, and what is reported">
-              <ScoringSection />
-            </DetailModal>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))", gap: 10 }}>
+              {[
+                { href: "/commit/docs#challenge", label: "The challenge", hint: "the task, stated in full" },
+                { href: "/commit/docs#input", label: "The input", hint: "three files, every field" },
+                { href: "/commit/docs#output", label: "The output", hint: "one answer, four parts" },
+                { href: "/commit/docs#scoring", label: "How it is scored", hint: "the rule, and what is reported" },
+              ].map((l) => (
+                <Link key={l.href} href={l.href}
+                      style={{ display: "block", textDecoration: "none", background: "#fffefd",
+                               border: `1px solid ${RULE}`, borderRadius: 9, padding: "13px 15px" }}>
+                  <div style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
+                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.7,
+                                   textTransform: "uppercase", color: ACCENT }}>
+                      {l.label}
+                    </span>
+                    <span style={{ color: FAINT, fontSize: 12, marginLeft: "auto" }}>→</span>
+                  </div>
+                  <div style={{ fontSize: 11.5, color: FAINT, marginTop: 4, lineHeight: 1.5 }}>{l.hint}</div>
+                </Link>
+              ))}
+            </div>
+            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 11 }}>
+              All four open the same reference page, at the section they name.
+            </div>
           </div>
 
 
         </div>
 
       </header>
-
-      <div style={section}><hr style={rule} /></div>
-
-      {/* ── 01 the answer space ─────────────────────────────────────── */}
-      <div style={section}>
-        <SectionHead n="01" title="The answer space" lede="What the 3,107 selectable ZFA terms are made of." />
-        <div style={{ ...card, padding: "26px 28px" }}>
-          <MenuCompositionFigure />
-        </div>
-      </div>
-
-      <div style={section}><hr style={rule} /></div>
 
       {/* ── footer ────────────────────────────────────────────────────── */}
       <div style={section}>
