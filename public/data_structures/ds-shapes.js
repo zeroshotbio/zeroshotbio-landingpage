@@ -33,12 +33,40 @@ const fillOf = n => (TIER[n.tier] || TIER.side).fill;
 
 /* A title bar along the top wall of any enclosure. Returns the y of the
    floor below it, so the caller can lay contents out under it. */
+const BAR_H = 2.0;   /* title-bar height, sized for 10.5 * TYPE type */
+
 function titlebar(g, n, text, right) {
-  const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2, BH = 0.86;
-  plate(g, n.x, y0 + BH / 2, n.w, BH, { fill: inkOf(n), fo: 0.13, stroke: inkOf(n), sw: 1, so: 0.5 });
-  label(g, x0 + 0.32, y0 + BH / 2, text, { size: 10.5, anchor: "start", fill: inkOf(n), ls: 0.09, upper: true });
-  if (right) label(g, x0 + n.w - 0.32, y0 + BH / 2, right, { size: 9, anchor: "end", fill: "var(--fg3)", ls: 0.06 });
-  return y0 + BH;
+  const x0 = n.x - n.w / 2, y0 = n.y - n.h / 2;
+  plate(g, n.x, y0 + BAR_H / 2, n.w, BAR_H, { fill: inkOf(n), fo: 0.13, stroke: inkOf(n), sw: 1, so: 0.5 });
+  label(g, x0 + 0.5, y0 + BAR_H / 2, text, { size: 10.5, anchor: "start", fill: inkOf(n), ls: 0.09, upper: true });
+  if (right) label(g, x0 + n.w - 0.5, y0 + BAR_H / 2, right, { size: 9, anchor: "end", fill: "var(--fg3)", ls: 0.06 });
+  return y0 + BAR_H;
+}
+
+/* ============================================================
+   LEADER
+
+   The textbook move: when the thing being labelled is far smaller than its
+   own label, put the label in clear space and run a line to the feature.
+
+   The case that forces it here is silver's minifin/ tile — 0.59% of its
+   bucket, which at true area is a strip a couple of pixels thick, and which
+   is the single most important thing in that bucket. The alternatives were
+   both lies: shrink the caption until it fits (illegible), or give the tile a
+   minimum area (wrong about the size). A leader keeps the area honest and the
+   caption readable.
+
+   Anchored with a dot on the feature, elbowed down and across to a caption
+   sitting below the enclosure in open space.
+   ============================================================ */
+function leader(g, ax, ay, tx, ty, text, ink) {
+  add(g, "path", {
+    d: path([[ax, ay], [ax, ty], [tx - 0.35, ty]]),
+    fill: "none", stroke: ink, "stroke-width": 1.1, "stroke-opacity": 0.75
+  });
+  const [dx, dy] = P(ax, ay);
+  add(g, "circle", { cx: dx, cy: dy, r: 3.4, fill: ink });
+  label(g, tx, ty, text, { size: 9, anchor: "start", fill: ink, ls: 0.03 });
 }
 
 /* ============================================================
@@ -61,8 +89,8 @@ DRAW.vault = (g, n) => {
   const top = titlebar(g, n, n.bucket, n.right);
 
   /* the floor tick, so the empty part of a bucket still reads as surveyed */
-  const fx = n.x - n.w / 2 + 0.42, fy = top + 0.28;
-  const fw = n.w - 0.84, fh = (n.y + n.h / 2) - fy - 0.42;
+  const fx = n.x - n.w / 2 + 0.55, fy = top + 0.45;
+  const fw = n.w - 1.1, fh = (n.y + n.h / 2) - fy - 0.55;
   plate(g, n.x, fy + fh / 2, fw, fh, { fill: "url(#pD)", stroke: "none" });
 
   /* A vault with no tiles. Deliberately NOT the pX cross-hatch the empty bay
@@ -72,15 +100,17 @@ DRAW.vault = (g, n) => {
      saying which of the two it is. */
   if (!n.tiles || !n.tiles.length) {
     plate(g, n.x, fy + fh / 2, fw, fh, { fill: "url(#pHl)", stroke: "none" });
-    label(g, n.x, fy + fh / 2 - 0.30, n.emptyHead || "no objects observed",
+    label(g, n.x, fy + fh / 2 - 0.95, n.emptyHead || "no objects observed",
       { size: 10, fill: ink, ls: 0.08, upper: true });
     (n.emptyLines || []).forEach((L, i) =>
-      label(g, n.x, fy + fh / 2 + 0.12 + i * 0.36, L, { size: 8.6, fill: "var(--fg3)" }));
+      label(g, n.x, fy + fh / 2 + 0.35 + i * lineH(8.6), L, { size: 8.6, fill: "var(--fg3)" }));
   }
 
   if (n.tiles && n.tiles.length) {
     const laid = squarify(n.tiles, fx, fy, fw, fh);
     const max = Math.max(...n.tiles.map(t => t.value));
+    const led = [];   /* tiles too small to caption in place */
+
     laid.forEach(L => {
       const it = L.item;
       /* opacity carries a second channel — object count density — so two
@@ -90,45 +120,57 @@ DRAW.vault = (g, n) => {
       plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: 0.9, so: 0.6 });
 
       /* A stale tile — content that does not belong to the current
-         architecture — is restroked in the drop colour and always names
-         itself, because honest area encoding buries exactly the tile the map
-         is about. Silver's minifin/ tile is 0.59% of its bucket: at true
-         area that is a hairline about two pixels thick, and it is the single
-         most important thing in there. So the rule is area for the size and
-         a forced callout for the meaning, rather than a fudged minimum area
-         that would lie about both. */
+         architecture — is restroked in the drop colour so it reads even at a
+         hairline width. */
       if (it.stale) {
         plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: "url(#pHl)", stroke: "none" });
-        plate(g, L.x, L.y, L.w - 0.07, Math.max(L.h - 0.07, 0.1),
+        plate(g, L.x, L.y, Math.max(L.w - 0.07, 0.1), Math.max(L.h - 0.07, 0.1),
           { fill: "none", stroke: "var(--drop)", sw: 1.6, so: 0.95 });
-        /* A sliver can be thin in either axis depending on which way the
-           squarifier laid its strip, so test both. A thin-and-tall tile gets
-           its callout set to the LEFT and anchored end, reading back into the
-           neighbour; a short-and-wide one gets it centred. */
-        const thin = L.w < 2.6, short = L.h < 1.0;
-        if (thin || short) {
-          /* 10px, i.e. above the fine-label threshold, so this one survives
-             the coarse overview zoom. A callout that vanishes exactly when the
-             tile is too small to see is worse than no callout at all. */
-          const txt = `${it.key}  ${fmtBytes(it.value)} · ${it.objs} obj`;
-          if (thin) label(g, L.x - L.w / 2 - 0.24, L.y, txt,
-            { size: 10, anchor: "end", fill: "var(--drop)", ls: 0.03 });
-          else label(g, L.x, L.y, txt, { size: 10, fill: "var(--drop)", ls: 0.03 });
-          return;
-        }
       }
 
-      /* label only where it fits; a clipped label is worse than none */
-      if (L.w > 1.5 && L.h > 0.62) {
-        label(g, L.x, L.y - (L.h > 1.0 ? 0.24 : 0), it.key, { size: Math.min(10.5, 7 + L.w), fill: "var(--fg)", ls: 0.03 });
-        if (L.h > 1.0) {
-          label(g, L.x, L.y + 0.18, fmtBytes(it.value), { size: 9, fill: "var(--fg2)" });
-          if (L.h > 1.5) label(g, L.x, L.y + 0.56, fmtCount(it.objs) + " obj", { size: 8.2, fill: "var(--fg3)" });
-        }
+      /* FIT OR LEAD.
+         The key shrinks to fit the tile's width, down to a floor. Below that
+         floor, or when the tile is too short to seat even one line, the tile
+         gets a leader instead of a caption crushed into it. */
+      const avail = (L.w - 0.5) * S;
+      const keySize = Math.min(10.5, avail / (it.key.length * TYPE * 0.6));
+      /* The bar is key AND size, not key alone. A tile captioned "minifin/"
+         with no figure is the worst of both: it takes the space of a label and
+         answers none of the question the treemap exists to answer. If the tile
+         cannot seat both, it leads, and the caption keeps its numbers. */
+      if (keySize < 7.6 || L.h < lineH(keySize) + lineH(9) + 0.2) {
+        led.push({ it, x: L.x, y: L.y });
+        return;
       }
+
+      const rows = [{ t: it.key, z: keySize, c: "var(--fg)" }];
+      const more = [
+        { t: fmtBytes(it.value), z: 9, c: "var(--fg2)" },
+        { t: fmtCount(it.objs) + " obj", z: 8.2, c: "var(--fg3)" }
+      ];
+      /* add the figures only while they still fit, width and height both */
+      for (const r of more) {
+        const h = rows.reduce((a, b) => a + lineH(b.z), 0) + lineH(r.z);
+        if (h + 0.2 > L.h || textW(r.t, r.z) > avail) break;
+        rows.push(r);
+      }
+      const total = rows.reduce((a, b) => a + lineH(b.z), 0);
+      let cy = L.y - total / 2;
+      rows.forEach(r => {
+        cy += lineH(r.z) / 2;
+        label(g, L.x, cy, r.t, { size: r.z, fill: it.stale ? "var(--drop)" : r.c, ls: 0.03 });
+        cy += lineH(r.z) / 2;
+      });
+    });
+
+    /* captions for the slivers, stacked in the open below the enclosure */
+    led.forEach((L, i) => {
+      const ty = n.y + n.h / 2 + 1.15 + i * lineH(9) * 1.35;
+      const txt = `${L.it.key}  ${fmtBytes(L.it.value)} · ${fmtCount(L.it.objs)} obj`;
+      leader(g, L.x, L.y, n.x - textW(txt, 9) / S / 2, ty, txt,
+        L.it.stale ? "var(--drop)" : ink);
     });
   }
-
 };
 
 /* ============================================================
@@ -148,21 +190,21 @@ DRAW.floor = (g, n) => {
   });
   /* the hatched margin: the part of the floor that is repo furniture —
      AGENTS.md, the Makefile, the lockfile — rather than pipeline code */
-  plate(g, n.x, n.y, n.w - 0.3, n.h - 0.3, { fill: "url(#pHl)", stroke: ink, sw: 0.6, so: 0.28 });
+  plate(g, n.x, n.y, n.w - 0.5, n.h - 0.5, { fill: "url(#pHl)", stroke: ink, sw: 0.6, so: 0.28 });
   const top = titlebar(g, n, n.repo, n.right);
 
   /* the command rail */
   if (n.rail && n.rail.length) {
-    const ry = n.y + n.h / 2 - 0.55;
-    plate(g, n.x, ry, n.w - 0.84, 0.7, { fill: "var(--bg)", fo: 0.7, stroke: ink, sw: 0.8, so: 0.45 })
+    const ry = n.y + n.h / 2 - 1.15, RH = 1.9;
+    plate(g, n.x, ry, n.w - 1.2, RH, { fill: "var(--bg)", fo: 0.7, stroke: ink, sw: 0.8, so: 0.45 })
       .classList.add("fine");
-    const x0 = n.x - n.w / 2 + 0.55, span = (n.w - 1.1) / n.rail.length;
+    const x0 = n.x - n.w / 2 + 0.6, span = (n.w - 1.2) / n.rail.length;
     n.rail.forEach((c, i) => {
       const cx = x0 + span * (i + 0.5);
       label(g, cx, ry, c, { size: 8.8, fill: stub ? "var(--fg3)" : "var(--fg)", ls: 0.05 });
       if (i) add(g, "line", {
-        x1: P(x0 + span * i, ry - 0.3)[0], y1: P(x0 + span * i, ry - 0.3)[1],
-        x2: P(x0 + span * i, ry + 0.3)[0], y2: P(x0 + span * i, ry + 0.3)[1],
+        x1: P(x0 + span * i, ry - RH / 2)[0], y1: P(x0 + span * i, ry - RH / 2)[1],
+        x2: P(x0 + span * i, ry + RH / 2)[0], y2: P(x0 + span * i, ry + RH / 2)[1],
         stroke: ink, "stroke-width": 0.7, "stroke-opacity": 0.35
       }).classList.add("fine");
     });
@@ -183,13 +225,15 @@ DRAW.cell = (g, n) => {
     stroke: ink, sw: 1.1, so: stub ? 0.55 : 0.95, dash: stub ? "5 3" : "none"
   });
   if (stub) plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
-  label(g, n.x, n.y - (n.note ? 0.20 : 0), n.cellName || n.name, { size: 10, fill: "var(--fg)", ls: 0.04 });
-  if (n.note) label(g, n.x, n.y + 0.20, n.note, { size: 8.4, fill: stub ? "var(--drop)" : "var(--fg2)" });
+  label(g, n.x, n.y - (n.note ? lineH(10) / 2 : 0), n.cellName || n.name,
+    { size: 10, fill: "var(--fg)", ls: 0.04 });
+  if (n.note) label(g, n.x, n.y + lineH(8.4) / 2 + 0.16, n.note,
+    { size: 8.4, fill: stub ? "var(--drop)" : "var(--fg2)" });
   /* the lamp: filled when the step has actually run against the real bucket */
-  const [lx, ly] = P(n.x + n.w / 2 - 0.24, n.y - n.h / 2 + 0.24);
+  const [lx, ly] = P(n.x + n.w / 2 - 0.45, n.y - n.h / 2 + 0.45);
   add(g, "circle", {
-    cx: lx, cy: ly, r: 3.1,
-    fill: stub ? "none" : "var(--signal)", stroke: stub ? "var(--drop)" : "var(--signal)", "stroke-width": 1.2
+    cx: lx, cy: ly, r: 6,
+    fill: stub ? "none" : "var(--signal)", stroke: stub ? "var(--drop)" : "var(--signal)", "stroke-width": 1.6
   });
 };
 
@@ -214,20 +258,17 @@ DRAW.spine = (g, n) => {
      other title on the map. A rail this narrow invites a rotated label, and a
      rotated label is the one thing a plan view has no excuse for: there is no
      foreshortened axis here for it to lie along. */
-  const y0 = n.y - n.h / 2, BH = 1.5;
+  const y0 = n.y - n.h / 2, BH = 3.4;
   plate(g, n.x, y0 + BH / 2, n.w, BH, { fill: ink, fo: 0.16, stroke: ink, sw: 1, so: 0.5 });
-  label(g, n.x, y0 + BH / 2 - 0.26, "zsb-", { size: 9.6, fill: ink, ls: 0.06 });
-  label(g, n.x, y0 + BH / 2 + 0.26, "medallion", { size: 9.6, fill: ink, ls: 0.06 });
+  label(g, n.x, y0 + BH / 2 - lineH(9.6) / 2, "zsb-", { size: 9.6, fill: ink, ls: 0.06 });
+  label(g, n.x, y0 + BH / 2 + lineH(9.6) / 2, "medallion", { size: 9.6, fill: ink, ls: 0.06 });
 
   /* the exported names, stacked down the rail — the actual contract */
   if (n.exports) {
-    const top = y0 + BH + 0.5, span = (n.h - BH - 1.0) / n.exports.length;
+    const top = y0 + BH + 0.6, span = (n.h - BH - 1.2) / n.exports.length;
     n.exports.forEach((e, i) => {
       const cy = top + span * (i + 0.5);
-      /* the chip is a frame around a word: at the coarse zoom the word is
-         gone, and an empty frame reads as a component rather than as a label
-         that could not fit. So it carries the fine tier too. */
-      plate(g, n.x, cy, n.w - 0.9, Math.min(span - 0.5, 2.6),
+      plate(g, n.x, cy, n.w - 1.2, Math.min(span - 0.7, 2.8),
         { fill: "var(--bg)", fo: 0.62, stroke: ink, sw: 0.7, so: 0.5 });
       /* 9.6px, i.e. NOT fine-tier: eight chips down a 57-unit rail have room
          for their captions at any zoom, and without them the contract reads as
@@ -238,14 +279,14 @@ DRAW.spine = (g, n) => {
 
   /* Tap stubs reaching LEFT out of the rail into each transform repo. */
   (n.taps || []).forEach(ty => {
-    const x0 = n.x - n.w / 2, x1 = x0 - (n.tapLen || 4.5);
+    const x0 = n.x - n.w / 2, x1 = x0 - (n.tapLen || 3);
     add(g, "path", {
       d: path([[x0, ty], [x1, ty]]),
       stroke: ink, "stroke-width": 1.2, "stroke-opacity": 0.5, "stroke-dasharray": "3 3", fill: "none"
     });
     const [cx, cy] = P(x1, ty);
     add(g, "circle", { cx, cy, r: 2.8, fill: "var(--bg)", stroke: ink, "stroke-width": 1.1 });
-    label(g, (x0 + x1) / 2, ty - 0.42, "imports", { size: 8, fill: "var(--fg3)" });
+    label(g, (x0 + x1) / 2, ty - 0.75, "imports", { size: 8, fill: "var(--fg3)" });
   });
 };
 
@@ -258,7 +299,11 @@ DRAW.spine = (g, n) => {
 DRAW.bay = (g, n) => {
   plate(g, n.x, n.y, n.w, n.h, { fill: "var(--bg)", fo: 0.5, stroke: "var(--drop)", sw: 1.3, so: 0.8, dash: "6 4" });
   plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
-  label(g, n.x, n.y - 0.46, n.headline, { size: 9.6, fill: "var(--drop)", ls: 0.05, upper: true });
-  (n.lines || []).forEach((L, i) => label(g, n.x, n.y + 0.06 + i * 0.38, L, { size: 9, fill: "var(--fg2)" }));
+  const rows = (n.lines || []).length;
+  const top = n.y - (lineH(9.6) + rows * lineH(9)) / 2;
+  label(g, n.x, top + lineH(9.6) / 2, n.headline,
+    { size: 9.6, fill: "var(--drop)", ls: 0.05, upper: true });
+  (n.lines || []).forEach((L, i) =>
+    label(g, n.x, top + lineH(9.6) + (i + 0.5) * lineH(9), L, { size: 9, fill: "var(--fg2)" }));
 };
 

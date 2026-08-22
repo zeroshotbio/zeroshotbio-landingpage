@@ -55,10 +55,10 @@
 
      x = 13    THE BUCKETS.  bronze, then silver, then gold, in tier order,
                each one directly below the last. This column is the data.
-     x = 46    THE TRANSFORMS. One repository per hop, each sitting in the
+     x = 58    THE TRANSFORMS. One repository per hop, each sitting in the
                vertical gap between the two buckets it bridges — so a repo is
                always beside the seam it works on, never beside a tier.
-     x = 64    THE CONTRACT. zsb-medallion, a single bar running the full
+     x = 76    THE CONTRACT. zsb-medallion, a single bar running the full
                height of the transform column and tapped by every repo in it.
                It is not a stage and it touches no bucket, which is why it is
                drawn as a rail rather than a station.
@@ -66,7 +66,7 @@
    Each hop is two conduits, and the pair is the whole shape of the map:
    out of a bucket's right wall, right and down into the repo (the READ), then
    back out of the repo's left wall, left and down into the next bucket (the
-   WRITE). Both doglegs turn on the same corridor at x = 30, at different
+   WRITE). Both doglegs turn on the same corridor at x = 36, at different
    heights, so the column between the two stacks reads as one channel.
 
    Station heights and gaps are authored, not computed. /pipeline lays its rows
@@ -75,15 +75,15 @@
    is as tall as its treemap needs to be — so a solver would only fight the
    drawing.
    ============================================================ */
-const COL_BUCKET = 13, COL_REPO = 46, COL_RAIL = 64, CORRIDOR = 30;
+const COL_BUCKET = 13, COL_REPO = 58, COL_RAIL = 76, CORRIDOR = 36;
 
 /* Column headers. Deliberately the only free-floating text on the canvas:
    every other string on this map lives inside a box that owns it, which is
    what stops labels and walls from colliding the way they used to. */
 const COLUMNS = [
-  { name: "The buckets — one per tier",     x: COL_BUCKET, y: 0.4 },
-  { name: "The transforms — one per hop",   x: COL_REPO,   y: 9.6 },
-  { name: "Contract",                       x: COL_RAIL,   y: 9.6 },
+  { name: "The buckets — one per tier",     x: COL_BUCKET, y: -0.6 },
+  { name: "The transforms — one per hop",   x: COL_REPO,   y:  8.6 },
+  { name: "Contract",                       x: COL_RAIL,   y:  8.6 },
 ];
 
 const NODES = [
@@ -92,7 +92,7 @@ const NODES = [
 {id:"BRONZE", key:"1", group:"① Bronze", groupMark:true, anchor:true,
  shape:"vault", tier:"bronze", doors:["r"],
  name:"Bronze", bucket:"BRONZE", right:"1,258 obj · 7.03 TiB",
- x:COL_BUCKET, y:9, w:24, h:14,
+ x:COL_BUCKET, y:9, w:24, h:16,
  sub:"s3://zsb-bronze-fortknox · human-write, automation-read",
  tiles:[
    {key:"megafin/",   value:3565423800576, objs:594},
@@ -107,9 +107,9 @@ const NODES = [
 
 /* ================= THE BRONZE → SILVER TRANSFORM ================= */
 {id:"BREPO", key:"2", group:"② Bronze → Silver", groupMark:true, anchor:true,
- shape:"floor", tier:"code", state:"live",
+ shape:"floor", tier:"bronze", state:"live",
  name:"zsb-bronze", repo:"zsb-bronze", right:"115 commits · 3,880 LOC",
- x:COL_REPO, y:20, w:22, h:19,
+ x:COL_REPO, y:21, w:22, h:21,
  rail:["fetch","convert","build","publish"],
  sub:"reads bronze · writes silver · the only repo here that has run",
  does:"The transform for the first hop. Named for the tier it <em>reads</em>, not the one it writes — the convention that makes this whole column unambiguous: zsb-bronze reads bronze and writes silver, zsb-silver reads silver and writes gold, zsb-gold only reads.",
@@ -117,36 +117,36 @@ const NODES = [
  cond:"There is no CI that runs the tests. Both workflow files in .github/ are Claude review bots; the README says plainly why the real gate is missing — cloning the private zsb-medallion dependency inside GitHub Actions needs credential plumbing that is not sorted out. So a green branch means somebody ran make verify on their own machine and said so. Separately, AGENTS.md still instructs you to branch off <mark>zsb-minifin</mark> rather than main; that branch is 41 commits behind and dead, and the last 48 commits went straight to main.",
  kv:[["Repo","zeroshotbio/zsb-bronze"],["HEAD","82c5b75 (main)"],["Commits","115, since 2026-07-21"],["Source","3,880 LOC · 2,226 in minifin/"],["Tests","10 files · no CI runs them"],["Depends on","zsb-medallion @ v0.4.0"],["Open PRs","0"]]},
 
-{id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"code", state:"live",
+{id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"fetch", cellName:"fetch", note:"8 of 1,258 objects · 944 MiB",
- x:COL_REPO, y:13.7, w:19, h:3.2,
+ x:COL_REPO, y:14.8, w:19, h:3.4,
  sub:"fetch/ · manifest.py + fetch.py · 221 LOC",
  does:"Mirrors eight named objects out of bronze, validating each one's size and etag against a pin before it is written to disk. This is the one step in the entire architecture that has demonstrably moved bytes between a real bucket and a real machine.",
  built:"The manifest is the most consequential twelve lines of configuration in the architecture, and the reason this hop is cheap. It is a list of eight object keys, each pinned to an exact size and an exact etag. <em>Not a prefix. Not a sync. Eight names.</em> The same Parse delivery holds ~225 GB of raw FASTQ and ~135 GB of split-pipe intermediates in adjacent prefixes; a prefix sync of minifin/ pulls 562 GiB and a very large egress bill. This pulls 944 MiB — about 0.16% of the dataset's own prefix — and it is everything conversion and cell-calling actually read. Downloads through <mark>zsb_medallion.io.S3IO</mark>, so the repo carries no boto3 of its own.",
  cond:"All eight pins were re-confirmed against the live bucket on 2026-08-22 — every size and every etag matched, multipart etags included. That is a real check and it passed. What it does not tell you is whether the pins would survive a re-upload: an S3 multipart etag depends on the part size the uploader chose, so re-uploading byte-identical content with a different chunk size changes the etag and this manifest would reject a file identical to the one it wants.",
  kv:[["Command","uv run zsb-minifin fetch"],["Keys pinned","8"],["Bytes pinned","989,650,630 (944 MiB)"],["Share of minifin/","0.16%"],["Verified","2026-08-22 — 8/8 size + etag"],["State","implemented and exercised"]]},
 
-{id:"BCONV", key:"2b", group:"② Bronze → Silver", shape:"cell", tier:"code", state:"live",
+{id:"BCONV", key:"2b", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"convert", cellName:"convert", note:"279M entries · ~150 MB peak",
- x:COL_REPO, y:17.35, w:19, h:3.2,
+ x:COL_REPO, y:18.7, w:19, h:3.4,
  sub:"process/convert.py · 417 LOC",
  does:"Streams the unfiltered Parse triplet into an h5ad instead of loading it whole. Parse ships one combined MatrixMarket of roughly 279 million non-zero entries; blocks of <mark>chunk_cells</mark> rows are appended to an on-disk CSR matrix.",
  built:"Default chunk is 100,000 cells. Peak memory on the measured run was about 150 MB — against a 2,743,021 × 32,520 matrix. Writes through zsb_medallion's AtomicPath, so a killed run leaves no half-written file where a good one should be.",
  cond:"The intermediate is local only and gitignored. It is not published anywhere and is reproducible only from bronze — correct for the tier rules, but it does mean the expensive step is thrown away between runs.",
  kv:[["Command","uv run zsb-minifin convert"],["Matrix","2,743,021 × 32,520"],["Non-zeros","~279 million"],["Peak memory","~150 MB"]]},
 
-{id:"BBUILD", key:"2c", group:"② Bronze → Silver", shape:"cell", tier:"code", state:"live",
+{id:"BBUILD", key:"2c", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"build", cellName:"build", note:"94,616 cells · jaccard 1.0000",
- x:COL_REPO, y:21.0, w:19, h:3.2,
+ x:COL_REPO, y:22.6, w:19, h:3.4,
  sub:"process/ · cells, corrections, provenance, validate · 924 LOC",
  does:"Calls cells, applies the mandatory corrections, stamps provenance into <mark>.uns</mark>, validates the schema, and writes the silver artifact. This is where the tier rule bites: silver is counts plus corrections and <em>no judgment calls</em> — if two scientists would pick different values, it is not silver, it is gold.",
  built:"Three cell-calling policies, in decreasing fidelity. <mark>parse-cutoffs</mark> is canonical: it reads Parse's per-(sample, sublibrary) thresh_raw and applies round(thresh_raw) per slice, reproducing the delivered barcode set <em>exactly</em> — 94,616 called, jaccard 1.0000, a set match rather than a count match. parse-settings reaches 94,876 (+260, jaccard 0.9940); barcode-ranks, a port of the DropletUtils search that takes no Parse threshold as input, reaches 94,338 (−278, jaccard 0.9827). The corrections are the three that are not judgment calls: Ctrl→DMSO, the Dapaglifozan typo→Dapagliflozin, and splitting five asterisk-merged samples back to two wells each, recovering 48 replicates from 43 Parse samples.",
  cond:"Exact parity <em>requires</em> the per-slice cut, and that is structural rather than a matter of tuning: split-pipe called cells per sample <em>and</em> sublibrary, and for all 43 samples the per-sample minimum called count falls below the maximum uncalled count. The per-sample policies therefore cannot reach 94,616 however they are tuned, and AGENTS.md warns against trying.",
  kv:[["Command","uv run zsb-minifin build"],["Cells called","94,616 of 2,743,021 barcodes"],["Genes","32,520"],["Non-zeros","193,544,653 · CSR int32"],["Replicates","48, from 43 Parse samples"],["Policy","parse-cutoffs (exact)"]]},
 
-{id:"BPUB", key:"2d", group:"② Bronze → Silver", shape:"cell", tier:"code", state:"stub",
+{id:"BPUB", key:"2d", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"stub",
  name:"publish", cellName:"publish", note:"written · never run against S3",
- x:COL_REPO, y:24.65, w:19, h:3.2,
+ x:COL_REPO, y:26.5, w:19, h:3.4,
  sub:"publish/publish.py · 184 LOC · the cold end of the live repo",
  does:"Uploads one silver release — the validated h5ad, the dataset README, and the changelog — under <mark>minifin/&lt;version&gt;/</mark>. Publication is deliberately a separate act from the build, so writing to a shared bucket is always something a person chose to do.",
  built:"Version prefixes are immutable by default; <mark>--overwrite</mark> is an explicit override meant for retrying a failed prefix, not for corrections — a correction is a new version. The one always-mutable object is the ledger at <mark>minifin/CHANGELOG.md</mark>. There is no delete path at all: removing a released object is a human console act. Re-validates the annotation schema on a backed read before uploading, so a stamped-but-wrong file is rejected at the door.",
@@ -156,9 +156,9 @@ const NODES = [
 /* ================= THE GAP, ON THE WRITE CONDUIT ================= */
 {id:"SGAP", key:"3", group:"③ The gap", groupMark:true, anchor:true,
  shape:"bay", tier:"silver",
- name:"minifin/v1/ — the prefix that is not there", x:CORRIDOR, y:29.5, w:9, h:4.2,
+ name:"minifin/v1/ — the prefix that is not there", x:CORRIDOR, y:32, w:9.4, h:6,
  headline:"empty",
- lines:["minifin/v1/minifin.h5ad", "minifin/v1/README.md", "minifin/CHANGELOG.md"],
+ lines:["minifin.h5ad", "README.md", "CHANGELOG.md"],
  sub:"the release the changelog describes · absent from silver",
  does:"Drawn as an empty bay on the write conduit, because that is what a plan does with a room that was specified and never built. Three objects would land here on the first real publish: the validated artifact, the dataset README that describes it, and the changelog ledger at the dataset root.",
  built:"The key convention is settled and written down in publish.py and AGENTS.md — the bucket is the tier, so keys carry no <mark>silver</mark> segment; artifacts live under <mark>&lt;dataset&gt;/&lt;version&gt;/</mark> and are immutable; the ledger sits above the version prefixes and is the sole object ever replaced.",
@@ -169,7 +169,7 @@ const NODES = [
 {id:"SILVER", key:"4", group:"④ Silver", groupMark:true, anchor:true,
  shape:"vault", tier:"silver", doors:["r"],
  name:"Silver", bucket:"SILVER", right:"79 obj · 15.45 GiB",
- x:COL_BUCKET, y:30, w:24, h:14,
+ x:COL_BUCKET, y:34, w:24, h:15,
  sub:"s3://zsb-silver-warehouse · written by zsb-bronze",
  tiles:[
    {key:"zebrahub/",  value:11127199502, objs:12},
@@ -183,9 +183,9 @@ const NODES = [
 
 /* ================= THE SILVER → GOLD TRANSFORM ================= */
 {id:"SREPO", key:"5", group:"⑤ Silver → Gold", groupMark:true, anchor:true,
- shape:"floor", tier:"code", state:"stub",
+ shape:"floor", tier:"silver", state:"stub",
  name:"zsb-silver", repo:"zsb-silver", right:"13 commits · 155 LOC",
- x:COL_REPO, y:41, w:22, h:17,
+ x:COL_REPO, y:45, w:22, h:17.5,
  rail:["fetch","process","publish"],
  sub:"reads silver · writes gold · three stubs, three gates",
  does:"The transform for the second hop, and the place the judgment calls are supposed to live: QC, doublet filtering, normalization, HVGs, batch-aware embeddings, clustering, cell-type annotation. Everything the silver tier refused to decide.",
@@ -193,27 +193,27 @@ const NODES = [
  cond:"Every one of the three gates is a <em>convention</em> rather than an algorithm — an object-key format, a QC sign-off, another object-key format. None of them needs research; they need a decision. And the first, the silver object-key convention, is already settled on the other side: zsb-bronze's publish.py implements it and its AGENTS.md documents it. The two repos have not been reconciled, so the reading side is still gated on something the writing side has already chosen.",
  kv:[["Repo","zeroshotbio/zsb-silver"],["HEAD","b88dfa2 (main)"],["Commits","13, since 2026-07-21"],["Source","155 LOC, all stubs"],["Tests","1 file — the docstring checker"],["Bytes moved","0"]]},
 
-{id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"code", state:"stub",
+{id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"fetch (silver)", cellName:"fetch", note:"gated: silver object-key convention",
- x:COL_REPO, y:35.9, w:19, h:3.4,
+ x:COL_REPO, y:40.55, w:19, h:3.4,
  sub:"download_silver() → raises NotImplementedError",
  does:"Would download the corrected silver h5ad that zsb-bronze published, through zsb_medallion's S3IO.",
  built:"Signature and docstring only. The docstring names its own blocker: the exact key 'comes from the Silver object-key convention, still to be settled with the bronze publish side'.",
  cond:"That convention <mark>is</mark> settled — <mark>&lt;dataset&gt;/&lt;version&gt;/</mark>, immutable, ledger at the dataset root. It is implemented in zsb-bronze's publish.py and stated in its AGENTS.md. This stub could be written today. What it could not do today is succeed, because nothing has been published under that convention for it to fetch.",
  kv:[["Function","download_silver(destination)"],["State","raises NotImplementedError"],["Stated gate","silver object-key convention"],["Actual state of that gate","settled upstream, unreconciled here"]]},
 
-{id:"SPROC", key:"5b", group:"⑤ Silver → Gold", shape:"cell", tier:"code", state:"stub",
+{id:"SPROC", key:"5b", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"process (silver→gold)", cellName:"process", note:"gated: gold v1 QC sign-off",
- x:COL_REPO, y:39.8, w:19, h:3.4,
+ x:COL_REPO, y:44.45, w:19, h:3.4,
  sub:"build_gold() → raises NotImplementedError",
  does:"The heaviest step in any tier, and the only one on this map that is genuinely unbuilt rather than merely unrun. QC and doublet filtering with fixed seeds, normalization and log1p, HVGs, batch-aware embeddings, clustering, and cell-type annotation.",
  built:"Docstring only, but the docstring is a real specification: raw counts preserved in <mark>layers['counts']</mark> before .X is touched, and every parameter, seed, version and cell-count transition stamped into <mark>.uns</mark>. It also fixes where the thresholds come from — Parse's recorded settings.txt, not inferred defaults — which is why settings.txt is pinned in the bronze manifest two stations up even though the canonical cell-calling policy does not read it.",
  cond:"Gated on 'Gold v1 QC sign-off', which is a human decision nobody has made. This is the one gate on the map that is a real question rather than a naming argument: it asks which QC thresholds this company is prepared to defend, and that is exactly the judgment call the silver tier exists to defer.",
  kv:[["Function","build_gold(source, destination)"],["State","raises NotImplementedError"],["Gate","gold v1 QC sign-off — unmade"],["Thresholds from","Parse settings.txt"],["Preserves","layers['counts'] before .X changes"]]},
 
-{id:"SPUB", key:"5c", group:"⑤ Silver → Gold", shape:"cell", tier:"code", state:"stub",
+{id:"SPUB", key:"5c", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"stub",
  name:"publish (gold)", cellName:"publish", note:"gated: gold object-key convention",
- x:COL_REPO, y:43.7, w:19, h:3.4,
+ x:COL_REPO, y:48.35, w:19, h:3.4,
  sub:"publish_gold() → raises NotImplementedError",
  does:"Would upload one validated gold h5ad under a versioned, non-overwriting key, and never publish an unvalidated artifact.",
  built:"Docstring only. Deliberately separate from the build, for the same reason the bronze publish is: uploading to a shared bucket should be an explicit act.",
@@ -224,7 +224,7 @@ const NODES = [
 {id:"GOLD", key:"6", group:"⑥ Gold", groupMark:true, anchor:true,
  shape:"vault", tier:"gold", doors:["r"],
  name:"Gold", bucket:"GOLD", right:"contents unknown",
- x:COL_BUCKET, y:51, w:24, h:11,
+ x:COL_BUCKET, y:57, w:24, h:12,
  sub:"s3://zsb-gold-library · analysis-ready, versioned · what the team trains on",
  tiles:[],
  emptyHead:"contents unknown",
@@ -237,9 +237,9 @@ const NODES = [
 
 /* ================= THE GOLD READER ================= */
 {id:"GREPO", key:"7", group:"⑦ Gold — the reader", groupMark:true, anchor:true,
- shape:"floor", tier:"code", state:"stub",
+ shape:"floor", tier:"gold", state:"stub",
  name:"zsb-gold", repo:"zsb-gold", right:"14 commits · 92 LOC",
- x:COL_REPO, y:61, w:22, h:13,
+ x:COL_REPO, y:68, w:22, h:13.5,
  rail:["fetch","notebooks"],
  sub:"reads gold · publishes nothing · the terminal repo",
  does:"The consumer end. Downloads and validates released gold artifacts and hosts the starter analysis notebooks. It is the only repo in the architecture with no write path at all — by design, not by omission, which is why nothing leaves it on this map.",
@@ -247,18 +247,18 @@ const NODES = [
  cond:"Blocked on the same unwritten gold key convention, and the README states the reason precisely: the previous download flow prefix-listed the bucket and pulled everything it found, which does not survive immutable versioned keys — a fresh clone would download every version ever released. So the pull must name one release, and the shape of that name has not been agreed.",
  kv:[["Repo","zeroshotbio/zsb-gold"],["HEAD","b80b2bc (main)"],["Commits","14"],["Source","92 LOC"],["Write path","none, by design"],["Notebooks","1 README, 0 notebooks"]]},
 
-{id:"GFETCH", key:"7a", group:"⑦ Gold — the reader", shape:"cell", tier:"code", state:"stub",
+{id:"GFETCH", key:"7a", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"fetch (gold)", cellName:"fetch", note:"gated: versioned-key convention",
- x:COL_REPO, y:57.9, w:19, h:3.4,
+ x:COL_REPO, y:65.0, w:19, h:3.4,
  sub:"download_gold() → raises NotImplementedError",
  does:"Would download one released MiniFin gold artifact.",
  built:"Docstring only.",
  cond:"Named blocker: 'a clone must pull one release, not every version'. The same paragraph that unblocks the silver publish step unblocks this one.",
  kv:[["Function","download_gold(destination)"],["State","raises NotImplementedError"],["Gate","versioned-key convention (shared with the silver publish)"]]},
 
-{id:"GNB", key:"7b", group:"⑦ Gold — the reader", shape:"cell", tier:"code", state:"stub",
+{id:"GNB", key:"7b", group:"⑦ Gold — the reader", shape:"cell", tier:"gold", state:"stub",
  name:"the starter notebooks", cellName:"notebooks", note:"1 README · 0 notebooks",
- x:COL_REPO, y:61.8, w:19, h:3.4,
+ x:COL_REPO, y:68.9, w:19, h:3.4,
  sub:"notebooks/minifin/README.md",
  does:"Where the analysis that consumes a gold release is meant to live. One README, describing an <mark>01_eda.ipynb</mark> that has not landed.",
  built:"The README specifies the notebook well: load the downloaded gold artifact, show its source and preprocessing provenance, validate shape, layers, required metadata and embeddings, and summarise QC distributions and perturbation / replicate / cell-type balance. Generated files go to a gitignored path or the sandbox bucket, never back under a gold key.",
@@ -269,8 +269,8 @@ const NODES = [
 {id:"MED", key:"8", group:"⑧ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
  name:"zsb-medallion", repo:"zsb-medallion", right:"v0.5.0",
- x:COL_RAIL, y:39, w:5, h:57, tapLen:4.5,
- taps:[20, 41, 61],
+ x:COL_RAIL, y:43, w:8, h:66, tapLen:3,
+ taps:[21, 45, 68],
  sub:"v0.5.0 · 48 commits · 1,843 LOC · the only repo here with boto3",
  exports:["BRONZE", "SILVER", "GOLD", "SANDBOX", "S3IO", "AtomicPath", "6 errors", "console"],
  does:"Not a stage, which is why it is drawn as a rail beside the transform column rather than a station in it. It is the shared vocabulary all three transforms import, and it touches no bucket. It holds exactly three things: the four bucket names, the S3 and atomic-file mechanics, and the CLI presentation helpers.",
@@ -291,20 +291,20 @@ const NODES = [
    about. A legend with two rows is a legend people read.
 
    Each hop is a READ (bucket → repo) and a WRITE (repo → next bucket), both
-   turning on the corridor at x = 30.
+   turning on the corridor at x = 36.
    ============================================================ */
 const EDGES = [
   /* bronze → zsb-bronze → silver */
   {a:{n:"BRONZE", s:"r", dy:-4}, b:{n:"BREPO", s:"l", dy:-4}, kind:"live",
-   label:"8 of 1,258 objects", sub:"944 MiB · size + etag verified"},
-  {a:{n:"BREPO", s:"l", dy:5}, b:{n:"SGAP", s:"t"}, kind:"cold",
-   label:"publish minifin/v1/", sub:"has not run"},
+   label:"8 keys · 944 MiB", sub:"size + etag verified"},
+  {a:{n:"BREPO", s:"l", dy:6}, b:{n:"SGAP", s:"t"}, kind:"cold",
+   label:"publish v1", sub:"has not run"},
   {a:{n:"SGAP", s:"b"}, b:{n:"SILVER", s:"r", dy:3}, kind:"cold"},
 
   /* silver → zsb-silver → gold */
   {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"cold",
    label:"download_silver()", sub:"raises"},
-  {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-1}, kind:"cold",
+  {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-2}, kind:"cold",
    label:"publish_gold()", sub:"raises"},
 
   /* gold → zsb-gold */
@@ -314,7 +314,7 @@ const EDGES = [
 
 /* one carry: the map runs out at the bottom, into everything gold feeds */
 const CARRIES = [
-  {x0:COL_REPO, y0:67.9, x1:COL_REPO, y1:71.5, fade:"out",
+  {x0:COL_REPO, y0:74.9, x1:COL_REPO, y1:79, fade:"out",
    from:"zsb-gold", to:"PRISM · the models · everything trained downstream"},
 ];
 

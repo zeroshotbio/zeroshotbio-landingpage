@@ -44,7 +44,7 @@ svg.appendChild(root);
    which is worth showing rather than hiding.
    ============================================================ */
 (function grid() {
-  const X0 = -6, X1 = 70, Y0 = -6, Y1 = 84;
+  const X0 = -6, X1 = 76, Y0 = -8, Y1 = 88;
   for (let x = X0; x <= X1; x += 2) {
     const major = x % 10 === 0;
     add(gGrid, "line", {
@@ -96,8 +96,14 @@ COLUMNS.forEach(C => {
    the reader text of the stations they were about.
    ============================================================ */
 const WIRE = {
-  live: { stroke: "var(--signal)", w: 2.0, dash: "none", op: 0.95, dots: true },
-  cold: { stroke: "var(--drop)",   w: 1.5, dash: "7 5",  op: 0.72, dots: false }
+  /* The live conduit is a track, not a highlight. It used to be a heavy blue
+     rule, which made the ONE hop that works the loudest thing on the map — and
+     the dots travelling it, the part that actually says "bytes moved", were
+     smaller than the line they moved along. So the rail is now a quiet grey
+     and the dots carry the signal colour. `ink` is kept separate from `stroke`
+     so a caption stays readable when its rail deliberately is not. */
+  live: { stroke: "var(--fg3)", w: 1.1, dash: "none", op: 0.5,  dots: true,  ink: "var(--fg2)" },
+  cold: { stroke: "var(--drop)", w: 1.5, dash: "7 5",  op: 0.72, dots: false, ink: "var(--drop)" }
 };
 
 function portOf(ref) {
@@ -147,14 +153,17 @@ EDGES.forEach(E => {
        the map, so it stays legible at the overview zoom. The qualifier is
        fine-tier and comes back when you zoom in. */
     const vertical = Math.abs(poly[bi][0] - poly[bi - 1][0]) < 0.02;
+    const half = (lineH(10) + lineH(8.6)) / 2;
     if (vertical) {
-      label(gLabel, cx - 0.5, cy - 0.24, E.label,
-        { size: 10, anchor: "end", fill: st.stroke, ls: 0.05 });
-      if (E.sub) label(gLabel, cx - 0.5, cy + 0.42, E.sub,
+      label(gLabel, cx - 0.55, cy - half + lineH(10) / 2, E.label,
+        { size: 10, anchor: "end", fill: st.ink, ls: 0.05 });
+      if (E.sub) label(gLabel, cx - 0.55, cy - half + lineH(10) + lineH(8.6) / 2, E.sub,
         { size: 8.6, anchor: "end", fill: "var(--fg3)" });
     } else {
-      label(gLabel, cx, cy - 0.44, E.label, { size: 10, fill: st.stroke, ls: 0.05 });
-      if (E.sub) label(gLabel, cx, cy + 0.48, E.sub, { size: 8.6, fill: "var(--fg3)" });
+      label(gLabel, cx, cy - half - 0.2 + lineH(10) / 2, E.label,
+        { size: 10, fill: st.ink, ls: 0.05 });
+      if (E.sub) label(gLabel, cx, cy - half - 0.2 + lineH(10) + lineH(8.6) / 2, E.sub,
+        { size: 8.6, fill: "var(--fg3)" });
     }
   }
 
@@ -168,7 +177,7 @@ CARRIES.forEach(C => {
     d: path(poly), fill: "none", stroke: "var(--fg3)", "stroke-width": 1.2,
     "stroke-dasharray": "6 4", "stroke-opacity": 0.5
   });
-  label(gLabel, C.x1, C.y1 + 0.5, "↓ " + C.to, { size: 8.6, fill: "var(--fg3)" });
+  label(gLabel, C.x1, C.y1 + 0.75, "↓ " + C.to, { size: 8.6, fill: "var(--fg3)" });
 });
 
 /* ============================================================
@@ -202,9 +211,9 @@ NODES.forEach(n => {
 
   /* the selection halo: a rule drawn just outside the wall, so picking a
      station never changes the station's own geometry */
-  const [ox, oy] = P(n.x - n.w / 2 - 0.22, n.y - n.h / 2 - 0.22);
+  const [ox, oy] = P(n.x - n.w / 2 - 0.35, n.y - n.h / 2 - 0.35);
   n._halo = add(g, "rect", {
-    x: ox, y: oy, width: (n.w + 0.44) * S, height: (n.h + 0.44) * S,
+    x: ox, y: oy, width: (n.w + 0.7) * S, height: (n.h + 0.7) * S,
     fill: "none", stroke: "var(--signal)", "stroke-width": 2,
     "stroke-opacity": 0, "pointer-events": "none"
   });
@@ -237,7 +246,12 @@ function mark() {
 LIVE_RUNS.forEach((poly, i) => {
   const N = 3, L = runLength(poly);
   const dots = Array.from({ length: N }, (_, k) => {
-    const c = add(gDot, "circle", { r: 2.6, fill: "var(--signal)" });
+    /* Three times the old radius, with a halo in the page colour so a dot
+       reads as travelling ON the rail rather than as a bead threaded through
+       it. These are the only saturated marks left on the conduits. */
+    const c = add(gDot, "circle", {
+      r: 9, fill: "var(--signal)", stroke: "var(--bg)", "stroke-width": 3
+    });
     return { c, t: k / N };
   });
   TICKERS.push(dt => {
@@ -270,24 +284,28 @@ function apply() { root.setAttribute("transform", `translate(${cam.x},${cam.y}) 
 
 function contentBox() {
   const b = gContent.getBBox();
-  return { x: b.x - 26, y: b.y - 26, w: b.width + 52, h: b.height + 52 };
+  /* extra room at the foot: the hint bar is an HTML overlay pinned to the
+     bottom of the stage, and the carry stub trailing off the last station
+     lands underneath it otherwise */
+  return { x: b.x - 26, y: b.y - 26, w: b.width + 52, h: b.height + 26 + 62 };
 }
 
 /* ============================================================
    LABEL TIERS
 
-   The map is about 115 grid units wide, so a fit-to-stage view sits near
-   z = 0.3 — at which a 9px label is under 3px and every small string on the
-   canvas turns into the same grey smear. Rather than pretend that is
-   legible, the fine tier is switched off below a threshold: the overview
-   shows walls, areas and wiring, and the words come back as you zoom toward
-   a station. Anything under 9.5px is fine tier, which is every sub-label,
-   tile figure, manifest row and rail command; station names and bucket names
-   stay up at all zooms.
+   Anything below FINE_PX (9.5 * TYPE) is fine tier and is switched off below
+   FINE_Z: sub-labels, tile figures and rail commands. Station names, bucket
+   names, conduit captions and sliver callouts sit above it and stay up at
+   every zoom. Decoration that exists only to frame a fine label — the repo
+   command rails — carries the class explicitly, so an empty frame never
+   survives its own caption.
    ============================================================ */
-const FINE_Z = 0.5;
+/* With the type tripled, fit-to-stage renders a 9px label at about 10 real
+   pixels, so the whole plan is legible without zooming and the coarse tier
+   only kicks in when somebody zooms a long way out. */
+const FINE_Z = 0.25;
 [...svg.querySelectorAll("text")].forEach(t => {
-  if (parseFloat(t.getAttribute("font-size")) < 9.5) t.classList.add("fine");
+  if (parseFloat(t.getAttribute("font-size")) < FINE_PX) t.classList.add("fine");
 });
 let coarse = null;
 /* Deliberately not a TICKER: tickers are paused by the motion toggle and by

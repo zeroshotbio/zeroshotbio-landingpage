@@ -178,6 +178,73 @@ floor holds separately-addressable cell nodes. On the isometric map that would
 need a depth sort. Here there is no depth to sort, which is most of why this
 file is a third the size of `pipeline-shapes.js`.
 
+## Type, and the one number that scales it
+
+`TYPE` in `ds-plan.js` multiplies every font size on the canvas. Sizes are
+still authored in the readable 8–10.5 range so a shape's code says what it
+means; `label()` multiplies at the point of use. It is currently **3**.
+
+Everything that has to move when type moves is expressed against it:
+
+| | |
+|---|---|
+| `FINE_PX` | the fine-tier cutoff, `9.5 * TYPE` |
+| `textW(str, size)` | rough advance width in final pixels |
+| `lineH(size)` | line pitch in grid units, `size * TYPE * 1.45 / S` |
+| `BAR_H` | title-bar height, sized for `10.5 * TYPE` |
+
+**Do not hard-code a line offset in grid units.** Every stack of labels on the
+map is laid out from `lineH()`. The leading factor is 1.45 rather than 1.2
+because at 1.2 a text box is exactly its own height and stacked lines sit
+flush — which is what the overlap checker caught last time.
+
+Changing `TYPE` will need station heights re-checked: a title bar plus N cells
+plus a command rail has to fit inside a floor, and a treemap tile has to seat
+its caption. Run `check-overlaps.mjs` afterwards, and look at it.
+
+## Fit or lead
+
+A treemap tile captions itself in place only if it can seat **the key and the
+size figure**, with the key shrunk to fit the tile's width down to a floor of
+`7.6`. Otherwise the tile gets a **leader**: a dot on the feature, an elbow
+down and across, and the caption in open space below the enclosure.
+
+This is the textbook move, and it is here because the honest thing and the
+readable thing pull apart at the small end. Silver's `minifin/` is 0.59% of
+its bucket — at true area, a strip a couple of pixels thick, and the single
+most important object set in that bucket. The two obvious alternatives are
+both lies: shrink the caption until it fits, or give the tile a minimum area.
+A leader keeps the area true and the caption readable.
+
+The bar is key *and* size deliberately. A tile captioned `minifin/` with no
+figure is the worst of both — it spends the space of a label and answers none
+of the question a treemap exists to answer.
+
+## Tier colour
+
+A transform wears the colour of the tier it reads, end to end: floor wall,
+title bar and every cell inside it. `zsb-bronze` is bronze, `zsb-silver` is
+silver, `zsb-gold` is gold. That matches the repos' own naming rule — each is
+named for the tier it reads — and it means the eye pairs a bucket with its
+transform across the corridor without following the line.
+
+`zsb-medallion` keeps the code blue. It is the one thing in that column that
+is not a hop.
+
+## Conduits: quiet track, loud dots
+
+The live conduit is a **track**, not a highlight: grey, 1.1px, half opacity.
+The dots travelling it carry the signal colour at `r: 9` with a
+background-coloured halo, so they read as moving *on* the rail rather than as
+beads threaded through it.
+
+It used to be the other way round — a heavy blue rule with small dots — which
+made the one hop that works the loudest thing on the map, and left the part
+that actually says "bytes moved" smaller than the line it moved along.
+
+`WIRE` keeps `ink` separate from `stroke` so a caption stays readable when its
+rail deliberately is not.
+
 ## Label tiers
 
 The map is about 73 grid units wide, so fit-to-stage sits near `z = 0.47`, at

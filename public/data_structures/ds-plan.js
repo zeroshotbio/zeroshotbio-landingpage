@@ -50,6 +50,35 @@ function plate(g, x, y, w, h, s) {
   });
 }
 
+/* ============================================================
+   TYPE
+
+   One scale factor for every string on the map. Sizes are still authored in
+   the readable 8-to-10.5 range so a shape's code says what it means, and
+   label() multiplies at the point of use.
+
+   It exists because the first two versions of this map were laid out for
+   labels that were, in effect, footnotes: legible only once you had zoomed
+   into a station. Tripling the type makes the whole plan readable at
+   fit-to-stage, which is what a plan is for. Everything downstream of that —
+   title-bar heights, line spacing, the fit-or-lead decision on a treemap
+   tile — is sized against TYPE rather than against a pixel constant, so this
+   is the one number to change.
+   ============================================================ */
+const TYPE = 3;
+
+/* The fine tier, in final pixels. ds-view tags anything below this and hides
+   it at low zoom; shapes opt out simply by asking for a larger size. */
+const FINE_PX = 9.5 * TYPE;
+
+/* Rough advance width for the monospace stack, in final pixels. Good to a few
+   percent, which is all the fit-or-lead decision needs — and cheap, where
+   measuring for real would mean laying out every candidate string twice. */
+const textW = (str, size) => String(str).length * size * TYPE * 0.6;
+
+/* Line pitch for a stack of labels, in grid units. */
+const lineH = size => size * TYPE * 1.45 / S;
+
 /* Text in plan view is always horizontal. On the isometric map labels are
    raked to +30 / -30 to sit along the flow and naming axes; here the axes are
    the screen axes, so a raked label would be pure decoration and would cost
@@ -58,7 +87,7 @@ function label(g, x, y, str, s) {
   const [px, py] = P(x, y);
   const t = add(g, "text", {
     x: px, y: py, fill: s.fill || "var(--fg)",
-    "font-size": s.size || 10, "text-anchor": s.anchor || "middle",
+    "font-size": (s.size || 10) * TYPE, "text-anchor": s.anchor || "middle",
     "dominant-baseline": s.base || "middle",
     "letter-spacing": s.ls === undefined ? 0.02 : s.ls,
     "fill-opacity": s.fo === undefined ? 1 : s.fo
