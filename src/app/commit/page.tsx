@@ -13,8 +13,8 @@
 // Gated by src/middleware.ts (Basic Auth), same as /daniotype_kasperov.
 import React from "react";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "./theme";
-import { MenuCompositionFigure } from "./figures";
 import Link from "next/link";
+import { IconDocs } from "./icons";
 import Overview from "./overview";
 import MANIFEST from "./data/manifest.json";
 import MENU from "./data/zfa_menu_preview.json";
@@ -85,45 +85,29 @@ export default function CommitChallengePage() {
 
           <Overview />
 
-          {/* The one real visual on this page: the answer space, by branch. It earns its place
-              here because the shape of the menu is part of understanding the task, not detail. */}
-          <div style={{ ...card, padding: "24px 26px", marginTop: 26 }}>
-            <MenuCompositionFigure />
-          </div>
-
-          {/* Every one of these lands on the same reference, at the section it names. The
-              detail is a page you can link to and come back from, not a layer over this one. */}
-          <div style={{ marginTop: 30 }}>
-            <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
-                          textTransform: "uppercase", color: MUTED, marginBottom: 11 }}>
-              read the detail
-            </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(232px, 1fr))", gap: 10 }}>
-              {[
-                { href: "/commit/docs#challenge", label: "The challenge", hint: "the task, stated in full" },
-                { href: "/commit/docs#input", label: "The input", hint: "three files, every field" },
-                { href: "/commit/docs#output", label: "The output", hint: "one answer, four parts" },
-                { href: "/commit/docs#scoring", label: "How it is scored", hint: "the rule, and what is reported" },
-              ].map((l) => (
-                <Link key={l.href} href={l.href}
-                      style={{ display: "block", textDecoration: "none", background: "#fffefd",
-                               border: `1px solid ${RULE}`, borderRadius: 9, padding: "13px 15px" }}>
-                  <div style={{ display: "flex", gap: 9, alignItems: "baseline" }}>
-                    <span style={{ fontFamily: MONO, fontSize: 11, fontWeight: 700, letterSpacing: 0.7,
-                                   textTransform: "uppercase", color: ACCENT }}>
-                      {l.label}
-                    </span>
-                    <span style={{ color: FAINT, fontSize: 12, marginLeft: "auto" }}>→</span>
-                  </div>
-                  <div style={{ fontSize: 11.5, color: FAINT, marginTop: 4, lineHeight: 1.5 }}>{l.hint}</div>
-                </Link>
-              ))}
-            </div>
-            <div style={{ fontSize: 11.5, color: FAINT, marginTop: 11 }}>
-              All four open the same reference page, at the section they name.
-            </div>
-          </div>
-
+          {/* One way in, not four. The reference is a page; this says so plainly. */}
+          <Link
+            href="/commit/docs"
+            style={{ display: "flex", alignItems: "center", gap: 14, textDecoration: "none",
+                     background: "#fffefd", border: `1px solid ${RULE}`, borderRadius: 11,
+                     padding: "18px 22px", marginTop: 26 }}
+          >
+            <span style={{ display: "inline-flex", color: ACCENT, flexShrink: 0 }}>
+              <IconDocs size={22} />
+            </span>
+            <span style={{ flex: 1, minWidth: 0 }}>
+              <span style={{ display: "block", fontSize: 15.5, fontWeight: 650, color: INK,
+                             letterSpacing: -0.2 }}>
+                Take me to the full documentation
+              </span>
+              <span style={{ display: "block", fontSize: 12.5, color: MUTED, marginTop: 3,
+                             lineHeight: 1.5 }}>
+                The challenge stated in full, every field of the three files, the four parts of an
+                answer, and the scoring rule.
+              </span>
+            </span>
+            <span style={{ fontFamily: MONO, fontSize: 15, color: FAINT, flexShrink: 0 }}>→</span>
+          </Link>
 
         </div>
 

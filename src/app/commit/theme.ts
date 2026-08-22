@@ -32,6 +32,10 @@ export const FILE_BD = "#f0e2d6";
 export const PANEL = "#eeece8";
 export const PANEL_BD = "#e0dbd4";
 
+// The third side marker, for scoring — beside FILE (input) and ACCENT (output). Taken from the
+// validated categorical set, so the three side colours are separable under CVD; 7.05:1 on card.
+export const SCORE = "#6d28d9";
+
 // Scoring outcomes. STATUS colours: they never carry meaning alone — every use ships with the
 // word ("full", "half", "zero") beside it.
 export const SC_FULL = "#3f6b55";

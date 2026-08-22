@@ -5,12 +5,14 @@
 // stable anchors, and no disclosure of any kind. The landing page links straight to the anchor for
 // whichever box you clicked, so "read the detail" and "get back" are both one step.
 //
-// Server-rendered throughout; no client JS. Every number comes from src/app/commit/data/, the
-// build-time bundle emitted by scripts/build_commit_challenge_asset.py.
+// Server-rendered apart from the contents rail, which tracks which section you are reading; every
+// number comes from src/app/commit/data/, the build-time bundle emitted by
+// scripts/build_commit_challenge_asset.py.
 //
 // Gated by src/middleware.ts (Basic Auth) via the /commit/:path* matcher.
 import React from "react";
 import Link from "next/link";
+import DocsRail from "./rail";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "../theme";
 import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "../windows";
 import { MenuCompositionFigure } from "../figures";
@@ -41,7 +43,7 @@ function Section({ id, n, title, children }: {
   id: string; n: string; title: string; children: React.ReactNode;
 }) {
   return (
-    <section id={id} style={{ scrollMarginTop: 24, marginBottom: 64 }}>
+    <section id={id} style={{ scrollMarginTop: 26, marginBottom: 64 }}>
       <div style={{ borderTop: `2px solid ${INK}`, paddingTop: 13, marginBottom: 22 }}>
         <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.9,
                       textTransform: "uppercase", color: ACCENT }}>
@@ -79,40 +81,15 @@ export default function CommitDocsPage() {
       />
 
       <div className="doc-grid">
-        {/* ── contents rail ─────────────────────────────────────────── */}
-        <nav className="doc-rail" aria-label="Contents">
-          <Link href="/commit"
-                style={{ display: "inline-flex", alignItems: "center", gap: 8, textDecoration: "none",
-                         fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.7,
-                         textTransform: "uppercase", color: ACCENT, border: `1px solid ${RULE}`,
-                         background: "#fffefd", borderRadius: 8, padding: "9px 13px", marginBottom: 22 }}>
-            ← Back to the overview
-          </Link>
-
-          <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.9,
-                        textTransform: "uppercase", color: MUTED, marginBottom: 9, paddingLeft: 10 }}>
-            Contents
-          </div>
-          {SECTIONS.map((s) => (
-            <a key={s.id} href={`#${s.id}`} className="doc-link">
-              <span style={{ fontFamily: MONO, fontSize: 9, color: FAINT, marginRight: 8 }}>{s.n}</span>
-              <span style={{ fontSize: 13, color: INK, fontWeight: 550 }}>{s.title}</span>
-              <span style={{ display: "block", fontSize: 11, color: FAINT, marginTop: 2, paddingLeft: 25 }}>
-                {s.blurb}
-              </span>
-            </a>
-          ))}
-
-          <div style={{ marginTop: 22, paddingTop: 16, borderTop: `1px solid ${RULE}`,
-                        fontFamily: MONO, fontSize: 9.5, color: FAINT, lineHeight: 1.7 }}>
-            <div>{nfmt(B.clusters)} clusters</div>
-            <div>{B.timepoint_hpf} hpf · {B.arm} arm</div>
-            <div>{nfmt((MENU as any).n_terms)} ZFA terms</div>
-            <div style={{ marginTop: 7, wordBreak: "break-all" }}>
-              menu {(MENU as any).menu_version_hash.slice(0, 12)}…
-            </div>
-          </div>
-        </nav>
+        <DocsRail
+          sections={SECTIONS}
+          stats={[
+            `${nfmt(B.clusters)} clusters`,
+            `${B.timepoint_hpf} hpf · ${B.arm} arm`,
+            `${nfmt((MENU as any).n_terms)} ZFA terms`,
+            `menu ${(MENU as any).menu_version_hash.slice(0, 12)}…`,
+          ]}
+        />
 
         {/* ── the reference ─────────────────────────────────────────── */}
         <article style={{ minWidth: 0 }}>

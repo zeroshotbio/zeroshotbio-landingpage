@@ -5,18 +5,32 @@
 // card — so it reads as part of the header rather than as the first figure. Everything it says is
 // expanded somewhere below; nothing is only here.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, SC_FULL, SC_HALF, SC_ZERO, nfmt } from "./theme";
+import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, FILE, SCORE, SC_FULL, SC_HALF, SC_ZERO, nfmt } from "./theme";
+import { IconInput, IconOutput, IconScore } from "./icons";
 import MENU from "./data/zfa_menu_preview.json";
 import H5AD from "./data/h5ad_summary.json";
 
-function Box({ side, color, lines }: { side: string; color: string; lines: string[] }) {
+// One shared header for all three boxes: glyph, then the side's name in its own colour. The glyph
+// is what separates them at a glance; the colour only reinforces it.
+function Head({ side, color, icon }: { side: string; color: string; icon: React.ReactNode }) {
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 8, color, marginBottom: 12 }}>
+      {icon}
+      <span style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1.3,
+                     textTransform: "uppercase" }}>
+        {side}
+      </span>
+    </div>
+  );
+}
+
+function Box({ side, color, icon, lines }: {
+  side: string; color: string; icon: React.ReactNode; lines: string[];
+}) {
   return (
     <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
                   padding: "18px 20px", minWidth: 0 }}>
-      <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1.3,
-                    textTransform: "uppercase", color, marginBottom: 12 }}>
-        {side}
-      </div>
+      <Head side={side} color={color} icon={icon} />
       {lines.map((l, i) => (
         <div key={l} style={{ fontSize: 13, color: INK, lineHeight: 1.5,
                               padding: "6px 0",
@@ -51,6 +65,7 @@ export default function Overview() {
         <Box
           side="the input"
           color={FILE}
+          icon={<IconInput />}
           lines={[
             "Three ranked DEG lists per cluster",
             "Per-cluster QC statistics",
@@ -64,6 +79,7 @@ export default function Overview() {
         <Box
           side="the output"
           color={ACCENT}
+          icon={<IconOutput />}
           lines={[
             `One ZFA identifier, from ${terms}`,
             "Both axis terms — the cell type, and the structure it sits in",
@@ -76,30 +92,53 @@ export default function Overview() {
         Per cluster, 112 times. What happens between the two boxes is the contest.
       </div>
 
-      {/* the rule, at a glance — same box vocabulary, one row per outcome */}
+      {/* the rule, at a glance — same header treatment as the two boxes above, its own colour */}
       <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
                     padding: "18px 20px", marginTop: 16 }}>
-        <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1.3,
-                      textTransform: "uppercase", color: MUTED, marginBottom: 12 }}>
-          how it is scored
+        <Head side="how it is scored" color={SCORE} icon={<IconScore />} />
+
+        <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.6, marginBottom: 14, maxWidth: 720 }}>
+          Your identifier is compared against the key&apos;s on the pinned ontology. Synonyms
+          resolve to the same term, so spelling is never the error. Credit depends on which
+          direction you missed in, and on what kind of term the key holds.
         </div>
+
         {[
-          { k: "Full", c: SC_FULL, t: "you match the key, or name a cell type inside the region it names" },
-          { k: "Half", c: SC_HALF, t: "the key names a cell type and you name the region containing it" },
-          { k: "Zero", c: SC_ZERO, t: "everything else" },
+          {
+            k: "Full", c: SC_FULL,
+            lead: "Your identifier matches the key's, or any term in its accepted set.",
+            more: "Also full when the key names a specific anatomical region and you correctly name a cell type contained in it. Being more precise than the key is not punished, in that one direction.",
+          },
+          {
+            k: "Half", c: SC_HALF,
+            lead: "The key names a cell type and you name the region that contains it.",
+            more: "Right neighbourhood, wrong grain. Retreating up the ontology buys safety, so it has to cost something.",
+          },
+          {
+            k: "Zero", c: SC_ZERO,
+            lead: "Everything else, including a cell type narrower than the key's own cell type.",
+            more: "Depth on its own earns nothing. A sibling term, however close, scores the same as an unrelated one.",
+          },
         ].map((o, i) => (
-          <div key={o.k} style={{ display: "flex", gap: 12, alignItems: "baseline",
-                                  padding: "7px 0", borderTop: i === 0 ? "none" : "1px solid #f2efeb" }}>
-            <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.7,
-                           textTransform: "uppercase", color: o.c, minWidth: 38 }}>
-              {o.k}
-            </span>
-            <span style={{ fontSize: 13, color: INK, lineHeight: 1.5 }}>{o.t}</span>
+          <div key={o.k} style={{ padding: "11px 0", borderTop: i === 0 ? `1px solid ${RULE}` : "1px solid #f2efeb" }}>
+            <div style={{ display: "flex", gap: 12, alignItems: "baseline" }}>
+              <span style={{ fontFamily: MONO, fontSize: 10.5, fontWeight: 700, letterSpacing: 0.8,
+                             textTransform: "uppercase", color: o.c, minWidth: 40, flexShrink: 0 }}>
+                {o.k}
+              </span>
+              <span style={{ fontSize: 13, color: INK, lineHeight: 1.5, fontWeight: 550 }}>{o.lead}</span>
+            </div>
+            <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6, marginTop: 5, paddingLeft: 52 }}>
+              {o.more}
+            </div>
           </div>
         ))}
-        <div style={{ fontSize: 11.5, color: FAINT, marginTop: 10, lineHeight: 1.55 }}>
-          Your identifier against the key&apos;s, on the pinned ontology — synonyms resolve,
-          spelling is never the error. Strict exact-match accuracy is reported alongside.
+
+        <div style={{ fontSize: 11.5, color: FAINT, marginTop: 13, paddingTop: 12,
+                      borderTop: `1px solid ${RULE}`, lineHeight: 1.6 }}>
+          Strict exact-match accuracy is reported beside the graded score, so the graded number
+          never carries the result on its own. Each cluster also carries a flag — contested,
+          evidence-ambiguous or removed — which decides whether it is scored at all.
         </div>
       </div>
     </div>
