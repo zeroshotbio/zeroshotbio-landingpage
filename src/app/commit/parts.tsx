@@ -18,7 +18,7 @@ const WINDOW = (H5AD as any).matrix_window ?? null;
 export const GF_FIELDS: { col: string; blurb: string }[] = [
   { col: "cluster_id", blurb: "The opaque handle for the cluster — C001 through C112, in order. No ordering meaning, no hint." },
   { col: "n_cells", blurb: "How many cells the cluster holds, and so how much evidence stands behind its row." },
-  { col: "n_cells_used", blurb: "How many of those cells the marker ranking was actually computed over." },
+  { col: "n_cells_used", blurb: "How many of those cells the marker ranking was computed over. Equal to n_cells for most clusters; the eleven largest are capped at 5,000." },
   { col: "top_50_markers", blurb: "DEGs up-expressed here more than anywhere else in the set — the cluster's positive signature." },
   { col: "bottom_50_markers", blurb: "DEGs down-expressed here relative to the rest of the set. Absence used as evidence: what a cluster conspicuously lacks narrows it as much as what it has." },
   { col: "family_50_markers", blurb: "The same ranking recomputed against a contrast group of related clusters rather than against the whole set." },
@@ -128,7 +128,7 @@ export function FileWindow({ cols, rows, elided, footer, elideLabel = "..." }: {
 }
 
 // gold_features.csv — every shipped column, so the window shows the file's real organisation.
-// Gene lists are cut to their first genes with the remainder counted, because a 50-gene cell would
+// Gene lists are cut to their first genes with the remainder counted, because a full-length cell would
 // be the only thing on screen.
 export function GoldFeaturesRows() {
   const w = (FEATURES as any).window;
@@ -147,7 +147,7 @@ export function GoldFeaturesRows() {
       cols={w.columns}
       rows={[...w.head.map(mk), null, ...w.tail.map(mk)]}
       elided={w.elided_rows}
-      footer={`${nfmt(w.total_rows)} rows × ${w.total_columns} columns · gene lists cut to the first ${w.genes_shown}, all 50 ship`}
+      footer={`${nfmt(w.total_rows)} rows × ${w.total_columns} columns · gene lists cut to the first ${w.genes_shown}; the file carries up to 50`}
     />
   );
 }

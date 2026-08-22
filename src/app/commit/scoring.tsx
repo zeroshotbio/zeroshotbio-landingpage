@@ -104,13 +104,21 @@ export default function ScoringSection() {
         cluster by cluster — no partial credit, no containment — is reported beside it, so the
         graded number cannot quietly carry the result.
       </p>
+      <p style={{ ...prose, margin: "0 0 15px" }}>
+        Not every cluster is scored the same way. The key carries per-cluster review metadata, and
+        the one that gates scoring is{" "}
+        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>evidence_ambiguous</code> — a boolean,
+        true on <strong>31 of the 112</strong> clusters, marking those where the reviewers could not
+        settle the call from the evidence available.
+      </p>
       <p style={{ ...prose, margin: 0 }}>
-        Every cluster also carries a <strong>scoring flag</strong> —{" "}
-        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>contested</code>,{" "}
-        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>evidence-ambiguous</code> or{" "}
-        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>removed</code> — and that flag decides
-        whether the answer for it is scored at all. Which clusters were excluded, and under which
-        flag, is reported with the score.
+        Alongside it the key records{" "}
+        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>granularity</code> (exact on 71 clusters,
+        broader on 24, narrower on 16) and separate{" "}
+        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>identity_agreement</code> and{" "}
+        <code style={{ fontFamily: MONO, fontSize: 13.5 }}>anatomy_agreement</code> fields, each
+        unanimous on roughly 80 clusters and split on the rest. Which clusters were excluded, and on
+        what basis, is reported with the score.
       </p>
 
       <p style={{ ...prose, fontSize: 14, color: MUTED, margin: "30px 0 0", paddingTop: 18,

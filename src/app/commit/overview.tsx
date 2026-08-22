@@ -137,9 +137,9 @@ One cluster in, one label out — 112 times. What happens between the two boxes 
         <div style={{ fontSize: 11.5, color: FAINT, marginTop: 13, paddingTop: 12,
                       borderTop: `1px solid ${RULE}`, lineHeight: 1.6 }}>
           Strict exact-match accuracy, cluster by cluster, is reported beside the graded score, so
-          the graded number never carries the result on its own. Every cluster also carries a flag
-          — contested, evidence-ambiguous or removed — which decides whether its answer is scored
-          at all.
+          the graded number never carries the result on its own. Clusters the reviewers could not
+          settle are flagged evidence-ambiguous — 31 of the 112 — and which clusters were excluded
+          is reported with the score.
         </div>
       </div>
     </div>

@@ -103,7 +103,9 @@ export default function InputSection() {
           One row per cluster, and the file your labeller will actually read. Each row carries three
           ranked lists of differentially expressed genes — <strong>DEGs</strong>, the genes whose
           expression separates that cluster from others — together with the quality statistics
-          behind them. The gene lists hold fifty entries each, in rank order.
+          behind them. Each list holds <strong>up to fifty</strong> genes in rank order — most are
+          full, but a cluster with little to separate it carries fewer, and one cluster&apos;s
+          depleted list is empty.
         </p>
         <Fields items={GF_FIELDS} />
         <div style={{ marginTop: 22 }}>
