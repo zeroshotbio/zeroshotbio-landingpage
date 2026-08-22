@@ -79,6 +79,10 @@
   .grip.shut:hover{background:var(--signal)}
   .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
   .grip.shut:hover span{color:var(--bg)}
+  /* the right grip needs no rule of its own — the reader it sits against
+     already carries a border-left, and two would read as a double line */
+  #gripR{border-right:none}
+  #gripR.shut{border-left:1px solid var(--fg)}
   .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
   .grp.mark{color:var(--fg)}
   .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
@@ -137,6 +141,60 @@
                    background:var(--signal);margin-left:9px;margin-right:15px}
   @media (max-width:1200px){.legend{display:none}}
 
+  /* ---- the steel thread ----
+     The one thing a reader has to know before any figure on this page means
+     what it says: every worked example here is ONE dataset carried end to
+     end. It is a band in the page flow rather than a card floating over the
+     canvas — the first version was an overlay pinned top-left and it sat
+     squarely on the bronze vault, which is the exact failure this map keeps
+     having to fix. A band cannot collide with the drawing, because the
+     drawing is fitted to what is left after it. */
+  .thread{flex:none;display:flex;align-items:baseline;gap:11px;
+          padding:6px 14px;border-bottom:1px solid var(--rule);
+          background:var(--panel);color:var(--fg2);
+          font-size:10px;line-height:1.5;
+          box-shadow:inset 3px 0 0 var(--signal)}
+  .thread b{flex:none;font-weight:400;color:var(--signal);font-size:8px;
+            letter-spacing:.16em;text-transform:uppercase}
+  .thread span{min-width:0}
+  .thread em{font-style:normal;color:var(--fg)}
+  /* On a phone the header is hidden entirely, so this band is the ONLY place
+     the thread is stated outside the reader. It stays — but the elaboration
+     goes, or one framing sentence eats a quarter of the screen. */
+  @media (max-width:900px){
+    .thread{padding:5px 10px;gap:7px;font-size:9.5px;flex-wrap:wrap}
+    .thread .more{display:none}
+  }
+
+  /* ---- the reader ----
+     Back after a spell away. What changed is the length: an entry is one
+     paragraph of at most a hundred words, then the figures. The long-form
+     prose is still in ds-data.js as the record of where each number came
+     from; it is deliberately not rendered. */
+  .reader{width:var(--reader-w,360px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:24px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:16px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  .read .note{color:var(--fg3);font-size:10px;margin-top:-4px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:112px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10px;
+        white-space:pre;overflow-x:auto;line-height:1.6;margin-bottom:10px}
+  .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
+         letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+  /* the steel-thread flag on an entry that IS the thread */
+  .thr{display:inline-block;border:1px solid var(--signal);color:var(--signal);font-size:8.5px;
+       letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+  .sheetclose{display:none}
+
   /* the step strip — the mobile stand-in for the left index */
   .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
          overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
@@ -170,11 +228,22 @@
     .stage{flex:1;min-height:0;border-bottom:none}
     .strip{display:block;height:var(--strip-h)}
     .hint{display:none}
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:38dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:36px 14px 16px}
     .stepnav{top:8px;right:8px;gap:10px}
     .stepnav button{width:44px;height:44px;font-size:23px}
   }
   @media (max-width:900px) and (orientation:landscape){
     :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
+    .reader{max-height:48dvh}
   }
   @media (prefers-reduced-motion:reduce){*{transition:none!important}}
 </style>
@@ -182,7 +251,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><b>Data Structures</b><span>medallion · plan view</span></div>
+    <div class="brand"><b>Data Structures</b><span>medallion · plan view · the MiniFin 100k steel thread</span></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stations</button>
       <button class="ctl" id="btnFit">Fit</button>
@@ -191,6 +260,16 @@
       <button class="ctl" id="btnTheme">Light</button>
     </div>
   </header>
+  <div class="thread">
+    <b>the steel thread</b>
+    <span>Every worked example on this map is <em>MiniFin 100k</em> — one 94,616-cell zebrafish
+    chemical-perturbation dataset, carried end to end as a single thin slice through every
+    tier.<span class="more"> Where a stage has run, it ran on MiniFin; where a stage has not,
+    MiniFin is what it would carry. Every command here is a MiniFin command, the release that
+    does not exist is <em>minifin/v1/</em>, and the notebook that has not landed is
+    <em>notebooks/minifin/</em>. The far larger MegaFin deliveries are drawn to true scale in
+    bronze, and are not the thread.</span></span>
+  </div>
   <div class="body">
     <aside id="aside"></aside>
     <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
@@ -206,15 +285,20 @@
         <button id="stPrev" aria-label="Previous station">‹</button>
         <button id="stNext" aria-label="Next station">›</button>
       </div>
-      <div class="hint">Arrow keys walk the stations · Click or hover to mark one · Esc to clear · Home to fit · Drag to pan · Scroll or pinch to zoom</div>
+      <div class="hint">Click a box to read it · Arrow keys walk the stations · Esc to clear · Home to fit · Drag to pan · Scroll or pinch to zoom · Drag a column border to resize, click it to collapse</div>
     </div>
     <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
+      <div class="read" id="read"></div>
+    </div>
   </div>
 </div>
 
-<script src="/data_structures/ds-plan.js?v=a2"></script>
-<script src="/data_structures/ds-shapes.js?v=a2"></script>
-<script src="/data_structures/ds-data.js?v=a2"></script>
-<script src="/data_structures/ds-view.js?v=a2"></script>
+<script src="/data_structures/ds-plan.js?v=a3"></script>
+<script src="/data_structures/ds-shapes.js?v=a3"></script>
+<script src="/data_structures/ds-data.js?v=a3"></script>
+<script src="/data_structures/ds-view.js?v=a3"></script>
 </body>
 </html>

@@ -113,6 +113,30 @@ boxes, which is apt: it is a missing S3 prefix, so it is in neither.
 Keep them faint. They are a ground, not a frame — noticed second, after the
 stations and before the wiring.
 
+## The steel thread — say it, and keep saying it
+
+Every worked example on this page is **MiniFin 100k**: one 94,616-cell
+zebrafish chemical-perturbation dataset, carried end to end as a single thin
+slice through every tier. That is the whole idea of a steel thread — prove the
+entire path on one small real thing before widening it to the datasets that
+cost money. It is not a sample of the map; it *is* the map's example:
+
+- every transform repo has exactly **one** dataset module, `minifin/`
+- every command on the page (`fetch`, `process convert`, `process build`,
+  `process all`, `publish`) is a MiniFin command
+- the release that does not exist is `minifin/v1/`
+- the notebook that has not landed is `notebooks/minifin/01_eda.ipynb`
+
+The MegaFin deliveries in bronze are drawn at true area because 92.2% of a
+7 TiB bill is worth seeing. **They are not the thread**, and no repo on this
+page reads them.
+
+It is stated in three places on purpose, because it governs every figure and a
+reader who misses it will misread the whole page: the **brand line**, the
+**band under the header**, and the **reader's default entry**. Nodes on the
+thread carry `thread:true`, which flags them in the reader. If you add a
+station, decide which of the two it is and say so.
+
 ## Naming
 
 The tiers are **bronze**, **silver** and **gold**. The buckets carry nickname
@@ -319,21 +343,67 @@ while after the rail stopped being blue.
 `WIRE` keeps `ink` separate from `stroke` so a caption stays readable when its
 rail deliberately is not.
 
-## No reader panel
+## The reader panel — and its hundred-word cap
 
-There was a right-hand prose column: eyebrow, title, what-it-is / what-is-
-there / condition, a payload transcript and a key-value table per station. It
-was removed once the type tripled and the map became legible on its own.
+Click a box and its entry renders in the right-hand column. An entry is:
 
-**The prose is still in `ds-data.js`** — `does`, `built`, `cond`, `kv`,
-`SNIPPETS` and `OVERVIEW` are all intact and still the on-instance record of
-what this map asserts. Nothing renders them today. Bringing the panel back is
-a markup-and-CSS job plus an `inspect()` function; the facts are waiting.
+```
+eyebrow (group)  ·  title  ·  sub
+[on the steel thread]  [not confirmable from here]
+n.brief          <- ONE paragraph, AT MOST 100 WORDS
+SNIPPETS[n.id]   <- a real transcript, where one exists
+n.kv             <- the figures
+```
 
-Selection is therefore just a mark: the halo on the station and the highlight
-on its index row. It does not move the camera. **There used to be a fly-to** —
-it earned its keep when a station was unreadable until you were on top of it,
-and at the current scale it only took the rest of the map away from you.
+**The cap is the feature, not a limitation.** The first version of this panel
+rendered `does` / `built` / `cond` per station — three long sections, nine
+hundred-odd words — which was an excellent record and a bad panel, and it is
+why the column got deleted for a while. Nobody reads nine hundred words to
+find out what a box is. If a brief will not fit in a hundred words, the box is
+doing too much, or the sentence is.
+
+`does` / `built` / `cond` **are still in `ds-data.js` and are deliberately not
+rendered.** They are where every figure in the brief came from, and the next
+person to re-read the buckets will need them. Do not delete them, and do not
+render them either. There is a word-count check worth re-running after edits:
+
+```bash
+node -e 'const s=require("fs").readFileSync("ds-data.js","utf8");(0,eval)(s+`
+  const wc=x=>String(x).replace(/<[^>]+>/g,"").trim().split(/\s+/).length;
+  NODES.forEach(n=>{const w=wc(n.brief); if(w>100)console.log("OVER",n.id,w)});
+  ["brief","how","state"].forEach(k=>{const w=wc(OVERVIEW[k]);
+    if(w>100)console.log("OVER OVERVIEW."+k,w)});`)'
+```
+
+`OVERVIEW` renders three fields under the same cap — `brief` (the steel
+thread), `how` (how to read the map) and `state` (where it stands) — and is
+what you see with nothing selected.
+
+Selection marks the station and fills the reader. It does **not** move the
+camera. There used to be a fly-to; it earned its keep when a station was
+unreadable until you were on top of it, and at the current type scale it only
+took the rest of the map away from you.
+
+## The column borders
+
+Both grips do two jobs, separated by whether the pointer travelled more than
+`MOVED` (4px):
+
+| gesture | result |
+| --- | --- |
+| drag | resize that column live, 0–640px |
+| click | collapse it all the way to the edge |
+| click again | restore it at the width it had before |
+| drag to the wall | collapse, same as a click |
+
+A collapsed column leaves the grip behind — a 16px sliver with an arrow
+pointing the way back — rather than nothing, because a panel that collapses to
+a truly invisible edge is a panel nobody finds again. `wOpen` remembers the
+pre-collapse width so restoring does not snap back to the default.
+
+Resizing calls `refresh()`, which re-fits **only when nothing is selected**: if
+somebody is reading a station, moving the map out from under them to gain forty
+pixels is not a favour.
 
 ## Label tiers
 

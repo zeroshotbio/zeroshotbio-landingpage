@@ -7,9 +7,11 @@
 (function () {
 "use strict";
 
-const svg   = document.getElementById("svg");
-const aside = document.getElementById("aside");
-const strip = document.getElementById("strip");
+const svg    = document.getElementById("svg");
+const aside  = document.getElementById("aside");
+const strip  = document.getElementById("strip");
+const reader = document.getElementById("reader");
+const readEl = document.getElementById("read");
 
 const M = {}; NODES.forEach(n => M[n.id] = n);
 const SEQ = NODES.filter(n => !n.noindex);
@@ -384,9 +386,68 @@ const tdist = e => Math.hypot(
 
 function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
 
+/* ============================================================
+   THE READER
+
+   One entry per station: a title, one paragraph, and the figures.
+
+   The paragraph is `n.brief` and is capped at a hundred words. That cap is
+   the point of it. The first version of this panel rendered three long
+   sections per station — what it is, what is there, its condition — which
+   was a good record and a bad panel: nobody reads nine hundred words to find
+   out what a box is. Those sections are still in ds-data.js, because they are
+   where every number in the brief came from and the next person to refresh
+   this page will need them. They are deliberately not rendered.
+
+   The kv table is not prose and is not capped: it is the evidence, and a
+   figure the reader can check is worth more than a sentence about it.
+   ============================================================ */
+function inspect(n) {
+  if (!n) return overview();
+  const H = [];
+  H.push(`<div class="eyebrow">${esc(n.group || "")}</div>`);
+  H.push(`<div class="title">${esc(n.name)}</div>`);
+  if (n.sub) H.push(`<div class="sub">${esc(n.sub)}</div>`);
+  if (n.thread) H.push(`<div class="thr">on the steel thread</div>`);
+  if (UNVERIFIED.has(n.id)) H.push(`<div class="unver">not confirmable from here</div>`);
+  if (n.brief) H.push(`<p>${n.brief}</p>`);
+
+  const sn = SNIPPETS[n.id] && SNIPPETS[n.id]();
+  if (sn) {
+    H.push(`<h4>${esc(sn.title)}</h4><div class="snip">${esc(sn.body)}</div>`);
+    if (sn.note) H.push(`<p class="note">${esc(sn.note)}</p>`);
+  }
+  if (n.kv && n.kv.length) {
+    H.push(`<h4>Read on 2026-08-22</h4>`);
+    n.kv.forEach(([k, v]) => H.push(`<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`));
+  }
+  readEl.innerHTML = H.join("");
+  readEl.scrollTop = 0;
+}
+
+/* Nothing selected: the map's own argument, in the same hundred-word shape. */
+function overview() {
+  readEl.innerHTML =
+    `<div class="eyebrow">${esc(OVERVIEW.eyebrow)}</div>` +
+    `<div class="title big">${esc(OVERVIEW.title)}</div>` +
+    `<div class="sub">${esc(OVERVIEW.sub)}</div>` +
+    `<div class="thr">the steel thread</div>` +
+    `<p>${OVERVIEW.brief}</p>` +
+    `<h4>How to read it</h4><p>${OVERVIEW.how}</p>` +
+    `<h4>Where it stands</h4><p>${OVERVIEW.state}</p>` +
+    `<p class="note">Click any box for its own entry. Everything here was read from the live buckets and fresh clones on 2026-08-22, not from the READMEs.</p>`;
+  readEl.scrollTop = 0;
+}
+
 function select(n) {
   picked = n; hovered = null;
-  mark();
+  inspect(n); mark();
+  /* On a phone the reader is a bottom sheet rather than a column, so
+     selecting has to raise it and shrink the strip out of its way. */
+  if (window.matchMedia("(max-width:900px)").matches) {
+    reader.classList.toggle("open", !!n);
+    strip.classList.toggle("mini", !!n);
+  }
 }
 
 /* ============================================================
@@ -459,39 +520,82 @@ bTheme.onclick = () => {
 };
 document.getElementById("btnFit").onclick = () => { select(null); fit(); };
 document.getElementById("btnStages").onclick = () => aside.classList.toggle("open");
+/* the bottom sheet's own dismiss, phone only */
+document.getElementById("sheetClose").onclick = () => select(null);
 
-/* the index can be dragged shut; what is left is the grip itself, a
-   full-height sliver carrying an arrow that points the way back */
-[["gripL", aside, "--aside-w", 238, 1]].forEach(
+/* ============================================================
+   THE COLUMN BORDERS
+
+   Each border does two jobs, and which one you get is decided by whether the
+   pointer moved:
+
+     DRAG  resize that column, live, between 0 and 640px
+     CLICK collapse it all the way to the edge — and click again to bring it
+           back at the width it had
+
+   The click case used to be a side effect: you could only shut a column by
+   dragging it below a threshold, which meant the fastest way to get the map
+   to full width was a careful drag to the wall. A border is the obvious thing
+   to click when you want a panel gone, so clicking it now does that.
+
+   What is left behind is the grip itself — a full-height sliver carrying an
+   arrow pointing the way back — rather than nothing, because a panel that
+   collapses to a truly invisible edge is a panel nobody finds again.
+   ============================================================ */
+const MOVED = 4;   /* px of travel that separates a drag from a click */
+
+[["gripL", aside,  "--aside-w",  238, 1],
+ ["gripR", reader, "--reader-w", 360, -1]].forEach(
   ([id, panel, varName, def, dir]) => {
     const grip = document.getElementById(id);
-    let w = def, drag = false, x0 = 0, w0 = 0;
+    let w = def, wOpen = def, drag = false, moved = false, x0 = 0, w0 = 0;
     const setW = v => { w = v; document.documentElement.style.setProperty(varName, v + "px"); };
+    const shut = () => {
+      if (w > 8) wOpen = w;            /* remember where to come back to */
+      grip.classList.add("shut"); panel.style.display = "none"; setW(0); refresh();
+    };
+    const open = () => {
+      grip.classList.remove("shut"); panel.style.display = "";
+      setW(wOpen < 56 ? def : wOpen); refresh();
+    };
+
     grip.addEventListener("pointerdown", e => {
-      if (grip.classList.contains("shut")) return;
-      drag = true; x0 = e.clientX; w0 = w; grip.setPointerCapture(e.pointerId); e.preventDefault();
+      drag = true; moved = false; x0 = e.clientX; w0 = w;
+      grip.setPointerCapture(e.pointerId); e.preventDefault();
     });
     grip.addEventListener("pointermove", e => {
       if (!drag) return;
-      setW(Math.max(0, Math.min(520, w0 + (e.clientX - x0) * dir)));
+      if (Math.abs(e.clientX - x0) > MOVED) moved = true;
+      if (!moved || grip.classList.contains("shut")) return;
+      setW(Math.max(0, Math.min(640, w0 + (e.clientX - x0) * dir)));
+      refresh();
     });
-    grip.addEventListener("pointerup", () => {
+    ["pointerup", "pointercancel"].forEach(k => grip.addEventListener(k, () => {
+      if (!drag) return;
       drag = false;
-      if (w < 56) { grip.classList.add("shut"); panel.style.display = "none"; setW(0); refresh(); }
-    });
-    grip.addEventListener("click", () => {
-      if (!grip.classList.contains("shut")) return;
-      grip.classList.remove("shut"); panel.style.display = ""; setW(def); refresh();
+      /* a click — no travel — toggles the column all the way, either way */
+      if (!moved) return grip.classList.contains("shut") ? open() : shut();
+      /* a drag that ended near the wall finishes the job */
+      if (w < 56) shut();
+      else { wOpen = w; refresh(); }
+    }));
+    grip.addEventListener("keydown", e => {
+      if (e.key !== "Enter" && e.key !== " ") return;
+      e.preventDefault();
+      grip.classList.contains("shut") ? open() : shut();
     });
     grip.querySelector("span").textContent = dir > 0 ? "›" : "‹";
   });
 
-function refresh() { requestAnimationFrame(() => { /* the stage resized under us */ }); }
+/* The stage just changed width. Reframe only when nothing is selected — if
+   somebody is reading a station, moving the map out from under them to gain
+   forty pixels is not a favour. */
+function refresh() { requestAnimationFrame(() => { if (!picked) fit(); }); }
 addEventListener("resize", () => { if (!picked) fit(); });
 
 /* ============================================================
    GO
    ============================================================ */
-requestAnimationFrame(() => { fit(); mark(); });
+requestAnimationFrame(() => { fit(); mark(); overview(); });
 
 })();
