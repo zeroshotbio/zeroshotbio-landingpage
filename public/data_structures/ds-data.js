@@ -58,7 +58,7 @@
      x = 58    THE TRANSFORMS. One repository per hop, each sitting in the
                vertical gap between the two buckets it bridges — so a repo is
                always beside the seam it works on, never beside a tier.
-     x = 76    THE CONTRACT. zsb-medallion, a single bar running the full
+     x = 78.5  THE CONTRACT. zsb-medallion, a single bar running the full
                height of the transform column and tapped by every repo in it.
                It is not a stage and it touches no bucket, which is why it is
                drawn as a rail rather than a station.
@@ -75,7 +75,7 @@
    is as tall as its treemap needs to be — so a solver would only fight the
    drawing.
    ============================================================ */
-const COL_BUCKET = 13, COL_REPO = 58, COL_RAIL = 76, CORRIDOR = 36;
+const COL_BUCKET = 13, COL_REPO = 58, COL_RAIL = 78.5, CORRIDOR = 36;
 
 /* ============================================================
    ZONES — the two systems the map spans.
@@ -98,7 +98,7 @@ const ZONES = [
   { name: "AWS S3", sub: "account 423623857952 · buckets",
     x0: -1.5, y0: -3.6, x1: 27.5, y1: 64.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
-    x0: 45.5, y0: 6.6, x1: 81.5, y1: 73.5 },
+    x0: 45.5, y0: 6.6, x1: 84, y1: 73.5 },
 ];
 
 const NODES = [
@@ -281,7 +281,7 @@ const NODES = [
 {id:"MED", key:"8", group:"⑧ The contract", groupMark:true, anchor:true,
  shape:"spine", tier:"code",
  name:"zsb-medallion", repo:"zsb-medallion", right:"v0.5.0",
- x:COL_RAIL, y:41, w:8, h:62, tapLen:3,
+ x:COL_RAIL, y:41, w:8, h:62, tapLen:5.5,
  taps:[21, 45, 66],
  sub:"v0.5.0 · 48 commits · 1,843 LOC · the only repo here with boto3",
  exports:["BRONZE", "SILVER", "GOLD", "SANDBOX", "S3IO", "AtomicPath", "6 errors", "console"],

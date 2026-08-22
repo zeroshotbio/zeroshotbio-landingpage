@@ -53,7 +53,7 @@ fonts. Top-level `const` in one file is visible to later files.
 | `ds-data.js` | **on-instance** | ZONES, NODES, EDGES, CARRIES, SNIPPETS, OVERVIEW. Every fact, number, key and payload. |
 | `ds-shapes.js` | rendering side | One draw function per shape, plus TIER and the title bar. |
 | `ds-plan.js` | rendering side | Projection, plate/label, squarify, routing, ticker registry, byte formatting. |
-| `ds-view.js` | shared | Grid, zones, conduits, dots, camera, label tiers, reader, index. |
+| `ds-view.js` | shared | Grid, zones, conduits, dots, camera, label tiers, index. |
 | `index.html` | shared | Markup and the CSS variables that define both themes. |
 
 ## The layout
@@ -249,17 +249,47 @@ is not a hop.
 
 ## Conduits: quiet track, loud dots
 
-The live conduit is a **track**, not a highlight: grey, 1.1px, half opacity.
-The dots travelling it carry the signal colour at `r: 9` with a
-background-coloured halo, so they read as moving *on* the rail rather than as
-beads threaded through it.
+A conduit is a **track**, not a highlight: 1.1–1.5px, half opacity. The dots
+travelling it carry the signal colour at `r: 9` with a background-coloured
+halo, so they read as moving *on* the rail rather than as beads threaded
+through it.
 
-It used to be the other way round — a heavy blue rule with small dots — which
-made the one hop that works the loudest thing on the map, and left the part
-that actually says "bytes moved" smaller than the line it moved along.
+The live rail used to be a heavy blue rule with small dots, which made the one
+hop that works the loudest thing on the map and left the part that actually
+says "bytes moved" smaller than the line it moved along.
+
+**Dots run on every conduit, cold ones included.** They are the only mark that
+shows direction — the arrowheads are small and sit only at the landing end —
+and a map where half the arrows are static reads as half broken rather than
+half unbuilt. What separates the two states is the rail underneath:
+
+| | |
+|---|---|
+| solid grey | has carried bytes |
+| dashed drop | written, never run |
+| moving dot | direction of flow, on both |
+
+Keep the legend honest about this. It claimed the live rail was blue for a
+while after the rail stopped being blue.
 
 `WIRE` keeps `ink` separate from `stroke` so a caption stays readable when its
 rail deliberately is not.
+
+## No reader panel
+
+There was a right-hand prose column: eyebrow, title, what-it-is / what-is-
+there / condition, a payload transcript and a key-value table per station. It
+was removed once the type tripled and the map became legible on its own.
+
+**The prose is still in `ds-data.js`** — `does`, `built`, `cond`, `kv`,
+`SNIPPETS` and `OVERVIEW` are all intact and still the on-instance record of
+what this map asserts. Nothing renders them today. Bringing the panel back is
+a markup-and-CSS job plus an `inspect()` function; the facts are waiting.
+
+Selection is therefore just a mark: the halo on the station and the highlight
+on its index row. It does not move the camera. **There used to be a fly-to** —
+it earned its keep when a station was unreadable until you were on top of it,
+and at the current scale it only took the rest of the map away from you.
 
 ## Label tiers
 
@@ -291,6 +321,8 @@ If you add a label that must persist at overview zoom, give it a font size of
   `fetch / convert / build / publish` — the same four words as the four cells
   stacked directly above it. The cells are the ones carrying the figures, so
   the rail was the copy that went.
+- **Re-add the fly-to on select.** See above: at this type size it removes more
+  than it reveals.
 - **Put a station name outside its own box.** Every station carries its name in
   its title bar. The external name plates this map used to have were a second
   copy of a string already on screen, and they were the only thing on the canvas
@@ -307,7 +339,7 @@ If you add a label that must persist at overview zoom, give it a font size of
 ## Notes for integration
 
 - Everything is inside `.app`, full-height via `100dvh`. Under 900px the index
-  collapses into the strip and the reader moves below the canvas.
+  collapses into the horizontal strip along the bottom.
 - Dark is default; `document.body.classList.add("light")` flips the whole SVG,
   because every colour is a CSS variable.
 - `prefers-reduced-motion` pauses the dots on load and makes the camera cut

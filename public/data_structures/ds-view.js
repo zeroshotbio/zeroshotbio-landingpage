@@ -1,17 +1,15 @@
 /* ============================================================
    ds-view.js — assembly and interaction.
-   Grid, registers, nodes, conduits, dots, camera, reader, index.
+   Grid, zones, nodes, conduits, dots, camera, index.
    Shared file: read the whole thing before changing any of it.
    Load order: plan -> shapes -> data -> view
    ============================================================ */
 (function () {
 "use strict";
 
-const svg    = document.getElementById("svg");
-const aside  = document.getElementById("aside");
-const readEl = document.getElementById("read");
-const strip  = document.getElementById("strip");
-const reader = document.getElementById("reader");
+const svg   = document.getElementById("svg");
+const aside = document.getElementById("aside");
+const strip = document.getElementById("strip");
 
 const M = {}; NODES.forEach(n => M[n.id] = n);
 const SEQ = NODES.filter(n => !n.noindex);
@@ -110,14 +108,20 @@ ZONES.forEach(Z => {
    the reader text of the stations they were about.
    ============================================================ */
 const WIRE = {
-  /* The live conduit is a track, not a highlight. It used to be a heavy blue
-     rule, which made the ONE hop that works the loudest thing on the map — and
-     the dots travelling it, the part that actually says "bytes moved", were
-     smaller than the line they moved along. So the rail is now a quiet grey
-     and the dots carry the signal colour. `ink` is kept separate from `stroke`
-     so a caption stays readable when its rail deliberately is not. */
-  live: { stroke: "var(--fg3)", w: 1.1, dash: "none", op: 0.5,  dots: true,  ink: "var(--fg2)" },
-  cold: { stroke: "var(--drop)", w: 1.5, dash: "7 5",  op: 0.72, dots: false, ink: "var(--drop)" }
+  /* A conduit is a track, not a highlight. The live one used to be a heavy
+     blue rule, which made the ONE hop that works the loudest thing on the map
+     — and the dots travelling it, the part that actually says "bytes moved",
+     were smaller than the line they moved along. So the rails are quiet and
+     the dots carry the signal colour. `ink` is kept separate from `stroke` so
+     a caption stays readable when its rail deliberately is not.
+
+     Dots run on EVERY conduit now, cold ones included. They are the only mark
+     that shows direction, and a map where half the arrows are static reads as
+     a map that is half broken rather than one that is half unbuilt. What
+     separates the two states is the rail underneath: solid grey has carried
+     bytes, dashed red is written and has never run. */
+  live: { stroke: "var(--fg3)", w: 1.1, dash: "none", op: 0.5,  dots: true, ink: "var(--fg2)" },
+  cold: { stroke: "var(--drop)", w: 1.5, dash: "7 5",  op: 0.72, dots: true, ink: "var(--drop)" }
 };
 
 function portOf(ref) {
@@ -127,7 +131,7 @@ function portOf(ref) {
   return { x: p[0] + (ref.dx || 0), y: p[1] + (ref.dy || 0), side: ref.s };
 }
 
-const LIVE_RUNS = [];
+const RUNS = [];
 EDGES.forEach(E => {
   const st = WIRE[E.kind], poly = route(portOf(E.a), portOf(E.b), E.at);
   const d = path(poly);
@@ -181,7 +185,7 @@ EDGES.forEach(E => {
     }
   }
 
-  if (st.dots) LIVE_RUNS.push(poly);
+  if (st.dots) RUNS.push(poly);
 });
 
 /* the carry: the map runs out at the right edge */
@@ -219,7 +223,7 @@ NODES.forEach(n => {
      copy of a string that was already on screen — and it was the one thing
      here that could collide with anything, because it was the one thing not
      bounded by a box. The old "Fort Knox" label landing on the register rule
-     behind it was exactly that failure. The subtitle lives in the reader. */
+     behind it was exactly that failure. */
 
   if (n.noindex) return;
 
@@ -232,8 +236,8 @@ NODES.forEach(n => {
     "stroke-opacity": 0, "pointer-events": "none"
   });
 
-  g.addEventListener("pointerenter", () => { if (!dragging) { hovered = n; inspect(n); mark(); } });
-  g.addEventListener("pointerleave", () => { if (hovered === n) { hovered = null; inspect(picked); mark(); } });
+  g.addEventListener("pointerenter", () => { if (!dragging) { hovered = n; mark(); } });
+  g.addEventListener("pointerleave", () => { if (hovered === n) { hovered = null; mark(); } });
   g.addEventListener("click", e => { e.stopPropagation(); select(picked === n ? null : n); });
   g.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); select(n); } });
 });
@@ -250,14 +254,13 @@ function mark() {
 }
 
 /* ============================================================
-   DOTS — only on runs that have actually carried bytes.
+   DOTS — on every conduit, live and cold alike.
 
-   There is exactly one such run on this map. That is the point, and it is
-   why the ticker is not parameterised: if a second solid conduit ever
-   appears here it will be because a second hop ran, and that is worth a
-   commit rather than a config flag.
+   They carry direction, which nothing else on the map does: the arrowheads
+   are small and sit only at the landing end. Whether a hop has actually run
+   is said by the rail beneath them, not by whether they move.
    ============================================================ */
-LIVE_RUNS.forEach((poly, i) => {
+RUNS.forEach((poly, i) => {
   const N = 3, L = runLength(poly);
   const dots = Array.from({ length: N }, (_, k) => {
     /* Three times the old radius, with a halo in the page colour so a dot
@@ -335,31 +338,11 @@ function fit() {
   cam.y = (r.height - b.h * cam.z) / 2 - b.y * cam.z;
   apply();
 }
-/* fly-to: centre a station at a zoom where its own labels are legible.
-   The overview zoom on a map this wide is about 0.25, at which a 9px label
-   is 2px — so selecting a station has to move the camera or the reader is
-   describing something you cannot see. */
-function focus(n) {
-  if (!n || !n.w) return;
-  const r = svg.getBoundingClientRect();
-  const pad = 1.7;
-  const z = Math.min(r.width / ((n.w + pad * 2) * S), r.height / ((n.h + pad * 2) * S), 1.5);
-  const [cx, cy] = P(n.x, n.y);
-  glide(r.width / 2 - cx * z, r.height / 2 - cy * z, z);
-}
-let anim = null;
-function glide(tx, ty, tz) {
-  if (anim) cancelAnimationFrame(anim);
-  if (window.matchMedia("(prefers-reduced-motion:reduce)").matches) {
-    cam.x = tx; cam.y = ty; cam.z = tz; apply(); return;
-  }
-  const s = { ...cam }, t0 = performance.now(), D = 340;
-  (function step(now) {
-    const k = Math.min((now - t0) / D, 1), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
-    cam.x = s.x + (tx - s.x) * e; cam.y = s.y + (ty - s.y) * e; cam.z = s.z + (tz - s.z) * e;
-    apply(); if (k < 1) anim = requestAnimationFrame(step);
-  })(t0);
-}
+/* No fly-to. Selecting a station used to glide the camera onto it, which
+   earned its keep back when the type was a third of this size and a station
+   was unreadable until you were on top of it. At the current scale the whole
+   plan reads at fit, so the camera move only took the rest of the map away
+   from you. Selection now just marks; pan and zoom stay manual. */
 
 let dragging = false, dragged = false, px = 0, py = 0;
 svg.addEventListener("pointerdown", e => {
@@ -399,53 +382,11 @@ svg.addEventListener("touchend", () => { pinch = null; }, { passive: true });
 const tdist = e => Math.hypot(
   e.touches[0].clientX - e.touches[1].clientX, e.touches[0].clientY - e.touches[1].clientY);
 
-/* ============================================================
-   THE READER
-   ============================================================ */
 function esc(s) { return String(s).replace(/[&<>]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" }[c])); }
-
-function inspect(n) {
-  if (!n) return overview();
-  const S1 = [];
-  S1.push(`<div class="eyebrow">${esc(n.group || "")}</div>`);
-  S1.push(`<div class="title">${esc(n.name)}</div>`);
-  if (n.sub) S1.push(`<div class="sub">${esc(n.sub)}</div>`);
-  if (UNVERIFIED.has(n.id)) S1.push(`<div class="unver">not confirmable from here</div>`);
-  if (n.does)  S1.push(`<h4>What it is</h4><p>${n.does}</p>`);
-  if (n.built) S1.push(`<h4>What is there</h4><p>${n.built}</p>`);
-  if (n.cond)  S1.push(`<h4>Condition</h4><p class="cond">${n.cond}</p>`);
-  const sn = SNIPPETS[n.id] && SNIPPETS[n.id]();
-  if (sn) {
-    S1.push(`<h4>${esc(sn.title)}</h4><div class="snip">${esc(sn.body)}</div>`);
-    if (sn.note) S1.push(`<p class="note">${esc(sn.note)}</p>`);
-  }
-  if (n.kv && n.kv.length) {
-    S1.push(`<h4>Read on 2026-08-22</h4>`);
-    n.kv.forEach(([k, v]) => S1.push(`<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`));
-  }
-  readEl.innerHTML = S1.join("");
-  readEl.scrollTop = 0;
-}
-
-function overview() {
-  readEl.innerHTML =
-    `<div class="eyebrow">${esc(OVERVIEW.eyebrow)}</div>` +
-    `<div class="title big">${esc(OVERVIEW.title)}</div>` +
-    `<div class="sub">${esc(OVERVIEW.sub)}</div>` +
-    `<h4>The map</h4>${OVERVIEW.does}` +
-    `<h4>How it was read</h4>${OVERVIEW.built}` +
-    `<h4>Condition</h4>${OVERVIEW.cond}`;
-  readEl.scrollTop = 0;
-}
 
 function select(n) {
   picked = n; hovered = null;
-  inspect(n); mark();
-  if (n) focus(n);
-  if (window.matchMedia("(max-width:900px)").matches) {
-    reader.classList.toggle("open", !!n);
-    strip.classList.toggle("mini", !!n);
-  }
+  mark();
 }
 
 /* ============================================================
@@ -466,8 +407,8 @@ function select(n) {
     b.className = "row" + (n.anchor ? " anchor" : ""); b.dataset.id = n.id;
     b.innerHTML = `<span class="key">${esc(n.key)}</span><span class="nm">${esc(n.name)}</span>`;
     b.onclick = () => select(n);
-    b.onpointerenter = () => { hovered = n; inspect(n); mark(); };
-    b.onpointerleave = () => { hovered = null; inspect(picked); mark(); };
+    b.onpointerenter = () => { hovered = n; mark(); };
+    b.onpointerleave = () => { hovered = null; mark(); };
     aside.appendChild(b);
 
     const c = document.createElement("button");
@@ -518,10 +459,10 @@ bTheme.onclick = () => {
 };
 document.getElementById("btnFit").onclick = () => { select(null); fit(); };
 document.getElementById("btnStages").onclick = () => aside.classList.toggle("open");
-document.getElementById("sheetClose").onclick = () => select(null);
 
-/* the two grips: either column can be dragged shut */
-[["gripL", aside, "--aside-w", 238, 1], ["gripR", reader, "--reader-w", 360, -1]].forEach(
+/* the index can be dragged shut; what is left is the grip itself, a
+   full-height sliver carrying an arrow that points the way back */
+[["gripL", aside, "--aside-w", 238, 1]].forEach(
   ([id, panel, varName, def, dir]) => {
     const grip = document.getElementById(id);
     let w = def, drag = false, x0 = 0, w0 = 0;
@@ -551,7 +492,6 @@ addEventListener("resize", () => { if (!picked) fit(); });
 /* ============================================================
    GO
    ============================================================ */
-overview();
 requestAnimationFrame(() => { fit(); mark(); });
 
 })();
