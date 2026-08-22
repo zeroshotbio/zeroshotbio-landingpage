@@ -20,10 +20,19 @@ const nextConfig = {
   // SOURCE: regenerated on-instance from the s3-bronze stage manifests + decisions
   // log; every figure is read from an artefact, and unrecoverable ones are marked
   // rather than inferred. Re-copy its output here and push to redeploy.
+  // /data_structures is a self-contained static viz in public/data_structures/
+  // (index.html + four classic scripts, no build step), built the same way as
+  // /pipeline and sharing its palette and shell. Same absolute-<script src>
+  // rule applies, and for the same reason: no trailing slash on the route.
+  // It is the PLAN-VIEW companion to /pipeline's isometric — five stations of
+  // the medallion architecture drawn straight down, with bucket contents as a
+  // treemap by bytes. Contract + ownership split: public/data_structures/HANDOFF.md
+  // SOURCE: read on-instance from the live S3 buckets and the four zsb-* repos.
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
       { source: '/pipeline', destination: '/pipeline/index.html' },
+      { source: '/data_structures', destination: '/data_structures/index.html' },
       { source: '/grcz12', destination: '/grcz12.html' },
     ]
   },
@@ -42,6 +51,15 @@ const nextConfig = {
       },
       {
         source: '/pipeline',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // Same shell-and-scripts coupling as /pipeline, same reason.
+      {
+        source: '/data_structures/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/data_structures',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
     ]
