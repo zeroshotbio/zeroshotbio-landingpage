@@ -44,6 +44,28 @@ function SectionHead({ n, title, lede }: { n: string; title: string; lede?: stri
   );
 }
 
+// One expandable block. Native <details> so it works without client JS and stays keyboard- and
+// screen-reader-navigable; the marker is drawn rather than inherited so it matches the page.
+function Disclosure({ label, children, wide = false }: {
+  label: string; children: React.ReactNode; wide?: boolean;
+}) {
+  return (
+    <details style={{ marginTop: 12 }}>
+      <summary style={{ cursor: "pointer", fontFamily: MONO, fontSize: 11, fontWeight: 700,
+                        letterSpacing: 0.7, textTransform: "uppercase", color: ACCENT,
+                        listStyle: "none", display: "flex", gap: 9, alignItems: "center",
+                        border: `1px solid ${RULE}`, background: "#fffefd",
+                        borderRadius: 8, padding: "11px 15px" }}>
+        <span style={{ fontSize: 13, lineHeight: 1 }}>▸</span> {label}
+      </summary>
+      <div style={{ marginTop: 18, paddingLeft: wide ? 0 : 15,
+                    borderLeft: wide ? "none" : `2px solid ${RULE}` }}>
+        {children}
+      </div>
+    </details>
+  );
+}
+
 function Stat({ k, v, sub }: { k: string; v: string; sub?: string }) {
   return (
     <div>
@@ -88,18 +110,8 @@ export default function CommitChallengePage() {
           </div>
 
 
-          {/* The framing prose is real but not everyone needs it first. Native <details> so it
-              works without client JS and stays keyboard- and screen-reader-navigable. */}
-          <details style={{ marginTop: 22, maxWidth: 660 }}>
-            <summary style={{ cursor: "pointer", fontFamily: MONO, fontSize: 11, fontWeight: 700,
-                              letterSpacing: 0.7, textTransform: "uppercase", color: ACCENT,
-                              listStyle: "none", display: "inline-flex", gap: 8, alignItems: "center",
-                              border: `1px solid ${RULE}`, background: "#fffefd",
-                              borderRadius: 8, padding: "9px 14px" }}>
-              <span style={{ fontSize: 13, lineHeight: 1 }}>▸</span> The challenge, stated
-            </summary>
-            <div style={{ fontSize: 14.5, lineHeight: 1.72, color: "#3f3a34", marginTop: 16,
-                          paddingLeft: 15, borderLeft: `2px solid ${RULE}` }}>
+          <Disclosure label="The Challenge, In detail">
+            <div style={{ fontSize: 14.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 660 }}>
               <p style={{ margin: "0 0 15px" }}>The set is ZSCAPE&apos;s published gold partition of the 48 hpf control arm:{" "}
             <strong>{nfmt(B.clusters)} clusters</strong> covering{" "}
             <strong>{nfmt((H5AD as any).shape.cells)} cells</strong>, every cluster clearing a{" "}
@@ -125,7 +137,7 @@ export default function CommitChallengePage() {
             that makes the rest auditable: without it a label is an assertion, and the difference
             between a method that reasoned and a method that guessed well is invisible.</p>
             </div>
-          </details>
+          </Disclosure>
 
           <div style={{ display: "flex", gap: 38, flexWrap: "wrap", marginTop: 36 }}>
             <Stat k="clusters" v={nfmt(B.clusters)} sub="given · frozen" />
@@ -136,32 +148,33 @@ export default function CommitChallengePage() {
 
           <Overview />
 
+          {/* The detail for each half, stacked. Both start closed: the overview above answers it
+              for most readers, and these are for the one who is going to do it. */}
+          <div style={{ marginTop: 20 }}>
+            <Disclosure label="The input — the three files" wide>
+              <div style={{ fontSize: 13, color: MUTED, lineHeight: 1.6, marginBottom: 18, maxWidth: 660 }}>
+                Each window shows a file as it ships — its size, its content hash, its real shape,
+                and a live slice of what is inside it.
+              </div>
+              <H5adWindow />
+              <GoldFeaturesWindow />
+              <ZfaMenuWindow />
+            </Disclosure>
+
+            <Disclosure label="The output — what you must return" wide>
+              <OutputFigure />
+            </Disclosure>
+          </div>
+
         </div>
 
-        {/* Slightly wider than the prose measure — the answer parts carry examples that want a
-            little room — but nothing like the width the two-panel version needed. */}
-        <div style={{ maxWidth: 1080, margin: "38px auto 0", padding: "0 24px" }}>
-          <OutputFigure />
-        </div>
       </header>
-
-      {/* ── 01 the files ──────────────────────────────────────────────── */}
-      <div style={section}>
-        <SectionHead
-          n="01"
-          title="The three files"
-          lede="Each window below shows a file as it ships — its size, its content hash, its real shape, and a live slice of what is inside it."
-        />
-        <H5adWindow />
-        <GoldFeaturesWindow />
-        <ZfaMenuWindow />
-      </div>
 
       <div style={section}><hr style={rule} /></div>
 
-      {/* ── 04 the answer space ─────────────────────────────────────── */}
+      {/* ── 01 the answer space ─────────────────────────────────────── */}
       <div style={section}>
-        <SectionHead n="02" title="The answer space" lede="What the 3,107 terms are made of." />
+        <SectionHead n="01" title="The answer space" lede="What the 3,107 terms are made of." />
         <div style={{ ...card, padding: "26px 28px" }}>
           <MenuCompositionFigure />
         </div>
@@ -169,9 +182,9 @@ export default function CommitChallengePage() {
 
       <div style={section}><hr style={rule} /></div>
 
-      {/* ── 05 how it is scored ──────────────────────────────────────── */}
+      {/* ── 02 how it is scored ──────────────────────────────────────── */}
       <div style={section}>
-        <SectionHead n="03" title="How it is scored" />
+        <SectionHead n="02" title="How it is scored" />
         <ScoringSection />
       </div>
 

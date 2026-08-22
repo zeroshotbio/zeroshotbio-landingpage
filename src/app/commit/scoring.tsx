@@ -1,92 +1,94 @@
-// How it is scored — the page's centre of gravity now that the framing prose has collapsed into a
-// disclosure under the masthead.
+// How it is scored.
 //
-// Three things have to land: scoring reads IDENTIFIERS on the ontology graph rather than strings;
-// credit is ASYMMETRIC, so being too specific and being too broad are different errors; and two
-// judges run, one of which is not finalised. The diagram carries the first two, because the
-// asymmetry is a fact about position in a tree and prose makes a meal of it.
+// ONE rule, stated once. An earlier version of this section described a two-judge setup, the first
+// of which was our internal weighted-ZFA-graph judge (:5011). Commit is not scored on that and has
+// not agreed to it, so it does not belong on a page addressed to a contestant. What remains is the
+// comparison rule the contract actually specifies: identifier match against accepted answer sets.
 //
-// The worked term and its real ancestor chain come from the bundle, so the diagram is drawn on the
-// same ontology fragment the output panel already showed rather than an invented one.
+// The full-credit case is narrow and the narrowness is the point. Going deeper than the key earns
+// full credit ONLY where the key names a specific anatomical region and the answer names a cell
+// type contained in it. Where the key already names a cell type, a narrower cell type is zero —
+// "deeper is free" is not the rule and must not be implied.
 import React from "react";
 import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, PANEL, PANEL_BD, card } from "./theme";
-import MENU from "./data/zfa_menu_preview.json";
 
-const ANSWER = (MENU as any).example_answer ?? null;
-
-// Outcome colours are STATUS, not categorical: they never carry identity alone — every one ships
-// with its word ("full", "half", "zero") and an explicit position in the diagram.
+// Outcome colours are STATUS, not categorical: each ships with its word and its position, never
+// carrying meaning by colour alone.
 const FULL = "#3f6b55";
 const HALF = "#a16207";
 const ZERO = "#9a3b3b";
 
-const TIERS = [
-  { key: "full", color: FULL, rule: "your term is a cell type sitting under the key's region",
-    detail: "The evidence carried you further down the tree than the key went. Going deeper than the key is not penalised — a correct specific answer is still correct." },
-  { key: "half", color: HALF, rule: "you name the region, the key names a cell type",
-    detail: "Right neighbourhood, stopped short. This is the error the benchmark exists to catch: upward compression buys safety, so it has to cost something." },
-  { key: "zero", color: ZERO, rule: "anything else",
-    detail: "Siblings and over-broad answers are decided against gold label SETS rather than one string, so a defensible near-miss is judged against every acceptable answer, not just the printed one." },
+const OUTCOMES = [
+  {
+    key: "full", color: FULL,
+    rule: "you match the key, or any term in its accepted set",
+    extra: "Also full when the key names a region and you correctly name a cell type inside it.",
+  },
+  {
+    key: "half", color: HALF,
+    rule: "the key names a cell type and you name the region containing it",
+    extra: "Right neighbourhood, stopped short. Upward compression buys safety, so it costs something.",
+  },
+  {
+    key: "zero", color: ZERO,
+    rule: "everything else",
+    extra: "Including a cell type narrower than the key's cell type — depth is not credit on its own.",
+  },
 ];
 
-// ── the asymmetry diagram ──────────────────────────────────────────────────
-// A small ontology fragment: the key's term sits mid-tree; three candidate answers sit above it,
-// under it, and beside it. Position IS the argument — the same distance in the tree scores
-// differently depending on direction.
-function AsymmetryDiagram() {
-  const W = 660, H = 268;
-  const cx = W / 2;
-
-  const node = (x: number, y: number, w: number, label: string, sub: string,
-                color: string, fill: string, strong = false) => (
-    <g key={label + y}>
-      <rect x={x - w / 2} y={y} width={w} height={38} rx={8}
-            fill={fill} stroke={color} strokeWidth={strong ? 2 : 1.25} />
-      <text x={x} y={y + 16} textAnchor="middle"
-            style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.6,
-                     textTransform: "uppercase", fill: color }}>
-        {sub}
-      </text>
-      <text x={x} y={y + 30} textAnchor="middle"
-            style={{ fontSize: 11.5, fontWeight: strong ? 650 : 500, fill: INK }}>
-        {label}
-      </text>
-    </g>
-  );
-
-  const edge = (x1: number, y1: number, x2: number, y2: number, dash = false) => (
-    <line x1={x1} y1={y1} x2={x2} y2={y2} stroke="#d8d3cd" strokeWidth={1.25}
-          strokeDasharray={dash ? "3 3" : undefined} />
-  );
+// ── the two cases where direction matters ─────────────────────────────────
+// Two panels rather than one tree, because the full case and the half case have DIFFERENT kinds of
+// term in the key. A single tree with one key node cannot show both without misstating one.
+function CaseDiagram() {
+  const cases = [
+    {
+      badge: "full", color: FULL, bg: "#f0f6f2", bd: "#cfe0d6",
+      top: { role: "the key", text: "a specific anatomical region", muted: false },
+      bottom: { role: "your answer", text: "a cell type inside it", muted: false },
+      note: "The key stopped at the region; you named what is in it and were right. That is not penalised.",
+    },
+    {
+      badge: "half", color: HALF, bg: "#fdf8ec", bd: "#eddcbb",
+      top: { role: "your answer", text: "the region containing it", muted: false },
+      bottom: { role: "the key", text: "a cell type", muted: false },
+      note: "You named the container instead of the thing. Right neighbourhood, and only half of it.",
+    },
+  ];
 
   return (
-    <div>
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
-           aria-label="An ontology fragment showing why credit is asymmetric: an answer below the key's term scores full, an answer above it scores half, an answer beside it scores zero."
-           style={{ display: "block", overflow: "visible" }}>
-        {/* spine */}
-        {edge(cx, 46, cx, 104)}
-        {edge(cx, 142, cx, 200)}
-        {/* sibling branch */}
-        {edge(cx, 123, cx + 170, 123, true)}
-        {edge(cx + 170, 123, cx + 170, 200, true)}
+    <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(272px, 1fr))", gap: 18 }}>
+      {cases.map((c) => (
+        <div key={c.badge} style={{ background: c.bg, border: `1px solid ${c.bd}`, borderRadius: 11,
+                                    padding: "17px 19px" }}>
+          <div style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, letterSpacing: 1,
+                        textTransform: "uppercase", color: c.color, marginBottom: 14 }}>
+            {c.badge}
+          </div>
 
-        {node(cx, 8, 250, "a broader ancestor", "answer here → half", HALF, "#fdf8ec")}
-        {node(cx, 104, 250, ANSWER?.term?.name ?? "the key's term", "the key", INK, "#f1efeb", true)}
-        {node(cx, 200, 250, "a cell type beneath it", "answer here → full", FULL, "#f0f6f2")}
-        {node(cx + 170, 200, 210, "a sibling elsewhere", "answer here → zero", ZERO, "#fbf1f1")}
+          {[c.top, c.bottom].map((n, i) => (
+            <div key={n.role}>
+              {i === 1 && (
+                <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "5px 0 5px 9px" }}>
+                  <span style={{ color: c.color, fontSize: 13, lineHeight: 1 }}>↓</span>
+                  <span style={{ fontFamily: MONO, fontSize: 8.5, color: FAINT, letterSpacing: 0.5 }}>
+                    contains
+                  </span>
+                </div>
+              )}
+              <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 8,
+                            padding: "9px 12px" }}>
+                <div style={{ fontFamily: MONO, fontSize: 8.5, fontWeight: 700, letterSpacing: 0.7,
+                              textTransform: "uppercase", color: MUTED }}>
+                  {n.role}
+                </div>
+                <div style={{ fontSize: 12.5, color: INK, marginTop: 3 }}>{n.text}</div>
+              </div>
+            </div>
+          ))}
 
-        {/* direction annotations */}
-        <text x={cx - 138} y={78} textAnchor="end"
-              style={{ fontFamily: MONO, fontSize: 8.5, fill: FAINT }}>too broad</text>
-        <text x={cx - 138} y={176} textAnchor="end"
-              style={{ fontFamily: MONO, fontSize: 8.5, fill: FAINT }}>more specific</text>
-      </svg>
-      <div style={{ fontSize: 11.5, color: MUTED, marginTop: 12, lineHeight: 1.6 }}>
-        The same one step, in two directions, is not the same answer. Down the tree you kept the
-        key&apos;s meaning and added to it; up the tree you dropped part of what the key asserted.
-        Only the second is a loss, so only the second is discounted.
-      </div>
+          <div style={{ fontSize: 11.5, color: MUTED, lineHeight: 1.55, marginTop: 13 }}>{c.note}</div>
+        </div>
+      ))}
     </div>
   );
 }
@@ -96,24 +98,14 @@ export default function ScoringSection() {
     <div>
       <div style={{ fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 660, marginBottom: 26 }}>
         <p style={{ margin: "0 0 17px" }}>
-          Every answer is scored <strong>by identifier</strong>, against a key you never see. Both
-          sides are resolved onto the anatomy ontology and compared as positions in a graph — not
-          as text. A synonym is never punished for being a synonym, and a term spelled differently
-          from the key is not wrong for that reason.
+          Your identifier against the key&apos;s, normalised on the pinned ontology. Synonyms
+          resolve; spelling is never the error.
         </p>
         <p style={{ margin: 0 }}>
-          Credit is <strong>asymmetric</strong>. Being too specific and being too broad are
-          different mistakes, and the benchmark treats them differently on purpose.
+          Credit is <strong>asymmetric</strong>, and narrowly so. Being more specific than the key
+          is sometimes free and sometimes worth nothing — it depends on what kind of term the key
+          holds.
         </p>
-      </div>
-
-      {/* the diagram */}
-      <div style={{ ...card, padding: "24px 26px", marginBottom: 22 }}>
-        <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
-                      textTransform: "uppercase", color: MUTED, marginBottom: 16 }}>
-          why direction matters
-        </div>
-        <AsymmetryDiagram />
       </div>
 
       {/* the three outcomes */}
@@ -121,9 +113,9 @@ export default function ScoringSection() {
                     padding: "20px 20px 8px", marginBottom: 22 }}>
         <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
                       textTransform: "uppercase", color: MUTED, marginBottom: 14, paddingLeft: 2 }}>
-          the three outcomes
+          the rule
         </div>
-        {TIERS.map((t) => (
+        {OUTCOMES.map((t) => (
           <div key={t.key} style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
                                     padding: "15px 17px", marginBottom: 12 }}>
             <div style={{ display: "flex", gap: 13, alignItems: "baseline", flexWrap: "wrap" }}>
@@ -136,48 +128,75 @@ export default function ScoringSection() {
               <span style={{ fontSize: 13.5, color: INK, fontWeight: 550 }}>{t.rule}</span>
             </div>
             <div style={{ fontSize: 12, color: MUTED, marginTop: 8, lineHeight: 1.6, paddingLeft: 2 }}>
-              {t.detail}
+              {t.extra}
             </div>
           </div>
         ))}
       </div>
 
-      {/* the two judges */}
+      {/* the two directional cases */}
+      <div style={{ ...card, padding: "24px 26px", marginBottom: 22 }}>
+        <div style={{ fontFamily: MONO, fontSize: 9.5, fontWeight: 700, letterSpacing: 0.8,
+                      textTransform: "uppercase", color: MUTED, marginBottom: 16 }}>
+          the two cases where direction matters
+        </div>
+        <CaseDiagram />
+        <div style={{ fontSize: 11.5, color: MUTED, marginTop: 16, lineHeight: 1.6, maxWidth: 700 }}>
+          The same one step, in two directions, is not the same answer — but only because the key
+          holds a different kind of term in each case. Where the key already names a cell type,
+          naming a narrower cell type beneath it is <strong>zero</strong>, not full. There is no
+          general credit for going deeper.
+        </div>
+      </div>
+
+      {/* what is reported alongside */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 18 }}>
         <div style={{ ...card, padding: "19px 21px" }}>
           <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.8,
                         textTransform: "uppercase", color: ACCENT, marginBottom: 9 }}>
-            judge A · ontology graph
+            reported alongside
           </div>
           <div style={{ fontSize: 13, color: INK, fontWeight: 600, marginBottom: 7 }}>
-            Weighted distance on the ZFA graph
+            Strict exact-match accuracy
           </div>
           <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
-            Resolves your term and the key&apos;s term to ontology nodes and measures how far apart
-            they sit. The fixed measuring stick — the same judge used across the other benchmark
-            rows, so scores are comparable between them.
+            The graded score is not reported on its own. Exact identifier match — no partial credit,
+            no containment — is published beside it, so the graded number can never quietly carry
+            the result.
           </div>
         </div>
 
         <div style={{ ...card, padding: "19px 21px" }}>
           <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.8,
-                        textTransform: "uppercase", color: MUTED, marginBottom: 9 }}>
-            judge B · category rule
+                        textTransform: "uppercase", color: ACCENT, marginBottom: 9 }}>
+            per-cluster flag
           </div>
-          <div style={{ fontSize: 13, color: INK, fontWeight: 600, marginBottom: 7 }}>
-            Full / half / zero, on region-vs-cell-type
+          <div style={{ fontSize: 13, color: INK, fontWeight: 600, marginBottom: 9 }}>
+            Whether a cluster is scored at all
+          </div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 5, marginBottom: 9 }}>
+            {["contested", "evidence-ambiguous", "removed"].map((f) => (
+              <span key={f} style={{ fontFamily: MONO, fontSize: 10, color: MUTED,
+                                     background: "#f1efeb", border: `1px solid ${RULE}`,
+                                     borderRadius: 999, padding: "3px 9px" }}>
+                {f}
+              </span>
+            ))}
           </div>
           <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
-            The rule above, applied against gold label sets. Both judges render on the same
-            answers, and neither is tuned to flatter the labeller.
+            Each cluster carries a scoring flag, and the flag decides whether it counts. Which
+            clusters were excluded is reported with the score.
           </div>
-          <div style={{ fontSize: 11.5, color: FAINT, marginTop: 11, paddingTop: 11,
-                        borderTop: `1px solid ${RULE}`, lineHeight: 1.55 }}>
-            <strong style={{ color: MUTED }}>Not yet finalised.</strong> The shape of the credit is
-            fixed and stated above; the exact weights, the region/cell-type membership test, and the
-            sibling-set definitions are still to be published. They are deliberately not guessed
-            here.
-          </div>
+        </div>
+      </div>
+
+      <div style={{ ...card, padding: "17px 21px", marginTop: 18, borderLeft: `3px solid ${FAINT}` }}>
+        <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
+          <strong style={{ color: INK }}>Not yet finalised.</strong> The shape of the credit is
+          fixed and stated above. Still to be published: the exact weights, what counts as a
+          region that is <em>not overly broad</em>, the containment test that decides whether one
+          term sits inside another, and the definition of the accepted answer sets. They are
+          deliberately not guessed here.
         </div>
       </div>
     </div>

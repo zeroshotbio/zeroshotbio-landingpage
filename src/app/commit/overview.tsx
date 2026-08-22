@@ -66,7 +66,7 @@ export default function Overview() {
           color={ACCENT}
           lines={[
             `One ZFA identifier, from ${terms}`,
-            "Both axis terms — what, and where",
+            "Both axis terms — the cell type, and the structure it sits in",
             "The ancestor chain back to the root",
             "A confidence score and tier",
           ]}
