@@ -346,20 +346,52 @@ function fit() {
    plan reads at fit, so the camera move only took the rest of the map away
    from you. Selection now just marks; pan and zoom stay manual. */
 
-let dragging = false, dragged = false, px = 0, py = 0;
+/* PAN — and the one subtlety that makes clicking a station work at all.
+
+   The pointer is captured LAZILY: not on pointerdown, but on the first move
+   past PAN_SLOP. That ordering is load-bearing, and getting it wrong is what
+   broke selection.
+
+   Capturing on pointerdown retargets the compatibility `click` event to the
+   capturing element. So a plain click on a station used to be delivered to
+   the <svg>, not to the station's own <g> — the g's handler never ran, its
+   stopPropagation never happened, and the background handler below fired
+   instead and CLEARED the selection. Every click on the map read as a click
+   on nothing.
+
+   Capture is only needed once a drag is genuinely underway, to keep the pan
+   alive when the cursor leaves the canvas. A click never travels far enough
+   to take it, so a click reaches the shape it landed on. */
+const PAN_SLOP = 3;
+let dragging = false, dragged = false, px = 0, py = 0, ox = 0, oy = 0, capId = null;
+
 svg.addEventListener("pointerdown", e => {
-  dragging = true; dragged = false; px = e.clientX; py = e.clientY;
-  svg.classList.add("drag"); svg.setPointerCapture(e.pointerId);
+  dragging = true; dragged = false;
+  px = ox = e.clientX; py = oy = e.clientY; capId = e.pointerId;
 });
 svg.addEventListener("pointermove", e => {
   if (!dragging) return;
-  const dx = e.clientX - px, dy = e.clientY - py;
-  if (Math.abs(dx) + Math.abs(dy) > 3) dragged = true;
-  cam.x += dx; cam.y += dy; px = e.clientX; py = e.clientY; apply();
+  if (!dragged) {
+    if (Math.abs(e.clientX - ox) + Math.abs(e.clientY - oy) <= PAN_SLOP) return;
+    /* this is a pan, not a click — now it is safe to take the pointer */
+    dragged = true;
+    svg.classList.add("drag");
+    try { svg.setPointerCapture(capId); } catch (_) { /* touch already has it */ }
+  }
+  cam.x += e.clientX - px; cam.y += e.clientY - py;
+  px = e.clientX; py = e.clientY; apply();
 });
-["pointerup", "pointercancel"].forEach(k => svg.addEventListener(k, () => {
+["pointerup", "pointercancel"].forEach(k => svg.addEventListener(k, e => {
   dragging = false; svg.classList.remove("drag");
+  if (capId !== null) {
+    try { if (svg.hasPointerCapture(capId)) svg.releasePointerCapture(capId); } catch (_) {}
+    capId = null;
+  }
+  /* `dragged` is read by the click handler, which fires after this one */
 }));
+/* Clicking the canvas itself clears the selection. A station's own handler
+   calls stopPropagation, so this only sees clicks that hit no station — and
+   only when the gesture was not a pan. */
 svg.addEventListener("click", () => { if (!dragged) select(null); });
 svg.addEventListener("wheel", e => {
   e.preventDefault();

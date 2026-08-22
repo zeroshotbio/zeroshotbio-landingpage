@@ -384,6 +384,36 @@ camera. There used to be a fly-to; it earned its keep when a station was
 unreadable until you were on top of it, and at the current type scale it only
 took the rest of the map away from you.
 
+## Clicking a station — and the pointer-capture trap
+
+`check-clicks.mjs` (beside these files, `node check-clicks.mjs <url>`) clicks
+every station with a **real** mouse press and asserts the reader shows that
+station, that a background click clears to the overview, and that a pan does
+not count as a click. It must report no failures.
+
+**Read this before touching the pan handlers.** Selection broke once and
+shipped. The `<svg>` was calling `setPointerCapture()` on `pointerdown`, and
+pointer capture *retargets the compatibility `click` event to the capturing
+element*. So a click on a station was delivered to the `<svg>`, not to the
+station's `<g>`: the station's handler never ran, its `stopPropagation()` never
+happened, and the background handler fired instead and cleared the selection.
+Every click on the map read as a click on nothing.
+
+The fix is that capture is taken **lazily** — not on `pointerdown`, but on the
+first `pointermove` past `PAN_SLOP` (3px). Capture is only needed once a drag
+is genuinely underway, to keep the pan alive when the cursor leaves the canvas;
+a click never travels far enough to take it, so a click reaches the shape it
+landed on. Do not move `setPointerCapture` back to `pointerdown`.
+
+The reason it shipped is worth keeping too: the test that was meant to cover it
+dispatched `new MouseEvent('click')` straight at the `<g>`. That path always
+works and proves nothing about the real one. **A synthetic event is not
+evidence about a real one** — `check-clicks.mjs` uses `page.mouse.click` only.
+
+Note also that stations **nest**: cells sit inside a repo floor, so a floor's
+centre legitimately belongs to a cell. The check picks each hit point with
+`elementFromPoint` rather than assuming the centre is clickable.
+
 ## The column borders
 
 Both grips do two jobs, separated by whether the pointer travelled more than
