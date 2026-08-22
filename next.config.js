@@ -24,9 +24,11 @@ const nextConfig = {
   // (index.html + four classic scripts, no build step), built the same way as
   // /pipeline and sharing its palette and shell. Same absolute-<script src>
   // rule applies, and for the same reason: no trailing slash on the route.
-  // It is the PLAN-VIEW companion to /pipeline's isometric — five stations of
-  // the medallion architecture drawn straight down, with bucket contents as a
-  // treemap by bytes. Contract + ownership split: public/data_structures/HANDOFF.md
+  // It is the PLAN-VIEW companion to /pipeline's isometric — the medallion
+  // architecture drawn straight down and read top to bottom: the bronze, silver
+  // and gold buckets in a column, the repo that performs each hop beside it, and
+  // zsb-medallion as a rail to their right. Bucket contents are a treemap by
+  // bytes. Contract + ownership split: public/data_structures/HANDOFF.md
   // SOURCE: read on-instance from the live S3 buckets and the four zsb-* repos.
   async rewrites() {
     return [

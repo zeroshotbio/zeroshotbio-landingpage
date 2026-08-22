@@ -44,7 +44,7 @@ svg.appendChild(root);
    which is worth showing rather than hiding.
    ============================================================ */
 (function grid() {
-  const X0 = -4, X1 = 144, Y0 = -8, Y1 = 36;
+  const X0 = -6, X1 = 70, Y0 = -6, Y1 = 84;
   for (let x = X0; x <= X1; x += 2) {
     const major = x % 10 === 0;
     add(gGrid, "line", {
@@ -64,37 +64,40 @@ svg.appendChild(root);
 })();
 
 /* ============================================================
-   REGISTERS — the three horizontal bands, ruled and named.
+   COLUMN HEADERS
+
+   This replaces the ruled bands the map used to carry. The bands were
+   horizontal registers, which made sense when the flow ran left to right;
+   with the flow running top to bottom they would cut across every column at
+   once and say nothing. Three headers, one per column, and no rules.
+
+   They are also the ONLY free-floating strings on the canvas. Every other
+   label on this map now lives inside a box that owns it — a title bar, a
+   cell, a treemap tile — which is what stops a station name from landing on
+   top of whatever happens to be behind it.
    ============================================================ */
-BANDS.forEach(B => {
-  const [x0, y0] = P(B.x0, B.y0), [x1, y1] = P(B.x1, B.y1);
-  add(gBand, "rect", {
-    x: x0, y: y0, width: x1 - x0, height: y1 - y0,
-    fill: "var(--fg)", "fill-opacity": ".016",
-    stroke: "var(--rule)", "stroke-width": 1, "stroke-opacity": ".5", "stroke-dasharray": "2 5"
-  });
-  const t = add(gBand, "text", {
-    x: x0 + 8, y: y0 + 14, fill: "var(--fg3)", "font-size": 9.5,
-    "letter-spacing": 0.16, style: "text-transform:uppercase"
-  });
-  t.textContent = B.name;
+COLUMNS.forEach(C => {
+  /* into gLabel, not gBand: gBand sits outside gContent and is excluded from
+     fit(), so a header drawn there gets cropped off the top of the view. */
+  label(gLabel, C.x, C.y, C.name,
+    { size: 9.6, fill: "var(--fg3)", ls: 0.16, upper: true });
 });
 
 /* ============================================================
    CONDUITS
 
-   Four kinds, and the difference between them is the argument of the map:
+   Two kinds, and the difference between them is the argument of the map:
 
      live   solid, full weight, dots moving       bytes have crossed this
      cold   dashed, half weight, no dots          written, never run
-     hist   dotted, muted                         the archived generation
-     never  solid but struck through              an edge we refuse to have
+
+   There were four. The archived-generation lane and the deliberately-refused
+   edge were retired when the map was simplified; what they said now lives in
+   the reader text of the stations they were about.
    ============================================================ */
 const WIRE = {
-  live:  { stroke: "var(--signal)", w: 2.0, dash: "none",  op: 0.95, dots: true },
-  cold:  { stroke: "var(--drop)",   w: 1.5, dash: "7 5",   op: 0.72, dots: false },
-  hist:  { stroke: "var(--fg3)",    w: 1.3, dash: "1 4",   op: 0.65, dots: false },
-  never: { stroke: "var(--fg3)",    w: 1.2, dash: "none",  op: 0.42, dots: false }
+  live: { stroke: "var(--signal)", w: 2.0, dash: "none", op: 0.95, dots: true },
+  cold: { stroke: "var(--drop)",   w: 1.5, dash: "7 5",  op: 0.72, dots: false }
 };
 
 function portOf(ref) {
@@ -125,15 +128,6 @@ EDGES.forEach(E => {
     fill: st.stroke, "fill-opacity": st.op
   });
 
-  /* an edge the architecture deliberately does not have gets struck through */
-  if (E.kind === "never") {
-    const mid = pointAt(poly, 0.5), [mx, my] = P(mid[0], mid[1]);
-    [[-1, -1, 1, 1], [-1, 1, 1, -1]].forEach(([a, b, c, e]) => add(gWire, "line", {
-      x1: mx + a * 6, y1: my + b * 6, x2: mx + c * 6, y2: my + e * 6,
-      stroke: "var(--drop)", "stroke-width": 1.6, "stroke-opacity": 0.85
-    }));
-  }
-
   /* edge labels ride above the run, centred on the longest straight segment
      so a label never sits on a corner */
   if (E.label) {
@@ -143,8 +137,25 @@ EDGES.forEach(E => {
       if (L > best) { best = L; bi = i; }
     }
     const cx = (poly[bi][0] + poly[bi - 1][0]) / 2, cy = (poly[bi][1] + poly[bi - 1][1]) / 2;
-    label(gLabel, cx, cy - 0.42, E.label, { size: 9, fill: st.stroke, ls: 0.05 });
-    if (E.sub) label(gLabel, cx, cy + 0.46, E.sub, { size: 8.2, fill: "var(--fg3)" });
+    /* Which side to sit on depends on which way the segment runs. Now that
+       the flow is vertical the longest segment is usually the corridor drop,
+       and a horizontal caption centred on a vertical line lands ON the line —
+       so a vertical run gets its label set out to the left instead, anchored
+       at its end, and only a horizontal run gets the label above it.
+
+       10px, above the fine threshold: what a conduit is doing is the point of
+       the map, so it stays legible at the overview zoom. The qualifier is
+       fine-tier and comes back when you zoom in. */
+    const vertical = Math.abs(poly[bi][0] - poly[bi - 1][0]) < 0.02;
+    if (vertical) {
+      label(gLabel, cx - 0.5, cy - 0.24, E.label,
+        { size: 10, anchor: "end", fill: st.stroke, ls: 0.05 });
+      if (E.sub) label(gLabel, cx - 0.5, cy + 0.42, E.sub,
+        { size: 8.6, anchor: "end", fill: "var(--fg3)" });
+    } else {
+      label(gLabel, cx, cy - 0.44, E.label, { size: 10, fill: st.stroke, ls: 0.05 });
+      if (E.sub) label(gLabel, cx, cy + 0.48, E.sub, { size: 8.6, fill: "var(--fg3)" });
+    }
   }
 
   if (st.dots) LIVE_RUNS.push(poly);
@@ -157,7 +168,7 @@ CARRIES.forEach(C => {
     d: path(poly), fill: "none", stroke: "var(--fg3)", "stroke-width": 1.2,
     "stroke-dasharray": "6 4", "stroke-opacity": 0.5
   });
-  label(gLabel, C.x1, C.y1 - 0.5, "→ " + C.to, { size: 8.6, anchor: "end", fill: "var(--fg3)" });
+  label(gLabel, C.x1, C.y1 + 0.5, "↓ " + C.to, { size: 8.6, fill: "var(--fg3)" });
 });
 
 /* ============================================================
@@ -176,25 +187,16 @@ NODES.forEach(n => {
     add(g, "rect", { x: hx, y: hy, width: n.w * S, height: n.h * S, fill: "transparent" });
   }
 
-  (DRAW[n.shape] || DRAW.mark)(g, n);
+  const draw = DRAW[n.shape];
+  if (!draw) throw new Error(`no DRAW.${n.shape} for node ${n.id}`);
+  draw(g, n);
 
-  /* The name plate sits outside the footprint, clear of the wall. Horizontal,
-     because in a plan there is no flow axis to rake it along.
-
-     Row 2's stations carry lab:"b" and put theirs below instead. Above would
-     land them on the contract bar's tap risers, which come down into row 2
-     from the bus between the rows — and a station name sitting on a riser
-     reads as a label for the riser. */
-  if (!n.noindex && n.shape !== "cell" && n.shape !== "bus") {
-    const below = n.lab === "b";
-    const edge = below ? n.y + n.h / 2 : n.y - n.h / 2;
-    /* clear of the selection halo, which sits 0.22 outside the wall — at the
-       old offsets the sub-label landed exactly on it and got struck through */
-    label(gLabel, n.x, edge + (below ? 0.72 : -1.14), n.name,
-      { size: n.anchor ? 12 : 10, fill: "var(--fg)", ls: 0.04 });
-    if (n.sub) label(gLabel, n.x, edge + (below ? 1.08 : -0.72), n.sub,
-      { size: 8.6, fill: "var(--fg3)" });
-  }
+  /* No free-floating name plates. Every station on this map carries its own
+     name inside its own title bar, so an external label was always a second
+     copy of a string that was already on screen — and it was the one thing
+     here that could collide with anything, because it was the one thing not
+     bounded by a box. The old "Fort Knox" label landing on the register rule
+     behind it was exactly that failure. The subtitle lives in the reader. */
 
   if (n.noindex) return;
 

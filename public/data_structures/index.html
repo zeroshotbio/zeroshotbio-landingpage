@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Data Structures</title>
-<meta name="description" content="A top-down plan of the Zeroshot medallion data architecture: bronze bucket, bronze repo, silver bucket, silver repo, gold bucket — read from the live buckets and repos.">
+<meta name="description" content="A top-down plan of the Zeroshot medallion data architecture: the bronze, silver and gold buckets in a column, the repository that performs each hop beside it, read from the live buckets and repos.">
 <style>
   /* The palette is /pipeline's, so the two maps read as one family. Added
      here: four tier accents (bronze, silver, gold, code) and a second grid
@@ -18,11 +18,11 @@
     --edge:#cdd6cd; --stroke:#cdd6cd;
     --signal:#74b0f0; --drop:#e0765c; --ok:#5aa46b;
 
-    /* the four tiers */
-    --bz:#c98f5a;  --bz-f:#2a2118;   /* bronze  — warm, the sealed floor   */
-    --sv:#9fb0b8;  --sv-f:#1d2426;   /* silver  — cool grey, the warehouse */
-    --gd:#d8b657;  --gd-f:#2a2517;   /* gold    — the library              */
-    --cd:#7fa9dd;  --cd-f:#1a222c;   /* code    — the repos and the bus    */
+    /* the three tiers, plus the colour the code wears */
+    --bz:#c98f5a;  --bz-f:#2a2118;   /* bronze — warm, the sealed tier  */
+    --sv:#9fb0b8;  --sv-f:#1d2426;   /* silver — cool grey              */
+    --gd:#d8b657;  --gd-f:#2a2517;   /* gold   — the terminal tier      */
+    --cd:#7fa9dd;  --cd-f:#1a222c;   /* code   — repos and the contract */
 
     --strip-h:clamp(66px,15dvh,118px);
     --strip-mini:28px;
@@ -118,7 +118,7 @@
         -webkit-user-select:none;user-select:none}
 
   /* the legend — a plan needs one, and this one is the argument of the map */
-  .legend{position:absolute;left:12px;top:12px;z-index:4;pointer-events:none;
+  .legend{position:absolute;left:12px;bottom:26px;z-index:4;pointer-events:none;
           background:var(--panel);border:1px solid var(--rule);padding:9px 11px;
           font-size:9px;letter-spacing:.04em;line-height:1.9;color:var(--fg2);
           box-shadow:0 8px 22px rgba(0,0,0,.28)}
@@ -128,7 +128,6 @@
             margin-right:7px;border-top-width:2px;border-top-style:solid}
   .lg-live{border-top-color:var(--signal)}
   .lg-cold{border-top-color:var(--drop);border-top-style:dashed}
-  .lg-hist{border-top-color:var(--fg3);border-top-style:dotted}
   @media (max-width:1200px){.legend{display:none}}
 
   .reader{width:var(--reader-w,360px);flex:none;border-left:1px solid var(--fg);display:flex;
@@ -222,12 +221,11 @@
     <aside id="aside"></aside>
     <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
     <div class="stage">
-      <svg id="svg" aria-label="Top-down plan of the Zeroshot medallion data architecture: bronze bucket, bronze repository, silver bucket, silver repository, gold bucket"></svg>
+      <svg id="svg" aria-label="Top-down plan of the Zeroshot medallion data architecture: the bronze, silver and gold buckets in a column, with the repository that performs each hop beside it and the shared contract to their right"></svg>
       <div class="legend">
         <b>conduits</b>
         <div><i class="lg-live"></i>bytes have crossed this</div>
         <div><i class="lg-cold"></i>written · never run</div>
-        <div><i class="lg-hist"></i>the archived generation</div>
       </div>
       <div class="stepnav">
         <button id="stPrev" aria-label="Previous station">‹</button>

@@ -12,6 +12,7 @@ you already know how to work on this.
 | Subject | the platonic process, in general | **one system, on one day** |
 | Source of truth | the dataset corpus on the instance | **the live S3 buckets + the four zsb-\* repos** |
 | Unit | a cell, a read, a gene | **a byte, an object, a commit** |
+| Reading direction | left to right, snaking | **top to bottom, three columns** |
 
 The two are meant to be read together and share a palette, a shell, and the
 index/reader/strip interaction. They deliberately do not share code: the
@@ -49,11 +50,73 @@ fonts. Top-level `const` in one file is visible to later files.
 
 | File | Owner | What it is |
 |---|---|---|
-| `ds-data.js` | **on-instance** | NODES, EDGES, BANDS, CARRIES, SNIPPETS, OVERVIEW. Every fact, number, key and payload. |
+| `ds-data.js` | **on-instance** | COLUMNS, NODES, EDGES, CARRIES, SNIPPETS, OVERVIEW. Every fact, number, key and payload. |
 | `ds-shapes.js` | rendering side | One draw function per shape, plus TIER and the title bar. |
 | `ds-plan.js` | rendering side | Projection, plate/label, squarify, routing, ticker registry, byte formatting. |
-| `ds-view.js` | shared | Grid, registers, conduits, dots, camera, label tiers, reader, index. |
+| `ds-view.js` | shared | Grid, column headers, conduits, dots, camera, label tiers, reader, index. |
 | `index.html` | shared | Markup and the CSS variables that define both themes. |
+
+## The layout
+
+Three columns, read top to bottom.
+
+```
+   THE BUCKETS          THE TRANSFORMS        CONTRACT
+   x = 13               x = 46                x = 64
+
+   ┌──────────┐
+   │  BRONZE  │──read──┐
+   └──────────┘        └──▶┌────────────┐
+                            │ zsb-bronze │◀── imports ──┐
+                       ┌────└────────────┘              │
+                    [empty bay]                         │
+   ┌──────────┐        │                                │
+   │  SILVER  │◀───────┘                          ┌───────────┐
+   └──────────┘──read──┐                          │    zsb-   │
+                       └──▶┌────────────┐◀────────│ medallion │
+                       ┌───└ zsb-silver ┘         │           │
+   ┌──────────┐        │                          └───────────┘
+   │   GOLD   │◀───────┘                                │
+   └──────────┘──read──┐                                │
+                       └──▶┌────────────┐◀── imports ───┘
+                           │  zsb-gold  │
+                           └────────────┘
+```
+
+Each hop is **two conduits**: out of a bucket's right wall, right and down into
+the repo (the READ), then back out of the repo's left wall, left and down into
+the next bucket (the WRITE). Both doglegs turn on the same corridor at `x = 30`
+at different heights, so the channel between the two stacks reads as one thing.
+
+A repo therefore always sits in the *vertical gap between the two buckets it
+bridges* — beside the seam it works on, never beside a tier. That is the whole
+reason the middle column is offset half a station down from the left one.
+
+`zsb-medallion` is a rail rather than a station, because it is not a stage: it
+touches no bucket and moves no bytes. It runs the full height of the transform
+column and taps left into each repo.
+
+## Naming
+
+The tiers are **bronze**, **silver** and **gold**. The buckets carry nickname
+suffixes for historical reasons — `fortknox`, `warehouse`, `library` — and those
+appear *only* inside a real identifier: the `s3://` URI in a bucket's subtitle,
+a transcribed CLI command, or the literal value of a `zsb_medallion` constant.
+Never as the name of a tier, in the map or in the reader. If you find yourself
+typing "the warehouse", write "silver".
+
+## No text may overlap other text
+
+`check-overlaps.mjs` (beside these files, run with `node check-overlaps.mjs <url>`)
+renders the page, forces every label tier
+visible (fine labels are `display:none` at overview zoom and would otherwise
+measure 0×0 and be skipped), and tests all 93 text boxes pairwise. It must
+report **0 overlapping pairs**. `getBBox()` is in untransformed user space, so
+one run covers every zoom level.
+
+Run it after any change to a shape's internal label spacing. The last round of
+failures were all sub-2px: stacked lines inside a treemap tile sitting 0.30
+grid units apart, which is exactly a 9px box's height.
 
 ## The state of the data — first pass, 2026-08-22
 
@@ -67,10 +130,18 @@ repos      fresh clones at
              zsb-silver    b88dfa2   zsb-gold   b80b2bc
 ```
 
-The eight manifest pins were each re-checked against Fort Knox. All eight
+The eight manifest pins were each re-checked against the bronze bucket. All eight
 matched size and etag, multipart etags included. That check is worth re-running
 whenever this page is refreshed — it is the one claim on the map that can go
 stale silently.
+
+Two things are on the map's edge and deliberately off it: the **zsb-sandbox**
+bucket (706 objects, 64.6 GiB, mostly three STARsolo alignment arms), which has
+no conduits in either direction by definition and so is not a station; and the
+pipeline that preceded these repos, whose output is what silver's `minifin/`
+tile actually holds — described in that tile's own notes rather than drawn as a
+second lane. Both were stations in the first version and both cost more than
+they explained.
 
 **Three things are marked unknown rather than guessed**, and should stay that
 way until somebody widens the role:
@@ -128,11 +199,17 @@ If you add a label that must persist at overview zoom, give it a font size of
   its bucket and is a two-pixel hairline at true area. That is the finding, not
   a rendering bug. It is handled with a forced callout in the drop colour; a
   floor on tile area would lie about the size *and* bury the meaning.
-- **Unfold the two rows back into one line.** It was one line first. Eight
-  stations flat is 121 units against 45, no viewport is that shape, and half the
-  canvas went to waste while everything rendered at a third of readable size.
-  The fold also earns the adjacency that makes `zsb-medallion` legible — the
-  contract sits *between* the rows, tapped from both sides.
+- **Turn the columns back into rows.** This was a horizontal flow twice — one
+  straight line, then folded into two rows — and both read as a process diagram
+  rather than as a structure. The tiers are a stack; drawing them as a stack is
+  what makes "bronze, then silver, then gold" a thing you see instead of a thing
+  you follow.
+- **Put a station name outside its own box.** Every station carries its name in
+  its title bar. The external name plates this map used to have were a second
+  copy of a string already on screen, and they were the only thing on the canvas
+  not bounded by a box — which is exactly why "Fort Knox" ended up sitting on
+  the register rule behind it. If a label needs to exist, give it a box that
+  owns it.
 - **Reformat, minify, or convert to a framework.** Line-level diffs need to stay
   readable across two authors.
 - **Let a dashed conduit become solid without a bucket read behind it.** Solid

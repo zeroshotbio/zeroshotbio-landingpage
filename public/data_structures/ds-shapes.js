@@ -48,11 +48,10 @@ function titlebar(g, n, text, right) {
    real boundary: everything else is code, and code has an interface rather
    than a perimeter. Inside, the bucket's top-level prefixes are a squarified
    treemap by bytes — which is the whole reason this map is worth drawing top
-   down. Fort Knox's 7.7 TB against the warehouse's 16.6 GB is a 466x ratio,
-   and area is the only encoding that shows it without a log scale.
+   down. Bronze's 7.03 TiB against silver's 15.45 GiB is a 466x ratio, and
+   area is the only encoding that shows it without a log scale.
 
-   n.tiles: [{key, value, objs, note}]  value in bytes
-   n.doors: sides that carry a conduit, marked as a gap in the outer wall
+   n.tiles: [{key, value, objs, stale}]  value in bytes
    ============================================================ */
 DRAW.vault = (g, n) => {
   const ink = inkOf(n);
@@ -68,7 +67,7 @@ DRAW.vault = (g, n) => {
 
   /* A vault with no tiles. Deliberately NOT the pX cross-hatch the empty bay
      uses: that pattern means "this should be here and is not", and the only
-     bucket that lands here is the gold library, whose contents are not known
+     bucket that lands here is the gold tier, whose contents are not known
      to be absent — they are not known at all. A plain hatch and a sentence
      saying which of the two it is. */
   if (!n.tiles || !n.tiles.length) {
@@ -93,7 +92,7 @@ DRAW.vault = (g, n) => {
       /* A stale tile — content that does not belong to the current
          architecture — is restroked in the drop colour and always names
          itself, because honest area encoding buries exactly the tile the map
-         is about. The warehouse's minifin/ is 0.59% of its bucket: at true
+         is about. Silver's minifin/ tile is 0.59% of its bucket: at true
          area that is a hairline about two pixels thick, and it is the single
          most important thing in there. So the rule is area for the size and
          a forced callout for the meaning, rather than a fudged minimum area
@@ -108,43 +107,28 @@ DRAW.vault = (g, n) => {
            neighbour; a short-and-wide one gets it centred. */
         const thin = L.w < 2.6, short = L.h < 1.0;
         if (thin || short) {
+          /* 10px, i.e. above the fine-label threshold, so this one survives
+             the coarse overview zoom. A callout that vanishes exactly when the
+             tile is too small to see is worse than no callout at all. */
           const txt = `${it.key}  ${fmtBytes(it.value)} · ${it.objs} obj`;
           if (thin) label(g, L.x - L.w / 2 - 0.24, L.y, txt,
-            { size: 9, anchor: "end", fill: "var(--drop)", ls: 0.03 });
-          else label(g, L.x, L.y, txt, { size: 9, fill: "var(--drop)", ls: 0.03 });
+            { size: 10, anchor: "end", fill: "var(--drop)", ls: 0.03 });
+          else label(g, L.x, L.y, txt, { size: 10, fill: "var(--drop)", ls: 0.03 });
           return;
         }
       }
 
       /* label only where it fits; a clipped label is worse than none */
       if (L.w > 1.5 && L.h > 0.62) {
-        label(g, L.x, L.y - (L.h > 1.0 ? 0.20 : 0), it.key, { size: Math.min(10.5, 7 + L.w), fill: "var(--fg)", ls: 0.03 });
+        label(g, L.x, L.y - (L.h > 1.0 ? 0.24 : 0), it.key, { size: Math.min(10.5, 7 + L.w), fill: "var(--fg)", ls: 0.03 });
         if (L.h > 1.0) {
-          label(g, L.x, L.y + 0.16, fmtBytes(it.value), { size: 9, fill: "var(--fg2)" });
-          if (L.h > 1.5) label(g, L.x, L.y + 0.46, fmtCount(it.objs) + " obj", { size: 8.2, fill: "var(--fg3)" });
+          label(g, L.x, L.y + 0.18, fmtBytes(it.value), { size: 9, fill: "var(--fg2)" });
+          if (L.h > 1.5) label(g, L.x, L.y + 0.56, fmtCount(it.objs) + " obj", { size: 8.2, fill: "var(--fg3)" });
         }
       }
     });
   }
 
-  /* doors: a break in the outer wall where a conduit lands, drawn as two
-     stubs rather than a gap so the wall still closes visually */
-  (n.doors || []).forEach(side => {
-    const half = 0.55, sw = 2.6;
-    const at = { l: [n.x - n.w / 2, n.y], r: [n.x + n.w / 2, n.y], t: [n.x, n.y - n.h / 2], b: [n.x, n.y + n.h / 2] }[side];
-    const vert = side === "l" || side === "r";
-    const a = vert ? [[at[0], at[1] - half], [at[0], at[1] + half]] : [[at[0] - half, at[1]], [at[0] + half, at[1]]];
-    add(g, "line", {
-      x1: P(a[0][0], a[0][1])[0], y1: P(a[0][0], a[0][1])[1],
-      x2: P(a[1][0], a[1][1])[0], y2: P(a[1][0], a[1][1])[1],
-      stroke: "var(--bg)", "stroke-width": sw
-    });
-    add(g, "line", {
-      x1: P(a[0][0], a[0][1])[0], y1: P(a[0][0], a[0][1])[1],
-      x2: P(a[1][0], a[1][1])[0], y2: P(a[1][0], a[1][1])[1],
-      stroke: ink, "stroke-width": 1, "stroke-dasharray": "2 3", "stroke-opacity": 0.7
-    });
-  });
 };
 
 /* ============================================================
@@ -210,45 +194,58 @@ DRAW.cell = (g, n) => {
 };
 
 /* ============================================================
-   BUS — zsb-medallion, the shared contract, running under the repos.
+   SPINE — zsb-medallion, the shared contract, running down beside the
+   transform column.
 
-   Drawn as a bar with tap stubs rising into each floor it serves, because
-   that is what it is: not a stage in the flow, but the thing all three
-   stages import their vocabulary from. It has no bucket and moves no bytes.
+   A rail rather than a station, because that is what the package is: not a
+   step in the flow, but the thing every transform imports its vocabulary
+   from. It touches no bucket and moves no bytes, so it gets no door and no
+   treemap — just a bar, the names it exports stacked down it, and one tap
+   reaching left into each repo it serves.
+
+   n.taps: y positions of the repos to tap, in grid units
    ============================================================ */
-DRAW.bus = (g, n) => {
+DRAW.spine = (g, n) => {
   const ink = inkOf(n);
-  plate(g, n.x, n.y, n.w, n.h, { fill: ink, fo: 0.13, stroke: ink, sw: 1.5, so: 0.9 });
+  plate(g, n.x, n.y, n.w, n.h, { fill: ink, fo: 0.11, stroke: ink, sw: 1.5, so: 0.9 });
   plate(g, n.x, n.y, n.w - 0.2, n.h - 0.2, { fill: "none", stroke: ink, sw: 0.6, so: 0.3 });
-  label(g, n.x - n.w / 2 + 0.42, n.y - 0.24, n.repo, { size: 11, anchor: "start", fill: ink, ls: 0.1, upper: true });
-  label(g, n.x - n.w / 2 + 0.42, n.y + 0.26, n.sub, { size: 8.8, anchor: "start", fill: "var(--fg2)" });
 
-  /* the exported names, spaced along the bar — the actual contract */
+  /* The title sits in a bar across the TOP of the rail, horizontal like every
+     other title on the map. A rail this narrow invites a rotated label, and a
+     rotated label is the one thing a plan view has no excuse for: there is no
+     foreshortened axis here for it to lie along. */
+  const y0 = n.y - n.h / 2, BH = 1.5;
+  plate(g, n.x, y0 + BH / 2, n.w, BH, { fill: ink, fo: 0.16, stroke: ink, sw: 1, so: 0.5 });
+  label(g, n.x, y0 + BH / 2 - 0.26, "zsb-", { size: 9.6, fill: ink, ls: 0.06 });
+  label(g, n.x, y0 + BH / 2 + 0.26, "medallion", { size: 9.6, fill: ink, ls: 0.06 });
+
+  /* the exported names, stacked down the rail — the actual contract */
   if (n.exports) {
-    const x0 = n.x - n.w / 2 + 5.6, span = (n.w - 6.3) / n.exports.length;
+    const top = y0 + BH + 0.5, span = (n.h - BH - 1.0) / n.exports.length;
     n.exports.forEach((e, i) => {
-      const cx = x0 + span * (i + 0.5);
+      const cy = top + span * (i + 0.5);
       /* the chip is a frame around a word: at the coarse zoom the word is
          gone, and an empty frame reads as a component rather than as a label
          that could not fit. So it carries the fine tier too. */
-      plate(g, cx, n.y, Math.min(span - 0.14, 2.5), 0.62,
-        { fill: "var(--bg)", fo: 0.62, stroke: ink, sw: 0.7, so: 0.5 }).classList.add("fine");
-      label(g, cx, n.y, e, { size: 8.6, fill: "var(--fg)" });
+      plate(g, n.x, cy, n.w - 0.9, Math.min(span - 0.5, 2.6),
+        { fill: "var(--bg)", fo: 0.62, stroke: ink, sw: 0.7, so: 0.5 });
+      /* 9.6px, i.e. NOT fine-tier: eight chips down a 57-unit rail have room
+         for their captions at any zoom, and without them the contract reads as
+         an empty tube rather than as the list of names it is. */
+      label(g, n.x, cy, e, { size: 9.6, fill: "var(--fg)" });
     });
   }
-  /* Tap risers. The bus sits BETWEEN the two rows, so it is tapped from both
-     sides: the bronze repo hangs above it and reaches down, the silver and
-     gold repos sit below it and reach up. dir is -1 for a riser going up out
-     of the bar, +1 for one going down. */
-  (n.taps || []).forEach(t => {
-    const dir = t.dir, y0 = n.y + dir * n.h / 2, y1 = y0 + dir * (n.tapLen || 4.5);
+
+  /* Tap stubs reaching LEFT out of the rail into each transform repo. */
+  (n.taps || []).forEach(ty => {
+    const x0 = n.x - n.w / 2, x1 = x0 - (n.tapLen || 4.5);
     add(g, "path", {
-      d: path([[t.x, y0], [t.x, y1]]),
+      d: path([[x0, ty], [x1, ty]]),
       stroke: ink, "stroke-width": 1.2, "stroke-opacity": 0.5, "stroke-dasharray": "3 3", fill: "none"
     });
-    const [cx, cy] = P(t.x, y1);
+    const [cx, cy] = P(x1, ty);
     add(g, "circle", { cx, cy, r: 2.8, fill: "var(--bg)", stroke: ink, "stroke-width": 1.1 });
-    label(g, t.x, y0 + dir * 1.2, "imports", { size: 8, fill: "var(--fg3)", anchor: "middle" });
+    label(g, (x0 + x1) / 2, ty - 0.42, "imports", { size: 8, fill: "var(--fg3)" });
   });
 };
 
@@ -261,78 +258,7 @@ DRAW.bus = (g, n) => {
 DRAW.bay = (g, n) => {
   plate(g, n.x, n.y, n.w, n.h, { fill: "var(--bg)", fo: 0.5, stroke: "var(--drop)", sw: 1.3, so: 0.8, dash: "6 4" });
   plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
-  label(g, n.x, n.y - 0.30, n.headline, { size: 9.6, fill: "var(--drop)", ls: 0.05, upper: true });
-  (n.lines || []).forEach((L, i) => label(g, n.x, n.y + 0.02 + i * 0.34, L, { size: 9, fill: "var(--fg2)" }));
+  label(g, n.x, n.y - 0.46, n.headline, { size: 9.6, fill: "var(--drop)", ls: 0.05, upper: true });
+  (n.lines || []).forEach((L, i) => label(g, n.x, n.y + 0.06 + i * 0.38, L, { size: 9, fill: "var(--fg2)" }));
 };
 
-/* ============================================================
-   RACK — the named-key manifest.
-
-   Eight rows, one per pinned object, each with its size bar and a tick. This
-   is the shape that earns the plan view a second time: the manifest is a
-   list, and a list drawn from directly overhead is just a list — legible,
-   in order, no foreshortening on the far rows.
-   ============================================================ */
-DRAW.rack = (g, n) => {
-  const ink = inkOf(n);
-  plate(g, n.x, n.y, n.w, n.h, { fill: "var(--panel2)", fo: 0.75, stroke: ink, sw: 1.3, so: 0.85 });
-  const top = titlebar(g, n, n.headline, n.right);
-  const rows = n.rows || [];
-  const rh = ((n.y + n.h / 2) - top - 0.30) / Math.max(rows.length, 1);
-  const max = Math.max(...rows.map(r => r.bytes));
-  rows.forEach((r, i) => {
-    const ry = top + 0.16 + rh * (i + 0.5);
-    const x0 = n.x - n.w / 2 + 0.34;
-    /* the size bar, log-scaled: the manifest spans 7,563 B to 959 MB, and on
-       a linear bar every row but the first is invisible */
-    const k = Math.log(r.bytes) / Math.log(max);
-    plate(g, x0 + (n.w - 0.68) * k / 2, ry, Math.max((n.w - 0.68) * k, 0.05), rh * 0.74,
-      { fill: ink, fo: 0.18, stroke: "none" });
-    label(g, x0, ry, r.name, { size: 8.6, anchor: "start", fill: "var(--fg)" });
-    label(g, n.x + n.w / 2 - 0.98, ry, fmtBytes(r.bytes), { size: 8.2, anchor: "end", fill: "var(--fg2)" });
-    const [tx, ty] = P(n.x + n.w / 2 - 0.52, ry);
-    add(g, "path", {
-      d: `M${tx - 3.2},${ty} l2.4,2.6 l4.4,-5.6`,
-      stroke: "var(--ok)", "stroke-width": 1.5, fill: "none", "stroke-linecap": "round", "stroke-linejoin": "round"
-    });
-  });
-};
-
-/* ============================================================
-   STACK — a group of objects that are not a treemap's business.
-   A short pile of plates, offset down-right, with a count.
-   ============================================================ */
-DRAW.stack = (g, n) => {
-  const ink = inkOf(n), N = Math.min(n.depth || 3, 5);
-  for (let i = N - 1; i >= 0; i--) {
-    plate(g, n.x + i * 0.11, n.y + i * 0.11, n.w, n.h, {
-      fill: i ? "var(--bg)" : "var(--panel2)", fo: i ? 0.7 : 0.95,
-      stroke: ink, sw: i ? 0.7 : 1.2, so: i ? 0.4 : 0.85, dash: n.state === "stub" ? "5 3" : "none"
-    });
-  }
-  label(g, n.x, n.y - 0.22, n.headline, { size: 10, fill: "var(--fg)", ls: 0.04 });
-  (n.lines || []).forEach((L, i) => label(g, n.x, n.y + 0.06 + i * 0.32, L, { size: 8.4, fill: "var(--fg2)" }));
-};
-
-/* ============================================================
-   MARK — a labelled point with no enclosure. Used for the things that are
-   true of the map rather than located on it.
-   ============================================================ */
-DRAW.mark = (g, n) => {
-  const ink = inkOf(n);
-  const [cx, cy] = P(n.x, n.y);
-  add(g, "circle", { cx, cy, r: 4, fill: "none", stroke: ink, "stroke-width": 1.3 });
-  add(g, "circle", { cx, cy, r: 1.5, fill: ink });
-  label(g, n.x, n.y + 0.42, n.name, { size: 9.2, fill: "var(--fg2)" });
-};
-
-/* The map's own north-and-scale block. A plan without a scale is a diagram;
-   with one it is a drawing of something. */
-DRAW.scalebar = (g, n) => {
-  const [x0, y0] = P(n.x - n.w / 2, n.y);
-  const [x1] = P(n.x + n.w / 2, n.y);
-  add(g, "line", { x1: x0, y1: y0, x2: x1, y2: y0, stroke: "var(--fg3)", "stroke-width": 1 });
-  [x0, x1].forEach(x => add(g, "line", { x1: x, y1: y0 - 4, x2: x, y2: y0 + 4, stroke: "var(--fg3)", "stroke-width": 1 }));
-  label(g, n.x, n.y - 0.34, n.headline, { size: 8.4, fill: "var(--fg3)", ls: 0.1, upper: true });
-  label(g, n.x, n.y + 0.36, n.sub, { size: 8.4, fill: "var(--fg3)" });
-};
