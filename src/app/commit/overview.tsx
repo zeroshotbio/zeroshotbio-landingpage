@@ -95,28 +95,28 @@ export default function Overview() {
       {/* the rule, at a glance — same header treatment as the two boxes above, its own colour */}
       <div style={{ background: CARD, border: `1px solid ${RULE}`, borderRadius: 10,
                     padding: "18px 20px", marginTop: 16 }}>
-        <Head side="how it is scored" color={SCORE} icon={<IconScore />} />
+        <Head side="evaluation" color={SCORE} icon={<IconScore />} />
 
         <div style={{ fontSize: 12.5, color: MUTED, lineHeight: 1.6, marginBottom: 14, maxWidth: 720 }}>
-          Your identifier is compared against the key&apos;s on the pinned ontology. Synonyms
-          resolve to the same term, so spelling is never the error. Credit depends on which
-          direction you missed in, and on what kind of term the key holds.
+          Clusters are scored one at a time. The identifier your labeller returns for a cluster is
+          compared against the one the key holds for it, on the pinned ontology — synonyms resolve,
+          so spelling is never the error.
         </div>
 
         {[
           {
             k: "Full", c: SC_FULL,
-            lead: "Your identifier matches the key's, or any term in its accepted set.",
-            more: "Also full when the key names a specific anatomical region and you correctly name a cell type contained in it. Being more precise than the key is not punished, in that one direction.",
+            lead: "Your identifier matches the key's for that cluster, or any term in its accepted set.",
+            more: "Also full where the key names a specific anatomical region and your labeller correctly names a cell type contained in it. Answering more precisely than the key is not punished, in that one direction.",
           },
           {
             k: "Half", c: SC_HALF,
-            lead: "The key names a cell type and you name the region that contains it.",
-            more: "Right neighbourhood, wrong grain. Retreating up the ontology buys safety, so it has to cost something.",
+            lead: "The key names a cell type for that cluster and your labeller names the region containing it.",
+            more: "Right neighbourhood, wrong grain. Retreating up the ontology buys safety on a hard cluster, so it has to cost something.",
           },
           {
             k: "Zero", c: SC_ZERO,
-            lead: "Everything else, including a cell type narrower than the key's own cell type.",
+            lead: "Everything else, including a cell type narrower than the key's own cell type for that cluster.",
             more: "Depth on its own earns nothing. A sibling term, however close, scores the same as an unrelated one.",
           },
         ].map((o, i) => (
@@ -136,9 +136,10 @@ export default function Overview() {
 
         <div style={{ fontSize: 11.5, color: FAINT, marginTop: 13, paddingTop: 12,
                       borderTop: `1px solid ${RULE}`, lineHeight: 1.6 }}>
-          Strict exact-match accuracy is reported beside the graded score, so the graded number
-          never carries the result on its own. Each cluster also carries a flag — contested,
-          evidence-ambiguous or removed — which decides whether it is scored at all.
+          Strict exact-match accuracy, cluster by cluster, is reported beside the graded score, so
+          the graded number never carries the result on its own. Every cluster also carries a flag
+          — contested, evidence-ambiguous or removed — which decides whether its answer is scored
+          at all.
         </div>
       </div>
     </div>

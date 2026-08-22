@@ -113,23 +113,6 @@ export default function CommitChallengePage() {
 
       </header>
 
-      {/* ── footer ────────────────────────────────────────────────────── */}
-      <div style={section}>
-        <hr style={rule} />
-        <div style={{ fontSize: 12.5, color: FAINT, lineHeight: 1.65, maxWidth: 660 }}>
-          <p style={{ margin: "0 0 11px" }}>
-            <strong style={{ color: MUTED }}>On the key&apos;s provenance.</strong> The gold labels
-            for this row were authored in-house, by translating ZSCAPE&apos;s published annotations
-            onto the frozen ZFA menu. They are blind to a contestant, but they are not an
-            independent standard, and a score against them is a ceiling check rather than a
-            neutral benchmark. Stated here because it changes what a number from this row means.
-          </p>
-          <p style={{ margin: 0, fontFamily: MONO, fontSize: 10.5, wordBreak: "break-all" }}>
-            menu {(MENU as any).menu_version_hash.slice(0, 16)}… · ZFA {(MENU as any).source.release} ·{" "}
-            {nfmt(B.clusters)} clusters · {B.timepoint_hpf} hpf · clustering {B.clustering}
-          </p>
-        </div>
-      </div>
     </main>
   );
 }

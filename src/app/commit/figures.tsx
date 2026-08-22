@@ -1,13 +1,11 @@
-// The two figures on /commit. Both are server-rendered inline SVG — no chart library, no client
-// JS. Hover detail rides on native <title> elements, which gives every mark a tooltip without
-// making the page a client component.
+// The menu composition bar, in the reference's §05. Server-rendered inline SVG — no chart library,
+// no client JS; hover detail rides on native <title> elements.
 //
-// Colour follows the dataviz method: the composition bar is CATEGORICAL (three identities, fixed
-// order, validated palette in theme.ts); the histogram is a SINGLE series, so it takes one hue and
-// carries no legend — its title names it.
+// Colour follows the dataviz method: three identities in fixed order from the validated palette in
+// theme.ts, a legend always present, and every segment direct-labelled so identity is never
+// carried by colour alone.
 import React from "react";
-import { MONO, RULE, MUTED, FAINT, INK, CAT, SERIES, nfmt } from "./theme";
-import DIST from "./data/cluster_size_distribution.json";
+import { MONO, RULE, MUTED, FAINT, INK, CAT, nfmt } from "./theme";
 import MENU from "./data/zfa_menu_preview.json";
 
 // ── shared figure chrome ───────────────────────────────────────────────────
@@ -30,106 +28,6 @@ function Figure({
         <div style={{ fontSize: 11.5, color: FAINT, marginTop: 12, lineHeight: 1.55 }}>{note}</div>
       )}
     </figure>
-  );
-}
-
-// ── figure 1 — cluster size distribution ───────────────────────────────────
-// Log-spaced bins. Sizes span 55 → 17,491 with a median of 688, so linear bins would put ~100 of
-// the 112 clusters in one column and say nothing. Counts stay on a linear axis from zero — the
-// bars still encode magnitude honestly; only the bin EDGES are log.
-const BIN_EDGES = [50, 100, 200, 400, 800, 1600, 3200, 6400, 12800, 25600];
-
-export function ClusterSizeFigure() {
-  const sizes: number[] = (DIST as any).sizes_sorted_desc;
-  const stats = (DIST as any).stats;
-
-  const bins = BIN_EDGES.slice(0, -1).map((lo, i) => {
-    const hi = BIN_EDGES[i + 1];
-    const count = sizes.filter((s) => s >= lo && s < hi).length;
-    return { lo, hi, count };
-  });
-  const maxCount = Math.max(...bins.map((b) => b.count));
-
-  // geometry
-  const W = 720, H = 250;
-  const padL = 34, padR = 12, padT = 16, padB = 46;
-  const plotW = W - padL - padR, plotH = H - padT - padB;
-  const bw = plotW / bins.length;
-  const yOf = (c: number) => padT + plotH - (c / maxCount) * plotH;
-
-  const ticks = [0, Math.round(maxCount / 2), maxCount];
-  const kfmt = (n: number) => (n >= 1000 ? `${n / 1000}k` : String(n));
-
-  return (
-    <Figure
-      n="Figure 1"
-      title="Cluster sizes are steeply skewed"
-      subtitle="112 clusters, binned by cell count. Bin edges double; counts are linear from zero."
-      note={`Every cluster clears the 50-cell floor. Half sit under ${nfmt(stats.median)} cells, and the largest holds ${nfmt(stats.max)} — 318× the smallest. A method tuned on the big clusters will still be wrong about most of the set.`}
-    >
-      <svg viewBox={`0 0 ${W} ${H}`} width="100%" role="img"
-           aria-label={`Histogram of cluster sizes across 112 clusters, from ${stats.min} to ${stats.max} cells`}
-           style={{ display: "block", overflow: "visible" }}>
-        {/* recessive gridlines */}
-        {ticks.map((t) => (
-          <g key={t}>
-            <line x1={padL} x2={W - padR} y1={yOf(t)} y2={yOf(t)} stroke={RULE} strokeWidth={1} />
-            <text x={padL - 8} y={yOf(t) + 3.5} textAnchor="end"
-                  style={{ fontFamily: MONO, fontSize: 9.5, fill: FAINT }}>{t}</text>
-          </g>
-        ))}
-
-        {bins.map((b, i) => {
-          const h = (b.count / maxCount) * plotH;
-          const x = padL + i * bw + 1;      // +1/-2 = the 2px surface gap between adjacent bars
-          const w = bw - 2;
-          return (
-            <g key={b.lo}>
-              {b.count > 0 && (
-                <rect x={x} y={yOf(b.count)} width={w} height={h} rx={4} ry={4} fill={SERIES}>
-                  <title>{`${nfmt(b.lo)}–${nfmt(b.hi - 1)} cells — ${b.count} cluster${b.count === 1 ? "" : "s"}`}</title>
-                </rect>
-              )}
-              {/* square off the baseline end: the 4px radius belongs to the data end only */}
-              {b.count > 0 && h > 4 && (
-                <rect x={x} y={yOf(b.count) + h - 4} width={w} height={4} fill={SERIES} />
-              )}
-              {b.count > 0 && (
-                <text x={x + w / 2} y={yOf(b.count) - 6} textAnchor="middle"
-                      style={{ fontFamily: MONO, fontSize: 10, fontWeight: 700, fill: INK }}>
-                  {b.count}
-                </text>
-              )}
-              <text x={x + w / 2} y={padT + plotH + 15} textAnchor="middle"
-                    style={{ fontFamily: MONO, fontSize: 9, fill: MUTED }}>
-                {kfmt(b.lo)}
-              </text>
-            </g>
-          );
-        })}
-
-        <line x1={padL} x2={W - padR} y1={padT + plotH} y2={padT + plotH} stroke="#d8d3cd" strokeWidth={1} />
-        <text x={padL} y={H - 12} style={{ fontFamily: MONO, fontSize: 9, fill: FAINT }}>
-          CELLS PER CLUSTER (BIN LOWER EDGE)
-        </text>
-        <text x={padL - 8} y={padT - 5} textAnchor="end" style={{ fontFamily: MONO, fontSize: 9, fill: FAINT }}>
-          n
-        </text>
-      </svg>
-
-      {/* the five-number summary, as a table view of the same data */}
-      <div style={{ display: "flex", gap: 22, flexWrap: "wrap", marginTop: 14, paddingTop: 12, borderTop: `1px solid ${RULE}` }}>
-        {[
-          ["min", nfmt(stats.min)], ["p25", nfmt(stats.p25)], ["median", nfmt(stats.median)],
-          ["p75", nfmt(stats.p75)], ["max", nfmt(stats.max)], ["total cells", nfmt((DIST as any).total_cells)],
-        ].map(([k, v]) => (
-          <div key={k}>
-            <div style={{ fontFamily: MONO, fontSize: 9, fontWeight: 700, letterSpacing: 0.6, textTransform: "uppercase", color: MUTED }}>{k}</div>
-            <div style={{ fontFamily: MONO, fontSize: 14, fontWeight: 700, color: INK, fontVariantNumeric: "tabular-nums", marginTop: 2 }}>{v}</div>
-          </div>
-        ))}
-      </div>
-    </Figure>
   );
 }
 
@@ -160,7 +58,7 @@ export function MenuCompositionFigure() {
 
   return (
     <Figure
-      n="Figure 2"
+      n="Figure"
       title="The answer space, by branch"
       subtitle={`All ${nfmt(total)} selectable ZFA terms, split by CARO stratum. Every answer — yours and the key's — is one of these.`}
       note="Roughly one term in five names a cell type. The rest name structures, or sit above the CARO roots entirely, which is where an over-broad answer tends to land."

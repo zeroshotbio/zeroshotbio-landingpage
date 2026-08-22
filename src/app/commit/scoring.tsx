@@ -16,18 +16,18 @@ import { MONO, RULE, MUTED, FAINT, INK, ACCENT, CARD, PANEL, PANEL_BD, card,
 const OUTCOMES = [
   {
     key: "full", color: FULL,
-    rule: "you match the key, or any term in its accepted set",
-    extra: "Also full when the key names a region and you correctly name a cell type inside it.",
+    rule: "your identifier matches the key's for that cluster, or any term in its accepted set",
+    extra: "Also full where the key names a specific anatomical region for the cluster and your labeller correctly names a cell type contained in it.",
   },
   {
     key: "half", color: HALF,
-    rule: "the key names a cell type and you name the region containing it",
-    extra: "Right neighbourhood, stopped short. Upward compression buys safety, so it costs something.",
+    rule: "the key names a cell type for that cluster and your labeller names the region containing it",
+    extra: "Right neighbourhood, wrong grain. Retreating up the ontology buys safety on a hard cluster, so it has to cost something.",
   },
   {
     key: "zero", color: ZERO,
     rule: "everything else",
-    extra: "Including a cell type narrower than the key's cell type — depth is not credit on its own.",
+    extra: "Including a cell type narrower than the key's own cell type for that cluster. Depth alone earns nothing, and a sibling term scores like a stranger.",
   },
 ];
 
@@ -93,13 +93,14 @@ export default function ScoringSection() {
     <div>
       <div style={{ fontSize: 15.5, lineHeight: 1.72, color: "#3f3a34", maxWidth: 660, marginBottom: 26 }}>
         <p style={{ margin: "0 0 17px" }}>
-          Your identifier against the key&apos;s, normalised on the pinned ontology. Synonyms
-          resolve; spelling is never the error.
+          Clusters are scored one at a time. The identifier your labeller returned for a cluster is
+          compared against the identifier the key holds for that same cluster, both normalised on
+          the pinned ontology. Synonyms resolve to the same term, so spelling is never the error.
         </p>
         <p style={{ margin: 0 }}>
-          Credit is <strong>asymmetric</strong>, and narrowly so. Being more specific than the key
-          is sometimes free and sometimes worth nothing — it depends on what kind of term the key
-          holds.
+          Credit is <strong>asymmetric</strong>, and narrowly so. Answering a cluster more
+          specifically than the key did is sometimes free and sometimes worth nothing — it depends
+          on what kind of term the key holds for that cluster.
         </p>
       </div>
 
@@ -137,10 +138,10 @@ export default function ScoringSection() {
         </div>
         <CaseDiagram />
         <div style={{ fontSize: 11.5, color: MUTED, marginTop: 16, lineHeight: 1.6, maxWidth: 700 }}>
-          The same one step, in two directions, is not the same answer — but only because the key
-          holds a different kind of term in each case. Where the key already names a cell type,
-          naming a narrower cell type beneath it is <strong>zero</strong>, not full. There is no
-          general credit for going deeper.
+          The same one step, in two directions, is not the same answer for a cluster — and only
+          because the key holds a different kind of term in each case. Where the key already names
+          a cell type, answering with a narrower cell type beneath it is <strong>zero</strong>, not
+          full. There is no general credit for going deeper.
         </div>
       </div>
 
@@ -155,9 +156,9 @@ export default function ScoringSection() {
             Strict exact-match accuracy
           </div>
           <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
-            The graded score is not reported on its own. Exact identifier match — no partial credit,
-            no containment — is published beside it, so the graded number can never quietly carry
-            the result.
+            The graded score is not reported on its own. Exact identifier match, cluster by cluster
+            — no partial credit, no containment — is published beside it, so the graded number can
+            never quietly carry the result.
           </div>
         </div>
 
@@ -179,8 +180,9 @@ export default function ScoringSection() {
             ))}
           </div>
           <div style={{ fontSize: 12, color: MUTED, lineHeight: 1.6 }}>
-            Each cluster carries a scoring flag, and the flag decides whether it counts. Which
-            clusters were excluded is reported with the score.
+            Every cluster carries a scoring flag, and that flag decides whether the answer for it
+            counts at all. Which clusters were excluded, and under which flag, is reported with the
+            score.
           </div>
         </div>
       </div>

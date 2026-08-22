@@ -14,9 +14,9 @@ import React from "react";
 import Link from "next/link";
 import DocsRail from "./rail";
 import { PAPER, INK, ACCENT, MONO, RULE, MUTED, FAINT, card, nfmt } from "../theme";
-import { GoldFeaturesWindow, ZfaMenuWindow, H5adWindow } from "../windows";
 import { MenuCompositionFigure } from "../figures";
-import OutputFigure from "../output";
+import InputSection from "./input";
+import OutputSection from "./output";
 import ScoringSection from "../scoring";
 import MANIFEST from "../data/manifest.json";
 import MENU from "../data/zfa_menu_preview.json";
@@ -33,9 +33,9 @@ const INCL = (H5AD as any).inclusion_rule;
 
 const SECTIONS = [
   { id: "challenge", n: "01", title: "The challenge", blurb: "What the task is, in full." },
-  { id: "input", n: "02", title: "The input — three files", blurb: "Every column and field you receive." },
-  { id: "output", n: "03", title: "The output — one answer", blurb: "The four parts of a returned answer." },
-  { id: "scoring", n: "04", title: "How it is scored", blurb: "The rule, and what is reported." },
+  { id: "input", n: "02", title: "The input — three files", blurb: "What each delivered file holds." },
+  { id: "output", n: "03", title: "The output — one answer", blurb: "The four parts of a cluster's answer." },
+  { id: "scoring", n: "04", title: "Evaluation", blurb: "How a cluster's answer is scored." },
   { id: "answer-space", n: "05", title: "The answer space", blurb: "What the menu is made of." },
 ];
 
@@ -103,7 +103,7 @@ export default function CommitDocsPage() {
             </h1>
             <p style={{ ...prose, marginTop: 14 }}>
               Everything behind the overview: what the task is, what each delivered file contains,
-              what an answer has to look like, and how it is judged.
+              what an answer for a cluster has to look like, and how that answer is judged.
             </p>
           </header>
 
@@ -149,20 +149,14 @@ export default function CommitDocsPage() {
           </Section>
 
           <Section id="input" n="02" title="The input — three files">
-            <p style={{ ...prose, margin: "0 0 24px" }}>
-              Each window shows a file as it ships — its size, its content hash, its real shape, and
-              a live slice of what is inside it.
-            </p>
-            <H5adWindow />
-            <GoldFeaturesWindow />
-            <ZfaMenuWindow />
+            <InputSection />
           </Section>
 
           <Section id="output" n="03" title="The output — one answer">
-            <OutputFigure />
+            <OutputSection />
           </Section>
 
-          <Section id="scoring" n="04" title="How it is scored">
+          <Section id="scoring" n="04" title="Evaluation">
             <ScoringSection />
           </Section>
 
