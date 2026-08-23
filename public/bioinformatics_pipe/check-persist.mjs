@@ -56,15 +56,20 @@ let bad = 0; const fail = m => { bad++; console.log('  FAIL  ' + m); };
 const errs = [];
 
 /* the stateful stand-in for the shared record */
-let record = null;
+/* The record carries a MONOTONIC `at`, because that is what the page
+   reconciles on: the shared copy wins only if it is strictly newer than what
+   the browser is holding. A stub with a constant stamp cannot tell a working
+   reconciliation from one that always keeps local. */
+let record = null, stamp = 0;
+const publish = o => { record = o; stamp += 1000; return stamp; };
 const serve = async r => {
   if (r.request().method() === 'POST') {
-    record = JSON.parse(r.request().postData() || '{}').offsets || null;
+    const at = publish(JSON.parse(r.request().postData() || '{}').offsets || null);
     return r.fulfill({ status: 200, contentType: 'application/json',
-      body: JSON.stringify({ ok: true, at: 1 }) });
+      body: JSON.stringify({ ok: true, at }) });
   }
   return r.fulfill({ status: 200, contentType: 'application/json',
-    body: JSON.stringify({ offsets: record, at: record ? 1 : null }) });
+    body: JSON.stringify({ offsets: record, at: record ? stamp : null }) });
 };
 
 const open = async () => {
@@ -73,7 +78,9 @@ const open = async () => {
   p.on('pageerror', e => errs.push(e.message));
   await p.route('**/api/bpipe_edits', serve);
   await p.goto(url, { waitUntil: 'networkidle' });
-  await p.waitForTimeout(1500);
+  /* long enough for the shared copy to arrive AND for the reload it triggers
+     when it is newer — adopting is a reload now, not an in-place apply */
+  await p.waitForTimeout(3600);
   return p;
 };
 
@@ -129,20 +136,22 @@ if (keys.length !== 1 || keys[0] !== TARGET)
   fail(`the saved table names ${JSON.stringify(keys)} — only ${TARGET} was touched`);
 
 await p1.reload({ waitUntil: 'networkidle' });
-await p1.waitForTimeout(1800);
+await p1.waitForTimeout(3000);
 let d = drift(laid, await allOf(p1));
 if (d.length) fail('same browser: the map came back different after a reload — ' + d.join(' ; '));
 
 /* and again, because a base derived from something that moves creeps by the
    same amount every single time round rather than settling */
 await p1.reload({ waitUntil: 'networkidle' });
-await p1.waitForTimeout(1800);
+await p1.waitForTimeout(3000);
 d = drift(laid, await allOf(p1));
 if (d.length) fail('same browser: still moving on the second reload — ' + d.join(' ; '));
 
 /* applying the table again must not compose onto itself */
 const twice = await p1.evaluate(() => {
-  const o = JSON.parse(localStorage.getItem('bpipe.offsets') || '{}');
+  /* the stored record is {offsets, at} — the table is inside it */
+  const rec = JSON.parse(localStorage.getItem('bpipe.offsets') || '{}');
+  const o = rec.offsets || rec;
   applyOffsets(o); applyOffsets(o);
   const n = NODES.find(m => m.id === 'UD');
   return { x: n.x, y: n.y };
@@ -176,7 +185,7 @@ await p3.waitForTimeout(300);
 await grab(p3, 'c3', 150, -80);
 const unsaved = await allOf(p3);
 await p3.reload({ waitUntil: 'networkidle' });
-await p3.waitForTimeout(2200);
+await p3.waitForTimeout(3000);
 d = drift(unsaved, await allOf(p3));
 if (d.length) fail('an unsaved sitting was thrown away on reload — ' + d.join(' ; '));
 
@@ -189,24 +198,45 @@ await p3.waitForTimeout(1100);
 await grab(p3, 'c1', 90, 70);                       // moved AFTER the save
 const later = await allOf(p3);
 await p3.reload({ waitUntil: 'networkidle' });
-await p3.waitForTimeout(2200);
+await p3.waitForTimeout(3000);
 d = drift(later, await allOf(p3));
 if (d.length) fail('work done after a save was lost on reload — ' + d.join(' ; '));
 
 /* ---- 6. but a record somebody ELSE published is still adopted ----------- */
 const base = await p3.evaluate(() => NODES.find(n => n.id === 'c3')._ox);
-record = { c3: { dx: 3.3, dy: -2.2 } };             // arrives from another browser
+publish({ c3: { dx: 3.3, dy: -2.2 } });             // arrives from another browser
 const p4 = await open();
 const took = await posOf(p4, 'c3');
 if (!took || Math.abs(took.x - (base + 3.3)) > 0.05 || Math.abs(took.y + 2.2) > 0.05)
   fail('a record published elsewhere was not adopted by a browser with nothing ' +
        `of its own — c3 opened at ${JSON.stringify(took)}, expected ${(base+3.3).toFixed(2)}, -2.2`);
 
+/* ---- 7. a browser carrying the OLD bare-table local record ------------
+   Every browser that edited this map before the stamp existed is holding one.
+   It has no `at`, so it reads as 0, and the shared record — which is that same
+   browser's own last save — supersedes it. What must NOT happen is the loader
+   treating a bare table as `{offsets, at}`, finding no `offsets` key, and
+   opening on an empty layout. */
+const p5ctx = await b.newContext({ viewport: { width: 1700, height: 1000 } });
+const p5 = await p5ctx.newPage();
+p5.on('pageerror', e => errs.push(e.message));
+await p5.route('**/api/bpipe_edits', serve);
+await p5.goto(url, { waitUntil: 'domcontentloaded' });
+await p5.evaluate(() => localStorage.setItem('bpipe.offsets',
+  JSON.stringify({ c5: { dx: -2.5, dy: 1.5 } })));      // the old shape, no stamp
+await p5.reload({ waitUntil: 'networkidle' });
+await p5.waitForTimeout(3600);
+const legacy = await posOf(p5, 'c3');
+if (!legacy || Math.abs(legacy.x - (13.9 + 3.3)) > 0.05)
+  fail('a browser holding the pre-stamp record did not take the shared copy — ' +
+       `c3 opened at ${JSON.stringify(legacy)}`);
+
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : 'persist: a drag saves and holds through a reload, opens that way in a browser that has ' +
     'never seen it, names only what was touched, re-applies without drifting, keeps unsaved work ' +
-    'through a reload both before and after a save, and still adopts a record published elsewhere');
+    'through a reload both before and after a save, still adopts a record published elsewhere, ' +
+    'and migrates a browser holding the pre-stamp record');
 if (errs.length) console.log('page errors:', errs);
 await b.close();
 process.exit(bad || errs.length ? 1 : 0);

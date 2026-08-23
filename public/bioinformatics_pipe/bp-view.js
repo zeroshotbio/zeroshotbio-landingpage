@@ -62,23 +62,43 @@ layoutRows(NODES, LANES, MIRROR);
    own Edit positions mode. Once a sitting has been baked back into the file
    the two are identical and clearing the local copy changes nothing.
    ============================================================ */
+/* THE STORED RECORD IS `{offsets, at}`, NOT A BARE TABLE, and the `at` is the
+   whole of how this page decides who is ahead.
+
+   This is /pipeline's scheme, ported here because it is the one that has been
+   in daily use and demonstrably keeps a sitting. Every drag stamps the local
+   record with the time; a successful save replaces that stamp with the SERVER'S
+   own, so the next load cannot read its own save as somebody else's. On load
+   the shared copy wins only if it is STRICTLY NEWER. Anything else is this
+   browser holding work the record has not seen, and it is left alone.
+
+   Two attempts before this one got it wrong in opposite directions. The first
+   applied the shared copy on any difference, which threw away every drag that
+   had not been published yet. The second compared JSON strings against a
+   remembered copy, which is a two-way comparison dressed up as a three-way one
+   and had a fall-through that adopted when the marker was missing — which is
+   every browser that had edits before it shipped. A timestamp is one number
+   and it is monotonic. */
 const EDIT_KEY="bpipe.offsets";
-/* THE RECORD THIS BROWSER LAST AGREED WITH — the shared copy as it stood at
-   the last successful save, or the last time this browser adopted one. It is
-   the third quantity that makes "the server is ahead of us" distinguishable
-   from "we are ahead of the server", which is not a distinction two copies can
-   make between them. Without it every unpublished drag is indistinguishable
-   from a stale browser and gets thrown away on the next load. */
-const SYNC_KEY=EDIT_KEY+".sync";
 const remember=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(err){} };
 const forget  =k=>{ try{ localStorage.removeItem(k); }catch(err){} };
-const recall  =k=>{ try{ return localStorage.getItem(k); }catch(err){ return null; } };
 
 const BAKED=(typeof OFFSETS!=="undefined")?OFFSETS:{};
-const LIVE=(()=>{
-  try{ const raw=localStorage.getItem(EDIT_KEY); if(raw) return JSON.parse(raw); }catch(err){}
-  return BAKED;
+const EDITS=(()=>{
+  try{
+    const raw=localStorage.getItem(EDIT_KEY);
+    if(raw){
+      const j=JSON.parse(raw);
+      /* the format before the stamp: a bare table of nudges. It is adopted
+         with at:0, so the first shared copy that turns up supersedes it —
+         which is right, because that copy is this browser's own last save. */
+      if(j && j.offsets) return {offsets:j.offsets||{}, at:j.at||0};
+      return {offsets:j||{}, at:0};
+    }
+  }catch(err){}
+  return {offsets:BAKED, at:0};
 })();
+const LIVE=EDITS.offsets||{};
 /* DELETIONS come first, because everything downstream — the lane solve, the
    edges, the index, the occlusion clip — has to be computed over what is
    actually on the map rather than over what once was. A node removed here
@@ -455,9 +475,17 @@ function refresh(id){
   CARRY.forEach(c=>{ if(!id || c.node===id) c.place(); });
   placeDots(0);
 }
-/* Apply a whole table of nudges to a map that has already been drawn. This is
-   what makes a saved arrangement the default for a browser that has never
-   seen it, without a reload and without a flash. */
+/* Apply a whole table of nudges to a map that has already been drawn.
+
+   NOTHING ON THE LOAD PATH CALLS THIS ANY MORE, and that is deliberate: it
+   re-runs only a SUBSET of what a load does. It moves the objects and repaints
+   the edges; it does not re-derive the attrition band's span, re-solve the
+   lane, rebuild the index or recompute the occlusion clip. Using it to adopt a
+   shared copy produced a picture no reload reproduced, which from the outside
+   is indistinguishable from a layout that did not take. The shared copy
+   reloads now. This is kept because it is exactly what a test needs to assert
+   that applying a table twice lands where applying it once does — the property
+   the _ox base exists to guarantee. */
 function applyOffsets(o){
   NODES.forEach(n=>{ applyNudge(n,o[n.id]); reposition(n); });
   if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
@@ -1045,13 +1073,89 @@ function note(title,body,ms){
 /* WHAT THIS SITTING TOUCHED, as opposed to what is in force. The saved table
    is the whole arrangement rather than a diff, so it cannot answer "what did I
    just move" — and a confirmation that answers the wrong question reads as a
-   confirmation of something you did not do. */
+   confirmation of something you did not do. It is also half of who owns what
+   when a save merges; see `ours`. */
 const touched=new Set();
+
+/* THE OTHER HALF: work this browser is holding that the shared copy has never
+   seen. It arrives from local storage as part of the state the page loads
+   with, so it is indistinguishable from everything else in force until the
+   record is read — at which point whatever DIFFERS is, by definition, ours and
+   unsent. Marking it is what keeps a change made before a refresh from being
+   quietly dropped by the merge on the way out. Keys we hold identical to the
+   record stay unmarked, so somebody else editing them later still wins. */
+const HELD={};
+const ours=k=>touched.has(k)||!!HELD[k];
+const differs=(a,b)=>JSON.stringify(a===undefined?null:a)!==JSON.stringify(b===undefined?null:b);
+function seedUnpublished(doc){
+  const ro=(doc&&doc.offsets)||{};
+  const mine=collectOffsets();
+  Object.keys(mine).forEach(k=>{ if(differs(mine[k],ro[k])) HELD[k]=1; });
+}
+
+function stash(){
+  remember(EDIT_KEY,JSON.stringify({offsets:collectOffsets(),at:Date.now()}));
+}
+/* Take the record's OWN timestamp after a successful write. Stamping it with
+   this browser's clock instead means the next load compares two clocks, and a
+   browser a few seconds fast reads its own save as somebody else's and
+   reloads over it. */
+function adoptStamp(at){
+  if(!at) return;
+  try{
+    const j=JSON.parse(localStorage.getItem(EDIT_KEY)||"{}");
+    j.at=at; localStorage.setItem(EDIT_KEY,JSON.stringify(j));
+  }catch(err){}
+}
 function markDirty(id){
   dirty=true;
   if(id) touched.add(id);
   document.body.classList.add("haschanges");
-  remember(EDIT_KEY,JSON.stringify(collectOffsets()));
+  stash();
+}
+
+/* A SAVE IS A MERGE, NEVER A REPLACEMENT. The record is one document and the
+   write is a whole-document Put, so a blind write means the second person to
+   press Save silently flattens the first — and, less obviously, means a browser
+   holding a stale copy of somebody else's work republishes it. Every save reads
+   the record first and lays only the keys THIS sitting owns on top of it.
+
+   A READ FAILURE ABORTS THE WRITE. Keeping a change in this browser is
+   recoverable — it is still in local storage and still on screen. Overwriting
+   somebody else's sitting is not. */
+function mergeOnto(doc){
+  const mine=collectOffsets(), theirs=(doc&&doc.offsets)||{};
+  const out={...theirs};
+  let kept=0;
+  Object.keys(theirs).forEach(k=>{
+    if(!ours(k) && differs(theirs[k],mine[k])) kept++; });
+  new Set([...Object.keys(mine),...Object.keys(theirs)]).forEach(k=>{
+    if(!ours(k)) return;
+    if(mine[k]) out[k]=mine[k]; else delete out[k];
+  });
+  return {body:{offsets:out}, kept};
+}
+function put(body){
+  return fetch("/api/bpipe_edits",{method:"POST",
+      headers:{"content-type":"application/json"},body:JSON.stringify(body)})
+    .then(r=>r.json()).catch(()=>({ok:false,error:"unreachable"}));
+}
+function pushRemote(){
+  if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
+  return fetch("/api/bpipe_edits",{cache:"no-store"})
+    .then(r=>r.json()).catch(()=>null)
+    .then(doc=>{
+      if(!doc || doc.error) return {ok:false,error:"unreachable"};
+      if(!doc.at) return put({offsets:collectOffsets()});   // nothing shared yet
+      const m=mergeOnto(doc);
+      return put(m.body).then(res=>{
+        /* what went out is not what is on screen if the merge carried
+           somebody else's work through, so keep the merged document */
+        if(res && res.ok && m.kept)
+          remember(EDIT_KEY,JSON.stringify({offsets:m.body.offsets,at:res.at||Date.now()}));
+        return {...res, kept:m.kept};
+      });
+    });
 }
 
 feature("edit positions", function(){
@@ -1317,36 +1421,26 @@ feature("saving", function(){
     const body=`${mine} moved this sitting · ${moved} placement${moved===1?"":"s"} `+
       `in force${gone?` · ${gone} deleted`:""} — this is what the page opens `+
       `with now, for every browser.`;
-    const doc=JSON.stringify(o);
-
     /* the browser first, because that never fails and is what the person in
        front of it is about to reload into */
-    remember(EDIT_KEY,doc);
+    stash();
 
     /* then the shared copy, which is what makes it the default for everyone.
        Its own record, never /pipeline's — one record shared between two maps
        means whichever saved last erases the other, silently. */
-    fetch("/api/bpipe_edits",{method:"POST",
-      headers:{"content-type":"application/json"},
-      body:JSON.stringify({offsets:o})})
-      .then(r=>r.json())
-      .then(r=>{
-        if(r && r.ok){
-          /* the record has been published, so this browser now agrees with it.
-             Until this line runs, everything here counts as unsaved and the
-             shared copy leaves it alone. */
-          remember(SYNC_KEY,doc);
-          touched.clear(); dirty=false;
-          document.body.classList.remove("haschanges");
-          note("Saved as the default",body);
-        }
-        else note("Saved in this browser only",
-          "The shared copy could not be written, so the map opens this way here "+
-          "and nowhere else. The block in the panel still works.");
-      })
-      .catch(()=>note("Saved in this browser only",
-        "No answer from the shared copy, so the map opens this way here and "+
-        "nowhere else. The block in the panel still works."));
+    pushRemote().then(res=>{
+      if(res && res.ok){
+        /* the record's own stamp, so the next load does not read this save as
+           somebody else's and reload over it */
+        adoptStamp(res.at);
+        note("Saved as the default",body+
+          (res.kept?` Someone else saved ${res.kept} change${res.kept===1?"":"s"} `+
+                    `while you were working — kept, not overwritten. Refresh to see them.`:""));
+      }
+      else note("Saved in this browser only",
+        "The shared copy could not be written, so the map opens this way here "+
+        "and nowhere else. The block in the panel still works.");
+    });
 
     /* and the block to paste, so a sitting can be baked into the repo */
     pinned=null; current=null; paintIndex();
@@ -1371,9 +1465,9 @@ feature("saving", function(){
   if(btnDrop) btnDrop.onclick=()=>ask("Discard every change?",
     "Positions and deletions both, back to what the file says. The shared copy "+
     "is left alone until the next save.",
-    /* the sync marker goes with it: this browser is no longer claiming to
-       have anything the shared copy has not seen */
-    ()=>{ forget(EDIT_KEY); forget(SYNC_KEY); location.reload(); });
+    /* the stamp goes with the table: this browser stops claiming to hold
+       anything, so the next load takes the record whole */
+    ()=>{ forget(EDIT_KEY); location.reload(); });
 });
 
 /* ============================================================
@@ -1385,54 +1479,41 @@ feature("saving", function(){
    ✕ button is told to catch up.
    ============================================================ */
 feature("shared copy", function(){
+  if(typeof fetch!=="function") return;
+  const mine=EDITS.at||0;
   fetch("/api/bpipe_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
-    const o=doc && doc.offsets;
-    if(!o) return;
-    if(dirty) return;                               // a sitting in this tab wins
+    if(!doc || doc.error || !doc.at) return;
 
-    const server=JSON.stringify(o), local=JSON.stringify(collectOffsets());
-    if(server===local){ remember(SYNC_KEY,server); return; }
+    /* KEEPING OURS is the common case, and it is the one two previous attempts
+       got wrong. The record is only taken if it is STRICTLY NEWER than what
+       this browser is holding. Otherwise every key we hold that the record has
+       not seen is marked, so the merge on the way out carries it rather than
+       deferring to the store — that is what stops a change made before a
+       refresh from being quietly dropped by the next save. */
+    if(doc.at<=mine || dirty) return seedUnpublished(doc);
 
-    /* IS THE LOCAL COPY BEHIND THE SERVER, OR AHEAD OF IT?
-
-       Different answers, opposite actions, and telling them apart needs a
-       third thing: SYNC_KEY, the record this browser last agreed with. The
-       version without it treated any difference as the server being newer and
-       applied the server copy, which quietly threw away every drag this
-       browser had not published yet.
-
-       That is what "it does not save the positions I chose" actually was. Move
-       something, save, move something else, reload: the second move is in this
-       browser's store and not in the record, the record therefore differs, and
-       the record wins. Same for the ordinary habit of moving a few things and
-       reloading to see how they look — the work is gone before it is ever
-       offered to Save.
-
-       server === sync  → nobody else has published; whatever differs here is
-                          ours and unsaved. Leave it alone.
-       server !== sync  → somebody did publish. Take it, unless we are also
-                          ahead, in which case say so rather than picking a
-                          winner silently. */
-    const sync=recall(SYNC_KEY);
-    if(server===sync) return;                       // ours, unsaved — keep it
-    if(sync!==null && local!==sync){
-      note("A newer shared layout is waiting",
-        "Someone else saved a different arrangement, and this browser has "+
-        "changes of its own that have not been saved. Nothing has been "+
-        "touched. Save positions to publish yours, or Discard to take theirs.",
-        12000);
+    /* AND TAKING THEIRS IS A RELOAD, not an in-place application. Applying a
+       table to a drawn map re-runs a subset of what a load does — it moves the
+       objects and repaints the edges, and it does NOT re-derive the attrition
+       band's span, re-solve the lane, rebuild the index or recompute the
+       occlusion clip. The result is a picture no reload reproduces, which is
+       indistinguishable from a layout that did not take. A reload is
+       unambiguous, and this path is rare by construction: it only runs when
+       somebody else has actually published something newer. */
+    remember(EDIT_KEY,JSON.stringify({offsets:doc.offsets||{},at:doc.at}));
+    /* AND ONLY RELOAD IF THE STORE ACTUALLY TOOK IT. A browser that cannot
+       write local storage — private mode, storage disabled, quota — comes back
+       holding at:0, reads the record as newer again, and reloads again, for
+       ever. Check the write landed before acting on it. */
+    let held=false;
+    try{ held=JSON.parse(localStorage.getItem(EDIT_KEY)||"{}").at===doc.at; }catch(err){}
+    if(!held){
+      note("A newer shared layout is available",
+        "This browser cannot remember it, so the page is not reloading — it "+
+        "would come back to exactly here and reload again.",9000);
       return;
     }
-
-    remember(EDIT_KEY,server); remember(SYNC_KEY,server);
-    /* A DELETION cannot be applied in place — the lane solve, the edges, the
-       index and the occlusion clip were all computed over a different set of
-       objects — so that one case needs the page back. Everything else is a
-       translate, and a translate does not need a reload. */
-    const wantGone=new Set(Object.keys(o).filter(k=>o[k]&&o[k].del));
-    const sameDeletions = wantGone.size===GONE.size &&
-      [...wantGone].every(k=>GONE.has(k));
-    if(!sameDeletions){ location.reload(); return; }
-    applyOffsets(o);
+    note("A newer shared layout arrived","Someone else saved. Loading it.",2000);
+    setTimeout(()=>location.reload(), 900);
   }).catch(()=>{});
 });

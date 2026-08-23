@@ -53,8 +53,9 @@ await p.locator('#btnSave').click(); await p.waitForTimeout(600);
 if(!await p.locator('#note.on').isVisible()) fail('Save gave no confirmation');
 const txt=await p.locator('#noteTitle').textContent();
 if(!/Saved/.test(txt)) fail(`the confirmation said "${txt}"`);
-const stored=JSON.parse(await p.evaluate(()=>localStorage.getItem('bpipe.offsets'))||'{}');
-if(!stored.c3 || !stored.c3.del) fail('the deletion was not saved: '+JSON.stringify(stored));
+const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('bpipe.offsets'))||'{}');
+const stored=rec.offsets||{};
+if(!stored.c3 || !stored.c3.del) fail('the deletion was not saved: '+JSON.stringify(rec));
 await p.waitForTimeout(5400);
 if(await p.locator('#note.on').isVisible()) fail('the confirmation never went away');
 

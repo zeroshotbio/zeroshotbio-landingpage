@@ -411,11 +411,16 @@ cannot catch the bug it exists for.
   on its own**. A notice that needs dismissing is a second thing to do after
   the thing you wanted to do; one that never leaves is indistinguishable from a
   stuck page.
-- **`check-persist.mjs`** asserts a saved sitting is the default **in a browser
-  that has never seen it**, that **unsaved work survives a reload** — both
-  before a save and after one, which is the case that was reported — that a
-  record published elsewhere is still adopted, and compares **every object, not
-  the one that was dragged** — the second persistence bug moved the attrition band, which the
+- **`check-persist.mjs`** runs a **stateful stub with a monotonic `at`** — a
+  constant stamp cannot tell a working reconciliation from one that always
+  keeps local — and asserts all seven transitions: a save holds through a
+  reload and through a second one; a browser that has never seen the record
+  opens on it; **unsaved work survives a reload, both before a save and after
+  one**, which is the case that was reported twice; a record published
+  elsewhere is still adopted; a browser holding the **pre-stamp** record
+  migrates; the table names only what was touched; and applying it twice lands
+  where applying it once does. It compares **every object, not the one that was
+  dragged** — the second persistence bug moved the attrition band, which the
   drag never touched, while the building that was dragged sat perfectly still. The other five all passed the day Save silently
   stopped taking, because they stub the endpoint to a constant and the author's
   own browser had the arrangement in local storage. This one runs a stateful
@@ -512,29 +517,50 @@ author reloads to check it took — and DynamoDB's default eventually-consistent
 read may legitimately serve the previous layout to exactly that reload. There
 is no way to tell that apart from a save that never happened.
 
-### Behind the server, or ahead of it: `bpipe.offsets.sync`
+### Who is ahead: the record carries a timestamp
 
-**Two copies cannot tell those apart.** The shared copy differs from what this
-browser is holding — is the record newer, or is this browser holding work it
-has not published? Answering that needs a third quantity, and until there was
-one the code assumed the first and applied the record. That threw away every
-unpublished drag: move something, Save, move something else, reload, and the
-second move is gone — it was in this browser's store and not in the record, so
-the record differed, so the record won. The ordinary habit of moving a few
-things and reloading to look at them lost the lot.
+**This is `/pipeline`'s scheme, ported.** That map has been edited daily for
+months and keeps a sitting; this one had two goes at inventing something and
+got it wrong in both directions, so the third answer is to use the one that
+works rather than a fourth idea.
 
-`SYNC_KEY` is **the record this browser last agreed with** — written on a
-successful POST and on adopting a shared copy, cleared by Discard. Then:
+The stored record is **`{offsets, at}`**, never a bare table. Every drag stamps
+`at` with the local clock. A successful save replaces that with the **record's
+own** stamp — stamping with this browser's clock instead means the next load
+compares two clocks, and a browser a few seconds fast reads its own save as
+somebody else's and reloads over it.
 
-| | |
-|---|---|
-| `server === local` | nothing to do; re-stamp sync |
-| `server === sync` | nobody else published — whatever differs here is ours and unsaved. **Leave it alone.** |
-| `server !== sync`, local clean | somebody published. Adopt it. |
-| `server !== sync`, local dirty | both moved. Touch nothing and **say so** — this is the one case worth a notice, and it is rare. |
+On load: **the shared copy wins only if `doc.at` is strictly newer.** Anything
+else is this browser holding work the record has not seen, and it is left
+alone — with `seedUnpublished()` marking every key that differs, so the merge
+on the way out carries it rather than deferring to the store.
 
-A `dirty` flag still short-circuits all of it: a sitting in progress in *this
-tab* is never disturbed.
+**A save is a merge, never a replacement.** The record is one document and the
+write is a whole-document Put, so a blind write means the second person to
+press Save flattens the first — and, less obviously, means a browser holding a
+stale copy of somebody else's work republishes it. `pushRemote()` reads the
+record, lays only the keys this sitting **owns** on top (`ours(k)` = touched
+here, or held unpublished), and writes that. A read failure aborts the write:
+keeping a change in this browser is recoverable, overwriting somebody else's
+sitting is not.
+
+**Taking theirs is a reload, not an in-place application.** `applyOffsets()`
+re-runs only a *subset* of what a load does — it moves the objects and repaints
+the edges, and does not re-derive the attrition band's span, re-solve the lane,
+rebuild the index or recompute the occlusion clip. The result is a picture no
+reload reproduces, which from the outside is indistinguishable from a layout
+that did not take. The reload is guarded: if the local write did not land, the
+page says so instead of reloading into the same state for ever.
+
+#### The two wrong answers, so nobody re-derives them
+
+- **Apply the record on any difference.** Two copies cannot say which is newer.
+  Every unpublished drag reads as a stale browser and is discarded: move
+  something, Save, move something else, reload, and the second move is gone.
+- **Compare JSON against a remembered copy.** A two-way comparison dressed up
+  as a three-way one, with a fall-through that adopts when the marker is
+  missing — which is every browser that had edits before it shipped. A
+  timestamp is one number, and it is monotonic.
 
 ### The confirmation counts this sitting, not the table
 
@@ -543,25 +569,16 @@ calling the answer "moved" tells somebody who nudged one label that they moved
 eleven things. `touched` is the set of ids this sitting actually changed; the
 toast reports both — *"1 moved this sitting · 11 placements in force"*.
 
-### The shared copy applies itself, it does not ask
+### What the shared copy is for
 
-`feature("shared copy")` fetches `/api/bpipe_edits` after the map has drawn and
-**calls `applyOffsets()`**. It used to write the record into `localStorage` and
-then merely show "Layout updated — reload to see it", which is why Save looked
-like it did nothing: the poster's own browser had the arrangement in its store,
-every other browser — and the poster's after a hard reload that beat the
-fetch — rendered the unmoved map and offered a notice instead of the layout.
-**A saved default that needs a second action to take effect is not a default.**
+The record at `/api/bpipe_edits` is what makes one person's arrangement the
+default for everyone else. It is read **after the map has drawn, never before**
+— a page that waits on a network round trip to show anything shows nothing when
+the network is slow — and a read failure is silent, because the map is already
+on screen from the tables in the data file.
 
-It reloads for exactly one case: when the **deletion set** differs. Deletions
-are applied before the lane solve, the edges, the index and the occlusion clip,
-so they cannot be composed onto a drawn map. It also declines to stomp a
-sitting in progress — if the local map is `dirty`, the fetched copy is ignored.
-
-`persist.mjs` / `persist2.mjs` in the scratchpad reproduce both directions
-(a local sitting held; a fresh browser adopting the shared copy). They are worth
-promoting to a `check-persist.mjs` — this was a shipped bug that all five
-existing checks passed straight through.
+It also declines to disturb a sitting in progress in *this* tab: if `dirty`,
+the fetched copy is only used to mark what is unpublished.
 
 ### Save
 

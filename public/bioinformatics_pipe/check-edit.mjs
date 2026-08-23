@@ -138,11 +138,14 @@ else {
 }
 
 /* it is remembered, and it prints a block to paste */
-const stored=await p.evaluate(()=>localStorage.getItem('bpipe.offsets'));
-if(!stored || !JSON.parse(stored).c3 || !JSON.parse(stored).c5 || !JSON.parse(stored)[annKey])
-  fail('offsets were not written to local storage: '+stored);
-if(movKey && stored && !JSON.parse(stored)[movKey])
-  fail('the band name offset was not written to local storage: '+stored);
+/* the stored record is {offsets, at}: the table, and when it was last touched */
+const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('bpipe.offsets'))||'{}');
+const stored=rec.offsets;
+if(!stored || !stored.c3 || !stored.c5 || !stored[annKey])
+  fail('offsets were not written to local storage: '+JSON.stringify(rec));
+if(movKey && stored && !stored[movKey])
+  fail('the band name offset was not written to local storage: '+JSON.stringify(rec));
+if(!rec.at) fail('the stored record carries no timestamp — reconciliation needs one');
 if(!await p.locator('#btnSave').isVisible()) fail('Save positions never appeared');
 await p.locator('#btnSave').click();
 await p.waitForTimeout(250);
