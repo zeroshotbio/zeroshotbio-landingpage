@@ -17,39 +17,58 @@
      /data_structures: those colours mean bronze, silver and gold, and
      reusing them for "survives / leaving / threshold" would say something
      false. */
+  /* ---- THE PALETTE IS /pipeline's, VERBATIM ----
+     Every token below is copied from public/pipeline/index.html. The two maps
+     are one map at two scales and they were not reading as one: this page had
+     a blue-grey ground and teal / brown / gold marks, that one has a warm grey
+     ground and objects in shades of it. Side by side they looked like two
+     different projects.
+
+     The three MARKS are the only additions, and they are aliases rather than
+     new colours — each one is a token /pipeline already carries, already
+     meaning close to what it has to mean here:
+
+       --keep    = --fg2    the population under consideration. It is most of
+                            every cloud, so it takes the neutral the rest of
+                            the map is drawn in rather than a colour.
+       --cull    = --drop   /pipeline already means "this is being dropped"
+                            with this, on its drop edges and its condition rule.
+       --accent  = --signal /pipeline already means "look here" with this.
+                            A threshold is the thing to look at.
+
+     So the page is greys and two functional colours, which is what /pipeline
+     is. Nothing on it is a hue this map invented. */
   :root{
     /* ---- dark (default) ---- */
-    --bg:#0E1418; --panel:#141C21; --panel2:#182228;
-    --fg:#DCE6EB; --fg2:#9FB0B8; --fg3:#7C8D95; --rule:#223037;
-    --grid:#DCE6EB; --grid-op:.055;
-    --edge:#C3D2DA; --stroke:#33454E; --voxel:#DCE6EB;
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
     --signal:#74b0f0; --drop:#e0765c;
 
-    /* the marks. Nothing else on the map gets colour. */
-    --keep:#79D2BE; --cull:#8C7150; --accent:#DCC584;
+    /* the marks, aliased onto the three above */
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
 
-    /* the objects. t- is a step or a cull, a- is a landmark, k- is the one
-       added building — three skins, named exactly as /pipeline names them, so
-       a shape copied from that map finds the tokens it expects. */
-    --t-top:#1E2C35; --t-left:#17232B; --t-right:#101B22;
-    --a-top:#3A5265; --a-left:#2A3D4B; --a-right:#1E2D38;
-    --k-top:#283C4A; --k-left:#1D2D38; --k-right:#15222B;
+    /* the objects: a step or a cull, a landmark, the roofed culls */
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
 
     --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
     --strip-mini:28px;                   /* what it collapses to while reading */
   }
   body.light{
-    --bg:#ECEEE9; --panel:#E1E4DE; --panel2:#D6DAD3;
-    --fg:#1B2422; --fg2:#4C5A55; --fg3:#6E7A75; --rule:#C6CCC4;
-    --grid:#1B2422; --grid-op:.06;
-    --edge:#1B2422; --stroke:#A9B2AC; --voxel:#1B2422;
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
     --signal:#1e4c8a; --drop:#8a3324;
 
-    --keep:#1F8069; --cull:#8A6B42; --accent:#8A6A24;
+    --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
 
-    --t-top:#DDE2DC; --t-left:#CBD2CA; --t-right:#BCC4BB;
-    --a-top:#AEBAB4; --a-left:#93A099; --a-right:#7E8C85;
-    --k-top:#D2D8D1; --k-left:#C0C7BF; --k-right:#B1B9B0;
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
   }
 
   *{box-sizing:border-box}

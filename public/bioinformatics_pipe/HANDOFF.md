@@ -342,20 +342,23 @@ and the coordinate ruler, both of which deliberately run wider than the map.
 6,000 and 9,000 — both flag exactly zero. Nothing draws that cut now, but
 `check-sim.mjs` asserts it and the cubic is fitted to the same population.
 
-## The checks — run all three
+## The checks — run all six
 
 ```bash
 node check-sim.mjs                       # no browser needed
-node check-text.mjs   <url>              # needs playwright
-node check-clicks.mjs <url>              # needs playwright
-node check-edit.mjs   <url>              # needs playwright
-node check-delete.mjs <url>              # needs playwright
+node check-text.mjs    <url>             # needs playwright
+node check-clicks.mjs  <url>             # needs playwright
+node check-edit.mjs    <url>             # needs playwright
+node check-delete.mjs  <url>             # needs playwright
+node check-persist.mjs <url>             # needs playwright
 ```
 
-The three browser checks **stub `/api/bpipe_edits`**. What is under test is the
+The browser checks **stub `/api/bpipe_edits`**. What is under test is the
 page's behaviour, not DynamoDB's, and a check that fails when a table is
 unreachable — or when it is run against a static preview server — is a check
-that gets ignored.
+that gets ignored. `check-persist.mjs` is the exception that proves it: it
+stands a *stateful* stand-in up instead, because a constant is exactly what
+cannot catch the bug it exists for.
 
 - **`check-sim.mjs`** asserts the population still supports the statistics. A
   picture that renders is not evidence the statistic underneath it works.
@@ -388,6 +391,13 @@ that gets ignored.
   on its own**. A notice that needs dismissing is a second thing to do after
   the thing you wanted to do; one that never leaves is indistinguishable from a
   stuck page.
+- **`check-persist.mjs`** asserts a saved sitting is the default **in a browser
+  that has never seen it**. The other five all passed the day Save silently
+  stopped taking, because they stub the endpoint to a constant and the author's
+  own browser had the arrangement in local storage. This one runs a stateful
+  record, opens a **second context** with an empty store, and also asserts the
+  saved table names only what was actually touched and that applying it twice
+  lands in the same place as applying it once.
 
 ## Performance
 
@@ -396,6 +406,82 @@ Roofs push to `TICKERS`; a ticker that throws is dropped and the map keeps
 running. `window.bpipeDiag()` returns one line of state when it looks stuck.
 
 ## Edit positions
+
+Ported from `/pipeline`. Everything the map draws is placed from world
+coordinates and the projection is affine, so a drag is exact rather than
+approximate: a screen delta divides straight back into a world delta and moving
+an object is a `translate` on the group it was drawn into. Nothing re-renders
+and no ticker is disturbed.
+
+**Three kinds of thing drag, and they are three different mechanisms.**
+
+- **A building.** World coordinates; the drag divides a screen delta back into
+  a world delta and translates the group.
+- **Its name.** Same, but into `ldx`/`ldy`, composed in front of the label
+  group's own translate+rotate.
+- **A floating annotation** — UNDER-AMPLIFIED, SYNTHETIC REFERENCE. These are
+  not laid out from world coordinates at all: their own shape re-places them
+  from scratch **every frame**, so moving the element is pointless — the next
+  frame puts it back. What is draggable is `ann.off`, a nudge in world-SVG
+  units that `placeAnn()` adds to whatever the shape asked for. The shape keeps
+  owning where the label starts; the editor owns where it ends up. And because
+  `placeAnn` recomputes the leader from the moved text to the **unmoved**
+  target, the line follows the label — which is the whole reason a label like
+  this is worth being able to move.
+
+**The building and its name drag separately.** A name is not attached to its
+building by anything but convention — it floats above and to one side, and
+where it can go depends on what its neighbours are doing. So it gets its own
+handle (a box round it, because glyphs are mostly holes and cannot be reliably
+picked up) and its own pair of nudges. Moving the building carries the name
+along; moving the name leaves the building alone. Both directions are asserted
+in `check-edit.mjs`, because both failure modes look fine in a screenshot.
+
+What comes out is a table of **nudges** — `dx`/`dy` for the object, `ldx`/`ldy`
+for its name, `adx`/`ady` for an annotation (keyed `"<node>:<which>"`), `del`
+for a deletion — relative to whatever `layoutRows()` computed, so it survives
+the lane being re-solved or a step being inserted.
+
+### One base, captured once: `_ox` / `_oy`
+
+**Every nudge is measured from `_ox`/`_oy`, the lane engine's own output, and
+from nothing else.** They are captured immediately after `layoutRows()` and
+never written again. `applyNudge(n,o)` sets `n.x = n._ox + o.dx`, so applying a
+table twice lands in the same place as applying it once, and reading the table
+back is a subtraction that cannot drift.
+
+The version before this composed offsets on top of *wherever the node currently
+was* and read them back as `current − start + LIVE[id]`, which is only correct
+while `LIVE` is exactly what was applied. Two bugs came out of it:
+
+- **A phantom `RIVER` offset in every save.** The attrition band's `x` is
+  *derived* from the buildings it spans, and it was derived after the base was
+  captured — so the band read as having been dragged 12.3 units by a user who
+  had never touched it. Scenery is now resolved **after** offsets are applied,
+  and takes its base from its derived position.
+- **A shared copy that could not be applied in place.** See below.
+
+### The shared copy applies itself, it does not ask
+
+`feature("shared copy")` fetches `/api/bpipe_edits` after the map has drawn and
+**calls `applyOffsets()`**. It used to write the record into `localStorage` and
+then merely show "Layout updated — reload to see it", which is why Save looked
+like it did nothing: the poster's own browser had the arrangement in its store,
+every other browser — and the poster's after a hard reload that beat the
+fetch — rendered the unmoved map and offered a notice instead of the layout.
+**A saved default that needs a second action to take effect is not a default.**
+
+It reloads for exactly one case: when the **deletion set** differs. Deletions
+are applied before the lane solve, the edges, the index and the occlusion clip,
+so they cannot be composed onto a drawn map. It also declines to stomp a
+sitting in progress — if the local map is `dirty`, the fetched copy is ignored.
+
+`persist.mjs` / `persist2.mjs` in the scratchpad reproduce both directions
+(a local sitting held; a fresh browser adopting the shared copy). They are worth
+promoting to a `check-persist.mjs` — this was a shipped bug that all five
+existing checks passed straight through.
+
+### Save
 
 **Save writes to three places, and says which of them took.** The browser
 (`localStorage`, `bpipe.offsets`), the shared record at `/api/bpipe_edits`, and
@@ -441,55 +527,35 @@ band with it.
 for part of each roof's loop, and a label you cannot see is a label you cannot
 pick up — the handle would be an empty dashed box hovering over nothing.
 
-## Edit positions
+## The palette is `/pipeline`'s, token for token
 
-Ported from `/pipeline`. Everything the map draws is placed from world
-coordinates and the projection is affine, so a drag is exact rather than
-approximate: a screen delta divides straight back into a world delta and moving
-an object is a `translate` on the group it was drawn into. Nothing re-renders
-and no ticker is disturbed.
+`index.html`'s `:root` and `body.light` blocks are **lifted from `/pipeline`
+verbatim** — the same greys, the same `--t-*` / `--a-*` / `--k-*` face triples,
+the same `--signal` and `--drop`. This map is the same row of the same story and
+it has to read as the same material.
 
-**Three kinds of thing drag, and they are three different mechanisms.**
+Three names this page uses are **aliases onto those tokens**, not new colours:
 
-- **A building.** World coordinates; the drag divides a screen delta back into
-  a world delta and translates the group.
-- **Its name.** Same, but into `ldx`/`ldy`, composed in front of the label
-  group's own translate+rotate.
-- **A floating annotation** — UNDER-AMPLIFIED, SYNTHETIC REFERENCE. These are
-  not laid out from world coordinates at all: their own shape re-places them
-  from scratch **every frame**, so moving the element is pointless — the next
-  frame puts it back. What is draggable is `ann.off`, a nudge in world-SVG
-  units that `placeAnn()` adds to whatever the shape asked for. The shape keeps
-  owning where the label starts; the editor owns where it ends up. And because
-  `placeAnn` recomputes the leader from the moved text to the **unmoved**
-  target, the line follows the label — which is the whole reason a label like
-  this is worth being able to move.
+```
+--keep:   var(--fg2)     the survivors, the bulk, anything that stays
+--cull:   var(--drop)    anything leaving, on any roof and on the staircase
+--accent: var(--signal)  a threshold: the knee, the MAD line, the band rails
+```
 
-**The building and its name drag separately.** A name is not attached to its
-building by anything but convention — it floats above and to one side, and
-where it can go depends on what its neighbours are doing. So it gets its own
-handle (a box round it, because glyphs are mostly holes and cannot be reliably
-picked up) and its own pair of nudges. Moving the building carries the name
-along; moving the name leaves the building alone. Both directions are asserted
-in `check-edit.mjs`, because both failure modes look fine in a screenshot.
-
-What comes out is a table of **nudges** — `dx`/`dy` for the object, `ldx`/`ldy`
-for its name, `adx`/`ady` for an annotation (keyed `"<node>:<which>"`) —
-relative to whatever `layoutRows()` computed — so it
-survives the lane being re-solved or a step being inserted. Save prints the
-block to paste into `OFFSETS` in `bp-data.js`; the browser holds a copy under
-`bpipe.offsets` until it is baked in.
-
-**It writes to local storage only.** `/pipeline`'s Save posts to a shared
-DynamoDB record keyed `pipeline_map::edits`; a second page writing there would
-overwrite that map's saved state.
+**Do not introduce a fourth.** Every mark on this page is one of three things —
+it stays, it goes, or it is the line deciding which — and the moment a roof
+gets its own hue the four culls stop being comparable at a glance. If a new
+roof needs a distinction the three do not carry, it needs a different
+*encoding* (fill vs ring, painted vs airborne), not a different colour.
 
 ## What is deliberately NOT here
 
-**The three authoring modes from `/pipeline`** — Edit positions, Edit text, Edit
-visual. They write to a single fixed DynamoDB record keyed `pipeline_map::edits`,
-and a second page pointing at it would silently overwrite that map's saved
-state. If this page ever needs them, it needs its own record first.
+**Edit text and Edit visual**, the other two authoring modes from `/pipeline`.
+Edit positions *is* here, with its own record — `bioinformatics_pipe::edits` in
+`src/app/api/bpipe_edits/route.ts`, never `/pipeline`'s `pipeline_map::edits`.
+One record between two maps means whichever saved last erases the other,
+silently, with no way to tell which happened. If this page ever needs the other
+two modes, that is the constraint they inherit.
 
 ## Please do not
 
@@ -505,3 +571,10 @@ state. If this page ever needs them, it needs its own record first.
   the cloud lies along the roof rather than across it.
 - **Replace the hand-rolled projection with a library.** Layout, label angles,
   painter ordering, the camera and the roof matrix all derive from `P()`.
+- **Write to `_ox`/`_oy` after they are captured**, or read a nudge back as
+  anything other than `x − _ox`. That is the single base the whole edit mode
+  measures from; the moment something else moves it, saves start containing
+  objects nobody touched.
+- **Add a colour.** Three encodings — stays, goes, threshold — aliased onto
+  `/pipeline`'s tokens. A roof with its own hue is a roof that can no longer be
+  compared with the other three at a glance.

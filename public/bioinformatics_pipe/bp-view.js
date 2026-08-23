@@ -2,14 +2,16 @@
    bp-view.js — assembly and interaction.
    Grid, ruler, bands, plinths, labels, edges, dots, camera, reader, index.
 
-   This is /pipeline's view with the three authoring modes removed, and
-   nothing else changed. It has to be: this page IS row 3 of that map, so a
-   step has to draw, label, highlight and read the same way in both places or
-   the two stop being one account of one pipeline. What is NOT here — Edit
-   positions, Edit text, Edit visual —
-   is out because those write to a single fixed record keyed to the /pipeline
-   map, and a second page pointing at it would silently overwrite that map's
-   saved state. If this page ever needs them, it needs its own record first.
+   This is /pipeline's view, and nothing about how a step draws, labels,
+   highlights or reads has been changed. It has to be: this page IS row 3 of
+   that map, so a step has to behave the same way in both places or the two
+   stop being one account of one pipeline.
+
+   Edit positions is here, and it has its own record — /api/bpipe_edits,
+   ITEM_ID "bioinformatics_pipe::edits". Never /pipeline's. One record between
+   two maps means whichever saved last erases the other, silently, with no way
+   to tell which happened. Edit text and Edit visual are NOT here, and inherit
+   that same constraint if they ever are.
    ============================================================ */
 
 /* Fail loudly and usefully if the scripts loaded out of order or one 404'd. */
@@ -77,33 +79,43 @@ if(GONE.size){
   Object.keys(byId).forEach(k=>{ if(GONE.has(k)) delete byId[k]; });
 }
 
-NODES.forEach(n=>{
-  const o=LIVE[n.id];
-  if(o){
-    n.x+=o.dx||0; n.y+=o.dy||0;
-    if(o.ldx||o.ldy) n.lab={dx:((n.lab&&n.lab.dx)||0)+(o.ldx||0),
-                            dy:((n.lab&&n.lab.dy)||0)+(o.ldy||0)};
-  }
-  /* where this node was actually drawn, and how far it has been dragged since */
-  n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
-});
+/* WHERE THE LANE ENGINE PUT EVERYTHING, before any nudge. Every offset in
+   the table is measured from here.
 
-/* Scenery that spans other objects is resolved AFTER the lane, the same way
-   follow{} is: it is not laid out, it is measured. The river runs from the
-   left edge of one landmark to the right edge of the other and puts a station
-   under each cull, so re-spacing the row re-shapes it instead of stranding
-   it. Its ledger counts come from MODEL — it owns no data of its own. */
+   The first version measured "what the committed table said, plus how far it
+   has been dragged since the page loaded", which is two quantities to keep in
+   step and one of them is invisible. It also meant the derived position of the
+   attrition band — computed after that baseline was taken — read as a nudge of
+   twelve units that got written into every save. One base, taken once, in one
+   place. */
+NODES.forEach(n=>{ n._ox=n.x; n._oy=n.y; n._lx=0; n._ly=0; });
+
+function applyNudge(n,o){
+  o=o||{};
+  n.x=n._ox+(o.dx||0); n.y=n._oy+(o.dy||0);
+  n._lx=o.ldx||0; n._ly=o.ldy||0;
+}
+NODES.filter(n=>!n.scenery).forEach(n=>applyNudge(n,LIVE[n.id]));
+
+/* Scenery spans other objects, so it is resolved AFTER they have settled —
+   the band has to reach the buildings where they actually ended up, not where
+   the lane first put them. Its own base is that derived position, so it only
+   carries a nudge when somebody has actually dragged it. */
 NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
   const A=byId[r.from], B=byId[r.to];
   r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
   r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
   /* a station whose cull has been deleted has nothing to stand under, so it
-     leaves the band — and what it culled goes back to the survivors */
+     leaves the band */
   r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
   r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x; });
-  /* its name hangs off the start of the band rather than the middle of it */
-  r.x=r.x0+1.4;
+  r._ox=r.x0+1.4; r._oy=r.y;
+  applyNudge(r,LIVE[r.id]);
 });
+
+/* and where each object was actually DRAWN, which is what a translate is
+   measured against */
+NODES.forEach(n=>{ n._px=n.x; n._py=n.y; });
 
 const labelEls={}, plinthEls={};
 const defs=installDefs(svg);
@@ -218,6 +230,11 @@ NODES.filter(n=>!n.anchor).forEach(n=>{
   }
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
+
+/* A label group carries its own translate+rotate; the base is kept so a nudge
+   can be composed in front of it rather than replacing it. */
+Object.keys(labelEls).forEach(id=>{
+  labelEls[id].dataset.base=labelEls[id].getAttribute("transform")||""; });
 
 /* ============================================================
    EDGES
@@ -335,6 +352,41 @@ function rebuildClip(){
   gEdge.setAttribute("clip-path","url(#nodeclip)");
   gDot .setAttribute("clip-path","url(#nodeclip)");
 })();
+
+/* ============================================================
+   MOVING THINGS AFTER THEY ARE DRAWN
+   The projection is affine, so a world delta is a translate on the group the
+   object was drawn into — nothing is re-rendered and no ticker is disturbed.
+   These live out here rather than inside the editor because the shared copy
+   has to be able to apply a whole table at load, without a reload.
+   ============================================================ */
+const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
+function reposition(n){
+  const dx=n.x-n._px, dy=n.y-n._py;
+  const t=(dx||dy)?shift(dx,dy):"";
+  if(nodeEls[n.id]) nodeEls[n.id].setAttribute("transform",t);
+  if(plinthEls[n.id]) plinthEls[n.id].setAttribute("transform",t);
+  const L=labelEls[n.id];
+  if(L) L.setAttribute("transform",
+    (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+(L.dataset.base||"") : (L.dataset.base||""));
+}
+function refresh(id){
+  rebuildClip();
+  /* carries have no host: they run off-map in absolute coordinates, so no
+     move can change them */
+  edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
+  placeDots(0);
+}
+/* Apply a whole table of nudges to a map that has already been drawn. This is
+   what makes a saved arrangement the default for a browser that has never
+   seen it, without a reload and without a flash. */
+function applyOffsets(o){
+  NODES.forEach(n=>{ applyNudge(n,o[n.id]); reposition(n); });
+  if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+    const w=o[a.key]||{}; a.off.dx=w.adx||0; a.off.dy=w.ady||0; a.reflow(); });
+  NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
+  refresh(null);
+}
 
 /* ============================================================
    DOTS
@@ -851,19 +903,14 @@ const r2=v=>Math.round(v*100)/100;
 
 /* the committed table plus this sitting */
 function totalOffset(n){
-  const b=LIVE[n.id]||{}, o={};
-  const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
-  const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
+  const o={};
+  const dx=r2(n.x-n._ox), dy=r2(n.y-n._oy), ldx=r2(n._lx), ldy=r2(n._ly);
   if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
   return o;
 }
 function annOffset(a){
   if(a.hide) return {del:true};
-  const b=LIVE[a.key]||{}, o={};
-  /* a.off already HOLDS the committed value — it was applied at load — so
-     unlike a node, which records where it was drawn and diffs against that,
-     an annotation's current offset IS the total. Adding the committed table
-     again here would double every saved nudge on the next save. */
+  const o={};
   const adx=r2(a.off.dx), ady=r2(a.off.dy);
   if(adx) o.adx=adx; if(ady) o.ady=ady;
   return o;
@@ -930,7 +977,6 @@ feature("edit positions", function(){
     const a=dsx/(S*C30), b=dsy/(S*0.5);
     return [(a+b)/2, (b-a)/2];
   };
-  const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
 
   /* A dashed footprint on every building and a box round every name, so the
      whole map reads as pick-up-able the moment the mode is on. The name box
@@ -947,27 +993,6 @@ feature("edit positions", function(){
     L.appendChild(el("rect",Object.assign({},box,{class:"ehandle lab"})));
     L.appendChild(el("rect",Object.assign({},box,{class:"ehit","data-id":n.id})));
   });
-  Object.values(labelEls).forEach(L=>{ L.dataset.base=L.getAttribute("transform")||""; });
-
-  /* redraw whatever a moved object touches. Mid-drag only its own routes are
-     rebuilt; the full pass runs once on release. */
-  function refresh(id){
-    rebuildClip();
-    /* carries have no host: they run off-map and are authored in absolute
-       coordinates, so no move can change them */
-    edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
-    placeDots(0);
-  }
-  function reposition(n){
-    const dx=n.x-n._px, dy=n.y-n._py;
-    const t=(dx||dy)?shift(dx,dy):"";
-    nodeEls[n.id].setAttribute("transform",t);
-    if(plinthEls[n.id]) plinthEls[n.id].setAttribute("transform",t);
-    const L=labelEls[n.id];
-    if(L) L.setAttribute("transform",
-      (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+L.dataset.base : L.dataset.base);
-  }
-
   /* ---- PICK, AND THE ✕ ------------------------------------------------
      A press that does not travel is a pick rather than a drag, and a picked
      object gets a ✕ floating at its top corner. The ✕ is an HTML button in
@@ -1206,17 +1231,23 @@ feature("saving", function(){
    ✕ button is told to catch up.
    ============================================================ */
 feature("shared copy", function(){
-  if(Object.keys(LIVE).length && LIVE!==BAKED) return;   // this browser is ahead
   fetch("/api/bpipe_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
     const o=doc && doc.offsets;
-    if(!o || !Object.keys(o).length) return;
-    if(JSON.stringify(o)===JSON.stringify(LIVE)) return;
+    if(!o) return;
+    if(dirty) return;                               // unsaved work here wins
+    if(JSON.stringify(o)===JSON.stringify(collectOffsets())) return;
     try{ localStorage.setItem(EDIT_KEY,JSON.stringify(o)); }catch(err){}
-    /* Deletions cannot be applied in place — everything from the lane solve
-       onward was computed over a different set of objects — so those need the
-       page to come back. Position nudges do not, and are the common case. */
-    if(Object.values(o).some(v=>v && v.del)) location.reload();
-    else note("Layout updated",
-      "Someone saved a different arrangement. Reload to see it.", 8000);
+    /* A DELETION cannot be applied in place — the lane solve, the edges, the
+       index and the occlusion clip were all computed over a different set of
+       objects — so that one case needs the page back. Everything else is a
+       translate, and a translate does not need a reload. This is the whole
+       repair: the first version stored the shared copy and then asked for a
+       refresh, so any browser whose local copy did not already match showed
+       the unmoved map and kept showing it. */
+    const wantGone=new Set(Object.keys(o).filter(k=>o[k]&&o[k].del));
+    const sameDeletions = wantGone.size===GONE.size &&
+      [...wantGone].every(k=>GONE.has(k));
+    if(!sameDeletions){ location.reload(); return; }
+    applyOffsets(o);
   }).catch(()=>{});
 });
