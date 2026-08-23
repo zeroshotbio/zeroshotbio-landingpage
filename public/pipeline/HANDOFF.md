@@ -121,6 +121,49 @@ No coordinates needed. `layoutRows()` computes x positions from the row's conten
 the `x` values in `NODES` are seed order only. Side structures use `follow:{a,b}` to
 sit at a node's x or midway between two.
 
+## The copy payload
+
+The Echo node (`P3`) carries a **Copy the shape source** button in its reader
+panel. It puts a ~15 KB self-contained listing on the clipboard: the
+projection, the shared plate vocabulary, `drawEchoDispense` itself, the node
+that feeds it, and the shape contract — for handing to somebody, or something,
+learning to draw in this style.
+
+**The payload is generated, never hand-written.**
+
+```bash
+node sync-copy-payload.mjs      # no dependencies
+```
+
+It lifts each function and constant out of `pipeline-iso.js` and
+`pipeline-shapes.js` **by name**, syntax-checks the result with `node --check`,
+and rewrites the block in `index.html` between the `BEGIN copy-ECHO` /
+`END copy-ECHO` markers. Re-run it after touching `drawEchoDispense`, the
+projection, or the plate helpers. A hand-copied listing drifts from the code it
+claims to be the moment either is edited, and a teaching example that is subtly
+not the real thing is worse than none.
+
+Three things about how it is wired, each with a reason:
+
+- **The payload lives in a `text/plain` block in `index.html`, not in a JS
+  string.** What it holds is source code — backticks, `${...}`, the lot — and
+  escaping several hundred lines of that into a template literal is a bug
+  waiting to happen. `textContent` gives it back byte for byte. The generator
+  refuses to write a payload containing a closing script tag, and **no comment
+  anywhere should contain one either** — it would terminate the block early and
+  break the page silently.
+- **The click handler is delegated on `#read`.** `renderNode` replaces
+  `read.innerHTML` wholesale, so a handler bound to the button goes with it on
+  the next hover.
+- **`navigator.clipboard` has a fallback.** The async API needs a secure context
+  and permission, and fails on `http://` and inside some embeds. The deprecated
+  textarea + `execCommand` path stays as the fallback; if both fail the button
+  says so and selects the text so it can be copied by hand.
+
+Any node can have one: set `copy:"<element id>"` and optionally
+`copyLabel:"..."`. If the named block is absent the button is simply not
+rendered, so a missing payload never leaves a dead control behind.
+
 ## The shape contract
 
 ```js

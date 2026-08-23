@@ -540,6 +540,29 @@ function renderOverview(){
     `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
     `<h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`;
 }
+/* ------------------------------------------------------------------
+   THE COPY PAYLOAD
+
+   A node may carry `copy:"<element id>"`, naming a <script type="text/plain">
+   block in index.html. If that block is present the reader grows a button
+   that puts its contents on the clipboard.
+
+   The payload lives in the HTML rather than in a JS string because the thing
+   it holds is source code — backticks, ${...}, the lot — and escaping several
+   hundred lines of that into a template literal is a bug waiting to happen.
+   textContent returns it byte for byte. It is regenerated from the real
+   source by sync-copy-payload.mjs; never hand-edit it.
+   ------------------------------------------------------------------ */
+function copyBlock(n){
+  if(!n.copy) return "";
+  const src=document.getElementById(n.copy);
+  if(!src) return "";                       // payload absent: no dead button
+  const kb=Math.round(src.textContent.length/1024);
+  return `<button class="copybtn" data-copy="${n.copy}">`+
+         `<span class="ic"></span><span class="tx">${esc(n.copyLabel||"Copy the source")}</span>`+
+         `<span class="sz">${kb} KB</span></button>`;
+}
+
 function renderNode(id){
   const n=byId[id];
   read.innerHTML=`<div class="eyebrow" ${TF(id,"group")}>${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+
@@ -548,8 +571,48 @@ function renderNode(id){
     (UNVERIFIED.has(n.key)?`<div class="unver">unverified with Patrick</div>`:"")+
     `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
     `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
-    `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`;
+    `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`+
+    copyBlock(n);
 }
+
+/* Delegated, because renderNode replaces read.innerHTML wholesale and a
+   handler bound to the button would go with it on the next hover. */
+read.addEventListener("click", async e=>{
+  const b=e.target.closest(".copybtn");
+  if(!b) return;
+  const src=document.getElementById(b.dataset.copy);
+  if(!src) return;
+  /* the <script> block's own leading newline is not part of the payload */
+  const text=src.textContent.replace(/^\n+/,"").replace(/\n*$/,"\n");
+  let ok=false;
+  try{
+    /* The async clipboard API needs a secure context AND permission, and
+       fails on http:// and inside some embeds. The textarea+execCommand path
+       is deprecated and still the only thing that works everywhere, so it
+       stays as the fallback rather than as the primary. */
+    await navigator.clipboard.writeText(text); ok=true;
+  }catch(_){
+    try{
+      const ta=document.createElement("textarea");
+      ta.value=text;
+      ta.setAttribute("readonly","");
+      ta.style.cssText="position:fixed;top:-1000px;opacity:0";
+      document.body.appendChild(ta);
+      ta.select(); ta.setSelectionRange(0,text.length);
+      ok=document.execCommand("copy");
+      document.body.removeChild(ta);
+    }catch(__){ ok=false; }
+  }
+  const tx=b.querySelector(".tx"), was=tx.textContent;
+  tx.textContent = ok ? "Copied to clipboard" : "Press Ctrl+C / Cmd+C";
+  b.classList.toggle("done", ok);
+  if(!ok){                                   /* leave it selected to copy by hand */
+    const r=document.createRange(); r.selectNodeContents(src);
+    src.style.cssText="position:fixed;left:-9999px;white-space:pre";
+    const s=getSelection(); s.removeAllRanges(); s.addRange(r);
+  }
+  setTimeout(()=>{ tx.textContent=was; b.classList.remove("done"); }, 2200);
+});
 function inspect(r){
   const s=SNIPPETS[r.e.kind]();
   pinned=null;current=null;paintIndex();

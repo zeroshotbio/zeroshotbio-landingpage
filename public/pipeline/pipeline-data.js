@@ -103,6 +103,14 @@ const NODES = [
 {id:"ECHO", key:"P3", group:"The compounds", shape:"echodispense", name:"Echo 650 dispense", x:8.5, y:R1, w:1.5, d:1.15, h:0.9, lab:{dx:-1.72,dy:0.83},
  lane:"r1-chem",
  sub:"SPARC BioCentre · acoustic, from the cherry-picking layout",
+ /* This node carries a copy payload: a self-contained listing of the shape
+    that draws it, plus the projection under it and the contract around it,
+    for handing to somebody learning to draw in this style. The payload is
+    the text/plain block with id copy-ECHO in index.html, and is
+    GENERATED from the real source by sync-copy-payload.mjs — a hand-copied
+    listing drifts from the code it claims to be the moment either is
+    touched. See public/pipeline/HANDOFF.md. */
+ copy:"copy-ECHO", copyLabel:"Copy the shape source",
  does:"Compound is fired into an empty 48-well plate without anything touching it. The destination plate is held inverted above the source and 2.5 nL droplets are launched upward into it, hundreds a second, held in place by surface tension until the plate is righted. Tipless and non-contact, so there is no carryover between wells and no tip waste. Because every well is addressed individually from a layout file, the cherry-picking sheet is not a pipetting plan — it is the treatment axis of the finished dataset, written down before a single fish exists.",
  built:"A Beckman Echo 650 at the SPARC BioCentre, SickKids, 686 Bay Street, Toronto. Four compounds into a 48-well destination: 0.1% DMSO vehicle, sorafenib as the anti-angiogenic positive control, orlistat and dapagliflozin as the two unknowns, twelve replicate wells each. The plate is dosed and then left; the embryos arrive later.",
  cond:"The cherry-picking sheet and the sample loading table disagree, and the disagreement starts here. This sheet is where treatment assignment first exists; the loading table is what the barcodes physically encode. Until the two are reconciled nothing downstream is trustworthy at treatment level, and neither sheet is on this instance, so it cannot be settled from here. Three more things about this step are unrecorded and are open questions for the bench: the actual transfer volume per well — 1 µM is in the design document and in no column of the object, and at 2.5 nL a droplet it is hundreds of droplets a well; whether the compound went in dry or into medium; and how long the plate then sat dosed before the embryos arrived. That last one is a real experimental variable — DMSO is hygroscopic and nanolitre volumes evaporate — and this map currently implies it was zero, because nothing records otherwise."},
