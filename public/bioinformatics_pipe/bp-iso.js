@@ -108,23 +108,30 @@ function ellipseAt(cx,cy,z,R){
    come out readable rather than upside down. It is not arbitrary and it is
    not a bug — and see TURN below for when to lay the chart the other way.
    ============================================================ */
-/* TURN — which roof edge the chart's x-axis runs along, and it is not
-   cosmetic. Chart x and chart y map to the two roof diagonals, one going
-   up-right and one going down-right. A chart whose data trends diagonally
-   therefore has its trend mapped onto the SUM or the DIFFERENCE of those two
-   directions — which is to say onto the horizontal or onto the VERTICAL.
+/* TURN — which roof edge the chart's x-axis runs along.
 
-   The complexity roof is the case that forced this. Genes against transcripts
-   is a straight diagonal in log-log, and at turn 0 its cloud came out as a
-   near-vertical sliver: geometrically correct, and useless. Turned a quarter,
-   the same cloud lies along the roof. Nothing about the data changed; only
-   which edge it was laid against.
+   Chart x and chart y map to the two roof diagonals, one going up-right and
+   one going down-right. So a chart's trend is projected onto the SUM or the
+   DIFFERENCE of those two directions — onto the horizontal, or onto the
+   VERTICAL. A trend that ends up vertical is a cloud squeezed into a sliver:
+   geometrically correct and useless. The complexity roof was drawn that way
+   once.
 
-   The rule for a new roof: if the data trends up-and-right in chart space,
-   turn it. If it trends down-and-right — a rank curve, a histogram — leave
-   it. Both orientations keep a positive determinant, so text is never
-   mirrored; it only changes which of the two diagonals it reads along, and
-   the map already reads at both. */
+   It also decides how the chart READS. At turn 0 an unrotated string advances
+   up-and-right at −30°, the same angle the step names and the band title read
+   at. At turn 1 it advances down-and-right at +30°, and the roof stops
+   matching the map around it.
+
+   NOTHING ON THIS PAGE TURNS, and the parameter is kept anyway because the
+   choice is real. The complexity roof gets both properties at turn 0 —
+   readable text AND a cloud lying along the roof — by not flipping its y
+   axis, so both quantities grow away from the near corner and their sum, not
+   their difference, carries the trend. Fixing it in the DATA mapping rather
+   than in the projection is the better fix where it is available; turning is
+   what is left when it is not.
+
+   Both orientations keep a positive determinant, so text is never mirrored
+   either way. Only its reading angle changes. */
 function roofFrame(g,n,H,CW,inset,turn){
   const ch=n.w*(inset===undefined?0.92:inset);
   const x0=n.x-ch/2, x1=n.x+ch/2, y0=n.y-ch/2, y1=n.y+ch/2;

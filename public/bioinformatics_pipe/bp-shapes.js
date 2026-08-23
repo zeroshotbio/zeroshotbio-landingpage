@@ -108,12 +108,26 @@ const MODEL=(()=>{
    Origin top-left, y down, exactly like an <svg> — because that is what it
    is, right up until the matrix picks it up and lays it on a roof.
    ============================================================ */
-const CW=176, PAD={l:48,r:13,t:22,b:34};
+/* The pads are for the corner-at-origin layout: the top strip carries the x
+   ticks AND the x-axis title, the left strip the y ticks, and the bottom
+   strip the y arm's arrowhead and the y-axis title at its end. */
+const CW=176, PAD={l:44,r:16,t:32,b:34};
 const CX0=PAD.l, CY0=PAD.t, CWD=CW-PAD.l-PAD.r, CHT=CW-PAD.t-PAD.b;
 const T_AXIS=12, T_TICK=10;
 
-const cxOf=(v,d)=>CX0+((v-d[0])/(d[1]-d[0]))*CWD;      /* value -> chart x */
-const cyOf=(v,d)=>CY0+CHT-((v-d[0])/(d[1]-d[0]))*CHT;  /* value -> chart y */
+/* BOTH AXES INCREASE AWAY FROM THE CORNER, and the y one is NOT flipped.
+
+   On a flat chart y is flipped because the page has a top and a bottom and
+   "up" means more. A roof has neither. What it has is a near corner and two
+   edges running away from it, and the only orientation that reads is the one
+   where both quantities grow outward from that corner — like the corner of a
+   room. Flipping y here would send the genes axis back toward the viewer and
+   put the cloud on the diagonal that projects to a vertical sliver.
+
+   This is also what lets every string on the roof read at the SAME angle as
+   the step names on the map. See axesFrame(). */
+const cxOf=(v,d)=>CX0+((v-d[0])/(d[1]-d[0]))*CWD;
+const cyOf=(v,d)=>CY0+((v-d[0])/(d[1]-d[0]))*CHT;
 
 /* ------------------------------------------------------------------
    POOLS — batch(), the canvas trick, in SVG.
@@ -180,15 +194,18 @@ function building(g,n,skin){
    ------------------------------------------------------------------ */
 function axesFrame(F,o){
   const g=F.g;
-  g.appendChild(el("polyline",{points:pts([[CX0,CY0-5],[CX0,CY0+CHT],[CX0+CWD+5,CY0+CHT]]),
+  /* The L opens from the chart origin — the roof's near-left corner — with
+     one arm running up-right and the other down-right. Ticks and their
+     numbers sit OUTSIDE the L, on the far side of each arm from the plot. */
+  g.appendChild(el("polyline",{points:pts([[CX0+CWD+5,CY0],[CX0,CY0],[CX0,CY0+CHT+5]]),
     fill:"none",stroke:"var(--fg)","stroke-width":"1.5"}));
-  g.appendChild(el("polygon",{points:pts([[CX0,CY0-9],[CX0-2.5,CY0-3.4],[CX0+2.5,CY0-3.4]]),fill:"var(--fg)"}));
-  g.appendChild(el("polygon",{points:pts([[CX0+CWD+9,CY0+CHT],[CX0+CWD+3.4,CY0+CHT-2.5],[CX0+CWD+3.4,CY0+CHT+2.5]]),fill:"var(--fg)"}));
+  g.appendChild(el("polygon",{points:pts([[CX0+CWD+9,CY0],[CX0+CWD+3.4,CY0-2.5],[CX0+CWD+3.4,CY0+2.5]]),fill:"var(--fg)"}));
+  g.appendChild(el("polygon",{points:pts([[CX0,CY0+CHT+9],[CX0-2.5,CY0+CHT+3.4],[CX0+2.5,CY0+CHT+3.4]]),fill:"var(--fg)"}));
 
   (o.xt||[]).forEach(([v,lab])=>{
     const x=cxOf(v,o.xd);
-    g.appendChild(el("line",{x1:x,y1:CY0+CHT,x2:x,y2:CY0+CHT+3.4,stroke:"var(--fg)","stroke-width":"1.3"}));
-    const t=g.appendChild(el("text",{x,y:CY0+CHT+14,"text-anchor":"middle",fill:"var(--fg2)",
+    g.appendChild(el("line",{x1:x,y1:CY0,x2:x,y2:CY0-3.4,stroke:"var(--fg)","stroke-width":"1.3"}));
+    const t=g.appendChild(el("text",{x,y:CY0-8,"text-anchor":"middle",fill:"var(--fg2)",
       "font-size":T_TICK,"font-family":MONO})); t.textContent=lab;
   });
   (o.yt||[]).forEach(([v,lab])=>{
@@ -198,19 +215,24 @@ function axesFrame(F,o){
       "font-size":T_TICK,"font-family":MONO})); t.textContent=lab;
   });
 
-  const ax=g.appendChild(el("text",{x:CX0+CWD/2,y:CY0+CHT+29,"text-anchor":"middle",fill:"var(--fg)",
+  /* NOTHING ON THE ROOF IS ROTATED, and that is the point.
+
+     At turn 0 an unrotated string advances along chart +x, which the matrix
+     sends up-and-right at −30° — the same angle the step names, the landmark
+     names and the band title all read at. So every word on this roof lies the
+     same way as every word on the rest of the map, and the eye never has to
+     change its reading angle to cross from one to the other.
+
+     The cost is that an axis title cannot run PARALLEL to its own axis: the
+     y arm goes down-right, and a title following it would read at +30° and
+     break the rule. So both titles sit at the far END of their arm instead,
+     just past the arrowhead, which is a legitimate convention and keeps the
+     association without the rotation. */
+  const ax=g.appendChild(el("text",{x:CX0+CWD,y:CY0-25,"text-anchor":"end",fill:"var(--fg)",
     "font-size":T_AXIS,"font-family":MONO,"font-weight":"600","letter-spacing":"1.2"}));
   ax.textContent=o.xlab;
-  /* rotate(+90), NOT −90, and the sign is the whole difference between a
-     legible label and an upside-down one. The matrix maps chart +x to screen
-     up-right and chart +y to screen down-right. A y-axis title at −90 would
-     advance along chart −y, which is screen UP-LEFT: it renders backwards,
-     read from its own end. At +90 it advances down-right with its glyph tops
-     pointing up-right — the same +30/−30 pair of reading directions the band
-     titles and the step names on the map already use. */
-  const ay=g.appendChild(el("text",{"text-anchor":"middle",fill:"var(--fg)","font-size":T_AXIS,
-    "font-family":MONO,"font-weight":"600","letter-spacing":"1.2",
-    transform:`translate(${CX0-40} ${CY0+CHT/2}) rotate(${F.turn?-90:90})`}));
+  const ay=g.appendChild(el("text",{x:CX0-5,y:CY0+CHT+7,"text-anchor":"end",fill:"var(--fg)",
+    "font-size":T_AXIS,"font-family":MONO,"font-weight":"600","letter-spacing":"1.2"}));
   ay.textContent=o.ylab;
 
   /* Everything drawn into F.plot is CLIPPED to the plot rectangle.
@@ -223,7 +245,7 @@ function axesFrame(F,o){
      on the roof, so nothing is quietly dropped from a number. */
   const cid="bpclip-"+(o.id||"x");
   const cp=el("clipPath",{id:cid,clipPathUnits:"userSpaceOnUse"});
-  cp.appendChild(el("rect",{x:CX0-5,y:CY0-7,width:CWD+14,height:CHT+12}));
+  cp.appendChild(el("rect",{x:CX0-5,y:CY0-5,width:CWD+14,height:CHT+14}));
   g.appendChild(cp);
   F.plot=g.appendChild(el("g",{"clip-path":`url(#${cid})`}));
   return F.plot;
@@ -257,16 +279,28 @@ function domainOf(vals,lo,hi,pad){
    is attached to the object, moves with it, and cannot be read as belonging
    to anything else.
    ------------------------------------------------------------------ */
+/* pointer-events:none on everything below, and it is not cosmetic.
+
+   A label that floats over a neighbour is still a CLICK TARGET sitting on top
+   of it. The panel parked over D4 meant clicking the mitochondrial cull
+   selected this building; moved clear, the under-amplified annotation landed
+   on D3 and did the same thing. Both were caught by check-clicks.mjs and
+   neither looked wrong in a screenshot.
+
+   Chasing that with coordinates is a losing game — every future nudge can
+   re-introduce it. A label is not the thing it labels: it should never take
+   a click. The building is a 4.2-unit box and is target enough. */
 function panel(g,head,tag,body){
   const lines=[head].concat(tag?[tag]:[]).concat(body||[]);
   const w=Math.max.apply(null,lines.map(L=>L.length))*8.2*0.62+15;
   const h=lines.length*13+11;
   const rect=g.appendChild(el("rect",{width:w,height:h,fill:"var(--panel)",
-    "fill-opacity":".92",stroke:"var(--rule)","stroke-width":"1","opacity":"0"}));
+    "fill-opacity":".92",stroke:"var(--rule)","stroke-width":"1","opacity":"0",
+    "pointer-events":"none"}));
   const texts=lines.map((L,i)=>{
     const isTag=tag&&i===1;
     const t=g.appendChild(el("text",{"font-size":i===0?9.6:8.2,"font-family":MONO,
-      "letter-spacing":isTag?"1.3":".3","fill-opacity":"0",
+      "letter-spacing":isTag?"1.3":".3","fill-opacity":"0","pointer-events":"none",
       fill:i===0?"var(--accent)":isTag?"var(--cull)":"var(--fg3)"}));
     t.textContent=L; return t;
   });
@@ -288,10 +322,12 @@ function panel(g,head,tag,body){
    ------------------------------------------------------------------ */
 function mkAnn(g,lines,tone){
   const col=tone||"var(--cull)";
-  const line=g.appendChild(el("line",{stroke:col,"stroke-width":".9","stroke-linecap":"round","stroke-opacity":"0"}));
-  const dot=g.appendChild(el("circle",{r:2,fill:col,"fill-opacity":"0"}));
-  const t1=g.appendChild(el("text",{"text-anchor":"start",fill:col,"font-size":12.5,
-    "font-family":MONO,"font-weight":"600","letter-spacing":"1","fill-opacity":"0"}));
+  const NOHIT={"pointer-events":"none"};
+  const line=g.appendChild(el("line",Object.assign({stroke:col,"stroke-width":".9",
+    "stroke-linecap":"round","stroke-opacity":"0"},NOHIT)));
+  const dot=g.appendChild(el("circle",Object.assign({r:2,fill:col,"fill-opacity":"0"},NOHIT)));
+  const t1=g.appendChild(el("text",Object.assign({"text-anchor":"start",fill:col,"font-size":12.5,
+    "font-family":MONO,"font-weight":"600","letter-spacing":"1","fill-opacity":"0"},NOHIT)));
   lines.forEach((L,i)=>{ const sp=el("tspan",{x:0,dy:i===0?0:14}); sp.textContent=L; t1.appendChild(sp); });
   return {line,dot,t1,lines,spans:[].slice.call(t1.childNodes)};
 }
@@ -372,10 +408,13 @@ DRAW.matrix=drawMatrix;
    ============================================================ */
 function drawComplexityRoof(g,n){
   building(g,n,SKIN.works);
-  /* turned a quarter: see roofFrame(). A log-log genes-against-transcripts
-     cloud is a straight diagonal, and at turn 0 it projects to a vertical
-     sliver. */
-  const F=roofFrame(g,n,n.h,CW,undefined,true);
+  /* Turn 0, so the chart reads the same way round as the rest of the map.
+     The cloud still lies ALONG the roof rather than across it, because the
+     genes axis is not flipped — see cyOf(). Those two facts are the same
+     fact: a positively-correlated pair projects to the horizontal when both
+     of its chart axes grow away from the corner, and to a vertical sliver
+     when one of them grows back toward the viewer. */
+  const F=roofFrame(g,n,n.h,CW);
 
   const us=MODEL.cells.map(c=>Math.log10(c.umi)), gs=MODEL.cells.map(c=>Math.log10(c.genes));
   /* Robust limits, not min and max. Transcript counts are log-normal with a
@@ -495,12 +534,22 @@ function drawComplexityRoof(g,n){
        of their targets rather than sitting directly over them — straight up
        from this roof is where D7's name runs, and the under-amplified label
        landed on it. The leader lines carry the association instead. */
-    placeAnn(annU,au,au[0]-168,au[1]-116,pLab);
-    placeAnn(annO,ao,ao[0]+74,ao[1]+92,pLab);
-    /* the panel sits under the building, on open ground: this roof hangs
-       below the cull row, so down is the one direction with nothing in it */
+    /* The building stands IN the line now, so left and right are its
+       neighbours and below is the cull ledger. What is open is above it and
+       the ground either side of the ledger. */
+    /* Up-left, above D4's name; and down-right, in the gap before G3. Those
+       are the two clear zones: D4's box is directly left, G3's directly
+       right, and the cull ledger sits under the near corner. */
+    placeAnn(annU,au,au[0]-158,au[1]-196,pLab);
+    placeAnn(annO,ao,ao[0]+18,ao[1]+162,pLab);
+    /* Straight up, and centred. The panel is a FILLED rect, so wherever it
+       lands it is a click target — and parked up-left it sat exactly over
+       D4's roof, which meant clicking the mitochondrial cull selected this
+       building instead. check-clicks.mjs caught it; nothing about the picture
+       looked wrong. Directly above the line is the one place on this map with
+       neither a neighbour nor the ledger under it. */
     const c0=F.toScreen(CX0+CWD/2,CY0+CHT/2);
-    pane.at(c0[0]-pane.w*0.5+30, c0[1]+128, pLab);
+    pane.at(c0[0]-pane.w*0.5+152, c0[1]-206, pLab);
   };
   run(0); everyFrame(run);
 }

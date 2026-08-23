@@ -62,7 +62,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),
 [gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 /* the extent of the ground plane, and of the ruler drawn around it */
-const GRID={x0:-6,x1:29,y0:-11,y1:14};
+const GRID={x0:-5,x1:32,y0:-10,y1:12};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -476,6 +476,10 @@ function renderNode(id){
     `<h4>What it does</h4><p>${n.does}</p>`+
     `<h4>How it is built</h4><p>${n.built}</p>`+
     `<h4>Condition</h4><p class="cond">${n.cond}</p>`+
+    /* Everything above this line is lifted verbatim from /pipeline. Anything
+       this page has to say for itself goes below it, under its own heading,
+       so a reader can tell which map is talking. */
+    (n.added?`<h4>Drawn here</h4><p class="added">${n.added}</p>`:"")+
     (n.kv?`<h4>Record</h4>`+n.kv.map(([k,v])=>
       `<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join(""):"")+
     `<h4>On the map</h4>`+

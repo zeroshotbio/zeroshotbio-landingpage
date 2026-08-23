@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Bioinformatics pipeline</title>
-<meta name="description" content="Row 3 of the zeroshot.bio pipeline map at full size: FASTQ to a filtered matrix, a counting stack, three reference structures and six culls — plus the genes-against-transcripts fit drawn flat on the roof of a building.">
+<meta name="description" content="Everything between the unfiltered and the filtered matrix on row 3 of the zeroshot.bio pipeline map: six culls and the cull ledger that does not exist, with the genes-against-transcripts fit drawn flat on the roof of the cull that makes it.">
 <style>
   /* The chrome is /pipeline's chrome, so the two maps read as one family:
      same shell, same type, same theme switch, same collapsing columns, same
@@ -190,6 +190,8 @@
   .kv dt{width:112px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
   .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
   .cond{border-left:2px solid var(--drop);padding-left:9px}
+  /* what this page says for itself, as against what it lifted */
+  .added{border-left:2px solid var(--accent);padding-left:9px}
   .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
         white-space:pre;overflow-x:auto;line-height:1.6}
 
@@ -267,7 +269,7 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><b>Bioinformatics pipeline</b><span>row 3 of the pipeline map · at full size</span></div>
+    <div class="brand"><b>Bioinformatics pipeline</b><span>unfiltered → filtered · from /pipeline, row 3</span></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
       <button class="ctl" id="btnHome">Fit the map</button>
@@ -278,14 +280,15 @@
   </header>
   <div class="thread">
     <b>the steel thread</b>
-    <span>This is the third row of <a href="/pipeline">/pipeline</a> — the band called
-    <em>Bioinformatics pipeline</em> — with the canvas to itself.<span class="more"> Nineteen objects,
-    lifted from that map as source text rather than re-typed, so the two cannot drift into two different
-    accounts of the same stage. One thing is added: node <em>D5</em> fits genes detected against total
-    counts, and that argument is drawn here — the scatter, the cubic and the robust band painted flat on
-    the roof of a building. Every figure on this page is <em>real</em> except that roof, which is
-    <em>modelled</em>, because the real fit is a per-sample spline and there is no single band to
-    draw.</span></span>
+    <span>Everything between the two matrices on row 3 of <a href="/pipeline">/pipeline</a> — the band
+    called <em>Bioinformatics pipeline</em>.<span class="more"> Six culls, and the cull ledger that would
+    say which of them killed which barcode and does not exist. Every name and number is lifted from that
+    map as source text rather than re-typed, so the two cannot drift into two different accounts of the
+    same stage; what has changed is size, because there these objects share a row with thirteen others and
+    here they are the only thing on the canvas. <em>D5</em> is drawn rather than described — it fits genes
+    detected against total counts, and that fit is painted flat on its roof. It is the one
+    <em>modelled</em> figure on the page; the real fit is a per-sample spline, so there is no single band
+    to draw.</span></span>
   </div>
   <div class="body">
     <aside id="aside"></aside>
