@@ -30,6 +30,8 @@ const b=await chromium.launch({args:['--no-sandbox']});
 const p=await b.newPage({viewport:{width:1700,height:1000}});
 const errs=[]; p.on('pageerror',e=>errs.push(e.message));
 p.on('console',m=>{ if(m.type()==='error') errs.push('console: '+m.text()); });
+await p.route('**/api/bpipe_edits',r=>r.fulfill({status:200,
+  contentType:'application/json',body:JSON.stringify({offsets:null,at:null})}));
 await p.goto(url,{waitUntil:'networkidle'});
 await p.waitForTimeout(1400);
 let bad=0; const fail=m=>{bad++;console.log('  FAIL  '+m);};

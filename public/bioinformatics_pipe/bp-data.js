@@ -110,12 +110,6 @@ const NODES = [
  modelled:true, pipelineName:"Doublets",
  added:"The roof is the expression embedding rather than a histogram, because between-ness is the entire signal and only an embedding has a between. The chords crossing it are the manufacture of the reference itself — pairs of real cells from different neighbourhoods, added together — which is the part nobody pictures. The expected collision rate in the record below is the one real figure on any of these four roofs. Three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary says what share of recovered barcodes should hold two cells. Collisions can only happen WITHIN a sublibrary, because the fourth barcode tells two cells apart that took the same path in different ones — get that denominator wrong and the expected rate comes out eight times too high. The scorer's own rate is modelled and sits beside it; where the two disagree is the interesting part, so both are shown rather than one being picked. Only true doublets pull apart on the roof. Over-called singlets get a ring and fade where they sit, because drawing them coming apart would be the picture claiming something the method does not."},
 
-{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+4.2, w:1.2, d:1.2, h:0.3,
- sub:"one row per dropped barcode",
- does:"What the Sankey should be drawn from: which stage killed which barcode, and why.",
- built:"Node and link labels would use the plain-English phrasings on this row, never the internal step names.",
- cond:"It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact. Vendors emit settings, not tallies. Authors publish thresholds, not ledgers. CellOracle reports a comparison at 57,175 cells against a deposit of 72,870 — roughly 21.5% removed by QC and ambient-cluster steps that are never numerically specified. Every retention figure on this row is therefore a ratio between two objects, never a sum over stages."},
-
 {id:"FD", key:"5", group:"⑤ Filtered matrix", groupMark:true, anchor:true, shape:"matrix",
  lane:"r3",
  name:"Filtered matrix", x:22.0, y:R3, w:1.55, d:1.55, h:1.55, cells:6, fill:0.62,
@@ -142,7 +136,7 @@ const NODES = [
    ------------------------------------------------------------------------ */
 {id:"RIVER", key:"A1", group:"Behind the row", shape:"attritionstaircase",
  scenery:true, modelled:true,
- name:"Attrition", x:14, y:R3-7.0, w:0.9, d:0.9, h:0, lab:{dy:-1.2},
+ name:"Attrition", x:14, y:R3-6.9, w:1.6, d:1.6, h:0, lab:{dy:0.35},
  from:"UD", to:"FD", yBase:R3-2.6, width:4.6, z:0.002, opacity:0.8,
  sub:"every barcode that ever appeared, and what each of the four takes",
  does:"The four culls' arithmetic, drawn to scale on the ground behind the row. One straight edge gives the run a datum; the opposite edge staircases down, one riser per cull, and a tributary peels off each riser and drifts clear. Every step is then read against one unmoving line rather than against a shape changing on both sides at once, which is what an earlier symmetric version got wrong — neither of its edges held still, so the eye had nothing to measure against.",
@@ -163,14 +157,11 @@ const EDGES = [
   {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c3",kind:"cell"},
   {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"c5",kind:"cell"},
   {a:"c5",b:"FD",kind:"cell"},
-  /* every cull would write a row in the ledger, and none of them can */
-  {a:"c1",b:"Q",kind:"drop",dash:true},{a:"c3",b:"Q",kind:"drop",dash:true},
-  {a:"c4",b:"Q",kind:"drop",dash:true},{a:"c5",b:"Q",kind:"drop",dash:true},
 ];
 
 /* One band, keeping its name from the big map. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-1.4, x1:33.0, y0:R3-11.4, y1:R3+6.2},
+  {name:"Bioinformatics pipeline", x0:-1.4, x1:33.0, y0:R3-11.4, y1:R3+4.0},
 ];
 
 /* Both ends fade, because neither is on this page: the barcodes arrive from a
@@ -316,7 +307,7 @@ const OVERVIEW = {
 <p>Nothing has been re-written. Every name, number and claim is lifted from that map as source text rather than re-typed, so the two cannot drift into two different accounts of the same stage. Three of the four are <em>named</em> differently here, and that is not drift either: on the big map a cull node has to cover every policy the corpus uses for its stage — "Cell or background" names three at once — while this page draws one policy per roof and says which. The reader carries the original name through.</p>
 <p><mark>Hatching means the stage destroys data.</mark> All four carry it. Each is tiered — <mark>physics</mark> where the threshold is fitted from a real feature of the data, <mark>taste</mark> where it is chosen — and the tiers are not evenly split.</p>
 <p><mark>Behind the row</mark> lies the attrition band: the four culls' arithmetic painted flat on the ground, one straight datum and a staircase descending against it, a tributary peeling off every riser. <mark>The knee is the first riser and it takes 96.7%</mark>, so the band is a cliff followed by three hairlines — which is the finding rather than a drawing problem. On this dataset the knee is very nearly the whole cull and the three after it are a rounding. Each station's own figure is a share of what <em>reached</em> it, so mito still reads −5.8% whether its riser is forty pixels or one.</p>
-<p><mark>Below the line</mark> hangs the cull ledger, which would say which stage killed which barcode. It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact — the band above is what a ledger would let you draw from records instead of from a simulation.</p>`,
+<p>A per-barcode cull ledger — which stage killed which barcode — does not exist here, and does not exist anywhere else in the corpus either, which is the more interesting fact. The band is what one would let you draw from records instead of from a simulation.</p>`,
   built:`<p>None of the four charts is rebuilt in three dimensions. Each is drawn in ordinary flat 2D and <mark>laid onto its roof by one matrix</mark> — which is why nothing occludes it, and why a circle painted in chart space comes out as the correct ellipse. That gives the page its grammar: <mark>painted things are ellipses, airborne things are circles</mark>. A barcode still under consideration lies on the surface; one that is leaving lifts off it.</p>
 <p><mark>And each cull leaves differently.</mark> Barcodes below the knee rain off the near eaves — they were never cells. Dying cells rise straight up and fade — they are leaking. Under-amplified cells peel off the surface while over-amplified ones swell where they lie and burst — two failures, not one filter with a mirror. True doublets pull apart into their two halves — they were always two. Four identical fades would make the row read as one animation on a loop.</p>
 <p>Every roof reads at the same angle as the rest of the map, which took two goes to get right. Chart x and chart y map to the two roof diagonals, so a chart's trend lands on their sum or their difference — on the horizontal, or on the vertical. A trend that comes out vertical is a cloud squeezed into a sliver. So the y axis on each roof is oriented so the trend is always a sum: the rank curve falls and takes the ordinary orientation, the genes-against-transcripts cloud rises and takes the inverted one. Their origins therefore sit in different corners, which is correct rather than sloppy — a roof has no up.</p>`,

@@ -66,6 +66,17 @@ const LIVE=(()=>{
   try{ const raw=localStorage.getItem(EDIT_KEY); if(raw) return JSON.parse(raw); }catch(err){}
   return BAKED;
 })();
+/* DELETIONS come first, because everything downstream — the lane solve, the
+   edges, the index, the occlusion clip — has to be computed over what is
+   actually on the map rather than over what once was. A node removed here
+   never existed as far as the rest of this file is concerned. */
+const GONE=new Set(Object.keys(LIVE).filter(k=>LIVE[k] && LIVE[k].del));
+if(GONE.size){
+  for(let i=NODES.length-1;i>=0;i--) if(GONE.has(NODES[i].id)) NODES.splice(i,1);
+  for(let i=EDGES.length-1;i>=0;i--) if(GONE.has(EDGES[i].a)||GONE.has(EDGES[i].b)) EDGES.splice(i,1);
+  Object.keys(byId).forEach(k=>{ if(GONE.has(k)) delete byId[k]; });
+}
+
 NODES.forEach(n=>{
   const o=LIVE[n.id];
   if(o){
@@ -86,7 +97,10 @@ NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
   const A=byId[r.from], B=byId[r.to];
   r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
   r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
-  r.ledger.steps.forEach(s=>{ s.x=byId[s.id].x; });
+  /* a station whose cull has been deleted has nothing to stand under, so it
+     leaves the band — and what it culled goes back to the survivors */
+  r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
+  r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x; });
   /* its name hangs off the start of the band rather than the middle of it */
   r.x=r.x0+1.4;
 });
@@ -286,6 +300,8 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
    because the shape has already drawn by now. */
 if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
   const o=LIVE[a.key];
+  if(o && o.del){ a.hide=true; [a.line,a.dot,a.t1,a.box,a.hit]
+    .forEach(e=>e.setAttribute("display","none")); return; }
   if(o){ a.off.dx=o.adx||0; a.off.dy=o.ady||0; a.reflow(); }
 });
 
@@ -395,6 +411,9 @@ function frame(now){
   try{
     stepCamera(now);
     placeDots(playing?dt:0);
+    /* the ✕ rides the camera, so it stays on its object through a pan or a
+       zoom rather than sliding off it */
+    if(editing && window.placeDeleteX) window.placeDeleteX();
     if(playing && view.k>=MOTION_MIN) runTickers(dt,now);
   }catch(err){
     if(!lastErr) console.error("bioinformatics_pipe: a frame threw — the loop keeps running.",err);
@@ -839,6 +858,7 @@ function totalOffset(n){
   return o;
 }
 function annOffset(a){
+  if(a.hide) return {del:true};
   const b=LIVE[a.key]||{}, o={};
   /* a.off already HOLDS the committed value — it was applied at load — so
      unlike a node, which records where it was drawn and diffs against that,
@@ -850,11 +870,47 @@ function annOffset(a){
 }
 function collectOffsets(){
   const out={};
-  NODES.forEach(n=>{ const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  /* deletions are carried forward whether or not the object is still on the
+     map: GONE was applied before NODES existed in its present form, so those
+     ids are not in NODES to be walked */
+  GONE.forEach(id=>{ out[id]={del:true}; });
+  NODES.forEach(n=>{ if(n.gone){ out[n.id]={del:true}; return; }
+    const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
   if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
     const o=annOffset(a); if(Object.keys(o).length) out[a.key]=o; });
   return out;
 }
+/* ---- the two bits of chrome the editing mode needs ----------------------
+   ask()  a yes/no the caller cannot proceed past by accident
+   note() a confirmation that says what happened and then gets out of the way
+
+   Both are plain DOM in the stage rather than anything in the SVG: they must
+   not shear with the projection, must not be inside whatever they are talking
+   about, and must sit above everything. */
+function ask(title,body,onYes){
+  const box=document.getElementById("ask");
+  if(!box){ if(confirm(title)) onYes(); return; }
+  box.querySelector("#askTitle").textContent=title;
+  box.querySelector("#askBody").textContent=body||"";
+  box.classList.add("on");
+  const go=box.querySelector("#askGo"), no=box.querySelector("#askNo");
+  const close=()=>{ box.classList.remove("on"); go.onclick=null; no.onclick=null; };
+  go.onclick=()=>{ close(); onYes(); };
+  no.onclick=close;
+}
+let noteTimer=0;
+function note(title,body,ms){
+  const box=document.getElementById("note");
+  if(!box) return;
+  box.querySelector("#noteTitle").textContent=title;
+  box.querySelector("#noteBody").innerHTML=body||"";
+  box.classList.add("on");
+  clearTimeout(noteTimer);
+  /* it goes away on its own. A confirmation that needs dismissing is a second
+     thing to do after the thing you actually wanted to do. */
+  noteTimer=setTimeout(()=>box.classList.remove("on"), ms||5000);
+}
+
 function markDirty(){
   dirty=true;
   document.body.classList.add("haschanges");
@@ -912,18 +968,76 @@ feature("edit positions", function(){
       (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+L.dataset.base : L.dataset.base);
   }
 
+  /* ---- PICK, AND THE ✕ ------------------------------------------------
+     A press that does not travel is a pick rather than a drag, and a picked
+     object gets a ✕ floating at its top corner. The ✕ is an HTML button in
+     the stage, not an SVG one, for two reasons: it must not shear with the
+     projection, and it must not be inside the group it is offering to
+     delete — a control that vanishes with its own target is a control you
+     cannot press twice.
+
+     Deleting asks first. Every other action in this mode is a drag, which
+     undoes itself by dragging back; this one does not, and the saved state
+     is shared, so a mis-click would take an object off the map for everybody. */
+  const xbtn=document.getElementById("delX");
+  let picked=null;
+  function placeX(){
+    if(!xbtn) return;
+    if(!picked || !editing){ xbtn.style.display="none"; return; }
+    const r=svg.getBoundingClientRect();
+    let sx,sy;
+    if(picked.kind==="node"){
+      const n=picked.n, p=P(n.x, n.y-n.d/2, topOf(n));
+      sx=view.x+p[0]*view.k; sy=view.y+p[1]*view.k;
+    } else {
+      const b=picked.a.hit.getBoundingClientRect();
+      sx=b.x+b.width-r.left; sy=b.y-r.top;
+    }
+    xbtn.style.display="grid";
+    xbtn.style.left=(sx+8)+"px";
+    xbtn.style.top=(sy-30)+"px";
+  }
+  window.placeDeleteX=placeX;
+  function pick(what){ picked=what; placeX(); }
+  function unpick(){ picked=null; placeX(); }
+
+  function removeNode(n){
+    n.gone=true;
+    [nodeEls[n.id],plinthEls[n.id],labelEls[n.id]].forEach(e=>{ if(e) e.setAttribute("display","none"); });
+    edgeGeom.forEach(rec=>{ if(rec.host && (rec.a===n.id||rec.b===n.id)) rec.host.setAttribute("display","none"); });
+    DOTS.forEach(d=>{ if(d.e.a===n.id||d.e.b===n.id) d.node.setAttribute("display","none"); });
+    rebuildClip();
+  }
+  function removeAnn(a){
+    a.hide=true;
+    [a.line,a.dot,a.t1,a.box,a.hit].forEach(e=>e.setAttribute("display","none"));
+  }
+  if(xbtn) xbtn.onclick=()=>{
+    if(!picked) return;
+    const what=picked;
+    const name=what.kind==="node" ? what.n.key+" · "+what.n.name : what.a.key;
+    ask("Delete "+name+"?",
+        "It comes off the map for anyone who opens the page once you save. "+
+        "Everything else in this mode undoes itself by dragging back; this does not.",
+        ()=>{
+          if(what.kind==="node") removeNode(what.n); else removeAnn(what.a);
+          unpick(); markDirty();
+        });
+  };
+
   let grab=null;
   function begin(ev,n,mode){
     if(!editing) return;
     ev.stopPropagation(); ev.preventDefault();
     const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
-    grab={n,mode,px:ev.clientX,py:ev.clientY,
+    grab={n,mode,px:ev.clientX,py:ev.clientY,moved:0,
           ox:n.x,oy:n.y,olx:n._lx,oly:n._ly};
     (mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.add("picked");
   }
   function move(ev){
     if(!grab) return;
+    grab.moved=Math.max(grab.moved,Math.hypot(ev.clientX-grab.px,ev.clientY-grab.py));
     if(grab.mode==="ann"){
       /* an annotation is screen-space, not world-space: it is not on the
          ground plane, so its nudge is measured in the same units it is drawn
@@ -946,9 +1060,17 @@ feature("edit positions", function(){
   }
   function end(){
     if(!grab) return;
-    if(grab.mode==="ann"){ grab.ann.box.classList.remove("picked"); grab=null; markDirty(); return; }
+    const travelled=grab.moved>4;
+    if(grab.mode==="ann"){
+      grab.ann.box.classList.remove("picked");
+      if(!travelled) pick({kind:"ann",a:grab.ann});
+      const moved=travelled; grab=null;
+      if(moved) markDirty();
+      return;
+    }
     const n=grab.n;
     (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
+    if(!travelled) pick({kind:"node",n});
     grab=null;
     refresh(null);
     /* painter order is (x+y); something dragged far enough changes places */
@@ -962,7 +1084,7 @@ feature("edit positions", function(){
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
         (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
-      : "Drag any building, any name or any floating label · release to keep · Save positions when done";
+      : "Drag to move · click to pick, then × to delete · Save positions when done";
   }
 
   /* THE FLOATING ANNOTATIONS. Same drag, different target: what moves is the
@@ -975,7 +1097,7 @@ feature("edit positions", function(){
       if(!editing) return;
       ev.stopPropagation(); ev.preventDefault();
       if(a.hit.setPointerCapture) a.hit.setPointerCapture(ev.pointerId);
-      grab={ann:a,mode:"ann",px:ev.clientX,py:ev.clientY,ox:a.off.dx,oy:a.off.dy};
+      grab={ann:a,mode:"ann",px:ev.clientX,py:ev.clientY,moved:0,ox:a.off.dx,oy:a.off.dy};
       a.box.classList.add("picked");
     });
     a.hit.addEventListener("pointermove",move);
@@ -995,11 +1117,12 @@ feature("edit positions", function(){
 
   function setMode(on){
     editing=on;
+    if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{ a.forceShow=on; a.reflow(); });
     svg.classList.toggle("editing",on);
     document.body.classList.toggle("editing",on);
     btnEdit.textContent=on?"Done moving":"Edit positions";
     if(on){ release(); say(null); }
-    else if(hint) hint.textContent=hint0;
+    else { unpick(); if(hint) hint.textContent=hint0; }
   }
   btnEdit.onclick=()=>setMode(!editing);
 });
@@ -1018,26 +1141,82 @@ feature("saving", function(){
       `  ${/^[A-Za-z_$][\w$]*$/.test(k)?k:JSON.stringify(k)}: ${JSON.stringify(v)},`);
     return `const ${name} = {\n`+rows.join("\n")+(rows.length?"\n":"")+"};";
   };
+
   btnSave.onclick=()=>{
     const o=collectOffsets(), n=Object.keys(o).length;
+    const moved=Object.values(o).filter(v=>!v.del).length;
+    const gone=Object.values(o).filter(v=>v.del).length;
+
+    /* the browser first, because that never fails and is what the person in
+       front of it is about to reload into */
+    try{ localStorage.setItem(EDIT_KEY,JSON.stringify(o)); }catch(err){}
+
+    /* then the shared copy, which is what makes it the default for everyone.
+       Its own record, never /pipeline's — one record shared between two maps
+       means whichever saved last erases the other, silently. */
+    fetch("/api/bpipe_edits",{method:"POST",
+      headers:{"content-type":"application/json"},
+      body:JSON.stringify({offsets:o})})
+      .then(r=>r.json())
+      .then(r=>{
+        if(r && r.ok) note("Saved as the default",
+          `${moved} object${moved===1?"":"s"} moved`+
+          (gone?` · ${gone} deleted`:"")+
+          " — this is what the page opens with now, for every browser.");
+        else note("Saved in this browser only",
+          "The shared copy could not be written, so the map opens this way here "+
+          "and nowhere else. The block in the panel still works.");
+      })
+      .catch(()=>note("Saved in this browser only",
+        "No answer from the shared copy, so the map opens this way here and "+
+        "nowhere else. The block in the panel still works."));
+
+    /* and the block to paste, so a sitting can be baked into the repo */
     pinned=null; current=null; paintIndex();
     read.innerHTML=
       `<div class="eyebrow">Positions</div>`+
-      `<div class="title">${n} object${n===1?"":"s"} moved</div>`+
+      `<div class="title">${moved} moved${gone?` · ${gone} deleted`:""}</div>`+
       `<div class="sub">everything currently in force, not just this sitting</div>`+
       (n?`<div class="snip">${esc(asSource(o,"OFFSETS"))}</div>`
         :`<p>Nothing differs from what the lane engine computed.</p>`)+
-      `<h4>What to do with it</h4>`+
-      `<p>This browser is already holding it — every release writes a copy — so it `+
-      `survives a refresh. Paste the block into <mark>OFFSETS</mark> in `+
-      `<mark>bp-data.js</mark> to make it the default for everyone.</p>`+
+      `<h4>What this did</h4>`+
+      `<p>Written to this browser and to the shared copy, so the page opens `+
+      `this way for anyone. Paste the block into <mark>OFFSETS</mark> in `+
+      `<mark>bp-data.js</mark> to put it in the repo, where it survives the `+
+      `store being cleared.</p>`+
       `<p>These are <mark>nudges</mark> relative to what the lane engine computed, `+
       `never absolute coordinates, so they survive the lane being re-solved or a `+
-      `step being inserted. <mark>ldx/ldy</mark> move a name; <mark>dx/dy</mark> `+
-      `move the building and take its name along.</p>`;
+      `step being inserted. <mark>dx/dy</mark> move a building and take its name `+
+      `along, <mark>ldx/ldy</mark> move the name alone, <mark>adx/ady</mark> a `+
+      `floating label, and <mark>del</mark> takes an object off the map.</p>`;
   };
-  if(btnDrop) btnDrop.onclick=()=>{
-    try{ localStorage.removeItem(EDIT_KEY); }catch(err){}
-    location.reload();
-  };
+
+  if(btnDrop) btnDrop.onclick=()=>ask("Discard every change?",
+    "Positions and deletions both, back to what the file says. The shared copy "+
+    "is left alone until the next save.",
+    ()=>{ try{ localStorage.removeItem(EDIT_KEY); }catch(err){} location.reload(); });
+});
+
+/* ============================================================
+   THE SHARED COPY
+   Read after the map has drawn, never before it: a page that waits on a
+   network round trip to show anything is a page that shows nothing when the
+   network is slow. If the shared copy differs from what this browser opened
+   with, the offsets are applied in place — no reload, no flash — and the
+   ✕ button is told to catch up.
+   ============================================================ */
+feature("shared copy", function(){
+  if(Object.keys(LIVE).length && LIVE!==BAKED) return;   // this browser is ahead
+  fetch("/api/bpipe_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
+    const o=doc && doc.offsets;
+    if(!o || !Object.keys(o).length) return;
+    if(JSON.stringify(o)===JSON.stringify(LIVE)) return;
+    try{ localStorage.setItem(EDIT_KEY,JSON.stringify(o)); }catch(err){}
+    /* Deletions cannot be applied in place — everything from the lane solve
+       onward was computed over a different set of objects — so those need the
+       page to come back. Position nudges do not, and are the common case. */
+    if(Object.values(o).some(v=>v && v.del)) location.reload();
+    else note("Layout updated",
+      "Someone saved a different arrangement. Reload to see it.", 8000);
+  }).catch(()=>{});
 });

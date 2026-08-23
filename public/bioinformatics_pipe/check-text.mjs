@@ -55,6 +55,13 @@ page.on('console', m => {
   if (m.type() === 'warning') warnings.push(m.text());
 });
 
+/* The shared-copy endpoint is stubbed. What is under test is the page's
+   behaviour, not DynamoDB's, and a check that fails when a table is
+   unreachable — or when it is being run against a static preview server — is
+   a check that gets ignored. */
+await page.route('**/api/bpipe_edits', r => r.fulfill({ status: 200,
+  contentType: 'application/json', body: JSON.stringify({ offsets: null, at: null }) }));
+
 await page.goto(url, { waitUntil: 'networkidle' });
 await page.waitForTimeout(1500);
 

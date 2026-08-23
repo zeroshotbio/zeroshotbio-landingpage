@@ -323,7 +323,7 @@ function axesFrame(F,o){
      title is most of the way off the building — "TRANSCRIPTS" and
      "EXPRESSION 2" both did it, and a five-letter "GENES" did not, so it
      looked like a one-off rather than the rule it is. */
-  const ax=g.appendChild(el("text",{x:CX0+CWD,y:cy-ySign*26,"text-anchor":"end",fill:"var(--fg)",
+  const ax=g.appendChild(el("text",{x:CX0+CWD,y:cy-ySign*28,"text-anchor":"end",fill:"var(--fg)",
     "font-size":T_AXIS,"font-family":MONO,"font-weight":"600","letter-spacing":"1.2"}));
   ax.textContent=o.xlab;
   const ay=g.appendChild(el("text",{x:CX0+4,y:yEnd+ySign*16,"text-anchor":"start",fill:"var(--fg)",
@@ -473,7 +473,11 @@ function placeAnn(ann,target,bax,bay,alpha){
   ann.line.setAttribute("x2",(target[0]-ux*3.5).toFixed(1)); ann.line.setAttribute("y2",(target[1]-uy*3.5).toFixed(1));
   ann.dot.setAttribute("cx",target[0].toFixed(1)); ann.dot.setAttribute("cy",target[1].toFixed(1));
   ann.t1.setAttribute("x",ax); ann.t1.setAttribute("y",ay);
-  const a=alpha.toFixed(3);
+  /* In Edit positions every annotation is held at full opacity. They only
+     exist for part of each roof's loop, and a label you cannot see is a label
+     you cannot pick up — the handle would be an empty dashed box hovering
+     over nothing. */
+  const a=(ann.forceShow?1:alpha).toFixed(3);
   ann.line.setAttribute("stroke-opacity",a);
   ann.dot.setAttribute("fill-opacity",a);
   ann.t1.setAttribute("fill-opacity",a);

@@ -156,8 +156,10 @@ Three things about how it sits, each of which was got wrong first:
   you cannot point at.
 - **`scenery:true` keeps it out of the occlusion silhouette.** Punching a
   ground element out of the clip cuts a hole in the layer it belongs to.
-- **The cull ledger has to be on the other side.** It has been above and below
-  during this build; whichever side the band is not on is the right one.
+- **The cull ledger is gone.** It hung off the row as an empty box saying in
+  prose what the band says in geometry — that no per-barcode record of which
+  stage killed which barcode exists here or anywhere in the corpus. The claim
+  survives in the band's own condition field. One object fewer, same content.
 
 `from`/`to` and the station ids are resolved to coordinates by the view after
 `layoutRows()`, the same way `follow{}` is — so re-spacing the row re-shapes
@@ -347,7 +349,13 @@ node check-sim.mjs                       # no browser needed
 node check-text.mjs   <url>              # needs playwright
 node check-clicks.mjs <url>              # needs playwright
 node check-edit.mjs   <url>              # needs playwright
+node check-delete.mjs <url>              # needs playwright
 ```
+
+The three browser checks **stub `/api/bpipe_edits`**. What is under test is the
+page's behaviour, not DynamoDB's, and a check that fails when a table is
+unreachable — or when it is run against a static preview server — is a check
+that gets ignored.
 
 - **`check-sim.mjs`** asserts the population still supports the statistics. A
   picture that renders is not evidence the statistic underneath it works.
@@ -374,12 +382,64 @@ node check-edit.mjs   <url>              # needs playwright
   a paste-back block containing both an `ldx`/`ldy` and an `adx`/`ady`. Pointer capture is what the mode is built on, and a
   dispatched `MouseEvent` skips pointer events entirely — a synthetic drag
   would pass against an implementation no hand could drive.
+- **`check-delete.mjs`** drives pick → × → confirm → delete, asserts **Cancel
+  spares the object**, that the deletion is written and survives a reload with
+  its edges gone, and that the Save confirmation both **appears and then leaves
+  on its own**. A notice that needs dismissing is a second thing to do after
+  the thing you wanted to do; one that never leaves is indistinguishable from a
+  stuck page.
 
 ## Performance
 
 One `requestAnimationFrame` drives the page. **A roof must never start its own.**
 Roofs push to `TICKERS`; a ticker that throws is dropped and the map keeps
 running. `window.bpipeDiag()` returns one line of state when it looks stuck.
+
+## Edit positions
+
+**Save writes to three places, and says which of them took.** The browser
+(`localStorage`, `bpipe.offsets`), the shared record at `/api/bpipe_edits`, and
+a block printed in the reader to paste into `OFFSETS` in `bp-data.js`. The
+shared record is what makes a sitting the default for everyone; the pasted
+block is what puts it in the repo, where it survives the store being cleared.
+If the POST fails the confirmation says so plainly — "saved in this browser
+only" — rather than claiming a default it did not set.
+
+**The shared record has its own `ITEM_ID`, never `/pipeline`'s.** One record
+between two maps means whichever saved last erases the other, silently, with
+no way to tell which happened.
+
+**It is read after the map has drawn, never before.** A page that waits on a
+network round trip to show anything shows nothing when the network is slow.
+
+**Save and Discard are always in the toolbar.** They used to appear only once
+something was dirty, which is a control that goes missing exactly when you go
+looking for it. `body.haschanges` now only tints Save rather than hiding it.
+
+### Deleting
+
+In the mode, a press that does not travel is a **pick** rather than a drag, and
+a picked object gets a **×** at its top corner. Clicking it asks first.
+
+Everything else in this mode undoes itself by dragging back; deleting does not,
+and the saved state is shared, so a mis-click takes an object off the map for
+everybody. `check-delete.mjs` asserts Cancel as hard as it asserts Delete.
+
+The × is an **HTML button in the stage, not an SVG one**, for two reasons: it
+must not shear with the projection, and it must not live inside the group it is
+offering to delete — a control that vanishes with its own target cannot be
+pressed a second time. It rides the camera from the frame loop so it stays on
+its object through a pan.
+
+A deletion is recorded as `del:true` in the same table as the nudges, and is
+applied **before anything is laid out** — the lane solve, the edges, the index
+and the occlusion clip all have to be computed over what is actually on the
+map. A station on the attrition band whose cull has been deleted drops off the
+band with it.
+
+**Annotations are held at full opacity while the mode is on.** They only exist
+for part of each roof's loop, and a label you cannot see is a label you cannot
+pick up — the handle would be an empty dashed box hovering over nothing.
 
 ## Edit positions
 
