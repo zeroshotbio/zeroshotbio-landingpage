@@ -150,16 +150,33 @@ function resolveScenery(o){
   NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
     const A=byId[r.from], B=byId[r.to];
     if(!A||!B) return;
-    r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
-    r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
-    /* a station whose cull has been deleted has nothing to stand under, so it
-       leaves the band */
-    r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
-    r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x; });
+    if(r._yBase===undefined) r._yBase=r.yBase;
     /* _oy is left exactly as the capture above took it. Re-taking it here
        would read whatever the last nudge left behind and compound it. */
     r._ox=(A._ox-A.w/2-0.4)+1.4;
     applyNudge(r,(o||{})[r.id]);
+
+    /* AND ITS OWN NUDGE GOES INTO ITS GEOMETRY, not just into r.x.
+
+       This is why the band would not stay where it was put. Every other object
+       is DRAWN at n.x, so a saved dx is in the picture the moment the page
+       loads. The band is not: it is drawn from x0/x1/yBase, derived from the
+       buildings it spans, and its dx reached the screen only as a translate
+       measured from where it was drawn — which is zero at load, by
+       construction. So it saved, it reloaded, it read back correctly, and it
+       drew in the old place. The model was right and the picture was wrong,
+       which is the hardest version of this to see and the reason a check that
+       compares NODES.x could never catch it.
+
+       The tributaries go with it: they belong to the band, not to the row. */
+    const mx=r.x-r._ox, my=r.y-r._oy;
+    r.x0=A.x-A.w/2-0.4+mx; r.x1=B.x+B.w/2+0.4+mx;
+    r.yBase=r._yBase+my;
+    r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
+    /* a station whose cull has been deleted has nothing to stand under, so it
+       leaves the band */
+    r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
+    r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x+mx; });
   });
 }
 resolveScenery(LIVE);
@@ -308,6 +325,7 @@ NODES.filter(n=>!n.anchor).forEach(n=>{
 Object.keys(labelEls).forEach(id=>{
   labelEls[id].dataset.base=labelEls[id].getAttribute("transform")||""; });
 
+
 /* ============================================================
    EDGES
    ============================================================ */
@@ -407,6 +425,26 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
 
+/* AND NOW PUT THE SAVED NAME NUDGES INTO THE PICTURE.
+
+   A building is DRAWN at n.x, so its saved dx is on screen the instant the
+   page loads. Its NAME is not: the label is drawn from n.x and n.lab, and
+   ldx/ldy reach it only through reposition() — which, on the load path, used
+   to be reached only via applyOffsets(), and applyOffsets() left the load path
+   when adopting a shared copy became a reload. Nothing called it any more.
+
+   So every name offset saved perfectly, read back perfectly, and drew in the
+   old place. Move a name, save, reload, and it is back — while the building
+   next to it, which is drawn at its own coordinate, stays put. That is exactly
+   the shape of "some of them stick and some of them do not", and no amount of
+   looking at the record would have shown it, because the record was right.
+
+   One line, and it also makes the two paths agree: a load now ends in the same
+   state a drag leaves the map in. It has to run down here rather than beside
+   the labels, because reposition() touches the node and plinth groups too and
+   those do not exist until this loop has run. */
+NODES.forEach(n=>reposition(n));
+
 /* Committed nudges for the floating annotations. They are keyed
    "<node>:<which>" and live in the same OFFSETS table as the buildings,
    because they are the same kind of thing: a hand-placed position that has
@@ -457,7 +495,12 @@ function rebuildClip(){
    These live out here rather than inside the editor because the shared copy
    has to be able to apply a whole table at load, without a reload.
    ============================================================ */
-const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
+/* A world delta as an SVG translate. A function declaration rather than a
+   const arrow so it is hoisted: the load path repositions everything the
+   moment the node groups exist, which is above this line. */
+function shift(dx,dy){
+  return `translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
+}
 function reposition(n){
   const dx=n.x-n._px, dy=n.y-n._py;
   const t=(dx||dy)?shift(dx,dy):"";

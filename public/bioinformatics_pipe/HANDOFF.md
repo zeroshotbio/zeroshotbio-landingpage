@@ -362,7 +362,7 @@ and the coordinate ruler, both of which deliberately run wider than the map.
 6,000 and 9,000 — both flag exactly zero. Nothing draws that cut now, but
 `check-sim.mjs` asserts it and the cubic is fitted to the same population.
 
-## The checks — run all six
+## The checks — run all seven
 
 ```bash
 node check-sim.mjs                       # no browser needed
@@ -371,6 +371,7 @@ node check-clicks.mjs  <url>             # needs playwright
 node check-edit.mjs    <url>             # needs playwright
 node check-delete.mjs  <url>             # needs playwright
 node check-persist.mjs <url>             # needs playwright
+node check-drawn.mjs   <url>             # needs playwright
 ```
 
 The browser checks **stub `/api/bpipe_edits`**. What is under test is the
@@ -411,6 +412,9 @@ cannot catch the bug it exists for.
   on its own**. A notice that needs dismissing is a second thing to do after
   the thing you wanted to do; one that never leaves is indistinguishable from a
   stuck page.
+- **`check-drawn.mjs`** asserts a saved position is **in the picture**, which is
+  a different claim from being in the record — see the section above. It is the
+  only check that would have caught either of the two bugs it exists for.
 - **`check-persist.mjs`** runs a **stateful stub with a monotonic `at`** — a
   constant stamp cannot tell a working reconciliation from one that always
   keeps local — and asserts all seven transitions: a save holds through a
@@ -427,6 +431,43 @@ cannot catch the bug it exists for.
   record, opens a **second context** with an empty store, and also asserts the
   saved table names only what was actually touched and that applying it twice
   lands in the same place as applying it once.
+
+### A SAVED POSITION HAS TO BE IN THE PICTURE
+
+`check-persist.mjs` passed for two builds while the map was visibly wrong,
+because it compares `NODES.x` and the model was right the whole time. Name
+offsets saved, read back and landed on the node objects exactly as intended;
+they simply never reached the screen. **The record being correct is not
+evidence that the map is.**
+
+Two ways it happened, and they are the same mistake wearing different clothes —
+**an object drawn from something other than its own saved coordinate**:
+
+- **A name** is not drawn at a coordinate of its own. Its group comes from
+  `n.x` and `n.lab`, and `ldx`/`ldy` reach it only through `reposition()`. On
+  the load path that used to be reached only via `applyOffsets()` — so the
+  moment adopting a shared copy became a reload, nothing called it at all, and
+  every name offset drew in the old place while the building beside it, drawn
+  at its own coordinate, stayed put. That is exactly the shape of *"some of
+  them stick and some of them do not"*. The load now ends with
+  `NODES.forEach(reposition)`, so it leaves the map in the same state a drag
+  does. (`shift()` is a function declaration, not a const arrow, so it is
+  hoisted above that call.)
+- **The attrition band** is drawn from `x0`/`x1`/`yBase`, derived from the
+  buildings it spans, and its own `dx` reached the screen only as a translate
+  measured from where it was drawn — which is zero at load, by construction.
+  `resolveScenery()` folds `r.x - r._ox` into the geometry now, tributaries
+  included.
+
+`check-drawn.mjs` enforces the rule directly: **where a thing draws after a
+reload is where it was left.** It measures the drawn group's bounding box and
+pushes the centre back through the world CTM, because the camera re-fits after
+a drag and raw screen coordinates would be comparing two cameras.
+
+**It drags by the edit handle, never a group's bbox centre.** The band spans
+half the map, so its centre lands on a building — press there and you drag the
+building, and the band then reads as "unmoved" for entirely the wrong reason.
+That false pass was in this check before it was fixed.
 
 ## Performance
 
