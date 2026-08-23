@@ -63,6 +63,17 @@ layoutRows(NODES, LANES, MIRROR);
    the two are identical and clearing the local copy changes nothing.
    ============================================================ */
 const EDIT_KEY="bpipe.offsets";
+/* THE RECORD THIS BROWSER LAST AGREED WITH — the shared copy as it stood at
+   the last successful save, or the last time this browser adopted one. It is
+   the third quantity that makes "the server is ahead of us" distinguishable
+   from "we are ahead of the server", which is not a distinction two copies can
+   make between them. Without it every unpublished drag is indistinguishable
+   from a stale browser and gets thrown away on the next load. */
+const SYNC_KEY=EDIT_KEY+".sync";
+const remember=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(err){} };
+const forget  =k=>{ try{ localStorage.removeItem(k); }catch(err){} };
+const recall  =k=>{ try{ return localStorage.getItem(k); }catch(err){ return null; } };
+
 const BAKED=(typeof OFFSETS!=="undefined")?OFFSETS:{};
 const LIVE=(()=>{
   try{ const raw=localStorage.getItem(EDIT_KEY); if(raw) return JSON.parse(raw); }catch(err){}
@@ -1031,10 +1042,16 @@ function note(title,body,ms){
   noteTimer=setTimeout(()=>box.classList.remove("on"), ms||5000);
 }
 
-function markDirty(){
+/* WHAT THIS SITTING TOUCHED, as opposed to what is in force. The saved table
+   is the whole arrangement rather than a diff, so it cannot answer "what did I
+   just move" — and a confirmation that answers the wrong question reads as a
+   confirmation of something you did not do. */
+const touched=new Set();
+function markDirty(id){
   dirty=true;
+  if(id) touched.add(id);
   document.body.classList.add("haschanges");
-  try{ localStorage.setItem(EDIT_KEY,JSON.stringify(collectOffsets())); }catch(err){}
+  remember(EDIT_KEY,JSON.stringify(collectOffsets()));
 }
 
 feature("edit positions", function(){
@@ -1135,7 +1152,8 @@ feature("edit positions", function(){
           if(what.kind==="node") removeNode(what.n);
           else if(what.kind==="ann") removeAnn(what.a);
           else { what.m.hide=true; what.m.g.setAttribute("display","none"); }
-          unpick(); markDirty();
+          unpick();
+          markDirty(what.kind==="node"?what.n.id:what.kind==="ann"?what.a.key:what.m.key);
         });
   };
 
@@ -1184,16 +1202,18 @@ feature("edit positions", function(){
     const travelled=grab.moved>4;
     if(grab.mode==="ann"){
       grab.ann.box.classList.remove("picked");
+      const k=grab.ann.key;
       if(!travelled) pick({kind:"ann",a:grab.ann});
       const moved=travelled; grab=null;
-      if(moved) markDirty();
+      if(moved) markDirty(k);
       return;
     }
     if(grab.mode==="mover"){
       grab.m.g.classList.remove("picked");
+      const k=grab.m.key;
       if(!travelled) pick({kind:"mover",m:grab.m});
       const moved=travelled; grab=null;
-      if(moved) markDirty();
+      if(moved) markDirty(k);
       return;
     }
     const n=grab.n;
@@ -1203,7 +1223,7 @@ feature("edit positions", function(){
     refresh(null);
     /* painter order is (x+y); something dragged far enough changes places */
     NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
-    markDirty();
+    markDirty(n.id);
   }
   function say(n){
     if(!hint) return;
@@ -1289,10 +1309,19 @@ feature("saving", function(){
     const o=collectOffsets(), n=Object.keys(o).length;
     const moved=Object.values(o).filter(v=>!v.del).length;
     const gone=Object.values(o).filter(v=>v.del).length;
+    /* WHAT WAS MOVED JUST NOW, as distinct from what is in force. The table
+       is cumulative — it is the whole arrangement, not a diff — so counting it
+       and calling the answer "moved" tells someone who nudged one label that
+       they moved eleven things. */
+    const mine=touched.size;
+    const body=`${mine} moved this sitting · ${moved} placement${moved===1?"":"s"} `+
+      `in force${gone?` · ${gone} deleted`:""} — this is what the page opens `+
+      `with now, for every browser.`;
+    const doc=JSON.stringify(o);
 
     /* the browser first, because that never fails and is what the person in
        front of it is about to reload into */
-    try{ localStorage.setItem(EDIT_KEY,JSON.stringify(o)); }catch(err){}
+    remember(EDIT_KEY,doc);
 
     /* then the shared copy, which is what makes it the default for everyone.
        Its own record, never /pipeline's — one record shared between two maps
@@ -1302,10 +1331,15 @@ feature("saving", function(){
       body:JSON.stringify({offsets:o})})
       .then(r=>r.json())
       .then(r=>{
-        if(r && r.ok) note("Saved as the default",
-          `${moved} object${moved===1?"":"s"} moved`+
-          (gone?` · ${gone} deleted`:"")+
-          " — this is what the page opens with now, for every browser.");
+        if(r && r.ok){
+          /* the record has been published, so this browser now agrees with it.
+             Until this line runs, everything here counts as unsaved and the
+             shared copy leaves it alone. */
+          remember(SYNC_KEY,doc);
+          touched.clear(); dirty=false;
+          document.body.classList.remove("haschanges");
+          note("Saved as the default",body);
+        }
         else note("Saved in this browser only",
           "The shared copy could not be written, so the map opens this way here "+
           "and nowhere else. The block in the panel still works.");
@@ -1337,7 +1371,9 @@ feature("saving", function(){
   if(btnDrop) btnDrop.onclick=()=>ask("Discard every change?",
     "Positions and deletions both, back to what the file says. The shared copy "+
     "is left alone until the next save.",
-    ()=>{ try{ localStorage.removeItem(EDIT_KEY); }catch(err){} location.reload(); });
+    /* the sync marker goes with it: this browser is no longer claiming to
+       have anything the shared copy has not seen */
+    ()=>{ forget(EDIT_KEY); forget(SYNC_KEY); location.reload(); });
 });
 
 /* ============================================================
@@ -1352,16 +1388,47 @@ feature("shared copy", function(){
   fetch("/api/bpipe_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
     const o=doc && doc.offsets;
     if(!o) return;
-    if(dirty) return;                               // unsaved work here wins
-    if(JSON.stringify(o)===JSON.stringify(collectOffsets())) return;
-    try{ localStorage.setItem(EDIT_KEY,JSON.stringify(o)); }catch(err){}
+    if(dirty) return;                               // a sitting in this tab wins
+
+    const server=JSON.stringify(o), local=JSON.stringify(collectOffsets());
+    if(server===local){ remember(SYNC_KEY,server); return; }
+
+    /* IS THE LOCAL COPY BEHIND THE SERVER, OR AHEAD OF IT?
+
+       Different answers, opposite actions, and telling them apart needs a
+       third thing: SYNC_KEY, the record this browser last agreed with. The
+       version without it treated any difference as the server being newer and
+       applied the server copy, which quietly threw away every drag this
+       browser had not published yet.
+
+       That is what "it does not save the positions I chose" actually was. Move
+       something, save, move something else, reload: the second move is in this
+       browser's store and not in the record, the record therefore differs, and
+       the record wins. Same for the ordinary habit of moving a few things and
+       reloading to see how they look — the work is gone before it is ever
+       offered to Save.
+
+       server === sync  → nobody else has published; whatever differs here is
+                          ours and unsaved. Leave it alone.
+       server !== sync  → somebody did publish. Take it, unless we are also
+                          ahead, in which case say so rather than picking a
+                          winner silently. */
+    const sync=recall(SYNC_KEY);
+    if(server===sync) return;                       // ours, unsaved — keep it
+    if(sync!==null && local!==sync){
+      note("A newer shared layout is waiting",
+        "Someone else saved a different arrangement, and this browser has "+
+        "changes of its own that have not been saved. Nothing has been "+
+        "touched. Save positions to publish yours, or Discard to take theirs.",
+        12000);
+      return;
+    }
+
+    remember(EDIT_KEY,server); remember(SYNC_KEY,server);
     /* A DELETION cannot be applied in place — the lane solve, the edges, the
        index and the occlusion clip were all computed over a different set of
        objects — so that one case needs the page back. Everything else is a
-       translate, and a translate does not need a reload. This is the whole
-       repair: the first version stored the shared copy and then asked for a
-       refresh, so any browser whose local copy did not already match showed
-       the unmoved map and kept showing it. */
+       translate, and a translate does not need a reload. */
     const wantGone=new Set(Object.keys(o).filter(k=>o[k]&&o[k].del));
     const sameDeletions = wantGone.size===GONE.size &&
       [...wantGone].every(k=>GONE.has(k));

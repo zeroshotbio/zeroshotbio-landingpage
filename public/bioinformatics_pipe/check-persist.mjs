@@ -30,6 +30,15 @@
                        twelve units by a user who had never touched it. A
                        table with junk in it is a table nobody trusts.
 
+   AND A LOCAL SITTING IS NOT THE SAME THING AS A STALE BROWSER. The third bug
+   here threw away every drag that had not been published yet: the shared copy
+   treated any difference between itself and this browser as itself being
+   newer, so moving something, saving, moving something else and reloading lost
+   the second move — and so did the ordinary habit of moving a few things and
+   reloading to look at them before deciding to save. Telling "behind" from
+   "ahead" needs a third quantity, the record this browser last agreed with,
+   and scenarios 4 to 6 below are the transitions it exists to get right.
+
    EVERY OBJECT IS COMPARED, not the one that was dragged. The second bug
    here moved something the drag never touched: the band's base was derived
    from the buildings it spans, so nudging the first matrix a unit left moved
@@ -150,10 +159,54 @@ if (Math.abs(fresh.x - dragged.x) > 0.01 || Math.abs(fresh.y - dragged.y) > 0.01
 d = drift(laid, await allOf(p2));
 if (d.length) fail('fresh browser: opened on a different arrangement — ' + d.join(' ; '));
 
+/* ---- 4. a sitting that has NOT been saved survives a reload ------------ */
+const grab = async (page, id, dx, dy) => {
+  const q = await page.evaluate(i => {
+    const n = NODES.find(m => m.id === i), w = document.querySelector('#svg > g');
+    const m = w.getScreenCTM(), t = P(n.x, n.y, topOf(n));
+    return { x: m.a * t[0] + m.c * t[1] + m.e, y: m.b * t[0] + m.d * t[1] + m.f };
+  }, id);
+  await page.mouse.move(q.x, q.y); await page.mouse.down();
+  await page.mouse.move(q.x + dx, q.y + dy, { steps: 16 }); await page.mouse.up();
+  await page.waitForTimeout(350);
+};
+const p3 = await open();
+await p3.locator('#btnEdit').click();
+await p3.waitForTimeout(300);
+await grab(p3, 'c3', 150, -80);
+const unsaved = await allOf(p3);
+await p3.reload({ waitUntil: 'networkidle' });
+await p3.waitForTimeout(2200);
+d = drift(unsaved, await allOf(p3));
+if (d.length) fail('an unsaved sitting was thrown away on reload — ' + d.join(' ; '));
+
+/* ---- 5. and so does one made AFTER a save, which is what was reported --- */
+await p3.locator('#btnEdit').click();
+await p3.waitForTimeout(300);
+await grab(p3, 'c5', -120, 60);
+await p3.locator('#btnSave').click();
+await p3.waitForTimeout(1100);
+await grab(p3, 'c1', 90, 70);                       // moved AFTER the save
+const later = await allOf(p3);
+await p3.reload({ waitUntil: 'networkidle' });
+await p3.waitForTimeout(2200);
+d = drift(later, await allOf(p3));
+if (d.length) fail('work done after a save was lost on reload — ' + d.join(' ; '));
+
+/* ---- 6. but a record somebody ELSE published is still adopted ----------- */
+const base = await p3.evaluate(() => NODES.find(n => n.id === 'c3')._ox);
+record = { c3: { dx: 3.3, dy: -2.2 } };             // arrives from another browser
+const p4 = await open();
+const took = await posOf(p4, 'c3');
+if (!took || Math.abs(took.x - (base + 3.3)) > 0.05 || Math.abs(took.y + 2.2) > 0.05)
+  fail('a record published elsewhere was not adopted by a browser with nothing ' +
+       `of its own — c3 opened at ${JSON.stringify(took)}, expected ${(base+3.3).toFixed(2)}, -2.2`);
+
 console.log(bad
   ? `\n${bad} FAILURE(S)`
-  : 'persist: a drag saves to the shared record, holds through a reload, opens that way in a ' +
-    'browser that has never seen it, names only what was touched, and re-applies without drifting');
+  : 'persist: a drag saves and holds through a reload, opens that way in a browser that has ' +
+    'never seen it, names only what was touched, re-applies without drifting, keeps unsaved work ' +
+    'through a reload both before and after a save, and still adopts a record published elsewhere');
 if (errs.length) console.log('page errors:', errs);
 await b.close();
 process.exit(bad || errs.length ? 1 : 0);

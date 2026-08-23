@@ -412,8 +412,10 @@ cannot catch the bug it exists for.
   the thing you wanted to do; one that never leaves is indistinguishable from a
   stuck page.
 - **`check-persist.mjs`** asserts a saved sitting is the default **in a browser
-  that has never seen it**, and compares **every object, not the one that was
-  dragged** — the second persistence bug moved the attrition band, which the
+  that has never seen it**, that **unsaved work survives a reload** — both
+  before a save and after one, which is the case that was reported — that a
+  record published elsewhere is still adopted, and compares **every object, not
+  the one that was dragged** — the second persistence bug moved the attrition band, which the
   drag never touched, while the building that was dragged sat perfectly still. The other five all passed the day Save silently
   stopped taking, because they stub the endpoint to a constant and the author's
   own browser had the arrangement in local storage. This one runs a stateful
@@ -509,6 +511,37 @@ while `LIVE` is exactly what was applied. Two bugs came out of it:
 author reloads to check it took — and DynamoDB's default eventually-consistent
 read may legitimately serve the previous layout to exactly that reload. There
 is no way to tell that apart from a save that never happened.
+
+### Behind the server, or ahead of it: `bpipe.offsets.sync`
+
+**Two copies cannot tell those apart.** The shared copy differs from what this
+browser is holding — is the record newer, or is this browser holding work it
+has not published? Answering that needs a third quantity, and until there was
+one the code assumed the first and applied the record. That threw away every
+unpublished drag: move something, Save, move something else, reload, and the
+second move is gone — it was in this browser's store and not in the record, so
+the record differed, so the record won. The ordinary habit of moving a few
+things and reloading to look at them lost the lot.
+
+`SYNC_KEY` is **the record this browser last agreed with** — written on a
+successful POST and on adopting a shared copy, cleared by Discard. Then:
+
+| | |
+|---|---|
+| `server === local` | nothing to do; re-stamp sync |
+| `server === sync` | nobody else published — whatever differs here is ours and unsaved. **Leave it alone.** |
+| `server !== sync`, local clean | somebody published. Adopt it. |
+| `server !== sync`, local dirty | both moved. Touch nothing and **say so** — this is the one case worth a notice, and it is rare. |
+
+A `dirty` flag still short-circuits all of it: a sitting in progress in *this
+tab* is never disturbed.
+
+### The confirmation counts this sitting, not the table
+
+The saved table is the whole arrangement, not a diff, so counting it and
+calling the answer "moved" tells somebody who nudged one label that they moved
+eleven things. `touched` is the set of ids this sitting actually changed; the
+toast reports both — *"1 moved this sitting · 11 placements in force"*.
 
 ### The shared copy applies itself, it does not ask
 
