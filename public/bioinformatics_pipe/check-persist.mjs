@@ -29,6 +29,15 @@
                        before that derivation it read as having been dragged
                        twelve units by a user who had never touched it. A
                        table with junk in it is a table nobody trusts.
+
+   EVERY OBJECT IS COMPARED, not the one that was dragged. The second bug
+   here moved something the drag never touched: the band's base was derived
+   from the buildings it spans, so nudging the first matrix a unit left moved
+   the band's zero a unit left underneath the nudge it already carried — and
+   by different amounts down the two paths a table can arrive by. It crept a
+   unit further on every save-and-reload, while the building that was actually
+   dragged sat perfectly still. Checking only the dragged object is how that
+   survived a check written for exactly this.
 */
 import { chromium } from 'playwright';
 
@@ -65,7 +74,18 @@ const posOf = (p, id) => p.evaluate(i => {
   const n = NODES.find(m => m.id === i);
   return n ? { x: n.x, y: n.y } : null;
 }, id);
-const TARGET = 'c4';   // Complexity — a building in the middle of the row
+/* EVERY object, every time — see the note at the top about what only shows up
+   when you look at the ones the drag never touched. */
+const allOf = p => p.evaluate(() => Object.fromEntries(
+  NODES.map(n => [n.id, [+n.x.toFixed(3), +n.y.toFixed(3)]])));
+const drift = (A, B) => Object.keys(A)
+  .filter(k => !B[k] || Math.abs(A[k][0] - B[k][0]) > 0.011 || Math.abs(A[k][1] - B[k][1]) > 0.011)
+  .map(k => `${k} ${JSON.stringify(A[k])} -> ${JSON.stringify(B[k] || null)}`);
+
+/* UD, the first matrix, is deliberately the one that moves: the attrition
+   band's span is derived from it, so dragging it is what tells a base apart
+   from a derivation. */
+const TARGET = 'UD';
 
 /* ---- 1. the same browser, which is what was reported ------------------- */
 const p1 = await open();
@@ -87,6 +107,7 @@ await p1.waitForTimeout(350);
 const dragged = await posOf(p1, TARGET);
 if (Math.abs(dragged.x - before.x) < 0.2 && Math.abs(dragged.y - before.y) < 0.2)
   fail('the drag did not move anything — the rest of this check proves nothing');
+const laid = await allOf(p1);          /* the whole map, as it was left */
 
 await p1.locator('#btnSave').click();
 await p1.waitForTimeout(900);
@@ -100,15 +121,21 @@ if (keys.length !== 1 || keys[0] !== TARGET)
 
 await p1.reload({ waitUntil: 'networkidle' });
 await p1.waitForTimeout(1800);
-const after = await posOf(p1, TARGET);
-if (Math.abs(after.x - dragged.x) > 0.01 || Math.abs(after.y - dragged.y) > 0.01)
-  fail(`same browser: reverted on reload — put at ${JSON.stringify(dragged)}, came back at ${JSON.stringify(after)}`);
+let d = drift(laid, await allOf(p1));
+if (d.length) fail('same browser: the map came back different after a reload — ' + d.join(' ; '));
+
+/* and again, because a base derived from something that moves creeps by the
+   same amount every single time round rather than settling */
+await p1.reload({ waitUntil: 'networkidle' });
+await p1.waitForTimeout(1800);
+d = drift(laid, await allOf(p1));
+if (d.length) fail('same browser: still moving on the second reload — ' + d.join(' ; '));
 
 /* applying the table again must not compose onto itself */
 const twice = await p1.evaluate(() => {
   const o = JSON.parse(localStorage.getItem('bpipe.offsets') || '{}');
   applyOffsets(o); applyOffsets(o);
-  const n = NODES.find(m => m.id === 'c4');
+  const n = NODES.find(m => m.id === 'UD');
   return { x: n.x, y: n.y };
 }).catch(() => null);
 if (twice && (Math.abs(twice.x - dragged.x) > 0.01 || Math.abs(twice.y - dragged.y) > 0.01))
@@ -120,6 +147,8 @@ const fresh = await posOf(p2, TARGET);
 if (Math.abs(fresh.x - dragged.x) > 0.01 || Math.abs(fresh.y - dragged.y) > 0.01)
   fail(`fresh browser: the shared copy was not applied — opened at ${JSON.stringify(fresh)}, ` +
        `the saved default is ${JSON.stringify(dragged)}`);
+d = drift(laid, await allOf(p2));
+if (d.length) fail('fresh browser: opened on a different arrangement — ' + d.join(' ; '));
 
 console.log(bad
   ? `\n${bad} FAILURE(S)`

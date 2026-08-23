@@ -35,6 +35,14 @@ const ddbClient = new DynamoDBClient({
 const TABLE_NAME =
   process.env.AWS_DYNAMODB_TABLE_NAME || "zeroshot_dataroom_visitor_tracking";
 
+// A save is read back within seconds of being written — the author reloads to
+// check it took. DynamoDB's default read is eventually consistent, so that
+// reload can legitimately be served the previous layout, which is
+// indistinguishable from a save that never happened. Both of these say "read
+// what was actually written": ConsistentRead below, and force-dynamic here so
+// Next does not render this handler once at build time and serve that forever.
+export const dynamic = "force-dynamic";
+
 const ITEM_ID = "bioinformatics_pipe::edits";
 const MAX_BYTES = 320_000; // DynamoDB caps an item at 400KB
 
@@ -42,7 +50,11 @@ const MAX_BYTES = 320_000; // DynamoDB caps an item at 400KB
 export async function GET() {
   try {
     const resp = await ddbClient.send(
-      new GetItemCommand({ TableName: TABLE_NAME, Key: marshall({ id: ITEM_ID }) })
+      new GetItemCommand({
+        TableName: TABLE_NAME,
+        Key: marshall({ id: ITEM_ID }),
+        ConsistentRead: true,
+      })
     );
     if (!resp.Item) return NextResponse.json({ offsets: null, at: null });
     const it = unmarshall(resp.Item);

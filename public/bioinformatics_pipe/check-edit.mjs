@@ -20,6 +20,11 @@
    the text while the end that names a point on the chart must not budge, which
    is the entire reason a label like this is worth being able to move.
 
+   A MOVER is the fourth case: the band's own name. It belongs to no building,
+   so nothing in the nudge table reached it and it was the only string on the
+   map that could not be got out of the way of anything else. Both halves are
+   asserted — the nudge changing, and the type actually going with it.
+
    And REAL MOUSE PRESSES ONLY. The mode is built on pointer capture, which a
    dispatched MouseEvent skips entirely — a synthetic drag would pass against
    an implementation that cannot actually be driven by a hand.
@@ -107,10 +112,37 @@ if (Math.hypot(a3.x1 - b3.x1, a3.y1 - b3.y1) < 8)
 if (Math.hypot(a3.x2 - b3.x2, a3.y2 - b3.y2) > 2)
   fail('the leader line let go of the point it names');
 
+/* drag THE BAND'S OWN NAME — a mover: type that belongs to no building.
+   It was the one string on the map the nudge table could not reach, so it was
+   also the only one that could not be got out of the way of anything else. */
+const movKey = await p.evaluate(() => MOVERS.length ? MOVERS[0].key : null);
+if (!movKey) fail('the band name is not a mover — nothing to drag');
+else {
+  const mstate = () => p.evaluate(k => {
+    const m = MOVERS.find(x => x.key === k);
+    const r = m.g.getBoundingClientRect();
+    return { lx: m.lx, ly: m.ly, sx: r.x + r.width / 2, sy: r.y + r.height / 2 };
+  }, movKey);
+  const b4 = await mstate();
+  await p.mouse.move(b4.sx, b4.sy); await p.mouse.down();
+  await p.mouse.move(b4.sx - 130, b4.sy - 50, { steps: 14 }); await p.mouse.up();
+  await p.waitForTimeout(300);
+  const a4 = await mstate();
+  if (Math.abs(a4.lx - b4.lx) < 0.2 && Math.abs(a4.ly - b4.ly) < 0.2)
+    fail(`dragging the band name did not move it (ldx ${b4.lx}->${a4.lx}, ldy ${b4.ly}->${a4.ly})`);
+  /* and the type itself has to have gone with the nudge — the nudge is what
+     is saved, but the nudge moving while the glyphs stay put is exactly the
+     failure the floating labels had */
+  if (Math.hypot(a4.sx - b4.sx, a4.sy - b4.sy) < 20)
+    fail('the band name nudge moved but the type did not');
+}
+
 /* it is remembered, and it prints a block to paste */
 const stored=await p.evaluate(()=>localStorage.getItem('bpipe.offsets'));
 if(!stored || !JSON.parse(stored).c3 || !JSON.parse(stored).c5 || !JSON.parse(stored)[annKey])
   fail('offsets were not written to local storage: '+stored);
+if(movKey && stored && !JSON.parse(stored)[movKey])
+  fail('the band name offset was not written to local storage: '+stored);
 if(!await p.locator('#btnSave').isVisible()) fail('Save positions never appeared');
 await p.locator('#btnSave').click();
 await p.waitForTimeout(250);
@@ -127,6 +159,6 @@ if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).dis
 
 console.log(bad?`\n${bad} FAILURE(S)`
  :'edit positions: buildings drag, names drag on their own, floating labels drag '+
-  'and their leaders follow, all three remembered, block prints');
+  'and their leaders follow, the band name drags, all four remembered, block prints');
 if(errs.length) console.log('page errors:',errs);
 await b.close(); process.exit(bad||errs.length?1:0);

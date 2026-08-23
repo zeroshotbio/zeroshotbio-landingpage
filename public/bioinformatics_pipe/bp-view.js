@@ -97,21 +97,41 @@ function applyNudge(n,o){
 }
 NODES.filter(n=>!n.scenery).forEach(n=>applyNudge(n,LIVE[n.id]));
 
-/* Scenery spans other objects, so it is resolved AFTER they have settled —
-   the band has to reach the buildings where they actually ended up, not where
-   the lane first put them. Its own base is that derived position, so it only
-   carries a nudge when somebody has actually dragged it. */
-NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
-  const A=byId[r.from], B=byId[r.to];
-  r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
-  r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
-  /* a station whose cull has been deleted has nothing to stand under, so it
-     leaves the band */
-  r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
-  r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x; });
-  r._ox=r.x0+1.4; r._oy=r.y;
-  applyNudge(r,LIVE[r.id]);
-});
+/* SCENERY SPANS OTHER OBJECTS, so it is resolved after they have settled: the
+   band has to reach the buildings where they actually ended up.
+
+   ITS BASE, THOUGH, IS TAKEN FROM WHERE THE LANE PUT THEM — `_ox`, not `x`.
+   That distinction is the whole of a bug that made Save look broken for two
+   builds running. The band's span is derived from the buildings it covers, so
+   deriving its BASE from them too makes the base a function of the very table
+   being applied: shift the first matrix a unit to the left and the band's
+   zero moves a unit left with it, on top of the nudge it already carries.
+   Worse, it moved by different amounts down the two paths a table can arrive
+   by — local storage, which lands before the lane is solved, and the shared
+   record, which lands after the map is drawn — so a layout saved in one
+   browser opened a unit off in the next one. It looked exactly like a save
+   that had not taken.
+
+   The base is the lane's own answer, computed as if nothing had been dragged.
+   The span still follows the buildings. Those are two different questions and
+   they now have two different answers. */
+function resolveScenery(o){
+  NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
+    const A=byId[r.from], B=byId[r.to];
+    if(!A||!B) return;
+    r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
+    r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
+    /* a station whose cull has been deleted has nothing to stand under, so it
+       leaves the band */
+    r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
+    r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x; });
+    /* _oy is left exactly as the capture above took it. Re-taking it here
+       would read whatever the last nudge left behind and compound it. */
+    r._ox=(A._ox-A.w/2-0.4)+1.4;
+    applyNudge(r,(o||{})[r.id]);
+  });
+}
+resolveScenery(LIVE);
 
 /* and where each object was actually DRAWN, which is what a translate is
    measured against */
@@ -173,19 +193,40 @@ const GRID={x0:-5,x1:37,y0:-15,y1:10};
   num(P(GRID.x0-LBL,GRID.y1+1.5,0), "Y", -30, true);
 })();
 
-/* row bands — the name runs along the band's bottom-right edge */
-BANDS.forEach(b=>{
+/* Row bands — the name runs along the band's bottom-right edge.
+
+   THE NAME IS A MOVER. It belongs to no building, so nothing in the nudge
+   table reached it and it was the one piece of type on the map that could not
+   be got out of the way of anything. It is placed from world coordinates like
+   everything else, so it takes the same world-unit nudge a building's name
+   takes, under its own key. */
+const MOVERS=[];
+BANDS.forEach((b,i)=>{
   const c=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]];
   gBand.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
     fill:"var(--fg)","fill-opacity":".025",stroke:"var(--fg)","stroke-opacity":".22",
     "stroke-width":"1","stroke-dasharray":"14 9"}));
-  const [px,py]=P(b.x1,(b.y0+b.y1)/2,0);
-  const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
+  const bx=b.x1, by=(b.y0+b.y1)/2;
+  const g=gLabel.appendChild(el("g"));
   const t=el("text",{x:0,y:17,"text-anchor":"middle","font-size":"16","letter-spacing":"4",
     fill:"var(--fg3)"});
   t.textContent=b.name.toUpperCase(); g.appendChild(t);
-  gLabel.appendChild(g);
+  const m={key:"band:"+i, name:b.name, g, lx:0, ly:0, hide:false,
+    reflow(){
+      const [px,py]=P(bx+m.lx, by+m.ly, 0);
+      g.setAttribute("transform",`translate(${px},${py}) rotate(-30)`);
+    }};
+  m.reflow();
+  MOVERS.push(m);
 });
+function applyMover(m,o){
+  o=o||{};
+  m.lx=o.ldx||0; m.ly=o.ldy||0;
+  if(o.del && !m.hide){ m.hide=true; m.g.setAttribute("display","none"); }
+  if(!o.del && m.hide){ m.hide=false; m.g.removeAttribute("display"); }
+  m.reflow();
+}
+MOVERS.forEach(m=>applyMover(m,LIVE[m.key]));
 
 /* plinths under the two landmarks; their names run along the bottom-left edge */
 NODES.filter(n=>n.anchor).forEach(n=>{
@@ -278,18 +319,43 @@ EDGES.forEach(e=>{
   edgeGeom.push(rec);
 });
 
-/* carries — fade to and from nothing */
+/* carries — fade to and from nothing.
+
+   Each one runs along the row from the edge of the building it serves, so it
+   is re-derived from that building rather than drawn once: dragging the
+   matrix carries its own track with it. The gradient is in user space, so it
+   has to be moved too — a path that moves under a fixed gradient fades in the
+   wrong place, which looks like a rendering bug and is in fact a stale
+   coordinate. */
+const CARRY=[];
 CARRIES.forEach((c,i)=>{
-  const a=P(c.x0,c.y0,0.02), b=P(c.x1,c.y1,0.02);
   const gid=`fade${i}`;
-  const lg=el("linearGradient",{id:gid,gradientUnits:"userSpaceOnUse",x1:a[0],y1:a[1],x2:b[0],y2:b[1]});
+  const lg=defs.appendChild(el("linearGradient",{id:gid,gradientUnits:"userSpaceOnUse"}));
   const o1=c.fade==="out"?".7":"0", o2=c.fade==="out"?"0":".7";
   lg.appendChild(el("stop",{offset:"0","stop-color":"var(--edge)","stop-opacity":o1}));
   lg.appendChild(el("stop",{offset:"1","stop-color":"var(--edge)","stop-opacity":o2}));
-  defs.appendChild(lg);
-  gEdge.appendChild(el("path",{d:`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`,fill:"none",
-    stroke:`url(#${gid})`,"stroke-width":"1.3"}));
-  edgeGeom.push({kind:c.kind,carry:c.fade,...makeGeom([a,b]),fromName:c.from,toName:c.to});
+  const path=gEdge.appendChild(el("path",{fill:"none",stroke:`url(#${gid})`,"stroke-width":"1.3"}));
+  const rec={kind:c.kind,carry:c.fade,fromName:c.from,toName:c.to};
+  edgeGeom.push(rec);
+  const place=()=>{
+    const n=byId[c.node];
+    if(!n || n.gone){ path.setAttribute("display","none"); return; }
+    path.removeAttribute("display");
+    /* the near end sits off the building's own face; the far end runs on out
+       of the map, along the row */
+    const edge=n.x+(c.side==="out"?+1:-1)*(n.w/2+c.gap);
+    const away=edge+(c.side==="out"?+1:-1)*c.len;
+    const near=P(edge,n.y,0.02), far=P(away,n.y,0.02);
+    /* a carry always FADES OUTWARD, so the solid end is the one at the
+       building whichever side it is on */
+    const a=c.fade==="out"?near:far, b=c.fade==="out"?far:near;
+    lg.setAttribute("x1",a[0]); lg.setAttribute("y1",a[1]);
+    lg.setAttribute("x2",b[0]); lg.setAttribute("y2",b[1]);
+    path.setAttribute("d",`M ${a[0]} ${a[1]} L ${b[0]} ${b[1]}`);
+    Object.assign(rec,makeGeom([a,b]));
+  };
+  place();
+  CARRY.push({node:c.node,place});
 });
 
 /* ============================================================
@@ -372,9 +438,10 @@ function reposition(n){
 }
 function refresh(id){
   rebuildClip();
-  /* carries have no host: they run off-map in absolute coordinates, so no
-     move can change them */
   edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
+  /* a carry has no host, but it is anchored to a building, so it moves when
+     that building does */
+  CARRY.forEach(c=>{ if(!id || c.node===id) c.place(); });
   placeDots(0);
 }
 /* Apply a whole table of nudges to a map that has already been drawn. This is
@@ -384,6 +451,7 @@ function applyOffsets(o){
   NODES.forEach(n=>{ applyNudge(n,o[n.id]); reposition(n); });
   if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
     const w=o[a.key]||{}; a.off.dx=w.adx||0; a.off.dy=w.ady||0; a.reflow(); });
+  MOVERS.forEach(m=>applyMover(m,o[m.key]));
   NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
   refresh(null);
 }
@@ -925,6 +993,11 @@ function collectOffsets(){
     const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
   if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
     const o=annOffset(a); if(Object.keys(o).length) out[a.key]=o; });
+  MOVERS.forEach(m=>{
+    if(m.hide){ out[m.key]={del:true}; return; }
+    const ldx=r2(m.lx), ldy=r2(m.ly);
+    if(ldx||ldy) out[m.key]={...(ldx?{ldx}:{}),...(ldy?{ldy}:{})};
+  });
   return out;
 }
 /* ---- the two bits of chrome the editing mode needs ----------------------
@@ -993,6 +1066,16 @@ feature("edit positions", function(){
     L.appendChild(el("rect",Object.assign({},box,{class:"ehandle lab"})));
     L.appendChild(el("rect",Object.assign({},box,{class:"ehit","data-id":n.id})));
   });
+  /* the band's own name gets the same box, for the same reason: glyphs are a
+     few hundred square pixels of ink and mostly holes */
+  MOVERS.forEach(m=>{
+    let bb; try{ bb=m.g.getBBox(); }catch(err){ bb=null; }
+    if(!bb || !bb.width) return;
+    const pad=6;
+    const box={x:bb.x-pad,y:bb.y-pad,width:bb.width+pad*2,height:bb.height+pad*2};
+    m.handle=m.g.appendChild(el("rect",Object.assign({},box,{class:"ehandle lab"})));
+    m.hit=m.g.appendChild(el("rect",Object.assign({},box,{class:"ehit"})));
+  });
   /* ---- PICK, AND THE ✕ ------------------------------------------------
      A press that does not travel is a pick rather than a drag, and a picked
      object gets a ✕ floating at its top corner. The ✕ is an HTML button in
@@ -1015,7 +1098,9 @@ feature("edit positions", function(){
       const n=picked.n, p=P(n.x, n.y-n.d/2, topOf(n));
       sx=view.x+p[0]*view.k; sy=view.y+p[1]*view.k;
     } else {
-      const b=picked.a.hit.getBoundingClientRect();
+      const t=picked.kind==="ann" ? picked.a.hit : picked.m.hit;
+      if(!t){ xbtn.style.display="none"; return; }
+      const b=t.getBoundingClientRect();
       sx=b.x+b.width-r.left; sy=b.y-r.top;
     }
     xbtn.style.display="grid";
@@ -1040,12 +1125,16 @@ feature("edit positions", function(){
   if(xbtn) xbtn.onclick=()=>{
     if(!picked) return;
     const what=picked;
-    const name=what.kind==="node" ? what.n.key+" · "+what.n.name : what.a.key;
+    const name=what.kind==="node" ? what.n.key+" · "+what.n.name
+             : what.kind==="ann"  ? what.a.key
+             : what.m.name;
     ask("Delete "+name+"?",
         "It comes off the map for anyone who opens the page once you save. "+
         "Everything else in this mode undoes itself by dragging back; this does not.",
         ()=>{
-          if(what.kind==="node") removeNode(what.n); else removeAnn(what.a);
+          if(what.kind==="node") removeNode(what.n);
+          else if(what.kind==="ann") removeAnn(what.a);
+          else { what.m.hide=true; what.m.g.setAttribute("display","none"); }
           unpick(); markDirty();
         });
   };
@@ -1076,6 +1165,13 @@ feature("edit positions", function(){
     }
     const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
     const q=v=>Math.round(v/SNAP)*SNAP;
+    if(grab.mode==="mover"){
+      const m=grab.m;
+      m.lx=r2(grab.ox+q(dx)); m.ly=r2(grab.oy+q(dy));
+      m.reflow();
+      if(hint) hint.textContent=`${m.name} — ldx ${m.lx.toFixed(2)} ldy ${m.ly.toFixed(2)}`;
+      return;
+    }
     const n=grab.n;
     if(grab.mode==="label"){ n._lx=r2(grab.olx+q(dx)); n._ly=r2(grab.oly+q(dy)); }
     else { n.x=r2(grab.ox+q(dx)); n.y=r2(grab.oy+q(dy)); }
@@ -1089,6 +1185,13 @@ feature("edit positions", function(){
     if(grab.mode==="ann"){
       grab.ann.box.classList.remove("picked");
       if(!travelled) pick({kind:"ann",a:grab.ann});
+      const moved=travelled; grab=null;
+      if(moved) markDirty();
+      return;
+    }
+    if(grab.mode==="mover"){
+      grab.m.g.classList.remove("picked");
+      if(!travelled) pick({kind:"mover",m:grab.m});
       const moved=travelled; grab=null;
       if(moved) markDirty();
       return;
@@ -1127,6 +1230,21 @@ feature("edit positions", function(){
     });
     a.hit.addEventListener("pointermove",move);
     ["pointerup","pointercancel"].forEach(t=>a.hit.addEventListener(t,end));
+  });
+
+  /* THE BAND'S NAME. World units, like a building's name — it is placed from
+     world coordinates, so it can be nudged in them. */
+  MOVERS.forEach(m=>{
+    if(!m.hit) return;
+    m.hit.addEventListener("pointerdown",ev=>{
+      if(!editing) return;
+      ev.stopPropagation(); ev.preventDefault();
+      if(m.hit.setPointerCapture) m.hit.setPointerCapture(ev.pointerId);
+      grab={m,mode:"mover",px:ev.clientX,py:ev.clientY,moved:0,ox:m.lx,oy:m.ly};
+      m.g.classList.add("picked");
+    });
+    m.hit.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>m.hit.addEventListener(t,end));
   });
 
   NODES.forEach(n=>{

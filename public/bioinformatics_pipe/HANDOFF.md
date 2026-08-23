@@ -199,21 +199,41 @@ orientation by moving the *axis* was the wrong lever, because it put one
 chart's origin in a different corner from the rest and that is what a reader
 notices first.
 
-### Nothing on the roof is rotated
+### One thing on the roof is rotated, and only one
 
 At turn 0 an unrotated string advances up-and-right at **−30°** — the same
-angle the step names, the landmark names and the band title all read at. So
-every word on the roof lies the same way as every word on the rest of the map,
-and the eye never changes reading angle crossing between them.
+angle the step names, the landmark names and the band title all read at. The
+chart title and the x title are both flat for that reason, and so is every tick.
 
-The cost: an axis title cannot run *parallel* to its own axis, because the y arm
-goes down-right and a title following it would read at +30° and break the rule.
-So **both titles sit at the far end of their arm**, past the arrowhead. That is
-a legitimate convention and keeps the association without the rotation.
+**The y title is turned a quarter, and only it.** Flat, it advanced along the
+same screen direction as the x title, so the two ran parallel and nothing but
+position said which axis either belonged to. Turned, it runs along its own arm
+the way a y title does on any chart anywhere.
+
+**The direction of the turn is not a free choice, and both signs look
+plausible.** Chart +y projects to **+30°** on screen and chart −y to **−150°**.
+Text laid along −150° runs right to left with its tops pointing down: upside
+down, at a glance, on a roof. `rotate(+90)` lays it along +30° with its tops
+up — parallel to the y arm, running the opposite way down that line from the
+arrow, which is what makes it read as a label *on* the axis rather than a
+second thing on it.
+
+If this is ever changed, **measure the screen CTM**: the image of `(1,0)` is
+the advance direction and the image of `(0,−1)` is glyph-up. Those two angles
+are the only evidence that counts. `angles.mjs`, beside the checks, prints
+both for every axis title on the map.
 
 `roofFrame`'s `turn` parameter still exists and nothing uses it. Fixing the
 orientation in the **data mapping** is the better fix where it is available;
 turning is what is left when it is not.
+
+### Ticks are filtered to their own domain
+
+The domains are robust quantiles computed from the population, so which decades
+are on the axis is not known when the ticks are written down. Tightening the
+complexity domain pushed a "100" off the left end, where it landed on top of
+the y axis's own "100" and rendered as `1000`. A tick outside its domain is a
+label pointing at nothing, so `axesFrame` drops it.
 
 ### There is no panel on the map, and no legend, and no band
 
@@ -392,7 +412,9 @@ cannot catch the bug it exists for.
   the thing you wanted to do; one that never leaves is indistinguishable from a
   stuck page.
 - **`check-persist.mjs`** asserts a saved sitting is the default **in a browser
-  that has never seen it**. The other five all passed the day Save silently
+  that has never seen it**, and compares **every object, not the one that was
+  dragged** — the second persistence bug moved the attrition band, which the
+  drag never touched, while the building that was dragged sat perfectly still. The other five all passed the day Save silently
   stopped taking, because they stub the endpoint to a constant and the author's
   own browser had the arrangement in local storage. This one runs a stateful
   record, opens a **second context** with an empty store, and also asserts the
@@ -419,6 +441,12 @@ and no ticker is disturbed.
   a world delta and translates the group.
 - **Its name.** Same, but into `ldx`/`ldy`, composed in front of the label
   group's own translate+rotate.
+- **The band's own name** — a **mover**. It belongs to no building, so nothing
+  in the nudge table reached it and it was the one string on the map that could
+  not be got out of the way of anything else. It is placed from world
+  coordinates like everything else, so it takes the same world-unit nudge a
+  building's name does, under its own key (`band:0`). `MOVERS` in `bp-view.js`;
+  add to that list and it drags, saves and deletes with no other work.
 - **A floating annotation** — UNDER-AMPLIFIED, SYNTHETIC REFERENCE. These are
   not laid out from world coordinates at all: their own shape re-places them
   from scratch **every frame**, so moving the element is pointless — the next
@@ -444,6 +472,19 @@ the lane being re-solved or a step being inserted.
 
 ### One base, captured once: `_ox` / `_oy`
 
+**Including the scenery.** The attrition band's *span* is derived from the
+buildings it covers, and deriving its *base* from them too makes the base a
+function of the very table being applied: shift the first matrix a unit left
+and the band's zero goes with it, on top of the nudge it already carries. It
+moved by different amounts down the two paths a table can arrive by — local
+storage lands before the lane is solved, the shared record lands after the map
+is drawn — so a layout saved in one browser opened a unit off in the next, and
+crept another unit on every save-and-reload after that. It looked exactly like
+a save that had not taken, which is what it was reported as, twice.
+
+`resolveScenery()` now takes the base from `A._ox` and the span from `A.x`.
+Two different questions, two different answers.
+
 **Every nudge is measured from `_ox`/`_oy`, the lane engine's own output, and
 from nothing else.** They are captured immediately after `layoutRows()` and
 never written again. `applyNudge(n,o)` sets `n.x = n._ox + o.dx`, so applying a
@@ -460,6 +501,14 @@ while `LIVE` is exactly what was applied. Two bugs came out of it:
   had never touched it. Scenery is now resolved **after** offsets are applied,
   and takes its base from its derived position.
 - **A shared copy that could not be applied in place.** See below.
+
+### And the record is read back consistently
+
+`GET /api/bpipe_edits` passes `ConsistentRead: true` and the route is
+`force-dynamic`. A save is read back within seconds of being written — the
+author reloads to check it took — and DynamoDB's default eventually-consistent
+read may legitimately serve the previous layout to exactly that reload. There
+is no way to tell that apart from a save that never happened.
 
 ### The shared copy applies itself, it does not ask
 
@@ -569,6 +618,13 @@ two modes, that is the constraint they inherit.
   like. If the computed one is wrong, the population model is wrong.
 - **Flip the roof's y axis back.** It looks like a bug and is the only reason
   the cloud lies along the roof rather than across it.
+- **Centre a squat plot.** `squat` is anchored to the x axis on purpose: the
+  corner and the x arm have to land where they land on every neighbouring roof,
+  or four charts meant to be read as a series stop lining up with each other.
+- **Write a carry down as coordinates.** Both of them are anchored to the
+  building they serve and run along the row. Fixed, they stayed put when that
+  building was dragged, so the map could be arranged into a state where the
+  barcodes arrive four units short of the matrix.
 - **Replace the hand-rolled projection with a library.** Layout, label angles,
   painter ordering, the camera and the roof matrix all derive from `P()`.
 - **Write to `_ox`/`_oy` after they are captured**, or read a nudge back as

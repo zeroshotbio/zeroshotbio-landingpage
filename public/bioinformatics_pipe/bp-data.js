@@ -167,11 +167,25 @@ const BANDS = [
 /* Both ends fade, because neither is on this page: the barcodes arrive from a
    counting stack that is off the left of this map, and the cells leave for the
    labelling a row below on the big one. Drawing a hard terminus at either end
-   would claim this stretch is self-contained, and it is a middle. */
+   would claim this stretch is self-contained, and it is a middle.
+
+   THEY RUN ALONG THE ROW, and they are ANCHORED TO A BUILDING rather than
+   written down as coordinates. Both matter, and both were got wrong first:
+
+   - The inbound one used to drop in from behind the row, on a segment at a
+     right angle to everything else on the page. A track that arrives across
+     the direction of travel does not read as the same pipeline continuing; it
+     reads as a second thing joining, from nowhere in particular. It arrives
+     on the row's own line now, from the left, which is where "off the left of
+     this map" actually is.
+   - Written as fixed coordinates they stayed put when the building they feed
+     was dragged, so the map could be arranged into a state where barcodes
+     arrive four units short of the matrix. Anchored, the track is wherever
+     its building is, always. */
 const CARRIES = [
-  {x0:1.95,y0:R3-8.0, x1:1.95,y1:R3-3.2, fade:"in", kind:"cell",
+  {node:"UD", side:"in",  gap:1.15, len:4.6, fade:"in", kind:"cell",
    from:"the counting stack, off this map", to:"Unfiltered matrix"},
-  {x0:32.1,y0:R3, x1:36.6,y1:R3, fade:"out", kind:"cell",
+  {node:"FD", side:"out", gap:1.15, len:4.6, fade:"out", kind:"cell",
    from:"Filtered matrix", to:"the labelling, a row below on /pipeline"},
 ];
 

@@ -188,9 +188,13 @@ const MODEL=(()=>{
 /* The bottom strip is deeper than the top one, and asymmetrically so on
    purpose: the "falling" layout puts BOTH the x ticks and the x title down
    there, and at equal pads they sat on each other. */
-const CW=176, PAD={l:44,r:16,t:34,b:42};
+/* PAD.l carries three things stacked outward from the plot: the tick marks,
+   the tick labels, and the turned y title. It is wider than it looks like it
+   needs to be for exactly that reason — at 44 the title sat on top of a
+   three-character tick and the two read as one longer string. */
+const CW=176, PAD={l:54,r:16,t:34,b:42};
 const CX0=PAD.l, CY0=PAD.t, CWD=CW-PAD.l-PAD.r, CHT=CW-PAD.t-PAD.b;
-const T_AXIS=12, T_TICK=10;
+const T_AXIS=12, T_TICK=10, T_TITLE=15;
 
 /* ------------------------------------------------------------------
    BEATS
@@ -271,7 +275,7 @@ function building(g,n,skin){
    ------------------------------------------------------------------ */
 function axesFrame(F,o){
   const g=F.g, up=o.trend!=="rising";      /* up: more is toward the top */
-  /* SQUAT — a plot shorter than the chart square, centred in it.
+  /* SQUAT — a plot shorter than the chart square, ANCHORED TO THE X AXIS.
 
      This is the lever that lets a RISING trend keep the ordinary axis
      placement. The trend's screen direction is (0.874(a−b), −0.505(a+b))
@@ -281,11 +285,16 @@ function axesFrame(F,o){
      direction swings toward −30°, which is the roof's own x edge and the
      angle everything on this page reads at.
 
-     So the genes-against-transcripts cloud gets its x axis along the bottom
-     like every other chart here, and still lies along the roof. What it costs
-     is a band of empty roof above and below the plot, which the axis titles
-     use anyway. */
-  const H=CHT*(o.squat||1), TOP=CY0+(CHT-H)/2, BOT=TOP+H;
+     IT IS ANCHORED, NOT CENTRED, and that is the whole difference between a
+     chart and a chart that looks like a mistake. Centred, a squat plot floats
+     in the middle of the roof with a band of blank slab under it, and its x
+     axis sits at a different height from the x axis of every neighbouring
+     roof — so four charts that are meant to be read as a series stop lining
+     up with each other. Anchored, the corner and the x axis land exactly
+     where they land on every other roof here and only the y arm is short,
+     which is a fact about the data rather than a wobble in the drawing. */
+  const H=CHT*(o.squat||1);
+  const TOP = up ? CY0+CHT-H : CY0, BOT = TOP+H;
   F.X=v=>CX0+((v-o.xd[0])/(o.xd[1]-o.xd[0]))*CWD;
   F.Y=up ? v=>BOT-((v-o.yd[0])/(o.yd[1]-o.yd[0]))*H
          : v=>TOP+((v-o.yd[0])/(o.yd[1]-o.yd[0]))*H;
@@ -304,31 +313,70 @@ function axesFrame(F,o){
   g.appendChild(el("polygon",{points:pts([
       [CX0,yEnd+ySign*9],[CX0-2.5,yEnd+ySign*3.4],[CX0+2.5,yEnd+ySign*3.4]]),fill:"var(--fg)"}));
 
-  /* ticks sit OUTSIDE the L, on the far side of each arm from the plot */
-  (o.xt||[]).forEach(([v,lab])=>{
+  /* Ticks sit OUTSIDE the L, on the far side of each arm from the plot — and
+     ONLY IF THEIR VALUE IS ON THE AXIS. The domains here are robust quantiles
+     computed from the population, so which decades are in range is not known
+     when the ticks are written down; tightening a domain silently pushed a
+     "100" off the left end of the complexity chart, where it landed on top of
+     the y axis's own "100" and rendered as "1000". A tick outside its domain
+     is a label pointing at nothing. */
+  const inX=v=>v>=Math.min(o.xd[0],o.xd[1])&&v<=Math.max(o.xd[0],o.xd[1]);
+  const inY=v=>v>=Math.min(o.yd[0],o.yd[1])&&v<=Math.max(o.yd[0],o.yd[1]);
+  (o.xt||[]).filter(t=>inX(t[0])).forEach(([v,lab])=>{
     const x=F.X(v);
     g.appendChild(el("line",{x1:x,y1:cy,x2:x,y2:cy-ySign*3.4,stroke:"var(--fg)","stroke-width":"1.3"}));
     const t=g.appendChild(el("text",{x,y:cy-ySign*3.4+(up?9:-4),"text-anchor":"middle",
       fill:"var(--fg2)","font-size":T_TICK,"font-family":MONO})); t.textContent=lab;
   });
-  (o.yt||[]).forEach(([v,lab])=>{
+  (o.yt||[]).filter(t=>inY(t[0])).forEach(([v,lab])=>{
     const y=F.Y(v);
     g.appendChild(el("line",{x1:CX0-3.4,y1:y,x2:CX0,y2:y,stroke:"var(--fg)","stroke-width":"1.3"}));
     const t=g.appendChild(el("text",{x:CX0-7,y:y+T_TICK*0.36,"text-anchor":"end",
       fill:"var(--fg2)","font-size":T_TICK,"font-family":MONO})); t.textContent=lab;
   });
 
-  /* Both titles are anchored START and sit inside the chart's own width.
-     Anchored END they run leftward off chart x = 0, which on an eleven-letter
-     title is most of the way off the building — "TRANSCRIPTS" and
-     "EXPRESSION 2" both did it, and a five-letter "GENES" did not, so it
-     looked like a one-off rather than the rule it is. */
+  /* ---- the three pieces of type on a chart -----------------------------
+
+     THE X TITLE runs along its own arm, outside the L. Anchored END and
+     sitting inside the chart's own width: anchored START it runs off chart
+     x = 0, which on an eleven-letter title is most of the way off the
+     building — "TRANSCRIPTS" and "EXPRESSION 2" both did it and a
+     five-letter "GENES" did not, so it looked like a one-off rather than the
+     rule it is.
+
+     THE Y TITLE IS TURNED A QUARTER, so it runs along its own arm the way a
+     y title does on any chart anywhere. Flat, it advanced along chart +x —
+     the same screen direction as the x title — so the two ran parallel and
+     nothing but position said which axis either one belonged to.
+
+     THE DIRECTION OF THE TURN IS NOT A FREE CHOICE. Chart +y projects to
+     +30° on screen and chart −y to −150°, and text laid along −150° is text
+     running right to left with its tops pointing down: upside down, at a
+     glance, on a roof. rotate(+90) lays it along +30° with its tops up, so
+     it is parallel to the y arm and still the right way up. It runs the
+     opposite way down that line from the arrow, which is what makes it read
+     as a label on the axis rather than a second thing on it. Measure the
+     screen CTM if this is ever changed — `advance` and `glyphUp` are the
+     only evidence that counts, and both look plausible at the wrong sign.
+
+     THE CHART TITLE sits above everything, centred over the plot, flat. It
+     is the one string on the roof that names the CULL rather than a
+     quantity, which is why it is the only one that gets its own size. */
   const ax=g.appendChild(el("text",{x:CX0+CWD,y:cy-ySign*28,"text-anchor":"end",fill:"var(--fg)",
     "font-size":T_AXIS,"font-family":MONO,"font-weight":"600","letter-spacing":"1.2"}));
   ax.textContent=o.xlab;
-  const ay=g.appendChild(el("text",{x:CX0+4,y:yEnd+ySign*16,"text-anchor":"start",fill:"var(--fg)",
+
+  const ayx=CX0-38, ayy=(TOP+BOT)/2;
+  const ay=g.appendChild(el("text",{x:ayx,y:ayy,"text-anchor":"middle",fill:"var(--fg)",
+    transform:`rotate(90 ${ayx} ${ayy})`,
     "font-size":T_AXIS,"font-family":MONO,"font-weight":"600","letter-spacing":"1.2"}));
   ay.textContent=o.ylab;
+
+  if(o.title){
+    const tt=g.appendChild(el("text",{x:CX0+CWD/2,y:TOP-19,"text-anchor":"middle",fill:"var(--fg)",
+      "font-size":T_TITLE,"font-family":MONO,"font-weight":"700","letter-spacing":"2.6"}));
+    tt.textContent=o.title;
+  }
 
   /* Everything drawn into F.plot is CLIPPED to the plot rectangle. The
      domains are robust quantiles, not min and max: a single barcode at five
@@ -561,7 +609,7 @@ function drawKneeRoof(g,n){
 
   const XD=[0,Math.log10(MODEL.B.length)+0.08];
   const YD=domainOf(MODEL.B.map(c=>Math.log10(c.umi)),0.0005,0.9995,0.05);
-  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"falling",
+  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"falling",title:"KNEE",
     xlab:"BARCODES, RANKED",ylab:"TRANSCRIPTS",
     xt:[[0,"1"],[2,"100"],[4,"10k"]],
     yt:[[1,"10"],[2,"100"],[3,"1k"]]});
@@ -654,7 +702,7 @@ function drawMitoRoof(g,n){
     if(b>=0&&b<BINS) hist[b]++; });
   const hmax=Math.max.apply(null,hist)||1;
 
-  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",
+  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",title:"MITO %",
     xlab:"MITOCHONDRIAL %",ylab:"CELLS",
     xt:[[0,"0"],[5,"5"],[10,"10"],[15,"15"]],yt:[]});
 
@@ -747,7 +795,7 @@ function drawDoubletRoof(g,n){
   const F=roofFrame(g,n,n.h,CW);
 
   const XD=[-0.04,1.04], YD=[-0.04,1.04];
-  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",
+  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",title:"DOUBLETS",
     xlab:"EXPRESSION 1",ylab:"EXPRESSION 2",xt:[],yt:[]});
 
   const px=c=>[F.X(c.ex), F.Y(c.ey)];
@@ -886,15 +934,16 @@ function drawComplexityRoof(g,n){
      cell in the population sits several sigma out on its own — and taking it
      as the axis limit compressed the entire cloud into a two-pixel sliver.
      It rendered, it was wrong, and nothing on screen said so. */
-  const XD=domainOf(us,0.004,0.996,0.06);
-  const YD=domainOf(gs,0.004,0.996,0.06);
+  const XD=domainOf(us,0.02,0.98,0.05);
+  const YD=domainOf(gs,0.02,0.98,0.05);
 
   /* Ordinary placement — x along the bottom, y up the left — like every
      other chart on the page. It is a rising trend, so it needs a squat plot
      to stay off the vertical; see axesFrame(). */
-  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",squat:0.46,
+  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",title:"COMPLEXITY",
     xlab:"TRANSCRIPTS",ylab:"GENES",
-    xt:[[2,"100"],[3,"1k"],[4,"10k"]],yt:[[2,"100"],[3,"1k"]]});
+    xt:[[2,"100"],[2.5,"300"],[3,"1k"],[3.5,"3k"],[4,"10k"]],
+    yt:[[2,"100"],[2.5,"300"],[3,"1k"],[3.5,"3k"]]});
 
   const px=c=>[F.X(Math.log10(c.umi)), F.Y(Math.log10(c.genes))];
 
