@@ -18,20 +18,33 @@
    If a claim on that map changes, change it there and lift it again; do not
    let the two drift into two different accounts of the same stage.
 
-   TWO THINGS ARE CHANGED, AND BOTH ARE GEOMETRY, NEVER PROSE
-   The six culls are scaled up 1.7x, because on the big map they share a row
-   with thirteen other objects and here they are the only thing on the canvas.
-   And D5, "Outliers off the trend", is drawn as a ROOF: it says it fits genes
-   detected against total counts and removes points too far off the fit, which
-   is a two-dimensional argument, and there is finally room to show it. It is
-   the same node — not a picture of it standing next to it — because putting
-   the claim on the map twice would be two places to keep in agreement.
+   FOUR CULLS, EACH WITH ITS DECISION DRAWN ON ITS ROOF
+     Knee        a hard transcript minimum at the steepest point of the
+                 barcode-rank curve, per sample
+     Mito %      cells above median + 3 MAD of mitochondrial fraction
+     Complexity  both tails of the genes-vs-transcripts fit
+     Doublets    scDblFinder, against the expected collision rate
 
-   ONE FIGURE ON THIS PAGE IS MODELLED AND THE REST ARE REAL
-   D5's band. The real fit is a per-sample spline at a p-level spanning
-   6.9e-6 to 1e-3 across a single plate, so there is no single band to draw.
-   It says MODELLED on the panel beside it, under its name on the map, and in
-   the reader. Keep it in all three.
+   Each is one of /pipeline's own cull nodes, lifted, and each keeps its
+   lifted body. What is authored here is the NAME and the one-line sub, which
+   say which single policy is on the roof — on the big map a cull node has to
+   cover every policy the corpus uses for that stage, and "Cell or background"
+   names three of them at once. The pipelineName field carries the original
+   name through to the reader so the two maps can still be matched up.
+
+   Two of the big map's six culls are not drawn: D3, the depth floor, folds
+   into the knee because the knee IS a transcript minimum, fitted rather than
+   chosen; and G3, sample demultiplex, exists only for hashed designs, which
+   this chemistry is not. Neither claim is being dropped — both are still on
+   /pipeline — only not drawn here.
+
+   EVERY FIGURE ON THESE FOUR ROOFS IS MODELLED, WITH ONE EXCEPTION
+   The thresholds are computed at load from the seeded population in
+   bp-pop.js, because none of these four has a shipping policy with a single
+   drawable number behind it. The exception is the expected collision rate on
+   the doublet roof, which is Poisson arithmetic over real figures — 442,368
+   paths, 8 sublibraries, 94,616 cells — and is labelled REAL beside the
+   modelled one it is being compared against.
 
    Load order: iso -> pop -> shapes -> data -> view
    ============================================================ */
@@ -49,49 +62,55 @@ const NODES = [
  built:"Written once inside the counting pipeline and read by every QC stage. It is essentially never part of a delivery: for the worked example, all-sample/ on this instance holds report/ and figures/ only.",
  cond:"Its absence is why the funnel on this row has no numbers. ChemFish states the rule plainly — do not infer the missing cells from the filtered object, the pre-QC data is not available. What survives for the worked example is a ratio, not a count: 86.1% of transcripts and 86.4% of reads fell inside called cells, so the discarded ambient tail is roughly a seventh of the signal. That tail is also the only place treatment-correlated contamination would show up, and it is gone."},
 
-{id:"c1", key:"D2", group:"The cull", shape:"tile", hatch:true, name:"Cell or background", x:15.4, y:R3, lane:"r3", w:1.19, d:1.19, h:1.33,
- sub:"knee, classifier, or expect-cells", tier:"physics",
+{id:"c1", key:"D2", group:"The cull", shape:"kneeroof", hatch:true, name:"Knee", x:15.4, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ sub:"hard transcript minimum at the steepest point of the barcode-rank curve, per sample", tier:"physics",
  does:"Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
  built:"Every stack does this and none of them do it the same way. Parse Trailmaker runs a classifier at FDR 0.01; split-pipe fits a transcript cutoff per sublibrary (613.7–711.2 in the worked example, 670.4 combined); Cell Ranger uses its own cell-calling against --expect-cells (DanioCell set 6,000–21,250 per sample); Microwell-seq took the top 10,000 cells by transcript count, or 20,000 depending which artefact you read; ZCL2's code instead treats everything below 500 UMI as the ambient profile and excludes it.",
- cond:"The only stage on this row whose threshold is fitted rather than chosen, which is why it is the one to trust. It is also where an undocumented floor can hide: CellOracle's deposit has a minimum of exactly 500 UMI with zero cells below it, and no paper or GEO record mentions a 500-UMI rule anywhere."},
+ cond:"The only stage on this row whose threshold is fitted rather than chosen, which is why it is the one to trust. It is also where an undocumented floor can hide: CellOracle's deposit has a minimum of exactly 500 UMI with zero cells below it, and no paper or GEO record mentions a 500-UMI rule anywhere.",
+ /* ---- authored on this page, below the lifted fields ------------------
+    name and sub say which single policy is on the roof; pipelineName keeps
+    the broader name it has on /pipeline so the two can still be matched up.
+    Everything above this comment is lifted byte-for-byte. ------------- */
+ modelled:true, pipelineName:"Cell or background",
+ added:"The knee is drawn as a rank curve with the cut standing VERTICALLY at the rank it lands on, because that is the right way round for this cull and for no other on the page: the knee is a statement about how many barcodes are cells, and the transcript number is what that statement costs. A horizontal floor would say the opposite — that a number was picked and the count fell out of it. The barcodes below the cut rain off the near eaves rather than fading, because they were never cells and the building is where the cells are."},
 
-{id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, name:"Depth floor", x:16.6, y:R3, lane:"r3", w:1.19, d:1.19, h:0.88,
- sub:"100 UMI to 2,000, depending who you ask", tier:"physics",
- does:"Removes barcodes carrying too few molecules or too few genes to support any statement about cell type.",
- built:"The corpus spread is nearly two orders of magnitude and every value is defensible in its own context: 100–250 UMI set per experiment (ZSCAPE); 80 stated and ~100 realised (ChemFish); more than 200 detected genes (DanioCell); a total-count window of 2,000–20,000 (Zebrahub); 500 transcripts and 200 genes as published (ZCL2); a per-sample fitted knee of 232–1,370 (MegaFin CP01).",
- cond:"Two failures worth carrying. ZCL2's released atlas does not obey its own published floor at all — minimum 63 UMI and 27 genes against a stated 500 and 200, so the deposit is pre-QC. And the worked example retains cells down to 294 transcripts, below split-pipe's own 670 knee estimate, while its cell count is exactly split-pipe's number_of_cells — which suggests the vendor's QC chain was applied to the analysis object and not to what was delivered."},
-
-{id:"c3", key:"D4", group:"The cull", shape:"tile", hatch:true, name:"Mitochondrial fraction", x:17.8, y:R3, lane:"r3", w:1.19, d:1.19, h:0.85,
- sub:"25% · 15% · 10% · 1% · none", tier:"taste",
+{id:"c3", key:"D4", group:"The cull", shape:"mitoroof", hatch:true, name:"Mito %", x:17.8, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ sub:"cells above median + 3 MAD of mitochondrial fraction, per sample", tier:"taste",
  does:"Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
  built:"ZSCAPE cuts above 25%, Zebrahub above 15%, DanioCell above 10%, Parse Trailmaker at a per-sample absolute threshold of 0.50–1.51%, CellOracle not at all.",
- cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally."},
+ cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally.",
+ /* ---- authored on this page, below the lifted fields ------------------
+    name and sub say which single policy is on the roof; pipelineName keeps
+    the broader name it has on /pipeline so the two can still be matched up.
+    Everything above this comment is lifted byte-for-byte. ------------- */
+ modelled:true, pipelineName:"Mitochondrial fraction",
+ added:"The cut is median + 3 x MAD, and the arithmetic is on the panel because it is short enough to check by eye — which is the whole argument for preferring it to a round number somebody liked. The axis stops a little past the cut rather than at the far end of the dying tail: a handful of cells at 40% would squash the singlet distribution into two bins and hide the shape the cut is made against. They are off-scale, and the count on the panel is over all of them regardless. Cells above the cut rise straight up off the roof and fade, because they are leaking."},
 
-{id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, name:"Outliers off the trend", x:19.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
- sub:"spline residual, or 4 SD, or the top 0.5%", tier:"taste",
+{id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, name:"Complexity", x:19.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ sub:"both tails of the genes-vs-transcripts fit: under-amplified and over-amplified", tier:"taste",
  does:"Fits genes detected against total counts and removes points sitting too far off the fit — classically two cells sharing one barcode.",
  built:"Parse Trailmaker fits a spline per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate. ZSCAPE removes cells more than 4 SD from the mean UMI. DanioCell removes the top 0.5% by detected features.",
  cond:"Two problems. It runs before the doublet scorer and removes much of what the doublet scorer exists to find, so the two are partly redundant and their order decides which gets the credit — and the order genuinely differs between stacks. And DanioCell's version is untestable after the fact: the top 0.5% of an already-filtered distribution is 0.5% by construction, so the rule cannot be verified against the deposit.",
- /* ---- added on this page, below the lifted fields ---------------------
-    modelled:true puts the word under this node's name on the map and a
-    badge in the reader. The added field is rendered as its own section,
-    headed so a reader sees it is this page speaking, not /pipeline. ---- */
- modelled:true,
- added:"On the big map this node is a 0.7-unit box and the fit is described in the text. Here it is drawn: the cloud, the least-squares cubic through it, and a band opened to a robust residual sigma, painted flat on the roof by a single transform so a circle in chart space comes out as the correct ellipse and nothing can occlude it. Painted cells are ellipses; cells that are leaving lift off the roof and become circles. Both tails go and the two gestures are deliberately not each other's mirror — under-amplified cells peel off the surface, over-amplified ones swell where they lie and burst — because reading this filter as one-sided is the common mistake. The band is MODELLED and it is the only modelled figure on this page: the real fit is a spline fitted per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate, so there is no single band that would be true of the run. What the roof shows is the shape of the decision, not its answer."},
+ /* ---- authored on this page, below the lifted fields ------------------
+    name and sub say which single policy is on the roof; pipelineName keeps
+    the broader name it has on /pipeline so the two can still be matched up.
+    Everything above this comment is lifted byte-for-byte. ------------- */
+ modelled:true, pipelineName:"Outliers off the trend",
+ added:"Both tails go, for opposite reasons, and the two gestures are deliberately not each other's mirror: under-amplified cells peel off the surface and become spheres, over-amplified ones swell where they lie and burst. One leaves the roof and one never does, which is the difference between having too many genes for your transcripts and too few. Reading this filter as one-sided is the common mistake, so the drawing refuses to make the two look alike."},
 
-{id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, name:"Sample demultiplex", x:20.0, y:R3, lane:"r3", w:1.19, d:1.19, h:0.78,
- sub:"only if the sample was hashed", tier:"taste",
- does:"In multiplexed designs, assigns each cell to the embryo or sample it came from by its hash oligo, and discards cells that cannot be confidently assigned. An entire cull stage that exists or does not exist depending on a choice made two rows up.",
- built:"ZSCAPE uses sci-Plex hashing with an enrichment ratio above 3 for the timeseries rounds and above 5 for perturbations, cutoffs set manually from the ratio distribution. ChemFish uses the same chemistry at ratio ≥ 2.5 with total corrected hash UMI above 5. DanioCell uses MULTI-seq: a barcode is negative below 20 UMIs, a singlet needs SNR ≥ 5, and cells called doublets by either approach are removed. Combinatorial designs skip this entirely — the barcode already is the sample.",
- cond:"The clearest case in the corpus of a published threshold that was not applied. ChemFish's round-two screen was released without its stated hash filters: 65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor, while round one matches every published threshold exactly. Two rounds of one experiment, one filtered and one not, and nothing in the object says which is which."},
-
-{id:"c5", key:"D6", group:"The cull", shape:"tile", hatch:true, name:"Doublets", x:21.0, y:R3, lane:"r3", w:1.19, d:1.19, h:0.75,
- sub:"five tools, and one no tool at all", tier:"taste",
+{id:"c5", key:"D6", group:"The cull", shape:"doubletroof", hatch:true, name:"Doublets", x:21.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ sub:"scDblFinder, thresholded against the expected collision rate", tier:"taste",
  does:"Scores each barcode for looking like two cells and removes those above a threshold.",
  built:"Parse Trailmaker fits a probability threshold per sample, 0.469 to 0.903 across one plate. ZSCAPE inspects residual multiplet clusters manually and removes them. ZCL2 runs DoubletFinder at a fixed 5% expected rate. MIC-Drop-seq's Methods state scDblFinder. Our own droplet path uses Scrublet. CellOracle mentions no doublet detection anywhere.",
- cond:"The least consistent stage on the map and the least auditable. MIC-Drop-seq states scDblFinder in Methods and deposits no doublet column in any object, so the claim cannot be checked at all. A per-sample threshold that swings from 0.47 to 0.90 across one plate is not measuring a constant property. And the true collision rate was set two rows up by loading density, which none of these tools can see."},
+ cond:"The least consistent stage on the map and the least auditable. MIC-Drop-seq states scDblFinder in Methods and deposits no doublet column in any object, so the claim cannot be checked at all. A per-sample threshold that swings from 0.47 to 0.90 across one plate is not measuring a constant property. And the true collision rate was set two rows up by loading density, which none of these tools can see.",
+ /* ---- authored on this page, below the lifted fields ------------------
+    name and sub say which single policy is on the roof; pipelineName keeps
+    the broader name it has on /pipeline so the two can still be matched up.
+    Everything above this comment is lifted byte-for-byte. ------------- */
+ modelled:true, pipelineName:"Doublets",
+ added:"The roof is the expression embedding rather than a histogram, because between-ness is the entire signal and only an embedding has a between. The chords crossing it are the manufacture of the reference itself — pairs of real cells from different neighbourhoods, added together — which is the part nobody pictures. THE EXPECTED COLLISION RATE ON THE PANEL IS THE ONE REAL FIGURE ON ANY OF THESE ROOFS: three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary says what share of recovered barcodes should hold two cells. Collisions can only happen WITHIN a sublibrary, because the fourth barcode tells two cells apart that took the same path in different ones — get that denominator wrong and the expected rate comes out eight times too high. The scorer's own rate is modelled and sits beside it; where the two disagree is the interesting part, so the roof shows both rather than picking one. Only true doublets pull apart on the roof. Over-called singlets get a ring and fade where they sit, because drawing them coming apart would be the picture claiming something the method does not."},
 
-{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+4.2, w:1.2, d:1.2, h:0.3,
+{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+4.4, w:1.2, d:1.2, h:0.3,
  sub:"one row per dropped barcode",
  does:"What the Sankey should be drawn from: which stage killed which barcode, and why.",
  built:"Node and link labels would use the plain-English phrasings on this row, never the internal step names.",
@@ -112,20 +131,21 @@ const ROWS=[R3], MIRROR=29.0;
    counting stack came off; six do now, so the gap engine gives every one of
    them room it did not have. */
 const LANES = [
-  {id:"r3", y:R3, x0:0.7, x1:26.0, dir:+1},
+  {id:"r3", y:R3, x0:0.7, x1:31.6, dir:+1},
 ];
 
 const EDGES = [
-  {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c2",kind:"cell"},{a:"c2",b:"c3",kind:"cell"},
-  {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"hx",kind:"cell"},{a:"hx",b:"c5",kind:"cell"},
+  {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c3",kind:"cell"},
+  {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"c5",kind:"cell"},
   {a:"c5",b:"FD",kind:"cell"},
-  {a:"c1",b:"Q",kind:"drop",dash:true},{a:"c4",b:"Q",kind:"drop",dash:true},
-  {a:"hx",b:"Q",kind:"drop",dash:true},
+  /* every cull would write a row in the ledger, and none of them can */
+  {a:"c1",b:"Q",kind:"drop",dash:true},{a:"c3",b:"Q",kind:"drop",dash:true},
+  {a:"c4",b:"Q",kind:"drop",dash:true},{a:"c5",b:"Q",kind:"drop",dash:true},
 ];
 
 /* One band, keeping its name from the big map. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-1.4, x1:27.4, y0:R3-4.0, y1:R3+6.4},
+  {name:"Bioinformatics pipeline", x0:-1.4, x1:33.0, y0:R3-4.2, y1:R3+6.8},
 ];
 
 /* Both ends fade, because neither is on this page: the barcodes arrive from a
@@ -135,7 +155,7 @@ const BANDS = [
 const CARRIES = [
   {x0:1.95,y0:R3-8.0, x1:1.95,y1:R3-3.2, fade:"in", kind:"cell",
    from:"the counting stack, off this map", to:"Unfiltered matrix"},
-  {x0:26.5,y0:R3, x1:31.0,y1:R3, fade:"out", kind:"cell",
+  {x0:32.1,y0:R3, x1:36.6,y1:R3, fade:"out", kind:"cell",
    from:"Filtered matrix", to:"the labelling, a row below on /pipeline"},
 ];
 
@@ -252,16 +272,18 @@ what exists instead, across the corpus:
 const OVERVIEW = {
   eyebrow:"Zeroshot · from /pipeline, row 3",
   title:"Unfiltered → Filtered",
-  sub:"two cubes, six culls, and the one that gets drawn",
-  does:`<p>Everything that happens between the two matrices on row 3 of <a href="/pipeline">/pipeline</a> — the band called <mark>Bioinformatics pipeline</mark>. Left to right: every barcode that ever appeared against every gene, then six culls, then the cells as asserted.</p>
-<p>Nothing has been re-written. Every name, number and claim is lifted from that map as source text rather than re-typed, so the two cannot drift into two different accounts of the same stage. What has changed is size: on the big map these culls share a row with thirteen other objects, so they are drawn small. Here they are the only thing on the canvas.</p>
-<p><mark>Hatching means the stage destroys data.</mark> All six culls carry it. Each is tiered — <mark>physics</mark> where the threshold is fitted from a real feature of the data, <mark>taste</mark> where it is chosen — and the tiers are not evenly split: only the first two are physics.</p>
+  sub:"two cubes, four culls, and every decision drawn on a roof",
+  does:`<p>Everything that happens between the two matrices on row 3 of <a href="/pipeline">/pipeline</a> — the band called <mark>Bioinformatics pipeline</mark>. Every barcode that ever appeared against every gene goes in on the left; the cells, as asserted, come out on the right.</p>
+<p>Four culls stand between them, and <mark>each one has its decision drawn on its roof</mark>:</p>
+<p><mark>Knee</mark> — a hard transcript minimum at the steepest point of the barcode-rank curve, per sample. <mark>Mito %</mark> — cells above median + 3 MAD of mitochondrial fraction. <mark>Complexity</mark> — both tails of the genes-vs-transcripts fit, under-amplified and over-amplified. <mark>Doublets</mark> — scDblFinder, thresholded against the expected collision rate.</p>
+<p>Nothing has been re-written. Every name, number and claim is lifted from that map as source text rather than re-typed, so the two cannot drift into two different accounts of the same stage. Three of the four are <em>named</em> differently here, and that is not drift either: on the big map a cull node has to cover every policy the corpus uses for its stage — "Cell or background" names three at once — while this page draws one policy per roof and says which. The reader carries the original name through.</p>
+<p><mark>Hatching means the stage destroys data.</mark> All four carry it. Each is tiered — <mark>physics</mark> where the threshold is fitted from a real feature of the data, <mark>taste</mark> where it is chosen — and the tiers are not evenly split.</p>
 <p><mark>Below the line</mark> hangs the cull ledger, which would say which stage killed which barcode. It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact. Every retention figure on this page is therefore a ratio between two objects rather than a sum over stages.</p>`,
-  built:`<p><mark>D5 is drawn rather than described.</mark> "Outliers off the trend" fits genes detected against total counts and removes points sitting too far off the fit — a two-dimensional argument, and on the big map a 0.7-unit box with the argument in the text. Here it is the roof of the building: the cloud, the least-squares cubic through it, and a band opened to a robust residual sigma, <mark>painted flat</mark> and laid onto the roof by one matrix.</p>
-<p>That is why nothing occludes it, and why a circle painted in chart space comes out as the correct ellipse. Which gives the roof its grammar: <mark>painted things are ellipses, airborne things are circles</mark>. A cell still under consideration lies on the surface; a cell that is leaving lifts off it.</p>
-<p><mark>Both tails go, for opposite reasons</mark>, and the two gestures are deliberately not each other's mirror — under-amplified cells peel off the surface, over-amplified ones swell where they lie and burst. Reading this filter as one-sided is the common mistake.</p>
-<p>The chart reads at the same angle as everything else on the map, which took two goes to get right: both of its axes grow away from the near corner rather than one of them flipping back toward the viewer, and that single choice is what keeps the cloud lying along the roof instead of squeezed into a vertical sliver.</p>`,
-  cond:`<p class="cond">Every figure on this page is real and matches /pipeline exactly — <mark>with one exception</mark>. D5's band is modelled, computed at load from a seeded simulation, because the real fit is a spline fitted per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate and there is no single band that would be true of the run. It says so on the panel, under its name, and here.</p>
-<p class="cond">The governing fact of this stretch is that a threshold printed in Methods is not evidence it was applied. Tested against their own releases, four datasets in the corpus disagree with their own published QC.</p>
-<p class="cond">The culls are not independent, and their order decides which of them gets the credit. D5 removes much of what D6 exists to find — a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so it lands in the low tail of D5's band first. The order genuinely differs between stacks, and the ledger that would settle it is the empty box below the line.</p>`
+  built:`<p>None of the four charts is rebuilt in three dimensions. Each is drawn in ordinary flat 2D and <mark>laid onto its roof by one matrix</mark> — which is why nothing occludes it, and why a circle painted in chart space comes out as the correct ellipse. That gives the page its grammar: <mark>painted things are ellipses, airborne things are circles</mark>. A barcode still under consideration lies on the surface; one that is leaving lifts off it.</p>
+<p><mark>And each cull leaves differently.</mark> Barcodes below the knee rain off the near eaves — they were never cells. Dying cells rise straight up and fade — they are leaking. Under-amplified cells peel off the surface while over-amplified ones swell where they lie and burst — two failures, not one filter with a mirror. True doublets pull apart into their two halves — they were always two. Four identical fades would make the row read as one animation on a loop.</p>
+<p>Every roof reads at the same angle as the rest of the map, which took two goes to get right. Chart x and chart y map to the two roof diagonals, so a chart's trend lands on their sum or their difference — on the horizontal, or on the vertical. A trend that comes out vertical is a cloud squeezed into a sliver. So the y axis on each roof is oriented so the trend is always a sum: the rank curve falls and takes the ordinary orientation, the genes-against-transcripts cloud rises and takes the inverted one. Their origins therefore sit in different corners, which is correct rather than sloppy — a roof has no up.</p>`,
+  cond:`<p class="cond">Every threshold on these four roofs is <mark>modelled</mark>, computed at load from a seeded population, and each roof says so. None of the four has a shipping policy with a single drawable number behind it: the knee search exists in code but is not what ships, the mitochondrial and complexity cuts are not written anywhere, and doublet filtering is a docstring that raises. A roof showing a mitochondrial cutoff without saying it was invented would be claiming a result nobody has produced.</p>
+<p class="cond">One figure is <mark>real</mark>, and it is on the doublet roof: the expected collision rate. Three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary gives the share of recovered barcodes that should hold two cells. Collisions can only happen within a sublibrary — get that denominator wrong and the rate comes out eight times too high. The scorer's own rate sits beside it, and where the two disagree is the interesting part.</p>
+<p class="cond">The four are not independent, and their order decides which gets the credit. Complexity removes much of what the doublet scorer exists to find — a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so it lands in the low tail first. The order genuinely differs between stacks, and the ledger that would settle it is the empty box below the line.</p>`
 };
+

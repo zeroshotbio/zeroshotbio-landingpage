@@ -62,7 +62,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),
 [gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 /* the extent of the ground plane, and of the ruler drawn around it */
-const GRID={x0:-5,x1:32,y0:-10,y1:12};
+const GRID={x0:-5,x1:37,y0:-11,y1:12};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -472,7 +472,14 @@ function renderNode(id){
     `<div class="eyebrow">${esc(n.group)}${n.tier?" · "+esc(n.tier)+" tier":""}</div>`+
     `<div class="title${n.anchor?" big":""}">${esc(n.name)}</div>`+
     `<div class="sub">${esc(n.sub)}</div>`+
-    (n.modelled?`<div class="unver">modelled — every other figure on this page is real</div>`:"")+
+    (n.modelled?`<div class="unver">figures on this roof are modelled</div>`:"")+
+    /* three of the four culls are named differently here than on /pipeline,
+       because this page draws ONE policy per roof and that map has to cover
+       every policy the corpus uses for the stage. Carrying the original
+       through means the two can still be matched up. */
+    (n.pipelineName && n.pipelineName!==n.name
+      ? `<p class="alias">On <a href="/pipeline">/pipeline</a> this node is `+
+        `<mark>${esc(n.pipelineName)}</mark> — same stage, broader name.</p>` : "")+
     `<h4>What it does</h4><p>${n.does}</p>`+
     `<h4>How it is built</h4><p>${n.built}</p>`+
     `<h4>Condition</h4><p class="cond">${n.cond}</p>`+

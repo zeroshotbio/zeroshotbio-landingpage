@@ -192,6 +192,7 @@
   .cond{border-left:2px solid var(--drop);padding-left:9px}
   /* what this page says for itself, as against what it lifted */
   .added{border-left:2px solid var(--accent);padding-left:9px}
+  .alias{font-size:11px;color:var(--fg2);margin:-4px 0 12px}
   .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
         white-space:pre;overflow-x:auto;line-height:1.6}
 
@@ -281,14 +282,14 @@
   <div class="thread">
     <b>the steel thread</b>
     <span>Everything between the two matrices on row 3 of <a href="/pipeline">/pipeline</a> — the band
-    called <em>Bioinformatics pipeline</em>.<span class="more"> Six culls, and the cull ledger that would
-    say which of them killed which barcode and does not exist. Every name and number is lifted from that
-    map as source text rather than re-typed, so the two cannot drift into two different accounts of the
-    same stage; what has changed is size, because there these objects share a row with thirteen others and
-    here they are the only thing on the canvas. <em>D5</em> is drawn rather than described — it fits genes
-    detected against total counts, and that fit is painted flat on its roof. It is the one
-    <em>modelled</em> figure on the page; the real fit is a per-sample spline, so there is no single band
-    to draw.</span></span>
+    called <em>Bioinformatics pipeline</em>.<span class="more"> Four culls, each with its decision drawn
+    on its roof: the <em>knee</em> as a rank curve cut at its steepest descent, <em>mito %</em> as a
+    distribution cut at median + 3 MAD, <em>complexity</em> as both tails of the genes-against-transcripts
+    fit, and <em>doublets</em> as an expression embedding thresholded against the expected collision rate.
+    Every name and number is lifted from that map as source text rather than re-typed. Every threshold on
+    the four roofs is <em>modelled</em> — none of these culls has a shipping policy with a single drawable
+    number — except the expected collision rate, which is Poisson arithmetic over real figures and is
+    marked <em>real</em> beside the modelled one it is compared against.</span></span>
   </div>
   <div class="body">
     <aside id="aside"></aside>

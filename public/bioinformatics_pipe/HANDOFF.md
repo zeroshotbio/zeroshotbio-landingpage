@@ -21,7 +21,21 @@ nothing before them.**
 
 The counting stack and its three reference structures are off this map on
 purpose. They are about how a matrix gets *built*; this is about what gets
-thrown out of one. Nine objects, where row 3 has nineteen.
+thrown out of one.
+
+Seven objects, where row 3 has nineteen: **four culls, drawn**, plus the two cubes and the
+cull ledger. Two of the big map's six culls are not drawn — D3, the depth
+floor, folds into the knee because the knee IS a transcript minimum, fitted
+rather than chosen; and G3, sample demultiplex, exists only for hashed
+designs, which this chemistry is not. Neither claim is dropped: both are still
+on `/pipeline`, just not drawn here.
+
+| roof | what it draws |
+|---|---|
+| **Knee** | a hard transcript minimum at the steepest point of the barcode-rank curve, per sample |
+| **Mito %** | cells above median + 3 MAD of mitochondrial fraction, per sample |
+| **Complexity** | both tails of the genes-vs-transcripts fit: under-amplified and over-amplified |
+| **Doublets** | scDblFinder, thresholded against the expected collision rate |
 
 Same isometric world — same projection, shell, reader, index, theme switch —
 because it is the same map at a different scale, not a different map about the
@@ -42,29 +56,33 @@ Same for the payloads: `REAL_CELLS`, `REAL_GENES`, `REAL_REFS`, `REAL_SUBLIBS`
 and the `read` / `cell` / `ref` / `meta` / `drop` snippets are the same records
 travelling the same edges.
 
-### Geometry is rescaled. Prose never is.
+### What is authored here, and what is lifted
 
-Two overrides are applied to the lifted text, both purely dimensional:
+Three fields per cull are authored on this page. Everything else — `does`,
+`built`, `cond` — is lifted byte-for-byte.
 
-- the six culls are scaled **×1.7** in `w`/`d`/`h`, because on the big map they
-  share a row with thirteen other objects and here they are the only thing on
-  the canvas. Left at 0.7 they are specks in a wide lane.
-- **D5 becomes the roof** — `shape:"complexityroof"`, 4.2 units square.
+- **`name` and `sub`.** Three of the four are named differently from
+  `/pipeline` and that is not drift. On the big map a cull node has to cover
+  *every* policy the corpus uses for its stage: "Cell or background" names
+  classifier, fitted knee and expect-cells together, because there it must.
+  This page draws **one policy per roof** and names it. `pipelineName` carries
+  the original through to the reader so the two can still be matched up.
+- **`added`.** Anything this page says for itself, rendered under its own
+  heading (*Drawn here*) so a reader can tell which map is talking.
 
-Anything this page has to say for itself goes in the added `added:` field,
-rendered in the reader under its own heading (*Drawn here*) so a reader can
-tell which map is talking.
+Geometry is also overridden — the four culls become 4.2 units square with a
+roof shape — but that is dimensional, never prose.
 
-## D5 is drawn, not described
+## Four culls, drawn rather than described
 
-Node D5, "Outliers off the trend", says it fits genes detected against total
-counts and removes points sitting too far off the fit. That is a
-two-dimensional argument, and on the big map it is a 0.7-unit hatched box with
-the argument in the text — the right call there. Here there is room to draw it.
+Each of the four makes a two-dimensional decision, and on the big map each is
+a 0.7-unit hatched box with that decision in prose — the right call there,
+where it is one of nineteen objects in one of four rows. Here there is room.
 
-**It is the same node, not a picture standing next to it.** An earlier build
-had the chart as a separate object hanging off D5 by a dashed line; that put
-the same claim on the map twice and gave two places to keep in agreement.
+**Each roof IS its node, not a picture standing next to it.** An earlier build
+had the complexity chart as a separate object hanging off D5 by a dashed line;
+that put the same claim on the map twice and gave two places to keep in
+agreement.
 
 ### The roof trick
 
@@ -86,22 +104,28 @@ lifts off it and becomes a true circle, with a shadow beneath it.
 not each other's mirror:** under-amplified cells peel off the surface;
 over-amplified ones swell where they lie and burst.
 
-### Both chart axes grow AWAY from the corner, and y is not flipped
+### `trend` — which way the y axis runs, and it is forced, not chosen
 
-This one line does two jobs and they are the same job.
+Chart x and chart y map to the two roof diagonals. So a chart's trend is
+projected onto their **sum** or their **difference** — onto the horizontal, or
+onto the **vertical**. A trend that comes out vertical is a cloud squeezed into
+a two-pixel sliver: geometrically correct, and useless. It happened twice
+during this build.
 
-On a flat chart y is flipped because the page has a top and a bottom and "up"
-means more. **A roof has neither.** What it has is a near corner and two edges
-running away from it. Chart x and chart y map to those two roof diagonals, so a
-trend is projected onto their **sum** or their **difference** — onto the
-horizontal, or onto the vertical. Genes rise with transcripts; with y flipped
-that is a difference, and the cloud came out as a near-vertical sliver:
-geometrically correct and useless.
+`axesFrame` takes a `trend` and orients y so the trend is always a sum:
 
-Unflipped, both quantities grow outward from the corner, the trend is a sum,
-and the cloud lies **along** the roof. The axis L opens from the origin with one
-arm up-right and one down-right, arrowheads pointing away from the corner —
-like the corner of a room.
+- **`"falling"`** — a rank curve. Transcripts drop as rank rises, so y is
+  flipped the ordinary way and the axis corner sits bottom-left, exactly like
+  a flat chart.
+- **`"rising"`** — genes against transcripts. Both grow together, so y is
+  **not** flipped: both quantities grow away from the near corner, like the
+  corner of a room, and the origin sits top-left.
+- **`"none"`** — a histogram, an embedding. No diagonal to protect; takes the
+  ordinary orientation.
+
+**So the knee roof and the complexity roof have their origins in different
+corners, and that is correct rather than sloppy.** A roof has no up. The only
+thing worth being consistent about is that the data lies *along* it.
 
 ### Nothing on the roof is rotated
 
@@ -119,15 +143,32 @@ a legitimate convention and keeps the association without the rotation.
 orientation in the **data mapping** is the better fix where it is available;
 turning is what is left when it is not.
 
-### The threshold panel is upright, and off the roof
+### The threshold panel is upright, off the roof, and placed by rule
 
 A block of text cannot live in chart space. Chart x and chart y are the two
 roof diagonals, so a block grows right-down as it gets wider and left-down as
 it gets taller — it **fans**. A four-line readout anchored in the one empty
-corner sweeps across the roof and lands on the band by its last line, from
+corner sweeps across the roof and lands on the data by its last line, from
 whichever corner it starts. Three placements were tried and all three did it.
-`panel()` draws it upright beside the building. Single lines — axis titles, tick
-numbers — are fine on the roof and stay there.
+`panel()` draws it upright beside the building. Single lines — axis titles,
+tick numbers — are fine on the roof and stay there.
+
+**Placement is a rule, not a nudge.** The row runs down-right at +30°;
+`PANEL_AT` steps perpendicular to that (up-right) and `ANN_AT` steps the other
+way (down-left), so panels ride in a line above the row and annotations in a
+line below it, both parallel, evenly spaced, and stable when the row is
+re-spaced. It has been re-spaced three times; every hand-nudged label broke
+each time.
+
+**`PANEL_MAX` is a width budget and it is not advisory.** The roofs stand
+about 200px apart at zoom 1 and every panel sits at the same offset from its
+own building *by design*, so one wider than that reaches its neighbour
+whatever the offsets are. `panel()` warns; `check-text.mjs` fails on the
+warning.
+
+**Both axis titles are anchored `start`.** Anchored `end` they run leftward off
+chart x = 0 — which a five-letter "GENES" survives and an eleven-letter
+"TRANSCRIPTS" does not, so it looked like a one-off rather than the rule.
 
 ### Labels never take clicks
 
@@ -142,22 +183,29 @@ can re-introduce it. A label is not the thing it labels.
 
 ## REAL vs MODELLED
 
-**Every figure on this page is real and matches `/pipeline` exactly — with one
-exception.** D5's band is modelled: computed at load from the seeded population
-in `bp-pop.js`, because the real fit is a spline fitted **per sample** at a
-p-level spanning 6.9e-6 to 1e-3 across a single plate, and there is no single
-band that would be true of the run. The roof shows the *shape* of the decision,
-not its answer.
+**Every threshold on the four roofs is modelled**, computed at load from the
+seeded population in `bp-pop.js`. None of these four has a shipping policy with
+a single drawable number behind it: the knee search exists in code but is not
+what ships, the mitochondrial and complexity cuts are not written anywhere, and
+doublet filtering is a docstring that raises. Each roof shows the *shape* of
+its decision, not its answer.
 
-It carries the word in three places — on the panel, under its name on the map,
-and in the reader. **Keep it in all three.** The node opts in with
-`modelled:true`; nothing else on this page sets it.
+Each carries the word in three places — on its panel, under its name on the
+map, and in the reader. **Keep it in all three.** A node opts in with
+`modelled:true`.
 
-`bp-pop.js` also computes the knee, the mito cutoff and the doublet threshold.
-Nothing draws them — those culls are `/pipeline`'s own tiles — but
-`check-sim.mjs` still asserts the population supports them, because it is the
-same population and a change that breaks one statistic has broken the model the
-band is fitted to.
+**One figure is real, and it is on the doublet roof: the expected collision
+rate.** Three barcode rounds give 48 × 96 × 96 = 442,368 addressable paths, the
+fourth barcode splits the run into 8 sublibraries, 94,616 cells were called,
+and Poisson over paths gives the share of recovered barcodes that should hold
+two cells. It sits on the panel in the *keep* colour, beside the modelled rate
+it is being compared against, because where the two disagree is the point.
+
+**The denominator is cells per SUBLIBRARY, not per run.** Two cells that took
+the same path in different sublibraries are told apart by the fourth barcode,
+so they never collide. Divide by the whole run instead and the expected rate
+comes out roughly eight times too high — 10% instead of 1.3% — and it still
+looks like a plausible multiplet rate, which is what makes it dangerous.
 
 ## Load order
 
