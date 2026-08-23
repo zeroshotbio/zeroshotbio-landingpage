@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Bioinformatics Pipe</title>
+<meta name="description" content="The six culls between the unfiltered DGE and the filtered matrix, drawn as animated plan-view tiles: knee, mitochondrial fraction, complexity, doublets. Every threshold computed, and every unbuilt stage marked.">
+<style>
+  /* The chrome is /data_structures' chrome, so the two pages read as one
+     family: same shell, same type, same theme switch, same collapsing
+     columns. What differs is the stage — that page is one pannable SVG plan,
+     this one is a scrolling column of animated square tiles, because the
+     subject is a sequence of events rather than a structure.
+
+     The TILE palette is separate and is set by the brief (keep / cull /
+     accent). It is deliberately NOT the medallion palette: those colours mean
+     bronze, silver and gold, and reusing them here would say something false. */
+  :root{
+    /* ---- dark (default) ---- */
+    --bg:#0E1418; --panel:#141C21; --panel2:#182228;
+    --fg:#DCE6EB; --fg2:#9FB0B8; --fg3:#7C8D95; --rule:#1F2A31;
+    --signal:#74b0f0;
+
+    /* the tile palette, mirrored into CSS so the chrome can quote it */
+    --keep:#79D2BE; --cull:#8C7150; --accent:#DCC584;
+
+    --strip-h:clamp(66px,15dvh,118px);
+    --strip-mini:28px;
+  }
+  body.light{
+    --bg:#ECEEE9; --panel:#E1E4DE; --panel2:#D6DAD3;
+    --fg:#1B2422; --fg2:#4C5A55; --fg3:#6E7A75; --rule:#D6DAD3;
+    --signal:#1e4c8a;
+    --keep:#1F8069; --cull:#8A6B42; --accent:#8A6A24;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+       font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;
+         -webkit-user-select:none;user-select:none}
+  a{color:var(--signal)}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;flex:none}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+  .brand{display:flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;flex:none;
+         border-right:1px solid var(--rule)}
+  .brand b{font-weight:600;letter-spacing:.06em;font-size:11.5px}
+  .brand span{color:var(--fg3);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+
+  /* the steel thread band — same role as on /data_structures, and the same
+     reason it is a band and not a floating card: it must never sit on the work */
+  .thread{flex:none;display:flex;align-items:baseline;gap:11px;
+          padding:6px 14px;border-bottom:1px solid var(--rule);
+          background:var(--panel);color:var(--fg2);
+          font-size:10px;line-height:1.5;
+          box-shadow:inset 3px 0 0 var(--signal)}
+  .thread b{flex:none;font-weight:400;color:var(--signal);font-size:8px;
+            letter-spacing:.16em;text-transform:uppercase}
+  .thread span{min-width:0}
+  .thread em{font-style:normal;color:var(--fg)}
+  @media (max-width:900px){
+    .thread{padding:5px 10px;gap:7px;font-size:9.5px;flex-wrap:wrap}
+    .thread .more{display:none}
+  }
+
+  .body{display:flex;flex:1;min-height:0}
+  aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
+        padding-bottom:24px;background:var(--bg);-webkit-user-select:none;user-select:none}
+  .grip{flex:none;width:9px;position:relative;cursor:col-resize;background:var(--panel2);
+        border-right:1px solid var(--fg);-webkit-user-select:none;user-select:none}
+  .grip:hover,.grip:focus-visible{background:var(--signal)}
+  .grip span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+             width:3px;height:34px;border-radius:2px;background:var(--fg3);
+             font-size:0;line-height:0;overflow:hidden}
+  .grip:hover span{background:var(--bg)}
+  .grip.shut{cursor:pointer;background:var(--bg);width:16px}
+  .grip.shut:hover{background:var(--signal)}
+  .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
+  .grip.shut:hover span{color:var(--bg)}
+  #gripR{border-right:none}
+  #gripR.shut{border-left:1px solid var(--fg)}
+
+  .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
+  .grp.mark{color:var(--fg)}
+  .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
+       border:1px solid var(--rule);border-left:none;border-right:none;margin-top:-1px}
+  .row .key{width:26px;height:17px;flex:none;border:1px solid var(--fg);display:grid;place-items:center;font-size:9px}
+  .row .nm{flex:1;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35}
+  .row:hover,.row:focus-visible{background:var(--panel2)}
+  .row.on{background:var(--fg);color:var(--bg)}
+  .row.on .key{border-color:var(--bg)}
+  .row .st{width:7px;height:7px;flex:none;border-radius:50%}
+  .st.keep{background:var(--keep)}
+  .st.cull{background:none;border:1px solid var(--cull)}
+
+  /* ---- the stage: a scrolling column of square tiles ----
+     Not a pannable canvas. /data_structures is a plan of a structure and
+     wants pan and zoom; this is a sequence of events in order, and a column
+     you scroll is the honest control for that. It also keeps every canvas at
+     its natural size, which a zoom transform would not. */
+  .stage{flex:1;position:relative;min-width:0;overflow-y:auto;overflow-x:hidden;
+         scroll-behavior:smooth}
+  .track{display:flex;flex-direction:column;align-items:center;
+         padding:20px 16px 90px;gap:0}
+  .step{width:100%;max-width:760px}
+  .card{display:flex;gap:18px;align-items:flex-start;width:100%;text-align:left;
+        border:1px solid var(--rule);background:var(--panel);padding:14px;
+        transition:border-color .18s ease, background .18s ease}
+  .card:hover{border-color:var(--fg3)}
+  .card.on{border-color:var(--signal);background:var(--panel2)}
+  .tilewrap{flex:none;width:clamp(190px,28vw,272px);aspect-ratio:1/1;position:relative;
+            background:var(--bg);border:1px solid var(--rule)}
+  .tilewrap canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .meta{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px;padding-top:2px}
+  .meta .k{font-size:8.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--fg3)}
+  .meta h3{margin:0;font-size:16px;font-weight:600;letter-spacing:.02em}
+  .meta .sb{font-size:10px;color:var(--fg2);line-height:1.5}
+  .badge{display:inline-block;font-size:8px;letter-spacing:.14em;text-transform:uppercase;
+         padding:2px 6px;border:1px solid currentColor;align-self:flex-start}
+  .badge.keep{color:var(--keep)}
+  .badge.cull{color:var(--cull)}
+  .meta .fig{font-size:11px;color:var(--fg2);margin-top:2px}
+  .meta .fig b{color:var(--fg);font-weight:600}
+  .meta .modelled{color:var(--accent)}
+
+  /* the conduit between two steps, carrying the attrition */
+  .link{display:flex;align-items:center;gap:9px;justify-content:center;
+        padding:9px 0;color:var(--fg3);font-size:9.5px;letter-spacing:.06em}
+  .link i{display:block;width:1px;height:15px;background:var(--rule)}
+  .link .drop{color:var(--cull)}
+
+  /* ---- the reader ---- */
+  .reader{width:var(--reader-w,360px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:23px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:14px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  .read .note{color:var(--fg3);font-size:10px;margin-top:-4px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:118px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .thr{display:inline-block;border:1px solid var(--signal);color:var(--signal);font-size:8.5px;
+       letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+  .sheetclose{display:none}
+
+  /* the legend — three colours and four gestures, which is the whole grammar */
+  .legend{position:absolute;right:14px;bottom:14px;z-index:4;pointer-events:none;
+          background:var(--panel);border:1px solid var(--rule);padding:9px 11px;
+          font-size:9px;letter-spacing:.04em;line-height:1.85;color:var(--fg2);
+          box-shadow:0 8px 22px rgba(0,0,0,.28)}
+  .legend b{display:block;font-weight:400;color:var(--fg3);font-size:8px;
+            letter-spacing:.16em;text-transform:uppercase;margin-bottom:4px}
+  .legend i{display:inline-block;width:9px;height:9px;border-radius:50%;
+            vertical-align:middle;margin-right:8px}
+  .lg-keep{background:var(--keep)}
+  .lg-cull{background:var(--cull)}
+  .lg-acc{background:var(--accent)}
+  @media (max-width:1250px){.legend{display:none}}
+
+  /* the step strip — the mobile stand-in for the left index */
+  .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
+         overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch;
+         -webkit-user-select:none;user-select:none}
+  .strip.mini{height:var(--strip-mini)}
+  .strip.mini .chip .n{display:none}
+  .chip{display:inline-flex;flex-direction:column;justify-content:center;gap:3px;
+        vertical-align:top;height:100%;min-width:96px;max-width:140px;
+        padding:6px 9px;border-right:1px solid var(--rule);text-align:left;
+        white-space:normal;-webkit-tap-highlight-color:transparent}
+  .chip .k{font-size:8px;letter-spacing:.12em;color:var(--fg3)}
+  .chip .n{font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
+  .chip.on{background:var(--fg);color:var(--bg)}
+  .chip.on .k{color:var(--bg)}
+  .mobtoggle{display:none}
+
+  @media (max-width:900px){
+    header{display:none}
+    .body{flex-direction:column;position:relative}
+    aside{display:none}
+    .grip{display:none}
+    .strip{display:block;height:var(--strip-h)}
+    .card{flex-direction:column;gap:12px}
+    .tilewrap{width:100%;max-width:none}
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:42dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:36px 14px 16px}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><b>Bioinformatics Pipe</b><span>unfiltered → filtered · the MiniFin 100k steel thread</span></div>
+    <div class="controls">
+      <button class="ctl" id="btnMotion" aria-pressed="false">Pause motion</button>
+      <button class="ctl" id="btnRestart">Restart loop</button>
+      <button class="ctl" id="btnTheme">Light</button>
+    </div>
+  </header>
+  <div class="thread">
+    <b>the steel thread</b>
+    <span>Every worked example here is <em>MiniFin 100k</em> — the same 94,616-cell zebrafish dataset the
+    medallion map follows, one leg deeper.<span class="more"> Six tiles, four of them culls, between the
+    unfiltered matrix split-pipe produces and the filtered matrix normalisation expects. Two kinds of number
+    appear and never look alike: <em>real</em> figures read from the artifacts, and <em>modelled</em> ones
+    computed from a seeded simulation — because of the four culls drawn here, only one has code that has
+    ever run.</span></span>
+  </div>
+  <div class="body">
+    <aside id="aside"></aside>
+    <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
+    <div class="stage" id="stage">
+      <div class="track" id="track"></div>
+      <div class="legend">
+        <b>the grammar</b>
+        <div><i class="lg-keep"></i>survives</div>
+        <div><i class="lg-cull"></i>leaving</div>
+        <div><i class="lg-acc"></i>the threshold</div>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+</div>
+
+<script src="/bioinformatics_pipe/bp-pop.js?v=b1"></script>
+<script src="/bioinformatics_pipe/bp-draw.js?v=b1"></script>
+<script src="/bioinformatics_pipe/bp-tiles.js?v=b1"></script>
+<script src="/bioinformatics_pipe/bp-data.js?v=b1"></script>
+<script src="/bioinformatics_pipe/bp-view.js?v=b1"></script>
+</body>
+</html>

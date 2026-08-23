@@ -30,11 +30,25 @@ const nextConfig = {
   // zsb-medallion as a rail to their right. Bucket contents are a treemap by
   // bytes. Contract + ownership split: public/data_structures/HANDOFF.md
   // SOURCE: read on-instance from the live S3 buckets and the four zsb-* repos.
+  // /bioinformatics_pipe is a self-contained static viz in public/bioinformatics_pipe/
+  // (index.html + five classic scripts, no build step), built the same way as
+  // /pipeline and /data_structures and sharing their shell. Same absolute-<script
+  // src> rule applies, same reason: no trailing slash on the route.
+  // It is one LEG of the medallion map at higher resolution — the six culls
+  // between the unfiltered DGE split-pipe produces and the filtered matrix
+  // normalisation expects. The tiles are animated Canvas 2D, not SVG, because
+  // each draws 14,000 particles a frame.
+  // Every threshold on those tiles is COMPUTED at load from a seeded simulation
+  // in bp-pop.js; none is a literal. That matters because only one of the four
+  // culls drawn has code that has ever run, so the page marks every figure real
+  // or modelled and must keep doing so.
+  // Contract + ownership split: public/bioinformatics_pipe/HANDOFF.md
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
       { source: '/pipeline', destination: '/pipeline/index.html' },
       { source: '/data_structures', destination: '/data_structures/index.html' },
+      { source: '/bioinformatics_pipe', destination: '/bioinformatics_pipe/index.html' },
       { source: '/grcz12', destination: '/grcz12.html' },
     ]
   },
@@ -62,6 +76,17 @@ const nextConfig = {
       },
       {
         source: '/data_structures',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // Same shell-and-scripts coupling again, and one more reason here: the
+      // tiles read SIM out of bp-tiles.js, so a stale script pairs today's
+      // drawing code with yesterday's cascade and the ledger stops adding up.
+      {
+        source: '/bioinformatics_pipe/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/bioinformatics_pipe',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
     ]
