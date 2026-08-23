@@ -84,7 +84,7 @@ const NODES = [
     the broader name it has on /pipeline so the two can still be matched up.
     Everything above this comment is lifted byte-for-byte. ------------- */
  modelled:true, pipelineName:"Mitochondrial fraction",
- added:"The cut is median + 3 x MAD, and the arithmetic is on the panel because it is short enough to check by eye — which is the whole argument for preferring it to a round number somebody liked. The axis stops a little past the cut rather than at the far end of the dying tail: a handful of cells at 40% would squash the singlet distribution into two bins and hide the shape the cut is made against. They are off-scale, and the count on the panel is over all of them regardless. Cells above the cut rise straight up off the roof and fade, because they are leaking."},
+ added:"The cut is median + 3 x MAD, and the arithmetic is in the record below because it is short enough to check by eye — which is the whole argument for preferring it to a round number somebody liked. The axis stops a little past the cut rather than at the far end of the dying tail: a handful of cells at 40% would squash the singlet distribution into two bins and hide the shape the cut is made against. They are off-scale, and the count in the record below is over all of them regardless. Cells above the cut rise straight up off the roof and fade, because they are leaking."},
 
 {id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, name:"Complexity", x:19.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
  sub:"both tails of the genes-vs-transcripts fit: under-amplified and over-amplified", tier:"taste",
@@ -108,7 +108,7 @@ const NODES = [
     the broader name it has on /pipeline so the two can still be matched up.
     Everything above this comment is lifted byte-for-byte. ------------- */
  modelled:true, pipelineName:"Doublets",
- added:"The roof is the expression embedding rather than a histogram, because between-ness is the entire signal and only an embedding has a between. The chords crossing it are the manufacture of the reference itself — pairs of real cells from different neighbourhoods, added together — which is the part nobody pictures. THE EXPECTED COLLISION RATE ON THE PANEL IS THE ONE REAL FIGURE ON ANY OF THESE ROOFS: three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary says what share of recovered barcodes should hold two cells. Collisions can only happen WITHIN a sublibrary, because the fourth barcode tells two cells apart that took the same path in different ones — get that denominator wrong and the expected rate comes out eight times too high. The scorer's own rate is modelled and sits beside it; where the two disagree is the interesting part, so the roof shows both rather than picking one. Only true doublets pull apart on the roof. Over-called singlets get a ring and fade where they sit, because drawing them coming apart would be the picture claiming something the method does not."},
+ added:"The roof is the expression embedding rather than a histogram, because between-ness is the entire signal and only an embedding has a between. The chords crossing it are the manufacture of the reference itself — pairs of real cells from different neighbourhoods, added together — which is the part nobody pictures. The expected collision rate in the record below is the one real figure on any of these four roofs. Three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary says what share of recovered barcodes should hold two cells. Collisions can only happen WITHIN a sublibrary, because the fourth barcode tells two cells apart that took the same path in different ones — get that denominator wrong and the expected rate comes out eight times too high. The scorer's own rate is modelled and sits beside it; where the two disagree is the interesting part, so both are shown rather than one being picked. Only true doublets pull apart on the roof. Over-called singlets get a ring and fade where they sit, because drawing them coming apart would be the picture claiming something the method does not."},
 
 {id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+4.4, w:1.2, d:1.2, h:0.3,
  sub:"one row per dropped barcode",
@@ -269,6 +269,18 @@ what exists instead, across the corpus:
   doublet        p 0.47-0.90 · manual · DoubletFinder 5% · none`}),
 };
 
+/* ============================================================
+   OFFSETS — fine positioning, applied straight after layoutRows().
+   Authored by dragging in the page's own "Edit positions" mode and pasted
+   back here. Everything in this table is a NUDGE relative to what the lane
+   engine computed, never an absolute coordinate, so re-solving the lane or
+   inserting a step carries these along instead of fighting them.
+     dx, dy      move the building, in world units
+     ldx, ldy    move its name, on top of whatever lab:{} the node carries
+   ============================================================ */
+const OFFSETS = {
+};
+
 const OVERVIEW = {
   eyebrow:"Zeroshot · from /pipeline, row 3",
   title:"Unfiltered → Filtered",
@@ -282,7 +294,7 @@ const OVERVIEW = {
   built:`<p>None of the four charts is rebuilt in three dimensions. Each is drawn in ordinary flat 2D and <mark>laid onto its roof by one matrix</mark> — which is why nothing occludes it, and why a circle painted in chart space comes out as the correct ellipse. That gives the page its grammar: <mark>painted things are ellipses, airborne things are circles</mark>. A barcode still under consideration lies on the surface; one that is leaving lifts off it.</p>
 <p><mark>And each cull leaves differently.</mark> Barcodes below the knee rain off the near eaves — they were never cells. Dying cells rise straight up and fade — they are leaking. Under-amplified cells peel off the surface while over-amplified ones swell where they lie and burst — two failures, not one filter with a mirror. True doublets pull apart into their two halves — they were always two. Four identical fades would make the row read as one animation on a loop.</p>
 <p>Every roof reads at the same angle as the rest of the map, which took two goes to get right. Chart x and chart y map to the two roof diagonals, so a chart's trend lands on their sum or their difference — on the horizontal, or on the vertical. A trend that comes out vertical is a cloud squeezed into a sliver. So the y axis on each roof is oriented so the trend is always a sum: the rank curve falls and takes the ordinary orientation, the genes-against-transcripts cloud rises and takes the inverted one. Their origins therefore sit in different corners, which is correct rather than sloppy — a roof has no up.</p>`,
-  cond:`<p class="cond">Every threshold on these four roofs is <mark>modelled</mark>, computed at load from a seeded population, and each roof says so. None of the four has a shipping policy with a single drawable number behind it: the knee search exists in code but is not what ships, the mitochondrial and complexity cuts are not written anywhere, and doublet filtering is a docstring that raises. A roof showing a mitochondrial cutoff without saying it was invented would be claiming a result nobody has produced.</p>
+  cond:`<p class="cond">Every threshold on these four roofs is <mark>modelled</mark>, computed at load from a seeded population, and each says so under its name on the map and in this column. None of the four has a shipping policy with a single drawable number behind it: the knee search exists in code but is not what ships, the mitochondrial and complexity cuts are not written anywhere, and doublet filtering is a docstring that raises. A roof showing a mitochondrial cutoff without saying it was invented would be claiming a result nobody has produced.</p>
 <p class="cond">One figure is <mark>real</mark>, and it is on the doublet roof: the expected collision rate. Three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary gives the share of recovered barcodes that should hold two cells. Collisions can only happen within a sublibrary — get that denominator wrong and the rate comes out eight times too high. The scorer's own rate sits beside it, and where the two disagree is the interesting part.</p>
 <p class="cond">The four are not independent, and their order decides which gets the credit. Complexity removes much of what the doublet scorer exists to find — a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so it lands in the low tail first. The order genuinely differs between stacks, and the ledger that would settle it is the empty box below the line.</p>`
 };

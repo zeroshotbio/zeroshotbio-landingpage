@@ -304,71 +304,67 @@ function domainOf(vals,lo,hi,pad){
   return [a-m,b+m];
 }
 
-/* pointer-events:none on everything below, and it is not cosmetic.
+/* ============================================================
+   WHAT EACH ROOF SHOWS — as data, for the reader, not as a box on the map.
 
-   A label that floats over a neighbour is still a CLICK TARGET sitting on top
-   of it. The panel parked over D4 meant clicking the mitochondrial cull
-   selected this building; moved clear, the under-amplified annotation landed
-   on D3 and did the same thing. Both were caught by check-clicks.mjs and
-   neither looked wrong in a screenshot.
+   Each roof used to carry a small floating panel with its threshold and the
+   arithmetic behind it. It is gone. A panel is a paragraph pretending to be
+   part of a drawing: it has to be placed, it has to be kept clear of its
+   neighbours, it takes a click if you are not careful, and it says nothing
+   the right-hand column could not say with more room and better type.
 
-   Chasing that with coordinates is a losing game — every future nudge can
-   re-introduce it. A label is not the thing it labels: it should never take
-   a click. The building is a 4.2-unit box and is target enough. */
-/* PANEL_MAX is the width budget, in characters, and it is not advisory. The
-   four roofs stand about 200px apart at zoom 1 and every panel sits at the
-   same offset from its own building by design, so one wider than that runs
-   into its neighbour whatever the offsets are. Anything longer warns, and
-   check-text.mjs turns the warning into a failure. */
-const PANEL_MAX=32;
-function panel(g,head,tag,body,foot){
-  const lines=[head].concat(tag?[tag]:[]).concat(body||[]).concat(foot?[foot]:[]);
-  const over=lines.filter(L=>L.length>PANEL_MAX);
-  if(over.length) console.warn("bp-shapes: panel line over "+PANEL_MAX+
-    " characters, it will reach the next building — "+over.join(" | "));
-  const w=Math.max.apply(null,lines.map(L=>L.length))*8.2*0.62+15;
-  const h=lines.length*13+11;
-  /* --panel2, not --panel: in light mode --panel is a hair off the page
-     colour and the whole block vanished into the background — visible in
-     dark, invisible in light, which is the failure mode a two-theme page is
-     built to have. --panel2 is the one step further from the ground in both. */
-  const rect=g.appendChild(el("rect",{width:w,height:h,fill:"var(--panel2)",
-    "fill-opacity":".95",stroke:"var(--fg3)","stroke-width":"1","stroke-opacity":".55",
-    "opacity":"0","pointer-events":"none"}));
-  const texts=lines.map((L,i)=>{
-    const isTag=tag&&i===1, isFoot=foot&&i===lines.length-1;
-    const t=g.appendChild(el("text",{"font-size":i===0?9.6:8.2,"font-family":MONO,
-      "letter-spacing":isTag?"1.3":".3","fill-opacity":"0","pointer-events":"none",
-      fill:i===0?"var(--accent)":isTag?"var(--cull)":isFoot?"var(--keep)":"var(--fg3)"}));
-    t.textContent=L; return t;
-  });
-  return {w,h,at(x,y,a){
-    rect.setAttribute("x",x.toFixed(1)); rect.setAttribute("y",y.toFixed(1));
-    rect.setAttribute("opacity",a.toFixed(3));
-    texts.forEach((t,i)=>{ t.setAttribute("x",(x+8).toFixed(1));
-      t.setAttribute("y",(y+16+i*13).toFixed(1));
-      t.setAttribute("fill-opacity",a.toFixed(3)); });
-  }};
-}
+   What survives is the requirement it existed for — a modelled figure has to
+   carry the word "modelled" wherever it is shown. So the numbers move to the
+   reader, which is where prose already lives, and the map keeps the word
+   under each building's name.
 
-/* Where a panel goes, and it is the same place on all four roofs.
-
-   The row runs down-right across the screen at +30°. Stepping PERPENDICULAR
-   to that — up and to the right — puts each panel clear of its own building
-   and of the row, and because every panel takes the same step they land in a
-   line parallel to the row, evenly spaced, instead of tiling into each other
-   the way they did when each was nudged by hand. */
-const PANEL_AT=[128,-236];
-/* And where an annotation goes: the SAME perpendicular, the other way. The
-   panels ride above the row, the annotations below it, and both lines stay
-   parallel to it. Nothing is nudged by hand any more — a hand-nudged label
-   is fine until the row is re-spaced, and this row has been re-spaced three
-   times. */
-const ANN_AT=[-150,236];
-const placePanel=(pane,F,a)=>{
-  const c=F.toScreen(CX0+CWD/2,CY0+CHT/2);
-  pane.at(c[0]-pane.w*0.5+PANEL_AT[0], c[1]+PANEL_AT[1], a);
+   Keyed by SHAPE, not by node id: a shape knows what it drew, and the data
+   file should not have to restate it.
+   ============================================================ */
+const FIGURES={
+  kneeroof:()=>({
+    head:Math.round(MODEL.kneeCut).toLocaleString()+" transcripts",
+    rows:[["Method","steepest descent on the smoothed log-log rank curve"],
+          ["Fitted","per sample — not a chosen round number"],
+          ["Kept",MODEL.kept.length.toLocaleString()+" of "+
+                  MODEL.B.length.toLocaleString()+" barcodes ("+
+                  (100*MODEL.kept.length/MODEL.B.length).toFixed(2)+"%)"]]}),
+  mitoroof:()=>({
+    head:MODEL.mito.cut.toFixed(1)+" % mitochondrial",
+    rows:[["Method","median + 3 × MAD over the survivors"],
+          ["Arithmetic","median "+MODEL.mito.med.toFixed(2)+" + 3 × MAD "+
+                        MODEL.mito.mad.toFixed(2)+" = "+MODEL.mito.cut.toFixed(2)+"%"],
+          ["Removed",MODEL.mitoGone.length+" of "+MODEL.cells.length+" cells"]]}),
+  complexityroof:()=>({
+    head:"± "+MODEL.band.K.toFixed(1)+" × robust sigma",
+    rows:[["Method","least-squares cubic through the cloud, band opened to a robust residual sigma"],
+          ["Sigma",MODEL.band.sigma.toFixed(4)+"  ·  band half-width "+MODEL.band.half.toFixed(4)],
+          ["Above the band",MODEL.cplxHi.length+" cells — under-amplified"],
+          ["Below the band",MODEL.cplxLo.length+" cells — over-amplified"]]}),
+  doubletroof:()=>({
+    head:(100*MODEL.flagRate).toFixed(1)+" % flagged",
+    rows:[["Method","kNN against synthetic doublets built from pairs of real cells in different neighbourhoods"],
+          ["Threshold","median + 3 × MAD over the scores, cut at "+MODEL.dbl.cut.toFixed(3)],
+          ["Flagged",MODEL.flagged.length+" of "+MODEL.cells.length+" cells"]],
+    /* the one figure on any roof that is not modelled */
+    real:["Expected collision rate",(100*MODEL.expected).toFixed(2)+
+          " % — Poisson over 442,368 paths, 8 sublibraries, 94,616 cells. "+
+          "The denominator is cells per sublibrary, not per run: the fourth barcode "+
+          "tells apart two cells that took the same path in different ones."]}),
 };
+
+/* Where an annotation goes, and it is the same rule on every roof.
+
+   The row runs down-right across the screen at +30°. ANN_AT steps
+   PERPENDICULAR to that — down and to the left — so every annotation lands
+   in a line parallel to the row, evenly spaced, below it. Nothing is nudged
+   by hand: a hand-nudged label is fine until the row is re-spaced, and this
+   row has been re-spaced four times.
+
+   (Its opposite number, PANEL_AT, is gone with the panels. Everything those
+   carried is in the reader now — see FIGURES above.)
+   ------------------------------------------------------------------ */
+const ANN_AT=[-150,236];
 
 /* ------------------------------------------------------------------
    ANNOTATIONS
@@ -506,12 +502,6 @@ function drawKneeRoof(g,n){
     stroke:"var(--accent)","stroke-width":"1.5","stroke-dasharray":"4 3","stroke-opacity":"0"}));
   const knot=F.plot.appendChild(el("circle",{cx:kx,cy:ky,r:2.4,fill:"var(--accent)","fill-opacity":"0"}));
 
-  const pane=panel(g,
-    Math.round(MODEL.kneeCut).toLocaleString()+"  TRANSCRIPTS","MODELLED",[
-    "steepest descent on the",
-    "smoothed log-log rank curve",
-    "fitted per sample, not chosen",
-    MODEL.kept.length.toLocaleString()+" of "+MODEL.B.length.toLocaleString()+" barcodes kept"]);
 
   /* the rain. A stable subsample of the doomed, each with its own phase, so
      the fall is weather rather than one synchronised dump. */
@@ -550,7 +540,6 @@ function drawKneeRoof(g,n){
     shadPool.set(shad,1.9);
     tailPool.node.setAttribute("fill-opacity",(0.34*(1-pExit*0.75)).toFixed(3));
 
-    placePanel(pane,F,pLab);
   };
   run(0); everyFrame(run);
 }
@@ -600,11 +589,6 @@ function drawMitoRoof(g,n){
   const rail=F.plot.appendChild(el("line",{x1:cx,y1:CY0-2,x2:cx,y2:CY0+CHT,
     stroke:"var(--accent)","stroke-width":"1.5","stroke-dasharray":"4 3","stroke-opacity":"0"}));
 
-  const pane=panel(g,
-    MODEL.mito.cut.toFixed(1)+" %  MITOCHONDRIAL","MODELLED",[
-    "median "+MODEL.mito.med.toFixed(2)+" + 3 x MAD "+MODEL.mito.mad.toFixed(2),
-    "fitted per sample, not chosen",
-    MODEL.mitoGone.length+" of "+MODEL.cells.length+" cells leave"]);
 
   /* the ones that go, spread over the tail rather than stacked on the axis */
   const risers=MODEL.mitoGone.map(c=>{
@@ -644,7 +628,6 @@ function drawMitoRoof(g,n){
     shadPool.set(shad);
     shadPool.node.setAttribute("fill-opacity",(0.3*pMark*(1-pExit)).toFixed(3));
 
-    placePanel(pane,F,pLab);
   };
   run(0); everyFrame(run);
 }
@@ -723,12 +706,6 @@ function drawDoubletRoof(g,n){
   const expRail=F.g.appendChild(el("line",{x1:expX,y1:ry-7,x2:expX,y2:ry+5,
     stroke:"var(--keep)","stroke-width":"1.4","stroke-dasharray":"2 2","stroke-opacity":"0"}));
 
-  const pane=panel(g,
-    (100*MODEL.flagRate).toFixed(1)+" %  FLAGGED","MODELLED",[
-    "kNN against synthetic doublets",
-    "cut at median + 3 x MAD"],
-    "expected collision "+(100*MODEL.expected).toFixed(2)+" % · REAL");
-
   const annS=mkAnn(g,["SYNTHETIC","REFERENCE"],"var(--accent)");
 
   const splits=MODEL.flagged.filter(c=>c.isDoublet&&c.t2>=0).map(c=>{
@@ -788,7 +765,6 @@ function drawDoubletRoof(g,n){
     const ts=F.toScreen.apply(null,mid(synth));
     const c1=F.toScreen(CX0+CWD/2,CY0+CHT/2);
     placeAnn(annS,ts,c1[0]+ANN_AT[0],c1[1]+ANN_AT[1],pLab*pMan);
-    placePanel(pane,F,pLab);
   };
   run(0); everyFrame(run);
 }
@@ -872,11 +848,6 @@ function drawComplexityRoof(g,n){
   const underPool=pool(g,{fill:"var(--cull)","fill-opacity":".85"});
   const underShad=pool(F.plot,{fill:"var(--stroke)","fill-opacity":".3"});
 
-  const pane=panel(g,
-    "BAND  +/- "+MODEL.band.K.toFixed(1)+" x SIGMA","MODELLED",[
-    "least-squares cubic fit",
-    "robust residual sigma "+MODEL.band.sigma.toFixed(4),
-    MODEL.cplxHi.length+" above the band, "+MODEL.cplxLo.length+" below"]);
 
   const annU=mkAnn(g,["UNDER-","AMPLIFIED"]);
   const annO=mkAnn(g,["OVER-","AMPLIFIED"]);
@@ -957,7 +928,6 @@ function drawComplexityRoof(g,n){
        building instead. check-clicks.mjs caught it; nothing about the picture
        looked wrong. Directly above the line is the one place on this map with
        neither a neighbour nor the ledger under it. */
-    placePanel(pane,F,pLab);
   };
   run(0); everyFrame(run);
 }

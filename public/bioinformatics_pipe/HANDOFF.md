@@ -143,28 +143,34 @@ a legitimate convention and keeps the association without the rotation.
 orientation in the **data mapping** is the better fix where it is available;
 turning is what is left when it is not.
 
-### The threshold panel is upright, off the roof, and placed by rule
+### There is no panel on the map, and no legend, and no band
 
-A block of text cannot live in chart space. Chart x and chart y are the two
-roof diagonals, so a block grows right-down as it gets wider and left-down as
-it gets taller — it **fans**. A four-line readout anchored in the one empty
-corner sweeps across the roof and lands on the data by its last line, from
-whichever corner it starts. Three placements were tried and all three did it.
-`panel()` draws it upright beside the building. Single lines — axis titles,
-tick numbers — are fine on the roof and stay there.
+Each roof used to carry a small floating panel with its threshold and the
+arithmetic behind it. All four are gone, along with the steel-thread band
+across the top and the grammar legend in the corner.
 
-**Placement is a rule, not a nudge.** The row runs down-right at +30°;
-`PANEL_AT` steps perpendicular to that (up-right) and `ANN_AT` steps the other
-way (down-left), so panels ride in a line above the row and annotations in a
-line below it, both parallel, evenly spaced, and stable when the row is
-re-spaced. It has been re-spaced three times; every hand-nudged label broke
-each time.
+A panel is a paragraph pretending to be part of a drawing. It has to be
+placed, kept clear of its neighbours, and stopped from taking clicks, and it
+says nothing the right-hand column could not say with more room and better
+type. Three separate placement bugs came out of the four of them.
 
-**`PANEL_MAX` is a width budget and it is not advisory.** The roofs stand
-about 200px apart at zoom 1 and every panel sits at the same offset from its
-own building *by design*, so one wider than that reaches its neighbour
-whatever the offsets are. `panel()` warns; `check-text.mjs` fails on the
-warning.
+What survives is the requirement they existed for: **a modelled figure carries
+the word wherever it is shown.** The word is now under each building's name on
+the map, and the numbers are in the reader under *What the roof shows*, driven
+by `FIGURES` in `bp-shapes.js` — keyed by **shape**, not by node id, because a
+shape knows what it drew and the data file should not have to restate it.
+
+A block of text could not have lived on a roof anyway. Chart x and chart y are
+the two roof diagonals, so a block grows right-down as it gets wider and
+left-down as it gets taller — it **fans**, and a four-line readout anchored in
+the one empty corner lands on the data by its last line whichever corner it
+starts from. Single lines — axis titles, tick numbers — are fine and stay
+there.
+
+`ANN_AT` remains: the annotations that *do* still float (UNDER-AMPLIFIED,
+SYNTHETIC REFERENCE) are placed by stepping perpendicular to the row, so they
+land in a line parallel to it rather than being nudged one at a time. The row
+has been re-spaced four times and every hand-nudged label broke each time.
 
 **Both axis titles are anchored `start`.** Anchored `end` they run leftward off
 chart x = 0 — which a five-letter "GENES" survives and an eleven-letter
@@ -172,14 +178,14 @@ chart x = 0 — which a five-letter "GENES" survives and an eleven-letter
 
 ### Labels never take clicks
 
-Everything `panel()` and `mkAnn()` draw carries `pointer-events:none`.
+Everything `mkAnn()` draws carries `pointer-events:none`.
 
 This is load-bearing. A label that floats over a neighbour is a **click target
-sitting on top of it**: the panel parked up-left meant clicking D4 selected D5,
-and once it moved, the under-amplified annotation landed on D3 and did the same
-thing. Both were caught by `check-clicks.mjs`; neither looked wrong in a
-screenshot. Chasing it with coordinates is a losing game — every future nudge
-can re-introduce it. A label is not the thing it labels.
+sitting on top of it**: an arithmetic panel parked up-left meant clicking D4
+selected D5, and once it moved, the under-amplified annotation landed on D3 and
+did the same thing. Both were caught by `check-clicks.mjs`; neither looked
+wrong in a screenshot. Chasing it with coordinates is a losing game — every
+future nudge can re-introduce it. A label is not the thing it labels.
 
 ## REAL vs MODELLED
 
@@ -190,15 +196,15 @@ what ships, the mitochondrial and complexity cuts are not written anywhere, and
 doublet filtering is a docstring that raises. Each roof shows the *shape* of
 its decision, not its answer.
 
-Each carries the word in three places — on its panel, under its name on the
-map, and in the reader. **Keep it in all three.** A node opts in with
+Each carries the word in two places — under its name on the map, and in the
+reader above the figures. **Keep it in both.** A node opts in with
 `modelled:true`.
 
 **One figure is real, and it is on the doublet roof: the expected collision
 rate.** Three barcode rounds give 48 × 96 × 96 = 442,368 addressable paths, the
 fourth barcode splits the run into 8 sublibraries, 94,616 cells were called,
 and Poisson over paths gives the share of recovered barcodes that should hold
-two cells. It sits on the panel in the *keep* colour, beside the modelled rate
+two cells. It sits in the reader in the *keep* colour, beside the modelled rate
 it is being compared against, because where the two disagree is the point.
 
 **The denominator is cells per SUBLIBRARY, not per run.** Two cells that took
@@ -249,7 +255,7 @@ largest cell sits several sigma out on its own. Taking it as the limit
 compressed the whole cloud into a two-pixel sliver: it rendered, it was wrong,
 and nothing on screen said so. `domainOf()` takes robust quantiles and `F.plot`
 is clipped, so the few off-scale marks do not draw — and **every count in the
-panel is over the whole population**, never over what fitted.
+reader is over the whole population**, never over what fitted.
 
 **There is no title on a roof.** Two drafts had one, carrying the building's
 name — already drawn on the map two centimetres away — and it sat straight
@@ -268,8 +274,9 @@ and the coordinate ruler, both of which deliberately run wider than the map.
 
 ```bash
 node check-sim.mjs                       # no browser needed
-node check-text.mjs  <url>               # needs playwright
+node check-text.mjs   <url>              # needs playwright
 node check-clicks.mjs <url>              # needs playwright
+node check-edit.mjs   <url>              # needs playwright
 ```
 
 - **`check-sim.mjs`** asserts the population still supports the statistics. A
@@ -289,12 +296,45 @@ node check-clicks.mjs <url>              # needs playwright
   means a shut panel reports width 1), and the expected overview title is read
   off `OVERVIEW` rather than hardcoded — a hardcoded one passed for a build
   after the page was renamed.
+- **`check-edit.mjs`** drives Edit positions with a real mouse: handles inert
+  until the mode is on, a building drag that moves the building and *not* the
+  name offset, a name drag that moves the name and *not* the building, the
+  result written to local storage, and a paste-back block that actually
+  contains an `ldx`/`ldy`. Pointer capture is what the mode is built on, and a
+  dispatched `MouseEvent` skips pointer events entirely — a synthetic drag
+  would pass against an implementation no hand could drive.
 
 ## Performance
 
 One `requestAnimationFrame` drives the page. **A roof must never start its own.**
 Roofs push to `TICKERS`; a ticker that throws is dropped and the map keeps
 running. `window.bpipeDiag()` returns one line of state when it looks stuck.
+
+## Edit positions
+
+Ported from `/pipeline`. Everything the map draws is placed from world
+coordinates and the projection is affine, so a drag is exact rather than
+approximate: a screen delta divides straight back into a world delta and moving
+an object is a `translate` on the group it was drawn into. Nothing re-renders
+and no ticker is disturbed.
+
+**The building and its name drag separately.** A name is not attached to its
+building by anything but convention — it floats above and to one side, and
+where it can go depends on what its neighbours are doing. So it gets its own
+handle (a box round it, because glyphs are mostly holes and cannot be reliably
+picked up) and its own pair of nudges. Moving the building carries the name
+along; moving the name leaves the building alone. Both directions are asserted
+in `check-edit.mjs`, because both failure modes look fine in a screenshot.
+
+What comes out is a table of **nudges**, `dx`/`dy` for the object and
+`ldx`/`ldy` for its name, relative to whatever `layoutRows()` computed — so it
+survives the lane being re-solved or a step being inserted. Save prints the
+block to paste into `OFFSETS` in `bp-data.js`; the browser holds a copy under
+`bpipe.offsets` until it is baked in.
+
+**It writes to local storage only.** `/pipeline`'s Save posts to a shared
+DynamoDB record keyed `pipeline_map::edits`; a second page writing there would
+overwrite that map's saved state.
 
 ## What is deliberately NOT here
 

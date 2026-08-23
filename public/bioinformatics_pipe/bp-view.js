@@ -48,6 +48,35 @@ const svg=document.getElementById("svg");
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
+/* ============================================================
+   OFFSETS
+   Fine positioning on top of whatever the lane engine computed. Everything in
+   the table is a NUDGE — dx/dy for the object, ldx/ldy for its name — never
+   an absolute coordinate, so re-solving the lane or inserting a step carries
+   them along instead of fighting them.
+
+   Two sources, and the local one wins while it is being tuned: the committed
+   table in bp-data.js, and whatever this browser is holding from the page's
+   own Edit positions mode. Once a sitting has been baked back into the file
+   the two are identical and clearing the local copy changes nothing.
+   ============================================================ */
+const EDIT_KEY="bpipe.offsets";
+const BAKED=(typeof OFFSETS!=="undefined")?OFFSETS:{};
+const LIVE=(()=>{
+  try{ const raw=localStorage.getItem(EDIT_KEY); if(raw) return JSON.parse(raw); }catch(err){}
+  return BAKED;
+})();
+NODES.forEach(n=>{
+  const o=LIVE[n.id];
+  if(o){
+    n.x+=o.dx||0; n.y+=o.dy||0;
+    if(o.ldx||o.ldy) n.lab={dx:((n.lab&&n.lab.dx)||0)+(o.ldx||0),
+                            dy:((n.lab&&n.lab.dy)||0)+(o.ldy||0)};
+  }
+  /* where this node was actually drawn, and how far it has been dragged since */
+  n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
+});
+
 const labelEls={}, plinthEls={};
 const defs=installDefs(svg);
 
@@ -180,19 +209,27 @@ function routeOf(e){
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
   return raw.map(p=>P(p[0],p[1],0.02));
 }
-EDGES.forEach(e=>{
-  const rec={...e,host:gEdge.appendChild(el("g")),
-             fromName:byId[e.a].name,toName:byId[e.b].name};
+/* One <g> per edge so a route can be redrawn on its own when the editor moves
+   a node — the number of elbows changes when two objects come level, so the
+   run is rebuilt rather than patched. */
+function paintEdge(rec){
+  const host=rec.host;
+  [...(host.children||[])].forEach(c=>host.removeChild(c));
   const pp=routeOf(rec);
-  const faint = rec.kind==="drop"||rec.kind==="soup";
+  const faint = rec.kind==="drop";
   const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
     "stroke-width":faint?"1":"1.3","stroke-opacity":faint?".35":".7"});
   if(rec.dash) path.setAttribute("stroke-dasharray","5 4");
-  rec.host.appendChild(path);
-  pp.slice(1,-1).forEach(c=>rec.host.appendChild(el("rect",
+  host.appendChild(path);
+  pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
     {x:c[0]-2.4,y:c[1]-2.4,width:4.8,height:4.8,transform:`rotate(45 ${c[0]} ${c[1]})`,
      fill:"var(--edge)","fill-opacity":".5"})));
   const g=makeGeom(pp); rec.segs=g.segs; rec.len=g.len;
+}
+EDGES.forEach(e=>{
+  const rec={...e,host:gEdge.appendChild(el("g")),
+             fromName:byId[e.a].name,toName:byId[e.b].name};
+  paintEdge(rec);
   edgeGeom.push(rec);
 });
 
@@ -219,12 +256,12 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   g.style.cursor="pointer";
   DRAW[n.shape](g,n);
   if(!TOUCH){
-    g.addEventListener("mouseenter",()=>show(n.id,false));
-    g.addEventListener("mouseleave",unhover);
+    g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
+    g.addEventListener("mouseleave",()=>{ if(!editing) unhover(); });
   }
-  g.addEventListener("focus",()=>show(n.id,false));
-  g.addEventListener("blur",unhover);
-  g.addEventListener("click",ev=>{ev.stopPropagation(); show(n.id,true);});
+  g.addEventListener("focus",()=>{ if(!editing) show(n.id,false); });
+  g.addEventListener("blur",()=>{ if(!editing) unhover(); });
+  g.addEventListener("click",ev=>{ev.stopPropagation(); if(!editing) show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
 
@@ -235,17 +272,22 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
    even-odd rule — applied to the edge and dot layers only. Grid and bands are
    untouched, so they still show through translucent artwork.
    ============================================================ */
-(function occlude(){
-  const sil=n=>{
-    const hw=n.w/2, hd=n.d/2, h=topOf(n);
-    return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
-            P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
-  };
+const nodeSil=n=>{
+  const hw=n.w/2, hd=n.d/2, h=topOf(n);
+  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
+          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
+};
+const clipPathEl=el("path",{"clip-rule":"evenodd"});
+function rebuildClip(){
   const R=40000;
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
-  NODES.forEach(n=>{ d+=" M "+sil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  NODES.forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  clipPathEl.setAttribute("d",d);
+}
+(function occlude(){
+  rebuildClip();
   const cp=el("clipPath",{id:"nodeclip",clipPathUnits:"userSpaceOnUse"});
-  cp.appendChild(el("path",{d,"clip-rule":"evenodd"}));
+  cp.appendChild(clipPathEl);
   defs.appendChild(cp);
   gEdge.setAttribute("clip-path","url(#nodeclip)");
   gDot .setAttribute("clip-path","url(#nodeclip)");
@@ -487,11 +529,27 @@ function renderNode(id){
        this page has to say for itself goes below it, under its own heading,
        so a reader can tell which map is talking. */
     (n.added?`<h4>Drawn here</h4><p class="added">${n.added}</p>`:"")+
+    figuresOf(n)+
     (n.kv?`<h4>Record</h4>`+n.kv.map(([k,v])=>
       `<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join(""):"")+
     `<h4>On the map</h4>`+
     `<dl class="kv"><dt>Feeds</dt><dd>${esc(feeds)}</dd></dl>`+
     `<dl class="kv"><dt>Fed by</dt><dd>${esc(fedBy)}</dd></dl>`;
+}
+
+/* The numbers that used to float in a box on the diagram. They belong here:
+   the map has no room for a paragraph, and the requirement the box existed to
+   satisfy — a modelled figure carries the word wherever it is shown — is met
+   by the badge above and by the word under the name on the map. */
+function figuresOf(n){
+  const mk = typeof FIGURES!=="undefined" && FIGURES[n.shape];
+  if(!mk) return "";
+  const f=mk();
+  return `<h4>What the roof shows</h4>`+
+    `<div class="figure">${esc(f.head)}</div>`+
+    f.rows.map(([k,v])=>`<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join("")+
+    (f.real?`<dl class="kv real"><dt>${esc(f.real[0])}</dt>`+
+            `<dd>${esc(f.real[1])}</dd></dl>`:"");
 }
 
 function inspect(r){
@@ -604,7 +662,7 @@ document.getElementById("btnTheme").onclick=e=>{
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
 };
 document.getElementById("btnHome").onclick=resetView;
-svg.addEventListener("click",()=>{ if(moved<8) release(); });
+svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
 
 /* ============================================================
    START THE MAP
@@ -715,4 +773,203 @@ feature("walk the sequence",function(){
     else if(e.key==="Escape"){ release(); }
     else if(e.key==="Home"||e.key==="0"){ e.preventDefault(); resetView(); }
   });
+});
+
+
+/* ============================================================
+   EDIT POSITIONS
+   A tuning mode, ported from /pipeline. Everything the map draws is placed
+   from world coordinates and the projection is affine, so dragging is exact
+   rather than approximate: a screen delta divides straight back into a world
+   delta, and moving an object is a translate on the group it was drawn into.
+   Nothing is re-rendered and no ticker is disturbed.
+
+   BOTH THE BUILDING AND ITS NAME ARE DRAGGABLE, and separately. A name is
+   not attached to its building by anything but convention — it floats above
+   and to one side, and where it can go depends on what its neighbours are
+   doing. So it gets its own handle and its own pair of nudges (ldx/ldy), and
+   moving the building carries the name with it while moving the name leaves
+   the building where it is.
+
+   What comes out is a table of NUDGES, not coordinates — dx/dy relative to
+   whatever layoutRows() computed. Paste it into OFFSETS in bp-data.js and it
+   survives re-solving the lane or inserting a step.
+
+   Unlike /pipeline this writes to local storage only. That map's Save posts
+   to a shared record keyed pipeline_map::edits; a second page writing there
+   would overwrite it. Here the block to paste is printed in the reader and
+   the browser holds a copy until it is baked into the file.
+   ============================================================ */
+let editing=false, dirty=false;
+const r2=v=>Math.round(v*100)/100;
+
+/* the committed table plus this sitting */
+function totalOffset(n){
+  const b=LIVE[n.id]||{}, o={};
+  const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
+  const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
+  if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
+  return o;
+}
+function collectOffsets(){
+  const out={};
+  NODES.forEach(n=>{ const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  return out;
+}
+function markDirty(){
+  dirty=true;
+  document.body.classList.add("haschanges");
+  try{ localStorage.setItem(EDIT_KEY,JSON.stringify(collectOffsets())); }catch(err){}
+}
+
+feature("edit positions", function(){
+  const btnEdit=document.getElementById("btnEdit");
+  if(!btnEdit) return;                       // the page can ship without the tool
+  const hint=document.querySelector(".hint");
+  const hint0=hint?hint.textContent:"";
+  const SNAP=0.05;
+
+  /* screen pixels -> world units on the ground plane. The exact inverse of P,
+     which is what makes a drag land where the pointer is rather than near it. */
+  const toWorldD=(dsx,dsy)=>{
+    const a=dsx/(S*C30), b=dsy/(S*0.5);
+    return [(a+b)/2, (b-a)/2];
+  };
+  const shift=(dx,dy)=>`translate(${((dx-dy)*S*C30).toFixed(2)},${((dx+dy)*S*0.5).toFixed(2)})`;
+
+  /* A dashed footprint on every building and a box round every name, so the
+     whole map reads as pick-up-able the moment the mode is on. The name box
+     is what makes a floating label a target at all: the glyphs themselves are
+     a few hundred square pixels of ink and mostly holes. */
+  NODES.forEach(n=>{
+    nodeEls[n.id].appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
+    const L=labelEls[n.id];
+    if(!L) return;
+    let bb; try{ bb=L.getBBox(); }catch(err){ bb=null; }
+    if(!bb || !bb.width) return;
+    const pad=4;
+    const box={x:bb.x-pad,y:bb.y-pad,width:bb.width+pad*2,height:bb.height+pad*2};
+    L.appendChild(el("rect",Object.assign({},box,{class:"ehandle lab"})));
+    L.appendChild(el("rect",Object.assign({},box,{class:"ehit","data-id":n.id})));
+  });
+  Object.values(labelEls).forEach(L=>{ L.dataset.base=L.getAttribute("transform")||""; });
+
+  /* redraw whatever a moved object touches. Mid-drag only its own routes are
+     rebuilt; the full pass runs once on release. */
+  function refresh(id){
+    rebuildClip();
+    /* carries have no host: they run off-map and are authored in absolute
+       coordinates, so no move can change them */
+    edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
+    placeDots(0);
+  }
+  function reposition(n){
+    const dx=n.x-n._px, dy=n.y-n._py;
+    const t=(dx||dy)?shift(dx,dy):"";
+    nodeEls[n.id].setAttribute("transform",t);
+    if(plinthEls[n.id]) plinthEls[n.id].setAttribute("transform",t);
+    const L=labelEls[n.id];
+    if(L) L.setAttribute("transform",
+      (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+L.dataset.base : L.dataset.base);
+  }
+
+  let grab=null;
+  function begin(ev,n,mode){
+    if(!editing) return;
+    ev.stopPropagation(); ev.preventDefault();
+    const el0=ev.currentTarget;
+    if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
+    grab={n,mode,px:ev.clientX,py:ev.clientY,
+          ox:n.x,oy:n.y,olx:n._lx,oly:n._ly};
+    (mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.add("picked");
+  }
+  function move(ev){
+    if(!grab) return;
+    const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
+    const q=v=>Math.round(v/SNAP)*SNAP;
+    const n=grab.n;
+    if(grab.mode==="label"){ n._lx=r2(grab.olx+q(dx)); n._ly=r2(grab.oly+q(dy)); }
+    else { n.x=r2(grab.ox+q(dx)); n.y=r2(grab.oy+q(dy)); }
+    reposition(n);
+    if(grab.mode!=="label") refresh(n.id);
+    say(n);
+  }
+  function end(){
+    if(!grab) return;
+    const n=grab.n;
+    (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
+    grab=null;
+    refresh(null);
+    /* painter order is (x+y); something dragged far enough changes places */
+    NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
+    markDirty();
+  }
+  function say(n){
+    if(!hint) return;
+    const o=n?totalOffset(n):{};
+    hint.textContent = n
+      ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
+        `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
+        (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
+      : "Drag any building or any name · release to keep · Save positions when done";
+  }
+
+  NODES.forEach(n=>{
+    const N=nodeEls[n.id];
+    N.addEventListener("pointerdown",ev=>begin(ev,n,"node"));
+    N.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>N.addEventListener(t,end));
+    const L=labelEls[n.id]; if(!L) return;
+    L.addEventListener("pointerdown",ev=>begin(ev,n,"label"));
+    L.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
+  });
+
+  function setMode(on){
+    editing=on;
+    svg.classList.toggle("editing",on);
+    document.body.classList.toggle("editing",on);
+    btnEdit.textContent=on?"Done moving":"Edit positions";
+    if(on){ release(); say(null); }
+    else if(hint) hint.textContent=hint0;
+  }
+  btnEdit.onclick=()=>setMode(!editing);
+});
+
+/* ============================================================
+   SAVING
+   Prints the block to paste into OFFSETS in bp-data.js. The browser already
+   holds a copy — every release writes one — so this is about getting the
+   sitting into the repo rather than about keeping it.
+   ============================================================ */
+feature("saving", function(){
+  const btnSave=document.getElementById("btnSave"), btnDrop=document.getElementById("btnDiscard");
+  if(!btnSave) return;
+  const asSource=(o,name)=>{
+    const rows=Object.entries(o).map(([k,v])=>
+      `  ${/^[A-Za-z_$][\w$]*$/.test(k)?k:JSON.stringify(k)}: ${JSON.stringify(v)},`);
+    return `const ${name} = {\n`+rows.join("\n")+(rows.length?"\n":"")+"};";
+  };
+  btnSave.onclick=()=>{
+    const o=collectOffsets(), n=Object.keys(o).length;
+    pinned=null; current=null; paintIndex();
+    read.innerHTML=
+      `<div class="eyebrow">Positions</div>`+
+      `<div class="title">${n} object${n===1?"":"s"} moved</div>`+
+      `<div class="sub">everything currently in force, not just this sitting</div>`+
+      (n?`<div class="snip">${esc(asSource(o,"OFFSETS"))}</div>`
+        :`<p>Nothing differs from what the lane engine computed.</p>`)+
+      `<h4>What to do with it</h4>`+
+      `<p>This browser is already holding it — every release writes a copy — so it `+
+      `survives a refresh. Paste the block into <mark>OFFSETS</mark> in `+
+      `<mark>bp-data.js</mark> to make it the default for everyone.</p>`+
+      `<p>These are <mark>nudges</mark> relative to what the lane engine computed, `+
+      `never absolute coordinates, so they survive the lane being re-solved or a `+
+      `step being inserted. <mark>ldx/ldy</mark> move a name; <mark>dx/dy</mark> `+
+      `move the building and take its name along.</p>`;
+  };
+  if(btnDrop) btnDrop.onclick=()=>{
+    try{ localStorage.removeItem(EDIT_KEY); }catch(err){}
+    location.reload();
+  };
 });
