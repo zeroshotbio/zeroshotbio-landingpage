@@ -133,33 +133,40 @@ const MODEL=(()=>{
   const lam=(CALLED/SUBLIBS)/PATHS, e=Math.exp(-lam);
   const EXPECTED=(1-e-lam*e)/(1-e);
 
-  /* ---- the ledger the river is drawn from ------------------------------
-     The four culls applied IN ORDER, each over what the one before it left.
-     Subtracting four independent percentages would double-count every cell
-     two of them agree about, and two of them do agree: a doublet carries two
-     cells' worth of transcripts and rather less than two cells' worth of
-     distinct genes, so complexity reaches it before the scorer does.
+  /* ---- the ledger the staircase is drawn from --------------------------
+     Four culls applied IN ORDER, each over what the one before it left, and
+     all four measured against ONE denominator: every barcode that ever
+     appeared. Subtracting four independent percentages would double-count
+     every barcode two of them agree about, and two of them do — a doublet
+     carries two cells' worth of transcripts and rather less than two cells'
+     worth of distinct genes, so complexity reaches it before the scorer does.
 
-     IT IS OVER CELLS, AND IT STARTS AT THE KNEE'S OUTPUT. That is the whole
-     reason the knee is not a station on it. The knee's own attrition is
-     96.7% of BARCODES — a proportional ribbon that included it would be a
-     cliff followed by three invisible slivers, which is exactly how the old
-     version of this page failed. Worse, it would conflate two denominators:
-     the knee removes empty droplets, the three after it remove cells. So the
-     river's 100% is the called cells, the knee is drawn as the mouth it
-     flows out of, and the barcode figure is stated there rather than drawn
-     at a scale that erases everything downstream. */
-  const afterMito=cells.filter(c=>c.mitoPct<=mito.cut);
+     THE KNEE IS THE FIRST STATION, and it takes 96.7%. An earlier version of
+     this band left it out on the grounds that a proportional ribbon including
+     it is a cliff followed by three hairlines. It is — and that is the
+     finding, not a drawing problem: on this dataset the knee is very nearly
+     the whole cull and the three after it are a rounding. What makes the
+     small ones still readable is that each station's own figure is a share of
+     what REACHED it, so mito reads −5.8% whether its riser is forty pixels or
+     one, and its tributary flares to a floor width so a small cull is still
+     visibly a cull. The band carries the arithmetic; the labels carry the
+     ones the band is too small to draw.
+
+     One denominator throughout, so nothing here is a ratio between two
+     different objects. Exactly one of the 468 barcodes past the knee is not
+     a cell in the simulation, so the population the last three culls act on
+     is the called cells in all but that one. */
+  const afterKnee=kept;
+  const afterMito=afterKnee.filter(c=>c.mitoPct<=mito.cut);
   const afterCplx=afterMito.filter(c=>Math.abs(resid(c))<=band.half);
-  const afterDbl =afterCplx.filter(c=>c.score<ds.cut);
+  const afterDbl =afterCplx.filter(c=>!(c.isCell&&c.score>=ds.cut));
   const ledger={
-    start:cells.length,
-    steps:[{id:"c3",name:"MITO",       culled:cells.length-afterMito.length},
+    start:B.length,
+    steps:[{id:"c1",name:"KNEE",       culled:B.length-afterKnee.length},
+           {id:"c3",name:"MITO",       culled:afterKnee.length-afterMito.length},
            {id:"c4",name:"COMPLEXITY", culled:afterMito.length-afterCplx.length},
            {id:"c5",name:"DOUBLETS",   culled:afterCplx.length-afterDbl.length}],
     final:afterDbl.length,
-    /* what the knee did, in its own currency */
-    kneeShare:lost.length/B.length,
   };
 
   return {
@@ -1011,59 +1018,59 @@ DRAW.complexityroof=drawComplexityRoof;
 
 
 /* ============================================================
-   THE ATTRITION RIVER — a ground-plane element, under the row
+   THE ATTRITION STAIRCASE — a ground-plane element, behind the row
 
-   The cull ledger drawn as a river painted on the ground, running the length
-   of the lane. It starts full width at the called cells and narrows at each
-   station, shedding a tributary to EACH side, so the run reads as a symmetric
-   taper toward the filtered matrix.
+   The cull ledger painted flat on the ground. ONE STRAIGHT EDGE runs the
+   length of the lane; the opposite edge STAIRCASES down, one riser per
+   station, and a tributary peels off each riser and drifts clear.
 
-   WHY SYMMETRIC
-   A one-sided Sankey has a straight edge and a stepped edge, so it reads as a
-   bar chart lying down and its top edge fights the lane's centreline. Split
-   the loss evenly and the shape becomes a taper about the lane axis — it
-   agrees with the direction of travel instead of competing with it, which is
-   what a background element has to do.
+   WHY A STRAIGHT EDGE
+   It gives the run a datum. Every step is read against one unmoving line
+   instead of against a shape changing on both sides at once, and the
+   staircase becomes the only thing moving — which is the point of the
+   graphic. The symmetric version this replaces had neither edge holding
+   still, so the eye had nothing to measure against.
+
+   ORIENTATION
+   On the ground plane, DECREASING y projects up and to the right. The datum
+   sits at the band's larger-y edge and yBase is set just above the row, so
+   the buildings land on the far side of that line and the band reads as
+   lying behind them. The staircase descends toward the datum; tributaries
+   leave up-right, away from the buildings.
 
    HOW IT SITS
-   z = 0.002, a hair above the grid so it never z-fights, and far below the
-   buildings. It registers NO ticker: a moving background behind four moving
-   foregrounds is noise, and this is a ledger, not an animation.
+   z = 0.002, a hair above the grid and far below the buildings. No ticker —
+   a moving background behind four moving foregrounds is noise. And
+   pointer-events:none: it spans the whole lane and is painted after some of
+   what stands near it, so without that it swallows their clicks.
 
-   SAME TRICK AS THE ROOFS. Drawn flat in 2D and wrapped in one
-   transform="matrix()" built from three projected GROUND corners, so the
-   taper, the tributaries and the painted percentages all shear into the
-   plane correctly and for free.
+   SAME TRICK AS THE ROOFS. Drawn flat and wrapped in one transform="matrix()"
+   built from three projected GROUND corners, so the steps and the painted
+   numbers shear into the plane correctly and for free.
 
-   IT OWNS NO DATA. Counts arrive on the node as `ledger`; swap in real
-   per-sample numbers and the river reshapes itself.
+   IT OWNS NO DATA — counts arrive on the node as `ledger`.
    ============================================================ */
 const smoothstep=t=>(t<=0?0:t>=1?1:t*t*(3-2*t));
 
-function drawAttritionRiver(g,n){
-  const {x0,x1,y:yC,hw:HW,z:Z=0.002,ledger}=n;
+function drawAttritionStaircase(g,n){
+  const {x0,x1,yBase,width:WD,z:Z=0.002,ledger}=n;
+  const flip=!!n.flip;
 
-  /* three ground corners define the whole painting */
-  const c00=P(x0,yC-HW,Z), c10=P(x1,yC-HW,Z), c01=P(x0,yC+HW,Z);
+  /* local (0,0) is the far edge at the start; local y grows toward the datum */
+  const yTopW=flip?yBase+WD:yBase-WD;
+  const c00=P(x0,yTopW,Z), c10=P(x1,yTopW,Z), c01=P(x0,yBase,Z);
   const LW=Math.hypot(c10[0]-c00[0],c10[1]-c00[1]);
   const LH=Math.hypot(c01[0]-c00[0],c01[1]-c00[1]);
   const Ux=(c10[0]-c00[0])/LW, Uy=(c10[1]-c00[1])/LW;
   const Vx=(c01[0]-c00[0])/LH, Vy=(c01[1]-c00[1])/LH;
 
-  /* pointer-events:none, and it is not optional. This is scenery: it is
-     painted on the ground, it spans half the map, and it is painted after
-     three of the buildings that stand ON it — so without this it swallows
-     their clicks and their drags. check-clicks.mjs found it immediately;
-     nothing about the picture looked wrong. It stays selectable from the
-     index, which is the right way to reach a thing you cannot point at. */
   const root=g.appendChild(el("g",{
     transform:"matrix("+Ux+" "+Uy+" "+Vx+" "+Vy+" "+c00[0]+" "+c00[1]+")",
-    "pointer-events":"none",
-    opacity:n.opacity!=null?n.opacity:0.82}));
+    opacity:n.opacity!=null?n.opacity:0.8,
+    "pointer-events":"none"}));
 
-  const mid=LH/2;
   const lxOf=wx=>((wx-x0)/(x1-x0))*LW;
-  const halfOf=count=>(count/ledger.start)*(LH/2);
+  const wOf=count=>(count/ledger.start)*LH;
 
   let running=ledger.start;
   const st=ledger.steps.map(s=>{
@@ -1071,97 +1078,88 @@ function drawAttritionRiver(g,n){
     running=out;
     return {...s,into,out,lx:lxOf(s.x),pct:(s.culled/into)*100};
   });
+  const final=running;
 
-  /* taper: constant between stations, smoothstepped across a short throat */
-  const THROAT=LW*0.028;
-  const halfAt=lx=>{
-    let h=halfOf(ledger.start);
-    for(const s of st) h+=(halfOf(s.out)-halfOf(s.into))*smoothstep((lx-(s.lx-THROAT/2))/THROAT);
-    return h;
-  };
+  const KEEP="var(--keep)", FLOW="var(--cull)";
 
-  const RIVER="var(--keep)", FLOW="var(--cull)", INK="var(--fg2)";
-
-  /* ---- tributaries first, so the river reads continuous over them ---- */
-  const SEGS=16;
+  /* ---- tributaries first, so the band reads continuous over them ---- */
+  const SEGS=18, reach=LW*0.13, drift=LH*0.70, MINW=LH*0.055;
+  /* The departure curve is QUADRATIC, not a smoothstep. A smoothstep flattens
+     at the far end and the stream settles into an S; t*t leaves the riser
+     tangent to the band and keeps bending away, so it reads as barcodes still
+     going rather than barcodes parked. It fades out before it stops. */
+  const rise=t=>t*t;
   st.forEach(s=>{
-    const th=halfOf(s.into)-halfOf(s.out);       /* what leaves on THIS side */
+    const th=wOf(s.into)-wOf(s.out);          /* exactly what this riser sheds */
     if(th<=0.01) return;
-    const reach=LW*0.10, drift=LH*0.34;
-    /* A two-pixel stream is true and invisible. The WIDTH AT THE JUNCTION
-       stays exactly proportional — that is where the claim is made — and a
-       thin stream then flares as it drifts clear, so a small cull still reads
-       as a cull. The river itself carries the arithmetic either way. */
-    const MINW=LH*0.042;
-    for(const side of [-1,1]){
-      const inner0=mid+side*halfOf(s.out), outer0=mid+side*halfOf(s.into);
-      for(let k=0;k<SEGS;k++){
-        const a=k/SEGS, b=(k+1)/SEGS, pA=smoothstep(a), pB=smoothstep(b);
-        const eA=th<MINW?(MINW-th)*pA:0, eB=th<MINW?(MINW-th)*pB:0;
-        const xa=s.lx+reach*a, xb=s.lx+reach*b;
-        const iA=inner0+side*drift*pA, iB=inner0+side*drift*pB;
-        const oA=outer0+side*(drift*pA+eA), oB=outer0+side*(drift*pB+eB);
-        const fade=1-a*a*0.88;
-        root.appendChild(el("polygon",{points:pts([[xa,iA],[xb,iB],[xb,oB],[xa,oA]]),
-          fill:FLOW,"fill-opacity":(0.52*fade).toFixed(3)}));
-        /* edges, so even a hairline stream has a line you can follow */
-        root.appendChild(el("line",{x1:xa,y1:oA,x2:xb,y2:oB,stroke:FLOW,
-          "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
-        root.appendChild(el("line",{x1:xa,y1:iA,x2:xb,y2:iB,stroke:FLOW,
-          "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
-      }
+    const inner0=LH-wOf(s.out);               /* the edge AFTER the step */
+    const outer0=LH-wOf(s.into);              /* the edge BEFORE it */
+    for(let k=0;k<SEGS;k++){
+      const a=k/SEGS, b=(k+1)/SEGS, pA=rise(a), pB=rise(b);
+      /* The riser width is exactly proportional — that is where the claim is
+         made. A thin stream then flares as it drifts clear, so a small cull is
+         still visibly a cull. The staircase carries the arithmetic either way. */
+      const eA=th<MINW?(MINW-th)*pA:0, eB=th<MINW?(MINW-th)*pB:0;
+      const xa=s.lx+reach*a, xb=s.lx+reach*b;
+      const iA=inner0-drift*pA, iB=inner0-drift*pB;
+      const oA=outer0-drift*pA-eA, oB=outer0-drift*pB-eB;
+      const fade=Math.pow(1-a,1.25);
+      root.appendChild(el("polygon",{points:pts([[xa,iA],[xb,iB],[xb,oB],[xa,oA]]),
+        fill:FLOW,"fill-opacity":(0.52*fade).toFixed(3)}));
+      root.appendChild(el("line",{x1:xa,y1:oA,x2:xb,y2:oB,stroke:FLOW,
+        "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
+      root.appendChild(el("line",{x1:xa,y1:iA,x2:xb,y2:iB,stroke:FLOW,
+        "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
     }
   });
 
-  /* ---- the river ---- */
-  const N=220, top=[], bot=[];
-  for(let i=0;i<=N;i++){
-    const lx=(LW*i)/N, h=halfAt(lx);
-    top.push([lx,mid-h]); bot.push([lx,mid+h]);
-  }
-  root.appendChild(el("polygon",{points:pts(top.concat(bot.slice().reverse())),
-    fill:RIVER,"fill-opacity":".14"}));
-  root.appendChild(el("polyline",{points:pts(top),fill:"none",stroke:RIVER,
-    "stroke-width":"1.4","stroke-opacity":".65"}));
-  root.appendChild(el("polyline",{points:pts(bot),fill:"none",stroke:RIVER,
-    "stroke-width":"1.4","stroke-opacity":".65"}));
-  /* lane axis — the hairline the taper is symmetric about */
-  root.appendChild(el("line",{x1:0,y1:mid,x2:LW,y2:mid,stroke:RIVER,
-    "stroke-width":".8","stroke-opacity":".30","stroke-dasharray":"5 7"}));
-
-  /* ---- painted labels: ground markings, not annotation ---- */
-  const FS=LH*0.062;
+  /* ---- the band: straight datum, staircased far edge ---- */
+  const stair=[[0,LH-wOf(ledger.start)]];
   st.forEach(s=>{
-    root.appendChild(el("line",{x1:s.lx,y1:mid-halfOf(s.into)-3,x2:s.lx,y2:mid+halfOf(s.into)+3,
-      stroke:INK,"stroke-width":".9","stroke-opacity":".40"}));
-    const t=root.appendChild(el("text",{x:s.lx+FS*0.4,y:mid-halfOf(s.into)-FS*0.7,fill:FLOW,
-      "font-size":FS*1.2,"font-family":MONO,"font-weight":"600","fill-opacity":".9"}));
+    stair.push([s.lx,LH-wOf(s.into)]);        /* tread */
+    stair.push([s.lx,LH-wOf(s.out)]);         /* riser */
+  });
+  stair.push([LW,LH-wOf(final)]);
+
+  root.appendChild(el("polygon",{points:pts(stair.concat([[LW,LH],[0,LH]])),
+    fill:KEEP,"fill-opacity":".18"}));
+  root.appendChild(el("polyline",{points:pts(stair),fill:"none",stroke:KEEP,
+    "stroke-width":"1.6","stroke-opacity":".8","stroke-linejoin":"miter"}));
+  root.appendChild(el("line",{x1:0,y1:LH,x2:LW,y2:LH,stroke:KEEP,
+    "stroke-width":"1.6","stroke-opacity":".8"}));
+
+  /* ---- numbers ---- */
+  const FS=LH*0.075;
+  st.forEach(s=>{
+    /* the figure rides its own departing stream */
+    const pm=rise(0.45), th=wOf(s.into)-wOf(s.out);
+    const flare=th<MINW?(MINW-th)*pm:0;
+    const t=root.appendChild(el("text",{
+      x:s.lx+reach*0.45+FS*0.3,
+      y:LH-wOf(s.into)-drift*pm-flare-FS*0.45,
+      fill:FLOW,"font-size":FS,"font-family":MONO,"font-weight":"600","fill-opacity":".95"}));
     t.textContent="\u2212"+s.pct.toFixed(1)+"%";
   });
-  /* Running remainder, painted along the ribbon's NEAR edge rather than
-     along its axis. The axis is where the buildings stand: the user's
-     original draws this on open ground, and here the row is on top of it, so
-     the centre line is the one place on the ribbon that is never visible.
-     0.80 of the half-width is outside the buildings' footprint and inside the
-     ribbon even after every cull has taken its share. */
-  const LANE=halfOf(ledger.start)*0.80;
+
+  /* The running remainder sits INSIDE the band where the band is tall enough
+     to hold it, and just outside the staircase edge where it is not. After
+     the knee this band is 3.3% of its own height — a couple of pixels — so
+     centring every figure in it, as the sandbox does, would stack four
+     numbers on one line. Outside means AWAY from the buildings, on the same
+     side the tributaries leave. */
   const edges=[0,...st.map(s=>s.lx),LW];
   const rem=[ledger.start,...st.map(s=>s.out)];
   rem.forEach((cnt,i)=>{
-    const t=root.appendChild(el("text",{x:(edges[i]+edges[i+1])/2,y:mid+LANE+FS*0.36,
-      "text-anchor":"middle",fill:RIVER,"font-size":FS*1.05,"font-family":MONO,
-      "font-weight":"600","letter-spacing":FS*0.1,"fill-opacity":".78"}));
-    t.textContent=(100*cnt/ledger.start).toFixed(1)+"%";
+    const w=wOf(cnt), cx=(edges[i]+edges[i+1])/2;
+    const inside=w>FS*1.9;
+    const t=root.appendChild(el("text",{
+      x:cx, y:inside ? LH-w/2+FS*0.34 : LH-w-FS*0.6,
+      "text-anchor":"middle",fill:KEEP,"font-size":FS*0.92,"font-family":MONO,
+      "font-weight":"600","letter-spacing":FS*0.09,"fill-opacity":".82"}));
+    const pc=100*cnt/ledger.start;
+    t.textContent=(pc>=10?pc.toFixed(0):pc.toFixed(2))+"%";
   });
-  /* THE MOUTH. The river's 100% is the called cells, and the knee is what
-     made them — so its own attrition is stated here, in its own currency,
-     rather than drawn on a scale that would erase everything downstream. */
-  if(n.mouth){
-    const t=root.appendChild(el("text",{x:FS*0.3,y:mid-halfOf(ledger.start)-FS*1.9,
-      fill:INK,"font-size":FS*0.92,"font-family":MONO,"letter-spacing":FS*0.06,
-      "fill-opacity":".8"}));
-    t.textContent=n.mouth;
-  }
-  /* NO ticker, on purpose — see the header note. */
+
+  /* NO ticker, on purpose. */
 }
-DRAW.attritionriver=drawAttritionRiver;
+DRAW.attritionstaircase=drawAttritionStaircase;

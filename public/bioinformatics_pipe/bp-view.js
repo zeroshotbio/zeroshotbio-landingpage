@@ -82,15 +82,13 @@ NODES.forEach(n=>{
    left edge of one landmark to the right edge of the other and puts a station
    under each cull, so re-spacing the row re-shapes it instead of stranding
    it. Its ledger counts come from MODEL — it owns no data of its own. */
-NODES.filter(n=>n.shape==="attritionriver").forEach(r=>{
+NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
   const A=byId[r.from], B=byId[r.to];
   r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
   r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
   r.ledger.steps.forEach(s=>{ s.x=byId[s.id].x; });
-  r.mouth="the knee already took "+(100*MODEL.ledger.kneeShare).toFixed(1)+
-          "% — of BARCODES, not of these";
-  /* it is scenery, so it sits where it was authored rather than in a lane */
-  r.x=(r.x0+r.x1)/2;
+  /* its name hangs off the start of the band rather than the middle of it */
+  r.x=r.x0+1.4;
 });
 
 const labelEls={}, plinthEls={};
@@ -107,7 +105,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),
 [gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 /* the extent of the ground plane, and of the ruler drawn around it */
-const GRID={x0:-5,x1:37,y0:-12,y1:11};
+const GRID={x0:-5,x1:37,y0:-15,y1:10};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);

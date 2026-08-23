@@ -146,9 +146,11 @@ const roofs = () => page.evaluate(() => {
     return { x: m.a * p[0] + m.c * p[1] + m.e, y: m.b * p[0] + m.d * p[1] + m.f }; };
   NODES.forEach(n => {
     if (n.scenery && n.x0 != null) {
-      const hw = n.hw * 1.4;
-      M[n.name] = [to(n.x0, n.y - hw, n.z), to(n.x1, n.y - hw, n.z),
-                   to(n.x1, n.y + hw, n.z), to(n.x0, n.y + hw, n.z)];
+      /* the ground patch it is painted on, grown for the tributaries that
+         drift off the far edge by design */
+      const lo = n.yBase - n.width * 1.9, hi = n.yBase + n.width * 0.15;
+      M[n.name] = [to(n.x0, lo, n.z), to(n.x1, lo, n.z),
+                   to(n.x1, hi, n.z), to(n.x0, hi, n.z)];
       return;
     }
     const h = topOf(n), hw = n.w / 2, hd = n.d / 2;

@@ -104,46 +104,64 @@ lifts off it and becomes a true circle, with a shadow beneath it.
 not each other's mirror:** under-amplified cells peel off the surface;
 over-amplified ones swell where they lie and burst.
 
-### The attrition river
+### The attrition staircase
 
-Ground scenery under the whole row: the four culls' arithmetic as a ribbon
-that starts at 100% and sheds a **tributary to each side** at every station.
-Symmetric on purpose — a one-sided Sankey has a straight edge and a stepped
-edge, so it reads as a bar chart lying down and fights the lane's centreline,
-while a taper about the axis agrees with the direction of travel.
+Ground scenery **behind** the row: the four culls' arithmetic as a band with
+**one straight datum** and a far edge that **staircases down**, one riser per
+cull, each shedding a tributary that drifts clear.
+
+The straight edge is the point. It gives the run a datum, so every step is read
+against one unmoving line instead of against a shape changing on both sides at
+once — which is what the symmetric river this replaces got wrong: neither of
+its edges held still, so the eye had nothing to measure against.
+
+**Orientation.** On the ground plane, *decreasing* y projects up and to the
+right. `yBase` sits just above the row, so the buildings land on the far side
+of the datum and the band reads as lying behind them, with tributaries leaving
+away from the buildings rather than across them.
 
 Same trick as the roofs: drawn flat and laid onto the **ground plane** by one
 matrix, at z = 0.002 so it never z-fights the grid. It registers **no ticker** —
 a moving background behind four moving foregrounds is noise.
 
-**It is over CELLS, and its 100% is the knee's output.** That is why the knee
-is not a station on it. The knee's attrition is 96.7% of *barcodes*: a
-proportional ribbon including it would be a cliff followed by three invisible
-slivers, which is exactly how an earlier version of this page failed. Worse, it
-would conflate two denominators — the knee removes empty droplets, the three
-after it remove cells. The barcode figure is stated at the river's **mouth**
-instead, in its own currency.
+**The knee is the first riser and it takes 96.7%.** An earlier version left it
+out on the grounds that a proportional band including it is a cliff followed by
+three hairlines. It is — and that is the finding, not a drawing problem: on
+this dataset the knee is very nearly the whole cull and the three after it are
+a rounding. Two things keep the small ones readable:
 
-Counts come from `MODEL.ledger`, which applies the culls **in order**, each
-over what the one before left. Subtracting four independent percentages
-double-counts every cell two of them agree about, and two of them do.
+- **each station's figure is a share of what *reached* it**, so mito reads
+  −5.8% whether its riser is forty pixels or one;
+- **a thin tributary flares to a floor width** as it drifts clear, so a small
+  cull is still visibly a cull. The riser width — where the claim is actually
+  made — stays exactly proportional.
+
+**One denominator throughout**: every barcode that ever appeared. Nothing on
+the band is a ratio between two different objects. Counts come from
+`MODEL.ledger`, which applies the culls **in order**, each over what the one
+before left — subtracting four independent percentages double-counts every
+barcode two of them agree about, and two of them do.
+
+The running remainder sits **inside** the band where the band is tall enough to
+hold it and **just outside the staircase edge** where it is not. After the knee
+the band is 3.3% of its own height, so centring every figure in it would stack
+four numbers on one line.
 
 Three things about how it sits, each of which was got wrong first:
 
-- **`pointer-events:none`, and it is not optional.** It spans half the map and
-  is painted after three of the buildings that stand on it, so without this it
+- **`pointer-events:none`, and it is not optional.** It spans the whole lane
+  and is painted after some of what stands near it, so without this it
   swallows their clicks and their drags. `check-clicks.mjs` found it at once.
   It stays reachable from the index, which is the right way to select a thing
   you cannot point at.
 - **`scenery:true` keeps it out of the occlusion silhouette.** Punching a
   ground element out of the clip cuts a hole in the layer it belongs to.
-- **Its running percentages ride the ribbon's near edge, not its axis.** The
-  axis is where the buildings stand, so the centre line is the one part of the
-  ribbon that is never visible.
+- **The cull ledger has to be on the other side.** It has been above and below
+  during this build; whichever side the band is not on is the right one.
 
 `from`/`to` and the station ids are resolved to coordinates by the view after
 `layoutRows()`, the same way `follow{}` is — so re-spacing the row re-shapes
-the river instead of stranding it.
+the band instead of stranding it.
 
 ### `trend` and `squat` — which way the y axis runs, and how tall the plot is
 
