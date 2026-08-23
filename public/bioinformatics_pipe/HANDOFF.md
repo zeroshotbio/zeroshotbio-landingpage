@@ -104,7 +104,48 @@ lifts off it and becomes a true circle, with a shadow beneath it.
 not each other's mirror:** under-amplified cells peel off the surface;
 over-amplified ones swell where they lie and burst.
 
-### `trend` — which way the y axis runs, and it is forced, not chosen
+### The attrition river
+
+Ground scenery under the whole row: the four culls' arithmetic as a ribbon
+that starts at 100% and sheds a **tributary to each side** at every station.
+Symmetric on purpose — a one-sided Sankey has a straight edge and a stepped
+edge, so it reads as a bar chart lying down and fights the lane's centreline,
+while a taper about the axis agrees with the direction of travel.
+
+Same trick as the roofs: drawn flat and laid onto the **ground plane** by one
+matrix, at z = 0.002 so it never z-fights the grid. It registers **no ticker** —
+a moving background behind four moving foregrounds is noise.
+
+**It is over CELLS, and its 100% is the knee's output.** That is why the knee
+is not a station on it. The knee's attrition is 96.7% of *barcodes*: a
+proportional ribbon including it would be a cliff followed by three invisible
+slivers, which is exactly how an earlier version of this page failed. Worse, it
+would conflate two denominators — the knee removes empty droplets, the three
+after it remove cells. The barcode figure is stated at the river's **mouth**
+instead, in its own currency.
+
+Counts come from `MODEL.ledger`, which applies the culls **in order**, each
+over what the one before left. Subtracting four independent percentages
+double-counts every cell two of them agree about, and two of them do.
+
+Three things about how it sits, each of which was got wrong first:
+
+- **`pointer-events:none`, and it is not optional.** It spans half the map and
+  is painted after three of the buildings that stand on it, so without this it
+  swallows their clicks and their drags. `check-clicks.mjs` found it at once.
+  It stays reachable from the index, which is the right way to select a thing
+  you cannot point at.
+- **`scenery:true` keeps it out of the occlusion silhouette.** Punching a
+  ground element out of the clip cuts a hole in the layer it belongs to.
+- **Its running percentages ride the ribbon's near edge, not its axis.** The
+  axis is where the buildings stand, so the centre line is the one part of the
+  ribbon that is never visible.
+
+`from`/`to` and the station ids are resolved to coordinates by the view after
+`layoutRows()`, the same way `follow{}` is — so re-spacing the row re-shapes
+the river instead of stranding it.
+
+### `trend` and `squat` — which way the y axis runs, and how tall the plot is
 
 Chart x and chart y map to the two roof diagonals. So a chart's trend is
 projected onto their **sum** or their **difference** — onto the horizontal, or
@@ -123,9 +164,20 @@ during this build.
 - **`"none"`** — a histogram, an embedding. No diagonal to protect; takes the
   ordinary orientation.
 
-**So the knee roof and the complexity roof have their origins in different
-corners, and that is correct rather than sloppy.** A roof has no up. The only
-thing worth being consistent about is that the data lies *along* it.
+**`squat` is the second lever, and it is what lets a rising trend keep the
+ordinary axis placement.** The trend's screen direction is
+`(0.874(a−b), −0.505(a+b))`, where `a` is how far the data runs across the plot
+and `b` how far it runs up it. At `a ≈ b` that is straight up — the sliver.
+Shrink `b` by making the **plot short**, rather than by lying about the domain,
+and the direction swings toward −30°, which is the roof's own x edge.
+
+So the complexity roof is `trend:"none", squat:0.46`: x along the bottom like
+every other chart here, and a cloud that still lies along the roof. What it
+costs is a band of empty roof above and below the plot, which the axis titles
+use anyway. `trend:"rising"` still exists and nothing uses it — fixing the
+orientation by moving the *axis* was the wrong lever, because it put one
+chart's origin in a different corner from the rest and that is what a reader
+notices first.
 
 ### Nothing on the roof is rotated
 
@@ -298,9 +350,10 @@ node check-edit.mjs   <url>              # needs playwright
   after the page was renamed.
 - **`check-edit.mjs`** drives Edit positions with a real mouse: handles inert
   until the mode is on, a building drag that moves the building and *not* the
-  name offset, a name drag that moves the name and *not* the building, the
-  result written to local storage, and a paste-back block that actually
-  contains an `ldx`/`ldy`. Pointer capture is what the mode is built on, and a
+  name offset, a name drag that moves the name and *not* the building, an
+  annotation drag whose **leader end follows the text while the end naming a
+  point on the chart does not budge**, the result written to local storage, and
+  a paste-back block containing both an `ldx`/`ldy` and an `adx`/`ady`. Pointer capture is what the mode is built on, and a
   dispatched `MouseEvent` skips pointer events entirely — a synthetic drag
   would pass against an implementation no hand could drive.
 
@@ -318,6 +371,22 @@ approximate: a screen delta divides straight back into a world delta and moving
 an object is a `translate` on the group it was drawn into. Nothing re-renders
 and no ticker is disturbed.
 
+**Three kinds of thing drag, and they are three different mechanisms.**
+
+- **A building.** World coordinates; the drag divides a screen delta back into
+  a world delta and translates the group.
+- **Its name.** Same, but into `ldx`/`ldy`, composed in front of the label
+  group's own translate+rotate.
+- **A floating annotation** — UNDER-AMPLIFIED, SYNTHETIC REFERENCE. These are
+  not laid out from world coordinates at all: their own shape re-places them
+  from scratch **every frame**, so moving the element is pointless — the next
+  frame puts it back. What is draggable is `ann.off`, a nudge in world-SVG
+  units that `placeAnn()` adds to whatever the shape asked for. The shape keeps
+  owning where the label starts; the editor owns where it ends up. And because
+  `placeAnn` recomputes the leader from the moved text to the **unmoved**
+  target, the line follows the label — which is the whole reason a label like
+  this is worth being able to move.
+
 **The building and its name drag separately.** A name is not attached to its
 building by anything but convention — it floats above and to one side, and
 where it can go depends on what its neighbours are doing. So it gets its own
@@ -326,8 +395,9 @@ picked up) and its own pair of nudges. Moving the building carries the name
 along; moving the name leaves the building alone. Both directions are asserted
 in `check-edit.mjs`, because both failure modes look fine in a screenshot.
 
-What comes out is a table of **nudges**, `dx`/`dy` for the object and
-`ldx`/`ldy` for its name, relative to whatever `layoutRows()` computed — so it
+What comes out is a table of **nudges** — `dx`/`dy` for the object, `ldx`/`ldy`
+for its name, `adx`/`ady` for an annotation (keyed `"<node>:<which>"`) —
+relative to whatever `layoutRows()` computed — so it
 survives the lane being re-solved or a step being inserted. Save prints the
 block to paste into `OFFSETS` in `bp-data.js`; the browser holds a copy under
 `bpipe.offsets` until it is baked in.

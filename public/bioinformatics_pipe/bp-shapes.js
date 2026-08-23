@@ -133,8 +133,37 @@ const MODEL=(()=>{
   const lam=(CALLED/SUBLIBS)/PATHS, e=Math.exp(-lam);
   const EXPECTED=(1-e-lam*e)/(1-e);
 
+  /* ---- the ledger the river is drawn from ------------------------------
+     The four culls applied IN ORDER, each over what the one before it left.
+     Subtracting four independent percentages would double-count every cell
+     two of them agree about, and two of them do agree: a doublet carries two
+     cells' worth of transcripts and rather less than two cells' worth of
+     distinct genes, so complexity reaches it before the scorer does.
+
+     IT IS OVER CELLS, AND IT STARTS AT THE KNEE'S OUTPUT. That is the whole
+     reason the knee is not a station on it. The knee's own attrition is
+     96.7% of BARCODES — a proportional ribbon that included it would be a
+     cliff followed by three invisible slivers, which is exactly how the old
+     version of this page failed. Worse, it would conflate two denominators:
+     the knee removes empty droplets, the three after it remove cells. So the
+     river's 100% is the called cells, the knee is drawn as the mouth it
+     flows out of, and the barcode figure is stated there rather than drawn
+     at a scale that erases everything downstream. */
+  const afterMito=cells.filter(c=>c.mitoPct<=mito.cut);
+  const afterCplx=afterMito.filter(c=>Math.abs(resid(c))<=band.half);
+  const afterDbl =afterCplx.filter(c=>c.score<ds.cut);
+  const ledger={
+    start:cells.length,
+    steps:[{id:"c3",name:"MITO",       culled:cells.length-afterMito.length},
+           {id:"c4",name:"COMPLEXITY", culled:afterMito.length-afterCplx.length},
+           {id:"c5",name:"DOUBLETS",   culled:afterCplx.length-afterDbl.length}],
+    final:afterDbl.length,
+    /* what the knee did, in its own currency */
+    kneeShare:lost.length/B.length,
+  };
+
   return {
-    B, cells, kneeCut, kept, lost,
+    B, cells, kneeCut, kept, lost, ledger,
     mito, mitoGone,
     band, resid,
     cplxHi:cells.filter(c=>resid(c)>band.half),    /* under-amplified */
@@ -234,15 +263,31 @@ function building(g,n,skin){
    far END of their arm, past the arrowhead.
    ------------------------------------------------------------------ */
 function axesFrame(F,o){
-  const g=F.g, up=o.trend!=="rising";      /* up: more is toward CY0 */
+  const g=F.g, up=o.trend!=="rising";      /* up: more is toward the top */
+  /* SQUAT — a plot shorter than the chart square, centred in it.
+
+     This is the lever that lets a RISING trend keep the ordinary axis
+     placement. The trend's screen direction is (0.874(a−b), −0.505(a+b))
+     where a is how far the data runs across the plot and b how far it runs
+     up it. At a ≈ b that is straight up: the vertical sliver. Shrink b — by
+     making the plot short rather than by lying about the domain — and the
+     direction swings toward −30°, which is the roof's own x edge and the
+     angle everything on this page reads at.
+
+     So the genes-against-transcripts cloud gets its x axis along the bottom
+     like every other chart here, and still lies along the roof. What it costs
+     is a band of empty roof above and below the plot, which the axis titles
+     use anyway. */
+  const H=CHT*(o.squat||1), TOP=CY0+(CHT-H)/2, BOT=TOP+H;
   F.X=v=>CX0+((v-o.xd[0])/(o.xd[1]-o.xd[0]))*CWD;
-  F.Y=up ? v=>CY0+CHT-((v-o.yd[0])/(o.yd[1]-o.yd[0]))*CHT
-         : v=>CY0+((v-o.yd[0])/(o.yd[1]-o.yd[0]))*CHT;
+  F.Y=up ? v=>BOT-((v-o.yd[0])/(o.yd[1]-o.yd[0]))*H
+         : v=>TOP+((v-o.yd[0])/(o.yd[1]-o.yd[0]))*H;
+  F.plotTop=TOP; F.plotBot=BOT;
 
   /* the corner, and which way each arm leaves it */
-  const cy = up ? CY0+CHT : CY0;           /* the x arm's chart y */
+  const cy = up ? BOT : TOP;               /* the x arm's chart y */
   const ySign = up ? -1 : +1;              /* the y arm's direction */
-  const yEnd = up ? CY0 : CY0+CHT;
+  const yEnd = up ? TOP : BOT;
 
   g.appendChild(el("polyline",{points:pts([
       [CX0, yEnd+ySign*5],[CX0,cy],[CX0+CWD+5,cy]]),
@@ -287,7 +332,7 @@ function axesFrame(F,o){
      population, never over what fitted on the roof. */
   const cid="bpclip-"+(o.id||"x");
   const cp=el("clipPath",{id:cid,clipPathUnits:"userSpaceOnUse"});
-  cp.appendChild(el("rect",{x:CX0-5,y:CY0-5,width:CWD+14,height:CHT+14}));
+  cp.appendChild(el("rect",{x:CX0-5,y:TOP-5,width:CWD+14,height:H+10}));
   g.appendChild(cp);
   F.plot=g.appendChild(el("g",{"clip-path":`url(#${cid})`}));
   return F.plot;
@@ -373,7 +418,16 @@ const ANN_AT=[-150,236];
    leaves from whichever edge of the text block faces its target, is trimmed
    a tenth at the text end, and stops short of the terminal dot.
    ------------------------------------------------------------------ */
-function mkAnn(g,lines,tone){
+/* Every annotation on the page registers here so the view's Edit positions
+   mode can pick it up. A floating label is placed by ITS OWN SHAPE, every
+   frame, from a base position the shape computes — so it cannot simply be
+   moved: the next frame would put it back. What is draggable instead is
+   `off`, a nudge in world-SVG units that placeAnn() adds to whatever the
+   shape asked for. The shape keeps owning where the label starts; the editor
+   owns where it ends up. */
+const ANNOTATIONS=[];
+
+function mkAnn(g,key,lines,tone){
   const col=tone||"var(--cull)";
   const NOHIT={"pointer-events":"none"};
   const line=g.appendChild(el("line",Object.assign({stroke:col,"stroke-width":".9",
@@ -382,9 +436,23 @@ function mkAnn(g,lines,tone){
   const t1=g.appendChild(el("text",Object.assign({"text-anchor":"start",fill:col,"font-size":12.5,
     "font-family":MONO,"font-weight":"600","letter-spacing":"1","fill-opacity":"0"},NOHIT)));
   lines.forEach((L,i)=>{ const sp=el("tspan",{x:0,dy:i===0?0:14}); sp.textContent=L; t1.appendChild(sp); });
-  return {line,dot,t1,lines,spans:[].slice.call(t1.childNodes)};
+  /* the grab target, and the dashed box that shows it is one. Both are inert
+     until the mode is on — see .ehit / .ehandle in index.html. The glyphs
+     themselves are not a target: two short words at 12.5px are mostly holes. */
+  const box=g.appendChild(el("rect",{class:"ehandle lab"}));
+  const hit=g.appendChild(el("rect",{class:"ehit","data-ann":key}));
+  const ann={key,line,dot,t1,lines,spans:[].slice.call(t1.childNodes),box,hit,
+             off:{dx:0,dy:0},last:null};
+  ann.reflow=()=>{ if(ann.last) placeAnn(ann,ann.last.target,ann.last.ax,ann.last.ay,ann.last.alpha); };
+  ANNOTATIONS.push(ann);
+  return ann;
 }
-function placeAnn(ann,target,ax,ay,alpha){
+function placeAnn(ann,target,bax,bay,alpha){
+  /* the shape asks for bax/bay; the editor's nudge is added on top, and the
+     leader is recomputed from the moved text to the UNMOVED target — which is
+     what makes the line follow the label rather than the label leave it */
+  ann.last={target,ax:bax,ay:bay,alpha};
+  const ax=bax+ann.off.dx, ay=bay+ann.off.dy;
   const w=Math.max.apply(null,ann.lines.map(L=>L.length))*12.5*0.6;
   const left=ax, right=ax+w, top=ay-12.5, bot=ay+(ann.lines.length-1)*14+4, GAP=6;
   let sx,sy;
@@ -402,6 +470,10 @@ function placeAnn(ann,target,ax,ay,alpha){
   ann.line.setAttribute("stroke-opacity",a);
   ann.dot.setAttribute("fill-opacity",a);
   ann.t1.setAttribute("fill-opacity",a);
+  /* the handle tracks the text, because the text moves every frame */
+  const bx=left-5, by=top-4, bw=w+10, bh=(bot-top)+8;
+  [ann.box,ann.hit].forEach(r=>{ r.setAttribute("x",bx.toFixed(1)); r.setAttribute("y",by.toFixed(1));
+    r.setAttribute("width",bw.toFixed(1)); r.setAttribute("height",bh.toFixed(1)); });
 }
 
 /* every roof registers one ticker, and every ticker is gated on the zoom the
@@ -706,7 +778,7 @@ function drawDoubletRoof(g,n){
   const expRail=F.g.appendChild(el("line",{x1:expX,y1:ry-7,x2:expX,y2:ry+5,
     stroke:"var(--keep)","stroke-width":"1.4","stroke-dasharray":"2 2","stroke-opacity":"0"}));
 
-  const annS=mkAnn(g,["SYNTHETIC","REFERENCE"],"var(--accent)");
+  const annS=mkAnn(g,n.id+":synth",["SYNTHETIC","REFERENCE"],"var(--accent)");
 
   const splits=MODEL.flagged.filter(c=>c.isDoublet&&c.t2>=0).map(c=>{
     const p=px(c), w=F.toWorld(p[0],p[1]);
@@ -806,7 +878,11 @@ function drawComplexityRoof(g,n){
   const XD=domainOf(us,0.004,0.996,0.06);
   const YD=domainOf(gs,0.004,0.996,0.06);
 
-  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"rising",xlab:"TRANSCRIPTS",ylab:"GENES",
+  /* Ordinary placement — x along the bottom, y up the left — like every
+     other chart on the page. It is a rising trend, so it needs a squat plot
+     to stay off the vertical; see axesFrame(). */
+  axesFrame(F,{id:n.id,xd:XD,yd:YD,trend:"none",squat:0.46,
+    xlab:"TRANSCRIPTS",ylab:"GENES",
     xt:[[2,"100"],[3,"1k"],[4,"10k"]],yt:[[2,"100"],[3,"1k"]]});
 
   const px=c=>[F.X(Math.log10(c.umi)), F.Y(Math.log10(c.genes))];
@@ -849,8 +925,8 @@ function drawComplexityRoof(g,n){
   const underShad=pool(F.plot,{fill:"var(--stroke)","fill-opacity":".3"});
 
 
-  const annU=mkAnn(g,["UNDER-","AMPLIFIED"]);
-  const annO=mkAnn(g,["OVER-","AMPLIFIED"]);
+  const annU=mkAnn(g,n.id+":under",["UNDER-","AMPLIFIED"]);
+  const annO=mkAnn(g,n.id+":over", ["OVER-","AMPLIFIED"]);
 
   const T=beats(8.8); let t=0;
   const run=dt=>{
@@ -932,3 +1008,160 @@ function drawComplexityRoof(g,n){
   run(0); everyFrame(run);
 }
 DRAW.complexityroof=drawComplexityRoof;
+
+
+/* ============================================================
+   THE ATTRITION RIVER — a ground-plane element, under the row
+
+   The cull ledger drawn as a river painted on the ground, running the length
+   of the lane. It starts full width at the called cells and narrows at each
+   station, shedding a tributary to EACH side, so the run reads as a symmetric
+   taper toward the filtered matrix.
+
+   WHY SYMMETRIC
+   A one-sided Sankey has a straight edge and a stepped edge, so it reads as a
+   bar chart lying down and its top edge fights the lane's centreline. Split
+   the loss evenly and the shape becomes a taper about the lane axis — it
+   agrees with the direction of travel instead of competing with it, which is
+   what a background element has to do.
+
+   HOW IT SITS
+   z = 0.002, a hair above the grid so it never z-fights, and far below the
+   buildings. It registers NO ticker: a moving background behind four moving
+   foregrounds is noise, and this is a ledger, not an animation.
+
+   SAME TRICK AS THE ROOFS. Drawn flat in 2D and wrapped in one
+   transform="matrix()" built from three projected GROUND corners, so the
+   taper, the tributaries and the painted percentages all shear into the
+   plane correctly and for free.
+
+   IT OWNS NO DATA. Counts arrive on the node as `ledger`; swap in real
+   per-sample numbers and the river reshapes itself.
+   ============================================================ */
+const smoothstep=t=>(t<=0?0:t>=1?1:t*t*(3-2*t));
+
+function drawAttritionRiver(g,n){
+  const {x0,x1,y:yC,hw:HW,z:Z=0.002,ledger}=n;
+
+  /* three ground corners define the whole painting */
+  const c00=P(x0,yC-HW,Z), c10=P(x1,yC-HW,Z), c01=P(x0,yC+HW,Z);
+  const LW=Math.hypot(c10[0]-c00[0],c10[1]-c00[1]);
+  const LH=Math.hypot(c01[0]-c00[0],c01[1]-c00[1]);
+  const Ux=(c10[0]-c00[0])/LW, Uy=(c10[1]-c00[1])/LW;
+  const Vx=(c01[0]-c00[0])/LH, Vy=(c01[1]-c00[1])/LH;
+
+  /* pointer-events:none, and it is not optional. This is scenery: it is
+     painted on the ground, it spans half the map, and it is painted after
+     three of the buildings that stand ON it — so without this it swallows
+     their clicks and their drags. check-clicks.mjs found it immediately;
+     nothing about the picture looked wrong. It stays selectable from the
+     index, which is the right way to reach a thing you cannot point at. */
+  const root=g.appendChild(el("g",{
+    transform:"matrix("+Ux+" "+Uy+" "+Vx+" "+Vy+" "+c00[0]+" "+c00[1]+")",
+    "pointer-events":"none",
+    opacity:n.opacity!=null?n.opacity:0.82}));
+
+  const mid=LH/2;
+  const lxOf=wx=>((wx-x0)/(x1-x0))*LW;
+  const halfOf=count=>(count/ledger.start)*(LH/2);
+
+  let running=ledger.start;
+  const st=ledger.steps.map(s=>{
+    const into=running, out=running-s.culled;
+    running=out;
+    return {...s,into,out,lx:lxOf(s.x),pct:(s.culled/into)*100};
+  });
+
+  /* taper: constant between stations, smoothstepped across a short throat */
+  const THROAT=LW*0.028;
+  const halfAt=lx=>{
+    let h=halfOf(ledger.start);
+    for(const s of st) h+=(halfOf(s.out)-halfOf(s.into))*smoothstep((lx-(s.lx-THROAT/2))/THROAT);
+    return h;
+  };
+
+  const RIVER="var(--keep)", FLOW="var(--cull)", INK="var(--fg2)";
+
+  /* ---- tributaries first, so the river reads continuous over them ---- */
+  const SEGS=16;
+  st.forEach(s=>{
+    const th=halfOf(s.into)-halfOf(s.out);       /* what leaves on THIS side */
+    if(th<=0.01) return;
+    const reach=LW*0.10, drift=LH*0.34;
+    /* A two-pixel stream is true and invisible. The WIDTH AT THE JUNCTION
+       stays exactly proportional — that is where the claim is made — and a
+       thin stream then flares as it drifts clear, so a small cull still reads
+       as a cull. The river itself carries the arithmetic either way. */
+    const MINW=LH*0.042;
+    for(const side of [-1,1]){
+      const inner0=mid+side*halfOf(s.out), outer0=mid+side*halfOf(s.into);
+      for(let k=0;k<SEGS;k++){
+        const a=k/SEGS, b=(k+1)/SEGS, pA=smoothstep(a), pB=smoothstep(b);
+        const eA=th<MINW?(MINW-th)*pA:0, eB=th<MINW?(MINW-th)*pB:0;
+        const xa=s.lx+reach*a, xb=s.lx+reach*b;
+        const iA=inner0+side*drift*pA, iB=inner0+side*drift*pB;
+        const oA=outer0+side*(drift*pA+eA), oB=outer0+side*(drift*pB+eB);
+        const fade=1-a*a*0.88;
+        root.appendChild(el("polygon",{points:pts([[xa,iA],[xb,iB],[xb,oB],[xa,oA]]),
+          fill:FLOW,"fill-opacity":(0.52*fade).toFixed(3)}));
+        /* edges, so even a hairline stream has a line you can follow */
+        root.appendChild(el("line",{x1:xa,y1:oA,x2:xb,y2:oB,stroke:FLOW,
+          "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
+        root.appendChild(el("line",{x1:xa,y1:iA,x2:xb,y2:iB,stroke:FLOW,
+          "stroke-width":"1.2","stroke-opacity":(0.8*fade).toFixed(3)}));
+      }
+    }
+  });
+
+  /* ---- the river ---- */
+  const N=220, top=[], bot=[];
+  for(let i=0;i<=N;i++){
+    const lx=(LW*i)/N, h=halfAt(lx);
+    top.push([lx,mid-h]); bot.push([lx,mid+h]);
+  }
+  root.appendChild(el("polygon",{points:pts(top.concat(bot.slice().reverse())),
+    fill:RIVER,"fill-opacity":".14"}));
+  root.appendChild(el("polyline",{points:pts(top),fill:"none",stroke:RIVER,
+    "stroke-width":"1.4","stroke-opacity":".65"}));
+  root.appendChild(el("polyline",{points:pts(bot),fill:"none",stroke:RIVER,
+    "stroke-width":"1.4","stroke-opacity":".65"}));
+  /* lane axis — the hairline the taper is symmetric about */
+  root.appendChild(el("line",{x1:0,y1:mid,x2:LW,y2:mid,stroke:RIVER,
+    "stroke-width":".8","stroke-opacity":".30","stroke-dasharray":"5 7"}));
+
+  /* ---- painted labels: ground markings, not annotation ---- */
+  const FS=LH*0.062;
+  st.forEach(s=>{
+    root.appendChild(el("line",{x1:s.lx,y1:mid-halfOf(s.into)-3,x2:s.lx,y2:mid+halfOf(s.into)+3,
+      stroke:INK,"stroke-width":".9","stroke-opacity":".40"}));
+    const t=root.appendChild(el("text",{x:s.lx+FS*0.4,y:mid-halfOf(s.into)-FS*0.7,fill:FLOW,
+      "font-size":FS*1.2,"font-family":MONO,"font-weight":"600","fill-opacity":".9"}));
+    t.textContent="\u2212"+s.pct.toFixed(1)+"%";
+  });
+  /* Running remainder, painted along the ribbon's NEAR edge rather than
+     along its axis. The axis is where the buildings stand: the user's
+     original draws this on open ground, and here the row is on top of it, so
+     the centre line is the one place on the ribbon that is never visible.
+     0.80 of the half-width is outside the buildings' footprint and inside the
+     ribbon even after every cull has taken its share. */
+  const LANE=halfOf(ledger.start)*0.80;
+  const edges=[0,...st.map(s=>s.lx),LW];
+  const rem=[ledger.start,...st.map(s=>s.out)];
+  rem.forEach((cnt,i)=>{
+    const t=root.appendChild(el("text",{x:(edges[i]+edges[i+1])/2,y:mid+LANE+FS*0.36,
+      "text-anchor":"middle",fill:RIVER,"font-size":FS*1.05,"font-family":MONO,
+      "font-weight":"600","letter-spacing":FS*0.1,"fill-opacity":".78"}));
+    t.textContent=(100*cnt/ledger.start).toFixed(1)+"%";
+  });
+  /* THE MOUTH. The river's 100% is the called cells, and the knee is what
+     made them — so its own attrition is stated here, in its own currency,
+     rather than drawn on a scale that would erase everything downstream. */
+  if(n.mouth){
+    const t=root.appendChild(el("text",{x:FS*0.3,y:mid-halfOf(ledger.start)-FS*1.9,
+      fill:INK,"font-size":FS*0.92,"font-family":MONO,"letter-spacing":FS*0.06,
+      "fill-opacity":".8"}));
+    t.textContent=n.mouth;
+  }
+  /* NO ticker, on purpose — see the header note. */
+}
+DRAW.attritionriver=drawAttritionRiver;

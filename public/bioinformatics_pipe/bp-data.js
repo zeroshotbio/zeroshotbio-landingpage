@@ -110,7 +110,7 @@ const NODES = [
  modelled:true, pipelineName:"Doublets",
  added:"The roof is the expression embedding rather than a histogram, because between-ness is the entire signal and only an embedding has a between. The chords crossing it are the manufacture of the reference itself — pairs of real cells from different neighbourhoods, added together — which is the part nobody pictures. The expected collision rate in the record below is the one real figure on any of these four roofs. Three barcode rounds give 442,368 addressable paths, the fourth splits the run into 8 sublibraries, 94,616 cells were called, and Poisson over paths within a sublibrary says what share of recovered barcodes should hold two cells. Collisions can only happen WITHIN a sublibrary, because the fourth barcode tells two cells apart that took the same path in different ones — get that denominator wrong and the expected rate comes out eight times too high. The scorer's own rate is modelled and sits beside it; where the two disagree is the interesting part, so both are shown rather than one being picked. Only true doublets pull apart on the roof. Over-called singlets get a ring and fade where they sit, because drawing them coming apart would be the picture claiming something the method does not."},
 
-{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+4.4, w:1.2, d:1.2, h:0.3,
+{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3-5.9, w:1.2, d:1.2, h:0.3,
  sub:"one row per dropped barcode",
  does:"What the Sankey should be drawn from: which stage killed which barcode, and why.",
  built:"Node and link labels would use the plain-English phrasings on this row, never the internal step names.",
@@ -123,6 +123,31 @@ const NODES = [
  does:"The same gene space, a fraction of the barcodes, dense where the first cube was empty. Everything here has been asserted to be a cell.",
  built:"For the worked example: 94,616 cells × 32,520 genes, raw integer counts, no layers and no embedding. Median 3,198 transcripts and 1,618 genes per cell against a design target above 4,000.",
  cond:"The governing rule for this object is corpus principle 4 — a threshold printed in Methods is never assumed to have been applied to the deposited data. Tested against their own releases, four datasets here disagree with their own Methods: ChemFish shipped one screen without its hash filters, ZCL2 shipped a pre-QC atlas with a mitochondrial filter matching zero genes, CellOracle shipped an undocumented 500-UMI floor and no mitochondrial filter, and the worked example keeps cells below its own knee. DanioCell is the one that verifies exactly — and even there a later format conversion broke the guarantee."},
+
+/* ---- the attrition river ------------------------------------------------
+   Scenery on the ground plane under the row: the four culls' arithmetic as a
+   ribbon that starts at 100% of the called cells and tapers. It owns no data
+   — MODEL.ledger in bp-shapes.js computes the counts by applying the culls
+   IN ORDER, and the shape reshapes itself around whatever it is handed.
+
+   It lies at the row's own y, on the ground, so the buildings stand ON it and
+   it shows either side of them — parking it below the row as a separate band
+   made it read as a second diagram rather than as the floor this one is
+   built on.
+
+   from/to and the step ids are resolved to real coordinates by the view once
+   layoutRows() has run; the x below is a placeholder. scenery:true keeps it
+   out of the occlusion silhouette, so the edges and dots above it are not
+   punched through by a thing lying flat on the floor.
+   ------------------------------------------------------------------------ */
+{id:"RIVER", key:"A1", group:"Under the row", shape:"attritionriver",
+ scenery:true, modelled:true,
+ name:"Attrition", x:14, y:R3, w:0.9, d:0.9, h:0, lab:{dy:4.9},
+ from:"UD", to:"FD", hw:3.2, z:0.002, opacity:0.66,
+ sub:"100% of the called cells, and what each cull takes",
+ does:"The four culls' arithmetic, drawn to scale on the ground under the row: a ribbon that starts at 100% and sheds a tributary to each side at every station. Symmetric on purpose — a one-sided Sankey has a straight edge and a stepped edge, so it reads as a bar chart lying down and fights the lane's centreline, while a taper about the axis agrees with the direction of travel.",
+ built:"Drawn flat in two dimensions and laid onto the ground plane by one transform, the same trick the roofs use. Counts come from applying the culls in order — each over what the one before it left — because subtracting four independent percentages double-counts every cell that two of them agree about, and two of them do agree: a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so complexity reaches it before the scorer does.",
+ cond:"It is over CELLS, and its 100% is the knee's output — which is why the knee is not a station on it. The knee's attrition is 96.7% of barcodes, and a proportional ribbon that included it would be a cliff followed by three invisible slivers, which is exactly how an earlier version of this page failed. Worse, it would conflate two denominators: the knee removes empty droplets, the three after it remove cells. The barcode figure is stated at the river's mouth instead, in its own currency. And the counts are modelled — this is what the culls would take from the simulated population, not a record of what any of them took, because no per-barcode ledger exists here or anywhere else in the corpus."},
 ];
 
 const ROWS=[R3], MIRROR=29.0;
@@ -145,7 +170,7 @@ const EDGES = [
 
 /* One band, keeping its name from the big map. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-1.4, x1:33.0, y0:R3-4.2, y1:R3+6.8},
+  {name:"Bioinformatics pipeline", x0:-1.4, x1:33.0, y0:R3-7.6, y1:R3+6.6},
 ];
 
 /* Both ends fade, because neither is on this page: the barcodes arrive from a

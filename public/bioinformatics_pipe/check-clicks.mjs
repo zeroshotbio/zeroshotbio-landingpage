@@ -52,7 +52,7 @@ if (await title() !== overviewTitle)
   fail(`initial reader entry was "${await title()}", expected "${overviewTitle}"`);
 
 const meta = await page.evaluate(() =>
-  NODES.map(n => ({ id: n.id, name: n.name })));
+  NODES.map(n => ({ id: n.id, name: n.name, scenery: !!n.scenery })));
 
 /* where the centre of a building's roof is, right now, on screen */
 const roofPoint = id => page.evaluate(i => {
@@ -62,8 +62,13 @@ const roofPoint = id => page.evaluate(i => {
   return { x: m.a * p[0] + m.c * p[1] + m.e, y: m.b * p[0] + m.d * p[1] + m.f };
 }, id);
 
-/* every building, clicked for real */
-for (const { id, name } of meta) {
+/* Every building, clicked for real — but not the scenery. The attrition
+   river is painted flat on the ground under the whole row and carries
+   pointer-events:none precisely so it cannot swallow a building's click, so
+   there is no point on the map that selects it. It is reached from the index,
+   which is checked below like everything else. */
+for (const { id, name, scenery } of meta) {
+  if (scenery) continue;
   await page.keyboard.press('Home');            // back to the fitted view
   await page.waitForTimeout(1300);
   const p = await roofPoint(id);

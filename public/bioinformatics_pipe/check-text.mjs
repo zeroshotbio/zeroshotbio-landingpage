@@ -132,15 +132,28 @@ const collect = () => page.evaluate(() => {
   return out;
 });
 
-/* every roof quadrilateral, in screen coordinates */
+/* The surface each object's own text has to stay on, in screen coordinates.
+
+   For a building that is its roof. For SCENERY it is the patch of ground the
+   thing is painted on, which is nothing to do with w/d — the attrition river
+   carries a placeholder footprint and spans half the map, so testing its
+   percentages against a 0.9-unit box called every one of them off the roof.
+   Its ground rectangle is grown a little because its tributary labels sit
+   just outside the ribbon's edge by design. */
 const roofs = () => page.evaluate(() => {
   const M = {}, world = document.querySelector('#svg > g'), m = world.getScreenCTM();
+  const to = (x, y, z) => { const p = P(x, y, z);
+    return { x: m.a * p[0] + m.c * p[1] + m.e, y: m.b * p[0] + m.d * p[1] + m.f }; };
   NODES.forEach(n => {
+    if (n.scenery && n.x0 != null) {
+      const hw = n.hw * 1.4;
+      M[n.name] = [to(n.x0, n.y - hw, n.z), to(n.x1, n.y - hw, n.z),
+                   to(n.x1, n.y + hw, n.z), to(n.x0, n.y + hw, n.z)];
+      return;
+    }
     const h = topOf(n), hw = n.w / 2, hd = n.d / 2;
-    const to = (x, y) => { const p = P(x, y, h);
-      return { x: m.a * p[0] + m.c * p[1] + m.e, y: m.b * p[0] + m.d * p[1] + m.f }; };
-    M[n.name] = [to(n.x - hw, n.y - hd), to(n.x + hw, n.y - hd),
-                 to(n.x + hw, n.y + hd), to(n.x - hw, n.y + hd)];
+    M[n.name] = [to(n.x - hw, n.y - hd, h), to(n.x + hw, n.y - hd, h),
+                 to(n.x + hw, n.y + hd, h), to(n.x - hw, n.y + hd, h)];
   });
   return M;
 });

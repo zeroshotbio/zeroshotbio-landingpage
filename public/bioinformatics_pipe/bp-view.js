@@ -77,6 +77,22 @@ NODES.forEach(n=>{
   n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
 });
 
+/* Scenery that spans other objects is resolved AFTER the lane, the same way
+   follow{} is: it is not laid out, it is measured. The river runs from the
+   left edge of one landmark to the right edge of the other and puts a station
+   under each cull, so re-spacing the row re-shapes it instead of stranding
+   it. Its ledger counts come from MODEL — it owns no data of its own. */
+NODES.filter(n=>n.shape==="attritionriver").forEach(r=>{
+  const A=byId[r.from], B=byId[r.to];
+  r.x0=A.x-A.w/2-0.4; r.x1=B.x+B.w/2+0.4;
+  r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
+  r.ledger.steps.forEach(s=>{ s.x=byId[s.id].x; });
+  r.mouth="the knee already took "+(100*MODEL.ledger.kneeShare).toFixed(1)+
+          "% — of BARCODES, not of these";
+  /* it is scenery, so it sits where it was authored rather than in a lane */
+  r.x=(r.x0+r.x1)/2;
+});
+
 const labelEls={}, plinthEls={};
 const defs=installDefs(svg);
 
@@ -91,7 +107,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),
 [gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 /* the extent of the ground plane, and of the ruler drawn around it */
-const GRID={x0:-5,x1:37,y0:-11,y1:12};
+const GRID={x0:-5,x1:37,y0:-12,y1:11};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -265,6 +281,16 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
 
+/* Committed nudges for the floating annotations. They are keyed
+   "<node>:<which>" and live in the same OFFSETS table as the buildings,
+   because they are the same kind of thing: a hand-placed position that has
+   to survive the row being re-spaced. Applied here rather than in the shape
+   because the shape has already drawn by now. */
+if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+  const o=LIVE[a.key];
+  if(o){ a.off.dx=o.adx||0; a.off.dy=o.ady||0; a.reflow(); }
+});
+
 /* ============================================================
    OCCLUSION
    A track and the dot on it must vanish wherever a building stands. One clip
@@ -281,7 +307,10 @@ const clipPathEl=el("path",{"clip-rule":"evenodd"});
 function rebuildClip(){
   const R=40000;
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
-  NODES.forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  /* scenery is painted ON the ground, so punching it out of the clip would
+     cut a hole in the very layer it belongs to */
+  NODES.filter(n=>!n.scenery).forEach(n=>{
+    d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
   clipPathEl.setAttribute("d",d);
 }
 (function occlude(){
@@ -811,9 +840,21 @@ function totalOffset(n){
   if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
   return o;
 }
+function annOffset(a){
+  const b=LIVE[a.key]||{}, o={};
+  /* a.off already HOLDS the committed value — it was applied at load — so
+     unlike a node, which records where it was drawn and diffs against that,
+     an annotation's current offset IS the total. Adding the committed table
+     again here would double every saved nudge on the next save. */
+  const adx=r2(a.off.dx), ady=r2(a.off.dy);
+  if(adx) o.adx=adx; if(ady) o.ady=ady;
+  return o;
+}
 function collectOffsets(){
   const out={};
   NODES.forEach(n=>{ const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+    const o=annOffset(a); if(Object.keys(o).length) out[a.key]=o; });
   return out;
 }
 function markDirty(){
@@ -885,6 +926,17 @@ feature("edit positions", function(){
   }
   function move(ev){
     if(!grab) return;
+    if(grab.mode==="ann"){
+      /* an annotation is screen-space, not world-space: it is not on the
+         ground plane, so its nudge is measured in the same units it is drawn
+         in, and only the camera scale divides out. */
+      const a=grab.ann;
+      a.off.dx=Math.round(grab.ox+(ev.clientX-grab.px)/view.k);
+      a.off.dy=Math.round(grab.oy+(ev.clientY-grab.py)/view.k);
+      a.reflow();
+      if(hint) hint.textContent=`${a.key} — adx ${a.off.dx} ady ${a.off.dy}`;
+      return;
+    }
     const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
     const q=v=>Math.round(v/SNAP)*SNAP;
     const n=grab.n;
@@ -896,6 +948,7 @@ feature("edit positions", function(){
   }
   function end(){
     if(!grab) return;
+    if(grab.mode==="ann"){ grab.ann.box.classList.remove("picked"); grab=null; markDirty(); return; }
     const n=grab.n;
     (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
     grab=null;
@@ -911,8 +964,25 @@ feature("edit positions", function(){
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
         (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
-      : "Drag any building or any name · release to keep · Save positions when done";
+      : "Drag any building, any name or any floating label · release to keep · Save positions when done";
   }
+
+  /* THE FLOATING ANNOTATIONS. Same drag, different target: what moves is the
+     nudge the shape's own placement is offset by, so the next frame keeps it
+     rather than putting the label back. The leader redraws from the moved
+     text to the unmoved point it names, which is the whole reason a label
+     like this is worth being able to move at all. */
+  if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+    a.hit.addEventListener("pointerdown",ev=>{
+      if(!editing) return;
+      ev.stopPropagation(); ev.preventDefault();
+      if(a.hit.setPointerCapture) a.hit.setPointerCapture(ev.pointerId);
+      grab={ann:a,mode:"ann",px:ev.clientX,py:ev.clientY,ox:a.off.dx,oy:a.off.dy};
+      a.box.classList.add("picked");
+    });
+    a.hit.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>a.hit.addEventListener(t,end));
+  });
 
   NODES.forEach(n=>{
     const N=nodeEls[n.id];

@@ -12,6 +12,14 @@
    dragging the name silently dragging the building with it. Both are asserted
    here in both directions.
 
+   The FLOATING annotations are a third case again. They are not laid out from
+   world coordinates at all — their own shape re-places them from scratch every
+   frame — so "moved" cannot mean "the element is somewhere else": the next
+   frame would put it back. What moves is the nudge the shape's placement is
+   offset by. And the leader line has to follow: its label end must move with
+   the text while the end that names a point on the chart must not budge, which
+   is the entire reason a label like this is worth being able to move.
+
    And REAL MOUSE PRESSES ONLY. The mode is built on pointer capture, which a
    dispatched MouseEvent skips entirely — a synthetic drag would pass against
    an implementation that cannot actually be driven by a hand.
@@ -72,9 +80,34 @@ if(Math.abs(a2.lx-b2.lx)<0.2 && Math.abs(a2.ly-b2.ly)<0.2)
 if(Math.abs(a2.x-b2.x)>0.001 || Math.abs(a2.y-b2.y)>0.001)
   fail('dragging the name moved the building too');
 
+/* drag a FLOATING ANNOTATION, and check the leader follows it */
+const annKey = await p.evaluate(() => ANNOTATIONS[0].key);
+const annState = () => p.evaluate(k => {
+  const a = ANNOTATIONS.find(x => x.key === k);
+  return { dx: a.off.dx, dy: a.off.dy,
+           /* x1,y1 is the leader's label end; x2,y2 the point it names */
+           x1: +a.line.getAttribute('x1'), y1: +a.line.getAttribute('y1'),
+           x2: +a.line.getAttribute('x2'), y2: +a.line.getAttribute('y2') };
+}, annKey);
+const b3 = await annState();
+const box = await p.evaluate(k => {
+  const r = ANNOTATIONS.find(x => x.key === k).hit.getBoundingClientRect();
+  return { x: r.x + r.width / 2, y: r.y + r.height / 2 };
+}, annKey);
+await p.mouse.move(box.x, box.y); await p.mouse.down();
+await p.mouse.move(box.x - 90, box.y + 60, { steps: 14 }); await p.mouse.up();
+await p.waitForTimeout(300);
+const a3 = await annState();
+if (Math.abs(a3.dx - b3.dx) < 10 && Math.abs(a3.dy - b3.dy) < 10)
+  fail(`dragging "${annKey}" did not move it (dx ${b3.dx}->${a3.dx}, dy ${b3.dy}->${a3.dy})`);
+if (Math.hypot(a3.x1 - b3.x1, a3.y1 - b3.y1) < 8)
+  fail('the leader line did not follow the label it is attached to');
+if (Math.hypot(a3.x2 - b3.x2, a3.y2 - b3.y2) > 2)
+  fail('the leader line let go of the point it names');
+
 /* it is remembered, and it prints a block to paste */
 const stored=await p.evaluate(()=>localStorage.getItem('bpipe.offsets'));
-if(!stored || !JSON.parse(stored).c3 || !JSON.parse(stored).c5)
+if(!stored || !JSON.parse(stored).c3 || !JSON.parse(stored).c5 || !JSON.parse(stored)[annKey])
   fail('offsets were not written to local storage: '+stored);
 if(!await p.locator('#btnSave').isVisible()) fail('Save positions never appeared');
 await p.locator('#btnSave').click();
@@ -82,6 +115,7 @@ await p.waitForTimeout(250);
 const snip=await p.evaluate(()=>document.querySelector('#read .snip')?.textContent||'');
 if(!/const OFFSETS = \{/.test(snip)) fail('Save did not print an OFFSETS block');
 if(!/ldx|ldy/.test(snip)) fail('the printed block has no name offset in it');
+if(!/adx|ady/.test(snip)) fail('the printed block has no annotation offset in it');
 
 /* and the mode gets out of the way again */
 await p.locator('#btnEdit').click();
@@ -90,6 +124,7 @@ if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).dis
   fail('handles still showing after leaving the mode');
 
 console.log(bad?`\n${bad} FAILURE(S)`
- :'edit positions: buildings drag, names drag on their own, both remembered, block prints');
+ :'edit positions: buildings drag, names drag on their own, floating labels drag '+
+  'and their leaders follow, all three remembered, block prints');
 if(errs.length) console.log('page errors:',errs);
 await b.close(); process.exit(bad||errs.length?1:0);
