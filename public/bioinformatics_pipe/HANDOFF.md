@@ -5,143 +5,191 @@ plus five classic scripts, no build step, no dependencies, no CDN. Served by a
 Next rewrite (`next.config.js`) with no-cache headers, exactly like
 `/pipeline` and `/data_structures`.
 
-`<script src>` attributes are **absolute** (`/bioinformatics_pipe/bp-pop.js`)
+`<script src>` attributes are **absolute** (`/bioinformatics_pipe/bp-iso.js`)
 because the route has no trailing slash — relative paths resolve against `/`
 and 404.
 
-## What it is, and how it relates to /data_structures
+## What this page is
 
-`/data_structures` is a plan of the medallion **architecture**: three buckets,
-three repos, one contract. This page is **one leg of it at higher resolution** —
-the six culls between the unfiltered DGE that split-pipe produces and the
-filtered matrix normalisation expects.
+**Row 3 of `/pipeline`, and only row 3.**
 
-Same steel thread (MiniFin 100k), same chrome, same reader contract, same
-collapsing columns. Two things are deliberately different:
+On the big map the four rows are named *Biological samples*, *Molecular
+biology*, **Bioinformatics pipeline** and *Opinionated metadata*. The third of
+those is this page: FASTQ in, a counting stack, the unfiltered matrix, six
+culls, the filtered matrix out, plus the four side structures that hang off
+them. Nineteen objects. There it is one band among four and its nodes are
+drawn small; here it has the whole canvas.
 
-| | /data_structures | here |
-| --- | --- | --- |
-| Stage | one pannable SVG plan | a scrolling column of animated canvas tiles |
-| Why | a structure you navigate | a sequence of events in order |
-| Palette | bronze / silver / gold | keep / cull / accent |
+It is the same isometric world — same projection, same shell, same reader,
+same index, same theme switch — because it is the same map at a different
+scale, not a different map about the same subject.
 
-The tile palette is **not** the medallion palette on purpose. Those colours
-mean bronze, silver and gold; reusing them for "survives / leaving / threshold"
-would say something false.
+## Every node is lifted, not re-typed
+
+`bp-data.js` is **generated from `pipeline-data.js`**. Each node is extracted
+as *source text* by brace-matching on `{id:"…"`, so every character of every
+`does` / `built` / `cond` field matches the map it came from.
+
+That is the whole point. Two hand-maintained accounts of one pipeline drift,
+and the drift is invisible until someone quotes the wrong one. If a claim
+changes, **change it on `/pipeline` and lift it again** — do not edit the prose
+here.
+
+The same goes for the payloads: `REAL_CELLS`, `REAL_GENES`, `REAL_REFS`,
+`REAL_SUBLIBS` and the `read` / `cell` / `ref` / `meta` / `drop` snippets are
+the same records travelling the same edges.
+
+The extraction scripts are not checked in — they are twenty lines and are
+rewritten when needed. What matters is the rule, not the tooling.
+
+## What is added, and it is one thing
+
+**`CPLX` — the complexity roof.** Node `D5`, "Outliers off the trend", says it
+fits genes detected against total counts and removes points sitting too far
+off the fit. That is a two-dimensional argument, and on the big map it is a
+0.7-unit hatched box with the argument in the text — the right call there,
+where it is one of nineteen objects in one of four rows. Here there is room to
+draw it.
+
+It **hangs under D5** rather than replacing it, which is the same relationship
+the counting reference, the 3′ UTR handling and the cull ledger already have to
+the steps they hang off. D5 stays exactly as it is on the big map.
+
+### The roof trick
+
+A scatter rebuilt in three dimensions occludes the very thing it exists to
+show, and a chart you have to orbit to read is not a chart. So it is not
+rebuilt. It is drawn in ordinary flat 2D — axes, ticks, a polyline, circles, in
+a 176 × 176 chart space — and laid onto the horizontal roof by one
+`transform="matrix()"` built from three projected corners. `roofFrame()` in
+`bp-iso.js` is the whole mechanism.
+
+That hands it a grammar:
+
+> **PAINTED things are ELLIPSES. AIRBORNE things are CIRCLES.**
+
+A cell still under consideration lies on the roof, and the matrix turns its
+circle into the correctly-oriented ellipse for free. A cell that is leaving
+lifts off it and becomes a true circle, with a shadow on the roof beneath it.
+
+**Both tails go, for opposite reasons, and the two gestures are deliberately
+not each other's mirror:** under-amplified cells peel off the surface;
+over-amplified ones swell where they lie and burst. Reading this filter as
+one-sided is the common mistake.
+
+### TURN, and why it exists
+
+Chart x and chart y map to the two roof diagonals. A chart whose data trends
+diagonally therefore has its trend projected onto the **sum** or the
+**difference** of those directions — horizontal, or vertical.
+
+Genes against transcripts is a straight diagonal in log-log, and at turn 0 the
+cloud came out as a near-vertical sliver: geometrically correct, and useless.
+`roofFrame(..., turn)` lays the chart against the other roof edge.
+
+**The rule for a new roof:** if the data trends up-and-right in chart space,
+turn it. If it trends down-and-right — a rank curve, a histogram — leave it.
+Both orientations keep a positive determinant, so text is never mirrored.
+
+### The y-axis title sign
+
+`rotate(+90)` at turn 0, `rotate(-90)` at turn 1. Get it backwards and the
+title advances along the wrong diagonal and renders upside down, read from its
+own end. It looks like a mirroring bug and is not one.
+
+### The threshold panel is upright, and off the roof
+
+A block of text cannot live in chart space. Chart x and chart y are the two
+roof diagonals, so a block grows right-down as it gets wider and left-down as
+it gets taller — it **fans**. A four-line readout anchored in the one empty
+corner sweeps across the roof and lands on the band by its last line,
+whichever corner you start from. Three placements were tried and all three did
+it. `panel()` draws it upright beside the building instead. Single lines —
+axis titles, tick numbers — are fine on the roof and stay there.
+
+## REAL vs MODELLED
+
+**Every figure on this page is real and matches `/pipeline` exactly — with one
+exception.** The complexity roof is modelled: computed at load from the seeded
+population in `bp-pop.js`, because the real fit is a spline fitted **per
+sample** at a p-level spanning 6.9e-6 to 1e-3 across a single plate, and there
+is no single band that would be true of the run. What the roof shows is the
+*shape* of the decision, not its answer.
+
+It carries the word in three places — on the panel, under its name on the map,
+and in the reader. **Keep it in all three.** The node opts in with
+`modelled:true`; nothing else on this page sets it.
+
+`bp-pop.js` also computes the knee, the mito cutoff and the doublet threshold.
+Nothing draws them any more — the culls on this row are `/pipeline`'s own tiles
+— but `check-sim.mjs` still asserts the population supports them, because it is
+the same population and a change that breaks one statistic has broken the model
+the band is fitted to.
 
 ## Load order
 
 ```
+bp-iso.js     projection, faces, paint, roofFrame, the ticker registry, lanes
 bp-pop.js     the population and the statistics computed from it
-bp-draw.js    the drawing vocabulary — one unit, the frame, text, annotation
-bp-tiles.js   the cascade + the six tiles
-bp-data.js    what the page ASSERTS: state, briefs, figures
-bp-view.js    canvases, the loop, the index, the reader, the grips
+bp-shapes.js  three shapes copied from /pipeline, one added, MODEL
+bp-data.js    row 3, lifted — nodes, edges, band, payloads, prose
+bp-view.js    assembly, camera, reader, index, strip
 ```
 
-`bp-pop.js` and `bp-data.js` are the on-instance's; `bp-draw.js` and
-`bp-view.js` are the renderer's. `bp-tiles.js` is the seam and is the one file
-where changing a number changes a picture.
+`bp-view.js` asserts this order at the top and fails with a readable message
+rather than a `ReferenceError` if a file 404s.
 
-## REAL vs MODELLED — the thing this page lives or dies on
+## The three copied shapes
 
-Two kinds of number appear and they are never allowed to look alike.
+`drawTile`, `drawHeap` and `drawMatrix` are verbatim from
+`pipeline-shapes.js`, down to the seed `drawMatrix` uses for its sparsity. **A
+step on this page must be the same object as the step on that one** — a box
+that looks different is telling a reader they are looking at two different
+things. `SKIN` keeps `/pipeline`'s token names for the same reason: a shape
+copied across finds the tokens it expects.
 
-**Real**, read from the artifacts: 2,743,021 barcodes, 32,520 genes, 94,616
-called cells, the three cell-calling policies and their jaccards.
+## Drawing thousands of marks in SVG: pools
 
-**Modelled**, computed at load from a seeded simulation: every threshold on
-tiles 02–06, and every survivor count downstream of the knee.
+`pool()` is `batch()` from the old canvas build, translated: a whole cloud is
+**one `<path>` whose `d` is a run of circle subpaths**, rebuilt as a single
+string and written with one `setAttribute`. Alpha varies by having several
+pools, not several thousand attributes.
 
-The reason this matters is the state of the pipeline. Verified 2026-08-23
-against `zsb-bronze 0414ac4` and `zsb-silver b4253a2`:
-
-- **zsb-bronze contains no mito, complexity or doublet code at all.** The only
-  "mitochondrial" string in the tree is a sample name in a test fixture.
-- **zsb-silver's `build_gold()` is a docstring and a `raise`.** It names "QC and
-  doublet filtering"; it does not name mito% or complexity under any name.
-- **zsb-bronze does implement `barcode_ranks()`** — a real port of the
-  DropletUtils knee search, which finds 94,338 against the delivered 94,616
-  (jaccard 0.9827). It is *not* the shipping policy; `parse-cutoffs` is.
-
-So of the four culls drawn, **one has a method in code and it is not the one
-that ships.** A page that showed a mitochondrial cutoff without saying it was
-invented would be claiming a result nobody has produced. Every modelled figure
-carries the word on the tile, in the card, and in the reader. Keep it there.
-
-## Every threshold is computed. None is a literal.
-
-`bp-pop.js` calculates the knee (steepest descent on a smoothed log-log rank
-curve), the mito cutoff (median + 3 × MAD), the complexity band (least-squares
-cubic + robust residual sigma) and the doublet threshold. Reseed and they all
-move. This is invisible when right and obvious when wrong — a hardcoded band
-sits in the same place no matter what the cloud does, and the tile becomes an
-illustration pretending to be a computation.
+A circle subpath drawn in **chart** space comes out of the matrix as the
+correct ellipse; the same subpath drawn in **screen** space comes out a circle.
+The painted/airborne grammar, for free, with no branch.
 
 ## Things that failed, so nobody re-tries them
 
-**Do not lower `N_BARCODES` to make tile 01 less crowded.** Below ~11,000 the
-called population drops under ~370 cells and the doublet cut rises above every
-score it produces: tile 05 flags nothing, the ledger loses a row, and nothing
-on screen says anything is wrong. Measured at 6,000 and 9,000 — both flag
-exactly zero. Crowding is a *drawing* problem, solved in radius and alpha.
+**Never take a chart's axis limits from min and max.** Transcript counts are
+log-normal with a long right tail and a doublet adds two draws together, so the
+largest cell sits several sigma out on its own. Taking it as the limit
+compressed the whole cloud into a two-pixel sliver: it rendered, it was wrong,
+and nothing on screen said so. `domainOf()` takes robust quantiles and `F.plot`
+is clipped, so the handful of off-scale marks simply do not draw — and **every
+count in the panel is over the whole population**, never over what fitted.
 
-**Cells need TYPES.** Without an expression embedding a doublet is almost
-exactly a large singlet: the scorer recovered them at 10% precision, flagging a
-quarter of the population. Real doublet finders work in expression space, where
-a doublet lands *between* two clusters. Without neighbourhoods there is no
-between.
+**There is no title on a roof.** Two drafts had one, carrying the building's
+name — already drawn on the map two centimetres away — and it sat straight
+through the y-axis title. The roof carries the chart. The map carries the names.
 
-**A doublet must BE two cells.** Carrying `isDoublet` as a label that left the
-profile untouched gave the scorer nothing to find.
+**An annotation cannot go straight up from this roof.** That is where D7's name
+runs, and the under-amplified label landed on it. Both annotations are pushed
+out to the side; the leader lines carry the association.
 
-**Otsu is wrong for the doublet threshold.** It maximises a mass-weighted
-quantity and doublets are ~3% of the mass, so the cut lands inside the singlet
-bulk. Steepest-descent (borrowed from the rank knee) is worse — it puts the cut
-above the highest-scoring real doublet. `median + 3 × MAD` is what works, and
-it is the same instrument the mito tile uses.
+**Fit the drawing, not the sheet.** `world.getBBox()` includes the ground grid
+and the coordinate ruler, both of which deliberately run wider than the map.
+`contentBox()` unions the band, the buildings and their names.
 
-**The doublet caller over-calls, roughly 2×. That is not a bug to tune away.**
-`TYPES` contains one deliberately adjacent pair (neural / neural crest) so the
-tile shows the hard case as well as the easy one.
+**Do not lower `N_BARCODES`.** Below ~11,000 the called population drops under
+~370 cells and the doublet cut rises above every score it produces. Measured at
+6,000 and 9,000 — both flag exactly zero. Nothing draws the doublet cut here
+any more, but `check-sim.mjs` still asserts it, and the cubic is fitted to the
+same population.
 
-**Never estimate text width from a character count.** The monospace advance is
-0.60 em with SF Mono and **0.93 em** with the default monospace in headless
-Chromium — a 55% difference. Three tiles ran their annotations off the canvas
-because the layout was sized against a guessed 0.6. Everything goes through
-`ctx.measureText` now, and `tracked(..., max)` shrinks to fit.
-
-**The loss bar in tile 06 is over the cells, not the barcodes.** Including the
-knee made it 97% one segment with three invisible slivers, *and* conflated two
-denominators: the knee removes empty droplets, the QC filters remove cells.
-
-## One unit governs everything
-
-```js
-const S = Math.min(wrap.clientWidth, wrap.clientHeight);
-const u = S / 100;
-```
-
-Every size — type, stroke, tick, dot radius, dash gap, padding — is a multiple
-of `u`. There is not one fixed pixel value in `bp-draw.js` or `bp-tiles.js`.
-The tiles are ~190px in the column and ~420px in preview and must read
-identically in both; a single hardcoded `12px` breaks that everywhere at once
-and is invisible at whatever size you happened to be looking at.
-
-Settled values are in `PAD`, `TYPE_` and `W` in `bp-draw.js`. Do not re-derive
-them.
-
-## Each cull's gesture is different, and the difference means something
-
-```
-02  barcodes below the knee RAIN downward      they were never cells
-03  dying cells RISE off the top and fade      they are leaking
-04  under-amplified SHRINK, over-amplified SWELL AND BURST
-05  doublets PULL APART into their two halves  they were always two
-```
-
-Six identical fades would make the sequence read as one animation on a loop.
-**Do not reuse a gesture.**
+**Cells need TYPES, and a doublet must BE two cells.** Both were tried the
+other way and the scorer had nothing to find. Same reason: the population is
+shared.
 
 ## The checks — run all three
 
@@ -151,43 +199,44 @@ node check-text.mjs  <url>               # needs playwright
 node check-clicks.mjs <url>              # needs playwright
 ```
 
-- **`check-sim.mjs`** asserts the population still supports the statistics: cell
-  fraction, knee separation, both complexity tails populated, doublet score
-  separation and recall, and same-seed reproducibility.
-- **`check-text.mjs`** renders all six tiles at two sizes across 24 frames and
-  asserts every drawn label lies inside its tile and no two overlap. Canvas
-  text leaves no DOM, so `tracked()` logs each string to `window.__BP_TEXTLOG`
-  when a checker creates that array. **The box is mapped through the current
-  transform before logging** — the rotated y-axis titles are drawn at the
-  origin of a rotated frame and would otherwise all report as off-canvas.
-- **`check-clicks.mjs`** clicks every tile with a *real* mouse press and asserts
-  the reader follows. Use `page.mouse.click`, never `dispatchEvent`: a
-  synthetic event is not evidence about a real one. (`/data_structures` shipped
-  a broken selection because of exactly that.)
+- **`check-sim.mjs`** asserts the population still supports the statistics. A
+  picture that renders is not evidence the statistic underneath it works.
+- **`check-text.mjs`** measures every drawn string as its **true oriented quad**
+  — `getBBox()` through `getScreenCTM()` — and asserts each stays on its own
+  roof and that no two overlap by real intersection area. **Do not use
+  axis-aligned boxes here.** Roof text runs at ±30°, so its AABB is enormous
+  and mostly empty, and two stacked lines of one block that do not touch report
+  an 85% overlap. The first version of that file was useless for exactly that
+  reason.
+- **`check-clicks.mjs`** clicks every building with a *real* mouse press at the
+  projected centre of its roof. Use `page.mouse.click`, never `dispatchEvent`:
+  a synthetic event is not evidence about a real one, and this map pans on
+  `pointerdown`. Two traps it now avoids: "collapsed" is not "exactly zero"
+  (both columns carry a 1px border under `border-box`, so a shut panel reports
+  width 1), and the expected overview title is read off `OVERVIEW` rather than
+  hardcoded — a hardcoded one passed for a build after the page was renamed.
 
 ## Performance
 
-Six canvases × 14,000 dots is the budget. Three things keep it viable and all
-three are load-bearing:
+One `requestAnimationFrame` drives the page. **A roof must never start its own.**
+Roofs push to `TICKERS`; a ticker that throws is dropped and the map keeps
+running. `window.bpipeDiag()` returns one line of state when it looks stuck.
 
-- an `IntersectionObserver` stops offscreen tiles drawing
-- `batch()` quantises alpha and emits one path per bucket, ~40× cheaper than
-  one `arc()+fill()` per dot
-- tile 01 refills a reusable scratch array; tile 06's ghost layer is static and
-  cached per tile size, and membership is a `Set` (it was `s4.includes(b)`,
-  5.4M comparisons a frame)
+## What is deliberately NOT here
 
-One `requestAnimationFrame` drives the whole page. **Tiles must never start
-their own** — six clocks drift apart and the sequence stops being a sequence.
+**The three authoring modes from `/pipeline`** — Edit positions, Edit text, Edit
+visual. They write to a single fixed DynamoDB record keyed `pipeline_map::edits`,
+and a second page pointing at it would silently overwrite that map's saved
+state. If this page ever needs them, it needs its own record first.
 
 ## Please do not
 
-- **Add an ambient-RNA tile.** Its absence is a claim: Parse barcodes inside
-  the fixed cell and washes between rounds, so the soup is a droplet problem.
-  Importing SoupX or CellBender here borrows a correction for a failure mode
-  this chemistry does not have.
-- **Give a modelled figure a real-looking label**, or drop the word "modelled"
-  to tidy a line up.
-- **Hardcode a threshold** because the computed one moved somewhere you did not
+- **Edit the prose in `bp-data.js`.** It is lifted. Edit `/pipeline` and lift
+  again, or the two maps start disagreeing about the same stage.
+- **Give the modelled roof a real-looking label**, or drop the word to tidy a
+  line up. It is the one modelled thing on a page where everything else is read
+  off an artefact.
+- **Hardcode the band** because the computed one moved somewhere you did not
   like. If the computed one is wrong, the population model is wrong.
-- **Reuse the medallion palette.** Bronze, silver and gold mean tiers.
+- **Replace the hand-rolled projection with a library.** Layout, label angles,
+  painter ordering, the camera and the roof matrix all derive from `P()`.

@@ -1,95 +1,192 @@
-/* check-text.mjs — no label may leave its tile, at any frame.
+/* check-text.mjs — no label may leave its building, and no two may collide.
    Run: node check-text.mjs <url>            (needs playwright)
 
-   WHY THIS FILE EXISTS
-   Canvas text leaves no DOM behind, so /data_structures' trick of walking
-   <text> nodes and comparing getBBox() does not transfer. Without something
-   like this the only check is looking at it, and looking at it missed the same
-   class of bug three times: a label sized against a GUESSED character advance
-   (0.6 em) drawn with a font whose real advance was 0.93 em, running off the
-   right edge of three different tiles.
+   The old version of this file measured canvas text, because the page used to
+   be six canvas tiles. It is an SVG map now, so the measurement is different
+   and the failure it catches is the same one: type that renders perfectly at
+   the size you happened to be looking at and runs off the edge at every other
+   size, or lands on top of something else.
 
-   bp-draw.js's tracked() pushes every string it draws to window.__BP_TEXTLOG
-   when that array exists. This walks all six tiles across the whole loop and
-   asserts two things:
+   WHAT MAKES THIS PAGE PARTICULARLY EASY TO GET WRONG
+   The added roof is drawn in a flat 176 x 176 chart space and then laid onto
+   a building by one matrix. Inside that space nothing tells you how wide a
+   string will be on the roof, or where it will end up: text does not wrap, it
+   hangs off the side of the building into the sky, and a block of it fans as
+   it grows because its two axes are the two roof diagonals. From the right
+   angle at the right zoom both look deliberate.
 
-     1. every drawn string lies inside its own tile
-     2. no two strings drawn in the same frame overlap each other
+   MEASURE THE ORIENTED BOX, NEVER THE AXIS-ALIGNED ONE.
+   This is the whole reason the file is longer than it looks like it should
+   be, and the first version of it was useless for exactly this reason. Roof
+   text is SHEARED: it runs at ±30° across the screen. Its axis-aligned
+   bounding box is therefore enormous and mostly empty, and two stacked lines
+   of the same readout — which do not touch — report an 85% overlap. Every box
+   here is the element's own getBBox() pushed through getScreenCTM(), giving
+   the true rotated quadrilateral, and overlap is the real intersection area
+   from clipping one convex quad against the other.
 
-   Failures print the tile, the time, and the string, because the frame matters
-   — most of these bugs only appear during one beat.
+   The checks:
+     1  no console warning at all from the drawing code. Anything that warns
+        during a draw is a measurement the shape could not satisfy.
+     2  roof text stays on its roof. Anything under a roof matrix is tested
+        against that building's roof quad. Annotations are exempt by design —
+        they float above the roof and point down onto it — and are identified
+        by living outside the matrix group.
+     3  nothing overlaps anything, by true intersection area.
+
+   Checked at both zooms the map is read at: fitted, and walked one building
+   at a time.
 */
 import { chromium } from 'playwright';
 
 const url = process.argv[2];
 if (!url) { console.error('usage: node check-text.mjs <url>'); process.exit(2); }
 
+const OVERLAP = 0.22;   // fraction of the smaller quad that counts as a collision
+const ROOF_PAD = 14;    // px of slack around a roof quad, for descenders and stroke
+
 const browser = await chromium.launch({ args: ['--no-sandbox', '--disable-dev-shm-usage'] });
-const page = await browser.newPage({ viewport: { width: 1000, height: 1000 } });
-const errors = [];
-page.on('pageerror', e => errors.push(String(e)));
+const page = await browser.newPage({ viewport: { width: 1700, height: 1000 } });
+
+const warnings = [], errors = [];
+page.on('pageerror', e => errors.push('pageerror: ' + e.message));
+page.on('console', m => {
+  if (m.type() === 'error') errors.push('console error: ' + m.text());
+  if (m.type() === 'warning') warnings.push(m.text());
+});
+
 await page.goto(url, { waitUntil: 'networkidle' });
-await page.waitForTimeout(900);
+await page.waitForTimeout(1500);
 
-/* Two sizes: the column size and the preview size. A label that fits at 420px
-   can still overflow at 190px, because type shrinks with u but the shrink-to-
-   fit floor does not. */
-const SIZES = [190, 420];
-const TIMES = Array.from({ length: 24 }, (_, i) => +(i / 24).toFixed(3));
+let bad = 0;
+const fail = m => { bad++; console.log('  FAIL  ' + m); };
 
-const findings = await page.evaluate(({ SIZES, TIMES }) => {
-  const out = [];
-  const cv = document.createElement('canvas');
-  const ctx = cv.getContext('2d');
+/* ---- 1. the drawing code must not warn ---------------------------------- */
+for (const w of warnings) if (/^bp-/.test(w)) fail(w);
 
-  for (const S of SIZES) {
-    cv.width = S; cv.height = S;
-    for (const name of TILE_ORDER) {
-      for (const t of TIMES) {
-        window.__BP_TEXTLOG = [];
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, S, S);
-        try { TILES[name](tileCtx(ctx, S, 'dark'), t); }
-        catch (e) { out.push({ kind: 'throw', tile: name, S, t, s: String(e) }); continue; }
-
-        const log = window.__BP_TEXTLOG;
-        for (const b of log) {
-          if (b.x < -0.5 || b.x + b.w > S + 0.5 || b.y < -0.5 || b.y + b.h > S + 0.5)
-            out.push({ kind: 'outside', tile: name, S, t, s: b.s,
-                       at: [Math.round(b.x), Math.round(b.y)], w: Math.round(b.w) });
-        }
-        for (let i = 0; i < log.length; i++)
-          for (let j = i + 1; j < log.length; j++) {
-            const a = log[i], b = log[j];
-            const ox = Math.min(a.x + a.w, b.x + b.w) - Math.max(a.x, b.x) - 1;
-            const oy = Math.min(a.y + a.h, b.y + b.h) - Math.max(a.y, b.y) - 1;
-            if (ox > 0 && oy > 0)
-              out.push({ kind: 'overlap', tile: name, S, t, s: a.s + '  ><  ' + b.s });
-          }
+/* ---- convex polygon helpers, on the node side --------------------------- */
+const area = q => {
+  let a = 0;
+  for (let i = 0; i < q.length; i++) {
+    const p = q[i], n = q[(i + 1) % q.length];
+    a += p.x * n.y - n.x * p.y;
+  }
+  return Math.abs(a) / 2;
+};
+/* Sutherland-Hodgman: clip subject against every edge of clipper. Both are
+   convex quads here, so the result is convex and its area is exact. */
+const clip = (subject, clipper) => {
+  let out = subject;
+  const cx = clipper.reduce((s, p) => s + p.x, 0) / clipper.length;
+  const cy = clipper.reduce((s, p) => s + p.y, 0) / clipper.length;
+  for (let i = 0; i < clipper.length && out.length; i++) {
+    const a = clipper[i], b = clipper[(i + 1) % clipper.length];
+    const side = p => (b.x - a.x) * (p.y - a.y) - (b.y - a.y) * (p.x - a.x);
+    const keep = Math.sign(side({ x: cx, y: cy })) || 1;
+    const inside = p => Math.sign(side(p)) === keep || Math.abs(side(p)) < 1e-9;
+    const next = [];
+    for (let j = 0; j < out.length; j++) {
+      const P = out[j], Q = out[(j + 1) % out.length];
+      const pi = inside(P), qi = inside(Q);
+      if (pi) next.push(P);
+      if (pi !== qi) {
+        const sp = side(P), sq = side(Q), t = sp / (sp - sq);
+        next.push({ x: P.x + (Q.x - P.x) * t, y: P.y + (Q.y - P.y) * t });
       }
     }
+    out = next;
   }
-  window.__BP_TEXTLOG = null;
   return out;
-}, { SIZES, TIMES });
+};
+const grow = (q, pad) => {
+  const cx = q.reduce((s, p) => s + p.x, 0) / q.length;
+  const cy = q.reduce((s, p) => s + p.y, 0) / q.length;
+  return q.map(p => {
+    const dx = p.x - cx, dy = p.y - cy, L = Math.hypot(dx, dy) || 1;
+    return { x: p.x + dx / L * pad, y: p.y + dy / L * pad };
+  });
+};
 
-/* One report line per distinct (kind, tile, string) — the same label usually
-   fails on many consecutive frames and listing each is noise. */
-const seen = new Map();
-for (const f of findings) {
-  const key = f.kind + '|' + f.tile + '|' + f.s;
-  if (!seen.has(key)) seen.set(key, { ...f, n: 0 });
-  seen.get(key).n++;
+/* Every drawn string as its TRUE oriented quad, plus which building it
+   belongs to and whether it is painted on that building's roof. */
+const collect = () => page.evaluate(() => {
+  const out = [];
+  document.querySelectorAll('#svg text').forEach(t => {
+    const s = (t.textContent || '').trim();
+    if (!s) return;
+    /* opacity 0 is a label mid-fade, not a label that is there */
+    if (parseFloat(getComputedStyle(t).fillOpacity) < 0.08) return;
+    const bb = t.getBBox(); if (!bb.width || !bb.height) return;
+    const m = t.getScreenCTM(); if (!m) return;
+    const pt = (x, y) => ({ x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f });
+    const quad = [pt(bb.x, bb.y), pt(bb.x + bb.width, bb.y),
+                  pt(bb.x + bb.width, bb.y + bb.height), pt(bb.x, bb.y + bb.height)];
+    let node = null, onRoof = false, e = t;
+    while (e && e.tagName !== 'svg') {
+      if (e.getAttribute && /^matrix\(/.test(e.getAttribute('transform') || '')) onRoof = true;
+      if (e.getAttribute && e.getAttribute('role') === 'button') { node = e.getAttribute('aria-label'); break; }
+      e = e.parentNode;
+    }
+    out.push({ s, node, onRoof, quad });
+  });
+  return out;
+});
+
+/* every roof quadrilateral, in screen coordinates */
+const roofs = () => page.evaluate(() => {
+  const M = {}, world = document.querySelector('#svg > g'), m = world.getScreenCTM();
+  NODES.forEach(n => {
+    const h = topOf(n), hw = n.w / 2, hd = n.d / 2;
+    const to = (x, y) => { const p = P(x, y, h);
+      return { x: m.a * p[0] + m.c * p[1] + m.e, y: m.b * p[0] + m.d * p[1] + m.f }; };
+    M[n.name] = [to(n.x - hw, n.y - hd), to(n.x + hw, n.y - hd),
+                 to(n.x + hw, n.y + hd), to(n.x - hw, n.y + hd)];
+  });
+  return M;
+});
+
+async function pass(label) {
+  const texts = await collect();
+  const quads = await roofs();
+
+  /* ---- 2. roof text stays on its roof ---------------------------------- */
+  for (const t of texts) {
+    if (!t.onRoof || !t.node || !quads[t.node]) continue;
+    const roof = grow(quads[t.node], ROOF_PAD);
+    const inside = area(clip(t.quad, roof));
+    const own = area(t.quad);
+    if (own && inside / own < 0.985)
+      fail(`${label}: "${t.s}" hangs off the roof of ${t.node} — ` +
+           `${(100 * (1 - inside / own)).toFixed(0)}% of it is over the edge`);
+  }
+
+  /* ---- 3. nothing overlaps anything ------------------------------------ */
+  for (let i = 0; i < texts.length; i++) for (let j = i + 1; j < texts.length; j++) {
+    const a = texts[i], b = texts[j];
+    const inter = area(clip(a.quad, b.quad));
+    if (!inter) continue;
+    const share = inter / Math.min(area(a.quad), area(b.quad));
+    if (share > OVERLAP)
+      fail(`${label}: "${a.s}" and "${b.s}" overlap by ${(share * 100).toFixed(0)}%`);
+  }
+  return texts.length;
 }
-const rows = [...seen.values()].sort((a, b) => b.n - a.n);
-rows.forEach(f => console.log(
-  `  ${f.kind.toUpperCase().padEnd(7)} ${f.tile.padEnd(11)} S=${String(f.S).padEnd(4)} ` +
-  `${f.n} frame(s)  "${String(f.s).slice(0, 64)}"`));
 
-const nT = SIZES.length * TIMES.length * 6;
-console.log(rows.length
-  ? `\n${rows.length} distinct text problem(s) over ${nT} tile-frames`
-  : `${nT} tile-frames checked; every label inside its tile, none overlapping`);
-if (errors.length) console.log('page errors:', errors);
+/* fitted — the view the page opens on */
+const nFit = await pass('fitted');
+
+/* and walked, one building at a time, which is the reading zoom */
+const ids = await page.evaluate(() => NODES.map(n => n.id));
+let nWalk = 0;
+for (const id of ids) {
+  await page.locator(`aside .row[data-id="${id}"]`).click();
+  await page.waitForTimeout(1500);
+  nWalk += await pass('at ' + id);
+}
+
+console.log(bad
+  ? `\n${bad} FAILURE(S)`
+  : `${nFit} labels fitted + ${nWalk} across ${ids.length} buildings: all on their roofs, none overlapping`);
+for (const e of errors) console.log('  ' + e);
 await browser.close();
-process.exit(rows.length || errors.length ? 1 : 0);
+process.exit(bad || errors.length ? 1 : 0);
