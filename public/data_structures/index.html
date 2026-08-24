@@ -58,10 +58,28 @@
   .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
        text-transform:uppercase;white-space:nowrap}
   .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
-  .brand{display:flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;flex:none;
-         border-right:1px solid var(--rule)}
-  .brand b{font-weight:600;letter-spacing:.06em;font-size:11.5px}
-  .brand span{color:var(--fg3);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+  /* The headline carries the steel thread, in one line.
+
+     It used to be a band of its own under the header, four sentences long,
+     and it was the largest single thing on the page before the map. The band
+     existed because an earlier version was an overlay that sat on the bronze
+     vault; a band in the flow could not collide with the drawing. But "cannot
+     collide" is a low bar for a paragraph of framing above every visit.
+
+     One line, in the headline, is the right size for a thing a reader needs
+     once. It ELLIPSES rather than wraps when the window is narrow — the
+     header is a single row and a headline that reflows to three lines is a
+     band again by another name — and the full statement is still the reader's
+     default entry, which is where somebody who wants it will look. */
+  .brand{display:flex;align-items:baseline;gap:9px;padding:6px 14px 6px 12px;
+         flex:1;min-width:0;border-right:1px solid var(--rule)}
+  .brand b{font-weight:600;letter-spacing:.06em;font-size:11.5px;flex:none}
+  .brand i{font-style:normal;color:var(--fg3);font-size:9px;letter-spacing:.12em;
+           text-transform:uppercase;flex:none}
+  .brand span{color:var(--fg2);font-size:10px;line-height:1.5;min-width:0;
+              white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+              box-shadow:inset 3px 0 0 var(--signal);padding-left:11px}
+  .brand em{font-style:normal;color:var(--fg)}
 
   .body{display:flex;flex:1;min-height:0}
   aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
@@ -140,31 +158,6 @@
   .legend i.lg-dot{border:none;width:9px;height:9px;border-radius:50%;
                    background:var(--signal);margin-left:9px;margin-right:15px}
   @media (max-width:1200px){.legend{display:none}}
-
-  /* ---- the steel thread ----
-     The one thing a reader has to know before any figure on this page means
-     what it says: every worked example here is ONE dataset carried end to
-     end. It is a band in the page flow rather than a card floating over the
-     canvas — the first version was an overlay pinned top-left and it sat
-     squarely on the bronze vault, which is the exact failure this map keeps
-     having to fix. A band cannot collide with the drawing, because the
-     drawing is fitted to what is left after it. */
-  .thread{flex:none;display:flex;align-items:baseline;gap:11px;
-          padding:6px 14px;border-bottom:1px solid var(--rule);
-          background:var(--panel);color:var(--fg2);
-          font-size:10px;line-height:1.5;
-          box-shadow:inset 3px 0 0 var(--signal)}
-  .thread b{flex:none;font-weight:400;color:var(--signal);font-size:8px;
-            letter-spacing:.16em;text-transform:uppercase}
-  .thread span{min-width:0}
-  .thread em{font-style:normal;color:var(--fg)}
-  /* On a phone the header is hidden entirely, so this band is the ONLY place
-     the thread is stated outside the reader. It stays — but the elaboration
-     goes, or one framing sentence eats a quarter of the screen. */
-  @media (max-width:900px){
-    .thread{padding:5px 10px;gap:7px;font-size:9.5px;flex-wrap:wrap}
-    .thread .more{display:none}
-  }
 
   /* ---- the reader ----
      Back after a spell away. What changed is the length: an entry is one
@@ -251,7 +244,9 @@
 <body>
 <div class="app">
   <header>
-    <div class="brand"><b>Data Structures</b><span>medallion · plan view · the MiniFin 100k steel thread</span></div>
+    <div class="brand"><b>Data Structures</b><i>medallion · plan view</i><span>The steel thread: every
+      worked example here is <em>MiniFin 100k</em>, one 94,616-cell zebrafish dataset carried end to
+      end through every tier. MegaFin is drawn to true scale in bronze and is not the thread.</span></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stations</button>
       <button class="ctl" id="btnFit">Fit</button>
@@ -260,16 +255,6 @@
       <button class="ctl" id="btnTheme">Light</button>
     </div>
   </header>
-  <div class="thread">
-    <b>the steel thread</b>
-    <span>Every worked example on this map is <em>MiniFin 100k</em> — one 94,616-cell zebrafish
-    chemical-perturbation dataset, carried end to end as a single thin slice through every
-    tier.<span class="more"> Where a stage has run, it ran on MiniFin; where a stage has not,
-    MiniFin is what it would carry. Every command here is a MiniFin command, the release that
-    does not exist is <em>minifin/v1/</em>, and the notebook that has not landed is
-    <em>notebooks/minifin/</em>. The far larger MegaFin deliveries are drawn to true scale in
-    bronze, and are not the thread.</span></span>
-  </div>
   <div class="body">
     <aside id="aside"></aside>
     <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>

@@ -113,7 +113,7 @@ boxes, which is apt: it is a missing S3 prefix, so it is in neither.
 Keep them faint. They are a ground, not a frame — noticed second, after the
 stations and before the wiring.
 
-## The steel thread — say it, and keep saying it
+## The steel thread — say it once, in the headline
 
 Every worked example on this page is **MiniFin 100k**: one 94,616-cell
 zebrafish chemical-perturbation dataset, carried end to end as a single thin
@@ -131,11 +131,20 @@ The MegaFin deliveries in bronze are drawn at true area because 92.2% of a
 7 TiB bill is worth seeing. **They are not the thread**, and no repo on this
 page reads them.
 
-It is stated in three places on purpose, because it governs every figure and a
-reader who misses it will misread the whole page: the **brand line**, the
-**band under the header**, and the **reader's default entry**. Nodes on the
-thread carry `thread:true`, which flags them in the reader. If you add a
-station, decide which of the two it is and say so.
+It is stated in **two** places: the **headline**, in one line of at most forty
+words, and the **reader's default entry**, at length. There used to be a third —
+a four-sentence band of its own between the header and the map — and it was the
+largest single thing on the page before the drawing. It existed because an
+earlier version was an overlay that sat on the bronze vault, and a band in the
+page flow cannot collide with the drawing. But "cannot collide" is a low bar for
+a paragraph of framing above every visit.
+
+The headline line **ellipses rather than wraps**. The header is a single row and
+a headline that reflows to three lines is a band again by another name. Keep it
+under forty words and let the reader carry the rest.
+
+Nodes on the thread carry `thread:true`, which flags them in the reader. If you
+add a station, decide which of the two it is and say so.
 
 ## Naming
 
@@ -151,8 +160,10 @@ typing "the warehouse", write "silver".
 `check-overlaps.mjs` (beside these files, run with `node check-overlaps.mjs <url>`)
 renders the page, forces every label tier
 visible (fine labels are `display:none` at overview zoom and would otherwise
-measure 0×0 and be skipped), and tests all 93 text boxes pairwise. It must
-report **0 overlapping pairs**. `getBBox()` is in untransformed user space, so
+measure 0×0 and be skipped), and tests every text box pairwise. It must
+report **0 overlapping pairs**. The count moves as the map does — it is 87 at
+the third pass — so read the count as a sanity check that the run saw the whole
+map, not as a number to hold constant. `getBBox()` is in untransformed user space, so
 one run covers every zoom level.
 
 Run it after any change to a shape's internal label spacing. The last round of
@@ -197,9 +208,10 @@ way until somebody widens the role:
    are the same 17 objects twice, 209 GiB duplicated; the archived provenance
    record points at the former, which is suggestive and not decisive.
 
-**The finding the map is built around**: `zsb-bronze`'s committed changelog
-describes a `v1` silver release dated 2026-08-22, and the warehouse has no
-`minifin/v1/` prefix. Of the four hops the architecture describes, one has run.
+**The finding the map was built around, for its first two reads**: `zsb-bronze`'s
+committed changelog described a `v1` silver release dated 2026-08-22, and the
+warehouse had no `minifin/v1/` prefix. Of the four hops the architecture
+describes, one had run. **That is no longer true — see the third pass.**
 
 ## The state of the data — second pass, 2026-08-22 (later the same day)
 
@@ -243,6 +255,79 @@ lockfiles and `.gitignore`s. Both now have an excellent gate around three
 functions that raise. Worth keeping an eye on across refreshes: the tooling is
 moving and the three gates are not, which is what you would expect, because the
 gates are conventions and sign-offs and no amount of tooling closes them.
+
+## The state of the data — third pass, 2026-08-24. The left column moved.
+
+The first two reads found the buckets byte-for-byte identical and every moving
+figure in the repo column. **This one is the other way round**, because a step
+on the right finally ran.
+
+```
+repos      re-pulled at
+             zsb-medallion 00b71e8   zsb-bronze 6126161
+             zsb-silver    4a64566   zsb-gold   513ca22
+buckets     aws s3 ls --recursive --summarize   on bronze and silver
+            aws s3api head-object               on all 8 bronze pins + the new release
+```
+
+**`minifin/v1/` exists.** On 2026-08-23 at 00:21:59 UTC the bronze publish step
+wrote a 1,561,917,184-byte artifact into the warehouse; its README at 00:22:28,
+and the ledger at the same moment — **objects first, ledger after**, which is
+the order that was wrong the last two times this page was read. The sharpest
+finding this map has ever carried is closed, and it closed by the release being
+published rather than by the note being retracted.
+
+| Was on the map | Now |
+| --- | --- |
+| "the changelog indexes a release that does not exist" | it exists. **Claim retired.** |
+| silver `79 obj · 15.45 GiB`, 0 versioned releases | `82 obj · 16.91 GiB`, one release under the convention |
+| one hop of four has run | **two** |
+| bronze `139 commits · 4,358 LOC` | `153 · 4,996` (2,680 in `minifin/`) |
+| silver `25 commits · 155 LOC`, three stubs | `34 · 870`, **fetch is written** and pinned to the release by size and ETag |
+| gold `20 commits · 92 LOC` | `30 · 93` — ten commits, one line of source |
+| medallion `v0.5.0 · 58 · 1,843` | `v0.8.0 · 83 · 2,656`, and it grew a shared `fetch` |
+| bronze on `v0.5.0`, silver and gold on `v0.4.0` | **all three on `v0.8.0`.** Divergence closed. |
+| entry point `zsb-minifin <command>` | `zsb-bronze minifin <command>` — one command per repo, datasets as subcommand groups. Silver adopted the same shape. |
+| — | **New:** both working repos have a `pins` command — check declared objects against the live bucket, exit non-zero on drift. |
+| — | **New:** `bump-consumers.yml` in medallion opens a PR against each consumer on a version tag. That is what closed the divergence. |
+
+**Two shape changes came out of this read**, and both are in `ds-shapes.js`:
+
+- **`DRAW.bay` gained a `filled` state.** The bay for `minifin/v1/` had been
+  drawn empty and hatched since this page existed. Keep both states — the next
+  release prefix starts empty too, and a map that can only draw good news is
+  not a plan.
+- **`DRAW.cell` gained a third state, `ready`.** For as long as this map had
+  two, "written" and "has run" were the same mark, because every step that was
+  written had run. zsb-silver's fetch broke that: a real implementation, pinned
+  to a real object, with nothing in the account able to say whether anybody has
+  run it — a fetch lands on a machine. Drawing it live would claim bytes moved;
+  drawing it as a stub would claim a function that raises. **Plate dashed means
+  it raises; lamp filled means it has moved bytes.** A ready cell is a solid box
+  with a hollow lamp.
+
+**One standing unknown is partly answered, and by a route around the closed
+door.** Every `GetBucket*` call is still AccessDenied — but `head-object` on any
+key in bronze or silver returns a `VersionId` and `ServerSideEncryption:
+AES256`. Both buckets are **versioned and encrypted at rest**, which this page
+had recorded as unknown since it was drawn. Replication is still unconfirmed: no
+object carries a `ReplicationStatus` header, which is suggestive rather than
+decisive, since that header only appears where a rule covers the object.
+**Generalise the move, not the finding** — when a bucket-level door is shut,
+look at what the object responses already carry.
+
+**What is left is two gates, both in the last two steps**, and neither is a
+research problem: the gold v1 QC sign-off, and the gold object-key convention.
+For the first time there is work aimed at the sign-off rather than around it —
+zsb-silver's open PR **#17**, porting Trailmaker QC steps 3 and 4. And the
+second now has a worked example one tier up: the silver key was answered by
+naming the object and pinning its identity, which is stronger than a convention.
+
+**Watch the rail.** `zsb_medallion` stopped being a vocabulary and became a
+library: the shared `fetch` is real code both working transforms depend on, so
+a change there can break a transform in a way that renaming a constant never
+could.
+
 
 ## The shape contract
 
@@ -476,9 +561,13 @@ If you add a label that must persist at overview zoom, give it a font size of
 - **Reformat, minify, or convert to a framework.** Line-level diffs need to stay
   readable across two authors.
 - **Let a dashed conduit become solid without a bucket read behind it.** Solid
-  means bytes have crossed, and can be shown to have. There is currently exactly
-  one solid conduit on this map. When a second appears it should be because a
-  second hop ran.
+  means bytes have crossed, and can be shown to have. **A second hop went solid
+  on 2026-08-23, and it went solid because `head-object` returned an object** —
+  not because a commit said it would. The next one is the same standard.
+- **Draw a written step as live.** `state:"ready"` exists for the case that
+  broke the two-state scheme: implemented, pinned to a real object, and with
+  nothing in the account able to show whether anybody has run it. A fetch lands
+  on a machine, and a machine is not in the account. Solid box, hollow lamp.
 
 ## Notes for integration
 

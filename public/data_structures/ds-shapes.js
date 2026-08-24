@@ -202,11 +202,30 @@ DRAW.floor = (g, n) => {
 /* ============================================================
    CELL — one module inside a repo floor.
 
-   state:"live"  implemented and exercised
-   state:"stub"  a function that raises, with its gating reason
+   state:"live"   implemented AND exercised against the real bucket
+   state:"ready"  implemented, never run
+   state:"stub"   a function that raises, with its gating reason
+
+   THE THIRD STATE IS NEW AND IT EARNED ITS PLACE. For as long as this map had
+   two, "written" and "has run" were the same mark, because on the first reads
+   every step that was written had run and every step that had not was a stub.
+   That stopped being true when zsb-silver's fetch was written against a
+   release that now exists: a real implementation, pinned to a real object,
+   with nothing on this map able to show whether anybody has run it. Drawing
+   it live would claim bytes moved; drawing it as a stub would claim a
+   function that raises. It is neither.
+
+   The lamp carries the distinction and the plate carries the other half:
+
+     plate dashed + hatched  ->  raises
+     lamp hollow             ->  has not moved bytes
+     lamp filled             ->  has
+
+   So a ready cell is a solid box with a hollow lamp, which reads as "built,
+   not yet lit" — which is exactly what it is.
    ============================================================ */
 DRAW.cell = (g, n) => {
-  const ink = inkOf(n), stub = n.state === "stub";
+  const ink = inkOf(n), stub = n.state === "stub", live = n.state === "live";
   plate(g, n.x, n.y, n.w, n.h, {
     fill: stub ? "var(--bg)" : ink, fo: stub ? 0.55 : 0.16,
     stroke: ink, sw: 1.1, so: stub ? 0.55 : 0.95, dash: stub ? "5 3" : "none"
@@ -216,11 +235,12 @@ DRAW.cell = (g, n) => {
     { size: 10, fill: "var(--fg)", ls: 0.04 });
   if (n.note) label(g, n.x, n.y + lineH(8.4) / 2 + 0.16, n.note,
     { size: 8.4, fill: stub ? "var(--drop)" : "var(--fg2)" });
-  /* the lamp: filled when the step has actually run against the real bucket */
+  /* the lamp: filled only when the step has actually run against the bucket */
   const [lx, ly] = P(n.x + n.w / 2 - 0.45, n.y - n.h / 2 + 0.45);
   add(g, "circle", {
     cx: lx, cy: ly, r: 6,
-    fill: stub ? "none" : "var(--signal)", stroke: stub ? "var(--drop)" : "var(--signal)", "stroke-width": 1.6
+    fill: live ? "var(--signal)" : "none",
+    stroke: stub ? "var(--drop)" : "var(--signal)", "stroke-width": 1.6
   });
 };
 
@@ -296,13 +316,26 @@ DRAW.spine = (g, n) => {
    The one shape on this map that draws an absence. Cross-hatched in the drop
    colour, dashed wall, and it names the key that would be there.
    ============================================================ */
+/* A bay is a room on a conduit: a set of object keys the architecture says
+   will exist at a place. It has two states and they are drawn as opposites,
+   because the whole point of putting it on the map is that a reader can see
+   which one it is in without reading a word.
+
+   EMPTY: dashed, hatched, in --drop. Specified and not built.
+   FILLED: solid, in --signal, each key with its size. Built.
+
+   The bay for minifin/v1/ was drawn empty for as long as this page has
+   existed and is now filled. Keep both states: the next release prefix starts
+   empty too, and a map that can only draw the good news is not a plan. */
 DRAW.bay = (g, n) => {
-  plate(g, n.x, n.y, n.w, n.h, { fill: "var(--bg)", fo: 0.5, stroke: "var(--drop)", sw: 1.3, so: 0.8, dash: "6 4" });
-  plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
+  const on = !!n.filled, tone = on ? "var(--signal)" : "var(--drop)";
+  plate(g, n.x, n.y, n.w, n.h, { fill: "var(--bg)", fo: on ? 0.9 : 0.5,
+    stroke: tone, sw: 1.3, so: on ? 1 : 0.8, dash: on ? null : "6 4" });
+  if (!on) plate(g, n.x, n.y, n.w, n.h, { fill: "url(#pX)", stroke: "none" });
   const rows = (n.lines || []).length;
   const top = n.y - (lineH(9.6) + rows * lineH(9)) / 2;
   label(g, n.x, top + lineH(9.6) / 2, n.headline,
-    { size: 9.6, fill: "var(--drop)", ls: 0.05, upper: true });
+    { size: 9.6, fill: tone, ls: 0.05, upper: true });
   (n.lines || []).forEach((L, i) =>
     label(g, n.x, top + lineH(9.6) + (i + 0.5) * lineH(9), L, { size: 9, fill: "var(--fg2)" }));
 };
