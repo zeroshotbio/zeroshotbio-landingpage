@@ -37,6 +37,18 @@
    assumed. The run is also checked to sit centred in the dotted mat under it:
    a row hard against one end of its own band reads as having slipped.
 
+   AND THAT NO TRACK IS TOO SHORT FOR THE DOTS ON IT. A dot moves at a
+   constant 52px per second, so `t` wraps once per 52px of track — which means
+   a track's LENGTH sets how often its dots restart. On a 2px run that is
+   twenty-one laps a second, and two dots strobing in place is what it looks
+   like. This is not hypothetical: trimming tracks back to their objects' walls
+   did exactly that to seventeen runs on rows 1 and 2, where the objects almost
+   touch, and the map went from reading correctly to looking broken.
+
+   The floor is the shortest track this map had before any trimming existed.
+   Anything under it is a track whose dots have stopped reading as travel and
+   started reading as a flicker.
+
    AND THAT THE GRID STILL COVERS THE DRAWING. The grid is the paper; a map
    that has outgrown it reads as having fallen off the edge of the sheet. This
    has happened twice — once when row 3's culls went to 4.2 units each, once
@@ -103,12 +115,21 @@ const found = await page.evaluate(gap => {
     }
   });
 
+  /* every track long enough that its dots read as travelling rather than
+     strobing — see the note at the top */
+  const MIN_PX = 45;
+  const strobing = edgeGeom
+    .filter(e => e.len && DOTS.some(d => d.e === e))
+    .filter(e => e.len < MIN_PX)
+    .map(e => `${e.a || e.fromName}->${e.b || e.toName} is ${Math.round(e.len)}px, ` +
+              `${(52 / e.len).toFixed(1)} laps/s`);
+
   const short = [];
   if (GRID.x0 > x0) short.push(`left by ${(GRID.x0 - x0).toFixed(1)}`);
   if (GRID.x1 < x1) short.push(`right by ${(x1 - GRID.x1).toFixed(1)}`);
   if (GRID.y0 > y0) short.push(`top by ${(GRID.y0 - y0).toFixed(1)}`);
   if (GRID.y1 < y1) short.push(`bottom by ${(y1 - GRID.y1).toFixed(1)}`);
-  return { cross, onCross, dirs, wrong, short, uneven, offcentre };
+  return { cross, onCross, dirs, wrong, short, uneven, offcentre, strobing };
 }, ROW_GAP);
 
 if (found.cross.length)
@@ -119,6 +140,9 @@ if (found.wrong.length)
   fail(`these lanes do not read left to right: ${found.wrong.join(', ')} — ` +
        `all four rows read the same way, and a flipped one says so nowhere on screen`);
 
+found.strobing.forEach(m => fail(`a track is too short for its dots — ${m}. A dot moves at a ` +
+  `constant speed, so a track's length sets how often its dots restart; below about 45px they ` +
+  `stop reading as travel and start reading as a flicker.`));
 found.uneven.forEach(m => fail(`an even lane is not even — ${m}. A node's own \`gap\` overrides ` +
   `\`even\`, which is how this stays true in the data and false on screen.`));
 found.offcentre.forEach(m => fail(`${m} — an even row should sit centred in its own mat`));
@@ -131,7 +155,8 @@ console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `rows: nothing is drawn between them, no dot is travelling between them, all ` +
     `${found.dirs.length} lanes read left to right, the three even ones are even and centred in ` +
-    `their mats, and the grid covers everything drawn on it`);
+    `their mats, no track is short enough for its dots to strobe, and the grid covers ` +
+    `everything drawn on it`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);

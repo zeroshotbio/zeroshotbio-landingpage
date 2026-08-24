@@ -261,6 +261,29 @@ whose objects are packed close on purpose and have always been fine. What a
 reader needs is enough visible line for a dot to read as travelling, and that
 is a length.
 
+### `MIN_RUN`: the trim has a floor, and the floor is not optional
+
+Trimming to the walls is right when two objects are far apart. When they are
+close — and most of rows 1 and 2 is objects almost touching — it takes the
+**whole track away**. Shipping the trim without a floor put seventeen runs
+under 40px and two at **2px**.
+
+That is not a cosmetic problem, because of how a dot is paced: it moves at a
+constant 52px per second, so **`t` wraps once per 52px of track**. A 2px run is
+twenty-one laps a second, and two dots strobing in place is what a reader sees.
+The old centre-to-centre routing paced those correctly *by accident*: the buried
+part of the track counted toward its length even though the clip hid it.
+
+So the trim has a budget — whatever is left after `MIN_RUN` is protected, split
+between the two ends in proportion to what each asked for. Far apart, both get
+their full step and the track runs wall to wall. Close together, the budget is
+nothing and the route is centre to centre, exactly as it was. `MIN_RUN` is 1.25
+world units, about 52px, which is the shortest track this map had before any of
+this existed.
+
+`check-rows.mjs` asserts the consequence: **no track under 45px**. Setting
+`MIN_RUN` to 0 reproduces the glitch and fails it, 2px run and all.
+
 ## `even` lanes
 
 The lane engine's default is a **major/minor rule**: a landmark gets room to

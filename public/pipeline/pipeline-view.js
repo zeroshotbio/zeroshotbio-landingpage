@@ -344,17 +344,46 @@ function makeGeom(pp){
    the wall and the start of the line, so a track reads as arriving at a
    building rather than as growing out of it. */
 const PORT=0.18;
-function portOut(n, tx, ty){
-  /* how far to step out of n toward (tx,ty), along whichever axis this leg
-     runs — the map's tracks are axis-aligned in world space, so this is the
-     half-extent in x or in y and never a diagonal */
-  const dx=tx-n.x, dy=ty-n.y;
-  if(Math.abs(dx)>=Math.abs(dy)){
-    const step=(n.w||0)/2+PORT;
-    return Math.abs(dx)<=step ? [n.x,n.y] : [n.x+Math.sign(dx)*step, n.y];
-  }
-  const step=(n.d||0)/2+PORT;
-  return Math.abs(dy)<=step ? [n.x,n.y] : [n.x, n.y+Math.sign(dy)*step];
+
+/* AND IT NEVER TRIMS A TRACK BELOW MIN_RUN, which is the half of this that I
+   left out and immediately regretted.
+
+   Trimming to the walls is right when the two objects are far apart. When they
+   are close — and most of rows 1 and 2 is objects almost touching — it takes
+   the whole track away: seventeen runs went under 40px and two went to 2px.
+   A dot's speed is a constant 52px per second, so `t` wraps once per 52px of
+   track: on a 2px run that is TWENTY-ONE LAPS A SECOND, and two dots strobing
+   in place is what the reader saw. The old centre-to-centre routing paced
+   those correctly by accident, because the buried part of the track counted
+   toward the length even though the clip hid it.
+
+   So the trim has a budget: whatever is left after MIN_RUN is protected, split
+   between the two ends in proportion to what each asked for. Far apart, both
+   get their full step and the track runs wall to wall. Close together, the
+   budget is nothing and the route is centre to centre, exactly as it was.
+   MIN_RUN is 1.25 world units — about 52px, which is the shortest track this
+   map had before any of this and reads as one dot crossing once a second. */
+const MIN_RUN=1.25;
+function trimEnds(raw, A, B){
+  const leg=(n, p, q)=>{                    /* how far n would like to step out */
+    const dx=q[0]-p[0], dy=q[1]-p[1];
+    return Math.abs(dx)>=Math.abs(dy)
+      ? {ax:0, want:(n.w||0)/2+PORT, dir:Math.sign(dx)||1}
+      : {ax:1, want:(n.d||0)/2+PORT, dir:Math.sign(dy)||1};
+  };
+  const a=leg(A, raw[0], raw[1]);
+  const b=leg(B, raw[raw.length-1], raw[raw.length-2]);
+  /* the run this leg has to spend, along the axis each end steps on */
+  const spanA=Math.abs(raw[1][a.ax]-raw[0][a.ax]);
+  const spanB=Math.abs(raw[raw.length-2][b.ax]-raw[raw.length-1][b.ax]);
+  const total=Math.min(spanA,spanB)===0 ? Math.max(spanA,spanB) : Math.min(spanA,spanB);
+  const budget=Math.max(0, (a.ax===b.ax ? Math.abs(raw[raw.length-1][a.ax]-raw[0][a.ax]) : total) - MIN_RUN);
+  const asked=a.want+b.want;
+  const k=asked>0 ? Math.min(1, budget/asked) : 0;
+  const step=(n,l,p)=>{ const q=[p[0],p[1]]; q[l.ax]+=l.dir*l.want*k; return q; };
+  raw[0]=step(A,a,raw[0]);
+  raw[raw.length-1]=step(B,b,raw[raw.length-1]);
+  return raw;
 }
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
@@ -363,9 +392,7 @@ function routeOf(e){
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
-  raw[0]=portOut(A, raw[1][0], raw[1][1]);
-  raw[raw.length-1]=portOut(B, raw[raw.length-2][0], raw[raw.length-2][1]);
-  return raw.map(p=>P(p[0],p[1],0.02));
+  return trimEnds(raw, A, B).map(p=>P(p[0],p[1],0.02));
 }
 function paintEdge(rec){
   const host=rec.host;
