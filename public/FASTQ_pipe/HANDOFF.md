@@ -42,9 +42,36 @@ be telling a reader they were looking at two different things.
 **The fork is at E2**, which is why the fragment is a node and not an arrow:
 one molecule sequenced from both ends, R1 to the genome and R2 to the
 whitelists, and everything downstream is two independent problems until they
-meet again. **Two edges leave E2 and they do not rejoin until E6.** If a layout
-change makes them read as alternatives rather than as parallel work, the layout
-is wrong.
+meet again. **Two edges leave E2 and they do not rejoin until E6.**
+
+### They are two lanes, and each leaves from its own end of the glyph
+
+The fragment already puts the cDNA at its left end and the barcodes at its
+right, so each outbound edge is **ported** to the end it belongs to — `port:"L"`
+and `port:"R"` on the edge, resolved through `PORTS[shape]` in `fq-shapes.js`.
+Two edges leaving one node from the same place are two edges nobody can tell
+apart. Each lane is then **tinted** with the token that half of the molecule
+already wears — `--keep` for R1, `--accent` for R2 — so both journeys are
+followable with no labels at all. No new colour: those are the two the page has.
+
+**Which side each lane sits on is not a free choice.** A track has to leave
+toward its own lane rather than back across the drawing it came from, and
+screen-left of the glyph is *below* the row in world terms — so **R1 goes below
+the spine and R2 above**. The spine between the fragment and the join carries
+nothing, so the two are adjacent with only empty ground between them.
+
+**The asymmetry is the point and must not be tidied.** R1 makes two stops, sits
+further from the spine, consumes the genome lane, differs per arm, and can fail
+— unmapped, multimapping, ambiguous. R2 makes one stop, consumes the
+whitelists, is deterministic, and is identical across arms; it finishes early
+and runs straight to the join while R1 is still working. **Equal lanes would be
+a lie about the pipeline.**
+
+A ported route is two segments and no elbow: the port, a run down to the
+destination's lane joining it `PORT_LEAD` (2.0 world units) before the first
+stop, then along the lane. **`E2` carries `noclip:true`** — the glyph is a flat
+diagram floating in the air, not a solid, so nothing hides behind it; punch its
+box out of the occlusion clip and both departures vanish at their own ends.
 
 **E6 has two inbound edges and must look like it.** The gene identity comes down
 one branch and the cell identity up the other, and neither alone is a count — a
@@ -79,8 +106,20 @@ choices — and the arms differ in *both*, which is why they are drawn as two
 pairs (`G1/G2 → G3a`, `G1b/G2b → G3b`) rather than as one genome with two
 annotations.
 
+**Each arm is a horizontal triple and the pairing is geometric, not hopeful.**
+A source at `(index.x − 1.4, index.y + 1.4)` lands 102px directly *left* of its
+index on screen and at the same height; `(+1.4, −1.4)` lands 102px directly
+right. So each index is flanked by its own two files, the two arms sit side by
+side with a clear gap, and no dashed line crosses another. The first attempt
+spread the four sources along one lane and the arms interleaved on screen even
+though they did not in world coordinates — **check the screen order, which is
+`(x − y)`, not the world x.**
+
 Everything from E4 onward exists twice and carries **`× 2 ARMS`** under its
-name. Drawing them once is a *density* decision, not a claim that anything is
+name — **E7 included**. That tag was only drawn on plain nodes at first, so the
+matrix rendered as one bare cube while every station feeding it said `× 2`,
+which reads as the branch collapsing back into one object. It does not.
+Landmarks draw the tag as a third line under the name and the stat. Drawing them once is a *density* decision, not a claim that anything is
 shared; the two gene spaces are not reconcilable after the fact.
 
 ### Nothing in this segment is a cull

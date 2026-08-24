@@ -275,6 +275,15 @@ NODES.filter(n=>n.anchor).forEach(n=>{
   const t2=el("text",{x:14,y:12,"text-anchor":"start","font-size":"11","letter-spacing":".8",
     fill:"var(--fg2)"});
   t2.textContent=n.stat||""; g.appendChild(t2);
+  /* A LANDMARK GETS ITS TAG TOO. It was only drawn on the plain nodes, so the
+     matrix at the end of the branch rendered as one cube with nothing on it
+     while every station feeding it said x 2 ARMS — which reads as the branch
+     collapsing back into one object, and it does not. */
+  if(n.tag){
+    const t3=el("text",{x:14,y:26,"text-anchor":"start","font-size":"9",
+      "letter-spacing":"1.4",fill:"var(--accent)"});
+    t3.textContent=n.tag; g.appendChild(t3);
+  }
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
@@ -327,6 +336,31 @@ function makeGeom(pp){
 }
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
+
+  /* A PORTED EDGE LEAVES FROM A NAMED POINT ON ITS SOURCE, NOT FROM ITS CENTRE.
+
+     Two edges leaving one node from the same place are two edges you cannot
+     tell apart, and on this map the one that matters is the fork: the fragment
+     glyph already puts the cDNA at its left end and the barcodes at its right,
+     so the R1 track should leave the left end and the R2 track the right one.
+     Then both journeys are followable with no labels at all.
+
+     The route is: the port, then a straight run down to the destination's own
+     lane, joining it a short way before the first stop, then along that lane.
+     Two segments and no elbow — a track that drops out of one end of a
+     molecule and lands on its own line, which is the whole claim, made in
+     geometry rather than in a caption.
+
+     PORT_LEAD is in world units along the lane, so the join scales with the
+     lane rather than with the screen. Small enough that the run is a departure
+     and not a second leg; large enough that the arrival is along the lane and
+     not into the side of the first stop. */
+  if(e.port && typeof PORTS!=="undefined" && PORTS[A.shape]){
+    const PORT_LEAD=2.0;
+    return [PORTS[A.shape](A,e.port),
+            P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
+  }
+
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
@@ -349,13 +383,20 @@ function paintEdge(rec){
      "written · never run". So a still edge is drawn thinner, dashed and
      dimmer, and no dot is ever put on it (see the DOTS block below). */
   const still = rec.still;
-  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
-    "stroke-width":(faint||still)?"1":"1.3","stroke-opacity":still?".3":(faint?".35":".7")});
+  /* AN EDGE CAN CARRY ITS OWN IDENTITY. The two branch lanes are tinted with
+     the tokens the fragment glyph already uses for the two halves of the
+     molecule — --keep for the cDNA, --accent for the barcodes — so the tracks
+     are the same colour as the thing travelling them, and neither needs a
+     label. No new colour: those are the two the page already has. */
+  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",
+    stroke:rec.tone||"var(--edge)",
+    "stroke-width":(faint||still)?"1":(rec.tone?"1.5":"1.3"),
+    "stroke-opacity":still?".3":(faint?".35":(rec.tone?".85":".7"))});
   if(rec.dash||still) path.setAttribute("stroke-dasharray","5 4");
   host.appendChild(path);
   pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
     {x:c[0]-2.4,y:c[1]-2.4,width:4.8,height:4.8,transform:`rotate(45 ${c[0]} ${c[1]})`,
-     fill:"var(--edge)","fill-opacity":".5"})));
+     fill:rec.tone||"var(--edge)","fill-opacity":".5"})));
   const g=makeGeom(pp); rec.segs=g.segs; rec.len=g.len;
 }
 EDGES.forEach(e=>{
@@ -485,8 +526,12 @@ function rebuildClip(){
   const R=40000;
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
   /* scenery is painted ON the ground, so punching it out of the clip would
-     cut a hole in the very layer it belongs to */
-  NODES.filter(n=>!n.scenery).forEach(n=>{
+     cut a hole in the very layer it belongs to — and noclip is for an object
+     that is not a solid at all. The fragment glyph is a flat diagram floating
+     in the air: a track passing under it should be visible passing under it,
+     and the two tracks that leave its own ends have to be visible from the
+     ends. Punch its box out of the clip and both disappear. */
+  NODES.filter(n=>!n.scenery && !n.noclip).forEach(n=>{
     d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
   clipPathEl.setAttribute("d",d);
 }
@@ -561,7 +606,8 @@ edgeGeom.forEach(e=>{
   for(let i=0;i<count;i++){
     const g=el("g"); g.style.cursor="pointer";
     g.appendChild(el("circle",{r:"10",fill:"transparent"}));
-    g.appendChild(el("circle",{r:faint?3:3.5,fill:faint?"var(--drop)":"var(--signal)",
+    g.appendChild(el("circle",{r:faint?3:3.5,
+      fill:e.tone||(faint?"var(--drop)":"var(--signal)"),
       stroke:"var(--stroke)","stroke-width":"1"}));
     gDot.appendChild(g);
     const rec={e,t:(i/count)+Math.random()*0.1,speed:(faint?26:52)/e.len,node:g};

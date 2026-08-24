@@ -368,6 +368,16 @@ function drawFragment(g,n){
 }
 DRAW.fragment=drawFragment;
 
+/* NAMED POINTS ON A SHAPE, for an edge to leave from rather than the centre.
+   The glyph's two ends are the fork itself — cDNA at the left, barcodes at the
+   right — so an edge that leaves from one of them has already said which read
+   it carries. See routeOf() in fq-view.js. Keyed by SHAPE rather than by node
+   id, because a port is a property of the drawing. */
+const PORTS={
+  fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
+    return which==="L" ? [F.FX0,F.BMID] : [F.FX1,F.BMID]; },
+};
+
 /* ============================================================
    E1 — THE POOL
 
