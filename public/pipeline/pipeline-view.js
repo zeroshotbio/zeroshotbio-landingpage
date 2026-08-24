@@ -74,12 +74,6 @@ if(typeof CARRIED!=="undefined") CARRIED.forEach(c=>{
   NODES.push(n);
 });
 
-/* HOW FAINT A RESTATEMENT IS. One number, because the object, its plinth and
-   its name are drawn into three different layers and all three have to agree
-   — dimming the box and leaving the name at full weight makes the name look
-   like a label for something that is not there. */
-const CARRIED_OP="0.42";
-
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
@@ -280,7 +274,6 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
     "stroke-opacity":isA?".4":".28","stroke-width":"1","stroke-dasharray":isA?"6 4":"2 3"}));
   /* el() writes every key it is handed, so a null lands as the string
      "null" — the opacity goes on afterwards or not at all */
-  if(n.carried) plinthEls[n.id].setAttribute("opacity",CARRIED_OP);
   /* labelBelow moves a landmark's name off its top-back edge and onto its
      front edge, running down-left instead of up-right — for a landmark whose
      usual placement collides with whatever is above it */
@@ -298,7 +291,6 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2); textEls[n.id+":stat"]=t2;
-  if(n.carried) g.setAttribute("opacity",CARRIED_OP);
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
@@ -384,12 +376,15 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
      so without this it swallows their clicks and their drags. It is still in
      the index and still selectable from there. */
   if(n.scenery) g.style.pointerEvents="none";
-  /* A CARRIED-IN CLONE IS DRAWN AT REDUCED WEIGHT, and that is the whole of
-     what makes it read as a restatement rather than as a second object. Same
-     shape, same size, same name — if it were drawn at full weight a reader
-     would count two unfiltered matrices, which is a worse error than the one
-     it exists to fix. */
-  if(n.carried) g.setAttribute("opacity",CARRIED_OP);
+  /* A CARRIED-IN CLONE IS DRAWN AT FULL WEIGHT. It was faded once, on the
+     reasoning that a restatement should not be mistaken for a second object —
+     and faded, it stopped reading as an object at all: the track leaving it
+     and the dots on that track looked like they came from nowhere, because the
+     thing they came from was a ghost. An object a row inherits is the most
+     solid thing on that row, not the least.
+
+     What says it is a restatement is where it sits and what the reader says
+     about it, not how faint it is. See renderNode. */
   DRAW[n.shape](g,n);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });

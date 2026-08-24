@@ -15,10 +15,15 @@
      SAME OBJECT   same shape, same size, same name as its source. A clone
                    that has drifted from what it clones is a second claim.
 
-     LESS WEIGHT   box, plinth and name all at the same reduced opacity. They
-                   are drawn into three different layers, so it is genuinely
-                   easy to dim one and not the others — and a full-weight name
-                   over a faded box reads as a label for something missing.
+     FULL WEIGHT   and this is the reverse of where it started. The clones
+                   were faded once, on the reasoning that a restatement should
+                   not be mistaken for a second object. Faded, they stopped
+                   reading as objects at all: the track leaving one and the
+                   dots on that track looked like they came from nowhere,
+                   because the thing they came from was a ghost. An object a
+                   row inherits is the most solid thing on that row, not the
+                   least. What says "restatement" is where it sits and what
+                   the reader says about it.
 
      NOT A STEP    absent from the index and from the arrow-key walk. Both are
                    the reading order, and reading the same object twice is not
@@ -53,15 +58,24 @@ const found = await page.evaluate(() => {
     if (n.w !== src.w || n.d !== src.d || n.h !== src.h)
       out.problems.push(`${n.id} is not the size of ${src.id}`);
     if (n.name !== src.name) out.problems.push(`${n.id} is called "${n.name}", ${src.id} is "${src.name}"`);
-    /* the three layers it is drawn into have to agree about how faint it is */
+    /* nothing about it may be faded — see the note at the top */
     const g = [...document.querySelectorAll('#svg g[role=button]')]
-      .find(e => e.getAttribute('aria-label') === n.name && e.getAttribute('opacity'));
-    const ops = [g && g.getAttribute('opacity'),
-                 labelEls[n.id] && labelEls[n.id].getAttribute('opacity'),
-                 plinthEls[n.id] && plinthEls[n.id].getAttribute('opacity')];
-    if (ops.some(o => !o)) out.problems.push(`${n.id} is at full weight somewhere: ${JSON.stringify(ops)}`);
-    else if (new Set(ops).size !== 1) out.problems.push(`${n.id}'s box, name and plinth disagree about weight: ${JSON.stringify(ops)}`);
-    else if (parseFloat(ops[0]) >= 0.85) out.problems.push(`${n.id} is barely dimmed at ${ops[0]} — it will read as a second object`);
+      .find(e => e.getAttribute('aria-label') === n.name && e.getAttribute('transform') !== null) ||
+      [...document.querySelectorAll('#svg g[role=button]')]
+      .find(e => e.getAttribute('aria-label') === n.name);
+    const ops = { box: g && g.getAttribute('opacity'),
+                  name: labelEls[n.id] && labelEls[n.id].getAttribute('opacity'),
+                  plinth: plinthEls[n.id] && plinthEls[n.id].getAttribute('opacity') };
+    Object.entries(ops).forEach(([k, v]) => {
+      if (v !== null && v !== undefined && parseFloat(v) < 0.99)
+        out.problems.push(`${n.id}'s ${k} is drawn at ${v} — a row's inherited object is the ` +
+          `most solid thing on that row, and faded it reads as a ghost the track comes out of`);
+    });
+    /* and it must be connected like everything else */
+    const wired = EDGES.some(e => e.a === n.id || e.b === n.id);
+    const dots = DOTS.filter(d => d.e && (d.e.a === n.id || d.e.b === n.id)).length;
+    if (!wired) out.problems.push(`${n.id} has no track at all — it must join its row like any other object`);
+    else if (!dots) out.problems.push(`${n.id}'s track carries no dots`);
     /* and it must carry no prose of its own */
     const own = Object.prototype.hasOwnProperty.call(
       (typeof CARRIED !== 'undefined' ? (CARRIED.find(c => c.id === n.id) || {}) : {}), 'does');
@@ -95,7 +109,7 @@ if (walked.length) fail(`the arrow keys stop on ${walked.join(', ')} — a resta
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `carried: ${found.list.join(', ')} — each the same shape, size and name as its source, drawn `
-    + `at one reduced weight across box, name and plinth, and in neither the index nor the walk`);
+    + `at full weight, wired into its row with dots, and in neither the index nor the walk`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);

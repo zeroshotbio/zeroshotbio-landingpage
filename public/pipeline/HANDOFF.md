@@ -213,18 +213,40 @@ those from contradicting each other:
 
 - **Same object.** Shape, size and name come from the source. A clone that has
   drifted from what it clones is a second claim.
-- **Less weight.** Box, plinth and name at one reduced opacity — they are drawn
-  into *three different layers*, so dimming one and not the others is easy, and
-  a full-weight name over a faded box reads as a label for something missing.
-  `CARRIED_OP` is the single number.
-- **Not a step.** Absent from the index and from the arrow-key walk. Both are
-  the reading order, and reading the same object twice is not a step in it.
+- **Full weight**, and this is the reverse of where it started. They were
+  faded once, on the reasoning that a restatement should not be mistaken for a
+  second object. Faded, they stopped reading as objects at all: the track
+  leaving one and the dots on that track looked like they came from nowhere,
+  because the thing they came from was a ghost. **An object a row inherits is
+  the most solid thing on that row, not the least.** What says "restatement" is
+  where it sits and what the reader says about it.
+- **Wired like anything else.** A track out of it into the first step of its
+  row, with dots on it. It is the object the row acts on; a row whose opening
+  object connects to nothing is a row that starts twice.
 - **No prose.** It holds no `does` of its own; the reader shows the source's
   and says plainly why the object is here twice.
+- **Not a step.** Absent from the index and the arrow-key walk.
 
 `check-carried.mjs` asserts all four. Note the `el()` trap it exposed:
 `el(tag, attrs)` writes **every** key it is handed, so `opacity: null` lands as
 the literal string `"null"`. Set an optional attribute after creation.
+
+## `even` lanes
+
+The lane engine's default is a **major/minor rule**: a landmark gets room to
+stand clear of the cluster either side of it. That is right on a row that is
+mostly small steps with two big things in it — rows 1 and 2. On a row whose
+objects are all comparable it does the opposite: it invents a rhythm out of
+nothing and the row reads as clustered when nothing about it is.
+
+`even:true` on a lane says **the spacing carries no meaning here** — make every
+gap the same. Rows 3, 4 and 5 use it, and their spans are set so the run sits
+centred in the dotted band under it with the same margin at each end.
+
+**A node's own `gap` still overrides `even`**, which is the one way this can be
+true in the data and false on screen. `check-rows.mjs` therefore *measures* the
+gaps rather than trusting the flag, and checks the run is centred in its mat: a
+row hard against one end of its own band reads as having slipped.
 
 ## Select many
 

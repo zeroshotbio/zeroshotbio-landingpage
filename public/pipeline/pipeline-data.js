@@ -489,9 +489,15 @@ const LANES = [
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
   {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:+1},
-  {id:"r3",       y:R3,       x0:0.7,  x1:22.0,  dir:+1},
-  {id:"r4",       y:R4,       x0:0.7,  x1:31.0,  dir:+1},
-  {id:"r5",       y:R5,       x0:0.7,  x1:24.0,  dir:+1},
+  /* The three bioinformatics rows space EVENLY and fill their own mat. Each
+     one is a short row of comparable objects — a matrix and five steps, a
+     matrix and five culls, a matrix and three landmarks — so the major/minor
+     rule had nothing to separate and only invented a rhythm. `even` makes
+     every gap the same; the spans are set so the run sits centred in the
+     dotted band under it, with the same margin at each end. */
+  {id:"r3",       y:R3,       x0:0.7,  x1:21.3,  dir:+1, even:true},
+  {id:"r4",       y:R4,       x0:0.7,  x1:30.3,  dir:+1, even:true},
+  {id:"r5",       y:R5,       x0:0.7,  x1:23.3,  dir:+1, even:true},
 ];
 
 const EDGES = [

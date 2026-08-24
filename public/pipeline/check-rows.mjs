@@ -26,6 +26,17 @@
    to read the same way. A lane quietly flipped back is a row that reads
    against its neighbours with nothing on screen saying so.
 
+   AND THAT AN `even` LANE IS ACTUALLY EVEN. The lane engine's default is a
+   major/minor rule: a landmark gets room to stand clear of the cluster either
+   side of it, which is right on a row that is mostly small steps with two big
+   things in it. On a row whose objects are all comparable it does the
+   opposite — it invents a rhythm out of nothing and the row reads as
+   clustered when nothing about it is. `even:true` says the spacing carries no
+   meaning here. A node's own `gap` still overrides, which is the one way this
+   can be true in the data and false on screen, so it is measured rather than
+   assumed. The run is also checked to sit centred in the dotted mat under it:
+   a row hard against one end of its own band reads as having slipped.
+
    AND THAT THE GRID STILL COVERS THE DRAWING. The grid is the paper; a map
    that has outgrown it reads as having fallen off the edge of the sheet. This
    has happened twice — once when row 3's culls went to 4.2 units each, once
@@ -73,12 +84,31 @@ const found = await page.evaluate(gap => {
     x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1);
     y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1);
   });
+  /* even lanes: every gap the same, and the run centred in its own band */
+  const uneven = [], offcentre = [];
+  LANES.filter(L => L.even).forEach(L => {
+    const on = NODES.filter(n => n.lane === L.id && !n.follow).sort((a, b) => a.x - b.x);
+    if (on.length < 2) return;
+    const gaps = [];
+    for (let i = 1; i < on.length; i++)
+      gaps.push((on[i].x - on[i].w / 2) - (on[i - 1].x + on[i - 1].w / 2));
+    const spread = Math.max(...gaps) - Math.min(...gaps);
+    if (spread > 0.02) uneven.push(`${L.id} gaps vary by ${spread.toFixed(2)}`);
+    const band = BANDS.find(b => Math.abs((b.y0 + b.y1) / 2 - L.y) < 1);
+    if (band) {
+      const l = (on[0].x - on[0].w / 2) - band.x0;
+      const r = band.x1 - (on[on.length - 1].x + on[on.length - 1].w / 2);
+      if (Math.abs(l - r) > 0.5)
+        offcentre.push(`${L.id} sits ${l.toFixed(1)} from the left of its mat and ${r.toFixed(1)} from the right`);
+    }
+  });
+
   const short = [];
   if (GRID.x0 > x0) short.push(`left by ${(GRID.x0 - x0).toFixed(1)}`);
   if (GRID.x1 < x1) short.push(`right by ${(x1 - GRID.x1).toFixed(1)}`);
   if (GRID.y0 > y0) short.push(`top by ${(GRID.y0 - y0).toFixed(1)}`);
   if (GRID.y1 < y1) short.push(`bottom by ${(y1 - GRID.y1).toFixed(1)}`);
-  return { cross, onCross, dirs, wrong, short };
+  return { cross, onCross, dirs, wrong, short, uneven, offcentre };
 }, ROW_GAP);
 
 if (found.cross.length)
@@ -89,6 +119,10 @@ if (found.wrong.length)
   fail(`these lanes do not read left to right: ${found.wrong.join(', ')} — ` +
        `all four rows read the same way, and a flipped one says so nowhere on screen`);
 
+found.uneven.forEach(m => fail(`an even lane is not even — ${m}. A node's own \`gap\` overrides ` +
+  `\`even\`, which is how this stays true in the data and false on screen.`));
+found.offcentre.forEach(m => fail(`${m} — an even row should sit centred in its own mat`));
+
 if (found.short.length)
   fail(`the grid falls short of the drawing — ${found.short.join(', ')}. The map has ` +
        `outgrown its paper, and the fit camera measures content so nothing else looks wrong.`);
@@ -96,7 +130,8 @@ if (found.short.length)
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `rows: nothing is drawn between them, no dot is travelling between them, all ` +
-    `${found.dirs.length} lanes read left to right, and the grid covers everything drawn on it`);
+    `${found.dirs.length} lanes read left to right, the three even ones are even and centred in ` +
+    `their mats, and the grid covers everything drawn on it`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);
