@@ -80,7 +80,7 @@ const NODES = [
 
 {id:"E2", key:"E2", group:"① The reads", shape:"fragment",
  lane:"r3", noclip:true,
- name:"One fragment", x:6.0, y:R3, w:4.1, d:4.1, h:3.2,
+ name:"One fragment", x:6.0, y:R3, w:4.1, d:4.1, h:5.6,
  sub:"one molecule, sequenced from both ends, with an unsequenced middle",
  does:"THE FORK. A single fragment carries everything: the cDNA at one end, the three ligation barcodes and the UMI at the other, and a stretch in the middle that neither read reaches. R1 goes to the genome and R2 goes to the whitelists, and from here to the deduplication they are two independent problems.",
  built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline.",
@@ -249,7 +249,18 @@ const LANES = [
    an index is built once and reused forever, and an edge that animates
    material down it every run asserts a per-sample cost that does not exist. */
 const EDGES = [
-  {a:"FQ", b:"E2", kind:"read"},
+  /* NO EDGE FROM THE POOL TO THE FRAGMENT, and none into the pool either.
+
+     A track with dots on it means material moving from one object to another,
+     and neither of those is happening here. The fragment is not somewhere the
+     reads GO — it is one of them, drawn larger, and the two dashed leaders
+     already say so. A track between them would double the claim and put dots
+     on a magnification. And nothing arrives at the pool on this page: the run
+     is upstream, on /pipeline, and the page opens on the reads rather than
+     fetching them from somewhere.
+
+     WHICH MEANS THE FIRST TRACK ON THIS MAP IS THE FORK. That is correct: the
+     first thing that actually moves is a read leaving for its own lane. */
 
   /* THE FORK, AND IT LEAVES FROM TWO DIFFERENT PLACES ON PURPOSE. R1 drops out
      of the cDNA end of the glyph onto its own lane below the spine; R2 drops
@@ -284,18 +295,20 @@ const BANDS = [
   {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-6.6, y1:R3+11.6},
 ];
 
-/* Both ends fade, because neither is on this page: the reads arrive from a
-   sequencer that is off the left of this map, and the matrix leaves for the
-   culls, which are drawn at /bioinformatics_pipe. Drawing a hard terminus at
-   either end would claim this stretch is self-contained, and it is a middle.
+/* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
+   drawn at /bioinformatics_pipe, and it fades rather than stopping because
+   drawing a hard terminus would claim this stretch is self-contained and it is
+   a middle.
 
-   THEY RUN ALONG THE ROW, and they are ANCHORED TO A NODE rather than written
-   down as coordinates — fixed coordinates stay put when the object they feed
-   is dragged, so the map can be arranged into a state where the reads arrive
-   four units short of the pool. */
+   There is no inbound one. The reads do not arrive at the pool from anywhere
+   on this page — the pool IS the start, and a track fading in toward it was a
+   second way of saying what the page's own title already says.
+
+   IT RUNS ALONG THE ROW, and it is ANCHORED TO ITS NODE rather than written
+   down as coordinates — fixed coordinates stay put when the object they leave
+   is dragged, so the map could be arranged into a state where the cells depart
+   four units clear of the cube. */
 const CARRIES = [
-  {node:"FQ", side:"in",  gap:1.15, len:4.6, fade:"in", kind:"read",
-   from:"the sequencer, a row up on /pipeline", to:"FASTQ pool"},
   {node:"UD", side:"out", gap:1.15, len:4.6, fade:"out", kind:"cell",
    from:"Unfiltered DGE", to:"the culls, drawn at /bioinformatics_pipe"},
 ];

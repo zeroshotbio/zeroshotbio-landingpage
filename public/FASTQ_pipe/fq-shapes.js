@@ -158,10 +158,11 @@ DRAW.matrix=drawMatrix;
    map ever starts dropping cells, the R1 trail has to move off this token.
 
    The trail is unbroken and that is the point: the hero read's cDNA half in the
-   pool, the leader running from the ring to the cDNA end of the glyph, the cDNA
-   block itself, the R1 bracket, the R1 track and the dots on it — all one
-   colour, from the pool to the moment it re-merges with R2 at the join. The
-   barcode half is the same story in accent.
+   pool, the cDNA block in the glyph, the R1 bracket and its name, the R1 track
+   and the dots on it — all one colour, from the pool to the moment it re-merges
+   with R2 at the join. The barcode half is the same story in accent. The dashed
+   leaders are NOT part of either trail and are grey: they magnify, they do not
+   carry.
 
    The one distinction the two tokens cannot carry is made by ENCODING instead:
    the UMI is the same accent as a barcode, drawn as an OUTLINE rather than a
@@ -224,7 +225,7 @@ const FRAG=[
   {k:"bc2",  w:13, tone:"r2",    lab:"BC2"},
   {k:"l2",   w:26, tone:"link",  lab:""},
   {k:"bc3",  w:13, tone:"r2",    lab:"BC3"},
-  {k:"umi",  w:16, tone:"umi",   lab:"UMI"},
+  {k:"umi",  w:48, tone:"umi",   lab:"UMI"},
 ];
 
 /* ---------------------------------------------------------------------------
@@ -298,17 +299,45 @@ const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monosp
    Its geometry is a function rather than a block of locals because the pool
    needs the two ends of the bar to aim its leaders at.
    ============================================================ */
+/* THE WHOLE DIAGRAM IS TURNED TO THE MAP'S OWN DIAGONAL, and that is a
+   ROTATION rather than a shear.
+
+   Drawn flat and level it was the one horizontal thing on a page where every
+   other line runs at 30 degrees, and it read as pasted on. Turned -30 it lies
+   along the world Y axis — the same line the step names, the band title and
+   every other string on the map read at — while staying a rigid, undistorted
+   drawing of a molecule. That is the difference from lying it on the ground
+   plane, which is what roofFrame() would do: a roof SHEARS its contents and a
+   circle on it becomes an ellipse. This does not. It is square to the reader,
+   just not level with the reader.
+
+   And it puts the molecule's own axis on the two lanes: the cDNA end now
+   points down-left, which is where R1 goes, and the barcode end up-right,
+   which is where R2 goes. The departures stopped needing an explanation.
+
+   Everything below is laid out level and the group carries one rotate(), so
+   the arithmetic here is still the arithmetic of a flat strip. rot() is for
+   the two callers that need a FINAL screen point — the ports, and the pool's
+   leaders — because those live outside the rotated group. */
+const FRAG_TURN=-30;
 function fragGeom(x,y){
   const p=P(x,y,0), X0=p[0], Y0=p[1];
   const FW=400, FX0=X0-FW/2, FX1=X0+FW/2, BH=17;
   const ROW2=Y0-18, ROW1=ROW2-21, BB=ROW1-25, BT=BB-BH, BMID=BT+BH/2;
   const YB=BT-21, LBL=YB-12, CTOP=LBL-22;
-  return {X0,Y0,FW,FX0,FX1,BH,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP};
+  /* the turn is about the bar's own midpoint, so the diagram pivots where it
+     sits rather than swinging off its node */
+  const px=X0, py=BMID;
+  const a=FRAG_TURN*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
+  const rot=q=>[px+(q[0]-px)*c-(q[1]-py)*sn, py+(q[0]-px)*sn+(q[1]-py)*c];
+  return {X0,Y0,FW,FX0,FX1,BH,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,px,py,rot};
 }
 
 function drawFragment(g,n){
   hitBox(g,n);
   const F=fragGeom(n.x,n.y);
+  /* one rotate on the group; everything inside is laid out level */
+  g=g.appendChild(el("g",{transform:`rotate(${FRAG_TURN} ${F.px} ${F.py})`}));
   const {FX0,FX1,FW,BT,BB,BH,BMID,ROW1,ROW2,YB,LBL}=F;
   const SEG=13, SUB=11, HEAD=16;
 
@@ -352,8 +381,11 @@ function drawFragment(g,n){
       g.appendChild(el("rect",{x,y:BT,width:w-0.9,height:BH,
         fill:R2TONE,"fill-opacity":".16",
         stroke:R2TONE,"stroke-width":"1.5"}));
-      tick(mid,BB,ROW2-12,R2TONE);
-      text(s.lab,mid,ROW2,SEG,R2TONE,"600");
+      /* labelled exactly like a barcode, on the same row: at three times the
+         length it has the room, and the outline is already carrying the one
+         thing that distinguishes it. */
+      tick(mid,BB,ROW1-12,R2TONE);
+      text(s.lab,mid,ROW1,SEG,R2TONE,"600");
       return;
     }
     const col=s.tone==="r1"?R1TONE:R2TONE;
@@ -373,14 +405,10 @@ function drawFragment(g,n){
      it reads as a terminus — the place the read stops — and it is the opposite:
      the direction the read travels. */
   const gi=FRAG.findIndex(s=>s.k==="gap");
-  /* THE TWO NAMES READ AT THE MAP'S OWN ANGLE, and they sit over the OUTER end
-     of each bracket — the end its track leaves from.
-
-     Everything else in this glyph is square to the reader because it is a
-     diagram of a molecule. These two are not labels on the diagram: they name
-     the two tracks, which are map objects, so they take the map's typography
-     (-30 degrees, like every other name on the page) and stand where their
-     track departs. The line then emerges from under its own name. */
+  /* The two names stand over the OUTER end of each bracket — the end its track
+     leaves from — so the line emerges from under its own name. They take no
+     turn of their own any more: the whole group is turned, so they arrive at
+     the map's angle like every other string on it. */
   const bracket=(xa,xb,col,label,dir)=>{
     g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.4","stroke-opacity":".9",
       d:`M ${xa} ${YB+6} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+6}`}));
@@ -390,7 +418,7 @@ function drawFragment(g,n){
     const at=dir>0?xa:xb;                      /* the outer end: R1 left, R2 right */
     const t=el("text",{x:0,y:0,"text-anchor":dir>0?"start":"end","font-size":HEAD,
       "font-family":MONO,"letter-spacing":"1.4",fill:col,"font-weight":"600",
-      transform:`translate(${at},${LBL}) rotate(-30)`});
+      transform:`translate(${at},${LBL})`});
     t.textContent=label; g.appendChild(t);
   };
   bracket(FX0,xs[gi],R1TONE,"R1",1);
@@ -405,7 +433,7 @@ DRAW.fragment=drawFragment;
    id, because a port is a property of the drawing. */
 const PORTS={
   fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
-    return which==="L" ? [F.FX0,F.BMID] : [F.FX1,F.BMID]; },
+    return F.rot(which==="L" ? [F.FX0,F.BMID] : [F.FX1,F.BMID]); },
 };
 
 /* ============================================================
@@ -446,13 +474,16 @@ function drawPool(g,n){
   }
   /* the leaders first, so they run UNDER the ring and the hero rather than
      across them */
-  /* ONE LEADER PER SIDE, EACH IN ITS OWN COLOUR. The frustum is not decoration
-     here: its left leg runs to the cDNA end of the glyph and its right leg to
-     the barcode end, so the trail each read is about to take is already
-     coloured before either has left the pool. */
-  const mkLead=col=>g.appendChild(el("path",{fill:"none",stroke:col,"stroke-opacity":".7",
-    "stroke-width":"1.7","stroke-dasharray":"6 4.5","pointer-events":"none"}));
-  const lead1=mkLead(R1TONE), lead2=mkLead(R2TONE);
+  /* THE LEADERS ARE GREY, AND THEY ARE NOT A TRACK. They say "this fragment is
+     that read, magnified" — a magnification frustum, one leg to each end of the
+     glyph. Nothing travels them and nothing is routed along them, so they take
+     neither of the two read colours: those belong to the tracks, which start at
+     the glyph. Colouring these made the pool look like the head of two
+     pipelines, and it is the head of neither. */
+  const mkLead=()=>g.appendChild(el("path",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".45","stroke-width":"1.7","stroke-dasharray":"6 4.5",
+    "pointer-events":"none"}));
+  const lead1=mkLead(), lead2=mkLead();
   const ring=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
     "stroke-opacity":".55","stroke-width":"0.9"}));
   const h1=g.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
@@ -520,8 +551,8 @@ function drawPool(g,n){
          fragment — a magnification frustum rather than a single pointer */
       if(FRAGNODE){
         const F=fragGeom(FRAGNODE._px,FRAGNODE._py);
-        const a1=crossGroup(n,FRAGNODE,[F.FX0,F.BMID]);
-        const a2=crossGroup(n,FRAGNODE,[F.FX1,F.BMID]);
+        const a1=crossGroup(n,FRAGNODE,F.rot([F.FX0,F.BMID]));
+        const a2=crossGroup(n,FRAGNODE,F.rot([F.FX1,F.BMID]));
         lead1.setAttribute("d",
           `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${a1[0].toFixed(1)} ${a1[1].toFixed(1)}`);
         lead2.setAttribute("d",

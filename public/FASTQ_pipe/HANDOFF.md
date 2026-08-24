@@ -286,16 +286,29 @@ end. R2 sequences inward from that end — which is why it meets the UMI first
 and reaches round 1 last. Draw the molecule truthfully and the reversal
 explains itself. **Do not reorder the fragment to match the read.**
 
-**The diagram is not in the isometric, and it is the only thing on the page
-that is not.** Everything else belongs to the world and shears with it. This is
-a diagram *of* a molecule rather than a thing standing somewhere on the map,
-and a diagram read at −30° is a diagram read at −30°: it is laid out in plain
-screen axes, square to the reader, hanging under the pool with nothing beneath
-it. An earlier build painted it flat on a rectangular pad — correct by the
-map's grammar, and worse: the pad was a solid claiming the reads sit somewhere,
-and it turned the diagram to the map's own angle for no gain. **That is why
-this shape does not call `roofFrame()`**: there is no surface to lie on and no
-shear to take.
+**The diagram is turned to the map's diagonal, and that is a *rotation* rather
+than a shear.** Level, it was the one horizontal thing on a page where every
+other line runs at 30°, and it read as pasted on. Turned −30° it lies along the
+**world Y axis** — the same line the step names and the band title read at —
+while staying a rigid, undistorted drawing of a molecule.
+
+That is the difference from lying it on the ground plane, which is what
+`roofFrame()` would do: **a roof shears its contents and a circle on it becomes
+an ellipse. This does not.** It is square to the reader, just not level with the
+reader. So the shape still does not call `roofFrame()` — there is no surface to
+lie on and no shear to take.
+
+And the turn puts the molecule's own axis on the two lanes: the cDNA end points
+down-left, which is where R1 goes, and the barcode end up-right, which is where
+R2 goes. The departures stopped needing an explanation.
+
+Everything inside is laid out **level** and the group carries one `rotate()`, so
+the arithmetic in `fragGeom()` is still the arithmetic of a flat strip.
+`F.rot()` is for the two callers that need a *final* screen point — the ports,
+and the pool's leaders — because those live outside the rotated group. An
+earlier build painted the diagram on a rectangular pad, which was a solid
+claiming the reads sit somewhere; that is what `plinth:false` and this rotation
+between them replaced.
 
 The pool is drawn in screen space too, so a read stays a straight line of even
 weight however the ball turns.
@@ -356,8 +369,21 @@ rule the palette section states: a new distinction needs a different encoding,
 not a different colour.
 
 **The leaders are a magnification frustum, not a pointer** — two of them, from
-the ring's shoulders to the two ends of the diagram, and heavy enough to read as
-structure rather than as a stray hairline.
+the ring's shoulders to the two ends of the diagram, heavy enough to read as
+structure rather than as a stray hairline, and **grey**. They say "this fragment
+is that read, magnified". Nothing travels them and nothing is routed along them,
+so they take neither read colour: those belong to the tracks, which start at the
+glyph. Tinting them made the pool look like the head of two pipelines, and it is
+the head of neither.
+
+**There is no track between the pool and the fragment, and none into the pool.**
+A track with dots means material moving from one object to another, and neither
+is happening: the fragment is not somewhere the reads *go*, it is one of them
+drawn larger, and the leaders already say so. Nothing arrives at the pool
+either — the run is upstream, on `/pipeline`, and the page opens on the reads
+rather than fetching them. **Which means the first track on this map is the
+fork**, and that is correct: the first thing that actually moves is a read
+leaving for its own lane.
 
 **380 reads is 760 line segments a frame.** Each depth bucket is one `<path>`
 whose `d` is a run of subpaths, rebuilt as a single string and written with one
