@@ -505,12 +505,10 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    other is two reading orders on one page, and the only thing telling you
    which is which is the dots.
 
-   Now all four run the same way and the RETURN IS DRAWN. Each transition
-   leaves the end of one row, drops into the gutter between the bands, runs
-   back along the whole length, and rises into the start of the next: see
-   `ret` in EDGES and routeOf() in the view. The cost is three long tracks;
-   what it buys is that every row is read the same way, and the return is
-   visible as a return rather than disguised as a corner.
+   Now all four run the same way and NOTHING IS DRAWN BETWEEN THEM. The rows
+   are stacked in order and each reads the same way, so one feeding the next
+   is already said by the layout; a track saying it too was the longest line
+   on the map carrying the least information. A row ends, and the next begins.
 
    ROW 3 IS STILL LONGER THAN THE OTHERS, and that is honest. Four of its
    culls carry a chart on their own roof, and a chart needs room: they are 4.2
@@ -568,11 +566,24 @@ const EDGES = [
   {a:"m3",b:"LB",kind:"call"},{a:"LB",b:"PR",kind:"call"},
 
   /* the corners */
-  /* THE THREE ROW TRANSITIONS, drawn as returns. Each runs back along the
-     whole length of the row it is leaving — see routeOf(). */
-  {a:"FX",b:"B0",kind:"susp",ret:true},
-  {a:"SEQ",b:"FQ",kind:"read",ret:true},
-  {a:"FD",b:"s1",kind:"cell",ret:true},
+  /* THE THREE ROW TRANSITIONS ARE NOT DRAWN, and their absence is the point.
+
+     Every row reads left to right and the rows are stacked in order, so that
+     one feeds the next is a thing the layout already says. Drawing it as well
+     meant a track running the entire length of a row backwards, three times,
+     to state something no reader was in doubt about — and a track is the
+     loudest thing on this map after the objects themselves. The tracks that
+     are left all say something that is not obvious from position: which of
+     two forks a thing took, that a reference feeds a step it is not beside,
+     that a cull drops into the ledger.
+
+     So a row simply ends. The last object of one row leads nowhere and the
+     first object of the next is fed by nothing, and both read as "this is
+     where the row stops" rather than as a broken link.
+
+     If you put them back, they need routeOf() to route them round rather than
+     across — a straight run cuts diagonally through every object on the row
+     it is leaving. That routing is gone with them; git has it. */
 ];
 
 /* the four bands — what kind of work each row is.
@@ -821,7 +832,7 @@ const OVERVIEW = {
   title:"Aquarium to Atlas",
   sub:"four rows · seven landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
-<p>Four rows, and <mark>every one of them reads left to right</mark>. Where a row ends, the track does not turn a corner into the next one — it swings out past the end, drops into the gutter between the two bands, and runs all the way back before it rises into the first object of the row below. Watch a dot make that journey and you have the length of a row in the time it takes. Top row is oldest.</p>
+<p>Four rows, and <mark>every one of them reads left to right</mark>. Nothing is drawn between them: the rows are stacked in the order they happen, so one feeding the next is already said by where they sit. A row ends, and the next begins. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where. <mark>Four of the six culls carry their decision on their own roof</mark> — a curve with a cut on it, a distribution with a threshold, a cloud with a band through it, an embedding against a manufactured reference. Each is a chart drawn flat and laid onto the building by one matrix, so it can be read without orbiting it. The other two are off the row rather than gone: one folds into the knee, and the other applies only to hashed designs.</p>

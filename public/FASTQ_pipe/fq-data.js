@@ -53,14 +53,15 @@ const R3 = 0;
 const NODES = [
 
 /* The landmark, and the only object on this page drawn by a shape of this
-   page's own. It is a PAD with the read structure painted flat on it and the
-   pool of reads airborne above it — so n.h is the pad, not the top of the
-   ball. topOf() reads n.h for the label anchor and the occlusion silhouette,
-   and the reads are deliberately in neither: they are not part of the
-   building. See drawReads in fq-shapes.js. */
+   page's own. NOTHING ABOUT IT IS A SOLID: a pool of reads in the air and a
+   diagram of one read below it, and neither of those is a building. So n.h is
+   not the height of any object — it is the top of the whole composition, which
+   is what topOf() hands the label, so the name floats clear above the pool
+   instead of landing in it. The pool and the diagram are both placed from it.
+   See drawReads in fq-shapes.js. */
 {id:"FQ", key:"3", group:"③ FASTQ", groupMark:true, anchor:true, shape:"reads",
  lane:"r3",
- name:"FASTQ", x:1.0, y:R3, w:3.2, d:6.4, h:0.34,
+ name:"FASTQ", x:1.0, y:R3, w:2.6, d:2.6, h:8.7,
  sub:"paired-end · demultiplexed · usually gone", stat:"off-instance",
  does:"The first digital object, and the only genuinely shapeless one. Different libraries, different depths, no schema — and nothing in it yet says which barcode is a cell.",
  built:"For the worked example: sequenced 2026-03/04 and processed in the vendor's own cloud workdir, whose S3 path the run definition still points at. Demultiplexing is its own named step in some pipelines — Zebrahub records bcl2fastq v2.20.0.422 — and invisible in others.",

@@ -59,6 +59,7 @@ of its own and they all have to pass too. This map's are:
 node check-culls.mjs <url>     # the shared roofs load, draw, animate, stay put
 node check-edit.mjs  <url>     # floating labels, the double press, the ✕
 node check-pads.mjs  <url>     # the four row pads: move, resize, name
+node check-rows.mjs  <url>     # the rows stay unconnected, and all read one way
 ```
 
 Three things about this page in particular, each of which has already gone
@@ -84,28 +85,37 @@ node and `n.h` for everything else, and the chart is laid at `n.h` — so a work
 roof would put the label anchor and the occlusion silhouette 4% below its own
 chart.
 
-### Every row reads left to right, and the return is drawn
+### Every row reads left to right, and nothing is drawn between them
 
 The map used to snake: rows 2 and 4 ran right to left so each turned a corner
 into the next. That is efficient with space and asks the reader to change
 direction three times — a row that reads one way with a row under it reading
 the other is two reading orders on one page, and the only thing telling you
-which is which is the dots.
+which is which is the dots. All four now run the same way.
 
-All four now run the same way, and each transition is a **return**:
-`ret:true` on the edge, `returnRoute()` in the view. It swings out past the
-end of the row, drops into the gutter between the two bands, runs the whole
-length back, and rises into the first object of the next row. Six points, four
-corners, and the only part sharing a line with anything is the horizontal run,
-which is in the gutter where nothing else is.
+**And the row-to-row tracks are gone.** The rows are stacked in the order
+things happen and each reads the same way, so "this row feeds the next" is
+already said by where they sit. Drawing it as well meant a track running the
+entire length of a row backwards, three times, to state something no reader
+was in doubt about — and a track is the loudest thing on this map after the
+objects themselves.
 
-Run straight it would cut diagonally across every object on the row it is
-leaving; run as an ordinary elbow it would do the same with a corner in it.
+**Every track that is left says something position does not**: which of two
+forks a thing took, that a reference feeds a step it is not beside, that a
+cull drops into a ledger. A row-to-row track said nothing of the sort. So a
+row simply ends: the last object of one leads nowhere and the first object of
+the next is fed by nothing, and both read as "the row stops here" rather than
+as a broken link.
 
-**The dots follow it for free** — they are placed along the polyline by arc
-length — and that is the point of drawing the return rather than hiding it in
-a corner. The time a dot spends travelling back *is* the reader's cue that a
-row has ended.
+`check-rows.mjs` asserts it, because **this is easy to undo by accident**.
+Adding an edge is one line in the data file and the obvious line to add is the
+one joining two rows — it is what the prose describes. The check also asserts
+every lane still reads left to right: a lane quietly flipped back is a row
+reading against its neighbours with nothing on screen saying so.
+
+If they ever go back, they need routing that goes **around** rather than
+across — a straight run between two rows cuts diagonally through every object
+on the row it is leaving. git has the version that did.
 
 ### The four pads move, resize and carry their names
 

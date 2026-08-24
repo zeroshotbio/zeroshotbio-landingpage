@@ -187,41 +187,56 @@ const FRAG=[
 
 function drawReads(g,n){
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
-  const PAD=n.h;                     /* the pad IS the node: topOf(n) is here */
 
-  /* ---- the pad ----------------------------------------------------------
-     IT IS A RECTANGLE, AND THE LONG SIDE IS THE MOLECULE. A square footprint
-     projects to a diamond twice as wide as either of its diagonals, so a strip
-     laid along one of them sits in the middle of a large empty plate. The pad
-     is therefore long in d and narrow in w — n.d runs along the strip — and it
-     reads as a bench with one thing laid out on it.
+  /* ---- the hit target, and it is the only box here ----------------------
+     NOTHING ON THIS OBJECT IS A SOLID. There is no plinth block under the
+     drawing and no roof over it — a pool of reads and a diagram of one read,
+     and neither of those is a building. But a node still has to be clickable
+     at the projected centre of its own footprint, which is where a person aims
+     and where check-clicks.mjs presses, and here that point is empty air.
 
-     The top face is then painted again, slightly inset and darker, so the two
-     marks have something to be legible against: --keep and --accent on the
-     anchor skin's own top is two greys apart. Same trick as building() on the
-     culls page, same reason. */
-  paint(g,n.x,n.y,n.w,n.d,PAD,SKIN.anchor);
-  /* data-fixed MARKS THE ONE PART OF THIS OBJECT THAT DOES NOT MOVE ON ITS
-     OWN, and check-drawn.mjs measures it instead of the whole group. That
-     check asks "did this come back drawn where it was left", by comparing the
-     centre of a group's bounding box across a reload — which is a sound
-     question and a useless measurement here, because most of this group is a
-     turning ball of reads and its silhouette is a different shape every frame.
+     So the node's box is laid down as a transparent silhouette: painted, so it
+     takes pointer events, and invisible, so it draws nothing. It goes in FIRST,
+     behind everything, so it can never occlude a mark. */
+  const hw=n.w/2, hd=n.d/2;
+  g.appendChild(el("polygon",{fill:"transparent",stroke:"none",points:pts([
+    P(n.x-hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,n.h), P(n.x+hw,n.y+hd,n.h),
+    P(n.x+hw,n.y+hd,0),   P(n.x-hw,n.y+hd,0),   P(n.x-hw,n.y-hd,0)])}));
+
+  /* Everything below is placed from ONE point: where this node stands on the
+     ground. n.h is the top of the whole composition rather than the height of
+     any object — it is what topOf() hands the label, so the name floats clear
+     above the pool instead of landing in it. */
+  const [X0,Y0]=P(n.x,n.y,0);
+  const RB=n.w*0.69;                      /* ball radius, world units */
+  const ZC=n.h-RB-0.5;                    /* it hovers; nothing here sits */
+
+  /* ================= the fragment, SQUARE TO THE VIEWER ==================
+     THIS ONE THING IS NOT DRAWN IN THE ISOMETRIC. Every other mark on the page
+     belongs to the world and shears with it; this is a diagram OF a molecule
+     rather than a thing standing somewhere in the map, and a diagram read at
+     -30 degrees is a diagram read at -30 degrees. It is laid out in plain
+     screen axes, centred under the pool, and it is the reason drawReads does
+     not use roofFrame(): there is no surface to lie on and no shear to take.
+
+     It still lives inside the node's own group, so it moves when the node is
+     dragged and scales with the camera like everything else.
+
+     data-fixed MARKS THE PART THAT DOES NOT MOVE ON ITS OWN, and
+     check-drawn.mjs measures it instead of the whole group. That check asks
+     "did this come back drawn where it was left" by comparing the centre of a
+     group's bounding box across a reload — a sound question and a useless
+     measurement on a turning ball, whose box is a different shape every frame.
      It reported sixty units of drift on a node nothing had touched. */
-  g.appendChild(el("polygon",{points:faces(n.x,n.y,n.w*0.97,n.d*0.985,PAD).top,
-    "data-fixed":"1",
-    fill:"var(--t-top)","fill-opacity":".92",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".45"}));
+  const card=g.appendChild(el("g",{"data-fixed":"1"}));
 
-  /* ================= the fragment, painted flat on the pad ================
-     roofFrame is square by construction and takes its side from n.w. What is
-     wanted here is a chart as long as the pad, so it is handed the pad's OWN
-     long side — the frame is a projection helper and does not care which
-     field the number came from. Local +x then runs along the molecule, up and
-     to the right at -30 degrees, like every other string on the map. */
-  const CW=176, F=roofFrame(g,{x:n.x,y:n.y,w:n.d},PAD,CW);
-  const FX0=5, FX1=171, FW=FX1-FX0, BY=84, BH=11, BMID=BY+BH/2;
-  const SEG=8, SUB=6.4, HEAD=9;
+  const FW=300, FX0=X0-FW/2, FX1=X0+FW/2;
+  /* laid out downward from just under the pool, so raising the ball carries
+     the diagram with it rather than leaving it behind */
+  const CTOP=Y0-(ZC-RB)*S*CZ+17;
+  const LBL=CTOP+12, YB=CTOP+18, BT=CTOP+26, BH=13, BB=BT+BH, BMID=BT+BH/2;
+  const ROW1=BB+19, ROW2=ROW1+16;
+  const SEG=10, SUB=8.5, HEAD=12;
 
   const total=FRAG.reduce((s,x)=>s+x.w,0);
   const wOf=s=>(s.w/total)*FW;
@@ -229,28 +244,28 @@ function drawReads(g,n){
   FRAG.forEach(s=>{ xs.push(cx); cx+=wOf(s); });
 
   const text=(str,x,y,size,fill,weight)=>{
-    const t=el("text",{x:0,y:0,"text-anchor":"middle","font-size":size,
+    const t=el("text",{x,y,"text-anchor":"middle","font-size":size,
       "font-family":MONO,"letter-spacing":(size*0.02).toFixed(2),fill,
-      "font-weight":weight||"400",transform:`translate(${x},${y})`});
-    t.textContent=str; F.g.appendChild(t); return t;
+      "font-weight":weight||"400"});
+    t.textContent=str; card.appendChild(t); return t;
   };
-  const tick=(x,y0,y1,col)=>F.g.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
+  const tick=(x,y0,y1,col)=>card.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
     stroke:col,"stroke-width":".8","stroke-opacity":".55"}));
 
   FRAG.forEach((s,i)=>{
     const x=xs[i], w=wOf(s), mid=x+w/2;
     if(s.k==="gap"){
       /* the unsequenced middle. An outline rather than a block, because there
-         is nothing in it — and its name goes on the second label row, where it
-         has the room its fifteen characters need. */
-      F.g.appendChild(el("rect",{x,y:BY,width:w,height:BH,fill:"none",
+         is nothing in it — and its name goes on the second label row, where
+         its fifteen characters have the room they need. */
+      card.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
         stroke:"var(--fg3)","stroke-width":"1","stroke-dasharray":"3.4 3.4"}));
-      tick(mid,BY+BH,116,"var(--fg3)");
-      text(s.lab,mid,122,SUB,"var(--fg3)");
+      tick(mid,BB,ROW2-9,"var(--fg3)");
+      text(s.lab,mid,ROW2,SUB,"var(--fg3)");
       return;
     }
     if(s.tone==="link"){
-      F.g.appendChild(el("rect",{x,y:BY+2.2,width:w-0.6,height:BH-4.4,
+      card.appendChild(el("rect",{x,y:BT+2.6,width:w-0.7,height:BH-5.2,
         fill:"var(--fg3)","fill-opacity":".30"}));
       return;
     }
@@ -258,46 +273,45 @@ function drawReads(g,n){
       /* SAME COLOUR AS A BARCODE, DIFFERENT ENCODING. The UMI is not a
          barcode — it names the molecule, not the cell — and this map does not
          get a fourth hue to say so. Outline against fill says it instead.
-         Its label goes ABOVE the bar: below, it would land on BC3's. */
-      F.g.appendChild(el("rect",{x,y:BY,width:w-0.6,height:BH,
+         Its label drops to the second row: on the first it would sit on BC3's,
+         because nothing separates the two on the molecule. */
+      card.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,
         fill:"var(--accent)","fill-opacity":".16",
         stroke:"var(--accent)","stroke-width":"1.2"}));
-      tick(mid,BY-3,BY,"var(--accent)");
-      text(s.lab,mid,BY-5.5,SEG,"var(--accent)","600");
+      tick(mid,BB,ROW2-9,"var(--accent)");
+      text(s.lab,mid,ROW2,SEG,"var(--accent)","600");
       return;
     }
     const col=s.tone==="keep"?"var(--keep)":"var(--accent)";
-    F.g.appendChild(el("rect",{x,y:BY,width:w-0.6,height:BH,fill:col,"fill-opacity":".9"}));
+    card.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,fill:col,"fill-opacity":".9"}));
     if(s.tone==="keep") text(s.lab,mid,BMID+SEG*0.36,SEG,"var(--bg)","600");
-    else { tick(mid,BY+BH,103,col); text(s.lab,mid,109,SEG,col,"600"); }
+    else { tick(mid,BB,ROW1-9,col); text(s.lab,mid,ROW1,SEG,col,"600"); }
   });
 
   /* ---- the two reads, bracketed over what each one covers ---------------
      R1 runs into the insert from the cDNA end; R2 runs inward from the far
      end, which is why its arrow points back along the molecule. The gap
-     between the brackets is the part neither read reaches. */
+     between the brackets is the part neither read reaches.
+
+     THE ARROWHEAD SITS 15% IN FROM THE END IT POINTS AT, not on it. On the end
+     it reads as a terminus — the place the read stops — and it is the opposite:
+     the direction the read travels. Set back inside its own bracket, it is
+     unmistakably a heading. */
   const gi=FRAG.findIndex(s=>s.k==="gap");
   const bracket=(xa,xb,col,label,dir)=>{
-    const yb=BY-17;
-    F.g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.1","stroke-opacity":".9",
-      d:`M ${xa} ${yb+4} L ${xa} ${yb} L ${xb} ${yb} L ${xb} ${yb+4}`}));
-    const a=2.4, ax=dir>0?xb:xa;
-    F.g.appendChild(el("polygon",{fill:col,
-      points:`${ax+dir*a*1.6},${yb} ${ax},${yb-a} ${ax},${yb+a}`}));
-    text(label,(xa+xb)/2,yb-4.5,HEAD,col,"600");
+    card.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.1","stroke-opacity":".9",
+      d:`M ${xa} ${YB+5} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+5}`}));
+    const a=3.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
+    card.appendChild(el("polygon",{fill:col,
+      points:`${ax+dir*a*1.7},${YB} ${ax},${YB-a} ${ax},${YB+a}`}));
+    text(label,(xa+xb)/2,LBL,HEAD,col,"600");
   };
   bracket(FX0,xs[gi],"var(--keep)","R1",1);
   bracket(xs[gi]+wOf(FRAG[gi]),FX1,"var(--accent)","R2",-1);
 
-  /* ================= the pool, airborne over the pad ====================== */
-  /* Screen-space, so a read stays a straight line of even weight however the
-     ball turns. Everything below is drawn into `g` rather than into F.g. */
-  const RB=n.d*0.34;                      /* ball radius, world units */
-  /* HIGH ENOUGH TO BE IN THE AIR. Lower, and the ball's lower half lands on
-     the pad's far half and the two read as one object — which is the opposite
-     of what the drawing is for. This clears the pad's back corner, and clears
-     the node's own name, which is anchored at that corner. */
-  const ZC=PAD+RB+3.2;
+  /* ================= the pool, airborne over the diagram ==================
+     Screen-space, so a read stays a straight line of even weight however the
+     ball turns. Everything below is drawn into `g` rather than into `card`. */
   const UU=RB*S*C30/32;                   /* the original's unit: R was 32 of them */
 
   const NB=4, pools=[];
@@ -317,8 +331,6 @@ function drawReads(g,n){
     "stroke-opacity":".55","stroke-width":"0.9"}));
   const h1=g.appendChild(el("line",{stroke:"var(--keep)","stroke-linecap":"butt"}));
   const h2=g.appendChild(el("line",{stroke:"var(--accent)","stroke-linecap":"butt"}));
-
-  const [LX,LY]=F.toScreen(FX0,BMID), [RX,RY]=F.toScreen(FX1,BMID);
 
   let T=0;
   const seen=[];
@@ -351,11 +363,10 @@ function drawReads(g,n){
       const b=Math.min(NB-1,Math.floor(s.d*NB)), sc=pools[b].sc;
       const a=s.rd.a0+T*s.rd.spin, ca=Math.cos(a), sa=Math.sin(a);
       const L=4.9*UU*sc, gp=1.35*UU*sc;
-      const ax=s.px+ca*(L+gp), ay=s.py+sa*(L+gp);
-      const bx=s.px+ca*gp,     by=s.py+sa*gp;
       pools[b].d+="M"+(s.px-ca*(L+gp)).toFixed(1)+" "+(s.py-sa*(L+gp)).toFixed(1)+
                   "L"+(s.px-ca*gp).toFixed(1)+" "+(s.py-sa*gp).toFixed(1)+
-                  "M"+bx.toFixed(1)+" "+by.toFixed(1)+"L"+ax.toFixed(1)+" "+ay.toFixed(1);
+                  "M"+(s.px+ca*gp).toFixed(1)+" "+(s.py+sa*gp).toFixed(1)+
+                  "L"+(s.px+ca*(L+gp)).toFixed(1)+" "+(s.py+sa*(L+gp)).toFixed(1);
     }
     for(let b=0;b<NB;b++) pools[b].node.setAttribute("d",pools[b].d||"M0 0");
 
@@ -376,8 +387,8 @@ function drawReads(g,n){
       /* two leaders, off the ring's shoulders to the two ends of the opened
          fragment — a magnification frustum rather than a single pointer */
       lead.setAttribute("d",
-        `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${LX.toFixed(1)} ${LY.toFixed(1)}`+
-        `M${(hero.px+R).toFixed(1)} ${hero.py.toFixed(1)}L${RX.toFixed(1)} ${RY.toFixed(1)}`);
+        `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${FX0.toFixed(1)} ${BMID.toFixed(1)}`+
+        `M${(hero.px+R).toFixed(1)} ${hero.py.toFixed(1)}L${FX1.toFixed(1)} ${BMID.toFixed(1)}`);
     }
   }
   render();
@@ -386,5 +397,5 @@ function drawReads(g,n){
      that throws is dropped without taking the map with it. */
   TICKERS.push(dt=>{ T+=dt; render(); });
 }
-DRAW.reads=drawReads;
 
+DRAW.reads=drawReads;

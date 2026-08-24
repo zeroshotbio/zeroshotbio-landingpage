@@ -324,35 +324,11 @@ function makeGeom(pp){
 /* One <g> per edge so a route can be redrawn on its own when the editor moves
    a node — the number of elbows changes when two nodes come level, so the run
    is rebuilt rather than patched. */
-/* THE RETURN, and it is the only routing on this map that is not an elbow.
-
-   Every row reads left to right, so the end of one row is a long way from the
-   start of the next and the track between them has to travel. Run straight,
-   it would cut diagonally across every object on the row it is leaving. Run
-   as an ordinary elbow, it would do the same thing with a corner in it.
-
-   So it goes round: OUT past the end of the row, DOWN into the gutter between
-   the two bands, BACK along the whole length, and UP into the first object of
-   the next row. Six points, four corners, and the only part of it that shares
-   a line with anything is the horizontal run — which is in the gutter, where
-   nothing else is.
-
-   The dots follow it for free: they are placed along the polyline by arc
-   length, so a longer track simply means a longer journey. That is the point
-   of drawing the return rather than hiding it in a corner — the time a dot
-   spends travelling back is the reader's cue that a row has ended. */
-const RET_LEAD=2.2;                    /* how far past the row's end it swings */
-function returnRoute(A,B){
-  const lead = B.x < A.x ? RET_LEAD : -RET_LEAD;
-  const gy = (A.y+B.y)/2;              /* the gutter between the two bands */
-  return [[A.x,A.y],[A.x+lead,A.y],[A.x+lead,gy],[B.x-lead,gy],[B.x-lead,B.y],[B.x,B.y]];
-}
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
   /* straight:true forces a direct run even across lanes — for a fork or a
      merge, where the elbow reads as a detour rather than as routing */
-  const raw = e.ret ? returnRoute(A,B)
-    : (e.straight || Math.abs(A.y-B.y)<0.05)
+  const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
   return raw.map(p=>P(p[0],p[1],0.02));
