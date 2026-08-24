@@ -741,6 +741,21 @@ svg.addEventListener("wheel",e=>{
    READER
    ============================================================ */
 const read=document.getElementById("read");
+/* THE READER OPENS ITSELF WHEN YOU PICK SOMETHING, IF IT WAS TUCKED AWAY.
+
+   Both side columns fold shut, and a folded reader is the natural way to read
+   the map — the drawing gets the whole window. But then clicking a building
+   filled a panel nobody could see, and the map answered a question silently
+   into a closed drawer. So a selection reveals the reader, and clearing the
+   selection folds it back.
+
+   ONLY IF WE WERE THE ONES WHO OPENED IT. If the reader was already open, a
+   click on empty space must not shut it — that would take away a column the
+   reader deliberately left up. The `feature` below tracks that; these two are
+   the handles it fills in, and they are no-ops until it does, so a page that
+   ships without the side columns still works. */
+let revealReader=()=>{}, restoreReader=()=>{};
+
 let pinned=null, current=null;
 const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
 
@@ -816,11 +831,14 @@ function show(id,pin){
   if(pin) pinned = pinned===id ? null : id;
   current = pinned || id;
   current?renderNode(current):renderOverview(); paintIndex();
+  /* a hover is a preview and does not disturb the columns; only a click,
+     which is the thing that means "tell me about this one" */
+  if(pin){ if(pinned) revealReader(); else restoreReader(); }
 }
 /* Hovering is a preview and nothing more. Only a click pins, and only a click
    on empty space or on the pinned item releases it. */
 function unhover(){ if(pinned) return; current=null; renderOverview(); paintIndex(); }
-function release(){ pinned=null; current=null; renderOverview(); paintIndex(); }
+function release(){ pinned=null; current=null; renderOverview(); paintIndex(); restoreReader(); }
 svg.addEventListener("mouseleave",unhover);
 
 const aside=document.getElementById("aside");
@@ -920,7 +938,23 @@ svg.addEventListener("click",()=>{ if(moved<8 && !editing) release(); });
    with it — including this loop. The symptom is a map that draws, lists and
    highlights perfectly and then sits frozen.
    ============================================================ */
+/* FIT TWICE, AND THE SECOND ONE IS THE ONE THAT COUNTS.
+
+   The first fit runs before anything has moved. Several things on this map
+   place themselves in their first frame rather than at build time — a floating
+   annotation is re-placed from its shape every frame, a ticker's marks start
+   at nothing and swell — so the content box measured at t=0 is not the content
+   box a second later, and the map opened a few percent off the fit the button
+   gives. Small, but it is the difference between "this is the view" and "this
+   is nearly the view", and the button was the only way to get the first one.
+
+   The second fit is deferred to the frame after the tickers have run once. It
+   is skipped if the reader has already been touched, so it can never yank the
+   camera out from under somebody who clicked straight into a station. */
 placeDots(0); fit(); last=performance.now(); requestAnimationFrame(frame);
+requestAnimationFrame(()=>requestAnimationFrame(()=>{
+  if(!pinned && !current && !anim) fit();
+}));
 
 /* Each block below is a feature, not a dependency. One that cannot find what
    it needs says so and stands down; the map keeps working. */
@@ -982,7 +1016,30 @@ feature("side columns",function(){
     p.arrow.textContent = shut ? p.shut : "";
     p.node.setAttribute("aria-label",(shut?"Show ":"Hide ")+(p.side>0?"the index":"the reader"));
   }
+  /* ---- opening the reader on a selection, and only then ----------------
+     `auto` is true only while the reader is open BECAUSE something is
+     selected. A person opening or closing it themselves clears the flag, so
+     from that moment the column is theirs and a click on empty space leaves
+     it exactly where they put it.
+
+     Neither of these calls store(): the shut state is a preference, and a
+     selection is not the user changing their mind about it. Fold the reader
+     away, click through six stations, click on nothing, reload — it is still
+     folded away. */
+  const R=P_.find(p=>p.grip==="gripR");
+  let auto=false;
+  revealReader=()=>{
+    if(!R || !R.node || R.w) return;               // already open: leave it
+    R.w = (typeof saved.gripR_last==="number" && saved.gripR_last) || R.def;
+    auto=true; apply(R);
+  };
+  restoreReader=()=>{
+    if(!R || !R.node || !auto) return;             // it was open before us
+    R.w=0; auto=false; apply(R);
+  };
+
   function store(){
+    auto=false;                                    // a deliberate change: it is theirs now
     const out={};
     P_.forEach(p=>{ out[p.grip]=p.w; if(p.w) out[p.grip+"_last"]=p.w; });
     saved=Object.assign(saved,out);
