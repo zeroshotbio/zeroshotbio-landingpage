@@ -85,6 +85,37 @@ node and `n.h` for everything else, and the chart is laid at `n.h` — so a work
 roof would put the label anchor and the occlusion silhouette 4% below its own
 chart.
 
+### Five rows: the bioinformatics row is two rows
+
+`R1..R5`. Rows 3 and 4 were one row and splitting them is the point of the
+current arrangement: together they were nineteen objects, a third of the map on
+one line, doing two different kinds of work. One turns reads into a table of
+every barcode against every gene; the other decides which of those barcodes was
+a cell. Each half already has a page of its own built from this data —
+`/FASTQ_pipe` and `/bioinformatics_pipe` — precisely because each is a subject
+on its own, and the big map now says the same thing.
+
+| | | |
+|---|---|---|
+| **row 3** | *Reads to a matrix* | FASTQ → barcode calling, alignment, UMI collapse → **unfiltered matrix** |
+| **row 4** | *The cull* | the four roofed culls → **filtered matrix**, with the attrition band behind them |
+
+**The unfiltered matrix ends row 3 rather than beginning row 4.** A node can
+only be in one place, and the row that *produces* it is the row it belongs to —
+row 3 is named for what it delivers. Row 4 begins with the first cull and reads
+as acting on the object sitting directly above its start, which is what the
+stacking is for. There is no `UD → c1` edge for the same reason there is no
+edge between any two rows.
+
+**The attrition band spans `c1 → FD`, not `UD → FD`.** A band cannot reach
+across a row, and the population it counts is the one arriving at the first
+cull, which is the same population.
+
+If you split or merge a row, four things move together: `LANES`, `ROWS`,
+`BANDS`' name list and `BAND_X`. `ROWS` is what decides whether a node's name
+emits up-right or down-left, so a row missing from it silently sends every
+side structure's label the wrong way.
+
 ### Every row reads left to right, and nothing is drawn between them
 
 The map used to snake: rows 2 and 4 ran right to left so each turned a corner

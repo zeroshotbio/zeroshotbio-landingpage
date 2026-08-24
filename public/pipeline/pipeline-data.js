@@ -47,16 +47,35 @@
    ============================================================ */
 
 /* ============================================================
-   FOUR ROWS, SNAKING. Odd rows run one way, even rows the other,
-   turning a corner at the end of each. Row gaps are equalised by eye,
-   not by grid units, because rows 3 and 4 carry side structures.
-     row 1  y= 0   the fish          →
-     row 2  y=12   the chemistry     ←
-     row 3  y=24   the matrix        →
-     row 4  y=36   the labelling     ←
-   x values below are seed order only — layoutRows() recomputes them.
+   FIVE ROWS, ALL READING LEFT TO RIGHT. Nothing is drawn between them:
+   they are stacked in the order things happen, so one feeding the next is
+   already said by where they sit.
+
+     row 1  the fish and the compounds
+     row 2  the chemistry
+     row 3  READS TO A MATRIX      FASTQ  ->  unfiltered matrix
+     row 4  THE CULL               the four culls  ->  filtered matrix
+     row 5  the labelling
+
+   ROWS 3 AND 4 WERE ONE ROW, and splitting them is the point of this
+   arrangement. Together they were nineteen objects — a third of the map on a
+   single line — and they are two different kinds of work: one turns reads
+   into a table of every barcode against every gene, the other decides which
+   of those barcodes was a cell. Each half already has its own page built from
+   this data (/FASTQ_pipe and /bioinformatics_pipe) precisely because each is
+   a subject on its own, and the big map now says the same thing.
+
+   THE UNFILTERED MATRIX ENDS ROW 3 rather than beginning row 4. A node can
+   only be in one place, and the row that produces it is the row it belongs
+   to: row 3 is named for what it delivers. Row 4 begins with the first cull
+   and reads as acting on the object sitting directly above its start, which
+   is what the stacking is for.
+
+   Row gaps are equalised by eye, not by grid units, because rows 3, 4 and 5
+   carry side structures. x values below are seed order only — layoutRows()
+   recomputes them.
    ============================================================ */
-const R1=0, R2=13.6, R3=27.2, R4=40.8;
+const R1=0, R2=13.6, R3=27.2, R4=40.8, R5=54.4;
 
 const NODES = [
 
@@ -285,7 +304,7 @@ const NODES = [
  cond:"Its absence is why the funnel on this row has no numbers. ChemFish states the rule plainly — do not infer the missing cells from the filtered object, the pre-QC data is not available. What survives for the worked example is a ratio, not a count: 86.1% of transcripts and 86.4% of reads fell inside called cells, so the discarded ambient tail is roughly a seventh of the signal. That tail is also the only place treatment-correlated contamination would show up, and it is gone."},
 
 {id:"c1", key:"D2", group:"The cull", shape:"kneeroof", hatch:true, modelled:true,
- name:"Knee", x:15.4, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ name:"Knee", x:15.4, y:R4, lane:"r4", w:4.2, d:4.2, h:0.52,
  sub:"hard transcript minimum at the steepest point of the barcode-rank curve, per sample", tier:"physics",
  pipelineName:"Cell or background",
  does:"Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
@@ -309,20 +328,20 @@ const NODES = [
    So they hang off the culls that absorb them, and a reader who wants either
    claim still finds it exactly where it was. */
 {id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, follow:{a:"c1",dx:-0.35},
- name:"Depth floor", x:16.6, y:R3-2.9, w:0.62, d:0.62, h:0.52,
+ name:"Depth floor", x:16.6, y:R4-2.9, w:0.62, d:0.62, h:0.52,
  sub:"folds into the knee · 100 UMI to 2,000, depending who you ask", tier:"physics",
  does:"Removes barcodes carrying too few molecules or too few genes to support any statement about cell type.",
  built:"The corpus spread is nearly two orders of magnitude and every value is defensible in its own context: 100–250 UMI set per experiment (ZSCAPE); 80 stated and ~100 realised (ChemFish); more than 200 detected genes (DanioCell); a total-count window of 2,000–20,000 (Zebrahub); 500 transcripts and 200 genes as published (ZCL2); a per-sample fitted knee of 232–1,370 (MegaFin CP01).",
  cond:"Two failures worth carrying. ZCL2's released atlas does not obey its own published floor at all — minimum 63 UMI and 27 genes against a stated 500 and 200, so the deposit is pre-QC. And the worked example retains cells down to 294 transcripts, below split-pipe's own 670 knee estimate, while its cell count is exactly split-pipe's number_of_cells — which suggests the vendor's QC chain was applied to the analysis object and not to what was delivered."},
 {id:"c3", key:"D4", group:"The cull", shape:"mitoroof", hatch:true, modelled:true,
- name:"Mito %", x:17.8, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ name:"Mito %", x:17.8, y:R4, lane:"r4", w:4.2, d:4.2, h:0.52,
  sub:"cells above median + 3 MAD of mitochondrial fraction, per sample", tier:"taste",
  pipelineName:"Mitochondrial fraction",
  does:"Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
  built:"ZSCAPE cuts above 25%, Zebrahub above 15%, DanioCell above 10%, Parse Trailmaker at a per-sample absolute threshold of 0.50–1.51%, CellOracle not at all.",
  cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally."},
 {id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, modelled:true,
- name:"Complexity", x:19.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ name:"Complexity", x:19.0, y:R4, lane:"r4", w:4.2, d:4.2, h:0.52,
  /* the pair land in the free lane between this row's band and row 4's */
  annNudge:{under:[-40,-150], over:[80,10]},
  sub:"both tails of the genes-against-transcripts fit: under-amplified and over-amplified", tier:"taste",
@@ -331,13 +350,13 @@ const NODES = [
  built:"Parse Trailmaker fits a spline per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate. ZSCAPE removes cells more than 4 SD from the mean UMI. DanioCell removes the top 0.5% by detected features.",
  cond:"Two problems. It runs before the doublet scorer and removes much of what the doublet scorer exists to find, so the two are partly redundant and their order decides which gets the credit — and the order genuinely differs between stacks. And DanioCell's version is untestable after the fact: the top 0.5% of an already-filtered distribution is 0.5% by construction, so the rule cannot be verified against the deposit."},
 {id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, follow:{a:"c5",dx:0.35},
- name:"Sample demultiplex", x:20.0, y:R3-2.9, w:0.62, d:0.62, h:0.46,
+ name:"Sample demultiplex", x:20.0, y:R4-2.9, w:0.62, d:0.62, h:0.46,
  sub:"hashed designs only · not this chemistry", tier:"taste",
  does:"In multiplexed designs, assigns each cell to the embryo or sample it came from by its hash oligo, and discards cells that cannot be confidently assigned. An entire cull stage that exists or does not exist depending on a choice made two rows up.",
  built:"ZSCAPE uses sci-Plex hashing with an enrichment ratio above 3 for the timeseries rounds and above 5 for perturbations, cutoffs set manually from the ratio distribution. ChemFish uses the same chemistry at ratio ≥ 2.5 with total corrected hash UMI above 5. DanioCell uses MULTI-seq: a barcode is negative below 20 UMIs, a singlet needs SNR ≥ 5, and cells called doublets by either approach are removed. Combinatorial designs skip this entirely — the barcode already is the sample.",
  cond:"The clearest case in the corpus of a published threshold that was not applied. ChemFish's round-two screen was released without its stated hash filters: 65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor, while round one matches every published threshold exactly. Two rounds of one experiment, one filtered and one not, and nothing in the object says which is which."},
 {id:"c5", key:"D6", group:"The cull", shape:"doubletroof", hatch:true, modelled:true,
- name:"Doublets", x:21.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ name:"Doublets", x:21.0, y:R4, lane:"r4", w:4.2, d:4.2, h:0.52,
  annNudge:{synth:[10,120]},
  sub:"scDblFinder, thresholded against the expected collision rate", tier:"taste",
  does:"Scores each barcode for looking like two cells and removes those above a threshold.",
@@ -358,128 +377,132 @@ const NODES = [
    because the per-barcode ledger the node below describes does not exist. */
 {id:"RIVER", key:"D0", group:"The cull", shape:"attritionstaircase",
  scenery:true, modelled:true,
- name:"Attrition", x:24, y:R3-7.4, w:1.6, d:1.6, h:0, lab:{dy:0.35},
- from:"UD", to:"FD", yBase:R3-2.6, width:4.6, z:0.002, opacity:0.8,
+ name:"Attrition", x:24, y:R4-7.4, w:1.6, d:1.6, h:0, lab:{dy:0.35},
+ /* it spans the culls whose arithmetic it is. It used to start at the
+    unfiltered matrix, which is a row above it now — a band cannot reach
+    across a row, and the population it counts is the one arriving at the
+    first cull, which is the same population. */
+ from:"c1", to:"FD", yBase:R4-2.6, width:4.6, z:0.002, opacity:0.8,
  sub:"every barcode that ever appeared, and what each of the four takes",
  does:"The four culls' arithmetic, drawn to scale on the ground behind the row. One straight edge gives the run a datum; the opposite edge staircases down, one riser per cull, and a tributary peels off each riser and drifts clear. Every step is then read against one unmoving line rather than against a shape changing on both sides at once, which is what an earlier symmetric version got wrong — neither of its edges held still, so the eye had nothing to measure against.",
  built:"Drawn flat in two dimensions and laid onto the ground plane by one transform, the same trick the roofs use. Counts come from applying the culls in order, each over what the one before left, because subtracting four independent percentages double-counts every barcode two of them agree about — and two of them do: a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so complexity reaches it before the scorer does.",
  cond:"One denominator throughout — every barcode that ever appeared — so nothing on this band is a ratio between two different objects. THE KNEE IS THE FIRST RISER AND IT TAKES 96.7%, which makes the band a cliff followed by three hairlines. That is the finding rather than a drawing problem: on this dataset the knee is very nearly the whole cull and the three after it are a rounding. What keeps the small ones readable is that each station's own figure is a share of what REACHED it, so mito reads −5.8% whether its riser is forty pixels or one, and a thin tributary flares to a floor width so a small cull is still visibly a cull. Exactly one of the 468 barcodes past the knee is not a cell in the simulation, so the population the last three act on is the called cells in all but that one. And the counts are modelled — what these culls would take from the simulated population, not a record of what any of them took, because no per-barcode ledger exists here or anywhere else in the corpus."},
 
-{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+2.6, w:1.2, d:1.2, h:0.3,
+{id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R4+2.6, w:1.2, d:1.2, h:0.3,
  sub:"one row per dropped barcode",
  does:"What the Sankey should be drawn from: which stage killed which barcode, and why.",
  built:"Node and link labels would use the plain-English phrasings on this row, never the internal step names.",
  cond:"It does not exist here, and it does not exist anywhere else in the corpus either, which is the more interesting fact. Vendors emit settings, not tallies. Authors publish thresholds, not ledgers. CellOracle reports a comparison at 57,175 cells against a deposit of 72,870 — roughly 21.5% removed by QC and ambient-cluster steps that are never numerically specified. Every retention figure on this row is therefore a ratio between two objects, never a sum over stages."},
 
 {id:"FD", key:"5", group:"⑤ Filtered matrix", groupMark:true, anchor:true, shape:"matrix",
- lane:"r3",
- name:"Filtered matrix", x:22.0, y:R3, w:1.55, d:1.55, h:1.55, cells:6, fill:0.62,
+ lane:"r4",
+ name:"Filtered matrix", x:22.0, y:R4, w:1.55, d:1.55, h:1.55, cells:6, fill:0.62,
  sub:"94,616 × 32,520 · median 3,198 UMI / 1,618 genes", stat:"the cells, as asserted",
  does:"The same gene space, a fraction of the barcodes, dense where the first cube was empty. Everything here has been asserted to be a cell.",
  built:"For the worked example: 94,616 cells × 32,520 genes, raw integer counts, no layers and no embedding. Median 3,198 transcripts and 1,618 genes per cell against a design target above 4,000.",
  cond:"The governing rule for this object is corpus principle 4 — a threshold printed in Methods is never assumed to have been applied to the deposited data. Tested against their own releases, four datasets here disagree with their own Methods: ChemFish shipped one screen without its hash filters, ZCL2 shipped a pre-QC atlas with a mitochondrial filter matching zero genes, CellOracle shipped an undocumented 500-UMI floor and no mitochondrial filter, and the worked example keeps cells below its own knee. DanioCell is the one that verifies exactly — and even there a later format conversion broke the guarantee."},
 
 /* ================= ROW 4 — THE LABELLING ================= */
-{id:"s1", key:"D8", group:"Finishing", shape:"tile", name:"Stamp .obs", x:0.7, y:R4, lane:"r4", w:0.68, d:0.68, h:0.4,
+{id:"s1", key:"D8", group:"Finishing", shape:"tile", name:"Stamp .obs", x:0.7, y:R5, lane:"r5", w:0.68, d:0.68, h:0.4,
  sub:"sample · well · perturbation",
  does:"Joins the sample metadata onto the cells so each one knows what it was treated with.",
  built:"Fourteen obs columns for the worked example: bc1/bc2/bc3_well, cell_id, cell_type, gene_count, mread_count, parse_sample, perturbation, replicate, sample, species, sublibrary, tscp_count.",
  cond:"Inherits the misspelled compound and the absent dose. cell_type is written here too, and it is the string 'unknown' for all 94,616 cells — it stays that way to the end of this map. Principle 6 governs from here on: original gene ids, native labels, stage definitions and perturbation identities are preserved alongside any canonical mapping, never replaced by it."},
-{id:"s2", key:"D9", group:"Finishing", shape:"tile", name:"Sibling note", x:2.2, y:R4, lane:"r4", w:0.68, d:0.68, h:0.4,
+{id:"s2", key:"D9", group:"Finishing", shape:"tile", name:"Sibling note", x:2.2, y:R5, lane:"r5", w:0.68, d:0.68, h:0.4,
  sub:"versions, inputs, hashes",
  does:"Writes the provenance that travels beside the object.",
  built:"Carried in uns for the worked example: dataset MiniFIN-100k, genome GRcZ11, kit Evercode WT, pipeline split-pipe v1.7.1, run_date 2026-04-08, source Parse Biosciences.",
  cond:"Six fields, all true, and thinner than it looks — no Ensembl release, no reference checksum, no QC settings, no cell-calling parameters, no intron flag. Everything the reference and cull nodes on the row above had to reconstruct by hand is exactly what these six fields do not say. The corpus standard is stricter: every derived object must carry a reproducible build script and a uns['provenance'] stamp, and superseded objects are retained rather than overwritten."},
 
 {id:"H5", key:"6", group:"⑥ Published object", groupMark:true, anchor:true, shape:"monolith",
- lane:"r4",
- name:"Published object", x:4.6, y:R4, w:2.0, d:2.0, h:1.9,
+ lane:"r5",
+ name:"Published object", x:4.6, y:R5, w:2.0, d:2.0, h:1.9,
  sub:"counts, metadata, provenance · no biology", stat:"complete and mute",
  does:"Counts, treatment metadata, provenance. Complete as a measurement and completely mute about biology — nothing in it says what any of these cells are.",
  built:"For the worked example: minifin_filtered.h5ad, 454 MiB, raw integer counts, symbol-native var_names with ENSDARG kept alongside in var['id'].",
  cond:"Two traps live in objects like this. The gene namespace is rarely stated and frequently assumed wrong: the worked example is symbol-native where MegaFin is ENSDARG-native, and Zebrahub was recorded in our own docs as symbols-needing-mapping when ENSDARG ids were in var['gene_ids'] the whole time. And QC columns go stale through conversion — DanioCell's obs carries nUMI, nGene, percent.mt and percent.ribo describing a 36,250-feature universe while X holds 30,121, so a 10% mitochondrial filter passes on obs while the matrix itself reaches 12.86%. A published QC guarantee, broken by a format change."},
-{id:"H5b", key:"E1", group:"⑥ Published object", shape:"ghost", follow:{a:"s2",b:"H5"}, name:"Second arm — not built", x:3.4, y:R4-2.5, w:1.2, d:1.2, h:1.2,
+{id:"H5b", key:"E1", group:"⑥ Published object", shape:"ghost", follow:{a:"s2",b:"H5"}, name:"Second arm — not built", x:3.4, y:R5-2.5, w:1.2, d:1.2, h:1.2,
  sub:"one arm only, for this run",
  does:"Where the second-annotation object would sit if it existed for this dataset.",
  built:"Nothing to build it from: the arm requires the reads, and they are not on this instance.",
  cond:"Drawn as an outline because it is absent, not because it would be useless. MegaFin Part 1 has such an arm and it diverges sharply from the vendor arm; whether this one would diverge the same way is unknown and currently unknowable here."},
 
-{id:"p1", key:"E2", group:"Building the partition", shape:"tile", name:"Coarse Leiden 0.1", x:7.4, y:R4, lane:"r4", w:0.7, d:0.7, h:0.5,
+{id:"p1", key:"E2", group:"Building the partition", shape:"tile", name:"Coarse Leiden 0.1", x:7.4, y:R5, lane:"r5", w:0.7, d:0.7, h:0.5,
  sub:"→ 18 compartments",
  does:"A deliberately blunt first pass carving the object into broad compartments. Nothing here is a cell type yet.",
  built:"2,000 HVGs, seurat_v3 flavour on the counts layer, then Leiden at resolution 0.1. Eighteen compartments for the worked example, holding 6 to 28 leaves each.",
  cond:"Runs from raw counts, not from a carried embedding — the worked example has no embedding to carry, and no global batch correction is applied at this stage. That is deliberate: global re-Harmonization was tried on the MegaFin Manual build and coherence collapsed from 0.93 to the 0.48–0.67 range."},
-{id:"p2", key:"E3", group:"Building the partition", shape:"tile", name:"Local 2000-HVG recompute", x:8.8, y:R4, lane:"r4", w:0.7, d:0.7, h:0.72,
+{id:"p2", key:"E3", group:"Building the partition", shape:"tile", name:"Local 2000-HVG recompute", x:8.8, y:R5, lane:"r5", w:0.7, d:0.7, h:0.72,
  sub:"per compartment · seurat_v3 · raw counts",
  does:"The load-bearing trick. Inside each compartment, variable genes are chosen again from scratch, then scaled, re-PCA'd to 50 dimensions and re-neighboured at 15. Genes invisible globally become the axis locally.",
  built:"Per compartment: fresh seurat_v3 2,000-HVG on the counts layer → scale → PCA(50) → 15-NN. random_state 0, held constant across all five internally-clustered datasets rather than tuned per dataset.",
  cond:"Load-bearing for droplet data and arguably skippable for combinatorial, kept on for cross-dataset comparability. The cost of that consistency is unmeasured on any single dataset."},
-{id:"p3", key:"E4", group:"Building the partition", shape:"tile", name:"Local Leiden 0.8 → leaves", x:10.2, y:R4, lane:"r4", w:0.7, d:0.7, h:0.62,
+{id:"p3", key:"E4", group:"Building the partition", shape:"tile", name:"Local Leiden 0.8 → leaves", x:10.2, y:R5, lane:"r5", w:0.7, d:0.7, h:0.62,
  sub:"251 – 342 leaves across five atlases",
  does:"Clusters inside each compartment and assembles one fine-leaf partition. This, not the labeller, decides how fine the answers can possibly be.",
  built:"Leiden 0.8, no nudge needed on the worked example: 267 leaves, median 150 cells, smallest 6 and largest 3,942. Across the corpus the same recipe lands at 251 (ZSCAPE) / 267 (MiniFin) / 270 (DanioCell) / 288 (ChemFish) / 342 (MegaFin), over datasets spanning 55k to 540k cells.",
  cond:"Leaf count being near-invariant to cell count is the strongest generalisation on this row — the recipe finds transcriptional states, not cells. It cuts both ways: 267 leaves from 94,616 cells is finer, relative to cell count, than 288 from 295,000, and 29 of the worked example's leaves fall under 30 cells, small enough that the labeller is told not to trust their fine statistics."},
-{id:"p4", key:"E5", group:"Building the partition", shape:"tile", name:"Leaf briefing", x:11.6, y:R4, lane:"r4", w:0.7, d:0.7, h:0.48,
+{id:"p4", key:"E5", group:"Building the partition", shape:"tile", name:"Leaf briefing", x:11.6, y:R5, lane:"r5", w:0.7, d:0.7, h:0.48,
  sub:"GT-blind context object",
  does:"What the labeller sees for each leaf, and nothing else: id, cell count, compartment, embedding centroid, the enriched genes, per-marker log2FC with in- and out-of-cluster prevalence, and a low-n flag. No identity, no published label, no hint.",
  built:"Assembled fresh per cluster and re-sent with the standing instructions. Verified ground-truth-blind: expert labels are loaded only to build the sealed key and never written into this file.",
  cond:"Two gaps worth naming. 265 of 267 leaves carry markers — two carry none and are being asked to be identified from nothing. And the markersDown field exists on every leaf and is empty on every leaf: the briefing has a slot for what a cluster fails to express and it has never once been filled. Absence of a marker is often the discriminating evidence, and the labeller has never been given any."},
 
-{id:"KAS", key:"K", group:"The labeller", shape:"works", name:"DanioType Kasperov", x:14.0, y:R4, lane:"r4", w:2.0, d:2.0, h:1.9,
+{id:"KAS", key:"K", group:"The labeller", shape:"works", name:"DanioType Kasperov", x:14.0, y:R5, lane:"r5", w:2.0, d:2.0, h:1.9,
  sub:"Researcher · Reasoner · Archivist", stat:"de novo, from markers alone",
  does:"Three specialists arguing about one cluster at a time. The Researcher searches the literature against the marker set. The Archivist answers raw-statistics probes on the live matrix so a claim can be checked rather than believed. The Reasoner synthesises, may go round again up to four times, then concludes or abstains. On the worked example, 46 of 267 leaves never reached the Researcher — a distinctiveness gate committed them to a coarse call up front — and of the 221 that did, 91 needed a second round, 37 a third, 7 a fourth and 5 a fifth.",
  built:"run_leaf_v2 (v1.2), gpt-5.4, ground-truth-blind end to end, leak-scanned per leaf. 209 assigns and 58 abstains, zero errors, $15.35 and 5,321 agent-seconds over 21 minutes — about six cents a leaf.",
  cond:"The transferability discipline is the fragile part, and it is already broken in a way nobody noticed. Every one of the 267 prompts in the worked example opens by telling the model it is looking at 'ZSCAPE 48 hpf'. The dataset name is hard-coded in the core prompt instead of coming from the adapter; the dataset it was actually reading is never named to the model. The results validated well anyway — but this is exactly the failure mode the architecture exists to prevent, it survived a full validated run undetected, and nothing in the code would catch it next time."},
-{id:"XF", key:"G4", group:"The labeller", shape:"ghost", follow:{a:"KAS",dx:-3.2}, name:"Label transfer — the road not taken", x:10.8, y:R4+2.8, w:0.9, d:0.9, h:0.9,
+{id:"XF", key:"G4", group:"The labeller", shape:"ghost", follow:{a:"KAS",dx:-3.2}, name:"Label transfer — the road not taken", x:10.8, y:R5+2.8, w:0.9, d:0.9, h:0.9,
  sub:"how most of these atlases were labelled",
  does:"The dominant alternative, drawn as an outline because this pipeline deliberately does not do it: instead of calling a cluster from its own markers, project the cells into an already-labelled reference and copy the nearest neighbours' labels across.",
  built:"Four of the seven external atlases here are labelled this way. ChemFish projects into a 1.2 M-cell developmental reference and transfers by majority vote of k=10 approximate nearest neighbours. MIC-Drop-seq transfers from DanioCell, then verifies manually against markers. CellOracle transfers twice — Farrell to a wild-type reference, then that reference to the perturbed samples. ZSCAPE calls its reference arm de novo but annotates perturbed cells by projection.",
  cond:"Transferred labels are not independent evidence about the source atlas — principle 5 — and error propagates across every hop. Two of these chains cannot even be audited: ChemFish's 319-label reference vocabulary is unpublished, and CellOracle's zebrafish labels were never deposited at all, leaving 394,459 cells unlabelled. Transfer is cheap, fast, and faithfully reproduces whatever the reference got wrong. Calling de novo from markers is the expensive choice this pipeline makes on purpose."},
-{id:"ST", key:"E7", group:"The labeller", shape:"pylon", follow:{a:"p4",b:"KAS"}, name:"Stats service :5007", x:12.8, y:R4-2.4, w:0.42, d:0.42, h:1.5,
+{id:"ST", key:"E7", group:"The labeller", shape:"pylon", follow:{a:"p4",b:"KAS"}, name:"Stats service :5007", x:12.8, y:R5-2.4, w:0.42, d:0.42, h:1.5,
  sub:"grounding",
  does:"Serves real per-cluster statistics so the Archivist can verify a marker claim instead of believing it.",
  built:"minifin_query.service on 127.0.0.1:5007, behind nginx, token-gated, one registered slot per partition. Registration is gated on a mandatory grounding check.",
  cond:"It exists because published marker evidence almost never does. ZSCAPE is the one exception in the corpus — a free-text evidence column naming the genes behind 120 of 151 calls, plus quantitative top markers for 151 subtypes with specificity and q-values. Everywhere else labels arrive with no supporting evidence at all, so a labeller either grounds itself or believes itself. The check matters: on the worked example pdgfrb came back at log2FC 3.005, 75.1% in-cluster, padj 1.09e-155 with sox2 correctly depleted, and the signs flipped the right way on a CNS leaf. It exists because a sibling adapter once returned a clean miss on every symbol it queried."},
-{id:"AD", key:"E6", group:"The labeller", shape:"tile", follow:{a:"KAS",dx:-1.0}, name:"Per-dataset adapter", x:13.0, y:R4+2.8, w:0.9, d:0.9, h:0.42,
+{id:"AD", key:"E6", group:"The labeller", shape:"tile", follow:{a:"KAS",dx:-1.0}, name:"Per-dataset adapter", x:13.0, y:R5+2.8, w:0.9, d:0.9, h:0.42,
  sub:"gene scheme · control vote · gate",
  does:"Everything the core is not allowed to know: how gene ids are written, which cells count as controls, what stage the animals were at, and how distinctive a leaf must be before a fine call is allowed.",
  built:"For the worked example: an identity gene map, which is correct there and wrong almost everywhere else; control vote on DMSO (24,837 cells, 26% of the matrix); stage 48 hpf; distinctiveness gate at n_enriched = 15, kept at the core default after checking the dataset's own distribution — median 120 enriched markers per leaf, gate fires on 6.4%, inside the shallow band between ChemFish at 3.5% and ZSCAPE at 7.2%.",
  cond:"The control vote thins the scoring denominator hard: DMSO is a quarter of the cells, so 34 of 267 leaves have no labelled control cell and cannot be scored. Choosing the control is itself a trap — CellOracle has three distinct control tiers, and its injection control is a tyr crispant carrying real Cas9 cuts, not a neutral baseline. Keeping the gate at the default was argued from the distribution rather than tuned to a target rate, but that reasoning lives in a metadata file, not in the code."},
-{id:"MENU", key:"E8", group:"The labeller", shape:"tile", follow:{a:"KAS",dx:1.4}, name:"Frozen ZFA menu", x:15.4, y:R4+2.8, w:0.9, d:0.9, h:0.36,
+{id:"MENU", key:"E8", group:"The labeller", shape:"tile", follow:{a:"KAS",dx:1.4}, name:"Frozen ZFA menu", x:15.4, y:R5+2.8, w:0.9, d:0.9, h:0.36,
  sub:"3,107 terms · dec9f728",
  does:"A closed ontology vocabulary: one ZFA id per cluster, chosen from a frozen list and no other.",
  built:"zfa_menu.v1.json — 3,107 non-obsolete ZFA terms from the 2026-06-02 release, hashed dec9f7289d7c…, built for the ZSCAPE Commit Gold benchmark on 2026-07-30.",
  cond:"It exists because almost nothing else does. Of the seven external atlases here, six ship free text with no ontology ids — ZSCAPE, ChemFish, DanioCell, ZCL2, MIC-Drop-seq and CellOracle. Zebrahub is the sole exception and ships ZFA identifiers natively, coarse in the full atlas and fine per stage. Without a closed vocabulary two atlases cannot be compared without a human adjudicating synonyms. Note the date: this menu postdates the worked example's run by four weeks, so those calls are free-text cell-type identities scored against an expert's own vocabulary, not against an ontology."},
 
-{id:"m1", key:"E9", group:"Consolidation", shape:"tile", name:"Meta-reasoner", x:17.0, y:R4, lane:"r4", w:0.75, d:0.75, h:0.66,
+{id:"m1", key:"E9", group:"Consolidation", shape:"tile", name:"Meta-reasoner", x:17.0, y:R5, lane:"r5", w:0.75, d:0.75, h:0.66,
  sub:"267 leaves → 114 nodes",
  does:"Collapses the fine leaves into a defensible set: merge what is the same thing, set aside what cannot be called, assign a tier to what survives.",
  built:"One GT-blind consolidation pass, compartment-scoped, offline — not a re-run of the labeller. For the worked example: 51 merge nodes plus 63 set aside, 114 in total, all 267 leaves mapped, none orphaned.",
  cond:"It works better than the leaves do. Merged nodes score 0.968 lenient against the sealed key while nodes that stayed single score 0.799, there are zero over-merge misses, and consolidation rescued leaves the labeller had abstained on. The open item is transfer: Prejudice-of-Shape is how this is meant to reach atlases with no ground truth, and it is not validated."},
-{id:"m2", key:"F1", group:"Consolidation", shape:"tile", follow:{a:"m1"}, name:"SSMP flag", x:17.0, y:R4+2.7, w:0.8, d:0.8, h:0.34,
+{id:"m2", key:"F1", group:"Consolidation", shape:"tile", follow:{a:"m1"}, name:"SSMP flag", x:17.0, y:R5+2.7, w:0.8, d:0.8, h:0.34,
  sub:"τ = 0.34 · 7 of 51 flagged",
  does:"Flags merges where the two leaves share no specific marker program — a warning that a merge is cosmetic.",
  built:"Log-IDF shared-core ratio on full differential expression, attached to every merge node. 7 of 51 merge nodes flagged marker-disjoint on the worked example; the lowest sits at 0.231 against a threshold of 0.34.",
  cond:"Advisory only, and τ was validated on one dataset with N = 7. Carrying a seven-sample threshold to a second dataset without re-validating is the kind of quiet borrowing this map exists to make visible. Nobody is required to read the flag either."},
-{id:"JU", key:"F2", group:"Consolidation", shape:"pylon", follow:{a:"KAS",b:"m1"}, name:"Sealed key · lenient/strict", x:15.9, y:R4-2.4, w:0.42, d:0.42, h:1.3,
+{id:"JU", key:"F2", group:"Consolidation", shape:"pylon", follow:{a:"KAS",b:"m1"}, name:"Sealed key · lenient/strict", x:15.9, y:R5-2.4, w:0.42, d:0.42, h:1.3,
  sub:"27 sets · 73,149 cells",
  does:"Where ground truth finally enters. Expert hand-drawn cell sets, hierarchical and overlapping — a cell can carry up to three — sealed before clustering and opened only to score.",
  built:"Per-leaf multi-label profiles, primary on controls and secondary on all cells, full distribution kept rather than collapsed to a plurality. Scoring is lenient (right lineage) and strict (right depth), never a single number.",
  cond:"Ground truth is thinner and less stable than the phrase suggests. Coverage across the corpus: 27 expert sets over 77% of cells (MiniFin), 4 sets over 9.5% (MegaFin), tissue level only (DanioCell), transferred rather than called and therefore not ground truth at all (ChemFish), none deposited (CellOracle). It also disagrees with itself — ZCL2 ships two published annotations of the same 143 clusters that agree on lineage 135 times out of 143 but on cell type only 113, with two clusters outright swapped. And an authored scheme rarely equals the labels realized in the object: ZSCAPE's workbook documents 36 tissue / 101 broad / 148 sub against a realized 34 / 99 / 156. Any score has to declare which source it scored against."},
-{id:"m3", key:"F3", group:"Consolidation", shape:"tile", name:"Assemble the deliverable", x:18.2, y:R4, lane:"r4", w:0.7, d:0.7, h:0.44,
+{id:"m3", key:"F3", group:"Consolidation", shape:"tile", name:"Assemble the deliverable", x:18.2, y:R5, lane:"r5", w:0.7, d:0.7, h:0.44,
  sub:"JSON, not a column",
  does:"Writes out every leaf's identity, its consolidation node, tier, marker-overlap score and route.",
  built:"schema daniotype_kasperov_run/v1, beside a leaf assignment mapping every cell to its leaf. Tiers are cell_type_sub, cell_type_broad, tissue and self.",
  cond:"That tier ladder is inherited, not invented: it mirrors the four levels realized in ZSCAPE's obs — germ_layer 7, tissue 34, cell_type_broad 99, cell_type_sub 156 — which is the closest thing the field has to a shared depth scale. Other atlases ladder differently: ZCL2 runs cluster 143 → cell_type 41 → cell_lineage 10, Zebrahub coarse 10 → fine 154. A tier name only means something next to the vocabulary it came from."},
 
 {id:"LB", key:"7", group:"⑦ Labelled deliverable", groupMark:true, anchor:true, shape:"strata",
- lane:"r4",
- name:"Labelled deliverable", x:20.2, y:R4, w:2.0, d:2.0, h:1.9,
+ lane:"r5",
+ name:"Labelled deliverable", x:20.2, y:R5, w:2.0, d:2.0, h:1.9,
  sub:"267 leaves named · 114 nodes · every cell reachable", stat:"the first biological claim",
  does:"The same cells as the published object, sorted into named strata. On the worked example: 209 leaves resolved outright, 24 left region-unresolved, 34 subtype-unresolved, and 19 resolved finer than the expert did. Four rows from a fish tank, this is the first object on the map that makes a biological claim.",
  built:"Validated on the sealed key at 0.989 lenient for committed in-ontology calls and 0.904 across all GT-backed leaves; strict agreement 0.524 and 0.478. At node level, 0.989 and 0.916 on 77 GT-backed nodes.",
  cond:"Read the gap between lenient and strict before quoting either. Lineage recovery is expert-level; depth agreement is about half, and most of that gap is an ontology-axis mismatch rather than error — the expert labels the CNS by anatomical region using spatial lassoes, and region is not recoverable from markers, so the labeller says 'region-unresolved' instead of guessing. Which axis becomes primary is an open product decision, flagged rather than defaulted. And there is no labelled matrix: obs['cell_type'] on the published object is still 'unknown' for every cell. Anyone who wants labelled cells joins the deliverable to the leaf assignment themselves."},
-{id:"PR", key:"F4", group:"⑦ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R4, lane:"r4", w:0.8, d:0.8, h:0.55,
+{id:"PR", key:"F4", group:"⑦ Labelled deliverable", shape:"tile", name:"PRISM handoff", x:22.2, y:R5, lane:"r5", w:0.8, d:0.8, h:0.55,
  sub:"foundation model",
  does:"Where a labelled atlas stops being an analysis and becomes training data.",
  built:"Reads the deliverable directly. No copy, no re-label.",
@@ -487,7 +510,7 @@ const NODES = [
 ];
 
 
-const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
+const ROWS=[R1,R2,R3,R4,R5], MIRROR=22.7;
 
 /* Row 1 runs as two parallel lines that meet once. The biology line — colony,
    pair, clutch, cull — sits above the centreline; the chemistry line — the four
@@ -520,8 +543,9 @@ const LANES = [
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
   {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
   {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:+1},
-  {id:"r3",       y:R3,       x0:0.7,  x1:37.85, dir:+1},
-  {id:"r4",       y:R4,       x0:0.7,  x1:24.0,  dir:+1},
+  {id:"r3",       y:R3,       x0:0.7,  x1:22.0,  dir:+1},
+  {id:"r4",       y:R4,       x0:0.7,  x1:31.0,  dir:+1},
+  {id:"r5",       y:R5,       x0:0.7,  x1:24.0,  dir:+1},
 ];
 
 const EDGES = [
@@ -550,7 +574,10 @@ const EDGES = [
      hang off the culls that absorb them rather than sitting in the line: one
      folds into the knee, the other applies only to hashed designs. A dashed
      edge, because it is a relationship rather than a flow of barcodes. */
-  {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c3",kind:"cell"},
+  /* the unfiltered matrix ends the row above; the cull row begins with the
+     first cull and acts on the object sitting directly over its start. No
+     track between rows — see the note in EDGES below. */
+  {a:"c1",b:"c3",kind:"cell"},
   {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"c5",kind:"cell"},
   {a:"c5",b:"FD",kind:"cell"},
   {a:"c2",b:"c1",kind:"ref",dash:true},{a:"hx",b:"c5",kind:"ref",dash:true},
@@ -591,9 +618,9 @@ const EDGES = [
    along one diagonal on the bottom-right edge. */
 /* A band is as long as its row, and row 3's row is longer. */
 const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
-const BAND_X=[[-2,24],[-2,24],[-2,39.9],[-2,26]];
-const BANDS = [R1,R2,R3,R4].map((r,i)=>({
-  name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
+const BAND_X=[[-2,24],[-2,24],[-2,24],[-2,33],[-2,26]];
+const BANDS = [R1,R2,R3,R4,R5].map((r,i)=>({
+  name:["Biological samples","Molecular biology","Reads to a matrix","The cull","Opinionated metadata"][i],
   x0:BAND_X[i][0], x1:BAND_X[i][1], y0:r+BAND_H[0], y1:r+BAND_H[1]
 }));
 
@@ -605,7 +632,7 @@ const CARRIES = [
      to it implied a handover that does not happen. */
   /* row 4 reads left to right like the rest now, so the map runs out at its
      RIGHT end rather than its left */
-  {x0:24.6,y0:R4,x1:28.6,y1:R4, fade:"out", kind:"call",
+  {x0:24.6,y0:R5,x1:28.6,y1:R5, fade:"out", kind:"call",
    from:"PRISM handoff", to:"everything after this map"},
 ];
 
@@ -830,13 +857,15 @@ purity           ${s.purity.toFixed(3)}`};},
 const OVERVIEW = {
   eyebrow:"Zebrafish single-cell · the platonic pipeline",
   title:"Aquarium to Atlas",
-  sub:"four rows · seven landmarks · one claim at the end",
+  sub:"five rows · seven landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
-<p>Four rows, and <mark>every one of them reads left to right</mark>. Nothing is drawn between them: the rows are stacked in the order they happen, so one feeding the next is already said by where they sit. A row ends, and the next begins. Top row is oldest.</p>
+<p>Five rows, and <mark>every one of them reads left to right</mark>. Nothing is drawn between them: the rows are stacked in the order they happen, so one feeding the next is already said by where they sit. A row ends, and the next begins. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
-<p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where. <mark>Four of the six culls carry their decision on their own roof</mark> — a curve with a cut on it, a distribution with a threshold, a cloud with a band through it, an embedding against a manufactured reference. Each is a chart drawn flat and laid onto the building by one matrix, so it can be read without orbiting it. The other two are off the row rather than gone: one folds into the knee, and the other applies only to hashed designs.</p>
-<p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>
+<p><mark>Row 3 — reads to a matrix.</mark> Barcode calling, alignment, UMI collapse, and the counting reference hanging off the steps that read it. It ends at a cube of every barcode against every gene — almost never delivered, and the reason the funnel below it has no counts.</p>
+<p><mark>Row 4 — the cull.</mark> Which of those barcodes was a cell. This is the row where atlases silently stop being comparable, and it says where. <mark>Four of the six culls carry their decision on their own roof</mark> — a curve with a cut on it, a distribution with a threshold, a cloud with a band through it, an embedding against a manufactured reference. Each is a chart drawn flat and laid onto the building by one matrix, so it can be read without orbiting it. The other two are off the row rather than gone: one folds into the knee, and the other applies only to hashed designs. Behind them, the arithmetic of all four painted flat on the ground.</p>
+<p>Those two were one row until they were not. Together they are nineteen objects doing two different kinds of work — one turns reads into a table, the other decides what was alive — and each already has a page of its own built from this data, at <a href="/FASTQ_pipe">/FASTQ_pipe</a> and <a href="/bioinformatics_pipe">/bioinformatics_pipe</a>.</p>
+<p><mark>Row 5 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>
 <p>Seven landmarks are real things you could point at; everything between them is a step, drawn small. Outlines are roads not taken. Hatching means the stage destroys data.</p>
 <p>Beyond the row-1 fork, three dependencies do not follow the rows. Sample identity on row 3 was written chemically on row 2 and decided physically on row 1. The doublet threshold on row 3 is trying to measure a collision rate that loading density set on row 2. And the nuclei-or-cells choice on row 1 decides what the intron stage on row 3 does, and what a mitochondrial percentage even means.</p>`,
   built:`<p>General claims come from the corpus at <mark>/data/datasets/zebrafish/</mark>: nine dataset entries, seven carrying a full nine-section provenance record under <mark>&lt;DATASET&gt;/sources/README.md</mark> — ZSCAPE, ChemFish, DanioCell, Zebrahub, ZCL2, MIC-Drop-seq, CellOracle. Every record ends with the same seven cross-dataset provenance principles, which are the nearest thing to a written statement of this pipeline; the four that drive this map are quoted in the header of <mark>pipeline-data.js</mark>.</p>
