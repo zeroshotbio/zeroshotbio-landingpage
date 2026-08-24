@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FASTQ → Unfiltered DGE</title>
+<meta name="description" content="Everything between the reads and the first matrix on row 3 of the zeroshot.bio pipeline map: barcode parse, genome index, alignment, gene assignment, UMI deduplication and the matrix build that emits DGE_unfiltered.">
+<style>
+  /* The chrome is /pipeline's chrome, so the two maps read as one family:
+     same shell, same type, same theme switch, same collapsing columns, same
+     reader. That is deliberate — this map is one leg of that one, drawn
+     deeper, and a reader who has learned to drive one should not have to
+     learn the other.
+
+     The MARK palette is separate and is set by the brief (keep / cull /
+     accent). It is deliberately NOT the medallion palette from
+     /data_structures: those colours mean bronze, silver and gold, and
+     reusing them for "survives / leaving / threshold" would say something
+     false. */
+  /* ---- THE PALETTE IS /pipeline's, VERBATIM ----
+     Every token below is copied from public/pipeline/index.html. The two maps
+     are one map at two scales and they were not reading as one: this page had
+     a blue-grey ground and teal / brown / gold marks, that one has a warm grey
+     ground and objects in shades of it. Side by side they looked like two
+     different projects.
+
+     The three MARKS are the only additions, and they are aliases rather than
+     new colours — each one is a token /pipeline already carries, already
+     meaning close to what it has to mean here:
+
+       --keep    = --fg2    the population under consideration. It is most of
+                            every cloud, so it takes the neutral the rest of
+                            the map is drawn in rather than a colour.
+       --cull    = --drop   /pipeline already means "this is being dropped"
+                            with this, on its drop edges and its condition rule.
+       --accent  = --signal /pipeline already means "look here" with this.
+                            A threshold is the thing to look at.
+
+     So the page is greys and two functional colours, which is what /pipeline
+     is. Nothing on it is a hue this map invented. */
+  :root{
+    /* ---- dark (default) ---- */
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
+    --signal:#74b0f0; --drop:#e0765c;
+
+    /* the marks, aliased onto the three above */
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+
+    /* the objects: a step or a cull, a landmark, the roofed culls */
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
+
+    --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
+    --strip-mini:28px;                   /* what it collapses to while reading */
+  }
+  body.light{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
+    --signal:#1e4c8a; --drop:#8a3324;
+
+    --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
+
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+       font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;
+         -webkit-user-select:none;user-select:none}
+  a{color:var(--signal)}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
+  .brand{display:flex;align-items:center;gap:9px;padding:6px 14px 6px 12px;flex:none;
+         border-right:1px solid var(--rule)}
+  .brand b{font-weight:600;letter-spacing:.06em;font-size:11.5px}
+  .brand span{color:var(--fg3);font-size:9px;letter-spacing:.12em;text-transform:uppercase}
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;flex:none}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+
+  .body{display:flex;flex:1;min-height:0}
+  aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
+        padding-bottom:24px;background:var(--bg);-webkit-user-select:none;user-select:none}
+  /* Either column can be dragged shut. What is left behind is the grip
+     itself, a full-height sliver carrying an arrow that points the way back —
+     so it is obvious the panel is still there rather than gone. */
+  .grip{flex:none;width:9px;position:relative;cursor:col-resize;background:var(--panel2);
+        border-right:1px solid var(--fg);-webkit-user-select:none;user-select:none}
+  .grip:hover,.grip:focus-visible{background:var(--signal)}
+  .grip span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+             width:3px;height:34px;border-radius:2px;background:var(--fg3)}
+  .grip:hover span{background:var(--bg)}
+  .grip.shut{cursor:pointer;background:var(--bg);width:16px}
+  .grip.shut:hover{background:var(--signal)}
+  .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
+  .grip.shut:hover span{color:var(--bg)}
+  .grip.shut::after{content:"";position:absolute;inset:0;
+                    background:repeating-linear-gradient(var(--rule) 0 1px,transparent 1px 5px);
+                    opacity:.35;pointer-events:none}
+
+  .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
+  .grp.mark{color:var(--fg)}
+  .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
+       border:1px solid var(--rule);border-left:none;border-right:none;margin-top:-1px}
+  .row .key{width:24px;height:17px;flex:none;border:1px solid var(--fg);display:grid;place-items:center;font-size:9px}
+  .row.anchor .key{background:var(--fg);color:var(--bg)}
+  .row .nm{flex:1;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35}
+  .row.anchor .nm{font-size:11.5px}
+  .row .n{font-size:9px;color:var(--fg3)}
+  .row:hover,.row:focus-visible{background:var(--panel2)}
+  .row.on{background:var(--fg);color:var(--bg)}
+  .row.on .key{border-color:var(--bg)}
+  .row.on.anchor .key{background:var(--bg);color:var(--fg)}
+  .row.on .n{color:var(--bg)}
+
+  .stage{flex:1;position:relative;min-width:0;overflow:hidden}
+  /* Panning is a drag across a canvas covered in <text>, and a drag across
+     text is a text selection as far as the browser is concerned — so the map
+     picked up a blue smear on every pan. Nothing on the map is meant to be
+     selected with the cursor; the prose in the reader still is, because that
+     is a different element and is left alone. */
+  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+      -webkit-user-select:none;user-select:none;
+      -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  svg.drag{cursor:grabbing}
+
+  /* walk the sequence: keyboard on a desktop, these on anything */
+  .stepnav{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:5}
+  .stepnav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
+                  background:var(--bg);color:var(--fg);display:grid;place-items:center;
+                  font-size:18px;line-height:1;padding-bottom:2px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  .stepnav button:hover,.stepnav button:focus-visible{background:var(--fg);color:var(--bg)}
+  .stepnav button:active{transform:scale(.92)}
+
+  .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
+        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none;
+        -webkit-user-select:none;user-select:none}
+
+  /* ---- edit positions ----
+     The handles are inert until the mode is on, so hit-testing, hover and the
+     selection halo are exactly as they were when it is off. In the mode, the
+     footprint becomes the grab target for the building and a box round the
+     name becomes the grab target for the name — a floating label is a few
+     hundred square pixels of ink and mostly holes, so its glyphs are not
+     something you can reliably pick up. */
+  body.editing #btnEdit{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  body.haschanges #btnSave{border-color:var(--accent);color:var(--accent)}
+  body.editing .hint{color:var(--signal);text-transform:none;font-size:10.5px;letter-spacing:.04em}
+  .ehandle{display:none;pointer-events:none;fill:var(--signal);fill-opacity:.05;
+           stroke:var(--signal);stroke-width:1.1;stroke-opacity:.5;stroke-dasharray:4 3}
+  .ehandle.lab{fill-opacity:.03;stroke-opacity:.4;stroke-dasharray:2 3}
+  .ehit{fill:transparent;pointer-events:none}
+  svg.editing .ehandle{display:block;pointer-events:all;cursor:move}
+  svg.editing .ehit{pointer-events:all;cursor:move}
+  svg.editing{cursor:default}
+  svg.editing g[role=button]{cursor:move}
+  svg.editing g:hover>.ehandle{fill-opacity:.16;stroke-opacity:1;stroke-dasharray:none}
+  svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
+
+  .delx{display:none;position:absolute;z-index:8;width:26px;height:26px;
+        border:1px solid var(--drop);border-radius:50%;background:var(--bg);
+        color:var(--drop);place-items:center;font-size:17px;line-height:1;
+        box-shadow:0 2px 10px rgba(0,0,0,.4);padding:0}
+  .delx:hover,.delx:focus-visible{background:var(--drop);color:var(--bg)}
+
+  .ask{display:none;position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.45);
+       align-items:center;justify-content:center;padding:18px}
+  .ask.on{display:flex}
+  .askbox{width:min(420px,100%);background:var(--panel);border:1px solid var(--drop);
+          padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .asktitle{font-size:16px;margin-bottom:6px}
+  .askbox p{color:var(--fg2);font-size:11.5px;margin:0 0 14px}
+  .askbar{display:flex;gap:8px}
+  .askbar .go{background:var(--drop);border-color:var(--drop);color:var(--bg)}
+  .askbar .go:hover{background:var(--drop);opacity:.85;color:var(--bg)}
+
+  .note{display:none;position:absolute;left:50%;bottom:30px;transform:translateX(-50%);
+        z-index:18;max-width:min(560px,88%);background:var(--panel);
+        border:1px solid var(--keep);border-left-width:3px;padding:10px 15px;
+        font-size:11.5px;color:var(--fg2);box-shadow:0 12px 32px rgba(0,0,0,.45)}
+  .note.on{display:block}
+  .note b{display:block;font-weight:400;color:var(--keep);font-size:9px;
+          letter-spacing:.16em;text-transform:uppercase;margin-bottom:3px}
+
+  .reader{width:var(--reader-w,360px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
+  /* the one place selection is wanted: the prose */
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:24px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:14px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:112px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .cond{border-left:2px solid var(--drop);padding-left:9px}
+  /* what this page says for itself, as against what it lifted */
+  .added{border-left:2px solid var(--accent);padding-left:9px}
+  .alias{font-size:11px;color:var(--fg2);margin:-4px 0 12px}
+  /* the threshold each roof draws — this used to be a box floating on the
+     diagram, and a diagram is the wrong place for a paragraph */
+  .figure{font-size:17px;color:var(--accent);letter-spacing:.02em;margin:2px 0 8px}
+  .kv.real dt{color:var(--keep)}
+  .kv.real dd{color:var(--fg2)}
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
+        white-space:pre;overflow-x:auto;line-height:1.6}
+
+  /* the badge that must never be dropped to tidy a line up */
+  .unver,.ver,.state{display:inline-block;font-size:8.5px;letter-spacing:.12em;
+        text-transform:uppercase;padding:1px 6px;margin:0 5px 8px 0}
+  .unver{border:1px solid var(--cull);color:var(--cull)}
+  .ver{border:1px solid var(--keep);color:var(--keep)}
+  .state{border:1px solid var(--rule);color:var(--fg2)}
+  .state.keep{border-color:var(--keep);color:var(--keep)}
+  .state.cull{border-color:var(--cull);color:var(--cull)}
+
+  /* the step strip — the mobile stand-in for the left index */
+  .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
+         overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch;
+         -webkit-user-select:none;user-select:none}
+  /* while the reader is up the strip collapses to a rule of keys — enough to
+     keep a sense of where you are, and to jump, without spending the height
+     the text needs */
+  .strip.mini{height:var(--strip-mini)}
+  .strip.mini .sgrp{display:none}
+  .strip.mini .chip{min-width:0;max-width:none;padding:0 9px;justify-content:center;gap:0}
+  .strip.mini .chip .n{display:none}
+  .strip.mini .chip .k{font-size:9.5px;letter-spacing:.14em;color:var(--fg2)}
+  .strip.mini .chip.on .k{color:var(--bg)}
+  .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
+        font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);
+        writing-mode:vertical-rl;text-orientation:mixed}
+  .chip{display:inline-flex;flex-direction:column;justify-content:center;gap:3px;
+        vertical-align:top;height:100%;min-width:88px;max-width:132px;
+        padding:6px 9px;border-right:1px solid var(--rule);text-align:left;
+        white-space:normal;-webkit-tap-highlight-color:transparent}
+  .chip .k{font-size:8px;letter-spacing:.12em;color:var(--fg3)}
+  .chip .n{font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
+  .chip.mark .n{font-weight:600}
+  .chip.on{background:var(--fg);color:var(--bg)}
+  .chip.on .k{color:var(--bg)}
+  .sheetclose{display:none}
+
+  .mobtoggle{display:none}
+  @media (max-width:900px){
+    /* no header at all: every pixel goes to the map */
+    header{display:none}
+    .body{flex-direction:column;position:relative}
+    aside{display:none}
+    .grip{display:none}
+    .stage{flex:1;min-height:0;border-bottom:none}
+    .strip{display:block;height:var(--strip-h)}
+    .hint{display:none}
+    /* the reader does not cover the map: it grows the footer instead, sitting
+       directly on top of the strip, so the strip stays reachable while you
+       read */
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:34dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:36px 14px 16px}      /* clear of the close button */
+    .mobtoggle{display:none}
+    .stepnav{top:8px;right:8px;gap:10px}
+    .stepnav button{width:44px;height:44px;font-size:23px}
+  }
+  @media (max-width:900px) and (orientation:landscape){
+    :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
+    .reader{max-height:48dvh}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand"><b>FASTQ pipeline</b><span>FASTQ → unfiltered DGE · from /pipeline, row 3</span></div>
+    <div class="controls">
+      <button class="ctl mobtoggle" id="btnStages">Stages</button>
+      <button class="ctl" id="btnHome">Fit the map</button>
+      <button class="ctl" id="btnAxes">Hide axes</button>
+      <button class="ctl" id="btnMotion" aria-pressed="false">Pause motion</button>
+      <button class="ctl" id="btnTheme">Light</button>
+      <button class="ctl" id="btnEdit">Edit positions</button>
+      <button class="ctl" id="btnSave">Save positions</button>
+      <button class="ctl" id="btnDiscard">Discard</button>
+    </div>
+  </header>
+  <div class="body">
+    <aside id="aside"></aside>
+    <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
+    <div class="stage">
+      <svg id="svg" aria-label="Isometric map of the six stations between paired-end FASTQ and the unfiltered digital gene expression matrix, each drawn as a building on one row"></svg>
+      <!-- the ✕ on a picked object. Deliberately NOT inside the SVG group it
+           offers to delete: it must not shear with the projection, and a
+           control that disappears with its own target cannot be pressed a
+           second time. -->
+      <button class="delx" id="delX" aria-label="Delete this object">&#215;</button>
+
+      <!-- a yes/no the caller cannot walk past by accident -->
+      <div class="ask" id="ask" role="dialog" aria-modal="true">
+        <div class="askbox">
+          <div class="asktitle" id="askTitle"></div>
+          <p id="askBody"></p>
+          <div class="askbar">
+            <button class="ctl go" id="askGo">Delete</button>
+            <button class="ctl" id="askNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- what happened, and then out of the way on its own -->
+      <div class="note" id="note" role="status" aria-live="polite">
+        <b id="noteTitle"></b><span id="noteBody"></span>
+      </div>
+
+      <div class="stepnav">
+        <button id="stPrev" aria-label="Previous step">‹</button>
+        <button id="stNext" aria-label="Next step">›</button>
+      </div>
+      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Home to fit the map · Drag to pan · Scroll or pinch to zoom · Click a dot to read what is in transit</div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Load order matters and is asserted at the top of fq-view.js.
+     src is ABSOLUTE because this route has no trailing slash: a relative path
+     resolves against / and 404s. -->
+<!-- No /culls files here. That pair is loaded by /pipeline and by
+     /bioinformatics_pipe, which draw the four roofed culls; nothing on this
+     stretch of the row has a decision with a chart behind it, so this page
+     loads no population and derives no threshold. -->
+<script src="/FASTQ_pipe/fq-iso.js?v=iso1"></script>
+<script src="/FASTQ_pipe/fq-shapes.js?v=iso1"></script>
+<script src="/FASTQ_pipe/fq-data.js?v=iso1"></script>
+<script src="/FASTQ_pipe/fq-view.js?v=iso1"></script>
+</body>
+</html>

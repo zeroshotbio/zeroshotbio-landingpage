@@ -45,12 +45,24 @@ const nextConfig = {
   // culls drawn has code that has ever run, so the page marks every figure real
   // or modelled and must keep doing so.
   // Contract + ownership split: public/bioinformatics_pipe/HANDOFF.md
+  // /FASTQ_pipe is the OTHER HALF of that same row, built the same way from the
+  // same shell: public/FASTQ_pipe/ (index.html + four classic scripts, no build
+  // step), same absolute-<script src> rule, same reason. It draws everything
+  // between the reads and the first matrix — barcode parse, genome index,
+  // alignment, gene assignment, UMI deduplication, matrix build — where
+  // /bioinformatics_pipe draws everything after it. Nothing on it is modelled
+  // and it loads no /culls files: there is no threshold on this stretch that
+  // has to be invented to be drawn. Its saved layout has its OWN record,
+  // /api/fqpipe_edits, id "FASTQ_pipe::edits" — never the neighbouring map's,
+  // or whichever saved last would erase the other silently.
+  // Contract + ownership split: public/FASTQ_pipe/HANDOFF.md
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },
       { source: '/pipeline', destination: '/pipeline/index.html' },
       { source: '/data_structures', destination: '/data_structures/index.html' },
       { source: '/bioinformatics_pipe', destination: '/bioinformatics_pipe/index.html' },
+      { source: '/FASTQ_pipe', destination: '/FASTQ_pipe/index.html' },
       { source: '/grcz12', destination: '/grcz12.html' },
     ]
   },
@@ -90,6 +102,17 @@ const nextConfig = {
       },
       {
         source: '/bioinformatics_pipe',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // Same shell-and-scripts coupling once more: index.html names the
+      // elements the four scripts reach for, and a script that cannot find an
+      // element it wants stops dead, taking everything after it in the file.
+      {
+        source: '/FASTQ_pipe/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/FASTQ_pipe',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
     ]
