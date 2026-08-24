@@ -101,11 +101,11 @@ const NODES = [
    adjacent with only empty ground between them.
 
    AND R1 IS THE LONGER JOURNEY, on purpose. Two stops against one, further
-   from the spine, consuming the genome lane, differing per arm, and able to
-   fail — unmapped, multimapping, ambiguous. Equal lanes would be a lie.
+   from the spine, consuming the genome lane, and able to fail — unmapped,
+   multimapping, ambiguous. Equal lanes would be a lie.
    --------------------------------------------------------------------------- */
 
-{id:"E4", key:"E4", group:"R1 · the cDNA half", shape:"tile", hatch:true, tag:"× 2 ARMS",
+{id:"E4", key:"E4", group:"R1 · the cDNA half", shape:"tile", hatch:true,
  follow:{a:"E2",dx:4.5}, name:"Align R1", x:11.0, y:R3+3.4, w:1.9, d:1.9, h:1.5,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
@@ -113,9 +113,9 @@ const NODES = [
  cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Alignment",
- added:"The first of the two joins: R1 meets the index. Multimappers and unmapped reads are set aside here rather than counted — which is a loss of reads and not a cull, because no barcode is removed and nothing downstream knows a cell by fewer of them. THIS NODE AND EVERY ONE AFTER IT EXISTS TWICE, once per annotation arm, which is what the two indexes above it mean."},
+ added:"The first of the two joins: R1 meets the index. Multimappers and unmapped reads are set aside here rather than counted — which is a loss of reads and not a cull, because no barcode is removed and nothing downstream knows a cell by fewer of them. It is also the only station on the page that consumes a reference: the index arrives on a still edge, having been built once and not for this run."},
 
-{id:"E5", key:"E5", group:"R1 · the cDNA half", shape:"tile", hatch:true, tag:"× 2 ARMS",
+{id:"E5", key:"E5", group:"R1 · the cDNA half", shape:"tile", hatch:true,
  follow:{a:"E2",dx:9.0}, name:"Assign to gene", x:17.0, y:R3+3.4, w:1.9, d:1.9, h:1.1,
  sub:"coordinates resolved against gene models · exonic by default",
  does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
@@ -128,8 +128,8 @@ const NODES = [
 /* ---------------------------------------------------------------------------
    R2 · THE BARCODE HALF. ITS OWN LANE, ABOVE THE SPINE, entered from the
    barcode end of the fragment. One stop, deterministic, identical across both
-   annotation arms — so it finishes its work early and runs straight to the
-   join while R1 is still working. Parallel to R1 and nearer the spine, because
+   references — so it finishes its work early and runs straight to the join
+   while R1 is still working. Parallel to R1 and nearer the spine, because
    it is the shorter of the two journeys and the drawing should say so.
    --------------------------------------------------------------------------- */
 
@@ -149,6 +149,13 @@ const NODES = [
    outside the experiment — the same class as "The compounds" in the wet-lab
    half of /pipeline, and drawn off to the side for the same reason.
 
+   ONE ARM IS DRAWN. A second index — GRCz12tu with Ensembl 2025_12 — is staged
+   rather than in use, and it is at /grcz12 rather than here: two indexes mean
+   two of everything from the alignment onward, and a map that draws a second
+   arm nothing has been counted against claims a result that does not exist
+   yet. If it is ever run, the branch goes back in the G lane as two pairs —
+   the arms differ in BOTH files — and every station from E4 on gets its × 2.
+
    THEIR EDGES DO NOT CARRY. A drug library is consumed; a STAR index is not.
    An edge that animates material down it every run asserts a per-sample cost
    that does not exist, so the reference edges are still:true — connected,
@@ -162,7 +169,7 @@ const NODES = [
  does:"The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus without exception, which is the one thing about the reference that IS comparable across all of them.",
  cond:"Sharing an assembly is a much weaker guarantee than it sounds, because it says nothing about the annotation laid over it — and the annotation is where four datasets on the same assembly end up with four different answers to 'which genes exist'.",
- added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision, and the two arms above differ in this one as well as in the annotation."},
+ added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision. Swapping it for GRCz12tu — staged, and documented stage by stage at /grcz12 — changes which bases are where, and therefore every coordinate downstream of the aligner."},
 
 {id:"G2", key:"G2", group:"G · genome, and W · whitelists", shape:"ref",
  follow:{a:"E4",dx:0.4}, name:"Ensembl 99", x:9.1, y:R3+7.5, w:1.25, d:1.25, h:0.55,
@@ -172,39 +179,15 @@ const NODES = [
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason.",
  added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was."},
 
-{id:"G3a", key:"G3a", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:-1.0}, name:"STAR index · built", x:7.5, y:R3+8.9, w:1.7, d:1.7, h:0.95,
+{id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"ref",
+ follow:{a:"E4",dx:-1.0}, name:"STAR index", x:7.5, y:R3+8.9, w:1.7, d:1.7, h:0.95,
  sub:"GRCz11 + Ensembl 99, baked together · once, not per run",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
  built:"Every dataset here is GRCz11, and yet: ZSCAPE and ChemFish share a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031 genes — byte-identical between them, all 32,031 coordinates matching position by position. DanioCell uses Lawson v4.3.2 via Cell Ranger, 36,250 released names. MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520. Zebrahub uses a custom reference called Danio.rerio_genome_Zebrabow_6, 32,057 ENSDARG plus three transgene features.",
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason. What works instead is reconstruction from the builder's own code plus the released coordinates, which is how ZSCAPE's was recovered exactly. What does not work is asking the paper: ZSCAPE, ChemFish and Zebrahub name no GTF at all, and Zebrahub's was written off in 2026 after six sources were exhausted.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"The counting reference",
- added:"BUILT ONCE FROM THE ASSEMBLY AND THE ANNOTATION TOGETHER — the annotation is baked in at index time, not applied afterward. Not per run and not per sample, which is why the edge leaving it is drawn connected but not carrying: nothing travels it when a run goes through. It determines which transcripts are callable at all, and that is the whole reason two indexes give two different matrices from identical reads."},
-
-{id:"G1b", key:"G1b", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:8.6}, name:"GRCz12tu", x:12.9, y:R3+10.3, w:1.25, d:1.25, h:0.55,
- sub:"the sequence · the newer assembly",
- does:"The second assembly. Same species, different coordinates: a base is not at the same address in the two, so nothing that names a position transfers between them without being lifted over.",
- built:"Staged rather than in use. The provenance for this arm, stage by stage, is at /grcz12.",
- cond:"Not interchangeable with GRCz11 by inspection. Two matrices built on the two assemblies cannot be concatenated, and a marker list from one is not a marker list for the other until every coordinate has been mapped across.",
- added:"Drawn because the branch is real. This arm exists as a decision that has been taken and staged, not as a hypothetical."},
-
-{id:"G2b", key:"G2b", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:11.4}, name:"Ensembl 2025_12", x:16.1, y:R3+7.5, w:1.25, d:1.25, h:0.55,
- sub:"the annotation · the newer release",
- does:"The annotation that goes with the newer assembly. A separate file and a separate decision, exactly as on the other arm.",
- built:"Staged alongside GRCz12tu; see /grcz12 for what has been built and what has not.",
- cond:"The two arms differ in BOTH files, which is why the branch is drawn as two pairs rather than as one genome with two annotations. Reporting only one of the two differences would make the arms look more comparable than they are.",
- added:"The pair is the point: an arm is an assembly and an annotation together, and there is no useful sense in which one of them alone defines it."},
-
-{id:"G3b", key:"G3b", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:10.0}, name:"STAR index · staged", x:14.5, y:R3+8.9, w:1.7, d:1.7, h:0.95,
- sub:"GRCz12tu + Ensembl 2025_12 · the second arm",
- does:"The second index, from the second assembly and the second annotation. Same reads go into it; a different matrix comes out.",
- built:"Built the same way and at the same cost as the first: once per reference, never per run.",
- cond:"THIS IS THE ONLY PLACE ON THE MAP WHERE ONE INPUT LEGITIMATELY PRODUCES TWO OUTPUTS. Everything from the alignment onward exists twice — two alignments, two gene assignments, two deduplications, two unfiltered matrices — and the two are not reconcilable after the fact, because the gene spaces differ.",
- added:"Same R1. Two indexes. Two matrices, from identical reads. The stations downstream are drawn once with a × 2 under the name rather than twice on the map, which is a density decision and not a claim that they are shared."},
+ added:"BUILT ONCE FROM THE ASSEMBLY AND THE ANNOTATION TOGETHER — the annotation is baked in at index time, not applied afterward. Not per run and not per sample, which is why the edge leaving it is drawn connected but not carrying: nothing travels it when a run goes through. It determines which transcripts are callable at all, which is why a second index built from a different assembly and a different annotation would produce a different matrix from identical reads. One is drawn, because one is what this run used."},
 
 {id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"ref",
  follow:{a:"E3",dx:0}, name:"Barcode whitelists", x:14.0, y:R3-5.0, w:1.5, d:1.5, h:0.6,
@@ -219,7 +202,7 @@ const NODES = [
    meet, and neither of them alone can produce a count.
    --------------------------------------------------------------------------- */
 
-{id:"E6", key:"E6", group:"The join", shape:"tile", hatch:true, tag:"× 2 ARMS",
+{id:"E6", key:"E6", group:"The join", shape:"tile", hatch:true,
  lane:"r3", gap:9,
  name:"Deduplicate UMIs", x:24.0, y:R3, w:1.9, d:1.9, h:1.35,
  sub:"barcode + gene + UMI collapse to one count · reads become molecules",
@@ -231,7 +214,7 @@ const NODES = [
  added:"THE SECOND JOIN, AND THE LOAD-BEARING NODE OF THIS WHOLE SEGMENT. The gene identity comes down the R1 branch and the cell identity comes up the R2 branch, and neither of them alone is a count: a gene with no cell is a read pile and a cell with no gene is an empty row. Two edges arrive here and the map is drawn so that they visibly converge. The UMI itself was stamped during reverse transcription, before any amplification, so every copy of one original molecule carries it — which is what makes this the step that undoes PCR rather than a step that guesses at it."},
 
 {id:"UD", key:"E7", group:"② Unfiltered DGE", groupMark:true, anchor:true, shape:"matrix",
- lane:"r3", tag:"× 2 ARMS",
+ lane:"r3",
  name:"Unfiltered DGE", x:30.0, y:R3, w:2.8, d:2.8, h:2.2, cells:8, fill:0.09,
  sub:"every barcode × every gene · rarely delivered", stat:"almost never shipped",
  does:"Every barcode that ever appeared, against every gene. Drawn sparse because it is sparse — almost all of this volume is empty, and most of these barcodes were never cells.",
@@ -280,21 +263,18 @@ const EDGES = [
      deterministic and is identical across arms. R1 therefore travels further
      and does more work, and its lane is drawn further out. Equal lanes would
      be a lie about the pipeline. */
-  {a:"E2", b:"E4", kind:"read", port:"L", tone:"var(--keep)"},
-  {a:"E4", b:"E5", kind:"read",          tone:"var(--keep)"},
-  {a:"E5", b:"E6", kind:"read",          tone:"var(--keep)"},   /* the gene identity arrives */
+  {a:"E2", b:"E4", kind:"read", port:"L", tone:"var(--cull)"},
+  {a:"E4", b:"E5", kind:"read",          tone:"var(--cull)"},
+  {a:"E5", b:"E6", kind:"read",          tone:"var(--cull)"},   /* the gene identity arrives */
 
   {a:"E2", b:"E3", kind:"read", port:"R", tone:"var(--accent)"},
   {a:"E3", b:"E6", kind:"cell",          tone:"var(--accent)"}, /* the cell identity arrives */
 
   {a:"E6", b:"UD", kind:"cell"},
 
-  {a:"G1",  b:"G3a", kind:"ref", still:true},
-  {a:"G2",  b:"G3a", kind:"ref", still:true},
-  {a:"G1b", b:"G3b", kind:"ref", still:true},
-  {a:"G2b", b:"G3b", kind:"ref", still:true},
-  {a:"G3a", b:"E4",  kind:"ref", still:true},
-  {a:"G3b", b:"E4",  kind:"ref", still:true},
+  {a:"G1", b:"G3", kind:"ref", still:true},
+  {a:"G2", b:"G3", kind:"ref", still:true},
+  {a:"G3", b:"E4", kind:"ref", still:true},
   {a:"W1",  b:"E3",  kind:"ref", still:true},
 ];
 
@@ -426,15 +406,15 @@ const OVERVIEW = {
   does:`<p>Everything that happens between the reads and the first matrix on row 3 of <a href="/pipeline">/pipeline</a> — the band called <mark>Bioinformatics pipeline</mark>. Paired-end FASTQ goes in on the left; every barcode that ever appeared, against every gene, comes out on the right.</p>
 <p><mark>It is not a chain.</mark> It is one fork and two separate joins, and the shape is the content:</p>
 <p><mark>The fork is at E2.</mark> One molecule, sequenced from both ends. R1 carries the cDNA and goes to the genome; R2 carries the barcodes and goes to the whitelists. Everything downstream of that node is two independent problems until they meet again.</p>
-<p><mark>They are two lanes, not two arrows.</mark> Each leaves from its own end of the fragment — R1 from the cDNA end, R2 from the barcode end — and runs on its own line, tinted with the token that half of the molecule already wears in the glyph. No label is needed on either. <mark>And they are not the same length.</mark> R1 makes two stops, consumes the genome lane, differs per arm and can fail; R2 makes one, is deterministic, and is identical across arms. R1 travels further and does more work, and the drawing says so.</p>
+<p><mark>They are two lanes, not two arrows.</mark> Each leaves from its own end of the fragment — R1 from the cDNA end, R2 from the barcode end — and runs on its own line, tinted with the token that half of the molecule already wears in the glyph. No label is needed on either. <mark>And they are not the same length.</mark> R1 makes two stops, consumes the genome lane and can fail; R2 makes one and is deterministic. R1 travels further and does more work, and the drawing says so.</p>
 <p><mark>The first join is E4</mark> — R1 meets the index. <mark>The second is E6</mark>, and it is the load-bearing node of the whole segment: the gene identity comes down one branch and the cell identity comes up the other, and neither of them alone is a count. A gene with no cell is a read pile; a cell with no gene is an empty row.</p>
 <p><mark>The reads themselves are drawn once, and only once.</mark> A pool of them turns in the air, and one — geometrically identical to every other, marked only by its colour and its ring — is opened up in the diagram hanging beneath it: cDNA, the middle neither read reaches, then the three ligation barcodes and the UMI. It is drawn in the molecule's own order rather than in the order R2 reads it, because <em>that</em> is what explains the reversal: BC1 is nearest the cDNA since reverse transcription attached it first, the UMI rides on the round-3 oligo at the far end, and R2 sequences inward from that end — meeting the UMI first and reaching round 1 last.</p>
 <p><mark>Nothing in this segment is a cull.</mark> Reads are set aside — a quarter of them carry no valid barcode combination and never reach the alignment, and multimappers and unmapped reads are dropped after it — but no cell is ever removed here. The matrix at the end is deliberately, uselessly complete; the culls are the D lane, drawn at <a href="/bioinformatics_pipe">/bioinformatics_pipe</a>, which begins at this cube.</p>`,
   built:`<p><mark>Three lanes, and they are not the same kind of thing.</mark> The <mark>E lane</mark> is sample material: it flows once, per run, and is consumed. The <mark>G lane</mark> (the genome) and the <mark>W lane</mark> (the barcode whitelists) are references — chosen rather than measured, built once and reused forever, arriving from outside the experiment. They are the same class as <em>The compounds</em> in the wet-lab half of the big map, and they start off to the side for the same reason.</p>
 <p><mark>But they are not drawn as flowing.</mark> A drug library is consumed; a STAR index is not. An edge that animates material down it every run asserts a per-sample cost that does not exist — so a reference edge is connected, dashed and dimmer, and never carries a dot. It is the distinction <a href="/data_structures">/data_structures</a> already makes between <em>has carried bytes</em> and <em>written · never run</em>. The reference objects wear a different skin from the stations for the same reason.</p>
-<p><mark>The assembly and the annotation are two nodes, not one.</mark> They are two files and two independent choices, and the index is built from them <em>together</em> — the annotation is baked in at index time, not applied afterward. Which is why the whole branch below lives in the G lane rather than in the E lane.</p>`,
-  cond:`<p class="cond"><mark>The branch is real, and it is the only one on the map.</mark> Same reads. Two indexes — GRCz11 with Ensembl 99, and GRCz12tu with Ensembl 2025_12. Two matrices. This is the one place where a single input legitimately produces two outputs, and the two arms differ in <em>both</em> files rather than in one, which is why they are drawn as two pairs.</p>
-<p class="cond">Every station from the alignment onward therefore exists twice, and carries <mark>× 2 arms</mark> under its name. They are drawn once rather than twice — a density decision, not a claim that anything is shared. The two gene spaces are not reconcilable after the fact.</p>
+<p><mark>The assembly and the annotation are two nodes, not one.</mark> They are two files and two independent choices, and the index is built from them <em>together</em> — the annotation is baked in at index time, not applied afterward. Which is why they live in the G lane rather than in the E lane.</p>`,
+  cond:`<p class="cond"><mark>One index is drawn, because one is what this run used.</mark> A second — GRCz12tu with Ensembl 2025_12 — is staged rather than in use, and the provenance for it is at <a href="/grcz12">/grcz12</a> stage by stage. It is not on this map: two indexes would mean two of everything from the alignment onward, and a map that draws a second arm nothing has been counted against is claiming a result that does not exist yet.</p>
+<p class="cond">What the single index does assert is how much rides on it. Every dataset in the corpus is GRCz11 and four of them still count against four different feature universes — 32,031 · 36,250 · 32,520 · 32,057 + 3 — so the assembly agreeing is a much weaker guarantee than it sounds. The gene set cannot even date the build: it is identical across Ensembl 99 to 114.</p>
 <p class="cond">Nothing on this page is modelled: every figure is read off an artefact — the vendor's own <em>analysis_summary.csv</em>, the delivered <em>var</em>, the corpus provenance records. The one thing that cannot be shown is the reads themselves, which stayed in the vendor's cloud workdir; the payload on the first track is the sequencing statistics that survive of them, and it says so rather than drawing a stand-in.</p>
 <p class="cond">The settings that decide the most are the ones nobody records. MIC-Drop-seq's GEO metadata says Cell Ranger v7 across all 36 samples while the pipeline's own machine-written summary says 5.0.0 — and that single difference decides whether intronic reads were counted. Where a hand-typed field and a run artefact disagree, the artefact wins.</p>`
 };

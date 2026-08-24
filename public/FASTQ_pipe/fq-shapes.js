@@ -144,12 +144,28 @@ DRAW.matrix=drawMatrix;
    any object on either — it is where the name hangs, and the box the
    silhouette and the drag handle are cut from.
 
-   COLOUR. The original of this drawing had five hues. This map has three tokens
-   and a rule against a fourth, so the distinctions that survive are the ones
-   the tokens already carry — cDNA is `--keep`, the barcodes are `--accent` —
-   and the one they do not carry is made by ENCODING instead: the UMI is the
-   same accent as a barcode, drawn as an OUTLINE rather than a fill, because it
-   is the one tag on the molecule that is not a barcode. See HANDOFF.md.
+   COLOUR, AND IT IS ONE TRAIL EACH. The original of this drawing had five hues.
+   This map has three tokens and a rule against a fourth, so the two halves of
+   the molecule take two of them and hold them the whole way:
+
+     R1 · the cDNA   --cull    /pipeline's orange
+     R2 · the barcodes  --accent
+
+   --cull means "this is being dropped" on the other two maps, and here it does
+   not, because NOTHING IN THIS SEGMENT IS A CULL — the token has no other job
+   on this page and the third distinction this page does need is the fork. That
+   is the trade, and it is only safe while that stays true: if anything on this
+   map ever starts dropping cells, the R1 trail has to move off this token.
+
+   The trail is unbroken and that is the point: the hero read's cDNA half in the
+   pool, the leader running from the ring to the cDNA end of the glyph, the cDNA
+   block itself, the R1 bracket, the R1 track and the dots on it — all one
+   colour, from the pool to the moment it re-merges with R2 at the join. The
+   barcode half is the same story in accent.
+
+   The one distinction the two tokens cannot carry is made by ENCODING instead:
+   the UMI is the same accent as a barcode, drawn as an OUTLINE rather than a
+   fill, because it is the one tag on the molecule that is not a barcode.
 
    THE ARROWHEADS SIT 15% IN FROM THE ENDS THEY POINT AT. On the end an arrow
    reads as a terminus — the place the read stops — and it means the opposite:
@@ -198,14 +214,16 @@ const READS=(()=>{
 /* left to right ALONG THE MOLECULE. Widths are schematic but proportionate:
    64 bases of insert, the unsequenced middle, then the three ligation barcodes
    with their linkers and the UMI on the far end. */
+const R1TONE="var(--cull)", R2TONE="var(--accent)";
+
 const FRAG=[
-  {k:"cdna", w:76, tone:"keep",  lab:"cDNA"},
+  {k:"cdna", w:76, tone:"r1",    lab:"cDNA"},
   {k:"gap",  w:62, tone:"ghost", lab:"never sequenced"},
-  {k:"bc1",  w:13, tone:"bc",    lab:"BC1"},
+  {k:"bc1",  w:13, tone:"r2",    lab:"BC1"},
   {k:"l1",   w:26, tone:"link",  lab:""},
-  {k:"bc2",  w:13, tone:"bc",    lab:"BC2"},
+  {k:"bc2",  w:13, tone:"r2",    lab:"BC2"},
   {k:"l2",   w:26, tone:"link",  lab:""},
-  {k:"bc3",  w:13, tone:"bc",    lab:"BC3"},
+  {k:"bc3",  w:13, tone:"r2",    lab:"BC3"},
   {k:"umi",  w:16, tone:"umi",   lab:"UMI"},
 ];
 
@@ -282,9 +300,9 @@ const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monosp
    ============================================================ */
 function fragGeom(x,y){
   const p=P(x,y,0), X0=p[0], Y0=p[1];
-  const FW=300, FX0=X0-FW/2, FX1=X0+FW/2, BH=13;
-  const ROW2=Y0-14, ROW1=ROW2-16, BB=ROW1-19, BT=BB-BH, BMID=BT+BH/2;
-  const YB=BT-16, LBL=YB-6, CTOP=LBL-12;
+  const FW=400, FX0=X0-FW/2, FX1=X0+FW/2, BH=17;
+  const ROW2=Y0-18, ROW1=ROW2-21, BB=ROW1-25, BT=BB-BH, BMID=BT+BH/2;
+  const YB=BT-21, LBL=YB-12, CTOP=LBL-22;
   return {X0,Y0,FW,FX0,FX1,BH,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP};
 }
 
@@ -292,7 +310,7 @@ function drawFragment(g,n){
   hitBox(g,n);
   const F=fragGeom(n.x,n.y);
   const {FX0,FX1,FW,BT,BB,BH,BMID,ROW1,ROW2,YB,LBL}=F;
-  const SEG=10, SUB=8.5, HEAD=12;
+  const SEG=13, SUB=11, HEAD=16;
 
   const total=FRAG.reduce((s,x)=>s+x.w,0);
   const wOf=s=>(s.w/total)*FW;
@@ -316,12 +334,12 @@ function drawFragment(g,n){
          its fifteen characters have the room they need. */
       g.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
         stroke:"var(--fg3)","stroke-width":"1","stroke-dasharray":"3.4 3.4"}));
-      tick(mid,BB,ROW2-9,"var(--fg3)");
+      tick(mid,BB,ROW2-12,"var(--fg3)");
       text(s.lab,mid,ROW2,SUB,"var(--fg3)");
       return;
     }
     if(s.tone==="link"){
-      g.appendChild(el("rect",{x,y:BT+2.6,width:w-0.7,height:BH-5.2,
+      g.appendChild(el("rect",{x,y:BT+3.4,width:w-0.9,height:BH-6.8,
         fill:"var(--fg3)","fill-opacity":".30"}));
       return;
     }
@@ -331,17 +349,17 @@ function drawFragment(g,n){
          get a fourth hue to say so. Outline against fill says it instead.
          Its label drops to the second row: on the first it would sit on BC3's,
          because nothing separates the two on the molecule. */
-      g.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,
-        fill:"var(--accent)","fill-opacity":".16",
-        stroke:"var(--accent)","stroke-width":"1.2"}));
-      tick(mid,BB,ROW2-9,"var(--accent)");
-      text(s.lab,mid,ROW2,SEG,"var(--accent)","600");
+      g.appendChild(el("rect",{x,y:BT,width:w-0.9,height:BH,
+        fill:R2TONE,"fill-opacity":".16",
+        stroke:R2TONE,"stroke-width":"1.5"}));
+      tick(mid,BB,ROW2-12,R2TONE);
+      text(s.lab,mid,ROW2,SEG,R2TONE,"600");
       return;
     }
-    const col=s.tone==="keep"?"var(--keep)":"var(--accent)";
-    g.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,fill:col,"fill-opacity":".9"}));
-    if(s.tone==="keep") text(s.lab,mid,BMID+SEG*0.36,SEG,"var(--bg)","600");
-    else { tick(mid,BB,ROW1-9,col); text(s.lab,mid,ROW1,SEG,col,"600"); }
+    const col=s.tone==="r1"?R1TONE:R2TONE;
+    g.appendChild(el("rect",{x,y:BT,width:w-0.9,height:BH,fill:col,"fill-opacity":".9"}));
+    if(s.tone==="r1") text(s.lab,mid,BMID+SEG*0.36,SEG,"var(--bg)","600");
+    else { tick(mid,BB,ROW1-12,col); text(s.lab,mid,ROW1,SEG,col,"600"); }
   });
 
   /* ---- the two reads, bracketed over what each one covers ---------------
@@ -355,16 +373,28 @@ function drawFragment(g,n){
      it reads as a terminus — the place the read stops — and it is the opposite:
      the direction the read travels. */
   const gi=FRAG.findIndex(s=>s.k==="gap");
+  /* THE TWO NAMES READ AT THE MAP'S OWN ANGLE, and they sit over the OUTER end
+     of each bracket — the end its track leaves from.
+
+     Everything else in this glyph is square to the reader because it is a
+     diagram of a molecule. These two are not labels on the diagram: they name
+     the two tracks, which are map objects, so they take the map's typography
+     (-30 degrees, like every other name on the page) and stand where their
+     track departs. The line then emerges from under its own name. */
   const bracket=(xa,xb,col,label,dir)=>{
-    g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.1","stroke-opacity":".9",
-      d:`M ${xa} ${YB+5} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+5}`}));
-    const a=3.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
+    g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.4","stroke-opacity":".9",
+      d:`M ${xa} ${YB+6} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+6}`}));
+    const a=4.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
     g.appendChild(el("polygon",{fill:col,
       points:`${ax+dir*a*1.7},${YB} ${ax},${YB-a} ${ax},${YB+a}`}));
-    text(label,(xa+xb)/2,LBL,HEAD,col,"600");
+    const at=dir>0?xa:xb;                      /* the outer end: R1 left, R2 right */
+    const t=el("text",{x:0,y:0,"text-anchor":dir>0?"start":"end","font-size":HEAD,
+      "font-family":MONO,"letter-spacing":"1.4",fill:col,"font-weight":"600",
+      transform:`translate(${at},${LBL}) rotate(-30)`});
+    t.textContent=label; g.appendChild(t);
   };
-  bracket(FX0,xs[gi],"var(--keep)","R1",1);
-  bracket(xs[gi]+wOf(FRAG[gi]),FX1,"var(--accent)","R2",-1);
+  bracket(FX0,xs[gi],R1TONE,"R1",1);
+  bracket(xs[gi]+wOf(FRAG[gi]),FX1,R2TONE,"R2",-1);
 }
 DRAW.fragment=drawFragment;
 
@@ -416,12 +446,17 @@ function drawPool(g,n){
   }
   /* the leaders first, so they run UNDER the ring and the hero rather than
      across them */
-  const lead=g.appendChild(el("path",{fill:"none",stroke:"var(--fg)","stroke-opacity":".55",
+  /* ONE LEADER PER SIDE, EACH IN ITS OWN COLOUR. The frustum is not decoration
+     here: its left leg runs to the cDNA end of the glyph and its right leg to
+     the barcode end, so the trail each read is about to take is already
+     coloured before either has left the pool. */
+  const mkLead=col=>g.appendChild(el("path",{fill:"none",stroke:col,"stroke-opacity":".7",
     "stroke-width":"1.7","stroke-dasharray":"6 4.5","pointer-events":"none"}));
+  const lead1=mkLead(R1TONE), lead2=mkLead(R2TONE);
   const ring=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
     "stroke-opacity":".55","stroke-width":"0.9"}));
-  const h1=g.appendChild(el("line",{stroke:"var(--keep)","stroke-linecap":"butt"}));
-  const h2=g.appendChild(el("line",{stroke:"var(--accent)","stroke-linecap":"butt"}));
+  const h1=g.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
+  const h2=g.appendChild(el("line",{stroke:R2TONE,"stroke-linecap":"butt"}));
 
   /* the fragment this pool is magnified into — the one cross-node reference on
      the page, and it is resolved every frame rather than captured, so the
@@ -487,8 +522,9 @@ function drawPool(g,n){
         const F=fragGeom(FRAGNODE._px,FRAGNODE._py);
         const a1=crossGroup(n,FRAGNODE,[F.FX0,F.BMID]);
         const a2=crossGroup(n,FRAGNODE,[F.FX1,F.BMID]);
-        lead.setAttribute("d",
-          `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${a1[0].toFixed(1)} ${a1[1].toFixed(1)}`+
+        lead1.setAttribute("d",
+          `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${a1[0].toFixed(1)} ${a1[1].toFixed(1)}`);
+        lead2.setAttribute("d",
           `M${(hero.px+R).toFixed(1)} ${hero.py.toFixed(1)}L${a2[0].toFixed(1)} ${a2[1].toFixed(1)}`);
       }
     }

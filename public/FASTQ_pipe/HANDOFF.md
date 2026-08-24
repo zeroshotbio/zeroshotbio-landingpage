@@ -51,8 +51,15 @@ right, so each outbound edge is **ported** to the end it belongs to — `port:"L
 and `port:"R"` on the edge, resolved through `PORTS[shape]` in `fq-shapes.js`.
 Two edges leaving one node from the same place are two edges nobody can tell
 apart. Each lane is then **tinted** with the token that half of the molecule
-already wears — `--keep` for R1, `--accent` for R2 — so both journeys are
-followable with no labels at all. No new colour: those are the two the page has.
+already wears — `--cull` for R1, `--accent` for R2 — so both journeys are
+followable with no labels at all. No new colour: those are two the page has.
+
+**The two bracket names read at the map's angle and stand at the outer end of
+their own bracket.** Everything else in the glyph is square to the reader
+because it is a diagram of a molecule; those two are not labels on the diagram,
+they name the two tracks, which are map objects. So they take the map's
+typography (−30°, like every other name on the page) and stand where their
+track departs — the line emerges from under its own name.
 
 **Which side each lane sits on is not a free choice.** A track has to leave
 toward its own lane rather than back across the drawing it came from, and
@@ -98,29 +105,31 @@ draws between *has carried bytes* and *written · never run*. Reference **nodes*
 wear `SKIN.works` rather than `SKIN.tile` for the same reason: a reference that
 looks like a station undoes half of that at a glance.
 
-### The branch, and it is the only one on the map
+### One index is drawn, because one is what this run used
 
-`G3 · STAR index` is where the annotation arms split. Same R1, two indexes, two
-matrices. **G1 and G2 are two nodes, not one** — two files, two independent
-choices — and the arms differ in *both*, which is why they are drawn as two
-pairs (`G1/G2 → G3a`, `G1b/G2b → G3b`) rather than as one genome with two
-annotations.
+`G1 · GRCz11` and `G2 · Ensembl 99` are **two nodes, not one** — two files, two
+independent choices — and `G3 · STAR index` is built from them *together*, the
+annotation baked in at index time rather than applied afterward.
 
-**Each arm is a horizontal triple and the pairing is geometric, not hopeful.**
-A source at `(index.x − 1.4, index.y + 1.4)` lands 102px directly *left* of its
-index on screen and at the same height; `(+1.4, −1.4)` lands 102px directly
-right. So each index is flanked by its own two files, the two arms sit side by
-side with a clear gap, and no dashed line crosses another. The first attempt
-spread the four sources along one lane and the arms interleaved on screen even
-though they did not in world coordinates — **check the screen order, which is
-`(x − y)`, not the world x.**
+A second arm exists: **GRCz12tu with Ensembl 2025_12**, staged rather than in
+use, documented stage by stage at `/grcz12`. **It is deliberately not on this
+map.** Two indexes mean two of everything from the alignment onward, and a map
+that draws a second arm nothing has been counted against is claiming a result
+that does not exist yet.
 
-Everything from E4 onward exists twice and carries **`× 2 ARMS`** under its
-name — **E7 included**. That tag was only drawn on plain nodes at first, so the
-matrix rendered as one bare cube while every station feeding it said `× 2`,
-which reads as the branch collapsing back into one object. It does not.
-Landmarks draw the tag as a third line under the name and the stat. Drawing them once is a *density* decision, not a claim that anything is
-shared; the two gene spaces are not reconcilable after the fact.
+**If it is ever run, the branch goes back the way it was drawn before**, and
+that shape is worth keeping: two *pairs* (`G1/G2 → G3a`, `G1b/G2b → G3b`)
+rather than one genome with two annotations, because the arms differ in **both**
+files. Each arm is a horizontal triple — a source at
+`(index.x − 1.4, index.y + 1.4)` lands 102px directly *left* of its index on
+screen and at the same height, `(+1.4, −1.4)` directly right — so every index is
+flanked by its own two files and no dashed line crosses another. **Check the
+screen order, which is `(x − y)`, not the world x:** the first attempt spread
+the four sources along one lane and the arms interleaved on screen even though
+they did not in world coordinates. And every station from `E4` on takes a
+`tag:"× 2 ARMS"`, the landmark included — the tag was once drawn only on plain
+nodes, so the matrix rendered as one bare cube while everything feeding it said
+`× 2`, which reads as the branch collapsing back into one object.
 
 ### Nothing in this segment is a cull
 
@@ -437,11 +446,31 @@ colours:
 
 ```
 --keep:   var(--fg2)     anything that stays
---cull:   var(--drop)    anything leaving
---accent: var(--signal)  a threshold
+--cull:   var(--drop)    /pipeline's orange
+--accent: var(--signal)  /pipeline's blue
 ```
 
 **Do not introduce a fourth.**
+
+### On this page the two colours are the two reads, and that is a trade
+
+`--cull` means *this is being dropped* on the other two maps. Here it does not,
+because **nothing in this segment is a cull** — the token has no other job on
+this page, and the distinction this page does need is the fork. So:
+
+```
+R1 · the cDNA        --cull
+R2 · the barcodes    --accent
+```
+
+**The trail is unbroken and that is the whole point.** The hero read's cDNA half
+in the pool, the leader from the ring to the cDNA end of the glyph, the cDNA
+block, the `R1` bracket and its name, the R1 track and the dots on it — one
+colour from the pool to the moment it re-merges with R2 at the join. The barcode
+half is the same story in accent.
+
+**It is only safe while nothing here drops cells.** If anything on this map ever
+starts culling, the R1 trail has to move off this token first.
 
 ## Load order
 
