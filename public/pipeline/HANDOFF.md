@@ -59,7 +59,8 @@ of its own and they all have to pass too. This map's are:
 node check-culls.mjs <url>     # the shared roofs load, draw, animate, stay put
 node check-edit.mjs  <url>     # floating labels, the double press, the ✕
 node check-pads.mjs  <url>     # the four row pads: move, resize, name
-node check-rows.mjs  <url>     # the rows stay unconnected, and all read one way
+node check-rows.mjs  <url>     # rows stay unconnected, all read one way, grid covers all
+node check-multi.mjs <url>     # Select many: one delta, spacing intact
 ```
 
 Three things about this page in particular, each of which has already gone
@@ -192,6 +193,63 @@ one — a band is as long as its row.
 If you re-space row 3, check the turn at both ends: the connector from row 2
 into `FQ` and the one from `FD` into `s1` are the only two places the snake
 can silently come apart.
+
+## Select many
+
+Turn it on inside Edit positions, click objects to gather them, drag any one
+and **the whole set moves by the same world delta**. Nothing is scaled and
+nothing is re-spaced; the set keeps its own arrangement exactly, which is the
+only reason to move things together rather than in turn.
+
+**Quantise the delta, never the result.** `r2()` on each member's new position
+rounds every one of them independently, and the lane engine does not put
+objects on tidy coordinates — so three objects moved by one drag came out 0.005
+apart from each other. Small, compounding, and precisely the thing the tool
+exists to prevent. `check-multi.mjs` compares the members' deltas **to each
+other** at a tolerance of 0.001, which is the assertion that matters; comparing
+them to zero would have passed that bug.
+
+**It is a mode, not a modifier key.** Shift-click is the obvious answer and is
+wrong here: Edit positions is driven by pointer capture with `preventDefault`
+on pointerdown, so the browser's own notion of a click never arrives and a
+modifier would have to be read off the pointer event and carried across a
+capture. A mode is one boolean and it is visible in the toolbar, which matters
+more — a selection you did not know you were building is a selection you will
+move by accident.
+
+A press that does not travel **toggles membership**; in this mode it does not
+offer a ✕, because the two would fight over one gesture. Dragging something
+outside the set clears the set and drags that one alone — and that clearing
+happens on the first travel, **not on pointerdown**, because on pointerdown a
+press is still ambiguous. Doing it there emptied the set on every click, so
+only ever one thing could be gathered.
+
+The set is a way of moving, not a thing that is saved: every member writes its
+own `dx`/`dy` like any other drag.
+
+## The grid is the paper, and the ruler is gone
+
+`GRID` has to be bigger than everything drawn on it. The map has outgrown it
+twice — when row 3's culls went to 4.2 units each, and when that row split in
+two — and **neither time did anything else look wrong**, because the fit camera
+measures the *content* and quietly framed a drawing with no paper under half of
+it. `check-rows.mjs` asserts the coverage now. Extending it costs nothing but
+the lines, so the bounds are deliberately generous.
+
+**The coordinate ruler is gone**, along with its button. It was numbers along
+the two outer edges so any position could be named in the same x and y the data
+file is authored in — a working tool for placing objects by hand. Edit
+positions replaced that job: you drag a thing and the offset is written down
+for you. `gAxis` is kept as an empty layer rather than removed, because the
+layer order is the z order and renumbering it moves something else by accident.
+
+**Pause motion is gone too, and the machinery is not.** `playing`,
+`setMotion()` and `MOTION_MIN` all still run: the map still stops for
+`prefers-reduced-motion` and still stops below the zoom where a chart is
+smaller than a postage stamp. What replaced the button is the **M key**, and
+that is not a detail to drop — without it a reader whose browser asks for
+reduced motion gets a still map and never learns that four of the culls draw
+their own decision. The hint says so whenever motion is off.
 
 ## Edit positions: deleting, and the floating labels
 

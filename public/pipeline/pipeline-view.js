@@ -149,7 +149,14 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gD
 [gGrid,gAxis,gBand,gPlinth,gEdge,gDot,gNode,gLabel].forEach(g=>world.appendChild(g));
 
 /* the extent of the ground plane, and of the ruler drawn around it */
-const GRID={x0:-6,x1:25,y0:-5.5,y1:45};
+/* THE GRID IS THE PAPER, so it has to be bigger than everything drawn on it.
+   The map has grown twice since these numbers were first set — row 3's culls
+   went to 4.2 units each, then the bioinformatics row split in two — and a
+   grid that stops short of the drawing reads as the drawing having fallen off
+   the edge of the sheet. These bounds are deliberately generous: the fit
+   camera measures the CONTENT, not the grid (see contentBox), so extending the
+   paper costs nothing but the lines. */
+const GRID={x0:-8,x1:42,y0:-8,y1:64};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -158,43 +165,16 @@ const GRID={x0:-6,x1:25,y0:-5.5,y1:45};
     gGrid.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],stroke:"var(--grid)","stroke-opacity":"var(--grid-op)","stroke-width":"1"}));}
 })();
 
-/* ============================================================
-   COORDINATE RULER
-   Numbers along the two outer edges that meet at the top corner, so any
-   position on the map can be named. These are the SAME x and y that NODES
-   and LANES are authored in — read a number off the edge and it is the
-   value to put in the file. Ticks every unit, numbers every two.
-   Both rulers sit outside all content: the leftmost thing on the map is at
-   x = -1.85 and the topmost at y = -3.55, against edges at -6 and -5.5.
-   ============================================================ */
-(function ruler(){
-  const T=0.34, LBL=1.0;
-  const tick=(a,b,op)=>gAxis.appendChild(el("line",{x1:a[0],y1:a[1],x2:b[0],y2:b[1],
-    stroke:"var(--fg)","stroke-opacity":op,"stroke-width":"1"}));
-  const num=(p,txt,rot,big)=>{
-    const g=el("g",{transform:`translate(${p[0]},${p[1]}) rotate(${rot})`});
-    const t=el("text",{x:0,y:3,"text-anchor":"middle","font-size":big?"10":"8",
-      "letter-spacing":big?"1.5":".4",fill:"var(--fg)","fill-opacity":big?".5":".38"});
-    t.textContent=txt; g.appendChild(t); gAxis.appendChild(g);
-  };
-  /* the axis lines themselves */
-  tick(P(GRID.x0,GRID.y0,0), P(GRID.x1,GRID.y0,0), ".2");
-  tick(P(GRID.x0,GRID.y0,0), P(GRID.x0,GRID.y1,0), ".2");
-  /* X runs down-right along y = y0; its numbers lie along that direction */
-  for(let x=Math.ceil(GRID.x0);x<=GRID.x1;x++){
-    const on=x%2===0;
-    tick(P(x,GRID.y0,0), P(x,GRID.y0-(on?T:T*0.5),0), on?".28":".16");
-    if(on) num(P(x,GRID.y0-LBL,0), String(x), 30);
-  }
-  /* Y runs down-left along x = x0; numbers stay upright by reading up-right */
-  for(let y=Math.ceil(GRID.y0);y<=GRID.y1;y++){
-    const on=y%2===0;
-    tick(P(GRID.x0,y,0), P(GRID.x0-(on?T:T*0.5),y,0), on?".28":".16");
-    if(on) num(P(GRID.x0-LBL,y,0), String(y), -30);
-  }
-  num(P(GRID.x1+1.5,GRID.y0-LBL,0), "X", 30, true);
-  num(P(GRID.x0-LBL,GRID.y1+1.5,0), "Y", -30, true);
-})();
+/* THE COORDINATE RULER IS GONE. It was numbers along the two outer edges so
+   any position could be named in the same x and y the data file is authored
+   in — a working tool for whoever was placing objects by hand. Edit positions
+   replaced that job: you drag a thing and the offset is written down for you,
+   so nobody reads a coordinate off an edge any more. What was left was two
+   long rules and forty numbers around a drawing that had outgrown them.
+
+   `gAxis` is kept as an empty layer rather than removed, because the layer
+   order is the z order and renumbering it is the kind of change that moves
+   something else by accident. */
 
 /* row bands — name runs along the band's bottom-right edge */
 /* THE FOUR PADS, and each is three things that move independently.
@@ -900,12 +880,6 @@ document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
    keyboard shortcut nobody is told about is not a control. It also clears the
    selection, so it is the one move that puts the page back to how it opened. */
 { const b=document.getElementById("btnHome"); if(b) b.onclick=resetView; }
-/* the ruler is a working tool, not part of the picture — one click hides it */
-let axes=!PHONE();     /* the ruler earns its space on a desktop, not a phone */
-const btnAxes=document.getElementById("btnAxes");
-const syncAxes=()=>{ gAxis.style.display=axes?"":"none";
-                     btnAxes.textContent=axes?"Hide axes":"Show axes"; };
-btnAxes.onclick=()=>{ axes=!axes; syncAxes(); }; syncAxes();
 document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
   e.target.textContent=document.body.classList.contains("light")?"Dark":"Light";
@@ -1056,8 +1030,21 @@ window.addEventListener("keydown",e=>{
   if(tag==="INPUT"||tag==="TEXTAREA"||(t&&t.isContentEditable)) return;
   if(e.key==="ArrowRight"||e.key==="ArrowDown"){ e.preventDefault(); stepBy(1); }
   else if(e.key==="ArrowLeft"||e.key==="ArrowUp"){ e.preventDefault(); stepBy(-1); }
-  else if(e.key==="Escape"){ release(); }
+  else if(e.key==="Escape"){
+    /* in Select many, Escape empties the set rather than clearing the reader:
+       an accidental gather is the thing you want to undo first, and the reader
+       is not showing anything in that mode anyway */
+    if(window.pipelineClearChosen) window.pipelineClearChosen();
+    release();
+  }
   else if(e.key==="Home"||e.key==="0"){ e.preventDefault(); resetView(); }
+  /* THE MOTION ESCAPE HATCH, now that the toolbar button is gone. It matters
+     for one reader in particular: somebody whose browser asks for reduced
+     motion gets a still map, and without a way to turn it on they never see
+     that four of the culls draw their own decision. A key is a smaller thing
+     than a button in a toolbar and it keeps the door open. The hint says so
+     whenever motion is off. */
+  else if(e.key==="m"||e.key==="M"){ e.preventDefault(); if(setMotion) setMotion(!playing,true); }
 });
 });
 
@@ -1281,6 +1268,12 @@ function pushRemote(){
 /* The motion control. The map is allowed to be still — what it is not allowed
    to be is still with no explanation and no way back. */
 feature("motion", function(){
+  /* THE PAUSE BUTTON IS GONE AND THE MACHINERY IS NOT. `playing`, setMotion()
+     and MOTION_MIN still run: the map still stops for prefers-reduced-motion,
+     still stops below the zoom where a chart is smaller than a postage stamp,
+     and a ticker that throws is still dropped. What went is one more control
+     in a toolbar for something almost nobody reached for — and `btn` being
+     absent is handled everywhere below rather than assumed away. */
   const btn=document.getElementById("btnMotion");
   const hint=document.querySelector(".hint"), hint0=hint?hint.textContent:"";
   onMotion=()=>{
@@ -1289,8 +1282,8 @@ feature("motion", function(){
     if(hint && !texting && !editing)
       hint.textContent = playing ? hint0
         : (mqReduce.matches && motionChoice!=="off"
-            ? "Motion is paused because this browser asks for reduced motion — press Play motion to run it anyway"
-            : "Motion is paused — press Play motion to start it");
+            ? "Motion is paused because this browser asks for reduced motion — press M to run it anyway"
+            : "Motion is paused — press M to start it");
   };
   if(btn) btn.onclick=()=>setMotion(!playing,true);
   onMotion();
@@ -1424,6 +1417,65 @@ feature("edit positions", function(){
      So the double press is measured from the presses. A press that did not
      travel is a candidate; two of them on the same target inside DBL_MS is a
      double click. Same rule a browser uses, applied one layer down. */
+  /* ---- SELECT MANY, AND MOVE THEM AS ONE ------------------------------
+     A map is arranged in groups more often than one object at a time: a row
+     shifts, a cluster of side structures moves off something it collides
+     with, four culls slide together. Doing that one drag at a time works and
+     loses the spacing — every object you move is measured by eye against the
+     one you moved last, and the errors add up.
+
+     So: turn the mode on, click objects to gather them, drag any one of them
+     and the whole set moves by the same world delta. Nothing is scaled and
+     nothing is re-spaced; the set keeps its own arrangement exactly, which is
+     the only reason to move things together rather than in turn.
+
+     WHY IT IS ITS OWN MODE rather than a modifier key. Shift-click is the
+     obvious answer and it is wrong here: this map's Edit positions is driven
+     by pointer capture with preventDefault on pointerdown, so the browser's
+     own notion of a click never arrives, and a modifier would have to be read
+     off the pointer event and remembered across a capture. A mode is one
+     boolean and it is visible in the toolbar, which matters more — a
+     selection you did not know you were building is a selection you will move
+     by accident.
+
+     A press that does not travel TOGGLES membership. Dragging something that
+     is not in the set clears the set and drags that one alone, which is what
+     every other drawing program does and the only behaviour nobody has to be
+     told about. */
+  const CHOSEN=new Set();
+  let multi=false;
+  const btnMulti=document.getElementById("btnMulti");
+  function markChosen(){
+    NODES.forEach(n=>{ const g=nodeEls[n.id];
+      if(g) g.classList.toggle("chosen", CHOSEN.has(n.id)); });
+  }
+  function clearChosen(){ CHOSEN.clear(); markChosen(); sayChosen(); }
+  function toggleChosen(id){
+    if(CHOSEN.has(id)) CHOSEN.delete(id); else CHOSEN.add(id);
+    markChosen(); sayChosen();
+  }
+  function sayChosen(){
+    if(!hint || !multi) return;
+    hint.textContent = CHOSEN.size
+      ? `${CHOSEN.size} selected — drag any one of them to move them all · click to add or remove · Esc to clear`
+      : "Select many: click objects to gather them, then drag any one to move them all as a unit";
+  }
+  function setMulti(on){
+    multi=on;
+    if(!on) clearChosen();
+    document.body.classList.toggle("multi",on);
+    if(btnMulti){ btnMulti.textContent=on?"Done selecting":"Select many";
+                  btnMulti.setAttribute("aria-pressed",String(on)); }
+    if(on){ unpick(); sayChosen(); } else say(null);
+  }
+  if(btnMulti) btnMulti.onclick=()=>{
+    /* it only means anything inside Edit positions, so it turns that on
+       rather than doing nothing and looking broken */
+    if(!editing) setMode(true);
+    setMulti(!multi);
+  };
+  window.pipelineClearChosen=()=>{ if(multi) clearChosen(); };
+
   const DBL_MS=420;
   let lastTap={key:null,t:0};
   function tapped(key,what){
@@ -1474,12 +1526,32 @@ feature("edit positions", function(){
     const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
     grab={n,mode,px:ev.clientX,py:ev.clientY,moved:0,
-          ox:n.x,oy:n.y,olx:n._lx,oly:n._ly,el:el0};
+          ox:n.x,oy:n.y,olx:n._lx,oly:n._ly,el:el0,
+          /* the whole set's starting positions, so every one of them is
+             measured from where it was rather than from where it is now.
+             Accumulating deltas frame by frame drifts, and the drift is
+             different for each member, which is exactly the spacing this
+             tool exists to preserve. */
+          /* the set travels only if the thing being dragged is IN it. A press
+             on anything else is either a tap that gathers, or a drag of that
+             one object — and which of the two it is cannot be known until it
+             has either travelled or not, so nothing is cleared here. */
+          set: (multi && mode==="node" && CHOSEN.has(n.id) && CHOSEN.size)
+                 ? [...CHOSEN].filter(id=>byId[id]).map(id=>({n:byId[id],ox:byId[id].x,oy:byId[id].y}))
+                 : null};
     (mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.add("picked");
   }
   function move(ev){
     if(!grab) return;
     grab.moved=Math.max(grab.moved,Math.hypot(ev.clientX-grab.px,ev.clientY-grab.py));
+    /* IT HAS TRAVELLED, so it is a drag rather than a tap. Dragging something
+       outside the set means the set is not what you meant: clear it and drag
+       this one alone, the way every drawing program behaves. Done here rather
+       than on pointerdown because on pointerdown a press is still ambiguous —
+       doing it there emptied the set on every click, so only ever one thing
+       could be gathered. */
+    if(multi && grab.moved>4 && !grab.set && grab.mode==="node" && CHOSEN.size && !CHOSEN.has(grab.n.id))
+      clearChosen();
     if(grab.mode && grab.mode.startsWith("band-")){
       const rec=grab.rec, b=rec.b;
       const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
@@ -1515,6 +1587,23 @@ feature("edit positions", function(){
     const q=v=>Math.round(v/SNAP)*SNAP;
     const n=grab.n;
     if(grab.mode==="label"){ n._lx=r2(grab.olx+q(dx)); n._ly=r2(grab.oly+q(dy)); }
+    else if(grab.set){
+      /* ONE DELTA, APPLIED TO EVERY MEMBER FROM ITS OWN START. The set keeps
+         its arrangement exactly — nothing is scaled, nothing re-spaced — which
+         is the whole reason to move things together rather than in turn. */
+      /* QUANTISE THE DELTA, NEVER THE RESULT. r2() on each member's new
+         position rounds every one of them independently, and the lane engine
+         does not put objects on tidy coordinates — so three objects moved by
+         one drag came out 0.005 apart from each other. Small, and it is
+         exactly the spacing this tool exists to preserve, and it compounds
+         every time a set is moved. The delta is snapped once; adding it
+         leaves every gap between members bit-identical. */
+      const ddx=q(dx), ddy=q(dy);
+      grab.set.forEach(m=>{ m.n.x=m.ox+ddx; m.n.y=m.oy+ddy; reposition(m.n); });
+      refresh(null);
+      if(hint) hint.textContent=`${grab.set.length} selected — moved dx ${ddx.toFixed(2)} dy ${ddy.toFixed(2)}`;
+      return;
+    }
     else { n.x=r2(grab.ox+q(dx)); n.y=r2(grab.oy+q(dy)); }
     reposition(n);
     if(grab.mode!=="label") refresh(n.id);
@@ -1539,8 +1628,14 @@ feature("edit positions", function(){
     const travelled=grab.moved>4;
     const n=grab.n;
     (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
+    const wasSet=grab.set;
     grab=null;
-    if(!travelled) return tapped("node:"+n.id,{kind:"node",n});
+    if(!travelled){
+      /* in this mode a tap gathers rather than offers a ✕ — the two would
+         fight over the same gesture, and gathering is what the mode is for */
+      if(multi) { toggleChosen(n.id); return; }
+      return tapped("node:"+n.id,{kind:"node",n});
+    }
     refresh(null);
     /* painter order is (x+y); something dragged far enough changes places */
     NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
@@ -1656,7 +1751,7 @@ feature("edit positions", function(){
     btnEdit.textContent=on?"Done moving":"Edit positions";
     syncSaveBar();
     holdAnnotations(on);
-    if(!on) unpick(); else placeX();
+    if(!on){ unpick(); setMulti(false); } else placeX();
     if(on){ release(); say(null); }
     else if(onMotion) onMotion();
     else if(hint) hint.textContent=hint0;

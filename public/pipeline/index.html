@@ -339,6 +339,14 @@
   .savebar .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
   .savedone{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
   svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
+  /* A MEMBER OF A MULTI-SELECTION reads differently from a picked object,
+     because it means something different: picked is "this one, and the ✕
+     applies to it", chosen is "this one AND the others, and they move
+     together". Solid where picked is dashed, and the whole set carries it at
+     once so the group reads as a group. */
+  svg.editing .chosen>.ehandle{fill-opacity:.3;stroke-opacity:1;stroke-width:2;
+                               stroke-dasharray:none;stroke:var(--signal)}
+  body.multi #btnMulti{border-color:var(--signal);color:var(--signal)}
 
   .reader{width:var(--reader-w,352px);flex:none;border-left:1px solid var(--fg);display:flex;
           flex-direction:column;background:var(--panel);min-height:0}
@@ -456,10 +464,9 @@
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
       <button class="ctl" id="btnHome">Fit the map</button>
-      <button class="ctl" id="btnAxes">Hide axes</button>
-      <button class="ctl" id="btnMotion" aria-pressed="false">Pause motion</button>
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
+      <button class="ctl edonly" id="btnMulti" aria-pressed="false">Select many</button>
       <button class="ctl" id="btnText">Edit text</button>
       <button class="ctl" id="btnVisual">Edit visual</button>
       <button class="ctl edonly" id="btnSave">Save all changes</button>

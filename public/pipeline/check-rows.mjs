@@ -25,6 +25,14 @@
    the returns became long enough to be a problem is that all four were turned
    to read the same way. A lane quietly flipped back is a row that reads
    against its neighbours with nothing on screen saying so.
+
+   AND THAT THE GRID STILL COVERS THE DRAWING. The grid is the paper; a map
+   that has outgrown it reads as having fallen off the edge of the sheet. This
+   has happened twice — once when row 3's culls went to 4.2 units each, once
+   when that row split in two — and neither time did anything else look wrong,
+   because the fit camera measures the CONTENT and quietly framed a drawing
+   with no paper under half of it. Extending the paper costs nothing but the
+   lines, so the bounds are generous and this asserts they stay that way.
 */
 import { chromium } from 'playwright';
 
@@ -54,7 +62,23 @@ const found = await page.evaluate(gap => {
     Math.abs(byId[d.e.a].y - byId[d.e.b].y) > gap).length;
   const dirs = LANES.map(L => `${L.id}:${L.dir}`);
   const wrong = LANES.filter(L => L.dir !== 1).map(L => L.id);
-  return { cross, onCross, dirs, wrong };
+  /* the paper, against everything drawn on it */
+  let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+  NODES.forEach(n => {
+    const hw = (n.w || 0) / 2, hd = (n.d || 0) / 2;
+    x0 = Math.min(x0, n.x - hw); x1 = Math.max(x1, n.x + hw);
+    y0 = Math.min(y0, n.y - hd); y1 = Math.max(y1, n.y + hd);
+  });
+  BANDS.forEach(b => {
+    x0 = Math.min(x0, b.x0); x1 = Math.max(x1, b.x1);
+    y0 = Math.min(y0, b.y0); y1 = Math.max(y1, b.y1);
+  });
+  const short = [];
+  if (GRID.x0 > x0) short.push(`left by ${(GRID.x0 - x0).toFixed(1)}`);
+  if (GRID.x1 < x1) short.push(`right by ${(x1 - GRID.x1).toFixed(1)}`);
+  if (GRID.y0 > y0) short.push(`top by ${(GRID.y0 - y0).toFixed(1)}`);
+  if (GRID.y1 < y1) short.push(`bottom by ${(y1 - GRID.y1).toFixed(1)}`);
+  return { cross, onCross, dirs, wrong, short };
 }, ROW_GAP);
 
 if (found.cross.length)
@@ -65,10 +89,14 @@ if (found.wrong.length)
   fail(`these lanes do not read left to right: ${found.wrong.join(', ')} — ` +
        `all four rows read the same way, and a flipped one says so nowhere on screen`);
 
+if (found.short.length)
+  fail(`the grid falls short of the drawing — ${found.short.join(', ')}. The map has ` +
+       `outgrown its paper, and the fit camera measures content so nothing else looks wrong.`);
+
 console.log(bad
   ? `\n${bad} FAILURE(S)`
-  : `rows: nothing is drawn between them, no dot is travelling between them, and all ` +
-    `${found.dirs.length} lanes read left to right`);
+  : `rows: nothing is drawn between them, no dot is travelling between them, all ` +
+    `${found.dirs.length} lanes read left to right, and the grid covers everything drawn on it`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);
