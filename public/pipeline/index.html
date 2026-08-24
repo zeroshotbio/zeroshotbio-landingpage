@@ -13,6 +13,24 @@
     --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
     --signal:#74b0f0; --drop:#e0765c;
 
+    /* ---- THE THREE MARKS THE ROOFED CULLS USE ----
+       Aliases, not new colours. Each is a token this page already carries,
+       already meaning close to what it has to mean on a chart:
+
+         --keep    = --fg2     the population still under consideration. It is
+                               most of every cloud, so it takes the neutral the
+                               rest of the map is drawn in rather than a hue.
+         --cull    = --drop    this page already means "being dropped" with
+                               this, on its drop edges and its condition rule.
+         --accent  = --signal  this page already means "look here" with this,
+                               and a threshold is the thing to look at.
+
+       Every mark on a roof is one of three things — it stays, it goes, or it
+       is the line deciding which. DO NOT ADD A FOURTH: the moment one roof
+       gets its own hue the four culls stop being comparable at a glance. */
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+
     --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
     --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
     --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
@@ -39,6 +57,7 @@
     --grid:#161e19; --grid-op:.06;
     --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
     --signal:#1e4c8a; --drop:#8a3324;
+    --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
 
     --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
     --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
@@ -299,6 +318,8 @@
   .cond{border-left:2px solid var(--drop);padding-left:9px}
   .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
         white-space:pre;overflow-x:auto;line-height:1.6}
+  /* the headline figure of a roofed cull's threshold */
+  .figure{font-size:17px;color:var(--accent);letter-spacing:.02em;margin:2px 0 8px}
   .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
          letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
 
@@ -794,6 +815,13 @@ const ECHO_NODE = {
 
 <script src="/pipeline/pipeline-iso.js?v=ec0copy1"></script>
 <script src="/pipeline/pipeline-shapes.js?v=ec0copy1"></script>
+<!-- The four roofed culls between the unfiltered and the filtered matrix.
+     SHARED WITH /bioinformatics_pipe, which is where they were written: that
+     page is this row drawn deeper, and one implementation means the two
+     accounts of one pipeline cannot drift. They read P, el, pts, S, rng,
+     paint, TICKERS, DRAW and SKIN out of the two files above. -->
+<script src="/culls/culls-pop.js?v=ec0copy1"></script>
+<script src="/culls/culls-draw.js?v=ec0copy1"></script>
 <script src="/pipeline/pipeline-data.js?v=ec0copy1"></script>
 <script src="/pipeline/pipeline-view.js?v=ec0copy1"></script>
 </body>

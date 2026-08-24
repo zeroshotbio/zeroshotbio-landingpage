@@ -21,6 +21,8 @@ be: the route has no trailing slash, so relative paths resolve against `/` and 4
 ```html
 <script src="/pipeline/pipeline-iso.js"></script>     <!-- primitives -->
 <script src="/pipeline/pipeline-shapes.js"></script>  <!-- visual vocabulary -->
+<script src="/culls/culls-pop.js"></script>           <!-- SHARED: the population -->
+<script src="/culls/culls-draw.js"></script>          <!-- SHARED: the four roofs -->
 <script src="/pipeline/pipeline-data.js"></script>    <!-- the pipeline itself -->
 <script src="/pipeline/pipeline-view.js"></script>    <!-- assembly + interaction -->
 ```
@@ -38,6 +40,55 @@ keep this order.
 | `pipeline-iso.js` | rendering side | Projection, faces, paint, layout, ticker registry. |
 | `pipeline-view.js` | shared, frozen | Grid, bands, labels, edges, dots, camera, reader, index. |
 | `index.html` | shared | Markup, header stats, and the CSS variables that define both themes. |
+| **`/culls/culls-pop.js`** | **shared with `/bioinformatics_pipe`** | The simulated barcode population and every statistic computed from it. |
+| **`/culls/culls-draw.js`** | **shared with `/bioinformatics_pipe`** | The four roofed culls, `roofFrame`, the chart helpers and the floating annotations. |
+
+## The four roofed culls are shared code
+
+Row 3's knee, mito, complexity and doublet culls are drawn from
+`public/culls/`, and **`/bioinformatics_pipe` draws the same four from the same
+files**. That page is this row drawn deeper; one implementation means two
+accounts of one pipeline cannot drift. It is the same rule the node prose
+already follows — that page lifts its `does` / `built` / `cond` from this one
+as source text rather than re-typing it.
+
+**Edit `/culls/` and you have edited two maps.** `node check-culls.mjs <url>`
+beside these files is this map's half of that; the other page has six checks
+of its own and they all have to pass too.
+
+Three things about this page in particular, each of which has already gone
+wrong once:
+
+- **The buildings are smaller here.** A cull is 4.2 units on that page because
+  it is the whole map; here it is 1.5, one object in one of four rows, and the
+  lane span is fixed by the snake so it cannot simply grow. Everything about an
+  annotation scales with its roof for that reason. A node may also nudge its
+  own annotations with `annDx` / `annDy`, which this map needs because the
+  ground under row 3 is occupied and the ground under that page's row is not.
+- **The palette must carry `--keep` / `--cull` / `--accent`.** They are aliases
+  onto `--fg2` / `--drop` / `--signal`, which this page already had. Without
+  them every mark on every roof renders black, which is what an undefined CSS
+  variable looks like and is easy to mistake for a deliberate choice.
+- **The reader must keep saying "modelled".** Every threshold on those roofs is
+  computed from a simulated population, and a modelled figure that has lost
+  that word claims a result nobody produced. `roofFigures()` in
+  `pipeline-view.js` prints it above the numbers.
+
+**Never give a roof `shape:"works"`.** `topOf()` returns `n.h*0.96` for a works
+node and `n.h` for everything else, and the chart is laid at `n.h` — so a works
+roof would put the label anchor and the occlusion silhouette 4% below its own
+chart.
+
+## The two culls that are not on a roof
+
+`c2` (Depth floor) and `hx` (Sample demultiplex) are **off the lane, not
+deleted**. Deleting them would have been the tidier edit and the wrong one:
+every claim on them is researched, and the corpus is the reason this map
+exists. What changed is their status, not their truth — one folds into the
+knee, because a fitted transcript minimum *is* a depth floor and drawing both
+would draw the same cut twice; the other applies only to hashed designs, and
+the chemistry two rows up is combinatorial, where the barcode already is the
+sample. They hang off the culls that absorb them, above the row.
 
 ## State of the data — generalised 2026-08-15 (second pass)
 

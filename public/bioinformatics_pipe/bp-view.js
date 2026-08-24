@@ -17,8 +17,9 @@
 /* Fail loudly and usefully if the scripts loaded out of order or one 404'd. */
 (function requires(){
   const need={ "bp-iso.js":["P","paint","installDefs","layoutRows","roofFrame","TICKERS"],
-               "bp-pop.js":["makeBarcodes","kneeOf","mitoCut","cubicBand","doubletScores"],
-               "bp-shapes.js":["DRAW","SKIN","topOf","MODEL"],
+               "culls/culls-pop.js":["makeBarcodes","kneeOf","mitoCut","cubicBand","doubletScores"],
+               "bp-shapes.js":["DRAW","SKIN","topOf"],
+               "culls/culls-draw.js":["MODEL","roofFrame","ANNOTATIONS","FIGURES"],
                "bp-data.js":["NODES","EDGES","LANES","BANDS","CARRIES","SNIPPETS","OVERVIEW"] };
   const missing=[];
   for(const file in need)

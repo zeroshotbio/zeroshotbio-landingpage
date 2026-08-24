@@ -358,9 +358,15 @@
 <!-- Load order matters and is asserted at the top of bp-view.js.
      src is ABSOLUTE because this route has no trailing slash: a relative path
      resolves against / and 404s. -->
+<!-- The two /culls files are SHARED WITH /pipeline. That map draws the same
+     four roofed culls between its own two matrices, and they are one
+     implementation rather than two so the two accounts of one pipeline cannot
+     drift. Order matters: culls-pop builds the population, culls-draw builds
+     MODEL out of it and needs roofFrame and SKIN from the two files above. -->
 <script src="/bioinformatics_pipe/bp-iso.js?v=iso1"></script>
-<script src="/bioinformatics_pipe/bp-pop.js?v=iso1"></script>
 <script src="/bioinformatics_pipe/bp-shapes.js?v=iso1"></script>
+<script src="/culls/culls-pop.js?v=iso1"></script>
+<script src="/culls/culls-draw.js?v=iso1"></script>
 <script src="/bioinformatics_pipe/bp-data.js?v=iso1"></script>
 <script src="/bioinformatics_pipe/bp-view.js?v=iso1"></script>
 </body>

@@ -84,6 +84,50 @@ had the complexity chart as a separate object hanging off D5 by a dashed line;
 that put the same claim on the map twice and gave two places to keep in
 agreement.
 
+### THE ROOFS NOW LIVE IN `/culls/`, AND `/pipeline` DRAWS THEM TOO
+
+`public/culls/culls-pop.js` (the population and its statistics) and
+`public/culls/culls-draw.js` (the four roofs, the attrition staircase,
+`roofFrame`, the chart helpers and the annotations) are loaded by **both**
+maps. `/pipeline` draws the same four culls between its own two matrices.
+
+That is the same rule the node prose already follows: two hand-maintained
+accounts of one pipeline drift, and the drift is invisible until somebody
+quotes the wrong one. **There is one knee chart, and both maps show it.**
+
+What the shared file assumes the host page has already defined:
+
+```
+P  el  pts  S  rng  paint      the projection and its primitives
+TICKERS                        the single frame loop's registry
+DRAW                           the registry it registers into
+SKIN                           needs .works and .tile
+```
+
+Both pages' iso files are the same file with different comments, so every one
+of those means the same thing in both. **The one that is not identical is
+`topOf()`**: `/pipeline` returns `n.h*0.96` for a `works` node and `n.h` for
+everything else. The roof shapes therefore must never be given
+`shape:"works"` — they have their own shape names, which fall through to `n.h`
+on both pages, and that is what keeps the label anchor and the occlusion
+silhouette on the same plane as the chart.
+
+**A roof is not the same size on the two maps, and everything scales with it.**
+A cull is 4.2 units here because this page is only this row; on `/pipeline` it
+is 1.5, one object in one of four rows. `annScale()` and `annAt()` scale an
+annotation's offset, type, leader and terminal dot by `n.w / 4.2`, and
+`placeAnn` measures against the annotation's own size rather than a constant.
+The first version did not, and the labels sat a building and a half away with
+leaders running off the bottom of the map. A node may also nudge its own
+annotations with `annDx` / `annDy` — `/pipeline` needs that because the ground
+below its row 3 is occupied and the ground below this one is not.
+
+**What is left in `bp-shapes.js`** is what is genuinely this page's: `SKIN`,
+`topOf`, and the three shapes copied from `/pipeline` (`drawTile`, `drawHeap`,
+`drawMatrix`). Those three are copied rather than shared on purpose — they are
+that map's shapes and that is where they are maintained. The roofs are the
+other way round: written here, imported there.
+
 ### The roof trick
 
 A scatter rebuilt in three dimensions occludes the very thing it exists to
@@ -365,7 +409,7 @@ and the coordinate ruler, both of which deliberately run wider than the map.
 ## The checks — run all seven
 
 ```bash
-node check-sim.mjs                       # no browser needed
+node check-sim.mjs                       # no browser needed  (reads ../culls/culls-pop.js)
 node check-text.mjs    <url>             # needs playwright
 node check-clicks.mjs  <url>             # needs playwright
 node check-edit.mjs    <url>             # needs playwright
@@ -702,6 +746,9 @@ two modes, that is the constraint they inherit.
 - **Edit the prose in `bp-data.js`.** It is lifted. Edit `/pipeline` and lift
   again, or the two maps start disagreeing about the same stage. New writing
   belongs in `added:`.
+- **Edit `/culls/` without checking BOTH maps.** Those two files are loaded by
+  `/pipeline` as well. `node check-culls.mjs <url>` beside that map's own files
+  is the check for the other consumer; run it alongside this page's six.
 - **Give the modelled band a real-looking label**, or drop the word to tidy a
   line up. It is the one modelled figure on a page where everything else is read
   off an artefact.

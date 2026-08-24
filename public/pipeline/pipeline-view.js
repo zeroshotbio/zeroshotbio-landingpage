@@ -593,6 +593,30 @@ function copyBlock(n){
          `<span class="sz">${kb} KB</span></button>`;
 }
 
+/* THE ARITHMETIC BEHIND A ROOF, and the word that has to travel with it.
+
+   Four culls on row 3 carry their decision on their own roof, and every
+   threshold drawn there is MODELLED — computed from a simulated population
+   that matches the worked example's shape, not read off an artefact. A
+   modelled figure that has lost that word is a figure claiming a result
+   nobody produced, so the reader states it before the numbers rather than
+   after them. FIGURES comes from /culls/culls-draw.js, keyed by shape.
+
+   Every other node on this map is unaffected: no FIGURES entry, no block. */
+function roofFigures(n){
+  const mk = typeof FIGURES!=="undefined" && FIGURES[n.shape];
+  if(!mk) return "";
+  const f=mk();
+  return `<h4>What the roof shows</h4>`+
+    (n.modelled?`<div class="unver">modelled, not measured</div>`:"")+
+    `<div class="figure">${esc(f.head)}</div>`+
+    f.rows.map(([k,v])=>`<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`).join("")+
+    (f.real?`<dl class="kv"><dt>${esc(f.real[0])}</dt><dd>${esc(f.real[1])}</dd></dl>`:"")+
+    (n.pipelineName?`<p class="note">Drawn here as one policy. This map's own name for the `+
+      `stage — which has to cover every policy the corpus uses for it — is `+
+      `<mark>${esc(n.pipelineName)}</mark>.</p>`:"");
+}
+
 function renderNode(id){
   const n=byId[id];
   read.innerHTML=`<div class="eyebrow" ${TF(id,"group")}>${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+
@@ -600,6 +624,7 @@ function renderNode(id){
     `<div class="sub" ${TF(id,"sub")}>${esc(n.sub)}</div>`+
     (UNVERIFIED.has(n.key)?`<div class="unver">unverified with Patrick</div>`:"")+
     `<h4>What it does</h4><p ${TF(id,"does")}>${n.does}</p>`+
+    roofFigures(n)+
     `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b].name).join(", ")||"—"}</dd></dl>`+
     `<dl class="kv"><dt>Fed by</dt><dd>${EDGES.filter(e=>e.b===id).map(e=>byId[e.a].name).join(", ")||"—"}</dd></dl>`+
     copyBlock(n);

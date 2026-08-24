@@ -1,7 +1,7 @@
 /* check-sim.mjs — the simulation must keep meaning what it says.
    Run: node check-sim.mjs            (no browser, no dependencies)
 
-   Every threshold on this page is computed from the population in bp-pop.js,
+   Every threshold on this page is computed from the population in culls-pop.js,
    which means the population can silently stop supporting them. These are the
    properties the tiles depend on. They all failed at least once during the
    build, and each failure looked completely fine on screen:
@@ -21,7 +21,7 @@ import { dirname, join } from 'node:path';
 
 const require = createRequire(import.meta.url);
 const here = dirname(fileURLToPath(import.meta.url));
-const { selfCheck } = require(join(here, 'bp-pop.js'));
+const { selfCheck } = require(join(here, '..', 'culls', 'culls-pop.js'));
 
 const rows = selfCheck();
 let bad = 0;

@@ -284,33 +284,59 @@ const NODES = [
  built:"Written once inside the counting pipeline and read by every QC stage. It is essentially never part of a delivery: for the worked example, all-sample/ on this instance holds report/ and figures/ only.",
  cond:"Its absence is why the funnel on this row has no numbers. ChemFish states the rule plainly — do not infer the missing cells from the filtered object, the pre-QC data is not available. What survives for the worked example is a ratio, not a count: 86.1% of transcripts and 86.4% of reads fell inside called cells, so the discarded ambient tail is roughly a seventh of the signal. That tail is also the only place treatment-correlated contamination would show up, and it is gone."},
 
-{id:"c1", key:"D2", group:"The cull", shape:"tile", hatch:true, name:"Cell or background", x:15.4, y:R3, lane:"r3", w:0.7, d:0.7, h:0.78,
- sub:"knee, classifier, or expect-cells", tier:"physics",
+{id:"c1", key:"D2", group:"The cull", shape:"kneeroof", hatch:true, modelled:true,
+ name:"Knee", x:15.4, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42,
+ sub:"hard transcript minimum at the steepest point of the barcode-rank curve, per sample", tier:"physics",
+ pipelineName:"Cell or background",
  does:"Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
  built:"Every stack does this and none of them do it the same way. Parse Trailmaker runs a classifier at FDR 0.01; split-pipe fits a transcript cutoff per sublibrary (613.7–711.2 in the worked example, 670.4 combined); Cell Ranger uses its own cell-calling against --expect-cells (DanioCell set 6,000–21,250 per sample); Microwell-seq took the top 10,000 cells by transcript count, or 20,000 depending which artefact you read; ZCL2's code instead treats everything below 500 UMI as the ambient profile and excludes it.",
  cond:"The only stage on this row whose threshold is fitted rather than chosen, which is why it is the one to trust. It is also where an undocumented floor can hide: CellOracle's deposit has a minimum of exactly 500 UMI with zero cells below it, and no paper or GEO record mentions a 500-UMI rule anywhere."},
-{id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, name:"Depth floor", x:16.6, y:R3, lane:"r3", w:0.7, d:0.7, h:0.52,
- sub:"100 UMI to 2,000, depending who you ask", tier:"physics",
+/* ---- THE TWO CULLS THAT ARE NOT DRAWN ON THE ROOFS -------------------
+   Four of the six culls on this row now carry their decision on their own
+   roof. These two do not, and they are OFF THE LANE rather than deleted,
+   sitting below the row as side structures like the metadata join and the
+   cull ledger.
+
+   Deleting them would have been the tidier edit and the wrong one. Every
+   claim on them is researched — a two-order-of-magnitude spread of published
+   depth floors, and a released screen missing its own stated hash filters —
+   and the corpus is the reason this map exists. What has changed is their
+   status, not their truth: one FOLDS INTO the knee, because a fitted
+   transcript minimum IS a depth floor and drawing both would draw the same
+   cut twice; the other applies ONLY TO HASHED DESIGNS, and the chemistry two
+   rows up is combinatorial, where the barcode already is the sample.
+
+   So they hang off the culls that absorb them, and a reader who wants either
+   claim still finds it exactly where it was. */
+{id:"c2", key:"D3", group:"The cull", shape:"tile", hatch:true, follow:{a:"c1",dx:-0.35},
+ name:"Depth floor", x:16.6, y:R3-2.9, w:0.62, d:0.62, h:0.52,
+ sub:"folds into the knee · 100 UMI to 2,000, depending who you ask", tier:"physics",
  does:"Removes barcodes carrying too few molecules or too few genes to support any statement about cell type.",
  built:"The corpus spread is nearly two orders of magnitude and every value is defensible in its own context: 100–250 UMI set per experiment (ZSCAPE); 80 stated and ~100 realised (ChemFish); more than 200 detected genes (DanioCell); a total-count window of 2,000–20,000 (Zebrahub); 500 transcripts and 200 genes as published (ZCL2); a per-sample fitted knee of 232–1,370 (MegaFin CP01).",
  cond:"Two failures worth carrying. ZCL2's released atlas does not obey its own published floor at all — minimum 63 UMI and 27 genes against a stated 500 and 200, so the deposit is pre-QC. And the worked example retains cells down to 294 transcripts, below split-pipe's own 670 knee estimate, while its cell count is exactly split-pipe's number_of_cells — which suggests the vendor's QC chain was applied to the analysis object and not to what was delivered."},
-{id:"c3", key:"D4", group:"The cull", shape:"tile", hatch:true, name:"Mitochondrial fraction", x:17.8, y:R3, lane:"r3", w:0.7, d:0.7, h:0.5,
- sub:"25% · 15% · 10% · 1% · none", tier:"taste",
+{id:"c3", key:"D4", group:"The cull", shape:"mitoroof", hatch:true, modelled:true,
+ name:"Mito %", x:17.8, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42,
+ sub:"cells above median + 3 MAD of mitochondrial fraction, per sample", tier:"taste",
+ pipelineName:"Mitochondrial fraction",
  does:"Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
  built:"ZSCAPE cuts above 25%, Zebrahub above 15%, DanioCell above 10%, Parse Trailmaker at a per-sample absolute threshold of 0.50–1.51%, CellOracle not at all.",
  cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally."},
-{id:"c4", key:"D5", group:"The cull", shape:"tile", hatch:true, name:"Outliers off the trend", x:19.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.62,
- sub:"spline residual, or 4 SD, or the top 0.5%", tier:"taste",
+{id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, modelled:true,
+ name:"Complexity", x:19.0, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42, annDx:-30, annDy:44,
+ sub:"both tails of the genes-against-transcripts fit: under-amplified and over-amplified", tier:"taste",
+ pipelineName:"Outliers off the trend",
  does:"Fits genes detected against total counts and removes points sitting too far off the fit — classically two cells sharing one barcode.",
  built:"Parse Trailmaker fits a spline per sample at a p-level spanning 6.9e-6 to 1e-3 across a single plate. ZSCAPE removes cells more than 4 SD from the mean UMI. DanioCell removes the top 0.5% by detected features.",
  cond:"Two problems. It runs before the doublet scorer and removes much of what the doublet scorer exists to find, so the two are partly redundant and their order decides which gets the credit — and the order genuinely differs between stacks. And DanioCell's version is untestable after the fact: the top 0.5% of an already-filtered distribution is 0.5% by construction, so the rule cannot be verified against the deposit."},
-{id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, name:"Sample demultiplex", x:20.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.46,
- sub:"only if the sample was hashed", tier:"taste",
+{id:"hx", key:"G3", group:"The cull", shape:"tile", hatch:true, follow:{a:"c5",dx:0.35},
+ name:"Sample demultiplex", x:20.0, y:R3-2.9, w:0.62, d:0.62, h:0.46,
+ sub:"hashed designs only · not this chemistry", tier:"taste",
  does:"In multiplexed designs, assigns each cell to the embryo or sample it came from by its hash oligo, and discards cells that cannot be confidently assigned. An entire cull stage that exists or does not exist depending on a choice made two rows up.",
  built:"ZSCAPE uses sci-Plex hashing with an enrichment ratio above 3 for the timeseries rounds and above 5 for perturbations, cutoffs set manually from the ratio distribution. ChemFish uses the same chemistry at ratio ≥ 2.5 with total corrected hash UMI above 5. DanioCell uses MULTI-seq: a barcode is negative below 20 UMIs, a singlet needs SNR ≥ 5, and cells called doublets by either approach are removed. Combinatorial designs skip this entirely — the barcode already is the sample.",
  cond:"The clearest case in the corpus of a published threshold that was not applied. ChemFish's round-two screen was released without its stated hash filters: 65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor, while round one matches every published threshold exactly. Two rounds of one experiment, one filtered and one not, and nothing in the object says which is which."},
-{id:"c5", key:"D6", group:"The cull", shape:"tile", hatch:true, name:"Doublets", x:21.0, y:R3, lane:"r3", w:0.7, d:0.7, h:0.44,
- sub:"five tools, and one no tool at all", tier:"taste",
+{id:"c5", key:"D6", group:"The cull", shape:"doubletroof", hatch:true, modelled:true,
+ name:"Doublets", x:21.0, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42, annDx:52, annDy:26,
+ sub:"scDblFinder, thresholded against the expected collision rate", tier:"taste",
  does:"Scores each barcode for looking like two cells and removes those above a threshold.",
  built:"Parse Trailmaker fits a probability threshold per sample, 0.469 to 0.903 across one plate. ZSCAPE inspects residual multiplet clusters manually and removes them. ZCL2 runs DoubletFinder at a fixed 5% expected rate. MIC-Drop-seq's Methods state scDblFinder. Our own droplet path uses Scrublet. CellOracle mentions no doublet detection anywhere.",
  cond:"The least consistent stage on the map and the least auditable. MIC-Drop-seq states scDblFinder in Methods and deposits no doublet column in any object, so the claim cannot be checked at all. A per-sample threshold that swings from 0.47 to 0.90 across one plate is not measuring a constant property. And the true collision rate was set two rows up by loading density, which none of these tools can see."},
@@ -741,7 +767,7 @@ const OVERVIEW = {
 <p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
-<p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where.</p>
+<p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where. <mark>Four of the six culls carry their decision on their own roof</mark> — a curve with a cut on it, a distribution with a threshold, a cloud with a band through it, an embedding against a manufactured reference. Each is a chart drawn flat and laid onto the building by one matrix, so it can be read without orbiting it. The other two are off the row rather than gone: one folds into the knee, and the other applies only to hashed designs.</p>
 <p><mark>Row 4 — the labelling.</mark> A mute object becomes a named one — de novo, from markers, which is not how most of the atlases here were labelled.</p>
 <p>Seven landmarks are real things you could point at; everything between them is a step, drawn small. Outlines are roads not taken. Hatching means the stage destroys data.</p>
 <p>Beyond the row-1 fork, three dependencies do not follow the rows. Sample identity on row 3 was written chemically on row 2 and decided physically on row 1. The doublet threshold on row 3 is trying to measure a collision rate that loading density set on row 2. And the nuclei-or-cells choice on row 1 decides what the intron stage on row 3 does, and what a mitochondrial percentage even means.</p>`,
