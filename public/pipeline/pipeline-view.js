@@ -510,17 +510,39 @@ function rebuildClip(){
 /* ============================================================
    DOTS
    ============================================================ */
+/* HOW FAST A DOT GOES, AND HOW MANY ARE ON A TRACK.
+
+   Both numbers are here rather than inline because they are the two halves of
+   one thing: how often a dot passes any given point. Two dots at 52px/s and
+   one dot at 35px/s are different maps to sit in front of — the first reads as
+   traffic, the second as material moving through a plant.
+
+   SPEED is in pixels of track per second and is the same on every track, which
+   is what makes a long run take longer to cross than a short one. It is not
+   "cross this track in N seconds": that would make a dot on a short hop crawl
+   and a dot on a long one race, and the length of a track would stop meaning
+   anything.
+
+   COUNT is per track. Halving it halves both the number of dots on screen and
+   how often one passes a point, because they are evenly spaced around the
+   loop — the two are the same knob. A track already down to one dot stays at
+   one: below that there is no dot, and the dots are the only thing on this map
+   that show direction. */
+const DOT_PX_PER_S=35, DOT_PX_PER_S_FAINT=17;
+const DOTS_PER_TRACK=1;
+
 const DOTS=[];
 edgeGeom.forEach(e=>{
   const faint = e.kind==="drop"||e.kind==="score";
-  const count = (faint||e.carry)?1:2;
+  const count = (faint||e.carry)?1:DOTS_PER_TRACK;
   for(let i=0;i<count;i++){
     const g=el("g"); g.style.cursor="pointer";
     g.appendChild(el("circle",{r:"10",fill:"transparent"}));
     g.appendChild(el("circle",{r:faint?3:3.5,fill:faint?"var(--drop)":"var(--signal)",
       stroke:"var(--stroke)","stroke-width":"1"}));
     gDot.appendChild(g);
-    const rec={e,t:(i/count)+Math.random()*0.1,speed:(faint?26:52)/e.len,node:g};
+    const rec={e,t:(i/count)+Math.random()*0.1,
+               speed:(faint?DOT_PX_PER_S_FAINT:DOT_PX_PER_S)/e.len,node:g};
     g.addEventListener("click",ev=>{ev.stopPropagation();inspect(rec);});
     DOTS.push(rec);
   }

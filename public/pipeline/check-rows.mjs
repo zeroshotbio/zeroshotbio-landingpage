@@ -38,16 +38,19 @@
    a row hard against one end of its own band reads as having slipped.
 
    AND THAT NO TRACK IS TOO SHORT FOR THE DOTS ON IT. A dot moves at a
-   constant 52px per second, so `t` wraps once per 52px of track — which means
-   a track's LENGTH sets how often its dots restart. On a 2px run that is
-   twenty-one laps a second, and two dots strobing in place is what it looks
-   like. This is not hypothetical: trimming tracks back to their objects' walls
-   did exactly that to seventeen runs on rows 1 and 2, where the objects almost
-   touch, and the map went from reading correctly to looking broken.
+   constant speed in pixels of track per second, so `t` wraps once per that
+   many pixels — which means a track's LENGTH sets how often its dots restart.
+   On a 2px run that was twenty-one laps a second, and two dots strobing in
+   place is what it looks like. Not hypothetical: trimming tracks back to their
+   objects' walls did exactly that to seventeen runs on rows 1 and 2, where the
+   objects almost touch, and the map went from reading correctly to broken.
 
-   The floor is the shortest track this map had before any trimming existed.
-   Anything under it is a track whose dots have stopped reading as travel and
-   started reading as a flicker.
+   THE MEASURE IS LAPS PER SECOND, read off the dots themselves rather than
+   computed from a speed written down here. The first version of this hardcoded
+   the pixel speed and a matching pixel floor, and both went stale the moment
+   the dots were slowed down — a check that has to be edited whenever the thing
+   it checks is tuned is a check that will one day be edited wrongly. Laps per
+   second is the quantity that reads as a flicker, whatever the speed is.
 
    AND THAT THE GRID STILL COVERS THE DRAWING. The grid is the paper; a map
    that has outgrown it reads as having fallen off the edge of the sheet. This
@@ -115,14 +118,14 @@ const found = await page.evaluate(gap => {
     }
   });
 
-  /* every track long enough that its dots read as travelling rather than
-     strobing — see the note at the top */
-  const MIN_PX = 45;
-  const strobing = edgeGeom
-    .filter(e => e.len && DOTS.some(d => d.e === e))
-    .filter(e => e.len < MIN_PX)
-    .map(e => `${e.a || e.fromName}->${e.b || e.toName} is ${Math.round(e.len)}px, ` +
-              `${(52 / e.len).toFixed(1)} laps/s`);
+  /* every track slow enough that its dots read as travelling rather than
+     strobing — see the note at the top. `speed` IS laps per second: the dot
+     advances t by speed*dt and t wraps at 1. */
+  const MAX_LAPS = 1.1;
+  const strobing = DOTS
+    .filter(d => d.speed > MAX_LAPS)
+    .map(d => `${d.e.a || d.e.fromName}->${d.e.b || d.e.toName} restarts ` +
+              `${d.speed.toFixed(1)} times a second on ${Math.round(d.e.len)}px of track`);
 
   const short = [];
   if (GRID.x0 > x0) short.push(`left by ${(GRID.x0 - x0).toFixed(1)}`);
@@ -140,9 +143,9 @@ if (found.wrong.length)
   fail(`these lanes do not read left to right: ${found.wrong.join(', ')} — ` +
        `all four rows read the same way, and a flipped one says so nowhere on screen`);
 
-found.strobing.forEach(m => fail(`a track is too short for its dots — ${m}. A dot moves at a ` +
-  `constant speed, so a track's length sets how often its dots restart; below about 45px they ` +
-  `stop reading as travel and start reading as a flicker.`));
+[...new Set(found.strobing)].forEach(m => fail(`a dot is strobing — ${m}. A dot moves at a ` +
+  `constant speed, so a track's length sets how often its dots restart; much above once a ` +
+  `second they stop reading as travel and start reading as a flicker.`));
 found.uneven.forEach(m => fail(`an even lane is not even — ${m}. A node's own \`gap\` overrides ` +
   `\`even\`, which is how this stays true in the data and false on screen.`));
 found.offcentre.forEach(m => fail(`${m} — an even row should sit centred in its own mat`));

@@ -281,8 +281,29 @@ nothing and the route is centre to centre, exactly as it was. `MIN_RUN` is 1.25
 world units, about 52px, which is the shortest track this map had before any of
 this existed.
 
-`check-rows.mjs` asserts the consequence: **no track under 45px**. Setting
-`MIN_RUN` to 0 reproduces the glitch and fails it, 2px run and all.
+### The two dot knobs
+
+`DOT_PX_PER_S` and `DOTS_PER_TRACK`, both at the top of the `DOTS` block. They
+are the two halves of one thing — **how often a dot passes a given point** —
+and it is worth knowing which does what before turning either:
+
+- **Speed is pixels of track per second**, the same on every track, which is
+  what makes a long run take longer to cross than a short one. It is *not*
+  "cross this track in N seconds": that would make a dot on a short hop crawl
+  and one on a long run race, and a track's length would stop meaning anything.
+- **Count is per track, and halving it halves both** the number of dots on
+  screen and how often one passes a point, because they are evenly spaced
+  around the loop. A track already down to one dot stays at one — below that
+  there is no dot, and the dots are the only thing on this map that shows
+  direction.
+
+`check-rows.mjs` asserts the consequence — **no dot restarting much more than
+once a second** — and reads the speed **off the dots** rather than from a
+number written down in the check. The first version hardcoded the pixel speed
+and a matching pixel floor, and both went stale the moment the dots were
+slowed: a check that has to be edited whenever the thing it checks is tuned is
+a check that will one day be edited wrongly. Setting `MIN_RUN` to 0 still
+reproduces the original glitch and fails it.
 
 ## `even` lanes
 
