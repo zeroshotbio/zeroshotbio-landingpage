@@ -76,6 +76,44 @@ const found = await page.evaluate(() => {
     const dots = DOTS.filter(d => d.e && (d.e.a === n.id || d.e.b === n.id)).length;
     if (!wired) out.problems.push(`${n.id} has no track at all — it must join its row like any other object`);
     else if (!dots) out.problems.push(`${n.id}'s track carries no dots`);
+    else {
+      /* AND ENOUGH OF THAT TRACK HAS TO BE IN THE OPEN. The occlusion clip
+         punches every object's silhouette out of the edge layer, so any part
+         of a track inside its own two objects is not drawn and a dot
+         travelling it is invisible. Authored centre to centre that was a
+         sliver at each end; with a 4.2-unit cull beside a 2.5-unit matrix it
+         became two thirds of the run, and the two objects read as
+         unconnected — the track was there and you could not see it move.
+
+         Tracks are routed wall to wall now. The bar is ABSOLUTE, not a share:
+         what a reader needs is enough visible line for a dot to read as
+         travelling, and that is a length. A share would fail half the objects
+         on row 1, which are packed close on purpose and have always been
+         fine. */
+      const e = EDGES.find(x => x.a === n.id) || EDGES.find(x => x.b === n.id);
+      const other = NODES.find(m => m.id === (e.a === n.id ? e.b : e.a));
+      if (other) {
+        const clear = Math.abs(other.x - n.x) - (n.w + other.w) / 2;
+        if (clear < 0.8)
+          out.problems.push(`${n.id}'s track has only ${clear.toFixed(2)} units of open run before ` +
+            `${other.id} — its dots spend the journey inside one building or the other`);
+        /* AND THE TRACK MUST NOT START AT THE CENTRE. The line above measures
+           the layout; this measures the routing, and they fail for different
+           reasons — a wall-to-wall route reverted to centre-to-centre leaves
+           the layout untouched and buries the track anyway. The drawn
+           polyline's first point is compared with the node's own projected
+           centre: they must not be the same place. */
+        const rec = edgeGeom.find(r => r.a === e.a && r.b === e.b);
+        if (rec && rec.segs && rec.segs.length) {
+          const start = rec.a === n.id ? rec.segs[0].from
+                      : (sg => [sg.from[0] + sg.dx, sg.from[1] + sg.dy])(rec.segs[rec.segs.length - 1]);
+          const c = P(n.x, n.y, 0.02);
+          if (Math.hypot(start[0] - c[0], start[1] - c[1]) < 4)
+            out.problems.push(`${n.id}'s track starts at its own centre — routed centre to centre, ` +
+              `so the occlusion clip buries everything inside the two objects`);
+        }
+      }
+    }
     /* and it must carry no prose of its own */
     const own = Object.prototype.hasOwnProperty.call(
       (typeof CARRIED !== 'undefined' ? (CARRIED.find(c => c.id === n.id) || {}) : {}), 'does');

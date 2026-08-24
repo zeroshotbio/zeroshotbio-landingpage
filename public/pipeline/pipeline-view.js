@@ -323,6 +323,39 @@ function makeGeom(pp){
 /* One <g> per edge so a route can be redrawn on its own when the editor moves
    a node — the number of elbows changes when two nodes come level, so the run
    is rebuilt rather than patched. */
+/* A TRACK RUNS WALL TO WALL, NOT CENTRE TO CENTRE.
+
+   It was authored centre to centre, which is the obvious thing and was fine
+   while every object on a row was under a unit across: the part of the track
+   buried inside the two objects was short, and the occlusion clip — which
+   punches every silhouette out of the edge layer — took a sliver off each end
+   that nobody noticed.
+
+   Then row 4 got 4.2-unit culls with 2.5-unit matrices beside them, and the
+   arithmetic turned over: from the unfiltered matrix to the knee is 5.1 units
+   of which 3.35 are inside one building or the other. Two thirds of that
+   track is clipped, so the dot on it is invisible for two thirds of its
+   journey and the two objects read as unconnected. The track was always
+   there; you could not see it move.
+
+   So each end is pulled back to the object's own wall before anything is
+   projected. The whole of what is drawn is now in the open, and a dot is
+   visible for the whole of its journey. `PORT` is the small gap left between
+   the wall and the start of the line, so a track reads as arriving at a
+   building rather than as growing out of it. */
+const PORT=0.18;
+function portOut(n, tx, ty){
+  /* how far to step out of n toward (tx,ty), along whichever axis this leg
+     runs — the map's tracks are axis-aligned in world space, so this is the
+     half-extent in x or in y and never a diagonal */
+  const dx=tx-n.x, dy=ty-n.y;
+  if(Math.abs(dx)>=Math.abs(dy)){
+    const step=(n.w||0)/2+PORT;
+    return Math.abs(dx)<=step ? [n.x,n.y] : [n.x+Math.sign(dx)*step, n.y];
+  }
+  const step=(n.d||0)/2+PORT;
+  return Math.abs(dy)<=step ? [n.x,n.y] : [n.x, n.y+Math.sign(dy)*step];
+}
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
   /* straight:true forces a direct run even across lanes — for a fork or a
@@ -330,6 +363,8 @@ function routeOf(e){
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
+  raw[0]=portOut(A, raw[1][0], raw[1][1]);
+  raw[raw.length-1]=portOut(B, raw[raw.length-2][0], raw[raw.length-2][1]);
   return raw.map(p=>P(p[0],p[1],0.02));
 }
 function paintEdge(rec){

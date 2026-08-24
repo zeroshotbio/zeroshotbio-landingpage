@@ -231,6 +231,36 @@ those from contradicting each other:
 `el(tag, attrs)` writes **every** key it is handed, so `opacity: null` lands as
 the literal string `"null"`. Set an optional attribute after creation.
 
+## A track runs wall to wall, not centre to centre
+
+The occlusion clip punches every object's silhouette out of the edge layer, so
+any part of a track **inside its own two objects is not drawn** — and a dot
+travelling that part is invisible.
+
+Authored centre to centre this was a sliver at each end and nobody noticed.
+Then row 4 got 4.2-unit culls beside 2.5-unit matrices and the arithmetic
+turned over: from the unfiltered matrix to the knee is 5.1 units of which 3.35
+are inside one building or the other. **Two thirds of that track was clipped**,
+so the dot on it was invisible for two thirds of its journey and the two
+objects read as unconnected. The track was always there; you could not see it
+move.
+
+`portOut()` pulls each end back to the object's own wall before anything is
+projected, leaving `PORT` between the wall and the line so a track reads as
+arriving at a building rather than growing out of it.
+
+`check-carried.mjs` asserts **both halves separately**, because they fail for
+different reasons: the *layout* (enough open run between the two walls) and the
+*routing* (the drawn polyline's first point is not the node's own centre).
+Reverting the routing leaves the layout untouched and buries the track anyway,
+so the layout check alone would not have caught it — measured, after writing
+only the first one.
+
+**The bar is an absolute length, not a share.** A share fails half of row 1,
+whose objects are packed close on purpose and have always been fine. What a
+reader needs is enough visible line for a dot to read as travelling, and that
+is a length.
+
 ## `even` lanes
 
 The lane engine's default is a **major/minor rule**: a landmark gets room to
