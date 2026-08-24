@@ -71,7 +71,14 @@ function ellipseAt(cx,cy,z,R){
    it is projection, not subject matter — and this page's header has claimed it
    was here since the day the roofs moved out. It was not, and nothing noticed,
    because requires() cannot actually see a missing `const` (see the note at the
-   top of fq-view.js). Now it is here, and this page needs it.
+   top of fq-view.js).
+
+   NOTHING ON THIS PAGE CALLS IT TODAY, which is the same footing ellipseAt is
+   on above. drawReads briefly did, and stopped: its diagram is square to the
+   reader rather than lying on a surface. It stays because a shape ported from
+   either of the other two maps arrives expecting it, and because the next flat
+   thing that does want to lie on a roof should not have to go and find it
+   again.
 
    WHY IT EXISTS. A drawing rebuilt in three dimensions occludes the very thing
    it exists to show. So it is not rebuilt: it is drawn in ordinary flat 2D — in

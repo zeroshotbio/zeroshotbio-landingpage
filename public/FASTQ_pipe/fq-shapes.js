@@ -114,16 +114,23 @@ DRAW.matrix=drawMatrix;
 
    HOW IT SITS IN THIS WORLD. The ball is a REAL ball, in world coordinates,
    turned by a real rotation and projected through P() like everything else on
-   the map — not a flat scatter pretending. The fragment is the opposite: flat
-   2D, in a 176 x 176 chart space, laid onto the pad by one roofFrame() matrix.
-   That is the page's own grammar and it falls out for free here:
+   the map — not a flat scatter pretending.
 
-     PAINTED things are ELLIPSES.  AIRBORNE things are CIRCLES.
+   THE FRAGMENT IS NOT IN THE ISOMETRIC AT ALL, and it is the only thing on the
+   page that is not. Everything else belongs to the world and shears with it.
+   This is a diagram OF a molecule rather than a thing standing somewhere on
+   the map, and a diagram read at -30 degrees is a diagram read at -30 degrees:
+   it is laid out in plain screen axes, square to the reader, hanging under the
+   pool with nothing beneath it. An earlier build had it painted flat on a
+   rectangular pad — correct by the map's grammar, and worse: the pad was a
+   solid claiming the reads sit somewhere, and it dragged the diagram round to
+   the map's own angle for no gain.
 
-   The reads are airborne, so they are drawn in screen space and stay circles
-   and straight lines. The fragment is painted, so it shears with the surface.
-   THE BALL IS DELIBERATELY NOT IN THE NODE'S SILHOUETTE — `topOf` is the pad,
-   not the top of the ball — because the reads are not part of the building.
+   Which is why this shape does not use roofFrame(): there is no surface to lie
+   on and no shear to take. NOTHING HERE IS A SOLID, so n.h is not the height
+   of any object — it is the top of the whole composition, which is what
+   topOf() hands the label, so the name floats clear above the pool rather than
+   landing in it.
 
    COLOUR. The original of this drawing had five hues. This map has three tokens
    and a rule against a fourth, so the distinctions that survive are the ones
@@ -131,6 +138,11 @@ DRAW.matrix=drawMatrix;
    and the one they do not carry is made by ENCODING instead: the UMI is the
    same accent as a barcode, drawn as an OUTLINE rather than a fill, because it
    is the one tag on the molecule that is not a barcode. See HANDOFF.md.
+
+   THE ARROWHEADS SIT 15% IN FROM THE ENDS THEY POINT AT. On the end an arrow
+   reads as a terminus — the place the read stops — and it means the opposite:
+   the direction the read travels. Set back inside its own bracket it is
+   unmistakably a heading.
 
    PERFORMANCE. 380 reads is 760 line segments a frame, which is far too many
    elements to move one attribute at a time. Each depth bucket is therefore ONE
@@ -197,9 +209,14 @@ function drawReads(g,n){
 
      So the node's box is laid down as a transparent silhouette: painted, so it
      takes pointer events, and invisible, so it draws nothing. It goes in FIRST,
-     behind everything, so it can never occlude a mark. */
+     behind everything, so it can never occlude a mark.
+
+     IT IS ALSO WHAT check-drawn.mjs MEASURES — see data-fixed below. Pure
+     geometry, no text, no stroke: its box is an exact transform of the node's
+     own coordinates, so pushing its centre back through the camera returns
+     that coordinate whatever the camera is doing. */
   const hw=n.w/2, hd=n.d/2;
-  g.appendChild(el("polygon",{fill:"transparent",stroke:"none",points:pts([
+  g.appendChild(el("polygon",{"data-fixed":"1",fill:"transparent",stroke:"none",points:pts([
     P(n.x-hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,n.h), P(n.x+hw,n.y+hd,n.h),
     P(n.x+hw,n.y+hd,0),   P(n.x-hw,n.y+hd,0),   P(n.x-hw,n.y-hd,0)])}));
 
@@ -222,13 +239,18 @@ function drawReads(g,n){
      It still lives inside the node's own group, so it moves when the node is
      dragged and scales with the camera like everything else.
 
-     data-fixed MARKS THE PART THAT DOES NOT MOVE ON ITS OWN, and
-     check-drawn.mjs measures it instead of the whole group. That check asks
+     WHY data-fixed IS ON THE SILHOUETTE AND NOT ON THIS. check-drawn.mjs asks
      "did this come back drawn where it was left" by comparing the centre of a
-     group's bounding box across a reload — a sound question and a useless
-     measurement on a turning ball, whose box is a different shape every frame.
-     It reported sixty units of drift on a node nothing had touched. */
-  const card=g.appendChild(el("g",{"data-fixed":"1"}));
+     bounding box across a reload. Measure the whole group and the answer is
+     the turning ball, whose box is a different shape every frame — sixty units
+     of drift on a node nothing had touched. Measure this card and the answer
+     is better but still not exact: it is mostly TEXT, and a text bounding box
+     is a font metric rather than a coordinate, so it lands a fraction
+     differently at a different zoom — and the zoom does differ between two
+     loads, because the camera fits to a content box that includes the ball.
+     0.6 units of nothing, which is exactly the tolerance. The silhouette is
+     pure geometry and has neither problem. */
+  const card=g.appendChild(el("g"));
 
   const FW=300, FX0=X0-FW/2, FX1=X0+FW/2;
   /* laid out downward from just under the pool, so raising the ball carries

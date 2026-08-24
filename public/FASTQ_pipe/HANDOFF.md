@@ -96,9 +96,10 @@ chart ever lands on this row, load `culls-pop.js` and `culls-draw.js` the way
 `FIGURES` back in the `requires()` table at the top of `fq-view.js`.
 
 **`roofFrame()` has been lifted into `fq-iso.js`,** verbatim from
-`culls-draw.js`. It is projection rather than subject matter, that is where
-this page's own header always claimed it lived, and `drawReads` needs it. It
-was *not* there before, and nothing noticed, because **`requires()` cannot see
+`culls-draw.js`. It is projection rather than subject matter, and that is where
+this page's own header always claimed it lived. Nothing calls it today — the
+same footing `ellipseAt` is on — and it stays for the next flat thing that does
+want to lie on a roof. It was *not* there before, and nothing noticed, because **`requires()` cannot see
 a missing `const`** — its fallback test is
 `typeof eval("typeof sym") === "undefined"`, and `eval` returns the *string*
 `"undefined"`, whose typeof is `"string"`. The condition can never be true. The
@@ -151,11 +152,23 @@ end. R2 sequences inward from that end — which is why it meets the UMI first
 and reaches round 1 last. Draw the molecule truthfully and the reversal
 explains itself. **Do not reorder the fragment to match the read.**
 
-**Painted and airborne, which is this map's grammar and not a fresh decision.**
-The structure is drawn flat in a 176 × 176 chart space and laid onto the pad by
-one `roofFrame()` matrix, so it shears with the surface. The pool is drawn in
-screen space, so a read stays a straight line of even weight however the ball
-turns.
+**The diagram is not in the isometric, and it is the only thing on the page
+that is not.** Everything else belongs to the world and shears with it. This is
+a diagram *of* a molecule rather than a thing standing somewhere on the map,
+and a diagram read at −30° is a diagram read at −30°: it is laid out in plain
+screen axes, square to the reader, hanging under the pool with nothing beneath
+it. An earlier build painted it flat on a rectangular pad — correct by the
+map's grammar, and worse: the pad was a solid claiming the reads sit somewhere,
+and it turned the diagram to the map's own angle for no gain. **That is why
+this shape does not call `roofFrame()`**: there is no surface to lie on and no
+shear to take.
+
+The pool is drawn in screen space too, so a read stays a straight line of even
+weight however the ball turns.
+
+**The arrowheads sit 15% in from the ends they point at.** On the end an arrow
+reads as a terminus — the place the read stops — and it means the opposite: the
+direction the read travels.
 
 **The ball is a real ball.** The reads are placed uniformly through a sphere —
 direction on the sphere, radius by cube root, because a uniform radius piles
@@ -164,16 +177,17 @@ rotation, and projected through `P()` like everything else. Depth is the map's
 own depth: what is nearer the eye is what has the greater `x + y`, the key
 everything else on the page is sorted by.
 
-**`topOf` is the pad, not the top of the ball**, so the reads are in neither
-the occlusion silhouette nor the label anchor. They are not part of the
-building. The node's own name is anchored at the pad's back corner and the ball
-is lifted clear of it; lower the ball and the two collide.
+**Nothing here is a solid, so `n.h` is not the height of any object** — it is
+the top of the whole composition, which is what `topOf()` hands the label, so
+the name floats clear above the pool rather than landing in it. Both the pool
+and the diagram are placed from it: lower the ball and it lands on the diagram;
+raise it and the name goes with it.
 
-**The pad is a rectangle and the long side is the molecule.** A square
-footprint projects to a diamond twice as wide as either diagonal, so a strip
-laid along one of them sits in the middle of a large empty plate. `n.d` runs
-along the strip and `roofFrame` is handed `{x, y, w: n.d}` — it is a projection
-helper and does not care which field the number came from.
+**The node's box is laid down as a transparent silhouette, first, behind
+everything.** Painted, so it takes pointer events; invisible, so it draws
+nothing. Without it a node with no solid at the projected centre of its own
+footprint cannot be clicked there — which is where a person aims and where
+`check-clicks.mjs` presses.
 
 **Colour: the original had five hues, this map has three tokens and a rule
 against a fourth.** cDNA is `--keep`, the barcodes are `--accent`, and the
@@ -200,14 +214,23 @@ is dropped without taking the map with it.
 ### `data-fixed`, and why an animated shape needs it
 
 `check-drawn.mjs` asks "did this come back drawn where it was left" by comparing
-the centre of a group's bounding box across a reload. That is a sound question
-and a useless measurement on this object: most of the group is a turning ball,
-so its box is a different shape every frame and its centre drifts tens of units
-while the node sits perfectly still. It reported sixty units of drift on
-something nothing had touched.
+the centre of a bounding box across a reload. That is a sound question and a
+useless measurement on this object: most of the group is a turning ball, so its
+box is a different shape every frame and its centre drifts tens of units while
+the node sits perfectly still. It reported sixty units of drift on something
+nothing had touched.
 
-So the pad's top face carries `data-fixed="1"`, and the check measures that when
-it is there. **Any future shape that animates must mark one static part the same
+So the check measures a `[data-fixed]` element where a shape marks one, and here
+that is **the transparent silhouette** — pure geometry, no text, no stroke, so
+its box is an exact transform of the node's own coordinates.
+
+**Not the diagram**, which was tried: it is mostly *text*, and a text bounding
+box is a font metric rather than a coordinate, so it lands a fraction
+differently at a different zoom — and the zoom does differ between two loads,
+because the camera fits to a content box that includes the ball. That is 0.6
+units of nothing, which is exactly the tolerance.
+
+**Any future shape that animates must mark one static, text-free part the same
 way**, or it will fail that check for a reason that has nothing to do with what
 the check is for.
 
@@ -386,6 +409,9 @@ world coordinates, for when something looks wrong and you want the numbers.
   painter ordering, the camera and `roofFrame`'s matrix all derive from `P()`.
 - **Reorder the fragment on the FASTQ landmark to match the order R2 reads
   it.** The reversal is the point.
+- **Turn that diagram back into the isometric, or stand it on a solid.** It is
+  a diagram of a molecule, not a thing in the map, and it was both of those
+  once.
 - **Start a `requestAnimationFrame` inside a shape.** Push to `TICKERS`.
 - **Add a colour.** Three encodings — stays, goes, threshold — aliased onto
   `/pipeline`'s tokens.
