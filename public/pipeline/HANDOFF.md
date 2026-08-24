@@ -61,6 +61,7 @@ node check-edit.mjs  <url>     # floating labels, the double press, the ✕
 node check-pads.mjs  <url>     # the four row pads: move, resize, name
 node check-rows.mjs  <url>     # rows stay unconnected, all read one way, grid covers all
 node check-multi.mjs <url>     # Select many: one delta, spacing intact
+node check-carried.mjs <url>   # the row-opening clones stay clones
 ```
 
 Three things about this page in particular, each of which has already gone
@@ -193,6 +194,37 @@ one — a band is as long as its row.
 If you re-space row 3, check the turn at both ends: the connector from row 2
 into `FQ` and the one from `FD` into `s1` are the only two places the snake
 can silently come apart.
+
+## Carried in: each row opens with what it inherits
+
+No track runs between rows. That is right — they are stacked in the order
+things happen — but *"already said by the layout"* does a lot of work at the
+**left edge** of a row, which is where a reader's eye lands first and is
+furthest from the thing the row above ended with.
+
+So each row after the first opens with the object it inherits, drawn again:
+`carried:"<id>"` in `CARRIED`, expanded into `NODES` before anything else looks
+at them, so the lane engine, the index, the occlusion clip and Edit positions
+all see an ordinary node.
+
+**The failure this can produce is a reader counting two of something.** There
+is one unfiltered matrix on this map and it appears twice, and four rules keep
+those from contradicting each other:
+
+- **Same object.** Shape, size and name come from the source. A clone that has
+  drifted from what it clones is a second claim.
+- **Less weight.** Box, plinth and name at one reduced opacity — they are drawn
+  into *three different layers*, so dimming one and not the others is easy, and
+  a full-weight name over a faded box reads as a label for something missing.
+  `CARRIED_OP` is the single number.
+- **Not a step.** Absent from the index and from the arrow-key walk. Both are
+  the reading order, and reading the same object twice is not a step in it.
+- **No prose.** It holds no `does` of its own; the reader shows the source's
+  and says plainly why the object is here twice.
+
+`check-carried.mjs` asserts all four. Note the `el()` trap it exposed:
+`el(tag, attrs)` writes **every** key it is handed, so `opacity: null` lands as
+the literal string `"null"`. Set an optional attribute after creation.
 
 ## Select many
 

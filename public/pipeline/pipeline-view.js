@@ -57,6 +57,29 @@ if(GONE.size){
     else if(n.follow.b && !live.has(n.follow.b)) delete n.follow.b; } });
 }
 
+/* CARRIED-IN CLONES are expanded before anything else looks at NODES, so the
+   rest of this file — the lane engine, the index, the occlusion clip, Edit
+   positions — sees them as ordinary nodes and needs to know nothing about
+   them. Everything except identity is taken from the source, so the two
+   cannot disagree about what they are. */
+if(typeof CARRIED!=="undefined") CARRIED.forEach(c=>{
+  const src=NODES.find(n=>n.id===c.carried);
+  if(!src) return;
+  const n=Object.assign({},src,c);
+  n.id=c.id; n.follow=undefined; n.gap=undefined;
+  /* it is a restatement, not a stage, so it is not in the sequence the arrow
+     keys walk and not in the index — both of those are the reading order, and
+     reading the same object twice is not a step */
+  n.skipIndex=true;
+  NODES.push(n);
+});
+
+/* HOW FAINT A RESTATEMENT IS. One number, because the object, its plinth and
+   its name are drawn into three different layers and all three have to agree
+   — dimming the box and leaving the name at full weight makes the name look
+   like a label for something that is not there. */
+const CARRIED_OP="0.42";
+
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
@@ -255,6 +278,9 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
     fill:"var(--fg)","fill-opacity":isA?".05":".03",stroke:"var(--fg)",
     "stroke-opacity":isA?".4":".28","stroke-width":"1","stroke-dasharray":isA?"6 4":"2 3"}));
+  /* el() writes every key it is handed, so a null lands as the string
+     "null" — the opacity goes on afterwards or not at all */
+  if(n.carried) plinthEls[n.id].setAttribute("opacity",CARRIED_OP);
   /* labelBelow moves a landmark's name off its top-back edge and onto its
      front edge, running down-left instead of up-right — for a landmark whose
      usual placement collides with whatever is above it */
@@ -272,6 +298,7 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2); textEls[n.id+":stat"]=t2;
+  if(n.carried) g.setAttribute("opacity",CARRIED_OP);
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
@@ -357,6 +384,12 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
      so without this it swallows their clicks and their drags. It is still in
      the index and still selectable from there. */
   if(n.scenery) g.style.pointerEvents="none";
+  /* A CARRIED-IN CLONE IS DRAWN AT REDUCED WEIGHT, and that is the whole of
+     what makes it read as a restatement rather than as a second object. Same
+     shape, same size, same name — if it were drawn at full weight a reader
+     would count two unfiltered matrices, which is a worse error than the one
+     it exists to fix. */
+  if(n.carried) g.setAttribute("opacity",CARRIED_OP);
   DRAW[n.shape](g,n);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
@@ -731,6 +764,23 @@ function roofFigures(n){
 
 function renderNode(id){
   const n=byId[id];
+  /* A CLONE SENDS THE READER TO THE ORIGINAL, with one line saying why it is
+     here twice. It holds no prose of its own — see CARRIED in the data file —
+     so there is one place to change any of it and no way for the two to
+     disagree. */
+  if(n.carried){
+    const src=byId[n.carried];
+    read.innerHTML=
+      `<div class="eyebrow">${esc(n.group)}</div>`+
+      `<div class="title big">${esc(n.name)}</div>`+
+      `<div class="sub">${esc(n.sub||"")}</div>`+
+      `<p class="note">Drawn again at the start of this row. It is the same object `+
+      `the row above ends with, not a second one — nothing is drawn between rows, `+
+      `so each row opens with what it inherits.</p>`+
+      (src?`<h4>What it does</h4><p>${src.does}</p>`:"")+
+      `<dl class="kv"><dt>Feeds</dt><dd>${EDGES.filter(e=>e.a===id).map(e=>byId[e.b]&&byId[e.b].name).filter(Boolean).join(", ")||"—"}</dd></dl>`;
+    return;
+  }
   read.innerHTML=`<div class="eyebrow" ${TF(id,"group")}>${esc(n.group)}${n.tier?" · "+n.tier+" tier":""}</div>`+
     `<div class="title${n.anchor?" big":""}" ${TF(id,"name")}>${esc(n.name)}</div>`+
     `<div class="sub" ${TF(id,"sub")}>${esc(n.sub)}</div>`+
@@ -808,7 +858,9 @@ svg.addEventListener("mouseleave",unhover);
 const aside=document.getElementById("aside");
 (function buildIndex(){
   let html="",g=null;
-  NODES.forEach(n=>{
+  /* the index is the READING ORDER, and reading the same object twice is not
+     a step — a carried-in clone is a restatement, so it is not listed */
+  NODES.filter(n=>!n.skipIndex).forEach(n=>{
     if(n.group!==g){g=n.group;html+=`<div class="grp${n.groupMark?" mark":""}">${esc(g)}</div>`;}
     html+=`<button class="row${n.anchor?" anchor":""}" data-id="${n.id}"><span class="key">${n.key}</span>`+
           `<span class="nm">${esc(n.name)}</span><span class="n">${n.hatch?"cull":""}</span></button>`;
@@ -1054,11 +1106,14 @@ function goTo(id){
   renderNode(id); paintIndex(); focusNode(id);
 }
 function stepBy(d){
-  if(!NODES.length) return;
+  /* same reason as the index: the arrow keys walk the sequence, and a
+     carried-in clone is not a step in it */
+  const WALK=NODES.filter(n=>!n.skipIndex);
+  if(!WALK.length) return;
   /* nothing selected yet: forward starts at the first, back at the last */
-  const at = current ? NODES.findIndex(n=>n.id===current) : (d>0 ? -1 : 0);
-  const to = ((at+d)%NODES.length + NODES.length) % NODES.length;
-  goTo(NODES[to].id);
+  const at = current ? WALK.findIndex(n=>n.id===current) : (d>0 ? -1 : 0);
+  const to = ((at+d)%WALK.length + WALK.length) % WALK.length;
+  goTo(WALK[to].id);
 }
 
 
