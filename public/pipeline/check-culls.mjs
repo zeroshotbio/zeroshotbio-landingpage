@@ -107,8 +107,16 @@ const strays = await page.evaluate(() => {
     const r = a.t1.getBBox();
     const q = P(host.x, host.y, host.h || 0);
     const d = Math.hypot(r.x + r.width / 2 - q[0], r.y + r.height / 2 - q[1]);
-    /* a label may float clear of its roof; it may not be five buildings away */
-    if (d > 8 * S) out.push(`${a.key} is ${(d / S).toFixed(1)} grid units from ${host.id}`);
+    /* MEASURED AGAINST THE ROOF'S OWN SIZE, in projected pixels, not in grid
+       units. A label deliberately floats clear of its roof and points back at
+       it — below the row, which in this projection is a long way in grid terms
+       for a short way on screen, because down-screen is +x and +y at once.
+       Grid distance flagged a label sitting exactly where it was put. What
+       this is for is a label five buildings away, so the bound is a multiple
+       of the building it belongs to. */
+    const across = (host.w || 1) * S * Math.cos(Math.PI / 6) * 2;
+    if (d > 3.2 * across)
+      out.push(`${a.key} is ${(d / across).toFixed(1)} roof-widths from ${host.id}`);
   });
   return out;
 });

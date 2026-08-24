@@ -285,7 +285,7 @@ const NODES = [
  cond:"Its absence is why the funnel on this row has no numbers. ChemFish states the rule plainly — do not infer the missing cells from the filtered object, the pre-QC data is not available. What survives for the worked example is a ratio, not a count: 86.1% of transcripts and 86.4% of reads fell inside called cells, so the discarded ambient tail is roughly a seventh of the signal. That tail is also the only place treatment-correlated contamination would show up, and it is gone."},
 
 {id:"c1", key:"D2", group:"The cull", shape:"kneeroof", hatch:true, modelled:true,
- name:"Knee", x:15.4, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42,
+ name:"Knee", x:15.4, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
  sub:"hard transcript minimum at the steepest point of the barcode-rank curve, per sample", tier:"physics",
  pipelineName:"Cell or background",
  does:"Separates barcodes that held a cell from barcodes that held only ambient RNA. Not a judgment call in principle, and by volume much the largest cut.",
@@ -315,14 +315,16 @@ const NODES = [
  built:"The corpus spread is nearly two orders of magnitude and every value is defensible in its own context: 100–250 UMI set per experiment (ZSCAPE); 80 stated and ~100 realised (ChemFish); more than 200 detected genes (DanioCell); a total-count window of 2,000–20,000 (Zebrahub); 500 transcripts and 200 genes as published (ZCL2); a per-sample fitted knee of 232–1,370 (MegaFin CP01).",
  cond:"Two failures worth carrying. ZCL2's released atlas does not obey its own published floor at all — minimum 63 UMI and 27 genes against a stated 500 and 200, so the deposit is pre-QC. And the worked example retains cells down to 294 transcripts, below split-pipe's own 670 knee estimate, while its cell count is exactly split-pipe's number_of_cells — which suggests the vendor's QC chain was applied to the analysis object and not to what was delivered."},
 {id:"c3", key:"D4", group:"The cull", shape:"mitoroof", hatch:true, modelled:true,
- name:"Mito %", x:17.8, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42,
+ name:"Mito %", x:17.8, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
  sub:"cells above median + 3 MAD of mitochondrial fraction, per sample", tier:"taste",
  pipelineName:"Mitochondrial fraction",
  does:"Removes cells dominated by mitochondrial transcripts — usually cells stressed or broken during dissociation.",
  built:"ZSCAPE cuts above 25%, Zebrahub above 15%, DanioCell above 10%, Parse Trailmaker at a per-sample absolute threshold of 0.50–1.51%, CellOracle not at all.",
  cond:"These numbers are not comparable, because the mitochondrial gene set is not the same object twice. Parse counts only the 13 protein-coding mitochondrial genes (~0.19% typical); measured over the full 37-feature MT contig the same cells sit near 8%, forty-three times higher. Reuse '1% mito' against a differently-defined set and you delete the dataset. Worse, the filter can silently do nothing: ZCL2's code matches with the pattern ^mt: — the Drosophila convention, inherited unchanged from a cross-species script — which matches zero zebrafish genes, so percent.mt is 0 for every cell and a cutoff at 20% excludes nothing. And the cut is never neutral across cell types: it sits directly downstream of a dissociation step that stresses tissues unequally."},
 {id:"c4", key:"D5", group:"The cull", shape:"complexityroof", hatch:true, modelled:true,
- name:"Complexity", x:19.0, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42, annDx:-30, annDy:44,
+ name:"Complexity", x:19.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ /* the pair land in the free lane between this row's band and row 4's */
+ annNudge:{under:[-40,-150], over:[80,10]},
  sub:"both tails of the genes-against-transcripts fit: under-amplified and over-amplified", tier:"taste",
  pipelineName:"Outliers off the trend",
  does:"Fits genes detected against total counts and removes points sitting too far off the fit — classically two cells sharing one barcode.",
@@ -335,11 +337,34 @@ const NODES = [
  built:"ZSCAPE uses sci-Plex hashing with an enrichment ratio above 3 for the timeseries rounds and above 5 for perturbations, cutoffs set manually from the ratio distribution. ChemFish uses the same chemistry at ratio ≥ 2.5 with total corrected hash UMI above 5. DanioCell uses MULTI-seq: a barcode is negative below 20 UMIs, a singlet needs SNR ≥ 5, and cells called doublets by either approach are removed. Combinatorial designs skip this entirely — the barcode already is the sample.",
  cond:"The clearest case in the corpus of a published threshold that was not applied. ChemFish's round-two screen was released without its stated hash filters: 65,736 cells (4.83%) fall below the 2.5 enrichment cutoff and 16,541 (1.22%) below the hash-UMI floor, while round one matches every published threshold exactly. Two rounds of one experiment, one filtered and one not, and nothing in the object says which is which."},
 {id:"c5", key:"D6", group:"The cull", shape:"doubletroof", hatch:true, modelled:true,
- name:"Doublets", x:21.0, y:R3, lane:"r3", w:1.5, d:1.5, h:0.42, annDx:52, annDy:26,
+ name:"Doublets", x:21.0, y:R3, lane:"r3", w:4.2, d:4.2, h:0.52,
+ annNudge:{synth:[10,120]},
  sub:"scDblFinder, thresholded against the expected collision rate", tier:"taste",
  does:"Scores each barcode for looking like two cells and removes those above a threshold.",
  built:"Parse Trailmaker fits a probability threshold per sample, 0.469 to 0.903 across one plate. ZSCAPE inspects residual multiplet clusters manually and removes them. ZCL2 runs DoubletFinder at a fixed 5% expected rate. MIC-Drop-seq's Methods state scDblFinder. Our own droplet path uses Scrublet. CellOracle mentions no doublet detection anywhere.",
  cond:"The least consistent stage on the map and the least auditable. MIC-Drop-seq states scDblFinder in Methods and deposits no doublet column in any object, so the claim cannot be checked at all. A per-sample threshold that swings from 0.47 to 0.90 across one plate is not measuring a constant property. And the true collision rate was set two rows up by loading density, which none of these tools can see."},
+/* ---- THE ATTRITION BAND, BEHIND THE ROW -----------------------------
+   The four culls' arithmetic drawn flat on the ground, one riser per cull,
+   a tributary peeling off each. It is SCENERY: it spans the whole cull
+   section, is painted after some of what stands on it, and takes no pointer
+   events — a floor rather than a building. Its span, its yBase and its
+   ledger are derived in the view from the buildings it covers, so it follows
+   them when the row is re-spaced or one of them is dragged.
+
+   Lifted from /bioinformatics_pipe with the same fields, because it is the
+   same band: only its key, its group and its position on this longer row are
+   this map's. Every count on it is MODELLED — what these culls would take
+   from the simulated population, not a record of what any of them took,
+   because the per-barcode ledger the node below describes does not exist. */
+{id:"RIVER", key:"D0", group:"The cull", shape:"attritionstaircase",
+ scenery:true, modelled:true,
+ name:"Attrition", x:24, y:R3-7.4, w:1.6, d:1.6, h:0, lab:{dy:0.35},
+ from:"UD", to:"FD", yBase:R3-2.6, width:4.6, z:0.002, opacity:0.8,
+ sub:"every barcode that ever appeared, and what each of the four takes",
+ does:"The four culls' arithmetic, drawn to scale on the ground behind the row. One straight edge gives the run a datum; the opposite edge staircases down, one riser per cull, and a tributary peels off each riser and drifts clear. Every step is then read against one unmoving line rather than against a shape changing on both sides at once, which is what an earlier symmetric version got wrong — neither of its edges held still, so the eye had nothing to measure against.",
+ built:"Drawn flat in two dimensions and laid onto the ground plane by one transform, the same trick the roofs use. Counts come from applying the culls in order, each over what the one before left, because subtracting four independent percentages double-counts every barcode two of them agree about — and two of them do: a doublet carries two cells' worth of transcripts and rather less than two cells' worth of distinct genes, so complexity reaches it before the scorer does.",
+ cond:"One denominator throughout — every barcode that ever appeared — so nothing on this band is a ratio between two different objects. THE KNEE IS THE FIRST RISER AND IT TAKES 96.7%, which makes the band a cliff followed by three hairlines. That is the finding rather than a drawing problem: on this dataset the knee is very nearly the whole cull and the three after it are a rounding. What keeps the small ones readable is that each station's own figure is a share of what REACHED it, so mito reads −5.8% whether its riser is forty pixels or one, and a thin tributary flares to a floor width so a small cull is still visibly a cull. Exactly one of the 468 barcodes past the knee is not a cell in the simulation, so the population the last three act on is the called cells in all but that one. And the counts are modelled — what these culls would take from the simulated population, not a record of what any of them took, because no per-barcode ledger exists here or anywhere else in the corpus."},
+
 {id:"Q", key:"D7", group:"The cull", shape:"tile", follow:{a:"c4"}, name:"Cull ledger", x:17.8, y:R3+2.6, w:1.2, d:1.2, h:0.3,
  sub:"one row per dropped barcode",
  does:"What the Sankey should be drawn from: which stage killed which barcode, and why.",
@@ -472,13 +497,26 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    images of each other. Membership is explicit rather than inferred from y,
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
+/* ROW 3 IS LONGER THAN THE OTHERS, and that is the honest shape of it.
+
+   Four of its culls carry a chart on their own roof, and a chart needs room:
+   they are 4.2 units square, the same size they are on /bioinformatics_pipe,
+   where they are bigger than the unfiltered matrix they follow because the
+   decision is the thing that row is about. Squeezing them to fit the span the
+   other rows use made them smaller than either matrix, which says the
+   opposite.
+
+   So r3 gets its own span and the snake still closes: row 2 runs right to
+   left and ends where row 3 begins; row 3 runs left to right and ends at
+   37.85; row 4 runs right to left FROM THERE, which is what `mirror` is for.
+   A lane may set its own mirror axis; without one it uses the map's. */
 const LANES = [
   {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.00, dir:+1},
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
   {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
-  {id:"r2",       y:R2,       x0:0.7,  x1:22.0, dir:-1},
-  {id:"r3",       y:R3,       x0:0.7,  x1:22.0, dir:+1},
-  {id:"r4",       y:R4,       x0:0.7,  x1:22.0, dir:-1},
+  {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:-1},
+  {id:"r3",       y:R3,       x0:0.7,  x1:37.85, dir:+1},
+  {id:"r4",       y:R4,       x0:16.55,x1:37.85, dir:-1, mirror:54.40},
 ];
 
 const EDGES = [
@@ -502,10 +540,16 @@ const EDGES = [
   {a:"IN",b:"cb3",kind:"read"},{a:"cb3",b:"cb4",kind:"cell"},{a:"cb4",b:"UD",kind:"cell"},
   {a:"E",b:"cb2",kind:"ref",dash:true},{a:"UTR",b:"cb2",kind:"ref",dash:true},
   {a:"V",b:"cb2",kind:"ref",dash:true},{a:"W",b:"cb4",kind:"meta",dash:true},
-  {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c2",kind:"cell"},{a:"c2",b:"c3",kind:"cell"},
-  {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"hx",kind:"cell"},{a:"hx",b:"c5",kind:"cell"},
+  /* THE CULL CHAIN runs through the four culls that carry their decision on a
+     roof. The two that do not — the depth floor and the sample demultiplex —
+     hang off the culls that absorb them rather than sitting in the line: one
+     folds into the knee, the other applies only to hashed designs. A dashed
+     edge, because it is a relationship rather than a flow of barcodes. */
+  {a:"UD",b:"c1",kind:"cell"},{a:"c1",b:"c3",kind:"cell"},
+  {a:"c3",b:"c4",kind:"cell"},{a:"c4",b:"c5",kind:"cell"},
   {a:"c5",b:"FD",kind:"cell"},
-  {a:"c1",b:"Q",kind:"drop",dash:true},{a:"c4",b:"Q",kind:"drop",dash:true},{a:"hx",b:"Q",kind:"drop",dash:true},
+  {a:"c2",b:"c1",kind:"ref",dash:true},{a:"hx",b:"c5",kind:"ref",dash:true},
+  {a:"c1",b:"Q",kind:"drop",dash:true},{a:"c4",b:"Q",kind:"drop",dash:true},{a:"c5",b:"Q",kind:"drop",dash:true},
 
   {a:"s1",b:"s2",kind:"cell"},{a:"s2",b:"H5",kind:"cell"},{a:"H5b",b:"H5",kind:"cell",dash:true},
   {a:"H5",b:"p1",kind:"cell"},{a:"p1",b:"p2",kind:"cell"},{a:"p2",b:"p3",kind:"cell"},{a:"p3",b:"p4",kind:"cell"},
@@ -525,10 +569,12 @@ const EDGES = [
 /* the four bands — what kind of work each row is.
    All four share the same x0/x1 gridlines, so the four titles line up
    along one diagonal on the bottom-right edge. */
+/* A band is as long as its row, and row 3's row is longer. */
 const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
+const BAND_X=[[-2,24],[-2,24],[-2,39.9],[14.4,39.9]];
 const BANDS = [R1,R2,R3,R4].map((r,i)=>({
   name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
-  x0:BAND_W[0], x1:BAND_W[1], y0:r+BAND_H[0], y1:r+BAND_H[1]
+  x0:BAND_X[i][0], x1:BAND_X[i][1], y0:r+BAND_H[0], y1:r+BAND_H[1]
 }));
 
 /* one carry: the map runs out at the end, into everything that comes after */

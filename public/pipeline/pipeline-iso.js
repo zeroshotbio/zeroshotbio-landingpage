@@ -105,6 +105,10 @@ function layoutRows(NODES, LANES, MIRROR){
   NODES.forEach(n=>{
     const id = n.lane || (n.follow && M[n.follow.a] ? M[n.follow.a].lane : null);
     const L = id ? byLane[id] : null;
-    if(L && L.dir===-1) n.x = MIRROR - n.x;
+    /* A LANE MAY SET ITS OWN MIRROR AXIS. Row 3 is longer than the others —
+       its four roofed culls each carry a chart and need the room — so row 4
+       has to turn back from where row 3 actually ends rather than from the
+       map's default axis, or the snake does not close. */
+    if(L && L.dir===-1) n.x = (L.mirror===undefined?MIRROR:L.mirror) - n.x;
   });
 }

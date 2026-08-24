@@ -562,8 +562,18 @@ const annScale = n => Math.max(0.3, Math.min(1, (n.w||ROOF_W)/ROOF_W));
    written for is empty ground. On /pipeline it is not: the cull ledger and the
    two culls that are not drawn on roofs hang under that row. The rule stays
    the rule and the map that needs the exception declares it. */
-const annAt = n => { const k=annScale(n);
-  return [ANN_AT[0]*k + (n.annDx||0), ANN_AT[1]*k + (n.annDy||0)]; };
+/* A node may nudge its annotations, in world-SVG units, either as a pair
+   (annDx/annDy) or one at a time (annNudge, keyed by the part of the
+   annotation key after the colon). The perpendicular rule puts them below the
+   row, which on the page these were written for is empty ground; on /pipeline
+   the cull ledger, the two undrawn culls and the whole of row 4 are down
+   there. The rule stays the rule and the map that needs the exception
+   declares it, per label, because the exceptions are not the same for each. */
+const annAt = (n, which) => {
+  const k=annScale(n), one=(n.annNudge||{})[which]||[0,0];
+  return [ANN_AT[0]*k + (n.annDx||0) + one[0],
+          ANN_AT[1]*k + (n.annDy||0) + one[1]];
+};
 
 /* ------------------------------------------------------------------
    ANNOTATIONS
@@ -952,7 +962,7 @@ function drawDoubletRoof(g,n){
                            a.reduce((s,p)=>s+p[1],0)/a.length]:[CW/2,CW/2];
     const ts=F.toScreen.apply(null,mid(synth));
     const c1=F.toScreen(CX0+CWD/2,CY0+CHT/2);
-    const A=annAt(n);
+    const A=annAt(n,"synth");
     placeAnn(annS,ts,c1[0]+A[0],c1[1]+A[1],pLab*pMan);
   };
   run(0); everyFrame(run);
@@ -1114,9 +1124,9 @@ function drawComplexityRoof(g,n){
     const c1=F.toScreen(CX0+CWD/2,CY0+CHT/2);
     /* further out than ANN_AT on its own: the cull ledger hangs under this
        building and runs its own name down-left from there. */
-    const A=annAt(n), z=annScale(n);
-    placeAnn(annU,au,c1[0]+A[0]-104*z,c1[1]+A[1]+96*z,pLab);
-    placeAnn(annO,ao,c1[0]+A[0]+96*z,c1[1]+A[1]+52*z,pLab);
+    const z=annScale(n), U=annAt(n,"under"), O=annAt(n,"over");
+    placeAnn(annU,au,c1[0]+U[0]-104*z,c1[1]+U[1]+96*z,pLab);
+    placeAnn(annO,ao,c1[0]+O[0]+96*z,c1[1]+O[1]+52*z,pLab);
     /* Straight up, and centred. The panel is a FILLED rect, so wherever it
        lands it is a click target — and parked up-left it sat exactly over
        D4's roof, which meant clicking the mitochondrial cull selected this

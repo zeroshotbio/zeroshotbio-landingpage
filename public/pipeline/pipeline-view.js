@@ -36,6 +36,27 @@ const TOUCH = window.matchMedia && window.matchMedia("(pointer: coarse)").matche
 const PHONE = () => window.matchMedia && window.matchMedia("(max-width: 900px)").matches;
 
 const svg=document.getElementById("svg");
+/* DELETIONS COME FIRST, because everything downstream — the lane solve, the
+   edges, the index, the occlusion clip — has to be computed over what is
+   actually on the map rather than over what once was. A node removed here
+   never existed as far as the rest of this file is concerned. */
+const GONE=new Set();
+(function readDeletions(){
+  try{
+    const raw=localStorage.getItem("pipeline.edits");
+    const o=raw ? (JSON.parse(raw).offsets||{}) : ((typeof OFFSETS!=="undefined")?OFFSETS:{});
+    Object.keys(o).forEach(k=>{ if(o[k] && o[k].del) GONE.add(k); });
+  }catch(err){}
+})();
+if(GONE.size){
+  for(let i=NODES.length-1;i>=0;i--) if(GONE.has(NODES[i].id)) NODES.splice(i,1);
+  const live=new Set(NODES.map(n=>n.id));
+  for(let i=EDGES.length-1;i>=0;i--) if(!live.has(EDGES[i].a)||!live.has(EDGES[i].b)) EDGES.splice(i,1);
+  NODES.forEach(n=>{ if(n.follow){
+    if(!live.has(n.follow.a)) delete n.follow;
+    else if(n.follow.b && !live.has(n.follow.b)) delete n.follow.b; } });
+}
+
 const byId={}; NODES.forEach(n=>byId[n.id]=n);
 layoutRows(NODES, LANES, MIRROR);
 
@@ -80,6 +101,37 @@ NODES.forEach(n=>{
   }
   /* where this node was actually drawn, and how far it has been dragged since */
   n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
+});
+
+/* SCENERY SPANS OTHER OBJECTS, so it is resolved after they have settled: the
+   attrition band has to reach the buildings where they actually ended up.
+
+   Its BASE, though, is the lane's own answer — `_px` on the building it starts
+   from, not that building's current x. The band's span is derived from the
+   buildings it covers, and deriving its base from them too makes the base a
+   function of the very table being applied: drag the first matrix a unit left
+   and the band's zero goes with it, on top of the nudge it already carries.
+   That cost /bioinformatics_pipe two builds of a Save that looked broken. Two
+   different questions, two different answers.
+
+   And its own nudge goes into its GEOMETRY, not just into r.x. Every other
+   object is drawn at n.x, so a saved dx is in the picture the moment the page
+   loads; this one is drawn from x0/x1/yBase, so a dx that only moved r.x
+   reached the screen as a translate measured from where it was drawn — which
+   is zero at load, by construction. It saved, it reloaded, it read back
+   correctly, and it drew in the old place. */
+NODES.filter(n=>n.shape==="attritionstaircase").forEach(r=>{
+  const A=byId[r.from], B=byId[r.to];
+  if(!A||!B||typeof MODEL==="undefined") return;
+  if(r._yBase===undefined) r._yBase=r.yBase;
+  const mx=r.x-r._px, my=r.y-r._py;
+  r.x0=A.x-A.w/2-0.4+mx; r.x1=B.x+B.w/2+0.4+mx;
+  r.yBase=r._yBase+my;
+  r.ledger=JSON.parse(JSON.stringify(MODEL.ledger));
+  /* a station whose cull has been deleted has nothing to stand under, so it
+     leaves the band */
+  r.ledger.steps=r.ledger.steps.filter(st=>byId[st.id]);
+  r.ledger.steps.forEach(st=>{ st.x=byId[st.id].x+mx; });
 });
 /* every object the editors can pick up */
 const plinthEls={}, labelEls={}, textEls={};
@@ -263,6 +315,10 @@ const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
+  /* Scenery spans a whole row and is painted after some of what stands on it,
+     so without this it swallows their clicks and their drags. It is still in
+     the index and still selectable from there. */
+  if(n.scenery) g.style.pointerEvents="none";
   DRAW[n.shape](g,n);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
@@ -272,6 +328,18 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   g.addEventListener("blur",()=>{ if(!editing) unhover(); });
   g.addEventListener("click",ev=>{ev.stopPropagation(); if(!editing) show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
+});
+
+/* Committed nudges and deletions for the floating annotations. They are keyed
+   "<node>:<which>" and live in the same table as the objects, because they are
+   the same kind of thing: a hand-placed position that has to survive the row
+   being re-spaced. Applied here rather than in the shape, because the shape
+   has already drawn by now. */
+if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+  const o=LIVE[a.key];
+  if(o && o.del){ a.hide=true; [a.line,a.dot,a.t1,a.box,a.hit]
+    .forEach(e=>e&&e.setAttribute("display","none")); return; }
+  if(o){ a.off.dx=o.adx||0; a.off.dy=o.ady||0; a.reflow(); }
 });
 
 /* ============================================================
@@ -296,7 +364,10 @@ const clipPathEl=el("path",{"clip-rule":"evenodd"});
 function rebuildClip(){
   const R=40000;
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
-  NODES.forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+  /* SCENERY IS PAINTED ON THE GROUND, so punching it out of the clip would
+     erase every track and dot that crosses it — which on the attrition band
+     is most of row 3. It is a floor, not a building. */
+  NODES.filter(n=>!n.scenery).forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
   clipPathEl.setAttribute("d",d);
 }
 (function occlude(){
@@ -406,6 +477,9 @@ function frame(now){
   try{
     stepCamera(now);
     placeDots(playing?dt:0);
+    /* the ✕ rides the camera, so it stays on its object through a pan or a
+       zoom rather than sliding off it */
+    if(editing && window.placeDeleteX) window.placeDeleteX();
     if(playing && view.k >= MOTION_MIN) runTickers(dt,now);
   }catch(err){
     if(!lastErr) console.error("pipeline: a frame threw — the loop keeps running.",err);
@@ -556,7 +630,7 @@ const read=document.getElementById("read");
    reader deliberately left up. The `feature` below tracks that; these two are
    the handles it fills in, and they are no-ops until it does, so a page that
    ships without the side columns still works. */
-let revealReader=()=>{}, restoreReader=()=>{};
+let revealReader=()=>{}, restoreReader=()=>{}, keepReader=()=>{};
 
 let pinned=null, current=null;
 const esc=s=>s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -893,6 +967,9 @@ feature("side columns", function(){
     if(!R || !R.node || !auto) return;             // it was open before us
     R.w=0; auto=false; apply(R);
   };
+  /* the reader is showing something that is not a preview — a save panel, a
+     payload — so it must not fold itself away on the next click elsewhere */
+  keepReader=()=>{ auto=false; };
 
   function store(){
     auto=false;                                    // a deliberate change: it is theirs now
@@ -959,9 +1036,20 @@ function totalOffset(n){
 }
 function collectOffsets(){
   const out={};
-  NODES.forEach(n=>{ const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  /* deletions are carried forward whether or not the object is still on the
+     map: GONE was applied before NODES existed in its present form, so those
+     ids are not in NODES to be walked */
+  GONE.forEach(id=>{ out[id]={del:true}; });
+  NODES.forEach(n=>{ if(n.gone){ out[n.id]={del:true}; return; }
+    const o=totalOffset(n); if(Object.keys(o).length) out[n.id]=o; });
+  if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+    if(a.hide){ out[a.key]={del:true}; return; }
+    const adx=r2g(a.off.dx), ady=r2g(a.off.dy);
+    if(adx||ady) out[a.key]={...(adx?{adx}:{}),...(ady?{ady}:{})};
+  });
   return out;
 }
+const r2g=v=>Math.round(v*100)/100;
 /* Wording is recorded as it is changed rather than diffed afterwards — the
    originals are gone the moment an override is applied on load, so there is
    nothing left to diff against. Seeded with whatever was already in force. */
@@ -979,6 +1067,8 @@ const movedHere = n => !!(n && ((n.x-n._px) || (n.y-n._py) || n._lx || n._ly));
 /* objects whose local nudge was never published — see seedUnpublished */
 const HELD={};
 const ours = n => movedHere(n) || !!HELD[n.id];
+/* an annotation or a deletion is ours the moment this sitting touched it */
+const OURKEYS=new Set();
 /* Work this browser is holding that the shared copy has never seen. It arrives
    from local storage as part of the state the page loads with, so it is
    indistinguishable from everything else in force until the shared copy is
@@ -1085,6 +1175,15 @@ function mergeOnto(doc){
     const o=(mine.offsets||{})[n.id];
     if(o) out.offsets[n.id]=o; else delete out.offsets[n.id];
   });
+  /* deletions and annotation nudges are keyed by things that are not nodes —
+     a deleted id is gone from NODES, and an annotation key is "<node>:<which>"
+     — so the walk above cannot reach them. Anything this sitting touched
+     wins; anything it did not is left exactly as the record has it. */
+  OURKEYS.forEach(k=>{
+    const o=(mine.offsets||{})[k];
+    if(o) out.offsets[k]=o; else delete out.offsets[k];
+  });
+  GONE.forEach(k=>{ out.offsets[k]={del:true}; });
   Object.entries(TOUCHED.nodes).forEach(([id,fs])=>Object.keys(fs).forEach(f=>{
     (out.text.nodes[id]=out.text.nodes[id]||{})[f]=SESSION_TEXT.nodes[id][f]; }));
   Object.keys(TOUCHED.bands).forEach(i=>{ out.text.bands[i]=SESSION_TEXT.bands[i]; });
@@ -1202,18 +1301,125 @@ feature("edit positions", function(){
      drag transform can be composed in front of it */
   Object.entries(labelEls).forEach(([id,L])=>{ L.dataset.base=L.getAttribute("transform")||""; });
 
+  /* ---- DOUBLE-CLICK TO PICK, THEN ✕ TO DELETE -------------------------
+     A single click on this map already means something — it pins a station
+     and fills the reader — and a press that does not travel is how a drag
+     ends, so neither is free to mean "offer to delete this". A double click
+     is: nothing else on the map uses it, and it cannot be arrived at by
+     accident in the middle of dragging.
+
+     The ✕ is an HTML button in the stage rather than an SVG one, for two
+     reasons: it must not shear with the projection, and it must not live
+     inside the group it is offering to delete — a control that vanishes with
+     its own target cannot be pressed a second time. It rides the camera from
+     the frame loop so it stays on its object through a pan.
+
+     And it asks. Everything else in this mode undoes itself by dragging back;
+     this does not, and the saved state is shared, so a mis-click would take an
+     object off the map for everybody. */
+  const xbtn=document.getElementById("delX");
+  const askBox=document.getElementById("delAsk");
+  let picked=null;
+  function askDelete(title,body,onYes){
+    if(!askBox){ if(confirm(title)) onYes(); return; }
+    askBox.querySelector("#delAskTitle").textContent=title;
+    askBox.querySelector("#delAskBody").textContent=body||"";
+    askBox.classList.add("on");
+    const go=askBox.querySelector("#delAskGo"), no=askBox.querySelector("#delAskNo");
+    const close=()=>{ askBox.classList.remove("on"); go.onclick=null; no.onclick=null; };
+    go.onclick=()=>{ close(); onYes(); };
+    no.onclick=close;
+  }
+  function placeX(){
+    if(!xbtn) return;
+    if(!picked || !editing){ xbtn.style.display="none"; return; }
+    let sx,sy;
+    if(picked.kind==="node"){
+      const n=picked.n, q=P(n.x, n.y-(n.d||0)/2, topOf(n));
+      sx=view.x+q[0]*view.k; sy=view.y+q[1]*view.k;
+    }else{
+      const t=picked.a.hit, r0=svg.getBoundingClientRect();
+      if(!t){ xbtn.style.display="none"; return; }
+      const b=t.getBoundingClientRect();
+      sx=b.x+b.width-r0.left; sy=b.y-r0.top;
+    }
+    xbtn.style.display="grid";
+    xbtn.style.left=(sx+8)+"px";
+    xbtn.style.top=(sy-30)+"px";
+  }
+  window.placeDeleteX=placeX;
+  const pick=w=>{ picked=w; placeX(); };
+  const unpick=()=>{ picked=null; placeX(); };
+
+  /* WHY THIS IS NOT A `dblclick` LISTENER, which is what it obviously should
+     be. This mode is built on pointer capture, and begin() calls
+     preventDefault() on pointerdown to stop the browser turning the drag into
+     a text selection. preventDefault on pointerdown suppresses the whole
+     compatibility mouse-event chain — click and dblclick included — so a
+     dblclick handler on a node group in this mode never fires once. It looks
+     right, it is wired to the right element, and it is dead.
+
+     So the double press is measured from the presses. A press that did not
+     travel is a candidate; two of them on the same target inside DBL_MS is a
+     double click. Same rule a browser uses, applied one layer down. */
+  const DBL_MS=420;
+  let lastTap={key:null,t:0};
+  function tapped(key,what){
+    const now=performance.now();
+    const isDouble = lastTap.key===key && (now-lastTap.t)<DBL_MS;
+    lastTap = isDouble ? {key:null,t:0} : {key,t:now};
+    if(isDouble) pick(what);
+    else if(picked) unpick();          // a single press elsewhere puts the ✕ away
+  }
+
+  function removeNode(n){
+    n.gone=true;
+    [nodeEls[n.id],plinthEls[n.id],labelEls[n.id]].forEach(e=>{ if(e) e.setAttribute("display","none"); });
+    edgeGeom.forEach(rec=>{ if(rec.host && (rec.a===n.id||rec.b===n.id)) rec.host.setAttribute("display","none"); });
+    DOTS.forEach(d=>{ if(d.e && (d.e.a===n.id||d.e.b===n.id)) d.node.setAttribute("display","none"); });
+    OURKEYS.add(n.id);
+    rebuildClip();
+  }
+  function removeAnn(a){
+    a.hide=true;
+    [a.line,a.dot,a.t1,a.box,a.hit].forEach(e=>e&&e.setAttribute("display","none"));
+    OURKEYS.add(a.key);
+  }
+  if(xbtn) xbtn.onclick=()=>{
+    if(!picked) return;
+    const what=picked;
+    const name = what.kind==="node" ? (what.n.key?what.n.key+" · ":"")+what.n.name : what.a.key;
+    askDelete("Delete "+name+"?",
+      "It comes off the map for anyone who opens the page once you save. "+
+      "Everything else in this mode undoes itself by dragging back; this does not.",
+      ()=>{ if(what.kind==="node") removeNode(what.n); else removeAnn(what.a);
+            unpick(); markDirty(); });
+  };
+
   let grab=null;
   function begin(ev,n,mode){
     if(!editing) return;
     ev.stopPropagation(); ev.preventDefault();
     const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
-    grab={n,mode,px:ev.clientX,py:ev.clientY,
+    grab={n,mode,px:ev.clientX,py:ev.clientY,moved:0,
           ox:n.x,oy:n.y,olx:n._lx,oly:n._ly,el:el0};
     (mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.add("picked");
   }
   function move(ev){
     if(!grab) return;
+    grab.moved=Math.max(grab.moved,Math.hypot(ev.clientX-grab.px,ev.clientY-grab.py));
+    if(grab.mode==="ann"){
+      /* an annotation is screen-space, not world-space: it is not on the
+         ground plane, so its nudge is measured in the units it is drawn in
+         and only the camera scale divides out */
+      const a=grab.ann;
+      a.off.dx=Math.round(grab.ox+(ev.clientX-grab.px)/view.k);
+      a.off.dy=Math.round(grab.oy+(ev.clientY-grab.py)/view.k);
+      a.reflow();
+      if(hint) hint.textContent=`${a.key} — adx ${a.off.dx} ady ${a.off.dy}`;
+      return;
+    }
     const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
     const q=v=>Math.round(v/SNAP)*SNAP;
     const n=grab.n;
@@ -1225,9 +1431,18 @@ feature("edit positions", function(){
   }
   function end(){
     if(!grab) return;
+    if(grab.mode==="ann"){
+      const a=grab.ann, travelled=grab.moved>4;
+      a.box.classList.remove("picked");
+      grab=null;
+      if(!travelled) return tapped("ann:"+a.key,{kind:"ann",a});
+      OURKEYS.add(a.key); markDirty(); return;
+    }
+    const travelled=grab.moved>4;
     const n=grab.n;
     (grab.mode==="label"?labelEls[n.id]:nodeEls[n.id]).classList.remove("picked");
     grab=null;
+    if(!travelled) return tapped("node:"+n.id,{kind:"node",n});
     refresh(null);
     /* painter order is (x+y); something dragged far enough changes places */
     NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
@@ -1240,7 +1455,7 @@ feature("edit positions", function(){
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
         (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
-      : "Drag any object or any name · release to keep · Save positions when done";
+      : "Drag any object, any name or any floating label · double-click one to offer a ✕ · Save all changes when done";
   }
 
   NODES.forEach(n=>{
@@ -1253,6 +1468,40 @@ feature("edit positions", function(){
     ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
   });
 
+  /* ---- THE FLOATING ANNOTATIONS, one at a time ------------------------
+     UNDER-AMPLIFIED and OVER-AMPLIFIED are two labels on one roof and they
+     are dragged separately, because they name two different tails of the same
+     cloud and where each can go depends on what is under it.
+
+     They are not laid out from world coordinates at all: their own shape
+     re-places them from scratch EVERY FRAME, so moving the element is
+     pointless — the next frame puts it back. What is draggable is `off`, a
+     nudge in world-SVG units that placeAnn() adds to whatever the shape asked
+     for. The shape keeps owning where the label starts; the editor owns where
+     it ends up. And because placeAnn recomputes the leader from the moved
+     text to the UNMOVED target, the line follows the label, which is the whole
+     reason a label like this is worth being able to move. */
+  if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
+    if(!a.hit) return;
+    a.hit.addEventListener("pointerdown",ev=>{
+      if(!editing) return;
+      ev.stopPropagation(); ev.preventDefault();
+      if(a.hit.setPointerCapture) a.hit.setPointerCapture(ev.pointerId);
+      grab={ann:a,mode:"ann",px:ev.clientX,py:ev.clientY,moved:0,ox:a.off.dx,oy:a.off.dy};
+      a.box.classList.add("picked");
+    });
+    a.hit.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>a.hit.addEventListener(t,end));
+  });
+
+  /* In this mode every annotation is held at full opacity. They only exist for
+     part of each roof's loop, and a label you cannot see is a label you cannot
+     pick up — the handle would be an empty dashed box hovering over nothing. */
+  function holdAnnotations(on){
+    if(typeof ANNOTATIONS==="undefined") return;
+    ANNOTATIONS.forEach(a=>{ a.forceShow=on; a.reflow(); });
+  }
+
   setPosMode=setMode;
   function setMode(on){
     if(on && texting) setTextMode(false);
@@ -1261,6 +1510,8 @@ feature("edit positions", function(){
     document.body.classList.toggle("editing",on);
     btnEdit.textContent=on?"Done moving":"Edit positions";
     syncSaveBar();
+    holdAnnotations(on);
+    if(!on) unpick(); else placeX();
     if(on){ release(); say(null); }
     else if(onMotion) onMotion();
     else if(hint) hint.textContent=hint0;
@@ -1527,6 +1778,13 @@ feature("saving", function(){
   function panel(state){
     const p=payload(), nMove=Object.keys(p.offsets).length, nWord=countText(p.text);
     pinned=null; current=null; paintIndex();
+    /* SAVE RENDERS INTO THE READER, so the reader has to be up. With it folded
+       away, pressing Save all changes did nothing anybody could see: the
+       confirmation, the count, the block to paste and the Confirm button were
+       all drawn into a closed drawer. Whoever pressed it had no way to know
+       whether it had taken. It stays up afterwards — this is not a preview
+       that should fold itself back. */
+    revealReader(); keepReader();
     read.innerHTML=
       `<div class="eyebrow">Save all changes</div>`+
       `<div class="title">${nMove} object${nMove===1?"":"s"} moved · `+
@@ -1560,7 +1818,7 @@ feature("saving", function(){
         adoptStamp(res.at);
         dirty=false; syncSaveBar(); panel("done");
         toast(mergeNote("Confirmed — saved as the new default. It will still be here after a refresh.",res),
-              false, res.kept?8000:0);
+              false, res.kept?9000:6000);
       }else{
         panel("pending");
         const why = res && res.error==="too_large" ? "too big for one record"

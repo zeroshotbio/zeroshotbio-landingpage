@@ -79,6 +79,64 @@ node and `n.h` for everything else, and the chart is laid at `n.h` — so a work
 roof would put the label anchor and the occlusion silhouette 4% below its own
 chart.
 
+### Row 3 is longer than the other rows
+
+Four culls carrying a chart each need room: they are **4.2 units square, the
+same size they are on `/bioinformatics_pipe`**, where they are bigger than the
+unfiltered matrix they follow because the decision is the thing that row is
+about. Squeezing them into the span the other rows use made them smaller than
+either matrix, which says the opposite.
+
+So `r3` has its own span and the snake still closes. **A lane may set its own
+`mirror` axis**; without one it uses the map's `MIRROR`. Row 2 runs right to
+left and ends where row 3 begins; row 3 runs left to right and ends at 37.85;
+row 4 runs right to left **from there**, which is what `r4`'s `mirror: 54.40`
+is for. `BAND_X` gives each band its own length rather than all four sharing
+one — a band is as long as its row.
+
+If you re-space row 3, check the turn at both ends: the connector from row 2
+into `FQ` and the one from `FD` into `s1` are the only two places the snake
+can silently come apart.
+
+## Edit positions: deleting, and the floating labels
+
+**A double press picks an object and offers a ✕.** It is deliberately *not* a
+`dblclick` listener, and that is worth knowing before you "fix" it: this mode
+is built on pointer capture and `begin()` calls `preventDefault()` on
+pointerdown to stop the drag becoming a text selection. **preventDefault on
+pointerdown suppresses the whole compatibility mouse-event chain — `click` and
+`dblclick` included** — so a `dblclick` handler on a node group in this mode
+never fires once. It looks right, it is wired to the right element, and it is
+dead. The double press is measured from the presses instead: a press that did
+not travel is a candidate, and two on the same target inside 420ms is a double
+click.
+
+**Deleting asks.** Everything else in this mode undoes itself by dragging
+back; this does not, and the saved state is shared, so a mis-click would take
+an object off the map for everybody. The ✕ is an HTML button in the stage, not
+an SVG one — it must not shear with the projection, and it must not live inside
+the group it is offering to delete, because a control that vanishes with its
+own target cannot be pressed a second time. It rides the camera from the frame
+loop.
+
+**A deletion is `del:true` in the same table as the nudges**, and is applied
+**before anything is laid out**: the lane solve, the edges, the index and the
+occlusion clip all have to be computed over what is actually on the map.
+
+**The floating labels drag one at a time.** UNDER-AMPLIFIED and OVER-AMPLIFIED
+are two labels on one roof, and they name two different tails of the same
+cloud, so where each can go depends on what is under it. They are not laid out
+from world coordinates at all — their own shape re-places them every frame — so
+what is draggable is `off`, a nudge the shape's placement is offset by. The
+leader is recomputed from the moved text to the **unmoved** target, which is
+the whole reason a label like this is worth being able to move.
+
+**Save renders into the reader, so Save reveals the reader.** With it folded
+away, pressing Save all changes did nothing anybody could see: the count, the
+block to paste and the Confirm button were all drawn into a closed drawer. It
+stays up afterwards — a save result is not a preview that should fold itself
+back.
+
 ## The two culls that are not on a roof
 
 `c2` (Depth floor) and `hx` (Sample demultiplex) are **off the lane, not

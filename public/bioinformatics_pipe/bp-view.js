@@ -755,7 +755,7 @@ const read=document.getElementById("read");
    reader deliberately left up. The `feature` below tracks that; these two are
    the handles it fills in, and they are no-ops until it does, so a page that
    ships without the side columns still works. */
-let revealReader=()=>{}, restoreReader=()=>{};
+let revealReader=()=>{}, restoreReader=()=>{}, keepReader=()=>{};
 
 let pinned=null, current=null;
 const esc=s=>String(s).replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]));
@@ -1038,6 +1038,9 @@ feature("side columns",function(){
     if(!R || !R.node || !auto) return;             // it was open before us
     R.w=0; auto=false; apply(R);
   };
+  /* the reader is showing something that is not a preview — a save panel, a
+     payload — so it must not fold itself away on the next click elsewhere */
+  keepReader=()=>{ auto=false; };
 
   function store(){
     auto=false;                                    // a deliberate change: it is theirs now

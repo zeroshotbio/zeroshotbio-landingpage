@@ -271,6 +271,32 @@
   }
   @media (max-width:900px){ .works{left:8px;bottom:8px;font-size:10px;max-width:calc(100% - 16px)} }
 
+  /* ---- deleting an object from the map ----
+     The ✕ is an HTML button in the stage, not an SVG one, for two reasons: it
+     must not shear with the projection, and it must not live inside the group
+     it is offering to delete — a control that vanishes with its own target
+     cannot be pressed a second time.
+
+     Deleting is the one action in this mode that does not undo itself by
+     dragging back, and the saved state is shared, so it asks first. The
+     confirm box is its own element rather than Edit visual's prompt: that one
+     collects a sentence, this one collects a yes. */
+  .delx{display:none;position:absolute;z-index:20;width:26px;height:26px;
+        border:1px solid var(--drop);border-radius:50%;background:var(--bg);
+        color:var(--drop);place-items:center;font-size:17px;line-height:1;
+        box-shadow:0 2px 10px rgba(0,0,0,.4);padding:0}
+  .delx:hover,.delx:focus-visible{background:var(--drop);color:var(--bg)}
+  .delask{display:none;position:absolute;inset:0;z-index:24;background:rgba(0,0,0,.45);
+          align-items:center;justify-content:center;padding:18px}
+  .delask.on{display:flex}
+  .delaskbox{width:min(420px,100%);background:var(--panel);border:1px solid var(--drop);
+             padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .delasktitle{font-size:16px;margin-bottom:6px}
+  .delaskbox p{color:var(--fg2);font-size:11.5px;margin:0 0 14px}
+  .delaskbar{display:flex;gap:8px}
+  .delaskbar .go{background:var(--drop);border-color:var(--drop);color:var(--bg)}
+  .delaskbar .go:hover{background:var(--drop);opacity:.85;color:var(--bg)}
+
   /* ---- confirmation ---- */
   .toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
          z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;
@@ -459,6 +485,18 @@
           </div>
         </div>
       </div>
+      <button class="delx" id="delX" aria-label="Delete this object">&#215;</button>
+      <div class="delask" id="delAsk" role="dialog" aria-modal="true">
+        <div class="delaskbox">
+          <div class="delasktitle" id="delAskTitle"></div>
+          <p id="delAskBody"></p>
+          <div class="delaskbar">
+            <button class="ctl go" id="delAskGo">Delete</button>
+            <button class="ctl" id="delAskNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
       <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
       <!-- drawings being made, while you carry on with the map. One row each,
