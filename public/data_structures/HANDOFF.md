@@ -82,8 +82,9 @@ Two enclosures, three columns, read top to bottom.
 
 Each hop is **two conduits**: out of a bucket's right wall, right and down into
 the repo (the READ), then back out of the repo's left wall, left and down into
-the next bucket (the WRITE). Both doglegs turn on the same corridor at `x = 30`
-at different heights, so the channel between the two stacks reads as one thing.
+the next bucket (the WRITE). Both doglegs turn on the same corridor — `CORRIDOR`
+in `ds-data.js`, currently `x = 38` — at different heights, so the channel
+between the two stacks reads as one thing.
 
 A repo therefore always sits in the *vertical gap between the two buckets it
 bridges* — beside the seam it works on, never beside a tier. That is the whole
@@ -155,7 +156,7 @@ a transcribed CLI command, or the literal value of a `zsb_medallion` constant.
 Never as the name of a tier, in the map or in the reader. If you find yourself
 typing "the warehouse", write "silver".
 
-## No text may overlap other text
+## No text may overlap other text — and no text may overflow a box
 
 `check-overlaps.mjs` (beside these files, run with `node check-overlaps.mjs <url>`)
 renders the page, forces every label tier
@@ -169,6 +170,49 @@ one run covers every zoom level.
 Run it after any change to a shape's internal label spacing. The last round of
 failures were all sub-2px: stacked lines inside a treemap tile sitting 0.30
 grid units apart, which is exactly a 9px box's height.
+
+### `check-fit.mjs` — because text-on-text is only half of it
+
+`check-overlaps.mjs` reported **0 overlapping pairs** while the bay's contents
+hung off both its edges, a conduit caption lay across the silver treemap, and a
+cell's note filled 91% of its box. None of those is a text-on-text collision.
+Two strings can miss each other perfectly and still both be in the wrong place,
+because the thing they are colliding with is a **rectangle**.
+
+```bash
+node check-fit.mjs <url>
+```
+
+Four assertions, all in grid units, so one run covers every zoom:
+
+| | |
+|---|---|
+| **containment** | a string inside a node's box stays inside it |
+| **trespass** | a string does not lie across a box it is not centred in |
+| **zone** | a string is wholly inside a dotted enclosure or wholly outside it |
+| **crowding** | a string uses at most **80%** of its box's width |
+
+**The boxes nest** — a cell inside a repo floor, a tile inside a vault — so the
+host is the **smallest** box containing the string's centre, and everything
+containing that centre is exempt from trespass. Taking the first match instead
+made every cell's own caption trespass on itself, which is the sort of finding
+that gets a check switched off.
+
+**Crowding is a house style, not a collision.** A caption at 91% touches both
+walls and reads as a mistake beside neighbours sitting at 55%. If a string will
+not come under the cap, the honest fixes in order are: **cut a figure that
+already appears within a few grid units** — the silver fetch caption carried a
+size printed twice more in the same corridor — then widen the box, then widen
+the corridor. Truncating the words is last.
+
+### The corridor is a place, and it has a width
+
+The gap between the two zones was 18 grid units and is now **23**. It is not
+empty space: every conduit caption lives in it, and a vertical run's caption is
+anchored `end` at the corridor line, so it runs **leftward, toward the S3
+zone** — which is why the silver fetch caption ended up lying on the silver
+vault's treemap. If you add a conduit with a caption, check what is to the left
+of `CORRIDOR` at that height before you write the words.
 
 ## The state of the data — first pass, 2026-08-22
 

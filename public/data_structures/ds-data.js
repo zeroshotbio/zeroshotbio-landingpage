@@ -126,7 +126,7 @@
    is as tall as its treemap needs to be — so a solver would only fight the
    drawing.
    ============================================================ */
-const COL_BUCKET = 13, COL_REPO = 58, COL_RAIL = 78.5, CORRIDOR = 36;
+const COL_BUCKET = 13, COL_REPO = 63, COL_RAIL = 83.5, CORRIDOR = 38;
 
 /* ============================================================
    ZONES — the two systems the map spans.
@@ -149,7 +149,7 @@ const ZONES = [
   { name: "AWS S3", sub: "account 423623857952 · buckets",
     x0: -1.5, y0: -3.6, x1: 27.5, y1: 64.5 },
   { name: "GitHub", sub: "github.com/zeroshotbio · repositories",
-    x0: 45.5, y0: 6.6, x1: 84, y1: 73.5 },
+    x0: 50.5, y0: 6.6, x1: 89, y1: 73.5 },
 ];
 
 const NODES = [
@@ -219,7 +219,7 @@ const NODES = [
  kv:[["Command","uv run zsb-bronze minifin process build"],["Cells called","94,616 of 2,743,021 barcodes"],["Genes","32,520"],["Non-zeros","193,544,653 · CSR int32"],["Replicates","48, from 43 Parse samples"],["Policy","parse-cutoffs (exact)"],["Also runs under","process all — stops on the first failure"]]},
 
 {id:"BPUB", key:"2d", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
- name:"publish", cellName:"publish", note:"ran 2026-08-23 · v1 in the warehouse",
+ name:"publish", cellName:"publish", note:"ran 2026-08-23 · v1 published",
  x:COL_REPO, y:27.75, w:19, h:3.4,
  sub:"publish/publish.py · the second hop, and it has now run",
  thread:true,
@@ -232,9 +232,9 @@ const NODES = [
 /* ================= THE GAP, ON THE WRITE CONDUIT ================= */
 {id:"SGAP", key:"3", group:"③ The first release", groupMark:true, anchor:true,
  shape:"bay", tier:"silver", filled:true,
- name:"minifin/v1/ — the release that landed", x:CORRIDOR, y:32, w:9.4, h:6,
+ name:"minifin/v1/ — the release that landed", x:CORRIDOR, y:32, w:12.4, h:6,
  headline:"landed 2026-08-23",
- lines:["minifin.h5ad · 1.45 GiB", "README.md · 9.9 KiB", "CHANGELOG.md · 1.5 KiB"],
+ lines:["minifin.h5ad · 1.45 GiB", "README.md", "CHANGELOG.md"],
  sub:"published by zsb-bronze · the second hop has run",
  thread:true,
  brief:"<mark>This bay was empty on every previous read of this map, and it is not empty now.</mark> On 2026-08-23 at 00:21 UTC the publish step ran for the first time and wrote the release it had been describing since the 22nd: the validated artifact at 1.45 GiB, the dataset README beside it, and the ledger one level up. The convention the bronze side settled and wrote down is now a convention with an instance. Two of the architecture's four hops have carried bytes.",
@@ -274,7 +274,7 @@ const NODES = [
  kv:[["Repo","zeroshotbio/zsb-silver"],["HEAD","4a64566 (main)"],["Commits","34, since 2026-07-22"],["Source","870 LOC · 366 in minifin/"],["Tests","6 files"],["Steps written","1 of 3 — fetch"],["Depends on","zsb-medallion @ v0.8.0"],["Open PRs","#17 — Trailmaker QC steps 3 and 4"],["Bytes moved","0 — the fetch has not been run from here"]]},
 
 {id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
- name:"fetch (silver)", cellName:"fetch", note:"written · pinned to a real object · not yet run",
+ name:"fetch (silver)", cellName:"fetch", note:"written · pinned · not yet run",
  x:COL_REPO, y:42.0, w:19, h:3.4,
  sub:"fetch/ · release.py + config.py + fetch.py · 154 LOC",
  thread:true,
@@ -400,7 +400,7 @@ const EDGES = [
 
   /* silver → zsb-silver → gold */
   {a:{n:"SILVER", s:"r", dy:6}, b:{n:"SREPO", s:"l", dy:0}, kind:"cold",
-   label:"fetch · 1 key · 1.45 GiB", sub:"written · pinned · not yet run"},
+   label:"fetch · 1 key", sub:"pinned · not yet run"},
   {a:{n:"SREPO", s:"l", dy:5}, b:{n:"GOLD", s:"r", dy:-2}, kind:"cold",
    label:"publish_gold()", sub:"raises"},
 
