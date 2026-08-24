@@ -216,17 +216,26 @@ function drawReads(g,n){
      own coordinates, so pushing its centre back through the camera returns
      that coordinate whatever the camera is doing. */
   const hw=n.w/2, hd=n.d/2;
+  /* the same hexagon nodeSil() builds in fq-view.js, and for the same reason
+     the order there matters — see the note above it */
   g.appendChild(el("polygon",{"data-fixed":"1",fill:"transparent",stroke:"none",points:pts([
-    P(n.x-hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,n.h), P(n.x+hw,n.y+hd,n.h),
-    P(n.x+hw,n.y+hd,0),   P(n.x-hw,n.y+hd,0),   P(n.x-hw,n.y-hd,0)])}));
+    P(n.x-hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,0),
+    P(n.x+hw,n.y+hd,0),   P(n.x-hw,n.y+hd,0),   P(n.x-hw,n.y-hd,n.h)])}));
 
   /* Everything below is placed from ONE point: where this node stands on the
      ground. n.h is the top of the whole composition rather than the height of
      any object — it is what topOf() hands the label, so the name floats clear
      above the pool instead of landing in it. */
+  /* ONE ORIGIN, TAKEN ONCE, AND EVERYTHING IS AN OFFSET FROM IT.
+
+     THE POOL AND THE DIAGRAM ARE ONE OBJECT AND HAVE TO MOVE AS ONE. The first
+     version placed the reads by projecting n.x + offset every frame while the
+     diagram was drawn once from n.x and left alone — so a drag moved the pool
+     TWICE, once through the group's own translate and again through the
+     recomputed projection, and the two halves of the drawing came apart under
+     the cursor. Nothing below reads n.x or n.y after this line. The group
+     translate the editor applies is then the only thing that moves either. */
   const [X0,Y0]=P(n.x,n.y,0);
-  const RB=n.w*0.69;                      /* ball radius, world units */
-  const ZC=n.h-RB-0.5;                    /* it hovers; nothing here sits */
 
   /* ================= the fragment, SQUARE TO THE VIEWER ==================
      THIS ONE THING IS NOT DRAWN IN THE ISOMETRIC. Every other mark on the page
@@ -252,12 +261,13 @@ function drawReads(g,n){
      pure geometry and has neither problem. */
   const card=g.appendChild(el("g"));
 
-  const FW=300, FX0=X0-FW/2, FX1=X0+FW/2;
-  /* laid out downward from just under the pool, so raising the ball carries
-     the diagram with it rather than leaving it behind */
-  const CTOP=Y0-(ZC-RB)*S*CZ+17;
-  const LBL=CTOP+12, YB=CTOP+18, BT=CTOP+26, BH=13, BB=BT+BH, BMID=BT+BH/2;
-  const ROW1=BB+19, ROW2=ROW1+16;
+  /* The diagram hangs just above the ground point, so the tracks that arrive
+     and leave pass under it rather than through it. It is laid out UPWARD from
+     its bottom row, and the pool is then placed above whatever that comes to —
+     one chain, so nothing has to be re-tuned twice. */
+  const FW=300, FX0=X0-FW/2, FX1=X0+FW/2, BH=13;
+  const ROW2=Y0-14, ROW1=ROW2-16, BB=ROW1-19, BT=BB-BH, BMID=BT+BH/2;
+  const YB=BT-16, LBL=YB-6, CTOP=LBL-12;
   const SEG=10, SUB=8.5, HEAD=12;
 
   const total=FRAG.reduce((s,x)=>s+x.w,0);
@@ -333,7 +343,24 @@ function drawReads(g,n){
 
   /* ================= the pool, airborne over the diagram ==================
      Screen-space, so a read stays a straight line of even weight however the
-     ball turns. Everything below is drawn into `g` rather than into `card`. */
+     ball turns. Everything below is drawn into `g` rather than into `card`.
+
+     ITS PLACE IS GIVEN IN SCREEN OFFSETS FROM THE SAME ORIGIN THE DIAGRAM USES,
+     not in world coordinates of its own. Up and to the left of the diagram —
+     far enough left that the node's name, which leaves the back corner up and
+     to the RIGHT, passes clear of it, and far enough up that the ball's lower
+     edge clears the top of the diagram where the two overlap.
+
+     A SPHERE PROJECTS TO AN ELLIPSE, and the affine map is the page's own: the
+     image of a vector (a,b,c) is ((a-b)*S*C30, (a+b)*S/2 - c*S*CZ), so the
+     semi-axes of the silhouette are RB*hypot(S*C30,S*C30) across and
+     RB*hypot(S/2,S/2,S*CZ) down. BSY below is that second number, and it is
+     what the clearance is measured against — not the radius, which is smaller
+     and would tuck the ball into the diagram. */
+  const RB=n.w*1.38;                      /* ball radius, world units */
+  const BSY=RB*Math.hypot(S*0.5,S*0.5,S*CZ);
+  const BDX=-160;                         /* left of the diagram's centre */
+  const BX=X0+BDX, BY=CTOP-22-BSY;        /* the ball's centre, on screen */
   const UU=RB*S*C30/32;                   /* the original's unit: R was 32 of them */
 
   const NB=4, pools=[];
@@ -347,8 +374,8 @@ function drawReads(g,n){
   }
   /* the leaders first, so they run UNDER the ring and the hero rather than
      across them */
-  const lead=g.appendChild(el("path",{fill:"none",stroke:"var(--fg)","stroke-opacity":".26",
-    "stroke-width":"0.6","stroke-dasharray":"2.4 2.6","pointer-events":"none"}));
+  const lead=g.appendChild(el("path",{fill:"none",stroke:"var(--fg)","stroke-opacity":".55",
+    "stroke-width":"1.7","stroke-dasharray":"6 4.5","pointer-events":"none"}));
   const ring=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
     "stroke-opacity":".55","stroke-width":"0.9"}));
   const h1=g.appendChild(el("line",{stroke:"var(--keep)","stroke-linecap":"butt"}));
@@ -372,8 +399,11 @@ function drawReads(g,n){
          this projection what is nearer the eye is what has the greater x+y,
          which is the same key everything else on the page is sorted by. */
       const dep=Math.max(0,Math.min(1,((x1+y2)/Math.SQRT2+1)/2));
-      const p=P(n.x+x1*RB, n.y+y2*RB, ZC+z2*RB);
-      seen.push({i,rd,px:p[0],py:p[1],d:dep});
+      /* the projection of the offset, added to the centre — never P() of an
+         absolute world point, which is what made the pool drag twice */
+      const a=x1*RB, b=y2*RB, c=z2*RB;
+      seen.push({i,rd,d:dep,
+        px:BX+(a-b)*S*C30, py:BY+(a+b)*S*0.5-c*S*CZ});
     }
     seen.sort((a,b)=>a.d-b.d);
 

@@ -249,13 +249,23 @@ function applyMover(m,o){
 }
 MOVERS.forEach(m=>applyMover(m,LIVE[m.key]));
 
-/* plinths under the two landmarks; their names run along the bottom-left edge */
+/* plinths under the landmarks; their names run along the bottom-left edge.
+
+   A LANDMARK CAN DECLINE THE PLINTH with plinth:false, and one does. The
+   plinth is a patch of ground saying "this object stands here", which is true
+   of the matrix cube and untrue of the reads: that node is a pool in the air
+   and a diagram hanging under it, and neither of them is on the floor. Drawn
+   anyway it was an empty dashed square below the whole visual with a track
+   running across it, which is exactly what it looks like — a footprint left by
+   something that has gone. The name is not optional and is drawn either way. */
 NODES.filter(n=>n.anchor).forEach(n=>{
-  const pad=0.55, hw=n.w/2+pad, hd=n.d/2+pad;
-  const c=[[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],[n.x+hw,n.y+hd],[n.x-hw,n.y+hd]];
-  plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
-    fill:"var(--fg)","fill-opacity":".05",stroke:"var(--fg)",
-    "stroke-opacity":".4","stroke-width":"1","stroke-dasharray":"6 4"}));
+  if(n.plinth!==false){
+    const pad=0.55, hw=n.w/2+pad, hd=n.d/2+pad;
+    const c=[[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],[n.x+hw,n.y+hd],[n.x-hw,n.y+hd]];
+    plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
+      fill:"var(--fg)","fill-opacity":".05",stroke:"var(--fg)",
+      "stroke-opacity":".4","stroke-width":"1","stroke-dasharray":"6 4"}));
+  }
   const lo=n.lab||{}, ex=n.x+(lo.dx||0);
   const [px,py]=P(ex, n.y-n.d/2+(lo.dy||0), topOf(n));
   const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
@@ -437,10 +447,24 @@ if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
    even-odd rule — applied to the edge and dot layers only. Grid and bands are
    untouched, so they still show through translucent artwork.
    ============================================================ */
+/* THE OUTLINE OF A BOX IS A HEXAGON, AND ITS VERTICAL SIDES ARE AT THE LEFT
+   AND RIGHT CORNERS — not at the near and far ones.
+
+   The version this replaces went far-top, right-top, NEAR-top, near-bottom,
+   left-bottom, FAR-bottom. On a square footprint the near and far corners
+   share a screen x, so two of those edges are the same vertical line travelled
+   in opposite directions: the outline crosses itself and the shape between them
+   cancels out. On a box a unit or so tall the overlap is a few pixels and
+   nobody sees it. On the FASTQ landmark, whose box is the height of the whole
+   composition, it drew as a bow tie with a hole through the middle — and that
+   hole is the occlusion clip and the drag handle both.
+
+   Far top, right top, right bottom, near bottom, left bottom, left top.
+   Convex at any height. */
 const nodeSil=n=>{
   const hw=n.w/2, hd=n.d/2, h=topOf(n);
-  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
-          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
+  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y-hd,0),
+          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,h)];
 };
 const clipPathEl=el("path",{"clip-rule":"evenodd"});
 function rebuildClip(){

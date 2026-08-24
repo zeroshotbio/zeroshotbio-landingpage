@@ -177,11 +177,35 @@ rotation, and projected through `P()` like everything else. Depth is the map's
 own depth: what is nearer the eye is what has the greater `x + y`, the key
 everything else on the page is sorted by.
 
-**Nothing here is a solid, so `n.h` is not the height of any object** — it is
-the top of the whole composition, which is what `topOf()` hands the label, so
-the name floats clear above the pool rather than landing in it. Both the pool
-and the diagram are placed from it: lower the ball and it lands on the diagram;
-raise it and the name goes with it.
+**One origin, taken once, and everything is an offset from it.** The pool and
+the diagram are one object and have to move as one. The first version projected
+`n.x + offset` for every read every frame while the diagram was drawn once from
+`n.x` and left alone — so a drag moved the pool *twice*, through the group's own
+translate and again through the recomputed projection, and the two halves came
+apart under the cursor. **Nothing in the shape reads `n.x` or `n.y` after the
+line that takes `[X0,Y0]`.** The group translate the editor applies is then the
+only thing that moves either half.
+
+**A sphere projects to an ellipse, and the clearance is measured against the
+ellipse.** The image of a vector `(a,b,c)` is
+`((a−b)·S·C30, (a+b)·S/2 − c·S·CZ)`, so the silhouette's vertical semi-axis is
+`RB·hypot(S/2, S/2, S·CZ)` — bigger than `RB·S·CZ`, and using the radius instead
+tucks the pool's lower edge into the diagram.
+
+**The pool sits up and to the left**, far enough left that the node's name —
+which leaves the far corner up and to the *right* — passes clear of it. Move one
+and check the other.
+
+**`n.h` is not the height of any object**; it is where the name hangs, and the
+box the silhouette and the drag handle are cut from. Nothing on this node is a
+solid, so there is nothing else for it to mean.
+
+**No plinth.** `plinth:false` on the node. The dashed ground patch under a
+landmark says "this object stands here", which is true of the matrix cube and
+untrue of this one — drawn anyway it was an empty dashed square under the whole
+visual with a track running across it, which is exactly what it looked like: a
+footprint left by something that has gone. The name is not optional and is drawn
+either way.
 
 **The node's box is laid down as a transparent silhouette, first, behind
 everything.** Painted, so it takes pointer events; invisible, so it draws
@@ -196,6 +220,10 @@ is the same accent as a barcode, drawn as an *outline* rather than a fill,
 because it is the one tag on the molecule that is not a barcode. That is the
 rule the palette section states: a new distinction needs a different encoding,
 not a different colour.
+
+**The leaders are a magnification frustum, not a pointer** — two of them, from
+the ring's shoulders to the two ends of the diagram, and heavy enough to read as
+structure rather than as a stray hairline.
 
 **380 reads is 760 line segments a frame.** Each depth bucket is one `<path>`
 whose `d` is a run of subpaths, rebuilt as a single string and written with one
@@ -233,6 +261,26 @@ units of nothing, which is exactly the tolerance.
 **Any future shape that animates must mark one static, text-free part the same
 way**, or it will fail that check for a reason that has nothing to do with what
 the check is for.
+
+## The outline of a box is a hexagon, and its vertical sides are at the left and right corners
+
+`nodeSil()` in `fq-view.js` builds the silhouette every node's occlusion clip
+and drag handle are cut from. The version inherited from the other maps went
+*far-top, right-top, **near**-top, near-bottom, left-bottom, **far**-bottom*.
+
+On a square footprint the near and far corners share a screen x, so two of those
+edges are the same vertical line travelled in opposite directions: the outline
+crosses itself and the region between them cancels out. On a box a unit or so
+tall the overlap is a few pixels and nobody sees it. On the FASTQ landmark,
+whose box is the height of the whole composition, it drew as a **bow tie with a
+hole through the middle** — and that hole is the occlusion clip and the drag
+handle both.
+
+It is *far top, right top, right bottom, near bottom, left bottom, left top*
+here, which is convex at any height. `drawReads` builds its own hit silhouette
+the same way. **If this is ever lifted back to `/pipeline` or
+`/bioinformatics_pipe`, take the order with it** — those maps have no object
+tall enough to show the bug, which is why it survived there.
 
 ## No scenery
 
