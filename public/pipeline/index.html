@@ -271,6 +271,21 @@
   }
   @media (max-width:900px){ .works{left:8px;bottom:8px;font-size:10px;max-width:calc(100% - 16px)} }
 
+  /* ---- the four pads ----
+     A pad is the biggest object on the map, so its handle is its EDGE rather
+     than its area: a fill would mean pressing anywhere on a row picks up the
+     floor instead of whatever is standing on it. The stroke is fat and
+     invisible, so the outline picks up where it is drawn and nowhere else.
+     The grip on the far corner resizes. Both are inert until the mode is on. */
+  .padedge{fill:none;stroke:var(--signal);stroke-opacity:0;stroke-width:14}
+  svg.editing .padedge{pointer-events:stroke;cursor:move;stroke-opacity:.18;stroke-width:9}
+  svg.editing .padedge:hover{stroke-opacity:.5}
+  .padgrip{display:none;fill:var(--bg);stroke:var(--signal);stroke-width:1.6}
+  .padgriphit{fill:transparent;pointer-events:none}
+  svg.editing .padgrip{display:block}
+  svg.editing .padgriphit{pointer-events:all;cursor:nwse-resize}
+  svg.editing .picked.padedge{stroke-opacity:.8}
+
   /* ---- deleting an object from the map ----
      The ✕ is an HTML button in the stage, not an SVG one, for two reasons: it
      must not shear with the projection, and it must not live inside the group

@@ -497,26 +497,33 @@ const ROWS=[R1,R2,R3,R4], MIRROR=22.7;
    images of each other. Membership is explicit rather than inferred from y,
    because two lanes share one row and inferring would interleave them. dir:-1
    mirrors the lane so the map snakes. */
-/* ROW 3 IS LONGER THAN THE OTHERS, and that is the honest shape of it.
+/* EVERY ROW READS LEFT TO RIGHT.
 
-   Four of its culls carry a chart on their own roof, and a chart needs room:
-   they are 4.2 units square, the same size they are on /bioinformatics_pipe,
-   where they are bigger than the unfiltered matrix they follow because the
-   decision is the thing that row is about. Squeezing them to fit the span the
-   other rows use made them smaller than either matrix, which says the
-   opposite.
+   It used to snake — rows 2 and 4 ran right to left so each turned a corner
+   into the next — which is efficient with space and asks the reader to change
+   direction three times. A row that reads one way and the row under it the
+   other is two reading orders on one page, and the only thing telling you
+   which is which is the dots.
 
-   So r3 gets its own span and the snake still closes: row 2 runs right to
-   left and ends where row 3 begins; row 3 runs left to right and ends at
-   37.85; row 4 runs right to left FROM THERE, which is what `mirror` is for.
-   A lane may set its own mirror axis; without one it uses the map's. */
+   Now all four run the same way and the RETURN IS DRAWN. Each transition
+   leaves the end of one row, drops into the gutter between the bands, runs
+   back along the whole length, and rises into the start of the next: see
+   `ret` in EDGES and routeOf() in the view. The cost is three long tracks;
+   what it buys is that every row is read the same way, and the return is
+   visible as a return rather than disguised as a corner.
+
+   ROW 3 IS STILL LONGER THAN THE OTHERS, and that is honest. Four of its
+   culls carry a chart on their own roof, and a chart needs room: they are 4.2
+   units square, the same size they are on /bioinformatics_pipe, where they
+   are bigger than the unfiltered matrix they follow because the decision is
+   the thing that row is about. */
 const LANES = [
   {id:"r1-bio",   y:R1-2.0,   x0:-1.30, x1:9.00, dir:+1},
   {id:"r1-chem",  y:R1+2.0,   x0:-1.00, x1:8.50, dir:+1},
   {id:"r1-tail",  y:R1,       x0: 9.85, x1:23.40, dir:+1},
-  {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:-1},
+  {id:"r2",       y:R2,       x0:0.7,  x1:22.0,  dir:+1},
   {id:"r3",       y:R3,       x0:0.7,  x1:37.85, dir:+1},
-  {id:"r4",       y:R4,       x0:16.55,x1:37.85, dir:-1, mirror:54.40},
+  {id:"r4",       y:R4,       x0:0.7,  x1:24.0,  dir:+1},
 ];
 
 const EDGES = [
@@ -561,9 +568,11 @@ const EDGES = [
   {a:"m3",b:"LB",kind:"call"},{a:"LB",b:"PR",kind:"call"},
 
   /* the corners */
-  {a:"FX",b:"B0",kind:"susp"},
-  {a:"SEQ",b:"FQ",kind:"read"},
-  {a:"FD",b:"s1",kind:"cell"},
+  /* THE THREE ROW TRANSITIONS, drawn as returns. Each runs back along the
+     whole length of the row it is leaving — see routeOf(). */
+  {a:"FX",b:"B0",kind:"susp",ret:true},
+  {a:"SEQ",b:"FQ",kind:"read",ret:true},
+  {a:"FD",b:"s1",kind:"cell",ret:true},
 ];
 
 /* the four bands — what kind of work each row is.
@@ -571,7 +580,7 @@ const EDGES = [
    along one diagonal on the bottom-right edge. */
 /* A band is as long as its row, and row 3's row is longer. */
 const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
-const BAND_X=[[-2,24],[-2,24],[-2,39.9],[14.4,39.9]];
+const BAND_X=[[-2,24],[-2,24],[-2,39.9],[-2,26]];
 const BANDS = [R1,R2,R3,R4].map((r,i)=>({
   name:["Biological samples","Molecular biology","Bioinformatics pipeline","Opinionated metadata"][i],
   x0:BAND_X[i][0], x1:BAND_X[i][1], y0:r+BAND_H[0], y1:r+BAND_H[1]
@@ -583,7 +592,9 @@ const CARRIES = [
      The chemistry lane simply begins — it has no incoming line, because the
      compound library is not part of this pipeline and drawing a thread back
      to it implied a handover that does not happen. */
-  {x0:-0.6,y0:R4,x1:-4.6,y1:R4, fade:"out", kind:"call",
+  /* row 4 reads left to right like the rest now, so the map runs out at its
+     RIGHT end rather than its left */
+  {x0:24.6,y0:R4,x1:28.6,y1:R4, fade:"out", kind:"call",
    from:"PRISM handoff", to:"everything after this map"},
 ];
 
@@ -810,7 +821,7 @@ const OVERVIEW = {
   title:"Aquarium to Atlas",
   sub:"four rows · seven landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
-<p>Four rows, snaking. Each turns a corner at the end and runs back the other way; the dots tell you which direction you are reading. Top row is oldest.</p>
+<p>Four rows, and <mark>every one of them reads left to right</mark>. Where a row ends, the track does not turn a corner into the next one — it swings out past the end, drops into the gutter between the two bands, and runs all the way back before it rises into the first object of the row below. Watch a dot make that journey and you have the length of a row in the time it takes. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — the matrix.</mark> Reads to a cube of every barcode, then six culls, then the cells. This is the row where atlases silently stop being comparable, and it says where. <mark>Four of the six culls carry their decision on their own roof</mark> — a curve with a cut on it, a distribution with a threshold, a cloud with a band through it, an embedding against a manufactured reference. Each is a chart drawn flat and laid onto the building by one matrix, so it can be read without orbiting it. The other two are off the row rather than gone: one folds into the knee, and the other applies only to hashed designs.</p>

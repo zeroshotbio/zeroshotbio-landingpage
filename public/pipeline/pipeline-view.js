@@ -197,18 +197,76 @@ const GRID={x0:-6,x1:25,y0:-5.5,y1:45};
 })();
 
 /* row bands — name runs along the band's bottom-right edge */
-BANDS.forEach(b=>{
-  const c=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]];
-  gBand.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
+/* THE FOUR PADS, and each is three things that move independently.
+
+   A band is the ground a row stands on. It was authored geometry and nothing
+   else: a rectangle computed from two constants, drawn once. It is now an
+   object with a position, a size and a name, and all three can be tuned in
+   Edit positions like everything else on this map — because the rows they
+   sit under have different lengths and different amounts of side structure
+   hanging off them, and no formula gets four of those right at once.
+
+   Its committed state lives in the same offsets table under `band:<i>`:
+     dx/dy    move the whole pad
+     sw/sh    grow or shrink it, from the far corner
+     ldx/ldy  move its name
+
+   `_b0` is the pad as the data file authored it, captured once, so every
+   nudge is measured from one base — the same rule the buildings follow. */
+const BANDEL=[];
+BANDS.forEach((b,i)=>{
+  const key="band:"+i;
+  b._b0={x0:b.x0,y0:b.y0,x1:b.x1,y1:b.y1};
+  const o=LIVE[key]||{};
+  const pad=gBand.appendChild(el("polygon",{
     fill:"var(--fg)","fill-opacity":".025",stroke:"var(--fg)","stroke-opacity":".22",
     "stroke-width":"1","stroke-dasharray":"14 9"}));
-  const [px,py]=P(b.x1, (b.y0+b.y1)/2, 0);
-  const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
+  const g=gLabel.appendChild(el("g"));
   const t=el("text",{x:0,y:17,"text-anchor":"middle","font-size":"16","letter-spacing":"4",
     fill:"var(--fg3)"});
   t.textContent=b.name.toUpperCase(); g.appendChild(t);
-  gLabel.appendChild(g); textEls["band:"+BANDS.indexOf(b)]=t;
+  textEls[key]=t;
+
+  const rec={key,b,pad,g,t,lx:o.ldx||0,ly:o.ldy||0,hide:!!o.del,
+    grip:null,gripHit:null,padHit:null};
+  rec.reflow=()=>{
+    const c=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]];
+    const q=c.map(p=>P(p[0],p[1],0));
+    pad.setAttribute("points",pts(q));
+    if(rec.padHit) rec.padHit.setAttribute("points",pts(q));
+    const [px,py]=P(b.x1+rec.lx, (b.y0+b.y1)/2+rec.ly, 0);
+    g.setAttribute("transform",`translate(${px},${py}) rotate(-30)`);
+    /* the resize grip sits on the far corner — the one that moves when the
+       pad grows, so dragging it means what it looks like it means */
+    if(rec.grip){
+      const [gx,gy]=P(b.x1,b.y1,0);
+      [rec.grip,rec.gripHit].forEach(e=>{ e.setAttribute("cx",gx.toFixed(1)); e.setAttribute("cy",gy.toFixed(1)); });
+    }
+  };
+  rec.apply=nudge=>{
+    const u=nudge||{};
+    b.x0=b._b0.x0+(u.dx||0);            b.y0=b._b0.y0+(u.dy||0);
+    b.x1=b._b0.x1+(u.dx||0)+(u.sw||0);  b.y1=b._b0.y1+(u.dy||0)+(u.sh||0);
+    rec.lx=u.ldx||0; rec.ly=u.ldy||0;
+    const gone=!!u.del;
+    if(gone!==rec.hide){ rec.hide=gone;
+      [pad,g].forEach(e=>gone?e.setAttribute("display","none"):e.removeAttribute("display")); }
+    rec.reflow();
+  };
+  rec.apply(o);
+  BANDEL.push(rec);
 });
+/* what a pad currently differs from its authored self by */
+function bandOffset(rec){
+  const b=rec.b, r=v=>Math.round(v*100)/100, out={};
+  if(rec.hide) return {del:true};
+  const dx=r(b.x0-b._b0.x0), dy=r(b.y0-b._b0.y0);
+  const sw=r((b.x1-b._b0.x1)-dx), sh=r((b.y1-b._b0.y1)-dy);
+  if(dx) out.dx=dx; if(dy) out.dy=dy;
+  if(sw) out.sw=sw; if(sh) out.sh=sh;
+  if(r(rec.lx)) out.ldx=r(rec.lx); if(r(rec.ly)) out.ldy=r(rec.ly);
+  return out;
+}
 
 /* plinths; landmark names run along the landmark's bottom-left edge */
 NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
@@ -266,11 +324,35 @@ function makeGeom(pp){
 /* One <g> per edge so a route can be redrawn on its own when the editor moves
    a node — the number of elbows changes when two nodes come level, so the run
    is rebuilt rather than patched. */
+/* THE RETURN, and it is the only routing on this map that is not an elbow.
+
+   Every row reads left to right, so the end of one row is a long way from the
+   start of the next and the track between them has to travel. Run straight,
+   it would cut diagonally across every object on the row it is leaving. Run
+   as an ordinary elbow, it would do the same thing with a corner in it.
+
+   So it goes round: OUT past the end of the row, DOWN into the gutter between
+   the two bands, BACK along the whole length, and UP into the first object of
+   the next row. Six points, four corners, and the only part of it that shares
+   a line with anything is the horizontal run — which is in the gutter, where
+   nothing else is.
+
+   The dots follow it for free: they are placed along the polyline by arc
+   length, so a longer track simply means a longer journey. That is the point
+   of drawing the return rather than hiding it in a corner — the time a dot
+   spends travelling back is the reader's cue that a row has ended. */
+const RET_LEAD=2.2;                    /* how far past the row's end it swings */
+function returnRoute(A,B){
+  const lead = B.x < A.x ? RET_LEAD : -RET_LEAD;
+  const gy = (A.y+B.y)/2;              /* the gutter between the two bands */
+  return [[A.x,A.y],[A.x+lead,A.y],[A.x+lead,gy],[B.x-lead,gy],[B.x-lead,B.y],[B.x,B.y]];
+}
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
   /* straight:true forces a direct run even across lanes — for a fork or a
      merge, where the elbow reads as a detour rather than as routing */
-  const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
+  const raw = e.ret ? returnRoute(A,B)
+    : (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
   return raw.map(p=>P(p[0],p[1],0.02));
@@ -1047,6 +1129,7 @@ function collectOffsets(){
     const adx=r2g(a.off.dx), ady=r2g(a.off.dy);
     if(adx||ady) out[a.key]={...(adx?{adx}:{}),...(ady?{ady}:{})};
   });
+  BANDEL.forEach(rec=>{ const o=bandOffset(rec); if(Object.keys(o).length) out[rec.key]=o; });
   return out;
 }
 const r2g=v=>Math.round(v*100)/100;
@@ -1337,6 +1420,9 @@ feature("edit positions", function(){
     if(picked.kind==="node"){
       const n=picked.n, q=P(n.x, n.y-(n.d||0)/2, topOf(n));
       sx=view.x+q[0]*view.k; sy=view.y+q[1]*view.k;
+    }else if(picked.kind==="band"){
+      const b=picked.rec.b, q=P(b.x1,b.y0,0);
+      sx=view.x+q[0]*view.k; sy=view.y+q[1]*view.k;
     }else{
       const t=picked.a.hit, r0=svg.getBoundingClientRect();
       if(!t){ xbtn.style.display="none"; return; }
@@ -1380,6 +1466,11 @@ feature("edit positions", function(){
     OURKEYS.add(n.id);
     rebuildClip();
   }
+  function removeBand(rec){
+    rec.hide=true;
+    [rec.pad,rec.g,rec.padHit,rec.grip,rec.gripHit].forEach(e=>e&&e.setAttribute("display","none"));
+    OURKEYS.add(rec.key);
+  }
   function removeAnn(a){
     a.hide=true;
     [a.line,a.dot,a.t1,a.box,a.hit].forEach(e=>e&&e.setAttribute("display","none"));
@@ -1388,11 +1479,15 @@ feature("edit positions", function(){
   if(xbtn) xbtn.onclick=()=>{
     if(!picked) return;
     const what=picked;
-    const name = what.kind==="node" ? (what.n.key?what.n.key+" · ":"")+what.n.name : what.a.key;
+    const name = what.kind==="node" ? (what.n.key?what.n.key+" · ":"")+what.n.name
+               : what.kind==="band" ? what.rec.b.name+" (the pad)"
+               : what.a.key;
     askDelete("Delete "+name+"?",
       "It comes off the map for anyone who opens the page once you save. "+
       "Everything else in this mode undoes itself by dragging back; this does not.",
-      ()=>{ if(what.kind==="node") removeNode(what.n); else removeAnn(what.a);
+      ()=>{ if(what.kind==="node") removeNode(what.n);
+            else if(what.kind==="band") removeBand(what.rec);
+            else removeAnn(what.a);
             unpick(); markDirty(); });
   };
 
@@ -1409,6 +1504,26 @@ feature("edit positions", function(){
   function move(ev){
     if(!grab) return;
     grab.moved=Math.max(grab.moved,Math.hypot(ev.clientX-grab.px,ev.clientY-grab.py));
+    if(grab.mode && grab.mode.startsWith("band-")){
+      const rec=grab.rec, b=rec.b;
+      const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
+      const q=v=>Math.round(v/SNAP)*SNAP;
+      if(grab.mode==="band-move"){
+        b.x0=r2(grab.ox+q(dx)); b.y0=r2(grab.oy+q(dy));
+        b.x1=r2(b.x0+grab.ow);  b.y1=r2(b.y0+grab.oh);
+      }else if(grab.mode==="band-size"){
+        /* a pad may not be dragged inside out: below a floor it stops rather
+           than flipping, which is what a negative width would draw */
+        b.x1=r2(Math.max(b.x0+2, grab.ox+grab.ow+q(dx)));
+        b.y1=r2(Math.max(b.y0+1.2, grab.oy+grab.oh+q(dy)));
+      }else{
+        rec.lx=r2(grab.olx+q(dx)); rec.ly=r2(grab.oly+q(dy));
+      }
+      rec.reflow();
+      if(hint) hint.textContent=`${b.name} — x ${b.x0.toFixed(1)}..${b.x1.toFixed(1)} `+
+        `y ${b.y0.toFixed(1)}..${b.y1.toFixed(1)}`;
+      return;
+    }
     if(grab.mode==="ann"){
       /* an annotation is screen-space, not world-space: it is not on the
          ground plane, so its nudge is measured in the units it is drawn in
@@ -1431,6 +1546,13 @@ feature("edit positions", function(){
   }
   function end(){
     if(!grab) return;
+    if(grab.mode && grab.mode.startsWith("band-")){
+      const rec=grab.rec, travelled=grab.moved>4;
+      rec.g.classList.remove("picked"); rec.pad.classList.remove("picked");
+      grab=null;
+      if(!travelled) return tapped("band:"+rec.key,{kind:"band",rec});
+      OURKEYS.add(rec.key); markDirty(); return;
+    }
     if(grab.mode==="ann"){
       const a=grab.ann, travelled=grab.moved>4;
       a.box.classList.remove("picked");
@@ -1466,6 +1588,53 @@ feature("edit positions", function(){
     L.addEventListener("pointerdown",ev=>begin(ev,n,"label"));
     L.addEventListener("pointermove",move);
     ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
+  });
+
+  /* ---- THE FOUR PADS: move, resize, and their names -------------------
+     A pad is the ground a row stands on and it is the biggest object on the
+     map, so it cannot take a press the way a building does — press anywhere
+     inside one and you would be dragging the floor instead of the thing
+     standing on it. Its handle is therefore its EDGE: an outline with no fill
+     and a fat invisible stroke, so the pad picks up only where it is drawn.
+
+     Its size handle is a grip on the FAR CORNER — the corner that moves when
+     the pad grows — so dragging it means what it looks like it means. Its
+     name has its own nudge, like every other name on this map.
+
+     All three are inert until the mode is on, and none of them exists in the
+     DOM in a way that can eat a click before then. */
+  BANDEL.forEach(rec=>{
+    const outline=el("polygon",{class:"ehandle padedge","pointer-events":"none"});
+    gBand.appendChild(outline);
+    rec.padHit=outline;
+    const grip=el("circle",{r:7,class:"ehandle padgrip","pointer-events":"none"});
+    const gripHit=el("circle",{r:13,class:"ehit padgriphit"});
+    gBand.appendChild(grip); gBand.appendChild(gripHit);
+    rec.grip=grip; rec.gripHit=gripHit;
+    /* a box round the name, because glyphs are mostly holes */
+    let bb; try{ bb=rec.g.getBBox(); }catch(err){ bb=null; }
+    if(bb && bb.width){
+      const pd=5, box={x:bb.x-pd,y:bb.y-pd,width:bb.width+pd*2,height:bb.height+pd*2};
+      rec.g.appendChild(el("rect",{...box,class:"ehandle lab"}));
+      rec.nameHit=rec.g.appendChild(el("rect",{...box,class:"ehit"}));
+    }
+    rec.reflow();
+
+    const wire=(target,mode)=>{
+      if(!target) return;
+      target.addEventListener("pointerdown",ev=>{
+        if(!editing) return;
+        ev.stopPropagation(); ev.preventDefault();
+        if(target.setPointerCapture) target.setPointerCapture(ev.pointerId);
+        grab={rec,mode:"band-"+mode,px:ev.clientX,py:ev.clientY,moved:0,
+              ox:rec.b.x0,oy:rec.b.y0,ow:rec.b.x1-rec.b.x0,oh:rec.b.y1-rec.b.y0,
+              olx:rec.lx,oly:rec.ly};
+        (mode==="name"?rec.g:rec.pad).classList.add("picked");
+      });
+      target.addEventListener("pointermove",move);
+      ["pointerup","pointercancel"].forEach(t=>target.addEventListener(t,end));
+    };
+    wire(outline,"move"); wire(gripHit,"size"); wire(rec.nameHit,"name");
   });
 
   /* ---- THE FLOATING ANNOTATIONS, one at a time ------------------------

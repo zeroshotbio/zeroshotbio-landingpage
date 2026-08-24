@@ -52,9 +52,14 @@ accounts of one pipeline cannot drift. It is the same rule the node prose
 already follows — that page lifts its `does` / `built` / `cond` from this one
 as source text rather than re-typing it.
 
-**Edit `/culls/` and you have edited two maps.** `node check-culls.mjs <url>`
-beside these files is this map's half of that; the other page has six checks
-of its own and they all have to pass too.
+**Edit `/culls/` and you have edited two maps.** The other page has six checks
+of its own and they all have to pass too. This map's are:
+
+```bash
+node check-culls.mjs <url>     # the shared roofs load, draw, animate, stay put
+node check-edit.mjs  <url>     # floating labels, the double press, the ✕
+node check-pads.mjs  <url>     # the four row pads: move, resize, name
+```
 
 Three things about this page in particular, each of which has already gone
 wrong once:
@@ -78,6 +83,55 @@ wrong once:
 node and `n.h` for everything else, and the chart is laid at `n.h` — so a works
 roof would put the label anchor and the occlusion silhouette 4% below its own
 chart.
+
+### Every row reads left to right, and the return is drawn
+
+The map used to snake: rows 2 and 4 ran right to left so each turned a corner
+into the next. That is efficient with space and asks the reader to change
+direction three times — a row that reads one way with a row under it reading
+the other is two reading orders on one page, and the only thing telling you
+which is which is the dots.
+
+All four now run the same way, and each transition is a **return**:
+`ret:true` on the edge, `returnRoute()` in the view. It swings out past the
+end of the row, drops into the gutter between the two bands, runs the whole
+length back, and rises into the first object of the next row. Six points, four
+corners, and the only part sharing a line with anything is the horizontal run,
+which is in the gutter where nothing else is.
+
+Run straight it would cut diagonally across every object on the row it is
+leaving; run as an ordinary elbow it would do the same with a corner in it.
+
+**The dots follow it for free** — they are placed along the polyline by arc
+length — and that is the point of drawing the return rather than hiding it in
+a corner. The time a dot spends travelling back *is* the reader's cue that a
+row has ended.
+
+### The four pads move, resize and carry their names
+
+A band is the ground a row stands on. It was authored geometry and nothing
+else; it is now an object with a position, a size and a name, all three tunable
+in Edit positions — because the rows have different lengths and different
+amounts of side structure, and no formula gets four of those right at once.
+
+Committed under `band:<i>` in the same offsets table: `dx`/`dy` move it,
+`sw`/`sh` grow it from the far corner, `ldx`/`ldy` move its name, `del`
+removes it. `_b0` is the pad as the data file authored it, captured once, so
+every nudge measures from one base — the same rule the buildings follow.
+
+**Its handle is its EDGE, never its area.** A pad is the biggest object on the
+map: a filled handle means pressing anywhere on a row picks up the floor
+instead of whatever is standing on it. The outline has no fill and a fat
+invisible stroke, so it picks up where it is drawn and nowhere else.
+
+**The size grip is on the far corner** — the corner that moves when the pad
+grows — so dragging it means what it looks like it means. A pad will not go
+inside out: below a floor it stops rather than flipping.
+
+`check-pads.mjs` asserts all three move independently (moving must not resize,
+resizing must not drag the near corner, moving the name must leave the pad
+alone), that the handles are inert before the mode is on, and that the whole
+lot saves and comes back.
 
 ### Row 3 is longer than the other rows
 
