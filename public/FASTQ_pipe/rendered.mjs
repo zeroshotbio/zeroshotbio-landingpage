@@ -56,8 +56,8 @@ async function trial(label,id,kind,dx,dy){
   console.log(`${label.padEnd(26)} drawn at ${JSON.stringify(A[key])} -> ${JSON.stringify(B[key])}  `+
     (moved<0.6?'STICKS':`*** LOST, off by ${moved.toFixed(1)} world units ***`));
 }
-await trial('GA building','GA','node',120,-60);
-await trial('GA name','GA','name',70,-80);
+await trial('GA building','E5','node',120,-60);
+await trial('GA name','E5','name',70,-80);
 await trial('FASTQ landmark','FQ','node',-90,60);
 await trial('"UNFILTERED DGE"','UD','name',80,-70);
 await b.close();

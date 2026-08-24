@@ -91,15 +91,28 @@ function drawMatrix(g,n){
     line(P(x0,Y,i*sz),P(x0+n.w,Y,i*sz),.28);}
 }
 
+/* A REFERENCE IS NOT A STATION, AND MUST NOT LOOK LIKE ONE. Same geometry, the
+   other skin — SKIN.works, which this page has no other user for. The genome
+   and the whitelists are chosen rather than measured and built once rather than
+   per run, and the edges leaving them are already drawn still; a reference that
+   wears the station skin undoes half of that at a glance. No new colour: the
+   k-* face triple is one /pipeline already carries. */
+const drawRef=(g,n)=>paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works,n.hatch);
+
 DRAW.tile=drawTile;
+DRAW.ref=drawRef;
 DRAW.heap=drawHeap;
 DRAW.matrix=drawMatrix;
 
 
 /* ============================================================
-   THE READS — the one shape this page has of its own.
+   THE READS — the two shapes this page has of its own.
 
-   A swarming pool, and one fragment opened up.
+   A swarming pool, and one fragment opened up. TWO NODES: E1 is the pool and
+   E2 is the fragment, because the fork is at E2 and a transition that splits
+   the segment into two independent problems is a node rather than an arrow.
+   One drawing all the same, held together by the leaders — see the note above
+   drawFragment().
 
    THE FRAGMENT IS DRAWN IN ITS OWN ORDER, NOT IN R2's ORDER. BC1 sits nearest
    the cDNA because RT attached it first; each ligation round adds the next one
@@ -120,17 +133,16 @@ DRAW.matrix=drawMatrix;
    page that is not. Everything else belongs to the world and shears with it.
    This is a diagram OF a molecule rather than a thing standing somewhere on
    the map, and a diagram read at -30 degrees is a diagram read at -30 degrees:
-   it is laid out in plain screen axes, square to the reader, hanging under the
-   pool with nothing beneath it. An earlier build had it painted flat on a
+   it is laid out in plain screen axes, square to the reader, with nothing
+   beneath it. An earlier build had it painted flat on a
    rectangular pad — correct by the map's grammar, and worse: the pad was a
    solid claiming the reads sit somewhere, and it dragged the diagram round to
    the map's own angle for no gain.
 
-   Which is why this shape does not use roofFrame(): there is no surface to lie
-   on and no shear to take. NOTHING HERE IS A SOLID, so n.h is not the height
-   of any object — it is the top of the whole composition, which is what
-   topOf() hands the label, so the name floats clear above the pool rather than
-   landing in it.
+   Which is why neither shape uses roofFrame(): there is no surface to lie on
+   and no shear to take. NEITHER NODE IS A SOLID, so n.h is not the height of
+   any object on either — it is where the name hangs, and the box the
+   silhouette and the drag handle are cut from.
 
    COLOUR. The original of this drawing had five hues. This map has three tokens
    and a rule against a fourth, so the distinctions that survive are the ones
@@ -197,77 +209,89 @@ const FRAG=[
   {k:"umi",  w:16, tone:"umi",   lab:"UMI"},
 ];
 
-function drawReads(g,n){
-  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+/* ---------------------------------------------------------------------------
+   TWO NODES, ONE DRAWING.
 
-  /* ---- the hit target, and it is the only box here ----------------------
-     NOTHING ON THIS OBJECT IS A SOLID. There is no plinth block under the
-     drawing and no roof over it — a pool of reads and a diagram of one read,
-     and neither of those is a building. But a node still has to be clickable
-     at the projected centre of its own footprint, which is where a person aims
-     and where check-clicks.mjs presses, and here that point is empty air.
+   E1 is the pool and E2 is the fragment, and they are separate nodes because
+   the fork is at E2: one molecule sequenced from both ends, R1 leaving for the
+   genome and R2 for the whitelists. A transition that splits the segment into
+   two independent problems is a node, not an arrow.
 
-     So the node's box is laid down as a transparent silhouette: painted, so it
-     takes pointer events, and invisible, so it draws nothing. It goes in FIRST,
-     behind everything, so it can never occlude a mark.
+   They still read as one picture, and the leaders are what make them one — a
+   magnification frustum from the ring in the pool down to the two ends of the
+   opened fragment. Those are drawn by the POOL, because the pool owns the read
+   the ring is around and that read moves every frame; and they are aimed at the
+   FRAGMENT, wherever it currently is.
 
-     IT IS ALSO WHAT check-drawn.mjs MEASURES — see data-fixed below. Pure
-     geometry, no text, no stroke: its box is an exact transform of the node's
-     own coordinates, so pushing its centre back through the camera returns
-     that coordinate whatever the camera is doing. */
+   Which is the one place on this page where a shape reads another node.
+   crossGroup() below is what makes that safe.
+   --------------------------------------------------------------------------- */
+
+/* Where a point drawn in node B's group currently appears, expressed in node
+   A's group.
+
+   Both groups carry a translate the editor put there — the difference between
+   where the node is now and where it was drawn — so a line drawn in A that has
+   to land on B needs the difference of the two, and nothing else. Get this
+   wrong and the leaders detach the moment either half is dragged, which is the
+   same class of bug as the pool that dragged twice: a coordinate taken from
+   the wrong frame. */
+function crossGroup(A,B,p){
+  const dx=(B.x-B._px)-(A.x-A._px), dy=(B.y-B._py)-(A.y-A._py);
+  return [p[0]+(dx-dy)*S*C30, p[1]+(dx+dy)*S*0.5];
+}
+
+/* The node's box as a transparent silhouette: painted, so it takes pointer
+   events, and invisible, so it draws nothing.
+
+   NEITHER OF THESE TWO NODES IS A SOLID, and a node still has to be clickable
+   at the projected centre of its own footprint — which is where a person aims
+   and where check-clicks.mjs presses, and on both of them that point is empty
+   air. It goes in FIRST, behind everything, so it can never occlude a mark.
+
+   IT IS ALSO WHAT check-drawn.mjs MEASURES, via data-fixed. Pure geometry, no
+   text, no stroke: its box is an exact transform of the node's own coordinates,
+   so pushing its centre back through the camera returns that coordinate
+   whatever the camera is doing. The alternatives both fail — the whole group is
+   mostly a turning ball whose box changes every frame, and the diagram is
+   mostly text, whose box is a font metric rather than a coordinate and lands a
+   fraction differently at a different zoom.
+
+   The hexagon is nodeSil()'s, in the same order and for the same reason. */
+function hitBox(g,n){
   const hw=n.w/2, hd=n.d/2;
-  /* the same hexagon nodeSil() builds in fq-view.js, and for the same reason
-     the order there matters — see the note above it */
   g.appendChild(el("polygon",{"data-fixed":"1",fill:"transparent",stroke:"none",points:pts([
     P(n.x-hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,n.h), P(n.x+hw,n.y-hd,0),
     P(n.x+hw,n.y+hd,0),   P(n.x-hw,n.y+hd,0),   P(n.x-hw,n.y-hd,n.h)])}));
+}
 
-  /* Everything below is placed from ONE point: where this node stands on the
-     ground. n.h is the top of the whole composition rather than the height of
-     any object — it is what topOf() hands the label, so the name floats clear
-     above the pool instead of landing in it. */
-  /* ONE ORIGIN, TAKEN ONCE, AND EVERYTHING IS AN OFFSET FROM IT.
+const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
 
-     THE POOL AND THE DIAGRAM ARE ONE OBJECT AND HAVE TO MOVE AS ONE. The first
-     version placed the reads by projecting n.x + offset every frame while the
-     diagram was drawn once from n.x and left alone — so a drag moved the pool
-     TWICE, once through the group's own translate and again through the
-     recomputed projection, and the two halves of the drawing came apart under
-     the cursor. Nothing below reads n.x or n.y after this line. The group
-     translate the editor applies is then the only thing that moves either. */
-  const [X0,Y0]=P(n.x,n.y,0);
+/* ============================================================
+   E2 — ONE FRAGMENT, SQUARE TO THE VIEWER
 
-  /* ================= the fragment, SQUARE TO THE VIEWER ==================
-     THIS ONE THING IS NOT DRAWN IN THE ISOMETRIC. Every other mark on the page
-     belongs to the world and shears with it; this is a diagram OF a molecule
-     rather than a thing standing somewhere in the map, and a diagram read at
-     -30 degrees is a diagram read at -30 degrees. It is laid out in plain
-     screen axes, centred under the pool, and it is the reason drawReads does
-     not use roofFrame(): there is no surface to lie on and no shear to take.
+   THIS IS THE ONE THING ON THE PAGE NOT DRAWN IN THE ISOMETRIC. Everything
+   else belongs to the world and shears with it. This is a diagram OF a molecule
+   rather than a thing standing somewhere on the map, and a diagram read at -30
+   degrees is a diagram read at -30 degrees: plain screen axes, square to the
+   reader, hanging just above the node's ground point so the tracks that arrive
+   and leave pass under it rather than through it.
 
-     It still lives inside the node's own group, so it moves when the node is
-     dragged and scales with the camera like everything else.
-
-     WHY data-fixed IS ON THE SILHOUETTE AND NOT ON THIS. check-drawn.mjs asks
-     "did this come back drawn where it was left" by comparing the centre of a
-     bounding box across a reload. Measure the whole group and the answer is
-     the turning ball, whose box is a different shape every frame — sixty units
-     of drift on a node nothing had touched. Measure this card and the answer
-     is better but still not exact: it is mostly TEXT, and a text bounding box
-     is a font metric rather than a coordinate, so it lands a fraction
-     differently at a different zoom — and the zoom does differ between two
-     loads, because the camera fits to a content box that includes the ball.
-     0.6 units of nothing, which is exactly the tolerance. The silhouette is
-     pure geometry and has neither problem. */
-  const card=g.appendChild(el("g"));
-
-  /* The diagram hangs just above the ground point, so the tracks that arrive
-     and leave pass under it rather than through it. It is laid out UPWARD from
-     its bottom row, and the pool is then placed above whatever that comes to —
-     one chain, so nothing has to be re-tuned twice. */
+   Its geometry is a function rather than a block of locals because the pool
+   needs the two ends of the bar to aim its leaders at.
+   ============================================================ */
+function fragGeom(x,y){
+  const p=P(x,y,0), X0=p[0], Y0=p[1];
   const FW=300, FX0=X0-FW/2, FX1=X0+FW/2, BH=13;
   const ROW2=Y0-14, ROW1=ROW2-16, BB=ROW1-19, BT=BB-BH, BMID=BT+BH/2;
   const YB=BT-16, LBL=YB-6, CTOP=LBL-12;
+  return {X0,Y0,FW,FX0,FX1,BH,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP};
+}
+
+function drawFragment(g,n){
+  hitBox(g,n);
+  const F=fragGeom(n.x,n.y);
+  const {FX0,FX1,FW,BT,BB,BH,BMID,ROW1,ROW2,YB,LBL}=F;
   const SEG=10, SUB=8.5, HEAD=12;
 
   const total=FRAG.reduce((s,x)=>s+x.w,0);
@@ -279,9 +303,9 @@ function drawReads(g,n){
     const t=el("text",{x,y,"text-anchor":"middle","font-size":size,
       "font-family":MONO,"letter-spacing":(size*0.02).toFixed(2),fill,
       "font-weight":weight||"400"});
-    t.textContent=str; card.appendChild(t); return t;
+    t.textContent=str; g.appendChild(t); return t;
   };
-  const tick=(x,y0,y1,col)=>card.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
+  const tick=(x,y0,y1,col)=>g.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
     stroke:col,"stroke-width":".8","stroke-opacity":".55"}));
 
   FRAG.forEach((s,i)=>{
@@ -290,14 +314,14 @@ function drawReads(g,n){
       /* the unsequenced middle. An outline rather than a block, because there
          is nothing in it — and its name goes on the second label row, where
          its fifteen characters have the room they need. */
-      card.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
+      g.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
         stroke:"var(--fg3)","stroke-width":"1","stroke-dasharray":"3.4 3.4"}));
       tick(mid,BB,ROW2-9,"var(--fg3)");
       text(s.lab,mid,ROW2,SUB,"var(--fg3)");
       return;
     }
     if(s.tone==="link"){
-      card.appendChild(el("rect",{x,y:BT+2.6,width:w-0.7,height:BH-5.2,
+      g.appendChild(el("rect",{x,y:BT+2.6,width:w-0.7,height:BH-5.2,
         fill:"var(--fg3)","fill-opacity":".30"}));
       return;
     }
@@ -307,7 +331,7 @@ function drawReads(g,n){
          get a fourth hue to say so. Outline against fill says it instead.
          Its label drops to the second row: on the first it would sit on BC3's,
          because nothing separates the two on the molecule. */
-      card.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,
+      g.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,
         fill:"var(--accent)","fill-opacity":".16",
         stroke:"var(--accent)","stroke-width":"1.2"}));
       tick(mid,BB,ROW2-9,"var(--accent)");
@@ -315,7 +339,7 @@ function drawReads(g,n){
       return;
     }
     const col=s.tone==="keep"?"var(--keep)":"var(--accent)";
-    card.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,fill:col,"fill-opacity":".9"}));
+    g.appendChild(el("rect",{x,y:BT,width:w-0.7,height:BH,fill:col,"fill-opacity":".9"}));
     if(s.tone==="keep") text(s.lab,mid,BMID+SEG*0.36,SEG,"var(--bg)","600");
     else { tick(mid,BB,ROW1-9,col); text(s.lab,mid,ROW1,SEG,col,"600"); }
   });
@@ -323,44 +347,52 @@ function drawReads(g,n){
   /* ---- the two reads, bracketed over what each one covers ---------------
      R1 runs into the insert from the cDNA end; R2 runs inward from the far
      end, which is why its arrow points back along the molecule. The gap
-     between the brackets is the part neither read reaches.
+     between the brackets is the part neither read reaches — and the two
+     brackets are the fork: everything downstream of this node is two
+     independent problems until they meet again at the deduplication.
 
      THE ARROWHEAD SITS 15% IN FROM THE END IT POINTS AT, not on it. On the end
      it reads as a terminus — the place the read stops — and it is the opposite:
-     the direction the read travels. Set back inside its own bracket, it is
-     unmistakably a heading. */
+     the direction the read travels. */
   const gi=FRAG.findIndex(s=>s.k==="gap");
   const bracket=(xa,xb,col,label,dir)=>{
-    card.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.1","stroke-opacity":".9",
+    g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.1","stroke-opacity":".9",
       d:`M ${xa} ${YB+5} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+5}`}));
     const a=3.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
-    card.appendChild(el("polygon",{fill:col,
+    g.appendChild(el("polygon",{fill:col,
       points:`${ax+dir*a*1.7},${YB} ${ax},${YB-a} ${ax},${YB+a}`}));
     text(label,(xa+xb)/2,LBL,HEAD,col,"600");
   };
   bracket(FX0,xs[gi],"var(--keep)","R1",1);
   bracket(xs[gi]+wOf(FRAG[gi]),FX1,"var(--accent)","R2",-1);
+}
+DRAW.fragment=drawFragment;
 
-  /* ================= the pool, airborne over the diagram ==================
-     Screen-space, so a read stays a straight line of even weight however the
-     ball turns. Everything below is drawn into `g` rather than into `card`.
+/* ============================================================
+   E1 — THE POOL
 
-     ITS PLACE IS GIVEN IN SCREEN OFFSETS FROM THE SAME ORIGIN THE DIAGRAM USES,
-     not in world coordinates of its own. Up and to the left of the diagram —
-     far enough left that the node's name, which leaves the back corner up and
-     to the RIGHT, passes clear of it, and far enough up that the ball's lower
-     edge clears the top of the diagram where the two overlap.
+   Screen-space, so a read stays a straight line of even weight however the
+   ball turns.
 
-     A SPHERE PROJECTS TO AN ELLIPSE, and the affine map is the page's own: the
-     image of a vector (a,b,c) is ((a-b)*S*C30, (a+b)*S/2 - c*S*CZ), so the
-     semi-axes of the silhouette are RB*hypot(S*C30,S*C30) across and
-     RB*hypot(S/2,S/2,S*CZ) down. BSY below is that second number, and it is
-     what the clearance is measured against — not the radius, which is smaller
-     and would tuck the ball into the diagram. */
-  const RB=n.w*1.38;                      /* ball radius, world units */
-  const BSY=RB*Math.hypot(S*0.5,S*0.5,S*CZ);
-  const BDX=-160;                         /* left of the diagram's centre */
-  const BX=X0+BDX, BY=CTOP-22-BSY;        /* the ball's centre, on screen */
+   ONE ORIGIN, TAKEN ONCE, AND EVERYTHING IS AN OFFSET FROM IT. An earlier
+   version placed the reads by projecting n.x + offset every frame — so a drag
+   moved the pool TWICE, once through the group's own translate and again
+   through the recomputed projection. Nothing below reads n.x or n.y after the
+   line that takes the origin; the group translate is then the only thing that
+   moves it.
+
+   A SPHERE PROJECTS TO AN ELLIPSE, and the affine map is the page's own: the
+   image of a vector (a,b,c) is ((a-b)*S*C30, (a+b)*S/2 - c*S*CZ), so the
+   semi-axes of the silhouette are RB*hypot(S*C30,S*C30) across and
+   RB*hypot(S/2,S/2,S*CZ) down. The second is what clearance is measured
+   against — not the radius, which is smaller.
+   ============================================================ */
+function drawPool(g,n){
+  hitBox(g,n);
+  const [X0,Y0]=P(n.x,n.y,0);
+  const RB=n.w*0.70;                      /* ball radius, world units */
+  const ZC=n.ballZ;                       /* it hovers; nothing here sits */
+  const BX=X0, BY=Y0-ZC*S*CZ;             /* the ball's centre, on screen */
   const UU=RB*S*C30/32;                   /* the original's unit: R was 32 of them */
 
   const NB=4, pools=[];
@@ -381,6 +413,11 @@ function drawReads(g,n){
   const h1=g.appendChild(el("line",{stroke:"var(--keep)","stroke-linecap":"butt"}));
   const h2=g.appendChild(el("line",{stroke:"var(--accent)","stroke-linecap":"butt"}));
 
+  /* the fragment this pool is magnified into — the one cross-node reference on
+     the page, and it is resolved every frame rather than captured, so the
+     leaders follow whichever half is dragged */
+  const FRAGNODE=(typeof NODES!=="undefined") && NODES.find(m=>m.id===n.aims);
+
   let T=0;
   const seen=[];
   function render(){
@@ -399,8 +436,6 @@ function drawReads(g,n){
          this projection what is nearer the eye is what has the greater x+y,
          which is the same key everything else on the page is sorted by. */
       const dep=Math.max(0,Math.min(1,((x1+y2)/Math.SQRT2+1)/2));
-      /* the projection of the offset, added to the centre — never P() of an
-         absolute world point, which is what made the pool drag twice */
       const a=x1*RB, b=y2*RB, c=z2*RB;
       seen.push({i,rd,d:dep,
         px:BX+(a-b)*S*C30, py:BY+(a+b)*S*0.5-c*S*CZ});
@@ -438,9 +473,14 @@ function drawReads(g,n){
       ring.setAttribute("r",R.toFixed(1));
       /* two leaders, off the ring's shoulders to the two ends of the opened
          fragment — a magnification frustum rather than a single pointer */
-      lead.setAttribute("d",
-        `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${FX0.toFixed(1)} ${BMID.toFixed(1)}`+
-        `M${(hero.px+R).toFixed(1)} ${hero.py.toFixed(1)}L${FX1.toFixed(1)} ${BMID.toFixed(1)}`);
+      if(FRAGNODE){
+        const F=fragGeom(FRAGNODE._px,FRAGNODE._py);
+        const a1=crossGroup(n,FRAGNODE,[F.FX0,F.BMID]);
+        const a2=crossGroup(n,FRAGNODE,[F.FX1,F.BMID]);
+        lead.setAttribute("d",
+          `M${(hero.px-R).toFixed(1)} ${hero.py.toFixed(1)}L${a1[0].toFixed(1)} ${a1[1].toFixed(1)}`+
+          `M${(hero.px+R).toFixed(1)} ${hero.py.toFixed(1)}L${a2[0].toFixed(1)} ${a2[1].toFixed(1)}`);
+      }
     }
   }
   render();
@@ -449,5 +489,4 @@ function drawReads(g,n){
      that throws is dropped without taking the map with it. */
   TICKERS.push(dt=>{ T+=dt; render(); });
 }
-
-DRAW.reads=drawReads;
+DRAW.pool=drawPool;

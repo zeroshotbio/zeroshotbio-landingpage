@@ -31,7 +31,7 @@ const at=id=>p.evaluate(i=>{const n=NODES.find(m=>m.id===i);
   return {x:m.a*q[0]+m.c*q[1]+m.e,y:m.b*q[0]+m.d*q[1]+m.f};},id);
 
 /* a press that does not travel is a pick */
-let q=await at('AL');
+let q=await at('E4');
 await p.mouse.click(q.x,q.y); await p.waitForTimeout(300);
 if(!await p.locator('#delX').isVisible()) fail('clicking an object did not offer a delete');
 
@@ -39,13 +39,13 @@ if(!await p.locator('#delX').isVisible()) fail('clicking an object did not offer
 await p.locator('#delX').click(); await p.waitForTimeout(250);
 if(!await p.locator('#ask.on').isVisible()) fail('delete did not ask for confirmation');
 await p.locator('#askNo').click(); await p.waitForTimeout(250);
-if(await p.evaluate(()=>!!NODES.find(n=>n.id==='AL').gone)) fail('Cancel deleted it anyway');
+if(await p.evaluate(()=>!!NODES.find(n=>n.id==='E4').gone)) fail('Cancel deleted it anyway');
 
 /* and then does it */
 await p.locator('#delX').click(); await p.waitForTimeout(200);
 await p.locator('#askGo').click(); await p.waitForTimeout(300);
-if(!await p.evaluate(()=>!!NODES.find(n=>n.id==='AL').gone)) fail('Delete did not remove it');
-if(await p.evaluate(()=>document.querySelector('#svg g[aria-label="Alignment"]').getAttribute('display'))!=='none')
+if(!await p.evaluate(()=>!!NODES.find(n=>n.id==='E4').gone)) fail('Delete did not remove it');
+if(await p.evaluate(()=>document.querySelector('#svg g[aria-label="Align R1"]').getAttribute('display'))!=='none')
   fail('the deleted object is still drawn');
 
 /* Save says what happened, and stops saying it */
@@ -55,14 +55,14 @@ const txt=await p.locator('#noteTitle').textContent();
 if(!/Saved/.test(txt)) fail(`the confirmation said "${txt}"`);
 const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('fqpipe.offsets'))||'{}');
 const stored=rec.offsets||{};
-if(!stored.AL || !stored.AL.del) fail('the deletion was not saved: '+JSON.stringify(rec));
+if(!stored.E4 || !stored.E4.del) fail('the deletion was not saved: '+JSON.stringify(rec));
 await p.waitForTimeout(5400);
 if(await p.locator('#note.on').isVisible()) fail('the confirmation never went away');
 
 /* and it survives a reload */
 await p.reload({waitUntil:'networkidle'}); await p.waitForTimeout(1200);
-if(await p.evaluate(()=>NODES.some(n=>n.id==='AL'))) fail('the deletion did not survive a reload');
-if(await p.evaluate(()=>EDGES.some(e=>e.a==='AL'||e.b==='AL'))) fail('an edge to the deleted object survived');
+if(await p.evaluate(()=>NODES.some(n=>n.id==='E4'))) fail('the deletion did not survive a reload');
+if(await p.evaluate(()=>EDGES.some(e=>e.a==='E4'||e.b==='E4'))) fail('an edge to the deleted object survived');
 
 console.log(bad?`\n${bad} FAILURE(S)`
  :'delete: pick shows the ✕, ✕ asks, Cancel spares it, Delete removes it, Save confirms and self-dismisses, and it survives a reload');

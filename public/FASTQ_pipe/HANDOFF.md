@@ -23,16 +23,74 @@ object: `UD`, the unfiltered matrix, drawn on both from the same `drawMatrix`
 with the same sparsity seed. A cube that looked different on the two maps would
 be telling a reader they were looking at two different things.
 
-Eight objects: the FASTQ landmark, six stations, and the cube.
+## IT IS NOT A CHAIN. One fork and two separate joins.
 
-| station | what it draws |
-|---|---|
-| **Barcode parse** | read 2's three ligation barcodes plus the UMI, matched to the well lists at one mismatch |
-| **Genome index** | built once per reference from FASTA + GTF, not per run |
-| **Alignment** | read 1 is the cDNA and goes to STAR |
-| **Gene assignment** | aligned read → a gene model from the GTF, exonic by default |
-| **UMI deduplication** | reads sharing barcode, gene and UMI become one transcript |
-| **Cell assignment and matrix build** | group by the full barcode combination, floor at 10, emit MTX |
+```
+   G1 GRCz11 ──┐
+               ├──→ G3a STAR index ──┐
+   G2 Ensembl ─┘                     │   (and G1b/G2b → G3b, the second arm)
+                                     ↓
+                               E4 align R1 ──→ E5 assign to gene ──┐
+                                     ↑                             │
+   E1 pool ──→ E2 fragment ──────────┤                             ├──→ E6 dedup ──→ E7 unfiltered DGE
+                                     ↓                             │
+                               E3 match R2 barcodes ───────────────┘
+                                     ↑
+   W1 whitelists ────────────────────┘
+```
+
+**The fork is at E2**, which is why the fragment is a node and not an arrow:
+one molecule sequenced from both ends, R1 to the genome and R2 to the
+whitelists, and everything downstream is two independent problems until they
+meet again. **Two edges leave E2 and they do not rejoin until E6.** If a layout
+change makes them read as alternatives rather than as parallel work, the layout
+is wrong.
+
+**E6 has two inbound edges and must look like it.** The gene identity comes down
+one branch and the cell identity up the other, and neither alone is a count — a
+gene with no cell is a read pile, a cell with no gene is an empty row. That
+convergence is the point of the segment.
+
+### Three lanes, and they are not the same kind of thing
+
+| Lane | What it is | Behaviour |
+|---|---|---|
+| **E · reads** | sample material | flows once, per run, consumed |
+| **G · genome** | reference, chosen | built once, reused forever |
+| **W · whitelists** | reference, chosen | fixed by the kit, reused forever |
+
+G and W are the same class as *The compounds* in the wet-lab half of
+`/pipeline` — a catalogue someone selected from, arriving from outside the
+experiment — and they sit off to the side for the same reason.
+
+**They are not drawn as flowing.** A drug library is consumed; a STAR index is
+not. An edge that animates material down it every run asserts a per-sample cost
+that does not exist. So a reference edge is `still:true` — connected, dashed,
+dimmer, **and never given a dot** — the same distinction `/data_structures`
+draws between *has carried bytes* and *written · never run*. Reference **nodes**
+wear `SKIN.works` rather than `SKIN.tile` for the same reason: a reference that
+looks like a station undoes half of that at a glance.
+
+### The branch, and it is the only one on the map
+
+`G3 · STAR index` is where the annotation arms split. Same R1, two indexes, two
+matrices. **G1 and G2 are two nodes, not one** — two files, two independent
+choices — and the arms differ in *both*, which is why they are drawn as two
+pairs (`G1/G2 → G3a`, `G1b/G2b → G3b`) rather than as one genome with two
+annotations.
+
+Everything from E4 onward exists twice and carries **`× 2 ARMS`** under its
+name. Drawing them once is a *density* decision, not a claim that anything is
+shared; the two gene spaces are not reconcilable after the fact.
+
+### Nothing in this segment is a cull
+
+Reads are set aside — a quarter carry no valid barcode combination and never
+reach the alignment, multimappers and unmapped reads are dropped after it — but
+**no cell is ever removed here**, and the matrix at the end is deliberately,
+uselessly complete. `n.hatch` still means *this stage destroys data* and five
+nodes carry it; the index column says **"drops"**, never "cull". The culls are
+the D lane, at `/bioinformatics_pipe`.
 
 Same isometric world as its three siblings — same projection, shell, reader,
 index, theme switch — because it is the same map at a different scale, not a
@@ -44,11 +102,16 @@ The `does` / `built` / `cond` fields in `fq-data.js` come from
 `pipeline-data.js`, node for node:
 
 ```
-FQ  → FQ  (③ FASTQ)          BP  → cb1 (Barcode calling)
-GX  → E   (The counting reference)    AL  → cb2 (Alignment)
-GA  → IN  (Intron inclusion)  UM  → cb3 (UMI collapse)
-CM  → cb4 (Combine and stamp) UD  → UD  (④ Unfiltered matrix)
+FQ  → FQ  (③ FASTQ)             E3  → cb1 (Barcode calling)
+E4  → cb2 (Alignment)           E5  → IN  (Intron inclusion)
+E6  → cb3 (UMI collapse)        G3a → E   (The counting reference)
+UD  → UD  (④ Unfiltered matrix)
 ```
+
+**The matrix keeps the id `UD`,** not `E7`, and that is load-bearing:
+`drawMatrix` seeds its sparsity off `n.id==="UD"`, and this cube has to be the
+same object as the one `/bioinformatics_pipe` draws. `key:"E7"` is what shows on
+the map. The rest of the ids follow the spec.
 
 That is the whole point. Two hand-maintained accounts of one pipeline drift,
 and the drift is invisible until someone quotes the wrong one. If a claim
@@ -59,10 +122,17 @@ Same for the payloads: `REAL_CELLS`, `REAL_GENES`, `REAL_REFS`, `REAL_SUBLIBS`
 and the `read` / `ref` / `cell` snippets are the same records travelling the
 same edges.
 
+**Not every node has a source.** `/pipeline` has no node for the fragment, the
+whitelists, or the second annotation arm, so `E2`, `W1`, `G1`, `G2`, `G1b`,
+`G2b` and `G3b` are **authored here in full** — `does` / `built` / `cond`
+included. Every other node's body is lifted. If a lifted node is ever given
+authored prose in those three fields the guarantee is gone, so put new writing
+in `added:`.
+
 ### What is authored here, and what is lifted
 
-Three fields per station are authored on this page. Everything else is lifted
-byte-for-byte.
+Three fields per lifted station are authored on this page. Everything else is
+lifted byte-for-byte.
 
 - **`name` and `sub`.** Five of the eight are named differently from
   `/pipeline` and that is not drift. The big map carries the name the whole
@@ -75,6 +145,22 @@ byte-for-byte.
 
 Geometry is also overridden — the stations are 1.9 units square where they are
 0.68 on the big map — but that is dimensional, never prose.
+
+### The lane is the spine, not the map
+
+Only the four nodes every read passes through in order are on lane `r3`: the
+pool, the fragment, the deduplication, the matrix. Everything else is a
+`follow{}` side structure taking its x from one of them and keeping its own y —
+which is what makes the fork a fork, with the two branches the same distance
+above and below the spine.
+
+`E6` carries `gap:9` so the whole fork fits in the span before it. The engine
+scales every gap to fill the lane, so that is a **ratio** against the others
+rather than a distance: re-space the lane and the fork keeps its share.
+
+`follow{}` targets resolve in **array order**, so a node must appear after the
+one it follows. Every `G*` follows `E4` directly rather than chaining through
+`G3a`, which is what lets the index sit in reading order.
 
 ## NOTHING ON THIS PAGE IS MODELLED
 
@@ -435,7 +521,9 @@ the bug it exists for.
   bbox centre, and it measures a `[data-fixed]` element where a shape marks one
   — see above.
 - **`check-persist.mjs`** runs a **stateful stub with a monotonic `at`** and
-  asserts all seven transitions, including the two that were reported as bugs:
+  asserts all seven transitions. It reads **both** bases off the node (`_ox`
+  *and* `_oy`) rather than assuming a target sits on the row — most of this map
+  does not, by design, including the two that were reported as bugs:
   **unsaved work survives a reload, both before a save and after one**, and a
   browser holding the pre-stamp record migrates. It compares **every object,
   not the one that was dragged**.

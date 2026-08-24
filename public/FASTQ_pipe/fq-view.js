@@ -291,14 +291,19 @@ NODES.filter(n=>!n.anchor).forEach(n=>{
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
   t.textContent=n.key+" · "+n.name; g.appendChild(t);
-  /* ONE node on this page carries a modelled figure and the rest do not, so
-     the word rides under its name on the map as well as on its roof and in
-     the reader. A modelled figure that has lost the word is a figure claiming
-     a result nobody has produced. */
-  if(n.modelled){
+  /* A SECOND LINE UNDER THE NAME, when a node has a standing qualifier on it.
+
+     Two of them exist. `modelled` is the one inherited from the other map — a
+     figure that has lost that word is a figure claiming a result nobody has
+     produced — and `tag` is anything else a node has to carry wherever it is
+     drawn. Here that is "x 2 ARMS": every station from the alignment onward
+     runs once per annotation arm, and a map that says so only in prose is a
+     map where the second matrix arrives from nowhere. */
+  const tag = n.tag || (n.modelled?"MODELLED":null);
+  if(tag){
     const t2=el("text",{x:below?-9:9,y:10,"text-anchor":below?"end":"start","font-size":"8",
       "letter-spacing":"1",fill:"var(--accent)"});
-    t2.textContent="MODELLED"; g.appendChild(t2);
+    t2.textContent=tag; g.appendChild(t2);
   }
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
@@ -335,9 +340,18 @@ function paintEdge(rec){
   [...(host.children||[])].forEach(c=>host.removeChild(c));
   const pp=routeOf(rec);
   const faint = rec.kind==="drop";
+  /* A REFERENCE EDGE IS CONNECTED BUT NOT CARRYING, and it has to look it.
+
+     The genome and the whitelists are chosen once and reused forever; the
+     reads are consumed. An index that animates material down it every run
+     asserts a per-sample cost that does not exist — the same distinction
+     /data_structures draws between "has carried bytes" and
+     "written · never run". So a still edge is drawn thinner, dashed and
+     dimmer, and no dot is ever put on it (see the DOTS block below). */
+  const still = rec.still;
   const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
-    "stroke-width":faint?"1":"1.3","stroke-opacity":faint?".35":".7"});
-  if(rec.dash) path.setAttribute("stroke-dasharray","5 4");
+    "stroke-width":(faint||still)?"1":"1.3","stroke-opacity":still?".3":(faint?".35":".7")});
+  if(rec.dash||still) path.setAttribute("stroke-dasharray","5 4");
   host.appendChild(path);
   pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
     {x:c[0]-2.4,y:c[1]-2.4,width:4.8,height:4.8,transform:`rotate(45 ${c[0]} ${c[1]})`,
@@ -540,6 +554,8 @@ function applyOffsets(o){
    ============================================================ */
 const DOTS=[];
 edgeGeom.forEach(e=>{
+  /* nothing travels a reference edge — see paintEdge */
+  if(e.still) return;
   const faint = e.kind==="drop"||e.kind==="soup";
   const count = (faint||e.carry)?1:2;
   for(let i=0;i<count;i++){

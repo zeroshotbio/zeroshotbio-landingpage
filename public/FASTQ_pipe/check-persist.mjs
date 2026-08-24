@@ -182,7 +182,7 @@ const grab = async (page, id, dx, dy) => {
 const p3 = await open();
 await p3.locator('#btnEdit').click();
 await p3.waitForTimeout(300);
-await grab(p3, 'AL', 150, -80);
+await grab(p3, 'E4', 150, -80);
 const unsaved = await allOf(p3);
 await p3.reload({ waitUntil: 'networkidle' });
 await p3.waitForTimeout(3000);
@@ -192,10 +192,10 @@ if (d.length) fail('an unsaved sitting was thrown away on reload — ' + d.join(
 /* ---- 5. and so does one made AFTER a save, which is what was reported --- */
 await p3.locator('#btnEdit').click();
 await p3.waitForTimeout(300);
-await grab(p3, 'UM', -120, 60);
+await grab(p3, 'E6', -120, 60);
 await p3.locator('#btnSave').click();
 await p3.waitForTimeout(1100);
-await grab(p3, 'BP', 90, 70);                       // moved AFTER the save
+await grab(p3, 'E3', 90, 70);                       // moved AFTER the save
 const later = await allOf(p3);
 await p3.reload({ waitUntil: 'networkidle' });
 await p3.waitForTimeout(3000);
@@ -203,13 +203,20 @@ d = drift(later, await allOf(p3));
 if (d.length) fail('work done after a save was lost on reload — ' + d.join(' ; '));
 
 /* ---- 6. but a record somebody ELSE published is still adopted ----------- */
-const base = await p3.evaluate(() => NODES.find(n => n.id === 'AL')._ox);
-publish({ AL: { dx: 3.3, dy: -2.2 } });             // arrives from another browser
+/* BOTH BASES ARE READ OFF THE NODE, never assumed to be zero. An offset is a
+   nudge from wherever the lane engine put the thing, and not every node on
+   this map sits on the row: the branches are off it by design, so a target
+   whose _oy is not 0 is the normal case rather than the exception. */
+const [base, baseY] = await p3.evaluate(() => {
+  const n = NODES.find(m => m.id === 'E4'); return [n._ox, n._oy];
+});
+publish({ E4: { dx: 3.3, dy: -2.2 } });             // arrives from another browser
 const p4 = await open();
-const took = await posOf(p4, 'AL');
-if (!took || Math.abs(took.x - (base + 3.3)) > 0.05 || Math.abs(took.y + 2.2) > 0.05)
+const took = await posOf(p4, 'E4');
+if (!took || Math.abs(took.x - (base + 3.3)) > 0.05 || Math.abs(took.y - (baseY - 2.2)) > 0.05)
   fail('a record published elsewhere was not adopted by a browser with nothing ' +
-       `of its own — AL opened at ${JSON.stringify(took)}, expected ${(base+3.3).toFixed(2)}, -2.2`);
+       `of its own — E4 opened at ${JSON.stringify(took)}, expected ` +
+       `${(base+3.3).toFixed(2)}, ${(baseY-2.2).toFixed(2)}`);
 
 /* ---- 7. a browser carrying the OLD bare-table local record ------------
    Every browser that edited this map before the stamp existed is holding one.
@@ -223,13 +230,13 @@ p5.on('pageerror', e => errs.push(e.message));
 await p5.route('**/api/fqpipe_edits', serve);
 await p5.goto(url, { waitUntil: 'domcontentloaded' });
 await p5.evaluate(() => localStorage.setItem('fqpipe.offsets',
-  JSON.stringify({ UM: { dx: -2.5, dy: 1.5 } })));      // the old shape, no stamp
+  JSON.stringify({ E6: { dx: -2.5, dy: 1.5 } })));      // the old shape, no stamp
 await p5.reload({ waitUntil: 'networkidle' });
 await p5.waitForTimeout(3600);
-const legacy = await posOf(p5, 'AL');
+const legacy = await posOf(p5, 'E4');
 if (!legacy || Math.abs(legacy.x - (base + 3.3)) > 0.05)
   fail('a browser holding the pre-stamp record did not take the shared copy — ' +
-       `AL opened at ${JSON.stringify(legacy)}`);
+       `E4 opened at ${JSON.stringify(legacy)}`);
 
 console.log(bad
   ? `\n${bad} FAILURE(S)`

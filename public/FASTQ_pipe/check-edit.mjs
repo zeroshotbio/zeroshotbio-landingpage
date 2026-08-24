@@ -62,24 +62,24 @@ if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).dis
   fail('handles still hidden after turning the mode on');
 
 /* drag a BUILDING */
-const before=await state('AL');
-let q=await at('AL','node');
+const before=await state('E4');
+let q=await at('E4','node');
 await p.mouse.move(q.x,q.y); await p.mouse.down();
 await p.mouse.move(q.x+140,q.y+40,{steps:14}); await p.mouse.up();
 await p.waitForTimeout(250);
-const afterN=await state('AL');
+const afterN=await state('E4');
 if(Math.abs(afterN.x-before.x)<0.2 && Math.abs(afterN.y-before.y)<0.2)
   fail(`dragging the building did not move it (x ${before.x}->${afterN.x})`);
 if(afterN.lx!==before.lx || afterN.ly!==before.ly)
   fail('dragging the building also moved its name offset');
 
 /* drag a NAME on its own */
-const b2=await state('UM');
-q=await at('UM','label');
+const b2=await state('E6');
+q=await at('E6','label');
 await p.mouse.move(q.x,q.y); await p.mouse.down();
 await p.mouse.move(q.x-120,q.y-70,{steps:14}); await p.mouse.up();
 await p.waitForTimeout(250);
-const a2=await state('UM');
+const a2=await state('E6');
 if(Math.abs(a2.lx-b2.lx)<0.2 && Math.abs(a2.ly-b2.ly)<0.2)
   fail(`dragging the name did not move it (lx ${b2.lx}->${a2.lx}, ly ${b2.ly}->${a2.ly})`);
 if(Math.abs(a2.x-b2.x)>0.001 || Math.abs(a2.y-b2.y)>0.001)
@@ -114,7 +114,7 @@ else {
 /* the stored record is {offsets, at}: the table, and when it was last touched */
 const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('fqpipe.offsets'))||'{}');
 const stored=rec.offsets;
-if(!stored || !stored.AL || !stored.UM)
+if(!stored || !stored.E4 || !stored.E6)
   fail('offsets were not written to local storage: '+JSON.stringify(rec));
 if(movKey && stored && !stored[movKey])
   fail('the band name offset was not written to local storage: '+JSON.stringify(rec));

@@ -103,8 +103,8 @@ async function trial(label, id, kind, dx, dy) {
          `${JSON.stringify(put)}, came back at ${JSON.stringify(back)}, off by ${off.toFixed(1)}`);
 }
 
-await trial('a building',            'GA', 'node',  120, -60);
-await trial("a building's name",     'GA', 'name',   70, -80);
+await trial('a building',            'E5', 'node',  120, -60);
+await trial("a building's name",     'E5', 'name',   70, -80);
 await trial('the FASTQ landmark',    'FQ', 'node',  -90,  60);
 await trial('"UNFILTERED DGE"',      'UD', 'name',   80, -70);
 
