@@ -57,8 +57,15 @@ const go = async () => { await p.goto(url, { waitUntil: 'networkidle' }); await 
 
 /* the bbox centre of a drawn group, in world coordinates */
 const drawnAt = (id, kind) => p.evaluate(([i, k]) => {
-  const el = k === 'node' ? nodeEls[i] : labelEls[i];
+  let el = k === 'node' ? nodeEls[i] : labelEls[i];
   if (!el) return null;
+  /* MEASURE SOMETHING THAT DOES NOT MOVE ON ITS OWN. A bounding box is only a
+     position if the drawing inside it holds still: the FASTQ landmark carries a
+     turning ball of reads that is most of its own group, so its box is a
+     different shape every frame and its centre drifts tens of units while the
+     object sits perfectly still. A shape that animates marks one static part
+     with data-fixed, and that part is what this check reads. */
+  el = el.querySelector('[data-fixed]') || el;
   const world = document.querySelector('#svg > g');
   const wm = world.getScreenCTM().inverse();
   const r = el.getBoundingClientRect();
@@ -98,12 +105,12 @@ async function trial(label, id, kind, dx, dy) {
 
 await trial('a building',            'GA', 'node',  120, -60);
 await trial("a building's name",     'GA', 'name',   70, -80);
-await trial('the FASTQ heap',        'FQ', 'node',  -90,  60);
+await trial('the FASTQ landmark',    'FQ', 'node',  -90,  60);
 await trial('"UNFILTERED DGE"',      'UD', 'name',   80, -70);
 
 console.log(bad
   ? `\n${bad} FAILURE(S)`
-  : 'drawn: a building, its name, the FASTQ heap and the matrix name all come back ' +
+  : 'drawn: a building, its name, the FASTQ landmark and the matrix name all come back ' +
     'drawn where they were left');
 if (errs.length) console.log('page errors:', errs);
 await b.close();

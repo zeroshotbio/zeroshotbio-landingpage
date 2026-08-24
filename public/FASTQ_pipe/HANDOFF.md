@@ -23,7 +23,7 @@ object: `UD`, the unfiltered matrix, drawn on both from the same `drawMatrix`
 with the same sparsity seed. A cube that looked different on the two maps would
 be telling a reader they were looking at two different things.
 
-Eight objects: the FASTQ heap, six stations, and the cube.
+Eight objects: the FASTQ landmark, six stations, and the cube.
 
 | station | what it draws |
 |---|---|
@@ -90,12 +90,20 @@ the page is the **10-transcript floor** at the matrix build, and it is a
 formatting decision about what is worth a row rather than a claim about what is
 a cell.
 
-So this page **loads no `/culls/` files, registers no tickers and derives no
-statistics.** `roofFrame()` is still in `fq-iso.js` and still works; it is part
-of the vocabulary shared with the other maps, not a dependency of this one. If
-a roof chart ever lands on this row, load `culls-pop.js` and `culls-draw.js`
-the way `index.html` on the other map does, and put the two symbols back in the
-`requires()` table at the top of `fq-view.js`.
+So this page **loads no `/culls/` files and derives no statistics.** If a roof
+chart ever lands on this row, load `culls-pop.js` and `culls-draw.js` the way
+`index.html` on the other map does, and put `MODEL`, `ANNOTATIONS` and
+`FIGURES` back in the `requires()` table at the top of `fq-view.js`.
+
+**`roofFrame()` has been lifted into `fq-iso.js`,** verbatim from
+`culls-draw.js`. It is projection rather than subject matter, that is where
+this page's own header always claimed it lived, and `drawReads` needs it. It
+was *not* there before, and nothing noticed, because **`requires()` cannot see
+a missing `const`** — its fallback test is
+`typeof eval("typeof sym") === "undefined"`, and `eval` returns the *string*
+`"undefined"`, whose typeof is `"string"`. The condition can never be true. The
+same block is in three maps; it is documented at the top of `fq-view.js` and
+should be fixed in all three together rather than here in passing.
 
 **Do not add a MODELLED badge to anything here without a model behind it.** The
 badge machinery is intact (`modelled:true` on a node) precisely so that a
@@ -124,19 +132,84 @@ here* paragraph. If it ever reads as a false claim — that reads flow *through*
 the index — the fix is a `follow{}` and an edge of kind `ref`, not a change of
 prose.
 
-## The heap has a hit target, and that is this page's only deviation from `/pipeline`'s shapes
+## `drawReads` — the one shape this page has of its own
 
 `drawTile`, `drawHeap` and `drawMatrix` are verbatim from
 `pipeline-shapes.js`, down to the seed `drawMatrix` uses for its sparsity.
+`drawHeap` has no user today — the FASTQ landmark is `drawReads` — and stays
+because the shapes file is the shared vocabulary, not a list of what is on
+screen this week.
 
-`drawHeap` has one line added: a **transparent silhouette laid down first**,
-behind every box. A heap is twenty-two loose boxes of random height, so most of
-the volume its silhouette encloses is air — including the exact centre of the
-footprint at full height, which is where a person aims and where
-`check-clicks.mjs` presses. Without it the click goes straight through the heap
-to the canvas behind and clears the selection. It is painted (so it takes
-pointer events) and invisible (so it changes nothing on screen), and it goes in
-first so it can never occlude a box.
+The FASTQ landmark is **a swarming pool, and one fragment opened up.** It is a
+port of a canvas drawing into this map's own idiom; what follows is what the
+port had to decide.
+
+**The fragment is drawn in its own order, not in R2's order.** BC1 sits nearest
+the cDNA because reverse transcription attached it first; each ligation round
+adds the next one further out; the UMI rides on the round-3 oligo at the far
+end. R2 sequences inward from that end — which is why it meets the UMI first
+and reaches round 1 last. Draw the molecule truthfully and the reversal
+explains itself. **Do not reorder the fragment to match the read.**
+
+**Painted and airborne, which is this map's grammar and not a fresh decision.**
+The structure is drawn flat in a 176 × 176 chart space and laid onto the pad by
+one `roofFrame()` matrix, so it shears with the surface. The pool is drawn in
+screen space, so a read stays a straight line of even weight however the ball
+turns.
+
+**The ball is a real ball.** The reads are placed uniformly through a sphere —
+direction on the sphere, radius by cube root, because a uniform radius piles
+the population into the centre — in *world* coordinates, turned by a real
+rotation, and projected through `P()` like everything else. Depth is the map's
+own depth: what is nearer the eye is what has the greater `x + y`, the key
+everything else on the page is sorted by.
+
+**`topOf` is the pad, not the top of the ball**, so the reads are in neither
+the occlusion silhouette nor the label anchor. They are not part of the
+building. The node's own name is anchored at the pad's back corner and the ball
+is lifted clear of it; lower the ball and the two collide.
+
+**The pad is a rectangle and the long side is the molecule.** A square
+footprint projects to a diamond twice as wide as either diagonal, so a strip
+laid along one of them sits in the middle of a large empty plate. `n.d` runs
+along the strip and `roofFrame` is handed `{x, y, w: n.d}` — it is a projection
+helper and does not care which field the number came from.
+
+**Colour: the original had five hues, this map has three tokens and a rule
+against a fourth.** cDNA is `--keep`, the barcodes are `--accent`, and the
+distinction the tokens cannot carry is made by **encoding** instead — the UMI
+is the same accent as a barcode, drawn as an *outline* rather than a fill,
+because it is the one tag on the molecule that is not a barcode. That is the
+rule the palette section states: a new distinction needs a different encoding,
+not a different colour.
+
+**380 reads is 760 line segments a frame.** Each depth bucket is one `<path>`
+whose `d` is a run of subpaths, rebuilt as a single string and written with one
+`setAttribute` — `pool()` on the other map, same idea. Alpha and weight vary by
+having four buckets, not by having 760 attributes. The hero is drawn as itself,
+because there is one of it.
+
+**The population is built once, at load, from a fixed seed**, so the pool is the
+same pool in every browser and the hero is the same read. A swarm that
+reshuffles on refresh is a decoration; this one is a drawing of an object.
+
+**It registers one ticker and never its own `requestAnimationFrame`.** A ticker
+inherits Pause motion and `prefers-reduced-motion` for free, and one that throws
+is dropped without taking the map with it.
+
+### `data-fixed`, and why an animated shape needs it
+
+`check-drawn.mjs` asks "did this come back drawn where it was left" by comparing
+the centre of a group's bounding box across a reload. That is a sound question
+and a useless measurement on this object: most of the group is a turning ball,
+so its box is a different shape every frame and its centre drifts tens of units
+while the node sits perfectly still. It reported sixty units of drift on
+something nothing had touched.
+
+So the pad's top face carries `data-fixed="1"`, and the check measures that when
+it is there. **Any future shape that animates must mark one static part the same
+way**, or it will fail that check for a reason that has nothing to do with what
+the check is for.
 
 ## No scenery
 
@@ -272,7 +345,9 @@ the bug it exists for.
 - **`check-clicks.mjs`** clicks every building with a *real* mouse press at the
   projected centre of its roof. Use `page.mouse.click`, never `dispatchEvent`:
   a synthetic event is not evidence about a real one, and this map pans on
-  `pointerdown`. It is the check that caught the heap having no hit target.
+  `pointerdown`. It is why the FASTQ landmark has a solid pad under its
+  drawing: the earlier heap enclosed mostly air and the click went straight
+  through it to the canvas behind, which cleared the selection.
 - **`check-edit.mjs`** drives Edit positions with a real mouse: handles inert
   until the mode is on, a building drag that moves the building and *not* the
   name offset, a name drag that moves the name and *not* the building, the band
@@ -286,7 +361,8 @@ the bug it exists for.
   a different claim from being in the record. It measures the drawn group's
   bounding box and pushes the centre back through the world CTM, because the
   camera re-fits after a drag. It drags by the **edit handle**, never a group's
-  bbox centre.
+  bbox centre, and it measures a `[data-fixed]` element where a shape marks one
+  — see above.
 - **`check-persist.mjs`** runs a **stateful stub with a monotonic `at`** and
   asserts all seven transitions, including the two that were reported as bugs:
   **unsaved work survives a reload, both before a save and after one**, and a
@@ -307,6 +383,9 @@ world coordinates, for when something looks wrong and you want the numbers.
   it has to be the same object, at the same size, from the same code.
 - **Point this page at `/api/bpipe_edits`.** See above; the failure is silent.
 - **Replace the hand-rolled projection with a library.** Layout, label angles,
-  painter ordering and the camera all derive from `P()`.
+  painter ordering, the camera and `roofFrame`'s matrix all derive from `P()`.
+- **Reorder the fragment on the FASTQ landmark to match the order R2 reads
+  it.** The reversal is the point.
+- **Start a `requestAnimationFrame` inside a shape.** Push to `TICKERS`.
 - **Add a colour.** Three encodings — stays, goes, threshold — aliased onto
   `/pipeline`'s tokens.

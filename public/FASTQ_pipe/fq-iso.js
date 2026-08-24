@@ -63,6 +63,59 @@ function ellipseAt(cx,cy,z,R){
 }
 
 
+/* ============================================================
+   roofFrame — A FLAT DRAWING, LAID ONTO A HORIZONTAL SURFACE BY ONE MATRIX.
+
+   LIFTED VERBATIM FROM /culls/culls-draw.js, where the four roofed culls both
+   /pipeline and /bioinformatics_pipe draw keep it. It belongs in an iso file —
+   it is projection, not subject matter — and this page's header has claimed it
+   was here since the day the roofs moved out. It was not, and nothing noticed,
+   because requires() cannot actually see a missing `const` (see the note at the
+   top of fq-view.js). Now it is here, and this page needs it.
+
+   WHY IT EXISTS. A drawing rebuilt in three dimensions occludes the very thing
+   it exists to show. So it is not rebuilt: it is drawn in ordinary flat 2D — in
+   a CW x CW chart space — and one transform="matrix()" lays that space onto the
+   horizontal plane at height H. Everything inside comes out sheared correctly
+   for free, which is where this map's grammar comes from:
+
+     PAINTED things are ELLIPSES.  AIRBORNE things are CIRCLES.
+
+   A circle drawn in chart space arrives as the correctly-oriented ellipse; the
+   same circle drawn in screen space arrives as a circle. No branch, no special
+   case.
+
+   ORIENTATION AT turn 0: local +x runs up and to the right at -30 degrees — the
+   same angle the step names and the band titles read at — and local +y runs
+   down and to the right at +30. So an unrotated string in here reads like every
+   other string on the map, and a block of text FANS: it grows right-down as it
+   gets wider and left-down as it gets taller. Single lines are fine. Paragraphs
+   are not, and never will be.
+   ============================================================ */
+function roofFrame(g,n,H,CW,inset,turn){
+  const ch=n.w*(inset===undefined?0.92:inset);
+  const x0=n.x-ch/2, x1=n.x+ch/2, y0=n.y-ch/2, y1=n.y+ch/2;
+
+  const c00=turn?P(x0,y0,H):P(x0,y1,H);   /* chart origin */
+  const cX =turn?P(x1,y0,H):P(x0,y0,H);   /* chart (CW,0) */
+  const cY =turn?P(x0,y1,H):P(x1,y1,H);   /* chart (0,CW) */
+  const Ux=(cX[0]-c00[0])/CW, Uy=(cX[1]-c00[1])/CW;
+  const Vx=(cY[0]-c00[0])/CW, Vy=(cY[1]-c00[1])/CW;
+  const det=Ux*Vy-Vx*Uy;
+
+  const host=g.appendChild(el("g",
+    {transform:`matrix(${Ux} ${Uy} ${Vx} ${Vy} ${c00[0]} ${c00[1]})`}));
+
+  return {
+    g:host, CW, x0, x1, y0, y1, turn:!!turn,
+    toScreen:(lx,ly)=>[c00[0]+lx*Ux+ly*Vx, c00[1]+lx*Uy+ly*Vy],
+    toWorld :turn ? (lx,ly)=>[x0+(lx/CW)*(x1-x0), y0+(ly/CW)*(y1-y0)]
+                  : (lx,ly)=>[x0+(ly/CW)*(x1-x0), y1-(lx/CW)*(y1-y0)],
+    toLocal :(sdx,sdy)=>[(Vy*sdx-Vx*sdy)/det, (-Uy*sdx+Ux*sdy)/det]
+  };
+}
+
+
 /* Hatch patterns, referenced by shapes as url(#hL) etc. Call once per <svg>.
    Hatching means one thing on this page and it is the same thing it means on
    /pipeline: THE STAGE DESTROYS DATA. All four culls carry it. */

@@ -19,7 +19,9 @@ const go=async()=>{await p.goto(U,{waitUntil:'networkidle'});await p.waitForTime
 const drawn=()=>p.evaluate(()=>{
   const world=document.querySelector('#svg > g');
   const wm=world.getScreenCTM().inverse();
-  const at=el=>{ if(!el) return null;
+  const at=el0=>{ if(!el0) return null;
+    /* the static part, where a shape animates — see check-drawn.mjs */
+    const el=el0.querySelector?.('[data-fixed]')||el0;
     const r=el.getBoundingClientRect();
     const pt=new DOMPoint(r.x+r.width/2, r.y+r.height/2).matrixTransform(wm);
     return [+pt.x.toFixed(1), +pt.y.toFixed(1)]; };
@@ -56,6 +58,6 @@ async function trial(label,id,kind,dx,dy){
 }
 await trial('GA building','GA','node',120,-60);
 await trial('GA name','GA','name',70,-80);
-await trial('FASTQ heap','FQ','node',-90,60);
+await trial('FASTQ landmark','FQ','node',-90,60);
 await trial('"UNFILTERED DGE"','UD','name',80,-70);
 await b.close();

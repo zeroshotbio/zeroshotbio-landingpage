@@ -14,7 +14,21 @@
    that same constraint if they ever are.
    ============================================================ */
 
-/* Fail loudly and usefully if the scripts loaded out of order or one 404'd. */
+/* Fail loudly and usefully if the scripts loaded out of order or one 404'd.
+
+   IT DOES NOT ACTUALLY CATCH A MISSING `const`, and that is worth knowing
+   before trusting it. A top-level `const` is not a property of `window`, so the
+   first test never sees one; the fallback is
+   `typeof eval("typeof " + sym) === "undefined"`, and `eval` there returns the
+   STRING "undefined", whose typeof is "string". The condition can never be
+   true. It catches a file that 404'd only through the symbols that happen to be
+   `function` declarations, which do reach `window`.
+
+   That is how this page ran for a build with `roofFrame` in the table below and
+   nowhere in the source — it lives in /culls/culls-draw.js, which this map does
+   not load. It is in fq-iso.js now, which is where this table always claimed it
+   was. Left as it stands rather than fixed in passing, because the same block
+   is in three maps and they should be changed together. */
 (function requires(){
   const need={ "fq-iso.js":["P","paint","installDefs","layoutRows","roofFrame","TICKERS"],
                "fq-shapes.js":["DRAW","SKIN","topOf"],
