@@ -810,10 +810,17 @@ const LOCUS_BANDS=(()=>{
   return out;
 })();
 
+/* BOTH UNTRANSLATED ENDS ARE LONGER THAN THEY WERE, and pushed outward: the 5'
+   further left, the 3' further right. They were short enough to read as trim on
+   the first and last exon rather than as regions of their own, and on this map
+   they are the regions that matter — the 3' UTR is where every read lands and
+   the one whose zebrafish annotation is incomplete. Each still leaves a visible
+   run of coding sequence in its own exon, which is what says it is a PART of
+   that exon and not a separate block. */
 const GENE={inset:[0.05,0.95],
-  exons:[[0,0.085],[0.145,0.215],[0.295,0.365],[0.45,0.52],[0.60,0.665],[0.755,1.0]],
-  utr5:[0,0.048],          /* the front of exon 1 */
-  utr3:[0.83,1.0]};        /* the tail of exon 6, and most of it */
+  exons:[[0,0.115],[0.175,0.235],[0.305,0.365],[0.445,0.505],[0.585,0.645],[0.735,1.0]],
+  utr5:[0,0.075],          /* the front of exon 1 */
+  utr3:[0.80,1.0]};        /* the tail of exon 6, and most of it */
 
 function drawLocus(g,n){
   refBuilding(g,n);
@@ -918,7 +925,13 @@ function drawLocus(g,n){
     t.textContent=str; G.appendChild(t); return t;
   };
   const ROW=y+CDSH/2+5.4*u;
-  GENE.exons.forEach(([a,b])=>{
+  /* THE LAST EXON IS NOT LABELLED "exon", and that is a correction rather than
+     an omission. A label sits at the centre of what it names, and the centre of
+     that exon is inside the 3' UTR — so the word pointed at the untranslated
+     tail and said the wrong thing about it. What the block needs saying is
+     already said, on the row below, by "3' UTR". Every other exon is a coding
+     block and keeps its name. */
+  GENE.exons.slice(0,-1).forEach(([a,b])=>{
     const x=(X(a)+X(b))/2;
     tick(x, y+CDSH/2+1.0*u, ROW-1.4*u);
     angled("exon", x+1.2*u, ROW+1.4*u);
@@ -1026,7 +1039,7 @@ function setBox(nd,x0,x1,y,d,z0,z1,op){
   nd.end.setAttribute("points",pts([P(x1,yb,z1),P(x1,yf,z1),P(x1,yf,z0),P(x1,yb,z0)]));
   ["top","near","end"].forEach(k=>{
     nd[k].setAttribute("fill-opacity",op);
-    nd[k].setAttribute("stroke-opacity",((k==="top"?0.75:0.55)*op).toFixed(3));
+    nd[k].setAttribute("stroke-opacity",((k==="top"?0.8:0.62)*op).toFixed(3));
   });
 }
 const easeOut=x=>1-Math.pow(1-x,2.2);
@@ -1058,17 +1071,17 @@ function drawBelts(g,n){
        — without asking to be looked at. */
     grp.appendChild(el("polygon",{points:pts([P(x0,y-BW/2,base),P(x1,y-BW/2,base),
       P(x1,y+BW/2,base),P(x0,y+BW/2,base)]),
-      fill:"var(--t-left)","fill-opacity":".45",stroke:"var(--stroke)",
-      "stroke-width":"0.9","stroke-opacity":".22"}));
+      fill:"var(--t-right)","fill-opacity":".55",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".11"}));
     grp.appendChild(el("polygon",{points:pts([P(x0,y+BW/2,base),P(x1,y+BW/2,base),
       P(x1,y+BW/2,0),P(x0,y+BW/2,0)]),
-      fill:"var(--t-left)","fill-opacity":".55",stroke:"var(--stroke)",
-      "stroke-width":"0.9","stroke-opacity":".22"}));
+      fill:"var(--t-right)","fill-opacity":".7",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".11"}));
 
     const slats=[];
     for(let k=0;k<30;k++)
       slats.push(grp.appendChild(el("line",{stroke:"var(--stroke)",
-        "stroke-width":"1","stroke-opacity":".17"})));
+        "stroke-width":"1","stroke-opacity":".09"})));
 
     const genes=[];
     for(let i=0;i<GPB;i++){
@@ -1083,9 +1096,12 @@ function drawBelts(g,n){
       }
       const ggrp=grp.appendChild(el("g"));
       const gn={grp:ggrp,len,ex,pos:0,
-        body:boxNodes(ggrp, i%2?"var(--k-top)":"var(--t-top)",
-                            i%2?"var(--k-left)":"var(--t-left)", 0.8),
-        exons:ex.map(()=>boxNodes(ggrp,"var(--a-top)","var(--a-left)",1.0)),
+        /* EVERY GENE THE SAME TONE, AND IT IS THE QUIET ONE. They alternated
+           between two, which made every other model on the belt look like a
+           different kind of object — the variation said something, and there
+           was nothing for it to say. */
+        body:boxNodes(ggrp,"var(--t-left)","var(--t-right)",0.8),
+        exons:ex.map(()=>boxNodes(ggrp,"var(--fg3)","var(--a-top)",1.0)),
         reads:[], spl:[]};
       const NR=19+Math.floor(rnd()*8);
       for(let k=0;k<NR;k++){
@@ -1164,9 +1180,14 @@ function drawBelts(g,n){
         const opRead=gxe>x1?op:1;
         const GX=f=>gx+f*gn.len;
 
-        setBox(gn.body,gx,gxe,y,BW*0.62,base,zGene,(op*0.85).toFixed(3));
+        /* THE LADDER, DARK TO LIGHT: track, gene body, exon, read. Each rung
+           is a step and the reads are the top of it — everything below them is
+           there to be landed ON, and the moment two rungs sit at the same
+           brightness the eye has to be told what to look at instead of being
+           shown. */
+        setBox(gn.body,gx,gxe,y,BW*0.62,base,zGene,(op*0.55).toFixed(3));
         gn.ex.forEach(([a,c],i)=>
-          setBox(gn.exons[i],GX(a),GX(c),y,BW*0.52,zGene,zExon,(op*0.95).toFixed(3)));
+          setBox(gn.exons[i],GX(a),GX(c),y,BW*0.52,zGene,zExon,(op*0.98).toFixed(3)));
 
         for(const r of gn.reads){
           const tx=GX(r.f), tx2=GX(r.f+r.len);

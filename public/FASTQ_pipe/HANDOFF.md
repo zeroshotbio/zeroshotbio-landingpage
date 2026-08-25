@@ -474,11 +474,24 @@ a distinction the palette has no token left for, made by *encoding* instead. Two
 halves and an arc is unmistakable, and a fourth hue would say "a different kind
 of read" when it is the same read.
 
-**The track is scenery and reads as scenery.** It was as solid as the genes
-riding it, so four belts competed with the sixteen gene models and three hundred
-reads that are the actual subject. Dropped back toward the ground it still
-carries the motion — the slats are what make it a belt — without asking to be
-looked at.
+### The ladder, dark to light: track, gene body, exon, read
+
+**Each rung is a step, and the reads are the top of it.** Everything below them
+is there to be landed *on*, and the moment two rungs sit at the same brightness
+the eye has to be *told* what to look at instead of being *shown*.
+
+- **The track** is `--t-right`, barely above the ground, slats at a tenth. It
+  was as solid as the genes riding it, so four belts competed with the sixteen
+  gene models and three hundred reads that are the actual subject. It still
+  carries the motion — the slats are what make it a belt — without asking to be
+  looked at.
+- **Every gene is the same tone, and it is the quiet one.** They alternated
+  between two, which made every other model on the belt look like a different
+  kind of object: the variation said something, and there was nothing for it to
+  say.
+- **The exons are the light rung**, faces *and* edges, because that is the
+  surface a read lands on and it has to look like a surface.
+- **The reads** are the only saturated thing in the frame.
 
 **A box on a belt is three faces, not two.** It was top and the long near side,
 on the reasoning that nothing on a belt is seen from its far side. True of the
@@ -572,6 +585,19 @@ that explains why it exists. A read from spliced mRNA covers the end of one exon
 and the start of the next, so it lands in two halves with nothing over the
 intron between them. Drawn here it says what the annotation is *for*: the
 assembly alone cannot place these, and this is the file that can.
+
+**Both untranslated ends are long, and pushed outward.** They were short enough
+to read as trim on the first and last exon rather than as regions of their own,
+and on this map they are the regions that matter. Each still leaves a visible
+run of coding sequence inside its own exon, which is what says it is a *part* of
+that exon and not a separate block.
+
+**The last exon is not labelled "exon", and that is a correction rather than an
+omission.** A label sits at the centre of what it names, and the centre of that
+exon is inside the 3′ UTR — so the word pointed at the untranslated tail and
+said the wrong thing about it. What that block needs saying is already said, on
+the row below, by *3′ UTR*. Every other exon is a coding block and keeps its
+name.
 
 **The model is a 3′-biased gene, which is the only kind this page is about.**
 Transcription runs 5′ → 3′: the 5′ UTR is the front of the first exon, the
