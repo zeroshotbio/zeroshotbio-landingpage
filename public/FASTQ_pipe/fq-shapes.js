@@ -1286,3 +1286,223 @@ function drawBelts(g,n){
   TICKERS.push(dt=>run(dt));
 }
 DRAW.belts=drawBelts;
+
+
+/* ============================================================
+   W1 · BARCODE WHITELISTS — where the lists come from
+
+   Three plates in the sizes the chemistry actually uses:
+
+     BC1   48 wells  ->  96 barcodes
+     BC2   96 wells  ->  96 barcodes
+     BC3   96 wells  ->  96 barcodes
+
+   ALL THREE SHARE A WELL PITCH, because real 48- and 96-well plates have the
+   same wells — the 48 is simply a smaller plate. So BC1's plate is visibly two
+   thirds the width of the others and still yields 96, because each of its wells
+   holds two RT primers, an oligo-dT and a random hexamer, carrying different
+   barcodes. Barcodes rise from that plate IN PAIRS and singly from the other
+   two. Same count, half the wells, two per well — visible in the motion rather
+   than asserted in a caption.
+
+   EACH RISER IS EXACTLY EIGHT BASES, and that is arithmetic rather than
+   decoration: the dash pattern is fixed in screen pixels and the riser's world
+   length is derived from it, so eight dashes and seven gaps land on the line
+   exactly. Scale the plates and the barcode stays eight bases long and stays
+   legible; scale the dashes with everything else and it would dissolve.
+
+   It climbs to the registry overhead and is written in; the registry fills
+   continuously, in order, and never empties.
+
+   THE BARCODES ARE `--fg`, THE PAGE'S OWN INK, AND THEY ARE MEANT TO BE WHITE.
+   These are the whitelists. It is the one place on the map where the brightest
+   token is spent on something that is neither a read nor a name, and the pun is
+   the reason. --fg follows the theme, so in light mode the "white" list is the
+   darkest ink on the page — which is the same joke told the other way up.
+   ============================================================ */
+const sstep=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(3-2*t); };
+
+/* paint() builds from the ground; the registry hangs in the air, so this is the
+   same three faces with a floor under them. */
+function slabAt(g,x,y,w,d,h,sk,z0){
+  const hw=w/2, hd=d/2;
+  const c=[[x-hw,y-hd],[x+hw,y-hd],[x+hw,y+hd],[x-hw,y+hd]];
+  const f={
+    top  :pts(c.map(p=>P(p[0],p[1],z0+h))),
+    right:pts([P(c[1][0],c[1][1],z0+h),P(c[2][0],c[2][1],z0+h),P(c[2][0],c[2][1],z0),P(c[1][0],c[1][1],z0)]),
+    left :pts([P(c[3][0],c[3][1],z0+h),P(c[2][0],c[2][1],z0+h),P(c[2][0],c[2][1],z0),P(c[3][0],c[3][1],z0)]),
+  };
+  ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
+    {points:f[k],fill:sk[k],stroke:"var(--stroke)","stroke-width":"0.9","stroke-opacity":".6"})));
+  return f;
+}
+
+const ROUNDS=[
+  {key:"BC1", cols:8,  rows:6, perWell:2, risers:13},
+  {key:"BC2", cols:12, rows:8, perWell:1, risers:20},
+  {key:"BC3", cols:12, rows:8, perWell:1, risers:20},
+];
+
+function drawWhitelists(g,n){
+  hitBox(g,n);
+  const rnd=mulberry32(0x5eedf15^0x1B);
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+
+  /* the layout is authored in its own units and scaled onto the node: K across
+     the ground, KZ up. The dashes are NOT scaled — see the header. */
+  const PITCH0=0.34, WELLR0=0.105, GAP0=3.3, PH0=0.30, ZR0=8.2, REGH0=0.07;
+  const NATW=ROUNDS.reduce((t,R)=>t+R.cols*PITCH0,0)+GAP0*(ROUNDS.length-1);
+  const K=n.w/NATW, KZ=n.h/(ZR0+REGH0);
+  const PITCH=PITCH0*K, WELL_R=WELLR0*K, gap=GAP0*K, h=PH0*KZ, ZR=ZR0*KZ;
+  const y=n.y;
+
+  const DASH=2.5, GAP=1.35, BC_LEN=(8*DASH+7*GAP)/(S*CZ);
+  const PLATE={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
+  const REG  ={top:"var(--t-left)",left:"var(--t-right)",right:"var(--t-right)"};
+
+  const plates=[];
+  let cx=0;
+  ROUNDS.forEach(R=>{
+    const w=R.cols*PITCH, d=R.rows*PITCH;
+    plates.push({R,px:cx+w/2,w,d});
+    cx+=w+gap;
+  });
+  plates.forEach(p=>{ p.px+=n.x-(cx-gap)/2; });
+
+  /* ---- plates, wells, risers ---- */
+  plates.forEach(pl=>{
+    const {R,px,w,d}=pl;
+    const grp=g.appendChild(el("g"));
+    slabAt(grp,px,y,w+0.30*K,d+0.30*K,h,PLATE,0);
+
+    const wells=[], wellNodes=[], wellLit=[];
+    for(let r=0;r<R.rows;r++) for(let c=0;c<R.cols;c++){
+      const wx=px-w/2+(c+0.5)*PITCH, wy=y-d/2+(r+0.5)*PITCH;
+      wells.push([wx,wy]);
+      const e=ellipseAt(wx,wy,h,WELL_R);
+      grp.appendChild(el("ellipse",{cx:e.x,cy:e.y,rx:e.rx,ry:e.ry,
+        fill:"var(--bg)","fill-opacity":".55",stroke:"var(--stroke)",
+        "stroke-width":".55","stroke-opacity":".5"}));
+      wellNodes.push(grp.appendChild(el("ellipse",{cx:e.x,cy:e.y,
+        rx:(e.rx*0.82).toFixed(2),ry:(e.ry*0.82).toFixed(2),
+        fill:"var(--fg)","fill-opacity":"0"})));
+      wellLit.push(-99);
+    }
+
+    const risers=[];
+    const PERIOD=4.6+rnd()*0.5;
+    for(let k=0;k<R.risers;k++){
+      const lines=[];
+      for(let s=0;s<R.perWell;s++)
+        lines.push(grp.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"2.7",
+          "stroke-linecap":"butt","stroke-dasharray":DASH+" "+GAP,"stroke-opacity":"0"})));
+      risers.push({lines,per:PERIOD,ph:k/R.risers,wi:0,slot0:0,lastU:1,armed:false});
+    }
+    Object.assign(pl,{wells,wellNodes,wellLit,risers,grp,seq:0});
+  });
+
+  /* ---- the registry: one panel per round, over its own plate.
+     BUILT LAST ON PURPOSE. DOM order is paint order, so the panels sit on top
+     of the risers and a climbing barcode passes UP AND BEHIND its register
+     rather than stopping short of it. */
+  const SLOT_P=0.42*K;
+  plates.forEach(pl=>{
+    const rw=pl.w+0.7*K, rd=pl.d+1.15*K;
+    slabAt(g,pl.px,y,rw,rd,REGH0*KZ,REG,ZR);
+    const cols=Math.max(1,Math.round(rw/SLOT_P)), rows=Math.max(1,Math.round(rd/SLOT_P));
+    const slots=[];
+    for(let r=0;r<rows;r++) for(let c=0;c<cols;c++){
+      const sx=pl.px-rw/2+((c+0.5)*rw)/cols, sy=y-rd/2+((r+0.5)*rd)/rows;
+      const a=P(sx,sy-0.10*K,ZR+REGH0*KZ+0.005), b=P(sx,sy+0.10*K,ZR+REGH0*KZ+0.005);
+      slots.push({node:g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+        x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
+        "stroke-width":"1.9","stroke-linecap":"butt","stroke-opacity":"0.05"})),lit:-99});
+    }
+    Object.assign(pl,{rw,rd,slots,ptr:0});
+  });
+
+  /* ---- the names, lying along the edges they belong to --------------------
+     Both edges at constant y — the far one and the near one — run at +30 on
+     screen, so a register's name rides its far edge and a plate's rides its
+     near one and the two share an angle. That is +30 rather than the map's own
+     -30 on purpose: these are not names OF an object on the map, they are
+     writing ON one, and writing on a surface takes the surface's angle. */
+  const place=(wx,wy,wz,rows,firstDy,startX)=>{
+    const a=P(wx,wy,wz);
+    const t=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+      "text-anchor":"start","font-family":MONO});
+    rows.forEach(([str,fill,size,weight,ls,op],i)=>{
+      const sp=el("tspan",{x:startX,y:firstDy+i*17*K,fill,"font-size":size,
+        "font-weight":weight,"letter-spacing":ls,"fill-opacity":op});
+      sp.textContent=str; t.appendChild(sp);
+    });
+    g.appendChild(t);
+  };
+  /* ONE SIZE FOR ALL THREE, taken from the shortest edge — BC1's plate is the
+     small one, and three sibling labels at three different sizes would read as
+     a mistake rather than as a fit. */
+  const CH=0.68, mainText=pl=>pl.R.key+" — 96 BARCODES";
+  const FIT=Math.max(6.5,Math.min(...plates.map(pl=>
+    ((pl.d+0.30*K)*S)/(mainText(pl).length*CH))));
+  plates.forEach(pl=>{
+    place(pl.px-pl.rw/2, y-pl.rd/2-0.40*K, ZR+REGH0*KZ,
+      [[pl.R.key+" WHITELIST","var(--fg)",(FIT*0.95).toFixed(1),"600",(FIT*0.11).toFixed(2),"1"]],
+      0, 12*K);
+    const rows=[[mainText(pl),"var(--fg)",FIT.toFixed(1),"600",(FIT*0.08).toFixed(2),".92"]];
+    if(pl.R.perWell===2)
+      rows.push(["two primers per well","var(--fg3)",(FIT*0.84).toFixed(1),"400","0",".9"]);
+    place(pl.px-(pl.w+0.30*K)/2, y+(pl.d+0.30*K)/2+0.42*K, h, rows, 15*K, 14*K);
+  });
+
+  const CLIMB=0.72;                          /* fraction of the cycle spent rising */
+  const TOP=(ZR+1.15*KZ-h)*0.80;             /* ends short of the register */
+  /* the head crosses the register underside at climb 0.825; the row is taken
+     just after, so the arrival reads as cause and the write as effect */
+  const WRITE=0.88;
+  let t=0;
+  const run=dt=>{
+    t+=dt;
+    for(const pl of plates){
+      const {R,wells,risers}=pl;
+      risers.forEach(rs=>{
+        const raw=t/rs.per+rs.ph, u=raw-Math.floor(raw);
+        /* a new cycle takes the NEXT well and the NEXT rows of the register, so
+           wells fire in the same order the register fills */
+        if(u<rs.lastU){
+          rs.wi=pl.seq%wells.length;
+          rs.slot0=(pl.seq*R.perWell)%pl.slots.length;
+          pl.wellLit[rs.wi]=t; pl.seq++; rs.armed=true;
+        }
+        rs.lastU=u;
+        const [wx,wy]=wells[rs.wi];
+        const climb=Math.min(1,u/CLIMB), e=1-Math.pow(1-climb,1.9);
+        const zb=h+TOP*e;
+        /* dark at the mouth of the well, bright across the middle, gone by 80% */
+        const op=Math.min(sstep(0,0.20,climb),1-sstep(0.58,0.80,climb))*0.92;
+        rs.lines.forEach((ln,si)=>{
+          const off=R.perWell===2?(si===0?-0.08*K:0.08*K):0;
+          const a=P(wx+off,wy+off*0.6,zb), b=P(wx+off,wy+off*0.6,zb+BC_LEN);
+          ln.setAttribute("x1",a[0].toFixed(1)); ln.setAttribute("y1",a[1].toFixed(1));
+          ln.setAttribute("x2",b[0].toFixed(1)); ln.setAttribute("y2",b[1].toFixed(1));
+          ln.setAttribute("stroke-opacity",Math.max(0,op).toFixed(3));
+        });
+        if(rs.armed && climb>=WRITE){
+          for(let si=0;si<R.perWell;si++)
+            pl.slots[(rs.slot0+si)%pl.slots.length].lit=t;
+          rs.armed=false;
+        }
+      });
+      pl.wellNodes.forEach((nd,i)=>{
+        const age=t-pl.wellLit[i];
+        nd.setAttribute("fill-opacity",age<0?"0":(0.85*Math.exp(-age/0.55)).toFixed(3));
+      });
+      for(const sl of pl.slots){
+        const age=t-sl.lit;
+        sl.node.setAttribute("stroke-opacity",(age<0?0.05:0.05+0.9*Math.exp(-age/3.0)).toFixed(3));
+      }
+    }
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.whitelists=drawWhitelists;

@@ -524,6 +524,43 @@ destroys data* and still puts "drops" in the index — multimappers and unmapped
 reads are set aside — but `drawBelts` paints no faces for the pattern to go on.
 The claim survives in the index and in the prose.
 
+## `drawWhitelists` — where the lists come from
+
+Three plates in the sizes the chemistry uses — BC1 48 wells, BC2 and BC3 96 —
+with a registry hanging over each.
+
+**All three share a well pitch**, because real 48- and 96-well plates have the
+same wells: the 48 is simply a smaller plate. So BC1's plate is visibly two
+thirds the width of the others *and still yields 96*, because each of its wells
+holds two RT primers — an oligo-dT and a random hexamer — carrying different
+barcodes. Barcodes rise from it **in pairs** and singly from the other two. Same
+count, half the wells, two per well, **shown in the motion rather than asserted
+in a caption**.
+
+**Each riser is exactly eight bases, and that is arithmetic rather than
+decoration.** The dash pattern is fixed in *screen* pixels and the riser's world
+length is derived from it, so eight dashes and seven gaps land on the line
+exactly. **Do not scale the dashes with the plates** — scale only the layout, or
+a barcode stops being eight of anything and turns into texture.
+
+**The registry is built last on purpose.** DOM order is paint order, so the
+panels sit on top of the risers and a climbing barcode passes *up and behind*
+its register rather than stopping short of it.
+
+**The barcodes are `--fg`, the page's brightest ink, and they are meant to be
+white.** These are the whitelists. It is the one place on the map where the
+brightest token is spent on something that is neither a read nor a name, and the
+pun is the reason. `--fg` follows the theme, so in light mode the "white" list is
+the darkest ink on the page — the same joke told the other way up.
+
+**The names lie along the edges they belong to.** Both edges at constant y run
+at **+30°** on screen, so a register's name rides its far edge and a plate's
+rides its near one and the two share an angle. That is +30 rather than the map's
+own −30 on purpose: these are not names *of* an object on the map, they are
+writing *on* one, and writing on a surface takes the surface's angle. One size
+for all three, taken from the shortest edge — three sibling labels at three
+different sizes would read as a mistake rather than as a fit.
+
 ## The two reference figures — `karyotype` and `locus`
 
 The genome lane is two files and two decisions, and until now it was two

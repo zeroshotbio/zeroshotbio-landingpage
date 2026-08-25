@@ -211,13 +211,17 @@ const NODES = [
  pipelineName:"The counting reference",
  added:"BUILT ONCE FROM THE ASSEMBLY AND THE ANNOTATION TOGETHER — the annotation is baked in at index time, not applied afterward. Not per run and not per sample, which is why the edge leaving it is drawn connected but not carrying: nothing travels it when a run goes through. It determines which transcripts are callable at all, which is why a second index built from a different assembly and a different annotation would produce a different matrix from identical reads. One is drawn, because one is what this run used."},
 
-{id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E3",dx:0}, name:"Barcode whitelists", x:14.0, y:R3-5.0, w:1.5, d:1.5, h:0.6,
+/* THREE PLATES AND A REGISTRY OVERHEAD, not a cube. w is the run of all three
+   plus their gaps, d is the deepest plate and its register margin, and h is the
+   registry's own top — the layout is authored in its own units and scaled onto
+   those three. See drawWhitelists in fq-shapes.js. */
+{id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"whitelists",
+ follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.2, w:8.4, d:2.9, h:3.5,
  sub:"the known well sequences for each ligation round · fixed by the kit",
  does:"The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
  built:"Three rounds of ligation give 48 × 96 × 96 = 442,368 addressable paths, and the fourth barcode — the index read — splits the run into subpools. A barcode is called by matching each round against its own list, independently, one mismatch tolerated.",
  cond:"Reused forever and never recorded with the data. Every deposited matrix in the corpus assumes its whitelists and none of them ships them, so a barcode string in an obs index cannot be parsed back into wells without knowing which kit version produced it — and ZCL2's 18 nt barcodes need a 3 × 6 split that is nowhere stated.",
- added:"Drawn on the same footing as the genome, and off to the same side, because it is the same kind of thing: a catalogue chosen once and consumed by nothing. The edge to the barcode matching is connected and still."},
+ added:"THREE PLATES IN THE SIZES THE CHEMISTRY ACTUALLY USES, with a registry hanging over each. All three share a well pitch, because real 48- and 96-well plates have the same wells — the 48 is simply a smaller plate. So BC1's plate is visibly two thirds the width of the others and still yields 96, because each of its wells holds two RT primers, an oligo-dT and a random hexamer, carrying different barcodes: barcodes rise from it IN PAIRS and singly from the other two. Same count, half the wells, two per well, shown in the motion rather than asserted in a caption. Each riser is exactly eight bases, and that is arithmetic rather than decoration — the dash pattern is fixed in screen pixels and the riser's length is derived from it, so eight dashes and seven gaps land on the line exactly. Each climbs to the registry overhead and is written in; the registry fills continuously, in order, and never empties. The barcodes are drawn in the page's brightest ink because these are the WHITELISTS, which is the one pun this map allows itself."},
 
 /* ---------------------------------------------------------------------------
    THE JOIN. The two halves have been independent since E2; this is where they
