@@ -519,8 +519,27 @@ if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
    ============================================================ */
 const nodeSil=n=>{
   const hw=n.w/2, hd=n.d/2, h=topOf(n);
-  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y+hd,h),
-          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,0)];
+  /* THE OUTLINE OF A BOX IS A HEXAGON, AND ITS VERTICAL SIDES ARE AT THE LEFT
+     AND RIGHT CORNERS — not at the near and far ones.
+
+     This went far-top, right-top, NEAR-top, near-bottom, left-bottom,
+     FAR-bottom. On a square footprint the near and far corners share a screen
+     x, so two of those edges are the same vertical line travelled in opposite
+     directions: the outline crosses itself and the region between cancels out.
+     A box a unit or so tall hides it in a few pixels; a tall one draws as a bow
+     tie with a hole through the middle — and that hole is the occlusion clip
+     and the drag handle both. Nothing on this map was tall enough to show it
+     until a picked object could be resized.
+
+     Far top, right top, right bottom, near bottom, left bottom, LEFT TOP. The
+     last point is (-hw, +hd) and not (-hw, -hd): written with -hd it repeats
+     the first and the outline closes from the bottom-left back to the far
+     corner, slicing the top-left off the shape. Square, the slice is small
+     enough that the middle of the top face is still inside it; give a node a w
+     far from its d and that middle falls outside and its clicks go through to
+     the canvas. Convex at any height and any aspect. */
+  return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y-hd,0),
+          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y+hd,h)];
 };
 const clipPathEl=el("path",{"clip-rule":"evenodd"});
 function rebuildClip(){

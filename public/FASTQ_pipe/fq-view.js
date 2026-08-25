@@ -584,8 +584,15 @@ if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
    Convex at any height. */
 const nodeSil=n=>{
   const hw=n.w/2, hd=n.d/2, h=topOf(n);
+  /* THE LAST POINT IS THE LEFT corner AT THE TOP — (-hw, +hd), not (-hw, -hd).
+     Written with -hd it repeats the first point and the outline closes from the
+     bottom-left straight back to the far corner, cutting the top-left off the
+     shape. On a SQUARE footprint the slice is small enough that the middle of
+     the top face is still inside it, so every click landed and nothing showed;
+     the first node with w far from d put that middle outside the shape and its
+     clicks fell through to the canvas. check-clicks found it in one run. */
   return [P(n.x-hw,n.y-hd,h), P(n.x+hw,n.y-hd,h), P(n.x+hw,n.y-hd,0),
-          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y-hd,h)];
+          P(n.x+hw,n.y+hd,0), P(n.x-hw,n.y+hd,0), P(n.x-hw,n.y+hd,h)];
 };
 const clipPathEl=el("path",{"clip-rule":"evenodd"});
 function rebuildClip(){

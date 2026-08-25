@@ -69,14 +69,14 @@ const NODES = [
    See drawPool / drawFragment in fq-shapes.js. */
 {id:"FQ", key:"E1", group:"① The reads", groupMark:true, anchor:true, shape:"pool",
  lane:"r3", plinth:false, aims:"E2", ballZ:5.0,
- name:"FASTQ pool", x:1.0, y:R3, w:5.1, d:5.1, h:9.0,
+ name:"FASTQ pool", x:1.0, y:R3, w:3.0, d:9.0, h:9.0,
  sub:"every read from the run, both mates, before anything has been interpreted", stat:"off-instance",
  does:"The first digital object, and the only genuinely shapeless one. Different libraries, different depths, no schema — and nothing in it yet says which barcode is a cell.",
  built:"For the worked example: sequenced 2026-03/04 and processed in the vendor's own cloud workdir, whose S3 path the run definition still points at. Demultiplexing is its own named step in some pipelines — Zebrahub records bcl2fastq v2.20.0.422 — and invisible in others.",
  cond:"The biggest hole on the map, and a general one. The reads are not on this box and no manifest of them is either, so every raw-read claim on this page is downstream of a vendor report rather than of the reads. It is worse elsewhere: ChemFish's pre-QC data is documented as unavailable, and CellOracle's SRA FASTQs are a deliberate non-acquisition. Re-deriving anything — a second annotation arm, a different intron setting — starts by getting the reads back.",
  /* ---- authored on this page, below the lifted fields ------------------ */
  pipelineName:"FASTQ",
- added:"A ball, not a rectangle, and a real one: the reads are placed uniformly through a sphere in world coordinates, turned by a real rotation and projected like everything else on this map, with depth driving size and opacity. The one being magnified is geometrically identical to every other read — same length, same weight, same wander. Only its colour and its ring say it is the one. Two leaders run from the ring's shoulders to the two ends of the opened fragment at E2, because a magnification is a frustum rather than a pointer, and they are recomputed every frame so they follow whichever of the two is dragged."},
+ added:"A PILL, not a rectangle, and a real one: the reads are placed uniformly through a sphere in world coordinates and the sphere is stretched along y AFTER the turn — so the swarm churns as it always did inside a shape that holds still, lying on the same line the name reads on. They are placed turned by a real rotation and projected like everything else on this map, with depth driving size and opacity. The one being magnified is geometrically identical to every other read — same length, same weight, same wander. Only its colour and its ring say it is the one. Two leaders run from the ring's shoulders to the two ends of the opened fragment at E2, because a magnification is a frustum rather than a pointer, and they are recomputed every frame so they follow whichever of the two is dragged."},
 
 {id:"E2", key:"E2", group:"① The reads", shape:"fragment",
  lane:"r3", noclip:true,
@@ -143,8 +143,12 @@ const NODES = [
    it is the shorter of the two journeys and the drawing should say so.
    --------------------------------------------------------------------------- */
 
-{id:"E3", key:"E3", group:"R2 · the barcode half", shape:"tile", hatch:true,
- follow:{a:"E2",dx:3.5}, name:"Match R2 barcodes", x:14.0, y:R3-2.4, w:1.9, d:1.9, h:1.15,
+/* A SORTING YARD, not a box. w is the run of the whole yard, d is the deck
+   from the top lane to the reject bin, and h is the top of the whitelist
+   panels overhead — the layout is authored in its own units and scaled onto
+   those three. See drawSortingYard in fq-shapes.js. */
+{id:"E3", key:"E3", group:"R2 · the barcode half", shape:"sortingyard", hatch:true,
+ follow:{a:"E2",dx:5.6}, name:"Match R2 barcodes", x:14.0, y:R3-3.6, w:9.6, d:4.6, h:1.6,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
@@ -216,7 +220,7 @@ const NODES = [
    registry's own top — the layout is authored in its own units and scaled onto
    those three. See drawWhitelists in fq-shapes.js. */
 {id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"whitelists",
- follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.2, w:8.4, d:2.9, h:3.5,
+ follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-9.4, w:8.4, d:2.9, h:3.5,
  sub:"the known well sequences for each ligation round · fixed by the kit",
  does:"The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
  built:"Three rounds of ligation give 48 × 96 × 96 = 442,368 addressable paths, and the fourth barcode — the index read — splits the run into subpools. A barcode is called by matching each round against its own list, independently, one mismatch tolerated.",
@@ -347,7 +351,7 @@ const EDGES = [
 /* One band, keeping its name from the big map. It has to reach the reference
    lane above the row and the whitelists below it. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-6.6, y1:R3+17.4},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-11.4, y1:R3+17.4},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are

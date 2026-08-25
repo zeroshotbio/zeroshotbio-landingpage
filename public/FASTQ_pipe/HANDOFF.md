@@ -439,6 +439,22 @@ The hero is drawn **last and stays on top**. It is the subject and both leaders
 point at it; a subject you can lose behind the crowd is one the reader has to
 hunt for.
 
+### A pill, not a ball — and the stretch happens after the turn
+
+The reads are still sampled uniformly through a unit sphere and still turned by
+a real rotation, so the swarm churns exactly as it did. What changed is the last
+step: the turned y is multiplied out **before it is projected**. Stretch the
+*source* points instead and the pill tumbles end over end — a rotating capsule
+rather than a still one with a crowd moving inside it.
+
+The long axis is world y, which projects to −30°: the same line the name FASTQ
+POOL reads on and the same line the fragment below it lies along. `n.d / n.w` is
+the ratio, so the shape is authored in the data file and the drawing obeys it.
+**Depth is taken after the stretch** — the world is what the pill lives in, and
+measured on the unit sphere it would sort the crowd by where each read *would*
+have been. The population grew from 380 to 620 because the pill is three times
+the volume: **density is what is being held constant, not the count.**
+
 **The population is built once, at load, from a fixed seed**, so the pool is the
 same pool in every browser and the hero is the same read. A swarm that
 reshuffles on refresh is a decoration; this one is a drawing of an object.
@@ -523,6 +539,42 @@ and a resize rescales the machine rather than stretching it. That is checked:
 destroys data* and still puts "drops" in the index — multimappers and unmapped
 reads are set aside — but `drawBelts` paints no faces for the pattern to go on.
 The claim survives in the index and in the prose.
+
+## `drawSortingYard` — matching as a place
+
+Eight lanes of raw R2 fragments enter. Three reader gantries stand across them,
+one per barcoding round, each holding its whitelist overhead. A fragment crosses
+a gantry, that round's barcode is checked, and it **merges into the lane for
+what it matched** — eight lanes become four, then two, then one. By the far end
+the survivors are on a single trunk, which opens again into the distinct cell
+identities the triplets actually name. **The funnel and the fan are the same
+movement twice**: many things becoming one, and one validated thing standing for
+many.
+
+**The reject lane is drawn on purpose.** A picture where everything matches is a
+picture of transport, not of matching. **The rate is tuned for legibility and is
+much worse than a real run** — the dump lane has to be visibly busy to read at
+all — and the node's own prose carries the real figure: 75.7% of reads carry a
+valid barcode combination.
+
+**The rejects are not `--cull`, and that is the palette note coming due.** The
+obvious choice is the page's inherited "this is being dropped" token — but on
+*this* map `--cull` is R1's trail, orange from the fragment's cDNA end all the
+way to the join, and spending it here would put R1's colour inside R2's station.
+So a reject is **dim rather than differently coloured** and the **cross** carries
+the verdict: the same rule the UMI outline and the splice arc already follow.
+HANDOFF warned this trade would come due the moment something on this map began
+dropping things. This is that moment, and this is the answer.
+
+The barcode blocks are `--accent`, R2's own token: dim until a gantry has read
+them, bright after. Ticks are `--fg` so a verdict sits legibly on the block it
+judges. The whitelist slots overhead are `--fg`, the same white the plates at
+`W1` write into.
+
+**Two build-order facts do real work.** The verdict marks are built after the
+fragments and *before* the gantries, so a tick rides above its block but passes
+*under* the scanner. The bin is built last, so a discarded triplet slides
+*behind* it and is gone.
 
 ## `drawWhitelists` — where the lists come from
 
