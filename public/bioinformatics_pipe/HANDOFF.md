@@ -741,6 +741,53 @@ One record between two maps means whichever saved last erases the other,
 silently, with no way to tell which happened. If this page ever needs the other
 two modes, that is the constraint they inherit.
 
+
+### A picked node resizes
+
+The ✕ appears on a pick because deleting is the one thing that cannot be undone
+by dragging back. **Resizing appears there too, and for the opposite reason:**
+it can be, but it needs handles, and four corners on every object at once would
+bury the map under its own tooling. One object at a time, and it is the one you
+just pointed at.
+
+**Four corners on the top face and one in the middle.** The corners take `w` and
+`d`; the middle one takes `h` and is dragged up the screen — z is the one axis
+this projection draws straight up, so a height drag divides by `S*CZ` and never
+touches the ground-plane inverse. They are SVG rects inside `world`, so they
+ride the camera for free and cannot shear.
+
+**A corner is anchored at its opposite.** Drag one and the other three hold
+still, which is what a rectangle anywhere does — so the drag writes `dw`/`dd`
+**and** `dx`/`dy`, because `w` and `d` are measured from a centre and the centre
+has to move to keep the far corner where it was.
+
+### A resize is the only edit that redraws, and that costs two things
+
+Every other edit is a translate on a group already drawn — nothing re-renders
+and no ticker is disturbed. `w`, `d` and `h` are read by the shape *at draw
+time*, so the only way to see a new size is `redrawNode()`.
+
+**Tickers have to be accounted for.** A shape that animates pushes into
+`TICKERS` when it draws; draw it twice and there are two, the older one running
+over elements that have been thrown away. The count is taken before and after
+each draw and remembered on the node. **Recording that only in the redraw is not
+enough** — the *first* draw's ticker was never on the books, so one resize left
+two. It is invisible on screen and it compounds.
+
+**And a shape can be squeezed below what it can draw.** Some derive what they
+draw from their own size — how many wells, how many cells, how many groups — and
+far enough down they produce nothing, at which point their own animation reads
+an empty array and throws. The frame loop drops a throwing ticker and keeps
+going, which is designed behaviour and not a crash; the shape stops moving until
+it is redrawn, and resizing it back does that. `MINWD` makes it hard to reach by
+accident rather than impossible — no single number knows what every shape needs.
+
+**`applyNudge` only clamps when there is actually a delta.** Clamping
+unconditionally reaches every node on every load, and at least one is authored
+`h:0` — a patch of ground rather than a box. A floor turned that 0 into 0.02,
+which is a difference, which put it in the saved table as an object somebody had
+resized. Nobody had.
+
 ## Please do not
 
 - **Edit the prose in `bp-data.js`.** It is lifted. Edit `/pipeline` and lift

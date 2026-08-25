@@ -113,11 +113,17 @@ NODES.forEach(n=>{
   const o=LIVE[n.id];
   if(o){
     n.x+=o.dx||0; n.y+=o.dy||0;
+    /* AND ITS SIZE. An object can be resized in the editor now, so w/d/h are
+       part of the saved arrangement exactly as x and y are. */
+    if(o.dw) n.w=Math.max(0.05,(n.w||0)+o.dw);
+    if(o.dd) n.d=Math.max(0.05,(n.d||0)+o.dd);
+    if(o.dh) n.h=Math.max(0.01,(n.h||0)+o.dh);
     if(o.ldx||o.ldy) n.lab={dx:((n.lab&&n.lab.dx)||0)+(o.ldx||0),
                             dy:((n.lab&&n.lab.dy)||0)+(o.ldy||0)};
   }
   /* where this node was actually drawn, and how far it has been dragged since */
   n._px=n.x; n._py=n.y; n._lx=0; n._ly=0;
+  n._pw=n.w; n._pd=n.d; n._ph=n.h;
 });
 
 /* SCENERY SPANS OTHER OBJECTS, so it is resolved after they have settled: the
@@ -265,8 +271,29 @@ function bandOffset(rec){
   return out;
 }
 
+/* WHERE A NAME HANGS, IN ONE PLACE. It is derived from the node's own size —
+   the far edge of the footprint, at the height the object reaches — so a
+   resize has to be able to ask for it again. Computing it twice, once at build
+   time and once in the editor, is how a name ends up floating off a building
+   that has been made smaller. The two branches are the two the map already
+   has: a landmark, which may also be flipped to its front edge with
+   labelBelow, and a step. */
+const LANDMARK=n=>n.anchor||n.shape==="works"||n.shape==="machine";
+function labelBase(n){
+  const lo=n.lab||{}, ex=n.x+(lo.dx||0);
+  if(LANDMARK(n)){
+    const [px,py]= n.labelBelow ? P(ex, n.y+n.d/2+(lo.dy||0), 0)
+                                : P(ex, n.y-n.d/2+(lo.dy||0), topOf(n));
+    return `translate(${px},${py}) rotate(-30)`;
+  }
+  let row=ROWS[0]; ROWS.forEach(r=>{ if(Math.abs(n.y-r)<Math.abs(n.y-row)) row=r; });
+  const below = n.y-row > 1;
+  const [bx,by] = below ? P(ex, n.y+n.d/2+(lo.dy||0), n.h) : P(ex, n.y-n.d/2+(lo.dy||0), n.h);
+  return `translate(${bx},${by}) rotate(-30)`;
+}
+
 /* plinths; landmark names run along the landmark's bottom-left edge */
-NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
+NODES.filter(LANDMARK).forEach(n=>{
   const isA=!!n.anchor, pad=isA?0.55:0.4, hw=n.w/2+pad, hd=n.d/2+pad;
   const c=[[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],[n.x+hw,n.y+hd],[n.x-hw,n.y+hd]];
   plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
@@ -281,9 +308,7 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
   /* lab:{dx,dy} applies here exactly as it does to a step name. It did not,
      once, and a landmark's name silently snapped back to its computed place on
      every reload while the offset sat in the store looking saved. */
-  const lo = n.lab || {}, ex = n.x+(lo.dx||0), ey = lo.dy||0;
-  const [px,py]= lb ? P(ex, n.y+n.d/2+ey, 0) : P(ex, n.y-n.d/2+ey, topOf(n));
-  const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
+  const g=el("g",{transform:labelBase(n)});
   const lx = (isA?14:11) * (lb?-1:1), la = lb?"end":"start";
   const t=el("text",{x:lx,y:-3,"text-anchor":la,"font-size":isA?"20":"13",
     "letter-spacing":isA?"2.5":"1.6",fill:isA?"var(--fg)":"var(--fg2)"});
@@ -296,15 +321,13 @@ NODES.filter(n=>n.anchor||n.shape==="works"||n.shape==="machine").forEach(n=>{
 
 /* every step emits its name from its top-right corner, running up and to the right
    at −30°: parallel to the band titles, perpendicular to the flow of the dots */
-NODES.filter(n=>!n.anchor && n.shape!=="works" && n.shape!=="machine").forEach(n=>{
+NODES.filter(n=>!LANDMARK(n)).forEach(n=>{
   let row=ROWS[0]; ROWS.forEach(r=>{ if(Math.abs(n.y-r)<Math.abs(n.y-row)) row=r; });
   const below = n.y-row > 1;                       // sits under its row: name goes down-left
   /* lab:{dx,dy} nudges the emission point in world units without touching the
      orientation — for a name that lands on top of something. Absent, nothing
      changes. */
-  const lo = n.lab || {}, ex = n.x+(lo.dx||0);
-  const [bx,by] = below ? P(ex, n.y+n.d/2+(lo.dy||0), n.h) : P(ex, n.y-n.d/2+(lo.dy||0), n.h);
-  const g=el("g",{transform:`translate(${bx},${by}) rotate(-30)`});
+  const g=el("g",{transform:labelBase(n)});
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
   t.textContent=n.key+" · "+n.name; g.appendChild(t); gLabel.appendChild(g);
@@ -453,7 +476,12 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
 
      What says it is a restatement is where it sits and what the reader says
      about it, not how faint it is. See renderNode. */
+  /* WHAT THIS NODE'S SHAPE REGISTERED. A resize redraws the shape, and a
+     redraw that cannot say which tickers were its own leaves the old one
+     running over elements that have been thrown away. */
+  const t0=TICKERS.length;
   DRAW[n.shape](g,n);
+  n._ticks=TICKERS.slice(t0);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
     g.addEventListener("mouseleave",()=>{ if(!editing) unhover(); });
@@ -1221,6 +1249,10 @@ function totalOffset(n){
   const dx=r2((b.dx||0)+(n.x-n._px)), dy=r2((b.dy||0)+(n.y-n._py));
   const ldx=r2((b.ldx||0)+n._lx),     ldy=r2((b.ldy||0)+n._ly);
   if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
+  const dw=r2((b.dw||0)+((n.w||0)-(n._pw||0)));
+  const dd=r2((b.dd||0)+((n.d||0)-(n._pd||0)));
+  const dh=r2((b.dh||0)+((n.h||0)-(n._ph||0)));
+  if(dw) o.dw=dw; if(dd) o.dd=dd; if(dh) o.dh=dh;
   return o;
 }
 function collectOffsets(){
@@ -1451,6 +1483,16 @@ feature("edit positions", function(){
   const hint=document.querySelector(".hint");
   const hint0=hint?hint.textContent:"";
   const SNAP=0.05, r2=v=>Math.round(v*100)/100;
+  /* A FLOOR ON WIDTH AND DEPTH, AND IT IS NOT ARBITRARY. A shape derives what
+     it draws from its own size — how many wells, how many cells, how many
+     groups — and squeezed far enough some of them produce nothing at all, at
+     which point their own animation reads an empty array and throws. The frame
+     loop drops a throwing ticker and keeps going, which is the designed
+     behaviour and not a crash; the shape simply stops moving until it is
+     redrawn. Resizing it back does that. The floor makes it hard to reach by
+     accident rather than impossible to reach at all — no single number can
+     know what every shape needs. */
+  const MINWD=0.3;
 
   /* screen pixels -> world units, on the ground plane. Inverse of P. */
   const toWorld=(dsx,dsy)=>{
@@ -1491,6 +1533,37 @@ feature("edit positions", function(){
     if(labelEls[n.id])  labelEls[n.id].setAttribute("transform",
       (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+labelEls[n.id].dataset.base
                              : labelEls[n.id].dataset.base);
+  }
+
+  /* ============================================================
+     REDRAW ONE NODE, WHICH IS WHAT A RESIZE COSTS
+
+     Every other edit is a translate on a group already drawn — nothing
+     re-renders and no ticker is disturbed. A resize is not: w, d and h are
+     read by the shape at draw time, so the only way to see a new size is to
+     draw it again. The tickers a shape registered are removed before it is
+     redrawn and recorded again after; the plinth and the name come from the
+     same numbers and are rebuilt with it; the editor's own handle goes back on
+     top, because clearing the group threw it away with everything else.
+     ============================================================ */
+  function redrawNode(n){
+    const g=nodeEls[n.id];
+    if(!g || !DRAW[n.shape]) return;
+    if(n._ticks) n._ticks.forEach(fn=>{ const i=TICKERS.indexOf(fn); if(i>=0) TICKERS.splice(i,1); });
+    const before=TICKERS.length;
+    while(g.firstChild) g.removeChild(g.firstChild);
+    DRAW[n.shape](g,n);
+    n._ticks=TICKERS.slice(before);
+    if(editing) g.appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
+    const pl=plinthEls[n.id];
+    if(pl){
+      const pad=n.anchor?0.55:0.4, hw=n.w/2+pad, hd=n.d/2+pad;
+      pl.setAttribute("points",pts([[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],
+        [n.x+hw,n.y+hd],[n.x-hw,n.y+hd]].map(q=>P(q[0],q[1],0))));
+    }
+    const L=labelEls[n.id];
+    if(L) L.dataset.base=labelBase(n);
+    reposition(n);
   }
 
   /* a label group already carries its own translate+rotate; keep it so the
@@ -1546,9 +1619,61 @@ feature("edit positions", function(){
     xbtn.style.left=(sx+8)+"px";
     xbtn.style.top=(sy-30)+"px";
   }
-  window.placeDeleteX=placeX;
-  const pick=w=>{ picked=w; placeX(); };
-  const unpick=()=>{ picked=null; placeX(); };
+  /* ---- AND A PICKED NODE CAN BE RESIZED ---------------------------------
+     The ✕ appears on a pick because deleting is the one thing that cannot be
+     undone by dragging back. Resizing appears there too, and for the opposite
+     reason: it can, but it needs handles, and four corners on every object at
+     once would bury this map — nineteen objects in one row of four — under its
+     own tooling. One object at a time, and it is the one you just picked.
+
+     FOUR CORNERS ON THE TOP FACE AND ONE IN THE MIDDLE. The corners take w and
+     d; the middle one takes h and is dragged up the screen. They are SVG rects
+     inside `world`, so they ride the camera for free and cannot shear — the
+     world group carries a translate and a scale and nothing else.
+
+     A CORNER IS ANCHORED AT ITS OPPOSITE. Drag one and the other three hold
+     still, which is what a rectangle anywhere does — so the drag writes dw/dd
+     AND dx/dy, because w and d are measured from a centre and the centre has
+     to move to keep the far corner where it was. */
+  const gResize=world.appendChild(el("g"));
+  const RH=[];
+  for(let k=0;k<5;k++)
+    RH.push(gResize.appendChild(el("rect",{class:"ehandle sizer"+(k===4?" tall":""),
+      width:"13",height:"13"})));
+  const sizerAt=(n,k)=>{
+    const hw=(n.w||0)/2, hd=(n.d||0)/2, h=topOf(n);
+    if(k===4) return P(n.x,n.y,h);
+    return P(n.x+((k===1||k===2)?hw:-hw), n.y+((k===2||k===3)?hd:-hd), h);
+  };
+  function placeResize(){
+    const on = picked && picked.kind==="node" && editing && !picked.n.gone;
+    RH.forEach((e,k)=>{
+      if(!on){ e.setAttribute("display","none"); return; }
+      e.removeAttribute("display");
+      const q=sizerAt(picked.n,k);
+      e.setAttribute("x",(q[0]-6.5).toFixed(1));
+      e.setAttribute("y",(q[1]-6.5).toFixed(1));
+    });
+  }
+  RH.forEach((e,k)=>{
+    e.addEventListener("pointerdown",ev=>{
+      if(!editing || !picked || picked.kind!=="node") return;
+      ev.stopPropagation(); ev.preventDefault();
+      if(e.setPointerCapture) e.setPointerCapture(ev.pointerId);
+      const n=picked.n;
+      grab={n,mode:"size",corner:k,px:ev.clientX,py:ev.clientY,moved:0,
+            ow:n.w,od:n.d,oh:n.h,ox:n.x,oy:n.y};
+      e.classList.add("picked");
+    });
+    e.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>e.addEventListener(t,ev=>{
+      e.classList.remove("picked"); end(ev);
+    }));
+  });
+
+  window.placeDeleteX=()=>{ placeX(); placeResize(); };
+  const pick=w=>{ picked=w; placeX(); placeResize(); };
+  const unpick=()=>{ picked=null; placeX(); placeResize(); };
 
   /* WHY THIS IS NOT A `dblclick` LISTENER, which is what it obviously should
      be. This mode is built on pointer capture, and begin() calls
@@ -1696,6 +1821,26 @@ feature("edit positions", function(){
        could be gathered. */
     if(multi && grab.moved>4 && !grab.set && grab.mode==="node" && CHOSEN.size && !CHOSEN.has(grab.n.id))
       clearChosen();
+    if(grab.mode==="size"){
+      const n=grab.n, q=v=>Math.round(v/SNAP)*SNAP;
+      if(grab.corner===4){
+        /* HEIGHT IS SCREEN-VERTICAL AND NOTHING ELSE. z is the one axis this
+           projection draws straight up, so a height drag divides by S*CZ and
+           never touches the ground-plane inverse. */
+        n.h=Math.max(0.02, r2(grab.oh + q(-(ev.clientY-grab.py)/view.k/(S*CZ))));
+      } else {
+        const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
+        const sx=(grab.corner===1||grab.corner===2)?1:-1;
+        const sy=(grab.corner===2||grab.corner===3)?1:-1;
+        n.w=Math.max(MINWD, r2(grab.ow+q(dx)*sx)); n.d=Math.max(MINWD, r2(grab.od+q(dy)*sy));
+        /* the opposite corner holds still, so the centre takes half the growth */
+        n.x=r2(grab.ox+(n.w-grab.ow)*sx/2); n.y=r2(grab.oy+(n.d-grab.od)*sy/2);
+      }
+      redrawNode(n); refresh(n.id); placeResize(); placeX();
+      if(hint) hint.textContent=`${n.key} · ${n.name} — w ${n.w.toFixed(2)}`+
+        `  d ${n.d.toFixed(2)}  h ${n.h.toFixed(2)}`;
+      return;
+    }
     if(grab.mode && grab.mode.startsWith("band-")){
       const rec=grab.rec, b=rec.b;
       const [dx,dy]=toWorld((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
@@ -1755,6 +1900,18 @@ feature("edit positions", function(){
   }
   function end(){
     if(!grab) return;
+    if(grab.mode==="size"){
+      const n=grab.n, travelled=grab.moved>4;
+      grab=null;
+      if(travelled){
+        OURKEYS.add(n.id);
+        refresh(null);
+        NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y))
+             .forEach(m=>gNode.appendChild(nodeEls[m.id]));
+        markDirty();
+      }
+      return;
+    }
     if(grab.mode && grab.mode.startsWith("band-")){
       const rec=grab.rec, travelled=grab.moved>4;
       rec.g.classList.remove("picked"); rec.pad.classList.remove("picked");

@@ -167,12 +167,38 @@
            stroke:var(--signal);stroke-width:1.1;stroke-opacity:.5;stroke-dasharray:4 3}
   .ehandle.lab{fill-opacity:.03;stroke-opacity:.4;stroke-dasharray:2 3}
   .ehit{fill:transparent;pointer-events:none}
+  /* the resize handles on a picked object: four on the roof for width and
+     depth, one in the middle for height */
+  .sizer{cursor:nwse-resize}
+  .sizer.tall{cursor:ns-resize}
   svg.editing .ehandle{display:block;pointer-events:all;cursor:move}
   svg.editing .ehit{pointer-events:all;cursor:move}
   svg.editing{cursor:default}
   svg.editing g[role=button]{cursor:move}
   svg.editing g:hover>.ehandle{fill-opacity:.16;stroke-opacity:1;stroke-dasharray:none}
   svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
+  /* THE RESIZE GRIPS, AND THEY HAVE TO SIT AFTER THE HOVER RULE ABOVE.
+
+     A grip has to be FOUND before it can be used, which makes it a different
+     kind of mark from the footprint it inherits from. `.ehandle` is a hint — a
+     dashed outline at 5% fill saying "this whole thing can be picked up" — and
+     it is right for that job precisely because it stays out of the way. A
+     corner grip is the opposite: a small target somebody has to spot and aim
+     at, and at 5% it was invisible until the cursor happened to cross it.
+
+     The order is not cosmetic. `svg.editing g:hover>.ehandle` is (0,3,2) and
+     beats a plain `svg.editing .sizer` at (0,2,1) — so the grips came out at
+     the hover rule's 16% whatever they asked for, because a picked object is
+     usually under the pointer. Matching the specificity and coming later is
+     what makes these win. Measure the computed fill-opacity if you move them.
+
+     They exist only while an object is picked, so there is no cost to the
+     resting map: five loud squares appearing the moment you pick something is
+     the affordance, not noise. */
+  svg.editing g>.ehandle.sizer{pointer-events:all;fill-opacity:.85;
+       stroke:var(--bg);stroke-width:1.4;stroke-opacity:.9;stroke-dasharray:none}
+  svg.editing g>.ehandle.sizer:hover,svg.editing g>.ehandle.sizer.picked{
+       fill-opacity:1;stroke:var(--fg);stroke-opacity:1;stroke-dasharray:none}
 
   .delx{display:none;position:absolute;z-index:8;width:26px;height:26px;
         border:1px solid var(--drop);border-radius:50%;background:var(--bg);

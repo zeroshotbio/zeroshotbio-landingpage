@@ -137,10 +137,62 @@ else {
     fail('the band name nudge moved but the type did not');
 }
 
+/* A PICKED NODE RESIZES — four corners for w and d, one handle for h.
+
+   THE TARGET IS A ROOFED CULL ON PURPOSE. It is the only kind of object here
+   that ANIMATES, and a resize is the only edit that redraws a shape: a shape
+   that animates pushes into TICKERS every time it is drawn, so a redraw that
+   cannot say which tickers were its own leaves the old one running over
+   elements that have been thrown away. The count must come back where it
+   started. It is invisible on screen and it compounds.
+
+   The corner is also ANCHORED AT ITS OPPOSITE — a resize that drifts the whole
+   object is a move wearing a resize's clothes. */
+const RSZ='c3';
+const sizeOf=id=>p.evaluate(i=>{ const n=NODES.find(m=>m.id===i);
+  return [n.w,n.d,n.h].map(v=>+v.toFixed(2)); },id);
+const cornerAt=(id,k)=>p.evaluate(([i,kk])=>{
+  const n=NODES.find(m=>m.id===i), hw=n.w/2, hd=n.d/2, h=topOf(n);
+  const q=kk===4?P(n.x,n.y,h)
+    :P(n.x+((kk===1||kk===2)?hw:-hw), n.y+((kk===2||kk===3)?hd:-hd), h);
+  const world=document.querySelector('#svg > g'), m=world.getScreenCTM();
+  return {x:m.a*q[0]+m.c*q[1]+m.e, y:m.b*q[0]+m.d*q[1]+m.f};
+},[id,k]);
+
+const tick0=await p.evaluate(()=>TICKERS.length);
+/* THE FAR CORNER, NOT THE CENTRE. On this map the middle of a roof is covered
+   by the roof's own floating annotation, whose hit box takes the press first —
+   the pick then lands on the annotation, the node is never picked, and the
+   drag that follows moves whatever was under it. The corner is clear of it. */
+let hp=await cornerAt(RSZ,0);
+await p.mouse.move(hp.x,hp.y); await p.mouse.down(); await p.mouse.up();
+await p.waitForTimeout(300);
+if(await p.evaluate(()=>document.querySelectorAll('svg.editing .sizer').length)!==5)
+  fail('picking a node did not put five resize handles on it');
+const rs0=await sizeOf(RSZ), far0=await cornerAt(RSZ,0);
+hp=await cornerAt(RSZ,2);
+await p.mouse.move(hp.x,hp.y); await p.mouse.down();
+await p.mouse.move(hp.x+70,hp.y+40,{steps:14}); await p.mouse.up();
+await p.waitForTimeout(300);
+const rs1=await sizeOf(RSZ);
+if(rs1[0]<=rs0[0]) fail(`dragging a corner out did not widen it (${rs0[0]} -> ${rs1[0]})`);
+const far1=await cornerAt(RSZ,0);
+if(Math.hypot(far1.x-far0.x,far1.y-far0.y)>3)
+  fail('resizing from one corner moved the opposite one — that is a move, not a resize');
+hp=await cornerAt(RSZ,4);
+await p.mouse.move(hp.x,hp.y); await p.mouse.down();
+await p.mouse.move(hp.x,hp.y-45,{steps:12}); await p.mouse.up();
+await p.waitForTimeout(300);
+if((await sizeOf(RSZ))[2]<=rs1[2]) fail('dragging the height handle up did not raise it');
+if(await p.evaluate(()=>TICKERS.length)!==tick0)
+  fail("a resize leaked a ticker — the redraw did not remove the shape's old one");
+
 /* it is remembered, and it prints a block to paste */
 /* the stored record is {offsets, at}: the table, and when it was last touched */
 const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('bpipe.offsets'))||'{}');
 const stored=rec.offsets;
+if(!stored || !stored[RSZ] || !stored[RSZ].dw || !stored[RSZ].dh)
+  fail('the resize was not written to local storage: '+JSON.stringify(stored&&stored[RSZ]));
 if(!stored || !stored.c3 || !stored.c5 || !stored[annKey])
   fail('offsets were not written to local storage: '+JSON.stringify(rec));
 if(movKey && stored && !stored[movKey])
@@ -161,7 +213,7 @@ if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).dis
   fail('handles still showing after leaving the mode');
 
 console.log(bad?`\n${bad} FAILURE(S)`
- :'edit positions: buildings drag, names drag on their own, floating labels drag '+
+ :'edit positions: buildings drag and resize from a corner and by height, names drag on their own, floating labels drag '+
   'and their leaders follow, the band name drags, all four remembered, block prints');
 if(errs.length) console.log('page errors:',errs);
 await b.close(); process.exit(bad||errs.length?1:0);

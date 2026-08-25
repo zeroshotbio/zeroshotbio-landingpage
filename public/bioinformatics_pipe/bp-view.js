@@ -120,12 +120,25 @@ if(GONE.size){
    attrition band — computed after that baseline was taken — read as a nudge of
    twelve units that got written into every save. One base, taken once, in one
    place. */
-NODES.forEach(n=>{ n._ox=n.x; n._oy=n.y; n._lx=0; n._ly=0; });
+/* THE BASE INCLUDES THE SIZE, and for the same reason it includes the
+   position: an object can be resized in the editor, and a size stored as
+   "whatever it is now" cannot be applied twice without growing. */
+NODES.forEach(n=>{ n._ox=n.x; n._oy=n.y; n._lx=0; n._ly=0;
+                   n._ow=n.w; n._od=n.d; n._oh=n.h; });
 
 function applyNudge(n,o){
   o=o||{};
   n.x=n._ox+(o.dx||0); n.y=n._oy+(o.dy||0);
   n._lx=o.ldx||0; n._ly=o.ldy||0;
+  /* ONLY IF THERE IS ACTUALLY A DELTA. Clamping unconditionally reaches every
+     node on every load, and one of them is authored h:0 — the attrition band,
+     which is a patch of ground rather than a box. A floor applied to it turned
+     0 into 0.02, which is a difference, which put it in the saved table as an
+     object somebody had resized. Nobody had. A node with no dw/dd/dh keeps
+     exactly the number the data file gave it. */
+  if(o.dw) n.w=Math.max(0.05,n._ow+o.dw);
+  if(o.dd) n.d=Math.max(0.05,n._od+o.dd);
+  if(o.dh) n.h=Math.max(0.01,n._oh+o.dh);
 }
 NODES.filter(n=>!n.scenery).forEach(n=>applyNudge(n,LIVE[n.id]));
 
@@ -277,6 +290,24 @@ function applyMover(m,o){
 }
 MOVERS.forEach(m=>applyMover(m,LIVE[m.key]));
 
+/* WHERE A NAME HANGS, IN ONE PLACE. It is derived from the node's own size —
+   the far edge of the footprint, at the height the object reaches — so a
+   resize has to be able to ask for it again. Computing it twice, once here and
+   once in the editor, is how a name ends up floating off a building that has
+   been made smaller. */
+function labelBase(n){
+  if(n.anchor){
+    const lo=n.lab||{}, ex=n.x+(lo.dx||0);
+    const [px,py]=P(ex, n.y-n.d/2+(lo.dy||0), topOf(n));
+    return `translate(${px},${py}) rotate(-30)`;
+  }
+  let row=ROWS[0]; ROWS.forEach(r=>{ if(Math.abs(n.y-r)<Math.abs(n.y-row)) row=r; });
+  const below = n.y-row > 1;
+  const lo=n.lab||{}, ex=n.x+(lo.dx||0);
+  const [bx,by] = below ? P(ex, n.y+n.d/2+(lo.dy||0), n.h) : P(ex, n.y-n.d/2+(lo.dy||0), n.h);
+  return `translate(${bx},${by}) rotate(-30)`;
+}
+
 /* plinths under the two landmarks; their names run along the bottom-left edge */
 NODES.filter(n=>n.anchor).forEach(n=>{
   const pad=0.55, hw=n.w/2+pad, hd=n.d/2+pad;
@@ -284,9 +315,7 @@ NODES.filter(n=>n.anchor).forEach(n=>{
   plinthEls[n.id]=gPlinth.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
     fill:"var(--fg)","fill-opacity":".05",stroke:"var(--fg)",
     "stroke-opacity":".4","stroke-width":"1","stroke-dasharray":"6 4"}));
-  const lo=n.lab||{}, ex=n.x+(lo.dx||0);
-  const [px,py]=P(ex, n.y-n.d/2+(lo.dy||0), topOf(n));
-  const g=el("g",{transform:`translate(${px},${py}) rotate(-30)`});
+  const g=el("g",{transform:labelBase(n)});
   const t=el("text",{x:14,y:-3,"text-anchor":"start","font-size":"20","letter-spacing":"2.5",
     fill:"var(--fg)"});
   t.textContent=n.name.toUpperCase(); g.appendChild(t);
@@ -303,9 +332,7 @@ NODES.filter(n=>n.anchor).forEach(n=>{
 NODES.filter(n=>!n.anchor).forEach(n=>{
   let row=ROWS[0]; ROWS.forEach(r=>{ if(Math.abs(n.y-r)<Math.abs(n.y-row)) row=r; });
   const below = n.y-row > 1;
-  const lo=n.lab||{}, ex=n.x+(lo.dx||0);
-  const [bx,by] = below ? P(ex, n.y+n.d/2+(lo.dy||0), n.h) : P(ex, n.y-n.d/2+(lo.dy||0), n.h);
-  const g=el("g",{transform:`translate(${bx},${by}) rotate(-30)`});
+  const g=el("g",{transform:labelBase(n)});
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
   t.textContent=n.key+" · "+n.name; g.appendChild(t);
@@ -415,7 +442,12 @@ const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
   g.style.cursor="pointer";
+  /* WHAT THIS NODE'S SHAPE REGISTERED. A resize redraws the shape, and a
+     redraw that cannot say which tickers were its own leaves the old one
+     running over elements that have been thrown away. */
+  const t0=TICKERS.length;
   DRAW[n.shape](g,n);
+  n._ticks=TICKERS.slice(t0);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
     g.addEventListener("mouseleave",()=>{ if(!editing) unhover(); });
@@ -511,6 +543,37 @@ function reposition(n){
   if(L) L.setAttribute("transform",
     (dx||dy||n._lx||n._ly) ? shift(dx+n._lx, dy+n._ly)+" "+(L.dataset.base||"") : (L.dataset.base||""));
 }
+/* ============================================================
+   REDRAW ONE NODE, WHICH IS WHAT A RESIZE COSTS
+
+   Every other edit is a translate on a group already drawn — nothing
+   re-renders and no ticker is disturbed. A resize is not: w, d and h are read
+   by the shape at draw time, so the only way to see a new size is to draw it
+   again. The tickers a shape registered are removed before it is redrawn and
+   recorded again after; the plinth and the name come from the same numbers and
+   are rebuilt with it; the editor's own handle goes back on top, because
+   clearing the group threw it away with everything else.
+   ============================================================ */
+function redrawNode(n){
+  const g=nodeEls[n.id];
+  if(!g || !DRAW[n.shape]) return;
+  if(n._ticks) n._ticks.forEach(fn=>{ const i=TICKERS.indexOf(fn); if(i>=0) TICKERS.splice(i,1); });
+  const before=TICKERS.length;
+  while(g.firstChild) g.removeChild(g.firstChild);
+  DRAW[n.shape](g,n);
+  n._ticks=TICKERS.slice(before);
+  if(editing) g.appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
+  const pl=plinthEls[n.id];
+  if(pl){
+    const pad=0.55, hw=n.w/2+pad, hd=n.d/2+pad;
+    pl.setAttribute("points",pts([[n.x-hw,n.y-hd],[n.x+hw,n.y-hd],
+      [n.x+hw,n.y+hd],[n.x-hw,n.y+hd]].map(q=>P(q[0],q[1],0))));
+  }
+  const L=labelEls[n.id];
+  if(L) L.dataset.base=labelBase(n);
+  reposition(n);
+}
+
 function refresh(id){
   rebuildClip();
   edgeGeom.forEach(rec=>{ if(rec.host && (!id || rec.a===id || rec.b===id)) paintEdge(rec); });
@@ -1117,6 +1180,8 @@ function totalOffset(n){
   const o={};
   const dx=r2(n.x-n._ox), dy=r2(n.y-n._oy), ldx=r2(n._lx), ldy=r2(n._ly);
   if(dx) o.dx=dx; if(dy) o.dy=dy; if(ldx) o.ldx=ldx; if(ldy) o.ldy=ldy;
+  const dw=r2(n.w-n._ow), dd=r2(n.d-n._od), dh=r2(n.h-n._oh);
+  if(dw) o.dw=dw; if(dd) o.dd=dd; if(dh) o.dh=dh;
   return o;
 }
 function annOffset(a){
@@ -1268,6 +1333,16 @@ feature("edit positions", function(){
   const hint=document.querySelector(".hint");
   const hint0=hint?hint.textContent:"";
   const SNAP=0.05;
+  /* A FLOOR ON WIDTH AND DEPTH, AND IT IS NOT ARBITRARY. A shape derives what
+     it draws from its own size — how many wells, how many cells, how many
+     groups — and squeezed far enough some of them produce nothing at all, at
+     which point their own animation reads an empty array and throws. The frame
+     loop drops a throwing ticker and keeps going, which is the designed
+     behaviour and not a crash; the shape simply stops moving until it is
+     redrawn. Resizing it back does that. The floor makes it hard to reach by
+     accident rather than impossible to reach at all — no single number can
+     know what every shape needs. */
+  const MINWD=0.3;
 
   /* screen pixels -> world units on the ground plane. The exact inverse of P,
      which is what makes a drag land where the pointer is rather than near it. */
@@ -1332,9 +1407,61 @@ feature("edit positions", function(){
     xbtn.style.left=(sx+8)+"px";
     xbtn.style.top=(sy-30)+"px";
   }
-  window.placeDeleteX=placeX;
-  function pick(what){ picked=what; placeX(); }
-  function unpick(){ picked=null; placeX(); }
+  /* ---- AND A PICKED NODE CAN BE RESIZED ---------------------------------
+     The ✕ appears on a pick because deleting is the one thing that cannot be
+     undone by dragging back. Resizing appears there too, and for the opposite
+     reason: it can, but it needs handles, and four corners on every object at
+     once would bury the map under its own tooling. One object at a time is
+     enough, and it is the object you just pointed at.
+
+     FOUR CORNERS ON THE TOP FACE AND ONE IN THE MIDDLE. The corners take w and
+     d; the middle one takes h and is dragged up the screen. They are SVG rects
+     inside `world`, so they ride the camera for free and cannot shear — the
+     world group carries a translate and a scale and nothing else.
+
+     A CORNER IS ANCHORED AT ITS OPPOSITE. Drag one and the other three hold
+     still, which is what a rectangle anywhere does — so the drag writes dw/dd
+     AND dx/dy, because w and d are measured from a centre and the centre has
+     to move to keep the far corner where it was. */
+  const gResize=world.appendChild(el("g"));
+  const RH=[];
+  for(let k=0;k<5;k++)
+    RH.push(gResize.appendChild(el("rect",{class:"ehandle sizer"+(k===4?" tall":""),
+      width:"13",height:"13"})));
+  const sizerAt=(n,k)=>{
+    const hw=n.w/2, hd=n.d/2, h=topOf(n);
+    if(k===4) return P(n.x,n.y,h);
+    return P(n.x+((k===1||k===2)?hw:-hw), n.y+((k===2||k===3)?hd:-hd), h);
+  };
+  function placeResize(){
+    const on = picked && picked.kind==="node" && editing && !picked.n.gone;
+    RH.forEach((e,k)=>{
+      if(!on){ e.setAttribute("display","none"); return; }
+      e.removeAttribute("display");
+      const q=sizerAt(picked.n,k);
+      e.setAttribute("x",(q[0]-6.5).toFixed(1));
+      e.setAttribute("y",(q[1]-6.5).toFixed(1));
+    });
+  }
+  RH.forEach((e,k)=>{
+    e.addEventListener("pointerdown",ev=>{
+      if(!editing || !picked || picked.kind!=="node") return;
+      ev.stopPropagation(); ev.preventDefault();
+      if(e.setPointerCapture) e.setPointerCapture(ev.pointerId);
+      const n=picked.n;
+      grab={n,mode:"size",corner:k,px:ev.clientX,py:ev.clientY,moved:0,
+            ow:n.w,od:n.d,oh:n.h,ox:n.x,oy:n.y};
+      e.classList.add("picked");
+    });
+    e.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>e.addEventListener(t,ev=>{
+      e.classList.remove("picked"); end(ev);
+    }));
+  });
+
+  window.placeDeleteX=()=>{ placeX(); placeResize(); };
+  function pick(what){ picked=what; placeX(); placeResize(); }
+  function unpick(){ picked=null; placeX(); placeResize(); }
 
   function removeNode(n){
     n.gone=true;
@@ -1389,6 +1516,26 @@ feature("edit positions", function(){
       if(hint) hint.textContent=`${a.key} — adx ${a.off.dx} ady ${a.off.dy}`;
       return;
     }
+    if(grab.mode==="size"){
+      const n=grab.n, q=v=>Math.round(v/SNAP)*SNAP;
+      if(grab.corner===4){
+        /* HEIGHT IS SCREEN-VERTICAL AND NOTHING ELSE. z is the one axis this
+           projection draws straight up, so a height drag divides by S*CZ and
+           never touches the ground-plane inverse. */
+        n.h=Math.max(0.02, r2(grab.oh + q(-(ev.clientY-grab.py)/view.k/(S*CZ))));
+      } else {
+        const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
+        const sx=(grab.corner===1||grab.corner===2)?1:-1;
+        const sy=(grab.corner===2||grab.corner===3)?1:-1;
+        n.w=Math.max(MINWD, r2(grab.ow+q(dx)*sx)); n.d=Math.max(MINWD, r2(grab.od+q(dy)*sy));
+        /* the opposite corner holds still, so the centre takes half the growth */
+        n.x=r2(grab.ox+(n.w-grab.ow)*sx/2); n.y=r2(grab.oy+(n.d-grab.od)*sy/2);
+      }
+      redrawNode(n); refresh(n.id); placeResize(); placeX();
+      if(hint) hint.textContent=`${n.key} · ${n.name} — w ${n.w.toFixed(2)}`+
+        `  d ${n.d.toFixed(2)}  h ${n.h.toFixed(2)}`;
+      return;
+    }
     const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
     const q=v=>Math.round(v/SNAP)*SNAP;
     if(grab.mode==="mover"){
@@ -1416,6 +1563,13 @@ feature("edit positions", function(){
       if(moved) markDirty(k);
       return;
     }
+    if(grab.mode==="size"){
+      const n=grab.n; const moved=travelled; grab=null;
+      if(moved){ markDirty(n.id); refresh(null);
+        NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y))
+             .forEach(m=>gNode.appendChild(nodeEls[m.id])); }
+      return;
+    }
     if(grab.mode==="mover"){
       grab.m.g.classList.remove("picked");
       const k=grab.m.key;
@@ -1440,7 +1594,7 @@ feature("edit positions", function(){
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
         (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
-      : "Drag to move · click to pick, then × to delete · Save positions when done";
+      : "Drag to move · click to pick, then drag a corner to resize or × to delete · Save positions when done";
   }
 
   /* THE FLOATING ANNOTATIONS. Same drag, different target: what moves is the
