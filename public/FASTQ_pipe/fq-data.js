@@ -329,6 +329,14 @@ const EDGES = [
   {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"G3", b:"E4", kind:"ref", straight:true, tone:"var(--fg2)"},
+
+  /* AND EACH FILE RUNS TO THE ALIGNER ITSELF. The index is built from the pair
+     and the aligner consumes the index — which the two short lines above say —
+     but on the map that left the assembly and the annotation looking like they
+     stopped at a cube. They do not: what is in them is what the alignment can
+     find, and these two tracks are that claim drawn rather than written. */
+  {a:"G1", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+  {a:"G2", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"W1", b:"E3", kind:"ref", straight:true, tone:"var(--fg2)"},
 ];
 

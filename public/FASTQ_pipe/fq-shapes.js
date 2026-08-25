@@ -845,14 +845,16 @@ const LOCUS_BANDS=(()=>{
    run of coding sequence in its own exon, which is what says it is a PART of
    that exon and not a separate block.
 
-   AND THE WHOLE MODEL SITS FURTHER RIGHT (inset 0.15 rather than 0.05). The
-   angled names trail down-LEFT from their ticks, so the first of them ran off
-   the left end of the model and straight into the 5' UTR's own label. Moving
-   the model over gives that label the clear ground it needs and costs nothing:
-   the model is a schematic, and where it sits on the roof is not a claim. */
-const GENE={inset:[0.15,0.95],
-  exons:[[0,0.115],[0.175,0.235],[0.305,0.365],[0.445,0.505],[0.585,0.645],[0.735,1.0]],
-  utr5:[0,0.075],          /* the front of exon 1 */
+   THE 5' UTR IS LONG ENOUGH TO BE ITS OWN GROUND. It was a stub at the front of
+   the first exon, close enough to that exon's coding block that its name and
+   the exon's name had to share the same stretch of roof. Given a real run of
+   its own — a low block with clear space to its left before anything else
+   starts — both names have somewhere to be. The model runs nearly the full
+   width of the roof now to pay for it; where a schematic sits is not a claim,
+   so that costs nothing. */
+const GENE={inset:[0.07,0.95],
+  exons:[[0,0.165],[0.235,0.295],[0.355,0.415],[0.475,0.535],[0.595,0.655],[0.745,1.0]],
+  utr5:[0,0.115],          /* the front of exon 1, and a long one */
   utr3:[0.80,1.0]};        /* the tail of exon 6, and most of it */
 
 function drawLocus(g,n){
@@ -1012,7 +1014,7 @@ function drawLocus(g,n){
   [[GENE.utr5,"5′ UTR",0,-1],[GENE.utr3,"3′ UTR",1,1]].forEach(([rg,str,end,dir])=>{
     const xt=X(rg[end]);
     tick(xt, y+UTRH/2+1.2*u, y+CDSH/2+17.6*u);
-    lab(str, xt+dir*7.0*u, y+CDSH/2+22.4*u);
+    lab(str, xt+dir*9.0*u, y+CDSH/2+22.4*u);
   });
 }
 DRAW.locus=drawLocus;
@@ -1151,7 +1153,6 @@ function drawBelts(g,n){
           u0:0.198+rnd()*0.062,                 /* lands in the first third */
           fx0:(5.2+rnd()*3.4)*K,                /* comes in from a long way up-belt */
           fz:(2.3+rnd()*1.5)*KZ,                /* a shallow slant, not a vertical drop */
-          sh:ggrp.appendChild(el("ellipse",{fill:"var(--stroke)","fill-opacity":"0"})),
           /* HALF THE WEIGHT. Three hundred reads at three pixels is a mass;
              at one and a half it is three hundred reads. */
           ln:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"1.5",
@@ -1230,22 +1231,24 @@ function drawBelts(g,n){
         for(const r of gn.reads){
           const tx=GX(r.f), tx2=GX(r.f+r.len);
           let x,z,ro;
+          /* A LANDED READ IS OPAQUE. It was drawn at 0.62 so it would sit into
+             the surface rather than on it — which was the right instinct while
+             the exons were bright and the wrong one now that they are not. The
+             reads are the only saturated thing on this station and the only
+             thing a viewer is meant to count; nothing is served by making them
+             argue with the box underneath. */
           if(u<r.u0){ x=0; z=0; ro=0; }
           else if(u<r.u0+0.058){
             const k=(u-r.u0)/0.058, ke=easeOut(k);
             x=tx-r.fx0*(1-ke);
             z=r.fz*Math.pow(1-k,1.25);
-            ro=Math.min(1,k*4)*0.62;
-          } else { x=tx; z=0; ro=0.62; }
+            ro=Math.min(1,k*4);
+          } else { x=tx; z=0; ro=1; }
           const zz=zRead+z;
           const a=P(x,y+r.dy,zz), b=P(x+(tx2-tx),y+r.dy,zz);
           r.ln.setAttribute("x1",a[0].toFixed(1)); r.ln.setAttribute("y1",a[1].toFixed(1));
           r.ln.setAttribute("x2",b[0].toFixed(1)); r.ln.setAttribute("y2",b[1].toFixed(1));
           r.ln.setAttribute("stroke-opacity",(ro*opRead).toFixed(3));
-          const e=ellipseAt(x+(tx2-tx)/2,y+r.dy,zExon,(0.042+z*0.05)*K);
-          r.sh.setAttribute("cx",e.x.toFixed(1)); r.sh.setAttribute("cy",e.y.toFixed(1));
-          r.sh.setAttribute("rx",e.rx.toFixed(2)); r.sh.setAttribute("ry",e.ry.toFixed(2));
-          r.sh.setAttribute("fill-opacity",(ro*opRead*op*0.34).toFixed(3));
         }
 
         for(const sp of gn.spl){

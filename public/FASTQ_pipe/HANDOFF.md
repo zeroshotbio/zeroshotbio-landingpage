@@ -493,8 +493,17 @@ the eye has to be *told* what to look at instead of being *shown*.
   rung for a build, on the argument that a read needs a surface to look like it
   is landing on. It does — but a light one competed with the reads themselves,
   and the reads are the point.
-- **The reads** are the only saturated thing in the frame, and now the only
-  bright one.
+- **The reads** are the only saturated thing in the frame, the only bright one,
+  and **fully opaque**. They were drawn at 0.62 so they would sit *into* the
+  surface rather than on it — the right instinct while the exons were bright and
+  the wrong one now that they are not. They are the thing a viewer is meant to
+  count; nothing is served by making them argue with the box underneath.
+
+**No shadow under a read.** Every one carried a soft ellipse on the exon below
+it, which is correct for an object in the air and wrong for three hundred of
+them: at rest the drawing was a field of grey blobs with an orange line on each.
+The reads still fall — the slant and the height are what make them arrive — they
+just no longer leave a mark where they land.
 
 **A box on a belt is three faces, not two.** It was top and the long near side,
 on the reasoning that nothing on a belt is seen from its far side. True of the
@@ -533,6 +542,13 @@ end, so the line leaves on the side it is going — no per-edge bookkeeping, and
 it stays right if either object is dragged or resized. **A straight ported edge
 is two points**; the lane-entry route is only for a track that has a lane to
 join.
+
+**And each file runs to the aligner itself**, not only to the index. The index
+is built from the pair and the aligner consumes the index — which the two short
+lines to `G3` say — but on the map that left the assembly and the annotation
+looking like they stopped at a cube. They do not: what is in them is what the
+alignment can find, and `G1 → E4` / `G2 → E4` are that claim drawn rather than
+written.
 
 **They are buildings with their content painted on the roof**, which is
 `/bioinformatics_pipe`'s own idiom and the reason `roofFrame` was lifted into
@@ -603,8 +619,11 @@ and the start of the next, so it lands in two halves with nothing over the
 intron between them. Drawn here it says what the annotation is *for*: the
 assembly alone cannot place these, and this is the file that can.
 
-**The model sits well in from the left end of the roof** (`inset` 0.15, not
-0.05) and **each UTR name sits at its own outer end** rather than at the block's
+**The 5′ UTR is long enough to be its own ground.** It was a stub at the front
+of the first exon, close enough to that exon's coding block that its name and
+the exon's name had to share a stretch of roof. Given a real run of its own — a
+low block with clear space to its left before anything else starts — both names
+have somewhere to be. **Each UTR name sits at its own outer end** rather than at the block's
 centre. The angled names trail down-*left* from their ticks, so the first of
 them ran off the left of the model and landed exactly on the 5′ UTR's own label.
 The tick still rises to the block, so the name is still *on* its section rather
