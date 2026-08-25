@@ -621,55 +621,58 @@ DRAW.pool=drawPool;
 /* ============================================================
    THE TWO REFERENCE FIGURES — GRCz11 and Ensembl 99.
 
-   The genome lane is two files and two decisions, and until now it was two
-   labelled cubes. These are what those files actually contain: the assembly
-   says which bases are where, the annotation says which stretches are a gene,
-   which parts survive splicing, which get translated, and which way it is
-   read. Ported from two canvas drawings into this page's idiom.
+   The genome lane is two files and two decisions. These are what those files
+   actually contain: the assembly says which bases are where, the annotation
+   says which stretches are a gene, which parts survive splicing, which get
+   translated, and which way it is read.
 
-   THEY ARE PANELS, AND THEY ARE TURNED LIKE THE FRAGMENT. Flat, square to the
-   reader, rotated -30 onto the map's own diagonal — a rotation and not a shear,
-   so the drawing inside stays undistorted. Same reasoning as the fragment: a
-   diagram OF a file is not a thing standing somewhere in the world, and a
-   diagram read at -30 is a diagram read at -30.
+   THEY ARE BUILDINGS WITH THEIR CONTENT PAINTED ON THE ROOF, which is
+   /bioinformatics_pipe's own idiom and the reason roofFrame was lifted into
+   fq-iso.js in the first place. An earlier build had them as flat cards turned
+   to the map's diagonal, like the fragment. That was wrong for these two and
+   right for that one, and the difference is worth stating: the fragment is a
+   diagram OF a molecule, which is nowhere; an index is a FILE THAT SITS
+   SOMEWHERE and feeds the aligner, and the map already has a way of drawing a
+   thing that sits somewhere and feeds something. A short flat prism feeding
+   another prism reads as a pipeline. A card floating beside one does not.
 
-   THEY CARRY A CARD. The fragment does not, because nothing passes behind it;
-   these are fed by reference edges that arrive at the node's own point, which
-   is the middle of the panel. A faint plate hides the last stretch of that
-   edge, so a line arrives at the figure rather than through it.
+   THE ROOF IS NOT SQUARE, and roofPanel() is why. Twenty-five ideograms in a
+   row and a gene model laid end to end both want a roof much longer than it is
+   deep; the aspect comes from n.w and n.d and the drawing reflows to it.
 
-   COLOUR: NONE OF THEIR OWN. The chromosome bodies take the reference skin's
-   own face (--k-top), the bands are punched out in --bg, and the window and its
-   frustum are grey — the same grey the pool's leaders use, and for the same
-   reason: a magnification is not a track. Coding sequence and UTR are the same
-   token at two weights, which is the UMI's trick again. The fork owns orange
-   and blue and nothing here borrows them.
+   TEXT ON THE ROOF FOLLOWS THE ROOF. At turn 0 an unrotated string advances at
+   -30 degrees, the angle every other name on this map reads at, so nothing in
+   here is rotated by hand. Single lines only — a block of text on a roof fans,
+   because chart x and chart y are the two roof diagonals.
 
-   HONEST NOTE ON THE BANDS, carried over from the original and worth keeping:
-   the chromosome LENGTHS are the real GRCz11 primary assembly in Mb. The
-   banding and the centromere positions are NOT — zebrafish has no standard
-   cytoband table of the kind that exists for human, so both are generated from
-   a seed. They are there to make the shapes read as chromosomes, not to be
-   counted. If a real band table ever lands, replace CHR_LAYOUT and nothing
-   else changes.
+   NO COLOUR OF THEIR OWN. Chromosome bodies take the reference skin's own face
+   (--k-top) and the bands are punched out in --bg. The window and its frustum
+   are grey — the same grey the pool's leaders use, and for the same reason: a
+   magnification is not a track. Coding sequence and UTR are one token at two
+   weights, which is the UMI's trick again. The fork owns orange and blue and
+   nothing here borrows them.
+
+   HONEST NOTE ON THE BANDS, carried over from the original. The chromosome
+   LENGTHS are the real GRCz11 primary assembly in Mb. The banding and the
+   centromere positions are NOT — zebrafish has no standard cytoband table of
+   the kind that exists for human, so both are generated from a seed. They are
+   there to make the shapes read as chromosomes, not to be counted. If a real
+   band table ever lands, replace CHR_LAYOUT and LOCUS_BANDS and nothing else
+   changes.
    ============================================================ */
 
-/* A flat panel, turned to the map's diagonal and centred on its node's own
-   ground point. Everything inside is laid out in plain 0..W by 0..H local
-   coordinates, exactly as it was on a canvas. */
-function panel(g,n,PW){
-  const p=P(n.x,n.y,0), X0=p[0], Y0=p[1];
-  const PH=PW*9/16, x0=X0-PW/2, y0=Y0-PH/2;
-  const host=g.appendChild(el("g",
-    {transform:`rotate(${FRAG_TURN} ${X0} ${Y0}) translate(${x0} ${y0})`}));
-  host.appendChild(el("rect",{x:0,y:0,width:PW,height:PH,
-    fill:"var(--panel)","fill-opacity":".72",
-    stroke:"var(--rule)","stroke-opacity":".55","stroke-width":"1"}));
-  return {g:host, W:PW, H:PH, u:PH/100};
+/* the low prism the chart is painted on: the reference skin, then its own top
+   face again, inset and darker, so the drawing has something to be legible
+   against. Same trick building() uses on the culls page. */
+function refBuilding(g,n){
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+  g.appendChild(el("polygon",{points:faces(n.x,n.y,n.w*0.965,n.d*0.985,n.h).top,
+    fill:"var(--t-top)","fill-opacity":".92",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".45"}));
 }
 
-/* the word the panel is about, large and bold in its own white space */
-function panelTitle(F,str,x,y,size){
+/* the word the roof is about, large, in its own clear space */
+function roofTitle(F,str,x,y,size){
   const t=el("text",{x,y,"text-anchor":"start","font-size":size,
     "font-family":MONO,"font-weight":"700","letter-spacing":(size*0.03).toFixed(2),
     fill:"var(--fg)","fill-opacity":".92"});
@@ -705,13 +708,13 @@ const CHR_LAYOUT=(()=>{
 })();
 
 function drawKaryotype(g,n){
-  hitBox(g,n);
-  const F=panel(g,n,n.pw||330), {W,H,u}=F;
-  const margin=6*u, slot=(W-margin*2)/CHR_LAYOUT.length;
-  const bw=Math.min(4.2*u, slot*0.56);
-  const top=30*u, maxH=58*u, maxMb=Math.max(...CHR), waist=0.9*u;
+  refBuilding(g,n);
+  const F=roofPanel(g,n,n.h,176), {CW,CH,u}=F;
+  const margin=5*u, slot=(CW-margin*2)/CHR_LAYOUT.length;
+  const bw=Math.min(4.6*u, slot*0.60);
+  const top=34*u, maxH=56*u, maxMb=Math.max(...CHR), waist=1.0*u;
 
-  panelTitle(F,"GRCz11",margin,20*u,15*u);
+  roofTitle(F,"GRCz11",margin,22*u,17*u);
 
   CHR_LAYOUT.forEach((ch,i)=>{
     const cx=margin+slot*(i+0.5), h=(ch.mb/maxMb)*maxH;
@@ -728,19 +731,29 @@ function drawKaryotype(g,n){
           fill:"var(--bg)","fill-opacity":".85"}));
       });
       F.g.appendChild(el("path",{d,fill:"none",stroke:"var(--stroke)",
-        "stroke-opacity":".7","stroke-width":(0.45*u).toFixed(2)}));
+        "stroke-opacity":".7","stroke-width":(0.5*u).toFixed(2)}));
     });
 
     /* the constriction, marked on both flanks */
     F.g.appendChild(el("path",{fill:"none",stroke:"var(--fg3)",
-      "stroke-width":(0.45*u).toFixed(2),
-      d:`M${x-0.5*u} ${yc}H${x+bw*0.22}M${x+bw*0.78} ${yc}H${x+bw+0.5*u}`}));
+      "stroke-width":(0.5*u).toFixed(2),
+      d:`M${x-0.6*u} ${yc}H${x+bw*0.22}M${x+bw*0.78} ${yc}H${x+bw+0.6*u}`}));
   });
 }
 DRAW.karyotype=drawKaryotype;
 
 /* ---- Ensembl 99: one chromosome, one window, one locus -------------------
-   Structure is real in kind; the coordinates are not. */
+   Structure is real in kind; the coordinates are not.
+
+   THE MODEL IS A 3'-BIASED GENE, WHICH IS THE ONLY KIND THIS PAGE IS ABOUT.
+   Transcription runs 5' to 3': the 5' UTR is the front of the first exon, the
+   coding sequence runs from there through the internal exons, and the 3' UTR is
+   the tail of the LAST one — and in a real gene it is most of that exon, which
+   is why it gets its own block and its own name here rather than a note off the
+   end. Every assay on this map primes with oligo-dT, so the reads land in that
+   block. It is also the one whose zebrafish annotation is incomplete in both
+   Ensembl and RefSeq, which is the 3' UTR problem the reference nodes keep
+   naming and the reason a 46% transcriptome mapping rate is not a failure. */
 const LOCUS_BANDS=(()=>{
   const rnd=mulberry32(0x5eedf15^0x99), out=[]; let acc=0.03;
   while(acc<0.94){
@@ -751,23 +764,22 @@ const LOCUS_BANDS=(()=>{
   return out;
 })();
 
-const GENE={inset:[0.10,0.90],
-  exons:[[0,0.075],[0.135,0.20],[0.28,0.355],[0.44,0.505],[0.60,0.675],[0.79,1.0]],
-  utr5:[0,0.042], utr3:[0.945,1.0]};
+const GENE={inset:[0.05,0.95],
+  exons:[[0,0.085],[0.145,0.215],[0.295,0.365],[0.45,0.52],[0.60,0.665],[0.755,1.0]],
+  utr5:[0,0.048],          /* the front of exon 1 */
+  utr3:[0.83,1.0]};        /* the tail of exon 6, and most of it */
 
 function drawLocus(g,n){
-  hitBox(g,n);
-  const F=panel(g,n,n.pw||330), {W,H,u}=F;
-  const G=F.g, LAB=5.2*u;
+  refBuilding(g,n);
+  const F=roofPanel(g,n,n.h,176), {CW,CH,u}=F;
+  const G=F.g, LAB=5.6*u;
 
-  panelTitle(F,"Ensembl 99",6*u,14*u,11*u);
+  roofTitle(F,"Ensembl 99",5*u,15*u,13*u);
 
   /* ---- the chromosome, laid on its side ---- */
-  const kx0=20*u, kx1=W-20*u, ky=28*u, kh=4.6*u, kw=kx1-kx0, cen=0.38, waist=0.9*u;
+  const kx0=18*u, kx1=CW-18*u, ky=24*u, kh=5.0*u, kw=kx1-kx0, cen=0.38, waist=1.0*u;
   const cxCen=kx0+kw*cen, r=kh/2, sq=kh*0.16;
   [[kx0,cxCen-waist/2,r,sq],[cxCen+waist/2,kx1,sq,r]].forEach(([a,b,rl,rr])=>{
-    /* the arm helper runs vertically; on its side the radii swap axes, so the
-       path is built by hand from the same two corner sizes */
     const d=`M${a} ${ky+rl}A${rl} ${rl} 0 0 1 ${a+rl} ${ky}H${b-rr}`+
             `A${rr} ${rr} 0 0 1 ${b} ${ky+rr}V${ky+kh-rr}`+
             `A${rr} ${rr} 0 0 1 ${b-rr} ${ky+kh}H${a+rl}`+
@@ -779,41 +791,39 @@ function drawLocus(g,n){
         fill:"var(--bg)","fill-opacity":".85"}));
     });
     G.appendChild(el("path",{d,fill:"none",stroke:"var(--stroke)",
-      "stroke-opacity":".7","stroke-width":(0.45*u).toFixed(2)}));
+      "stroke-opacity":".7","stroke-width":(0.5*u).toFixed(2)}));
   });
-  G.appendChild(el("path",{fill:"none",stroke:"var(--fg3)","stroke-width":(0.45*u).toFixed(2),
-    d:`M${cxCen} ${ky-0.6*u}V${ky+kh*0.22}M${cxCen} ${ky+kh*0.78}V${ky+kh+0.6*u}`}));
+  G.appendChild(el("path",{fill:"none",stroke:"var(--fg3)","stroke-width":(0.5*u).toFixed(2),
+    d:`M${cxCen} ${ky-0.7*u}V${ky+kh*0.22}M${cxCen} ${ky+kh*0.78}V${ky+kh+0.7*u}`}));
 
-  /* ---- the window, and the frustum down onto the locus ----
-     GREY, LIKE THE POOL'S LEADERS. A magnification is not a track: nothing
-     travels it, so it takes neither read's colour. */
+  /* ---- the window, and the frustum down onto the locus ---- */
   const wx0=kx0+kw*0.470, wx1=kx0+kw*0.530;
-  G.appendChild(el("rect",{x:wx0,y:ky-1.6*u,width:wx1-wx0,height:kh+3.2*u,
-    fill:"none",stroke:"var(--fg)","stroke-opacity":".6","stroke-width":(0.8*u).toFixed(2)}));
+  G.appendChild(el("rect",{x:wx0,y:ky-1.8*u,width:wx1-wx0,height:kh+3.6*u,
+    fill:"none",stroke:"var(--fg)","stroke-opacity":".6","stroke-width":(0.9*u).toFixed(2)}));
 
-  const lx0=8*u, lx1=W-8*u, lw=lx1-lx0;
+  const lx0=6*u, lx1=CW-6*u, lw=lx1-lx0;
   const [gi0,gi1]=GENE.inset;
   const X=f=>lx0+(gi0+(gi1-gi0)*f)*lw;
   const gx0=X(0), gx1=X(1);
-  const y=68*u, CDSH=7.6*u, UTRH=4.0*u, lTop=50*u;
+  const y=64*u, CDSH=8.0*u, UTRH=4.4*u, lTop=46*u;
 
   G.appendChild(el("path",{fill:"none",stroke:"var(--fg)","stroke-opacity":".38",
-    "stroke-width":(0.55*u).toFixed(2),"stroke-dasharray":`${(2.4*u).toFixed(1)} ${(2.6*u).toFixed(1)}`,
-    d:`M${wx0} ${ky+kh+1.6*u}L${gx0} ${lTop}M${wx1} ${ky+kh+1.6*u}L${gx1} ${lTop}`}));
+    "stroke-width":(0.6*u).toFixed(2),"stroke-dasharray":`${(2.4*u).toFixed(1)} ${(2.6*u).toFixed(1)}`,
+    d:`M${wx0} ${ky+kh+1.8*u}L${gx0} ${lTop}M${wx1} ${ky+kh+1.8*u}L${gx1} ${lTop}`}));
 
   /* ---- the model: a line, chevrons for the introns, blocks for the exons ---- */
   G.appendChild(el("line",{x1:gx0,y1:y,x2:gx1,y2:y,stroke:"var(--fg3)",
-    "stroke-width":(0.75*u).toFixed(2)}));
+    "stroke-width":(0.8*u).toFixed(2)}));
   const inExon=f=>GENE.exons.some(([a,b])=>f>a&&f<b);
   let chev="";
-  for(let f=0.006;f<1;f+=0.020){
+  for(let f=0.006;f<1;f+=0.022){
     if(inExon(f)) continue;
-    const x=X(f), a=1.5*u;
+    const x=X(f), a=1.6*u;
     chev+=`M${(x-a*0.6).toFixed(1)} ${(y-a).toFixed(1)}L${(x+a*0.6).toFixed(1)} ${y.toFixed(1)}`+
           `L${(x-a*0.6).toFixed(1)} ${(y+a).toFixed(1)}`;
   }
   G.appendChild(el("path",{d:chev,fill:"none",stroke:"var(--fg3)",
-    "stroke-width":(0.5*u).toFixed(2)}));
+    "stroke-width":(0.55*u).toFixed(2)}));
 
   /* CODING AND UNTRANSLATED ARE ONE TOKEN AT TWO WEIGHTS, which is the UMI's
      trick: a distinction the palette has no colour left for, made by fill. */
@@ -828,33 +838,42 @@ function drawLocus(g,n){
     parts.forEach(([s0,s1,h,op])=>{
       G.appendChild(el("rect",{x:X(s0),y:y-h/2,width:X(s1)-X(s0),height:h,
         fill:"var(--keep)","fill-opacity":op,
-        stroke:"var(--panel)","stroke-width":(0.35*u).toFixed(2)}));
+        stroke:"var(--t-top)","stroke-width":(0.4*u).toFixed(2)}));
     });
   });
 
-  /* ---- ONE label per kind, not one per feature ----
-     The original named every exon and every intron. Six "exon"s and five
-     "intron"s is a pattern stated eleven times; one of each teaches the shape,
-     and the room that buys goes into making them legible at map scale. */
+  /* ---- EVERY EXON AND EVERY INTRON IS NAMED, on two rows so the two sets
+     never have to share a line, and the UTRs get a third of their own. Six
+     exons above and five introns below is eleven labels on a roof; they fit
+     because they alternate, and because a name only ever has its own row's
+     neighbours to clear. */
   const lab=(str,x,ty,anchor)=>{
     const t=el("text",{x,y:ty,"text-anchor":anchor||"middle","font-size":LAB,
       "font-family":MONO,fill:"var(--fg3)"});
     t.textContent=str; G.appendChild(t); return t;
   };
   const tick=(x,y0,y1)=>G.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
-    stroke:"var(--fg3)","stroke-width":(0.45*u).toFixed(2),"stroke-opacity":".7"}));
+    stroke:"var(--fg3)","stroke-width":(0.5*u).toFixed(2),"stroke-opacity":".7"}));
 
-  const e0=GENE.exons[0], e1=GENE.exons[1];
-  const ex=(X(e0[0])+X(e0[1]))/2, ix=(X(e0[1])+X(e1[0]))/2;
-  tick(ex, y-CDSH/2-1.3*u, y-CDSH/2-6.4*u); lab("exon", ex, y-CDSH/2-7.8*u);
-  tick(ix, y+CDSH/2+1.3*u, y+CDSH/2+5.0*u); lab("intron", ix, y+CDSH/2+9.4*u);
+  GENE.exons.forEach(([a,b])=>{
+    const x=(X(a)+X(b))/2;
+    tick(x, y-CDSH/2-1.2*u, y-CDSH/2-4.6*u);
+    lab("exon", x, y-CDSH/2-6.2*u);
+  });
+  for(let i=0;i<GENE.exons.length-1;i++){
+    const x=(X(GENE.exons[i][1])+X(GENE.exons[i+1][0]))/2;
+    tick(x, y+CDSH/2+1.2*u, y+CDSH/2+4.6*u);
+    lab("intron", x, y+CDSH/2+9.6*u);
+  }
 
-  const utrLab=(x,str,anchor,dir)=>{
-    G.appendChild(el("line",{x1:x,y1:y,x2:x+dir*2.6*u,y2:y,stroke:"var(--fg3)",
-      "stroke-width":(0.45*u).toFixed(2),"stroke-opacity":".7"}));
-    lab(str, x+dir*3.6*u, y+LAB*0.36, anchor);
-  };
-  utrLab(gx0,"5′ UTR","end",-1);
-  utrLab(gx1,"3′ UTR","start",1);
+  /* THE UTRs GET THEIR OWN ROW AND THEIR OWN TICK, pointing at the block they
+     name. The 3' UTR is most of the last exon and it is where every read on
+     this map lands, so it is a section of the drawing rather than a note off
+     the end. */
+  [[GENE.utr5,"5′ UTR"],[GENE.utr3,"3′ UTR"]].forEach(([rg,str])=>{
+    const x=(X(rg[0])+X(rg[1]))/2;
+    tick(x, y+UTRH/2+1.2*u, y+CDSH/2+15.2*u);
+    lab(str, x, y+CDSH/2+20.4*u);
+  });
 }
 DRAW.locus=drawLocus;

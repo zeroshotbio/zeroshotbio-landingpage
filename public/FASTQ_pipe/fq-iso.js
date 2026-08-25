@@ -123,6 +123,49 @@ function roofFrame(g,n,H,CW,inset,turn){
 }
 
 
+/* ============================================================
+   roofPanel — THE SAME TRICK ON A RECTANGULAR ROOF.
+
+   roofFrame above is SQUARE by construction: it takes one side from n.w and
+   uses it for both axes, because every chart it was written for is square. The
+   two reference figures on this page are not — a row of twenty-five ideograms
+   and a gene model laid end to end both want a roof much longer than it is
+   deep. So this takes the footprint from n.w AND n.d, and derives the chart's
+   own height from them so nothing is stretched:
+
+     local +x runs along the roof's d extent, 0..CW
+     local +y runs along the roof's w extent, 0..CH,  CH = CW * w/d
+
+   Which means CW is a resolution rather than a shape — pick it, and CH follows
+   from the building. Change the footprint and the drawing rescales; change the
+   ASPECT and the drawing reflows, which is the whole reason a figure gets to
+   ask for a roof that is not square.
+
+   roofFrame is left exactly as it was lifted. Two functions rather than one
+   generalised one, because that file is /culls' and this one is ours.
+
+   Same orientation rule at turn 0: local +x advances up and to the right at
+   -30 degrees, the angle every string on this map reads at, so text laid in
+   here follows the roof. Single lines only — a block still fans.
+   ============================================================ */
+function roofPanel(g,n,H,CW,inset){
+  const ins=(inset===undefined?0.92:inset);
+  const cw=n.w*ins, cd=n.d*ins, CH=CW*cw/cd;
+  const x0=n.x-cw/2, x1=n.x+cw/2, y0=n.y-cd/2, y1=n.y+cd/2;
+
+  const c00=P(x0,y1,H);                   /* chart (0,0)  */
+  const cX =P(x0,y0,H);                   /* chart (CW,0) */
+  const cY =P(x1,y1,H);                   /* chart (0,CH) */
+  const Ux=(cX[0]-c00[0])/CW, Uy=(cX[1]-c00[1])/CW;
+  const Vx=(cY[0]-c00[0])/CH, Vy=(cY[1]-c00[1])/CH;
+
+  const host=g.appendChild(el("g",
+    {transform:`matrix(${Ux} ${Uy} ${Vx} ${Vy} ${c00[0]} ${c00[1]})`}));
+
+  return {g:host, CW, CH, u:CH/100,
+    toScreen:(lx,ly)=>[c00[0]+lx*Ux+ly*Vx, c00[1]+lx*Uy+ly*Vy]};
+}
+
 /* Hatch patterns, referenced by shapes as url(#hL) etc. Call once per <svg>.
    Hatching means one thing on this page and it is the same thing it means on
    /pipeline: THE STAGE DESTROYS DATA. All four culls carry it. */

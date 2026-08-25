@@ -455,16 +455,32 @@ says which bases are where; the annotation says which stretches are a gene,
 which parts survive splicing, which get translated, and which way it is read.
 Both ported from canvas drawings into this page's idiom.
 
-**They are panels, and they are turned like the fragment.** Flat, square to the
-reader, rotated −30° onto the map's own diagonal — a rotation and not a shear,
-so the drawing inside stays undistorted. `panel()` gives a group whose contents
-are laid out in plain `0..W × 0..H` local coordinates, exactly as they were on a
-canvas, which is what made the port a transcription rather than a rewrite.
+**They are buildings with their content painted on the roof**, which is
+`/bioinformatics_pipe`'s own idiom and the reason `roofFrame` was lifted into
+`fq-iso.js` in the first place.
 
-**They carry a card and the fragment does not.** Nothing passes behind the
-fragment; these are fed by reference edges that arrive at the node's own point,
-which is the middle of the panel. A faint plate hides the last stretch of that
-edge, so a line arrives *at* the figure rather than through it.
+An earlier build had them as flat cards turned to the map's diagonal, like the
+fragment. **That is right for the fragment and wrong for these two, and the
+difference is worth stating:** the fragment is a diagram *of* a molecule, which
+is nowhere; an index is a *file that sits somewhere* and feeds the aligner, and
+the map already has a way of drawing a thing that sits somewhere and feeds
+something. A short flat prism feeding another prism reads as a pipeline. A card
+floating beside one does not.
+
+**The roof is not square, and `roofPanel()` is why.** `roofFrame` takes one side
+from `n.w` and uses it for both axes, because every chart it was written for is
+square; twenty-five ideograms in a row and a gene model laid end to end both
+want a roof much longer than it is deep. `roofPanel` takes the footprint from
+`n.w` *and* `n.d` and derives the chart's own height from them, so **`CW` is a
+resolution rather than a shape** — change the footprint and the drawing
+rescales, change the aspect and it reflows. `roofFrame` is left exactly as it
+was lifted: two functions rather than one generalised one, because that file is
+`/culls`' and this one is ours.
+
+**Text on the roof follows the roof.** At turn 0 an unrotated string advances at
+−30°, the angle every other name on the map reads at, so nothing in either
+figure is rotated by hand. Single lines only — a block on a roof fans, because
+chart x and chart y are the two roof diagonals.
 
 **No colour of their own.** Chromosome bodies take the reference skin's own face
 (`--k-top`) and the bands are punched out in `--bg`. The window and its frustum
@@ -473,10 +489,19 @@ magnification is not a track.** Coding sequence and UTR are one token at two
 weights, which is the UMI's trick again. The fork owns orange and blue and
 nothing here borrows them.
 
-**One label per kind, not one per feature.** The original named every exon and
-every intron — six *exon*s and five *intron*s is a pattern stated eleven times.
-One of each teaches the shape, and the room that buys goes into making them
-legible at map scale.
+**Every exon and every intron is named**, on two rows so the two sets never
+share a line, with the UTRs on a third of their own. Eleven labels fit on a roof
+because they alternate: a name only ever has its own row's neighbours to clear.
+
+**The model is a 3′-biased gene, which is the only kind this page is about.**
+Transcription runs 5′ → 3′: the 5′ UTR is the front of the first exon, the
+coding sequence runs from there through the internal exons, and **the 3′ UTR is
+the tail of the last one and most of it.** That is why it gets its own block and
+its own name rather than a note off the end — every assay on this map primes
+with oligo-dT, so that block is where the reads land, and it is the one whose
+zebrafish annotation is incomplete in both Ensembl and RefSeq. It is the 3′ UTR
+problem the reference nodes keep naming, and the reason a 46% transcriptome
+mapping rate is not a failure.
 
 ### Honest note on the bands, carried over from the original
 

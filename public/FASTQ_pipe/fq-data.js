@@ -170,9 +170,13 @@ const NODES = [
    fragment gets: noclip because a panel is not a solid, and n.h is where the
    name hangs rather than the height of anything. See drawKaryotype and
    drawLocus in fq-shapes.js. */
+/* NOT CUBES ANY MORE, BUT STILL BUILDINGS. The assembly and the annotation are
+   two files and two decisions, and what they contain is drawable — so it is
+   drawn, on the roof of a short flat prism, which is /bioinformatics_pipe's own
+   idiom. The roof is NOT square: the aspect comes from w and d, and roofPanel()
+   reflows the chart to it. See drawKaryotype and drawLocus in fq-shapes.js. */
 {id:"G1", key:"G1", group:"G · genome, and W · whitelists", shape:"karyotype",
- noclip:true, pw:290,
- follow:{a:"E4",dx:0.9}, name:"GRCz11", x:5.9, y:R3+16.7, w:2.2, d:2.2, h:5.6,
+ follow:{a:"E4",dx:0.4}, name:"GRCz11", x:5.9, y:R3+12.6, w:4.0, d:7.1, h:0.5,
  sub:"the sequence · which bases are where",
  does:"The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus without exception, which is the one thing about the reference that IS comparable across all of them.",
@@ -180,13 +184,12 @@ const NODES = [
  added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision. Swapping it for GRCz12tu — staged, and documented stage by stage at /grcz12 — changes which bases are where, and therefore every coordinate downstream of the aligner. THE FIGURE IS THE 25 CHROMOSOMES AS IDEOGRAMS, ordered by length. The lengths are the real GRCz11 primary assembly in Mb; the banding and the centromere positions are NOT, and are generated from a seed — zebrafish has no standard cytoband table of the kind that exists for human. They are there to make the shapes read as chromosomes, not to be counted."},
 
 {id:"G2", key:"G2", group:"G · genome, and W · whitelists", shape:"locus",
- noclip:true, pw:290,
- follow:{a:"E4",dx:6.9}, name:"Ensembl 99", x:9.1, y:R3+11.8, w:2.2, d:2.2, h:5.6,
+ follow:{a:"E4",dx:7.4}, name:"Ensembl 99", x:9.1, y:R3+9.8, w:4.0, d:8.0, h:0.5,
  sub:"the annotation · where genes start and stop",
  does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
  built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason.",
- added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (the blocks against the chevroned line between them), which of those get translated (the tall blocks against the short ones at either end), and which way it is read (the chevrons). The structures are real in kind; the coordinates are not."},
+ added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (every exon and every intron is named), which of those get translated (the tall blocks against the low ones at either end), and which way it is read (the chevrons). Transcription runs 5′ to 3′: the 5′ UTR is the front of the first exon, the coding sequence runs from there through the internal exons, and THE 3′ UTR IS THE TAIL OF THE LAST ONE AND MOST OF IT — which is why it is drawn as its own section with its own name rather than as a note off the end. Every assay on this map primes with oligo-dT, so that block is where the reads land, and it is the one whose zebrafish annotation is incomplete in both Ensembl and RefSeq. The structures are real in kind; the coordinates are not."},
 
 {id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"ref",
  follow:{a:"E4",dx:-1.0}, name:"STAR index", x:7.5, y:R3+8.9, w:1.7, d:1.7, h:0.95,
@@ -322,7 +325,7 @@ const EDGES = [
 /* One band, keeping its name from the big map. It has to reach the reference
    lane above the row and the whitelists below it. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-6.6, y1:R3+18.4},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-6.6, y1:R3+17.4},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
