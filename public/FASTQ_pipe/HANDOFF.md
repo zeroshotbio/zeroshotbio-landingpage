@@ -80,6 +80,10 @@ stop, then along the lane. **`E2` carries `noclip:true`** — the glyph is a fla
 diagram floating in the air, not a solid, so nothing hides behind it; punch its
 box out of the occlusion clip and both departures vanish at their own ends.
 
+**Both lanes run straight into E6** (`straight:true` on the last leg of each).
+The elbow route puts a Z in that leg, and a Z at the moment two things converge
+reads as two things being nudged together rather than as two things arriving.
+
 **E6 has two inbound edges and must look like it.** The gene identity comes down
 one branch and the cell identity up the other, and neither alone is a count — a
 gene with no cell is a read pile, a cell with no gene is an empty row. That
@@ -317,6 +321,18 @@ weight however the ball turns.
 reads as a terminus — the place the read stops — and it means the opposite: the
 direction the read travels.
 
+**The two brackets hang UNDERNEATH, below even the barcode names, and the
+unsequenced middle is called out from above.** That is not symmetry for its own
+sake: the tracks leave from the bracket ends, so the brackets have to be on the
+side the tracks go, and everything that leaves this glyph leaves downward. The
+one label that names an *absence* is the one thing pointing back *into* the
+molecule, from the other side.
+
+**The ports are therefore the bracket ends, not the bar ends** — a track leaves
+from under its own name, so what a reader follows out of the glyph is the thing
+they just read the name of. The pool's leaders still aim at the *bar* ends: the
+magnification points at the molecule, not at the brackets.
+
 **The ball is a real ball.** The reads are placed uniformly through a sphere —
 direction on the sphere, radius by cube root, because a uniform radius piles
 the population into the centre — in *world* coordinates, turned by a real
@@ -390,6 +406,22 @@ whose `d` is a run of subpaths, rebuilt as a single string and written with one
 `setAttribute` — `pool()` on the other map, same idea. Alpha and weight vary by
 having four buckets, not by having 760 attributes. The hero is drawn as itself,
 because there is one of it.
+
+### The candle, and the moths
+
+The hero carries a light, and **the light is depth-sorted with it**. Reads nearer
+the eye than the hero pass in front of the glow and cut it; reads behind it are
+lit by it. That is one `insertBefore` rather than a shader: the hero, its ring
+and its two glow circles live in their own group, and every frame that group is
+moved to the DOM position matching the hero's own depth bucket. **Painter order
+is the z order on this page and always has been** — this is that rule used for
+light instead of for solids.
+
+Two radial stops: a tight core for the flame and a wide soft halo for what it
+throws, both `--fg`. **The light is not a third read colour** — it is light, and
+the two halves of the hero keep their own tokens inside it. The leaders are
+appended after the hero group so they stay legible whatever it is doing; they
+are an annotation about the drawing, not a thing inside it.
 
 **The population is built once, at load, from a fixed seed**, so the pool is the
 same pool in every browser and the hero is the same read. A swarm that

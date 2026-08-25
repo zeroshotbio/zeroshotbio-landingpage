@@ -322,15 +322,24 @@ const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monosp
 const FRAG_TURN=-30;
 function fragGeom(x,y){
   const p=P(x,y,0), X0=p[0], Y0=p[1];
+  /* THE READS ARE BRACKETED FROM UNDERNEATH, BELOW EVEN THE BARCODE NAMES, and
+     the unsequenced middle is called out from above. That is not symmetry for
+     its own sake: the two tracks leave from the bracket ends, so the brackets
+     have to be on the side the tracks go, and everything that leaves this glyph
+     leaves downward. The one label that names an ABSENCE is the one thing that
+     points back INTO the molecule, from the other side. */
   const FW=400, FX0=X0-FW/2, FX1=X0+FW/2, BH=17;
-  const ROW2=Y0-18, ROW1=ROW2-21, BB=ROW1-25, BT=BB-BH, BMID=BT+BH/2;
-  const YB=BT-21, LBL=YB-12, CTOP=LBL-22;
+  const BT=Y0-52, BB=BT+BH, BMID=BT+BH/2;
+  const NSQ=BT-16;                       /* "never sequenced", above the bar */
+  const ROW1=BB+25;                      /* BC1 BC2 BC3 UMI, below it */
+  const YB=ROW1+24, LBL=YB+24;           /* the two brackets, below those */
+  const ROW2=ROW1, CTOP=NSQ-16;
   /* the turn is about the bar's own midpoint, so the diagram pivots where it
      sits rather than swinging off its node */
   const px=X0, py=BMID;
   const a=FRAG_TURN*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
   const rot=q=>[px+(q[0]-px)*c-(q[1]-py)*sn, py+(q[0]-px)*sn+(q[1]-py)*c];
-  return {X0,Y0,FW,FX0,FX1,BH,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,px,py,rot};
+  return {X0,Y0,FW,FX0,FX1,BH,NSQ,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,px,py,rot};
 }
 
 function drawFragment(g,n){
@@ -338,7 +347,7 @@ function drawFragment(g,n){
   const F=fragGeom(n.x,n.y);
   /* one rotate on the group; everything inside is laid out level */
   g=g.appendChild(el("g",{transform:`rotate(${FRAG_TURN} ${F.px} ${F.py})`}));
-  const {FX0,FX1,FW,BT,BB,BH,BMID,ROW1,ROW2,YB,LBL}=F;
+  const {FX0,FX1,FW,BT,BB,BH,BMID,NSQ,ROW1,ROW2,YB,LBL}=F;
   const SEG=13, SUB=11, HEAD=16;
 
   const total=FRAG.reduce((s,x)=>s+x.w,0);
@@ -363,8 +372,8 @@ function drawFragment(g,n){
          its fifteen characters have the room they need. */
       g.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
         stroke:"var(--fg3)","stroke-width":"1","stroke-dasharray":"3.4 3.4"}));
-      tick(mid,BB,ROW2-12,"var(--fg3)");
-      text(s.lab,mid,ROW2,SUB,"var(--fg3)");
+      tick(mid,NSQ+5,BT,"var(--fg3)");
+      text(s.lab,mid,NSQ,SUB,"var(--fg3)");
       return;
     }
     if(s.tone==="link"){
@@ -411,7 +420,7 @@ function drawFragment(g,n){
      the map's angle like every other string on it. */
   const bracket=(xa,xb,col,label,dir)=>{
     g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.4","stroke-opacity":".9",
-      d:`M ${xa} ${YB+6} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB+6}`}));
+      d:`M ${xa} ${YB-6} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB-6}`}));
     const a=4.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
     g.appendChild(el("polygon",{fill:col,
       points:`${ax+dir*a*1.7},${YB} ${ax},${YB-a} ${ax},${YB+a}`}));
@@ -432,8 +441,11 @@ DRAW.fragment=drawFragment;
    it carries. See routeOf() in fq-view.js. Keyed by SHAPE rather than by node
    id, because a port is a property of the drawing. */
 const PORTS={
+  /* THE PORTS ARE THE BRACKET ENDS, NOT THE BAR ENDS. A track leaves from the
+     end of the bracket that names it, under its own label — so what a reader
+     follows out of this glyph is the thing they just read the name of. */
   fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
-    return F.rot(which==="L" ? [F.FX0,F.BMID] : [F.FX1,F.BMID]); },
+    return F.rot(which==="L" ? [F.FX0,F.YB] : [F.FX1,F.YB]); },
 };
 
 /* ============================================================
@@ -474,27 +486,56 @@ function drawPool(g,n){
   }
   /* the leaders first, so they run UNDER the ring and the hero rather than
      across them */
+  /* ================= THE CANDLE, AND THE MOTHS ============================
+     The one read being magnified carries a light, and the light is DEPTH-SORTED
+     WITH IT. Reads nearer the eye than the hero pass in front of the glow and
+     cut it; reads behind it are lit by it. That is the whole effect, and it is
+     one insertBefore rather than a shader: the hero and its halo live in their
+     own group, and every frame that group is moved to the DOM position matching
+     the hero's own depth bucket. Painter order is the z order on this page and
+     always has been — this is that rule used for light instead of for solids.
+
+     THE LIGHT IS `--fg`, NOT EITHER READ COLOUR. It is light, not a third
+     thing: the two halves of the hero keep their own tokens inside it. Two
+     stops — a tight core for the flame, a wide soft halo for what it throws. */
+  const gid="glow-"+n.id, cid="core-"+n.id;
+  const defs=g.appendChild(el("defs"));
+  const grad=(id,stops)=>{
+    const rg=defs.appendChild(el("radialGradient",{id}));
+    stops.forEach(([o,op])=>rg.appendChild(el("stop",
+      {offset:o,"stop-color":"var(--fg)","stop-opacity":op})));
+  };
+  grad(gid,[["0",".32"],[".33",".13"],[".68",".04"],["1","0"]]);
+  grad(cid,[["0",".55"],[".55",".16"],["1","0"]]);
+
+  const heroG=g.appendChild(el("g",{"pointer-events":"none"}));
+  const halo=heroG.appendChild(el("circle",{fill:`url(#${gid})`}));
+  const core=heroG.appendChild(el("circle",{fill:`url(#${cid})`}));
+  const ring=heroG.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".55","stroke-width":"0.9"}));
+  const h1=heroG.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
+  const h2=heroG.appendChild(el("line",{stroke:R2TONE,"stroke-linecap":"butt"}));
+
   /* THE LEADERS ARE GREY, AND THEY ARE NOT A TRACK. They say "this fragment is
      that read, magnified" — a magnification frustum, one leg to each end of the
      glyph. Nothing travels them and nothing is routed along them, so they take
      neither of the two read colours: those belong to the tracks, which start at
      the glyph. Colouring these made the pool look like the head of two
-     pipelines, and it is the head of neither. */
+     pipelines, and it is the head of neither.
+
+     They are appended last so they stay legible whatever the hero is doing:
+     they are an annotation about the drawing, not a thing inside it. */
   const mkLead=()=>g.appendChild(el("path",{fill:"none",stroke:"var(--fg)",
     "stroke-opacity":".45","stroke-width":"1.7","stroke-dasharray":"6 4.5",
     "pointer-events":"none"}));
   const lead1=mkLead(), lead2=mkLead();
-  const ring=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
-    "stroke-opacity":".55","stroke-width":"0.9"}));
-  const h1=g.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
-  const h2=g.appendChild(el("line",{stroke:R2TONE,"stroke-linecap":"butt"}));
 
   /* the fragment this pool is magnified into — the one cross-node reference on
      the page, and it is resolved every frame rather than captured, so the
      leaders follow whichever half is dragged */
   const FRAGNODE=(typeof NODES!=="undefined") && NODES.find(m=>m.id===n.aims);
 
-  let T=0;
+  let T=0, heroAt=-1;
   const seen=[];
   function render(){
     const A=T*0.26, cosA=Math.cos(A), sinA=Math.sin(A);
@@ -547,6 +588,18 @@ function drawPool(g,n){
       const R=7.5*UU+Math.sin(T*1.6)*0.5*UU;
       ring.setAttribute("cx",hero.px.toFixed(1)); ring.setAttribute("cy",hero.py.toFixed(1));
       ring.setAttribute("r",R.toFixed(1));
+
+      /* the light, and where in the stack it belongs */
+      const flick=1+Math.sin(T*1.6)*0.05+Math.sin(T*4.3)*0.02;
+      for(const [e,k] of [[halo,30],[core,4.8]]){
+        e.setAttribute("cx",hero.px.toFixed(1)); e.setAttribute("cy",hero.py.toFixed(1));
+        e.setAttribute("r",(k*UU*flick).toFixed(1));
+      }
+      const hb=Math.min(NB-1,Math.floor(hero.d*NB));
+      if(hb!==heroAt){
+        heroAt=hb;
+        g.insertBefore(heroG, pools[hb+1] ? pools[hb+1].node : lead1);
+      }
       /* two leaders, off the ring's shoulders to the two ends of the opened
          fragment — a magnification frustum rather than a single pointer */
       if(FRAGNODE){

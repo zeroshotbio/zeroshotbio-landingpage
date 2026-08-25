@@ -276,10 +276,14 @@ const EDGES = [
      be a lie about the pipeline. */
   {a:"E2", b:"E4", kind:"read", port:"L", tone:"var(--cull)"},
   {a:"E4", b:"E5", kind:"read",          tone:"var(--cull)"},
-  {a:"E5", b:"E6", kind:"read",          tone:"var(--cull)"},   /* the gene identity arrives */
+  /* STRAIGHT INTO THE JOIN, BOTH OF THEM. The elbow route puts a Z in the last
+     leg of each lane, and a Z at the moment two things converge reads as two
+     things being nudged together rather than as two things arriving. Each lane
+     aims at E6 from where it is and holds that line. */
+  {a:"E5", b:"E6", kind:"read", straight:true, tone:"var(--cull)"},   /* the gene identity arrives */
 
   {a:"E2", b:"E3", kind:"read", port:"R", tone:"var(--accent)"},
-  {a:"E3", b:"E6", kind:"cell",          tone:"var(--accent)"}, /* the cell identity arrives */
+  {a:"E3", b:"E6", kind:"cell", straight:true, tone:"var(--accent)"}, /* the cell identity arrives */
 
   {a:"E6", b:"UD", kind:"cell"},
 
