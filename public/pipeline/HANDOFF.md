@@ -195,7 +195,32 @@ If you re-space row 3, check the turn at both ends: the connector from row 2
 into `FQ` and the one from `FD` into `s1` are the only two places the snake
 can silently come apart.
 
-## Carried in: each row opens with what it inherits
+## What opens a row
+
+Rows 4 and 5 open with the object itself, drawn again — see below. **Row 2
+opens by undoing the step above it**: `THW`, the Thaw, which is `drawVials`
+running the other way.
+
+`drawVials` builds one set of parts — a freezer, a plate, cells in its wells, a
+door and a pipette — and **`thaw:true` chooses a different timeline over them**
+rather than the shape being written twice. Fixing: the tip works across the
+wells, each settling as it is fixed, then the plate shrinks into the freezer
+and the door shuts. Thawing: the door opens, the plate comes out and grows, and
+the cells come back to life well by well.
+
+**It is not the fixing animation run backwards**, which is the tempting version
+and the wrong one — a reversed tip is un-pipetting, and nothing is added to a
+thaw. `check-carried.mjs` asserts exactly that: the Thaw shows **no pipette
+tip** and Fixed material does. Removing `thaw:true` fails it, which is the
+reported bug reproduced.
+
+This object was a carried-in clone of Fixed material first, and it read wrong
+for a reason worth keeping: the animation was still the fixing animation, so
+the map showed a sample being put *into* the freezer at the head of the row
+that takes it out. A clone is right when the row inherits an object unchanged;
+it is wrong when the row's first act is to undo something.
+
+## Carried in: rows 4 and 5 open with what they inherit
 
 No track runs between rows. That is right — they are stacked in the order
 things happen — but *"already said by the layout"* does a lot of work at the

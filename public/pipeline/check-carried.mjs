@@ -1,4 +1,4 @@
-/* check-carried.mjs — each row opens with the object it inherits, drawn again.
+/* check-carried.mjs — what opens a row.
    Run: node check-carried.mjs <url>         (needs playwright)
 
    Nothing is drawn between the rows, which is right — they are stacked in the
@@ -32,6 +32,19 @@
      NO PROSE      it holds no `does` of its own; the reader shows the
                    source's. One place to change it, no way for the two to
                    disagree.
+
+   ROW 2 OPENS DIFFERENTLY, and the difference is the point. Its first object
+   is not a restatement of the fixed material — it is the THAW, which is that
+   step undone: the same freezer, the same plate, the same cells, running the
+   other way. It was a clone once and read wrong for a reason worth keeping
+   written down: the animation was still the FIXING animation, so the map
+   showed a sample being put into the freezer at the head of the row that
+   takes it out.
+
+   The check on it is the one thing that cannot be true of both. drawVials
+   moves a pipette tip across the wells while it fixes them, and NOTHING IS
+   BEING ADDED TO A THAW. A thaw showing a tip is the fixing schedule running
+   under a new name, which is exactly what was reported.
 */
 import { chromium } from 'playwright';
 
@@ -47,6 +60,28 @@ await page.waitForTimeout(3000);
 
 let bad = 0;
 const fail = m => { bad++; console.log('  FAIL  ' + m); };
+
+/* the thaw is the fixing step undone, not the fixing step relabelled */
+const thaw = await page.evaluate(() => {
+  const tip = nm => {
+    const g = [...document.querySelectorAll('#svg g[role=button]')]
+      .find(e => e.getAttribute('aria-label') === nm);
+    if (!g) return null;
+    /* the pipette: a <g> whose only child is a <g> holding exactly 3 <path> */
+    const c = [...g.querySelectorAll('g')].find(e =>
+      e.children.length === 1 && e.children[0].tagName === 'g' &&
+      e.children[0].querySelectorAll('path').length === 3);
+    return c ? parseFloat(c.getAttribute('opacity') || '1') : null;
+  };
+  return { thawTip: tip('Thaw'), fixTip: tip('Fixed material') };
+});
+if (thaw.thawTip === null) fail('there is no Thaw at the head of the chemistry row');
+else if (thaw.thawTip > 0.01)
+  fail('the Thaw is showing a pipette tip — nothing is added to a thaw, so this is the ' +
+       'fixing schedule running under a new name, which is the bug this exists for');
+if (thaw.fixTip !== null && thaw.fixTip < 0.99)
+  fail('Fixed material is not showing its tip — the two steps are meant to differ, ' +
+       'and they cannot differ if neither pipettes');
 
 const found = await page.evaluate(() => {
   const out = { list: [], problems: [], indexed: [], walked: [] };
@@ -147,7 +182,8 @@ if (walked.length) fail(`the arrow keys stop on ${walked.join(', ')} — a resta
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `carried: ${found.list.join(', ')} — each the same shape, size and name as its source, drawn `
-    + `at full weight, wired into its row with dots, and in neither the index nor the walk`);
+    + `at full weight, wired into its row with dots, and in neither the index nor the walk; `
+    + `and the Thaw runs the fixing step backwards rather than relabelled`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);

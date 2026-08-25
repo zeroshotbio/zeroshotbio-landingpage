@@ -174,6 +174,23 @@ const NODES = [
    section 2 cDNA capture and amplification, section 3 sequencing library prep.
    Every built field below cites the section it comes from. The manual is on
    this instance at ~/parse-public-docs/assets/31841872776724-*.pdf. */
+/* The chemistry row opens by undoing the last thing the biology row did.
+   Same object as Fixed material — the same freezer, the same plate, the same
+   cells in its wells — running the other way: `thaw:true` swaps the schedule
+   in drawVials for one where the door opens, the plate comes out and grows,
+   and the cells come back to life well by well. It is deliberately NOT the
+   fixing animation reversed; see the note in that shape.
+
+   It is a step rather than a carried-in restatement, so it carries its own
+   name, its own key and the prose that belongs to it. */
+{id:"THW", key:"B1", group:"In situ barcoding", groupMark:true, anchor:true,
+ shape:"vials", thaw:true, lane:"r2",
+ name:"Thaw", x:0.7, y:R2, w:2.52, d:1.82, h:0.665,
+ sub:"37°C thaw · haemocytometer · loading table", stat:"the biology restarts",
+ does:"Fixed material comes back out of the freezer, is thawed until the last ice crystal goes, counted, and diluted to the concentration the loading table demands. The count taken here decides how many cells enter each round-one well, and therefore how crowded the whole run will be.",
+ built:"Section 1.1. Thaw in a 37C water bath, mix, count on a haemocytometer, record the count into the Evercode WT Sample Loading Table v2, dilute with Sample Dilution Buffer, then proceed immediately to round one — the manual gives no stopping point here. The Round 1 Plate thaws alongside, 10 minutes at 25C. The loading table is filled in beforehand and tells you which sample goes in which well; the counts are what get written into it now.",
+ cond:"The loading table — not any dispensing sheet — is what the barcodes physically encode, so it is the authority on which drug a cell saw. The run definition carries 44 sample entries against 48 loaded wells and 43 distinct samples reach the matrix; the 48 to 44 to 43 attrition is undocumented at every step. No cell count from this step survives on this instance, so the loading density that sets the collision rate six boxes downstream cannot be recovered."},
+
 {id:"R1p", key:"B2", group:"In situ barcoding", shape:"miniplate", name:"Round 1 — reverse transcription", x:2.6, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:4,
  sub:"48 wells · 96 barcodes · sample identity",
  does:"Each well gets its own barcoded primer and RNA is reverse transcribed inside the intact cell. This round carries sample identity — everything the dataset knows about which drug a cell saw is written here, in the first chemical step.",
@@ -474,7 +491,6 @@ const ROWS=[R1,R2,R3,R4,R5], MIRROR=22.7;
    key of its own either: it shows the source's, because it IS the source.
    ============================================================ */
 const CARRIED = [
-  {id:"FXc", carried:"FX", lane:"r2", x:0.7, anchor:true, groupMark:true},
   {id:"UDc", carried:"UD", lane:"r4", x:0.7, anchor:true, groupMark:true},
   {id:"FDc", carried:"FD", lane:"r5", x:0.7, anchor:true, groupMark:true},
 ];
@@ -512,7 +528,7 @@ const EDGES = [
      inherits, which is the thing the thaw acts on, and one box that says
      "take it out of the freezer" was the least of the twelve steps here.
      Its prose is in the commit that removed it. */
-  {a:"FXc",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
+  {a:"THW",b:"R1p",kind:"susp"},{a:"R1p",b:"B1",kind:"susp"},{a:"B1",b:"R2p",kind:"susp"},
   {a:"R2p",b:"B2",kind:"susp"},{a:"B2",b:"R3p",kind:"susp"},{a:"R3p",b:"SB",kind:"susp"},
   {a:"SB",b:"CAP",kind:"lib"},{a:"CAP",b:"QCD",kind:"lib"},{a:"QCD",b:"FRG",kind:"lib"},
   {a:"FRG",b:"R4p",kind:"lib"},{a:"R4p",b:"LIB",kind:"lib"},{a:"LIB",b:"SEQ",kind:"lib"},
@@ -815,7 +831,7 @@ const OVERVIEW = {
   title:"Aquarium to Atlas",
   sub:"five rows · seven landmarks · one claim at the end",
   does:`<p>The end-to-end pipeline behind a zebrafish single-cell atlas, drawn as the shape it takes in general rather than as one run. Where a stage varies by technology the node names the variants; where the corpus disagrees with itself the condition field says so. One run — <mark>MiniFin</mark>, 94,616 cells — is carried throughout as the worked example, because it is the one whose every artefact sits on the instance, and its records are what the moving dots carry.</p>
-<p>Five rows, and <mark>every one of them reads left to right</mark>. No track runs between them: they are stacked in the order things happen, so one feeding the next is already said by where they sit. Instead <mark>each row opens with the object it inherits</mark>, drawn again at half weight — the fixed material, the unfiltered matrix, the filtered matrix. It is the same object as the one the row above ends with, not a second one. Top row is oldest.</p>
+<p>Five rows, and <mark>every one of them reads left to right</mark>. No track runs between them: they are stacked in the order things happen, so one feeding the next is already said by where they sit. Instead <mark>each row opens with what it inherits</mark>. Rows 4 and 5 open with the object itself — the unfiltered matrix, the filtered matrix — drawn again, the same object the row above ends with rather than a second one. Row 2 opens by <em>undoing</em> the step above it: the fixed material comes back out of the freezer and thaws. Top row is oldest.</p>
 <p><mark>Row 1 — the fish, and the compounds.</mark> The only row where biology is being done rather than described, and the only one that forks. A biology line runs above the centreline — the colony, the pair, the clutch, the cull — while a chemistry line runs below it, from picking four compounds out of a library through the Echo to a dosed and empty plate. The two are independent and meet exactly once, when the embryos go into wells that already contain compound. Note what feeds each: the biology line starts in our own tanks, while the chemistry line simply begins — nothing feeds it, because the compounds are not ours and the library they came from is not part of this pipeline. After the merge the row runs on to the choice that governs everything downstream — whole cells, or nuclei.</p>
 <p><mark>Row 2 — the chemistry.</mark> Four rounds of barcoding, library prep, three and a half billion reads. One of four assay families the corpus uses.</p>
 <p><mark>Row 3 — reads to a matrix.</mark> Barcode calling, alignment, UMI collapse, and the counting reference hanging off the steps that read it. It ends at a cube of every barcode against every gene — almost never delivered, and the reason the funnel below it has no counts.</p>

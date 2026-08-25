@@ -329,15 +329,34 @@ function drawVials(g,n){
     "stroke-linecap":"round"});
   g.appendChild(handle);
 
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+
+  /* ---- TWO SCHEDULES OVER ONE SET OF PARTS ----------------------------
+     Everything above draws a freezer, a plate, cells in its wells, a door and
+     a pipette. What makes this object FIXING or THAWING is only the order
+     those move in, so the geometry is built once and the timeline is chosen
+     here rather than the shape being written twice.
+
+     FIXING (the default, and the last step of the biology row): the tip works
+     across the wells, each settling as it is fixed; the plate then shrinks
+     into the freezer and the door shuts on it.
+
+     THAWING (`thaw:true`, the first step of the chemistry row): the reverse —
+     and NOT the same animation run backwards, which is the tempting version
+     and the wrong one: a reversed tip is un-pipetting, and nothing is being
+     added to a thaw. The door opens, the plate comes out and grows, and the
+     cells come back to life well by well as the cold leaves them. */
   const STEP=0.5;                 // same pace as the tip on the arraying step
   const FILL=groups.length*STEP;
   const SETTLE=0.6, SHRINK=1.8, CLOSE=0.9, HOLD=1.6, OPEN=0.7;
-  const CYCLE=FILL+SETTLE+SHRINK+CLOSE+HOLD+OPEN;
-  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const THAW_STEP=0.34, THAW=groups.length*THAW_STEP;
+  const CYCLE = n.thaw ? (HOLD+OPEN+SHRINK+THAW+SETTLE+CLOSE)
+                       : (FILL+SETTLE+SHRINK+CLOSE+HOLD+OPEN);
 
   let t=0, stowed=null;
   const run=(dt)=>{
     t=(t+dt)%CYCLE;
+    if(n.thaw) return runThaw();
     const head=Math.floor(t/STEP);
 
     const goingIn = t>FILL+SETTLE;
@@ -397,6 +416,63 @@ function drawVials(g,n){
     flake.setAttribute("opacity",(dq>0.75?(dq-0.75)/0.25:0).toFixed(2));
     handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
   };
+
+  /* THE THAW. Phases, in order: the plate sits in the shut freezer; the door
+     opens; the plate slides out and grows; the cells warm well by well as the
+     cold leaves them; a beat; and the door shuts again on an empty freezer,
+     which is the loop closing rather than anything happening. */
+  function runThaw(){
+    const tOpen=HOLD, tOut=tOpen+OPEN, tWarm=tOut+SHRINK, tRest=tWarm+THAW;
+    let dq;
+    if(t<tOpen) dq=1;
+    else if(t<tOut) dq=1-ease((t-tOpen)/OPEN);
+    else if(t<tRest+SETTLE) dq=0;
+    else dq=ease((t-tRest-SETTLE)/CLOSE);
+    let e;
+    if(t<tOut) e=1;
+    else if(t<tWarm) e=1-ease((t-tOut)/SHRINK);
+    else e=0;
+    /* in front of the shell once it has left, behind it while it is inside */
+    const inFreezer = t<tWarm;
+    if(inFreezer!==stowed){
+      stowed=inFreezer;
+      if(inFreezer) g.insertBefore(cart, shellG); else g.appendChild(cart);
+    }
+    const warmed = t<tWarm ? 0 : Math.floor((t-tWarm)/THAW_STEP);
+    groups.forEach((grp,i)=>{
+      const moving = t>=tRest ? true : i<warmed;
+      grp.cells.forEach(c=>{
+        if(!moving){
+          c.node.setAttribute("cx",c.cx); c.node.setAttribute("cy",c.cy);
+          c.node.setAttribute("fill-opacity",".28");
+          c.node.setAttribute("stroke","var(--fg)");
+          c.node.setAttribute("stroke-width",".55");
+          c.node.setAttribute("stroke-opacity",".9");
+        }else{
+          const jx=Math.sin(t*c.rate+c.ph)+0.6*Math.sin(t*c.rate2+c.ph2);
+          const jy=Math.cos(t*c.rate*0.83+c.ph2)+0.6*Math.cos(t*c.rate2*1.17+c.ph);
+          c.node.setAttribute("cx",(c.cx+jx*c.amp).toFixed(2));
+          c.node.setAttribute("cy",(c.cy+jy*c.amp*0.62).toFixed(2));
+          c.node.setAttribute("fill-opacity",".8");
+          c.node.setAttribute("stroke-opacity","0");
+        }
+      });
+    });
+    pip.setAttribute("opacity","0");        /* nothing is being added */
+
+    const SC_END=Math.max(0.12,((dx1-dx0)*0.5)/plate.w);
+    const sc=1-(1-SC_END)*e;
+    const aimX=pc[0]+(inside[0]-pc[0])*e, aimY=pc[1]+(inside[1]-pc[1])*e;
+    cart.setAttribute("transform",
+      `translate(${(aimX-pc[0]*sc).toFixed(2)},${(aimY-pc[1]*sc).toFixed(2)}) scale(${sc.toFixed(3)})`);
+
+    const edge=dx0+(dx1-dx0)*dq;
+    door.setAttribute("points",pts([D(dx0,dz1),D(edge,dz1),D(edge,dz0),D(dx0,dz0)]));
+    door.setAttribute("fill-opacity",(0.85*Math.min(1,dq*4)).toFixed(2));
+    flake.setAttribute("opacity",(dq>0.75?(dq-0.75)/0.25:0).toFixed(2));
+    handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
+  }
+
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }

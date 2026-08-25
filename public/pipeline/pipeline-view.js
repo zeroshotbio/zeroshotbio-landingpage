@@ -399,13 +399,19 @@ function paintEdge(rec){
   [...(host.children||[])].forEach(c=>host.removeChild(c));
   const pp=routeOf(rec);
   const faint = rec.kind==="drop"||rec.kind==="score";
-  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--edge)",
-    "stroke-width":faint?"1":"1.3","stroke-opacity":faint?".35":".7"});
+  /* A TRACK IS A ROAD, NOT A HIGHLIGHT. It is the most repeated mark on the
+     map — forty-seven of them — so anything it has that it does not need is
+     paid for forty-seven times. Thinner and greyer than the objects it joins,
+     so the eye reads the buildings first and the wiring second; the dots on
+     it carry the signal colour and are the thing meant to be noticed. */
+  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--fg3)",
+    "stroke-width":faint?".7":".9","stroke-opacity":faint?".3":".5"});
   if(rec.dash) path.setAttribute("stroke-dasharray","5 4");
   host.appendChild(path);
+  /* the corner marks go with the track they belong to */
   pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
-    {x:c[0]-2.4,y:c[1]-2.4,width:4.8,height:4.8,transform:`rotate(45 ${c[0]} ${c[1]})`,
-     fill:"var(--edge)","fill-opacity":".5"})));
+    {x:c[0]-1.7,y:c[1]-1.7,width:3.4,height:3.4,transform:`rotate(45 ${c[0]} ${c[1]})`,
+     fill:"var(--fg3)","fill-opacity":".45"})));
   const g=makeGeom(pp); rec.segs=g.segs; rec.len=g.len;
 }
 EDGES.forEach(e=>{
@@ -537,9 +543,13 @@ edgeGeom.forEach(e=>{
   const count = (faint||e.carry)?1:DOTS_PER_TRACK;
   for(let i=0;i<count;i++){
     const g=el("g"); g.style.cursor="pointer";
+    /* THE HIT TARGET DOES NOT SHRINK WITH THE DOT. The mark is 1.75px and a
+       1.75px target cannot be hit by a hand on a moving object; the invisible
+       circle round it is what makes a dot clickable at all, and it is sized
+       for a finger rather than for the drawing. */
     g.appendChild(el("circle",{r:"10",fill:"transparent"}));
-    g.appendChild(el("circle",{r:faint?3:3.5,fill:faint?"var(--drop)":"var(--signal)",
-      stroke:"var(--stroke)","stroke-width":"1"}));
+    g.appendChild(el("circle",{r:faint?1.5:1.75,fill:faint?"var(--drop)":"var(--signal)",
+      stroke:"var(--stroke)","stroke-width":".5"}));
     gDot.appendChild(g);
     const rec={e,t:(i/count)+Math.random()*0.1,
                speed:(faint?DOT_PX_PER_S_FAINT:DOT_PX_PER_S)/e.len,node:g};
