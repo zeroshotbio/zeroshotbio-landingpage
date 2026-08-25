@@ -616,3 +616,245 @@ function drawPool(g,n){
   TICKERS.push(dt=>{ T+=dt; render(); });
 }
 DRAW.pool=drawPool;
+
+
+/* ============================================================
+   THE TWO REFERENCE FIGURES — GRCz11 and Ensembl 99.
+
+   The genome lane is two files and two decisions, and until now it was two
+   labelled cubes. These are what those files actually contain: the assembly
+   says which bases are where, the annotation says which stretches are a gene,
+   which parts survive splicing, which get translated, and which way it is
+   read. Ported from two canvas drawings into this page's idiom.
+
+   THEY ARE PANELS, AND THEY ARE TURNED LIKE THE FRAGMENT. Flat, square to the
+   reader, rotated -30 onto the map's own diagonal — a rotation and not a shear,
+   so the drawing inside stays undistorted. Same reasoning as the fragment: a
+   diagram OF a file is not a thing standing somewhere in the world, and a
+   diagram read at -30 is a diagram read at -30.
+
+   THEY CARRY A CARD. The fragment does not, because nothing passes behind it;
+   these are fed by reference edges that arrive at the node's own point, which
+   is the middle of the panel. A faint plate hides the last stretch of that
+   edge, so a line arrives at the figure rather than through it.
+
+   COLOUR: NONE OF THEIR OWN. The chromosome bodies take the reference skin's
+   own face (--k-top), the bands are punched out in --bg, and the window and its
+   frustum are grey — the same grey the pool's leaders use, and for the same
+   reason: a magnification is not a track. Coding sequence and UTR are the same
+   token at two weights, which is the UMI's trick again. The fork owns orange
+   and blue and nothing here borrows them.
+
+   HONEST NOTE ON THE BANDS, carried over from the original and worth keeping:
+   the chromosome LENGTHS are the real GRCz11 primary assembly in Mb. The
+   banding and the centromere positions are NOT — zebrafish has no standard
+   cytoband table of the kind that exists for human, so both are generated from
+   a seed. They are there to make the shapes read as chromosomes, not to be
+   counted. If a real band table ever lands, replace CHR_LAYOUT and nothing
+   else changes.
+   ============================================================ */
+
+/* A flat panel, turned to the map's diagonal and centred on its node's own
+   ground point. Everything inside is laid out in plain 0..W by 0..H local
+   coordinates, exactly as it was on a canvas. */
+function panel(g,n,PW){
+  const p=P(n.x,n.y,0), X0=p[0], Y0=p[1];
+  const PH=PW*9/16, x0=X0-PW/2, y0=Y0-PH/2;
+  const host=g.appendChild(el("g",
+    {transform:`rotate(${FRAG_TURN} ${X0} ${Y0}) translate(${x0} ${y0})`}));
+  host.appendChild(el("rect",{x:0,y:0,width:PW,height:PH,
+    fill:"var(--panel)","fill-opacity":".72",
+    stroke:"var(--rule)","stroke-opacity":".55","stroke-width":"1"}));
+  return {g:host, W:PW, H:PH, u:PH/100};
+}
+
+/* the word the panel is about, large and bold in its own white space */
+function panelTitle(F,str,x,y,size){
+  const t=el("text",{x,y,"text-anchor":"start","font-size":size,
+    "font-family":MONO,"font-weight":"700","letter-spacing":(size*0.03).toFixed(2),
+    fill:"var(--fg)","fill-opacity":".92"});
+  t.textContent=str; F.g.appendChild(t); return t;
+}
+
+/* an ideogram arm: rounded at the telomere, square at the centromere */
+const armPath=(x,y,w,h,rt,rb)=>
+  `M${x} ${y+rt}A${rt} ${rt} 0 0 1 ${x+rt} ${y}H${x+w-rt}A${rt} ${rt} 0 0 1 ${x+w} ${y+rt}`+
+  `V${y+h-rb}A${rb} ${rb} 0 0 1 ${x+w-rb} ${y+h}H${x+rb}A${rb} ${rb} 0 0 1 ${x} ${y+h-rb}Z`;
+
+/* ---- GRCz11: 25 chromosomes as ideograms, ordered by length --------------- */
+const CHR=[59.58,59.64,62.63,78.09,72.50,60.27,74.08,54.99,56.99,45.30,
+           45.31,49.19,51.75,51.99,47.79,55.02,53.36,51.14,48.29,55.35,
+           45.61,39.30,46.30,42.36,37.50];
+
+const CHR_LAYOUT=(()=>{
+  const rnd=mulberry32(0x5eedf15);
+  return CHR.map(mb=>{
+    const cen=0.34+rnd()*0.16;                 /* metacentric to submetacentric */
+    const arm=frac=>{
+      const out=[]; const n=3+Math.floor(rnd()*4); let acc=0;
+      for(let i=0;i<n;i++){
+        const gapw=0.06+rnd()*0.10, bandw=0.05+rnd()*0.12;
+        acc+=gapw;
+        if(acc+bandw>0.94) break;
+        out.push([acc,bandw]); acc+=bandw;
+      }
+      return out.map(([a,b])=>[a*frac,b*frac]);
+    };
+    return {mb,cen,p:arm(cen),q:arm(1-cen).map(([a,b])=>[a+cen,b])};
+  }).sort((a,b)=>b.mb-a.mb);
+})();
+
+function drawKaryotype(g,n){
+  hitBox(g,n);
+  const F=panel(g,n,n.pw||330), {W,H,u}=F;
+  const margin=6*u, slot=(W-margin*2)/CHR_LAYOUT.length;
+  const bw=Math.min(4.2*u, slot*0.56);
+  const top=30*u, maxH=58*u, maxMb=Math.max(...CHR), waist=0.9*u;
+
+  panelTitle(F,"GRCz11",margin,20*u,15*u);
+
+  CHR_LAYOUT.forEach((ch,i)=>{
+    const cx=margin+slot*(i+0.5), h=(ch.mb/maxMb)*maxH;
+    const yc=top+h*ch.cen, x=cx-bw/2;
+    const r=bw/2, sq=bw*0.16;
+
+    [[top, yc-waist/2, r, sq, ch.p],
+     [yc+waist/2, top+h, sq, r, ch.q]].forEach(([y0,y1,rt,rb,bands])=>{
+      const d=armPath(x,y0,bw,y1-y0,rt,rb);
+      F.g.appendChild(el("path",{d,fill:"var(--k-top)","fill-opacity":".95"}));
+      bands.forEach(([a,b])=>{
+        const by=Math.max(top+a*h,y0), bh=Math.min(top+(a+b)*h,y1)-by;
+        if(bh>0) F.g.appendChild(el("rect",{x,y:by,width:bw,height:bh,
+          fill:"var(--bg)","fill-opacity":".85"}));
+      });
+      F.g.appendChild(el("path",{d,fill:"none",stroke:"var(--stroke)",
+        "stroke-opacity":".7","stroke-width":(0.45*u).toFixed(2)}));
+    });
+
+    /* the constriction, marked on both flanks */
+    F.g.appendChild(el("path",{fill:"none",stroke:"var(--fg3)",
+      "stroke-width":(0.45*u).toFixed(2),
+      d:`M${x-0.5*u} ${yc}H${x+bw*0.22}M${x+bw*0.78} ${yc}H${x+bw+0.5*u}`}));
+  });
+}
+DRAW.karyotype=drawKaryotype;
+
+/* ---- Ensembl 99: one chromosome, one window, one locus -------------------
+   Structure is real in kind; the coordinates are not. */
+const LOCUS_BANDS=(()=>{
+  const rnd=mulberry32(0x5eedf15^0x99), out=[]; let acc=0.03;
+  while(acc<0.94){
+    const gap=0.03+rnd()*0.06, w=0.025+rnd()*0.07;
+    acc+=gap; if(acc+w>0.94) break;
+    out.push([acc,w]); acc+=w;
+  }
+  return out;
+})();
+
+const GENE={inset:[0.10,0.90],
+  exons:[[0,0.075],[0.135,0.20],[0.28,0.355],[0.44,0.505],[0.60,0.675],[0.79,1.0]],
+  utr5:[0,0.042], utr3:[0.945,1.0]};
+
+function drawLocus(g,n){
+  hitBox(g,n);
+  const F=panel(g,n,n.pw||330), {W,H,u}=F;
+  const G=F.g, LAB=5.2*u;
+
+  panelTitle(F,"Ensembl 99",6*u,14*u,11*u);
+
+  /* ---- the chromosome, laid on its side ---- */
+  const kx0=20*u, kx1=W-20*u, ky=28*u, kh=4.6*u, kw=kx1-kx0, cen=0.38, waist=0.9*u;
+  const cxCen=kx0+kw*cen, r=kh/2, sq=kh*0.16;
+  [[kx0,cxCen-waist/2,r,sq],[cxCen+waist/2,kx1,sq,r]].forEach(([a,b,rl,rr])=>{
+    /* the arm helper runs vertically; on its side the radii swap axes, so the
+       path is built by hand from the same two corner sizes */
+    const d=`M${a} ${ky+rl}A${rl} ${rl} 0 0 1 ${a+rl} ${ky}H${b-rr}`+
+            `A${rr} ${rr} 0 0 1 ${b} ${ky+rr}V${ky+kh-rr}`+
+            `A${rr} ${rr} 0 0 1 ${b-rr} ${ky+kh}H${a+rl}`+
+            `A${rl} ${rl} 0 0 1 ${a} ${ky+kh-rl}Z`;
+    G.appendChild(el("path",{d,fill:"var(--k-top)","fill-opacity":".95"}));
+    LOCUS_BANDS.forEach(([p,wd])=>{
+      const s0=Math.max(kx0+p*kw,a), s1=Math.min(kx0+(p+wd)*kw,b);
+      if(s1>s0) G.appendChild(el("rect",{x:s0,y:ky,width:s1-s0,height:kh,
+        fill:"var(--bg)","fill-opacity":".85"}));
+    });
+    G.appendChild(el("path",{d,fill:"none",stroke:"var(--stroke)",
+      "stroke-opacity":".7","stroke-width":(0.45*u).toFixed(2)}));
+  });
+  G.appendChild(el("path",{fill:"none",stroke:"var(--fg3)","stroke-width":(0.45*u).toFixed(2),
+    d:`M${cxCen} ${ky-0.6*u}V${ky+kh*0.22}M${cxCen} ${ky+kh*0.78}V${ky+kh+0.6*u}`}));
+
+  /* ---- the window, and the frustum down onto the locus ----
+     GREY, LIKE THE POOL'S LEADERS. A magnification is not a track: nothing
+     travels it, so it takes neither read's colour. */
+  const wx0=kx0+kw*0.470, wx1=kx0+kw*0.530;
+  G.appendChild(el("rect",{x:wx0,y:ky-1.6*u,width:wx1-wx0,height:kh+3.2*u,
+    fill:"none",stroke:"var(--fg)","stroke-opacity":".6","stroke-width":(0.8*u).toFixed(2)}));
+
+  const lx0=8*u, lx1=W-8*u, lw=lx1-lx0;
+  const [gi0,gi1]=GENE.inset;
+  const X=f=>lx0+(gi0+(gi1-gi0)*f)*lw;
+  const gx0=X(0), gx1=X(1);
+  const y=68*u, CDSH=7.6*u, UTRH=4.0*u, lTop=50*u;
+
+  G.appendChild(el("path",{fill:"none",stroke:"var(--fg)","stroke-opacity":".38",
+    "stroke-width":(0.55*u).toFixed(2),"stroke-dasharray":`${(2.4*u).toFixed(1)} ${(2.6*u).toFixed(1)}`,
+    d:`M${wx0} ${ky+kh+1.6*u}L${gx0} ${lTop}M${wx1} ${ky+kh+1.6*u}L${gx1} ${lTop}`}));
+
+  /* ---- the model: a line, chevrons for the introns, blocks for the exons ---- */
+  G.appendChild(el("line",{x1:gx0,y1:y,x2:gx1,y2:y,stroke:"var(--fg3)",
+    "stroke-width":(0.75*u).toFixed(2)}));
+  const inExon=f=>GENE.exons.some(([a,b])=>f>a&&f<b);
+  let chev="";
+  for(let f=0.006;f<1;f+=0.020){
+    if(inExon(f)) continue;
+    const x=X(f), a=1.5*u;
+    chev+=`M${(x-a*0.6).toFixed(1)} ${(y-a).toFixed(1)}L${(x+a*0.6).toFixed(1)} ${y.toFixed(1)}`+
+          `L${(x-a*0.6).toFixed(1)} ${(y+a).toFixed(1)}`;
+  }
+  G.appendChild(el("path",{d:chev,fill:"none",stroke:"var(--fg3)",
+    "stroke-width":(0.5*u).toFixed(2)}));
+
+  /* CODING AND UNTRANSLATED ARE ONE TOKEN AT TWO WEIGHTS, which is the UMI's
+     trick: a distinction the palette has no colour left for, made by fill. */
+  GENE.exons.forEach(([a,b])=>{
+    const parts=[];
+    const push=(rg,h,op)=>{ const s0=Math.max(a,rg[0]), s1=Math.min(b,rg[1]);
+      if(s1>s0) parts.push([s0,s1,h,op]); };
+    push(GENE.utr5,UTRH,".42"); push(GENE.utr3,UTRH,".42");
+    const cs=GENE.utr5[1]>a&&GENE.utr5[1]<b?GENE.utr5[1]:a;
+    const ce=GENE.utr3[0]>a&&GENE.utr3[0]<b?GENE.utr3[0]:b;
+    if(ce>cs) parts.push([cs,ce,CDSH,".95"]);
+    parts.forEach(([s0,s1,h,op])=>{
+      G.appendChild(el("rect",{x:X(s0),y:y-h/2,width:X(s1)-X(s0),height:h,
+        fill:"var(--keep)","fill-opacity":op,
+        stroke:"var(--panel)","stroke-width":(0.35*u).toFixed(2)}));
+    });
+  });
+
+  /* ---- ONE label per kind, not one per feature ----
+     The original named every exon and every intron. Six "exon"s and five
+     "intron"s is a pattern stated eleven times; one of each teaches the shape,
+     and the room that buys goes into making them legible at map scale. */
+  const lab=(str,x,ty,anchor)=>{
+    const t=el("text",{x,y:ty,"text-anchor":anchor||"middle","font-size":LAB,
+      "font-family":MONO,fill:"var(--fg3)"});
+    t.textContent=str; G.appendChild(t); return t;
+  };
+  const tick=(x,y0,y1)=>G.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
+    stroke:"var(--fg3)","stroke-width":(0.45*u).toFixed(2),"stroke-opacity":".7"}));
+
+  const e0=GENE.exons[0], e1=GENE.exons[1];
+  const ex=(X(e0[0])+X(e0[1]))/2, ix=(X(e0[1])+X(e1[0]))/2;
+  tick(ex, y-CDSH/2-1.3*u, y-CDSH/2-6.4*u); lab("exon", ex, y-CDSH/2-7.8*u);
+  tick(ix, y+CDSH/2+1.3*u, y+CDSH/2+5.0*u); lab("intron", ix, y+CDSH/2+9.4*u);
+
+  const utrLab=(x,str,anchor,dir)=>{
+    G.appendChild(el("line",{x1:x,y1:y,x2:x+dir*2.6*u,y2:y,stroke:"var(--fg3)",
+      "stroke-width":(0.45*u).toFixed(2),"stroke-opacity":".7"}));
+    lab(str, x+dir*3.6*u, y+LAB*0.36, anchor);
+  };
+  utrLab(gx0,"5′ UTR","end",-1);
+  utrLab(gx1,"3′ UTR","start",1);
+}
+DRAW.locus=drawLocus;

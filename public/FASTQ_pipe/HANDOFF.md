@@ -447,6 +447,49 @@ reshuffles on refresh is a decoration; this one is a drawing of an object.
 inherits Pause motion and `prefers-reduced-motion` for free, and one that throws
 is dropped without taking the map with it.
 
+## The two reference figures — `karyotype` and `locus`
+
+The genome lane is two files and two decisions, and until now it was two
+labelled cubes. These are what those files actually *contain*: the assembly
+says which bases are where; the annotation says which stretches are a gene,
+which parts survive splicing, which get translated, and which way it is read.
+Both ported from canvas drawings into this page's idiom.
+
+**They are panels, and they are turned like the fragment.** Flat, square to the
+reader, rotated −30° onto the map's own diagonal — a rotation and not a shear,
+so the drawing inside stays undistorted. `panel()` gives a group whose contents
+are laid out in plain `0..W × 0..H` local coordinates, exactly as they were on a
+canvas, which is what made the port a transcription rather than a rewrite.
+
+**They carry a card and the fragment does not.** Nothing passes behind the
+fragment; these are fed by reference edges that arrive at the node's own point,
+which is the middle of the panel. A faint plate hides the last stretch of that
+edge, so a line arrives *at* the figure rather than through it.
+
+**No colour of their own.** Chromosome bodies take the reference skin's own face
+(`--k-top`) and the bands are punched out in `--bg`. The window and its frustum
+are **grey — the same grey the pool's leaders use, for the same reason: a
+magnification is not a track.** Coding sequence and UTR are one token at two
+weights, which is the UMI's trick again. The fork owns orange and blue and
+nothing here borrows them.
+
+**One label per kind, not one per feature.** The original named every exon and
+every intron — six *exon*s and five *intron*s is a pattern stated eleven times.
+One of each teaches the shape, and the room that buys goes into making them
+legible at map scale.
+
+### Honest note on the bands, carried over from the original
+
+Chromosome **lengths** are the real GRCz11 primary assembly, in Mb. The
+**banding pattern and the centromere positions are not** — zebrafish has no
+standard cytoband table of the kind that exists for human, so both are generated
+deterministically from a seed. They are there to make the shapes read as
+chromosomes, **not to be counted.** If a real band table ever lands, replace
+`CHR_LAYOUT` and `LOCUS_BANDS` and nothing else changes. The gene model is the
+same deal: real in kind, no real coordinates. **Both nodes say so in their own
+`added` prose, and that is not optional** — it is the same rule the culls page
+lives by, that a figure nobody can check must say which parts are which.
+
 ### `data-fixed`, and why an animated shape needs it
 
 `check-drawn.mjs` asks "did this come back drawn where it was left" by comparing
