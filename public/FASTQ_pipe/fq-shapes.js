@@ -666,9 +666,14 @@ DRAW.pool=drawPool;
    against. Same trick building() uses on the culls page. */
 function refBuilding(g,n){
   paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+  /* THE ROOF IS THE BACKGROUND TOKEN, not the tile's own face. --t-top sits
+     only a shade under the chromosome bodies drawn on it, and the drawing read
+     as a texture rather than as a figure. --bg is the darkest thing the page
+     has, and the bands punched out of the chromosomes are drawn in it too — so
+     a band is the roof showing through, which is what a band is. */
   g.appendChild(el("polygon",{points:faces(n.x,n.y,n.w*0.965,n.d*0.985,n.h).top,
-    fill:"var(--t-top)","fill-opacity":".92",stroke:"var(--stroke)",
-    "stroke-width":".8","stroke-opacity":".45"}));
+    fill:"var(--bg)","fill-opacity":".93",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".5"}));
 }
 
 /* the word the roof is about, large, in its own clear space */
@@ -715,6 +720,47 @@ function drawKaryotype(g,n){
   const top=34*u, maxH=56*u, maxMb=Math.max(...CHR), waist=1.0*u;
 
   roofTitle(F,"GRCz11",margin,22*u,17*u);
+
+  /* ---- AND A DOUBLE HELIX TURNING BESIDE THE WORD -----------------------
+     So that a glance says DNA before the caption does. It lies along the same
+     line the title reads on — local +x, which is -30 degrees on screen — so it
+     belongs to the word rather than sitting next to it.
+
+     TWO STRANDS AND A LADDER, and the ladder is what turns. The strands are
+     two sines half a period apart, redrawn each frame at a moving phase; the
+     rungs between them shorten as the pair comes edge-on and lengthen again,
+     which is the whole of the illusion. Their WEIGHT AND OPACITY follow the
+     same cosine, so the near side of the turn is heavier than the far side —
+     depth without a second projection. */
+  const HX0=margin+66*u, HL=54*u, HYC=15.5*u, HA=6.4*u, HK=Math.PI*2/(HL/2.6);
+  const sA=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".72","stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"round"}));
+  const sB=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".72","stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"round"}));
+  const RUNGS=[];
+  for(let i=0;i<13;i++)
+    RUNGS.push(F.g.appendChild(el("line",{stroke:"var(--fg)","stroke-linecap":"round"})));
+  let hp=0;
+  const spin=()=>{
+    const N=64, a=[], b=[];
+    for(let i=0;i<=N;i++){
+      const x=HX0+HL*i/N, th=HK*(x-HX0)+hp;
+      a.push([x.toFixed(1),(HYC+HA*Math.sin(th)).toFixed(1)].join(","));
+      b.push([x.toFixed(1),(HYC-HA*Math.sin(th)).toFixed(1)].join(","));
+    }
+    sA.setAttribute("points",a.join(" ")); sB.setAttribute("points",b.join(" "));
+    RUNGS.forEach((r,i)=>{
+      const x=HX0+HL*(i+0.5)/RUNGS.length, th=HK*(x-HX0)+hp;
+      const y1=HYC+HA*Math.sin(th), y2=HYC-HA*Math.sin(th);
+      const near=(Math.cos(th)+1)/2;          /* 1 nearest the eye, 0 furthest */
+      r.setAttribute("x1",x.toFixed(1)); r.setAttribute("y1",y1.toFixed(1));
+      r.setAttribute("x2",x.toFixed(1)); r.setAttribute("y2",y2.toFixed(1));
+      r.setAttribute("stroke-width",((0.55+near*0.9)*u).toFixed(2));
+      r.setAttribute("stroke-opacity",(0.16+near*0.5).toFixed(3));
+    });
+  };
+  spin();
+  TICKERS.push(dt=>{ hp-=dt*1.7; spin(); });
 
   CHR_LAYOUT.forEach((ch,i)=>{
     const cx=margin+slot*(i+0.5), h=(ch.mb/maxMb)*maxH;
@@ -772,7 +818,7 @@ const GENE={inset:[0.05,0.95],
 function drawLocus(g,n){
   refBuilding(g,n);
   const F=roofPanel(g,n,n.h,176), {CW,CH,u}=F;
-  const G=F.g, LAB=5.6*u;
+  const G=F.g, LAB=4.3*u;
 
   roofTitle(F,"Ensembl 99",5*u,15*u,13*u);
 
@@ -855,16 +901,58 @@ function drawLocus(g,n){
   const tick=(x,y0,y1)=>G.appendChild(el("line",{x1:x,y1:y0,x2:x,y2:y1,
     stroke:"var(--fg3)","stroke-width":(0.5*u).toFixed(2),"stroke-opacity":".7"}));
 
+  /* EVERY NAME IS BELOW THE MODEL AND EVERY NAME IS ANGLED, and the two go
+     together. Exons above and introns below kept them apart by putting them on
+     opposite sides, which spends the whole drawing on the labelling; below the
+     line they interleave, and eleven horizontal words on one row would collide.
+     Turned, each trails off down-left from its own tick and its neighbours run
+     parallel to it — the standard trick for a crowded categorical axis, and it
+     works here for the same reason it works there. Anchored `end` so the word
+     finishes at its tick rather than starting there.
+
+     ABOVE THE LINE IS LEFT EMPTY FOR THE ARCHES. */
+  const angled=(str,x,ty)=>{
+    const t=el("text",{x:0,y:0,"text-anchor":"end","font-size":LAB,
+      "font-family":MONO,fill:"var(--fg3)",
+      transform:`translate(${x},${ty}) rotate(-38)`});
+    t.textContent=str; G.appendChild(t); return t;
+  };
+  const ROW=y+CDSH/2+5.4*u;
   GENE.exons.forEach(([a,b])=>{
     const x=(X(a)+X(b))/2;
-    tick(x, y-CDSH/2-1.2*u, y-CDSH/2-4.6*u);
-    lab("exon", x, y-CDSH/2-6.2*u);
+    tick(x, y+CDSH/2+1.0*u, ROW-1.4*u);
+    angled("exon", x+1.2*u, ROW+1.4*u);
   });
   for(let i=0;i<GENE.exons.length-1;i++){
     const x=(X(GENE.exons[i][1])+X(GENE.exons[i+1][0]))/2;
-    tick(x, y+CDSH/2+1.2*u, y+CDSH/2+4.6*u);
-    lab("intron", x, y+CDSH/2+9.6*u);
+    tick(x, y+1.0*u, ROW-1.4*u);
+    angled("intron", x+1.2*u, ROW+1.4*u);
   }
+
+  /* ---- TWO SPLICED READS, ARCHING THE INTRONS THEY CROSS -----------------
+     The same object the belts at E4 draw, in the same orange, on the node that
+     explains why it exists: a read from spliced mRNA covers the end of one exon
+     and the start of the next, so it lands in two halves with nothing over the
+     intron between them. Drawn here it says what the annotation is FOR — the
+     assembly alone cannot place these, and this is the file that can.
+
+     Above the line, because that is the side the labels left empty. */
+  const arch=(i)=>{
+    const ja=X(GENE.exons[i][1]), jb=X(GENE.exons[i+1][0]);
+    const top=y-CDSH/2, HALF=(jb-ja)*0.55, lift=6.2*u+(jb-ja)*0.09;
+    G.appendChild(el("line",{x1:ja-HALF,y1:top-1.6*u,x2:ja,y2:top-1.6*u,
+      stroke:R1TONE,"stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"butt"}));
+    G.appendChild(el("line",{x1:jb,y1:top-1.6*u,x2:jb+HALF,y2:top-1.6*u,
+      stroke:R1TONE,"stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"butt"}));
+    const path=[];
+    for(let k=0;k<=22;k++){
+      const f=k/22;
+      path.push(`${(ja+(jb-ja)*f).toFixed(1)},${(top-1.6*u-Math.sin(Math.PI*f)*lift).toFixed(1)}`);
+    }
+    G.appendChild(el("polyline",{points:path.join(" "),fill:"none",stroke:R1TONE,
+      "stroke-width":(0.9*u).toFixed(2),"stroke-linecap":"round","stroke-opacity":".9"}));
+  };
+  arch(0); arch(3);
 
   /* THE UTRs GET THEIR OWN ROW AND THEIR OWN TICK, pointing at the block they
      name. The 3' UTR is most of the last exon and it is where every read on
@@ -872,8 +960,8 @@ function drawLocus(g,n){
      the end. */
   [[GENE.utr5,"5′ UTR"],[GENE.utr3,"3′ UTR"]].forEach(([rg,str])=>{
     const x=(X(rg[0])+X(rg[1]))/2;
-    tick(x, y+UTRH/2+1.2*u, y+CDSH/2+15.2*u);
-    lab(str, x, y+CDSH/2+20.4*u);
+    tick(x, y+UTRH/2+1.2*u, y+CDSH/2+17.6*u);
+    lab(str, x, y+CDSH/2+22.4*u);
   });
 }
 DRAW.locus=drawLocus;
@@ -915,23 +1003,31 @@ DRAW.locus=drawLocus;
    against a fixed 9.2-unit span; K and KZ carry that onto whatever w and h the
    editor leaves behind, so this shape survives being resized like every other.
    ============================================================ */
-/* a box carried by the belt: top face and the long near face, rebuilt per
-   frame. Two polygons rather than paint()'s three, because nothing on a belt is
-   ever seen from its far side. */
+/* A BOX CARRIED BY THE BELT — ALL THREE FACES THIS PROJECTION CAN SEE, rebuilt
+   per frame.
+
+   It was two, top and the long near side, on the reasoning that nothing on a
+   belt is seen from its far side. True of the far side and not of the LEADING
+   END, which is square to the eye and was simply missing: every exon read as an
+   open trough with its front wall knocked out. The eye is at +x +y, so top,
+   the +y flank and the +x end are the three that face it — which is exactly
+   what paint() draws for a static box, done here per frame instead. */
 function boxNodes(g,fill,side,sw){
   return {
     top :g.appendChild(el("polygon",{fill,stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".75"})),
     near:g.appendChild(el("polygon",{fill:side,stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".55"})),
+    end :g.appendChild(el("polygon",{fill:side,stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".55"})),
   };
 }
 function setBox(nd,x0,x1,y,d,z0,z1,op){
   const yb=y-d/2, yf=y+d/2;
   nd.top.setAttribute("points",pts([P(x0,yb,z1),P(x1,yb,z1),P(x1,yf,z1),P(x0,yf,z1)]));
   nd.near.setAttribute("points",pts([P(x0,yf,z1),P(x1,yf,z1),P(x1,yf,z0),P(x0,yf,z0)]));
-  nd.top.setAttribute("fill-opacity",op);
-  nd.near.setAttribute("fill-opacity",op);
-  nd.top.setAttribute("stroke-opacity",(0.75*op).toFixed(3));
-  nd.near.setAttribute("stroke-opacity",(0.55*op).toFixed(3));
+  nd.end.setAttribute("points",pts([P(x1,yb,z1),P(x1,yf,z1),P(x1,yf,z0),P(x1,yb,z0)]));
+  ["top","near","end"].forEach(k=>{
+    nd[k].setAttribute("fill-opacity",op);
+    nd[k].setAttribute("stroke-opacity",((k==="top"?0.75:0.55)*op).toFixed(3));
+  });
 }
 const easeOut=x=>1-Math.pow(1-x,2.2);
 const clamp01=x=>(x<0?0:x>1?1:x);
@@ -955,19 +1051,24 @@ function drawBelts(g,n){
     const y=y0+b*pitch;
     const grp=g.appendChild(el("g"));
 
+    /* THE TRACK IS SCENERY AND SHOULD READ AS SCENERY. It was as solid as the
+       genes riding it, so four belts competed with the sixteen gene models and
+       three hundred reads that are the actual subject. Dropped back toward the
+       ground it still carries the motion — the slats are what makes it a belt
+       — without asking to be looked at. */
     grp.appendChild(el("polygon",{points:pts([P(x0,y-BW/2,base),P(x1,y-BW/2,base),
       P(x1,y+BW/2,base),P(x0,y+BW/2,base)]),
-      fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
-      "stroke-width":"0.9","stroke-opacity":".5"}));
+      fill:"var(--t-left)","fill-opacity":".45",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".22"}));
     grp.appendChild(el("polygon",{points:pts([P(x0,y+BW/2,base),P(x1,y+BW/2,base),
       P(x1,y+BW/2,0),P(x0,y+BW/2,0)]),
-      fill:"var(--t-left)","fill-opacity":".95",stroke:"var(--stroke)",
-      "stroke-width":"0.9","stroke-opacity":".5"}));
+      fill:"var(--t-left)","fill-opacity":".55",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".22"}));
 
     const slats=[];
     for(let k=0;k<30;k++)
       slats.push(grp.appendChild(el("line",{stroke:"var(--stroke)",
-        "stroke-width":"1","stroke-opacity":".34"})));
+        "stroke-width":"1","stroke-opacity":".17"})));
 
     const genes=[];
     for(let i=0;i<GPB;i++){
@@ -997,7 +1098,9 @@ function drawBelts(g,n){
           fx0:(5.2+rnd()*3.4)*K,                /* comes in from a long way up-belt */
           fz:(2.3+rnd()*1.5)*KZ,                /* a shallow slant, not a vertical drop */
           sh:ggrp.appendChild(el("ellipse",{fill:"var(--stroke)","fill-opacity":"0"})),
-          ln:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.0",
+          /* HALF THE WEIGHT. Three hundred reads at three pixels is a mass;
+             at one and a half it is three hundred reads. */
+          ln:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"1.5",
             "stroke-linecap":"butt","stroke-opacity":"0"}))});
       }
       for(let k=0;k<ex.length-1;k++){
@@ -1006,10 +1109,10 @@ function drawBelts(g,n){
           dy:(rnd()-0.5)*BW*0.30,
           u0:0.204+rnd()*0.056,
           fx0:(5.4+rnd()*3.0)*K, fz:(2.5+rnd()*1.3)*KZ,
-          a:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.4","stroke-opacity":"0"})),
-          c:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.4","stroke-opacity":"0"})),
+          a:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"1.7","stroke-opacity":"0"})),
+          c:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"1.7","stroke-opacity":"0"})),
           arc:ggrp.appendChild(el("polyline",{fill:"none",stroke:"var(--cull)",
-            "stroke-width":"1.8","stroke-linecap":"round","stroke-opacity":"0"}))});
+            "stroke-width":"0.9","stroke-linecap":"round","stroke-opacity":"0"}))});
       }
       genes.push(gn);
     }

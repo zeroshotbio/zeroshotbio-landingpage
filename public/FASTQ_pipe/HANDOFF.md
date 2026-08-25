@@ -474,6 +474,19 @@ a distinction the palette has no token left for, made by *encoding* instead. Two
 halves and an arc is unmistakable, and a fourth hue would say "a different kind
 of read" when it is the same read.
 
+**The track is scenery and reads as scenery.** It was as solid as the genes
+riding it, so four belts competed with the sixteen gene models and three hundred
+reads that are the actual subject. Dropped back toward the ground it still
+carries the motion — the slats are what make it a belt — without asking to be
+looked at.
+
+**A box on a belt is three faces, not two.** It was top and the long near side,
+on the reasoning that nothing on a belt is seen from its far side. True of the
+far side and not of the **leading end**, which is square to the eye and was
+simply missing: every exon read as an open trough with its front wall knocked
+out. The eye is at +x +y, so top, the +y flank and the +x end are the three that
+face it — exactly what `paint()` draws for a static box, done per frame instead.
+
 **Every absolute length is scaled by the node.** The original was authored
 against a fixed 9.2-unit span; `K` and `KZ` carry that onto whatever `w` and `h`
 the editor leaves behind. `w` runs along the belts, `d` across all four, `h` is
@@ -521,16 +534,44 @@ was lifted: two functions rather than one generalised one, because that file is
 figure is rotated by hand. Single lines only — a block on a roof fans, because
 chart x and chart y are the two roof diagonals.
 
-**No colour of their own.** Chromosome bodies take the reference skin's own face
-(`--k-top`) and the bands are punched out in `--bg`. The window and its frustum
+**The roof is `--bg`, not the tile's own face.** `--t-top` sits only a shade
+under the chromosome bodies drawn on it, and the drawing read as a texture
+rather than as a figure. `--bg` is the darkest thing the page has — and the
+bands punched out of the chromosomes are drawn in it too, so **a band is the
+roof showing through**, which is what a band is.
+
+**GRCz11 carries a turning double helix beside its name**, so a glance says DNA
+before the caption does. It lies along the same line the title reads on — local
++x, −30° on screen — so it belongs to the word rather than sitting next to it.
+Two sines half a period apart, redrawn each frame at a moving phase; the rungs
+between them shorten as the pair comes edge-on and lengthen again, which is the
+whole of the illusion, and their **weight and opacity follow the same cosine**
+so the near side of the turn is heavier than the far side. Depth without a
+second projection. It registers a ticker, which `redrawNode()` accounts for like
+any other.
+
+**No other colour of their own.** Chromosome bodies take the reference skin's
+own face (`--k-top`) and the bands are punched out in `--bg`. The window and its frustum
 are **grey — the same grey the pool's leaders use, for the same reason: a
 magnification is not a track.** Coding sequence and UTR are one token at two
 weights, which is the UMI's trick again. The fork owns orange and blue and
 nothing here borrows them.
 
-**Every exon and every intron is named**, on two rows so the two sets never
-share a line, with the UTRs on a third of their own. Eleven labels fit on a roof
-because they alternate: a name only ever has its own row's neighbours to clear.
+**Every exon and every intron is named, all of them below the model, and all of
+them angled** — and the two go together. Exons above and introns below kept them
+apart by putting them on opposite sides, which spends the whole drawing on the
+labelling; below the line they interleave, and eleven horizontal words on one
+row would collide. Turned, each trails off down-left from its own tick and its
+neighbours run parallel to it — the standard trick for a crowded categorical
+axis, and it works here for the same reason it works there. Anchored `end`, so
+the word finishes at its tick rather than starting there.
+
+**Above the line is left empty for two spliced reads**, arching the introns they
+cross — the same object the belts at `E4` draw, in the same orange, on the node
+that explains why it exists. A read from spliced mRNA covers the end of one exon
+and the start of the next, so it lands in two halves with nothing over the
+intron between them. Drawn here it says what the annotation is *for*: the
+assembly alone cannot place these, and this is the file that can.
 
 **The model is a 3′-biased gene, which is the only kind this page is about.**
 Transcription runs 5′ → 3′: the 5′ UTR is the front of the first exon, the
