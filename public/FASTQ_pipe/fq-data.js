@@ -317,8 +317,13 @@ const EDGES = [
      aims at E6 from where it is and holds that line. */
   {a:"E5", b:"E6", kind:"read", straight:true, tone:"var(--cull)"},   /* the gene identity arrives */
 
-  {a:"E2", b:"E3", kind:"read", port:"R", tone:"var(--accent)"},
-  {a:"E3", b:"E6", kind:"cell", straight:true, tone:"var(--accent)"}, /* the cell identity arrives */
+  /* THE R2 TRACK STOPS AT THE MOUTH OF THE YARD. Aimed at E3's centre it ran
+     the whole length of the yard to get there, and joined end to end with the
+     E3 -> E6 line it read as one blue rail crossing the entire picture — which
+     says the opposite of what the yard is for. It ends at the head of the eight
+     lanes now, and the next one starts where the fan comes out. */
+  {a:"E2", b:"E3", kind:"read", port:"R", portB:"head", tone:"var(--accent)"},
+  {a:"E3", b:"E6", kind:"cell", straight:true, port:"tail", tone:"var(--accent)"}, /* the cell identity arrives */
 
   {a:"E6", b:"UD", kind:"cell"},
 

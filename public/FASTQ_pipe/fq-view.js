@@ -422,6 +422,8 @@ function routeOf(e){
        a track that has to join a lane; a reference line has no lane to join,
        it just has to leave from somewhere visible and arrive. */
     if(e.straight) return [p0, endAt || P(B.x,B.y,0.02)];
+    /* a destination port beats the lane-entry route: the port IS the arrival */
+    if(endAt) return [p0, endAt];
     const PORT_LEAD=2.0;
     return [p0, P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
   }

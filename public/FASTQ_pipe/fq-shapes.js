@@ -479,7 +479,25 @@ const PORTS={
   karyotype :(n,which,B)=>roofCorner(n,B),
   locus     :(n,which,B)=>roofCorner(n,B),
   whitelists:(n,which,B)=>roofCorner(n,B),
-  sortingyard:(n,which,B)=>roofCorner(n,B),
+  /* THE YARD'S OWN ENDS, AT DECK HEIGHT — not a roof corner, because it has no
+     roof. "head" is where the eight lanes start, which is what an arriving read
+     should be aimed at; "tail" is where the fan leaves. Anything else falls back
+     to the corner, which is the right answer for W1 overhead. */
+  sortingyard:(n,which,B)=>{
+    const M=yardMetrics(n);
+    /* "head" IS ON THE LANE, JUST INSIDE THE YARD AND SHORT OF THE FIRST ARCH.
+
+       Not the far end of the run-in and not the footprint edge, for one reason
+       that is pure projection: at this y, everything within about a unit of the
+       yard's left edge lies along -30 degrees from the R2 bracket — which is
+       the angle the bracket itself is drawn at. Aimed there the track leaves
+       the port and lies down exactly on top of the bracket, invisible. A point
+       a little further along the lane puts the line near horizontal, so it
+       reads as a track running forward into the yard, which is what it is. */
+    if(which==="head") return P(M.x0+(M.A.TRK-M.A.x0)*M.K, M.cy, M.base);
+    if(which==="tail") return P(M.x1, M.cy, M.base);
+    return roofCorner(n,B);
+  },
 };
 function roofCorner(n,B){
   const hw=n.w/2, hd=n.d/2;
@@ -1576,9 +1594,23 @@ DRAW.whitelists=drawWhitelists;
    is drawn in the fragment anatomy at E2 and left out of the matching yard,
    where a fourth block would only muddy the triplet. */
 const YARD_ROUNDS=[
-  {x0:0, x1:19.4, cy:-1.1, base:0.14, gx:[3.6,7.2,10.8], MZ:1.5, REJ:3.6,
-   binX:14.6, v:1.25, fanX:13.4, MZ2:2.6, OUTN:6, OUTP:0.86, VALX:17.7},
+  /* gz/pgap are the gantry: how high the beam rides and how far the scanner
+     face sits above it. They are here rather than inline because NATZ is built
+     from them — lower the arch without lowering NATZ and n.h stops meaning the
+     height of the thing. IN, PAD and LANDX are the approach, in the same
+     authored units: the track starts at IN, a fragment is born at PAD, and it
+     touches down at LANDX — just past the start of the track, so the landing
+     happens ON it and not halfway to the first scanner. */
+  {x0:0, x1:19.4, cy:-1.1, base:0.14, gx:[3.9,7.5,11.1], MZ:1.5, REJ:3.6,
+   binX:14.6, v:1.25, fanX:13.4, MZ2:2.6, OUTN:6, OUTP:0.86, VALX:17.7,
+   gz:0.66, pgap:0.40, IN:-3.0, PAD:-7.4, LANDX:-2.5, TRK:2.8},
 ][0];
+
+/* the handful of numbers both drawSortingYard and PORTS.sortingyard need */
+function yardMetrics(n){
+  const A=YARD_ROUNDS, K=n.w/(A.x1-A.x0), KZ=n.h/(A.base+A.gz+A.pgap+0.07);
+  return {A,K,KZ, x0:n.x-n.w/2, x1:n.x+n.w/2, cy:n.y+A.cy*K, base:A.base*KZ};
+}
 
 function drawSortingYard(g,n){
   hitBox(g,n);
@@ -1587,13 +1619,12 @@ function drawSortingYard(g,n){
 
   /* authored in its own units and scaled onto the node: K across the ground,
      KZ up. Everything below is in scaled world units. */
-  const A=YARD_ROUNDS, NATW=A.x1-A.x0, NATZ=A.base+1.05+0.66+0.07;
-  const K=n.w/NATW, KZ=n.h/NATZ;
+  const M=yardMetrics(n), A=M.A, K=M.K, KZ=M.KZ;
   const SC=q=>q*K;
-  const x0=n.x-n.w/2, x1=n.x+n.w/2;
+  const x0=M.x0, x1=M.x1;
   const XX=q=>x0+(q-A.x0)*K;                   /* authored x -> world x */
-  const cy=n.y+SC(A.cy);
-  const base=A.base*KZ, REJ=n.y+SC(A.REJ), binX=XX(A.binX), fanX=XX(A.fanX);
+  const cy=M.cy;
+  const base=M.base, REJ=n.y+SC(A.REJ), binX=XX(A.binX), fanX=XX(A.fanX);
   const gx=A.gx.map(XX), MZ=SC(A.MZ), MZ2=SC(A.MZ2), OUTP=SC(A.OUTP);
   const VALX=XX(A.VALX), v=A.v*K, OUTN=A.OUTN;
   const SEG_W=SC(0.32), LINK=SC(0.19);
@@ -1637,7 +1668,7 @@ function drawSortingYard(g,n){
      So it is kept and dropped to a tenth, which reads as a surface at a glance
      and as nothing at all a moment later. */
   const dTop=laneY(0,0)-SC(1.0), dBot=REJ+SC(0.9);
-  const xIn=x0-SC(4.6);                      /* where the lanes actually begin */
+  const xIn=XX(A.IN);                        /* where the lanes actually begin */
   slabAt(g,(xIn+x1)/2,(dTop+dBot)/2,x1-xIn,dBot-dTop,base,DECK,0,0.10);
 
   /* ---- lane guides, drawn from the same functions the fragments follow ---- */
@@ -1651,10 +1682,11 @@ function drawSortingYard(g,n){
      has to have somewhere to land. It comes down out of the air onto bare
      track, runs a little way on it, and only then reaches the first gantry —
      which is the difference between arriving and simply appearing. */
-  for(let o=0;o<8;o++){
-    guide(x=>yMain(x,o),0.16,"1.5",xIn,x0);      /* the approach */
-    guide(x=>yMain(x,o),0.30,"1.5",x0,fanX);     /* the yard proper */
-  }
+  /* ONE POLYLINE PER LANE, FROM THE APPROACH STRAIGHT THROUGH THE YARD. The
+     approach was briefly drawn as its own dimmer segment, which made it read as
+     a second set of tracks that happened to meet the first — the join showed and
+     the shading disagreed. It is one track. */
+  for(let o=0;o<8;o++) guide(x=>yMain(x,o),0.30,"1.5",xIn,fanX);
   for(let j=0;j<OUTN;j++) guide(x=>yFan(x,j),0.30,"1.5",gx[2],x1);
   for(let s=0;s<3;s++)
     guide(x=>{
@@ -1699,7 +1731,7 @@ function drawSortingYard(g,n){
   /* ---- gantries with their whitelists overhead.
      Built AFTER the fragments: DOM order is paint order, so a barcode passing
      under a scanner is hidden by it. ---- */
-  const gz=1.05*KZ, panelZ=gz+0.66*KZ;
+  const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
   const stations=gx.map((sx,i)=>{
     const grp=g.appendChild(el("g"));
     const halfSpan=(COUNTS[i]-1)*PITCH[i]/2+SC(0.75);
@@ -1721,8 +1753,12 @@ function drawSortingYard(g,n){
     return {sx,i,halfSpan,slots,ptr:0};
   });
 
-  /* ---- the bin, built last: a discarded triplet slides BEHIND it and is gone */
-  slabAt(g,binX,REJ,SC(1.5),SC(1.5),0.62*KZ,BIN,base,0.5);
+  /* ---- the bin, built last and OPAQUE: a discarded triplet slides behind it
+     and is gone. Translucent, it was a box you could watch things vanish inside,
+     which is a different and much worse idea — the point is that the far side of
+     it is out of the story. ---- */
+  const BINW=SC(1.5);
+  slabAt(g,binX,REJ,BINW,BINW,0.62*KZ,BIN,base);
 
   /* ---- the names, along the edges they belong to ---- */
   const lab=(wx,wy,wz,str,size,fill,op,rot,anchor,dy)=>{
@@ -1734,10 +1770,14 @@ function drawSortingYard(g,n){
     t.textContent=str; g.appendChild(t);
   };
   const FS=Math.max(6,13.5*K);
+  /* CLEAR OF THE PANEL, NOT ON IT. The name sat at 0.78 of the half-span, which
+     was outside a panel that stopped at 0.78 and is inside one that runs the
+     full width. It hangs just past the far end now, where there is nothing. */
   stations.forEach((st,i)=>
-    lab(st.sx-SC(0.68), cy-st.halfSpan*0.78-SC(0.34), base+panelZ+0.07*KZ,
+    lab(st.sx-SC(0.68), cy-st.halfSpan-SC(0.95), base+panelZ+0.07*KZ,
         `BC${i+1} WHITELIST`, FS.toFixed(1), "var(--fg)", "1", 30));
-  lab(binX-SC(0.75), REJ+SC(1.65), base+0.62*KZ, "NO MATCH",
+  /* and this one down at the bin's foot, out from under the tracks that reach it */
+  lab(binX-SC(0.75), REJ+SC(2.20), base, "NO MATCH",
       (FS*0.96).toFixed(1), "var(--rej)", "1", 30);
   /* the point of the whole yard, named along its near edge, which runs at -30 */
   lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "VALIDATED TRIPLETS",
@@ -1765,8 +1805,8 @@ function drawSortingYard(g,n){
 
      It also puts them UNDER the scanners for free: the fragments are built
      before the gantries, and DOM order is paint order. */
-  const PAD=SC(4.6), LOOP=(x1-x0)+PAD*2;
-  const LANDX=x0+SC(1.1), FALLX=SC(7.0), FALLZ=2.6*KZ;
+  const PAD=-SC(A.PAD), LOOP=(x1-x0)+PAD*2;
+  const LANDX=XX(A.LANDX), FALLX=SC(4.0), FALLZ=2.6*KZ;
   let t=0;
   const run=dt=>{
     t+=dt;
@@ -1783,8 +1823,17 @@ function drawSortingYard(g,n){
       const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
       const zAir=FALLZ*air, xAir=-FALLX*air;
 
-      let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(1.0),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
-      if(fr.fail>=0) vis*=1-sstep(binX-SC(1.1),binX-SC(0.1),fx);   /* swallowed */
+      let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(0.4),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
+      /* SWALLOWED — and the cut happens while it is completely hidden.
+
+         The bin is 1.5 units of footprint and the triplet is 1.34, so there is
+         a narrow window where the whole fragment is inside the box's silhouette
+         and nothing else. Take it to zero there and the fragment is at full
+         strength right up to the moment it goes behind the box, and simply
+         never comes out the other side. Fade it anywhere wider and you watch it
+         dissolve in the open, which is a different and much sadder story than
+         being thrown away. */
+      if(fr.fail>=0) vis*=1-sstep(binX-BINW*0.48,binX-BINW*0.39,fx);
 
       const blockX=(i,atX,pk)=>atX+SPREAD[i]+(PACKED[i]-SPREAD[i])*pk+SEG_W/2;
 

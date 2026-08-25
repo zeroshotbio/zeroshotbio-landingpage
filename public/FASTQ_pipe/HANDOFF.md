@@ -598,12 +598,47 @@ It is still the other half of a pair with `E4`: R1's reads fall onto gene models
 and stay; R2's fall onto lanes and are carried off to be checked. That is the
 difference between the two branches said twice, once on each station.
 
-**The eight lanes run back past the yard's own `x0`** — `xIn = x0 - SC(4.6)`, at
-0.16 opacity against the yard proper's 0.30 — because a fragment has to have
-somewhere to land. It comes down onto bare track, runs a little way on it, and
-only then reaches the first gantry at `x0 + SC(3.6)`. That run-in is the
-difference between arriving and simply appearing. The deck is stretched back
-with them, though at a tenth opacity nobody will ever notice.
+**The eight lanes run back past the yard's own `x0`** — because a fragment has
+to have somewhere to land. It comes down onto bare track, runs a good way along
+it, and only then reaches the first gantry. That run-in is the difference
+between arriving and simply appearing. The deck is stretched back with them,
+though at a tenth opacity nobody will ever notice.
+
+**It is ONE polyline per lane.** The run-in was briefly drawn as its own
+segment at lower opacity, and it read as a second set of tracks that happened to
+meet the first — the join showed and the shading disagreed. Same call, same
+opacity, `xIn` straight through to `fanX`.
+
+`IN`, `PAD` and `LANDX` live in `YARD_ROUNDS` with everything else, in authored
+units: the track starts at `IN`, a fragment is born at `PAD` (further back
+still, and in the air — "further back" is a thing the *fall* does, not something
+the track has to be lengthened for), and it touches down at `LANDX`, just past
+the start of the track. So the landing happens ON the track with most of the
+run still ahead of it, rather than a few units short of the first scanner.
+
+### Where the R2 track lands, and why not at the obvious place
+
+`E2 -> E3` used to aim at `E3`'s centre. The yard is 9.6 units long, so the line
+ran the whole length of it to get there, and butted end to end with the
+`E3 -> E6` line leaving the same centre: one blue rail crossing the entire
+picture, which says the opposite of what a station is. Both are ported now —
+`portB:"head"` in and `port:"tail"` out — so the blue stops at the yard and
+starts again where the fan comes out.
+
+**"head" is not the head of the run-in, and not the footprint edge either.**
+Both were tried. It is `TRK` units along the lane, just inside the yard and
+short of the first arch, for a reason that is pure projection: at this `y`,
+every point within about a unit of the yard's left edge lies along −30° from the
+R2 bracket — which is the angle the bracket itself is drawn at. Aimed there, the
+track leaves its port and lies down exactly on top of the bracket and is
+invisible. A point further along the lane puts the line near horizontal, and it
+reads as a track running forward into the yard. Aimed at the far end of the
+run-in it was worse still: that reaches back under `E2`, so the line went almost
+straight up the screen and crossed the fragment glyph on the way.
+
+`routeOf` had to be taught this: a ported *source* edge that also has a `portB`
+now returns `[p0, endAt]` instead of falling through to the lane-entry route,
+which ignored `endAt` and went to the destination's centre anyway.
 
 ### It arrives blue and is demoted
 
@@ -638,7 +673,7 @@ them, bright after. Ticks are `--fg` so a verdict sits legibly on the block it
 judges. The whitelist slots overhead are `--fg`, the same white the plates at
 `W1` write into.
 
-### The scanner panel spans the whole arch
+### The scanner panel spans the whole arch, and the arch sits lower
 
 It was 78% of the span, centred — which *is* centred and does not look it. A slab
 narrower than the legs it sits on, floating above them, reads as slipped rather
@@ -648,6 +683,39 @@ reads as one object with a lid. The 20 whitelist slots widen with it
 (`hw = halfSpan - SC(0.22)`), which is the better half of the change: the
 scanner face now shows the list it is checking against, right across the lanes
 it checks.
+
+**`gz` and `pgap` are in `YARD_ROUNDS`, not inline, because `NATZ` is built from
+them.** Lower the arch without lowering `NATZ` and `n.h` stops meaning the height
+of the thing — the whole shape rescales under you. They went 1.05/0.66 to
+0.66/0.40: high enough to be a gantry, low enough that it reads as standing over
+its lanes instead of hovering up-left of them. The stations moved a little
+further along the lane at the same time (`gx` 3.6/7.2/10.8 to 3.9/7.5/11.1),
+which is the rest of the same complaint.
+
+**The names hang past the far end of the panel**, at `cy - halfSpan - SC(0.95)`.
+They used to sit at 0.78 of the half-span, which was clear of a panel that
+stopped at 0.78 and is on top of one that runs the full width. *NO MATCH* moved
+too — down to the bin's foot at `base`, out from under the reject tracks that
+reach it.
+
+### The bin is opaque, and the cut happens where you cannot see it
+
+Translucent, it was a box you could watch things vanish *inside*, which is a
+different and much worse idea — the point of a bin is that the far side of it is
+out of the story.
+
+The fade window then matters. The bin is 1.5 units of footprint and the triplet
+is 1.34, so there is a narrow window where the whole fragment is inside the
+box's silhouette and nothing else: `binX - 0.48·BINW` to `binX - 0.39·BINW`.
+Take `vis` to zero there and the fragment is at full strength right up to the
+moment it goes behind the box, and never comes out the other side. Any wider a
+window and you watch it dissolve in the open, which is a much sadder story than
+being thrown away — and a hair too narrow and a sliver reappears past the bin's
+lower-right corner, which is what the old `binX - 1.1 -> binX - 0.1` window did.
+
+The verdict marks ride at `zR + 0.5·KZ` against the bin's `0.62·KZ` top, so a
+cross that is still up when the cut happens projects onto the bin's top face and
+is covered by it. That is luck rather than design, but it is checked luck.
 
 **Three build-order facts do real work.** The verdict marks are built after the
 fragments and *before* the gantries, so a tick rides above its block but passes
