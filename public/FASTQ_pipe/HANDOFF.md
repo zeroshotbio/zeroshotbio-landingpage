@@ -578,16 +578,50 @@ take `--rej`, the ticks and *VALIDATED TRIPLETS* take `--ok`, and the big
 end-of-line tick takes `--ok` at well under full opacity: it is a confirmation,
 not an announcement.
 
-### Reads fall onto the head of the lanes
+### The falling thing IS the fragment
 
-The same gesture the belts at `E4` use, in R2's colour instead of R1's: a read
-slants in from up-line, drops, and lands — here at the very start of the eight
-lanes, so what the yard receives is unmistakable. **It is the other half of a
-pair.** R1's reads fall onto gene models and stay; R2's fall onto lanes and are
-carried off to be checked, which is the difference between the two branches said
-twice, once on each station. They land and fade rather than persisting, because
-the fragment carrying the barcodes is already drawn travelling the lane — a read
-that stayed would be the same object twice.
+`E4`'s reads fall as plain lines because a read at that station *is* a plain
+line — a stretch of cDNA lying on a gene model. Here the object that matters is
+the triplet: three blocks on a strand, exactly as it will look for the rest of
+its run. So the fragment itself descends. There is no separate rain and no
+moment where one thing becomes another, because **there is only ever one
+object.** It slants in from up-line, drops, lands, and keeps going.
+
+This costs nothing and buys two things. The fragments are built before the
+gantries and DOM order is paint order, so a falling read passes *under* a
+scanner for free — which the earlier stand-in rain, built after them, did not.
+And the lap counter, the verdict clearing, the fail lane and the pack-up at the
+hourglass all already exist on the fragment; a stand-in would have had to
+duplicate the ones it needed and silently diverge on the ones it did not.
+
+It is still the other half of a pair with `E4`: R1's reads fall onto gene models
+and stay; R2's fall onto lanes and are carried off to be checked. That is the
+difference between the two branches said twice, once on each station.
+
+**The eight lanes run back past the yard's own `x0`** — `xIn = x0 - SC(4.6)`, at
+0.16 opacity against the yard proper's 0.30 — because a fragment has to have
+somewhere to land. It comes down onto bare track, runs a little way on it, and
+only then reaches the first gantry at `x0 + SC(3.6)`. That run-in is the
+difference between arriving and simply appearing. The deck is stretched back
+with them, though at a tenth opacity nobody will ever notice.
+
+### It arrives blue and is demoted
+
+A read falling out of the sky is R2 — blue is that branch's identity the whole
+length of the map, and the thing that lands has to be readable as one of those.
+What it is *not* yet is checked. So it holds `--accent` down the run-in, and the
+instant the first scanner reads block one **the other two go dim**: the fragment
+has stopped being a read and become a candidate with two claims outstanding,
+which it then earns back one gantry at a time.
+
+The change is a snap and wants to be. It is an event, not a transition, and it
+happens under the first arch where the eye is already looking. A crossfade there
+would blur the one moment the station exists to stage.
+
+**The body is one bar, not two connectors.** It spans all three blocks at
+`SC(0.045)` half-depth — the same glyph `E2` draws up the lane — so the thing
+that lands here is recognisably the thing that was named there. Built before the
+blocks, for the same paint-order reason.
 
 ### The deck is almost not there
 
@@ -604,10 +638,22 @@ them, bright after. Ticks are `--fg` so a verdict sits legibly on the block it
 judges. The whitelist slots overhead are `--fg`, the same white the plates at
 `W1` write into.
 
-**Two build-order facts do real work.** The verdict marks are built after the
+### The scanner panel spans the whole arch
+
+It was 78% of the span, centred — which *is* centred and does not look it. A slab
+narrower than the legs it sits on, floating above them, reads as slipped rather
+than as inset; there is nothing in the picture to measure it against except the
+legs, and it disagrees with them. Full width and the two agree, and the arch
+reads as one object with a lid. The 20 whitelist slots widen with it
+(`hw = halfSpan - SC(0.22)`), which is the better half of the change: the
+scanner face now shows the list it is checking against, right across the lanes
+it checks.
+
+**Three build-order facts do real work.** The verdict marks are built after the
 fragments and *before* the gantries, so a tick rides above its block but passes
-*under* the scanner. The bin is built last, so a discarded triplet slides
-*behind* it and is gone.
+*under* the scanner. The falling fragments are under the scanners for the same
+reason. The bin is built last, so a discarded triplet slides *behind* it and is
+gone.
 
 ## `drawWhitelists` — where the lists come from
 

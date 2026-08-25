@@ -1637,7 +1637,8 @@ function drawSortingYard(g,n){
      So it is kept and dropped to a tenth, which reads as a surface at a glance
      and as nothing at all a moment later. */
   const dTop=laneY(0,0)-SC(1.0), dBot=REJ+SC(0.9);
-  slabAt(g,(x0+x1)/2,(dTop+dBot)/2,x1-x0,dBot-dTop,base,DECK,0,0.10);
+  const xIn=x0-SC(4.6);                      /* where the lanes actually begin */
+  slabAt(g,(xIn+x1)/2,(dTop+dBot)/2,x1-xIn,dBot-dTop,base,DECK,0,0.10);
 
   /* ---- lane guides, drawn from the same functions the fragments follow ---- */
   const guide=(fn,op,w,xa,xb)=>{
@@ -1646,7 +1647,14 @@ function drawSortingYard(g,n){
     g.appendChild(el("polyline",{points:pts(p),fill:"none",stroke:"var(--fg3)",
       "stroke-width":w,"stroke-opacity":op,"stroke-linecap":"round"}));
   };
-  for(let o=0;o<8;o++) guide(x=>yMain(x,o),0.30,"1.5",x0,fanX);
+  /* THE EIGHT LANES RUN BACK PAST THE YARD'S OWN START, because a fragment
+     has to have somewhere to land. It comes down out of the air onto bare
+     track, runs a little way on it, and only then reaches the first gantry —
+     which is the difference between arriving and simply appearing. */
+  for(let o=0;o<8;o++){
+    guide(x=>yMain(x,o),0.16,"1.5",xIn,x0);      /* the approach */
+    guide(x=>yMain(x,o),0.30,"1.5",x0,fanX);     /* the yard proper */
+  }
   for(let j=0;j<OUTN;j++) guide(x=>yFan(x,j),0.30,"1.5",gx[2],x1);
   for(let s=0;s<3;s++)
     guide(x=>{
@@ -1660,11 +1668,15 @@ function drawSortingYard(g,n){
     const grp=g.appendChild(el("g"));
     const mk=fill=>grp.appendChild(el("polygon",{fill,stroke:"var(--stroke)",
       "stroke-width":".7","stroke-opacity":".45","fill-opacity":"0"}));
+    /* THE BODY IS ONE BAR, NOT TWO CONNECTORS. It is the same glyph E2 draws
+       up the lane — three blocks on a strand — so the thing that lands here is
+       recognisably the thing that was named there. Built before the blocks:
+       DOM order is paint order, and the bar belongs underneath them. */
     frags.push({origin:i%8, ph:i/NF,
       fail:rnd()<0.34?Math.floor(rnd()*3):-1,
       out:i%OUTN, grp,
+      body:mk("var(--fg3)"),
       bc:[mk("var(--accent)"),mk("var(--accent)"),mk("var(--accent)")],
-      links:[mk("var(--fg3)"),mk("var(--fg3)")],
       flash:[-99,-99,-99], px:undefined});
   }
 
@@ -1693,10 +1705,14 @@ function drawSortingYard(g,n){
     const halfSpan=(COUNTS[i]-1)*PITCH[i]/2+SC(0.75);
     [-1,1].forEach(sgn=>slabAt(grp,sx,cy+sgn*halfSpan,SC(0.18),SC(0.18),gz,GAN,base));
     slabAt(grp,sx,cy,SC(0.34),halfSpan*2,0.16*KZ,GAN,base+gz);
-    slabAt(grp,sx,cy,SC(1.45),halfSpan*2*0.78,0.07*KZ,GAN,base+panelZ);
+    /* THE PANEL SPANS THE WHOLE ARCH. It was 78% of it, centred — which is
+       centred, and does not look it: a slab narrower than the legs it sits on,
+       floating above them, reads as slipped rather than as inset. Full width
+       and the two agree, and the arch reads as one object with a lid. */
+    slabAt(grp,sx,cy,SC(1.45),halfSpan*2,0.07*KZ,GAN,base+panelZ);
     const slots=[];
     for(let c=0;c<20;c++){
-      const px=sx-SC(0.6)+(c/19)*SC(1.2), hw=halfSpan*0.78-SC(0.2);
+      const px=sx-SC(0.6)+(c/19)*SC(1.2), hw=halfSpan-SC(0.22);
       const a=P(px,cy-hw,base+panelZ+0.075*KZ), b=P(px,cy+hw,base+panelZ+0.075*KZ);
       slots.push({node:grp.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
@@ -1704,28 +1720,6 @@ function drawSortingYard(g,n){
     }
     return {sx,i,halfSpan,slots,ptr:0};
   });
-
-  /* ---- READS FALLING ONTO THE HEAD OF THE LANES ------------------------
-     The same gesture the belts at E4 use, in R2's colour instead of R1's: a
-     read slants in from up-line, drops, and lands — here at the very start of
-     the eight lanes, so what the yard receives is unmistakable. It is the
-     other half of a pair. R1's reads fall onto gene models and stay; R2's fall
-     onto lanes and are carried off to be checked, which is the difference
-     between the two branches said twice, once on each station.
-
-     They land and fade rather than persisting, because the fragment that
-     carries the barcodes is already drawn travelling the lane — a read that
-     stayed would be the same object twice. */
-  const INB=[];
-  for(let k=0;k<16;k++){
-    const lane=k%8;
-    INB.push({lane, ph:k/16, per:2.6+rnd()*0.9,
-      fx0:SC(5.0+rnd()*3.0), fz:(2.1+rnd()*1.3)*KZ, dy:(rnd()-0.5)*PITCH[0]*0.4,
-      len:SEG_W*2.2,
-      ln:g.appendChild(el("line",{stroke:"var(--accent)","stroke-width":"1.5",
-        "stroke-linecap":"butt","stroke-opacity":"0"}))});
-  }
-  const LANDX=x0+SC(0.55);
 
   /* ---- the bin, built last: a discarded triplet slides BEHIND it and is gone */
   slabAt(g,binX,REJ,SC(1.5),SC(1.5),0.62*KZ,BIN,base,0.5);
@@ -1751,15 +1745,28 @@ function drawSortingYard(g,n){
   lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "putative cell barcodes",
       (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "end", (FS*1.33).toFixed(1));
 
-  const quad=(node,xa,xb,yy,zz,op,fill)=>{
-    node.setAttribute("points",pts([P(xa,yy-SC(0.10),zz),P(xb,yy-SC(0.10),zz),
-      P(xb,yy+SC(0.10),zz),P(xa,yy+SC(0.10),zz)]));
+  const quad=(node,xa,xb,yy,zz,op,fill,hd)=>{
+    const q=hd===undefined?SC(0.10):hd;
+    node.setAttribute("points",pts([P(xa,yy-q,zz),P(xb,yy-q,zz),
+      P(xb,yy+q,zz),P(xa,yy+q,zz)]));
     node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
     node.setAttribute("stroke-opacity",(clamp01(op)*0.5).toFixed(3));
     if(fill) node.setAttribute("fill",fill);
   };
 
-  const PAD=SC(2.4), LOOP=(x1-x0)+PAD*2;
+  /* THE FALLING THING IS THE FRAGMENT ITSELF, not a stand-in for it.
+
+     E4's reads fall as plain lines because a read at that station IS a plain
+     line — a stretch of cDNA on a gene model. Here the object that matters is
+     the triplet: three blocks on a body, exactly as it will look for the rest
+     of its run. So the whole thing descends and lands and keeps going, rather
+     than a line landing and a triplet appearing where it stopped. There is no
+     moment where one becomes the other, because there is only ever one.
+
+     It also puts them UNDER the scanners for free: the fragments are built
+     before the gantries, and DOM order is paint order. */
+  const PAD=SC(4.6), LOOP=(x1-x0)+PAD*2;
+  const LANDX=x0+SC(1.1), FALLX=SC(7.0), FALLZ=2.6*KZ;
   let t=0;
   const run=dt=>{
     t+=dt;
@@ -1772,13 +1779,29 @@ function drawSortingYard(g,n){
       const yy=yOf(fx,fr.origin,fr.fail,fr.out);
       const pack=sstep(gx[2]+SC(0.5),gx[2]+SC(2.1),fx);
 
-      let vis=Math.min(sstep(x0-SC(0.8),x0+SC(0.4),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
+      /* the descent: 1 in the air at the far end of the run-in, 0 on the track */
+      const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
+      const zAir=FALLZ*air, xAir=-FALLX*air;
+
+      let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(1.0),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
       if(fr.fail>=0) vis*=1-sstep(binX-SC(1.1),binX-SC(0.1),fx);   /* swallowed */
 
       const blockX=(i,atX,pk)=>atX+SPREAD[i]+(PACKED[i]-SPREAD[i])*pk+SEG_W/2;
 
+      /* IT ARRIVES BLUE AND IS DEMOTED, RATHER THAN FADING IN.
+
+         A read falling out of the sky is R2 — blue is that branch's identity the
+         whole length of the map, and the thing that lands has to be readable as
+         one of those. What it is NOT yet is checked. So it stays R2's colour
+         down the run-in, and the instant the first scanner reads block one the
+         other two go dim: the fragment has stopped being a read and become a
+         candidate with two claims outstanding, which it then earns back one
+         gantry at a time. The change is a snap and wants to be — it is an
+         event, not a transition, and it happens under the first arch where the
+         eye is already looking. */
+      const first=blockX(0,fx,pack)>gx[0];
       fr.bc.forEach((node,i)=>{
-        const sx2=fx+SPREAD[i]+(PACKED[i]-SPREAD[i])*pack;
+        const sx2=fx+xAir+SPREAD[i]+(PACKED[i]-SPREAD[i])*pack;
         /* once it has failed it is off the line — later gantries never see it */
         const reachable=fr.fail<0||i<=fr.fail;
         const scanned=blockX(i,fx,pack)>gx[i]&&reachable;
@@ -1786,12 +1809,12 @@ function drawSortingYard(g,n){
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
         const valid=fr.fail<0&&fx>VALX;
         /* unread blocks are dim AND a different token; read ones snap to R2's */
-        const op=vis*(bad?0.7:scanned?0.95:0.55)*(1+fl*0.30);
-        quad(node,sx2,sx2+SEG_W,yy,zR,op,
-          bad?"var(--rej)":valid?"var(--accent)":scanned?"var(--accent)":"var(--fg3)");
+        const op=vis*(bad?0.7:scanned?0.95:first?0.55:0.90)*(1+fl*0.30);
+        quad(node,sx2,sx2+SEG_W,yy,zR+zAir,op,
+          bad?"var(--rej)":(scanned||valid||!first)?"var(--accent)":"var(--fg3)");
       });
-      fr.links.forEach((node,i)=>
-        quad(node,fx+SPREAD[i]+SEG_W,fx+SPREAD[i+1],yy,zR,vis*0.24));
+      quad(fr.body,fx+xAir,fx+xAir+SPREAD[2]+SEG_W,yy,zR+zAir,vis*0.26,
+        undefined,SC(0.045));
 
       stations.forEach((st,i)=>{
         const prev=fr.px===undefined?fx:fr.px;
@@ -1831,20 +1854,6 @@ function drawSortingYard(g,n){
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
       fr.px=fx;
-    }
-    /* the inbound rain, on its own clock */
-    for(const r of INB){
-      const raw=t/r.per+r.ph, u=raw-Math.floor(raw);
-      const yy=laneY(0,r.lane)+r.dy;
-      let x,z,op;
-      if(u<0.62){ const k=u/0.62, ke=1-Math.pow(1-k,2.2);
-        x=LANDX-r.fx0*(1-ke); z=r.fz*Math.pow(1-k,1.25);
-        op=Math.min(1,k*3.2)*0.95;
-      } else { x=LANDX; z=0; op=1-sstep(0.62,0.80,u); }
-      const a=P(x,yy,base+0.06*KZ+z), b=P(x+r.len,yy,base+0.06*KZ+z);
-      r.ln.setAttribute("x1",a[0].toFixed(1)); r.ln.setAttribute("y1",a[1].toFixed(1));
-      r.ln.setAttribute("x2",b[0].toFixed(1)); r.ln.setAttribute("y2",b[1].toFixed(1));
-      r.ln.setAttribute("stroke-opacity",Math.max(0,op).toFixed(3));
     }
     for(const st of stations) for(const sl of st.slots){
       const age=t-sl.lit;
