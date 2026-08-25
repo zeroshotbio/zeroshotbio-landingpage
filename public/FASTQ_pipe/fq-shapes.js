@@ -461,7 +461,31 @@ const PORTS={
   /* THE MIDDLE OF THE BRACKET THAT NAMES THE TRACK — see fragGeom. */
   fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
     return F.rot(which==="L" ? F.r1Port : F.r2Port); },
+
+  /* A ROOF LEAVES FROM ITS NEAREST CORNER, NOT FROM ITS MIDDLE.
+
+     These two are the largest footprints on the map, and an edge drawn from the
+     centre of one spends its whole length inside the object's own occlusion
+     silhouette: GRCz11's line to the index was 136 pixels long and every one of
+     them was underneath GRCz11. The track was there, the dot was travelling it,
+     and the node read as unconnected.
+
+     The corner is chosen by which one is nearest the far end, so the line
+     leaves on the side it is going — no per-edge bookkeeping, and it stays
+     right if either object is dragged or resized. */
+  karyotype:(n,which,B)=>roofCorner(n,B),
+  locus    :(n,which,B)=>roofCorner(n,B),
 };
+function roofCorner(n,B){
+  const hw=n.w/2, hd=n.d/2;
+  let best=null, bd=Infinity;
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sy])=>{
+    const x=n.x+sx*hw, y=n.y+sy*hd;
+    const d=(x-B.x)*(x-B.x)+(y-B.y)*(y-B.y);
+    if(d<bd){ bd=d; best=[x,y]; }
+  });
+  return P(best[0],best[1],topOf(n));
+}
 
 /* ============================================================
    E1 — THE POOL
@@ -732,14 +756,17 @@ function drawKaryotype(g,n){
      which is the whole of the illusion. Their WEIGHT AND OPACITY follow the
      same cosine, so the near side of the turn is heavier than the far side —
      depth without a second projection. */
-  const HX0=margin+66*u, HL=54*u, HYC=15.5*u, HA=6.4*u, HK=Math.PI*2/(HL/2.6);
-  const sA=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg)",
-    "stroke-opacity":".72","stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"round"}));
-  const sB=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg)",
-    "stroke-opacity":".72","stroke-width":(1.5*u).toFixed(2),"stroke-linecap":"round"}));
+  /* SMALL AND QUIET. It was long enough and bright enough to compete with the
+     twenty-five ideograms that are the actual figure — a mark that says "DNA"
+     only has to be read once, and it is beside a word that already says it. */
+  const HX0=margin+65*u, HL=32*u, HYC=15.8*u, HA=3.6*u, HK=Math.PI*2/(HL/2.2);
+  const sA=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg3)",
+    "stroke-opacity":".5","stroke-width":(0.9*u).toFixed(2),"stroke-linecap":"round"}));
+  const sB=F.g.appendChild(el("polyline",{fill:"none",stroke:"var(--fg3)",
+    "stroke-opacity":".5","stroke-width":(0.9*u).toFixed(2),"stroke-linecap":"round"}));
   const RUNGS=[];
-  for(let i=0;i<13;i++)
-    RUNGS.push(F.g.appendChild(el("line",{stroke:"var(--fg)","stroke-linecap":"round"})));
+  for(let i=0;i<9;i++)
+    RUNGS.push(F.g.appendChild(el("line",{stroke:"var(--fg3)","stroke-linecap":"round"})));
   let hp=0;
   const spin=()=>{
     const N=64, a=[], b=[];
@@ -755,8 +782,8 @@ function drawKaryotype(g,n){
       const near=(Math.cos(th)+1)/2;          /* 1 nearest the eye, 0 furthest */
       r.setAttribute("x1",x.toFixed(1)); r.setAttribute("y1",y1.toFixed(1));
       r.setAttribute("x2",x.toFixed(1)); r.setAttribute("y2",y2.toFixed(1));
-      r.setAttribute("stroke-width",((0.55+near*0.9)*u).toFixed(2));
-      r.setAttribute("stroke-opacity",(0.16+near*0.5).toFixed(3));
+      r.setAttribute("stroke-width",((0.4+near*0.55)*u).toFixed(2));
+      r.setAttribute("stroke-opacity",(0.09+near*0.26).toFixed(3));
     });
   };
   spin();
@@ -816,8 +843,14 @@ const LOCUS_BANDS=(()=>{
    they are the regions that matter — the 3' UTR is where every read lands and
    the one whose zebrafish annotation is incomplete. Each still leaves a visible
    run of coding sequence in its own exon, which is what says it is a PART of
-   that exon and not a separate block. */
-const GENE={inset:[0.05,0.95],
+   that exon and not a separate block.
+
+   AND THE WHOLE MODEL SITS FURTHER RIGHT (inset 0.15 rather than 0.05). The
+   angled names trail down-LEFT from their ticks, so the first of them ran off
+   the left end of the model and straight into the 5' UTR's own label. Moving
+   the model over gives that label the clear ground it needs and costs nothing:
+   the model is a schematic, and where it sits on the roof is not a claim. */
+const GENE={inset:[0.15,0.95],
   exons:[[0,0.115],[0.175,0.235],[0.305,0.365],[0.445,0.505],[0.585,0.645],[0.735,1.0]],
   utr5:[0,0.075],          /* the front of exon 1 */
   utr3:[0.80,1.0]};        /* the tail of exon 6, and most of it */
@@ -971,10 +1004,15 @@ function drawLocus(g,n){
      name. The 3' UTR is most of the last exon and it is where every read on
      this map lands, so it is a section of the drawing rather than a note off
      the end. */
-  [[GENE.utr5,"5′ UTR"],[GENE.utr3,"3′ UTR"]].forEach(([rg,str])=>{
-    const x=(X(rg[0])+X(rg[1]))/2;
-    tick(x, y+UTRH/2+1.2*u, y+CDSH/2+17.6*u);
-    lab(str, x, y+CDSH/2+22.4*u);
+  /* EACH UTR NAME SITS AT ITS OWN OUTER END rather than at the block's centre —
+     the 5' one pulled left, the 3' one pushed right. At the centre the 5' label
+     sat directly under the first angled "exon", which trails down-left from its
+     tick and lands exactly there. The tick still rises to the block, so the
+     name is still ON its section and not off beside the model. */
+  [[GENE.utr5,"5′ UTR",0,-1],[GENE.utr3,"3′ UTR",1,1]].forEach(([rg,str,end,dir])=>{
+    const xt=X(rg[end]);
+    tick(xt, y+UTRH/2+1.2*u, y+CDSH/2+17.6*u);
+    lab(str, xt+dir*7.0*u, y+CDSH/2+22.4*u);
   });
 }
 DRAW.locus=drawLocus;
@@ -1039,7 +1077,7 @@ function setBox(nd,x0,x1,y,d,z0,z1,op){
   nd.end.setAttribute("points",pts([P(x1,yb,z1),P(x1,yf,z1),P(x1,yf,z0),P(x1,yb,z0)]));
   ["top","near","end"].forEach(k=>{
     nd[k].setAttribute("fill-opacity",op);
-    nd[k].setAttribute("stroke-opacity",((k==="top"?0.8:0.62)*op).toFixed(3));
+    nd[k].setAttribute("stroke-opacity",((k==="top"?0.42:0.28)*op).toFixed(3));
   });
 }
 const easeOut=x=>1-Math.pow(1-x,2.2);
@@ -1101,7 +1139,7 @@ function drawBelts(g,n){
            different kind of object — the variation said something, and there
            was nothing for it to say. */
         body:boxNodes(ggrp,"var(--t-left)","var(--t-right)",0.8),
-        exons:ex.map(()=>boxNodes(ggrp,"var(--fg3)","var(--a-top)",1.0)),
+        exons:ex.map(()=>boxNodes(ggrp,"var(--k-top)","var(--k-left)",1.0)),
         reads:[], spl:[]};
       const NR=19+Math.floor(rnd()*8);
       for(let k=0;k<NR;k++){
@@ -1187,7 +1225,7 @@ function drawBelts(g,n){
            shown. */
         setBox(gn.body,gx,gxe,y,BW*0.62,base,zGene,(op*0.55).toFixed(3));
         gn.ex.forEach(([a,c],i)=>
-          setBox(gn.exons[i],GX(a),GX(c),y,BW*0.52,zGene,zExon,(op*0.98).toFixed(3)));
+          setBox(gn.exons[i],GX(a),GX(c),y,BW*0.52,zGene,zExon,(op*0.7).toFixed(3)));
 
         for(const r of gn.reads){
           const tx=GX(r.f), tx2=GX(r.f+r.len);

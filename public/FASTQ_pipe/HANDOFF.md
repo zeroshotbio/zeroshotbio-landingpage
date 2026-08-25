@@ -489,9 +489,12 @@ the eye has to be *told* what to look at instead of being *shown*.
   between two, which made every other model on the belt look like a different
   kind of object: the variation said something, and there was nothing for it to
   say.
-- **The exons are the light rung**, faces *and* edges, because that is the
-  surface a read lands on and it has to look like a surface.
-- **The reads** are the only saturated thing in the frame.
+- **The exons** are a rung above the gene body and no more. They were the light
+  rung for a build, on the argument that a read needs a surface to look like it
+  is landing on. It does — but a light one competed with the reads themselves,
+  and the reads are the point.
+- **The reads** are the only saturated thing in the frame, and now the only
+  bright one.
 
 **A box on a belt is three faces, not two.** It was top and the long near side,
 on the reasoning that nothing on a belt is seen from its far side. True of the
@@ -519,6 +522,17 @@ labelled cubes. These are what those files actually *contain*: the assembly
 says which bases are where; the annotation says which stretches are a gene,
 which parts survive splicing, which get translated, and which way it is read.
 Both ported from canvas drawings into this page's idiom.
+
+**A roof leaves from its nearest corner, not from its middle.** These two are
+the largest footprints on the map, and an edge drawn from the centre of one
+spends its whole length inside the object's own occlusion silhouette: GRCz11's
+line to the index was 136 pixels long and every one of them was underneath
+GRCz11. The track was there, the dot was travelling it, and the node read as
+unconnected. `PORTS.karyotype` / `PORTS.locus` pick the corner nearest the far
+end, so the line leaves on the side it is going — no per-edge bookkeeping, and
+it stays right if either object is dragged or resized. **A straight ported edge
+is two points**; the lane-entry route is only for a track that has a lane to
+join.
 
 **They are buildings with their content painted on the roof**, which is
 `/bioinformatics_pipe`'s own idiom and the reason `roofFrame` was lifted into
@@ -554,7 +568,10 @@ bands punched out of the chromosomes are drawn in it too, so **a band is the
 roof showing through**, which is what a band is.
 
 **GRCz11 carries a turning double helix beside its name**, so a glance says DNA
-before the caption does. It lies along the same line the title reads on — local
+before the caption does — **small and quiet**, because a mark that says "DNA"
+only has to be read once and it stands beside a word that already says it. Long
+and bright it competed with the twenty-five ideograms that are the actual
+figure. It lies along the same line the title reads on — local
 +x, −30° on screen — so it belongs to the word rather than sitting next to it.
 Two sines half a period apart, redrawn each frame at a moving phase; the rungs
 between them shorten as the pair comes edge-on and lengthen again, which is the
@@ -585,6 +602,14 @@ that explains why it exists. A read from spliced mRNA covers the end of one exon
 and the start of the next, so it lands in two halves with nothing over the
 intron between them. Drawn here it says what the annotation is *for*: the
 assembly alone cannot place these, and this is the file that can.
+
+**The model sits well in from the left end of the roof** (`inset` 0.15, not
+0.05) and **each UTR name sits at its own outer end** rather than at the block's
+centre. The angled names trail down-*left* from their ticks, so the first of
+them ran off the left of the model and landed exactly on the 5′ UTR's own label.
+The tick still rises to the block, so the name is still *on* its section rather
+than off beside the model. Where the model sits on the roof is not a claim —
+it is a schematic — so moving it costs nothing.
 
 **Both untranslated ends are long, and pushed outward.** They were short enough
 to read as trim on the first and last exon rather than as regions of their own,

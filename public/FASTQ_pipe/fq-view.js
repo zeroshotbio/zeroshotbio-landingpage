@@ -411,9 +411,13 @@ function routeOf(e){
      and not a second leg; large enough that the arrival is along the lane and
      not into the side of the first stop. */
   if(e.port && typeof PORTS!=="undefined" && PORTS[A.shape]){
+    const p0=PORTS[A.shape](A,e.port,B);
+    /* A STRAIGHT PORTED EDGE IS TWO POINTS. The lane-entry route below is for
+       a track that has to join a lane; a reference line has no lane to join,
+       it just has to leave from somewhere visible and arrive. */
+    if(e.straight) return [p0, P(B.x,B.y,0.02)];
     const PORT_LEAD=2.0;
-    return [PORTS[A.shape](A,e.port),
-            P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
+    return [p0, P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
   }
 
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)

@@ -326,8 +326,8 @@ const EDGES = [
      straight: the elbow route puts a Z in a line whose whole content is "this
      feeds that", and a Z reads as a detour the thing actually takes.
   */
-  {a:"G1", b:"G3", kind:"ref", straight:true, tone:"var(--fg2)"},
-  {a:"G2", b:"G3", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+  {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"G3", b:"E4", kind:"ref", straight:true, tone:"var(--fg2)"},
   {a:"W1", b:"E3", kind:"ref", straight:true, tone:"var(--fg2)"},
 ];
