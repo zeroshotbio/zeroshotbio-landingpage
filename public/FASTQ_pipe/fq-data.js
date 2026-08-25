@@ -105,18 +105,28 @@ const NODES = [
    multimapping, ambiguous. Equal lanes would be a lie.
    --------------------------------------------------------------------------- */
 
-{id:"E4", key:"E4", group:"R1 · the cDNA half", shape:"tile", hatch:true,
- follow:{a:"E2",dx:4.5}, name:"Align R1", x:11.0, y:R3+3.4, w:1.9, d:1.9, h:1.5,
+/* THE ONE STATION ON THIS PAGE THAT IS A SURFACE RATHER THAN A BOX. Four
+   belts along the lane's own direction, carrying annotated gene models past;
+   the reads fly in from up-belt and land on them. w runs along the belts, d
+   across all four, and h is the whole stack — base, gene body, exon — so a
+   resize rescales the machine rather than stretching it. See drawBelts. */
+/* hatch:true still means "this stage destroys data" and still puts "drops" in
+   the index — multimappers and unmapped reads are set aside here. What it no
+   longer does is DRAW hatching, because drawBelts paints no faces for the
+   pattern to go on. The claim survives in the index and in the prose; if a
+   future belt wants it back it has to be part of the machine. */
+{id:"E4", key:"E4", group:"R1 · the cDNA half", shape:"belts", hatch:true,
+ follow:{a:"E2",dx:5.6}, name:"Align R1", x:11.0, y:R3+3.4, w:6.4, d:4.4, h:0.62,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
  cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Alignment",
- added:"The first of the two joins: R1 meets the index. Multimappers and unmapped reads are set aside here rather than counted — which is a loss of reads and not a cull, because no barcode is removed and nothing downstream knows a cell by fewer of them. It is also the only station on the page that consumes a reference: the index arrives on a still edge, having been built once and not for this run."},
+ added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. Four belts run along the lane's own direction carrying annotated gene models past — exons standing proud, introns flat between them — and the reads fly in from up-belt, chase a moving target, drop onto it, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands."},
 
 {id:"E5", key:"E5", group:"R1 · the cDNA half", shape:"tile", hatch:true,
- follow:{a:"E2",dx:9.0}, name:"Assign to gene", x:17.0, y:R3+3.4, w:1.9, d:1.9, h:1.1,
+ follow:{a:"E2",dx:11.4}, name:"Assign to gene", x:17.0, y:R3+3.4, w:1.9, d:1.9, h:1.1,
  sub:"coordinates resolved against gene models · exonic by default",
  does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
  built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",

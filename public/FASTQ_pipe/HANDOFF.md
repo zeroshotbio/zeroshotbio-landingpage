@@ -447,6 +447,45 @@ reshuffles on refresh is a decoration; this one is a drawing of an object.
 inherits Pause motion and `prefers-reduced-motion` for free, and one that throws
 is dropped without taking the map with it.
 
+## `drawBelts` — the alignment as a machine
+
+**The index is not a step reads pass through, it is a surface they land on**,
+and that is why this station is drawn rather than labelled. Four belts run along
+the lane's own direction carrying annotated gene models past — exons standing
+proud, introns flat between them — and the reads fly in from up-belt, chase a
+moving target, drop onto it, and then **ride along** with the gene until it goes.
+
+**Everything shares one velocity**: slats, genes and landed reads. That is what
+makes it a machine rather than three animations in a trench coat.
+
+**The aggregate is the argument.** Every read lands on an exon and none on an
+intron. One worked example is a fact about that read; three hundred of them is a
+fact about the *annotation* — the half of the index the assembly cannot supply,
+and the reason `G1` and `G2` are two nodes rather than one. A few cannot land in
+one piece: they came from spliced mRNA and cover the end of one exon and the
+start of the next, so they arrive as two halves with an arc between them that
+never touches down over the intron. Those are the reads the sequence alone could
+not place.
+
+**The reads are `--cull`, R1's own colour** — the same the track into this
+station carries and the same the cDNA block wears in the fragment, so the trail
+does not break at the moment it lands. **The spliced reads are that colour too:**
+a distinction the palette has no token left for, made by *encoding* instead. Two
+halves and an arc is unmistakable, and a fourth hue would say "a different kind
+of read" when it is the same read.
+
+**Every absolute length is scaled by the node.** The original was authored
+against a fixed 9.2-unit span; `K` and `KZ` carry that onto whatever `w` and `h`
+the editor leaves behind. `w` runs along the belts, `d` across all four, `h` is
+the whole stack — base, gene body, exon — so `topOf(n)` is exactly the exon top
+and a resize rescales the machine rather than stretching it. That is checked:
+`check-edit` resizes this node and asserts the ticker count does not grow.
+
+**`hatch:true` no longer draws anything here.** It still means *this stage
+destroys data* and still puts "drops" in the index — multimappers and unmapped
+reads are set aside — but `drawBelts` paints no faces for the pattern to go on.
+The claim survives in the index and in the prose.
+
 ## The two reference figures — `karyotype` and `locus`
 
 The genome lane is two files and two decisions, and until now it was two

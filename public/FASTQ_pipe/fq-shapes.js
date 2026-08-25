@@ -877,3 +877,247 @@ function drawLocus(g,n){
   });
 }
 DRAW.locus=drawLocus;
+
+
+/* ============================================================
+   E4 · ALIGN R1 — CONVEYOR BELTS
+
+   THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON,
+   and that is the whole reason this station is drawn rather than labelled.
+   Four narrow belts run in parallel along the lane's own direction. Genes ride
+   ON the belts — annotated models that enter at one end, cross, and leave at
+   the other, exons standing proud with introns flat between them. Reads fly in
+   from off-map, chase a moving target, drop onto it, and then RIDE ALONG with
+   the gene until it goes.
+
+   EVERYTHING SHARES ONE VELOCITY: slats, genes and landed reads. That is what
+   makes it a machine rather than three animations in a trench coat.
+
+   THE AGGREGATE IS THE ARGUMENT. Every read lands on an exon and none on an
+   intron. One worked example reads as a fact about that read; three hundred of
+   them reads as a fact about the ANNOTATION — which is the half of the index
+   the FASTA cannot supply, and the thing G1 and G2 are two separate nodes to
+   say.
+
+   And a few cannot land in one piece. They came from spliced mRNA and cover the
+   end of one exon and the start of the next, so they arrive as two halves with
+   an arc between them that never touches down over the intron. Those are the
+   reads the sequence alone could not place.
+
+   COLOUR: THE READS ARE R1's OWN. They are --cull, the same orange the track
+   into this station carries and the same the cDNA block wears in the fragment,
+   so the trail does not break at the moment it lands. The SPLICED reads are
+   that colour too — a distinction the palette has no token left for, made by
+   ENCODING instead: two halves and an arc is unmistakable, and a fourth hue
+   would say "a different kind of read" when it is the same read.
+
+   EVERY ABSOLUTE LENGTH IS SCALED BY THE NODE. The original was authored
+   against a fixed 9.2-unit span; K and KZ carry that onto whatever w and h the
+   editor leaves behind, so this shape survives being resized like every other.
+   ============================================================ */
+/* a box carried by the belt: top face and the long near face, rebuilt per
+   frame. Two polygons rather than paint()'s three, because nothing on a belt is
+   ever seen from its far side. */
+function boxNodes(g,fill,side,sw){
+  return {
+    top :g.appendChild(el("polygon",{fill,stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".75"})),
+    near:g.appendChild(el("polygon",{fill:side,stroke:"var(--stroke)","stroke-width":sw,"stroke-opacity":".55"})),
+  };
+}
+function setBox(nd,x0,x1,y,d,z0,z1,op){
+  const yb=y-d/2, yf=y+d/2;
+  nd.top.setAttribute("points",pts([P(x0,yb,z1),P(x1,yb,z1),P(x1,yf,z1),P(x0,yf,z1)]));
+  nd.near.setAttribute("points",pts([P(x0,yf,z1),P(x1,yf,z1),P(x1,yf,z0),P(x0,yf,z0)]));
+  nd.top.setAttribute("fill-opacity",op);
+  nd.near.setAttribute("fill-opacity",op);
+  nd.top.setAttribute("stroke-opacity",(0.75*op).toFixed(3));
+  nd.near.setAttribute("stroke-opacity",(0.55*op).toFixed(3));
+}
+const easeOut=x=>1-Math.pow(1-x,2.2);
+const clamp01=x=>(x<0?0:x>1?1:x);
+
+function drawBelts(g,n){
+  hitBox(g,n);
+  const rnd=mulberry32(0x5eedf15^0x53);
+  const NB=n.belts||4;
+  const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0;
+  const pitch=n.d/NB, y0=n.y-n.d/2+pitch/2;
+  const BW=pitch*0.52;
+  const base=n.h*0.245, geneH=n.h*0.19, exonH=n.h*0.565;
+  const K=span/9.2, KZ=n.h/0.53;              /* the original's own units */
+  const v=(n.v||1.05)*K;
+  const GPB=4;                                 /* tiled end to end, no gaps */
+  const PAD=7*K;                               /* enough to enter and leave off-map */
+  const LOOP=span+PAD*2;
+
+  const belts=[];
+  for(let b=0;b<NB;b++){
+    const y=y0+b*pitch;
+    const grp=g.appendChild(el("g"));
+
+    grp.appendChild(el("polygon",{points:pts([P(x0,y-BW/2,base),P(x1,y-BW/2,base),
+      P(x1,y+BW/2,base),P(x0,y+BW/2,base)]),
+      fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".5"}));
+    grp.appendChild(el("polygon",{points:pts([P(x0,y+BW/2,base),P(x1,y+BW/2,base),
+      P(x1,y+BW/2,0),P(x0,y+BW/2,0)]),
+      fill:"var(--t-left)","fill-opacity":".95",stroke:"var(--stroke)",
+      "stroke-width":"0.9","stroke-opacity":".5"}));
+
+    const slats=[];
+    for(let k=0;k<30;k++)
+      slats.push(grp.appendChild(el("line",{stroke:"var(--stroke)",
+        "stroke-width":"1","stroke-opacity":".34"})));
+
+    const genes=[];
+    for(let i=0;i<GPB;i++){
+      const len=LOOP/GPB;
+      const ex=[];
+      let f=0.015+rnd()*0.03;
+      while(f<0.93){
+        const w=0.055+rnd()*0.10;
+        if(f+w>0.955) break;
+        ex.push([f,f+w]);
+        f+=w+0.05+rnd()*0.085;
+      }
+      const ggrp=grp.appendChild(el("g"));
+      const gn={grp:ggrp,len,ex,pos:0,
+        body:boxNodes(ggrp, i%2?"var(--k-top)":"var(--t-top)",
+                            i%2?"var(--k-left)":"var(--t-left)", 0.8),
+        exons:ex.map(()=>boxNodes(ggrp,"var(--a-top)","var(--a-left)",1.0)),
+        reads:[], spl:[]};
+      const NR=19+Math.floor(rnd()*8);
+      for(let k=0;k<NR;k++){
+        const e=ex[Math.floor(rnd()*ex.length)];
+        const RL=0.048;
+        const lo=e[0]+0.003, hi2=Math.max(lo,e[1]-RL-0.003);
+        gn.reads.push({f:lo+rnd()*(hi2-lo), len:RL,
+          dy:(rnd()-0.5)*BW*0.46,
+          u0:0.198+rnd()*0.062,                 /* lands in the first third */
+          fx0:(5.2+rnd()*3.4)*K,                /* comes in from a long way up-belt */
+          fz:(2.3+rnd()*1.5)*KZ,                /* a shallow slant, not a vertical drop */
+          sh:ggrp.appendChild(el("ellipse",{fill:"var(--stroke)","fill-opacity":"0"})),
+          ln:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.0",
+            "stroke-linecap":"butt","stroke-opacity":"0"}))});
+      }
+      for(let k=0;k<ex.length-1;k++){
+        if(rnd()<0.5) continue;
+        gn.spl.push({j:[ex[k][1],ex[k+1][0]],
+          dy:(rnd()-0.5)*BW*0.30,
+          u0:0.204+rnd()*0.056,
+          fx0:(5.4+rnd()*3.0)*K, fz:(2.5+rnd()*1.3)*KZ,
+          a:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.4","stroke-opacity":"0"})),
+          c:ggrp.appendChild(el("line",{stroke:"var(--cull)","stroke-width":"3.4","stroke-opacity":"0"})),
+          arc:ggrp.appendChild(el("polyline",{fill:"none",stroke:"var(--cull)",
+            "stroke-width":"1.8","stroke-linecap":"round","stroke-opacity":"0"}))});
+      }
+      genes.push(gn);
+    }
+    /* Uniform length, tiled nose to tail, and each belt phase-shifted by a
+       QUARTER OF A GENE against the one behind it. Four belts, four quarters:
+       an entry happens somewhere every quarter-gene, so the picture never has a
+       lull and no two belts are ever at the same point in the cycle. */
+    const GL=LOOP/GPB;
+    genes.forEach((gn,i)=>{ gn.len=GL; gn.pos=((b*GL)/NB+i*GL)%LOOP; });
+    belts.push({y,slats,genes,v});
+  }
+
+  const zGene=base+geneH, zExon=base+geneH+exonH, zRead=zExon+0.03*KZ;
+
+  let t=0;
+  const run=dt=>{
+    t+=dt;
+    for(const belt of belts){
+      const y=belt.y, scroll=t*belt.v;
+
+      const gap=span/belt.slats.length;
+      belt.slats.forEach((s,k)=>{
+        const x=x0+(((k*gap+scroll)%span)+span)%span;
+        const a=P(x,y-BW/2,base), b=P(x,y+BW/2,base);
+        s.setAttribute("x1",a[0].toFixed(1)); s.setAttribute("y1",a[1].toFixed(1));
+        s.setAttribute("x2",b[0].toFixed(1)); s.setAttribute("y2",b[1].toFixed(1));
+      });
+
+      for(const gn of belt.genes){
+        const gx=x0-PAD+(((gn.pos+scroll)%LOOP)+LOOP)%LOOP;
+        const gxe=gx+gn.len;
+        const u=clamp01((gx-(x0-PAD))/LOOP);
+        /* THE GENE IS ONLY DRAWN ONCE IT IS TWO THIRDS ONTO THE BELT, and it
+           goes again the moment it drops back under that. No half-genes at the
+           ends, and no blink: the fade is on the overlap rather than on x. */
+        const overlap=Math.max(0,Math.min(gxe,x1)-Math.max(gx,x0));
+        const op=clamp01((overlap/gn.len-0.60)/0.14);
+        /* the group stays alive well before that, because its inbound reads are
+           already falling from up-belt and the trail is most of the picture */
+        const live=gxe>x0-11*K && gx<x1+1.4*K;
+        if(!live){
+          if(gn.shown!==false){ gn.grp.setAttribute("display","none"); gn.shown=false; }
+          continue;
+        }
+        if(gn.shown===false){ gn.grp.removeAttribute("display"); gn.shown=true; }
+        /* Reads may show BEFORE the body does — the inbound trail is the point —
+           but they must never outlive it. On the way out they fade on exactly
+           the same measure, so nothing is left floating on nothing. */
+        const opRead=gxe>x1?op:1;
+        const GX=f=>gx+f*gn.len;
+
+        setBox(gn.body,gx,gxe,y,BW*0.62,base,zGene,(op*0.85).toFixed(3));
+        gn.ex.forEach(([a,c],i)=>
+          setBox(gn.exons[i],GX(a),GX(c),y,BW*0.52,zGene,zExon,(op*0.95).toFixed(3)));
+
+        for(const r of gn.reads){
+          const tx=GX(r.f), tx2=GX(r.f+r.len);
+          let x,z,ro;
+          if(u<r.u0){ x=0; z=0; ro=0; }
+          else if(u<r.u0+0.058){
+            const k=(u-r.u0)/0.058, ke=easeOut(k);
+            x=tx-r.fx0*(1-ke);
+            z=r.fz*Math.pow(1-k,1.25);
+            ro=Math.min(1,k*4)*0.62;
+          } else { x=tx; z=0; ro=0.62; }
+          const zz=zRead+z;
+          const a=P(x,y+r.dy,zz), b=P(x+(tx2-tx),y+r.dy,zz);
+          r.ln.setAttribute("x1",a[0].toFixed(1)); r.ln.setAttribute("y1",a[1].toFixed(1));
+          r.ln.setAttribute("x2",b[0].toFixed(1)); r.ln.setAttribute("y2",b[1].toFixed(1));
+          r.ln.setAttribute("stroke-opacity",(ro*opRead).toFixed(3));
+          const e=ellipseAt(x+(tx2-tx)/2,y+r.dy,zExon,(0.042+z*0.05)*K);
+          r.sh.setAttribute("cx",e.x.toFixed(1)); r.sh.setAttribute("cy",e.y.toFixed(1));
+          r.sh.setAttribute("rx",e.rx.toFixed(2)); r.sh.setAttribute("ry",e.ry.toFixed(2));
+          r.sh.setAttribute("fill-opacity",(ro*opRead*op*0.34).toFixed(3));
+        }
+
+        for(const sp of gn.spl){
+          const ja=GX(sp.j[0]), jb=GX(sp.j[1]), HL=0.30*K;
+          let off,z,so;
+          if(u<sp.u0){ off=0; z=0; so=0; }
+          else if(u<sp.u0+0.062){
+            const k=(u-sp.u0)/0.062, ke=easeOut(k);
+            off=-sp.fx0*(1-ke);
+            z=sp.fz*Math.pow(1-k,1.25);
+            so=Math.min(1,k*4);
+          } else { off=0; z=0; so=1; }
+          const zz=zRead+z, yy=y+sp.dy, oo=(so*opRead).toFixed(3);
+          const seg=(node,u0,u1)=>{
+            const a=P(u0+off,yy,zz), b=P(u1+off,yy,zz);
+            node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
+            node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
+            node.setAttribute("stroke-opacity",oo);
+          };
+          seg(sp.a,ja-HL,ja);
+          seg(sp.c,jb,jb+HL);
+          const N=20, path=[];
+          const lift=(0.26+(jb-ja)*0.10)*KZ;
+          for(let i=0;i<=N;i++){
+            const k=i/N;
+            path.push(P(ja+(jb-ja)*k+off,yy,zz+Math.sin(Math.PI*k)*lift));
+          }
+          sp.arc.setAttribute("points",pts(path));
+          sp.arc.setAttribute("stroke-opacity",oo);
+        }
+      }
+    }
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.belts=drawBelts;
