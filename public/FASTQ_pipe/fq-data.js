@@ -299,11 +299,16 @@ const EDGES = [
      So they are proper lines with dots on them, in a neutral grey that is
      neither read's colour — the fork owns orange and blue and nothing else on
      the map may borrow them. What still marks a reference as a different class
-     of thing is the SKIN its node wears. */
-  {a:"G1", b:"G3", kind:"ref", tone:"var(--fg2)"},
-  {a:"G2", b:"G3", kind:"ref", tone:"var(--fg2)"},
-  {a:"G3", b:"E4", kind:"ref", tone:"var(--fg2)"},
-  {a:"W1", b:"E3", kind:"ref", tone:"var(--fg2)"},
+     of thing is the SKIN its node wears.
+
+     STRAIGHT, ALL FOUR, for the same reason the two lanes arrive at the join
+     straight: the elbow route puts a Z in a line whose whole content is "this
+     feeds that", and a Z reads as a detour the thing actually takes.
+  */
+  {a:"G1", b:"G3", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"G2", b:"G3", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"G3", b:"E4", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"W1", b:"E3", kind:"ref", straight:true, tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference

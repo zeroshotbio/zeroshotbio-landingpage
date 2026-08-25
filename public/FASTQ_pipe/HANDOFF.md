@@ -83,6 +83,9 @@ box out of the occlusion clip and both departures vanish at their own ends.
 **Both lanes run straight into E6** (`straight:true` on the last leg of each).
 The elbow route puts a Z in that leg, and a Z at the moment two things converge
 reads as two things being nudged together rather than as two things arriving.
+**All four reference edges are `straight:true` too**, for the same reason: the
+whole content of one is "this feeds that", and a Z reads as a detour the thing
+actually takes.
 
 **E6 has two inbound edges and must look like it.** The gene identity comes down
 one branch and the cell identity up the other, and neither alone is a count — a
@@ -486,6 +489,40 @@ here, which is convex at any height. `drawReads` builds its own hit silhouette
 the same way. **If this is ever lifted back to `/pipeline` or
 `/bioinformatics_pipe`, take the order with it** — those maps have no object
 tall enough to show the bug, which is why it survived there.
+
+## The band is an object, not a backdrop
+
+It was the one thing on the map drawn from constants and untouchable — every
+building drags and every name nudges, and the patch of ground they all stand on
+was fixed. It is also what the camera fits to, so getting it wrong costs the
+whole view.
+
+It has the two handles a rectangle anywhere has: **drag the border to move it,
+drag a corner to reshape it.** Its record is `bandbox:<i>`, carrying `dx`/`dy`
+for the move and `bx0`/`by0`/`bx1`/`by1` for the four extents — the smallest
+thing that expresses both without them interfering, so a move leaves the extents
+alone and a corner leaves the move alone and neither can quietly undo the other
+on a reload. A corner owns exactly two extents and touches no others.
+
+**The border, not the interior, and that is not a style choice.** The band covers
+the whole map. Give it a filled hit target and every drag that misses a building
+— which is how you pan — grabs the band instead. `pointer-events:stroke` on a
+polygon with no fill takes presses on the outline and nowhere else.
+
+**One element is both the target and the feedback.** A separate dashed outline
+on top of it — the obvious way to show "grabbable" — sits on exactly the same
+geometry and, being an `.ehandle`, takes the press instead: two of the four
+edges were dead before this was noticed. The fat translucent stroke *is* the
+affordance.
+
+**Its name rides its edge.** The title is placed from the band's own
+bottom-right corner rather than from a remembered constant, so reshaping carries
+the title along. It still has its own nudge on top (`band:<i>`) — the same split
+a building and its name already have.
+
+The handles live in their own layer appended last, so a corner can never end up
+underneath something, and they are inert until the mode is on like every other
+handle here.
 
 ## No ruler, and three fewer buttons
 

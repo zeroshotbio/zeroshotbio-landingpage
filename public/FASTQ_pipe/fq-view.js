@@ -203,25 +203,69 @@ const GRID={x0:-5,x1:37,y0:-15,y1:10};
    be got out of the way of anything. It is placed from world coordinates like
    everything else, so it takes the same world-unit nudge a building's name
    takes, under its own key. */
-const MOVERS=[];
+/* THE BAND IS AN OBJECT, NOT A BACKDROP.
+
+   It is the one thing on the map that was drawn from constants and could not be
+   touched — every building can be dragged and its name nudged, and the patch of
+   ground they all stand on was fixed. It is also the thing the camera fits to,
+   so getting it wrong costs the whole view.
+
+   So it has the same two handles a rectangle anywhere has: DRAG THE BORDER to
+   move it, DRAG A CORNER to reshape it. Its record is `bandbox:<i>` and carries
+   dx/dy for the move and bx0/by0/bx1/by1 for the four extents, which is the
+   smallest thing that can express both without the two interfering — a move
+   leaves the extents alone and a corner leaves the move alone, so neither can
+   quietly undo the other on a reload.
+
+   ITS NAME RIDES ITS EDGE. The title is placed from the band's own bottom-right
+   corner rather than from a remembered constant, so reshaping the band carries
+   the title with it. It still has its own nudge on top (`band:<i>`); that is the
+   same split a building and its name already have. */
+const MOVERS=[], BOXES=[];
 BANDS.forEach((b,i)=>{
-  const c=[[b.x0,b.y0],[b.x1,b.y0],[b.x1,b.y1],[b.x0,b.y1]];
-  gBand.appendChild(el("polygon",{points:pts(c.map(p=>P(p[0],p[1],0))),
+  const poly=gBand.appendChild(el("polygon",{
     fill:"var(--fg)","fill-opacity":".025",stroke:"var(--fg)","stroke-opacity":".22",
     "stroke-width":"1","stroke-dasharray":"14 9"}));
-  const bx=b.x1, by=(b.y0+b.y1)/2;
+
   const g=gLabel.appendChild(el("g"));
   const t=el("text",{x:0,y:17,"text-anchor":"middle","font-size":"16","letter-spacing":"4",
     fill:"var(--fg3)"});
   t.textContent=b.name.toUpperCase(); g.appendChild(t);
+
+  const box={key:"bandbox:"+i, name:b.name, b, poly, dx:0, dy:0, e:[0,0,0,0],
+    hit:null, corners:[],
+    rect(){ return [b.x0+box.dx+box.e[0], b.y0+box.dy+box.e[1],
+                    b.x1+box.dx+box.e[2], b.y1+box.dy+box.e[3]]; },
+    reflow(){
+      const [x0,y0,x1,y1]=box.rect();
+      const cs=[[x0,y0],[x1,y0],[x1,y1],[x0,y1]].map(q=>P(q[0],q[1],0));
+      const d=pts(cs);
+      poly.setAttribute("points",d);
+      if(box.hit) box.hit.setAttribute("points",d);
+      box.corners.forEach((h,k)=>{
+        h.setAttribute("x",(cs[k][0]-7).toFixed(1));
+        h.setAttribute("y",(cs[k][1]-7).toFixed(1));
+      });
+      m.reflow();
+    }};
+  BOXES.push(box);
+
   const m={key:"band:"+i, name:b.name, g, lx:0, ly:0, hide:false,
     reflow(){
-      const [px,py]=P(bx+m.lx, by+m.ly, 0);
+      const [x0,y0,x1,y1]=box.rect();
+      const [px,py]=P(x1+m.lx, (y0+y1)/2+m.ly, 0);
       g.setAttribute("transform",`translate(${px},${py}) rotate(-30)`);
     }};
-  m.reflow();
   MOVERS.push(m);
+  box.reflow();
 });
+function applyBox(box,o){
+  o=o||{};
+  box.dx=o.dx||0; box.dy=o.dy||0;
+  box.e=[o.bx0||0,o.by0||0,o.bx1||0,o.by1||0];
+  box.reflow();
+}
+BOXES.forEach(box=>applyBox(box,LIVE[box.key]));
 function applyMover(m,o){
   o=o||{};
   m.lx=o.ldx||0; m.ly=o.ldy||0;
@@ -571,6 +615,7 @@ function applyOffsets(o){
   NODES.forEach(n=>{ applyNudge(n,o[n.id]); reposition(n); });
   if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{
     const w=o[a.key]||{}; a.off.dx=w.adx||0; a.off.dy=w.ady||0; a.reflow(); });
+  BOXES.forEach(box=>applyBox(box,o[box.key]));
   MOVERS.forEach(m=>applyMover(m,o[m.key]));
   NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(m=>gNode.appendChild(nodeEls[m.id]));
   refresh(null);
@@ -1181,6 +1226,13 @@ function collectOffsets(){
     const ldx=r2(m.lx), ldy=r2(m.ly);
     if(ldx||ldy) out[m.key]={...(ldx?{ldx}:{}),...(ldy?{ldy}:{})};
   });
+  BOXES.forEach(box=>{
+    const o={}, [bx0,by0,bx1,by1]=box.e.map(r2);
+    if(r2(box.dx)) o.dx=r2(box.dx);
+    if(r2(box.dy)) o.dy=r2(box.dy);
+    if(bx0) o.bx0=bx0; if(by0) o.by0=by0; if(bx1) o.bx1=bx1; if(by1) o.by1=by1;
+    if(Object.keys(o).length) out[box.key]=o;
+  });
   return out;
 }
 /* ---- the two bits of chrome the editing mode needs ----------------------
@@ -1331,6 +1383,31 @@ feature("edit positions", function(){
     L.appendChild(el("rect",Object.assign({},box,{class:"ehandle lab"})));
     L.appendChild(el("rect",Object.assign({},box,{class:"ehit","data-id":n.id})));
   });
+  /* ---- THE BAND: A BORDER TO MOVE IT BY, AND FOUR CORNERS TO RESHAPE IT ----
+     THE BORDER RATHER THAN THE INTERIOR, and that is not a style choice. The
+     band covers the whole map. Give it a filled hit target and in this mode
+     every drag that misses a building — which is how you pan — grabs the band
+     instead. `pointer-events:stroke` on a polygon with no fill takes presses on
+     the outline and nowhere else, so the inside of the map stays what it was.
+
+     They live in their own layer appended last, so a corner can never end up
+     underneath something. They are inert until the mode is on, like every other
+     handle here. */
+  const gBandEdit=world.appendChild(el("g"));
+  BOXES.forEach(box=>{
+    /* ONE ELEMENT IS BOTH THE TARGET AND THE FEEDBACK. A separate dashed
+       outline on top of this — the obvious way to show "grabbable" — sits on
+       exactly the same geometry and, being an .ehandle, takes the press
+       instead: two of the four edges were dead. The fat translucent stroke IS
+       the affordance. */
+    box.hit=gBandEdit.appendChild(el("polygon",{class:"ehit bandedge",fill:"none",
+      stroke:"transparent","stroke-width":"16","pointer-events":"stroke"}));
+    for(let k=0;k<4;k++)
+      box.corners.push(gBandEdit.appendChild(
+        el("rect",{class:"ehandle bandcorner",width:"14",height:"14"})));
+    box.reflow();
+  });
+
   /* the band's own name gets the same box, for the same reason: glyphs are a
      few hundred square pixels of ink and mostly holes */
   MOVERS.forEach(m=>{
@@ -1431,6 +1508,23 @@ feature("edit positions", function(){
     }
     const [dx,dy]=toWorldD((ev.clientX-grab.px)/view.k,(ev.clientY-grab.py)/view.k);
     const q=v=>Math.round(v/SNAP)*SNAP;
+    if(grab.mode==="box" || grab.mode==="corner"){
+      const box=grab.box;
+      if(grab.mode==="box"){ box.dx=r2(grab.ox+q(dx)); box.dy=r2(grab.oy+q(dy)); }
+      else {
+        /* which extents this corner owns: 0=(x0,y0) 1=(x1,y0) 2=(x1,y1) 3=(x0,y1) */
+        const xi=(grab.corner===1||grab.corner===2)?2:0;
+        const yi=(grab.corner===2||grab.corner===3)?3:1;
+        box.e=grab.oe.slice();
+        box.e[xi]=r2(grab.oe[xi]+q(dx));
+        box.e[yi]=r2(grab.oe[yi]+q(dy));
+      }
+      box.reflow();
+      const [x0,y0,x1,y1]=box.rect();
+      if(hint) hint.textContent=`${box.name} band — x ${x0.toFixed(2)}..${x1.toFixed(2)}`+
+        `   y ${y0.toFixed(2)}..${y1.toFixed(2)}`;
+      return;
+    }
     if(grab.mode==="mover"){
       const m=grab.m;
       m.lx=r2(grab.ox+q(dx)); m.ly=r2(grab.oy+q(dy));
@@ -1453,6 +1547,11 @@ feature("edit positions", function(){
       const k=grab.ann.key;
       if(!travelled) pick({kind:"ann",a:grab.ann});
       const moved=travelled; grab=null;
+      if(moved) markDirty(k);
+      return;
+    }
+    if(grab.mode==="box" || grab.mode==="corner"){
+      const k=grab.box.key; const moved=travelled; grab=null;
       if(moved) markDirty(k);
       return;
     }
@@ -1498,6 +1597,30 @@ feature("edit positions", function(){
     });
     a.hit.addEventListener("pointermove",move);
     ["pointerup","pointercancel"].forEach(t=>a.hit.addEventListener(t,end));
+  });
+
+  /* THE BAND ITSELF. Two grabs on one object: the border moves it, a corner
+     reshapes it. A corner owns two of the four extents and touches no others,
+     so dragging one never drifts the opposite edge. */
+  BOXES.forEach(box=>{
+    const start=(ev,mode,k)=>{
+      if(!editing) return;
+      ev.stopPropagation(); ev.preventDefault();
+      const t=ev.currentTarget;
+      if(t.setPointerCapture) t.setPointerCapture(ev.pointerId);
+      grab={box,mode,corner:k,px:ev.clientX,py:ev.clientY,moved:0,
+            ox:box.dx,oy:box.dy,oe:box.e.slice()};
+      t.classList.add("picked");
+    };
+    const stop=ev=>{ if(ev.currentTarget) ev.currentTarget.classList.remove("picked"); end(ev); };
+    box.hit.addEventListener("pointerdown",ev=>start(ev,"box"));
+    box.hit.addEventListener("pointermove",move);
+    ["pointerup","pointercancel"].forEach(t=>box.hit.addEventListener(t,stop));
+    box.corners.forEach((h,k)=>{
+      h.addEventListener("pointerdown",ev=>start(ev,"corner",k));
+      h.addEventListener("pointermove",move);
+      ["pointerup","pointercancel"].forEach(t=>h.addEventListener(t,stop));
+    });
   });
 
   /* THE BAND'S NAME. World units, like a building's name — it is placed from

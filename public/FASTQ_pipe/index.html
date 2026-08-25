@@ -167,6 +167,16 @@
            stroke:var(--signal);stroke-width:1.1;stroke-opacity:.5;stroke-dasharray:4 3}
   .ehandle.lab{fill-opacity:.03;stroke-opacity:.4;stroke-dasharray:2 3}
   .ehit{fill:transparent;pointer-events:none}
+  /* the band's own two handles: an outline to move it by and four corners to
+     reshape it. The outline takes presses on its STROKE only — the band covers
+     the whole map, and a filled target would swallow every pan in this mode. */
+  .bandedge{cursor:move}
+  svg.editing .bandedge{pointer-events:stroke!important;stroke:var(--signal)!important;
+                        stroke-opacity:.28}
+  svg.editing .bandedge:hover,svg.editing .bandedge.picked{stroke-opacity:.7}
+  .bandcorner{cursor:nwse-resize}
+  svg.editing .bandcorner{pointer-events:all}
+  svg.editing .bandcorner:hover,svg.editing .bandcorner.picked{fill-opacity:.3;stroke-opacity:1;stroke-dasharray:none}
   svg.editing .ehandle{display:block;pointer-events:all;cursor:move}
   svg.editing .ehit{pointer-events:all;cursor:move}
   svg.editing{cursor:default}

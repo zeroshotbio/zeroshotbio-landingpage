@@ -110,10 +110,54 @@ else {
     fail('the band name nudge moved but the type did not');
 }
 
+/* THE BAND: A BORDER THAT MOVES IT AND A CORNER THAT RESHAPES IT.
+
+   This one is checked harder than the rest because it is the only object on the
+   map whose geometry is DERIVED — the polygon is drawn from x0/y0/x1/y1 rather
+   than from a coordinate of its own, which is the exact shape of the bug that
+   made Save look broken for two builds on /bioinformatics_pipe: the record was
+   right, the model was right, and the picture was wrong. So this asserts the
+   RECT AFTER A RELOAD, not the record.
+
+   And it asserts the two are independent: a corner must move two extents and
+   leave the other two alone, or dragging one edge quietly drifts the opposite
+   one. */
+const rectOf=pg=>pg.evaluate(()=>BOXES[0].rect().map(v=>+v.toFixed(2)));
+const bandBefore=await rectOf(p);
+
+const corner=await p.evaluate(()=>{
+  const r=BOXES[0].corners[2].getBoundingClientRect();
+  return {x:r.x+r.width/2,y:r.y+r.height/2};
+});
+await p.mouse.move(corner.x,corner.y); await p.mouse.down();
+await p.mouse.move(corner.x-120,corner.y-70,{steps:14}); await p.mouse.up();
+await p.waitForTimeout(250);
+const bandCorner=await rectOf(p);
+if(bandCorner[0]!==bandBefore[0] || bandCorner[1]!==bandBefore[1])
+  fail(`dragging the far corner moved the near one too (${bandBefore} -> ${bandCorner})`);
+if(bandCorner[2]===bandBefore[2] && bandCorner[3]===bandBefore[3])
+  fail('dragging a band corner did not reshape it');
+
+const edge=await p.evaluate(()=>{
+  const pp=BOXES[0].hit.getAttribute('points').split(' ').map(q=>q.split(',').map(Number));
+  const world=document.querySelector('#svg > g'), m=world.getScreenCTM();
+  const mid=[(pp[1][0]+pp[2][0])/2,(pp[1][1]+pp[2][1])/2];
+  return {x:m.a*mid[0]+m.c*mid[1]+m.e, y:m.b*mid[0]+m.d*mid[1]+m.f};
+});
+await p.mouse.move(edge.x,edge.y); await p.mouse.down();
+await p.mouse.move(edge.x+60,edge.y+40,{steps:12}); await p.mouse.up();
+await p.waitForTimeout(250);
+const bandMoved=await rectOf(p);
+const shifted=bandMoved.map((v,i)=>+(v-bandCorner[i]).toFixed(2));
+if(!shifted[0] || shifted.some(v=>Math.abs(v-shifted[0])>0.001 && Math.abs(v-shifted[1])>0.001))
+  fail(`dragging the band border did not move it rigidly (${shifted})`);
+
 /* it is remembered, and it prints a block to paste */
 /* the stored record is {offsets, at}: the table, and when it was last touched */
 const rec=JSON.parse(await p.evaluate(()=>localStorage.getItem('fqpipe.offsets'))||'{}');
 const stored=rec.offsets;
+if(!stored || !stored["bandbox:0"])
+  fail('the band box was not written to local storage: '+JSON.stringify(rec));
 if(!stored || !stored.E4 || !stored.E6)
   fail('offsets were not written to local storage: '+JSON.stringify(rec));
 if(movKey && stored && !stored[movKey])
@@ -126,6 +170,16 @@ const snip=await p.evaluate(()=>document.querySelector('#read .snip')?.textConte
 if(!/const OFFSETS = \{/.test(snip)) fail('Save did not print an OFFSETS block');
 if(!/ldx|ldy/.test(snip)) fail('the printed block has no name offset in it');
 
+/* AND THE BAND COMES BACK DRAWN WHERE IT WAS LEFT — the record being right is
+   not evidence that the picture is. */
+await p.reload({waitUntil:'networkidle'});
+await p.waitForTimeout(2200);
+const bandBack=await rectOf(p);
+if(bandBack.some((v,i)=>Math.abs(v-bandMoved[i])>0.001))
+  fail(`the band saved and reloaded somewhere else — left at ${bandMoved}, came back at ${bandBack}`);
+await p.locator('#btnEdit').click();
+await p.waitForTimeout(300);
+
 /* and the mode gets out of the way again */
 await p.locator('#btnEdit').click();
 await p.waitForTimeout(250);
@@ -134,6 +188,7 @@ if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).dis
 
 console.log(bad?`\n${bad} FAILURE(S)`
  :'edit positions: buildings drag, names drag on their own, the band name drags, '+
-  'all three remembered, block prints');
+  'the band box moves rigidly and reshapes by a corner and comes back where it was '+
+  'left, all remembered, block prints');
 if(errs.length) console.log('page errors:',errs);
 await b.close(); process.exit(bad||errs.length?1:0);

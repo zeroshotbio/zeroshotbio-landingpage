@@ -411,10 +411,14 @@ function drawFragment(g,n){
       text(s.lab,mid,ROW1,SEG,R2TONE,"600");
       return;
     }
+    /* EVERY NAMED SEGMENT IS LABELLED THE SAME WAY, on the same row, on a tick.
+       cDNA sat inside its own block, which is the one place a name can go that
+       says "this one is different" without meaning it — the block is wide
+       enough to hold the word and none of the others are, so the layout was
+       being decided by the width of a bar rather than by what it names. */
     const col=s.tone==="r1"?R1TONE:R2TONE;
     g.appendChild(el("rect",{x,y:BT,width:w-0.9,height:BH,fill:col,"fill-opacity":".9"}));
-    if(s.tone==="r1") text(s.lab,mid,BMID+SEG*0.36,SEG,"var(--bg)","600");
-    else { tick(mid,BB,ROW1-12,col); text(s.lab,mid,ROW1,SEG,col,"600"); }
+    tick(mid,BB,ROW1-12,col); text(s.lab,mid,ROW1,SEG,col,"600");
   });
 
   /* ---- the two reads, bracketed over what each one covers ---------------
