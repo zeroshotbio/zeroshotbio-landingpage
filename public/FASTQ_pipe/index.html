@@ -303,9 +303,11 @@
     <div class="brand"><b>FASTQ pipeline</b><span>FASTQ → unfiltered DGE · from /pipeline, row 3</span></div>
     <div class="controls">
       <button class="ctl mobtoggle" id="btnStages">Stages</button>
-      <button class="ctl" id="btnHome">Fit the map</button>
-      <button class="ctl" id="btnAxes">Hide axes</button>
-      <button class="ctl" id="btnMotion" aria-pressed="false">Pause motion</button>
+      <!-- Fit the map, Hide axes and Pause motion are deliberately not here.
+           Home (or 0) still re-fits and the hint line says so; the ruler those
+           axes belonged to is gone entirely; and prefers-reduced-motion is
+           still read and obeyed — what went is the override. See the CONTROLS
+           block in fq-view.js. -->
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
       <button class="ctl" id="btnSave">Save positions</button>

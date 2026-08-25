@@ -339,7 +339,24 @@ function fragGeom(x,y){
   const px=X0, py=BMID;
   const a=FRAG_TURN*Math.PI/180, c=Math.cos(a), sn=Math.sin(a);
   const rot=q=>[px+(q[0]-px)*c-(q[1]-py)*sn, py+(q[0]-px)*sn+(q[1]-py)*c];
-  return {X0,Y0,FW,FX0,FX1,BH,NSQ,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,px,py,rot};
+
+  /* where each segment starts and how wide it is — computed here rather than in
+     drawFragment because the PORTS need the two BRACKET SPANS, and a port that
+     works out its own idea of the layout is a port that drifts off the drawing
+     the first time a width changes. */
+  const total=FRAG.reduce((t,q)=>t+q.w,0);
+  const wOf=q=>(q.w/total)*FW;
+  const xs=[]; let cx=FX0;
+  FRAG.forEach(q=>{ xs.push(cx); cx+=wOf(q); });
+  const gi=FRAG.findIndex(q=>q.k==="gap");
+  /* THE MIDDLE OF EACH BRACKET, WHICH IS WHERE ITS TRACK LEAVES. At the end it
+     left from under its own name and the two overlapped; from the middle the
+     name has the end to itself and the line has clear air. */
+  const r1Port=[(FX0+xs[gi])/2, YB];
+  const r2Port=[(xs[gi]+wOf(FRAG[gi])+FX1)/2, YB];
+
+  return {X0,Y0,FW,FX0,FX1,BH,NSQ,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,
+          px,py,rot,total,wOf,xs,gi,r1Port,r2Port};
 }
 
 function drawFragment(g,n){
@@ -350,10 +367,7 @@ function drawFragment(g,n){
   const {FX0,FX1,FW,BT,BB,BH,BMID,NSQ,ROW1,ROW2,YB,LBL}=F;
   const SEG=13, SUB=11, HEAD=16;
 
-  const total=FRAG.reduce((s,x)=>s+x.w,0);
-  const wOf=s=>(s.w/total)*FW;
-  const xs=[]; let cx=FX0;
-  FRAG.forEach(s=>{ xs.push(cx); cx+=wOf(s); });
+  const {wOf,xs,gi}=F;
 
   const text=(str,x,y,size,fill,weight)=>{
     const t=el("text",{x,y,"text-anchor":"middle","font-size":size,
@@ -413,7 +427,6 @@ function drawFragment(g,n){
      THE ARROWHEAD SITS 15% IN FROM THE END IT POINTS AT, not on it. On the end
      it reads as a terminus — the place the read stops — and it is the opposite:
      the direction the read travels. */
-  const gi=FRAG.findIndex(s=>s.k==="gap");
   /* The two names stand over the OUTER end of each bracket — the end its track
      leaves from — so the line emerges from under its own name. They take no
      turn of their own any more: the whole group is turned, so they arrive at
@@ -441,11 +454,9 @@ DRAW.fragment=drawFragment;
    it carries. See routeOf() in fq-view.js. Keyed by SHAPE rather than by node
    id, because a port is a property of the drawing. */
 const PORTS={
-  /* THE PORTS ARE THE BRACKET ENDS, NOT THE BAR ENDS. A track leaves from the
-     end of the bracket that names it, under its own label — so what a reader
-     follows out of this glyph is the thing they just read the name of. */
+  /* THE MIDDLE OF THE BRACKET THAT NAMES THE TRACK — see fragGeom. */
   fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
-    return F.rot(which==="L" ? [F.FX0,F.YB] : [F.FX1,F.YB]); },
+    return F.rot(which==="L" ? F.r1Port : F.r2Port); },
 };
 
 /* ============================================================
@@ -481,50 +492,41 @@ function drawPool(g,n){
     pools.push({node:g.appendChild(el("path",{fill:"none",stroke:"var(--fg3)",
         "stroke-linecap":"butt",
         "stroke-width":(0.85*UU*(0.72+d*0.5)).toFixed(2),
-        "stroke-opacity":(0.16+d*0.52).toFixed(3)})),
+        "stroke-opacity":(0.14+d*0.46).toFixed(3)})),
       sc:0.72+d*0.5, d:""});
   }
   /* the leaders first, so they run UNDER the ring and the hero rather than
      across them */
-  /* ================= THE CANDLE, AND THE MOTHS ============================
-     The one read being magnified carries a light, and the light is DEPTH-SORTED
-     WITH IT. Reads nearer the eye than the hero pass in front of the glow and
-     cut it; reads behind it are lit by it. That is the whole effect, and it is
-     one insertBefore rather than a shader: the hero and its halo live in their
-     own group, and every frame that group is moved to the DOM position matching
-     the hero's own depth bucket. Painter order is the z order on this page and
-     always has been — this is that rule used for light instead of for solids.
+  /* THE HERO IS MARKED, NOT LIT.
 
-     THE LIGHT IS `--fg`, NOT EITHER READ COLOUR. It is light, not a third
-     thing: the two halves of the hero keep their own tokens inside it. Two
-     stops — a tight core for the flame, a wide soft halo for what it throws. */
-  const gid="glow-"+n.id, cid="core-"+n.id;
-  const defs=g.appendChild(el("defs"));
-  const grad=(id,stops)=>{
-    const rg=defs.appendChild(el("radialGradient",{id}));
-    stops.forEach(([o,op])=>rg.appendChild(el("stop",
-      {offset:o,"stop-color":"var(--fg)","stop-opacity":op})));
-  };
-  grad(gid,[["0",".32"],[".33",".13"],[".68",".04"],["1","0"]]);
-  grad(cid,[["0",".55"],[".55",".16"],["1","0"]]);
+     There was a candle here for a build: a depth-sorted halo, moths crossing in
+     front of the light. It worked and it is gone — a light source is a claim
+     about a physical scene, and this is a diagram of a file. What is left is
+     what the original drawing said: the hero is GEOMETRICALLY IDENTICAL to
+     every other read, same length, same weight, same wander, and only its
+     colour and its ring say it is the one.
 
-  const heroG=g.appendChild(el("g",{"pointer-events":"none"}));
-  const halo=heroG.appendChild(el("circle",{fill:`url(#${gid})`}));
-  const core=heroG.appendChild(el("circle",{fill:`url(#${cid})`}));
-  const ring=heroG.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
-    "stroke-opacity":".55","stroke-width":"0.9"}));
-  const h1=heroG.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
-  const h2=heroG.appendChild(el("line",{stroke:R2TONE,"stroke-linecap":"butt"}));
+     So the ring does the work and it does it harder than it did: brighter,
+     heavier, and with a second faint ring outside it, which reads as a mark on
+     a drawing rather than as a glow. The rest of the pool is a shade dimmer to
+     let the two coloured halves carry.
+
+     The hero is drawn LAST and stays on top. It is the subject and the two
+     leaders point at it; a subject you can lose behind the crowd is a subject
+     the reader has to hunt for. */
+  const ring=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".28","stroke-width":"0.8"}));      /* the outer companion */
+  const ring2=g.appendChild(el("circle",{fill:"none",stroke:"var(--fg)",
+    "stroke-opacity":".85","stroke-width":"1.5"}));
+  const h1=g.appendChild(el("line",{stroke:R1TONE,"stroke-linecap":"butt"}));
+  const h2=g.appendChild(el("line",{stroke:R2TONE,"stroke-linecap":"butt"}));
 
   /* THE LEADERS ARE GREY, AND THEY ARE NOT A TRACK. They say "this fragment is
      that read, magnified" — a magnification frustum, one leg to each end of the
      glyph. Nothing travels them and nothing is routed along them, so they take
      neither of the two read colours: those belong to the tracks, which start at
      the glyph. Colouring these made the pool look like the head of two
-     pipelines, and it is the head of neither.
-
-     They are appended last so they stay legible whatever the hero is doing:
-     they are an annotation about the drawing, not a thing inside it. */
+     pipelines, and it is the head of neither. */
   const mkLead=()=>g.appendChild(el("path",{fill:"none",stroke:"var(--fg)",
     "stroke-opacity":".45","stroke-width":"1.7","stroke-dasharray":"6 4.5",
     "pointer-events":"none"}));
@@ -535,7 +537,7 @@ function drawPool(g,n){
      leaders follow whichever half is dragged */
   const FRAGNODE=(typeof NODES!=="undefined") && NODES.find(m=>m.id===n.aims);
 
-  let T=0, heroAt=-1;
+  let T=0;
   const seen=[];
   function render(){
     const A=T*0.26, cosA=Math.cos(A), sinA=Math.sin(A);
@@ -585,20 +587,10 @@ function drawPool(g,n){
       h2.setAttribute("x1",(hero.px+ca*gp).toFixed(1));     h2.setAttribute("y1",(hero.py+sa*gp).toFixed(1));
       h2.setAttribute("x2",(hero.px+ca*(L+gp)).toFixed(1)); h2.setAttribute("y2",(hero.py+sa*(L+gp)).toFixed(1));
       h1.setAttribute("stroke-width",w); h2.setAttribute("stroke-width",w);
-      const R=7.5*UU+Math.sin(T*1.6)*0.5*UU;
-      ring.setAttribute("cx",hero.px.toFixed(1)); ring.setAttribute("cy",hero.py.toFixed(1));
-      ring.setAttribute("r",R.toFixed(1));
-
-      /* the light, and where in the stack it belongs */
-      const flick=1+Math.sin(T*1.6)*0.05+Math.sin(T*4.3)*0.02;
-      for(const [e,k] of [[halo,30],[core,4.8]]){
+      const R=8.2*UU+Math.sin(T*1.6)*0.5*UU;
+      for(const [e,k] of [[ring2,1],[ring,1.42]]){
         e.setAttribute("cx",hero.px.toFixed(1)); e.setAttribute("cy",hero.py.toFixed(1));
-        e.setAttribute("r",(k*UU*flick).toFixed(1));
-      }
-      const hb=Math.min(NB-1,Math.floor(hero.d*NB));
-      if(hb!==heroAt){
-        heroAt=hb;
-        g.insertBefore(heroG, pools[hb+1] ? pools[hb+1].node : lead1);
+        e.setAttribute("r",(R*k).toFixed(1));
       }
       /* two leaders, off the ring's shoulders to the two ends of the opened
          fragment — a magnification frustum rather than a single pointer */

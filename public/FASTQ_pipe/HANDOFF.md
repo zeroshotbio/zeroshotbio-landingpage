@@ -101,13 +101,22 @@ G and W are the same class as *The compounds* in the wet-lab half of
 `/pipeline` — a catalogue someone selected from, arriving from outside the
 experiment — and they sit off to the side for the same reason.
 
-**They are not drawn as flowing.** A drug library is consumed; a STAR index is
-not. An edge that animates material down it every run asserts a per-sample cost
-that does not exist. So a reference edge is `still:true` — connected, dashed,
-dimmer, **and never given a dot** — the same distinction `/data_structures`
-draws between *has carried bytes* and *written · never run*. Reference **nodes**
-wear `SKIN.works` rather than `SKIN.tile` for the same reason: a reference that
-looks like a station undoes half of that at a glance.
+**What marks them is the SKIN, not the edge.** Reference *nodes* wear
+`SKIN.works` where the stations wear `SKIN.tile`.
+
+Their edges were drawn `still:true` for a while — connected, dashed, dimmer,
+never given a dot — on the argument that a STAR index is built once and reused
+forever, so animating material down it every run asserts a per-sample cost that
+does not exist. **True, and it cost more than it was worth.** A dashed line
+nothing moves along reads as a footnote, and these are not footnotes: the
+reference is the single largest source of incomparability between two zebrafish
+atlases, and the whitelists are what a barcode *means*.
+
+So they are proper lines with dots, in a **neutral grey** (`--fg2`) that is
+neither read's colour — the fork owns orange and blue and nothing else on the
+map may borrow them. **The `still` mechanism is still in `paintEdge` and the
+DOTS block and nothing uses it**; it is one branch each and it is the right
+answer for a genuinely inert edge, if this map ever grows one.
 
 ### One index is drawn, because one is what this run used
 
@@ -328,10 +337,13 @@ side the tracks go, and everything that leaves this glyph leaves downward. The
 one label that names an *absence* is the one thing pointing back *into* the
 molecule, from the other side.
 
-**The ports are therefore the bracket ends, not the bar ends** — a track leaves
-from under its own name, so what a reader follows out of the glyph is the thing
-they just read the name of. The pool's leaders still aim at the *bar* ends: the
-magnification points at the molecule, not at the brackets.
+**The ports are the MIDDLE of each bracket.** At the end, a track left from
+under its own name and the two overlapped; from the middle the name has the end
+to itself and the line has clear air. The spans are computed in `fragGeom()`
+rather than in `drawFragment()` for exactly that reason — **a port that works
+out its own idea of the layout drifts off the drawing the first time a width
+changes.** The pool's leaders still aim at the *bar* ends: the magnification
+points at the molecule, not at the brackets.
 
 **The ball is a real ball.** The reads are placed uniformly through a sphere —
 direction on the sphere, radius by cube root, because a uniform radius piles
@@ -407,21 +419,22 @@ whose `d` is a run of subpaths, rebuilt as a single string and written with one
 having four buckets, not by having 760 attributes. The hero is drawn as itself,
 because there is one of it.
 
-### The candle, and the moths
+### The hero is marked, not lit
 
-The hero carries a light, and **the light is depth-sorted with it**. Reads nearer
-the eye than the hero pass in front of the glow and cut it; reads behind it are
-lit by it. That is one `insertBefore` rather than a shader: the hero, its ring
-and its two glow circles live in their own group, and every frame that group is
-moved to the DOM position matching the hero's own depth bucket. **Painter order
-is the z order on this page and always has been** — this is that rule used for
-light instead of for solids.
+There was a candle here for a build — a depth-sorted halo, moths crossing in
+front of the light. It worked, and it is out: **a light source is a claim about
+a physical scene, and this is a diagram of a file.**
 
-Two radial stops: a tight core for the flame and a wide soft halo for what it
-throws, both `--fg`. **The light is not a third read colour** — it is light, and
-the two halves of the hero keep their own tokens inside it. The leaders are
-appended after the hero group so they stay legible whatever it is doing; they
-are an annotation about the drawing, not a thing inside it.
+What stands instead is what the drawing said in the first place. The hero is
+**geometrically identical to every other read** — same length, same weight, same
+wander — and only its colour and its ring say it is the one. The ring now does
+that work harder: brighter, heavier, and with a second faint ring outside it,
+which reads as a mark *on a drawing* rather than as a glow. The rest of the pool
+is a shade dimmer to let the two coloured halves carry.
+
+The hero is drawn **last and stays on top**. It is the subject and both leaders
+point at it; a subject you can lose behind the crowd is one the reader has to
+hunt for.
 
 **The population is built once, at load, from a fixed seed**, so the pool is the
 same pool in every browser and the hero is the same read. A swarm that
@@ -473,6 +486,27 @@ here, which is convex at any height. `drawReads` builds its own hit silhouette
 the same way. **If this is ever lifted back to `/pipeline` or
 `/bioinformatics_pipe`, take the order with it** — those maps have no object
 tall enough to show the bug, which is why it survived there.
+
+## No ruler, and three fewer buttons
+
+There was a coordinate ruler — ticks and numbers along the two outer edges, in
+the same x and y `fq-data.js` is authored in — and a **Hide axes** button for
+it. That button was the tell: **a control whose job is to remove something from
+the drawing is an admission that the thing should not have been in the
+drawing.** Positions are authored by dragging in Edit positions and pasting the
+block back, which is how every layout here has actually been made. Both are
+gone, and `gAxis` with them.
+
+**Fit the map** is gone as a button and alive as a key: `Home` (or `0`) re-fits,
+the hint line says so, and `check-clicks.mjs` presses it between every building
+it clicks. It is a way back rather than a thing to do.
+
+**Pause motion** is the one that cost something, and it is worth being honest
+about. `prefers-reduced-motion` is still read and still obeyed, and still
+re-read when it changes — a machine asking for less motion gets less. What went
+is the **override**, in both directions. `setMotion()` and the `MOTION_KEY`
+store are intact, so putting it back is one line in `index.html` and one in the
+CONTROLS block.
 
 ## No scenery
 

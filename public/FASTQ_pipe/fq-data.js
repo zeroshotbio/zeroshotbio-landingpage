@@ -156,11 +156,12 @@ const NODES = [
    yet. If it is ever run, the branch goes back in the G lane as two pairs —
    the arms differ in BOTH files — and every station from E4 on gets its × 2.
 
-   THEIR EDGES DO NOT CARRY. A drug library is consumed; a STAR index is not.
-   An edge that animates material down it every run asserts a per-sample cost
-   that does not exist, so the reference edges are still:true — connected,
-   dashed, and never given a dot. Same distinction /data_structures draws
-   between "has carried bytes" and "written · never run".
+   WHAT MARKS THEM IS THE SKIN, NOT THE EDGE. They wear SKIN.works where the
+   stations wear SKIN.tile. Their edges used to be drawn still as well — dashed,
+   dimmer, never given a dot — and that went too far: a dashed line nothing
+   moves along reads as a footnote, and the reference is the single largest
+   source of incomparability between two zebrafish atlases. They are proper
+   lines with dots now, in a grey that is neither read's colour.
    --------------------------------------------------------------------------- */
 
 {id:"G1", key:"G1", group:"G · genome, and W · whitelists", shape:"ref",
@@ -287,10 +288,22 @@ const EDGES = [
 
   {a:"E6", b:"UD", kind:"cell"},
 
-  {a:"G1", b:"G3", kind:"ref", still:true},
-  {a:"G2", b:"G3", kind:"ref", still:true},
-  {a:"G3", b:"E4", kind:"ref", still:true},
-  {a:"W1",  b:"E3",  kind:"ref", still:true},
+  /* THESE CARRY, AND THEY ARE GREY. They were drawn still — dashed, dimmer,
+     never given a dot — on the argument that an index is built once and reused
+     forever, so animating material down it every run asserts a per-sample cost
+     that does not exist. True, and it cost more than it was worth: a dashed
+     line nothing moves along reads as a footnote, and these are not footnotes.
+     The reference is the single largest source of incomparability between two
+     zebrafish atlases, and the whitelists are what a barcode means.
+
+     So they are proper lines with dots on them, in a neutral grey that is
+     neither read's colour — the fork owns orange and blue and nothing else on
+     the map may borrow them. What still marks a reference as a different class
+     of thing is the SKIN its node wears. */
+  {a:"G1", b:"G3", kind:"ref", tone:"var(--fg2)"},
+  {a:"G2", b:"G3", kind:"ref", tone:"var(--fg2)"},
+  {a:"G3", b:"E4", kind:"ref", tone:"var(--fg2)"},
+  {a:"W1", b:"E3", kind:"ref", tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference
