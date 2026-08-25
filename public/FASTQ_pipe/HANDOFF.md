@@ -557,14 +557,47 @@ much worse than a real run** — the dump lane has to be visibly busy to read at
 all — and the node's own prose carries the real figure: 75.7% of reads carry a
 valid barcode combination.
 
-**The rejects are not `--cull`, and that is the palette note coming due.** The
-obvious choice is the page's inherited "this is being dropped" token — but on
-*this* map `--cull` is R1's trail, orange from the fragment's cDNA end all the
-way to the join, and spending it here would put R1's colour inside R2's station.
-So a reject is **dim rather than differently coloured** and the **cross** carries
-the verdict: the same rule the UMI outline and the splice arc already follow.
-HANDOFF warned this trade would come due the moment something on this map began
-dropping things. This is that moment, and this is the answer.
+### The verdict pair — the one place this page adds a colour
+
+The rule everywhere else is three tokens and no fourth: a new distinction gets a
+new *encoding*, not a new hue. **The sorting yard is where that stops working.**
+Both accents are spoken for — orange **is** R1 and blue **is** R2, the whole
+length of the map — so a pass/fail inside R2's own station has nothing left to
+borrow that would not also say *this is the other branch*. `--cull` was the
+obvious choice for a reject and is the worst one available here.
+
+So `:root` carries two more: **`--ok`** (green) and **`--rej`** (brown), defined
+in both themes, **muted on purpose** — they answer a question, they do not
+compete with the two tracks. Dim-versus-bright still carries the block and the
+tick and cross still carry the verdict; the colour is what makes the verdict
+readable from across the room, which is the one thing on this station a reader
+is meant to take in at a glance.
+
+**Nothing outside `drawSortingYard` may use them.** The bin and its *NO MATCH*
+take `--rej`, the ticks and *VALIDATED TRIPLETS* take `--ok`, and the big
+end-of-line tick takes `--ok` at well under full opacity: it is a confirmation,
+not an announcement.
+
+### Reads fall onto the head of the lanes
+
+The same gesture the belts at `E4` use, in R2's colour instead of R1's: a read
+slants in from up-line, drops, and lands — here at the very start of the eight
+lanes, so what the yard receives is unmistakable. **It is the other half of a
+pair.** R1's reads fall onto gene models and stay; R2's fall onto lanes and are
+carried off to be checked, which is the difference between the two branches said
+twice, once on each station. They land and fade rather than persisting, because
+the fragment carrying the barcodes is already drawn travelling the lane — a read
+that stayed would be the same object twice.
+
+### The deck is almost not there
+
+It was a solid floor, and a solid floor under a yard whose whole subject is eight
+thin lanes and what travels them is a large bright rectangle competing with all
+of it. What the yard needs from a floor is the fact that the gantry legs stand on
+something; **the lanes themselves draw the ground.** So it is kept and dropped to
+a tenth. `E3` also takes `noclip:true` — there is no floor left to hide anything
+behind, and the whitelist line arriving from `W1` was being cut the moment it
+entered the node's silhouette.
 
 The barcode blocks are `--accent`, R2's own token: dim until a gantry has read
 them, bright after. Ticks are `--fg` so a verdict sits legibly on the block it
@@ -631,6 +664,11 @@ end, so the line leaves on the side it is going — no per-edge bookkeeping, and
 it stays right if either object is dragged or resized. **A straight ported edge
 is two points**; the lane-entry route is only for a track that has a lane to
 join.
+
+**And an edge can port at its far end too.** `portB` lands the arrival on the
+destination's near corner instead of its centre — same reason as the source
+port, one object further along. Without it the whitelist line from `W1` crossed
+the entire sorting yard to reach the middle of it.
 
 **And each file runs to the aligner itself**, not only to the index. The index
 is built from the pair and the aligner consumes the index — which the two short

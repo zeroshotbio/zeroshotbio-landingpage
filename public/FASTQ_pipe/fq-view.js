@@ -410,12 +410,18 @@ function routeOf(e){
      lane rather than with the screen. Small enough that the run is a departure
      and not a second leg; large enough that the arrival is along the lane and
      not into the side of the first stop. */
+  /* A DESTINATION PORT, for the same reason as a source one: these objects are
+     large, and an edge that ends at the centre of one crosses the whole of it
+     to get there. `portB` lands it on the near corner instead, so the line
+     arrives AT the thing rather than through it. */
+  const endAt = (e.portB && typeof PORTS!=="undefined" && PORTS[B.shape])
+    ? PORTS[B.shape](B,e.portB,A) : null;
   if(e.port && typeof PORTS!=="undefined" && PORTS[A.shape]){
     const p0=PORTS[A.shape](A,e.port,B);
     /* A STRAIGHT PORTED EDGE IS TWO POINTS. The lane-entry route below is for
        a track that has to join a lane; a reference line has no lane to join,
        it just has to leave from somewhere visible and arrive. */
-    if(e.straight) return [p0, P(B.x,B.y,0.02)];
+    if(e.straight) return [p0, endAt || P(B.x,B.y,0.02)];
     const PORT_LEAD=2.0;
     return [p0, P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
   }
@@ -423,7 +429,9 @@ function routeOf(e){
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
-  return raw.map(p=>P(p[0],p[1],0.02));
+  const pp=raw.map(p=>P(p[0],p[1],0.02));
+  if(endAt) pp[pp.length-1]=endAt;
+  return pp;
 }
 /* One <g> per edge so a route can be redrawn on its own when the editor moves
    a node — the number of elbows changes when two objects come level, so the

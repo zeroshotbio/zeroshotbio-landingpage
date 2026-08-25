@@ -147,7 +147,12 @@ const NODES = [
    from the top lane to the reject bin, and h is the top of the whitelist
    panels overhead — the layout is authored in its own units and scaled onto
    those three. See drawSortingYard in fq-shapes.js. */
-{id:"E3", key:"E3", group:"R2 · the barcode half", shape:"sortingyard", hatch:true,
+/* noclip because the yard has no floor to hide anything behind. The whitelist
+   line arriving from W1 was cut the moment it entered this node's silhouette —
+   a track that stops a hundred pixels short of what it feeds. The yard's own
+   graphics still paint over it where they overlap, which is the occlusion that
+   was actually wanted. */
+{id:"E3", key:"E3", group:"R2 · the barcode half", shape:"sortingyard", hatch:true, noclip:true,
  follow:{a:"E2",dx:5.6}, name:"Match R2 barcodes", x:14.0, y:R3-3.6, w:9.6, d:4.6, h:1.6,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
@@ -345,7 +350,7 @@ const EDGES = [
      find, and these two tracks are that claim drawn rather than written. */
   {a:"G1", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"G2", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
-  {a:"W1", b:"E3", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"W1", b:"E3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference

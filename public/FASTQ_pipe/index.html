@@ -49,6 +49,19 @@
     /* the marks, aliased onto the three above */
     --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
 
+    /* THE VERDICT PAIR, AND THE ONE PLACE THIS PAGE ADDS A COLOUR.
+       The rule everywhere else is three tokens and no fourth: a new
+       distinction gets a new ENCODING, not a new hue. The sorting yard is
+       where that stops working. Both accents are spoken for — orange IS R1
+       and blue IS R2, the whole length of the map — so a pass/fail inside R2's
+       own station has nothing left to borrow that would not also say "this is
+       the other branch". Dim-versus-bright carries the block; the tick and the
+       cross carry the verdict; and the verdict is the one thing on the map a
+       reader is meant to read at a glance from across the room.
+       Muted on purpose: they answer a question, they do not compete with the
+       two tracks. Nothing outside drawSortingYard may use them. */
+    --ok:#7fb894; --rej:#9a7c58;
+
     /* the objects: a step or a cull, a landmark, the roofed culls */
     --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
     --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
@@ -65,6 +78,7 @@
     --signal:#1e4c8a; --drop:#8a3324;
 
     --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
+    --ok:#3f7a58; --rej:#6f5636;
 
     --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
     --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;

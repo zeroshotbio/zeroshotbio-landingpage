@@ -476,8 +476,10 @@ const PORTS={
      The corner is chosen by which one is nearest the far end, so the line
      leaves on the side it is going — no per-edge bookkeeping, and it stays
      right if either object is dragged or resized. */
-  karyotype:(n,which,B)=>roofCorner(n,B),
-  locus    :(n,which,B)=>roofCorner(n,B),
+  karyotype :(n,which,B)=>roofCorner(n,B),
+  locus     :(n,which,B)=>roofCorner(n,B),
+  whitelists:(n,which,B)=>roofCorner(n,B),
+  sortingyard:(n,which,B)=>roofCorner(n,B),
 };
 function roofCorner(n,B){
   const hw=n.w/2, hd=n.d/2;
@@ -1344,7 +1346,7 @@ const sstep=(a,b,x)=>{ const t=Math.max(0,Math.min(1,(x-a)/(b-a))); return t*t*(
 
 /* paint() builds from the ground; the registry hangs in the air, so this is the
    same three faces with a floor under them. */
-function slabAt(g,x,y,w,d,h,sk,z0){
+function slabAt(g,x,y,w,d,h,sk,z0,op){
   const hw=w/2, hd=d/2;
   const c=[[x-hw,y-hd],[x+hw,y-hd],[x+hw,y+hd],[x-hw,y+hd]];
   const f={
@@ -1352,8 +1354,10 @@ function slabAt(g,x,y,w,d,h,sk,z0){
     right:pts([P(c[1][0],c[1][1],z0+h),P(c[2][0],c[2][1],z0+h),P(c[2][0],c[2][1],z0),P(c[1][0],c[1][1],z0)]),
     left :pts([P(c[3][0],c[3][1],z0+h),P(c[2][0],c[2][1],z0+h),P(c[2][0],c[2][1],z0),P(c[3][0],c[3][1],z0)]),
   };
+  const o=(op===undefined?1:op);
   ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
-    {points:f[k],fill:sk[k],stroke:"var(--stroke)","stroke-width":"0.9","stroke-opacity":".6"})));
+    {points:f[k],fill:sk[k],"fill-opacity":o.toFixed(2),stroke:"var(--stroke)",
+     "stroke-width":"0.9","stroke-opacity":(0.6*Math.min(1,o*2.2)).toFixed(3)})));
   return f;
 }
 
@@ -1597,7 +1601,10 @@ function drawSortingYard(g,n){
 
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const GAN ={top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"};
-  const BIN ={top:"var(--a-top)",left:"var(--a-left)",right:"var(--a-right)"};
+  /* the bin takes the reject colour too — it is where the crosses end up, and
+     a neutral box at the end of a brown lane reads as a different story. Half
+     opacity, because it is a terminus and not a destination. */
+  const BIN ={top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"};
 
   const COUNTS=[8,4,2,1], PITCH=[SC(0.80),SC(1.05),SC(1.45),0];
   const laneY=(st,i)=>cy+(i-(COUNTS[st]-1)/2)*PITCH[st];
@@ -1622,9 +1629,15 @@ function drawSortingYard(g,n){
     return main+(REJ-main)*sstep(hit+SC(0.10),hit+SC(2.0),x);
   };
 
-  /* ---- the deck ---- */
+  /* ---- THE DECK IS ALMOST NOT THERE ----------------------------------
+     It was a solid floor, and a solid floor under a yard whose whole subject is
+     eight thin lanes and what travels them is a large bright rectangle
+     competing with all of it. What the yard needs from a floor is the fact that
+     the gantry legs stand on something; the lanes themselves draw the ground.
+     So it is kept and dropped to a tenth, which reads as a surface at a glance
+     and as nothing at all a moment later. */
   const dTop=laneY(0,0)-SC(1.0), dBot=REJ+SC(0.9);
-  slabAt(g,(x0+x1)/2,(dTop+dBot)/2,x1-x0,dBot-dTop,base,DECK,0);
+  slabAt(g,(x0+x1)/2,(dTop+dBot)/2,x1-x0,dBot-dTop,base,DECK,0,0.10);
 
   /* ---- lane guides, drawn from the same functions the fragments follow ---- */
   const guide=(fn,op,w,xa,xb)=>{
@@ -1661,12 +1674,12 @@ function drawSortingYard(g,n){
   const CROSS="M -3.8 -3.8 L 3.8 3.8 M 3.8 -3.8 L -3.8 3.8";
   const BIGTICK="M -8.4 0.8 L -2.8 6.8 L 9.2 -8.4";
   frags.forEach(fr=>{
-    fr.big=g.appendChild(el("path",{d:BIGTICK,fill:"none",stroke:"var(--fg)",
-      "stroke-width":"3.0","stroke-linecap":"round","stroke-linejoin":"round",
+    fr.big=g.appendChild(el("path",{d:BIGTICK,fill:"none",stroke:"var(--ok)",
+      "stroke-width":"2.6","stroke-linecap":"round","stroke-linejoin":"round",
       "stroke-opacity":"0"}));
     fr.marks=[0,1,2].map(i=>g.appendChild(el("path",{
       d:fr.fail===i?CROSS:TICK, fill:"none",
-      stroke:fr.fail===i?"var(--fg3)":"var(--fg)",
+      stroke:fr.fail===i?"var(--rej)":"var(--ok)",
       "stroke-width":"2.0","stroke-linecap":"round","stroke-linejoin":"round",
       "stroke-opacity":"0"})));
   });
@@ -1692,8 +1705,30 @@ function drawSortingYard(g,n){
     return {sx,i,halfSpan,slots,ptr:0};
   });
 
+  /* ---- READS FALLING ONTO THE HEAD OF THE LANES ------------------------
+     The same gesture the belts at E4 use, in R2's colour instead of R1's: a
+     read slants in from up-line, drops, and lands — here at the very start of
+     the eight lanes, so what the yard receives is unmistakable. It is the
+     other half of a pair. R1's reads fall onto gene models and stay; R2's fall
+     onto lanes and are carried off to be checked, which is the difference
+     between the two branches said twice, once on each station.
+
+     They land and fade rather than persisting, because the fragment that
+     carries the barcodes is already drawn travelling the lane — a read that
+     stayed would be the same object twice. */
+  const INB=[];
+  for(let k=0;k<16;k++){
+    const lane=k%8;
+    INB.push({lane, ph:k/16, per:2.6+rnd()*0.9,
+      fx0:SC(5.0+rnd()*3.0), fz:(2.1+rnd()*1.3)*KZ, dy:(rnd()-0.5)*PITCH[0]*0.4,
+      len:SEG_W*2.2,
+      ln:g.appendChild(el("line",{stroke:"var(--accent)","stroke-width":"1.5",
+        "stroke-linecap":"butt","stroke-opacity":"0"}))});
+  }
+  const LANDX=x0+SC(0.55);
+
   /* ---- the bin, built last: a discarded triplet slides BEHIND it and is gone */
-  slabAt(g,binX,REJ,SC(1.5),SC(1.5),0.62*KZ,BIN,base);
+  slabAt(g,binX,REJ,SC(1.5),SC(1.5),0.62*KZ,BIN,base,0.5);
 
   /* ---- the names, along the edges they belong to ---- */
   const lab=(wx,wy,wz,str,size,fill,op,rot,anchor,dy)=>{
@@ -1709,10 +1744,10 @@ function drawSortingYard(g,n){
     lab(st.sx-SC(0.68), cy-st.halfSpan*0.78-SC(0.34), base+panelZ+0.07*KZ,
         `BC${i+1} WHITELIST`, FS.toFixed(1), "var(--fg)", "1", 30));
   lab(binX-SC(0.75), REJ+SC(1.65), base+0.62*KZ, "NO MATCH",
-      (FS*0.96).toFixed(1), "var(--fg3)", ".95", 30);
+      (FS*0.96).toFixed(1), "var(--rej)", "1", 30);
   /* the point of the whole yard, named along its near edge, which runs at -30 */
   lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "VALIDATED TRIPLETS",
-      (FS*1.1).toFixed(1), "var(--accent)", "1", -30, "end");
+      (FS*1.1).toFixed(1), "var(--ok)", "1", -30, "end");
   lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "putative cell barcodes",
       (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "end", (FS*1.33).toFixed(1));
 
@@ -1753,7 +1788,7 @@ function drawSortingYard(g,n){
         /* unread blocks are dim AND a different token; read ones snap to R2's */
         const op=vis*(bad?0.7:scanned?0.95:0.55)*(1+fl*0.30);
         quad(node,sx2,sx2+SEG_W,yy,zR,op,
-          bad?"var(--fg3)":valid?"var(--accent)":scanned?"var(--accent)":"var(--fg3)");
+          bad?"var(--rej)":valid?"var(--accent)":scanned?"var(--accent)":"var(--fg3)");
       });
       fr.links.forEach((node,i)=>
         quad(node,fx+SPREAD[i]+SEG_W,fx+SPREAD[i+1],yy,zR,vis*0.24));
@@ -1777,7 +1812,8 @@ function drawSortingYard(g,n){
         const bop=bigAge<0.09?bigAge/0.09:1-sstep(0.58,0.95,bigAge);
         fr.big.setAttribute("transform",
           `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
-        fr.big.setAttribute("stroke-opacity",(bop*vis*0.92).toFixed(3));
+        /* subtle: it is a confirmation, not an announcement */
+        fr.big.setAttribute("stroke-opacity",(bop*vis*0.62).toFixed(3));
       } else fr.big.setAttribute("stroke-opacity","0");
 
       fr.marks.forEach((mk,i)=>{
@@ -1795,6 +1831,20 @@ function drawSortingYard(g,n){
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
       fr.px=fx;
+    }
+    /* the inbound rain, on its own clock */
+    for(const r of INB){
+      const raw=t/r.per+r.ph, u=raw-Math.floor(raw);
+      const yy=laneY(0,r.lane)+r.dy;
+      let x,z,op;
+      if(u<0.62){ const k=u/0.62, ke=1-Math.pow(1-k,2.2);
+        x=LANDX-r.fx0*(1-ke); z=r.fz*Math.pow(1-k,1.25);
+        op=Math.min(1,k*3.2)*0.95;
+      } else { x=LANDX; z=0; op=1-sstep(0.62,0.80,u); }
+      const a=P(x,yy,base+0.06*KZ+z), b=P(x+r.len,yy,base+0.06*KZ+z);
+      r.ln.setAttribute("x1",a[0].toFixed(1)); r.ln.setAttribute("y1",a[1].toFixed(1));
+      r.ln.setAttribute("x2",b[0].toFixed(1)); r.ln.setAttribute("y2",b[1].toFixed(1));
+      r.ln.setAttribute("stroke-opacity",Math.max(0,op).toFixed(3));
     }
     for(const st of stations) for(const sl of st.slots){
       const age=t-sl.lit;
