@@ -148,7 +148,7 @@ const NODES = [
    pattern to go on. The claim survives in the index and in the prose; if a
    future belt wants it back it has to be part of the machine. */
 {id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true,
- lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.4, d:4.4, h:0.62,
+ lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.4, d:6.6, h:0.62,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
@@ -359,7 +359,7 @@ const EDGES = [
      back into a station on a route. The chain therefore starts at E3 for now.
      PORTS.fragment is still there and still correct — it is what the edge will
      leave from when it comes back. */
-  {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},
+  {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},   /* tail = the belt's NEAR rail, clear of the label at its mouth */
   {a:"E4", b:"E5", kind:"read", straight:true, port:"corner", tone:"var(--cull)"},
   {a:"E5", b:"CB", kind:"read", tone:"var(--cull)"},
   {a:"CB", b:"E6", kind:"cell", tone:"var(--cull)"},
@@ -401,7 +401,12 @@ const EDGES = [
      GTF is E5 rather than E4. */
   {a:"G2", b:"E5", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
 
-  {a:"W1", b:"E3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
+    /* AT THE MIDDLE OF THE YARD, NOT ITS CORNER. A whitelist does not feed the
+     mouth of the belt, it feeds the scanners — so the line lands on the far rail
+     at the middle arch, which is both where it belongs and the only place on
+     this node that a line arriving from up-right can reach without crossing the
+     belt to get there. */
+  {a:"W1", b:"E3", kind:"ref", straight:true, port:"corner", portB:"mid", tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference

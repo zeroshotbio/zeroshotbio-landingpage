@@ -563,80 +563,52 @@ is dropped without taking the map with it.
 
 ## `drawBelts` — the alignment as a machine
 
-**The index is not a step reads pass through, it is a surface they land on**,
-and that is why this station is drawn rather than labelled. Four belts run along
-the lane's own direction carrying annotated gene models past — exons standing
-proud, introns flat between them — and the reads fly in from up-belt, chase a
-moving target, drop onto it, and then **ride along** with the gene until it goes.
+**One belt, and the gene lies across it** — the same turn `E3` makes, for the
+same reason and with the opposite subject.
 
-**Everything shares one velocity**: slats, genes and landed reads. That is what
-makes it a machine rather than three animations in a trench coat.
+At `E3` the molecule lies broadside so three scanners can each read a different
+part of it. Here the molecule *lands* broadside so its cDNA half can lie **along**
+a gene. Four belts of models running down-track could only ever show reads
+landing *on* something; one gene turned across the track shows a read landing
+**somewhere on it**, which is the whole of what an aligner decides.
 
-**The aggregate is the argument.** Every read lands on an exon and none on an
-intron. One worked example is a fact about that read; three hundred of them is a
-fact about the *annotation* — the half of the index the assembly cannot supply,
-and the reason `G1` and `G2` are two nodes rather than one. A few cannot land in
-one piece: they came from spliced mRNA and cover the end of one exon and the
-start of the next, so they arrive as two halves with an arc between them that
-never touches down over the intron. Those are the reads the sequence alone could
-not place.
+### The barcode end does not land, and that is the picture
 
-**The reads are `--cull`, R1's own colour** — the same the track into this
-station carries and the same the cDNA block wears in the fragment, so the trail
-does not break at the moment it lands. **The spliced reads are that colour too:**
-a distinction the palette has no token left for, made by *encoding* instead. Two
-halves and an arc is unmistakable, and a fourth hue would say "a different kind
-of read" when it is the same read.
+It has no genome to match — it is a synthetic tag and the aligner has nothing to
+do with it — so past the cDNA the molecule lifts off the surface and rides at an
+angle: grey adapter, then blue, still attached and doing nothing. That is the
+honest shape of a 3′ read. **Two thirds of the molecule is the reason it can be
+counted, and none of it aligns.**
 
-### The ladder, dark to light: track, gene body, exon, read
+**`LIFT` is `0.52 × n.h` and it was `1.55`.** At 1.55 the blue tails stood up
+like flags and the gene vanished under a hedge of them, which inverts the
+station: the subject is where the *orange* lands. The tail has to be visibly off
+the surface and visibly not aligned, and nothing beyond that.
 
-**Each rung is a step, and the reads are the top of it.** Everything below them
-is there to be landed *on*, and the moment two rungs sit at the same brightness
-the eye has to be *told* what to look at instead of being *shown*.
+### Proportions that had to move together
 
-- **The track** is `--t-right`, barely above the ground, slats at a tenth. It
-  was as solid as the genes riding it, so four belts competed with the sixteen
-  gene models and three hundred reads that are the actual subject. It still
-  carries the motion — the slats are what make it a belt — without asking to be
-  looked at.
-- **Every gene is the same tone, and it is the quiet one.** They alternated
-  between two, which made every other model on the belt look like a different
-  kind of object: the variation said something, and there was nothing for it to
-  say.
-- **The exons** are a rung above the gene body and no more. They were the light
-  rung for a build, on the argument that a read needs a surface to look like it
-  is landing on. It does — but a light one competed with the reads themselves,
-  and the reads are the point.
-- **The reads** are the only saturated thing in the frame, the only bright one,
-  and **fully opaque**. They were drawn at 0.62 so they would sit *into* the
-  surface rather than on it — the right instinct while the exons were bright and
-  the wrong one now that they are not. They are the thing a viewer is meant to
-  count; nothing is served by making them argue with the box underneath.
+`RTOT` is 0.145 of a gene — 64 bp of cDNA, then 32 and 58 that do not align, in
+the same base pairs as everywhere else on this page. It started at 0.205 and the
+reads would not fit inside an exon; the exon generator makes more and smaller
+ones to suit, and `NG` went 6 to 10 so more than two genes are on the belt at
+once.
 
-**No shadow under a read.** Every one carried a soft ellipse on the exon below
-it, which is correct for an object in the air and wrong for three hundred of
-them: at rest the drawing was a field of grey blobs with an orange line on each.
-The reads still fall — the slant and the height are what make them arrive — they
-just no longer leave a mark where they land.
+**The gene body carries at 0.80.** Below that the model reads as a staircase of
+unrelated blocks rather than one gene with exons standing proud of it — the body
+is the thing that says these blocks belong to each other.
 
-**A box on a belt is three faces, not two.** It was top and the long near side,
-on the reasoning that nothing on a belt is seen from its far side. True of the
-far side and not of the **leading end**, which is square to the eye and was
-simply missing: every exon read as an open trough with its front wall knocked
-out. The eye is at +x +y, so top, the +y flank and the +x end are the three that
-face it — exactly what `paint()` draws for a static box, done per frame instead.
+### `setBoxY`
 
-**Every absolute length is scaled by the node.** The original was authored
-against a fixed 9.2-unit span; `K` and `KZ` carry that onto whatever `w` and `h`
-the editor leaves behind. `w` runs along the belts, `d` across all four, `h` is
-the whole stack — base, gene body, exon — so `topOf(n)` is exactly the exon top
-and a resize rescales the machine rather than stretching it. That is checked:
-`check-edit` resizes this node and asserts the ticker count does not grow.
+`setBox`'s twin: same three faces, same roles, transposed for a box long in `y`
+and thin in `x`. Anything laid across a belt on this page needs it.
 
-**`hatch:true` no longer draws anything here.** It still means *this stage
-destroys data* and still puts "drops" in the index — multimappers and unmapped
-reads are set aside — but `drawBelts` paints no faces for the pattern to go on.
-The claim survives in the index and in the prose.
+### Gone for now: the splice arches
+
+The old station drew a few reads arriving as two halves with an arc between
+them, spanning an intron — *the reads the sequence alone could not place.* It
+was a good detail and it is not in this rewrite. It would go back as a read
+whose orange half is split in two with an arc over the intron between them; the
+lifted tail is unaffected. Noted here so it is a decision rather than a loss.
 
 ## `drawSortingYard` — matching as a place
 
