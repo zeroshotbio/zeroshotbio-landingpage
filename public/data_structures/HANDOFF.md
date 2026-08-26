@@ -373,6 +373,50 @@ a change there can break a transform in a way that renaming a constant never
 could.
 
 
+## The state of the data — fourth pass, 2026-08-26. Nothing moved.
+
+```
+repos      re-checked at (all four already at their upstream tips, nothing to pull)
+             zsb-medallion 00b71e8   zsb-bronze 6126161
+             zsb-silver    4a64566   zsb-gold   513ca22
+buckets     aws s3 ls --recursive --summarize   on bronze and silver
+            aws s3api head-object               on all 8 bronze pins + the v1 release
+```
+
+**Both sides came back identical.** Bronze 1,258 / 7,730,616,859,647 B and
+silver 82 / 18,154,728,187 B to the byte, the same three prefixes at the same
+counts and sizes (`zebrahub/` 12 / 10.36 GiB, `megafin-1/` 61 / 5.00 GiB,
+`minifin/` 9 / 1.55 GiB), gold still refusing both `ListBucket` and
+`HeadBucket`. All eight bronze pins matched on size and multipart etag for the
+**fourth read running**, every one still returning a `VersionId` and
+`ServerSideEncryption: AES256`; so did `minifin/v1/minifin.h5ad`
+(1,561,917,184 B, `9ce4a7f9…-187`, written 2026-08-23 00:21:59 UTC). Two days,
+four repos, zero commits merged. **No figure on this page changed.**
+
+Two pieces of **prose** did, and both were the same kind of error — a claim
+that outlived the read it was made in.
+
+| Was on the map | Now |
+| --- | --- |
+| Silver's `cond` opened *"one of the three tiles is now a real release"* and closed, four sentences later, with the second pass's *"not one object in this tier follows the convention … silver is full of things, and empty of releases"* | The tail is rewritten. The old sentence is **named and half-retired** rather than deleted — it is still full of things. |
+| zsb-silver *"carries the only open pull request in the set"* | It carries **both**: #17 is still open and **#18** (docs) opened 2026-08-24 22:26 UTC, after the third read. The other three repos have none. |
+
+**The lesson is worth more than either fix. When a finding is retired, grep the
+panel for its other half.** A rewrite starts at the top of a paragraph and stops
+when the new fact has been stated, so the closing line is exactly where the
+superseded claim survives — and a panel that contradicts itself in four
+sentences is worse than one that is merely out of date, because a reader cannot
+tell which half to trust. The third pass retired that claim in the `brief` and
+in the headline and left it standing in the `cond`. Both shipped for two days.
+
+**And the quiet read is the one to keep doing.** Three of the four passes on
+this page found something; this one found nothing on either side and was still
+worth the hour, because *nothing moved* is a fact about a project and because
+the two errors it did turn up were only findable by re-reading panels nobody had
+a reason to open. The pins are now a `pins` command in two repos — ask the
+machine — but the prose has no such check, and `check-fit.mjs` cannot read.
+
+
 ## The shape contract
 
 ```js
