@@ -19,14 +19,34 @@
    If a claim on that map changes, change it there and lift it again; do not
    let the two drift into two different accounts of the same stage.
 
-   SIX STEPS BETWEEN THE READS AND THE MATRIX
-     Barcode parse    read 2's three ligation barcodes plus the UMI, matched
-                      against the known well lists at one mismatch
-     Genome index     built once per reference from FASTA + GTF, not per run
-     Alignment        read 1 is the cDNA and goes to STAR
-     Gene assignment  aligned read -> a gene model from the GTF
-     UMI dedup        reads sharing barcode, gene and UMI become one count
-     Cell assignment  group by the full barcode combination, floor, emit MTX
+   IT IS ONE CHAIN. IT WAS DRAWN AS A FORK AND THAT WAS WRONG.
+
+   An earlier version of this page ran two parallel lanes out of E2 — orange
+   cDNA below, blue barcode above — and joined them at the deduplication. That
+   is not what split-pipe does, and it is not what any of the four counting
+   stacks in the corpus does either. R1 and R2 are two ends of ONE read pair
+   sharing one read ID; they are never separate objects and there is nothing to
+   reunite. Barcode matching happens FIRST and everything downstream inherits
+   its result. The fork was a picture of a data structure nobody builds.
+
+   SIX STEPS BETWEEN THE READS AND THE MATRIX, IN ORDER
+     E3  Match R2 barcodes   read 2's three ligation barcodes plus the UMI,
+                             matched against the known well lists at one
+                             mismatch. Reads that clear it go on; the rest are
+                             discarded HERE, before anything expensive.
+     E4  Align R1            read 1 is the cDNA and goes to STAR, against an
+                             index built once per reference from FASTA + GTF
+     E5  Assign to gene      aligned read -> a gene model from the GTF
+     E6  Bucket by cell      group by the full barcode combination
+     E7  Deduplicate UMIs    reads sharing cell, gene and UMI become one count
+     E8  Unfiltered DGE      every barcode x every gene
+
+   WHY THAT ORDER AND NOT ANOTHER. Alignment is the expensive step, and it is
+   not spent on reads that could never be assigned to a cell — a quarter of them
+   in the worked example. And a read that has cleared E3 CARRIES ITS CELL
+   IDENTITY for the whole rest of the chain, which is what makes E7 possible at
+   all: deduplication needs cell, gene and UMI together, so the bucketing by
+   cell has to happen before it rather than after.
 
    Each is one of /pipeline's own row-3 nodes, lifted, and each keeps its
    lifted body. What is authored here is the NAME and the one-line sub, which
@@ -58,10 +78,10 @@ const NODES = [
 
 /* E1 and E2 are ONE DRAWING AND TWO NODES. The pool and the fragment are drawn
    by two shapes of this page's own, held together by the leaders between them.
-   They are two nodes because THE FORK IS AT E2: one molecule sequenced from
-   both ends, R1 leaving for the genome and R2 for the whitelists, and a
-   transition that splits the segment into two independent problems is a node
-   rather than an arrow.
+   They are two nodes because the pool is a population and the fragment is a
+   member of it opened up — a magnification is a change of subject, and a change
+   of subject is a node rather than an arrow. E2 is NOT a fork; nothing on this
+   page forks.
 
    Neither is a solid, so n.h on either is not the height of an object — it is
    where the name hangs, and the box the silhouette and the drag handle are cut
@@ -82,65 +102,20 @@ const NODES = [
  lane:"r3", noclip:true,
  name:"One fragment", x:6.0, y:R3, w:4.1, d:4.1, h:5.6,
  sub:"one molecule, sequenced from both ends, with an unsequenced middle",
- does:"THE FORK. A single fragment carries everything: the cDNA at one end, the three ligation barcodes and the UMI at the other, and a stretch in the middle that neither read reaches. R1 goes to the genome and R2 goes to the whitelists, and from here to the deduplication they are two independent problems.",
+ does:"ONE MOLECULE CARRIES EVERYTHING: the cDNA at one end, the three ligation barcodes and the UMI at the other, and a stretch in the middle that neither read reaches. R1 and R2 are two ends of one fragment sharing one read ID — never two objects and never separately routed. The barcode end is read first, and it decides whether the cDNA end is ever looked at.",
  built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline.",
  cond:"The middle is not recoverable. Insert lengths vary and nothing sequences the span between the two reads, so a fragment is known at both ends and guessed in between — which is why fragment-level evidence for anything (isoform, fusion, allele) is out of reach for this chemistry no matter how deep the run goes.",
  /* ---- authored on this page ------------------------------------------- */
- added:"THE FRAGMENT IS DRAWN IN ITS OWN ORDER, NOT IN R2's ORDER. BC1 sits nearest the cDNA because reverse transcription attached it first, each ligation round adds the next one further out, and the UMI rides on the round-3 oligo at the far end. R2 sequences inward from that end — which is why it meets the UMI first and reaches round 1 last. Draw the molecule truthfully and the reversal explains itself. It is the one thing on this page not drawn in the isometric: a diagram OF a molecule rather than a thing standing somewhere on the map, so it is square to the reader. The arrowheads sit a little inside the ends they point at, because an arrow on the end reads as the place a read stops rather than the direction it travels. AND THE TWO TRACKS LEAVE FROM THE TWO ENDS: R1 drops off the cDNA end onto its own lane and R2 off the barcode end onto its, each tinted with the token this glyph already gives that half of the molecule. Two edges leaving one node from the same place are two edges nobody can tell apart; leaving from their own ends, both journeys are followable with no labels at all."},
+ added:"THE FRAGMENT IS DRAWN IN ITS OWN ORDER, NOT IN R2's ORDER. BC1 sits nearest the cDNA because reverse transcription attached it first, each ligation round adds the next one further out, and the UMI rides on the round-3 oligo at the far end. R2 sequences inward from that end — which is why it meets the UMI first and reaches round 1 last. Draw the molecule truthfully and the reversal explains itself. It is the one thing on this page not drawn in the isometric: a diagram OF a molecule rather than a thing standing somewhere on the map, so it is square to the reader. The arrowheads sit a little inside the ends they point at, because an arrow on the end reads as the place a read stops rather than the direction it travels. ONE TRACK LEAVES, AND IT LEAVES FROM THE BARCODE END, because that is the end the next station reads. The glyph still draws both brackets — the molecule really does have two ends, and the R1 bracket is what the alignment two stops later is about — but only one line leaves it, because only one thing travels: the pair, intact, on its way to be checked."},
 
 /* ---------------------------------------------------------------------------
-   R1 · THE cDNA HALF. ITS OWN LANE, BELOW THE SPINE, and it is a lane rather
-   than a detour: two stops on one straight line, entered from the cDNA end of
-   the fragment and left for the deduplication.
+   THE CHAIN. Six stations on one line, in the order a read actually meets them.
 
-   WHICH SIDE IS NOT A FREE CHOICE. The glyph puts the cDNA at its left end and
-   the barcodes at its right, and a track has to leave toward its own lane
-   rather than back across the drawing it came from. Screen-left of the glyph
-   is BELOW the row in world terms, so R1 goes below and R2 above. The spine
-   between the fragment and the join carries nothing, so the two lanes are
-   adjacent with only empty ground between them.
-
-   AND R1 IS THE LONGER JOURNEY, on purpose. Two stops against one, further
-   from the spine, consuming the genome lane, and able to fail — unmapped,
-   multimapping, ambiguous. Equal lanes would be a lie.
-   --------------------------------------------------------------------------- */
-
-/* THE ONE STATION ON THIS PAGE THAT IS A SURFACE RATHER THAN A BOX. Four
-   belts along the lane's own direction, carrying annotated gene models past;
-   the reads fly in from up-belt and land on them. w runs along the belts, d
-   across all four, and h is the whole stack — base, gene body, exon — so a
-   resize rescales the machine rather than stretching it. See drawBelts. */
-/* hatch:true still means "this stage destroys data" and still puts "drops" in
-   the index — multimappers and unmapped reads are set aside here. What it no
-   longer does is DRAW hatching, because drawBelts paints no faces for the
-   pattern to go on. The claim survives in the index and in the prose; if a
-   future belt wants it back it has to be part of the machine. */
-{id:"E4", key:"E4", group:"R1 · the cDNA half", shape:"belts", hatch:true,
- follow:{a:"E2",dx:5.6}, name:"Align R1", x:11.0, y:R3+3.4, w:6.4, d:4.4, h:0.62,
- sub:"the cDNA half hits the genome · produces coordinates",
- does:"Aligns the cDNA read to the genome and assigns it to a gene.",
- built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
- cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
- /* ---- authored on this page ------------------------------------------- */
- pipelineName:"Alignment",
- added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. Four belts run along the lane's own direction carrying annotated gene models past — exons standing proud, introns flat between them — and the reads fly in from up-belt, chase a moving target, drop onto it, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands."},
-
-{id:"E5", key:"E5", group:"R1 · the cDNA half", shape:"tile", hatch:true,
- follow:{a:"E2",dx:11.4}, name:"Assign to gene", x:17.0, y:R3+3.4, w:1.9, d:1.9, h:1.1,
- sub:"coordinates resolved against gene models · exonic by default",
- does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
- built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",
- cond:"Three consequences, all worse than the version number. Reproducing that matrix requires Cell Ranger 5.0.0 specifically — a modern default produces a materially different object, silently. Cross-dataset depth comparisons are confounded in a known direction, because sci-RNA-seq3 runs on intron-rich nuclei while the 10x runs here used whole cells and threw the introns away. And low detection of a long or nuclear-retained transcript is weak biological evidence, because gene absence already has two non-biological explanations.",
- /* ---- authored on this page ------------------------------------------- */
- pipelineName:"Intron inclusion",
- added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei."},
-
-/* ---------------------------------------------------------------------------
-   R2 · THE BARCODE HALF. ITS OWN LANE, ABOVE THE SPINE, entered from the
-   barcode end of the fragment. One stop, deterministic, identical across both
-   references — so it finishes its work early and runs straight to the join
-   while R1 is still working. Parallel to R1 and nearer the spine, because
-   it is the shorter of the two journeys and the drawing should say so.
+   EVERY ONE OF THEM IS ON THE LANE NOW. They used to be side structures hung
+   off E2 by follow{}, because two were on one branch and one was on another and
+   the lane was only the spine between the fork and the join. There is no fork
+   and no join, so there is no spine either — there is just the line, and
+   everything that happens to a read happens on it.
    --------------------------------------------------------------------------- */
 
 /* A SORTING YARD, not a box. w is the run of the whole yard, d is the deck
@@ -152,8 +127,8 @@ const NODES = [
    a track that stops a hundred pixels short of what it feeds. The yard's own
    graphics still paint over it where they overlap, which is the occlusion that
    was actually wanted. */
-{id:"E3", key:"E3", group:"R2 · the barcode half", shape:"sortingyard", hatch:true, noclip:true,
- follow:{a:"E2",dx:5.6}, name:"Match R2 barcodes", x:14.0, y:R3-3.6, w:9.6, d:4.6, h:1.6,
+{id:"E3", key:"E3", group:"The chain", shape:"sortingyard", hatch:true, noclip:true,
+ lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:4.6, h:1.6,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
@@ -161,6 +136,36 @@ const NODES = [
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Barcode calling",
  added:"Each of the three barcodes is matched independently against its own whitelist, one mismatch tolerated. Concatenate the three plus the subpool index and you have a cell identity — unique only WITHIN a subpool, which is the whole reason the fourth barcode exists. Two cells that took the same path through the three plates in different subpools are told apart by it and by nothing else."},
+
+/* THE ONE STATION ON THIS PAGE THAT IS A SURFACE RATHER THAN A BOX. Four
+   belts along the lane's own direction, carrying annotated gene models past;
+   the reads fly in from up-belt and land on them. w runs along the belts, d
+   across all four, and h is the whole stack — base, gene body, exon — so a
+   resize rescales the machine rather than stretching it. See drawBelts. */
+/* hatch:true still means "this stage destroys data" and still puts "drops" in
+   the index — multimappers and unmapped reads are set aside here. What it no
+   longer does is DRAW hatching, because drawBelts paints no faces for the
+   pattern to go on. The claim survives in the index and in the prose; if a
+   future belt wants it back it has to be part of the machine. */
+{id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true,
+ lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.4, d:4.4, h:0.62,
+ sub:"the cDNA half hits the genome · produces coordinates",
+ does:"Aligns the cDNA read to the genome and assigns it to a gene.",
+ built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
+ cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
+ /* ---- authored on this page ------------------------------------------- */
+ pipelineName:"Alignment",
+ added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. Four belts run along the lane's own direction carrying annotated gene models past — exons standing proud, introns flat between them — and the reads fly in from up-belt, chase a moving target, drop onto it, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands."},
+
+{id:"E5", key:"E5", group:"The chain", shape:"tile", hatch:true,
+ lane:"r3", gap:1.2, name:"Assign to gene", x:27.0, y:R3, w:1.9, d:1.9, h:1.1,
+ sub:"coordinates resolved against gene models · exonic by default",
+ does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
+ built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",
+ cond:"Three consequences, all worse than the version number. Reproducing that matrix requires Cell Ranger 5.0.0 specifically — a modern default produces a materially different object, silently. Cross-dataset depth comparisons are confounded in a known direction, because sci-RNA-seq3 runs on intron-rich nuclei while the 10x runs here used whole cells and threw the introns away. And low detection of a long or nuclear-retained transcript is weak biological evidence, because gene absence already has two non-biological explanations.",
+ /* ---- authored on this page ------------------------------------------- */
+ pipelineName:"Intron inclusion",
+ added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei."},
 
 /* ---------------------------------------------------------------------------
    G AND W · THE REFERENCE. A different class of thing from everything above:
@@ -174,6 +179,12 @@ const NODES = [
    arm nothing has been counted against claims a result that does not exist
    yet. If it is ever run, the branch goes back in the G lane as two pairs —
    the arms differ in BOTH files — and every station from E4 on gets its × 2.
+
+   THE WIRING, WHICH IS NOT WHAT IT WAS. GRCz11 and Ensembl 99 both feed the
+   STAR index, and the index feeds E4. Ensembl 99 ALSO feeds E5 directly: the
+   GTF is baked in at index time and read again at the gene assignment, one file
+   with two consumers. The whitelists feed E3, which is now the first station on
+   the chain rather than the only stop on a branch.
 
    WHAT MARKS THEM IS THE SKIN, NOT THE EDGE. They wear SKIN.works where the
    stations wear SKIN.tile. Their edges used to be drawn still as well — dashed,
@@ -195,7 +206,7 @@ const NODES = [
    idiom. The roof is NOT square: the aspect comes from w and d, and roofPanel()
    reflows the chart to it. See drawKaryotype and drawLocus in fq-shapes.js. */
 {id:"G1", key:"G1", group:"G · genome, and W · whitelists", shape:"karyotype",
- follow:{a:"E4",dx:0.4}, name:"GRCz11", x:5.9, y:R3+12.6, w:4.0, d:7.1, h:0.5,
+ follow:{a:"E4",dx:0.4}, name:"GRCz11", x:5.9, y:R3+9.2, w:4.0, d:7.1, h:0.5,
  sub:"the sequence · which bases are where",
  does:"The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus without exception, which is the one thing about the reference that IS comparable across all of them.",
@@ -203,7 +214,7 @@ const NODES = [
  added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision. Swapping it for GRCz12tu — staged, and documented stage by stage at /grcz12 — changes which bases are where, and therefore every coordinate downstream of the aligner. THE FIGURE IS THE 25 CHROMOSOMES AS IDEOGRAMS, ordered by length. The lengths are the real GRCz11 primary assembly in Mb; the banding and the centromere positions are NOT, and are generated from a seed — zebrafish has no standard cytoband table of the kind that exists for human. They are there to make the shapes read as chromosomes, not to be counted."},
 
 {id:"G2", key:"G2", group:"G · genome, and W · whitelists", shape:"locus",
- follow:{a:"E4",dx:7.4}, name:"Ensembl 99", x:9.1, y:R3+9.8, w:4.0, d:8.0, h:0.5,
+ follow:{a:"E4",dx:7.4}, name:"Ensembl 99", x:9.1, y:R3+6.4, w:4.0, d:8.0, h:0.5,
  sub:"the annotation · where genes start and stop",
  does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
  built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
@@ -211,7 +222,7 @@ const NODES = [
  added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (every exon and every intron is named), which of those get translated (the tall blocks against the low ones at either end), and which way it is read (the chevrons). Transcription runs 5′ to 3′: the 5′ UTR is the front of the first exon, the coding sequence runs from there through the internal exons, and THE 3′ UTR IS THE TAIL OF THE LAST ONE AND MOST OF IT — which is why it is drawn as its own section with its own name rather than as a note off the end. Every assay on this map primes with oligo-dT, so that block is where the reads land, and it is the one whose zebrafish annotation is incomplete in both Ensembl and RefSeq. The structures are real in kind; the coordinates are not."},
 
 {id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:-1.0}, name:"STAR index", x:7.5, y:R3+8.9, w:1.7, d:1.7, h:0.95,
+ follow:{a:"E4",dx:-1.0}, name:"STAR index", x:7.5, y:R3+5.5, w:1.7, d:1.7, h:0.95,
  sub:"GRCz11 + Ensembl 99, baked together · once, not per run",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
  built:"Every dataset here is GRCz11, and yet: ZSCAPE and ChemFish share a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031 genes — byte-identical between them, all 32,031 coordinates matching position by position. DanioCell uses Lawson v4.3.2 via Cell Ranger, 36,250 released names. MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520. Zebrahub uses a custom reference called Danio.rerio_genome_Zebrabow_6, 32,057 ENSDARG plus three transgene features.",
@@ -225,7 +236,7 @@ const NODES = [
    registry's own top — the layout is authored in its own units and scaled onto
    those three. See drawWhitelists in fq-shapes.js. */
 {id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"whitelists",
- follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-9.4, w:8.4, d:2.9, h:3.5,
+ follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.0, w:8.4, d:2.9, h:3.5,
  sub:"the known well sequences for each ligation round · fixed by the kit",
  does:"The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
  built:"Three rounds of ligation give 48 × 96 × 96 = 442,368 addressable paths, and the fourth barcode — the index read — splits the run into subpools. A barcode is called by matching each round against its own list, independently, one mismatch tolerated.",
@@ -233,24 +244,49 @@ const NODES = [
  added:"THREE PLATES IN THE SIZES THE CHEMISTRY ACTUALLY USES, with a registry hanging over each. All three share a well pitch, because real 48- and 96-well plates have the same wells — the 48 is simply a smaller plate. So BC1's plate is visibly two thirds the width of the others and still yields 96, because each of its wells holds two RT primers, an oligo-dT and a random hexamer, carrying different barcodes: barcodes rise from it IN PAIRS and singly from the other two. Same count, half the wells, two per well, shown in the motion rather than asserted in a caption. Each riser is exactly eight bases, and that is arithmetic rather than decoration — the dash pattern is fixed in screen pixels and the riser's length is derived from it, so eight dashes and seven gaps land on the line exactly. Each climbs to the registry overhead and is written in; the registry fills continuously, in order, and never empties. The barcodes are drawn in the page's brightest ink because these are the WHITELISTS, which is the one pun this map allows itself."},
 
 /* ---------------------------------------------------------------------------
-   THE JOIN. The two halves have been independent since E2; this is where they
-   meet, and neither of them alone can produce a count.
+   THE LAST TWO STATIONS. Nothing meets here — nothing was ever apart. What
+   happens is a regrouping and then a collapse.
+
+   THE IDS DO NOT TRACK THE KEYS, ON PURPOSE. `id` is the stable name this
+   object is known by in the saved-offsets table, so renaming one silently
+   re-applies somebody's drag to a different building. When the chain was
+   re-ordered the KEYS moved and the ids did not: id "E6" carries key "E7", and
+   the new bucketing station is id "CB". The key is what the map shows and what
+   the prose refers to; the id is bookkeeping and is allowed to look odd.
    --------------------------------------------------------------------------- */
 
-{id:"E6", key:"E6", group:"The join", shape:"tile", hatch:true,
- lane:"r3", gap:9,
- name:"Deduplicate UMIs", x:24.0, y:R3, w:1.9, d:1.9, h:1.35,
+/* NEW, AND IT HAS TO EXIST FOR THE NEXT ONE TO WORK. Deduplication needs cell,
+   gene and UMI together — so the grouping by cell cannot come after it, which
+   is where an earlier version of this page implicitly put it by having the cell
+   identity arrive at the dedup node on its own branch. Lifted from /pipeline's
+   "Combine and stamp", which is the same operation seen from the other end:
+   the cell id is assembled out of the barcode rounds and every read carrying it
+   lands in the same bucket. */
+{id:"CB", key:"E6", group:"The chain", shape:"tile",
+ lane:"r3", gap:0.8,
+ name:"Bucket by cell", x:30.0, y:R3, w:1.9, d:1.9, h:1.2,
+ sub:"one index · bc1_bc2_bc3__sublibrary",
+ does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
+ built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
+ cond:"86.1% of transcripts land inside called cells; the remaining 13.9% is the ambient pool and it is dropped here rather than kept as a background profile. Barcode conventions are a live trap whenever matrices are compared: ZCL2's 18 nt barcodes need a 3 × 6 split to parse, and MegaFin's vendor-well barcodes have 0% overlap with the same library's raw-combinatorial rebuild — the same cells, unjoinable.",
+ /* ---- authored on this page ------------------------------------------- */
+ pipelineName:"Combine and stamp",
+ added:"The barcode combination became a cell identity back at E3; this is where it becomes an ADDRESS. Every read that cleared the whitelists has been carrying its cell all the way through the alignment and the gene assignment, and here they are gathered by it — which is the only reason the next station can ask whether two reads are the same molecule. Drawn as a plain tile for now, with the rest of the artwork pass still to come."},
+
+{id:"E6", key:"E7", group:"The chain", shape:"tile", hatch:true,
+ lane:"r3", gap:0.8,
+ name:"Deduplicate UMIs", x:33.0, y:R3, w:1.9, d:1.9, h:1.35,
  sub:"barcode + gene + UMI collapse to one count · reads become molecules",
  does:"Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
  built:"For the worked example, 3.66 billion reads collapse to 735,624,135 transcripts — sequencing saturation 0.424. MIC-Drop-seq's four measured 10x runs sit at 51.5–53.4%.",
  cond:"Saturation around 0.4–0.5 is the corpus norm and it means depth is not saturated: read depth alone accounts for about a quarter of the worked example's cluster resolution. Any cross-dataset comparison of genes-per-cell has to control for it. ZCL2 cannot even be checked — its UMI length is not stated and is not recoverable from a count matrix.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"UMI collapse",
- added:"THE SECOND JOIN, AND THE LOAD-BEARING NODE OF THIS WHOLE SEGMENT. The gene identity comes down the R1 branch and the cell identity comes up the R2 branch, and neither of them alone is a count: a gene with no cell is a read pile and a cell with no gene is an empty row. Two edges arrive here and the map is drawn so that they visibly converge. The UMI itself was stamped during reverse transcription, before any amplification, so every copy of one original molecule carries it — which is what makes this the step that undoes PCR rather than a step that guesses at it."},
+ added:"THE LOAD-BEARING NODE OF THIS WHOLE SEGMENT, and it is load-bearing because of what has already accumulated on the read rather than because two things meet here. It needs three facts at once — cell, gene, UMI — and by now the read has all three: the cell from E3, the gene from E5, the UMI carried in read 2 the whole way. NOTHING CONVERGES. An earlier version of this page drew two edges arriving here from two branches, which made the dedup look like an assembly step; it is a collapse. The UMI itself was stamped during reverse transcription, before any amplification, so every copy of one original molecule carries it — which is what makes this the step that undoes PCR rather than a step that guesses at it."},
 
-{id:"UD", key:"E7", group:"② Unfiltered DGE", groupMark:true, anchor:true, shape:"matrix",
- lane:"r3",
- name:"Unfiltered DGE", x:30.0, y:R3, w:2.8, d:2.8, h:2.2, cells:8, fill:0.09,
+{id:"UD", key:"E8", group:"② Unfiltered DGE", groupMark:true, anchor:true, shape:"matrix",
+ lane:"r3", gap:1.6,
+ name:"Unfiltered DGE", x:37.0, y:R3, w:2.8, d:2.8, h:2.2, cells:8, fill:0.09,
  sub:"every barcode × every gene · rarely delivered", stat:"almost never shipped",
  does:"Every barcode that ever appeared, against every gene. Drawn sparse because it is sparse — almost all of this volume is empty, and most of these barcodes were never cells.",
  built:"Written once inside the counting pipeline and read by every QC stage. It is essentially never part of a delivery: for the worked example, all-sample/ on this instance holds report/ and figures/ only.",
@@ -262,19 +298,19 @@ const NODES = [
 
 const ROWS=[R3], MIRROR=29.0;
 
-/* ONE LANE, AND IT IS THE SPINE RATHER THAN THE WHOLE MAP. Only the four nodes
-   that every read passes through in order are on it — the pool, the fragment,
-   the deduplication and the matrix. Everything else is a side structure that
-   takes its x from one of them and keeps its own y, which is what makes the
-   fork a fork: the two branches sit above and below the spine at the same
-   distance from it, so they read as parallel work rather than as alternatives.
+/* ONE LANE, AND NOW IT IS THE WHOLE E STORY. All eight stations are on it, in
+   order, because a read meets them in that order and nothing leaves the line.
+   The only things off the lane are the references — the genome pair above the
+   row and the whitelists below it — and they are off it because they are a
+   different class of object, not because they are a different route.
 
-   E6 carries gap:9 because the whole fork has to fit in the span before it.
-   The engine scales every gap to fill the lane, so that is a RATIO against the
-   others rather than a distance — re-space the lane and the fork keeps its
-   share of it. */
+   The per-node gap:{} values are RATIOS, not distances: the engine scales every
+   gap to fill x0..x1, so widening the lane keeps their proportions. E3 carries
+   the largest one because the sorting yard's lanes run back past its own
+   footprint to give arriving reads somewhere to land, and that run-in has to
+   clear the fragment glyph in front of it. */
 const LANES = [
-  {id:"r3", y:R3, x0:0.7, x1:26.0, dir:+1},
+  {id:"r3", y:R3, x0:0.7, x1:42.4, dir:+1},
 ];
 
 /* Two edge classes, and the difference is the point.
@@ -297,35 +333,31 @@ const EDGES = [
      WHICH MEANS THE FIRST TRACK ON THIS MAP IS THE FORK. That is correct: the
      first thing that actually moves is a read leaving for its own lane. */
 
-  /* THE FORK, AND IT LEAVES FROM TWO DIFFERENT PLACES ON PURPOSE. R1 drops out
-     of the cDNA end of the glyph onto its own lane below the spine; R2 drops
-     out of the barcode end onto its own lane above it. Each lane is tinted
-     with the token the glyph already gives that half of the molecule, so the
-     two journeys are followable without a label on either.
+  /* ONE CHAIN, ONE COLOUR.
 
-     THE ASYMMETRY IS THE POINT AND MUST NOT BE TIDIED. R1 makes two stops,
-     consumes the genome lane, differs per arm and can fail — unmapped,
-     multimapping, ambiguous. R2 makes one, consumes the whitelists, is
-     deterministic and is identical across arms. R1 therefore travels further
-     and does more work, and its lane is drawn further out. Equal lanes would
-     be a lie about the pipeline. */
-  {a:"E2", b:"E4", kind:"read", port:"L", tone:"var(--cull)"},
-  {a:"E4", b:"E5", kind:"read",          tone:"var(--cull)"},
-  /* STRAIGHT INTO THE JOIN, BOTH OF THEM. The elbow route puts a Z in the last
-     leg of each lane, and a Z at the moment two things converge reads as two
-     things being nudged together rather than as two things arriving. Each lane
-     aims at E6 from where it is and holds that line. */
-  {a:"E5", b:"E6", kind:"read", straight:true, tone:"var(--cull)"},   /* the gene identity arrives */
+     The two tokens used to mean the two branches: --cull was R1 and --accent
+     was R2, and every edge on the page was one or the other. With the fork gone
+     that distinction has nothing left to distinguish, and keeping it would be
+     the old claim smuggled through in paint. So the whole E chain is --cull —
+     which is /pipeline's own colour for this row, and means here exactly what
+     it means there: this is the material, and it is moving.
 
-  /* THE R2 TRACK STOPS AT THE MOUTH OF THE YARD. Aimed at E3's centre it ran
-     the whole length of the yard to get there, and joined end to end with the
-     E3 -> E6 line it read as one blue rail crossing the entire picture — which
-     says the opposite of what the yard is for. It ends at the head of the eight
-     lanes now, and the next one starts where the fan comes out. */
-  {a:"E2", b:"E3", kind:"read", port:"R", portB:"head", tone:"var(--accent)"},
-  {a:"E3", b:"E6", kind:"cell", straight:true, port:"tail", tone:"var(--accent)"}, /* the cell identity arrives */
+     --accent is now unspoken for, deliberately. A read that has cleared E3
+     carries a CELL, and colouring reads by cell from E4 onward is the next
+     thing this page has to do; the token is being kept back for that rather
+     than spent on a distinction that no longer exists. Until the artwork pass
+     lands, E3 still draws blue fragments and E4 still draws orange reads, and
+     those two disagree with each other on purpose — the flow is right first.
 
-  {a:"E6", b:"UD", kind:"cell"},
+     STRAIGHT, AND PORTED AT BOTH ENDS WHERE THE OBJECT IS BIG. E3 is 9.6 units
+     long and E4 is 6.4; an edge aimed at either centre spends half its length
+     inside the thing it is arriving at. */
+  {a:"E2", b:"E3", kind:"read", port:"R", portB:"head", tone:"var(--cull)"},
+  {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},
+  {a:"E4", b:"E5", kind:"read", straight:true, port:"corner", tone:"var(--cull)"},
+  {a:"E5", b:"CB", kind:"read", tone:"var(--cull)"},
+  {a:"CB", b:"E6", kind:"cell", tone:"var(--cull)"},
+  {a:"E6", b:"UD", kind:"cell", tone:"var(--cull)"},
 
   /* THESE CARRY, AND THEY ARE GREY. They were drawn still — dashed, dimmer,
      never given a dot — on the argument that an index is built once and reused
@@ -346,22 +378,34 @@ const EDGES = [
   */
   {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
   {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
-  {a:"G3", b:"E4", kind:"ref", straight:true, tone:"var(--fg2)"},
+  {a:"G3", b:"E4", kind:"ref", straight:true, portB:"corner", tone:"var(--fg2)"},
 
-  /* AND EACH FILE RUNS TO THE ALIGNER ITSELF. The index is built from the pair
-     and the aligner consumes the index — which the two short lines above say —
-     but on the map that left the assembly and the annotation looking like they
-     stopped at a cube. They do not: what is in them is what the alignment can
-     find, and these two tracks are that claim drawn rather than written. */
-  {a:"G1", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
-  {a:"G2", b:"E4", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+  /* ENSEMBL 99 IS ONE FILE WITH TWO CONSUMERS, AND IT IS ONE BOX WITH TWO
+     ARROWS. The GTF is baked into the index at build time AND read again at the
+     gene assignment — the same file, twice, for two different purposes. Drawing
+     a second annotation node would say there were two of them; drawing one
+     arrow would lose the fact that E5's answer depends on the same choice E4's
+     does. Two arrows out of one box is the only version that is true.
+
+     THE DIRECT G1 -> E4 AND G2 -> E4 LINES ARE GONE. They were added when the
+     assembly and the annotation looked like they stopped at a cube, and they
+     did fix that — but they also said the aligner reads the FASTA and the GTF,
+     which it does not. It reads the index. The index is built from them. That
+     is what the two short lines above are for, and the second consumer of the
+     GTF is E5 rather than E4. */
+  {a:"G2", b:"E5", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference
    lane above the row and the whitelists below it. */
+  /* THE REFERENCES CAME IN WHEN THE ROW STRAIGHTENED. They were hung off an E4
+   that sat 3.4 units off the row and an E3 that sat 3.6 the other way; with
+   every station back on y = R3 those offsets were 3-odd units of empty ground
+   each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:28.0, y0:R3-11.4, y1:R3+17.4},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+14.0},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
@@ -486,15 +530,15 @@ const OVERVIEW = {
   title:"FASTQ → Unfiltered DGE",
   sub:"one fork, two joins, and a reference that is chosen rather than measured",
   does:`<p>Everything that happens between the reads and the first matrix on row 3 of <a href="/pipeline">/pipeline</a> — the band called <mark>Bioinformatics pipeline</mark>. Paired-end FASTQ goes in on the left; every barcode that ever appeared, against every gene, comes out on the right.</p>
-<p><mark>It is not a chain.</mark> It is one fork and two separate joins, and the shape is the content:</p>
-<p><mark>The fork is at E2.</mark> One molecule, sequenced from both ends. R1 carries the cDNA and goes to the genome; R2 carries the barcodes and goes to the whitelists. Everything downstream of that node is two independent problems until they meet again.</p>
-<p><mark>They are two lanes, not two arrows.</mark> Each leaves from its own end of the fragment — R1 from the cDNA end, R2 from the barcode end — and runs on its own line, tinted with the token that half of the molecule already wears in the glyph. No label is needed on either. <mark>And they are not the same length.</mark> R1 makes two stops, consumes the genome lane and can fail; R2 makes one and is deterministic. R1 travels further and does more work, and the drawing says so.</p>
-<p><mark>The first join is E4</mark> — R1 meets the index. <mark>The second is E6</mark>, and it is the load-bearing node of the whole segment: the gene identity comes down one branch and the cell identity comes up the other, and neither of them alone is a count. A gene with no cell is a read pile; a cell with no gene is an empty row.</p>
+<p><mark>It is one chain.</mark> An earlier version of this page drew it as a fork — orange cDNA below, blue barcode above, rejoining at the deduplication — and that was a picture of a data structure nobody builds. R1 and R2 are two ends of one read pair sharing one read ID. They are never separate objects, so there is nothing to reunite.</p>
+<p><mark>The barcode comes first, and that ordering is the argument.</mark> Read 2's three ligation barcodes are matched against their whitelists before anything else happens. Reads that clear it go on; the quarter that do not are discarded there. Alignment is the expensive step and it is not spent on reads that could never be assigned to a cell.</p>
+<p><mark>A read that has cleared E3 carries its cell for the whole rest of the chain.</mark> Which is what makes the deduplication possible at all: it needs cell, gene and UMI at once, so the bucketing by cell has to happen before it rather than after. Six stations, in the order a read meets them — match, align, assign to gene, bucket by cell, collapse UMIs, matrix.</p>
 <p><mark>The reads themselves are drawn once, and only once.</mark> A pool of them turns in the air, and one — geometrically identical to every other, marked only by its colour and its ring — is opened up in the diagram hanging beneath it: cDNA, the middle neither read reaches, then the three ligation barcodes and the UMI. It is drawn in the molecule's own order rather than in the order R2 reads it, because <em>that</em> is what explains the reversal: BC1 is nearest the cDNA since reverse transcription attached it first, the UMI rides on the round-3 oligo at the far end, and R2 sequences inward from that end — meeting the UMI first and reaching round 1 last.</p>
 <p><mark>Nothing in this segment is a cull.</mark> Reads are set aside — a quarter of them carry no valid barcode combination and never reach the alignment, and multimappers and unmapped reads are dropped after it — but no cell is ever removed here. The matrix at the end is deliberately, uselessly complete; the culls are the D lane, drawn at <a href="/bioinformatics_pipe">/bioinformatics_pipe</a>, which begins at this cube.</p>`,
-  built:`<p><mark>Three lanes, and they are not the same kind of thing.</mark> The <mark>E lane</mark> is sample material: it flows once, per run, and is consumed. The <mark>G lane</mark> (the genome) and the <mark>W lane</mark> (the barcode whitelists) are references — chosen rather than measured, built once and reused forever, arriving from outside the experiment. They are the same class as <em>The compounds</em> in the wet-lab half of the big map, and they start off to the side for the same reason.</p>
+  built:`<p><mark>Three lanes, and they are not the same kind of thing.</mark> The <mark>E lane</mark> is sample material: it flows once, per run, and is consumed — one line, every station on it. The <mark>G lane</mark> (the genome) and the <mark>W lane</mark> (the barcode whitelists) are references — chosen rather than measured, built once and reused forever, arriving from outside the experiment. They are the same class as <em>The compounds</em> in the wet-lab half of the big map, and they sit off to the side for the same reason: they are a different kind of object, not a different route.</p>
 <p><mark>But they are not drawn as flowing.</mark> A drug library is consumed; a STAR index is not. An edge that animates material down it every run asserts a per-sample cost that does not exist — so a reference edge is connected, dashed and dimmer, and never carries a dot. It is the distinction <a href="/data_structures">/data_structures</a> already makes between <em>has carried bytes</em> and <em>written · never run</em>. The reference objects wear a different skin from the stations for the same reason.</p>
-<p><mark>The assembly and the annotation are two nodes, not one.</mark> They are two files and two independent choices, and the index is built from them <em>together</em> — the annotation is baked in at index time, not applied afterward. Which is why they live in the G lane rather than in the E lane.</p>`,
+<p><mark>The assembly and the annotation are two nodes, not one.</mark> They are two files and two independent choices, and the index is built from them <em>together</em> — the annotation is baked in at index time, not applied afterward. Which is why they live in the G lane rather than in the E lane.</p>
+<p><mark>Ensembl 99 is one file with two consumers.</mark> It is baked into the index that the alignment uses, and it is read again at the gene assignment — so it is one box with two arrows leaving it, rather than two annotation nodes. The aligner itself reads neither file directly: it reads the index, which is why the FASTA and the GTF run to the index and the index runs to the aligner.</p>`,
   cond:`<p class="cond"><mark>One index is drawn, because one is what this run used.</mark> A second — GRCz12tu with Ensembl 2025_12 — is staged rather than in use, and the provenance for it is at <a href="/grcz12">/grcz12</a> stage by stage. It is not on this map: two indexes would mean two of everything from the alignment onward, and a map that draws a second arm nothing has been counted against is claiming a result that does not exist yet.</p>
 <p class="cond">What the single index does assert is how much rides on it. Every dataset in the corpus is GRCz11 and four of them still count against four different feature universes — 32,031 · 36,250 · 32,520 · 32,057 + 3 — so the assembly agreeing is a much weaker guarantee than it sounds. The gene set cannot even date the build: it is identical across Ensembl 99 to 114.</p>
 <p class="cond">Nothing on this page is modelled: every figure is read off an artefact — the vendor's own <em>analysis_summary.csv</em>, the delivered <em>var</em>, the corpus provenance records. The one thing that cannot be shown is the reads themselves, which stayed in the vendor's cloud workdir; the payload on the first track is the sequencing statistics that survive of them, and it says so rather than drawing a stand-in.</p>

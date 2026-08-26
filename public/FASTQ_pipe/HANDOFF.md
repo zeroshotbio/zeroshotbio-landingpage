@@ -1040,25 +1040,59 @@ colours:
 
 **Do not introduce a fourth.**
 
-### On this page the two colours are the two reads, and that is a trade
+### `--cull` is the whole E chain, and `--accent` is being held back
+
+The two tokens used to be the two branches — `--cull` for R1's cDNA lane,
+`--accent` for R2's barcode lane. **That distinction is gone**, because the fork
+it encoded was wrong (see below), and a colour that outlives the claim it was
+made for is the claim smuggled through in paint. So the entire E chain is
+`--cull`, which is `/pipeline`'s own colour for this row and means here exactly
+what it means there: *this is the material, and it is moving.*
 
 `--cull` means *this is being dropped* on the other two maps. Here it does not,
 because **nothing in this segment is a cull** — the token has no other job on
-this page, and the distinction this page does need is the fork. So:
+this page. **It is only safe while that stays true.** If anything on this map
+ever starts culling, the read trail has to move off this token first.
 
-```
-R1 · the cDNA        --cull
-R2 · the barcodes    --accent
-```
+`--accent` is now unspoken for, deliberately. A read that has cleared `E3`
+carries a **cell**, and colouring reads by cell from `E4` onward is the next
+thing this page owes; the token is being kept for that rather than spent on a
+distinction that no longer exists.
 
-**The trail is unbroken and that is the whole point.** The hero read's cDNA half
-in the pool, the leader from the ring to the cDNA end of the glyph, the cDNA
-block, the `R1` bracket and its name, the R1 track and the dots on it — one
-colour from the pool to the moment it re-merges with R2 at the join. The barcode
-half is the same story in accent.
+**There is a live inconsistency and it is on purpose.** `E3` still draws blue
+fragments and `E4` still draws orange reads — two stations disagreeing about
+what colour a read is — because the flow was fixed first and the artwork pass
+has not landed. Do not "fix" it by putting the branch colours back.
 
-**It is only safe while nothing here drops cells.** If anything on this map ever
-starts culling, the R1 trail has to move off this token first.
+### The fork was wrong
+
+Worth writing down so nobody re-derives it. The page used to run two parallel
+lanes out of `E2` and join them at the deduplication: R1 to the genome, R2 to
+the whitelists, both arriving at `E6` where "neither of them alone is a count".
+It drew beautifully and it is not what any counting stack does.
+
+R1 and R2 are **two ends of one read pair sharing one read ID.** They are never
+separate objects, they are never separately routed, and there is nothing to
+reunite — so a join node was drawing an assembly step that does not happen. And
+the ordering was wrong in a way that mattered: barcode matching comes **first**,
+because alignment is the expensive step and it is not spent on the quarter of
+reads that could never be assigned to a cell. Everything downstream of `E3`
+inherits a cell identity, which is what makes `E7` possible at all — dedup needs
+cell, gene and UMI at once, so `E6` (bucket by cell) has to precede it.
+
+One chain, eight stations, all of them on the lane. The only things off the lane
+are the references, and they are off it because they are a different *class of
+object*, not a different route.
+
+### `id` does not track `key`, and must not be made to
+
+`id` is the stable name an object is known by in the saved-offsets table. Rename
+one and somebody's saved drag silently re-applies to a different building. When
+the chain was re-ordered the **keys** moved and the **ids** did not: id `E6`
+carries key `E7`, and the new bucketing station is id `CB` carrying key `E6`.
+The key is what the map shows and what the prose refers to; the id is
+bookkeeping and is allowed to look odd. Tidying it is a data migration, not a
+rename.
 
 ## Load order
 

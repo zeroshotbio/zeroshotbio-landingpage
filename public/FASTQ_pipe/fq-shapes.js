@@ -476,6 +476,9 @@ const PORTS={
      The corner is chosen by which one is nearest the far end, so the line
      leaves on the side it is going — no per-edge bookkeeping, and it stays
      right if either object is dragged or resized. */
+  /* the belts are 6.4 units along the lane and the edge before them arrives
+     head-on; without this it lands in the middle of the machine */
+  belts     :(n,which,B)=>roofCorner(n,B),
   karyotype :(n,which,B)=>roofCorner(n,B),
   locus     :(n,which,B)=>roofCorner(n,B),
   whitelists:(n,which,B)=>roofCorner(n,B),
