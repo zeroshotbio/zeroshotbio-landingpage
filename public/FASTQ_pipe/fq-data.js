@@ -128,7 +128,7 @@ const NODES = [
    graphics still paint over it where they overlap, which is the occlusion that
    was actually wanted. */
 {id:"E3", key:"E3", group:"The chain", shape:"sortingyard", hatch:true, noclip:true,
- lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:7.0, h:1.6,
+ lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:7.0, h:2.15,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
@@ -255,7 +255,7 @@ const NODES = [
    unit of depth each to make room; both roofs reflow, which is what roofPanel
    is for. Move any of the four and re-check the three inequalities. */
 {id:"G3", key:"G3", noclip:true, group:"G · genome, and W · whitelists", shape:"starindex",
- follow:{a:"E4",dx:-4.0}, name:"STAR index", x:7.5, y:R3+6.2, w:2.2, d:3.8, h:0.5,
+ follow:{a:"E4",dx:-1.5}, name:"STAR index", x:7.5, y:R3+6.2, w:2.2, d:3.8, h:0.5,
  sub:"GRCz11 + Ensembl 99, baked together · once, not per run",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
  built:"Every dataset here is GRCz11, and yet: ZSCAPE and ChemFish share a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031 genes — byte-identical between them, all 32,031 coordinates matching position by position. DanioCell uses Lawson v4.3.2 via Cell Ranger, 36,250 released names. MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520. Zebrahub uses a custom reference called Danio.rerio_genome_Zebrabow_6, 32,057 ENSDARG plus three transgene features.",

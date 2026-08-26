@@ -2228,8 +2228,15 @@ const YARD_ROUNDS=[
      that end the face runs before the pillar takes it; LIP is how far back over
      the unsequenced middle it laps, so the near edge covers bc1 rather than
      stopping exactly on it. */
-  {x0:0, x1:19.4, cy:-3.0, base:0.14, gx:[3.4,7.4,11.4], MZ:3.0, REJ:5.0,
-   binX:16.0, v:2.6, VALX:18.9,
+  /* THE DECK IS A PLATFORM NOW, NOT A STAIN. base was 0.14 — a ghost of a
+     surface, which was right while everything on this station stood ON it and
+     nothing ever left. The reject path leaves it: fragments run to the near
+     edge, tip over it and drop into a shredder standing on the floor below. You
+     cannot fall off an edge that has no height, so base is 0.62 and n.h went
+     1.6 -> 2.15 with it, which holds KZ (and therefore the gantries) where they
+     were. Change one of those two and change the other. */
+  {x0:0, x1:19.4, cy:-3.0, base:0.62, gx:[2.4,5.9,9.4], MZ:2.6, REJ:5.0,
+   binX:18.4, v:2.6, VALX:18.9,
    gz:0.66, pgap:0.40, IN:-3.0, PAD:-7.4, LANDX:-2.5, TRK:2.8,
    FLEN:5.0, TIP:0.55, LIP:0.22, THK:0.34},
 ][0];
@@ -2285,6 +2292,30 @@ function drawSortingYard(g,n){
   const gx=A.gx.map(XX), MZ=SC(A.MZ), v=A.v*K;
   const FL=SC(A.FLEN), THK=SC(A.THK);
 
+  /* THE SHREDDER'S NUMBERS ARE DERIVED HERE AND THE BOX IS DRAWN LATE.
+     Painter order wants the bin built last; the reject siding, which stops at
+     the deck's edge, needs to know where that edge is before it is drawn. The
+     two are separated rather than reordered. */
+  const BINX=FL+SC(0.9), BINY=SC(1.6);
+  const BY=REJ+SC(3.2), BINH=0.26*KZ, binTop=BINH;
+  const MOUTH=binX-BINX*0.34;                 /* where the blades bite */
+  /* the tip: y carries it over the edge, z drops it onto the mouth, and the
+     whole movement finishes just before the blades so the two stay legible as
+     two things */
+  /* TIPB IS WHERE THE LEADING END REACHES THE BLADES, not an arbitrary offset,
+     and that is the constraint the whole downstream half of this station is
+     laid out around. The fragment is FL long and travels along its own length,
+     so its nose is at cx + FL/2: the tip has to be finished by cx = MOUTH-FL/2
+     or the thing starts being eaten before it has left the deck. The first
+     version had TIPB at MOUTH-0.15 and every rejected fragment was consumed
+     entirely before the tip began, which drew nothing at all.
+
+     Reading backwards from there: TIPA is a unit earlier, and the last gantry's
+     divert has to be complete before TIPA — which is what moved gx up-belt to
+     2.4/5.9/9.4 and MZ down to 2.6. Move any one of gx, MZ, binX or FLEN and
+     re-check TIPA > gx[2] + MZ. */
+  const TIPB=MOUTH-FL/2, TIPA=TIPB-SC(1.0);
+
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const GAN ={top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"};
   const BIN ={top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"};
@@ -2310,9 +2341,11 @@ function drawSortingYard(g,n){
   /* ---- the deck, almost not there --------------------------------------- */
   /* the near edge is set by the shredder now that it is thin in y, not by a
      trough as deep as a fragment is long */
-  const dTop=cy-FL/2-SC(0.9), dBot=n.y+SC(A.REJ)+SC(1.6)/2+SC(1.9);
+  /* the near edge sits just past the reject line: the siding runs along it and
+     the fragments go over it */
+  const dTop=cy-FL/2-SC(0.9), dBot=n.y+SC(A.REJ)+SC(0.9);
   const xIn=XX(A.IN);
-  slabAt(g,(xIn+x1)/2,(dTop+dBot)/2,x1-xIn,dBot-dTop,base,DECK,0,0.10);
+  slabAt(g,(xIn+x1)/2,(dTop+dBot)/2,x1-xIn,dBot-dTop,base,DECK,0,0.32);
 
   /* ---- ONE BELT, and the three sidings that leave it --------------------- */
   const guide=(fn,op,w,xa,xb)=>{
@@ -2327,7 +2360,10 @@ function drawSortingYard(g,n){
   [-FL/2,0,FL/2].forEach((off,i)=>
     guide(()=>cy+off, i===1?0.14:0.42, i===1?"1.1":"1.8", xIn, x1));
   const rejY=(x,i)=>cy+(REJ-cy)*sstep(gx[i]+SC(0.9),gx[i]+MZ,x);
-  for(let i=0;i<3;i++) guide(x=>rejY(x,i),0.18,"1.2",gx[i],binX);
+  /* THE TRACK ENDS AT THE EDGE. It used to run all the way to the bin, which
+     drew a rail into a hopper on the same surface; there is no rail past the
+     edge, there is a drop. */
+  for(let i=0;i<3;i++) guide(x=>rejY(x,i),0.18,"1.2",gx[i],TIPA);
 
   /* ---- SLATS, so the belt is a belt ------------------------------------
      Two rails and a centre line draw a track; what makes it a conveyor is that
@@ -2406,7 +2442,7 @@ function drawSortingYard(g,n){
        top and nothing underneath it. It spans the face, so it now falls across
        the R2 block alone and the cDNA end passes through open air. Built before
        the panel so the panel's own face paints over the top edge of it. */
-    grp.appendChild(el("polygon",{fill:"var(--fg)","fill-opacity":"0.035",stroke:"none",
+    grp.appendChild(el("polygon",{fill:"var(--fg)","fill-opacity":"0.105",stroke:"none",
       points:pts([P(sx,SCN_F,base+panelZ),P(sx,SCN_N,base+panelZ),
                   P(sx,SCN_N,base),P(sx,SCN_F,base)])}));
     /* AND THE PANEL IS TRANSLUCENT. Opaque and 1.45 wide it was a bench top: it
@@ -2465,15 +2501,18 @@ function drawSortingYard(g,n){
      something is going through them, which is the honest picture — the machine
      is not busy, it is busy WHEN a fragment reaches it — and the flash of them
      turning is the one moment a reader can see the deletion happen. */
-  const BINX=FL+SC(0.9), BINY=SC(1.6);
-  slabAt(g,binX,REJ,BINX,BINY,0.62*KZ,BIN,base);
-  const MOUTH=binX-BINX*0.34;                 /* where the blades bite */
-  const binTop=base+0.62*KZ;
+  /* OFF THE DECK AND ON THE FLOOR, so the deck's near edge is something a
+     fragment goes OVER. Standing on the deck the bin was a bay at the end of a
+     siding — a place on the same surface, which reads as sorting rather than as
+     discarding. Beyond the edge and lower, the last thing a rejected fragment
+     does is leave the machine's own floor. Its top has to sit BELOW the height
+     the fragments ride at, or they would climb into it. */
+  slabAt(g,binX,BY,BINX,BINY,BINH,BIN,0);
   /* the slot the fragment goes into, inset in the top face */
   const SLOTX=BINX*0.80, SLOTY=BINY*0.34;
   g.appendChild(el("polygon",{points:pts([
-      P(binX-SLOTX/2,REJ-SLOTY/2,binTop),P(binX+SLOTX/2,REJ-SLOTY/2,binTop),
-      P(binX+SLOTX/2,REJ+SLOTY/2,binTop),P(binX-SLOTX/2,REJ+SLOTY/2,binTop)]),
+      P(binX-SLOTX/2,BY-SLOTY/2,binTop),P(binX+SLOTX/2,BY-SLOTY/2,binTop),
+      P(binX+SLOTX/2,BY+SLOTY/2,binTop),P(binX-SLOTX/2,BY+SLOTY/2,binTop)]),
     fill:"var(--bg)","fill-opacity":".72",stroke:"none"}));
   /* THE CUTTERS. Short blades across the slot, scrolling along it while the
      machine runs. Built after the slot so they read as being inside it. */
@@ -2515,7 +2554,7 @@ function drawSortingYard(g,n){
     lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "middle",
         (FS*1.85).toFixed(1));
   });
-  lab(binX-SC(1.5), REJ+SC(1.6)/2+SC(0.85), base, "NO MATCH",
+  lab(binX-SC(1.5), BY+BINY/2+SC(0.85), 0, "NO MATCH",
       (FS*1.25).toFixed(1), "var(--rej)", "1", 30);
   /* PAST THE MOUTH OF THE BELT, not alongside it. Between the near rail and the
      reject siding there are 1.4 authored units and the siding's own fragments
@@ -2617,8 +2656,15 @@ function drawSortingYard(g,n){
 
       /* the descent, exactly as before: it is the fragment that falls */
       const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
-      const zAir=FALLZ*air, xAir=-FALLX*air, cx=fx+xAir, cz=zR+zAir;
-      const yc=fr.fail<0?cy:rejY(fx,fr.fail);   /* the siding starts after the arch */
+      const zAir=FALLZ*air, xAir=-FALLX*air, cx=fx+xAir;
+      /* AND THE ONE AT THE END OF THE REJECT SIDING, which is the same thing in
+         the other direction: the fragment runs to the deck's near edge, tips
+         over it and drops onto the shredder standing on the floor. y carries it
+         over the edge and z takes it down, and the drop is squared because a
+         fall accelerates and a linear one reads as a lift lowering. */
+      const tip=fr.fail<0?0:sstep(TIPA,TIPB,fx);
+      const yc=(fr.fail<0?cy:rejY(fx,fr.fail))+(fr.fail<0?0:(BY-REJ)*tip);
+      const cz=zR-(zR-binTop)*tip*tip+zAir;
       /* IT TURNS ON THE SAME CURVE IT PEELS OFF ON. The divert and the quarter
          turn are one movement — a thing leaving a line swings round as it goes
          — so rot rides rejY's own sstep rather than having a schedule of its
@@ -2736,8 +2782,8 @@ function drawSortingYard(g,n){
       const bp2=SLOTX/NBLADE, roll=((t*SC(5.2))%bp2+bp2)%bp2;
       blades.forEach((bl,k)=>{
         const bxp=binX-SLOTX/2+((k*bp2+roll)%SLOTX);
-        const a=P(bxp,REJ-SLOTY*0.42,binTop+0.004),
-              b=P(bxp,REJ+SLOTY*0.42,binTop+0.004);
+        const a=P(bxp,BY-SLOTY*0.42,binTop+0.004),
+              b=P(bxp,BY+SLOTY*0.42,binTop+0.004);
         bl.setAttribute("x1",a[0].toFixed(1)); bl.setAttribute("y1",a[1].toFixed(1));
         bl.setAttribute("x2",b[0].toFixed(1)); bl.setAttribute("y2",b[1].toFixed(1));
         bl.setAttribute("stroke-opacity",(0.10+0.72*on).toFixed(3));

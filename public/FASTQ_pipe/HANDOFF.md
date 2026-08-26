@@ -936,10 +936,11 @@ the block keeps it locked on for the whole pass, which is what a reader does.
 The mark still fires later, at `FIREAT`: **scan, then answer.**
 
 A **light curtain** hangs under each face: a plane from the face to the deck, at
-0.035. It is what makes the scanner a scanner rather than a shelf. It spans the
-face, so it falls across the R2 block alone and the cDNA end passes through open
-air. Both are built AFTER the scanners, so they paint as light rather than as
-structure.
+**0.105** — it was 0.035, which is a thing you notice only once you have been
+told it is there. It is what makes the scanner a scanner rather than a shelf: *a
+shelf has a top and nothing underneath it.* It spans the face, so it falls
+across the R2 block alone and the cDNA end passes through open air. Both are
+built AFTER the scanners, so they paint as light rather than as structure.
 
 ### The readout scans, and it scans on its own clock
 
@@ -1029,31 +1030,60 @@ aggregate that moves when you change `NF` is not saying anything.
 belt so they do not clump, and they fail at three *different* rounds, so every
 gantry is seen to reject somebody and none of them is decoration.
 
-### The bin is a shredder, turned ninety degrees, on the near edge
+### The deck is a platform, and the shredder is off the edge of it
+
+`base` was **0.14** — a ghost of a surface, which was right while everything on
+this station stood *on* it and nothing ever left. The reject path leaves it:
+fragments run to the near edge, tip over it and drop onto a shredder standing on
+the floor below. **You cannot fall off an edge that has no height.** `base` is
+0.62 and `n.h` went 1.6 → 2.15 with it, which holds `KZ` — and therefore the
+gantries — where they were. **Change one of those two and change the other.**
+The deck's own fill went 0.10 → 0.32 for the same reason: an edge nobody can see
+is not an edge.
+
+The bin used to stand *on* the deck at the end of a siding, which is a place on
+the same surface and reads as **sorting**. Beyond the edge and lower, the last
+thing a rejected fragment does is leave the machine's own floor. Its top has to
+sit **below** the height the fragments ride at, or they climb into it rather
+than falling in.
+
+### The bin is a shredder, turned ninety degrees
 
 It was a hopper lying **across** the siding, long in `y`, because what came down
-the siding was a fragment lying across the belt and the mouth had to be as wide
-as the thing entering it. **Both have turned.**
-
-A rejected fragment now swings round as it leaves the belt and arrives **end
-on**, travelling along its own length, so the mouth it needs is a **slot**
-rather than a trough — long in `x`, thin in `y`, lying along the yard's near
-edge, which is the one edge on this deck with nothing else on it. `BINX` and
-`BINY` swapped; the deck's near edge came in with them, since it no longer has
-to be as deep as a fragment is long.
+the siding was a fragment lying across the belt. **Both have turned.** A
+rejected fragment swings round as it leaves the belt and arrives **end on**,
+travelling along its own length, so the mouth it needs is a **slot** rather than
+a trough — long in `x`, thin in `y`.
 
 **The turn rides `rejY`'s own `sstep`.** The divert and the quarter turn are one
-movement — a thing leaving a line swings round as it goes — so `rot` shares the
-curve rather than having a schedule of its own, and the two can never come
-apart. At `rot 1` the cDNA end is at −x and the UMI end at +x, which is the
-broadside pose turned a quarter turn **clockwise on screen**: +y is down-left
-here and −x is up-left, so that is the way the near end swings.
+movement, so `rot` shares the curve rather than having a schedule of its own and
+the two can never come apart. At `rot 1` the cDNA end is at −x and the UMI end
+at +x, which is the broadside pose turned a quarter turn **clockwise on screen**.
 
-**Every piece of a fragment is now a segment between two base pairs**, not a
-span of `y` at a fixed `x` — `seg2` places both ends and `bar`/`rail` take the
-perpendicular **in the ground plane**, so a bar keeps its world width through
-the whole turn. That is the change that makes the pose a variable instead of an
+**Every piece of a fragment is a segment between two base pairs**, not a span of
+`y` at a fixed `x` — `seg2` places both ends and `bar`/`rail` take the
+perpendicular **in the ground plane**, so a bar keeps its world width through the
+whole turn. That is the change that makes the pose a variable instead of an
 assumption.
+
+### `TIPB` is where the leading end reaches the blades, and it lays out the yard
+
+This is the constraint the whole downstream half of the station is arranged
+around, and getting it wrong drew **nothing at all**.
+
+The fragment is `FL` long and travels along its own length, so its nose is at
+`cx + FL/2`. **The tip has to be finished by `cx = MOUTH − FL/2`** or the thing
+starts being eaten before it has left the deck. The first version put `TIPB` at
+`MOUTH − 0.15`, and every rejected fragment was consumed entirely before its tip
+began: the fall was in the code, ran every lap, and was never once visible.
+
+Reading backwards from there: `TIPA` is a unit earlier, and the last gantry's
+divert has to complete before `TIPA`. That is what moved `gx` up-belt to
+2.4/5.9/9.4 and `MZ` down to 2.6. **Move any one of `gx`, `MZ`, `binX` or `FLEN`
+and re-check `TIPA > gx[2] + MZ`.**
+
+The drop itself is `tip²` rather than `tip`, because a fall accelerates and a
+linear one reads as a lift lowering.
 
 ### And it shreds, which is the honest verb
 
@@ -1072,8 +1102,11 @@ the ticks riding on the blocks go with them.
 **The cutters run only while something is in them.** A machine that turns all
 the time is scenery; one that starts when a thing reaches it is a machine doing
 something *to that thing*. They scroll along the slot and fade out over `RUNOUT`
-once the last fragment is through, so it spins down rather than stopping dead —
-and that flash is the one moment a reader can watch the deletion happen.
+once the last fragment is through, so it spins down rather than stopping dead.
+
+**The siding stops at the edge.** It used to run all the way to the bin, which
+drew a rail into a hopper on the same surface. There is no rail past the edge;
+there is a drop.
 
 ### Slats, so the belt is a belt
 
@@ -1877,3 +1910,7 @@ resized. Nobody had.
 - **Move any of `G1`/`G2`/`G3`/`E4` without re-checking the three `tr → bl`
   inequalities.** The belt's own near rail at +2.66, not the footprint at +3.3,
   is what the index has to clear.
+- **Change `E3`'s `base` without changing its `n.h`.** `KZ` is derived from
+  their sum and every gantry on the station scales with it.
+- **Move `gx`, `MZ`, `binX` or `FLEN` without re-checking `TIPA > gx[2] + MZ`.**
+  Get it wrong and the fall runs every lap and is never visible.
