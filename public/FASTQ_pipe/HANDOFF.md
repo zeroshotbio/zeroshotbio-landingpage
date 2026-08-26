@@ -649,20 +649,52 @@ barcode end at `-y`, which is the side the whitelist plates are on.
 what this station is about; at full strength it was the loudest thing on the belt
 and the barcodes read as trim on the end of an orange bar.
 
+### The scanner is a cantilever over the R2 block, on one post
+
+**It was an arch, and an arch was a claim this station does not make.** Two legs
+straddling the belt, a cross-beam under the face, and a face as wide as the
+molecule: that draws a machine reading *everything that passes beneath it*. This
+station reads R2. The cDNA half of the fragment goes under nothing, is checked
+against nothing, and no scanner here has an opinion about it.
+
+So the face covers **bp 96 to 154 — the three barcodes and the UMI — and
+nothing else**, and it is carried by a **single post at its far tip**, out past
+the UMI end on the side the whitelist plates are on, which is where the answer
+comes from. `TIP` (0.55) is how far past that end the face runs before the post
+takes it; `LIP` (0.22) is how far back over the unsequenced middle it laps, so
+the near edge *covers* bc1 rather than stopping exactly on it. `SCN_F`, `SCN_N`,
+`SCN_MID` and `SCN_LEN` are derived from `YARD_MOL`'s own base pairs, so the
+face is measured off the molecule and moves with it — **do not write the span as
+a constant**, and `A.SPAN` is gone rather than left at a value nothing reads.
+
+The post rises to `panelZ`, flush with the panel's underside, because a post
+that stops at `gz` and leaves the face floating above it is the cross-beam's
+problem again in a smaller size. **The second leg and the cross-beam are both
+gone**: the beam was a solid repeating the panel's own outline one step lower,
+and with the face this short there is nothing for it to stiffen.
+
+The post lands `TIP` clear of the far rail, so nothing stands on the belt.
+
 ### The scan is a beam, and it sweeps
 
-A dropped line from the scanner face to the deck at the arch's own x, tracking
-along the fragment's length as it passes under — cDNA end to UMI end — with a
-spot where it lands and a `sin(pi*u)` fade so it arrives and leaves rather than
-snapping on. Which is what a barcode reader does, and what the old slot flicker
-only implied. The sweep and the thing being swept are the same object seen
-twice.
+A dropped line from the scanner face to the deck at the station's own x,
+tracking along the fragment as it passes under, with a spot where it lands and a
+`sin(pi*u)` fade so it arrives and leaves rather than snapping on. Which is what
+a barcode reader does, and what the old slot flicker only implied. The sweep and
+the thing being swept are the same object seen twice.
 
-A **light curtain** hangs under each arch: a plane from the scanner face to the
-deck across the belt, at 0.035. It is what makes the arch a scanner rather than
-a table — a table has a top and nothing underneath it.
+**It sweeps R2 and stops there.** It used to run the whole molecule, cDNA end to
+UMI end, and that was the face's fault rather than the beam's: a face spanning
+the belt has to be shown reading across the belt. With the face over R2 alone
+the beam has exactly R2 to sweep, in the block's own base pairs (`R2A` → `R2B`),
+and it can no longer be seen reading a stretch of cDNA nothing here judges.
 
-Both are built AFTER the arches, so they paint as light rather than as
+A **light curtain** hangs under each face: a plane from the face to the deck, at
+0.035. It is what makes the scanner a scanner rather than a shelf — a shelf has
+a top and nothing underneath it. It spans the face, so it now falls across the
+R2 block alone and the cDNA end passes through open air.
+
+Both are built AFTER the scanners, so they paint as light rather than as
 structure. Everything else at this station is built before what occludes it;
 these two are the exception and the exception is the point.
 
@@ -671,10 +703,11 @@ these two are the exception and the exception is the point.
 Opaque and `SC(1.45)` along the belt it was a bench top: it hid the fragment for
 a long stretch and the one moment this station exists to show happened
 underneath it. `SC(0.72)` at 0.62 opacity, and the read happens in view — the
-verdict marks, which pass *under* the gantries by build order, are now visible
-through the glass at the moment they fire. `READAT` is derived from `PANW`
-rather than written as a constant, so narrowing the panel moves the verdict with
-it instead of leaving it firing in mid-air.
+verdict marks, which pass *under* the scanners by build order, are now visible
+through the glass at the moment they fire. That is load-bearing now rather than
+a nicety: two of the three verdicts fire under their own face, and they are legible
+because the glass is thin, translucent, and a good deal higher in z than a mark
+riding at `cz + 0.5·KZ`, which projects it clear below the panel's silhouette.
 
 ### `BC1` is twice the size and `WHITELIST` sits under it
 
@@ -686,14 +719,46 @@ lines, the same treatment every other named thing on this map gets.
 a normal name puts the second line inside a 2x one — 23% overlap, which
 check-text caught on all three at once. 1.85 clears it.
 
-### The verdict fires on the way OUT
+**And the name is centred on the face's own tip edge.** Anchored `start` and
+nudged off a corner it was a label parked beside a wide arch and it read as one.
+The face is now a short cantilever and it *has* an end, so the name sits square
+over that end: `text-anchor:middle` at the station's own x, `SC(0.95)` outward
+in −y. Both edges of the face at constant y run at **+30° on screen**, which is
+the angle the two lines are already set at, so a middle anchor at that x puts the
+centre of the text on the centre of the tip edge and the two run parallel;
+offsetting in −y — up and to the right — carries it clear of the panel without
+moving it off that line. The second line's `dy` shifts it perpendicular to the
+text, which reads as down-left on screen: both lines stay centred on the same
+line, which is what a two-line stack does everywhere else on this map.
 
-Lying across the belt, a fragment spends a real interval beneath the scanner
-face — and the marks are built before the gantries so that they pass *under*
-them. A verdict struck at the arch's centre is therefore struck where nobody can
-see it. It fires `SC(0.78)` past the arch, just clear of the panel's downstream
-edge: read on the way in, answer on the way out, which is also the more honest
-order.
+### The verdict fires where the beam crosses the block it is about
+
+**The sweep and the verdict are one event.** The mark used to fire at a fixed
+`SC(0.78)` past the arch while the beam ran on its own clock, so the tick and the
+moment the beam crossed the block it is about were two different instants: the
+drawing said *read here, answered there* and meant *read, and answered, here*.
+That was the right call while the beam swept the whole molecule — there was no
+single moment to point at — and it stopped being right the moment the face
+narrowed to R2.
+
+Now the beam's position **is** the clock. It sweeps the R2 block once per pass,
+bc1 first because bc1 is the block nearest the near rail, and station *i* fires
+when the beam reaches the barcode *that station checks*. So **`FIREAT[i]` is not
+a constant offset** — it is where the sweep has got to at barcode *i*, and the
+three differ: `-0.24`, `+0.31`, `+0.86` in `SC` units against a panel that is
+`±0.36` wide. Two of the three therefore fire under their own glass, which the
+panel was thinned for; the third fires just clear of it.
+
+The same figure drives the block's own brightening (`scanned`), so a barcode
+lights and its verdict lands on the same frame rather than a few pixels apart.
+
+**The window is deliberately lopsided** — `SW_IN` `SC(0.35)` upstream, `SW_OUT`
+`SC(1.25)` downstream — and both numbers are pinned at both ends. Wider and the
+first crossing happens before the fragment has reached the face; narrower, or
+shifted further out, and the last one lands after `gx + SC(0.9)`, where the
+reject siding has already begun to peel the fragment away — a verdict struck on
+a fragment that is visibly *already leaving* is the answer arriving after the
+decision. Move one, check the other two.
 
 ### Who fails is the figure, not a coin flip
 
@@ -708,7 +773,7 @@ aggregate that moves when you change `NF` is not saying anything.
 belt so they do not clump, and they fail at three *different* rounds, so every
 gantry is seen to reject somebody and none of them is decoration.
 
-### The bin is as wide as the belt
+### The bin is as wide as the belt, and it stands well off it
 
 A cube would have been narrower than the thing going into it, so a rejected
 fragment would have stuck out either side and never gone away. It is a hopper
@@ -716,6 +781,20 @@ across the siding: `SC(1.6)` along the belt, `FL + SC(0.9)` across it. The
 swallow window is the same idea as before — take `vis` to zero while the whole
 fragment is inside the hopper's silhouette, so it is at full strength right up
 to going behind and never comes out.
+
+**`REJ` is 5.0 and it was 3.4.** At 3.4 the hopper sat about a fragment's width
+off the near rail, close enough that the belt and the bin read as one piece of
+machinery with a wide part — and a reject that never visibly *leaves* is a
+reject nobody registers. Further down and to the left (+y is down-left on
+screen) there is clear ground between them and the siding has a visible run.
+`MZ` went 2.4 → 3.0 with it, because the same divert over a longer drop is a
+steeper one, and `binX` 16.1 → 17.4 so the hopper sits downstream of the last
+station rather than beside it. **`NO MATCH` takes its place from `REJ` and
+`binX`**, so it followed on its own; nothing about the label moved.
+
+The three stations went upstream at the same time — `gx` `[4.4, 8.4, 12.4]` →
+`[3.4, 7.4, 11.4]` — which is the other half of the same change: the sidings
+need the run, and the yard's own mouth had more clear belt than it needed.
 
 ### Slats, so the belt is a belt
 
@@ -746,35 +825,31 @@ take `--rej`, the ticks and *VALIDATED TRIPLETS* take `--ok`, and the big
 end-of-line tick takes `--ok` at well under full opacity: it is a confirmation,
 not an announcement.
 
-### The scanner panel spans the whole arch, and the arch sits lower
+### The panel is the whole face, and the face sits low
 
-It was 78% of the span, centred — which *is* centred and does not look it. A slab
-narrower than the legs it sits on, floating above them, reads as slipped rather
-than as inset; there is nothing in the picture to measure it against except the
-legs, and it disagrees with them. Full width and the two agree, and the arch
-reads as one object with a lid. The 20 whitelist slots widen with it
-(`hw = halfSpan - SC(0.22)`), which is the better half of the change: the
-scanner face now shows the list it is checking against, right across the lanes
-it checks.
+The panel used to be 78% of the arch's span, centred — which *is* centred and
+does not look it: a slab narrower than the legs it sits on, floating above them,
+reads as slipped rather than as inset. It was taken to the full span, and now
+that the span is the R2 block the two are the same thing: **the face is the
+panel, and `SCN_LEN` is both.** The whitelist slots run its length
+(`hw = SCN_LEN/2 - SC(0.16)`), which is the better half of that change — the
+scanner face shows the list it is checking against, right over the blocks it
+checks.
 
 **`gz` and `pgap` are in `YARD_ROUNDS`, not inline, because `NATZ` is built from
-them.** Lower the arch without lowering `NATZ` and `n.h` stops meaning the height
+them.** Lower the face without lowering `NATZ` and `n.h` stops meaning the height
 of the thing — the whole shape rescales under you. They went 1.05/0.66 to
 0.66/0.40: high enough to be a gantry, low enough that it reads as standing over
-its lanes instead of hovering up-left of them. The stations moved a little
-further along the lane at the same time (`gx` 3.6/7.2/10.8 to 3.9/7.5/11.1),
-which is the rest of the same complaint.
+its blocks instead of hovering up-left of them.
 
-**The names hang past the far end of the panel**, at `cy - halfSpan - SC(0.95)`.
-They used to sit at 0.78 of the half-span, which was clear of a panel that
-stopped at 0.78 and is on top of one that runs the full width. *NO MATCH* moved
-too — down to the bin's foot at `base`, out from under the reject tracks that
-reach it.
+**The names hang past the tip of the face**, at `SCN_F - SC(0.95)`, centred —
+see above. *NO MATCH* is placed off the bin's own foot at `base`, out from under
+the reject tracks that reach it, so moving `REJ` and `binX` carried it along.
 
 
 **Three build-order facts do real work.** The verdict marks are built after the
-fragments and *before* the gantries, so a tick rides above its block but passes
-*under* the scanner. The falling fragments are under the scanners for the same
+fragments and *before* the scanners, so a tick rides above its block but passes
+*under* the face. The falling fragments are under the scanners for the same
 reason. The bin is built last, so a discarded triplet slides *behind* it and is
 gone.
 

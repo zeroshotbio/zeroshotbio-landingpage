@@ -1683,13 +1683,22 @@ const YARD_ROUNDS=[
      face sits above it. They are here rather than inline because NATZ is built
      from them. IN, PAD and LANDX are the approach: the track starts at IN, a
      fragment is born at PAD, and it touches down at LANDX. FLEN is the
-     molecule's length across the belt and SPAN is the arch — FLEN plus a margin
-     each side, and the same for all three, because a scanner is as wide as what
-     goes under it. */
-  {x0:0, x1:19.4, cy:-3.0, base:0.14, gx:[4.4,8.4,12.4], MZ:2.4, REJ:3.4,
-   binX:16.1, v:2.6, VALX:18.9,
+     molecule's length across the belt.
+
+     THE SCANNER IS NOT AS WIDE AS THE BELT, AND THAT IS THE POINT. It used to
+     be an arch spanning FLEN plus a margin each side, on two legs, with a
+     cross-beam under the face. But this station reads R2 and nothing else: the
+     cDNA half of the molecule has no business here and no scanner is pointed at
+     it. So the face covers the R2 block alone — the three barcodes and the UMI,
+     bp 96 to 154 — and it is cantilevered from a SINGLE pillar at its far tip,
+     out past the UMI end where the whitelist plates are. TIP is how far past
+     that end the face runs before the pillar takes it; LIP is how far back over
+     the unsequenced middle it laps, so the near edge covers bc1 rather than
+     stopping exactly on it. */
+  {x0:0, x1:19.4, cy:-3.0, base:0.14, gx:[3.4,7.4,11.4], MZ:3.0, REJ:5.0,
+   binX:17.4, v:2.6, VALX:18.9,
    gz:0.66, pgap:0.40, IN:-3.0, PAD:-7.4, LANDX:-2.5, TRK:2.8,
-   FLEN:5.0, SPAN:6.5, THK:0.34},
+   FLEN:5.0, TIP:0.55, LIP:0.22, THK:0.34},
 ][0];
 
 /* THE SAME MOLECULE AS E2, IN THE SAME UNITS: base pairs, cDNA end first.
@@ -1722,7 +1731,7 @@ function drawSortingYard(g,n){
   const cy=M.cy, base=M.base;
   const REJ=n.y+SC(A.REJ), binX=XX(A.binX), VALX=XX(A.VALX);
   const gx=A.gx.map(XX), MZ=SC(A.MZ), v=A.v*K;
-  const FL=SC(A.FLEN), SPAN=SC(A.SPAN), THK=SC(A.THK);
+  const FL=SC(A.FLEN), THK=SC(A.THK);
 
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const GAN ={top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"};
@@ -1738,6 +1747,16 @@ function drawSortingYard(g,n){
   const yBP=(yc,bp)=>yc+FL/2-bp*uBP;
   const segAt=k=>cuts.find(c=>c[2]===k);
   const BCBP=["bc1","bc2","bc3"].map(k=>{const c=segAt(k); return (c[0]+c[1])/2;});
+
+  /* ---- THE R2 BLOCK, which is the only part of the molecule this station
+     looks at. bp 96 (the start of bc1) to bp 154 (the end of the UMI) — the
+     blue stretch, and every scanner face, light curtain and beam on this belt
+     is measured off it rather than off the belt's own width. SCN_F is the far
+     tip, at -y, up-right, on the side the whitelist plates are; SCN_N is the
+     near edge, lapping a little way back over the unsequenced middle. */
+  const R2A=segAt("bc1")[0], R2B=segAt("umi")[1];
+  const SCN_F=yBP(cy,R2B)-SC(A.TIP), SCN_N=yBP(cy,R2A)+SC(A.LIP);
+  const SCN_MID=(SCN_F+SCN_N)/2, SCN_LEN=SCN_N-SCN_F;
 
   /* ---- the deck, almost not there --------------------------------------- */
   const dTop=cy-FL/2-SC(0.9), dBot=REJ+FL/2+SC(0.9);
@@ -1815,30 +1834,39 @@ function drawSortingYard(g,n){
       "stroke-opacity":"0"})));
   });
 
-  /* ---- three identical arches, each as wide as the thing beneath it ------- */
+  /* ---- three identical scanners, each over the R2 block and nothing else --- */
   const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
-  const half=SPAN/2;
   const PANW=SC(0.72);                 /* half of what it was, along the belt */
   const stations=gx.map((sx,i)=>{
     const grp=g.appendChild(el("g"));
-    [-1,1].forEach(sgn=>slabAt(grp,sx,cy+sgn*half,SC(0.18),SC(0.18),gz,GAN,base));
-    slabAt(grp,sx,cy,SC(0.30),half*2,0.16*KZ,GAN,base+gz);
-    /* THE LIGHT CURTAIN — a plane hanging from the scanner face to the deck,
-       across the belt. It is what makes the arch a scanner rather than a table:
-       a table has a top and nothing underneath it. Built before the panel so the
-       panel's own face paints over the top edge of it. */
+    /* ONE PILLAR, AT THE FAR TIP, AND IT GOES ALL THE WAY UP TO THE FACE.
+       Two legs and a cross-beam under the panel drew a gantry standing over the
+       whole belt, which is a claim about what is being read: everything that
+       passes beneath it. It is not — the cDNA half goes under nothing. So the
+       second leg is gone, the beam under the face is gone (it was a solid
+       repeating the panel's own outline one step lower), and what is left is a
+       single post out past the UMI end carrying a face that reaches back over
+       the barcodes. It stands on the side the whitelist plates are on, which is
+       where the answer comes from. Its top is flush with the panel's underside,
+       so the post carries the face rather than stopping short of it. */
+    slabAt(grp,sx,SCN_F+SC(0.09),SC(0.18),SC(0.18),panelZ,GAN,base);
+    /* THE LIGHT CURTAIN — a plane hanging from the scanner face to the deck.
+       It is what makes the scanner a scanner rather than a shelf: a shelf has a
+       top and nothing underneath it. It spans the face, so it now falls across
+       the R2 block alone and the cDNA end passes through open air. Built before
+       the panel so the panel's own face paints over the top edge of it. */
     grp.appendChild(el("polygon",{fill:"var(--fg)","fill-opacity":"0.035",stroke:"none",
-      points:pts([P(sx,cy-FL/2,base+panelZ),P(sx,cy+FL/2,base+panelZ),
-                  P(sx,cy+FL/2,base),P(sx,cy-FL/2,base)])}));
+      points:pts([P(sx,SCN_F,base+panelZ),P(sx,SCN_N,base+panelZ),
+                  P(sx,SCN_N,base),P(sx,SCN_F,base)])}));
     /* AND THE PANEL IS TRANSLUCENT. Opaque and 1.45 wide it was a bench top: it
        hid the fragment for a long stretch of belt, and the one moment this
        station exists to show happened underneath it. Half as wide and see
        through, and the read happens in view. */
-    slabAt(grp,sx,cy,PANW,half*2,0.07*KZ,GAN,base+panelZ,0.62);
+    slabAt(grp,sx,SCN_MID,PANW,SCN_LEN,0.07*KZ,GAN,base+panelZ,0.62);
     const slots=[];
     for(let c=0;c<14;c++){
-      const px=sx-PANW*0.42+(c/13)*PANW*0.84, hw=half-SC(0.22);
-      const a=P(px,cy-hw,base+panelZ+0.075*KZ), b=P(px,cy+hw,base+panelZ+0.075*KZ);
+      const px=sx-PANW*0.42+(c/13)*PANW*0.84, hw=SCN_LEN/2-SC(0.16);
+      const a=P(px,SCN_MID-hw,base+panelZ+0.075*KZ), b=P(px,SCN_MID+hw,base+panelZ+0.075*KZ);
       slots.push({node:grp.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
         "stroke-width":"1.7","stroke-opacity":"0.07"})),lit:-99});
@@ -1849,9 +1877,14 @@ function drawSortingYard(g,n){
   /* ---- THE SCAN ITSELF, built after the arches so it reads as light ------
      A beam dropped from the scanner face to the deck, sweeping ALONG the
      fragment as it passes under — which is what a barcode reader does, and what
-     the old slot-flicker only implied. It travels the molecule's own length
-     from the cDNA end to the UMI end, so the sweep and the thing being swept
-     are the same object seen twice. */
+     the old slot-flicker only implied. It travels the R2 block, bc1 out to the
+     UMI, so the sweep and the thing being swept are the same object seen twice.
+
+     IT USED TO TRAVEL THE WHOLE MOLECULE, cDNA end to UMI end, and that was the
+     face's fault rather than the beam's: a scanner spanning the belt has to be
+     shown reading across the belt. With the face over R2 alone the beam has
+     exactly R2 to sweep, and it can no longer be seen reading a stretch of cDNA
+     that nothing at this station has an opinion about. */
   stations.forEach(st=>{
     st.beam=g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"1.5",
       "stroke-opacity":"0","stroke-linecap":"round"}));
@@ -1881,13 +1914,21 @@ function drawSortingYard(g,n){
      digit buried in it; what a reader needs at a glance is WHICH ROUND. BC1 goes
      to twice the size and WHITELIST drops underneath — the same two-line
      treatment every other named thing on this map gets. */
+  /* AND THE NAME IS CENTRED ON THE FACE'S OWN TIP EDGE. Anchored start and
+     nudged off a corner, it was a label parked beside a wide arch and it read
+     as one; the face is now a short cantilever and it has an end, so the name
+     sits square over that end. Both edges of the face at constant y run at +30
+     on screen, which is the angle the two lines are already set at, so a middle
+     anchor at the scanner's own x puts the centre of the text on the centre of
+     the tip edge and the two run parallel. Offsetting in -y — up and to the
+     right — carries it clear of the panel without moving it off that line. */
   stations.forEach((st,i)=>{
-    const lx=st.sx-SC(0.68), ly=cy-half-SC(0.95), lz=base+panelZ+0.07*KZ;
-    lab(lx,ly,lz, `BC${i+1}`, (FS*2).toFixed(1), "var(--fg)", "1", 30);
+    const lx=st.sx, ly=SCN_F-SC(0.95), lz=base+panelZ+0.07*KZ;
+    lab(lx,ly,lz, `BC${i+1}`, (FS*2).toFixed(1), "var(--fg)", "1", 30, "middle");
     /* dy is measured from BC1's baseline and BC1 is twice the size, so the
        1.35 that works under a normal name puts WHITELIST inside the big
        glyph's box — 23% overlap, which check-text caught. */
-    lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "start",
+    lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "middle",
         (FS*1.85).toFixed(1));
   });
   lab(binX-SC(0.75), REJ+FL/2+SC(1.55), base, "NO MATCH",
@@ -1925,7 +1966,24 @@ function drawSortingYard(g,n){
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
 
-  const SWEEPW=SC(1.15);            /* how far either side of an arch counts as "under" */
+  /* ---- THE SWEEP AND THE VERDICT ARE ONE EVENT ---------------------------
+     The mark used to fire at a fixed point past the panel's downstream edge
+     while the beam ran on its own clock, so the tick and the moment the beam
+     crossed the block it is about were two different instants — the drawing
+     said "read here, answered there" and meant "read, and answered, here".
+
+     Now the beam's position IS the clock. It sweeps the R2 block once per pass,
+     bc1 first because bc1 is the block nearest the belt's near rail, and each
+     station fires the moment the beam crosses the barcode THAT station checks.
+     So FIREAT[i] is not a constant offset: it is where the sweep has got to
+     when it reaches barcode i, and station i answers there and nowhere else.
+
+     The window is deliberately lopsided — a little upstream of the face, a good
+     deal downstream — so that every one of the three crossings lands at or past
+     the arch and none of them lands after the reject siding has begun to peel
+     away at gx + 0.9. Read on the way through, answered on the block. */
+  const SW_IN=SC(0.35), SW_OUT=SC(1.25), SW_W=SW_IN+SW_OUT;
+  const FIREAT=BCBP.map(bp=>-SW_IN+((bp-R2A)/(R2B-R2A))*SW_W);
   let t=0;
   const run=dt=>{
     t+=dt;
@@ -1960,7 +2018,7 @@ function drawSortingYard(g,n){
       fr.bc.forEach((node,i)=>{
         const c=segAt(`bc${i+1}`);
         const reachable=fr.fail<0||i<=fr.fail;
-        const scanned=fx>gx[i]+PANW*0.62&&reachable;
+        const scanned=fx>gx[i]+FIREAT[i]&&reachable;
         const bad=fr.fail===i&&scanned;
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
         node.setAttribute("fill",bad?"var(--rej)":R2T);
@@ -1971,17 +2029,15 @@ function drawSortingYard(g,n){
       fr.umi.setAttribute("fill-opacity",(clamp01(vis*0.16)).toFixed(3));
       fr.umi.setAttribute("stroke-opacity",(clamp01(vis*0.8)).toFixed(3));
 
-      /* THE VERDICT FIRES AS THE FRAGMENT COMES OUT THE FAR SIDE, not as it
-         goes under. Lying across the belt it spends a real interval beneath the
-         scanner face, and the mark is built before the gantries so that it
-         passes under them — which means a verdict struck at the arch's centre
-         is struck where nobody can see it. Read on the way in, answer on the way
-         out: it is also the more honest order. */
-      const READAT=PANW*0.62;      /* just past the panel's downstream edge */
+      /* THE VERDICT FIRES WHERE THE BEAM CROSSES THE BLOCK IT IS ABOUT. The
+         mark is built before the gantries, so it passes under the scanner and
+         the face is see-through: a tick struck beneath the panel is read
+         through the glass, which is what the panel was narrowed and thinned
+         for. See FIREAT above for why each station's offset differs. */
       stations.forEach((st,i)=>{
         const prev=fr.px===undefined?fx:fr.px;
         const stillOnLine=fr.fail<0||i<=fr.fail;
-        if(prev<=st.sx+READAT && fx>st.sx+READAT && stillOnLine){
+        if(prev<=st.sx+FIREAT[i] && fx>st.sx+FIREAT[i] && stillOnLine){
           fr.flash[i]=t;
           if(fr.fail!==i){ st.slots[st.ptr%st.slots.length].lit=t; st.ptr++; }
         }
@@ -2003,8 +2059,8 @@ function drawSortingYard(g,n){
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
       stations.forEach((st,i)=>{
-        if(vis>0.5 && (fr.fail<0||i<=fr.fail) && Math.abs(fx-st.sx)<SWEEPW){
-          st.sw=(fx-(st.sx-SWEEPW))/(2*SWEEPW); st.swY=yc;
+        if(vis>0.5 && (fr.fail<0||i<=fr.fail) && fx>st.sx-SW_IN && fx<st.sx+SW_OUT){
+          st.sw=(fx-(st.sx-SW_IN))/SW_W; st.swY=yc;
         }
       });
       fr.px=fx;
@@ -2013,7 +2069,8 @@ function drawSortingYard(g,n){
     for(const st of stations){
       if(st.sw<0){ st.beam.setAttribute("stroke-opacity","0");
                    st.spot.setAttribute("fill-opacity","0"); continue; }
-      const yb=st.swY+FL/2-st.sw*FL;
+      /* the beam lands ON the R2 block, in the block's own base pairs */
+      const yb=yBP(st.swY, R2A+(R2B-R2A)*st.sw);
       const a=P(st.sx,yb,base+panelZ), b=P(st.sx,yb,base);
       st.beam.setAttribute("x1",a[0].toFixed(1)); st.beam.setAttribute("y1",a[1].toFixed(1));
       st.beam.setAttribute("x2",b[0].toFixed(1)); st.beam.setAttribute("y2",b[1].toFixed(1));
