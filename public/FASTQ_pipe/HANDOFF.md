@@ -913,35 +913,56 @@ and with the face this short there is nothing for it to stiffen.
 
 The post lands `TIP` clear of the far rail, so nothing stands on the belt.
 
-### The laser is aimed, and it is aimed at one square
+### The laser is aimed, and it locks onto the block
 
 A beam dropped from the scanner face to the deck, **at the station's own barcode
-and no other** — BC1's points at bc1, BC2's at bc2, BC3's at bc3 — with a spot
-where it lands and a `sin(pi*u)` fade so it arrives with the block and leaves
-with it. It is a fixed point on a machine; the fragment is what moves.
+and no other** — BC1's on bc1, BC2's on bc2, BC3's on bc3 — brightest at the
+instant that block is directly beneath, with a `sin(pi*u)` fade so it arrives
+with the block and leaves with it.
 
 **It used to sweep**, first the whole molecule and then the whole R2 block, and
-both were the same mistake in different sizes: *a beam that travels the length of
-a read is a beam reading all of it*, and no station here reads more than one
+both were the same mistake in different sizes: *a beam that travels the length
+of a read is a beam reading all of it*, and no station here reads more than one
 square. Every gantry can *see* all three — that is what lying broadside buys —
 but what makes gantry *i* a different question from gantry *j* is which one it
-**checks**, and until the aim was fixed that was the one thing the drawing did
-not say. It says it now with no caption and no colour.
+**checks**.
+
+**And it drops on the block rather than at the station.** Standing at the arch's
+own `x` it was on its target only for the instant the fragment was exactly
+underneath; either side of that it was landing on bare deck a bar's width away,
+and the whole lit window read as *a zap that misses*. The face is `PANW` wide,
+so a beam leaving any point on its underside is the same machine — aiming it at
+the block keeps it locked on for the whole pass, which is what a reader does.
+The mark still fires later, at `FIREAT`: **scan, then answer.**
 
 A **light curtain** hangs under each face: a plane from the face to the deck, at
-0.035. It is what makes the scanner a scanner rather than a shelf — a shelf has
-a top and nothing underneath it. It spans the face, so it falls across the R2
-block alone and the cDNA end passes through open air.
+0.035. It is what makes the scanner a scanner rather than a shelf. It spans the
+face, so it falls across the R2 block alone and the cDNA end passes through open
+air. Both are built AFTER the scanners, so they paint as light rather than as
+structure.
 
-Both are built AFTER the scanners, so they paint as light rather than as
-structure. Everything else at this station is built before what occludes it;
-these two are the exception and the exception is the point.
+### The readout scans, and it scans on its own clock
+
+Each slot on the face used to be lit by a **verdict** and left to decay over 1.7
+seconds, so the face changed about as often as a fragment passed — one line
+coming up bright every second or so, which reads as *a light blinking* rather
+than as a machine reading.
+
+**A scanner's face is not a tally of what it has decided; it is the reading, and
+reading is fast.** `SCANHZ` is 21 slots a second with `SCANTRAIL` slots of tail
+behind the head, so it crosses all fourteen in about two thirds of a second.
+That is the difference between a lamp and an instrument, and it costs one line
+of arithmetic — the verdict no longer touches the slots at all.
 
 ### The panel is half as wide and see-through
 
 Opaque and `SC(1.45)` along the belt it was a bench top: it hid the fragment for
 a long stretch and the one moment this station exists to show happened
-underneath it. `SC(0.72)` at 0.62 opacity, and the read happens in view — the
+underneath it. `SC(0.72)` at **0.78** opacity — it was 0.62, which was a
+*suggestion* of a face with the deck's own lines coming through it, the same
+mistake `E4`'s belt was making. What has to stay legible through it is a mark,
+and a mark is a bright stroke on a dark ground: it survives 0.78 comfortably.
+The read happens in view — the
 verdict marks, which pass *under* the scanners by build order, are now visible
 through the glass at the moment they fire. That is load-bearing now rather than
 a nicety: two of the three verdicts fire under their own face, and they are legible
@@ -1008,28 +1029,51 @@ aggregate that moves when you change `NF` is not saying anything.
 belt so they do not clump, and they fail at three *different* rounds, so every
 gantry is seen to reject somebody and none of them is decoration.
 
-### The bin is as wide as the belt, and it stands well off it
+### The bin is a shredder, turned ninety degrees, on the near edge
 
-A cube would have been narrower than the thing going into it, so a rejected
-fragment would have stuck out either side and never gone away. It is a hopper
-across the siding: `SC(1.6)` along the belt, `FL + SC(0.9)` across it. The
-swallow window is the same idea as before — take `vis` to zero while the whole
-fragment is inside the hopper's silhouette, so it is at full strength right up
-to going behind and never comes out.
+It was a hopper lying **across** the siding, long in `y`, because what came down
+the siding was a fragment lying across the belt and the mouth had to be as wide
+as the thing entering it. **Both have turned.**
 
-**`REJ` is 5.0 and it was 3.4.** At 3.4 the hopper sat about a fragment's width
-off the near rail, close enough that the belt and the bin read as one piece of
-machinery with a wide part — and a reject that never visibly *leaves* is a
-reject nobody registers. Further down and to the left (+y is down-left on
-screen) there is clear ground between them and the siding has a visible run.
-`MZ` went 2.4 → 3.0 with it, because the same divert over a longer drop is a
-steeper one, and `binX` 16.1 → 17.4 so the hopper sits downstream of the last
-station rather than beside it. **`NO MATCH` takes its place from `REJ` and
-`binX`**, so it followed on its own; nothing about the label moved.
+A rejected fragment now swings round as it leaves the belt and arrives **end
+on**, travelling along its own length, so the mouth it needs is a **slot**
+rather than a trough — long in `x`, thin in `y`, lying along the yard's near
+edge, which is the one edge on this deck with nothing else on it. `BINX` and
+`BINY` swapped; the deck's near edge came in with them, since it no longer has
+to be as deep as a fragment is long.
 
-The three stations went upstream at the same time — `gx` `[4.4, 8.4, 12.4]` →
-`[3.4, 7.4, 11.4]` — which is the other half of the same change: the sidings
-need the run, and the yard's own mouth had more clear belt than it needed.
+**The turn rides `rejY`'s own `sstep`.** The divert and the quarter turn are one
+movement — a thing leaving a line swings round as it goes — so `rot` shares the
+curve rather than having a schedule of its own, and the two can never come
+apart. At `rot 1` the cDNA end is at −x and the UMI end at +x, which is the
+broadside pose turned a quarter turn **clockwise on screen**: +y is down-left
+here and −x is up-left, so that is the way the near end swings.
+
+**Every piece of a fragment is now a segment between two base pairs**, not a
+span of `y` at a fixed `x` — `seg2` places both ends and `bar`/`rail` take the
+perpendicular **in the ground plane**, so a bar keeps its world width through
+the whole turn. That is the change that makes the pose a variable instead of an
+assumption.
+
+### And it shreds, which is the honest verb
+
+A bin that swallows is a bin that **stores**, and nothing is stored here: 24.3%
+of reads carry no valid barcode combination and they are discarded with no
+record of which ones.
+
+**`CUTBP` is where the blades have got to, in the molecule's own base pairs.**
+Anything past it is not drawn. Fading the whole fragment out was the first
+attempt and it says the wrong thing: *a discarded read does not get dimmer, it
+stops existing, and it stops existing from the end that went in.* Because the
+discard pose puts the UMI end at +x and the slot is at +x, that end is the
+high-bp end — so the clip is a single upper bound and needs no special case, and
+the ticks riding on the blocks go with them.
+
+**The cutters run only while something is in them.** A machine that turns all
+the time is scenery; one that starts when a thing reaches it is a machine doing
+something *to that thing*. They scroll along the slot and fade out over `RUNOUT`
+once the last fragment is through, so it spins down rather than stopping dead —
+and that flash is the one moment a reader can watch the deletion happen.
 
 ### Slats, so the belt is a belt
 
@@ -1125,31 +1169,64 @@ a shelf cannot show standing still is that you do not walk it, you arrive at one
 place on it. A sweep would draw a scan, which is the one access pattern this
 structure exists to avoid.
 
-**It sits in the gap between its two sources.** Both are eight units deep and
-this row cannot be cleared in `y` by anything, so `x` is where the separation
-has to come from — `G1` and `G2` were pushed apart to `dx` −0.6 and 9.0 to open
-it. Check both neighbours if you move or resize any of the three.
+### `tr` and `bl` — the two edges anybody can point at
 
-### The feed, and two clip lessons
+These footprints are rectangles in the ground plane, and under this projection
+two of their four edges are the ones a person would name:
 
-`G3 → E4` took three tries and each failure was a different mechanism:
+| | |
+|---|---|
+| `"tr"` | the edge at **min y** — up and to the right |
+| `"bl"` | the edge at **max y** — down and to the left |
+
+Both are returned at their **centre**, by `edgePort()`. A corner is where two
+edges meet and it belongs to neither: `roofCorner` is the right answer when a
+line just has to leave from the side it is going, and the wrong one when the
+drawing is meant to say *this edge feeds that edge*. The reference chain says
+exactly that — assembly and annotation into the index, index into the aligner —
+so it is drawn edge to edge.
+
+`PORTS.belts` answers `"bl"` with the **belt's own near rail**, not the
+footprint's near edge: the rail is what a reader sees as the machine's
+bottom-left edge, and it is a good half unit inside the box the layout gave it.
+
+### The row is arranged around those three tracks
+
+For a track to read as *leaving* rather than doubling back, the destination's
+bottom-left edge has to be at **lower y** than the source's top-right edge. That
+one inequality fixes all four positions:
+
+```
+G1 tr  y +8.4   ->  G3 bl  y +8.1        G1 and G2 sit below the index
+G2 tr  y +8.5   ->  G3 bl  y +8.1
+G3 tr  y +4.3   ->  E4 bl  y +2.66       and the index below the belt
+```
+
+**The last one is the tight constraint and it is not about the footprint.**
+`E4`'s box reaches y +3.3 but its drawn belt stops at +2.66, and the belt is
+opaque and paints after the edges — so an index whose top-right edge is inside
++2.66 sends its track *under the deck*, where none of it survives. `G1` and `G2`
+lost a unit of depth each to make room and both roofs reflow, which is what
+`roofPanel` is for; the band grew to `R3+15.5` to hold them.
+
+**`G3 → E4` took three tries and each failure was a different mechanism**, which
+is the part worth keeping:
 
 1. **Corner to corner was a stub.** `roofCorner` picks by distance to the
-   destination's *centre*, and the two nearest corners were a unit apart. Nobody
-   could see it was a track.
-2. **Then the occlusion clip ate it.** The feed lands on the belt's near rail
-   and the rail is *inside* `E4`'s footprint — `n.d` is 6.6 and the drawn belt
-   is 5.3 — so the whole run was cut. `E4` carries `noclip:true` now, the third
-   node on this page to need it and for the same reason every time.
+   destination's *centre*, and the two nearest corners were a unit apart.
+2. **Then the occlusion clip ate it.** The feed lands on the belt's near rail,
+   and the rail is inside `E4`'s footprint. `E4` carries `noclip:true` now — the
+   third node on this page to need it, for the same reason every time. `G1`,
+   `G2` and `G3` carry it too: they are flat cards, and a track that grazes one
+   is hidden by the card itself rather than by a box around it.
 3. **Then the opaque deck painted over it.** `gNode` paints after `gEdge`, and
-   the source corner `roofCorner` chose was at *low* `y`, so the track ran the
-   length of the deck to reach a rail on the deck's near edge. `PORTS.starindex`
-   answers `"feed"` with the −x/+y corner explicitly, which puts the whole run
-   on open ground outside the belt and arriving at its side.
+   the corner `roofCorner` chose was at *low* y, so the track ran the length of
+   the deck to reach a rail on the deck's near edge. Naming the edge fixed it.
 
-`PORTS.belts` answers `"feed"` with a point on the near rail a quarter of the
-way along — a run with room for a dot, and where a thing being consumed by a
-machine goes: **into its side, not at its corner.**
+**A note on the name.** This box is the STAR **index** and not the STAR
+*aligner*: the aligner is `E4`, one station along. Every word of this node's
+lifted prose is about the index, so the roof says index — if the two ever have
+to agree on "aligner", the node they belong to is `E4`.
 
 ## The orange chain is off the map
 
@@ -1795,3 +1872,8 @@ resized. Nobody had.
   stated reason, not a measurement; the alignments are not on this instance.
 - **Put the orange chain back without reading the note on it.** It is one line
   each and it changes what the map claims, in both directions.
+- **Let `E3`'s readout be driven by verdicts again.** The face is the reading,
+  not a tally of what has been decided, and reading is fast.
+- **Move any of `G1`/`G2`/`G3`/`E4` without re-checking the three `tr → bl`
+  inequalities.** The belt's own near rail at +2.66, not the footprint at +3.3,
+  is what the index has to clear.

@@ -214,16 +214,16 @@ const NODES = [
    drawn, on the roof of a short flat prism, which is /bioinformatics_pipe's own
    idiom. The roof is NOT square: the aspect comes from w and d, and roofPanel()
    reflows the chart to it. See drawKaryotype and drawLocus in fq-shapes.js. */
-{id:"G1", key:"G1", group:"G · genome, and W · whitelists", shape:"karyotype",
- follow:{a:"E4",dx:-0.6}, name:"GRCz11", x:5.9, y:R3+9.2, w:4.0, d:7.1, h:0.5,
+{id:"G1", key:"G1", noclip:true, group:"G · genome, and W · whitelists", shape:"karyotype",
+ follow:{a:"E4",dx:1.0}, name:"GRCz11", x:5.9, y:R3+11.4, w:4.0, d:6.0, h:0.5,
  sub:"the sequence · which bases are where",
  does:"The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus without exception, which is the one thing about the reference that IS comparable across all of them.",
  cond:"Sharing an assembly is a much weaker guarantee than it sounds, because it says nothing about the annotation laid over it — and the annotation is where four datasets on the same assembly end up with four different answers to 'which genes exist'.",
  added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision. Swapping it for GRCz12tu — staged, and documented stage by stage at /grcz12 — changes which bases are where, and therefore every coordinate downstream of the aligner. THE FIGURE IS THE 25 CHROMOSOMES AS IDEOGRAMS, ordered by length. The lengths are the real GRCz11 primary assembly in Mb; the banding and the centromere positions are NOT, and are generated from a seed — zebrafish has no standard cytoband table of the kind that exists for human. They are there to make the shapes read as chromosomes, not to be counted."},
 
-{id:"G2", key:"G2", group:"G · genome, and W · whitelists", shape:"locus",
- follow:{a:"E4",dx:9.0}, name:"Ensembl 99", x:9.1, y:R3+6.4, w:4.0, d:8.0, h:0.5,
+{id:"G2", key:"G2", noclip:true, group:"G · genome, and W · whitelists", shape:"locus",
+ follow:{a:"E4",dx:6.5}, name:"Ensembl 99", x:9.1, y:R3+11.8, w:4.0, d:6.6, h:0.5,
  sub:"the annotation · where genes start and stop",
  does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
  built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
@@ -238,13 +238,24 @@ const NODES = [
    point is that you can go straight to the entry you want — with a lookup
    landing on one spine at a time. See drawStarIndex.
 
-   IT SITS IN THE GAP BETWEEN ITS TWO SOURCES. G1 spans x -1.6..+2.4 of E4 and
-   G2 spans +5.4..+9.4; the three units between them is the only clear ground on
-   this row, and w is 2.6 because that is what fits it. Both sources are eight
-   units deep and this row cannot be cleared in y by anything, so x is where the
-   separation has to come from — check both neighbours if you resize it. */
-{id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"starindex",
- follow:{a:"E4",dx:4.6}, name:"STAR index", x:7.5, y:R3+4.0, w:2.6, d:4.2, h:0.5,
+   THE WHOLE ROW IS ARRANGED AROUND THREE EDGE-TO-EDGE TRACKS, and that is what
+   fixes these three positions. Each source leaves from the centre of its
+   TOP-RIGHT edge and each track lands on the centre of a BOTTOM-LEFT one, so
+   for a track to read as leaving rather than doubling back, the destination's
+   bottom-left edge has to be at LOWER y than the source's top-right edge:
+
+     G1 tr  y +8.4  ->  G3 bl  y +8.1      G1 and G2 sit below the index
+     G2 tr  y +8.5  ->  G3 bl  y +8.1
+     G3 tr  y +4.3  ->  E4 bl  y +2.66     and the index below the belt
+
+   That last one is the tight constraint and it is not about the footprint: E4's
+   BOX reaches y +3.3 but its drawn belt stops at +2.66, and the belt is opaque
+   and paints after the edges. An index whose top-right edge is inside +2.66
+   sends its track under the deck, where none of it survives. G1 and G2 lost a
+   unit of depth each to make room; both roofs reflow, which is what roofPanel
+   is for. Move any of the four and re-check the three inequalities. */
+{id:"G3", key:"G3", noclip:true, group:"G · genome, and W · whitelists", shape:"starindex",
+ follow:{a:"E4",dx:-4.0}, name:"STAR index", x:7.5, y:R3+6.2, w:2.2, d:3.8, h:0.5,
  sub:"GRCz11 + Ensembl 99, baked together · once, not per run",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
  built:"Every dataset here is GRCz11, and yet: ZSCAPE and ChemFish share a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031 genes — byte-identical between them, all 32,031 coordinates matching position by position. DanioCell uses Lawson v4.3.2 via Cell Ranger, 36,250 released names. MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520. Zebrahub uses a custom reference called Danio.rerio_genome_Zebrabow_6, 32,057 ENSDARG plus three transgene features.",
@@ -432,9 +443,9 @@ const EDGES = [
      straight: the elbow route puts a Z in a line whose whole content is "this
      feeds that", and a Z reads as a detour the thing actually takes.
   */
-  {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
-  {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
-  {a:"G3", b:"E4", kind:"ref", straight:true, port:"feed", portB:"feed", tone:"var(--fg2)"},
+  {a:"G1", b:"G3", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
+  {a:"G2", b:"G3", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
+  {a:"G3", b:"E4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
 
   /* ENSEMBL 99 IS ONE FILE WITH TWO CONSUMERS, AND IT IS ONE BOX WITH TWO
      ARROWS. The GTF is baked into the index at build time AND read again at the
@@ -477,7 +488,7 @@ const EDGES = [
    every station back on y = R3 those offsets were 3-odd units of empty ground
    each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+14.0},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+15.5},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
