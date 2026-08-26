@@ -677,6 +677,43 @@ barcode end at `-y`, which is the side the whitelist plates are on.
 what this station is about; at full strength it was the loudest thing on the belt
 and the barcodes read as trim on the end of an orange bar.
 
+### The scan is a beam, and it sweeps
+
+A dropped line from the scanner face to the deck at the arch's own x, tracking
+along the fragment's length as it passes under — cDNA end to UMI end — with a
+spot where it lands and a `sin(pi*u)` fade so it arrives and leaves rather than
+snapping on. Which is what a barcode reader does, and what the old slot flicker
+only implied. The sweep and the thing being swept are the same object seen
+twice.
+
+A **light curtain** hangs under each arch: a plane from the scanner face to the
+deck across the belt, at 0.035. It is what makes the arch a scanner rather than
+a table — a table has a top and nothing underneath it.
+
+Both are built AFTER the arches, so they paint as light rather than as
+structure. Everything else at this station is built before what occludes it;
+these two are the exception and the exception is the point.
+
+### The panel is half as wide and see-through
+
+Opaque and `SC(1.45)` along the belt it was a bench top: it hid the fragment for
+a long stretch and the one moment this station exists to show happened
+underneath it. `SC(0.72)` at 0.62 opacity, and the read happens in view — the
+verdict marks, which pass *under* the gantries by build order, are now visible
+through the glass at the moment they fire. `READAT` is derived from `PANW`
+rather than written as a constant, so narrowing the panel moves the verdict with
+it instead of leaving it firing in mid-air.
+
+### `BC1` is twice the size and `WHITELIST` sits under it
+
+Set as one string, the three arches read as three instances of one label with a
+digit buried in it; what a reader needs at a glance is **which round**. Two
+lines, the same treatment every other named thing on this map gets.
+
+**`dy` is measured from the big glyph's baseline**, so the 1.35 that works under
+a normal name puts the second line inside a 2x one — 23% overlap, which
+check-text caught on all three at once. 1.85 clears it.
+
 ### The verdict fires on the way OUT
 
 Lying across the belt, a fragment spends a real interval beneath the scanner

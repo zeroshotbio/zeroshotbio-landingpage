@@ -1846,20 +1846,45 @@ function drawSortingYard(g,n){
   /* ---- three identical arches, each as wide as the thing beneath it ------- */
   const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
   const half=SPAN/2;
+  const PANW=SC(0.72);                 /* half of what it was, along the belt */
   const stations=gx.map((sx,i)=>{
     const grp=g.appendChild(el("g"));
     [-1,1].forEach(sgn=>slabAt(grp,sx,cy+sgn*half,SC(0.18),SC(0.18),gz,GAN,base));
-    slabAt(grp,sx,cy,SC(0.34),half*2,0.16*KZ,GAN,base+gz);
-    slabAt(grp,sx,cy,SC(1.45),half*2,0.07*KZ,GAN,base+panelZ);
+    slabAt(grp,sx,cy,SC(0.30),half*2,0.16*KZ,GAN,base+gz);
+    /* THE LIGHT CURTAIN — a plane hanging from the scanner face to the deck,
+       across the belt. It is what makes the arch a scanner rather than a table:
+       a table has a top and nothing underneath it. Built before the panel so the
+       panel's own face paints over the top edge of it. */
+    grp.appendChild(el("polygon",{fill:"var(--fg)","fill-opacity":"0.035",stroke:"none",
+      points:pts([P(sx,cy-FL/2,base+panelZ),P(sx,cy+FL/2,base+panelZ),
+                  P(sx,cy+FL/2,base),P(sx,cy-FL/2,base)])}));
+    /* AND THE PANEL IS TRANSLUCENT. Opaque and 1.45 wide it was a bench top: it
+       hid the fragment for a long stretch of belt, and the one moment this
+       station exists to show happened underneath it. Half as wide and see
+       through, and the read happens in view. */
+    slabAt(grp,sx,cy,PANW,half*2,0.07*KZ,GAN,base+panelZ,0.62);
     const slots=[];
-    for(let c=0;c<20;c++){
-      const px=sx-SC(0.6)+(c/19)*SC(1.2), hw=half-SC(0.22);
+    for(let c=0;c<14;c++){
+      const px=sx-PANW*0.42+(c/13)*PANW*0.84, hw=half-SC(0.22);
       const a=P(px,cy-hw,base+panelZ+0.075*KZ), b=P(px,cy+hw,base+panelZ+0.075*KZ);
       slots.push({node:grp.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
-        "stroke-width":"1.7","stroke-opacity":"0.06"})),lit:-99});
+        "stroke-width":"1.7","stroke-opacity":"0.07"})),lit:-99});
     }
-    return {sx,i,slots,ptr:0};
+    return {sx,i,slots,ptr:0,sw:-1,swY:cy};
+  });
+
+  /* ---- THE SCAN ITSELF, built after the arches so it reads as light ------
+     A beam dropped from the scanner face to the deck, sweeping ALONG the
+     fragment as it passes under — which is what a barcode reader does, and what
+     the old slot-flicker only implied. It travels the molecule's own length
+     from the cDNA end to the UMI end, so the sweep and the thing being swept
+     are the same object seen twice. */
+  stations.forEach(st=>{
+    st.beam=g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"1.5",
+      "stroke-opacity":"0","stroke-linecap":"round"}));
+    st.spot=g.appendChild(el("ellipse",{fill:"var(--fg)","fill-opacity":"0",
+      rx:(SC(0.34)*S*C30).toFixed(1), ry:(SC(0.34)*S*0.30).toFixed(1)}));
   });
 
   /* ---- the bin, built last and opaque, and AS WIDE AS THE BELT ------------
@@ -1879,15 +1904,30 @@ function drawSortingYard(g,n){
     t.textContent=str; g.appendChild(t);
   };
   const FS=Math.max(6,13.5*K);
-  stations.forEach((st,i)=>
-    lab(st.sx-SC(0.68), cy-half-SC(0.95), base+panelZ+0.07*KZ,
-        `BC${i+1} WHITELIST`, FS.toFixed(1), "var(--fg)", "1", 30));
-  lab(binX-SC(0.75), REJ+FL/2+SC(1.45), base, "NO MATCH",
-      (FS*0.96).toFixed(1), "var(--rej)", "1", 30);
-  lab(VALX, cy+FL/2+SC(0.55), base, "VALIDATED TRIPLETS",
-      (FS*1.1).toFixed(1), "var(--ok)", "1", -30, "end");
-  lab(VALX, cy+FL/2+SC(0.55), base, "putative cell barcodes",
-      (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "end", (FS*1.33).toFixed(1));
+  /* THE ROUND IS THE NAME AND THE REST IS THE NOUN. "BC1 WHITELIST" set as one
+     string made the three arches read as three instances of one label with a
+     digit buried in it; what a reader needs at a glance is WHICH ROUND. BC1 goes
+     to twice the size and WHITELIST drops underneath — the same two-line
+     treatment every other named thing on this map gets. */
+  stations.forEach((st,i)=>{
+    const lx=st.sx-SC(0.68), ly=cy-half-SC(0.95), lz=base+panelZ+0.07*KZ;
+    lab(lx,ly,lz, `BC${i+1}`, (FS*2).toFixed(1), "var(--fg)", "1", 30);
+    /* dy is measured from BC1's baseline and BC1 is twice the size, so the
+       1.35 that works under a normal name puts WHITELIST inside the big
+       glyph's box — 23% overlap, which check-text caught. */
+    lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "start",
+        (FS*1.85).toFixed(1));
+  });
+  lab(binX-SC(0.75), REJ+FL/2+SC(1.55), base, "NO MATCH",
+      (FS*1.25).toFixed(1), "var(--rej)", "1", 30);
+  /* PAST THE MOUTH OF THE BELT, not alongside it. Between the near rail and the
+     reject siding there are 1.4 authored units and the siding's own fragments
+     use most of them; the clear ground is beyond the end, which is also where
+     the thing being named actually goes. */
+  lab(x1+SC(0.75), cy, base, "VALIDATED TRIPLETS",
+      (FS*1.1).toFixed(1), "var(--ok)", "1", -30);
+  lab(x1+SC(0.75), cy, base, "putative cell barcodes",
+      (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "start", (FS*1.33).toFixed(1));
 
   /* ---- one lap ----------------------------------------------------------- */
   const PAD=-SC(A.PAD), LOOP=(x1-x0)+PAD*2;
@@ -1908,9 +1948,11 @@ function drawSortingYard(g,n){
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
 
+  const SWEEPW=SC(1.15);            /* how far either side of an arch counts as "under" */
   let t=0;
   const run=dt=>{
     t+=dt;
+    for(const st of stations) st.sw=-1;
     for(const fr of frags){
       const u=((t*v/LOOP+fr.ph)%1+1)%1;
       const fx=x0-PAD+u*LOOP;
@@ -1941,7 +1983,7 @@ function drawSortingYard(g,n){
       fr.bc.forEach((node,i)=>{
         const c=segAt(`bc${i+1}`);
         const reachable=fr.fail<0||i<=fr.fail;
-        const scanned=fx>gx[i]+SC(0.78)&&reachable;
+        const scanned=fx>gx[i]+PANW*0.62&&reachable;
         const bad=fr.fail===i&&scanned;
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
         node.setAttribute("fill",bad?"var(--rej)":R2T);
@@ -1958,7 +2000,7 @@ function drawSortingYard(g,n){
          passes under them — which means a verdict struck at the arch's centre
          is struck where nobody can see it. Read on the way in, answer on the way
          out: it is also the more honest order. */
-      const READAT=SC(0.78);       /* just past the panel's downstream edge */
+      const READAT=PANW*0.62;      /* just past the panel's downstream edge */
       stations.forEach((st,i)=>{
         const prev=fr.px===undefined?fx:fr.px;
         const stillOnLine=fr.fail<0||i<=fr.fail;
@@ -1983,7 +2025,26 @@ function drawSortingYard(g,n){
           `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
+      stations.forEach((st,i)=>{
+        if(vis>0.5 && (fr.fail<0||i<=fr.fail) && Math.abs(fx-st.sx)<SWEEPW){
+          st.sw=(fx-(st.sx-SWEEPW))/(2*SWEEPW); st.swY=yc;
+        }
+      });
       fr.px=fx;
+    }
+
+    for(const st of stations){
+      if(st.sw<0){ st.beam.setAttribute("stroke-opacity","0");
+                   st.spot.setAttribute("fill-opacity","0"); continue; }
+      const yb=st.swY+FL/2-st.sw*FL;
+      const a=P(st.sx,yb,base+panelZ), b=P(st.sx,yb,base);
+      st.beam.setAttribute("x1",a[0].toFixed(1)); st.beam.setAttribute("y1",a[1].toFixed(1));
+      st.beam.setAttribute("x2",b[0].toFixed(1)); st.beam.setAttribute("y2",b[1].toFixed(1));
+      /* fades in and out over the pass rather than snapping on */
+      const k=Math.sin(Math.PI*clamp01(st.sw));
+      st.beam.setAttribute("stroke-opacity",(0.52*k).toFixed(3));
+      st.spot.setAttribute("cx",b[0].toFixed(1)); st.spot.setAttribute("cy",b[1].toFixed(1));
+      st.spot.setAttribute("fill-opacity",(0.38*k).toFixed(3));
     }
     const scroll=((t*v)%SLAT_P+SLAT_P)%SLAT_P;
     slats.forEach((ln,k)=>{
