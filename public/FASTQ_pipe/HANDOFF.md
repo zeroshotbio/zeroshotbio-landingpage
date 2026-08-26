@@ -377,10 +377,29 @@ reverse transcription attached it first, the UMI on the round-3 oligo at the far
 end. R2 reads inward from that end, which is why it meets the UMI first. Drawn
 truthfully, the reversal explains itself.
 
-**The gap is the one entry whose `w` is not a length**, and the one segment with
-no figure under it. Insert size varies per fragment and nothing sequences the
-span between the two reads, so there is no number to draw and none is drawn.
-That silence is the honest statement and nothing is allowed to fill it.
+**The gap is the one entry whose `w` is not a length, and the one figure on this
+glyph that is not measured.** It cannot be measured: read 2's 58 bases are
+barcode, linker and UMI end to end — not one base of cDNA — so the two reads
+never overlap and no paired-end inference is available.
+
+What the reads DO settle is that the middle is never short. 0.37% of read 1s
+carry a run of 12+ A and those starts are spread flat across all positions, so
+they are A-rich sequence rather than a polyA junction: **read 1 essentially never
+runs off the end of its insert.** The span is longer than 64 bp and that is the
+end of what the FASTQs will say.
+
+So the `~250` is an order of magnitude from the protocol's expected library size
+— final library, less the Illumina adapters, less read 2's block, less the
+oligo-dT scaffold, less the 64 read 1 already has. **It is marked as a different
+kind of fact three ways**: a tilde, a unit where every other figure is a bare
+number, and an axis break drawn across the segment itself.
+
+**The axis break is the important one.** At ~250 against a molecule whose whole
+sequenced length is 122, drawing the gap to scale would make it twice everything
+else put together and the barcodes would vanish. So `w` is a token — and the two
+slashes say the shortening is deliberate. A quietly shortened bar with a number
+under it would be the worst of both: a reader would take the width for the
+length, which is exactly what the old drawing's proportions did wrong.
 
 The figures themselves are meant to be **found rather than read**: bare numbers
 in `--fg3` under read 2's six segments (no unit — the `58 bp` under the bracket

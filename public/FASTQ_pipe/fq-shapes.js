@@ -234,15 +234,34 @@ const READS=(()=>{
    it meets the UMI first and reaches round 1 last. Drawn truthfully, the
    reversal explains itself.
 
-   THE GAP IS THE ONE ENTRY WHOSE `w` IS NOT A LENGTH. Insert size varies per
-   fragment and nothing sequences the span between the two reads, so there is no
-   number to draw and none is drawn: it is the only segment with no figure under
-   it, and that absence is the honest statement. Its width is a token. */
+   THE GAP IS THE ONE ENTRY WHOSE `w` IS NOT A LENGTH, AND THE ONE FIGURE ON
+   THIS GLYPH THAT IS NOT MEASURED.
+
+   It cannot be. Read 2's 58 bases are barcode, linker and UMI end to end — not
+   one base of cDNA — so the two reads never overlap and no paired-end inference
+   is possible. What the FASTQs DO settle is that the middle is never short:
+   0.37% of read 1s carry a run of 12+ A and those are spread flat across all
+   positions, so they are A-rich sequence rather than a polyA junction. Read 1
+   essentially never runs off the end of its insert. The middle is longer than
+   64 bp and that is all the reads will say.
+
+   So `approx` is an ORDER OF MAGNITUDE from the protocol's expected library
+   size — final library minus the Illumina adapters, minus read 2's block, minus
+   the oligo-dT scaffold, minus the 64 read 1 already has. It is drawn with a
+   tilde and it is the only figure here with a unit on it, because it is not
+   part of the 58 the others sum to.
+
+   AND THE SEGMENT IS DRAWN WITH AN AXIS BREAK. At ~250 against a molecule whose
+   whole sequenced length is 122, to scale it would be twice everything else put
+   together and the barcodes would vanish. `w` is therefore a token, and the two
+   slashes across it are the standard "not to scale" glyph — which is a much
+   better statement than a quietly shortened bar, because it says the shortening
+   is deliberate rather than leaving the reader to assume it is not there. */
 const R1TONE="var(--cull)", R2TONE="var(--accent)";
 
 const FRAG=[
   {k:"cdna", w:64, tone:"r1",    lab:"cDNA"},
-  {k:"gap",  w:24, tone:"ghost", lab:"never sequenced"},   /* a token, not a length */
+  {k:"gap",  w:32, tone:"ghost", lab:"never sequenced", approx:250},  /* token width; see above */
   {k:"bc1",  w:8,  tone:"r2",    lab:"BC1"},
   {k:"l1",   w:12, tone:"link",  lab:""},
   {k:"bc2",  w:8,  tone:"r2",    lab:"BC2"},
@@ -411,8 +430,18 @@ function drawFragment(g,n){
          its fifteen characters have the room they need. */
       g.appendChild(el("rect",{x,y:BT,width:w,height:BH,fill:"none",
         stroke:"var(--fg3)","stroke-width":"1","stroke-dasharray":"3.4 3.4"}));
-      tick(mid,NSQ+5,BT,"var(--fg3)");
-      text(s.lab,mid,NSQ,SUB,"var(--fg3)");
+      /* THE AXIS BREAK, at the middle: two parallel slashes, which is what a
+         chart draws when an axis is interrupted. The name and its leader step
+         to the left of them so the three marks do not stack on one point. */
+      [-3.1,3.1].forEach(dx=>g.appendChild(el("line",{
+        x1:mid+dx-3.2, y1:BB+3.4, x2:mid+dx+3.2, y2:BT-3.4,
+        stroke:"var(--fg3)","stroke-width":"1.2","stroke-linecap":"round"})));
+      const nx=mid-w*0.30;
+      tick(nx,NSQ+5,BT,"var(--fg3)");
+      text(s.lab,nx,NSQ,SUB,"var(--fg3)");
+      /* the tilde carries the whole claim: approximately, and from the protocol
+         rather than from these reads */
+      text(`~${s.approx} bp`,mid,BPROW,BP,"var(--fg3)");
       return;
     }
     if(s.tone==="link"){
