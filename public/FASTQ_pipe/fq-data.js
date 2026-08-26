@@ -147,7 +147,16 @@ const NODES = [
    longer does is DRAW hatching, because drawBelts paints no faces for the
    pattern to go on. The claim survives in the index and in the prose; if a
    future belt wants it back it has to be part of the machine. */
-{id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true,
+/* NOCLIP, THE THIRD TIME THIS PAGE HAS NEEDED IT AND FOR THE SAME REASON EVERY
+   TIME. The index's track lands on the belt's NEAR RAIL, and the rail is inside
+   this node's footprint — n.d is 6.6 and the drawn belt is 5.3 — so the
+   occlusion clip ate the whole line: it ran from G3's corner across the
+   footprint to a point well inside it and not one pixel of it survived. Nothing
+   here is a solid except the deck, and the deck paints over an edge on its own
+   because gNode paints after gEdge. Punch the box out of the clip and the feed
+   is visible on the ground and hidden under the machine, which is the occlusion
+   that was actually wanted. */
+{id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true, noclip:true,
  lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.4, d:6.6, h:0.62,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
@@ -206,7 +215,7 @@ const NODES = [
    idiom. The roof is NOT square: the aspect comes from w and d, and roofPanel()
    reflows the chart to it. See drawKaryotype and drawLocus in fq-shapes.js. */
 {id:"G1", key:"G1", group:"G · genome, and W · whitelists", shape:"karyotype",
- follow:{a:"E4",dx:0.4}, name:"GRCz11", x:5.9, y:R3+9.2, w:4.0, d:7.1, h:0.5,
+ follow:{a:"E4",dx:-0.6}, name:"GRCz11", x:5.9, y:R3+9.2, w:4.0, d:7.1, h:0.5,
  sub:"the sequence · which bases are where",
  does:"The assembly. Which bases are where, and nothing else — no genes, no exons, no strand. Chosen, not measured.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus without exception, which is the one thing about the reference that IS comparable across all of them.",
@@ -214,22 +223,35 @@ const NODES = [
  added:"Drawn as its own node rather than folded into the index, because it is its own file and its own decision. Swapping it for GRCz12tu — staged, and documented stage by stage at /grcz12 — changes which bases are where, and therefore every coordinate downstream of the aligner. THE FIGURE IS THE 25 CHROMOSOMES AS IDEOGRAMS, ordered by length. The lengths are the real GRCz11 primary assembly in Mb; the banding and the centromere positions are NOT, and are generated from a seed — zebrafish has no standard cytoband table of the kind that exists for human. They are there to make the shapes read as chromosomes, not to be counted."},
 
 {id:"G2", key:"G2", group:"G · genome, and W · whitelists", shape:"locus",
- follow:{a:"E4",dx:7.4}, name:"Ensembl 99", x:9.1, y:R3+6.4, w:4.0, d:8.0, h:0.5,
+ follow:{a:"E4",dx:9.0}, name:"Ensembl 99", x:9.1, y:R3+6.4, w:4.0, d:8.0, h:0.5,
  sub:"the annotation · where genes start and stop",
  does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
  built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason.",
  added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (every exon and every intron is named), which of those get translated (the tall blocks against the low ones at either end), and which way it is read (the chevrons). Transcription runs 5′ to 3′: the 5′ UTR is the front of the first exon, the coding sequence runs from there through the internal exons, and THE 3′ UTR IS THE TAIL OF THE LAST ONE AND MOST OF IT — which is why it is drawn as its own section with its own name rather than as a note off the end. Every assay on this map primes with oligo-dT, so that block is where the reads land, and it is the one whose zebrafish annotation is incomplete in both Ensembl and RefSeq. The structures are real in kind; the coordinates are not."},
 
-{id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"ref",
- follow:{a:"E4",dx:-1.0}, name:"STAR index", x:7.5, y:R3+5.5, w:1.7, d:1.7, h:0.95,
+/* DRAWN, NOT LABELLED, AND FOR THE SAME REASON THE OTHER TWO ARE. G1 says which
+   bases are where and G2 says which stretches are a gene; this is what you get
+   when the second is baked into the first, and as a small unlabelled cube it
+   read as a STEP between them and the aligner rather than as a thing built once
+   and reused forever. It is a shelf of spines now — a structure whose whole
+   point is that you can go straight to the entry you want — with a lookup
+   landing on one spine at a time. See drawStarIndex.
+
+   IT SITS IN THE GAP BETWEEN ITS TWO SOURCES. G1 spans x -1.6..+2.4 of E4 and
+   G2 spans +5.4..+9.4; the three units between them is the only clear ground on
+   this row, and w is 2.6 because that is what fits it. Both sources are eight
+   units deep and this row cannot be cleared in y by anything, so x is where the
+   separation has to come from — check both neighbours if you resize it. */
+{id:"G3", key:"G3", group:"G · genome, and W · whitelists", shape:"starindex",
+ follow:{a:"E4",dx:4.6}, name:"STAR index", x:7.5, y:R3+4.0, w:2.6, d:4.2, h:0.5,
  sub:"GRCz11 + Ensembl 99, baked together · once, not per run",
  does:"The gene model reads are assigned against. Nominally a detail; in practice the single largest source of incomparability between two zebrafish atlases.",
  built:"Every dataset here is GRCz11, and yet: ZSCAPE and ChemFish share a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031 genes — byte-identical between them, all 32,031 coordinates matching position by position. DanioCell uses Lawson v4.3.2 via Cell Ranger, 36,250 released names. MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520. Zebrahub uses a custom reference called Danio.rerio_genome_Zebrabow_6, 32,057 ENSDARG plus three transgene features.",
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason. What works instead is reconstruction from the builder's own code plus the released coordinates, which is how ZSCAPE's was recovered exactly. What does not work is asking the paper: ZSCAPE, ChemFish and Zebrahub name no GTF at all, and Zebrahub's was written off in 2026 after six sources were exhausted.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"The counting reference",
- added:"BUILT ONCE FROM THE ASSEMBLY AND THE ANNOTATION TOGETHER — the annotation is baked in at index time, not applied afterward. Not per run and not per sample, which is why the edge leaving it is drawn connected but not carrying: nothing travels it when a run goes through. It determines which transcripts are callable at all, which is why a second index built from a different assembly and a different annotation would produce a different matrix from identical reads. One is drawn, because one is what this run used."},
+ added:"BUILT ONCE FROM THE ASSEMBLY AND THE ANNOTATION TOGETHER — the annotation is baked in at index time, not applied afterward. Not per run and not per sample: it is built once and then consumed by every run for as long as nobody changes it. IT IS DRAWN AS A SHELF, because that is what the object is — STAR's index is a suffix array with the annotation compiled into it, a structure whose whole purpose is that you can go straight to the entry you want without reading what comes before it, which is a library. It was a labelled cube for as long as this map existed, and a cube sitting between two drawn figures and the aligner reads as a STEP, something reads pass through. Nothing passes through this. The lookup jumps from spine to spine rather than sweeping along them, because an index is a thing you ADDRESS: a sweep would draw the one access pattern this structure exists to avoid. The spines come from a fixed seed and are real in kind with no real content — there is no claim here about how many entries a STAR index holds. It determines which transcripts are callable at all, which is why a second index built from a different assembly and a different annotation would produce a different matrix from identical reads. One is drawn, because one is what this run used."},
 
 /* THREE PLATES AND A REGISTRY OVERHEAD, not a cube. w is the run of all three
    plus their gaps, d is the deepest plate and its register margin, and h is the
@@ -369,11 +391,29 @@ const EDGES = [
      back into a station on a route. The chain therefore starts at E3 for now.
      PORTS.fragment is still there and still correct — it is what the edge will
      leave from when it comes back. */
-  {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},   /* tail = the belt's NEAR rail, clear of the label at its mouth */
-  {a:"E4", b:"E5", kind:"read", straight:true, port:"corner", tone:"var(--cull)"},
-  {a:"E5", b:"CB", kind:"read", tone:"var(--cull)"},
-  {a:"CB", b:"E6", kind:"cell", tone:"var(--cull)"},
-  {a:"E6", b:"UD", kind:"cell", tone:"var(--cull)"},
+  /* ---- THE ORANGE CHAIN IS OFF THE MAP, AND THIS IS WHERE IT WAS ---------
+
+     Every --cull track and every dot on one is gone, on request. What was here:
+
+       {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},
+       {a:"E4", b:"E5", kind:"read", straight:true, port:"corner", tone:"var(--cull)"},
+       {a:"E5", b:"CB", kind:"read", tone:"var(--cull)"},
+       {a:"CB", b:"E6", kind:"cell", tone:"var(--cull)"},
+       {a:"E6", b:"UD", kind:"cell", tone:"var(--cull)"},
+
+     PUT THEM BACK BY UNCOMMENTING THOSE FIVE LINES. Nothing else has to move:
+     the ports they used are all still on their shapes, PORTS.sortingyard still
+     answers "tail", and the dots come back with the edges.
+
+     BE CLEAR ABOUT WHAT THE MAP NOW SAYS WITHOUT THEM. The header of this file
+     and the handoff both open with "IT IS ONE CHAIN", and the chain was those
+     five lines: they are what made eight stations a sequence rather than eight
+     objects standing in a row. The stations are still in lane order and the
+     reader still walks them in order, so the ORDER survives; what is gone is
+     the assertion that material moves along it. The reference edges are all
+     that connect anything now, which inverts the emphasis of the whole
+     drawing — the things chosen once and reused forever are drawn as
+     connected, and the thing that actually flows is not. */
 
   /* THESE CARRY, AND THEY ARE GREY. They were drawn still — dashed, dimmer,
      never given a dot — on the argument that an index is built once and reused
@@ -392,9 +432,9 @@ const EDGES = [
      straight: the elbow route puts a Z in a line whose whole content is "this
      feeds that", and a Z reads as a detour the thing actually takes.
   */
-  {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
-  {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
-  {a:"G3", b:"E4", kind:"ref", straight:true, portB:"corner", tone:"var(--fg2)"},
+  {a:"G1", b:"G3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
+  {a:"G2", b:"G3", kind:"ref", straight:true, port:"corner", portB:"corner", tone:"var(--fg2)"},
+  {a:"G3", b:"E4", kind:"ref", straight:true, port:"feed", portB:"feed", tone:"var(--fg2)"},
 
   /* ENSEMBL 99 IS ONE FILE WITH TWO CONSUMERS, AND IT IS ONE BOX WITH TWO
      ARROWS. The GTF is baked into the index at build time AND read again at the

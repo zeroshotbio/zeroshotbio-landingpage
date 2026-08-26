@@ -612,54 +612,126 @@ turn, which reads as the barcode end retracting into the read.
 
 | | |
 |---|---|
-| `RW` | `0.093 × GW` — was 0.40, then 0.28 |
-| `RWB` | `0.25 × RW` — was 0.50 |
-| screen floor | read `0.6`, aerial `0.3` half-pixels |
+| `RW` | `0.047 × GW` — was 0.40, then 0.28, then 0.093 |
+| `RWB` | `0.25 × RW` |
+| screen floor | read `0.42`, aerial `0.26` half-pixels |
 
 **A read is a line, not a body.** At 0.28 of a gene's own thickness thirty reads
 on one model were a *texture* — you could see that reads were there and not how
-many. At 0.093 a hundred lines at slightly different offsets read as a hundred,
+many. At 0.047 a hundred lines at slightly different heights read as a hundred,
 which is the count the aggregate argument is made of.
 
-**Neither half takes an outline any more.** A `0.6` stroke on a bar under a
-pixel wide is not an edge, it *is* the bar, and it draws every read at the same
-width whatever the width is.
+**Neither half takes an outline.** A `0.6` stroke on a bar under a pixel wide is
+not an edge, it *is* the bar, and it draws every read at the same width whatever
+the width is.
 
 **The floor is in screen pixels and it is the one place this shape leaves world
-units** — and it is the one that bit. A quarter of a read is under a pixel wide,
-and under a pixel an SVG polygon stops being drawn faintly and starts not being
-drawn at all. The aerial was floored and the read was a true quad, so at map
-zoom *the part with no position was drawn wider than the part with one*: the
-floor had quietly inverted the hierarchy the widths were set to make. Both go
-through `barTo` now, the read at twice the aerial's minimum, so the ratio
-survives down to the zoom where the true widths stop meaning anything.
+units** — and it is the one that bit. Under a pixel an SVG polygon stops being
+drawn faintly and starts not being drawn at all. The aerial was floored and the
+read was a true quad, so at map zoom *the part with no position was drawn wider
+than the part with one*: the floor had quietly inverted the hierarchy the widths
+were set to make. Both go through `barTo` now, the read at roughly twice the
+aerial's minimum, so the ratio survives down to the zoom where the true widths
+stop meaning anything. **Move one floor and move the other.**
 
-### It rains from one point, and it is never parked at it
+**The unsequenced middle sets its own dash pattern, per frame.** It is a few
+pixels long at map zoom and a few more at reading zoom, and a fixed `2.2 2.2`
+gave it one dash at one scale and three at the other — *a dotted line that is
+three dots is not read as dotted*. `seg` measures the length it actually has and
+divides it into `DASHN` dashes and `DASHN-1` gaps, so it is the same line at
+every zoom. That is the general fix for any dash on a projected segment here.
 
-Reads used to arrive in a cohort inside a narrow band of the traverse, which
-draws a *delivery* — a batch handed over at a moment. Alignment is not a batch.
+### One shower at a time, and the arithmetic that guarantees it
+
+Every gene used to be rained on across most of its crossing, so three or four
+were being showered at once and the belt read as continuous weather. **It is not
+weather: a gene is a target and a shower is the thing being aimed at it.**
+
+The guarantee is arithmetic, not a scheduler. The genes are evenly spaced
+`1/NG = 0.1` apart in `u`, so **a shower whose whole airborne interval is
+narrower than 0.1 can only ever have one gene under it.**
+
+```
+SHOWER_AT 0.402   the first read's u0
+SHOWER_W  0.040   the spread of u0 across the shower
+FALL      0.052   one read's fall
+          -----
+          0.092   airborne, first read's start to last read's landing  < 0.1
+```
+
+**Change any of the three and check the sum.** They also have to sit inside the
+window where a gene is actually on the belt — roughly `u` 0.30 to 0.70 — or the
+shower lands in the dark, which is how an earlier spread came out looking like
+no rain at all. A gene now comes on bare at 0.30, is showered around 0.35–0.45,
+and rides the rest of the way covered.
 
 **One point, not a region.** `NOZX` and `NOZZ` are constants: every read on a
 gene falls from the same place, up-belt and above the exon tops, on the belt's
-centre line. The per-read jitter that used to be in the source is gone — *a
-spray whose source is itself spread out is a shower*, and what this station does
-is three hundred reads leaving one stream and each finding its own place on one
-model. **The fan is the landing sites and nothing else**, which is why `dx`
-closes in as `air` goes to zero and `dy` comes down off `cy` rather than being a
-fixed offset.
+centre line. *A spray whose source is itself spread out is a shower*, and what
+this station does is a stream of reads each finding its own place on one model —
+so `dx` closes in as `air` goes to zero and `dy` comes down off `cy`. **The fan
+is the landing sites and nothing else.**
 
 **And a read is invisible until its own fall starts.** Before, `kk` was 0 and
 `air` was 1 for everything whose window had not opened, so thirty reads hung
-motionless above every gene at three-quarter strength waiting their turn — the
-opposite of rain. `op` is `sstep(0, 0.10, kk)`: the first frame anybody sees of
-a read is a frame in which **it is already moving**, and it fades in over the
-first tenth of the fall rather than popping.
+motionless above every gene at three-quarter strength waiting their turn. `op`
+is `sstep(0, 0.10, kk)`: the first frame anybody sees of a read is a frame in
+which **it is already moving**.
 
-`u0` is spread over 0.34–0.64, the part of the loop that is actually on screen —
-a gene is only on the belt for `u` in roughly 0.30–0.70, and the first spread of
-these ran 0.10–0.52, so half the rain landed in the dark. `NR` is 24–33 a gene,
-affordable because `gn.hid` hides the six models that are off the belt at any
-moment and skips them entirely, which is most of the per-frame cost.
+### They stack, the way a pile-up in a genome browser does
+
+Laid on one plane the pile turned to soup: thirty lines at the same height over
+the same stretch of exon are one orange smear, and the count — *which is the
+whole argument of this station* — is unreadable off it.
+
+`rd.row` comes from greedy interval packing, exactly what every read viewer
+does: walk the reads in start order and drop each into the lowest row whose last
+read ended before this one starts, with `STACK_GAP` of clear transcript between
+them so two in a row never touch end to end. `z0` is then the read's **own row**,
+not the exon roof — a stack sits on the thing under it, and the top of it is
+where the next read goes.
+
+**The records are re-sorted into row order before the elements are built**,
+because DOM order is paint order and a stack has to paint from the bottom up.
+Sorting after the elements exist leaves the two orders unrelated.
+
+`dx` came down to 30% of the line's width at the same time. The wide jitter was
+right while reads lay side by side and is wrong now that they stack: **a column
+that wanders in x is not a column.**
+
+### The 3′ bias is drawn as height, and it is a shape rather than a profile
+
+Every assay on this map primes with oligo-dT, which is why reads pile at the 3′
+end. But **Evercode WT puts two primers in each BC1 well** — an oligo-dT and a
+random hexamer, which is the reason BC1's plate is two thirds the width of the
+others and still yields 96, drawn on `W1` — and the hexamer primes anywhere on
+the transcript. So the pile is a mixture: most of it at the tail, a real spread
+along the body, and neither of them zero. `P3` is the share taken at the tail;
+the rest is uniform.
+
+A read aims at a position on the transcript first and then takes the exon whose
+middle is nearest it, so the bias is a property of the **transcript** and the
+exon layout only decides where on it a read can sit.
+
+**Combined with the stack, the bias comes out as HEIGHT rather than density** —
+deep where the oligo-dT reads pile up, a single layer along the body. That is a
+fact about the chemistry drawn as a shape, and it is the one thing a flat pile
+could not say at all.
+
+**`P3` IS NOT A MEASURED PROFILE AND MUST NOT BE LABELLED AS ONE.** Nothing on
+this page is modelled; this is a drawing decision with a stated reason, in the
+same class as the exon layout it lands on. A real coverage profile needs the
+alignments, and those are not on this instance.
+
+### Both ends of every gene are named
+
+`5′` at `f = -0.055` and `3′` at `f = 1.055`, on the gene's own line, set at −30
+like the model itself, anchored so each runs *away* from the gene rather than
+across it. Which way a transcript runs is not a detail on this belt: it is the
+reason the pile is where it is. Unlabelled, that stack is a lump at one end of a
+diagram and a reader has to be told what it means; labelled, it says it. The
+gene's name moved out to `K*0.55` off the near rail at the same time, to keep
+clear of the `5′` mark now sitting between them.
 
 ### Where a read lands is the whole claim, so the model has to be able to hold it
 
@@ -1023,6 +1095,83 @@ fragments and *before* the scanners, so a tick rides above its block but passes
 *under* the face. The falling fragments are under the scanners for the same
 reason. The bin is built last, so a discarded triplet slides *behind* it and is
 gone.
+
+## `drawStarIndex` — the third reference figure
+
+**It was a labelled cube, which is what the other two were before they were
+drawn.** `G1` says which bases are where and `G2` says which stretches are a
+gene; the index is what you get when the second is **baked into the first**, and
+a cube said none of that — a reader had two drawn figures feeding an unlabelled
+box that fed the aligner, which reads as a *step* rather than as a thing built
+once and reused forever.
+
+**A shelf of spines, because that is what the object is.** STAR's index is a
+suffix array with the annotation compiled in: a structure whose whole purpose is
+that you can go straight to the entry you want without reading what comes
+before it. That is a library, and the visual idiom for one is a shelf.
+
+Two things were got wrong first and are worth not repeating:
+
+- **The spines were two units wide and read as a bar chart.** Bars are thin
+  because their width means nothing; *a book's width is the first thing about
+  it*. Wider and fewer, and the run reads as objects standing.
+- **The shelf board was a line at the same `y` as the book bottoms**, so every
+  book covered it and it showed only in the gaps — which at this scale is
+  nothing. It is a `rect` **under** the spines now. A shelf you cannot see is a
+  bar chart with extra steps.
+
+**The lookup jumps; it does not sweep.** An index is a thing you *address*: what
+a shelf cannot show standing still is that you do not walk it, you arrive at one
+place on it. A sweep would draw a scan, which is the one access pattern this
+structure exists to avoid.
+
+**It sits in the gap between its two sources.** Both are eight units deep and
+this row cannot be cleared in `y` by anything, so `x` is where the separation
+has to come from — `G1` and `G2` were pushed apart to `dx` −0.6 and 9.0 to open
+it. Check both neighbours if you move or resize any of the three.
+
+### The feed, and two clip lessons
+
+`G3 → E4` took three tries and each failure was a different mechanism:
+
+1. **Corner to corner was a stub.** `roofCorner` picks by distance to the
+   destination's *centre*, and the two nearest corners were a unit apart. Nobody
+   could see it was a track.
+2. **Then the occlusion clip ate it.** The feed lands on the belt's near rail
+   and the rail is *inside* `E4`'s footprint — `n.d` is 6.6 and the drawn belt
+   is 5.3 — so the whole run was cut. `E4` carries `noclip:true` now, the third
+   node on this page to need it and for the same reason every time.
+3. **Then the opaque deck painted over it.** `gNode` paints after `gEdge`, and
+   the source corner `roofCorner` chose was at *low* `y`, so the track ran the
+   length of the deck to reach a rail on the deck's near edge. `PORTS.starindex`
+   answers `"feed"` with the −x/+y corner explicitly, which puts the whole run
+   on open ground outside the belt and arriving at its side.
+
+`PORTS.belts` answers `"feed"` with a point on the near rail a quarter of the
+way along — a run with room for a dot, and where a thing being consumed by a
+machine goes: **into its side, not at its corner.**
+
+## The orange chain is off the map
+
+**Every `--cull` track and every dot on one has been removed, on request.** All
+five are written out in full in the `EDGES` block of `fq-data.js`, in a comment,
+with their ports intact. Uncommenting them restores the chain and nothing else
+has to move: the ports they used are all still on their shapes,
+`PORTS.sortingyard` still answers `"tail"`, and the dots come back with the
+edges.
+
+**Be clear about what the map now says without them.** The header of `fq-data.js`
+and this file both open with *"IT IS ONE CHAIN"*, and the chain **was** those
+five lines: they are what made eight stations a sequence rather than eight
+objects standing in a row. The stations are still in lane order and the reader
+still walks them in order, so the *order* survives. What is gone is the
+assertion that material moves along it — and the reference edges are now the
+only edges on the page, which inverts the emphasis of the whole drawing: the
+things chosen once and reused forever are drawn as connected, and the thing that
+actually flows is not.
+
+That is a claim change rather than a style change, and it is one line each to
+put back.
 
 ## `drawWhitelists` — where the lists come from
 
@@ -1640,3 +1789,9 @@ resized. Nobody had.
 - **Give one half of a read a pixel floor and not the other.** Below a pixel the
   floor decides the widths, so a floor on one side silently inverts whatever the
   widths were set to say.
+- **Widen `E4`'s shower past `0.1` of `u`.** `SHOWER_W + FALL` under the gene
+  spacing is the whole guarantee that one gene is rained on at a time.
+- **Call `E4`'s 3′ bias a coverage profile.** It is the shape of the bias with a
+  stated reason, not a measurement; the alignments are not on this instance.
+- **Put the orange chain back without reading the note on it.** It is one line
+  each and it changes what the map claims, in both directions.

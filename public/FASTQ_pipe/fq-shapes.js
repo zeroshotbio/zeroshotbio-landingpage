@@ -588,7 +588,20 @@ const PORTS={
      right if either object is dragged or resized. */
   /* the belts are 6.4 units along the lane and the edge before them arrives
      head-on; without this it lands in the middle of the machine */
-  belts     :(n,which,B)=>roofCorner(n,B),
+  /* THE BELT HAS A SIDE, AND THE INDEX FEEDS INTO IT. A corner-to-corner edge
+     between E4 and G3 is two points a unit apart — the index sits just off the
+     machine's own footprint, so the nearest corners of the two are nearly the
+     same place and the track came out as a stub nobody could see was a track.
+     "feed" lands on the belt's NEAR rail, a quarter of the way along it, which
+     is a run with room for a dot and is also where a thing being consumed by a
+     machine goes: into its side, not at its corner. */
+  belts     :(n,which,B)=>{
+    if(which==="feed"){
+      const K=n.w/9.2, GL=n.d*0.70, BW=GL+K*1.0;
+      return P(n.x-n.w*0.22, n.y+BW/2, n.h*0.245);
+    }
+    return roofCorner(n,B);
+  },
   karyotype :(n,which,B)=>roofCorner(n,B),
   locus     :(n,which,B)=>roofCorner(n,B),
   /* AND A WHITELIST LEAVES FROM UNDER ITS OWN NAME. One line from the corner of
@@ -599,6 +612,15 @@ const PORTS={
      name: centred on it across, clear of it below, including clear of BC1's
      second row. `two primers per well` belongs to that label, so the line
      starts under the block rather than through it. */
+  /* AND THE INDEX LEAVES FROM THE CORNER THAT FACES THE MACHINE'S NEAR SIDE,
+     which is not the corner nearest it. roofCorner picks by distance to the
+     destination's CENTRE, and E4's centre is straight up the belt from here —
+     so it chose the corner at low y, and the track then ran the length of the
+     deck to reach a rail on the deck's near edge. The belt is opaque and paints
+     after the edges, so every pixel of it was covered. Leaving from -x/+y puts
+     the whole run on open ground outside the belt and arriving at its side. */
+  starindex :(n,which,B)=> which==="feed"
+    ? P(n.x-n.w/2, n.y+n.d/2, topOf(n)) : roofCorner(n,B),
   whitelists:(n,which,B)=>{
     const i=BCN(which);
     if(i<0) return roofCorner(n,B);
@@ -1196,6 +1218,99 @@ DRAW.locus=drawLocus;
 
 
 /* ============================================================
+   G3 · THE STAR INDEX — the third reference figure, and the only one that is
+   not a file somebody downloaded.
+
+   IT WAS A LABELLED CUBE, which is what the other two were before they were
+   drawn. G1 says which bases are where and G2 says which stretches are a gene;
+   the index is what you get when you BAKE THE SECOND INTO THE FIRST, and a
+   cube said none of that — a reader had two drawn figures feeding an unlabelled
+   box that fed the aligner, which reads as a step rather than as a thing built
+   once and reused forever.
+
+   A SHELF OF SPINES, because that is what the object is. STAR's index is a
+   suffix array with the annotation compiled in: a structure whose whole purpose
+   is that you can go straight to the entry you want without reading what comes
+   before it. That is a library, and the visual idiom for one is a shelf. The
+   lookup runs along it because an index is only interesting in use — nothing
+   moves along a shelf, so the thing that moves is the reading.
+
+   The spines are generated from the same seed every load, like every other
+   arrangement on this page: real in kind, no real content. There is no claim
+   here about how many entries a STAR index holds.
+   ============================================================ */
+function drawStarIndex(g,n){
+  refBuilding(g,n);
+  const F=roofPanel(g,n,n.h,176), {CW,CH,u}=F;
+  const rnd=mulberry32(0x5eedf15^0x9C);
+  const margin=5*u;
+
+  roofTitle(F,"STAR index",margin,20*u,15*u);
+
+  /* ---- the shelves, and the spines standing on them --------------------- */
+  const ROWS=3, top=30*u, bot=CH-5*u, sh=(bot-top)/ROWS;
+  const books=[];
+  for(let r=0;r<ROWS;r++){
+    const yb=top+sh*(r+1)-2.0*u;
+    /* THE BOARD IS A RECT UNDER THE SPINES, NOT A LINE THROUGH THEIR FEET. As a
+       line at the same y as the book bottoms it was hidden by every book and
+       showed only in the gaps between them, which at this scale is nothing. A
+       shelf you cannot see is a bar chart. */
+    F.g.appendChild(el("rect",{x:margin.toFixed(1),y:yb.toFixed(1),
+      width:(CW-margin*2).toFixed(1),height:(1.9*u).toFixed(1),
+      fill:"var(--fg3)","fill-opacity":".55"}));
+    let bx=margin+1.2*u;
+    /* WIDER AND FEWER THAN THE FIRST ATTEMPT. At two units a spine the run read
+       as a bar chart — bars are thin because their width means nothing, and a
+       book's width is the first thing about it. The bottoms align on a visible
+       board and the tops do not, which is the whole silhouette of a shelf. */
+    while(bx<CW-margin-6.5*u){
+      const bw=(3.4+rnd()*3.4)*u, bh=(9+rnd()*7.5)*u;
+      /* two faces of one grey and a hair of lean on a few of them, so a run of
+         spines reads as objects standing rather than as a bar chart */
+      const lean=rnd()<0.10?(rnd()-0.5)*7:0;
+      const at={x:bx.toFixed(1),y:(yb-bh).toFixed(1),
+        width:bw.toFixed(1),height:bh.toFixed(1),
+        fill:rnd()<0.5?"var(--k-top)":"var(--k-left)","fill-opacity":".72"};
+      /* el() writes every key it is given, so an absent attribute has to be an
+         absent KEY — a null value lands as the string "null" and the renderer
+         rejects the whole transform */
+      if(lean) at.transform=`rotate(${lean.toFixed(1)} ${bx.toFixed(1)} ${yb.toFixed(1)})`;
+      books.push(F.g.appendChild(el("rect",at)));
+      bx+=bw+0.7*u;
+    }
+  }
+
+  /* ---- THE LOOKUP -------------------------------------------------------
+     One spine at a time, brightened and then let go. An index is a thing you
+     ADDRESS: what a shelf cannot show standing still is that you do not walk
+     it, you arrive at one place on it. So the mark jumps rather than sweeps,
+     and it jumps somewhere unrelated each time — a sweep would draw a scan,
+     which is the one access pattern this structure exists to avoid. */
+  const seq=books.map((_,i)=>i);
+  for(let i=seq.length-1;i>0;i--){
+    const j=Math.floor(rnd()*(i+1)); const t=seq[i]; seq[i]=seq[j]; seq[j]=t;
+  }
+  let t=0, ptr=0, lit=-99;
+  const HOLD=0.42;
+  const run=dt=>{
+    t+=dt;
+    if(t-lit>HOLD){ lit=t; ptr=(ptr+1)%seq.length; }
+    const age=(t-lit)/HOLD;
+    books.forEach((b,i)=>{
+      const on=i===seq[ptr];
+      b.setAttribute("fill-opacity",(on?0.72+0.28*(1-age):0.72).toFixed(3));
+      if(on) b.setAttribute("fill","var(--fg2)");
+      else if(b.getAttribute("fill")==="var(--fg2)") b.setAttribute("fill","var(--k-top)");
+    });
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.starindex=drawStarIndex;
+
+
+/* ============================================================
    E4 · ALIGN R1 — CONVEYOR BELTS
 
    THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON,
@@ -1348,7 +1463,7 @@ function drawBelts(g,n){
      aerial goes through `barTo`, which floors its own half-width in SCREEN
      pixels — a legibility floor, and the only length on this shape that is not
      in world units. */
-  const RW=GW*0.093, RWB=RW*0.25;
+  const RW=GW*0.047, RWB=RW*0.25;
   const GWE=GW*0.58;                          /* the gene's line, body and exons alike */
   /* ONE POINT, NOT A LINE. Every read on a gene falls from the same place: up
      the belt by NOZX and above the exon tops by NOZZ, on the belt's centre
@@ -1402,6 +1517,10 @@ function drawBelts(g,n){
   /* smaller than every other name on this map, on purpose: it is an
      identification, not a heading, and there are ten of them moving */
   const GFS=Math.max(5,8.0*K);
+  /* the shower, the 3' bias and the stack — see the notes in the gene loop */
+  const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
+  const P3=0.55;                              /* share of reads primed at the tail */
+  const RSTEP=n.h*0.070;                      /* one row of the pile */
 
   /* ---- the belt: scenery, and it should read as scenery -------------------
      OPAQUE, though. It was drawn through at 0.55 and 0.7, and a translucent
@@ -1461,6 +1580,22 @@ function drawBelts(g,n){
       fill:"var(--fg3)","font-size":GFS.toFixed(1),"font-weight":"500",
       "letter-spacing":(GFS*0.06).toFixed(2),"fill-opacity":"0"}));
     gn.lab.textContent=GENE_NAMES[(i*7+3)%GENE_NAMES.length];
+    /* ---- AND ITS TWO ENDS ARE NAMED ---------------------------------------
+       Which way a transcript runs is not a detail on this belt, it is the
+       reason the pile is where it is: transcription runs 5' to 3', the oligo-dT
+       primes off the polyA tail, and the stack that builds at the far end of
+       every model is the 3' UTR getting read over and over. Unlabelled, that
+       stack is a lump at one end of a diagram and a reader has to be told what
+       it means. Labelled, it says it. Same ink and a size below the name's,
+       because these are two characters that only have to be found once. */
+    gn.p5=ggrp.appendChild(el("text",{"text-anchor":"end","font-family":MONO,
+      fill:"var(--fg3)","font-size":(GFS*0.82).toFixed(1),"font-weight":"500",
+      "fill-opacity":"0"}));
+    gn.p5.textContent="5′";
+    gn.p3=ggrp.appendChild(el("text",{"text-anchor":"start","font-family":MONO,
+      fill:"var(--fg3)","font-size":(GFS*0.82).toFixed(1),"font-weight":"500",
+      "fill-opacity":"0"}));
+    gn.p3.textContent="3′";
     /* MORE OF THEM THAN THE BELT BEFORE THIS ONE DELIVERS, on purpose. Every
        fragment that clears the whitelists arrives here, and the pile-up on one
        gene is the point: a read is one observation and a gene model covered in
@@ -1475,7 +1610,35 @@ function drawBelts(g,n){
        what makes the fan a fan. The spread you see is not the source spreading,
        it is 300 different landing sites pulling their own read out of one
        stream. */
+    /* ---- WHERE THE READS LAND ------------------------------------------
+       ONE SHOWER PER GENE, AND ONLY ONE AT A TIME. Every gene used to be
+       rained on across most of its crossing, so three or four were being
+       showered at once and the belt read as continuous weather. It is not
+       weather: a gene is a target and a shower is the thing being aimed at it.
+       The genes are evenly spaced 1/NG = 0.1 apart in u, so a shower whose
+       whole airborne interval is NARROWER THAN 0.1 can only ever have one gene
+       under it. SHOWER_AT + SHOWER_W + FALL is 0.092, which is that, with a
+       little air either side. Change any of the three and check the sum.
+
+       A gene therefore comes onto the belt bare at u = 0.30, is showered at
+       0.35-0.45, and rides the rest of the way covered.
+
+       THREE PRIME BIAS, AND IT IS A MIXTURE RATHER THAN A CLIFF. Every assay on
+       this map primes with oligo-dT, which is why reads pile at the 3' end —
+       but Evercode WT puts TWO primers in each BC1 well, an oligo-dT and a
+       random hexamer (the reason BC1's plate is half the size and still yields
+       96, drawn on W1), and the hexamer primes anywhere on the transcript. So
+       the pile is a mixture: most of it at the tail, a real spread along the
+       body, and neither of them zero.
+
+       P3 IS THE SHAPE OF THAT BIAS AND NOT A MEASURED PROFILE, and it must not
+       be labelled as one. Nothing on this page is modelled; this is a drawing
+       decision with a stated reason, in the same class as the exon layout it
+       lands on. A real coverage profile needs the alignments, and those are not
+       on this instance. */
     const NR=24+Math.floor(rnd()*10);
+    const fits=ex.filter(e=>e[1]-e[0]>=RL+0.006);
+    const pool=fits.length?fits:[ex.reduce((a,b)=>(b[1]-b[0]>a[1]-a[0]?b:a))];
     for(let k=0;k<NR;k++){
       /* ONE IN SIX CROSSES A SPLICE JUNCTION, and lands in two pieces.
          It came from spliced mRNA, so it covers the end of one exon and the
@@ -1484,62 +1647,99 @@ function drawBelts(g,n){
          place, and the reason G2 is a node of its own. */
       const sp=ex.length>1 && rnd()<1/6;
       const rd={sp,
-        /* ON THE MODEL, NOT BESIDE IT. dx used to run to +/-1.1 of a gene's own
-           thickness, so most reads landed off the line entirely and the pile
-           read as scatter around a gene rather than coverage of one. It is now
-           bounded by the line's own width less the read's, so every read lands
-           somewhere a read could actually have aligned. */
-        dx:(rnd()-0.5)*(GWE-RW),
-        /* RAIN, NOT A COHORT — AND SPREAD OVER THE PART OF THE LOOP THAT IS
-           ON SCREEN. A gene is only on the belt for u in about 0.30 to 0.70;
-           reads that landed at 0.15 landed in the dark, which is how the first
-           spread of these came out looking like no rain at all. Between 0.34
-           and 0.64 a gene arrives with reads still falling onto it and is
-           covered by the time it leaves, which is the story. */
-        u0:0.34+rnd()*0.30,
-        /* NO OUTLINE ON THE READ EITHER, now that a read is a line. A 0.6
-           stroke on a bar under a pixel wide is not an edge, it IS the bar,
-           and it draws every read at the same width whatever the width is. */
-        cd:ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
-          stroke:"none"}))};
+        /* ON THE MODEL, AND NOW BARELY OFF ITS CENTRE LINE. A read used to take
+           the whole width of the line as jitter, which was right while they lay
+           side by side and is wrong now that they stack: a column that wanders
+           in x is not a column. What is left is enough to say these are
+           separate objects. */
+        dx:(rnd()-0.5)*(GWE-RW)*0.30,
+        u0:SHOWER_AT+rnd()*SHOWER_W};
       if(sp){
         const kx=Math.floor(rnd()*(ex.length-1)), eA=ex[kx], eB=ex[kx+1];
         rd.rlA=RL*(0.34+rnd()*0.32); rd.rlB=RL-rd.rlA;
         rd.fA=Math.max(eA[0]+0.002, eA[1]-rd.rlA); rd.fB=eB[0]+0.002;
         rd.gap=[eA[1],eB[0]];
-        rd.end=rd.fB+rd.rlB;
-        rd.ymid=yOf((rd.fA+rd.end)/2);
+        rd.start=rd.fA; rd.end=rd.fB+rd.rlB;
+      }else{
+        /* aim at a position on the transcript first, then take the exon whose
+           middle is nearest it — so the bias is a property of the transcript
+           and the exon layout only decides where on it a read can sit */
+        const tf = rnd()<P3 ? 1-Math.pow(rnd(),1.6)*0.20 : rnd();
+        const e=pool.reduce((a,b)=>
+          Math.abs((b[0]+b[1])/2-tf)<Math.abs((a[0]+a[1])/2-tf)?b:a);
+        const lo=e[0]+0.003, hi=Math.max(lo,e[1]-RL-0.003);
+        rd.f=lo+rnd()*(hi-lo); rd.start=rd.f; rd.end=rd.f+RL;
+      }
+      rd.ymid=yOf((rd.start+rd.end)/2);
+      gn.reads.push(rd);
+    }
+
+    /* ---- AND THEY STACK, THE WAY A PILE-UP IN A GENOME BROWSER DOES --------
+       Laid on one plane the pile turned into soup: thirty lines at the same
+       height over the same stretch of exon are one orange smear, and the count
+       — which is the whole argument of this station — is unreadable off it.
+       Greedy interval packing, exactly what every read viewer does: walk the
+       reads in start order and drop each into the lowest row whose last read
+       ended before this one starts, with STACK_GAP of clear transcript between
+       them so two reads in a row never touch end to end.
+
+       The result is the 3' bias made visible as HEIGHT rather than as density.
+       Where the oligo-dT reads pile up the stack is deep; along the body, where
+       the hexamers put one read here and one there, it is a single layer. That
+       is a fact about the chemistry drawn as a shape, and it is the one thing a
+       flat pile could not say at all. */
+    const STACK_GAP=RL*0.30;
+    { const rowEnd=[];
+      gn.reads.sort((a,b)=>a.start-b.start);
+      for(const rd of gn.reads){
+        let r=0; while(rowEnd[r]!==undefined && rowEnd[r]>rd.start) r++;
+        rowEnd[r]=rd.end+STACK_GAP; rd.row=r;
+      }
+      /* BUILT IN ROW ORDER, because DOM order is paint order and a stack has
+         to paint from the bottom up. Sorting the records after the elements
+         were made would have left the two orders unrelated. */
+      gn.reads.sort((a,b)=>(a.row-b.row)||(a.start-b.start));
+    }
+    for(const rd of gn.reads){
+      /* NO OUTLINE ON THE READ, now that a read is a line. A 0.6 stroke on a
+         bar under a pixel wide is not an edge, it IS the bar, and it draws
+         every read at the same width whatever the width is. */
+      rd.cd=ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
+        stroke:"none"}));
+      if(rd.sp){
         rd.cd2=ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
           stroke:"none"}));
         rd.arc=ggrp.appendChild(el("path",{fill:"none",stroke:"var(--cull)",
           "stroke-width":"1.0","stroke-opacity":"0","stroke-linecap":"round"}));
-      }else{
-        /* only exons that can actually hold the whole read, and the longest as
-           a fallback so this can never pick from an empty list */
-        const fits=ex.filter(e=>e[1]-e[0]>=RL+0.006);
-        const pool=fits.length?fits:[ex.reduce((a,b)=>(b[1]-b[0]>a[1]-a[0]?b:a))];
-        const e=pool[Math.floor(rnd()*pool.length)];
-        const lo=e[0]+0.003, hi=Math.max(lo,e[1]-RL-0.003);
-        rd.f=lo+rnd()*(hi-lo); rd.end=rd.f+RL;
-        rd.ymid=yOf((rd.f+rd.end)/2);
       }
+      /* THE DASH PATTERN IS SET PER FRAME, FROM THE SEGMENT'S OWN LENGTH. The
+         unsequenced middle is a few pixels long at map zoom and a few more at
+         reading zoom, and a fixed 2.2/2.2 gave it one dash at one and three at
+         the other — a dotted line that is three dots is a dotted line nobody
+         reads as dotted. segDash divides whatever length it has into DASHN
+         dashes, so it is the same line at every zoom. */
       rd.ad=ggrp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
-        "stroke-opacity":"0","stroke-dasharray":"2.2 2.2","stroke-linecap":"butt"}));
-      /* NO OUTLINE ON THE AERIAL. At half the orange's width a 0.6 stroke is a
-         third of the bar again, and the two halves came out looking the same
+        "stroke-opacity":"0","stroke-linecap":"butt"}));
+      /* NO OUTLINE ON THE AERIAL. At a quarter of the read's width a 0.6 stroke
+         is the whole bar again, and the two halves came out looking the same
          thickness — which is the one thing this pair is not. */
       rd.bc=ggrp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",
         stroke:"none"}));
-      gn.reads.push(rd);
     }
     genes.push(gn);
   }
 
+  const DASHN=7;                              /* dashes in the unsequenced middle */
   const seg=(node,xa,ya,za,xb,yb,zb,op)=>{
     const a=P(xa,ya,za), b=P(xb,yb,zb);
     node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
     node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
+    /* DASHN dashes and DASHN-1 gaps, measured off the length it actually has,
+       so the middle reads as dotted at every zoom instead of as one dash at
+       map scale and three at reading scale */
+    const d=Math.hypot(b[0]-a[0],b[1]-a[1])/(2*DASHN-1);
+    node.setAttribute("stroke-dasharray",d.toFixed(2)+" "+d.toFixed(2));
   };
   /* A BAR BETWEEN TWO POINTS ANYWHERE, thin across, offset in the SCREEN plane.
      quadX and quadY were this shape's two axis-aligned bars, and between them
@@ -1629,12 +1829,16 @@ function drawBelts(g,n){
       gn.ex.forEach((e,k)=>
         setBoxY(gn.exons[k],gxp,GWE,yOf(e[0]),yOf(e[1]),base,exTop,vis.toFixed(3)));
 
-      /* the name rides with its gene, at the gene's own x, off the near rail */
+      /* the name rides with its gene, at the gene's own x, off the near rail;
+         the two end marks ride the gene's own line, just past each end */
       {
-        const a=P(gxp,cy+BW/2+K*0.34,base);
-        gn.lab.setAttribute("transform",
-          `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`);
-        gn.lab.setAttribute("fill-opacity",(vis*0.55).toFixed(3));
+        const put=(t,wy,op)=>{ const a=P(gxp,wy,base);
+          t.setAttribute("transform",
+            `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`);
+          t.setAttribute("fill-opacity",(vis*op).toFixed(3)); };
+        put(gn.lab,cy+BW/2+K*0.55,0.55);
+        put(gn.p5 ,yOf(-0.055),0.45);
+        put(gn.p3 ,yOf( 1.055),0.45);
       }
 
       for(const rd of gn.reads){
@@ -1648,24 +1852,27 @@ function drawBelts(g,n){
            the opposite of rain. It is now invisible until its own fall starts
            and fades in over the first tenth of it, so the first frame anybody
            sees of a read is a frame in which it is already moving. */
-        const kk=clamp01((u-(rd.u0-0.20))/0.20);
+        const kk=clamp01((u-(rd.u0-FALL))/FALL);
         const air=Math.pow(1-kk,2.2);
         const flap=flapOf(kk);
         /* one point: dx closes in as it lands, and y comes down off the belt's
            own centre line */
-        const rx=gxp+rd.dx*(1-air)-NOZX*air, z0=exTop+NOZZ*air;
+        /* z0 is the read's OWN row, not the exon roof: a stack sits on the
+           thing under it, and the top of it is where the next read goes. */
+        const rz=exTop+rd.row*RSTEP;
+        const rx=gxp+rd.dx*(1-air)-NOZX*air, z0=rz+NOZZ*air;
         const dy=(cy-rd.ymid)*air;            /* the fan, closing as it lands */
         const op=vis*sstep(0,0.10,kk);
         /* the cDNA lies flat on the exon — the only part of this molecule the
            aligner has anything to say about, and the only part drawn at full
            strength */
         if(rd.sp){
-          barTo(rd.cd ,RW,0.6,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
-          barTo(rd.cd2,RW,0.6,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
+          barTo(rd.cd ,RW,0.42,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
+          barTo(rd.cd2,RW,0.42,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
           /* and nothing at all over the intron between them */
           archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap,op*0.55);
         }else{
-          barTo(rd.cd,RW,0.6,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
+          barTo(rd.cd,RW,0.42,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
         }
         /* AND THE TAIL LEAVES THE GENE'S AXIS ALTOGETHER — up-belt and up, at
            the far end of whatever the orange did. Along the axis it read as
@@ -1676,8 +1883,8 @@ function drawBelts(g,n){
         let ux=TDIR[0]*flap, uy=-(1-flap), uz=TDIR[1]*flap;
         const uL=Math.hypot(ux,uy,uz)||1; ux/=uL; uy/=uL; uz/=uL;
         const kx=rx+ux*TAIL*TKNEE, ky=ye+uy*TAIL*TKNEE, kz=z0+uz*TAIL*TKNEE;
-        seg(rd.ad,rx,ye,z0,kx,ky,kz,op*0.55);
-        barTo(rd.bc,RWB,0.3,kx,ky,kz,rx+ux*TAIL,ye+uy*TAIL,z0+uz*TAIL,op*0.26);
+        seg(rd.ad,rx,ye,z0,kx,ky,kz,op*0.42);
+        barTo(rd.bc,RWB,0.26,kx,ky,kz,rx+ux*TAIL,ye+uy*TAIL,z0+uz*TAIL,op*0.34);
       }
     });
   };
