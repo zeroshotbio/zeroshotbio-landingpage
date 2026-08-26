@@ -348,6 +348,46 @@ out its own idea of the layout drifts off the drawing the first time a width
 changes.** The pool's leaders still aim at the *bar* ends: the magnification
 points at the molecule, not at the brackets.
 
+**Nothing leaves this glyph at the moment.** The `E2 -> E3` edge and its dots are
+gone: it is a measured diagram of a molecule, and a track running out of it turns
+it back into a station on a route. `PORTS.fragment` stays because it is correct
+and is what the edge will leave from when it returns; the chain starts at `E3`
+until then.
+
+### The widths are base pairs, measured, and two of them were telling a story
+
+`FRAG[].w` is **bp**, not a schematic weight. The numbers came off MegaFin 1's
+own FASTQs rather than a config, because no run folder and no split-pipe config
+for that run exist on this instance:
+
+```
+R1  64 bp   the cDNA insert
+R2  58 bp   UMI[0:10] bc3[10:18] bc2[30:38] bc1[50:58]
+            -> UMI 10, three barcodes of 8, two linkers of 12   (= 58)
+```
+
+Two proportions were wrong before and **both were wrong in the same direction**.
+R2 was drawn *longer* than R1; it is shorter, and the two are nearly equal. And
+the linkers were drawn at twice a barcode when they are one and a half times it.
+Together they made read 2 look like a long spacer with small marks on it, when
+the barcodes are most of what read 2 is.
+
+The order stays the **molecule's**, not R2's — BC1 nearest the cDNA because
+reverse transcription attached it first, the UMI on the round-3 oligo at the far
+end. R2 reads inward from that end, which is why it meets the UMI first. Drawn
+truthfully, the reversal explains itself.
+
+**The gap is the one entry whose `w` is not a length**, and the one segment with
+no figure under it. Insert size varies per fragment and nothing sequences the
+span between the two reads, so there is no number to draw and none is drawn.
+That silence is the honest statement and nothing is allowed to fill it.
+
+The figures themselves are meant to be **found rather than read**: bare numbers
+in `--fg3` under read 2's six segments (no unit — the `58 bp` under the bracket
+has given it), and the two read lengths in neutral ink centred under their own
+brackets, the name at the outer end saying *which* read. Six segment figures
+that add to 58: the drawing can be checked against itself.
+
 **The ball is a real ball.** The reads are placed uniformly through a sphere —
 direction on the sphere, radius by cube root, because a uniform radius piles
 the population into the centre — in *world* coordinates, turned by a real
@@ -439,21 +479,21 @@ The hero is drawn **last and stays on top**. It is the subject and both leaders
 point at it; a subject you can lose behind the crowd is one the reader has to
 hunt for.
 
-### A pill, not a ball — and the stretch happens after the turn
+### It was a pill for a while, and it is a ball again
 
-The reads are still sampled uniformly through a unit sphere and still turned by
-a real rotation, so the swarm churns exactly as it did. What changed is the last
-step: the turned y is multiplied out **before it is projected**. Stretch the
-*source* points instead and the pill tumbles end over end — a rotating capsule
-rather than a still one with a crowd moving inside it.
+The stretch is gone, and it is gone from the code rather than set to 1. A pool
+is a **population**, not a shape with an axis; giving it a long axis along world
+y implied an ordering in the molecule's own direction that a bag of unsorted
+reads does not have. `n.w` and `n.d` are back to equal (5.1) and the count is
+back to 380 — density was what the 620 was holding constant, and the volume
+went back with the shape.
 
-The long axis is world y, which projects to −30°: the same line the name FASTQ
-POOL reads on and the same line the fragment below it lies along. `n.d / n.w` is
-the ratio, so the shape is authored in the data file and the drawing obeys it.
-**Depth is taken after the stretch** — the world is what the pill lives in, and
-measured on the unit sphere it would sort the crowd by where each read *would*
-have been. The population grew from 380 to 620 because the pill is three times
-the volume: **density is what is being held constant, not the count.**
+Worth recording why the removal touched three lines and not one. The stretch was
+applied **after** the turn (stretching the source points instead makes the pill
+tumble end over end — a rotating capsule rather than a still one with a crowd
+inside it), which meant the depth key had to be taken after it too. A spare
+multiply left in the hot loop is a spare thing to get wrong the next time
+somebody edits this, so `RBY` is gone and `dep` divides by `RB*2` again.
 
 **The population is built once, at load, from a fixed seed**, so the pool is the
 same pool in every browser and the hero is the same read. A swarm that

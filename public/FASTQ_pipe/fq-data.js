@@ -89,7 +89,7 @@ const NODES = [
    See drawPool / drawFragment in fq-shapes.js. */
 {id:"FQ", key:"E1", group:"① The reads", groupMark:true, anchor:true, shape:"pool",
  lane:"r3", plinth:false, aims:"E2", ballZ:5.0,
- name:"FASTQ pool", x:1.0, y:R3, w:3.0, d:9.0, h:9.0,
+ name:"FASTQ pool", x:1.0, y:R3, w:5.1, d:5.1, h:9.0,
  sub:"every read from the run, both mates, before anything has been interpreted", stat:"off-instance",
  does:"The first digital object, and the only genuinely shapeless one. Different libraries, different depths, no schema — and nothing in it yet says which barcode is a cell.",
  built:"For the worked example: sequenced 2026-03/04 and processed in the vendor's own cloud workdir, whose S3 path the run definition still points at. Demultiplexing is its own named step in some pipelines — Zebrahub records bcl2fastq v2.20.0.422 — and invisible in others.",
@@ -106,7 +106,7 @@ const NODES = [
  built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline.",
  cond:"The middle is not recoverable. Insert lengths vary and nothing sequences the span between the two reads, so a fragment is known at both ends and guessed in between — which is why fragment-level evidence for anything (isoform, fusion, allele) is out of reach for this chemistry no matter how deep the run goes.",
  /* ---- authored on this page ------------------------------------------- */
- added:"THE FRAGMENT IS DRAWN IN ITS OWN ORDER, NOT IN R2's ORDER. BC1 sits nearest the cDNA because reverse transcription attached it first, each ligation round adds the next one further out, and the UMI rides on the round-3 oligo at the far end. R2 sequences inward from that end — which is why it meets the UMI first and reaches round 1 last. Draw the molecule truthfully and the reversal explains itself. It is the one thing on this page not drawn in the isometric: a diagram OF a molecule rather than a thing standing somewhere on the map, so it is square to the reader. The arrowheads sit a little inside the ends they point at, because an arrow on the end reads as the place a read stops rather than the direction it travels. ONE TRACK LEAVES, AND IT LEAVES FROM THE BARCODE END, because that is the end the next station reads. The glyph still draws both brackets — the molecule really does have two ends, and the R1 bracket is what the alignment two stops later is about — but only one line leaves it, because only one thing travels: the pair, intact, on its way to be checked."},
+ added:"THE FRAGMENT IS DRAWN IN ITS OWN ORDER, NOT IN R2's ORDER. BC1 sits nearest the cDNA because reverse transcription attached it first, each ligation round adds the next one further out, and the UMI rides on the round-3 oligo at the far end. R2 sequences inward from that end — which is why it meets the UMI first and reaches round 1 last. Draw the molecule truthfully and the reversal explains itself. It is the one thing on this page not drawn in the isometric: a diagram OF a molecule rather than a thing standing somewhere on the map, so it is square to the reader. The arrowheads sit a little inside the ends they point at, because an arrow on the end reads as the place a read stops rather than the direction it travels. THE WIDTHS ARE THE REAL BASE PAIRS, measured off this run's own FASTQs rather than read off a config, because no run folder and no split-pipe config for it exist on this instance: R1 is 64 and R2 is 58, so the cDNA is slightly the longer of the two rather than the shorter as it was drawn; and read 2 is UMI 10, three barcodes of 8, two linkers of 12, which makes a linker one and a half times a barcode rather than twice it. Both errors flattered the barcode end. THE ONE SEGMENT WITH NO FIGURE UNDER IT IS THE MIDDLE: insert size varies per fragment and nothing sequences the span between the two reads, so its width on the drawing is a token and its silence is the honest part. NOTHING LEAVES THIS GLYPH FOR NOW — no track, no dots. It is a measured diagram of a molecule, and a line running out of it turns it back into a station on a route."},
 
 /* ---------------------------------------------------------------------------
    THE CHAIN. Six stations on one line, in the order a read actually meets them.
@@ -351,8 +351,14 @@ const EDGES = [
 
      STRAIGHT, AND PORTED AT BOTH ENDS WHERE THE OBJECT IS BIG. E3 is 9.6 units
      long and E4 is 6.4; an edge aimed at either centre spends half its length
-     inside the thing it is arriving at. */
-  {a:"E2", b:"E3", kind:"read", port:"R", portB:"head", tone:"var(--cull)"},
+     inside the thing it is arriving at.
+
+     NOTHING LEAVES E2 AT THE MOMENT. The E2 -> E3 track and its dots are
+     deliberately absent while the fragment is being made accurate: the glyph is
+     a measured diagram of a molecule, and a track running out of it turns it
+     back into a station on a route. The chain therefore starts at E3 for now.
+     PORTS.fragment is still there and still correct — it is what the edge will
+     leave from when it comes back. */
   {a:"E3", b:"E4", kind:"read", straight:true, port:"tail", portB:"corner", tone:"var(--cull)"},
   {a:"E4", b:"E5", kind:"read", straight:true, port:"corner", tone:"var(--cull)"},
   {a:"E5", b:"CB", kind:"read", tone:"var(--cull)"},

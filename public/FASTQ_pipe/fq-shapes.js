@@ -194,11 +194,8 @@ const mulberry32=(a)=>()=>{
 };
 
 const READS=(()=>{
-  /* 620 RATHER THAN 380, because the pill is three times the volume of the
-     ball it replaced and the same crowd in it reads as a thin haze. Density is
-     the thing being held constant, not the count. */
   const rnd=mulberry32(READ_SEED), reads=[];
-  for(let i=0;i<620;i++){
+  for(let i=0;i<380;i++){
     /* uniform THROUGH the ball: a direction on the sphere, and a radius by
        cube root. Taking a uniform radius instead piles the population into the
        centre and the ball reads as a fuzzy blob with a bright core. */
@@ -215,21 +212,45 @@ const READS=(()=>{
   return {reads, hero:118};
 })();
 
-/* left to right ALONG THE MOLECULE. Widths are schematic but proportionate:
-   64 bases of insert, the unsequenced middle, then the three ligation barcodes
-   with their linkers and the UMI on the far end. */
+/* LEFT TO RIGHT ALONG THE MOLECULE, AND `w` IS BASE PAIRS.
+
+   Not schematic and not proportionate-ish: these are the real numbers, measured
+   off MegaFin 1's own FASTQs on 2026-08-26 rather than read off a config, since
+   no run folder and no split-pipe config for that run exist on this instance.
+
+     R1  64 bp   the cDNA insert
+     R2  58 bp   UMI[0:10] bc3[10:18] bc2[30:38] bc1[50:58]
+                 -> UMI 10, three barcodes of 8, two linkers of 12
+
+   Two proportions were wrong before and both were wrong in a way that told a
+   story. R2 was drawn LONGER than R1; it is shorter, 58 against 64, and the two
+   are nearly equal. And the linkers were drawn at twice a barcode when they are
+   one and a half times it — 12 against 8 — which made the barcodes look like
+   small marks on a long spacer instead of most of what read 2 is.
+
+   THE ORDER IS THE MOLECULE'S, NOT R2's, and that stays. BC1 sits nearest the
+   cDNA because reverse transcription attached it first; the UMI rides on the
+   round-3 oligo at the far end. R2 sequences inward from that end, which is why
+   it meets the UMI first and reaches round 1 last. Drawn truthfully, the
+   reversal explains itself.
+
+   THE GAP IS THE ONE ENTRY WHOSE `w` IS NOT A LENGTH. Insert size varies per
+   fragment and nothing sequences the span between the two reads, so there is no
+   number to draw and none is drawn: it is the only segment with no figure under
+   it, and that absence is the honest statement. Its width is a token. */
 const R1TONE="var(--cull)", R2TONE="var(--accent)";
 
 const FRAG=[
-  {k:"cdna", w:76, tone:"r1",    lab:"cDNA"},
-  {k:"gap",  w:62, tone:"ghost", lab:"never sequenced"},
-  {k:"bc1",  w:13, tone:"r2",    lab:"BC1"},
-  {k:"l1",   w:26, tone:"link",  lab:""},
-  {k:"bc2",  w:13, tone:"r2",    lab:"BC2"},
-  {k:"l2",   w:26, tone:"link",  lab:""},
-  {k:"bc3",  w:13, tone:"r2",    lab:"BC3"},
-  {k:"umi",  w:48, tone:"umi",   lab:"UMI"},
+  {k:"cdna", w:64, tone:"r1",    lab:"cDNA"},
+  {k:"gap",  w:24, tone:"ghost", lab:"never sequenced"},   /* a token, not a length */
+  {k:"bc1",  w:8,  tone:"r2",    lab:"BC1"},
+  {k:"l1",   w:12, tone:"link",  lab:""},
+  {k:"bc2",  w:8,  tone:"r2",    lab:"BC2"},
+  {k:"l2",   w:12, tone:"link",  lab:""},
+  {k:"bc3",  w:8,  tone:"r2",    lab:"BC3"},
+  {k:"umi",  w:10, tone:"umi",   lab:"UMI"},
 ];
+const FRAG_R1BP=64, FRAG_R2BP=58;   /* = sum of the segments on either side */
 
 /* ---------------------------------------------------------------------------
    TWO NODES, ONE DRAWING.
@@ -335,7 +356,8 @@ function fragGeom(x,y){
   const BT=Y0-52, BB=BT+BH, BMID=BT+BH/2;
   const NSQ=BT-16;                       /* "never sequenced", above the bar */
   const ROW1=BB+25;                      /* BC1 BC2 BC3 UMI, below it */
-  const YB=ROW1+24, LBL=YB+24;           /* the two brackets, below those */
+  const BPROW=ROW1+15;                   /* the small base-pair figures */
+  const YB=ROW1+34, LBL=YB+24;           /* the two brackets, below those */
   const ROW2=ROW1, CTOP=NSQ-16;
   /* the turn is about the bar's own midpoint, so the diagram pivots where it
      sits rather than swinging off its node */
@@ -358,7 +380,7 @@ function fragGeom(x,y){
   const r1Port=[(FX0+xs[gi])/2, YB];
   const r2Port=[(xs[gi]+wOf(FRAG[gi])+FX1)/2, YB];
 
-  return {X0,Y0,FW,FX0,FX1,BH,NSQ,ROW1,ROW2,BB,BT,BMID,YB,LBL,CTOP,
+  return {X0,Y0,FW,FX0,FX1,BH,NSQ,ROW1,ROW2,BPROW,BB,BT,BMID,YB,LBL,CTOP,
           px,py,rot,total,wOf,xs,gi,r1Port,r2Port};
 }
 
@@ -367,8 +389,8 @@ function drawFragment(g,n){
   const F=fragGeom(n.x,n.y);
   /* one rotate on the group; everything inside is laid out level */
   g=g.appendChild(el("g",{transform:`rotate(${FRAG_TURN} ${F.px} ${F.py})`}));
-  const {FX0,FX1,FW,BT,BB,BH,BMID,NSQ,ROW1,ROW2,YB,LBL}=F;
-  const SEG=13, SUB=11, HEAD=16;
+  const {FX0,FX1,FW,BT,BB,BH,BMID,NSQ,ROW1,ROW2,BPROW,YB,LBL}=F;
+  const SEG=13, SUB=11, HEAD=16, BP=9, RDBP=11.5;
 
   const {wOf,xs,gi}=F;
 
@@ -424,6 +446,23 @@ function drawFragment(g,n){
     tick(mid,BB,ROW1-12,col); text(s.lab,mid,ROW1,SEG,col,"600");
   });
 
+  /* ---- THE LENGTHS, AND THEY ARE MEANT TO BE FOUND RATHER THAN READ.
+
+     A bare figure under every segment of read 2 — no unit, because the "58 bp"
+     under the bracket has already given it, and no colour, because a
+     measurement is not a party to the thing it measures. Six of them, and they
+     add to the 58: the drawing can be checked against itself.
+
+     NOT UNDER THE cDNA. Its figure is the 64 under the R1 bracket and printing
+     it twice would make it look like two facts. And NOT UNDER THE GAP: insert
+     size varies per fragment and the FASTQ cannot tell us, so the one segment
+     with no number is the one whose length is genuinely unknown. That silence
+     is doing work, which is why nothing is allowed to fill it. */
+  for(let i=gi+1;i<FRAG.length;i++){
+    const x=xs[i], w=wOf(FRAG[i]);
+    text(String(FRAG[i].w), x+w/2, BPROW, BP, "var(--fg3)");
+  }
+
   /* ---- the two reads, bracketed over what each one covers ---------------
      R1 runs into the insert from the cDNA end; R2 runs inward from the far
      end, which is why its arrow points back along the molecule. The gap
@@ -452,6 +491,14 @@ function drawFragment(g,n){
   };
   bracket(FX0,xs[gi],R1TONE,"R1",1);
   bracket(xs[gi]+wOf(FRAG[gi]),FX1,R2TONE,"R2",-1);
+
+  /* the two read lengths, centred under their own brackets — the name at the
+     outer end says WHICH read, the figure in the middle says how much of the
+     molecule it covers. Neutral ink on purpose: 64 against 58 is the one
+     proportion on this glyph a reader is meant to weigh, and it weighs better
+     without either read's colour arguing for it. */
+  text(`${FRAG_R1BP} bp`, (FX0+xs[gi])/2, LBL, RDBP, "var(--fg2)");
+  text(`${FRAG_R2BP} bp`, (xs[gi]+wOf(FRAG[gi])+FX1)/2, LBL, RDBP, "var(--fg2)");
 }
 DRAW.fragment=drawFragment;
 
@@ -535,21 +582,16 @@ function roofCorner(n,B){
 function drawPool(g,n){
   hitBox(g,n);
   const [X0,Y0]=P(n.x,n.y,0);
-  /* A PILL, NOT A BALL — and the stretch happens AFTER the turn, not before.
+  /* A BALL. It was stretched into a pill along world y for a while and is not
+     any more — the pool is a population, not a shape with an axis, and giving
+     it one implied an ordering along the molecule's own direction that a bag of
+     unsorted reads does not have.
 
-     The reads are still sampled uniformly through a unit sphere and still
-     turned by a real rotation, so the swarm churns exactly as it did. What
-     changed is the last step: the turned y is multiplied out before it is
-     projected. Stretch the SOURCE points instead and the pill tumbles end over
-     end, which is a different object entirely — a rotating capsule rather than
-     a still one with a crowd moving inside it.
-
-     The long axis is world y, which projects to -30 degrees: the same line the
-     name FASTQ POOL reads on, and the same line the fragment below it lies
-     along. n.d / n.w is the ratio, so the shape is authored in the data file
-     and the drawing just obeys it. */
-  const RB=n.w*0.70;                      /* the short semi-axis, world units */
-  const RBY=RB*(n.d/n.w);                 /* the long one, along y */
+     The machinery that made the pill is gone rather than set to 1: the stretch
+     was applied AFTER the turn, which meant the depth key had to be taken after
+     it too, and a spare multiply left in the hot loop is a spare thing to get
+     wrong the next time this is edited. */
+  const RB=n.w*0.70;                      /* the ball's radius, world units */
   const ZC=n.ballZ;                       /* it hovers; nothing here sits */
   const BX=X0, BY=Y0-ZC*S*CZ;             /* the pill's centre, on screen */
   const UU=RB*S*C30/32;                   /* the original's unit: R was 32 of them */
@@ -621,12 +663,9 @@ function drawPool(g,n){
       const y2=y1*cosB-wz*sinB, z2=y1*sinB+wz*cosB;
       /* DEPTH IS THE MAP'S OWN DEPTH, not a third coordinate of its own: in
          this projection what is nearer the eye is what has the greater x+y,
-         which is the same key everything else on the page is sorted by. It is
-         taken AFTER the stretch, because the world is what the pill lives in —
-         measured on the unit sphere it would sort the crowd by where each read
-         WOULD have been. */
-      const a=x1*RB, b=y2*RBY, c=z2*RB;
-      const dep=Math.max(0,Math.min(1,((a+b)/(RB+RBY)+1)/2));
+         which is the same key everything else on the page is sorted by. */
+      const a=x1*RB, b=y2*RB, c=z2*RB;
+      const dep=Math.max(0,Math.min(1,((a+b)/(RB*2)+1)/2));
       seen.push({i,rd,d:dep,
         px:BX+(a-b)*S*C30, py:BY+(a+b)*S*0.5-c*S*CZ});
     }

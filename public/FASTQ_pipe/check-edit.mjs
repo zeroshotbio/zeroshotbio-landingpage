@@ -61,6 +61,99 @@ await p.waitForTimeout(300);
 if(await p.evaluate(()=>getComputedStyle(document.querySelector('.ehandle')).display)==='none')
   fail('handles still hidden after turning the mode on');
 
+/* --- RESIZE FIRST, BEFORE ANYTHING HAS BEEN DRAGGED ---------------------
+
+   This block used to sit after the three drags and it started failing the
+   moment the E lane straightened into one line. The building drag moves E4
+   +140,+40 px, and on a map where the stations are now shoulder to shoulder
+   that lands its top face underneath a NEIGHBOUR'S NAME. The pick press hits
+   that label's hit rect instead, nothing is picked, and the corner drag that
+   follows is a plain move of whatever is under it. Nothing was wrong with the
+   page: the check had walked its own target into a crowd.
+
+   /pipeline's copy carries the same rule for the same reason. Resize first,
+   while every corner is still over its own object. */
+/* A PICKED NODE RESIZES — four corners for w and d, one handle for h.
+
+   TWO THINGS ARE ASSERTED THAT LOOK LIKE PLUMBING AND ARE NOT.
+
+   The corner is ANCHORED AT ITS OPPOSITE, so the far corner must hold still
+   while the near one moves; a resize that drifts the whole object is a move
+   wearing a resize's clothes.
+
+   And THE TICKER COUNT MUST NOT GROW. A resize is the only edit that redraws a
+   shape, and a shape that animates pushes into TICKERS every time it draws.
+   Recording those only in the redraw was not enough — the first draw's ticker
+   was never on the books, so one resize left two, both running over elements
+   the other had thrown away. It is invisible on screen and it compounds. */
+const sizeOf=id=>p.evaluate(i=>{ const n=NODES.find(m=>m.id===i);
+  return [n.w,n.d,n.h,n.x,n.y].map(v=>+v.toFixed(2)); },id);
+const cornerAt=(id,k)=>p.evaluate(([i,kk])=>{
+  const n=NODES.find(m=>m.id===i), hw=n.w/2, hd=n.d/2, h=topOf(n);
+  const q=kk===4?P(n.x,n.y,h)
+    :P(n.x+((kk===1||kk===2)?hw:-hw), n.y+((kk===2||kk===3)?hd:-hd), h);
+  const world=document.querySelector('#svg > g'), m=world.getScreenCTM();
+  return {x:m.a*q[0]+m.c*q[1]+m.e, y:m.b*q[0]+m.d*q[1]+m.f};
+},[id,k]);
+
+const RSZ='E4';
+const tickersBefore=await p.evaluate(()=>TICKERS.length);
+let hit=await cornerAt(RSZ,4);   /* the top-face CENTRE, and without travelling: a corner may be off the drawn shape, and a press that misses drags whatever is under it */
+await p.mouse.move(hit.x,hit.y); await p.mouse.down(); await p.mouse.up();
+await p.waitForTimeout(300);
+/* NOT `.sizer` COUNT: there are always five of them. They are built once at
+   setup and hidden with display:none, so counting them passed whether anything
+   was picked or not — a vacuous assertion that sat here through two real
+   failures. What says a node is picked is that they are VISIBLE and sitting on
+   ITS corners. */
+{ const sz=await p.evaluate(()=>[...document.querySelectorAll('.sizer')]
+    .map(e=>e.getAttribute('display')==='none'?null:[+e.getAttribute('x')+6.5,+e.getAttribute('y')+6.5]));
+  if(sz.some(v=>!v)) fail('picking a node did not show its five resize handles');
+  else{
+    const want=await p.evaluate(i=>{const n=NODES.find(m=>m.id===i),hw=n.w/2,hd=n.d/2,h=topOf(n);
+      return [[-1,-1],[1,-1],[1,1],[-1,1]].map(([a,b])=>P(n.x+a*hw,n.y+b*hd,h))
+        .concat([P(n.x,n.y,h)]);},RSZ);
+    const off=sz.map((q,k)=>Math.hypot(q[0]-want[k][0],q[1]-want[k][1]));
+    if(Math.max(...off)>2)
+      fail(`the handles are not on ${RSZ}'s corners — something else took the press`);
+  }
+}
+
+const sz0=await sizeOf(RSZ);
+const far0=await cornerAt(RSZ,0);                    /* the corner opposite the one dragged */
+hit=await cornerAt(RSZ,2);
+await p.mouse.move(hit.x,hit.y); await p.mouse.down();
+await p.mouse.move(hit.x+80,hit.y+46,{steps:14}); await p.mouse.up();
+await p.waitForTimeout(300);
+const sz1=await sizeOf(RSZ);
+if(sz1[0]<=sz0[0]) fail(`dragging a corner out did not widen it (${sz0[0]} -> ${sz1[0]})`);
+const far1=await cornerAt(RSZ,0);
+if(Math.hypot(far1.x-far0.x,far1.y-far0.y)>3)
+  fail('resizing from one corner moved the opposite one — that is a move, not a resize');
+
+hit=await cornerAt(RSZ,4);
+await p.mouse.move(hit.x,hit.y); await p.mouse.down();
+await p.mouse.move(hit.x,hit.y-50,{steps:12}); await p.mouse.up();
+await p.waitForTimeout(300);
+const sz2=await sizeOf(RSZ);
+if(sz2[2]<=sz1[2]) fail(`dragging the height handle up did not raise it (${sz1[2]} -> ${sz2[2]})`);
+if(await p.evaluate(()=>TICKERS.length)!==tickersBefore)
+  fail("a resize leaked a ticker — the redraw did not remove the shape's old one");
+
+/* PUT THE HANDLES DOWN BEFORE DRAGGING E4.
+
+   A picked node wears its height handle on its own top-face centre, which is
+   exactly where the drag below presses — so the press resizes instead of
+   moving, and the accidental drag then writes a height nobody asked for over
+   the one the resize just set. (Worth knowing about the page, not just the
+   check: this mode has no click-empty-space-to-unpick, so the only way to put
+   the handles down is to pick something else.) */
+{ const f=await p.evaluate(()=>{const n=NODES.find(m=>m.id==='FQ');
+    const w=document.querySelector('#svg > g'),m=w.getScreenCTM(),q=P(n.x,n.y,topOf(n)*0.5);
+    return {x:m.a*q[0]+m.c*q[1]+m.e, y:m.b*q[0]+m.d*q[1]+m.f};});
+  await p.mouse.move(f.x,f.y); await p.mouse.down(); await p.mouse.up();
+  await p.waitForTimeout(250); }
+
 /* drag a BUILDING */
 const before=await state('E4');
 let q=await at('E4','node');
@@ -109,58 +202,6 @@ else {
   if (Math.hypot(a4.sx - b4.sx, a4.sy - b4.sy) < 20)
     fail('the band name nudge moved but the type did not');
 }
-
-/* A PICKED NODE RESIZES — four corners for w and d, one handle for h.
-
-   TWO THINGS ARE ASSERTED THAT LOOK LIKE PLUMBING AND ARE NOT.
-
-   The corner is ANCHORED AT ITS OPPOSITE, so the far corner must hold still
-   while the near one moves; a resize that drifts the whole object is a move
-   wearing a resize's clothes.
-
-   And THE TICKER COUNT MUST NOT GROW. A resize is the only edit that redraws a
-   shape, and a shape that animates pushes into TICKERS every time it draws.
-   Recording those only in the redraw was not enough — the first draw's ticker
-   was never on the books, so one resize left two, both running over elements
-   the other had thrown away. It is invisible on screen and it compounds. */
-const sizeOf=id=>p.evaluate(i=>{ const n=NODES.find(m=>m.id===i);
-  return [n.w,n.d,n.h,n.x,n.y].map(v=>+v.toFixed(2)); },id);
-const cornerAt=(id,k)=>p.evaluate(([i,kk])=>{
-  const n=NODES.find(m=>m.id===i), hw=n.w/2, hd=n.d/2, h=topOf(n);
-  const q=kk===4?P(n.x,n.y,h)
-    :P(n.x+((kk===1||kk===2)?hw:-hw), n.y+((kk===2||kk===3)?hd:-hd), h);
-  const world=document.querySelector('#svg > g'), m=world.getScreenCTM();
-  return {x:m.a*q[0]+m.c*q[1]+m.e, y:m.b*q[0]+m.d*q[1]+m.f};
-},[id,k]);
-
-const RSZ='E4';
-const tickersBefore=await p.evaluate(()=>TICKERS.length);
-let hit=await cornerAt(RSZ,4);   /* the top-face CENTRE, and without travelling: a corner may be off the drawn shape, and a press that misses drags whatever is under it */
-await p.mouse.move(hit.x,hit.y); await p.mouse.down(); await p.mouse.up();
-await p.waitForTimeout(300);
-if(await p.evaluate(()=>document.querySelectorAll('svg.editing .sizer').length)!==5)
-  fail('picking a node did not put five resize handles on it');
-
-const sz0=await sizeOf(RSZ);
-const far0=await cornerAt(RSZ,0);                    /* the corner opposite the one dragged */
-hit=await cornerAt(RSZ,2);
-await p.mouse.move(hit.x,hit.y); await p.mouse.down();
-await p.mouse.move(hit.x+80,hit.y+46,{steps:14}); await p.mouse.up();
-await p.waitForTimeout(300);
-const sz1=await sizeOf(RSZ);
-if(sz1[0]<=sz0[0]) fail(`dragging a corner out did not widen it (${sz0[0]} -> ${sz1[0]})`);
-const far1=await cornerAt(RSZ,0);
-if(Math.hypot(far1.x-far0.x,far1.y-far0.y)>3)
-  fail('resizing from one corner moved the opposite one — that is a move, not a resize');
-
-hit=await cornerAt(RSZ,4);
-await p.mouse.move(hit.x,hit.y); await p.mouse.down();
-await p.mouse.move(hit.x,hit.y-50,{steps:12}); await p.mouse.up();
-await p.waitForTimeout(300);
-const sz2=await sizeOf(RSZ);
-if(sz2[2]<=sz1[2]) fail(`dragging the height handle up did not raise it (${sz1[2]} -> ${sz2[2]})`);
-if(await p.evaluate(()=>TICKERS.length)!==tickersBefore)
-  fail("a resize leaked a ticker — the redraw did not remove the shape's old one");
 
 /* THE BAND: A BORDER THAT MOVES IT AND A CORNER THAT RESHAPES IT.
 
@@ -218,6 +259,7 @@ if(movKey && stored && !stored[movKey])
   fail('the band name offset was not written to local storage: '+JSON.stringify(rec));
 if(!rec.at) fail('the stored record carries no timestamp — reconciliation needs one');
 if(!await p.locator('#btnSave').isVisible()) fail('Save positions never appeared');
+const szLeft=await sizeOf(RSZ);   /* the live geometry at the moment of saving */
 await p.locator('#btnSave').click();
 await p.waitForTimeout(250);
 const snip=await p.evaluate(()=>document.querySelector('#read .snip')?.textContent||'');
@@ -233,8 +275,11 @@ const bandBack=await rectOf(p);
    live comes back 21.26, and demanding more than the record can hold would be
    a check failing on its own storage format rather than on the map. */
 const szBack=await sizeOf(RSZ);
-if(szBack.some((v,i)=>Math.abs(v-sz2[i])>0.011))
-  fail(`the resize saved and reloaded at a different size — left ${sz2}, came back ${szBack}`);
+/* against szLeft, taken just before Save, NOT against sz2 from the resize
+   block: the resize now runs first and E4 is deliberately moved afterwards, so
+   sz2's x and y are five steps stale. w, d and h are the resize's business. */
+if(szBack.some((v,i)=>Math.abs(v-szLeft[i])>0.011))
+  fail(`the resize saved and reloaded at a different size — left ${szLeft}, came back ${szBack}`);
 if(bandBack.some((v,i)=>Math.abs(v-bandMoved[i])>0.001))
   fail(`the band saved and reloaded somewhere else — left at ${bandMoved}, came back at ${bandBack}`);
 await p.locator('#btnEdit').click();
