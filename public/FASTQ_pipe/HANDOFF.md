@@ -401,11 +401,50 @@ slashes say the shortening is deliberate. A quietly shortened bar with a number
 under it would be the worst of both: a reader would take the width for the
 length, which is exactly what the old drawing's proportions did wrong.
 
-The figures themselves are meant to be **found rather than read**: bare numbers
-in `--fg3` under read 2's six segments (no unit — the `58 bp` under the bracket
-has given it), and the two read lengths in neutral ink centred under their own
-brackets, the name at the outer end saying *which* read. Six segment figures
-that add to 58: the drawing can be checked against itself.
+### Two registers, one on each side of the bar
+
+**Above it: the measurements.** Every base-pair figure and nothing else — grey,
+small, no words. **Below it: the names** a person reads to find out what the
+molecule is made of, then the brackets and the two reads.
+
+They were interleaved before — the middle's name above, the figures below, the
+segment names in between — and the eye had to sort measurement from nomenclature
+on every row. Split by side and there is nothing to sort: one glance for what it
+*is*, another for how long.
+
+The figures are meant to be **found rather than read**: bare numbers over read
+2's six segments (no unit — the `58 bp` under the bracket has given it), and the
+two read lengths in neutral ink under their own brackets, the name at the outer
+end saying *which* read. Six segment figures that add to 58, so the drawing can
+be checked against itself. The read lengths stay **below**, with the brackets:
+they annotate a bracket rather than a segment, and separating a figure from the
+thing it measures to satisfy a rule about sides is the rule serving itself.
+
+**Two names need a second row.** "never sequenced" is fifteen characters over a
+32-unit token and would run into `BC1`; and at the true 10 bp the UMI is 26px
+wide against BC3's 21 with 23 between their centres, so `BC3` and `UMI` on one
+row read as `BC3UMI` — which is what shipped for one commit. Both drop to
+`ROW2`, where they are 180px apart and each has the row to itself. *(The old
+code carried a comment claiming the UMI already dropped to a second row. It did
+not: `ROW2` was defined as `ROW1`. A comment describing an intention that the
+code does not implement is worse than no comment.)*
+
+**check-text did not catch `BC3UMI`** and cannot. Its `OVERLAP` rule is a
+*share* of the smaller quad, and two strings that meet with almost no overlap
+still read as one word. A same-building minimum-gap rule was tried and backed
+out: at 3px it failed 121 times on the locus, whose exon/intron labels are
+small, angled and deliberately close, and a check that fires that often on
+correct drawing is a check people learn to skip. The blind spot is recorded at
+the top of `check-text.mjs`. Look at the picture.
+
+### The arrowheads sit at the outer ends
+
+20% in from the end each read **starts** at, next to its own name — not 15% in
+from the inner one. Both brackets meet at the gap, so an arrow near each inner
+end put the two of them within a few pixels of each other in the middle of the
+drawing, where they read as one symmetrical ornament rather than as two reads
+going opposite ways. Out at the ends, each arrow sits under its own name and
+points away from it, which is what the read does.
 
 **The ball is a real ball.** The reads are placed uniformly through a sphere —
 direction on the sphere, radius by cube root, because a uniform radius piles

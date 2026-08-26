@@ -42,6 +42,16 @@ import { chromium } from 'playwright';
 const url = process.argv[2];
 if (!url) { console.error('usage: node check-text.mjs <url>'); process.exit(2); }
 
+/* OVERLAP IS A SHARE, AND IT HAS A BLIND SPOT WORTH KNOWING ABOUT. Two strings
+   that meet with almost no overlap at all still read as one word: "BC3" and
+   "UMI" shipped as "BC3UMI" on E2's glyph once the barcode widths became true
+   base pairs, and this rule never fired because their quads barely touched.
+
+   A same-building minimum-gap rule was tried and backed out. Set at 3px it
+   failed 121 times on the locus, whose exon/intron labels are small, angled and
+   deliberately close — a check that fires that often on correct drawing is a
+   check people learn to skip. So the gap is real: zero-overlap contact is
+   caught by looking at the picture, not by this file. Look at the picture. */
 const OVERLAP = 0.22;   // fraction of the smaller quad that counts as a collision
 const ROOF_PAD = 14;    // px of slack around a roof quad, for descenders and stroke
 

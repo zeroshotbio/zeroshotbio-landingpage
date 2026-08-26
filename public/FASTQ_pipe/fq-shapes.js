@@ -373,11 +373,22 @@ function fragGeom(x,y){
      points back INTO the molecule, from the other side. */
   const FW=400, FX0=X0-FW/2, FX1=X0+FW/2, BH=17;
   const BT=Y0-52, BB=BT+BH, BMID=BT+BH/2;
-  const NSQ=BT-16;                       /* "never sequenced", above the bar */
-  const ROW1=BB+25;                      /* BC1 BC2 BC3 UMI, below it */
-  const BPROW=ROW1+15;                   /* the small base-pair figures */
-  const YB=ROW1+34, LBL=YB+24;           /* the two brackets, below those */
-  const ROW2=ROW1, CTOP=NSQ-16;
+  /* TWO REGISTERS, ONE ON EACH SIDE OF THE BAR.
+
+     Above it: the measurements. Every base-pair figure, and nothing else — grey,
+     small, no words. Below it: the names, the ones a person reads to find out
+     what this molecule is made of. cDNA, the three barcodes, the UMI, and what
+     the middle is; then the brackets and the two reads.
+
+     They were interleaved before — the middle's name above, the figures below,
+     the segment names in between — and the eye had to sort measurement from
+     nomenclature on every row. Split by side and there is nothing to sort: one
+     glance for what it IS, another for how long. */
+  const BPROW=BT-8;                      /* every bp figure, above the bar */
+  const ROW1=BB+18;                      /* cDNA BC1 BC2 BC3 UMI, below it */
+  const ROW2=ROW1+15;                    /* "never sequenced", on its own row */
+  const YB=ROW2+16, LBL=YB+20;           /* the brackets, then R1 and R2 */
+  const NSQ=BPROW, CTOP=BPROW-14;
   /* the turn is about the bar's own midpoint, so the diagram pivots where it
      sits rather than swinging off its node */
   const px=X0, py=BMID;
@@ -436,9 +447,13 @@ function drawFragment(g,n){
       [-3.1,3.1].forEach(dx=>g.appendChild(el("line",{
         x1:mid+dx-3.2, y1:BB+3.4, x2:mid+dx+3.2, y2:BT-3.4,
         stroke:"var(--fg3)","stroke-width":"1.2","stroke-linecap":"round"})));
-      const nx=mid-w*0.30;
-      tick(nx,NSQ+5,BT,"var(--fg3)");
-      text(s.lab,nx,NSQ,SUB,"var(--fg3)");
+      /* THE NAME DROPS TO ITS OWN ROW BELOW. Fifteen characters centred on a
+         32-unit token would run into BC1 on the names row; a row of its own
+         costs 15px and buys the whole clearance. Its leader passes down through
+         the names row at a point where there is no name — the gap's midpoint is
+         166px from cDNA and 52 from BC1 — so nothing has to move for it. */
+      tick(mid,BB,ROW2-10,"var(--fg3)");
+      text(s.lab,mid,ROW2,SUB,"var(--fg3)");
       /* the tilde carries the whole claim: approximately, and from the protocol
          rather than from these reads */
       text(`~${s.approx} bp`,mid,BPROW,BP,"var(--fg3)");
@@ -458,11 +473,14 @@ function drawFragment(g,n){
       g.appendChild(el("rect",{x,y:BT,width:w-0.9,height:BH,
         fill:R2TONE,"fill-opacity":".16",
         stroke:R2TONE,"stroke-width":"1.5"}));
-      /* labelled exactly like a barcode, on the same row: at three times the
-         length it has the room, and the outline is already carrying the one
-         thing that distinguishes it. */
-      tick(mid,BB,ROW1-12,R2TONE);
-      text(s.lab,mid,ROW1,SEG,R2TONE,"600");
+      /* ITS NAME DROPS TO THE SECOND ROW, and now that there IS a second row it
+         actually does. At the true 10 bp the UMI is 26px wide against BC3's 21
+         and their centres are 23 apart, so two four-character names on one row
+         run together — "BC3UMI" — because nothing separates the two on the
+         molecule either. The row below is empty out here: the only other thing
+         on it is the middle's name, 180px away. */
+      tick(mid,BB,ROW2-12,R2TONE);
+      text(s.lab,mid,ROW2,SEG,R2TONE,"600");
       return;
     }
     /* EVERY NAMED SEGMENT IS LABELLED THE SAME WAY, on the same row, on a tick.
@@ -477,7 +495,7 @@ function drawFragment(g,n){
 
   /* ---- THE LENGTHS, AND THEY ARE MEANT TO BE FOUND RATHER THAN READ.
 
-     A bare figure under every segment of read 2 — no unit, because the "58 bp"
+     A bare figure over every segment of read 2 — no unit, because the "58 bp"
      under the bracket has already given it, and no colour, because a
      measurement is not a party to the thing it measures. Six of them, and they
      add to the 58: the drawing can be checked against itself.
@@ -509,7 +527,14 @@ function drawFragment(g,n){
   const bracket=(xa,xb,col,label,dir)=>{
     g.appendChild(el("path",{fill:"none",stroke:col,"stroke-width":"1.4","stroke-opacity":".9",
       d:`M ${xa} ${YB-6} L ${xa} ${YB} L ${xb} ${YB} L ${xb} ${YB-6}`}));
-    const a=4.2, back=0.15*(xb-xa), ax=(dir>0?xb-back:xa+back);
+    /* THE ARROWHEAD SITS 20% IN FROM THE OUTER END — the end the read STARTS
+       at, next to its own name — and not 15% in from the inner one. Both
+       brackets meet at the gap, so an arrow near each inner end put the two of
+       them within a few pixels of each other in the middle of the drawing,
+       where they read as one symmetrical ornament rather than as two reads
+       going opposite ways. Out at the ends, each arrow sits under its own name
+       and points away from it, which is what the read does. */
+    const a=4.2, back=0.20*(xb-xa), ax=(dir>0?xa+back:xb-back);
     g.appendChild(el("polygon",{fill:col,
       points:`${ax+dir*a*1.7},${YB} ${ax},${YB-a} ${ax},${YB+a}`}));
     const at=dir>0?xa:xb;                      /* the outer end: R1 left, R2 right */
