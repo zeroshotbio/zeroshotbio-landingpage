@@ -640,20 +640,81 @@ The claim survives in the index and in the prose.
 
 ## `drawSortingYard` — matching as a place
 
-Eight lanes of raw R2 fragments enter. Three reader gantries stand across them,
-one per barcoding round, each holding its whitelist overhead. A fragment crosses
-a gantry, that round's barcode is checked, and it **merges into the lane for
-what it matched** — eight lanes become four, then two, then one. By the far end
-the survivors are on a single trunk, which opens again into the distinct cell
-identities the triplets actually name. **The funnel and the fan are the same
-movement twice**: many things becoming one, and one validated thing standing for
-many.
+One belt, and what travels it is **the molecule from E2, lying across the belt**.
 
-**The reject lane is drawn on purpose.** A picture where everything matches is a
-picture of transport, not of matching. **The rate is tuned for legibility and is
-much worse than a real run** — the dump lane has to be visibly busy to read at
-all — and the node's own prose carries the real figure: 75.7% of reads carry a
-valid barcode combination.
+### The eight lanes are gone, and so is the funnel they drew
+
+They merged 8 -> 4 -> 2 -> 1 through the three gantries, which drew a funnel —
+and a funnel is what this station is not. Nothing is combined here. Each
+fragment is asked three questions in turn and either survives them or does not.
+One belt says that; eight lanes narrowing to one said something else, and said
+it three times.
+
+### The fragment lies ACROSS the belt, and that is the whole trick
+
+Its long axis is world y and it travels in world x, so the whole molecule —
+cDNA, the dotted middle, the three barcodes with their linkers, the UMI —
+presents itself broadside to every scanner it passes under. Which is the truth
+of the operation: **all three barcodes are on one read, and every gantry can see
+all of them.** What makes gantry *i* a different question from gantry *j* is
+which one it *checks*.
+
+The payoff is geometric. Because the barcodes sit at different `y`, the three
+verdicts land at three different places **on the same object**. Travelling
+lengthwise they would have stacked on one point, which is why the old drawing
+needed a summarising check at the end to say "all three passed". It does not any
+more: three ticks earned one at a time and still riding at the far edge of the
+yard say more than one big one that replaces them, because they say *which*
+three and they stay attached to the blocks they are about.
+
+`YARD_MOL` restates E2's molecule in bp. `FRAG` itself cannot be reused — it
+carries screen-space widths and labels for a diagram square to the reader — but
+the numbers are the same measured numbers, so they are written out again rather
+than approximated into a decoration. 154 bp end to end, cDNA end at `+y`, the
+barcode end at `-y`, which is the side the whitelist plates are on.
+
+**The cDNA is held back to 0.55.** It is two fifths of the molecule and it is not
+what this station is about; at full strength it was the loudest thing on the belt
+and the barcodes read as trim on the end of an orange bar.
+
+### The verdict fires on the way OUT
+
+Lying across the belt, a fragment spends a real interval beneath the scanner
+face — and the marks are built before the gantries so that they pass *under*
+them. A verdict struck at the arch's centre is therefore struck where nobody can
+see it. It fires `SC(0.78)` past the arch, just clear of the panel's downstream
+edge: read on the way in, answer on the way out, which is also the more honest
+order.
+
+### Who fails is the figure, not a coin flip
+
+A per-fragment random draw gives whatever it gives. At `NF=12` and `p=0.30` this
+page's seed produced **twelve passes in a row** — the reject siding ran empty and
+the bin was scenery, and nobody would have noticed from the code. Worse, the
+picture would have changed the next time somebody re-spaced the belt: an
+aggregate that moves when you change `NF` is not saying anything.
+
+`FAILAT` names them. **3 of 12 is 25%, against the worked example's measured
+24.3%** of reads carrying no valid barcode combination. They are spread down the
+belt so they do not clump, and they fail at three *different* rounds, so every
+gantry is seen to reject somebody and none of them is decoration.
+
+### The bin is as wide as the belt
+
+A cube would have been narrower than the thing going into it, so a rejected
+fragment would have stuck out either side and never gone away. It is a hopper
+across the siding: `SC(1.6)` along the belt, `FL + SC(0.9)` across it. The
+swallow window is the same idea as before — take `vis` to zero while the whole
+fragment is inside the hopper's silhouette, so it is at full strength right up
+to going behind and never comes out.
+
+### Slats, so the belt is a belt
+
+Two rails and a centre line draw a *track*; what makes it a conveyor is that the
+surface moves. The slats scroll at exactly the speed the fragments travel, which
+is the claim: nothing here is pulled along by anything of its own, **the floor is
+carrying it.** Built before the fragments, so they ride on top of it, and quiet
+enough (0.30) to be texture rather than pattern.
 
 ### The verdict pair — the one place this page adds a colour
 
@@ -675,101 +736,6 @@ is meant to take in at a glance.
 take `--rej`, the ticks and *VALIDATED TRIPLETS* take `--ok`, and the big
 end-of-line tick takes `--ok` at well under full opacity: it is a confirmation,
 not an announcement.
-
-### The falling thing IS the fragment
-
-`E4`'s reads fall as plain lines because a read at that station *is* a plain
-line — a stretch of cDNA lying on a gene model. Here the object that matters is
-the triplet: three blocks on a strand, exactly as it will look for the rest of
-its run. So the fragment itself descends. There is no separate rain and no
-moment where one thing becomes another, because **there is only ever one
-object.** It slants in from up-line, drops, lands, and keeps going.
-
-This costs nothing and buys two things. The fragments are built before the
-gantries and DOM order is paint order, so a falling read passes *under* a
-scanner for free — which the earlier stand-in rain, built after them, did not.
-And the lap counter, the verdict clearing, the fail lane and the pack-up at the
-hourglass all already exist on the fragment; a stand-in would have had to
-duplicate the ones it needed and silently diverge on the ones it did not.
-
-It is still the other half of a pair with `E4`: R1's reads fall onto gene models
-and stay; R2's fall onto lanes and are carried off to be checked. That is the
-difference between the two branches said twice, once on each station.
-
-**The eight lanes run back past the yard's own `x0`** — because a fragment has
-to have somewhere to land. It comes down onto bare track, runs a good way along
-it, and only then reaches the first gantry. That run-in is the difference
-between arriving and simply appearing. The deck is stretched back with them,
-though at a tenth opacity nobody will ever notice.
-
-**It is ONE polyline per lane.** The run-in was briefly drawn as its own
-segment at lower opacity, and it read as a second set of tracks that happened to
-meet the first — the join showed and the shading disagreed. Same call, same
-opacity, `xIn` straight through to `fanX`.
-
-`IN`, `PAD` and `LANDX` live in `YARD_ROUNDS` with everything else, in authored
-units: the track starts at `IN`, a fragment is born at `PAD` (further back
-still, and in the air — "further back" is a thing the *fall* does, not something
-the track has to be lengthened for), and it touches down at `LANDX`, just past
-the start of the track. So the landing happens ON the track with most of the
-run still ahead of it, rather than a few units short of the first scanner.
-
-### Where the R2 track lands, and why not at the obvious place
-
-`E2 -> E3` used to aim at `E3`'s centre. The yard is 9.6 units long, so the line
-ran the whole length of it to get there, and butted end to end with the
-`E3 -> E6` line leaving the same centre: one blue rail crossing the entire
-picture, which says the opposite of what a station is. Both are ported now —
-`portB:"head"` in and `port:"tail"` out — so the blue stops at the yard and
-starts again where the fan comes out.
-
-**"head" is not the head of the run-in, and not the footprint edge either.**
-Both were tried. It is `TRK` units along the lane, just inside the yard and
-short of the first arch, for a reason that is pure projection: at this `y`,
-every point within about a unit of the yard's left edge lies along −30° from the
-R2 bracket — which is the angle the bracket itself is drawn at. Aimed there, the
-track leaves its port and lies down exactly on top of the bracket and is
-invisible. A point further along the lane puts the line near horizontal, and it
-reads as a track running forward into the yard. Aimed at the far end of the
-run-in it was worse still: that reaches back under `E2`, so the line went almost
-straight up the screen and crossed the fragment glyph on the way.
-
-`routeOf` had to be taught this: a ported *source* edge that also has a `portB`
-now returns `[p0, endAt]` instead of falling through to the lane-entry route,
-which ignored `endAt` and went to the destination's centre anyway.
-
-### It arrives blue and is demoted
-
-A read falling out of the sky is R2 — blue is that branch's identity the whole
-length of the map, and the thing that lands has to be readable as one of those.
-What it is *not* yet is checked. So it holds `--accent` down the run-in, and the
-instant the first scanner reads block one **the other two go dim**: the fragment
-has stopped being a read and become a candidate with two claims outstanding,
-which it then earns back one gantry at a time.
-
-The change is a snap and wants to be. It is an event, not a transition, and it
-happens under the first arch where the eye is already looking. A crossfade there
-would blur the one moment the station exists to stage.
-
-**The body is one bar, not two connectors.** It spans all three blocks at
-`SC(0.045)` half-depth — the same glyph `E2` draws up the lane — so the thing
-that lands here is recognisably the thing that was named there. Built before the
-blocks, for the same paint-order reason.
-
-### The deck is almost not there
-
-It was a solid floor, and a solid floor under a yard whose whole subject is eight
-thin lanes and what travels them is a large bright rectangle competing with all
-of it. What the yard needs from a floor is the fact that the gantry legs stand on
-something; **the lanes themselves draw the ground.** So it is kept and dropped to
-a tenth. `E3` also takes `noclip:true` — there is no floor left to hide anything
-behind, and the whitelist line arriving from `W1` was being cut the moment it
-entered the node's silhouette.
-
-The barcode blocks are `--accent`, R2's own token: dim until a gantry has read
-them, bright after. Ticks are `--fg` so a verdict sits legibly on the block it
-judges. The whitelist slots overhead are `--fg`, the same white the plates at
-`W1` write into.
 
 ### The scanner panel spans the whole arch, and the arch sits lower
 
@@ -796,24 +762,6 @@ stopped at 0.78 and is on top of one that runs the full width. *NO MATCH* moved
 too — down to the bin's foot at `base`, out from under the reject tracks that
 reach it.
 
-### The bin is opaque, and the cut happens where you cannot see it
-
-Translucent, it was a box you could watch things vanish *inside*, which is a
-different and much worse idea — the point of a bin is that the far side of it is
-out of the story.
-
-The fade window then matters. The bin is 1.5 units of footprint and the triplet
-is 1.34, so there is a narrow window where the whole fragment is inside the
-box's silhouette and nothing else: `binX - 0.48·BINW` to `binX - 0.39·BINW`.
-Take `vis` to zero there and the fragment is at full strength right up to the
-moment it goes behind the box, and never comes out the other side. Any wider a
-window and you watch it dissolve in the open, which is a much sadder story than
-being thrown away — and a hair too narrow and a sliver reappears past the bin's
-lower-right corner, which is what the old `binX - 1.1 -> binX - 0.1` window did.
-
-The verdict marks ride at `zR + 0.5·KZ` against the bin's `0.62·KZ` top, so a
-cross that is still up when the cut happens projects onto the bin's top face and
-is covered by it. That is luck rather than design, but it is checked luck.
 
 **Three build-order facts do real work.** The verdict marks are built after the
 fragments and *before* the gantries, so a tick rides above its block but passes

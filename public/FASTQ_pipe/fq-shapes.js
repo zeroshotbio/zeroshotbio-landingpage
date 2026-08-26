@@ -1690,17 +1690,48 @@ DRAW.whitelists=drawWhitelists;
    is drawn in the fragment anatomy at E2 and left out of the matching yard,
    where a fourth block would only muddy the triplet. */
 const YARD_ROUNDS=[
-  /* gz/pgap are the gantry: how high the beam rides and how far the scanner
+  /* ONE TRACK, AND WHAT TRAVELS IT IS THE MOLECULE FROM E2, EDGE FIRST.
+
+     The eight merging lanes are gone. They drew a funnel, and a funnel is what
+     this station is not: nothing is being combined here, each fragment is
+     simply asked three questions in turn. One belt says that; eight lanes
+     narrowing to one said something else, and said it three times.
+
+     THE FRAGMENT LIES ACROSS THE BELT. Its long axis is world y and it travels
+     in world x, so the whole molecule — cDNA, the dotted middle, the three
+     barcodes with their linkers, the UMI — presents itself broadside to every
+     scanner it passes under. Which is the truth of the operation: all three
+     barcodes are on one read and every gantry can see all of them. What makes
+     gantry i a different question from gantry j is WHICH ONE IT CHECKS, and
+     because the barcodes sit at different y the three verdicts land at three
+     different places on the same object. That is the whole reason for turning
+     it: travelling lengthwise, the three checks stacked on one point.
+
+     gz/pgap are the gantry: how high the beam rides and how far the scanner
      face sits above it. They are here rather than inline because NATZ is built
-     from them — lower the arch without lowering NATZ and n.h stops meaning the
-     height of the thing. IN, PAD and LANDX are the approach, in the same
-     authored units: the track starts at IN, a fragment is born at PAD, and it
-     touches down at LANDX — just past the start of the track, so the landing
-     happens ON it and not halfway to the first scanner. */
-  {x0:0, x1:19.4, cy:-1.1, base:0.14, gx:[3.9,7.5,11.1], MZ:1.5, REJ:3.6,
-   binX:14.6, v:1.25, fanX:13.4, MZ2:2.6, OUTN:6, OUTP:0.86, VALX:17.7,
-   gz:0.66, pgap:0.40, IN:-3.0, PAD:-7.4, LANDX:-2.5, TRK:2.8},
+     from them. IN, PAD and LANDX are the approach: the track starts at IN, a
+     fragment is born at PAD, and it touches down at LANDX. FLEN is the
+     molecule's length across the belt and SPAN is the arch — FLEN plus a margin
+     each side, and the same for all three, because a scanner is as wide as what
+     goes under it. */
+  {x0:0, x1:19.4, cy:-3.0, base:0.14, gx:[4.4,8.4,12.4], MZ:2.4, REJ:3.4,
+   binX:16.1, v:2.6, VALX:18.9,
+   gz:0.66, pgap:0.40, IN:-3.0, PAD:-7.4, LANDX:-2.5, TRK:2.8,
+   FLEN:5.0, SPAN:6.5, THK:0.34},
 ][0];
+
+/* THE SAME MOLECULE AS E2, IN THE SAME UNITS: base pairs, cDNA end first.
+   FRAG itself cannot be reused — it carries screen-space widths and labels for
+   a diagram square to the reader — but the numbers are the same measured
+   numbers, so they are written once more rather than approximated into a
+   decoration. 154 bp end to end; see FRAG at the top of this file. */
+const YARD_MOL=[
+  {k:"cdna", bp:64}, {k:"gap", bp:32},
+  {k:"bc1", bp:8}, {k:"l1", bp:12},
+  {k:"bc2", bp:8}, {k:"l2", bp:12},
+  {k:"bc3", bp:8}, {k:"umi", bp:10},
+];
+const YARD_MOL_BP=154;
 
 /* the handful of numbers both drawSortingYard and PORTS.sortingyard need */
 function yardMetrics(n){
@@ -1710,113 +1741,101 @@ function yardMetrics(n){
 
 function drawSortingYard(g,n){
   hitBox(g,n);
-  const rnd=mulberry32(0x5eedf15^0xE3);
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
 
-  /* authored in its own units and scaled onto the node: K across the ground,
-     KZ up. Everything below is in scaled world units. */
   const M=yardMetrics(n), A=M.A, K=M.K, KZ=M.KZ;
   const SC=q=>q*K;
   const x0=M.x0, x1=M.x1;
   const XX=q=>x0+(q-A.x0)*K;                   /* authored x -> world x */
-  const cy=M.cy;
-  const base=M.base, REJ=n.y+SC(A.REJ), binX=XX(A.binX), fanX=XX(A.fanX);
-  const gx=A.gx.map(XX), MZ=SC(A.MZ), MZ2=SC(A.MZ2), OUTP=SC(A.OUTP);
-  const VALX=XX(A.VALX), v=A.v*K, OUTN=A.OUTN;
-  const SEG_W=SC(0.32), LINK=SC(0.19);
-  const SPREAD=[0,SEG_W+LINK,2*(SEG_W+LINK)], PACKED=SPREAD;
+  const cy=M.cy, base=M.base;
+  const REJ=n.y+SC(A.REJ), binX=XX(A.binX), VALX=XX(A.VALX);
+  const gx=A.gx.map(XX), MZ=SC(A.MZ), v=A.v*K;
+  const FL=SC(A.FLEN), SPAN=SC(A.SPAN), THK=SC(A.THK);
 
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const GAN ={top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"};
-  /* the bin takes the reject colour too — it is where the crosses end up, and
-     a neutral box at the end of a brown lane reads as a different story. Half
-     opacity, because it is a terminus and not a destination. */
   const BIN ={top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"};
+  const R1T="var(--cull)", R2T="var(--accent)";
 
-  const COUNTS=[8,4,2,1], PITCH=[SC(0.80),SC(1.05),SC(1.45),0];
-  const laneY=(st,i)=>cy+(i-(COUNTS[st]-1)/2)*PITCH[st];
-  const laneAt=(o,st)=>Math.floor(o/Math.pow(2,st));
-  const outY=j=>cy+(j-(OUTN-1)/2)*OUTP;
-  const yFan=(x,j)=>laneY(3,0)+(outY(j)-laneY(3,0))*sstep(fanX,fanX+MZ2,x);
+  /* ---- where each part of the molecule sits ACROSS the belt ---------------
+     bp 0 is the outer cDNA end and it lies at +y, the near side; the UMI end is
+     at -y, the far side, which is the side the whitelists are on. So the three
+     barcodes face the plates that judge them. */
+  const uBP=FL/YARD_MOL_BP;
+  const cuts=[]; { let a=0; for(const q of YARD_MOL){ cuts.push([a,a+q.bp,q.k]); a+=q.bp; } }
+  const yBP=(yc,bp)=>yc+FL/2-bp*uBP;
+  const segAt=k=>cuts.find(c=>c[2]===k);
+  const BCBP=["bc1","bc2","bc3"].map(k=>{const c=segAt(k); return (c[0]+c[1])/2;});
 
-  /* one continuous y for a fragment: its lane, blended through each merge */
-  const yMain=(x,o)=>{
-    let yv=laneY(0,o);
-    for(let s=0;s<3;s++){
-      const k=sstep(gx[s],gx[s]+MZ,x);
-      yv+=(laneY(s+1,laneAt(o,s+1))-laneY(s,laneAt(o,s)))*k;
-    }
-    return yv;
-  };
-  const yOf=(x,o,fail,out)=>{
-    const funnel=yMain(x,o);
-    const main=funnel+(yFan(x,out)-laneY(3,0))*sstep(fanX-SC(0.1),fanX+SC(0.1),x);
-    if(fail<0) return main;
-    const hit=gx[fail]-SPREAD[fail]-SEG_W/2;   /* where that block was read */
-    return main+(REJ-main)*sstep(hit+SC(0.10),hit+SC(2.0),x);
-  };
-
-  /* ---- THE DECK IS ALMOST NOT THERE ----------------------------------
-     It was a solid floor, and a solid floor under a yard whose whole subject is
-     eight thin lanes and what travels them is a large bright rectangle
-     competing with all of it. What the yard needs from a floor is the fact that
-     the gantry legs stand on something; the lanes themselves draw the ground.
-     So it is kept and dropped to a tenth, which reads as a surface at a glance
-     and as nothing at all a moment later. */
-  const dTop=laneY(0,0)-SC(1.0), dBot=REJ+SC(0.9);
-  const xIn=XX(A.IN);                        /* where the lanes actually begin */
+  /* ---- the deck, almost not there --------------------------------------- */
+  const dTop=cy-FL/2-SC(0.9), dBot=REJ+FL/2+SC(0.9);
+  const xIn=XX(A.IN);
   slabAt(g,(xIn+x1)/2,(dTop+dBot)/2,x1-xIn,dBot-dTop,base,DECK,0,0.10);
 
-  /* ---- lane guides, drawn from the same functions the fragments follow ---- */
+  /* ---- ONE BELT, and the three sidings that leave it --------------------- */
   const guide=(fn,op,w,xa,xb)=>{
     const p=[];
     for(let i=0;i<=90;i++){ const x=xa+((xb-xa)*i)/90; p.push(P(x,fn(x),base)); }
     g.appendChild(el("polyline",{points:pts(p),fill:"none",stroke:"var(--fg3)",
       "stroke-width":w,"stroke-opacity":op,"stroke-linecap":"round"}));
   };
-  /* THE EIGHT LANES RUN BACK PAST THE YARD'S OWN START, because a fragment
-     has to have somewhere to land. It comes down out of the air onto bare
-     track, runs a little way on it, and only then reaches the first gantry —
-     which is the difference between arriving and simply appearing. */
-  /* ONE POLYLINE PER LANE, FROM THE APPROACH STRAIGHT THROUGH THE YARD. The
-     approach was briefly drawn as its own dimmer segment, which made it read as
-     a second set of tracks that happened to meet the first — the join showed and
-     the shading disagreed. It is one track. */
-  for(let o=0;o<8;o++) guide(x=>yMain(x,o),0.30,"1.5",xIn,fanX);
-  for(let j=0;j<OUTN;j++) guide(x=>yFan(x,j),0.30,"1.5",gx[2],x1);
-  for(let s=0;s<3;s++)
-    guide(x=>{
-      if(x<gx[s]) return REJ;
-      return laneY(s,0)+(REJ-laneY(s,0))*sstep(gx[s]+SC(0.10),gx[s]+SC(2.0),x);
-    },0.18,"1.2",x0,binX);
+  /* the belt is drawn as its two rails plus a centre line, so that a thing
+     lying ACROSS it reads as being on something rather than floating over a
+     single stripe */
+  [-FL/2,0,FL/2].forEach((off,i)=>
+    guide(()=>cy+off, i===1?0.14:0.42, i===1?"1.1":"1.8", xIn, x1));
+  const rejY=(x,i)=>cy+(REJ-cy)*sstep(gx[i]+SC(0.9),gx[i]+MZ,x);
+  for(let i=0;i<3;i++) guide(x=>rejY(x,i),0.18,"1.2",gx[i],binX);
 
-  /* ---- fragments ---- */
-  const zR=base+0.05*KZ, NF=48, frags=[];
+  /* ---- SLATS, so the belt is a belt ------------------------------------
+     Two rails and a centre line draw a track; what makes it a conveyor is that
+     the surface moves. The slats scroll at exactly the speed the fragments
+     travel, which is the claim: nothing here is pulled along by anything of its
+     own, the floor is carrying it. Built before the fragments, so they ride on
+     top of it. */
+  const SLAT_P=SC(0.62), SLAT_RUN=x1-xIn, NSLAT=Math.ceil(SLAT_RUN/SLAT_P)+1;
+  const slats=[];
+  for(let k=0;k<NSLAT;k++)
+    slats.push(g.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
+      "stroke-opacity":"0.30","stroke-linecap":"butt"})));
+
+  /* ---- the fragments ----------------------------------------------------- */
+  /* WHO FAILS IS NOT A COIN FLIP, IT IS THE FIGURE.
+
+     A per-fragment random draw gave whatever it gave: at NF=12 and p=0.30 this
+     seed's first twelve draws all came up pass, so the reject siding ran empty
+     and the bin was scenery. Worse, it would have been a different picture at a
+     different NF — an aggregate that changes when you re-space the belt is not
+     saying anything.
+
+     3 of 12 is 25%, against the worked example's measured 24.3% of reads
+     carrying no valid barcode combination. The three are spread down the belt
+     so they do not clump, and they fail at three DIFFERENT rounds, so every
+     gantry is seen to reject somebody and none of them is decoration. */
+  const FAILAT={2:0, 6:2, 9:1};
+  const zR=base+0.05*KZ, NF=12, frags=[];
   for(let i=0;i<NF;i++){
     const grp=g.appendChild(el("g"));
-    const mk=fill=>grp.appendChild(el("polygon",{fill,stroke:"var(--stroke)",
+    const poly=fill=>grp.appendChild(el("polygon",{fill,stroke:"var(--stroke)",
       "stroke-width":".7","stroke-opacity":".45","fill-opacity":"0"}));
-    /* THE BODY IS ONE BAR, NOT TWO CONNECTORS. It is the same glyph E2 draws
-       up the lane — three blocks on a strand — so the thing that lands here is
-       recognisably the thing that was named there. Built before the blocks:
-       DOM order is paint order, and the bar belongs underneath them. */
-    frags.push({origin:i%8, ph:i/NF,
-      fail:rnd()<0.34?Math.floor(rnd()*3):-1,
-      out:i%OUTN, grp,
-      body:mk("var(--fg3)"),
-      bc:[mk("var(--accent)"),mk("var(--accent)"),mk("var(--accent)")],
+    frags.push({ph:i/NF, fail:FAILAT[i]===undefined?-1:FAILAT[i], grp,
+      /* build order IS paint order: backbone, then what sits on it */
+      bone:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
+        "stroke-opacity":"0","stroke-linecap":"round"})),
+      mid:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.3",
+        "stroke-opacity":"0","stroke-dasharray":"2.6 2.6","stroke-linecap":"butt"})),
+      cdna:poly(R1T),
+      bc:[poly(R2T),poly(R2T),poly(R2T)],
+      umi:grp.appendChild(el("polygon",{fill:R2T,"fill-opacity":"0",
+        stroke:R2T,"stroke-width":"1.2","stroke-opacity":"0"})),
       flash:[-99,-99,-99], px:undefined});
   }
 
-  /* ---- verdict marks. Built after the fragments and BEFORE the gantries, so a
-     tick or cross rides above its block but passes UNDER the scanner. ---- */
+  /* ---- verdict marks: after the fragments, BEFORE the gantries, so a tick
+     rides above its block and still passes under the scanner ---- */
   const TICK="M -4.2 0.4 L -1.4 3.4 L 4.6 -4.2";
   const CROSS="M -3.8 -3.8 L 3.8 3.8 M 3.8 -3.8 L -3.8 3.8";
-  const BIGTICK="M -8.4 0.8 L -2.8 6.8 L 9.2 -8.4";
   frags.forEach(fr=>{
-    fr.big=g.appendChild(el("path",{d:BIGTICK,fill:"none",stroke:"var(--ok)",
-      "stroke-width":"2.6","stroke-linecap":"round","stroke-linejoin":"round",
-      "stroke-opacity":"0"}));
     fr.marks=[0,1,2].map(i=>g.appendChild(el("path",{
       d:fr.fail===i?CROSS:TICK, fill:"none",
       stroke:fr.fail===i?"var(--rej)":"var(--ok)",
@@ -1824,39 +1843,33 @@ function drawSortingYard(g,n){
       "stroke-opacity":"0"})));
   });
 
-  /* ---- gantries with their whitelists overhead.
-     Built AFTER the fragments: DOM order is paint order, so a barcode passing
-     under a scanner is hidden by it. ---- */
+  /* ---- three identical arches, each as wide as the thing beneath it ------- */
   const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
+  const half=SPAN/2;
   const stations=gx.map((sx,i)=>{
     const grp=g.appendChild(el("g"));
-    const halfSpan=(COUNTS[i]-1)*PITCH[i]/2+SC(0.75);
-    [-1,1].forEach(sgn=>slabAt(grp,sx,cy+sgn*halfSpan,SC(0.18),SC(0.18),gz,GAN,base));
-    slabAt(grp,sx,cy,SC(0.34),halfSpan*2,0.16*KZ,GAN,base+gz);
-    /* THE PANEL SPANS THE WHOLE ARCH. It was 78% of it, centred — which is
-       centred, and does not look it: a slab narrower than the legs it sits on,
-       floating above them, reads as slipped rather than as inset. Full width
-       and the two agree, and the arch reads as one object with a lid. */
-    slabAt(grp,sx,cy,SC(1.45),halfSpan*2,0.07*KZ,GAN,base+panelZ);
+    [-1,1].forEach(sgn=>slabAt(grp,sx,cy+sgn*half,SC(0.18),SC(0.18),gz,GAN,base));
+    slabAt(grp,sx,cy,SC(0.34),half*2,0.16*KZ,GAN,base+gz);
+    slabAt(grp,sx,cy,SC(1.45),half*2,0.07*KZ,GAN,base+panelZ);
     const slots=[];
     for(let c=0;c<20;c++){
-      const px=sx-SC(0.6)+(c/19)*SC(1.2), hw=halfSpan-SC(0.22);
+      const px=sx-SC(0.6)+(c/19)*SC(1.2), hw=half-SC(0.22);
       const a=P(px,cy-hw,base+panelZ+0.075*KZ), b=P(px,cy+hw,base+panelZ+0.075*KZ);
       slots.push({node:grp.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
         "stroke-width":"1.7","stroke-opacity":"0.06"})),lit:-99});
     }
-    return {sx,i,halfSpan,slots,ptr:0};
+    return {sx,i,slots,ptr:0};
   });
 
-  /* ---- the bin, built last and OPAQUE: a discarded triplet slides behind it
-     and is gone. Translucent, it was a box you could watch things vanish inside,
-     which is a different and much worse idea — the point is that the far side of
-     it is out of the story. ---- */
-  const BINW=SC(1.5);
-  slabAt(g,binX,REJ,BINW,BINW,0.62*KZ,BIN,base);
+  /* ---- the bin, built last and opaque, and AS WIDE AS THE BELT ------------
+     A cube would have been narrower than the thing going into it, so a
+     rejected fragment would have stuck out either side of it and never gone
+     away. It is a hopper across the siding instead. */
+  const BINX=SC(1.6), BINY=FL+SC(0.9);
+  slabAt(g,binX,REJ,BINX,BINY,0.62*KZ,BIN,base);
 
-  /* ---- the names, along the edges they belong to ---- */
+  /* ---- names ------------------------------------------------------------- */
   const lab=(wx,wy,wz,str,size,fill,op,rot,anchor,dy)=>{
     const a=P(wx,wy,wz);
     const t=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(${rot})`,
@@ -1866,140 +1879,119 @@ function drawSortingYard(g,n){
     t.textContent=str; g.appendChild(t);
   };
   const FS=Math.max(6,13.5*K);
-  /* CLEAR OF THE PANEL, NOT ON IT. The name sat at 0.78 of the half-span, which
-     was outside a panel that stopped at 0.78 and is inside one that runs the
-     full width. It hangs just past the far end now, where there is nothing. */
   stations.forEach((st,i)=>
-    lab(st.sx-SC(0.68), cy-st.halfSpan-SC(0.95), base+panelZ+0.07*KZ,
+    lab(st.sx-SC(0.68), cy-half-SC(0.95), base+panelZ+0.07*KZ,
         `BC${i+1} WHITELIST`, FS.toFixed(1), "var(--fg)", "1", 30));
-  /* and this one down at the bin's foot, out from under the tracks that reach it */
-  lab(binX-SC(0.75), REJ+SC(2.20), base, "NO MATCH",
+  lab(binX-SC(0.75), REJ+FL/2+SC(1.45), base, "NO MATCH",
       (FS*0.96).toFixed(1), "var(--rej)", "1", 30);
-  /* the point of the whole yard, named along its near edge, which runs at -30 */
-  lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "VALIDATED TRIPLETS",
+  lab(VALX, cy+FL/2+SC(0.55), base, "VALIDATED TRIPLETS",
       (FS*1.1).toFixed(1), "var(--ok)", "1", -30, "end");
-  lab(x1+SC(0.55), outY(OUTN-1)+SC(0.55), base, "putative cell barcodes",
+  lab(VALX, cy+FL/2+SC(0.55), base, "putative cell barcodes",
       (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "end", (FS*1.33).toFixed(1));
 
-  const quad=(node,xa,xb,yy,zz,op,fill,hd)=>{
-    const q=hd===undefined?SC(0.10):hd;
-    node.setAttribute("points",pts([P(xa,yy-q,zz),P(xb,yy-q,zz),
-      P(xb,yy+q,zz),P(xa,yy+q,zz)]));
-    node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
-    node.setAttribute("stroke-opacity",(clamp01(op)*0.5).toFixed(3));
-    if(fill) node.setAttribute("fill",fill);
-  };
-
-  /* THE FALLING THING IS THE FRAGMENT ITSELF, not a stand-in for it.
-
-     E4's reads fall as plain lines because a read at that station IS a plain
-     line — a stretch of cDNA on a gene model. Here the object that matters is
-     the triplet: three blocks on a body, exactly as it will look for the rest
-     of its run. So the whole thing descends and lands and keeps going, rather
-     than a line landing and a triplet appearing where it stopped. There is no
-     moment where one becomes the other, because there is only ever one.
-
-     It also puts them UNDER the scanners for free: the fragments are built
-     before the gantries, and DOM order is paint order. */
+  /* ---- one lap ----------------------------------------------------------- */
   const PAD=-SC(A.PAD), LOOP=(x1-x0)+PAD*2;
   const LANDX=XX(A.LANDX), FALLX=SC(4.0), FALLZ=2.6*KZ;
+
+  /* a bar lying across the belt: fixed thickness in x, spanning ya..yb in y */
+  const bar=(node,xc,ya,yb,zz,op,hw)=>{
+    const h=hw===undefined?THK/2:hw;
+    node.setAttribute("points",pts([P(xc-h,ya,zz),P(xc+h,ya,zz),
+      P(xc+h,yb,zz),P(xc-h,yb,zz)]));
+    node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
+    node.setAttribute("stroke-opacity",(clamp01(op)*0.5).toFixed(3));
+  };
+  const rail=(node,xc,ya,yb,zz,op)=>{
+    const a=P(xc,ya,zz), b=P(xc,yb,zz);
+    node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
+    node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
+    node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
+  };
+
   let t=0;
   const run=dt=>{
     t+=dt;
     for(const fr of frags){
       const u=((t*v/LOOP+fr.ph)%1+1)%1;
       const fx=x0-PAD+u*LOOP;
-      /* a new lap is a new fragment: clear its verdicts, or it comes back in
-         still wearing the cross it earned last time round */
-      if(fr.px!==undefined && fx<fr.px){ fr.flash=[-99,-99,-99]; fr.valAt=undefined; }
-      const yy=yOf(fx,fr.origin,fr.fail,fr.out);
-      const pack=sstep(gx[2]+SC(0.5),gx[2]+SC(2.1),fx);
+      if(fr.px!==undefined && fx<fr.px) fr.flash=[-99,-99,-99];
 
-      /* the descent: 1 in the air at the far end of the run-in, 0 on the track */
+      /* the descent, exactly as before: it is the fragment that falls */
       const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
-      const zAir=FALLZ*air, xAir=-FALLX*air;
+      const zAir=FALLZ*air, xAir=-FALLX*air, cx=fx+xAir, cz=zR+zAir;
+      const yc=fr.fail<0?cy:rejY(fx,fr.fail);   /* the siding starts after the arch */
 
       let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(0.4),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
-      /* SWALLOWED — and the cut happens while it is completely hidden.
+      /* swallowed while wholly inside the hopper's silhouette */
+      if(fr.fail>=0) vis*=1-sstep(binX-BINX*0.42,binX-BINX*0.30,fx);
 
-         The bin is 1.5 units of footprint and the triplet is 1.34, so there is
-         a narrow window where the whole fragment is inside the box's silhouette
-         and nothing else. Take it to zero there and the fragment is at full
-         strength right up to the moment it goes behind the box, and simply
-         never comes out the other side. Fade it anywhere wider and you watch it
-         dissolve in the open, which is a different and much sadder story than
-         being thrown away. */
-      if(fr.fail>=0) vis*=1-sstep(binX-BINW*0.48,binX-BINW*0.39,fx);
+      /* the backbone runs the length of the barcode block; the middle is a
+         dotted line because there is nothing in it to draw */
+      const gapS=segAt("gap"), bcS=segAt("bc1"), umiS=segAt("umi");
+      rail(fr.bone,cx,yBP(yc,bcS[0]),yBP(yc,umiS[1]),cz,vis*0.30);
+      rail(fr.mid ,cx,yBP(yc,gapS[0]),yBP(yc,gapS[1]),cz,vis*0.45);
 
-      const blockX=(i,atX,pk)=>atX+SPREAD[i]+(PACKED[i]-SPREAD[i])*pk+SEG_W/2;
+      /* the cDNA is two fifths of the molecule and it is not what this station
+         is about. Drawn at full strength it was the loudest thing on the belt
+         and the barcodes read as trim on the end of an orange bar — so it is
+         held back, present and in proportion but not the subject. */
+      const cd=segAt("cdna");
+      bar(fr.cdna,cx,yBP(yc,cd[0]),yBP(yc,cd[1]),cz,vis*0.55);
 
-      /* IT ARRIVES BLUE AND IS DEMOTED, RATHER THAN FADING IN.
-
-         A read falling out of the sky is R2 — blue is that branch's identity the
-         whole length of the map, and the thing that lands has to be readable as
-         one of those. What it is NOT yet is checked. So it stays R2's colour
-         down the run-in, and the instant the first scanner reads block one the
-         other two go dim: the fragment has stopped being a read and become a
-         candidate with two claims outstanding, which it then earns back one
-         gantry at a time. The change is a snap and wants to be — it is an
-         event, not a transition, and it happens under the first arch where the
-         eye is already looking. */
-      const first=blockX(0,fx,pack)>gx[0];
       fr.bc.forEach((node,i)=>{
-        const sx2=fx+xAir+SPREAD[i]+(PACKED[i]-SPREAD[i])*pack;
-        /* once it has failed it is off the line — later gantries never see it */
+        const c=segAt(`bc${i+1}`);
         const reachable=fr.fail<0||i<=fr.fail;
-        const scanned=blockX(i,fx,pack)>gx[i]&&reachable;
+        const scanned=fx>gx[i]+SC(0.78)&&reachable;
         const bad=fr.fail===i&&scanned;
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
-        const valid=fr.fail<0&&fx>VALX;
-        /* unread blocks are dim AND a different token; read ones snap to R2's */
-        const op=vis*(bad?0.7:scanned?0.95:first?0.55:0.90)*(1+fl*0.30);
-        quad(node,sx2,sx2+SEG_W,yy,zR+zAir,op,
-          bad?"var(--rej)":(scanned||valid||!first)?"var(--accent)":"var(--fg3)");
+        node.setAttribute("fill",bad?"var(--rej)":R2T);
+        bar(node,cx,yBP(yc,c[0]),yBP(yc,c[1]),cz,
+            vis*(bad?0.78:scanned?0.95:0.50)*(1+fl*0.30));
       });
-      quad(fr.body,fx+xAir,fx+xAir+SPREAD[2]+SEG_W,yy,zR+zAir,vis*0.26,
-        undefined,SC(0.045));
+      bar(fr.umi,cx,yBP(yc,umiS[0]),yBP(yc,umiS[1]),cz,0);
+      fr.umi.setAttribute("fill-opacity",(clamp01(vis*0.16)).toFixed(3));
+      fr.umi.setAttribute("stroke-opacity",(clamp01(vis*0.8)).toFixed(3));
 
+      /* THE VERDICT FIRES AS THE FRAGMENT COMES OUT THE FAR SIDE, not as it
+         goes under. Lying across the belt it spends a real interval beneath the
+         scanner face, and the mark is built before the gantries so that it
+         passes under them — which means a verdict struck at the arch's centre
+         is struck where nobody can see it. Read on the way in, answer on the way
+         out: it is also the more honest order. */
+      const READAT=SC(0.78);       /* just past the panel's downstream edge */
       stations.forEach((st,i)=>{
         const prev=fr.px===undefined?fx:fr.px;
         const stillOnLine=fr.fail<0||i<=fr.fail;
-        /* the block, not the fragment, is what crosses the scanner */
-        if(blockX(i,prev,pack)<=st.sx && blockX(i,fx,pack)>st.sx && stillOnLine){
-          fr.flash[i]=t;                       /* the verdict, either way */
+        if(prev<=st.sx+READAT && fx>st.sx+READAT && stillOnLine){
+          fr.flash[i]=t;
           if(fr.fail!==i){ st.slots[st.ptr%st.slots.length].lit=t; st.ptr++; }
         }
       });
-      /* the whole triplet passes, once, on the far side of the hourglass */
-      if(fr.px!==undefined && fr.px<=VALX && fx>VALX && fr.fail<0) fr.valAt=t;
-      const bigAge=t-(fr.valAt===undefined?-99:fr.valAt);
-      if(bigAge>=0 && bigAge<0.95){
-        const c=fx+SPREAD[1]+(PACKED[1]-SPREAD[1])*pack+SEG_W/2;
-        const a=P(c,yy,zR+0.72*KZ);
-        const pop=bigAge<0.13?0.5+1.15*(bigAge/0.13):1.65-0.25*Math.min(1,(bigAge-0.13)/0.16);
-        const bop=bigAge<0.09?bigAge/0.09:1-sstep(0.58,0.95,bigAge);
-        fr.big.setAttribute("transform",
-          `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
-        /* subtle: it is a confirmation, not an announcement */
-        fr.big.setAttribute("stroke-opacity",(bop*vis*0.62).toFixed(3));
-      } else fr.big.setAttribute("stroke-opacity","0");
 
+      /* EVERY VERDICT HOLDS, ALL THE WAY OUT. There is no summarising check at
+         the end any more: three ticks earned one at a time and still riding at
+         the far edge of the yard say more than one big one that replaces them,
+         because they say WHICH three, and they stay attached to the blocks they
+         are about. */
       fr.marks.forEach((mk,i)=>{
-        /* EVERY VERDICT HOLDS. A cross rides to the bin; a tick rides until the
-           big check at the end takes over for all three at once. */
         const age=t-fr.flash[i];
         if(fr.flash[i]<0||age<0){ mk.setAttribute("stroke-opacity","0"); return; }
-        const relieved=fr.valAt===undefined?0:sstep(0.05,0.30,t-fr.valAt);
-        const sx2=fx+SPREAD[i]+(PACKED[i]-SPREAD[i])*pack+SEG_W/2;
-        const a=P(sx2,yy,zR+0.5*KZ);
+        const a=P(cx,yBP(yc,BCBP[i]),cz+0.5*KZ);
         const pop=age<0.11?0.55+1.0*(age/0.11):1.15-0.15*Math.min(1,(age-0.11)/0.14);
-        const op=(age<0.08?age/0.08:1)*(1-relieved);
+        const op=(age<0.08?age/0.08:1);
         mk.setAttribute("transform",
           `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
       fr.px=fx;
     }
+    const scroll=((t*v)%SLAT_P+SLAT_P)%SLAT_P;
+    slats.forEach((ln,k)=>{
+      const sx2=xIn+((k*SLAT_P+scroll)%SLAT_RUN);
+      const a=P(sx2,cy-FL/2,base), b2=P(sx2,cy+FL/2,base);
+      ln.setAttribute("x1",a[0].toFixed(1)); ln.setAttribute("y1",a[1].toFixed(1));
+      ln.setAttribute("x2",b2[0].toFixed(1)); ln.setAttribute("y2",b2[1].toFixed(1));
+    });
     for(const st of stations) for(const sl of st.slots){
       const age=t-sl.lit;
       sl.node.setAttribute("stroke-opacity",(age<0?0.06:0.06+0.85*Math.exp(-age/1.7)).toFixed(3));

@@ -128,7 +128,7 @@ const NODES = [
    graphics still paint over it where they overlap, which is the occlusion that
    was actually wanted. */
 {id:"E3", key:"E3", group:"The chain", shape:"sortingyard", hatch:true, noclip:true,
- lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:4.6, h:1.6,
+ lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:7.0, h:1.6,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
