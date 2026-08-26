@@ -155,7 +155,7 @@ const NODES = [
  cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Alignment",
- added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. Four belts run along the lane's own direction carrying annotated gene models past — exons standing proud, introns flat between them — and the reads fly in from up-belt, chase a moving target, drop onto it, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands."},
+ added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. One belt runs along the lane's own direction and the gene models lie ACROSS it — exons standing proud, introns flat between them, each model named along the near rail — and the reads rain in from up-belt and above, settle onto a moving target, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands; the barcode end takes no position from any of this and is drawn saying so — half the width of the aligned end, and leaning off the gene's axis entirely. THE GENE NAMES ARE REAL ZEBRAFISH SYMBOLS AND THE MODELS UNDER THEM ARE NOT: every gene on this belt is a seeded arrangement of exons, real in kind with no real coordinates, and the names are there to say that these are ten different zebrafish genes rather than one gene drawn ten times. No name here describes the model it sits beside."},
 
 {id:"E5", key:"E5", group:"The chain", shape:"tile", hatch:true,
  lane:"r3", gap:1.2, name:"Assign to gene", x:27.0, y:R3, w:1.9, d:1.9, h:1.1,
@@ -235,7 +235,17 @@ const NODES = [
    plus their gaps, d is the deepest plate and its register margin, and h is the
    registry's own top — the layout is authored in its own units and scaled onto
    those three. See drawWhitelists in fq-shapes.js. */
+/* NOCLIP, FOR THE SAME REASON E3 CARRIES IT, ONE OBJECT FURTHER BACK. The three
+   lines to the scanners now leave from under each plate's own name, and a name
+   sits INSIDE this node's footprint — so the occlusion clip cut every one of
+   them at the box edge and all three appeared to start in mid-air, a third of
+   the way along. Nothing here is a solid: it is three plates, three registries
+   and the air between them, and the plates themselves still paint over a line
+   that runs behind one, because gNode paints after gEdge. Punch the box out of
+   the clip and the departures are visible where the ground is empty and hidden
+   where something actually stands. */
 {id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"whitelists",
+ noclip:true,
  follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.0, w:8.4, d:2.9, h:3.5,
  sub:"the known well sequences for each ligation round · fixed by the kit",
  does:"The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
@@ -401,12 +411,23 @@ const EDGES = [
      GTF is E5 rather than E4. */
   {a:"G2", b:"E5", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
 
-    /* AT THE MIDDLE OF THE YARD, NOT ITS CORNER. A whitelist does not feed the
-     mouth of the belt, it feeds the scanners — so the line lands on the far rail
-     at the middle arch, which is both where it belongs and the only place on
-     this node that a line arriving from up-right can reach without crossing the
-     belt to get there. */
-  {a:"W1", b:"E3", kind:"ref", straight:true, port:"corner", portB:"mid", tone:"var(--fg2)"},
+    /* THREE LISTS, THREE SCANNERS, THREE LINES — AND EACH ONE JOINS ITS OWN PAIR.
+
+     It was one line, from this node's corner to the far rail at the middle
+     arch. That is where a whitelist feeds, and it still left the only thing
+     about this pair worth drawing unsaid: BC1's plate is checked by BC1's
+     scanner and by neither of the others. The three rounds are three
+     independent questions, and one line collapsed them into a supply.
+
+     Each runs from the bottom of a plate's own name to the top of its
+     scanner's own name — label to label, because at this scale the names are
+     the objects a reader is actually holding on to, and a line between two
+     small machines is a line you have to trace. The ports are on the shapes
+     (PORTS.whitelists / PORTS.sortingyard), so they are measured off the text
+     itself and stay off it when a plate or a station is resized. */
+  {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc1", portB:"bc1", tone:"var(--fg2)"},
+  {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc2", portB:"bc2", tone:"var(--fg2)"},
+  {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc3", portB:"bc3", tone:"var(--fg2)"},
 ];
 
 /* One band, keeping its name from the big map. It has to reach the reference

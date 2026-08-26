@@ -572,18 +572,113 @@ a gene. Four belts of models running down-track could only ever show reads
 landing *on* something; one gene turned across the track shows a read landing
 **somewhere on it**, which is the whole of what an aligner decides.
 
-### The barcode end does not land, and that is the picture
+### The barcode end does not land, and it leans away like an aerial
 
 It has no genome to match — it is a synthetic tag and the aligner has nothing to
-do with it — so past the cDNA the molecule lifts off the surface and rides at an
-angle: grey adapter, then blue, still attached and doing nothing. That is the
-honest shape of a 3′ read. **Two thirds of the molecule is the reason it can be
-counted, and none of it aligns.**
+do with it — so past the cDNA the molecule lifts off the surface: grey adapter,
+then blue, still attached and doing nothing. That is the honest shape of a 3′
+read. **Two thirds of the molecule is the reason it can be counted, and none of
+it aligns.**
 
-**`LIFT` is `0.52 × n.h` and it was `1.55`.** At 1.55 the blue tails stood up
-like flags and the gene vanished under a hedge of them, which inverts the
-station: the subject is where the *orange* lands. The tail has to be visibly off
-the surface and visibly not aligned, and nothing beyond that.
+**And it leaves the gene's axis altogether.** It used to carry on *along* the
+gene as it rose, which put the one part of the molecule with **no** position
+onto the axis that means position — a blue tail pointing along a gene reads as
+blue lying on the gene. `TDIR` is `[-0.86, +0.51]`, so it goes into −x and +z:
+up-and-to-the-left, about 47° off the deck, across the direction of travel and
+across the gene both. There is nowhere on the model it could be mistaken for
+being, and trailing behind the belt's own motion is what a mast on a moving
+thing does anyway.
+
+**`LIFT` is gone and the length is base pairs again.** It was `0.52 × n.h`, a
+height with nothing behind it. The tail is 32 of unsequenced middle and 58 of
+barcode against the 64 that aligned, so it is `(RG+RB)` of the gene long — half
+again the orange, which is the true ratio — laid along a fixed direction instead
+of along the model. `TKNEE` is where the dashes stop and the blue starts, and it
+is 32/90 for the same reason.
+
+### The orange is the subject, and the drawing says so three ways
+
+`RW` went `0.40 × GW` to **`0.28`**, and the barcode end is drawn at **half that
+again** (`RWB`). A read is one observation; at 0.40 a few of them read as slats
+laid on the model rather than as a pile of separate measurements, and the pile is
+the argument. The two halves are then not the same thickness on purpose: *the
+orange is the part with a position, the blue is the part that has none*, and the
+drawing should not give them equal say. Opacity carries the rest — the aligned
+half at full strength, the aerial at 0.42.
+
+**The aerial takes no outline.** At half the orange's width a `0.6` stroke is a
+third of the bar again, and with one the two halves came out looking the same
+thickness, which is the one thing this pair is not.
+
+### It rains, and it rains from one nozzle
+
+Reads used to arrive in a cohort inside a narrow band of the traverse, which
+draws a *delivery* — a batch handed over at a moment. Alignment is not a batch:
+reads arrive continuously, they are independent, and no two are aimed.
+
+So every read has its own `u0`, and they all fall from the **same** place —
+up-belt, high, `fx0` and `fz` with a nozzle's width of jitter and no more, plus
+a small lateral `fy0` that closes as it lands. **The fan you see is not the
+source spreading**; it is three hundred different landing sites each pulling its
+own read out of one stream, which is what a wide-angle spray actually is. `air`
+goes 1 → 0 with its slope going to zero too, so a read *settles* rather than
+arriving at speed and stopping.
+
+**`u0` is spread over the part of the loop that is on screen.** A gene is only
+on the belt for `u` in roughly 0.30–0.70; the first spread of these ran 0.10–0.52
+and half the rain landed in the dark, which is why it looked like no rain at all.
+At 0.34–0.64 a gene arrives with reads still falling onto it and is covered by
+the time it leaves.
+
+`NR` is 24–33 a gene, about double what it was. Which is affordable only because
+of the next paragraph.
+
+**A gene off the belt costs nothing.** Ten models are on the loop and four are on
+the belt at a time; walking the other six every frame was most of the work this
+shape did and none of the picture. `gn.hid` hides the group once and skips it
+until it comes back — worth ~60% of the per-frame cost, and it is what pays for
+the extra reads.
+
+### The splice arches are back
+
+They were dropped in the rewrite and noted as a decision rather than a loss.
+**One read in six** now lands in two pieces: its orange is split across an exon
+boundary, one piece ending at the end of exon *k* and the other starting at the
+start of exon *k+1*, with an arc over the intron between them that **never
+touches down**. Those are the reads the sequence alone could not place, and they
+are the reason `G2` is a node of its own rather than a note on `G1`.
+
+`archPath` samples the curve in the gene's own `f`, so it lands on the two exon
+ends it belongs to however the model is scaled. `ARCH` is `0.26 × n.h` and it
+was 0.42: an intron here is a few hundredths of a gene wide, and an arch as tall
+as it is long draws a **loop**, which reads as something the read does rather
+than as the something it does not. What has to be legible is that the read is in
+two pieces and that nothing of it is over the gap.
+
+The split is `RL` between the two halves — the read does not get longer for
+being spliced — and the aerial hangs off the far end of the second piece like
+any other.
+
+### Every gene is named, and the names are real on models that are not
+
+Real zebrafish symbols, in `--fg3` at `0.55`, smaller than every other name on
+this map: it is an identification, not a heading, and there are ten of them
+moving. Each rides at its own gene's x just off the near rail, set at −30 like
+the gene's own long axis, anchored `end` so it finishes at the rail and trails
+away from the belt into empty ground rather than across it.
+
+**The pairing is not a claim and must not become one.** Every gene on this belt
+is a seeded arrangement of exons — real in kind, no real coordinates, the same
+deal `LOCUS_BANDS` is on. What the names add is the one thing the geometry
+cannot say: that these are zebrafish genes and that they are all *different from
+each other*. A row of unnamed models reads as one gene drawn ten times. The
+symbols are real because "realistic-sounding" invented ones are how you end up
+with a plausible string somebody looks up — but **no name here describes the
+model under it**, and if that ever has to be true the models have to come from
+the annotation rather than from a seed.
+
+Thirty names, picked with a stride coprime to the count, so ten genes get ten
+different ones and the same gene keeps its name for as long as the page is open.
 
 ### Proportions that had to move together
 
@@ -597,18 +692,14 @@ once.
 unrelated blocks rather than one gene with exons standing proud of it — the body
 is the thing that says these blocks belong to each other.
 
-### `setBoxY`
+### `setBoxY`, `quadX`
 
 `setBox`'s twin: same three faces, same roles, transposed for a box long in `y`
 and thin in `x`. Anything laid across a belt on this page needs it.
 
-### Gone for now: the splice arches
-
-The old station drew a few reads arriving as two halves with an arc between
-them, spanning an intron — *the reads the sequence alone could not place.* It
-was a good detail and it is not in this rewrite. It would go back as a read
-whose orange half is split in two with an arc over the intron between them; the
-lifted tail is unaffected. Noted here so it is a decision rather than a loss.
+`quadX` is `quadY`'s transpose for the same reason one step down — a bar thin in
+`y` running in `x` and `z`. The aerial leaves the gene's own axis, so it needs a
+bar that is not measured along it.
 
 ## `drawSortingYard` — matching as a place
 
@@ -675,24 +766,25 @@ and with the face this short there is nothing for it to stiffen.
 
 The post lands `TIP` clear of the far rail, so nothing stands on the belt.
 
-### The scan is a beam, and it sweeps
+### The laser is aimed, and it is aimed at one square
 
-A dropped line from the scanner face to the deck at the station's own x,
-tracking along the fragment as it passes under, with a spot where it lands and a
-`sin(pi*u)` fade so it arrives and leaves rather than snapping on. Which is what
-a barcode reader does, and what the old slot flicker only implied. The sweep and
-the thing being swept are the same object seen twice.
+A beam dropped from the scanner face to the deck, **at the station's own barcode
+and no other** — BC1's points at bc1, BC2's at bc2, BC3's at bc3 — with a spot
+where it lands and a `sin(pi*u)` fade so it arrives with the block and leaves
+with it. It is a fixed point on a machine; the fragment is what moves.
 
-**It sweeps R2 and stops there.** It used to run the whole molecule, cDNA end to
-UMI end, and that was the face's fault rather than the beam's: a face spanning
-the belt has to be shown reading across the belt. With the face over R2 alone
-the beam has exactly R2 to sweep, in the block's own base pairs (`R2A` → `R2B`),
-and it can no longer be seen reading a stretch of cDNA nothing here judges.
+**It used to sweep**, first the whole molecule and then the whole R2 block, and
+both were the same mistake in different sizes: *a beam that travels the length of
+a read is a beam reading all of it*, and no station here reads more than one
+square. Every gantry can *see* all three — that is what lying broadside buys —
+but what makes gantry *i* a different question from gantry *j* is which one it
+**checks**, and until the aim was fixed that was the one thing the drawing did
+not say. It says it now with no caption and no colour.
 
 A **light curtain** hangs under each face: a plane from the face to the deck, at
 0.035. It is what makes the scanner a scanner rather than a shelf — a shelf has
-a top and nothing underneath it. It spans the face, so it now falls across the
-R2 block alone and the cDNA end passes through open air.
+a top and nothing underneath it. It spans the face, so it falls across the R2
+block alone and the cDNA end passes through open air.
 
 Both are built AFTER the scanners, so they paint as light rather than as
 structure. Everything else at this station is built before what occludes it;
@@ -731,34 +823,30 @@ moving it off that line. The second line's `dy` shifts it perpendicular to the
 text, which reads as down-left on screen: both lines stay centred on the same
 line, which is what a two-line stack does everywhere else on this map.
 
-### The verdict fires where the beam crosses the block it is about
+### Scan, then answer, and in that order
 
-**The sweep and the verdict are one event.** The mark used to fire at a fixed
-`SC(0.78)` past the arch while the beam ran on its own clock, so the tick and the
-moment the beam crossed the block it is about were two different instants: the
-drawing said *read here, answered there* and meant *read, and answered, here*.
-That was the right call while the beam swept the whole molecule — there was no
-single moment to point at — and it stopped being right the moment the face
-narrowed to R2.
+**The two are separate events with a gap between them, and the gap is the
+point.** `LASW` is `SC(0.50)`: the laser is lit while the fragment is within
+that of the station, brightest at the instant its own square is directly
+beneath. `FIREAT` is `SC(0.62)` — deliberately **outside** that window. The beam
+goes out, and a moment later the mark pops.
 
-Now the beam's position **is** the clock. It sweeps the R2 block once per pass,
-bc1 first because bc1 is the block nearest the near rail, and station *i* fires
-when the beam reaches the barcode *that station checks*. So **`FIREAT[i]` is not
-a constant offset** — it is where the sweep has got to at barcode *i*, and the
-three differ: `-0.24`, `+0.31`, `+0.86` in `SC` units against a panel that is
-`±0.36` wide. Two of the three therefore fire under their own glass, which the
-panel was thinned for; the third fires just clear of it.
+That ordering is the whole content of the station: it read, and *then* it
+decided. Every arrangement that collapses the two is worse. Firing inside the
+window draws one flash that is somehow both the question and the answer. Firing
+at a fixed offset while the beam ran on its own clock — which is what shipped
+for one build — draws a machine answering about something it is not looking at.
 
-The same figure drives the block's own brightening (`scanned`), so a barcode
-lights and its verdict lands on the same frame rather than a few pixels apart.
+**Both numbers are pinned at both ends.** Keep `FIREAT > LASW` or the two
+collapse back into a single event; keep `FIREAT` under `SC(0.9)` or the answer
+arrives after the reject siding has begun to peel the fragment away, and a
+verdict struck on a fragment that is visibly already leaving is a verdict
+arriving after the decision. The same figure drives the block's own brightening
+(`scanned`), so a barcode lights and its verdict lands together.
 
-**The window is deliberately lopsided** — `SW_IN` `SC(0.35)` upstream, `SW_OUT`
-`SC(1.25)` downstream — and both numbers are pinned at both ends. Wider and the
-first crossing happens before the fragment has reached the face; narrower, or
-shifted further out, and the last one lands after `gx + SC(0.9)`, where the
-reject siding has already begun to peel the fragment away — a verdict struck on
-a fragment that is visibly *already leaving* is the answer arriving after the
-decision. Move one, check the other two.
+The marks are built before the scanners, so a tick rides above its block and
+passes *under* the face — and the face is see-through, which is what it was
+thinned for.
 
 ### Who fails is the figure, not a coin flip
 
@@ -846,6 +934,14 @@ its blocks instead of hovering up-left of them.
 see above. *NO MATCH* is placed off the bin's own foot at `base`, out from under
 the reject tracks that reach it, so moving `REJ` and `binX` carried it along.
 
+***VALIDATED TRIPLETS* is right of the mouth and above it**, at
+`x1 + SC(1.05)`, `cy - FL/2 - SC(1.75)` — one move in world terms and two on
+screen, since a little more x carries it past the end and a good way into −y
+lifts it clear (−y is up-and-to-the-right here). A third of a fragment off the
+far rail it still read as a label *on* the belt; up there it reads as what
+leaves it, which is what it names. The track out still leaves from the **near**
+rail, so the two never lie parallel.
+
 
 **Three build-order facts do real work.** The verdict marks are built after the
 fragments and *before* the scanners, so a tick rides above its block but passes
@@ -881,6 +977,43 @@ white.** These are the whitelists. It is the one place on the map where the
 brightest token is spent on something that is neither a read nor a name, and the
 pun is the reason. `--fg` follows the theme, so in light mode the "white" list is
 the darkest ink on the page — the same joke told the other way up.
+
+### Three lists, three scanners, three lines — and each one joins its own pair
+
+It was **one** line, from this node's corner to the far rail at the middle arch.
+That is where a whitelist feeds, and it still left the only thing about this
+pair worth drawing unsaid: **BC1's plate is checked by BC1's scanner and by
+neither of the others.** Three rounds are three independent questions, and one
+line collapsed them into a supply.
+
+Each of the three now runs **from the bottom of a plate's own name to the top of
+its scanner's own name** — label to label. That is not a decorative choice: at
+this scale the names *are* the objects a reader is holding on to, and a line
+between two small machines is a line you have to trace, where a line between two
+words is a sentence.
+
+**The ports are on the shapes, and they are measured off the text.**
+`PORTS.whitelists` takes `bc1`/`bc2`/`bc3` and returns the point centred under
+that plate's label block — under the *block*, so BC1's second row (*two primers
+per well*) is cleared too rather than crossed. `PORTS.sortingyard` takes the
+same names and returns the point just above the top of that station's `BC1`
+glyph. Both go through `ROT30`, which brings an offset expressed **in the
+label's own frame** — along the line it reads on, and up or down from its
+baseline — back to the screen through the same rotation the text got. That is
+what lets an edge land on the *top of a string* rather than at the point the
+string was hung from.
+
+`wlLayout()` exists for the same reason `yardMetrics()` does: the draw and the
+port derive the layout **once**, together. A port that works out its own idea of
+where a name is drifts off it the first time a plate width changes.
+
+**W1 carries `noclip:true` because of this**, and it was the whole of the first
+attempt's bug. A name sits *inside* its node's footprint, so the occlusion clip
+cut every one of the three lines at the box edge and all three appeared to begin
+in mid-air, a third of the way along. Nothing here is a solid — three plates,
+three registries and the air between them — and the plates still paint over a
+line that runs behind one, because `gNode` paints after `gEdge`. Same reasoning
+E3 has carried all along, one object further back.
 
 **The names lie along the edges they belong to.** Both edges at constant y run
 at **+30°** on screen, so a register's name rides its far edge and a plate's
@@ -1418,3 +1551,11 @@ resized. Nobody had.
 - **Start a `requestAnimationFrame` inside a shape.** Push to `TICKERS`.
 - **Add a colour.** Three encodings — stays, goes, threshold — aliased onto
   `/pipeline`'s tokens.
+- **Let a scanner at `E3` read more than its own square.** The aim is the one
+  thing that distinguishes the three stations from each other, and a beam that
+  travels a read is a beam reading all of it.
+- **Collapse `E3`'s scan and its verdict into one event.** `FIREAT > LASW`, and
+  both under `SC(0.9)`. See *Scan, then answer*.
+- **Treat a gene name at `E4` as a claim about the model under it.** The symbols
+  are real; the models are seeded. If one ever has to describe the other, the
+  models come from the annotation.

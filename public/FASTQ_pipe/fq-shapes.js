@@ -561,6 +561,15 @@ DRAW.fragment=drawFragment;
    right — so an edge that leaves from one of them has already said which read
    it carries. See routeOf() in fq-view.js. Keyed by SHAPE rather than by node
    id, because a port is a property of the drawing. */
+/* A LABEL'S OWN FRAME, BROUGHT BACK TO THE SCREEN. Every name on this map is a
+   translate to a projected point followed by a rotate, so an offset expressed
+   the way the text is set — along the line it reads on, and up or down from its
+   baseline — comes back through the same rotation and nothing else. That is
+   what lets an edge land on the TOP of a string rather than at the point the
+   string was hung from. */
+const ROT30=(p,dx,dy)=>[p[0]+dx*C30-dy*0.5, p[1]+dx*0.5+dy*C30];
+const BCN=w=>{ const m=/^bc([123])$/.exec(w||""); return m?+m[1]-1:-1; };
+
 const PORTS={
   /* THE MIDDLE OF THE BRACKET THAT NAMES THE TRACK — see fragGeom. */
   fragment:(n,which)=>{ const F=fragGeom(n.x,n.y);
@@ -582,13 +591,37 @@ const PORTS={
   belts     :(n,which,B)=>roofCorner(n,B),
   karyotype :(n,which,B)=>roofCorner(n,B),
   locus     :(n,which,B)=>roofCorner(n,B),
-  whitelists:(n,which,B)=>roofCorner(n,B),
+  /* AND A WHITELIST LEAVES FROM UNDER ITS OWN NAME. One line from the corner of
+     this node said "the lists feed the yard" and left a reader to work out
+     which list feeds which scanner — which is the only thing about this pair
+     worth drawing, since the three rounds are three independent questions. So
+     there are three lines, and each starts at the bottom of its own plate's
+     name: centred on it across, clear of it below, including clear of BC1's
+     second row. `two primers per well` belongs to that label, so the line
+     starts under the block rather than through it. */
+  whitelists:(n,which,B)=>{
+    const i=BCN(which);
+    if(i<0) return roofCorner(n,B);
+    const L=wlLayout(n), pl=L.plates[i], K=L.K, FIT=L.FIT;
+    const rows=pl.R.perWell===2?2:1;
+    return ROT30(P(pl.px-(pl.w+0.30*K)/2, L.y+(pl.d+0.30*K)/2+0.42*K, L.h),
+                 14*K+(L.mainText(pl).length*L.CH*FIT)/2,
+                 15*K+(rows-1)*17*K+FIT*1.55);
+  },
   /* THE YARD'S OWN ENDS, AT DECK HEIGHT — not a roof corner, because it has no
      roof. "head" is where the eight lanes start, which is what an arriving read
      should be aimed at; "tail" is where the fan leaves. Anything else falls back
      to the corner, which is the right answer for W1 overhead. */
   sortingyard:(n,which,B)=>{
     const M=yardMetrics(n);
+    /* AND IT ARRIVES AT THE TOP OF THE SCANNER'S OWN NAME. The three whitelist
+       lines come down from up-right, which is the side a name's ascenders face,
+       so the line stops where the reading starts and never crosses a letter.
+       Landing on the station itself was tried and is worse: three lines into
+       three small machines is three lines you have to trace, where three lines
+       into three big words is a sentence. */
+    const b=BCN(which);
+    if(b>=0) return ROT30(P(M.gx[b],M.labY,M.labZ), 0, -M.FS*2.15);
     /* "head" IS ON THE LANE, JUST INSIDE THE YARD AND SHORT OF THE FIRST ARCH.
 
        Not the far end of the run-in and not the footprint edge, for one reason
@@ -1167,11 +1200,11 @@ DRAW.locus=drawLocus;
 
    THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON,
    and that is the whole reason this station is drawn rather than labelled.
-   Four narrow belts run in parallel along the lane's own direction. Genes ride
-   ON the belts — annotated models that enter at one end, cross, and leave at
-   the other, exons standing proud with introns flat between them. Reads fly in
-   from off-map, chase a moving target, drop onto it, and then RIDE ALONG with
-   the gene until it goes.
+   ONE belt runs along the lane's own direction and the genes lie ACROSS it —
+   annotated models that enter at one end, cross, and leave at the other, exons
+   standing proud with introns flat between them, each with its own name lying
+   along the near rail. Reads rain in from up-belt and above, settle onto a
+   moving target, and then RIDE ALONG with the gene until it goes.
 
    EVERYTHING SHARES ONE VELOCITY: slats, genes and landed reads. That is what
    makes it a machine rather than three animations in a trench coat.
@@ -1240,6 +1273,26 @@ function setBoxY(nd,xc,w,ya,yb,z0,z1,op){
   });
 }
 
+/* REAL ZEBRAFISH SYMBOLS ON GENERATED MODELS, and the pairing is not a claim.
+
+   Every gene on this belt is a seeded arrangement of exons — real in kind, no
+   real coordinates, the same deal LOCUS_BANDS is on. What the names add is the
+   one thing the geometry cannot say: that these are zebrafish genes and that
+   they are all different from each other. A row of unnamed models reads as one
+   gene drawn ten times.
+
+   So the symbols are real, because "realistic-sounding" invented ones are how
+   you end up with a plausible string somebody looks up; but NO NAME HERE
+   DESCRIBES THE MODEL UNDER IT, and if that ever needs to be true the models
+   have to come from the annotation rather than from a seed. Thirty of them,
+   picked with a stride coprime to the count so ten genes get ten names. */
+const GENE_NAMES=[
+  "sox19a","myod1","pax2a","shha","tbx16","gata1a","mylpfa","elavl3","foxd3",
+  "sox10","mitfa","slc24a5","fabp10a","apoeb","mpx","runx1","kdrl","myl7",
+  "tnnt2a","desma","her4.1","neurod1","olig2","gfap","mbpa","krt4","col2a1a",
+  "fgf8a","wnt11","notch1a",
+];
+
 function drawBelts(g,n){
   hitBox(g,n);
   const rnd=mulberry32(0x5eedf15^0x53);
@@ -1260,13 +1313,21 @@ function drawBelts(g,n){
      the surface and rides at an angle, still attached, still visible, doing
      nothing. That is the honest picture of a 3' read: two thirds of the
      molecule is the reason it can be counted and none of it aligns. */
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
   const K=span/9.2, KZ=n.h/0.53;              /* the original's own units */
   const base=n.h*0.245, geneH=n.h*0.19, exonH=n.h*0.565;
   const GL=n.d*0.70;                          /* the gene, across the belt */
   const BW=GL+K*1.0;                          /* the belt, a shade wider than its load */
   const GW=K*0.30;                            /* a gene's thickness along the belt */
-  const RW=GW*0.40;                           /* and a read's */
+  /* THINNER THAN IT WAS, AND THE TWO HALVES ARE NOT THE SAME THICKNESS.
+     A read is one observation; at 0.40 of a gene's own thickness a few of them
+     read as slats laid on the model rather than as a pile of separate
+     measurements, and the pile is the argument. The barcode end is drawn at
+     HALF the aligned end's width on top of that — the orange is the part with
+     a position, the blue is the part that has none, and the drawing should not
+     give them equal say. */
+  const RW=GW*0.28, RWB=RW*0.50;
   const v=(n.v||1.05)*K;
   const NG=10, PAD=7*K, LOOP=span+PAD*2;
   const yOf=f=>cy+GL/2-f*GL;                  /* f=0 at +y, the gene's near end */
@@ -1275,12 +1336,34 @@ function drawBelts(g,n){
      gene it lands on: 64 of cDNA that aligns, then 32 of unsequenced middle and
      58 of barcode that do not */
   const RTOT=0.145, RL=RTOT*64/154, RG=RTOT*32/154, RB=RTOT*58/154;
-  /* THE LIFT IS SMALL ON PURPOSE. At 1.55 x n.h the blue tails stood up like
-     flags and the gene disappeared under a hedge of them — which inverted the
-     station: the subject here is where the ORANGE lands. The tail has to be
-     visibly off the surface and visibly not aligned, and nothing more than
-     that. */
-  const LIFT=n.h*0.52;
+  /* THE TAIL LEANS UP-BELT, LIKE AN AERIAL.
+
+     It used to carry on along the gene's own axis as it rose, which put the one
+     part of the molecule with NO position onto the axis that means position — a
+     blue tail pointing along a gene reads as blue lying on the gene. Turned
+     into -x it leaves that axis entirely: -x is up-and-to-the-left here, so the
+     tail stands off the surface at about 47 degrees, across the direction of
+     travel and across the gene both, and there is nowhere on the model it could
+     be mistaken for being. Trailing behind the belt's own motion is what a mast
+     on a moving thing does anyway.
+
+     LIFT IS GONE AND THE LENGTH IS BASE PAIRS AGAIN. It was n.h * 0.52, a
+     height with nothing behind it. The tail is 32 of unsequenced middle and 58
+     of barcode against the 64 that aligned, so it is (RG+RB) of the gene long —
+     half again the orange, which is the true ratio — laid along a fixed
+     direction instead of along the model. TKNEE is where the dashes stop and
+     the blue starts, and it is 32/90 for the same reason. */
+  const TDIR=[-0.86,0.51];                    /* up and to the left, unit length */
+  const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
+  /* THE ARCH A SPLICED READ THROWS OVER THE INTRON IT CROSSES. Kept low: an
+     intron here is a few hundredths of a gene wide, so an arch as tall as it is
+     long draws a loop, and a loop reads as something the read does rather than
+     as the something it does NOT do. What has to be legible is that the read is
+     in two pieces and that nothing of it touches down between them. */
+  const ARCH=n.h*0.26;
+  /* smaller than every other name on this map, on purpose: it is an
+     identification, not a heading, and there are ten of them moving */
+  const GFS=Math.max(5,8.0*K);
 
   /* ---- the belt: scenery, and it should read as scenery ------------------ */
   g.appendChild(el("polygon",{points:pts([P(x0,cy-BW/2,base),P(x1,cy-BW/2,base),
@@ -1309,29 +1392,79 @@ function drawBelts(g,n){
       if(f+w>0.965) break;
       ex.push([f,f+w]); f+=w+0.035+rnd()*0.055;
     }
-    const gn={grp:ggrp, pos:0, ex,
+    const gn={grp:ggrp, pos:0, ex, hid:false,
       body:boxNodes(ggrp,"var(--t-left)","var(--t-right)",0.8),
       exons:ex.map(()=>boxNodes(ggrp,"var(--k-top)","var(--k-left)",1.0)),
       reads:[]};
+    /* ---- THE GENE'S NAME, LYING ALONG THE BELT'S NEAR EDGE ----------------
+       Real zebrafish symbols on generated models — see GENE_NAMES. It rides at
+       the gene's own x, just off the near rail, and it is set at -30 like the
+       gene's own long axis, so the word runs parallel to the thing it names.
+       Anchored `end`, so it finishes at the rail and trails away from the belt
+       into empty ground rather than across it. */
+    gn.lab=ggrp.appendChild(el("text",{"text-anchor":"end","font-family":MONO,
+      fill:"var(--fg3)","font-size":GFS.toFixed(1),"font-weight":"500",
+      "letter-spacing":(GFS*0.06).toFixed(2),"fill-opacity":"0"}));
+    gn.lab.textContent=GENE_NAMES[(i*7+3)%GENE_NAMES.length];
     /* MORE OF THEM THAN THE BELT BEFORE THIS ONE DELIVERS, on purpose. Every
        fragment that clears the whitelists arrives here, and the pile-up on one
        gene is the point: a read is one observation and a gene model covered in
-       them is a count. */
-    const NR=11+Math.floor(rnd()*5);
+       them is a count.
+
+       AND THEY ARRIVE AS RAIN. They used to come down in one cohort inside a
+       narrow band of the traverse, which drew a delivery — a batch handed over
+       at a moment. Alignment is not a batch: reads arrive continuously, they
+       are independent, and no two are aimed. So each one now has its own u0
+       spread across most of the crossing, and they all fall from the SAME
+       place — up-belt, high, a nozzle's width of jitter and no more — which is
+       what makes the fan a fan. The spread you see is not the source spreading,
+       it is 300 different landing sites pulling their own read out of one
+       stream. */
+    const NR=24+Math.floor(rnd()*10);
     for(let k=0;k<NR;k++){
-      const e=ex[Math.floor(rnd()*ex.length)];
-      const lo=e[0]+0.004, hi=Math.max(lo,e[1]-RL-0.004);
-      gn.reads.push({f:lo+rnd()*(hi-lo),
-        dx:(rnd()-0.5)*GW*1.7,
-        u0:0.17+rnd()*0.11,                   /* lands in the first third */
-        fx0:(4.6+rnd()*3.2)*K,                /* in from a long way up-belt */
-        fz:(2.2+rnd()*1.4)*KZ,                /* a slant, not a vertical drop */
+      /* ONE IN SIX CROSSES A SPLICE JUNCTION, and lands in two pieces.
+         It came from spliced mRNA, so it covers the end of one exon and the
+         start of the next and there is nothing of it over the intron between —
+         an arch, and no contact. Those are the reads the assembly alone cannot
+         place, and the reason G2 is a node of its own. */
+      const sp=ex.length>1 && rnd()<1/6;
+      const rd={sp,
+        dx:(rnd()-0.5)*GW*2.2,
+        /* RAIN, NOT A COHORT — AND SPREAD OVER THE PART OF THE LOOP THAT IS
+           ON SCREEN. A gene is only on the belt for u in about 0.30 to 0.70;
+           reads that landed at 0.15 landed in the dark, which is how the first
+           spread of these came out looking like no rain at all. Between 0.34
+           and 0.64 a gene arrives with reads still falling onto it and is
+           covered by the time it leaves, which is the story. */
+        u0:0.34+rnd()*0.30,
+        fx0:(5.0+rnd()*1.1)*K,                /* one nozzle, up-belt and high */
+        fy0:(rnd()-0.5)*GL*0.16,
+        fz:(3.0+rnd()*0.6)*KZ,
         cd:ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
-          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"})),
-        ad:ggrp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
-          "stroke-opacity":"0","stroke-dasharray":"2.2 2.2","stroke-linecap":"butt"})),
-        bc:ggrp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",
-          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"}))});
+          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"}))};
+      if(sp){
+        const kx=Math.floor(rnd()*(ex.length-1)), eA=ex[kx], eB=ex[kx+1];
+        rd.rlA=RL*(0.34+rnd()*0.32); rd.rlB=RL-rd.rlA;
+        rd.fA=Math.max(eA[0]+0.002, eA[1]-rd.rlA); rd.fB=eB[0]+0.002;
+        rd.gap=[eA[1],eB[0]];
+        rd.end=rd.fB+rd.rlB;
+        rd.cd2=ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
+          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"}));
+        rd.arc=ggrp.appendChild(el("path",{fill:"none",stroke:"var(--cull)",
+          "stroke-width":"1.0","stroke-opacity":"0","stroke-linecap":"round"}));
+      }else{
+        const e=ex[Math.floor(rnd()*ex.length)];
+        const lo=e[0]+0.004, hi=Math.max(lo,e[1]-RL-0.004);
+        rd.f=lo+rnd()*(hi-lo); rd.end=rd.f+RL;
+      }
+      rd.ad=ggrp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
+        "stroke-opacity":"0","stroke-dasharray":"2.2 2.2","stroke-linecap":"butt"}));
+      /* NO OUTLINE ON THE AERIAL. At half the orange's width a 0.6 stroke is a
+         third of the bar again, and the two halves came out looking the same
+         thickness — which is the one thing this pair is not. */
+      rd.bc=ggrp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",
+        stroke:"none"}));
+      gn.reads.push(rd);
     }
     genes.push(gn);
   }
@@ -1346,6 +1479,25 @@ function drawBelts(g,n){
     const a=P(xa,ya,za), b=P(xb,yb,zb);
     node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
     node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
+    node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
+  };
+  /* quadY's transpose: thin in Y, running in x and z. The aerial leaves the
+     gene's own axis, so it needs a bar that is not measured along it. */
+  const quadX=(node,yc2,w,xa,za,xb,zb,op)=>{
+    node.setAttribute("points",pts([P(xa,yc2-w/2,za),P(xa,yc2+w/2,za),
+                                    P(xb,yc2+w/2,zb),P(xb,yc2-w/2,zb)]));
+    node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
+    node.setAttribute("stroke-opacity",(clamp01(op)*0.45).toFixed(3));
+  };
+  /* the arch over an intron: sampled in the gene's own f, so it lands on the
+     two exon ends it belongs to however the model is scaled */
+  const archPath=(node,xc,fa,fb,z0,dy,op)=>{
+    const p=[];
+    for(let s=0;s<=10;s++){
+      const q=s/10;
+      p.push(P(xc, yOf(fa+(fb-fa)*q)+dy, z0+ARCH*Math.sin(Math.PI*q)));
+    }
+    node.setAttribute("d","M "+p.map(a=>a[0].toFixed(1)+" "+a[1].toFixed(1)).join(" L "));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
 
@@ -1366,6 +1518,17 @@ function drawBelts(g,n){
       gn.pos=gxp;
       const vis=Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),1-sstep(x1-K*0.9,x1-K*0.1,gxp));
       const exTop=base+exonH;
+      /* A GENE OFF THE BELT COSTS NOTHING. Ten models are on the loop and four
+         are on the belt; with thirty reads apiece, walking the other six every
+         frame was most of the work this shape does and none of the picture.
+         Hide once, then skip until it comes back. */
+      if(vis<=0.002){
+        if(!gn.hid){
+          gn.hid=true; gn.grp.setAttribute("display","none");
+        }
+        return;
+      }
+      if(gn.hid){ gn.hid=false; gn.grp.removeAttribute("display"); }
 
       /* THE BODY HAS TO CARRY, or the gene reads as a staircase of unrelated
          blocks rather than as one model with exons standing proud of it. It is
@@ -1374,19 +1537,41 @@ function drawBelts(g,n){
       gn.ex.forEach((e,k)=>
         setBoxY(gn.exons[k],gxp,GW,yOf(e[0]),yOf(e[1]),base,exTop,(vis*0.42).toFixed(3)));
 
+      /* the name rides with its gene, at the gene's own x, off the near rail */
+      {
+        const a=P(gxp,cy+BW/2+K*0.34,base);
+        gn.lab.setAttribute("transform",
+          `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`);
+        gn.lab.setAttribute("fill-opacity",(vis*0.55).toFixed(3));
+      }
+
       for(const rd of gn.reads){
-        const kk=clamp01((u-(rd.u0-0.17))/0.17);
-        const air=Math.pow(1-kk,1.7);
+        /* LANDS GENTLY. air goes 1 to 0 over the fall and its slope goes to
+           zero with it, so a read settles onto the exon rather than arriving
+           at speed and stopping. */
+        const kk=clamp01((u-(rd.u0-0.20))/0.20);
+        const air=Math.pow(1-kk,2.2);
         const rx=gxp+rd.dx-rd.fx0*air, z0=exTop+rd.fz*air;
+        const dy=rd.fy0*air;                  /* the fan, closing as it lands */
         const op=vis*(1-0.25*air);
-        const ya=yOf(rd.f), yb=yOf(rd.f+RL);
-        const yc2=yOf(rd.f+RL+RG), yd=yOf(rd.f+RL+RG+RB);
         /* the cDNA lies flat on the exon — the only part of this molecule the
-           aligner has anything to say about */
-        quadY(rd.cd,rx,RW,ya,z0,yb,z0,op*0.95);
-        /* and everything past it lifts away from the surface */
-        seg(rd.ad,rx,yb,z0,rx,yc2,z0+LIFT*0.40,op*0.65);
-        quadY(rd.bc,rx,RW*0.75,yc2,z0+LIFT*0.40,yd,z0+LIFT,op*0.88);
+           aligner has anything to say about, and the only part drawn at full
+           strength */
+        if(rd.sp){
+          quadY(rd.cd ,rx,RW,yOf(rd.fA)+dy,z0,yOf(rd.fA+rd.rlA)+dy,z0,op);
+          quadY(rd.cd2,rx,RW,yOf(rd.fB)+dy,z0,yOf(rd.fB+rd.rlB)+dy,z0,op);
+          /* and nothing at all over the intron between them */
+          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,op*0.55);
+        }else{
+          quadY(rd.cd,rx,RW,yOf(rd.f)+dy,z0,yOf(rd.f+RL)+dy,z0,op);
+        }
+        /* AND THE TAIL LEAVES THE GENE'S AXIS ALTOGETHER — up-belt and up, at
+           the far end of whatever the orange did. Along the axis it read as
+           more read; across it, it reads as an aerial on one. */
+        const ye=yOf(rd.end)+dy;
+        const kx=rx+TDIR[0]*TAIL*TKNEE, kz=z0+TDIR[1]*TAIL*TKNEE;
+        seg(rd.ad,rx,ye,z0,kx,ye,kz,op*0.60);
+        quadX(rd.bc,ye,RWB,kx,kz,rx+TDIR[0]*TAIL,z0+TDIR[1]*TAIL,op*0.42);
       }
     });
   };
@@ -1453,6 +1638,33 @@ const ROUNDS=[
   {key:"BC3", cols:12, rows:8, perWell:1, risers:20},
 ];
 
+/* THE LAYOUT, DERIVED ONCE. drawWhitelists draws from it and PORTS.whitelists
+   aims at it: the three lines to E3 leave from underneath each plate's own
+   name, and a port that re-derives where a name is drifts off it the first time
+   a plate width changes. Same rule fragGeom and yardMetrics live by. */
+function wlLayout(n){
+  const PITCH0=0.34, GAP0=3.3, PH0=0.30, ZR0=8.2, REGH0=0.07;
+  const NATW=ROUNDS.reduce((t,R)=>t+R.cols*PITCH0,0)+GAP0*(ROUNDS.length-1);
+  const K=n.w/NATW, KZ=n.h/(ZR0+REGH0);
+  const PITCH=PITCH0*K, gap=GAP0*K, h=PH0*KZ, ZR=ZR0*KZ;
+  const plates=[]; let cx=0;
+  ROUNDS.forEach(R=>{
+    const w=R.cols*PITCH, d=R.rows*PITCH;
+    plates.push({R,px:cx+w/2,w,d});
+    cx+=w+gap;
+  });
+  plates.forEach(p=>{
+    p.px+=n.x-(cx-gap)/2; p.rw=p.w+0.7*K; p.rd=p.d+1.15*K;
+  });
+  /* ONE SIZE FOR ALL THREE, taken from the shortest edge — BC1's plate is the
+     small one, and three sibling labels at three different sizes would read as
+     a mistake rather than as a fit. */
+  const CH=0.68, mainText=pl=>pl.R.key+" — 96 BARCODES";
+  const FIT=Math.max(6.5,Math.min(...plates.map(pl=>
+    ((pl.d+0.30*K)*S)/(mainText(pl).length*CH))));
+  return {K,KZ,PITCH,gap,h,ZR,REGH0,PH0,ZR0,plates,FIT,CH,mainText,y:n.y};
+}
+
 function drawWhitelists(g,n){
   hitBox(g,n);
   const rnd=mulberry32(0x5eedf15^0x1B);
@@ -1460,24 +1672,16 @@ function drawWhitelists(g,n){
 
   /* the layout is authored in its own units and scaled onto the node: K across
      the ground, KZ up. The dashes are NOT scaled — see the header. */
-  const PITCH0=0.34, WELLR0=0.105, GAP0=3.3, PH0=0.30, ZR0=8.2, REGH0=0.07;
-  const NATW=ROUNDS.reduce((t,R)=>t+R.cols*PITCH0,0)+GAP0*(ROUNDS.length-1);
-  const K=n.w/NATW, KZ=n.h/(ZR0+REGH0);
-  const PITCH=PITCH0*K, WELL_R=WELLR0*K, gap=GAP0*K, h=PH0*KZ, ZR=ZR0*KZ;
+  const L=wlLayout(n);
+  const WELLR0=0.105, REGH0=L.REGH0;
+  const K=L.K, KZ=L.KZ, PITCH=L.PITCH, WELL_R=WELLR0*K, gap=L.gap, h=L.h, ZR=L.ZR;
   const y=n.y;
 
   const DASH=2.5, GAP=1.35, BC_LEN=(8*DASH+7*GAP)/(S*CZ);
   const PLATE={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const REG  ={top:"var(--t-left)",left:"var(--t-right)",right:"var(--t-right)"};
 
-  const plates=[];
-  let cx=0;
-  ROUNDS.forEach(R=>{
-    const w=R.cols*PITCH, d=R.rows*PITCH;
-    plates.push({R,px:cx+w/2,w,d});
-    cx+=w+gap;
-  });
-  plates.forEach(p=>{ p.px+=n.x-(cx-gap)/2; });
+  const plates=L.plates;
 
   /* ---- plates, wells, risers ---- */
   plates.forEach(pl=>{
@@ -1517,7 +1721,7 @@ function drawWhitelists(g,n){
      rather than stopping short of it. */
   const SLOT_P=0.42*K;
   plates.forEach(pl=>{
-    const rw=pl.w+0.7*K, rd=pl.d+1.15*K;
+    const rw=pl.rw, rd=pl.rd;
     slabAt(g,pl.px,y,rw,rd,REGH0*KZ,REG,ZR);
     const cols=Math.max(1,Math.round(rw/SLOT_P)), rows=Math.max(1,Math.round(rd/SLOT_P));
     const slots=[];
@@ -1528,7 +1732,7 @@ function drawWhitelists(g,n){
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
         "stroke-width":"1.9","stroke-linecap":"butt","stroke-opacity":"0.05"})),lit:-99});
     }
-    Object.assign(pl,{rw,rd,slots,ptr:0});
+    Object.assign(pl,{slots,ptr:0});
   });
 
   /* ---- the names, lying along the edges they belong to --------------------
@@ -1548,12 +1752,8 @@ function drawWhitelists(g,n){
     });
     g.appendChild(t);
   };
-  /* ONE SIZE FOR ALL THREE, taken from the shortest edge — BC1's plate is the
-     small one, and three sibling labels at three different sizes would read as
-     a mistake rather than as a fit. */
-  const CH=0.68, mainText=pl=>pl.R.key+" — 96 BARCODES";
-  const FIT=Math.max(6.5,Math.min(...plates.map(pl=>
-    ((pl.d+0.30*K)*S)/(mainText(pl).length*CH))));
+  /* one size for all three — see wlLayout */
+  const FIT=L.FIT, mainText=L.mainText;
   plates.forEach(pl=>{
     place(pl.px-pl.rw/2, y-pl.rd/2-0.40*K, ZR+REGH0*KZ,
       [[pl.R.key+" WHITELIST","var(--fg)",(FIT*0.95).toFixed(1),"600",(FIT*0.11).toFixed(2),"1"]],
@@ -1714,10 +1914,29 @@ const YARD_MOL=[
 ];
 const YARD_MOL_BP=154;
 
-/* the handful of numbers both drawSortingYard and PORTS.sortingyard need */
+/* the handful of numbers both drawSortingYard and PORTS.sortingyard need.
+
+   THE SCANNER GEOMETRY IS IN HERE RATHER THAN IN THE DRAW, because a port now
+   has to land on a name: the three whitelist lines arrive at the top of each
+   station's own label, and a port that works out its own idea of where a label
+   is drifts off it the first time a width changes — the same rule fragGeom
+   already lives by. One derivation, two callers. */
 function yardMetrics(n){
   const A=YARD_ROUNDS, K=n.w/(A.x1-A.x0), KZ=n.h/(A.base+A.gz+A.pgap+0.07);
-  return {A,K,KZ, x0:n.x-n.w/2, x1:n.x+n.w/2, cy:n.y+A.cy*K, base:A.base*KZ};
+  const SC=q=>q*K, x0=n.x-n.w/2, cy=n.y+A.cy*K, base=A.base*KZ;
+  const FL=SC(A.FLEN), uBP=FL/YARD_MOL_BP;
+  /* the molecule's own cuts, in bp, and the R2 block inside them */
+  const cuts=[]; { let a=0; for(const q of YARD_MOL){ cuts.push([a,a+q.bp,q.k]); a+=q.bp; } }
+  const segAt=k=>cuts.find(c=>c[2]===k);
+  const R2A=segAt("bc1")[0], R2B=segAt("umi")[1];
+  const yAt=bp=>cy+FL/2-bp*uBP;
+  const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
+  const SCN_F=yAt(R2B)-SC(A.TIP), SCN_N=yAt(R2A)+SC(A.LIP);
+  return {A,K,KZ, x0, x1:n.x+n.w/2, cy, base, FL, uBP, cuts, segAt, R2A, R2B,
+          BCBP:["bc1","bc2","bc3"].map(k=>{const c=segAt(k); return (c[0]+c[1])/2;}),
+          gz, panelZ, SCN_F, SCN_N, SCN_MID:(SCN_F+SCN_N)/2, SCN_LEN:SCN_N-SCN_F,
+          gx:A.gx.map(q=>x0+(q-A.x0)*K), FS:Math.max(6,13.5*K),
+          labZ:base+panelZ+0.07*KZ, labY:SCN_F-SC(0.95)};
 }
 
 function drawSortingYard(g,n){
@@ -1742,21 +1961,18 @@ function drawSortingYard(g,n){
      bp 0 is the outer cDNA end and it lies at +y, the near side; the UMI end is
      at -y, the far side, which is the side the whitelists are on. So the three
      barcodes face the plates that judge them. */
-  const uBP=FL/YARD_MOL_BP;
-  const cuts=[]; { let a=0; for(const q of YARD_MOL){ cuts.push([a,a+q.bp,q.k]); a+=q.bp; } }
+  const uBP=M.uBP, segAt=M.segAt, BCBP=M.BCBP;
   const yBP=(yc,bp)=>yc+FL/2-bp*uBP;
-  const segAt=k=>cuts.find(c=>c[2]===k);
-  const BCBP=["bc1","bc2","bc3"].map(k=>{const c=segAt(k); return (c[0]+c[1])/2;});
 
   /* ---- THE R2 BLOCK, which is the only part of the molecule this station
      looks at. bp 96 (the start of bc1) to bp 154 (the end of the UMI) — the
      blue stretch, and every scanner face, light curtain and beam on this belt
      is measured off it rather than off the belt's own width. SCN_F is the far
      tip, at -y, up-right, on the side the whitelist plates are; SCN_N is the
-     near edge, lapping a little way back over the unsequenced middle. */
-  const R2A=segAt("bc1")[0], R2B=segAt("umi")[1];
-  const SCN_F=yBP(cy,R2B)-SC(A.TIP), SCN_N=yBP(cy,R2A)+SC(A.LIP);
-  const SCN_MID=(SCN_F+SCN_N)/2, SCN_LEN=SCN_N-SCN_F;
+     near edge, lapping a little way back over the unsequenced middle. All four
+     come from yardMetrics, because PORTS reads them too. */
+  const R2A=M.R2A, R2B=M.R2B;
+  const SCN_F=M.SCN_F, SCN_N=M.SCN_N, SCN_MID=M.SCN_MID, SCN_LEN=M.SCN_LEN;
 
   /* ---- the deck, almost not there --------------------------------------- */
   const dTop=cy-FL/2-SC(0.9), dBot=REJ+FL/2+SC(0.9);
@@ -1835,7 +2051,7 @@ function drawSortingYard(g,n){
   });
 
   /* ---- three identical scanners, each over the R2 block and nothing else --- */
-  const gz=A.gz*KZ, panelZ=gz+A.pgap*KZ;
+  const gz=M.gz, panelZ=M.panelZ;
   const PANW=SC(0.72);                 /* half of what it was, along the belt */
   const stations=gx.map((sx,i)=>{
     const grp=g.appendChild(el("g"));
@@ -1874,22 +2090,23 @@ function drawSortingYard(g,n){
     return {sx,i,slots,ptr:0,sw:-1,swY:cy};
   });
 
-  /* ---- THE SCAN ITSELF, built after the arches so it reads as light ------
-     A beam dropped from the scanner face to the deck, sweeping ALONG the
-     fragment as it passes under — which is what a barcode reader does, and what
-     the old slot-flicker only implied. It travels the R2 block, bc1 out to the
-     UMI, so the sweep and the thing being swept are the same object seen twice.
+  /* ---- THE LASER, built after the scanners so it reads as light ----------
+     A beam dropped from the scanner face to the deck, AIMED AT ONE SQUARE: the
+     station's own barcode and no other. BC1's laser points at bc1, BC2's at
+     bc2, BC3's at bc3, and each is a fixed point on the machine — the fragment
+     is what moves.
 
-     IT USED TO TRAVEL THE WHOLE MOLECULE, cDNA end to UMI end, and that was the
-     face's fault rather than the beam's: a scanner spanning the belt has to be
-     shown reading across the belt. With the face over R2 alone the beam has
-     exactly R2 to sweep, and it can no longer be seen reading a stretch of cDNA
-     that nothing at this station has an opinion about. */
+     IT USED TO SWEEP, first the whole molecule and then the whole R2 block, and
+     both were the same mistake in different sizes: a beam that travels the
+     length of a read is a beam reading all of it, and no station here reads
+     more than one square. A fixed aim says which one, without a caption and
+     without a colour, and it turns the pass into an event with an order —
+     the square arrives, the laser fires on it, the answer follows. */
   stations.forEach(st=>{
-    st.beam=g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"1.5",
+    st.beam=g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"1.3",
       "stroke-opacity":"0","stroke-linecap":"round"}));
     st.spot=g.appendChild(el("ellipse",{fill:"var(--fg)","fill-opacity":"0",
-      rx:(SC(0.34)*S*C30).toFixed(1), ry:(SC(0.34)*S*0.30).toFixed(1)}));
+      rx:(SC(0.26)*S*C30).toFixed(1), ry:(SC(0.26)*S*0.30).toFixed(1)}));
   });
 
   /* ---- the bin, built last and opaque, and AS WIDE AS THE BELT ------------
@@ -1908,7 +2125,7 @@ function drawSortingYard(g,n){
     if(dy) t.setAttribute("y",dy);
     t.textContent=str; g.appendChild(t);
   };
-  const FS=Math.max(6,13.5*K);
+  const FS=M.FS;
   /* THE ROUND IS THE NAME AND THE REST IS THE NOUN. "BC1 WHITELIST" set as one
      string made the three arches read as three instances of one label with a
      digit buried in it; what a reader needs at a glance is WHICH ROUND. BC1 goes
@@ -1923,7 +2140,7 @@ function drawSortingYard(g,n){
      the tip edge and the two run parallel. Offsetting in -y — up and to the
      right — carries it clear of the panel without moving it off that line. */
   stations.forEach((st,i)=>{
-    const lx=st.sx, ly=SCN_F-SC(0.95), lz=base+panelZ+0.07*KZ;
+    const lx=st.sx, ly=M.labY, lz=M.labZ;
     lab(lx,ly,lz, `BC${i+1}`, (FS*2).toFixed(1), "var(--fg)", "1", 30, "middle");
     /* dy is measured from BC1's baseline and BC1 is twice the size, so the
        1.35 that works under a normal name puts WHITELIST inside the big
@@ -1940,11 +2157,17 @@ function drawSortingYard(g,n){
 
      AND OFF THE FAR RAIL, because the track out of this station leaves from the
      NEAR one. On the belt's centre line the two were parallel and on top of each
-     other, and the orange line read as something coming out of the words. */
-  const VLY=cy-FL/2-SC(0.35);
-  lab(x1+SC(0.6), VLY, base, "VALIDATED TRIPLETS",
+     other, and the orange line read as something coming out of the words.
+
+     RIGHT OF THE END AND ABOVE IT, which is one move in world terms and two on
+     screen: a little further along x carries it past the mouth, and a good way
+     into -y lifts it clear of the belt entirely — -y is up-and-to-the-right
+     here. Sitting a third of a fragment off the far rail it still read as a
+     label ON the belt; up here it reads as what leaves it. */
+  const VLY=cy-FL/2-SC(1.75);
+  lab(x1+SC(1.05), VLY, base, "VALIDATED TRIPLETS",
       (FS*1.1).toFixed(1), "var(--ok)", "1", -30);
-  lab(x1+SC(0.6), VLY, base, "putative cell barcodes",
+  lab(x1+SC(1.05), VLY, base, "putative cell barcodes",
       (FS*0.92).toFixed(1), "var(--fg3)", ".9", -30, "start", (FS*1.33).toFixed(1));
 
   /* ---- one lap ----------------------------------------------------------- */
@@ -1966,24 +2189,18 @@ function drawSortingYard(g,n){
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
 
-  /* ---- THE SWEEP AND THE VERDICT ARE ONE EVENT ---------------------------
-     The mark used to fire at a fixed point past the panel's downstream edge
-     while the beam ran on its own clock, so the tick and the moment the beam
-     crossed the block it is about were two different instants — the drawing
-     said "read here, answered there" and meant "read, and answered, here".
+  /* ---- SCAN, THEN ANSWER, AND IN THAT ORDER ------------------------------
+     The laser is lit while the fragment is within LASW of the station and is
+     brightest at the instant its own square is directly beneath — that is what
+     `sin(pi*u)` buys: the pulse arrives with the block and leaves with it.
 
-     Now the beam's position IS the clock. It sweeps the R2 block once per pass,
-     bc1 first because bc1 is the block nearest the belt's near rail, and each
-     station fires the moment the beam crosses the barcode THAT station checks.
-     So FIREAT[i] is not a constant offset: it is where the sweep has got to
-     when it reaches barcode i, and station i answers there and nowhere else.
-
-     The window is deliberately lopsided — a little upstream of the face, a good
-     deal downstream — so that every one of the three crossings lands at or past
-     the arch and none of them lands after the reject siding has begun to peel
-     away at gx + 0.9. Read on the way through, answered on the block. */
-  const SW_IN=SC(0.35), SW_OUT=SC(1.25), SW_W=SW_IN+SW_OUT;
-  const FIREAT=BCBP.map(bp=>-SW_IN+((bp-R2A)/(R2B-R2A))*SW_W);
+     The verdict lands at FIREAT, which is deliberately OUTSIDE that window. The
+     beam goes out, and a moment later the mark pops. Read, then answered — two
+     events with a gap between them, in the order the machine does them, rather
+     than one thing happening twice. Keep FIREAT > LASW or the two collapse back
+     into a single flash; keep it under SC(0.9) or the answer arrives after the
+     reject siding has already begun to peel the fragment away. */
+  const LASW=SC(0.50), FIREAT=SC(0.62);
   let t=0;
   const run=dt=>{
     t+=dt;
@@ -2018,7 +2235,7 @@ function drawSortingYard(g,n){
       fr.bc.forEach((node,i)=>{
         const c=segAt(`bc${i+1}`);
         const reachable=fr.fail<0||i<=fr.fail;
-        const scanned=fx>gx[i]+FIREAT[i]&&reachable;
+        const scanned=fx>gx[i]+FIREAT&&reachable;
         const bad=fr.fail===i&&scanned;
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
         node.setAttribute("fill",bad?"var(--rej)":R2T);
@@ -2033,11 +2250,11 @@ function drawSortingYard(g,n){
          mark is built before the gantries, so it passes under the scanner and
          the face is see-through: a tick struck beneath the panel is read
          through the glass, which is what the panel was narrowed and thinned
-         for. See FIREAT above for why each station's offset differs. */
+         for. See LASW/FIREAT above for the order the two happen in. */
       stations.forEach((st,i)=>{
         const prev=fr.px===undefined?fx:fr.px;
         const stillOnLine=fr.fail<0||i<=fr.fail;
-        if(prev<=st.sx+FIREAT[i] && fx>st.sx+FIREAT[i] && stillOnLine){
+        if(prev<=st.sx+FIREAT && fx>st.sx+FIREAT && stillOnLine){
           fr.flash[i]=t;
           if(fr.fail!==i){ st.slots[st.ptr%st.slots.length].lit=t; st.ptr++; }
         }
@@ -2059,8 +2276,8 @@ function drawSortingYard(g,n){
         mk.setAttribute("stroke-opacity",(op*vis*0.9).toFixed(3));
       });
       stations.forEach((st,i)=>{
-        if(vis>0.5 && (fr.fail<0||i<=fr.fail) && fx>st.sx-SW_IN && fx<st.sx+SW_OUT){
-          st.sw=(fx-(st.sx-SW_IN))/SW_W; st.swY=yc;
+        if(vis>0.5 && (fr.fail<0||i<=fr.fail) && Math.abs(fx-st.sx)<LASW){
+          st.sw=(fx-(st.sx-LASW))/(2*LASW); st.swY=yc;
         }
       });
       fr.px=fx;
@@ -2069,16 +2286,19 @@ function drawSortingYard(g,n){
     for(const st of stations){
       if(st.sw<0){ st.beam.setAttribute("stroke-opacity","0");
                    st.spot.setAttribute("fill-opacity","0"); continue; }
-      /* the beam lands ON the R2 block, in the block's own base pairs */
-      const yb=yBP(st.swY, R2A+(R2B-R2A)*st.sw);
+      /* THE AIM IS FIXED: this station's own square, and the fragment's own
+         line — which is the reject siding once it has begun to leave. */
+      const yb=yBP(st.swY, BCBP[st.i]);
       const a=P(st.sx,yb,base+panelZ), b=P(st.sx,yb,base);
       st.beam.setAttribute("x1",a[0].toFixed(1)); st.beam.setAttribute("y1",a[1].toFixed(1));
       st.beam.setAttribute("x2",b[0].toFixed(1)); st.beam.setAttribute("y2",b[1].toFixed(1));
-      /* fades in and out over the pass rather than snapping on */
+      /* BRIGHTEST WHEN THE SQUARE IS DIRECTLY BENEATH, which is what sin(pi*u)
+         is doing here: the pulse arrives with the block and leaves with it, and
+         a beam that snapped on would be a lamp rather than a reading. */
       const k=Math.sin(Math.PI*clamp01(st.sw));
-      st.beam.setAttribute("stroke-opacity",(0.52*k).toFixed(3));
+      st.beam.setAttribute("stroke-opacity",(0.78*k).toFixed(3));
       st.spot.setAttribute("cx",b[0].toFixed(1)); st.spot.setAttribute("cy",b[1].toFixed(1));
-      st.spot.setAttribute("fill-opacity",(0.38*k).toFixed(3));
+      st.spot.setAttribute("fill-opacity",(0.50*k).toFixed(3));
     }
     const scroll=((t*v)%SLAT_P+SLAT_P)%SLAT_P;
     slats.forEach((ln,k)=>{
