@@ -1269,7 +1269,11 @@ function setBoxY(nd,xc,w,ya,yb,z0,z1,op){
   nd.end .setAttribute("points",pts([P(xr,y0,z1),P(xr,y1,z1),P(xr,y1,z0),P(xr,y0,z0)]));
   ["top","near","end"].forEach(k=>{
     nd[k].setAttribute("fill-opacity",op);
-    nd[k].setAttribute("stroke-opacity",((k==="top"?0.42:0.28)*op).toFixed(3));
+    /* QUIETER THAN setBox's, because everything drawn through this is opaque.
+       An outline earns its keep on a translucent face, where it is the only
+       thing saying where the box ends; on a solid one at full strength it is a
+       second drawing of the same edge. */
+    nd[k].setAttribute("stroke-opacity",((k==="top"?0.30:0.18)*op).toFixed(3));
   });
 }
 
@@ -1316,18 +1320,43 @@ function drawBelts(g,n){
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
   const K=span/9.2, KZ=n.h/0.53;              /* the original's own units */
-  const base=n.h*0.245, geneH=n.h*0.19, exonH=n.h*0.565;
+  /* THE MODEL IS LOW. exonH was 0.565 of n.h against a line 0.12 world units
+     wide, which is a wall rather than a block: opaque and narrowed, the exons
+     came out as a row of train cars standing on a rail. An exon is a THICKER
+     PART OF A LINE. Give it a little over its own width in height and it reads
+     as one, and a read landing on its top lands somewhere the eye can still
+     see is part of the gene. */
+  const base=n.h*0.245, geneH=n.h*0.09, exonH=n.h*0.24;
   const GL=n.d*0.70;                          /* the gene, across the belt */
   const BW=GL+K*1.0;                          /* the belt, a shade wider than its load */
   const GW=K*0.30;                            /* a gene's thickness along the belt */
   /* THINNER THAN IT WAS, AND THE TWO HALVES ARE NOT THE SAME THICKNESS.
      A read is one observation; at 0.40 of a gene's own thickness a few of them
      read as slats laid on the model rather than as a pile of separate
-     measurements, and the pile is the argument. The barcode end is drawn at
-     HALF the aligned end's width on top of that — the orange is the part with
-     a position, the blue is the part that has none, and the drawing should not
-     give them equal say. */
-  const RW=GW*0.28, RWB=RW*0.50;
+     measurements, and the pile is the argument.
+
+     THEN A THIRD OF THAT AGAIN. At 0.28 a read still had a body, and thirty
+     bodies on one model is a texture rather than a count — you could see that
+     reads were there and not how many. At 0.093 a read is a LINE, which is what
+     one observation looks like, and a hundred lines at slightly different
+     offsets read as a hundred.
+
+     AND THE AERIAL IS A QUARTER OF THE READ. The orange is the part with a
+     position and the blue is the part that has none; they should not have equal
+     say and they no longer have comparable weight. Below about a pixel a true
+     quad stops being drawn at all rather than being drawn faintly, so the
+     aerial goes through `barTo`, which floors its own half-width in SCREEN
+     pixels — a legibility floor, and the only length on this shape that is not
+     in world units. */
+  const RW=GW*0.093, RWB=RW*0.25;
+  const GWE=GW*0.58;                          /* the gene's line, body and exons alike */
+  /* ONE POINT, NOT A LINE. Every read on a gene falls from the same place: up
+     the belt by NOZX and above the exon tops by NOZZ, on the belt's centre
+     line. The jitter that used to be in the source is gone — a spray whose
+     source is itself spread out is a shower, and what this station does is
+     three hundred reads leaving one stream and each finding its OWN place on
+     one model. The fan is the landing sites, and nothing else. */
+  const NOZX=5.4*K, NOZZ=3.2*KZ;
   const v=(n.v||1.05)*K;
   const NG=10, PAD=7*K, LOOP=span+PAD*2;
   const yOf=f=>cy+GL/2-f*GL;                  /* f=0 at +y, the gene's near end */
@@ -1355,6 +1384,15 @@ function drawBelts(g,n){
      the blue starts, and it is 32/90 for the same reason. */
   const TDIR=[-0.86,0.51];                    /* up and to the left, unit length */
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
+  /* AND IT ARRIVES FLAT AND FLAPS UP ON THE WAY DOWN.
+     A molecule in free air is a straight molecule: at the top of the fall the
+     whole read is one flat line — cDNA, adapter, barcode end, in a row along
+     the gene's own axis, at the height it is falling through. The aerial is not
+     a shape the molecule HAS, it is a shape the descent puts it in, so the tail
+     swings from that line up into TDIR as the read comes down, the way wind
+     takes a streamer. `flap` is that swing, and the splice arch opens on the
+     same number — a read that lands opens up in one motion. */
+  const flapOf=kk=>easeOut(clamp01((kk-0.12)/0.68));
   /* THE ARCH A SPLICED READ THROWS OVER THE INTRON IT CROSSES. Kept low: an
      intron here is a few hundredths of a gene wide, so an arch as tall as it is
      long draws a loop, and a loop reads as something the read does rather than
@@ -1365,14 +1403,19 @@ function drawBelts(g,n){
      identification, not a heading, and there are ten of them moving */
   const GFS=Math.max(5,8.0*K);
 
-  /* ---- the belt: scenery, and it should read as scenery ------------------ */
+  /* ---- the belt: scenery, and it should read as scenery -------------------
+     OPAQUE, though. It was drawn through at 0.55 and 0.7, and a translucent
+     deck is not quieter than a solid one — it is busier, because the grid and
+     the ground plane read straight through it and every gene on it acquires a
+     second set of lines nobody drew. Quiet is a colour close to the ground,
+     not a hole in the floor. */
   g.appendChild(el("polygon",{points:pts([P(x0,cy-BW/2,base),P(x1,cy-BW/2,base),
     P(x1,cy+BW/2,base),P(x0,cy+BW/2,base)]),
-    fill:"var(--t-right)","fill-opacity":".55",stroke:"var(--stroke)",
+    fill:"var(--t-right)","fill-opacity":"1",stroke:"var(--stroke)",
     "stroke-width":"0.9","stroke-opacity":".11"}));
   g.appendChild(el("polygon",{points:pts([P(x0,cy+BW/2,base),P(x1,cy+BW/2,base),
     P(x1,cy+BW/2,0),P(x0,cy+BW/2,0)]),
-    fill:"var(--t-right)","fill-opacity":".7",stroke:"var(--stroke)",
+    fill:"var(--t-right)","fill-opacity":"1",stroke:"var(--stroke)",
     "stroke-width":"0.9","stroke-opacity":".11"}));
   const NSL=34, slats=[];
   for(let k=0;k<NSL;k++)
@@ -1386,14 +1429,26 @@ function drawBelts(g,n){
     /* more exons and smaller ones than the down-track version had: a read is
        0.145 of the gene now, and an exon has to have somewhere to put two or
        three of them */
+    /* NO EXON SHORTER THAN A READ. The generator ran from 0.055 and a read is
+       0.0602 of a gene, so the short half of the distribution could not hold
+       one — and the placement, which clamps rather than rejects, put those
+       reads at the exon's start and let them hang off the far end onto the
+       intron beside it. On a model this is the only claim the station makes:
+       every read on an exon, none on an intron. A model with somewhere a read
+       cannot land is a model that will eventually be seen to break it. */
     const ex=[]; let f=0.015+rnd()*0.025;
     while(f<0.95){
-      const w=0.055+rnd()*0.085;
+      const w=RL+0.012+rnd()*0.075;
       if(f+w>0.965) break;
       ex.push([f,f+w]); f+=w+0.035+rnd()*0.055;
     }
     const gn={grp:ggrp, pos:0, ex, hid:false,
-      body:boxNodes(ggrp,"var(--t-left)","var(--t-right)",0.8),
+      /* THREE STEPS OF ONE GREY, DARKEST AT THE BOTTOM: the deck is --t-right,
+         the gene's line is --t-top, the exons are --k-top. On a translucent
+         deck the body could be --t-left and still be seen; on an opaque one it
+         is within a shade of the floor it sits on and reads as an empty
+         outlined box, because all that is left of it is its own stroke. */
+      body:boxNodes(ggrp,"var(--t-top)","var(--t-left)",0.8),
       exons:ex.map(()=>boxNodes(ggrp,"var(--k-top)","var(--k-left)",1.0)),
       reads:[]};
     /* ---- THE GENE'S NAME, LYING ALONG THE BELT'S NEAR EDGE ----------------
@@ -1429,7 +1484,12 @@ function drawBelts(g,n){
          place, and the reason G2 is a node of its own. */
       const sp=ex.length>1 && rnd()<1/6;
       const rd={sp,
-        dx:(rnd()-0.5)*GW*2.2,
+        /* ON THE MODEL, NOT BESIDE IT. dx used to run to +/-1.1 of a gene's own
+           thickness, so most reads landed off the line entirely and the pile
+           read as scatter around a gene rather than coverage of one. It is now
+           bounded by the line's own width less the read's, so every read lands
+           somewhere a read could actually have aligned. */
+        dx:(rnd()-0.5)*(GWE-RW),
         /* RAIN, NOT A COHORT — AND SPREAD OVER THE PART OF THE LOOP THAT IS
            ON SCREEN. A gene is only on the belt for u in about 0.30 to 0.70;
            reads that landed at 0.15 landed in the dark, which is how the first
@@ -1437,25 +1497,31 @@ function drawBelts(g,n){
            and 0.64 a gene arrives with reads still falling onto it and is
            covered by the time it leaves, which is the story. */
         u0:0.34+rnd()*0.30,
-        fx0:(5.0+rnd()*1.1)*K,                /* one nozzle, up-belt and high */
-        fy0:(rnd()-0.5)*GL*0.16,
-        fz:(3.0+rnd()*0.6)*KZ,
+        /* NO OUTLINE ON THE READ EITHER, now that a read is a line. A 0.6
+           stroke on a bar under a pixel wide is not an edge, it IS the bar,
+           and it draws every read at the same width whatever the width is. */
         cd:ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
-          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"}))};
+          stroke:"none"}))};
       if(sp){
         const kx=Math.floor(rnd()*(ex.length-1)), eA=ex[kx], eB=ex[kx+1];
         rd.rlA=RL*(0.34+rnd()*0.32); rd.rlB=RL-rd.rlA;
         rd.fA=Math.max(eA[0]+0.002, eA[1]-rd.rlA); rd.fB=eB[0]+0.002;
         rd.gap=[eA[1],eB[0]];
         rd.end=rd.fB+rd.rlB;
+        rd.ymid=yOf((rd.fA+rd.end)/2);
         rd.cd2=ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
-          stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":"0"}));
+          stroke:"none"}));
         rd.arc=ggrp.appendChild(el("path",{fill:"none",stroke:"var(--cull)",
           "stroke-width":"1.0","stroke-opacity":"0","stroke-linecap":"round"}));
       }else{
-        const e=ex[Math.floor(rnd()*ex.length)];
-        const lo=e[0]+0.004, hi=Math.max(lo,e[1]-RL-0.004);
+        /* only exons that can actually hold the whole read, and the longest as
+           a fallback so this can never pick from an empty list */
+        const fits=ex.filter(e=>e[1]-e[0]>=RL+0.006);
+        const pool=fits.length?fits:[ex.reduce((a,b)=>(b[1]-b[0]>a[1]-a[0]?b:a))];
+        const e=pool[Math.floor(rnd()*pool.length)];
+        const lo=e[0]+0.003, hi=Math.max(lo,e[1]-RL-0.003);
         rd.f=lo+rnd()*(hi-lo); rd.end=rd.f+RL;
+        rd.ymid=yOf((rd.f+rd.end)/2);
       }
       rd.ad=ggrp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
         "stroke-opacity":"0","stroke-dasharray":"2.2 2.2","stroke-linecap":"butt"}));
@@ -1469,33 +1535,51 @@ function drawBelts(g,n){
     genes.push(gn);
   }
 
-  const quadY=(node,xc,w,ya,za,yb,zb,op)=>{
-    node.setAttribute("points",pts([P(xc-w/2,ya,za),P(xc+w/2,ya,za),
-                                    P(xc+w/2,yb,zb),P(xc-w/2,yb,zb)]));
-    node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
-    node.setAttribute("stroke-opacity",(clamp01(op)*0.45).toFixed(3));
-  };
   const seg=(node,xa,ya,za,xb,yb,zb,op)=>{
     const a=P(xa,ya,za), b=P(xb,yb,zb);
     node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
     node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
-  /* quadY's transpose: thin in Y, running in x and z. The aerial leaves the
-     gene's own axis, so it needs a bar that is not measured along it. */
-  const quadX=(node,yc2,w,xa,za,xb,zb,op)=>{
-    node.setAttribute("points",pts([P(xa,yc2-w/2,za),P(xa,yc2+w/2,za),
-                                    P(xb,yc2+w/2,zb),P(xb,yc2-w/2,zb)]));
+  /* A BAR BETWEEN TWO POINTS ANYWHERE, thin across, offset in the SCREEN plane.
+     quadX and quadY were this shape's two axis-aligned bars, and between them
+     they covered every direction a read used to run in. The aerial swings
+     through a whole arc now, so it needs a bar that does not care which axis it
+     is on — and once one existed there was no reason for the read to keep its
+     own. A world extent in x or in y
+     projects to exactly w*S — the two are equal under this projection — so
+     that is the width used, and the bar is the same weight in any direction.
+
+     THE FLOOR IS IN SCREEN PIXELS AND IT IS THE ONE PLACE THIS SHAPE LEAVES
+     WORLD UNITS. A quarter of a read is under a pixel wide, and under a pixel
+     an SVG polygon stops being drawn faintly and starts not being drawn. Half
+     a pixel of half-width is the difference between "deliberately slight" and
+     "missing", and there is nothing to be gained by being right about the
+     width of something nobody can see.
+
+     WHICH IS WHY THE READ GOES THROUGH HERE TOO, and why the floor is a
+     parameter. The aligned half was a true quad and the aerial was floored, so
+     at map zoom the part with no position was drawn WIDER than the part with
+     one — the floor had quietly inverted the hierarchy the widths were set to
+     make. Both are floored now, the read at twice the aerial's minimum, so the
+     ratio survives all the way down to the zoom where the true widths stop
+     meaning anything. */
+  const barTo=(node,w,minHW,ax,ay,az,bx,by,bz,op)=>{
+    const a=P(ax,ay,az), b=P(bx,by,bz);
+    const dx=b[0]-a[0], dy2=b[1]-a[1], L=Math.hypot(dx,dy2)||1;
+    const hw=Math.max(minHW,w*S/2), hx=-dy2/L*hw, hy=dx/L*hw;
+    node.setAttribute("points",[[a[0]+hx,a[1]+hy],[b[0]+hx,b[1]+hy],
+      [b[0]-hx,b[1]-hy],[a[0]-hx,a[1]-hy]]
+      .map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" "));
     node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
-    node.setAttribute("stroke-opacity",(clamp01(op)*0.45).toFixed(3));
   };
   /* the arch over an intron: sampled in the gene's own f, so it lands on the
      two exon ends it belongs to however the model is scaled */
-  const archPath=(node,xc,fa,fb,z0,dy,op)=>{
+  const archPath=(node,xc,fa,fb,z0,dy,h,op)=>{
     const p=[];
     for(let s=0;s<=10;s++){
       const q=s/10;
-      p.push(P(xc, yOf(fa+(fb-fa)*q)+dy, z0+ARCH*Math.sin(Math.PI*q)));
+      p.push(P(xc, yOf(fa+(fb-fa)*q)+dy, z0+h*Math.sin(Math.PI*q)));
     }
     node.setAttribute("d","M "+p.map(a=>a[0].toFixed(1)+" "+a[1].toFixed(1)).join(" L "));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
@@ -1533,9 +1617,17 @@ function drawBelts(g,n){
       /* THE BODY HAS TO CARRY, or the gene reads as a staircase of unrelated
          blocks rather than as one model with exons standing proud of it. It is
          the thing that says these blocks belong to each other. */
-      setBoxY(gn.body,gxp,GW*0.58,yOf(0),yOf(1),base,base+geneH,(vis*0.80).toFixed(3));
+      /* ONE LINE, AND THE EXONS ARE THE SAME LINE STANDING TALLER.
+         The exons used to be WIDER than the body they sit on (GW against
+         GW*0.58) and both were drawn through — 0.42 and 0.80 — so a gene came
+         apart into a wide translucent staircase with a narrow strip showing
+         between the treads, and the deck's own lines through all of it. A gene
+         model is one line with thicker sections: same width, different height,
+         both solid. What separates an exon from the intron beside it is that it
+         stands up, and that is the only difference there should be. */
+      setBoxY(gn.body,gxp,GWE,yOf(0),yOf(1),base,base+geneH,vis.toFixed(3));
       gn.ex.forEach((e,k)=>
-        setBoxY(gn.exons[k],gxp,GW,yOf(e[0]),yOf(e[1]),base,exTop,(vis*0.42).toFixed(3)));
+        setBoxY(gn.exons[k],gxp,GWE,yOf(e[0]),yOf(e[1]),base,exTop,vis.toFixed(3)));
 
       /* the name rides with its gene, at the gene's own x, off the near rail */
       {
@@ -1548,30 +1640,44 @@ function drawBelts(g,n){
       for(const rd of gn.reads){
         /* LANDS GENTLY. air goes 1 to 0 over the fall and its slope goes to
            zero with it, so a read settles onto the exon rather than arriving
-           at speed and stopping. */
+           at speed and stopping.
+
+           AND IT IS NEVER PARKED. Before the window opened, kk was 0, air was
+           1, and the read sat at the nozzle at three-quarter strength waiting
+           its turn — thirty reads hanging motionless above every gene, which is
+           the opposite of rain. It is now invisible until its own fall starts
+           and fades in over the first tenth of it, so the first frame anybody
+           sees of a read is a frame in which it is already moving. */
         const kk=clamp01((u-(rd.u0-0.20))/0.20);
         const air=Math.pow(1-kk,2.2);
-        const rx=gxp+rd.dx-rd.fx0*air, z0=exTop+rd.fz*air;
-        const dy=rd.fy0*air;                  /* the fan, closing as it lands */
-        const op=vis*(1-0.25*air);
+        const flap=flapOf(kk);
+        /* one point: dx closes in as it lands, and y comes down off the belt's
+           own centre line */
+        const rx=gxp+rd.dx*(1-air)-NOZX*air, z0=exTop+NOZZ*air;
+        const dy=(cy-rd.ymid)*air;            /* the fan, closing as it lands */
+        const op=vis*sstep(0,0.10,kk);
         /* the cDNA lies flat on the exon — the only part of this molecule the
            aligner has anything to say about, and the only part drawn at full
            strength */
         if(rd.sp){
-          quadY(rd.cd ,rx,RW,yOf(rd.fA)+dy,z0,yOf(rd.fA+rd.rlA)+dy,z0,op);
-          quadY(rd.cd2,rx,RW,yOf(rd.fB)+dy,z0,yOf(rd.fB+rd.rlB)+dy,z0,op);
+          barTo(rd.cd ,RW,0.6,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
+          barTo(rd.cd2,RW,0.6,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
           /* and nothing at all over the intron between them */
-          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,op*0.55);
+          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap,op*0.55);
         }else{
-          quadY(rd.cd,rx,RW,yOf(rd.f)+dy,z0,yOf(rd.f+RL)+dy,z0,op);
+          barTo(rd.cd,RW,0.6,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
         }
         /* AND THE TAIL LEAVES THE GENE'S AXIS ALTOGETHER — up-belt and up, at
            the far end of whatever the orange did. Along the axis it read as
            more read; across it, it reads as an aerial on one. */
         const ye=yOf(rd.end)+dy;
-        const kx=rx+TDIR[0]*TAIL*TKNEE, kz=z0+TDIR[1]*TAIL*TKNEE;
-        seg(rd.ad,rx,ye,z0,kx,ye,kz,op*0.60);
-        quadX(rd.bc,ye,RWB,kx,kz,rx+TDIR[0]*TAIL,z0+TDIR[1]*TAIL,op*0.42);
+        /* the tail turns rather than stretches: the direction is normalised, so
+           it is the same molecule at every point in the swing */
+        let ux=TDIR[0]*flap, uy=-(1-flap), uz=TDIR[1]*flap;
+        const uL=Math.hypot(ux,uy,uz)||1; ux/=uL; uy/=uL; uz/=uL;
+        const kx=rx+ux*TAIL*TKNEE, ky=ye+uy*TAIL*TKNEE, kz=z0+uz*TAIL*TKNEE;
+        seg(rd.ad,rx,ye,z0,kx,ky,kz,op*0.55);
+        barTo(rd.bc,RWB,0.3,kx,ky,kz,rx+ux*TAIL,ye+uy*TAIL,z0+uz*TAIL,op*0.26);
       }
     });
   };

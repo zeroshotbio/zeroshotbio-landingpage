@@ -585,59 +585,131 @@ gene as it rose, which put the one part of the molecule with **no** position
 onto the axis that means position — a blue tail pointing along a gene reads as
 blue lying on the gene. `TDIR` is `[-0.86, +0.51]`, so it goes into −x and +z:
 up-and-to-the-left, about 47° off the deck, across the direction of travel and
-across the gene both. There is nowhere on the model it could be mistaken for
-being, and trailing behind the belt's own motion is what a mast on a moving
-thing does anyway.
+across the gene both.
 
-**`LIFT` is gone and the length is base pairs again.** It was `0.52 × n.h`, a
-height with nothing behind it. The tail is 32 of unsequenced middle and 58 of
-barcode against the 64 that aligned, so it is `(RG+RB)` of the gene long — half
-again the orange, which is the true ratio — laid along a fixed direction instead
-of along the model. `TKNEE` is where the dashes stop and the blue starts, and it
-is 32/90 for the same reason.
+**`LIFT` is gone and the length is base pairs.** It was `0.52 × n.h`, a height
+with nothing behind it. The tail is 32 of unsequenced middle and 58 of barcode
+against the 64 that aligned, so it is `(RG+RB)` of the gene long — half again
+the orange, which is the true ratio. `TKNEE` is where the dashes stop and the
+blue starts, and it is 32/90 for the same reason.
 
-### The orange is the subject, and the drawing says so three ways
+### But it arrives flat, and the descent is what flaps it up
 
-`RW` went `0.40 × GW` to **`0.28`**, and the barcode end is drawn at **half that
-again** (`RWB`). A read is one observation; at 0.40 a few of them read as slats
-laid on the model rather than as a pile of separate measurements, and the pile is
-the argument. The two halves are then not the same thickness on purpose: *the
-orange is the part with a position, the blue is the part that has none*, and the
-drawing should not give them equal say. Opacity carries the rest — the aligned
-half at full strength, the aerial at 0.42.
+**A molecule in free air is a straight molecule.** At the top of the fall the
+whole read is one flat line — cDNA, adapter, barcode end, in a row along the
+gene's own axis, at the height it is falling through. The aerial is not a shape
+the molecule *has*; it is a shape the descent puts it in. `flapOf(kk)` swings the
+tail from that line up into `TDIR` as the read comes down, the way wind takes a
+streamer, and the splice arch opens on the same number — **a read that lands
+opens up in one motion.**
 
-**The aerial takes no outline.** At half the orange's width a `0.6` stroke is a
-third of the bar again, and with one the two halves came out looking the same
-thickness, which is the one thing this pair is not.
+**The tail turns; it does not stretch.** The direction is interpolated and then
+*normalised*, so it is the same molecule at every point in the swing. Lerping
+the components without normalising shortens the tail through the middle of the
+turn, which reads as the barcode end retracting into the read.
 
-### It rains, and it rains from one nozzle
+### The orange is the subject, and the drawing says so in widths
+
+| | |
+|---|---|
+| `RW` | `0.093 × GW` — was 0.40, then 0.28 |
+| `RWB` | `0.25 × RW` — was 0.50 |
+| screen floor | read `0.6`, aerial `0.3` half-pixels |
+
+**A read is a line, not a body.** At 0.28 of a gene's own thickness thirty reads
+on one model were a *texture* — you could see that reads were there and not how
+many. At 0.093 a hundred lines at slightly different offsets read as a hundred,
+which is the count the aggregate argument is made of.
+
+**Neither half takes an outline any more.** A `0.6` stroke on a bar under a
+pixel wide is not an edge, it *is* the bar, and it draws every read at the same
+width whatever the width is.
+
+**The floor is in screen pixels and it is the one place this shape leaves world
+units** — and it is the one that bit. A quarter of a read is under a pixel wide,
+and under a pixel an SVG polygon stops being drawn faintly and starts not being
+drawn at all. The aerial was floored and the read was a true quad, so at map
+zoom *the part with no position was drawn wider than the part with one*: the
+floor had quietly inverted the hierarchy the widths were set to make. Both go
+through `barTo` now, the read at twice the aerial's minimum, so the ratio
+survives down to the zoom where the true widths stop meaning anything.
+
+### It rains from one point, and it is never parked at it
 
 Reads used to arrive in a cohort inside a narrow band of the traverse, which
-draws a *delivery* — a batch handed over at a moment. Alignment is not a batch:
-reads arrive continuously, they are independent, and no two are aimed.
+draws a *delivery* — a batch handed over at a moment. Alignment is not a batch.
 
-So every read has its own `u0`, and they all fall from the **same** place —
-up-belt, high, `fx0` and `fz` with a nozzle's width of jitter and no more, plus
-a small lateral `fy0` that closes as it lands. **The fan you see is not the
-source spreading**; it is three hundred different landing sites each pulling its
-own read out of one stream, which is what a wide-angle spray actually is. `air`
-goes 1 → 0 with its slope going to zero too, so a read *settles* rather than
-arriving at speed and stopping.
+**One point, not a region.** `NOZX` and `NOZZ` are constants: every read on a
+gene falls from the same place, up-belt and above the exon tops, on the belt's
+centre line. The per-read jitter that used to be in the source is gone — *a
+spray whose source is itself spread out is a shower*, and what this station does
+is three hundred reads leaving one stream and each finding its own place on one
+model. **The fan is the landing sites and nothing else**, which is why `dx`
+closes in as `air` goes to zero and `dy` comes down off `cy` rather than being a
+fixed offset.
 
-**`u0` is spread over the part of the loop that is on screen.** A gene is only
-on the belt for `u` in roughly 0.30–0.70; the first spread of these ran 0.10–0.52
-and half the rain landed in the dark, which is why it looked like no rain at all.
-At 0.34–0.64 a gene arrives with reads still falling onto it and is covered by
-the time it leaves.
+**And a read is invisible until its own fall starts.** Before, `kk` was 0 and
+`air` was 1 for everything whose window had not opened, so thirty reads hung
+motionless above every gene at three-quarter strength waiting their turn — the
+opposite of rain. `op` is `sstep(0, 0.10, kk)`: the first frame anybody sees of
+a read is a frame in which **it is already moving**, and it fades in over the
+first tenth of the fall rather than popping.
 
-`NR` is 24–33 a gene, about double what it was. Which is affordable only because
-of the next paragraph.
+`u0` is spread over 0.34–0.64, the part of the loop that is actually on screen —
+a gene is only on the belt for `u` in roughly 0.30–0.70, and the first spread of
+these ran 0.10–0.52, so half the rain landed in the dark. `NR` is 24–33 a gene,
+affordable because `gn.hid` hides the six models that are off the belt at any
+moment and skips them entirely, which is most of the per-frame cost.
 
-**A gene off the belt costs nothing.** Ten models are on the loop and four are on
-the belt at a time; walking the other six every frame was most of the work this
-shape did and none of the picture. `gn.hid` hides the group once and skips it
-until it comes back — worth ~60% of the per-frame cost, and it is what pays for
-the extra reads.
+### Where a read lands is the whole claim, so the model has to be able to hold it
+
+**Every read on an exon, none on an intron** is the only thing this station
+asserts in aggregate, and it was quietly false twice over.
+
+- **`dx` ran to ±1.1 of a gene's own thickness**, so most reads landed off the
+  line entirely and the pile read as scatter *around* a gene rather than
+  coverage *of* one. It is bounded by `GWE - RW` now — the line's own width less
+  the read's — so every read lands somewhere a read could actually have aligned.
+- **The exon generator started at 0.055 and a read is 0.0602 of a gene**, so the
+  short half of the distribution could not hold one. The placement clamps rather
+  than rejects, so those reads sat at the exon's start and hung off the far end
+  onto the intron beside it. Exons now start at `RL + 0.012`, and the placement
+  additionally filters to exons that fit and falls back to the longest. **A
+  model with somewhere a read cannot land is a model that will eventually be
+  seen to break the claim.**
+
+### The gene is one line, opaque, with thicker sections
+
+`GWE` is `0.58 × GW` and the body and the exons are **both** that width. They
+were `GW*0.58` and `GW` — the exons *wider* than the body they sit on — and both
+drawn through, at 0.42 and 0.80. A gene came apart into a wide translucent
+staircase with a narrow strip showing between the treads and the deck's own grid
+through all of it. **A gene model is one line with thicker sections: same width,
+different height, both solid.** What separates an exon from the intron beside it
+is that it stands up, and that is the only difference there should be.
+
+**`exonH` went 0.565 → 0.24 of `n.h`, `geneH` 0.19 → 0.09.** Opaque and narrowed,
+an exon at 0.565 against a line 0.12 world units wide is a *wall*: the models
+came out as rows of train cars standing on a rail. A little over its own width in
+height reads as a thicker part of a line, and a read landing on its top lands
+somewhere the eye can still see is part of the gene.
+
+**Three steps of one grey, darkest at the bottom:** the deck is `--t-right`, the
+gene's line is `--t-top`, the exons are `--k-top`. On a translucent deck the body
+could be `--t-left` and still be seen; on an opaque one it is within a shade of
+the floor and reads as an *empty outlined box*, because all that is left of it is
+its own stroke.
+
+### The deck is opaque, and that is what made it quiet
+
+The belt was drawn through at 0.55 and 0.7. **A translucent deck is not quieter
+than a solid one — it is busier**, because the ground grid reads straight through
+it and every gene on it acquires a second set of lines nobody drew. Quiet is a
+colour close to the ground, not a hole in the floor.
+
+`setBoxY`'s outlines came down with it, 0.42/0.28 → 0.30/0.18. An outline earns
+its keep on a translucent face, where it is the only thing saying where the box
+ends; on a solid one at full strength it is a second drawing of the same edge.
 
 ### The splice arches are back
 
@@ -649,15 +721,13 @@ touches down**. Those are the reads the sequence alone could not place, and they
 are the reason `G2` is a node of its own rather than a note on `G1`.
 
 `archPath` samples the curve in the gene's own `f`, so it lands on the two exon
-ends it belongs to however the model is scaled. `ARCH` is `0.26 × n.h` and it
-was 0.42: an intron here is a few hundredths of a gene wide, and an arch as tall
-as it is long draws a **loop**, which reads as something the read does rather
-than as the something it does not. What has to be legible is that the read is in
-two pieces and that nothing of it is over the gap.
-
-The split is `RL` between the two halves — the read does not get longer for
-being spliced — and the aerial hangs off the far end of the second piece like
-any other.
+ends it belongs to however the model is scaled, and it takes its height as an
+argument so the arch can **open with the flap** — flat in the air, arched on the
+model. `ARCH` is `0.26 × n.h` and it was 0.42: an intron here is a few hundredths
+of a gene wide, and an arch as tall as it is long draws a **loop**, which reads
+as something the read does rather than as the something it does not. The split is
+`RL` between the two halves — the read does not get longer for being spliced —
+and the aerial hangs off the far end of the second piece like any other.
 
 ### Every gene is named, and the names are real on models that are not
 
@@ -692,14 +762,19 @@ once.
 unrelated blocks rather than one gene with exons standing proud of it — the body
 is the thing that says these blocks belong to each other.
 
-### `setBoxY`, `quadX`
+### `setBoxY` and `barTo`
 
 `setBox`'s twin: same three faces, same roles, transposed for a box long in `y`
 and thin in `x`. Anything laid across a belt on this page needs it.
 
-`quadX` is `quadY`'s transpose for the same reason one step down — a bar thin in
-`y` running in `x` and `z`. The aerial leaves the gene's own axis, so it needs a
-bar that is not measured along it.
+`barTo` replaced both `quadX` and `quadY`. They were this shape's two
+axis-aligned bars and between them they covered every direction a read used to
+run in; the aerial swings through a whole arc now, so it needs a bar that does
+not care which axis it is on — and once one existed there was no reason for the
+read to keep its own. It offsets in the **screen** plane, which is exact enough
+for a line and is what lets both halves share one pixel floor: a world extent in
+`x` or in `y` projects to exactly `w·S` under this projection, so a bar is the
+same weight in any direction.
 
 ## `drawSortingYard` — matching as a place
 
@@ -1559,3 +1634,9 @@ resized. Nobody had.
 - **Treat a gene name at `E4` as a claim about the model under it.** The symbols
   are real; the models are seeded. If one ever has to describe the other, the
   models come from the annotation.
+- **Generate an exon at `E4` that is shorter than `RL`.** The placement clamps
+  rather than rejects, so a read on one hangs off the end onto the intron and
+  breaks the only claim this station makes in aggregate.
+- **Give one half of a read a pixel floor and not the other.** Below a pixel the
+  floor decides the widths, so a floor on one side silently inverts whatever the
+  widths were set to say.
