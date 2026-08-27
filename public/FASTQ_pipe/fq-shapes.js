@@ -1664,7 +1664,7 @@ function drawBelts(g,n){
   const ARCH=n.h*0.26;
   /* smaller than every other name on this map, on purpose: it is an
      identification, not a heading, and there are ten of them moving */
-  const GFS=Math.max(5,8.0*K);
+  const GFS=Math.max(6,10.4*K);
   /* ---- THE LAST THIRD IS THE ASSIGNMENT ----------------------------------
      Alignment answers WHERE on the assembly; assignment answers WHICH GENE, and
      they are different questions asked of the same read a moment apart. The
@@ -1693,9 +1693,22 @@ function drawBelts(g,n){
      it) or they climb into it; and the bin must be inside the belt's own
      visible span, because a shunted read is drawn in its gene's group and goes
      when the gene does. 0.86 leaves the last-declared read room to get there. */
-  const BINX4=x0+span*0.86, BINY4=cy-BW/2-GL*0.14;
-  const SLOTX4=RL*GL*1.9, SLOTY4=RL*GL*1.25;
-  const BUCKH4=n.h*0.23, HEADH4=n.h*0.07;
+  const BINX4=x0+span*0.86, BINY4=cy-BW/2-GL*0.18;
+  /* THE SAME SHAPE AS E3's, WHICH IS A RATIO AND NOT A SIZE. That bin's slot is
+     5.9 times as long as it is wide and its pail and head are 0.204 and 0.058
+     of the slot's length; carry those three numbers and the two boxes are the
+     same object at two scales. Left to itself this one came out nearly square,
+     which is a different machine. */
+  const SLOTX4=RL*GL*2.6, SLOTY4=SLOTX4/5.9;
+  const BUCKH4=SLOTX4*0.204, HEADH4=SLOTX4*0.058;
+  /* ---- AND THE LANES THE KEPT READS LEAVE BY ------------------------------
+     At the end of the belt the gene rolls off the edge and what it was carrying
+     does not: the reads it kept peel into lanes and run on. A gene is a place a
+     read was; a lane is a read on its own, which is what everything after this
+     station counts. */
+  const MKL=RL*GL*S*0.62;                     /* how far left of its read a mark sits */
+  const NLANE=5, LANEP=GL*0.215, LANEX=span*0.20;
+  const laneY=k=>cy+(k-(NLANE-1)/2)*LANEP;
   /* the shower, the 3' bias and the stack — see the notes in the gene loop */
   const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
   const P3=0.55;                              /* share of reads primed at the tail */
@@ -1715,6 +1728,12 @@ function drawBelts(g,n){
     P(x1,cy+BW/2,0),P(x0,cy+BW/2,0)]),
     fill:"var(--t-right)","fill-opacity":"1",stroke:"var(--stroke)",
     "stroke-width":"0.9","stroke-opacity":".11"}));
+  for(let k=0;k<NLANE;k++){
+    const a=P(x1,laneY(k),base), b=P(x1+LANEX,laneY(k),base);
+    g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg3)",
+      "stroke-width":"2.0","stroke-opacity":".40","stroke-linecap":"round"}));
+  }
   const NSL=34, slats=[];
   for(let k=0;k<NSL;k++)
     slats.push(g.appendChild(el("line",{stroke:"var(--stroke)",
@@ -1755,6 +1774,12 @@ function drawBelts(g,n){
          outlined box, because all that is left of it is its own stroke. */
       body:boxNodes(ggrp,"var(--t-top)","var(--t-left)",0.8),
       exons:ex.map(()=>boxNodes(ggrp,"var(--k-top)","var(--k-left)",1.0)),
+      /* THE GENE LIGHTS UP, and it is one box rather than one per exon. A green
+         copy of the whole model line, laid over it and under the reads: at ten
+         genes and eight exons apiece the per-exon version is 240 more boxes to
+         rewrite every frame for a difference nobody could see. What has to read
+         is that THE MODEL has claimed something, not which part of it. */
+      glow:boxNodes(ggrp,"var(--ok)","var(--ok)",0.8),
       reads:[]};
     /* ---- THE GENE'S NAME, LYING ALONG THE BELT'S NEAR EDGE ----------------
        Real zebrafish symbols on generated models — see GENE_NAMES. It rides at
@@ -1856,6 +1881,7 @@ function drawBelts(g,n){
            side by side and is wrong now that they stack: a column that wanders
            in x is not a column. What is left is enough to say these are
            separate objects. */
+        lane:Math.floor(rnd()*NLANE), qs:rnd(),
         dx:(rnd()-0.5)*(GWE-RW)*0.30,
         u0:SHOWER_AT+rnd()*SHOWER_W};
       if(sp){
@@ -1967,7 +1993,7 @@ function drawBelts(g,n){
          and the same two tokens as the sorting yard, because it is the same
          kind of event: a thing being checked against a list and kept or not. */
       rd.mk=ggrp.appendChild(el("path",{d:rd.bad?ACROSS:ATICK,fill:"none",
-        stroke:rd.bad?"var(--rej)":"var(--ok)","stroke-width":"1.7",
+        stroke:rd.bad?"var(--rej)":"var(--ok)","stroke-width":"2.0",
         "stroke-linecap":"round","stroke-linejoin":"round","stroke-opacity":"0"}));
     }
     genes.push(gn);
@@ -2033,7 +2059,7 @@ function drawBelts(g,n){
     {top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"},
     {top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"});
   {
-    const a=P(BINX4-SLOTX4*0.7,BINY4-SLOTY4*1.45-GL*0.05,0);
+    const a=P(BINX4+SLOTX4*0.34,BINY4-SLOTY4*1.7-GL*0.05,0);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
       "text-anchor":"start","font-family":MONO,fill:"var(--rej)",
       "font-size":(GFS*1.05).toFixed(1),"font-weight":"600",
@@ -2068,13 +2094,21 @@ function drawBelts(g,n){
       const u=((t*v/LOOP+i/NG)%1+1)%1;
       const gxp=x0-PAD+u*LOOP;
       gn.pos=gxp;
+      /* TWO VISIBILITIES, AND THEY END IN DIFFERENT PLACES. `vis` is the gene
+         MODEL: it fades out at the belt's own end, because that is where the
+         model goes. `live` is the group: it has to outlast the model, because
+         the reads the model kept run on down the lanes after it has gone, and
+         they are drawn in its group. Keying gn.hid off vis put the lanes out
+         with the gene that fed them. */
       const vis=Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),1-sstep(x1-K*0.9,x1-K*0.1,gxp));
+      const live=Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),
+                          1-sstep(x1+LANEX*0.94,x1+LANEX*1.2,gxp));
       const exTop=base+exonH;
       /* A GENE OFF THE BELT COSTS NOTHING. Ten models are on the loop and four
          are on the belt; with thirty reads apiece, walking the other six every
          frame was most of the work this shape does and none of the picture.
          Hide once, then skip until it comes back. */
-      if(vis<=0.002){
+      if(live<=0.002){
         if(!gn.hid){
           gn.hid=true; gn.grp.setAttribute("display","none");
         }
@@ -2093,9 +2127,19 @@ function drawBelts(g,n){
          model is one line with thicker sections: same width, different height,
          both solid. What separates an exon from the intron beside it is that it
          stands up, and that is the only difference there should be. */
-      setBoxY(gn.body,gxp,GWE,yOf(0),yOf(1),base,base+geneH,vis.toFixed(3));
+      /* IT ROLLS OFF THE EDGE. The model used to fade where the belt stops,
+         which draws a thing being switched off; it drops instead, and the fade
+         goes with it. z is the only axis this projection draws straight up, so
+         a drop is the one movement that cannot be mistaken for anything else. */
+      const roll=sstep(x1-span*0.075,x1+span*0.010,gxp);
+      const gz=-roll*roll*GL*0.34;
+      setBoxY(gn.body,gxp,GWE,yOf(0),yOf(1),base+gz,base+geneH+gz,vis.toFixed(3));
       gn.ex.forEach((e,k)=>
-        setBoxY(gn.exons[k],gxp,GWE,yOf(e[0]),yOf(e[1]),base,exTop,vis.toFixed(3)));
+        setBoxY(gn.exons[k],gxp,GWE,yOf(e[0]),yOf(e[1]),base+gz,exTop+gz,vis.toFixed(3)));
+      /* and the whole line goes green as the sweep claims it */
+      const glow=sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.07,gxp);
+      setBoxY(gn.glow,gxp,GWE*1.02,yOf(0),yOf(1),base+gz,exTop*1.01+gz,
+        (vis*glow*0.26).toFixed(3));
 
       /* the name rides with its gene, at the gene's own x, off the near rail;
          the two end marks ride the gene's own line, just past each end */
@@ -2158,16 +2202,38 @@ function drawBelts(g,n){
            machine has one chute */
         const shunt=rd.bad?sstep(fire+span*0.02,BINX4-span*0.02,gxp):0;
         if(rd.bad && shunt>0.55) shred4=t;
+        /* ---- AND THE KEPT ONES PEEL INTO A LANE ---------------------------
+           At the end of the belt a read stops being a mark on a gene and starts
+           being a read: it leaves the model's own y, drops onto the deck and
+           runs out down one of five lanes. Which lane is fixed at build, so a
+           read keeps it — a lane that reshuffles is a queue, and nothing here
+           queues. */
+        const lane=rd.bad?0:sstep(x1-span*0.085,x1-span*0.015,gxp);
+        const rmid=yOf((rd.start+rd.end)/2);
         const rxb=gxp+rd.dx*(1-air)-NOZX*air;
         const dyb=(cy-rd.ymid)*air;           /* the fan, closing as it lands */
-        const rx=rxb+shunt*(BINX4-rxb);
-        const dy=dyb+shunt*(BINY4-yOf((rd.start+rd.end)/2)-dyb);
-        const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz);
+        /* AND THEY SPREAD OUT ALONG IT. Every read on a gene reaches the end
+           of the belt at the same x, so dropping them straight into five lanes
+           stacks five columns of them on one line — which draws a queue, and
+           the one thing a read leaving here is not is queued. qs is a fixed
+           share of the lane's length, so each runs ahead by its own amount and
+           the lanes read as a stream. */
+        const rx=rxb+shunt*(BINX4-rxb)+lane*rd.qs*LANEX*0.45;
+        const dy=dyb+shunt*(BINY4-rmid-dyb)+lane*(laneY(rd.lane)-rmid-dyb);
+        const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz)
+                 +lane*(base+n.h*0.05-rz);
         /* A SHUNTED READ OUTLIVES ITS OWN GENE'S FADE. It is drawn in the
            gene's group, and the gene is already dimming by the time the last of
            them reaches the bin — so once it is off the model it carries its own
            visibility. */
-        const rvis=rd.bad?Math.max(vis,sstep(0.04,0.30,shunt)):vis;
+        /* MEASURED OFF THE READ's OWN x, not the gene's — they are spread along
+           the lane and a shared fade would put them out together. The spread
+           and this threshold are one setting in two places: push the spread past
+           the fade and the reads that ran furthest ahead are gone before they
+           are drawn, which is exactly what 0.86 against 0.70 did. */
+        const laneVis=1-sstep(x1+LANEX*0.80,x1+LANEX*1.12,rx);
+        const rvis=rd.bad?Math.max(vis,sstep(0.04,0.30,shunt))
+                         :(lane>0?Math.max(vis,laneVis*sstep(0.02,0.25,lane)):vis);
         const op=rvis*sstep(0,0.10,kk)*(1-sstep(0.90,1,shunt));
         /* the cDNA lies flat on the exon — the only part of this molecule the
            aligner has anything to say about, and the only part drawn at full
@@ -2195,10 +2261,15 @@ function drawBelts(g,n){
         if(!said || op<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
         else{
           const age=(gxp-fire)/(span*0.02);
-          const a=P(rx,yOf((rd.start+rd.end)/2)+dy,z0+n.h*0.30);
-          const pop=age<1?0.55+0.60*age:1.15-0.15*Math.min(1,(age-1)*1.2);
+          const a=P(rx,rmid+dy,z0+n.h*0.34);
+          /* PUSHED LEFT, IN SCREEN UNITS. The mark is about a read and the read
+             is a line running up-right; sitting on top of it the two overlap
+             and neither is legible. A world offset would have to pick an axis
+             and every axis here is diagonal — the one direction that is
+             unambiguously "off the read" on this projection is straight left. */
+          const pop=(age<1?0.55+0.72*age:1.30-0.18*Math.min(1,(age-1)*1.2))*1.06;
           rd.mk.setAttribute("transform",
-            `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
+            `translate(${(a[0]-MKL).toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
           rd.mk.setAttribute("stroke-opacity",(op*0.92).toFixed(3));
         }
       }
@@ -2208,6 +2279,50 @@ function drawBelts(g,n){
   TICKERS.push(dt=>run(dt));
 }
 DRAW.belts=drawBelts;
+
+
+/* ============================================================
+   E5 · THE SECOND HALF OF THE BELT.
+
+   IT WAS A CUBE ON THE ROW AND THAT DREW THE WRONG THING. Assignment does not
+   happen somewhere else: it happens to a read already lying on a gene, on the
+   same machine, a moment after the alignment that put it there. A separate box
+   downstream says the read gets picked up and carried to another station, which
+   is exactly what does not happen.
+
+   So it is an outline on the deck instead — the downstream part of E4's belt,
+   with its own footprint, its own name and its own entry in the reader. Two
+   named halves of one machine. It draws nothing but its own edge, because
+   everything inside it is already being drawn by drawBelts; what it adds is
+   WHERE ONE QUESTION STOPS AND THE NEXT BEGINS.
+
+   ITS FOOTPRINT HAS TO MATCH ASSIGN0. The split is a number in drawBelts and a
+   node position here, and they are the same line: move ASSIGN0 and move this,
+   or the outline will say the sweep starts somewhere it does not.
+   ============================================================ */
+function drawBeltSeg(g,n){
+  hitBox(g,n);
+  const x0=n.x-n.w/2, x1=n.x+n.w/2, y0=n.y-n.d/2, y1=n.y+n.d/2, z=n.h;
+  const corner=Math.min(n.w,n.d)*0.16;
+  /* A BRACKET AT EACH CORNER RATHER THAN A CLOSED RECTANGLE. A full outline on
+     a deck that already has rails reads as a third rail; four corners read as a
+     region, which is what this is — and it leaves the long sides open where the
+     genes cross them. */
+  [[-1,-1],[1,-1],[1,1],[-1,1]].forEach(([sx,sy])=>{
+    const cx=sx<0?x0:x1, cy2=sy<0?y0:y1;
+    const a=P(cx-sx*corner,cy2,z), b=P(cx,cy2,z), c=P(cx,cy2-sy*corner,z);
+    g.appendChild(el("polyline",{points:pts([a,b,c]),fill:"none",
+      stroke:"var(--fg2)","stroke-width":"1.5","stroke-opacity":".55",
+      "stroke-linecap":"round","stroke-linejoin":"round"}));
+  });
+  /* and the line the sweep starts on, which is the only edge of the four that
+     is a claim rather than a boundary */
+  g.appendChild(el("line",{...(()=>{const a=P(x0,y0,z),b=P(x0,y1,z);
+    return {x1:a[0].toFixed(1),y1:a[1].toFixed(1),x2:b[0].toFixed(1),y2:b[1].toFixed(1)};})(),
+    stroke:"var(--ok)","stroke-width":"1.4","stroke-opacity":".42",
+    "stroke-dasharray":"4 4"}));
+}
+DRAW.beltseg=drawBeltSeg;
 
 
 /* ============================================================

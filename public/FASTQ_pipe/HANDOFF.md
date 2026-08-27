@@ -1335,6 +1335,76 @@ fragments and *before* the scanners, so a tick rides above its block but passes
 reason. The bin is built last, so a discarded triplet slides *behind* it and is
 gone.
 
+## `drawBeltSeg` — E5 is the second half of E4's belt
+
+**It was a cube on the row and that drew the wrong thing.** Assignment does not
+happen somewhere else: it happens to a read already lying on a gene, on the same
+machine, a moment after the alignment that put it there. *A separate box
+downstream says the read gets picked up and carried to another station*, which is
+exactly what does not happen.
+
+So it is an outline on the deck — the downstream part of the belt, with its own
+footprint, its own name and its own row in the index. **Two named halves of one
+machine.** It draws nothing but its own edge, because everything inside it is
+already drawn by `drawBelts`; what it adds is *where one question stops and the
+next begins*.
+
+**Four corner brackets rather than a closed rectangle.** A full outline on a deck
+that already has rails reads as a third rail; four corners read as a *region*,
+which is what this is, and it leaves the long sides open where the genes cross
+them. The one closed edge is the upstream one, in `--ok`, dashed: that edge is a
+claim rather than a boundary.
+
+**Its footprint has to match `ASSIGN0`.** The split is a number in `drawBelts`
+and a node position in `fq-data.js`, and they are the same line — E4 is `w 8.56`
+and the split is at 0.585 of it, so E5 starts `+0.728` past E4's centre, runs
+`3.552` wide, and takes the **belt's** width (5.32) as its depth rather than the
+node's, so the outline lands on the rails. **Move `ASSIGN0` and move all four.**
+
+## The end of the belt: the gene rolls off, the reads carry on
+
+**The model used to fade where the belt stops, which draws a thing being
+switched off.** It drops instead — `roll²`, so it accelerates — and the fade goes
+with it. `z` is the only axis this projection draws straight up, so a drop is the
+one movement that cannot be mistaken for anything else.
+
+**What it was carrying does not go with it.** A gene is a place a read *was*; a
+lane is a read on its own, which is what everything after this station counts. The
+kept reads leave the model's `y`, drop to the deck and run out down one of five
+lanes. `rd.lane` is fixed at build — *a lane that reshuffles is a queue, and
+nothing here queues.*
+
+**Two visibilities, and they end in different places.** `vis` is the gene MODEL
+and fades at the belt's own end. `live` is the **group**, and has to outlast it,
+because the reads are drawn inside it and are still running when the model has
+gone. Keying `gn.hid` off `vis` put the lanes out with the gene that fed them.
+
+**`qs` spreads them along the lane, and it is one setting in two places.** Every
+read on a gene reaches the end at the same `x`; dropped straight in, five columns
+stack on one line and draw a queue. `qs` is a fixed share of the lane's length so
+each runs ahead by its own amount. **The spread and the fade threshold have to be
+set together** — at `0.86` of the lane against a fade starting at `0.70`, the
+reads that ran furthest ahead were gone before they were drawn.
+
+## The assignment reads louder
+
+- **The gene lights up**, and it is **one** box rather than one per exon: at ten
+  genes and eight exons apiece the per-exon version is 240 more boxes to rewrite
+  every frame for a difference nobody could see. What has to read is that *the
+  model* has claimed something, not which part of it.
+- **The name grows and turns `--ok`.** `GFS` went `8.0·K` → `10.4·K` and the
+  assign scale to `+0.95`.
+- **The marks are pushed left, in screen units.** A mark is about a read, and the
+  read is a line running up-right; sitting on top of it the two overlap and
+  neither is legible. A world offset would have to pick an axis and *every axis
+  here is diagonal* — the one direction that is unambiguously "off the read" on
+  this projection is straight left.
+- **The NO GENE MATCH bin is E3's bin's shape**, which is a **ratio and not a
+  size**: slot 5.9 times as long as wide, pail and head 0.204 and 0.058 of the
+  slot's length. Carry those three and the two boxes are one object at two
+  scales. Left to itself this one came out nearly square, which is a different
+  machine.
+
 ## `drawStarIndex` — the third reference figure
 
 **It was a labelled cube, which is what the other two were before they were
@@ -2251,3 +2321,9 @@ resized. Nobody had.
   `E3`'s reject rate, and the real figures are in the prose.
 - **Use `rd.f` anywhere a spliced read can reach.** It has `fA` and `fB`;
   `start` and `end` are the fields every read has.
+- **Move `ASSIGN0` without moving `E5`'s footprint.** They are the same line
+  written twice.
+- **Key `E4`'s `gn.hid` off `vis`.** `vis` is the model; `live` is the group, and
+  the lanes run after the model has gone.
+- **Set the lane spread without the lane fade.** Push the spread past the fade
+  and the reads that ran furthest ahead vanish before they are drawn.

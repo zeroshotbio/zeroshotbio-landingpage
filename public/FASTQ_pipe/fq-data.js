@@ -166,8 +166,21 @@ const NODES = [
  pipelineName:"Alignment",
  added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. One belt runs along the lane's own direction and the gene models lie ACROSS it — exons standing proud, introns flat between them, each model named along the near rail — and the reads rain in from up-belt and above, settle onto a moving target, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: every read lands on an exon and none on an intron. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands; the barcode end takes no position from any of this and is drawn saying so — half the width of the aligned end, and leaning off the gene's axis entirely. THE GENE NAMES ARE REAL ZEBRAFISH SYMBOLS AND THE MODELS UNDER THEM ARE NOT: every gene on this belt is a seeded arrangement of exons, real in kind with no real coordinates, and the names are there to say that these are ten different zebrafish genes rather than one gene drawn ten times. No name here describes the model it sits beside."},
 
-{id:"E5", key:"E5", group:"The chain", shape:"tile", hatch:true,
- lane:"r3", gap:1.2, name:"Assign to gene", x:27.0, y:R3, w:1.9, d:1.9, h:1.1,
+/* E5 IS THE SECOND HALF OF E4's BELT, not a box downstream of it.
+
+   Assignment happens to a read already lying on a gene, on the same machine, a
+   moment after the alignment that put it there. A separate cube on the row said
+   the read gets picked up and carried somewhere else, which is exactly what
+   does not happen. It keeps its name, its prose and its row in the index; what
+   it loses is the claim that it is a different place.
+
+   THE FOOTPRINT HAS TO MATCH ASSIGN0 IN drawBelts. E4 is w 8.56 and the split
+   is at 0.585 of it, so this starts 0.728 past E4's centre and runs to its far
+   end: centre +2.504, width 3.552. Its depth is the BELT's width (GL + K, which
+   is 5.32 at these numbers) and not the node's, so the outline lands on the
+   rails. Move ASSIGN0 and move all four of those. */
+{id:"E5", key:"E5", group:"The chain", shape:"beltseg", hatch:true, noclip:true,
+ follow:{a:"E4",dx:2.504}, name:"Assign to gene", x:27.0, y:R3, w:3.552, d:5.32, h:0.155,
  sub:"coordinates resolved against gene models · exonic by default",
  does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
  built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",
