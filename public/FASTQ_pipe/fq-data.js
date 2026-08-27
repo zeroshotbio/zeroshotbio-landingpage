@@ -363,9 +363,25 @@ const NODES = [
    "Combine and stamp", which is the same operation seen from the other end:
    the cell id is assembled out of the barcode rounds and every read carrying it
    lands in the same bucket. */
-{id:"CB", key:"E6", group:"The chain", shape:"tile",
- lane:"r3", gap:0.8,
- name:"Bucket by cell", x:30.0, y:R3, w:1.9, d:1.9, h:1.2,
+/* E6 IS THE LANES OFF THE END OF THE BELT, not a box after them.
+
+   Same move as E5 one station earlier and for the same reason. Bucketing by
+   cell is not somewhere a read is taken: it is what the reads ARE once they
+   stop being marks on a gene — five lanes, each one a cell, and a read joins
+   the lane its barcode already said it belonged to. The cube said the reads get
+   collected and carried; the lanes say they were already sorted.
+
+   AND IT IS WHERE THE BLUE COMES BACK. The barcode end has pointed off every
+   axis for the whole of E4 because on a gene it is the part with no position.
+   In a lane there is no gene and nothing is being placed — what travels is the
+   read, and what says which read it is is the barcode. So the molecule
+   straightens and the blue leads, with the aligned end trailing.
+
+   ITS FOOTPRINT IS THE LANE FIELD. x1 to x1 + LANEX in x, NLANE * LANEP across.
+   Those are numbers in drawBelts; move them and move this. */
+{id:"CB", key:"E6", group:"The chain", shape:"beltseg", noclip:true,
+ follow:{a:"E4",dx:5.99},
+ name:"Bucket by cell", x:30.0, y:R3, w:3.42, d:4.97, h:0.155,
  sub:"one index · bc1_bc2_bc3__sublibrary",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
@@ -374,8 +390,12 @@ const NODES = [
  pipelineName:"Combine and stamp",
  added:"The barcode combination became a cell identity back at E3; this is where it becomes an ADDRESS. Every read that cleared the whitelists has been carrying its cell all the way through the alignment and the gene assignment, and here they are gathered by it — which is the only reason the next station can ask whether two reads are the same molecule. Drawn as a plain tile for now, with the rest of the artwork pass still to come."},
 
+/* GAP 2.6, NOT 0.8, AND IT IS THE LANE FIELD THAT SET IT. E4's kept reads run
+   out down five lanes for 0.40 of the belt's length past its end, and CB's
+   footprint is that field — so the next station on the row has to start after
+   it or it stands in the middle of the traffic. Widen LANEX and widen this. */
 {id:"E6", key:"E7", group:"The chain", shape:"tile", hatch:true,
- lane:"r3", gap:0.8,
+ lane:"r3", gap:2.6,
  name:"Deduplicate UMIs", x:33.0, y:R3, w:1.9, d:1.9, h:1.35,
  sub:"barcode + gene + UMI collapse to one count · reads become molecules",
  does:"Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
@@ -411,7 +431,7 @@ const ROWS=[R3], MIRROR=29.0;
    footprint to give arriving reads somewhere to land, and that run-in has to
    clear the fragment glyph in front of it. */
 const LANES = [
-  {id:"r3", y:R3, x0:0.7, x1:42.4, dir:+1},
+  {id:"r3", y:R3, x0:0.7, x1:47.0, dir:+1},
 ];
 
 /* Two edge classes, and the difference is the point.
@@ -549,7 +569,7 @@ const EDGES = [
    every station back on y = R3 those offsets were 3-odd units of empty ground
    each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+16.8},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:49.5, y0:R3-9.6, y1:R3+16.8},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are

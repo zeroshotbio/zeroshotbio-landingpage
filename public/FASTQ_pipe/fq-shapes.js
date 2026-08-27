@@ -1707,7 +1707,7 @@ function drawBelts(g,n){
      read was; a lane is a read on its own, which is what everything after this
      station counts. */
   const MKL=RL*GL*S*0.62;                     /* how far left of its read a mark sits */
-  const NLANE=5, LANEP=GL*0.215, LANEX=span*0.20;
+  const NLANE=5, LANEP=GL*0.215, LANEX=span*0.40;
   const laneY=k=>cy+(k-(NLANE-1)/2)*LANEP;
   /* the shower, the 3' bias and the stack — see the notes in the gene loop */
   const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
@@ -2218,7 +2218,7 @@ function drawBelts(g,n){
            the one thing a read leaving here is not is queued. qs is a fixed
            share of the lane's length, so each runs ahead by its own amount and
            the lanes read as a stream. */
-        const rx=rxb+shunt*(BINX4-rxb)+lane*rd.qs*LANEX*0.45;
+        const rx=rxb+shunt*(BINX4-rxb)+lane*rd.qs*LANEX*0.42;
         const dy=dyb+shunt*(BINY4-rmid-dyb)+lane*(laneY(rd.lane)-rmid-dyb);
         const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz)
                  +lane*(base+n.h*0.05-rz);
@@ -2235,28 +2235,50 @@ function drawBelts(g,n){
         const rvis=rd.bad?Math.max(vis,sstep(0.04,0.30,shunt))
                          :(lane>0?Math.max(vis,laneVis*sstep(0.02,0.25,lane)):vis);
         const op=rvis*sstep(0,0.10,kk)*(1-sstep(0.90,1,shunt));
-        /* the cDNA lies flat on the exon — the only part of this molecule the
-           aligner has anything to say about, and the only part drawn at full
-           strength */
+        /* ---- ON THE MODEL IT LIES ACROSS THE TRACK; IN THE LANE IT LIES
+           ALONG IT, AND THE BLUE GOES IN FRONT.
+
+           The barcode end has been an aerial for the whole of this station and
+           it has been drawing the right thing: on a gene it is the part with no
+           position, so it points off every axis that means one. In a lane there
+           is no gene left and nothing is being placed — what is travelling is
+           the READ, and the thing that says which read it is is the barcode.
+           So the molecule straightens out and the blue leads, with the aligned
+           end trailing behind it. The one part that could not say anything
+           about position is the one part that says which cell, and the lane is
+           where that matters.
+
+           `PT(gy,s)` is the whole of the turn: gy is a point's y in the GENE's
+           frame and s is how far along the molecule it is, and `lane` slides
+           between them. At lane 0 it is the y it always was; at lane 1 it is x,
+           in molecule order, at one y. The tail's direction lerps to +x and is
+           re-normalised, so it turns rather than shortening. */
+        const anchorY=rmid+dy, Lo=RL*GL;
+        const PT=(gy,sm)=>[rx+lane*(sm-Lo), anchorY+(1-lane)*(gy-rmid), z0];
+        const B2=(node,a,b,w,fl,o)=>barTo(node,w,fl,a[0],a[1],a[2],b[0],b[1],b[2],o);
         if(rd.sp){
-          barTo(rd.cd ,RW,0.62,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
-          barTo(rd.cd2,RW,0.62,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
-          /* and nothing at all over the intron between them */
-          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap,op*0.95);
+          const sA=rd.rlA*GL;
+          B2(rd.cd ,PT(yOf(rd.fA),0),PT(yOf(rd.fA+rd.rlA),sA),RW,0.62,op);
+          B2(rd.cd2,PT(yOf(rd.fB),sA),PT(yOf(rd.fB+rd.rlB),Lo),RW,0.62,op);
+          /* and nothing at all over the intron between them — until the lane,
+             where there is no intron to arch over */
+          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap*(1-lane),
+                   op*0.95*(1-lane));
         }else{
-          barTo(rd.cd,RW,0.62,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
+          B2(rd.cd,PT(yOf(rd.f),0),PT(yOf(rd.f+RL),Lo),RW,0.62,op);
         }
-        /* AND THE TAIL LEAVES THE GENE'S AXIS ALTOGETHER — up-belt and up, at
-           the far end of whatever the orange did. Along the axis it read as
-           more read; across it, it reads as an aerial on one. */
-        const ye=yOf(rd.end)+dy;
-        /* the tail turns rather than stretches: the direction is normalised, so
-           it is the same molecule at every point in the swing */
+        const tail0=PT(yOf(rd.end),Lo);
         let ux=TDIR[0]*flap, uy=-(1-flap), uz=TDIR[1]*flap;
         const uL=Math.hypot(ux,uy,uz)||1; ux/=uL; uy/=uL; uz/=uL;
-        const kx=rx+ux*TAIL*TKNEE, ky=ye+uy*TAIL*TKNEE, kz=z0+uz*TAIL*TKNEE;
-        seg(rd.ad,rx,ye,z0,kx,ky,kz,op*0.42);
-        barTo(rd.bc,RWB,0.26,kx,ky,kz,rx+ux*TAIL,ye+uy*TAIL,z0+uz*TAIL,op*0.34);
+        let tx=ux+(1-ux)*lane, ty=uy*(1-lane), tz=uz*(1-lane);
+        const tL=Math.hypot(tx,ty,tz)||1; tx/=tL; ty/=tL; tz/=tL;
+        const knee=[tail0[0]+tx*TAIL*TKNEE,tail0[1]+ty*TAIL*TKNEE,tail0[2]+tz*TAIL*TKNEE];
+        const tipp=[tail0[0]+tx*TAIL,tail0[1]+ty*TAIL,tail0[2]+tz*TAIL];
+        seg(rd.ad,tail0[0],tail0[1],tail0[2],knee[0],knee[1],knee[2],op*0.42);
+        /* AND IT COMES UP IN THE LANE. Held back to a quarter of the read while
+           it is the part with nothing to say; in the lane it is the part doing
+           the saying, and it is drawn like it. */
+        B2(rd.bc,knee,tipp,RWB*(1+2.0*lane),0.26+0.36*lane,op*(0.34+0.52*lane));
         /* the mark rides above the read it is about, and pops the way E3's do */
         if(!said || op<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
         else{
