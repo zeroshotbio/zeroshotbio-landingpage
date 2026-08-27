@@ -1417,6 +1417,55 @@ just given up. *The two swap, and the swap is the whole content of the step.*
 **Same `d` as the two belts**, so `K` — which comes off the depth — makes a
 fragment here the same size as the one that was riding a gene next door.
 
+### Every read carries three facts, and the drawing shows all three
+
+| fact | how it is drawn | why there |
+|---|---|---|
+| cell barcode | the **blue bar**, and the **track** it is on | it has carried it since `E3`; sorting by it is what this node does |
+| gene | text, in `--ok` | that verdict was struck one station back |
+| UMI | text, in `--accent` | it is R2's and has been R2's since `E2` |
+
+**The cell is not written on the read.** Writing it a dozen times over on one
+track is a caption for the track, and the track already has one. *The sort key
+belongs to the lane; the labels ride along.*
+
+### They repeat, and that is the whole setup for `E7`
+
+A track carries **one or two genes over and over** — that is what depth on a
+cell looks like — and its UMIs come from a **pool smaller than its read count**,
+sampled with a skew, so most are unique and some turn up two, five, a dozen
+times. **If every read in a track looked distinct there would be nothing for
+deduplication to do**, and the next station would read as an empty gesture.
+
+Nothing is merged here. No counts, no collapsing: two reads that share cell,
+gene and UMI are still two reads. *Drawing it early would spend the one thing
+`E7` has to show.*
+
+### The empty tracks are the point, and the number is real
+
+Three rounds of ligation address **96 × 96 × 96 = 884,736** cell barcodes per
+subpool. The tracks are a **window onto that space** and are labelled with their
+place in it — ascending, spread across it — rather than 1…24. **Most are empty
+or nearly so**, and that emptiness *is* the unfiltered matrix: every barcode by
+every gene, and the overwhelming majority of addressable barcodes were never a
+cell. An even sprinkle would draw a machine working evenly, which is the one
+thing this stage is not.
+
+**Two counts are on this map and neither is wrong.** `W1` says 48 × 96 × 96 =
+442,368 addressable **well paths**; this says 884,736 addressable **barcode
+combinations**. BC1's 48 wells each hold two primers carrying different
+barcodes, so there are 96 BC1 barcodes and only 48 BC1 wells. **Do not "fix" one
+to match the other** — `W1`'s own prose now says both and why.
+
+### `n.d` is the field and `n.gd` is the fragment
+
+The only node where the two differ. On a belt they are one thing: a gene lies
+across it, so the belt's depth sets the fragment's size. Here there is no gene —
+`d` is how far the tracks spread, which is set by **having to write two rows of
+type between neighbouring lines**, and sizing the fragments off that would make
+them four times what they were one station back. `gd` is the belts' own depth,
+so a read here is the read that was riding a gene next door.
+
 ### The tracks and their names
 
 - **Spacing off the type.** A track only has to be as far from its neighbour as
@@ -1428,9 +1477,17 @@ fragment here the same size as the one that was riding a gene next door.
 - **Appended last.** A fragment on a track stands its aligned end up and to the
   left, which is exactly where its own name is — drawn first, a dozen of the
   thirty were simply missing.
-- **Not equally busy.** A seeded weight per track raised to a power, so a few
-  take most of the traffic and some go whole passes empty. *Thirty equally fed
-  tracks draw a manifold, not a set of cells.*
+- **Not equally busy.** Half the tracks are empty, most of the rest carry one or
+  two, and a few carry up to seven. *Twenty-four equally fed tracks draw a
+  manifold, not a set of cells.*
+- **A busy track is capped**, and the cap is the loop divided by how long a tag
+  is: two reads on one line are two tags on one line. It is a drawing limit and
+  not a claim about depth — *the UMI pool is what says a read repeats.*
+- **A tag stays off until its read is clear of the cell names.** Those sit at
+  the field's near end and run about a unit along their own tracks; a read that
+  lands under one puts its gene and UMI through the name of the cell in the next
+  lane. That is the one collision here no amount of spacing fixes, because the
+  two are on different lines going the same way.
 
 ## The assignment reads louder## The assignment reads louder
 
@@ -2381,3 +2438,7 @@ resized. Nobody had.
   screen; −30 is the gene's axis, not the track's.
 - **Draw the track names before the fragments.** A fragment stands its orange end
   exactly where its own name is.
+- **Reconcile `W1`'s 442,368 with `E6`'s 884,736 by changing one of them.** They
+  count wells and barcodes; both are on the map and both are right.
+- **Write the cell barcode on the read at `E6`.** The track is the cell; the
+  read carries the labels that are not the sort key.

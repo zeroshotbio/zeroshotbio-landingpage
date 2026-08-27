@@ -2369,10 +2369,17 @@ function drawTracks(g,n){
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const rnd=mulberry32(0x5eedf15^0xC4);
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
-  /* THE SAME K AS THE BELTS, off the depth, so a fragment here is the same
-     fragment that was on a gene one station back. */
-  const K=n.d*0.1053, KZ=n.h/0.53;
-  const base=n.h*0.245, GL=n.d*0.70;
+  /* K COMES OFF n.gd, NOT n.d, AND THIS IS THE ONE STATION WHERE THEY DIFFER.
+
+     On the belts the two are the same thing: a gene lies across the belt, so
+     the belt's depth sets the fragment's size. Here there is no gene — the
+     depth is the FIELD, thirty tracks wide, and it has to be wide enough to
+     write two rows of type between neighbouring lines. Sizing the fragments off
+     that would make them four times what they were one station back, and the
+     one thing this read has to be is the same read. n.gd is the depth the
+     fragments were sized against; n.d is how far the field spreads. */
+  const K=(n.gd||n.d)*0.1053, KZ=n.h/0.53;
+  const base=n.h*0.245, GL=(n.gd||n.d)*0.70;
   const RTOT=0.145, RL=RTOT*64/154, RG=RTOT*32/154, RB=RTOT*58/154;
   const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
   const TDIR=[-0.86,0.51];
@@ -2381,54 +2388,129 @@ function drawTracks(g,n){
   const v=(n.v||1.05)*K;
 
   /* the track field: spacing off the type, exactly as before */
-  const NT=30, TP=GL*0.085;
+  /* THE SPACING IS SET BY THE TYPE, and here there are TWO rows of it between
+     neighbouring tracks: the cell's name above its own line, and its reads'
+     gene and UMI below. Half of S times TP is the clear air perpendicular, and
+     it has to hold both — at the belts' 0.085 of a gene it held one, and the
+     read tags collided with the next track's name fifty-seven times. */
+  const NT=24, TP=n.d*0.94/NT;
   const trackY=k=>cy+(k-(NT-1)/2)*TP;
   const GFS=Math.max(6,10.4*K), LFS=Math.max(3.0,GFS*0.46);
   const lz=base+n.h*0.05;
 
-  /* AND THEY ARE NOT EQUALLY BUSY. A seeded weight per track, raised to a power
-     so the tail is long: a few take most of the traffic, most take a little,
-     some go whole passes without a fragment. Thirty equally fed tracks draw a
-     manifold, not a set of cells. */
-  const cum=[]; { const w=[]; let tot=0;
-    for(let k=0;k<NT;k++){ const q=Math.pow(0.06+rnd(),2.4); w.push(q); tot+=q; }
-    let acc=0; for(let k=0;k<NT;k++){ acc+=w[k]/tot; cum.push(acc); } }
-  const pick=r=>{ for(let k=0;k<NT;k++) if(r<=cum[k]) return k; return NT-1; };
+  /* ---- WHICH CELL EACH TRACK IS, AND HOW LITTLE IS IN MOST OF THEM -------
+     Three rounds of ligation address 96 x 96 x 96 = 884,736 cell barcodes per
+     subpool. Thirty tracks is a window onto that, so they are LABELLED WITH
+     THEIR PLACE IN IT rather than 1..30 — ascending, spread across the space,
+     because sorting by cell is the whole of what this node does.
+
+     AND MOST OF THEM ARE EMPTY. That is not a drawing convenience: the matrix
+     this row ends at is every barcode by every gene, and the reason it is
+     "unfiltered" is that the overwhelming majority of addressable barcodes were
+     never a cell. An even sprinkle across thirty tracks would draw a machine
+     working evenly, which is the one thing this stage is not.
+
+     (Note for the count: W1 says 48 x 96 x 96 = 442,368 addressable WELL PATHS,
+     which is a different quantity — BC1's 48 wells each hold two primers
+     carrying different barcodes, so there are 96 BC1 barcodes and 884,736
+     barcode combinations. Both numbers are right about different things and
+     both are on the map; do not "fix" one to match the other.) */
+  const CELLSPACE=884736;
+  const lanes=[];
+  { let c=Math.floor(rnd()*8000)+1;
+    for(let k=0;k<NT;k++){
+      /* empty, thin, or busy — and empty wins most of the time */
+      const r=rnd();
+      /* AND A BUSY TRACK IS CAPPED, because two reads on one line are two tags
+         on one line: the cap is the loop divided by how long a tag is. It is a
+         drawing limit and not a claim about depth — the pool below is what says
+         a UMI repeats. */
+      const m=r<0.52?0:(r<0.80?1+Math.floor(rnd()*2)
+                              :2+Math.floor(Math.pow(rnd(),1.7)*6));
+      lanes.push({cell:c,m,reads:[]});
+      c+=Math.floor(1+rnd()*(CELLSPACE/NT*1.6));
+    } }
+  const fmt=v=>String(v).replace(/\B(?=(\d{3})+(?!\d))/g,",");
 
   const labs=[];
   for(let k=0;k<NT;k++){
     const a=P(x0,trackY(k),base), b=P(x1,trackY(k),base);
     g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
       x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg3)",
-      "stroke-width":"1.8","stroke-opacity":".34","stroke-linecap":"round"}));
+      "stroke-width":"1.8","stroke-opacity":(lanes[k].m?".40":".22"),
+      "stroke-linecap":"round"}));
     /* ROTATE 30, because a track runs along +x and +x goes DOWN and to the
        right on this projection. The name rides at a negative y in its own
        rotated frame, so the track is its underline. */
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-      x:(LFS*0.9).toFixed(1), y:(-LFS*0.55).toFixed(1),
+      x:(LFS*0.9).toFixed(1), y:(-LFS*0.42).toFixed(1),
       "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
-      "font-size":LFS.toFixed(1),"font-weight":"500","fill-opacity":".55"});
-    t2.textContent="barcode "+(k+1); labs.push(t2);
+      "font-size":LFS.toFixed(1),"font-weight":"500",
+      "fill-opacity":(lanes[k].m?".62":".34")});
+    t2.textContent="cell "+fmt(lanes[k].cell); labs.push(t2);
+  }
+  /* what the window is a window onto, said once and at the field's near edge */
+  {
+    const a=P(x0,trackY(NT-1)+TP*1.9,base);
+    const t3=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+      "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
+      "font-size":(LFS*1.25).toFixed(1),"font-weight":"600",
+      "letter-spacing":(LFS*0.08).toFixed(2),"fill-opacity":".6"});
+    t3.textContent=NT+" of "+fmt(CELLSPACE)+" · 96 × 96 × 96 · most are empty";
+    labs.push(t3);
   }
 
-  /* ---- the reads ---------------------------------------------------------
-     One population riding the field, each with its own track, its own place in
-     the cycle and its own fall. They come down from ONE point, up-track and
-     above, for the reason the rain at E4 does: a spray whose source is itself
-     spread out is a shower, and what this draws is a stream of reads each
-     finding its own track. */
+  /* ---- THE READS, AND THE THREE FACTS EACH ONE CARRIES --------------------
+     A read arriving here has three: the cell barcode it has carried since E3,
+     the gene it was assigned at E5, and the UMI that came in on R2 at the very
+     start and has not been used for anything yet.
+
+     THE CELL IS THE BLUE BAR AND THE TRACK IT IS ON — it is not written on the
+     read, because writing it thirty times over on one track is a caption for
+     the track, and the track already has one. The gene and the UMI ride with
+     the read as text, in the two tokens they belong to: --ok for the gene,
+     because that verdict was struck one station back, and --accent for the UMI,
+     because it is R2's and has been R2's since E2.
+
+     AND THEY REPEAT, WHICH IS THE WHOLE SETUP FOR E7. A track carries one or
+     two genes over and over — that is what depth on a cell looks like — and its
+     UMIs are drawn from a pool smaller than the number of reads, so most are
+     unique and some turn up two, five, a dozen times. If every read in a track
+     looked distinct there would be nothing for deduplication to do and the next
+     station would read as an empty gesture. */
   const NOZX=3.4*K, NOZZ=2.6*KZ;
-  const NR=Math.max(26,Math.round(span/K*4.4));
   const PAD=2.2*K, LOOP=span+PAD*2;
+  const BASES="ACGT";
+  const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
   const reads=[];
-  for(let i=0;i<NR;i++){
-    const grp=g.appendChild(el("g"));
-    reads.push({tk:pick(rnd()), ph:rnd(), u0:0.10+rnd()*0.16,
-      cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
-      ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
-        "stroke-opacity":"0","stroke-linecap":"butt"})),
-      bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"}))});
-  }
+  lanes.forEach((ln,k)=>{
+    if(!ln.m) return;
+    /* one dominant gene and sometimes a second: a cell is not a survey */
+    const gn1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
+    const gn2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
+    /* a UMI pool smaller than the read count, sampled with a skew, so the
+       duplicates land on a few of them rather than spreading evenly */
+    const pool=[]; const np=Math.max(1,Math.ceil(ln.m*0.5));
+    for(let i=0;i<np;i++) pool.push(umiOf());
+    for(let j=0;j<ln.m;j++){
+      const grp=g.appendChild(el("g"));
+      const gene=(rnd()<0.78?gn1:gn2);
+      const umi=pool[Math.min(np-1,Math.floor(Math.pow(rnd(),1.8)*np))];
+      const tag=el("text",{"text-anchor":"start","font-family":MONO,
+        "font-size":LFS.toFixed(1),"font-weight":"500","fill-opacity":"0"});
+      const sp1=el("tspan",{fill:"var(--ok)"}); sp1.textContent=gene;
+      const sp2=el("tspan",{fill:"var(--accent)"}); sp2.textContent=" "+umi;
+      tag.appendChild(sp1); tag.appendChild(sp2);
+      reads.push({tk:k, ph:(j+0.5+(rnd()-0.5)*0.5)/ln.m, u0:0.10+rnd()*0.16,
+        cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
+        ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
+          "stroke-opacity":"0","stroke-linecap":"butt"})),
+        bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
+        tag});
+    }
+  });
+  /* the tags go on last, over the fragments, for the reason the track names do */
+  reads.forEach(r=>labs.push(r.tag));
   labs.forEach(t2=>g.appendChild(t2));
 
   const DASHN=7;
@@ -2473,6 +2555,23 @@ function drawTracks(g,n){
       barTo2(rd.bc,RWB,0.32,bA,bB,vis*0.90);
       seg2(rd.ad,bA,kx,vis*0.42);
       barTo2(rd.cd,RW,0.62,kx,oEnd,vis);
+      /* THE TWO FACTS THAT ARE NOT ALREADY DRAWN, riding just below the read's
+         own track — below, because above is where the track's own name is, and
+         a read's labels colliding with its cell's name is the one collision
+         this field cannot afford. */
+      { const q=P(bB[0],yy,zz);
+        rd.tag.setAttribute("transform",
+          `translate(${q[0].toFixed(1)},${q[1].toFixed(1)}) rotate(30)`);
+        rd.tag.setAttribute("x",(LFS*0.8).toFixed(1));
+        rd.tag.setAttribute("y",(LFS*0.95).toFixed(1));
+        /* AND THE TAG STAYS OFF UNTIL THE READ IS CLEAR OF THE CELL NAMES.
+           Those sit at the field's near end and run about a unit along their
+           own tracks; a read that lands under one puts its gene and UMI through
+           the name of the cell in the next lane. It is the one collision in
+           this field that no amount of spacing fixes, because the two are on
+           different lines going the same way. */
+        rd.tag.setAttribute("fill-opacity",
+          (vis*0.72*sstep(x0+K*1.1,x0+K*2.1,gx)).toFixed(3)); }
     }
   };
   run(0);

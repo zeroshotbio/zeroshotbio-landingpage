@@ -345,7 +345,7 @@ const NODES = [
  follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.0, w:8.4, d:2.9, h:3.5,
  sub:"the known well sequences for each ligation round · fixed by the kit",
  does:"The list of sequences that could legitimately be at each barcode position, one list per round of ligation. Fixed by the kit, not by the experiment.",
- built:"Three rounds of ligation give 48 × 96 × 96 = 442,368 addressable paths, and the fourth barcode — the index read — splits the run into subpools. A barcode is called by matching each round against its own list, independently, one mismatch tolerated.",
+ built:"Three rounds of ligation give 48 × 96 × 96 = 442,368 addressable WELL PATHS — and 96 × 96 × 96 = 884,736 addressable BARCODE combinations, because BC1's 48 wells each hold two primers carrying different barcodes. The two numbers are about different things and both are on this map: the well count is what a physical path through the plates is, and the barcode count is what a cell identity can be, which is the space E6's tracks are a window onto, and the fourth barcode — the index read — splits the run into subpools. A barcode is called by matching each round against its own list, independently, one mismatch tolerated.",
  cond:"Reused forever and never recorded with the data. Every deposited matrix in the corpus assumes its whitelists and none of them ships them, so a barcode string in an obs index cannot be parsed back into wells without knowing which kit version produced it — and ZCL2's 18 nt barcodes need a 3 × 6 split that is nowhere stated.",
  added:"THREE PLATES IN THE SIZES THE CHEMISTRY ACTUALLY USES, with a registry hanging over each. All three share a well pitch, because real 48- and 96-well plates have the same wells — the 48 is simply a smaller plate. So BC1's plate is visibly two thirds the width of the others and still yields 96, because each of its wells holds two RT primers, an oligo-dT and a random hexamer, carrying different barcodes: barcodes rise from it IN PAIRS and singly from the other two. Same count, half the wells, two per well, shown in the motion rather than asserted in a caption. Each riser is exactly eight bases, and that is arithmetic rather than decoration — the dash pattern is fixed in screen pixels and the riser's length is derived from it, so eight dashes and seven gaps land on the line exactly. Each climbs to the registry overhead and is written in; the registry fills continuously, in order, and never empties. The barcodes are drawn in the page's brightest ink because these are the WHITELISTS, which is the one pun this map allows itself."},
 
@@ -384,18 +384,23 @@ const NODES = [
    is the barcode. So the blue lies along the track with its middle on it and
    the aligned end takes over the pose the blue has just given up.
 
-   SAME d AS THE TWO BELTS, on purpose: K comes off the depth, so a fragment
-   here is the same size as the one that was riding a gene next door. */
+   d IS THE FIELD AND gd IS THE FRAGMENT, and this is the only node where the
+   two differ. On a belt they are one thing: a gene lies across it, so the
+   belt's depth sets the fragment's size. Here there is no gene — d is how far
+   thirty tracks spread, which is set by having to write two rows of type
+   between neighbouring lines, and sizing the fragments off that would make them
+   four times what they were one station back. gd is the belts' own depth, so a
+   read here is the read that was riding a gene next door. */
 {id:"CB", key:"E6", group:"The chain", shape:"tracks", noclip:true,
  lane:"r3", gap:1.5,
- name:"Bucket by cell", x:30.0, y:R3, w:5.4, d:6.6, h:0.62,
+ name:"Bucket by cell", x:30.0, y:R3, w:5.4, d:13.0, gd:6.6, h:0.62,
  sub:"one index · bc1_bc2_bc3__sublibrary",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
  cond:"86.1% of transcripts land inside called cells; the remaining 13.9% is the ambient pool and it is dropped here rather than kept as a background profile. Barcode conventions are a live trap whenever matrices are compared: ZCL2's 18 nt barcodes need a 3 × 6 split to parse, and MegaFin's vendor-well barcodes have 0% overlap with the same library's raw-combinatorial rebuild — the same cells, unjoinable.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Combine and stamp",
- added:"The barcode combination became a cell identity back at E3; this is where it becomes an ADDRESS. Every read that cleared the whitelists has been carrying its cell all the way through the alignment and the gene assignment, and here they are gathered by it — which is the only reason the next station can ask whether two reads are the same molecule. Drawn as a plain tile for now, with the rest of the artwork pass still to come."},
+ added:"The barcode combination became a cell identity back at E3; this is where it becomes an ADDRESS. EVERY READ HERE CARRIES THREE FACTS and the drawing shows all three. The cell barcode is the blue bar it has carried since E3 — and the track it is on, because sorting by cell is the whole of what this node does. The GENE is the one it was assigned at E5, written in that station's own green. The UMI came in on R2 at the very start and has still not been used for anything: it is written in R2's blue, and it is the only one of the three that matters at the next station. AND THEY REPEAT, WHICH IS THE SETUP FOR E7. A track carries one or two genes over and over, because that is what depth on a cell looks like; its UMIs come from a pool smaller than its read count, so most are unique and some turn up two, five, a dozen times. If every read in a track looked distinct there would be nothing for deduplication to do. THE EMPTY TRACKS ARE THE POINT. Three rounds of ligation address 96 x 96 x 96 = 884,736 cell barcodes per subpool, and twenty-four tracks here are a window onto that space, labelled with their place in it rather than 1..24. Most are empty or nearly so. That emptiness IS the unfiltered matrix: every barcode by every gene, and the overwhelming majority of addressable barcodes were never a cell. NOTHING IS MERGED HERE. No counts, no collapsing — a read that shares cell, gene and UMI with another is still drawn as its own read. That is E7's job and drawing it early would spend the one thing E7 has to show."},
 
 /* GAP 2.6, NOT 0.8, AND IT IS THE LANE FIELD THAT SET IT. E4's kept reads run
    out down five lanes for 0.40 of the belt's length past its end, and CB's
