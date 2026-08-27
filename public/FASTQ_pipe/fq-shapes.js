@@ -2384,7 +2384,22 @@ function drawTracks(g,n){
   const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
   const TDIR=[-0.86,0.51];
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
-  const Lo=RL*GL, Ta=TAIL*TKNEE, Lb=TAIL-Ta;
+  /* THE READ IS DRAWN LARGER HERE, AND IT IS THE SAME READ MAGNIFIED.
+
+     Two of its three facts are written on it, and a label has to be able to sit
+     over the segment it belongs to — the gene over the aligned end, the UMI's
+     ten bases over the barcode end. At the size a read is on a belt the UMI
+     alone is three times the blue it names. So the whole molecule is scaled,
+     both halves together, which keeps the 64 : 90 the rest of this page draws.
+     E2 does the same thing for the same reason: one read out of the pool, drawn
+     big enough to carry writing.
+
+     RS TRADES AGAINST HOW MANY READS FIT ON A TRACK. At 2.7 a fragment is 1.8
+     units end to end and four of them fit a lap with room for their labels;
+     push it further and the tracks thin out until the repetition stops being
+     visible, which is the one thing this station is for. */
+  const RS=2.9;
+  const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
   const v=(n.v||1.05)*K;
 
   /* the track field: spacing off the type, exactly as before */
@@ -2393,9 +2408,24 @@ function drawTracks(g,n){
      gene and UMI below. Half of S times TP is the clear air perpendicular, and
      it has to hold both — at the belts' 0.085 of a gene it held one, and the
      read tags collided with the next track's name fifty-seven times. */
-  const NT=24, TP=n.d*0.94/NT;
+  /* THE SPACING IS SET BY HOW FAR A FRAGMENT REACHES TOWARD THE TRACK ABOVE
+     IT, not by the type alone. The aligned end stands up and up-belt, and on
+     this projection that lands about 5.8 screen units per unit of length toward
+     the previous track — times RS, plus the gene name sitting over it. What has
+     to clear is that whole stack, and S * cos30 * TP is the clear air there.
+     TWENTY TRACKS AT THIS SPACING is what fits between the row above and the
+     band; more tracks means a narrower gap and a name over somebody else's
+     line. */
+  const NT=20, TP=n.d*0.94/NT;
   const trackY=k=>cy+(k-(NT-1)/2)*TP;
-  const GFS=Math.max(6,10.4*K), LFS=Math.max(3.0,GFS*0.46);
+  /* THREE SIZES, AND EACH IS SET BY WHAT IT HAS TO SIT OVER.
+       CAP  the field's one caption, biggest, because it is read once
+       CFS  a cell's name, over its own track
+       LFS  a read's gene and UMI, over their own segments — bold, because at
+            this size weight is the only thing that separates them from the
+            grid they are drawn on. */
+  const GFS=Math.max(6,10.4*K);
+  const LFS=Math.max(4.4,GFS*0.70), CFS=LFS*1.8, CAP=CFS*1.5;
   const lz=base+n.h*0.05;
 
   /* ---- WHICH CELL EACH TRACK IS, AND HOW LITTLE IS IN MOST OF THEM -------
@@ -2425,8 +2455,8 @@ function drawTracks(g,n){
          on one line: the cap is the loop divided by how long a tag is. It is a
          drawing limit and not a claim about depth — the pool below is what says
          a UMI repeats. */
-      const m=r<0.52?0:(r<0.80?1+Math.floor(rnd()*2)
-                              :2+Math.floor(Math.pow(rnd(),1.7)*6));
+      const m=r<0.50?0:(r<0.78?1+Math.floor(rnd()*2)
+                              :2+Math.floor(Math.pow(rnd(),1.5)*3));
       lanes.push({cell:c,m,reads:[]});
       c+=Math.floor(1+rnd()*(CELLSPACE/NT*1.6));
     } }
@@ -2443,19 +2473,24 @@ function drawTracks(g,n){
        right on this projection. The name rides at a negative y in its own
        rotated frame, so the track is its underline. */
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-      x:(LFS*0.9).toFixed(1), y:(-LFS*0.42).toFixed(1),
+      x:(CFS*0.55).toFixed(1), y:(-CFS*0.38).toFixed(1),
       "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
-      "font-size":LFS.toFixed(1),"font-weight":"500",
+      "font-size":CFS.toFixed(1),"font-weight":"500",
       "fill-opacity":(lanes[k].m?".62":".34")});
     t2.textContent="cell "+fmt(lanes[k].cell); labs.push(t2);
   }
   /* what the window is a window onto, said once and at the field's near edge */
   {
-    const a=P(x0,trackY(NT-1)+TP*1.9,base);
+    /* SET DOWNSTREAM OF THE FIELD'S CORNER, not at it. The far side of this
+       field lands a long way to the SCREEN left — y and x pull the same way on
+       this projection — so a caption started at the corner reads straight into
+       the gene names on the belt one station back. Two and a half units along
+       the track buys the whole line its own air. */
+    const a=P(x0+2.6,trackY(NT-1)+TP*1.5,base);
     const t3=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
       "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
-      "font-size":(LFS*1.25).toFixed(1),"font-weight":"600",
-      "letter-spacing":(LFS*0.08).toFixed(2),"fill-opacity":".6"});
+      "font-size":CAP.toFixed(1),"font-weight":"600",
+      "letter-spacing":(CAP*0.06).toFixed(2),"fill-opacity":".62"});
     t3.textContent=NT+" of "+fmt(CELLSPACE)+" · 96 × 96 × 96 · most are empty";
     labs.push(t3);
   }
@@ -2478,6 +2513,16 @@ function drawTracks(g,n){
      unique and some turn up two, five, a dozen times. If every read in a track
      looked distinct there would be nothing for deduplication to do and the next
      station would read as an empty gesture. */
+  /* THE TWO ANGLES THE LABELS LIE AT, taken off the projection rather than
+     written down, so a change to TDIR or to the camera carries into the type
+     instead of leaving it beside the thing it names. Each is the direction that
+     READS — the reverse of the segment's own, where the segment runs up-left,
+     because text has to advance to the right. */
+  const ANGB=(()=>{ const o=P(0,0,0), u=P(1,0,0);
+    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
+  const ANGO=(()=>{ const o=P(0,0,0), u=P(-TDIR[0],0,-TDIR[1]);
+    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
+
   const NOZX=3.4*K, NOZZ=2.6*KZ;
   const PAD=2.2*K, LOOP=span+PAD*2;
   const BASES="ACGT";
@@ -2488,29 +2533,42 @@ function drawTracks(g,n){
     /* one dominant gene and sometimes a second: a cell is not a survey */
     const gn1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
     const gn2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
-    /* a UMI pool smaller than the read count, sampled with a skew, so the
-       duplicates land on a few of them rather than spreading evenly */
-    const pool=[]; const np=Math.max(1,Math.ceil(ln.m*0.5));
-    for(let i=0;i<np;i++) pool.push(umiOf());
+    /* A POOL PER GENE, SMALLER THAN THE READ COUNT, sampled with a skew, so
+       the duplicates land on a few of its entries rather than spreading evenly.
+
+       PER GENE AND NOT PER TRACK, because what E7 collapses is cell AND gene
+       AND UMI together. A repeated UMI carried by two different genes is not a
+       duplicate molecule, it is a collision between two — and drawing one is
+       drawing the next station a job it does not have. */
+    const pools={};
+    const umiFor=gn=>{ let q=pools[gn];
+      if(!q){ q=pools[gn]=[]; const np=Math.max(1,Math.ceil(ln.m*0.45));
+        for(let i=0;i<np;i++) q.push(umiOf()); }
+      return q[Math.min(q.length-1,Math.floor(Math.pow(rnd(),1.8)*q.length))]; };
     for(let j=0;j<ln.m;j++){
       const grp=g.appendChild(el("g"));
       const gene=(rnd()<0.78?gn1:gn2);
-      const umi=pool[Math.min(np-1,Math.floor(Math.pow(rnd(),1.8)*np))];
-      const tag=el("text",{"text-anchor":"start","font-family":MONO,
-        "font-size":LFS.toFixed(1),"font-weight":"500","fill-opacity":"0"});
-      const sp1=el("tspan",{fill:"var(--ok)"}); sp1.textContent=gene;
-      const sp2=el("tspan",{fill:"var(--accent)"}); sp2.textContent=" "+umi;
-      tag.appendChild(sp1); tag.appendChild(sp2);
+      const umi=umiFor(gene);
+      /* ONE LABEL PER SEGMENT, EACH LYING ALONG ITS OWN. The gene goes over the
+         aligned end and the UMI over the barcode end, so the two pieces of the
+         molecule ARE the two underlines and no legend is needed to say which
+         fact came from which end of the read. Bold, because at this size
+         against this grid weight is what makes them text. */
+      const mk=(txt,col)=>el("text",{"text-anchor":"start","font-family":MONO,
+        "font-size":LFS.toFixed(1),"font-weight":"700",fill:col,
+        "fill-opacity":"0"});
+      const tg=mk(gene,"var(--ok)"); tg.textContent=gene;
+      const tu=mk(umi,"var(--accent)"); tu.textContent=umi;
       reads.push({tk:k, ph:(j+0.5+(rnd()-0.5)*0.5)/ln.m, u0:0.10+rnd()*0.16,
         cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
         ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
           "stroke-opacity":"0","stroke-linecap":"butt"})),
         bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
-        tag});
+        tg, tu});
     }
   });
   /* the tags go on last, over the fragments, for the reason the track names do */
-  reads.forEach(r=>labs.push(r.tag));
+  reads.forEach(r=>{ labs.push(r.tg); labs.push(r.tu); });
   labs.forEach(t2=>g.appendChild(t2));
 
   const DASHN=7;
@@ -2555,23 +2613,31 @@ function drawTracks(g,n){
       barTo2(rd.bc,RWB,0.32,bA,bB,vis*0.90);
       seg2(rd.ad,bA,kx,vis*0.42);
       barTo2(rd.cd,RW,0.62,kx,oEnd,vis);
-      /* THE TWO FACTS THAT ARE NOT ALREADY DRAWN, riding just below the read's
-         own track — below, because above is where the track's own name is, and
-         a read's labels colliding with its cell's name is the one collision
-         this field cannot afford. */
-      { const q=P(bB[0],yy,zz);
-        rd.tag.setAttribute("transform",
-          `translate(${q[0].toFixed(1)},${q[1].toFixed(1)}) rotate(30)`);
-        rd.tag.setAttribute("x",(LFS*0.8).toFixed(1));
-        rd.tag.setAttribute("y",(LFS*0.95).toFixed(1));
-        /* AND THE TAG STAYS OFF UNTIL THE READ IS CLEAR OF THE CELL NAMES.
-           Those sit at the field's near end and run about a unit along their
-           own tracks; a read that lands under one puts its gene and UMI through
-           the name of the cell in the next lane. It is the one collision in
-           this field that no amount of spacing fixes, because the two are on
+      /* THE TWO FACTS THAT ARE NOT ALREADY DRAWN, each lying along the piece of
+         the molecule it came off. The gene sits over the ORANGE at the orange's
+         own angle, so the aligned end underlines it; the UMI sits over the BLUE
+         at the track's angle, so the barcode end underlines that. Both are set
+         from the segment's far end and read back down it, because Latin type
+         has to advance to the right and only one of each segment's two
+         directions does that on this projection. */
+      { const qo=P(oEnd[0],yy,oEnd[2]), qb=P(bA[0],yy,bA[2]);
+        /* AND THEY STAY OFF UNTIL THE READ IS CLEAR OF THE CELL NAMES. Those
+           sit at the field's near end and run about two units along their own
+           tracks; a read that lands under one puts its gene and UMI through the
+           name of the cell in the next lane. It is the one collision in this
+           field that no amount of spacing fixes, because the two are on
            different lines going the same way. */
-        rd.tag.setAttribute("fill-opacity",
-          (vis*0.72*sstep(x0+K*1.1,x0+K*2.1,gx)).toFixed(3)); }
+        const op=(vis*0.86*sstep(x0+K*2.6,x0+K*4.0,gx)).toFixed(3);
+        rd.tg.setAttribute("transform",
+          `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
+        rd.tg.setAttribute("x",(LFS*0.35).toFixed(1));
+        rd.tg.setAttribute("y",(-LFS*0.42).toFixed(1));
+        rd.tg.setAttribute("fill-opacity",op);
+        rd.tu.setAttribute("transform",
+          `translate(${qb[0].toFixed(1)},${qb[1].toFixed(1)}) rotate(${ANGB})`);
+        rd.tu.setAttribute("x",(LFS*0.25).toFixed(1));
+        rd.tu.setAttribute("y",(-LFS*0.42).toFixed(1));
+        rd.tu.setAttribute("fill-opacity",op); }
     }
   };
   run(0);

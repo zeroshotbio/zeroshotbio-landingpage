@@ -1422,19 +1422,42 @@ fragment here the same size as the one that was riding a gene next door.
 | fact | how it is drawn | why there |
 |---|---|---|
 | cell barcode | the **blue bar**, and the **track** it is on | it has carried it since `E3`; sorting by it is what this node does |
-| gene | text, in `--ok` | that verdict was struck one station back |
-| UMI | text, in `--accent` | it is R2's and has been R2's since `E2` |
+| gene | `--ok` text **along the orange**, at the orange's own angle | that verdict was struck one station back, on that end |
+| UMI | `--accent` text **along the blue**, at the track's angle | it is R2's and has been R2's since `E2` |
+
+**Each label lies along the segment it came off, so the two pieces of the
+molecule *are* the two underlines** and no legend has to say which fact came
+from which end. Both angles are taken off the projection (`ANGB`, `ANGO`) rather
+than written down, and both read *back down* their segment — the reverse of its
+own direction, because Latin type has to advance to the right and only one of
+each segment's two directions does that here.
 
 **The cell is not written on the read.** Writing it a dozen times over on one
 track is a caption for the track, and the track already has one. *The sort key
 belongs to the lane; the labels ride along.*
 
+**The read is drawn `RS` = 2.9 times belt size**, both halves together so the
+64 : 90 holds. At belt size the UMI's ten bases are three times the blue they
+name. It is the same read, magnified — `E2` does the same thing for the same
+reason. **`RS` trades against how many reads fit a track**: at 2.9 a fragment is
+just under two units end to end and four fit a lap with room for their labels.
+Push it further and the tracks thin out until the repetition stops being
+visible, which is the one thing this station is for.
+
+**Three type sizes, each set by what it has to sit over**: `CAP` (the field's
+one caption, read once), `CFS` (a cell's name, over its track), `LFS` (a read's
+gene and UMI, over their segments — **bold**, because at that size against this
+grid weight is the only thing that makes them read as text).
+
 ### They repeat, and that is the whole setup for `E7`
 
 A track carries **one or two genes over and over** — that is what depth on a
-cell looks like — and its UMIs come from a **pool smaller than its read count**,
-sampled with a skew, so most are unique and some turn up two, five, a dozen
-times. **If every read in a track looked distinct there would be nothing for
+cell looks like — and **each gene has its own UMI pool**, smaller than the read
+count and sampled with a skew, so most are unique and some turn up two, five, a
+dozen times. **Per gene and not per track**: what `E7` collapses is cell *and*
+gene *and* UMI together, so a repeated UMI carried by two different genes is not
+a duplicate molecule — it is a collision between two, and drawing one gives the
+next station a job it does not have. **If every read in a track looked distinct there would be nothing for
 deduplication to do**, and the next station would read as an empty gesture.
 
 Nothing is merged here. No counts, no collapsing: two reads that share cell,
@@ -1445,7 +1468,7 @@ gene and UMI are still two reads. *Drawing it early would spend the one thing
 
 Three rounds of ligation address **96 × 96 × 96 = 884,736** cell barcodes per
 subpool. The tracks are a **window onto that space** and are labelled with their
-place in it — ascending, spread across it — rather than 1…24. **Most are empty
+place in it — ascending, spread across it — rather than 1…20. **Most are empty
 or nearly so**, and that emptiness *is* the unfiltered matrix: every barcode by
 every gene, and the overwhelming majority of addressable barcodes were never a
 cell. An even sprinkle would draw a machine working evenly, which is the one
@@ -1480,9 +1503,20 @@ so a read here is the read that was riding a gene next door.
 - **Not equally busy.** Half the tracks are empty, most of the rest carry one or
   two, and a few carry up to seven. *Twenty-four equally fed tracks draw a
   manifold, not a set of cells.*
-- **A busy track is capped**, and the cap is the loop divided by how long a tag
-  is: two reads on one line are two tags on one line. It is a drawing limit and
-  not a claim about depth — *the UMI pool is what says a read repeats.*
+- **A busy track is capped at four**, and the cap is the loop divided by how long
+  a labelled fragment is: two reads on one line are two sets of labels on one
+  line. It is a drawing limit and not a claim about depth — *the UMI pool is what
+  says a read repeats.*
+- **Track spacing is set by how far a fragment reaches toward the track above
+  it**, not by the type alone: the aligned end stands up and up-belt, which on
+  this projection lands ~5.8 screen units per unit of length toward the previous
+  track — times `RS`, plus the gene name sitting over it. `S · cos30 · TP` is the
+  clear air there. Twenty tracks at that spacing is what fits between the
+  reference row and the band.
+- **The field's caption starts 2.6 units downstream of the corner.** The far side
+  of this field lands a long way to the *screen* left — `y` and `x` pull the same
+  way here — so a caption started at the corner reads straight into `E5`'s gene
+  names.
 - **A tag stays off until its read is clear of the cell names.** Those sit at
   the field's near end and run about a unit along their own tracks; a read that
   lands under one puts its gene and UMI through the name of the cell in the next
