@@ -138,13 +138,22 @@ const collect = () => page.evaluate(() => {
     const pt = (x, y) => ({ x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f });
     const quad = [pt(bb.x, bb.y), pt(bb.x + bb.width, bb.y),
                   pt(bb.x + bb.width, bb.y + bb.height), pt(bb.x, bb.y + bb.height)];
-    let node = null, onRoof = false, e = t;
+    let node = null, name = null, onRoof = false, e = t;
     while (e && e.tagName !== 'svg') {
       if (e.getAttribute && /^matrix\(/.test(e.getAttribute('transform') || '')) onRoof = true;
-      if (e.getAttribute && e.getAttribute('role') === 'button') { node = e.getAttribute('aria-label'); break; }
+      if (e.getAttribute && e.getAttribute('role') === 'button') {
+        /* BY ID, NOT BY NAME. Two nodes may carry the same name — a second copy
+           of a reference file — and keying a roof lookup off the name merges
+           them, so one card's labels get tested against the other card's roof
+           and come back 100% off it. That is a bug in this file, not in the
+           page, and it shipped as a page failure for one build. */
+        node = e.getAttribute('data-id') || e.getAttribute('aria-label');
+        name = e.getAttribute('aria-label');
+        break;
+      }
       e = e.parentNode;
     }
-    out.push({ s, node, onRoof, quad });
+    out.push({ s, node, name, onRoof, quad });
   });
   return out;
 });
@@ -166,13 +175,13 @@ const roofs = () => page.evaluate(() => {
       /* the ground patch it is painted on, grown for the tributaries that
          drift off the far edge by design */
       const lo = n.yBase - n.width * 1.9, hi = n.yBase + n.width * 0.15;
-      M[n.name] = [to(n.x0, lo, n.z), to(n.x1, lo, n.z),
-                   to(n.x1, hi, n.z), to(n.x0, hi, n.z)];
+      M[n.id] = [to(n.x0, lo, n.z), to(n.x1, lo, n.z),
+                 to(n.x1, hi, n.z), to(n.x0, hi, n.z)];
       return;
     }
     const h = topOf(n), hw = n.w / 2, hd = n.d / 2;
-    M[n.name] = [to(n.x - hw, n.y - hd, h), to(n.x + hw, n.y - hd, h),
-                 to(n.x + hw, n.y + hd, h), to(n.x - hw, n.y + hd, h)];
+    M[n.id] = [to(n.x - hw, n.y - hd, h), to(n.x + hw, n.y - hd, h),
+               to(n.x + hw, n.y + hd, h), to(n.x - hw, n.y + hd, h)];
   });
   return M;
 });
@@ -188,7 +197,7 @@ async function pass(label) {
     const inside = area(clip(t.quad, roof));
     const own = area(t.quad);
     if (own && inside / own < 0.985)
-      fail(`${label}: "${t.s}" hangs off the roof of ${t.node} — ` +
+      fail(`${label}: "${t.s}" hangs off the roof of ${t.name} (${t.node}) — ` +
            `${(100 * (1 - inside / own)).toFixed(0)}% of it is over the edge`);
   }
 

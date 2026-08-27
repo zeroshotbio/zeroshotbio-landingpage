@@ -685,6 +685,23 @@ function edgePort(n,which){
   if(which==="bl") return P(n.x, n.y+n.d/2, topOf(n));
   return null;
 }
+/* THE MIDDLE OF WHICHEVER EDGE FACES THE OTHER OBJECT, and never a corner.
+
+   roofCorner picks the nearest CORNER, which is the right answer for a
+   reference line that only has to leave on the side it is going. It is the
+   wrong answer for a track somebody drew between two things: a corner belongs
+   to neither of the edges that meet at it, so a line leaving one reads as
+   escaping the box rather than as coming out of a face. All four midpoints are
+   candidates and the nearest wins, so which face is used follows from where the
+   other object is and needs no bookkeeping. Used by the Connect tool for both
+   ends of every link — see routeOf. */
+function faceMid(n,B){
+  const c=[[n.x,n.y-n.d/2],[n.x,n.y+n.d/2],[n.x-n.w/2,n.y],[n.x+n.w/2,n.y]];
+  let best=c[0], bd=Infinity;
+  for(const q of c){ const d=(q[0]-B.x)*(q[0]-B.x)+(q[1]-B.y)*(q[1]-B.y);
+    if(d<bd){ bd=d; best=q; } }
+  return P(best[0],best[1],topOf(n));
+}
 function roofCorner(n,B){
   const hw=n.w/2, hd=n.d/2;
   let best=null, bd=Infinity;
@@ -2430,21 +2447,28 @@ function drawSortingYard(g,n){
      machine sitting across the top of it, wider than the bin so the join reads
      as a lid rather than as a step. binTop IS that lid, and it has to stay
      BELOW the height fragments ride at on the deck, or they climb into it. */
-  const BUCKX=FL*0.95, BUCKY=FL*0.55, BUCKH=0.46*KZ;
-  const HEADX=BUCKX*1.10, HEADY=BUCKY*1.14, HEADH=0.13*KZ;
+  /* THE SLOT IS SIZED FIRST AND THE BOX AROUND IT SECOND, because the slot is
+     the only part with a constraint: a fragment drops through it lying flat, so
+     it has to be LONGER than the fragment and WIDER than the fragment's bar.
+     Sizing the box first and taking a fraction of it for the slot gave a mouth
+     shorter than the thing going into it — which is why the first version had
+     to stand the fragment on end to get it in at all. */
+  const SLOTX=FL*1.12, SLOTY=THK*2.8;
+  const HEADX=SLOTX+FL*0.30, HEADY=SLOTY+FL*0.36, HEADH=0.13*KZ;
+  const BUCKX=HEADX*0.90, BUCKY=HEADY*0.84, BUCKH=0.46*KZ;
   const BY=REJ+SC(3.4), binTop=BUCKH+HEADH;
-  const SLOTX=HEADX*0.66, SLOTY=HEADY*0.26;
-  /* TIPB IS WHERE THE NOSE REACHES THE SLOT, and the whole downstream half of
-     this station is laid out backwards from it. It is not an offset from a
-     mouth any more — the nose is PLACED there by interpolation — so it only has
-     to be far enough back that the tip is not travelling backwards, and far
-     enough forward that the last gantry's divert is finished first.
+  const HOVER=binTop+FL*0.42;                 /* where it comes to rest before dropping */
+  /* TIPB IS WHERE THE FRAGMENT COMES TO REST OVER THE SLOT. It only has to be
+     far enough back that the crossing is not travelling backwards, and far
+     enough forward that the last gantry's divert has finished first.
 
-     An earlier version fed the fragment in sideways and put TIPB where its nose
-     met the blades; before that it put TIPB a hair before the blades, and every
-     rejected fragment was consumed entirely before its tip began — the fall was
-     in the code, ran every lap, and was never once visible. Move any one of gx,
-     MZ, binX or FLEN and RE-CHECK TIPA > gx[2] + MZ. */
+     THE HISTORY IS WORTH ONE LINE EACH, because two of the three drew nothing.
+     Version one fed the fragment into the side of the bin and put TIPB a hair
+     before the blades — every reject was eaten before its tip began. Version
+     two moved TIPB to where the nose met the blades, which worked, and then
+     stood the fragment on end to feed it through a slot too short to take it
+     lying down. This one widens the slot instead and the fragment stays flat.
+     Move any one of gx, MZ, binX or FLEN and RE-CHECK TIPA > gx[2] + MZ. */
   const TIPB=binX-FL/2, TIPA=TIPB-SC(1.2), DIVEND=TIPB+SC(2.6);
 
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
@@ -2744,20 +2768,23 @@ function drawSortingYard(g,n){
   let PA=[0,0,0], PD=[0,-1,0], PBP=HALFBP;
   const ptOf=bp=>{ const k=(bp-PBP)*uBP;
     return [PA[0]+k*PD[0], PA[1]+k*PD[1], PA[2]+k*PD[2]]; };
-  /* CUTBP IS WHERE THE CUTTERS HAVE GOT TO, in the molecule's own base pairs.
-     Anything past it has been through the blades and is not drawn. Fading the
-     whole fragment out instead was the first attempt and it says the wrong
-     thing: a discarded read does not get dimmer, it stops existing, and it
-     stops existing FROM THE END THAT WENT IN — which is the high-bp end in
-     every pose, so the clip is a single upper bound and needs no special
-     case. */
-  let CUTBP=Infinity;
+  /* THE PER-BASE-PAIR CLIP IS GONE, and it is worth saying what it was for.
+     While a rejected fragment was fed in END FIRST — through the side, and then
+     stood on end through the lid — the honest way to draw it disappearing was
+     to stop drawing the part that had already gone through: CUTBP was the base
+     pair the blades had reached, and everything past it was not drawn. That is
+     the right mechanism for a thing consumed progressively.
+
+     It is not the right mechanism for a thing that DROPS IN. A fragment falling
+     flat through a slot goes in all at once, the lid hides it, and that is the
+     whole picture; a clip would be a second answer to a question the geometry
+     already answers. If anything here is ever eaten from one end again, this is
+     the shape of it. */
   /* the width runs ACROSS the molecule in the ground plane, and falls back to y
      when the molecule is standing on end and has no ground direction left */
   const across=h=>{ const nh=Math.hypot(PD[0],PD[1]);
     return nh>0.05?[-PD[1]/nh*h,PD[0]/nh*h]:[0,h]; };
   const bar=(node,bpA,bpB,op,hw)=>{
-    if(bpB>CUTBP) bpB=CUTBP;
     if(bpA>=bpB){ node.setAttribute("fill-opacity","0");
                   node.setAttribute("stroke-opacity","0"); return; }
     const a=ptOf(bpA), b=ptOf(bpB), n=across(hw===undefined?THK/2:hw);
@@ -2767,7 +2794,6 @@ function drawSortingYard(g,n){
     node.setAttribute("stroke-opacity",(clamp01(op)*0.5).toFixed(3));
   };
   const rail=(node,bpA,bpB,op)=>{
-    if(bpB>CUTBP) bpB=CUTBP;
     if(bpA>=bpB){ node.setAttribute("stroke-opacity","0"); return; }
     const q=ptOf(bpA), r=ptOf(bpB), a=P(q[0],q[1],q[2]), b=P(r[0],r[1],r[2]);
     node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
@@ -2801,7 +2827,6 @@ function drawSortingYard(g,n){
       const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
       const zAir=FALLZ*air, xAir=-FALLX*air, cx=fx+xAir;
       let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(0.4),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
-      CUTBP=Infinity;
 
       if(fr.fail<0){
         PBP=HALFBP; PD=[0,-1,0]; PA=[cx,cy,zR+zAir];
@@ -2812,36 +2837,32 @@ function drawSortingYard(g,n){
            schedule of its own, and the two can never come apart. */
         const rot=sstep(gx[fr.fail]+SC(0.9),gx[fr.fail]+MZ,fx);
         const tip=sstep(TIPA,TIPB,fx), yr=rejY(fx,fr.fail);
+        /* ONE ANCHOR THE WHOLE WAY: its middle. The axis is NORMALISED —
+           lerping the two components without it shortens the fragment to 71% at
+           the halfway point, which reads as the molecule shrinking as it
+           turns. */
+        const rx=rot, ry=-(1-rot), L=Math.hypot(rx,ry)||1;
+        PBP=HALFBP; PD=[rx/L,ry/L,0];
         if(tip<=0){
-          /* still on the deck, mid-turn, pivoting about its middle. The axis is
-             NORMALISED — lerping the two components without it shortens the
-             fragment to 71% at the halfway point, which reads as the molecule
-             shrinking as it turns. */
-          const rx=rot, ry=-(1-rot), L=Math.hypot(rx,ry)||1;
-          PBP=HALFBP; PD=[rx/L,ry/L,0]; PA=[cx,yr,zR+zAir];
+          PA=[cx,yr,zR+zAir];
         }else{
-          /* OVER THE EDGE AND DOWN THROUGH THE TOP, nose first and nose
-             anchored. The nose crosses to the slot over the tip, and then the
-             molecule stands up over it and feeds down: a shredder is loaded
-             through the hole in its lid, not through its side, and standing the
-             fragment on end is the only way in that reads as one.
+          /* OVER THE EDGE, THEN STRAIGHT DOWN. It stays flat and it stays
+             end-on: the fragment crosses to sit above the slot, hangs there for
+             the length of the crossing, and then drops in.
 
-             The pivot is about the NOSE and not the middle, which is the whole
-             reason this looks like feeding rather than dropping: pivot about
-             the middle and the fragment has to RISE a full half-length to get
-             its nose to the slot, and that draws a fragment being lifted. */
-          const dv=sstep(TIPB,DIVEND,fx);
-          const th=Math.min(1,dv/0.5)*Math.PI/2, sn=Math.sin(th);
-          PBP=YARD_MOL_BP; PD=[Math.cos(th),0,-sn];
-          /* the descent overlaps the last of the stand-up, so the molecule is
-             already being eaten by the time it is upright and never stands as a
-             full-length needle over the machine */
-          const desc=clamp01((dv-0.28)/0.72), e=tip*tip;
-          PA=[cx+FL/2+(binX-(cx+FL/2))*tip,
-              yr+(BY-yr)*tip,
-              (zR+(binTop-zR)*e)-FL*desc];
-          if(sn>1e-3) CUTBP=YARD_MOL_BP+(PA[2]-binTop)/(uBP*sn);
-          if(CUTBP<YARD_MOL_BP && CUTBP>0) shredT=t;
+             IT USED TO STAND ON END TO GET IN, and that was a workaround for a
+             slot too short to take it lying down. Widen the mouth and the
+             molecule does not have to do anything clever — which is the honest
+             picture as well, since nothing about a discarded read turns it
+             upright. What is left is one translation down, and the lid does the
+             rest: the bin is drawn after the fragments, so a thing at the slot
+             goes behind the machine's own top face and is gone. */
+          const drop=sstep(TIPB,DIVEND,fx), e=tip*tip;
+          PA=[cx+(binX-cx)*tip, yr+(BY-yr)*tip,
+              zR+(HOVER-zR)*e-(HOVER-(binTop-FL*0.10))*drop*drop];
+          /* and it stops existing once it is through the lid */
+          vis*=1-sstep(binTop,binTop-FL*0.16,PA[2]);
+          if(PA[2]<HOVER*0.55+binTop*0.45) shredT=t;
         }
       }
 
@@ -2892,7 +2913,6 @@ function drawSortingYard(g,n){
       fr.marks.forEach((mk,i)=>{
         const age=t-fr.flash[i];
         if(fr.flash[i]<0||age<0){ mk.setAttribute("stroke-opacity","0"); return; }
-        if(BCBP[i]>CUTBP){ mk.setAttribute("stroke-opacity","0"); return; }
         const q=ptOf(BCBP[i]);
         const a=P(q[0],q[1],q[2]+0.5*KZ);
         const pop=age<0.11?0.55+1.0*(age/0.11):1.15-0.15*Math.min(1,(age-0.11)/0.14);

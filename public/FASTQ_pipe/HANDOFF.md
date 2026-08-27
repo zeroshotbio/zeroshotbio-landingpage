@@ -1089,42 +1089,56 @@ than the bin so the join reads as a lid rather than as a step. `binTop` **is**
 that lid, and it has to stay below the height fragments ride at on the deck, or
 they climb into it rather than falling in.
 
-### The pose is three poses, and the last one stands the molecule on end
+### The pose is two poses, and the discard stays flat
 
 A fragment on this belt used to lie one way and one way only — broadside, long
-in `y` — so a piece of it was a span of `y` at a fixed `x`. It now has three:
+in `y` — so a piece of it was a span of `y` at a fixed `x`. It has two:
 
 | | | |
 |---|---|---|
 | broadside | long in ±y | the reading pose, under the scanners |
 | end on | long in x | the discard pose, a quarter turn clockwise |
-| standing | long in z | going down through the slot |
 
 So a piece is a **segment between two base pairs along a direction, from an
 anchor**. `PA`, `PD` and `PBP` are that pose, `ptOf(bp)` reads it, and `across()`
-gives the width — in the ground plane while there is one, falling back to `y`
-once the molecule is upright and has no ground direction left.
+gives the width in the ground plane. **One anchor the whole way: its middle.**
 
-**`PBP` is the part that matters.** Through the turn the fragment pivots about
-its **middle**; going into the slot it pivots about its **nose**, because *a
-thing being fed into a machine turns about the end that is already in it.* Pivot
-the dive about the middle instead and the fragment has to **rise a full half
-length** to get its nose to the slot — which draws a fragment being lifted by a
-crane, not fed into a shredder.
+**There was a third pose and it is gone.** A reject used to stand on end and feed
+down through the slot, pivoting about its nose. That was a workaround for a slot
+too short to take it lying down, and it looked like one: *nothing about a
+discarded read turns it upright.* Widen the mouth and the molecule does not have
+to do anything clever — it crosses to sit above the slot and drops in flat.
 
-**The axis is normalised** through the turn. Lerping the two components without
-it shortens the molecule to 71% at the halfway point, which reads as the thing
-shrinking as it turns.
+**The axis is still normalised** through the turn. Lerping the two components
+without it shortens the molecule to 71% at the halfway point, which reads as the
+thing shrinking as it turns.
 
-**The stand-up and the descent overlap** — the pivot runs over the first half of
-the dive, the descent starts at 0.28 of it — so the molecule is already being
-eaten by the time it is upright and never stands over the machine as a
-full-length needle.
+### The slot is sized first and the box around it second
 
-**And the laser had to stop looking things up.** It kept `swY` and rebuilt the
-block's position from a formula; a fragment's pose is only knowable while its
-own turn of the loop is running, so the station captures the **point**
-(`swP = ptOf(BCBP[i])`) instead.
+The slot is the only part with a constraint: a fragment drops through it lying
+flat, so it has to be **longer than the fragment** and **wider than the
+fragment's bar**. `SLOTX = FL·1.12`, `SLOTY = THK·2.8`, and `HEADX`/`HEADY`/the
+pail are derived outward from those.
+
+Sizing the box first and taking a fraction of it for the slot is what produced a
+mouth **shorter than the thing going into it** — and that, rather than any
+argument about shredders, is why the first version had to stand the fragment on
+end to get it in at all. **When one part of an assembly has a hard constraint,
+that part is the one with the free parameter.**
+
+### And the lid does the disappearing
+
+The bin is drawn **after** the fragments, so a thing at the slot goes behind the
+machine's own top face and is gone. `vis` fades over the last of the drop as
+well, which is belt and braces — but the occlusion is the part that reads.
+
+**The per-base-pair clip is gone, and it is worth saying what it was for.**
+While a reject was fed in *end first*, the honest way to draw it disappearing
+was to stop drawing the part that had already gone through: `CUTBP` was the base
+pair the blades had reached. That is the right mechanism for a thing consumed
+**progressively**. It is the wrong one for a thing that **drops in** — a fragment
+falling flat through a slot goes in all at once, and a clip would be a second
+answer to a question the geometry already answers.
 
 ### `TIPB` is where the nose reaches the slot, and it lays out the yard
 
@@ -1135,12 +1149,13 @@ finished first. **Move any one of `gx`, `MZ`, `binX` or `FLEN` and re-check
 `TIPA > gx[2] + MZ`.** That is what moved `gx` up-belt to 2.4/5.9/9.4 and `MZ`
 down to 2.6.
 
-**It has been got wrong twice and both times drew nothing at all**, which is why
-it is worth a check rather than a comment. Feeding side-on, `TIPB` had to be at
-`MOUTH − FL/2`, because the fragment's nose is at `cx + FL/2`; the version
-before that put it a hair before the blades, and every rejected fragment was
-consumed entirely before its tip began. The fall was in the code, ran every lap,
-and was never once seen.
+**The history is worth one line each, because two of the three drew nothing.**
+Version one fed the fragment into the *side* of the bin and put `TIPB` a hair
+before the blades — every reject was eaten before its tip began, so the fall ran
+every lap and was never once seen. Version two moved `TIPB` to where the nose
+met the blades, which worked, and then stood the fragment on end to feed it
+through a slot too short to take it lying down. This one widens the slot instead
+and the fragment stays flat.
 
 The drop itself is `tip²` rather than `tip`, because a fall accelerates and a
 linear one reads as a lift lowering.
@@ -1384,6 +1399,24 @@ inside Edit positions rather than a click: *a drag that sometimes creates a
 track is a drag nobody can predict.* Press the button, click one object, click
 another. Clicking the first one again cancels.
 
+### Always the middle of an edge, never a corner
+
+`roofCorner` picks the nearest **corner**, which is the right answer for a
+reference line that only has to leave on the side it is going. It is the wrong
+answer for a track somebody drew between two things: *a corner belongs to
+neither of the edges that meet at it*, so a line leaving one reads as escaping
+the box rather than as coming out of a face.
+
+`faceMid(n,B)` takes all four edge midpoints and returns the nearest to the
+other object, so **which** face is used follows from where that object is and
+needs no bookkeeping. Both ends of every link go through it.
+
+**It is resolved in `routeOf` before `PORTS` is consulted, on purpose.** `PORTS`
+is keyed by *shape* and most shapes on this page have no entry — a link between
+two of those would have fallen through to a centre-to-centre line, which runs
+out of the middle of a box and through whatever is in the way. `faceMid` needs
+nothing but a footprint, and every node has one.
+
 ### They are ordinary edges from the first frame
 
 `LIVELINKS` is read at load and each pair is pushed into `EDGES` **before
@@ -1438,6 +1471,37 @@ than about the pipeline**, and it says so: *not a claim this page makes*. Every
 other edge has prose beside it in `fq-data.js` saying what moves along it; this
 one has a person's judgement and nothing else. It carries dots because tracks on
 this map carry dots — a drawing convention, not a measurement.
+
+## Two things placed on request, and what they cost
+
+**`G2 → E5` is off the map.** The line is written out in a comment in `EDGES`
+with the claim it drew: *the annotation has a second consumer, and it is `E5`
+rather than `E4` — the aligner reads the index, and the thing that turns a
+coordinate into a gene reads the model.* Uncomment it, or draw it by hand.
+
+**There is a second `Ensembl 99`, and it is a copy rather than a claim.**
+`G2b` — same figure, same size, same prose, unconnected, placed for the Connect
+tool to wire up. Which also means **the map currently shows one file twice** and
+says so nowhere but in the comment above the record.
+
+**If it is meant to be the second annotation arm it needs its own name and its
+own prose.** The arm this page has always described as staged-not-run is
+GRCz12tu with Ensembl 2025_12, documented at `/grcz12`. A second box labelled
+"Ensembl 99" is a duplicate; a second box labelled with the release it actually
+is would be *the arm*, and would want a `G1b` beside it.
+
+### It also broke a check, and the check was wrong
+
+`check-text` matched each string to a building by `aria-label` and then looked
+that building's roof up in a map keyed by **name**. With two nodes called
+"Ensembl 99" the map held one entry, so one card's labels were tested against
+the other card's roof and came back 100% off it.
+
+**Name is not identity.** Node groups carry `data-id` now and the check keys off
+it; the failure line prints both, because the name is what a person recognises
+and the id is what the page means. Anything else that keys off a name is the
+same bug waiting — the two "Ensembl 99"s are the first pair this page has ever
+had, and they will not be the last.
 
 ## `drawWhitelists` — where the lists come from
 
@@ -2088,3 +2152,8 @@ resized. Nobody had.
 - **Merge `LINKS` key by key.** A pair is not a property of either end. Union.
 - **Arm a drag and a click on the same press.** `preventDefault` plus a pointer
   capture means the click never arrives — see Connect two items.
+- **Land a hand-drawn link on a corner.** Both ends go through `faceMid`.
+- **Key anything off a node's NAME.** Two nodes may share one; `data-id` is the
+  identity. `check-text` shipped that bug for one build.
+- **Size `E3`'s bin before its slot.** The slot has the constraint — longer than
+  a fragment, wider than its bar — so the slot is the free parameter.

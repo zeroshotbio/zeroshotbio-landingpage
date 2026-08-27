@@ -143,7 +143,7 @@ if(GONE.size){
    and a hand-drawn connection is not a claim that outranks the drawn ones. */
 const LIVELINKS=(EDITS.links||((typeof LINKS!=="undefined")?LINKS:[]))
   .filter(l=>l && byId[l.a] && byId[l.b] && !GONE.has(l.a) && !GONE.has(l.b));
-const linkEdge=(a,b)=>({a,b,kind:"link",straight:true,port:"corner",portB:"corner",
+const linkEdge=(a,b)=>({a,b,kind:"link",straight:true,port:"face",portB:"face",
   tone:"var(--fg2)",dotTone:"var(--fg)",link:true});
 LIVELINKS.forEach(l=>EDGES.push(linkEdge(l.a,l.b)));
 
@@ -439,6 +439,14 @@ function routeOf(e){
      large, and an edge that ends at the centre of one crosses the whole of it
      to get there. `portB` lands it on the near corner instead, so the line
      arrives AT the thing rather than through it. */
+  /* A HAND-DRAWN LINK LEAVES AND ARRIVES AT THE MIDDLE OF AN EDGE, WHATEVER IT
+     IS JOINING. It is resolved before PORTS is consulted on purpose: PORTS is
+     keyed by SHAPE and most shapes on this page have no entry, so a link
+     between two of those would have fallen through to a centre-to-centre line —
+     which runs out of the middle of a box and through whatever is in the way.
+     faceMid needs nothing but a footprint, which every node has. */
+  if(e.port==="face" && typeof faceMid==="function")
+    return [faceMid(A,B), faceMid(B,A)];
   const endAt = (e.portB && typeof PORTS!=="undefined" && PORTS[B.shape])
     ? PORTS[B.shape](B,e.portB,A) : null;
   if(e.port && typeof PORTS!=="undefined" && PORTS[A.shape]){
@@ -544,7 +552,14 @@ CARRIES.forEach((c,i)=>{
    ============================================================ */
 const nodeEls={};
 NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
-  const g=el("g",{tabindex:"0",role:"button","aria-label":n.name});
+  /* data-id as well as the name, because NAME IS NOT IDENTITY. Two nodes may
+     legitimately carry the same name — a second copy of a reference file, say —
+     and anything that keys off the name silently merges them. check-text did
+     exactly that: it matched each string to a building by aria-label and looked
+     up that building's roof in a map keyed by name, so with two "Ensembl 99"s
+     one card's labels were tested against the other card's roof and came back
+     100% off it. */
+  const g=el("g",{tabindex:"0",role:"button","aria-label":n.name,"data-id":n.id});
   g.style.cursor="pointer";
   /* WHAT THIS NODE'S SHAPE REGISTERED, recorded here and nowhere else. A
      resize redraws the shape, and a redraw that cannot say which tickers were

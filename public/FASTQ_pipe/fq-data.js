@@ -230,6 +230,26 @@ const NODES = [
  cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason.",
  added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (every exon and every intron is named), which of those get translated (the tall blocks against the low ones at either end), and which way it is read (the chevrons). Transcription runs 5′ to 3′: the 5′ UTR is the front of the first exon, the coding sequence runs from there through the internal exons, and THE 3′ UTR IS THE TAIL OF THE LAST ONE AND MOST OF IT — which is why it is drawn as its own section with its own name rather than as a note off the end. Every assay on this map primes with oligo-dT, so that block is where the reads land, and it is the one whose zebrafish annotation is incomplete in both Ensembl and RefSeq. The structures are real in kind; the coordinates are not."},
 
+/* A SECOND ENSEMBL 99, AND IT IS A COPY RATHER THAN A CLAIM.
+
+   Placed on request, unconnected, for the Connect tool to wire up. Same figure,
+   same size and same prose as G2, because that is what a copy is — which also
+   means THE MAP CURRENTLY SHOWS ONE FILE TWICE and says so nowhere but here.
+
+   IF IT IS MEANT TO BE THE SECOND ANNOTATION ARM IT NEEDS ITS OWN NAME AND ITS
+   OWN PROSE. The arm this page has always described as staged-not-run is
+   GRCz12tu with Ensembl 2025_12, documented at /grcz12 — see the note at the
+   top of this file. A second box labelled "Ensembl 99" is a duplicate; a second
+   box labelled with the release it actually is would be the arm, and would want
+   a G1b beside it. Until then it is scaffolding, which is what the b says. */
+{id:"G2b", key:"G2b", noclip:true, group:"G · genome, and W · whitelists", shape:"locus",
+ follow:{a:"E4",dx:11.5}, name:"Ensembl 99", x:9.1, y:R3+11.8, w:4.0, d:6.6, h:0.5,
+ sub:"the annotation · where genes start and stop",
+ does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
+ built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
+ cond:"You cannot read the release off the data. The zebrafish gene set is identical across Ensembl releases 99–114 — all 32,520 of it — so set identity cannot date a build, and every reference verdict in the corpus that reads UNRESOLVED reads that way for this reason.",
+ added:"This is the single largest source of incomparability between two zebrafish atlases, and it is a file somebody chose. Nothing downstream can recover which one it was. THE FIGURE IS A ZOOM: one chromosome, a window on it, and the locus that window opens — so the four claims an annotation makes are visible as shapes rather than as a sentence. Which stretches are a gene (the blocks), which parts survive splicing (every exon and every intron is named), which of those get translated (the tall blocks against the low ones at either end), and which way it is read (the chevrons). Transcription runs 5′ to 3′: the 5′ UTR is the front of the first exon, the coding sequence runs from there through the internal exons, and THE 3′ UTR IS THE TAIL OF THE LAST ONE AND MOST OF IT — which is why it is drawn as its own section with its own name rather than as a note off the end. Every assay on this map primes with oligo-dT, so that block is where the reads land, and it is the one whose zebrafish annotation is incomplete in both Ensembl and RefSeq. The structures are real in kind; the coordinates are not."},
+
 /* DRAWN, NOT LABELLED, AND FOR THE SAME REASON THE OTHER TWO ARE. G1 says which
    bases are where and G2 says which stretches are a gene; this is what you get
    when the second is baked into the first, and as a small unlabelled cube it
@@ -472,20 +492,16 @@ const EDGES = [
   {a:"G2", b:"G3", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
   {a:"G3", b:"E4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
 
-  /* ENSEMBL 99 IS ONE FILE WITH TWO CONSUMERS, AND IT IS ONE BOX WITH TWO
-     ARROWS. The GTF is baked into the index at build time AND read again at the
-     gene assignment — the same file, twice, for two different purposes. Drawing
-     a second annotation node would say there were two of them; drawing one
-     arrow would lose the fact that E5's answer depends on the same choice E4's
-     does. Two arrows out of one box is the only version that is true.
+  /* ---- G2 -> E5 IS OFF THE MAP, AND THIS IS WHERE IT WAS -----------------
 
-     THE DIRECT G1 -> E4 AND G2 -> E4 LINES ARE GONE. They were added when the
-     assembly and the annotation looked like they stopped at a cube, and they
-     did fix that — but they also said the aligner reads the FASTA and the GTF,
-     which it does not. It reads the index. The index is built from them. That
-     is what the two short lines above are for, and the second consumer of the
-     GTF is E5 rather than E4. */
-  {a:"G2", b:"E5", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+       {a:"G2", b:"E5", kind:"ref", straight:true, port:"corner", tone:"var(--fg2)"},
+
+     Removed on request. The claim it drew is still true and still worth
+     drawing: the annotation has a SECOND consumer, and it is E5 rather than E4
+     — the aligner reads the index, and the thing that turns a coordinate into
+     a gene reads the model. Put it back by uncommenting that line, or draw it
+     by hand with the Connect tool, which is what the second Ensembl 99 was
+     added for. */
 
     /* THREE LISTS, THREE SCANNERS, THREE LINES — AND EACH ONE JOINS ITS OWN PAIR.
 
@@ -513,7 +529,7 @@ const EDGES = [
    every station back on y = R3 those offsets were 3-odd units of empty ground
    each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+15.5},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:44.5, y0:R3-9.6, y1:R3+16.8},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
