@@ -1075,40 +1075,72 @@ thing a rejected fragment does is leave the machine's own floor. Its top has to
 sit **below** the height the fragments ride at, or they climb into it rather
 than falling in.
 
-### The bin is a shredder, turned ninety degrees
+### The bin is a shredder, and a shredder is loaded through its lid
 
-It was a hopper lying **across** the siding, long in `y`, because what came down
-the siding was a fragment lying across the belt. **Both have turned.** A
-rejected fragment swings round as it leaves the belt and arrives **end on**,
-travelling along its own length, so the mouth it needs is a **slot** rather than
-a trough — long in `x`, thin in `y`.
+It was a hopper lying **across** the siding; then it was a slot fed from the
+side. Both were wrong about the same thing: **you do not push paper into the
+side of a shredder, you drop it down the hole in the top.** A machine loaded
+side-on is a chute, and a chute is a place things pass *through*.
 
-**The turn rides `rejY`'s own `sstep`.** The divert and the quarter turn are one
-movement, so `rot` shares the curve rather than having a schedule of its own and
-the two can never come apart. At `rot 1` the cDNA end is at −x and the UMI end
-at +x, which is the broadside pose turned a quarter turn **clockwise on screen**.
+**A pail with a shredder head on it.** As one slab it was a skip — a box you
+throw things into, which is a picture of *storage*. The silhouette that says
+shredder is two boxes: a bin, and a machine sitting across the top of it, wider
+than the bin so the join reads as a lid rather than as a step. `binTop` **is**
+that lid, and it has to stay below the height fragments ride at on the deck, or
+they climb into it rather than falling in.
 
-**Every piece of a fragment is a segment between two base pairs**, not a span of
-`y` at a fixed `x` — `seg2` places both ends and `bar`/`rail` take the
-perpendicular **in the ground plane**, so a bar keeps its world width through the
-whole turn. That is the change that makes the pose a variable instead of an
-assumption.
+### The pose is three poses, and the last one stands the molecule on end
 
-### `TIPB` is where the leading end reaches the blades, and it lays out the yard
+A fragment on this belt used to lie one way and one way only — broadside, long
+in `y` — so a piece of it was a span of `y` at a fixed `x`. It now has three:
 
-This is the constraint the whole downstream half of the station is arranged
-around, and getting it wrong drew **nothing at all**.
+| | | |
+|---|---|---|
+| broadside | long in ±y | the reading pose, under the scanners |
+| end on | long in x | the discard pose, a quarter turn clockwise |
+| standing | long in z | going down through the slot |
 
-The fragment is `FL` long and travels along its own length, so its nose is at
-`cx + FL/2`. **The tip has to be finished by `cx = MOUTH − FL/2`** or the thing
-starts being eaten before it has left the deck. The first version put `TIPB` at
-`MOUTH − 0.15`, and every rejected fragment was consumed entirely before its tip
-began: the fall was in the code, ran every lap, and was never once visible.
+So a piece is a **segment between two base pairs along a direction, from an
+anchor**. `PA`, `PD` and `PBP` are that pose, `ptOf(bp)` reads it, and `across()`
+gives the width — in the ground plane while there is one, falling back to `y`
+once the molecule is upright and has no ground direction left.
 
-Reading backwards from there: `TIPA` is a unit earlier, and the last gantry's
-divert has to complete before `TIPA`. That is what moved `gx` up-belt to
-2.4/5.9/9.4 and `MZ` down to 2.6. **Move any one of `gx`, `MZ`, `binX` or `FLEN`
-and re-check `TIPA > gx[2] + MZ`.**
+**`PBP` is the part that matters.** Through the turn the fragment pivots about
+its **middle**; going into the slot it pivots about its **nose**, because *a
+thing being fed into a machine turns about the end that is already in it.* Pivot
+the dive about the middle instead and the fragment has to **rise a full half
+length** to get its nose to the slot — which draws a fragment being lifted by a
+crane, not fed into a shredder.
+
+**The axis is normalised** through the turn. Lerping the two components without
+it shortens the molecule to 71% at the halfway point, which reads as the thing
+shrinking as it turns.
+
+**The stand-up and the descent overlap** — the pivot runs over the first half of
+the dive, the descent starts at 0.28 of it — so the molecule is already being
+eaten by the time it is upright and never stands over the machine as a
+full-length needle.
+
+**And the laser had to stop looking things up.** It kept `swY` and rebuilt the
+block's position from a formula; a fragment's pose is only knowable while its
+own turn of the loop is running, so the station captures the **point**
+(`swP = ptOf(BCBP[i])`) instead.
+
+### `TIPB` is where the nose reaches the slot, and it lays out the yard
+
+`TIPB` is not an offset from a mouth any more — the nose is **placed** at the
+slot by interpolation — so it only has to be far enough back that the tip is not
+travelling backwards, and far enough forward that the last gantry's divert is
+finished first. **Move any one of `gx`, `MZ`, `binX` or `FLEN` and re-check
+`TIPA > gx[2] + MZ`.** That is what moved `gx` up-belt to 2.4/5.9/9.4 and `MZ`
+down to 2.6.
+
+**It has been got wrong twice and both times drew nothing at all**, which is why
+it is worth a check rather than a comment. Feeding side-on, `TIPB` had to be at
+`MOUTH − FL/2`, because the fragment's nose is at `cx + FL/2`; the version
+before that put it a hair before the blades, and every rejected fragment was
+consumed entirely before its tip began. The fall was in the code, ran every lap,
+and was never once seen.
 
 The drop itself is `tip²` rather than `tip`, because a fall accelerates and a
 linear one reads as a lift lowering.
@@ -1941,4 +1973,9 @@ resized. Nobody had.
 - **Change `E3`'s `base` without changing its `n.h`.** `KZ` is derived from
   their sum and every gantry on the station scales with it.
 - **Move `gx`, `MZ`, `binX` or `FLEN` without re-checking `TIPA > gx[2] + MZ`.**
-  Get it wrong and the fall runs every lap and is never visible.
+  Got wrong twice; both times the fall ran every lap and was never once seen.
+- **Pivot `E3`'s dive about the fragment's middle.** It has to turn about the
+  end that is already in the machine, or it rises half its length to get there.
+- **Reach for an opacity at `E4` before checking the width.** Under a pixel, a
+  shape is drawn at partial coverage, which is indistinguishable from
+  transparency.
