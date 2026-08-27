@@ -608,24 +608,14 @@ const PORTS={
      meant to say THIS edge feeds THAT edge. The reference chain says exactly
      that — assembly and annotation into the index, index into the aligner — so
      it is drawn edge to edge. */
-  belts     :(n,which,B)=>{
-    /* the belt's own near rail, not the footprint's: the rail is what a reader
-       sees as the machine's bottom-left edge, and it is a good half unit inside
-       the box the layout gave it */
-    if(which==="bl"||which==="assign"){
-      /* BELTU, not 9.2 — this is the same divide drawBelts makes and it has to
-         make it the same way, or the port lands on a rail that is not where the
-         rail is. */
-      const K=n.w/12.3, GL=n.d*0.70, BW=GL+K*1.0;
-      /* "bl" is the middle of the near rail, where the index feeds the machine.
-         "assign" is four fifths along it, where the annotation does — a
-         different consumer at a different point on the same belt, and the
-         distance between the two ports is the distance between the two
-         questions. */
-      return P(which==="assign"?n.x-n.w/2+n.w*0.80:n.x, n.y+BW/2, n.h*0.245);
-    }
-    return roofCorner(n,B);
-  },
+  /* THE BELT'S OWN NEAR RAIL, not the footprint's: the rail is what a reader
+     sees as the machine's bottom-left edge, and it is a good half unit inside
+     the box the layout gave it. `K` is derived exactly the way drawGeneBelt
+     derives it — off the DEPTH — because a port that computes the rail its own
+     way lands on a rail that is not where the rail is, and that is how this
+     went wrong once already. Both belts answer it, because both have one. */
+  belts     :(n,which,B)=>beltRail(n,which)||roofCorner(n,B),
+  assign    :(n,which,B)=>beltRail(n,which)||roofCorner(n,B),
   karyotype :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
   aligner   :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
   locus     :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
@@ -688,6 +678,11 @@ const PORTS={
     return roofCorner(n,B);
   },
 };
+function beltRail(n,which){
+  if(which!=="bl") return null;
+  const K=n.d*0.1053, GL=n.d*0.70, BW=GL+K*1.0;
+  return P(n.x, n.y+BW/2, n.h*0.245);
+}
 function edgePort(n,which){
   if(which==="tr") return P(n.x, n.y-n.d/2, topOf(n));
   if(which==="bl") return P(n.x, n.y+n.d/2, topOf(n));
@@ -1550,7 +1545,27 @@ const GENE_NAMES=[
   "fgf8a","wnt11","notch1a",
 ];
 
-function drawBelts(g,n){
+/* ONE FUNCTION, TWO MACHINES.
+
+   Aligning and assigning are two steps and they are drawn as two objects. For a
+   while assignment was the far end of the alignment belt, which is tidy and
+   says the wrong thing twice over: that a read is carried between the two on
+   one surface, and that the two are one machine somebody named in halves. They
+   are not — the second reads the model, the first reads the assembly, and a
+   reader who cannot see where one ends cannot see that there are two.
+
+   SO THE GENES FADE OUT AT THE END OF ONE AND FADE IN AT THE START OF THE
+   NEXT, which is the same not-quite-connected the rest of this page uses: E3's
+   validated triplets fade at its mouth and fresh ones appear at E4. An
+   imperfect join is honest here — nothing on this map claims to have followed
+   one molecule from end to end, and a belt running unbroken between two
+   stations would.
+
+   What the two modes share is everything about a gene and a read: the models,
+   the pile-up, the 3' bias, the aerial, the names. What they do not share is
+   the rain (align only) and the sweep, the bin and the tracks (assign only). */
+function drawGeneBelt(g,n,MODE){
+  const ASSIGN=MODE==="assign";
   hitBox(g,n);
   const rnd=mulberry32(0x5eedf15^0x53);
 
@@ -1572,15 +1587,17 @@ function drawBelts(g,n){
      molecule is the reason it can be counted and none of it aligns. */
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
-  /* THE BELT IS LONGER AND EVERYTHING ON IT IS THE SAME SIZE, which is the
-     whole reason BELTU exists. K used to be span/9.2 with the 9.2 written into
-     the divide, so widening the node scaled the machine: longer belt, longer
-     genes, bigger reads, and no more room than before. BELTU is the belt's
-     length in its OWN units, so growing them together adds belt and leaves the
-     load alone. It went 9.2 -> 12.3 and n.w went 6.4 -> 8.56 to match; change
-     one and change the other, or the gene models resize under you. */
-  const BELTU=12.3;
-  const K=span/BELTU, KZ=n.h/0.53;            /* the original's own units */
+  /* K COMES OFF THE DEPTH, NOT THE LENGTH, and that is what lets two belts of
+     different lengths carry the same size of gene.
+
+     It was span/9.2 with the 9.2 written into the divide, so widening a belt
+     scaled the whole machine — longer belt, longer genes, bigger reads, no more
+     room than before. Then it was span/BELTU, which fixed that at the cost of
+     two numbers that had to be changed together. Depth is the right source:
+     a gene lies ACROSS the belt, so what sets its size is how wide the belt is,
+     and the length is then free. Give two belts the same d and they are the
+     same machine at two lengths. */
+  const K=n.d*0.1053, KZ=n.h/0.53;            /* the original's own units */
   /* THE MODEL IS LOW. exonH was 0.565 of n.h against a line 0.12 world units
      wide, which is a wall rather than a block: opaque and narrowed, the exons
      came out as a row of train cars standing on a rail. An exon is a THICKER
@@ -1621,7 +1638,12 @@ function drawBelts(g,n){
      one model. The fan is the landing sites, and nothing else. */
   const NOZX=5.4*K, NOZZ=3.2*KZ;
   const v=(n.v||1.05)*K;
-  const NG=10, PAD=7*K, LOOP=span+PAD*2;
+  /* THE PITCH IS FIXED AND THE COUNT FOLLOWS. Ten genes was right for one belt
+     of one length; with two belts it has to be the SPACING that is shared, or a
+     short belt carries its models bunched and a long one carries them strung
+     out, and the two stop looking like the same conveyor. */
+  const PAD=7*K, LOOP=span+PAD*2;
+  const NG=Math.max(4,Math.round(LOOP/(2.32*K)));
   const yOf=f=>cy+GL/2-f*GL;                  /* f=0 at +y, the gene's near end */
 
   /* the read, in the same base pairs as everywhere else, as a fraction of the
@@ -1677,7 +1699,10 @@ function drawBelts(g,n){
      thirty of them simultaneously is a decision about the gene, which is not
      what this step does. Each read's mark fires when the model has carried it
      past ASSIGN0 + f*ASSIGNL, so the marks travel the transcript. */
-  const ASSIGN0=x0+span*0.585, ASSIGNL=span*0.185;
+  /* THE SWEEP RUNS ACROSS THE MIDDLE OF THE ASSIGN BELT, not the far end of
+     the align one. A gene arrives with its pile already on it, is claimed, and
+     leaves marked — which needs run-in before it and run-out after. */
+  const ASSIGN0=x0+span*0.30, ASSIGNL=span*0.32;
   /* WHERE A DECLINED READ ENDS UP: off the FAR rail, at −y.
 
      E3's bin is on the near side and this one is not, which is worth a line.
@@ -1694,7 +1719,7 @@ function drawBelts(g,n){
      it) or they climb into it; and the bin must be inside the belt's own
      visible span, because a shunted read is drawn in its gene's group and goes
      when the gene does. 0.86 leaves the last-declared read room to get there. */
-  const BINX4=x0+span*0.86, BINY4=cy-BW/2-GL*0.18;
+  const BINX4=x0+span*0.82, BINY4=cy-BW/2-GL*0.18;
   /* THE SAME SHAPE AS E3's, WHICH IS A RATIO AND NOT A SIZE. That bin's slot is
      5.9 times as long as it is wide and its pail and head are 0.204 and 0.058
      of the slot's length; carry those three numbers and the two boxes are the
@@ -1766,7 +1791,7 @@ function drawBelts(g,n){
      reader could see. They go on top instead: the mark is small and grey and
      crossing a read costs it nothing, where being hidden costs it everything. */
   const laneLabs=[];
-  for(let k=0;k<NLANE;k++){
+  for(let k=0;ASSIGN&&k<NLANE;k++){
     const a=P(x1,laneY(k),base), b=P(x1+LANEX,laneY(k),base);
     g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
       x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg3)",
@@ -2106,10 +2131,10 @@ function drawBelts(g,n){
      Same object as E3's and from the same function, because a read declined
      here and a fragment declined there are the same kind of event one step
      apart. The name is the difference: it says which question was asked. */
-  const BIN4=shredBin(g,BINX4,BINY4,SLOTX4,SLOTY4,BUCKH4,HEADH4,
+  const BIN4=ASSIGN?shredBin(g,BINX4,BINY4,SLOTX4,SLOTY4,BUCKH4,HEADH4,
     {top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"},
-    {top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"});
-  {
+    {top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"}):{top:0,run(){}};
+  if(ASSIGN){
     const a=P(BINX4+SLOTX4*0.34,BINY4-SLOTY4*1.7-GL*0.05,0);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
       "text-anchor":"start","font-family":MONO,fill:"var(--rej)",
@@ -2152,9 +2177,18 @@ function drawBelts(g,n){
          the reads the model kept run on down the lanes after it has gone, and
          they are drawn in its group. Keying gn.hid off vis put the lanes out
          with the gene that fed them. */
-      const vis=Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),1-sstep(x1-K*0.9,x1-K*0.1,gxp));
-      const live=Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),
-                          1-sstep(x1+LANEX*0.94,x1+LANEX*1.2,gxp));
+      /* THE JOIN IS A FADE AT BOTH ENDS AND IT IS DELIBERATELY SOFT. On the
+         align belt a gene comes on at the mouth and goes out gently over the
+         last fifth — it is not handed over, it stops being drawn. On the assign
+         belt one appears over the first fifth, fresh, from the same general
+         direction. Neither belt claims to be the other's continuation. */
+      const vis=ASSIGN
+        ? Math.min(sstep(x0-K*0.2,x0+span*0.17,gxp),1-sstep(x1-K*0.9,x1-K*0.1,gxp))
+        : Math.min(sstep(x0-K*0.4,x0+K*0.5,gxp),1-sstep(x1-span*0.20,x1-K*0.1,gxp));
+      const live=ASSIGN
+        ? Math.min(sstep(x0-K*0.2,x0+span*0.17,gxp),
+                   1-sstep(x1+LANEX*0.94,x1+LANEX*1.2,gxp))
+        : vis;
       const exTop=base+exonH;
       /* A GENE OFF THE BELT COSTS NOTHING. Ten models are on the loop and four
          are on the belt; with thirty reads apiece, walking the other six every
@@ -2183,13 +2217,13 @@ function drawBelts(g,n){
          which draws a thing being switched off; it drops instead, and the fade
          goes with it. z is the only axis this projection draws straight up, so
          a drop is the one movement that cannot be mistaken for anything else. */
-      const roll=sstep(x1-span*0.075,x1+span*0.010,gxp);
+      const roll=ASSIGN?sstep(x1-span*0.075,x1+span*0.010,gxp):0;
       const gz=-roll*roll*GL*0.34;
       setBoxY(gn.body,gxp,GWE,yOf(0),yOf(1),base+gz,base+geneH+gz,vis.toFixed(3));
       gn.ex.forEach((e,k)=>
         setBoxY(gn.exons[k],gxp,GWE,yOf(e[0]),yOf(e[1]),base+gz,exTop+gz,vis.toFixed(3)));
       /* and the whole line goes green as the sweep claims it */
-      const glow=sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.07,gxp);
+      const glow=ASSIGN?sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.07,gxp):0;
       setBoxY(gn.glow,gxp,GWE*1.02,yOf(0),yOf(1),base+gz,exTop*1.01+gz,
         (vis*glow*0.26).toFixed(3));
 
@@ -2224,7 +2258,10 @@ function drawBelts(g,n){
            the opposite of rain. It is now invisible until its own fall starts
            and fades in over the first tenth of it, so the first frame anybody
            sees of a read is a frame in which it is already moving. */
-        const kk=clamp01((u-(rd.u0-FALL))/FALL);
+        /* NO RAIN ON THE ASSIGN BELT. Its genes arrive already covered: the
+           reads landed one station back, and drawing them falling again would
+           say the alignment happens twice. */
+        const kk=ASSIGN?1:clamp01((u-(rd.u0-FALL))/FALL);
         const air=Math.pow(1-kk,2.2);
         const flap=flapOf(kk);
         /* one point: dx closes in as it lands, and y comes down off the belt's
@@ -2247,12 +2284,12 @@ function drawBelts(g,n){
            even when shunt is zero. Multiplying by zero does not rescue an
            undefined; the every-read fields are start and end. */
         const fire=ASSIGN0+rd.start*ASSIGNL;
-        const said=gxp>fire;
+        const said=ASSIGN&&gxp>fire;
         /* every declined read converges on the same box, so the shunt is
            normalised between its OWN verdict and one shared arrival — the ones
            declared late simply travel faster, which is what happens when a
            machine has one chute */
-        const shunt=rd.bad?sstep(fire+span*0.02,BINX4-span*0.02,gxp):0;
+        const shunt=(ASSIGN&&rd.bad)?sstep(fire+span*0.02,BINX4-span*0.02,gxp):0;
         if(rd.bad && shunt>0.55) shred4=t;
         /* ---- AND THE KEPT ONES PEEL INTO A LANE ---------------------------
            At the end of the belt a read stops being a mark on a gene and starts
@@ -2260,7 +2297,7 @@ function drawBelts(g,n){
            runs out down one of five lanes. Which lane is fixed at build, so a
            read keeps it — a lane that reshuffles is a queue, and nothing here
            queues. */
-        const lane=rd.bad?0:sstep(x1-span*0.085,x1-span*0.015,gxp);
+        const lane=(!ASSIGN||rd.bad)?0:sstep(x1-span*0.085,x1-span*0.015,gxp);
         const rmid=yOf((rd.start+rd.end)/2);
         const rxb=gxp+rd.dx*(1-air)-NOZX*air;
         const dyb=(cy-rd.ymid)*air;           /* the fan, closing as it lands */
@@ -2361,7 +2398,8 @@ function drawBelts(g,n){
   run(0);
   TICKERS.push(dt=>run(dt));
 }
-DRAW.belts=drawBelts;
+DRAW.belts =(g,n)=>drawGeneBelt(g,n,"align");
+DRAW.assign=(g,n)=>drawGeneBelt(g,n,"assign");
 
 
 /* ============================================================

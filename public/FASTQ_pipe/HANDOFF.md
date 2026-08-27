@@ -761,14 +761,7 @@ diagram and a reader has to be told what it means; labelled, it says it. The
 gene's name moved out to `K*0.55` off the near rail at the same time, to keep
 clear of the `5′` mark now sitting between them.
 
-### The belt is a third longer, and the length is where the second question goes
-
-**`BELTU` exists so that a longer belt is not a bigger machine.** `K` used to be
-`span/9.2` with the 9.2 written into the divide, so widening the node scaled
-everything on it: longer belt, longer genes, bigger reads, and **no more room
-than before**. `BELTU` is the belt's length in its own units. It went 9.2 → 12.3
-and `n.w` went 6.4 → 8.56 to match. **Change one and change the other**, or the
-gene models resize under you.
+### The assignment is its own station
 
 **Alignment answers *where on the assembly*; assignment answers *which gene*,**
 and they are different questions asked of the same read a moment apart. The
@@ -779,7 +772,8 @@ pile of reads on it and leaves with every one of them marked.
 is a verdict per read; one mark appearing on thirty of them simultaneously is a
 decision about the *gene*, which is not what this step does. Each read's mark
 fires when the model has carried it past `ASSIGN0 + f·ASSIGNL`, so the marks
-travel the transcript.
+travel the transcript. `ASSIGN0` sits at 0.30 of `E5`'s own belt with the sweep
+running to 0.62, so a gene has run-in before it and run-out after.
 
 **The gene's name is the answer, so it becomes the answer's colour.** Assignment
 does not produce a mark on a read and nothing else — what it produces is a
@@ -1344,31 +1338,50 @@ fragments and *before* the scanners, so a tick rides above its block but passes
 reason. The bin is built last, so a discarded triplet slides *behind* it and is
 gone.
 
-## `drawBeltSeg` — E5 is the second half of E4's belt
+## `drawGeneBelt` — one function, two machines
 
-**It was a cube on the row and that drew the wrong thing.** Assignment does not
-happen somewhere else: it happens to a read already lying on a gene, on the same
-machine, a moment after the alignment that put it there. *A separate box
-downstream says the read gets picked up and carried to another station*, which is
-exactly what does not happen.
+**Aligning and assigning are two steps and they are drawn as two objects.** For
+a while assignment was the far end of the alignment belt, which is tidy and says
+the wrong thing twice over: that a read is carried between the two on one
+surface, and that the two are one machine somebody named in halves. They are
+not — the first reads the assembly, the second reads the model, and *a reader
+who cannot see where one ends cannot see that there are two.*
 
-So it is an outline on the deck — the downstream part of the belt, with its own
-footprint, its own name and its own row in the index. **Two named halves of one
-machine.** It draws nothing but its own edge, because everything inside it is
-already drawn by `drawBelts`; what it adds is *where one question stops and the
-next begins*.
+`drawGeneBelt(g, n, MODE)` with `DRAW.belts` and `DRAW.assign` as the two
+wrappers. What they share is everything about a gene and a read — the models,
+the pile-up, the 3′ bias, the aerial, the names, the stack. What they do not
+share is the **rain** (align only) and the **sweep, the bin and the tracks**
+(assign only).
 
-**Four corner brackets rather than a closed rectangle.** A full outline on a deck
-that already has rails reads as a third rail; four corners read as a *region*,
-which is what this is, and it leaves the long sides open where the genes cross
-them. The one closed edge is the upstream one, in `--ok`, dashed: that edge is a
-claim rather than a boundary.
+### The join is a fade, and an imperfect join is the honest one
 
-**Its footprint has to match `ASSIGN0`.** The split is a number in `drawBelts`
-and a node position in `fq-data.js`, and they are the same line — E4 is `w 8.56`
-and the split is at 0.585 of it, so E5 starts `+0.728` past E4's centre, runs
-`3.552` wide, and takes the **belt's** width (5.32) as its depth rather than the
-node's, so the outline lands on the rails. **Move `ASSIGN0` and move all four.**
+Genes go out gently over the last fifth of `E4` and fresh ones appear over the
+first fifth of `E5`. That is the same not-quite-connected the rest of this page
+already uses: `E3`'s validated triplets fade at its mouth and fresh fragments
+appear at `E4`. **Nothing on this map claims to have followed one molecule end
+to end, and a belt running unbroken between two stations would.**
+
+`E5`'s genes arrive **already covered**. The reads landed one station back;
+drawing them falling again would say the alignment happens twice, so `kk` is
+pinned to 1 in assign mode and the nozzle is unused.
+
+### `K` comes off the depth, which is what lets two belts differ in length
+
+It was `span/9.2` with the 9.2 in the divide, so widening a belt scaled the whole
+machine. Then it was `span/BELTU`, which fixed that at the cost of two numbers
+that had to move together. **Depth is the right source**: a gene lies *across*
+the belt, so what sets its size is how wide the belt is, and the length is then
+free. Give two belts the same `d` and they are the same machine at two lengths —
+which is exactly what `E4` and `E5` are.
+
+**The gene pitch is what is shared, not the count.** `NG` follows from `LOOP`, or
+a short belt carries its models bunched and a long one strung out and the two
+stop looking like the same conveyor.
+
+**`PORTS.belts` and `PORTS.assign` both go through `beltRail()`**, which derives
+`K` the same way `drawGeneBelt` does. A port that computes the rail its own way
+lands on a rail that is not where the rail is — that went wrong once already,
+when the port still divided by `BELTU`.
 
 ## The end of the belt: the gene rolls off, the reads carry on
 
@@ -2393,8 +2406,10 @@ resized. Nobody had.
 - **Size a `shredBin` before its slot.** The slot has the constraint — longer
   than what drops through it, wider than its bar — so the slot is the free
   parameter and the box is derived outward.
-- **Change `BELTU` without changing `E4`'s `n.w`.** They are one number split in
-  two; move one and the gene models resize under you.
+- **Derive `K` from a belt's length.** It comes off the depth, which is what
+  lets `E4` and `E5` be different lengths and carry the same size of gene.
+- **Join two belts with a continuous surface.** The fade at each end is the
+  claim: nothing here followed one molecule from station to station.
 - **Call `E4`'s intronic share a measurement.** It is tuned for legibility, like
   `E3`'s reject rate, and the real figures are in the prose.
 - **Use `rd.f` anywhere a spliced read can reach.** It has `fA` and `fB`;

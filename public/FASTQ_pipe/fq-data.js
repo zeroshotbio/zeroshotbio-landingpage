@@ -128,7 +128,7 @@ const NODES = [
    graphics still paint over it where they overlap, which is the occlusion that
    was actually wanted. */
 {id:"E3", key:"E3", group:"The chain", shape:"sortingyard", hatch:true, noclip:true,
- lane:"r3", gap:2.6, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:7.0, h:2.15,
+ lane:"r3", gap:4.2, name:"Match R2 barcodes", x:14.0, y:R3, w:9.6, d:7.0, h:2.15,
  sub:"three barcodes, each against its own whitelist, one mismatch tolerated",
  does:"Reads the cell barcode off the reads and reconstructs which physical path each molecule took — through three barcode plates, or into one droplet, or onto one microwell bead.",
  built:"Four counting stacks appear across the corpus and they are not interchangeable: bbi-dmux → bbi-sci for sci-RNA-seq3 (ZSCAPE, ChemFish); Cell Ranger for 10x (DanioCell 4.0.0 wrapping STAR 2.5.1b, MIC-Drop-seq 5.0.0, Zebrahub 5.0.1, CellOracle 5.0.1); split-pipe v1.7.1 for Parse (MiniFin, MegaFin); STAR plus modified Drop-seq tools 1.12 for Microwell-seq (ZCL2). In the worked example, 75.7% of reads carry a valid barcode combination.",
@@ -157,37 +157,42 @@ const NODES = [
    is visible on the ground and hidden under the machine, which is the occlusion
    that was actually wanted. */
 {id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true, noclip:true,
- lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:8.56, d:6.6, h:0.62,
+ lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.6, d:6.6, h:0.62,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
  cond:"A 46% transcriptome mapping rate looks alarming and is not a failure — it is the 3′ UTR problem next door, unpatched. The gap between 46% here and 73% there is mostly annotation, not chemistry, which is why the reference nodes above this row matter more than they look.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Alignment",
- added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. One belt runs along the lane's own direction and the gene models lie ACROSS it — exons standing proud, introns flat between them, each model named along the near rail — and the reads rain in from up-belt and above, settle onto a moving target, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: nearly every read lands on an exon, and the ones that do not are the point of the second half of this belt. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. THE LAST THIRD IS THE ASSIGNMENT, and it is E5: a gene crosses that line with a pile of reads on it, its name grows and turns green, and a mark lands on every read in turn from 5' to 3'. Reads that fell on introns get a cross and are shunted off to NO GENE MATCH — which is exactly what this step decides, because whether an intronic read counts is --include-introns, a flag and not a fact. THE INTRONIC SHARE DRAWN HERE IS TUNED FOR LEGIBILITY, like the reject rate at E3; the measured figure for this run is in HOW IT IS BUILT above, where 46.1% of reads map to the transcriptome against an exonic fraction of 63.8%. AND AT THE END OF THE BELT the model rolls off the edge and what it was carrying does not: the kept reads peel into thirty tracks, one per cell barcode, which is E6. That is where the blue comes back — on a gene the barcode end is the part with no position and it stands off every axis that means one; on a track there is no gene, what travels is the read, and the thing that says which read it is is the barcode. So the blue lies along the track and the aligned end stands off it instead. The tracks are not equally busy, because cells are not. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands; the barcode end takes no position from any of this and is drawn saying so — half the width of the aligned end, and leaning off the gene's axis entirely. THE GENE NAMES ARE REAL ZEBRAFISH SYMBOLS AND THE MODELS UNDER THEM ARE NOT: every gene on this belt is a seeded arrangement of exons, real in kind with no real coordinates, and the names are there to say that these are ten different zebrafish genes rather than one gene drawn ten times. No name here describes the model it sits beside."},
+ added:"THE INDEX IS NOT A STEP READS PASS THROUGH, IT IS A SURFACE THEY LAND ON, and that is why this station is drawn rather than labelled. One belt runs along the lane's own direction and the gene models lie ACROSS it — exons standing proud, introns flat between them, each model named along the near rail — and the reads rain in from up-belt and above, settle onto a moving target, and then ride along with the gene until it goes. Everything shares one velocity: slats, genes and landed reads. THE AGGREGATE IS THE ARGUMENT: nearly every read lands on an exon, and the ones that do not are the point of the second half of this belt. One worked example is a fact about that read; three hundred of them is a fact about the ANNOTATION, which is the half of the index the assembly cannot supply and the reason GRCz11 and Ensembl 99 are two nodes rather than one. SOME READS LAND ON INTRONS AND THAT IS DELIBERATE: reads land where the sequence matches and pre-mRNA is in the library, and those are the reads the next station has to decide about. The share drawn is tuned for legibility, like the reject rate at E3; the measured figures for this run are in HOW IT IS BUILT above, where 46.1% of reads map to the transcriptome against an exonic fraction of 63.8%. THE GENES FADE OUT AS THEY REACH THE END, and fresh ones appear at E5's own belt next door. That join is deliberately imperfect, the same way E3's validated triplets fade at its mouth and fresh fragments appear here: nothing on this map claims to have followed one molecule end to end, and a belt running unbroken between two stations would. And a few cannot land in one piece — they came from spliced mRNA and cover the end of one exon and the start of the next, so they arrive as two halves with an arc between them that never touches down over the intron. Those are the reads the sequence alone could not place. The reads are drawn in R1's own colour, the same one the track into this station carries, so the trail does not break at the moment it lands; the barcode end takes no position from any of this and is drawn saying so — half the width of the aligned end, and leaning off the gene's axis entirely. THE GENE NAMES ARE REAL ZEBRAFISH SYMBOLS AND THE MODELS UNDER THEM ARE NOT: every gene on this belt is a seeded arrangement of exons, real in kind with no real coordinates, and the names are there to say that these are ten different zebrafish genes rather than one gene drawn ten times. No name here describes the model it sits beside."},
 
-/* E5 IS THE SECOND HALF OF E4's BELT, not a box downstream of it.
+/* E5 IS ITS OWN MACHINE, NOT THE FAR END OF E4's.
 
-   Assignment happens to a read already lying on a gene, on the same machine, a
-   moment after the alignment that put it there. A separate cube on the row said
-   the read gets picked up and carried somewhere else, which is exactly what
-   does not happen. It keeps its name, its prose and its row in the index; what
-   it loses is the claim that it is a different place.
+   For a while it was an outline over the downstream part of the alignment belt,
+   which is tidy and says the wrong thing twice: that a read is carried between
+   the two on one surface, and that the two are one machine somebody named in
+   halves. They are not. The first reads the assembly, the second reads the
+   model, and a reader who cannot see where one ends cannot see that there are
+   two.
 
-   THE FOOTPRINT HAS TO MATCH ASSIGN0 IN drawBelts. E4 is w 8.56 and the split
-   is at 0.585 of it, so this starts 0.728 past E4's centre and runs to its far
-   end: centre +2.504, width 3.552. Its depth is the BELT's width (GL + K, which
-   is 5.32 at these numbers) and not the node's, so the outline lands on the
-   rails. Move ASSIGN0 and move all four of those. */
-{id:"E5", key:"E5", group:"The chain", shape:"beltseg", hatch:true, noclip:true,
- follow:{a:"E4",dx:2.504}, name:"Assign to gene", x:27.0, y:R3, w:3.552, d:5.32, h:0.155,
+   THE JOIN IS A FADE AND THAT IS THE HONEST FORM OF IT. Genes go out gently
+   over the last fifth of E4 and fresh ones appear over the first fifth here —
+   the same not-quite-connected E3's validated triplets already use. Nothing on
+   this map claims to have followed one molecule end to end, and a belt running
+   unbroken between two stations would.
+
+   SAME d AS E4, ON PURPOSE. K comes off the DEPTH now, so two belts that share
+   a depth carry the same size of gene whatever their lengths are. Change this d
+   and this station's models stop matching the ones next door. */
+{id:"E5", key:"E5", group:"The chain", shape:"assign", hatch:true, noclip:true,
+ lane:"r3", gap:1.5, name:"Assign to gene", x:27.0, y:R3, w:7.2, d:6.6, h:0.62,
  sub:"coordinates resolved against gene models · exonic by default",
  does:"Decides whether a read landing inside an intron counts toward its gene. It is one flag, it is almost never stated, and it changes the matrix materially.",
  built:"Cell Ranger flipped this default across exactly the versions in play: 5.0.0 counts no intronic reads and offers no option, 6.x makes it opt-in and off by default, 7.x turns it on by default. MIC-Drop-seq's released main-screen matrix was built with Include introns: False, discarding 9.1–9.5% of confidently-mapped reads against 76.5–77.3% exonic.",
  cond:"Three consequences, all worse than the version number. Reproducing that matrix requires Cell Ranger 5.0.0 specifically — a modern default produces a materially different object, silently. Cross-dataset depth comparisons are confounded in a known direction, because sci-RNA-seq3 runs on intron-rich nuclei while the 10x runs here used whole cells and threw the introns away. And low detection of a long or nuclear-retained transcript is weak biological evidence, because gene absence already has two non-biological explanations.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Intron inclusion",
- added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei."},
+ added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei. ITS OWN MACHINE, NOT THE FAR END OF E4's. Genes arrive already covered in reads — they landed one station back and drawing them falling again would say the alignment happens twice — and appear fresh over the first fifth of this belt. Across the middle each model is CLAIMED: its name grows and turns green, and a mark lands on every read in turn from 5' to 3', because a verdict per read is a verdict per read and thirty marks appearing together would be a decision about the gene. READS THAT FELL ON INTRONS GET A CROSS and are shunted off to NO GENE MATCH, which is exactly what this step decides: whether an intronic read counts is --include-introns, a flag and not a fact, and this node is named for the flag. AT THE END THE MODEL ROLLS OFF THE EDGE AND WHAT IT WAS CARRYING DOES NOT: the kept reads peel into thirty tracks, one per cell barcode, which is E6. That is where the blue comes back. On a gene the barcode end is the part with no position and it stands off every axis that means one; on a track there is no gene, what travels is the read, and the thing that says which read it is is the barcode — so the blue lies along the track and the aligned end stands off it instead. The tracks are not equally busy, because cells are not."},
 
 /* ---------------------------------------------------------------------------
    G AND W · THE REFERENCE. A different class of thing from everything above:
@@ -377,11 +382,14 @@ const NODES = [
    read, and what says which read it is is the barcode. So the molecule
    straightens and the blue leads, with the aligned end trailing.
 
-   ITS FOOTPRINT IS THE LANE FIELD. x1 to x1 + LANEX in x, NLANE * LANEP across.
-   Those are numbers in drawBelts; move them and move this. */
+   ITS FOOTPRINT IS THE LANE FIELD, AND THE FIELD IS E5's NOW. x1 to x1 + LANEX
+   in x, NLANE * LANEP across, measured off the ASSIGN belt — the tracks come
+   off the end of the step that decided which gene a read belongs to, not off
+   the one that decided where on the genome it sat. Those are numbers in
+   drawGeneBelt; move them and move this. */
 {id:"CB", key:"E6", group:"The chain", shape:"beltseg", noclip:true,
- follow:{a:"E4",dx:5.99},
- name:"Bucket by cell", x:30.0, y:R3, w:3.42, d:11.78, h:0.155,
+ follow:{a:"E5",dx:5.04},
+ name:"Bucket by cell", x:30.0, y:R3, w:2.88, d:11.78, h:0.155,
  sub:"one index · bc1_bc2_bc3__sublibrary",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",
@@ -395,7 +403,7 @@ const NODES = [
    footprint is that field — so the next station on the row has to start after
    it or it stands in the middle of the traffic. Widen LANEX and widen this. */
 {id:"E6", key:"E7", group:"The chain", shape:"tile", hatch:true,
- lane:"r3", gap:2.6,
+ lane:"r3", gap:5.2,
  name:"Deduplicate UMIs", x:33.0, y:R3, w:1.9, d:1.9, h:1.35,
  sub:"barcode + gene + UMI collapse to one count · reads become molecules",
  does:"Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
@@ -431,7 +439,7 @@ const ROWS=[R3], MIRROR=29.0;
    footprint to give arriving reads somewhere to land, and that run-in has to
    clear the fragment glyph in front of it. */
 const LANES = [
-  {id:"r3", y:R3, x0:0.7, x1:47.0, dir:+1},
+  {id:"r3", y:R3, x0:0.7, x1:50.0, dir:+1},
 ];
 
 /* Two edge classes, and the difference is the point.
@@ -550,12 +558,12 @@ const EDGES = [
      small machines is a line you have to trace. The ports are on the shapes
      (PORTS.whitelists / PORTS.sortingyard), so they are measured off the text
      itself and stay off it when a plate or a station is resized. */
-    /* THE SECOND ANNOTATION FEEDS THE ASSIGNMENT, four fifths down the belt.
-     The index is what the aligner reads and it lands on the middle of the near
-     rail; the gene model is what ASSIGNMENT reads, and it lands where that
-     happens. Two consumers, two points on one machine, and the gap between the
-     ports is the gap between the two questions. */
-  {a:"G2b", b:"E4", kind:"ref", straight:true, port:"tr", portB:"assign", tone:"var(--fg2)"},
+    /* THE SECOND ANNOTATION FEEDS THE ASSIGNMENT, and now that assignment is
+     its own machine the port is simply that machine's near rail. It used to be
+     four fifths along E4's belt, which was the best available answer while the
+     two steps shared one surface: two consumers at two points on one machine.
+     Two machines is the better answer, and it needs no special port at all. */
+  {a:"G2b", b:"E5", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
 
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc1", portB:"bc1", tone:"var(--fg2)"},
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc2", portB:"bc2", tone:"var(--fg2)"},
@@ -569,7 +577,7 @@ const EDGES = [
    every station back on y = R3 those offsets were 3-odd units of empty ground
    each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:49.5, y0:R3-9.6, y1:R3+16.8},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:52.5, y0:R3-9.6, y1:R3+16.8},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are
