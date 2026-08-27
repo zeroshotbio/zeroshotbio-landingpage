@@ -804,7 +804,16 @@ share of them land on introns — which is why the intron gaps had to widen to
 read counts is `--include-introns`: **a flag, not a fact**, and the node that
 owns this step is named for it. The share is **tuned for legibility and is not a
 measurement**, the same way `E3`'s reject rate is; there is no per-read
-assignment record on this instance and the real figures live in the prose.
+assignment record on this instance and the real figures live in the prose —
+`E4`'s own `built` carries them: 46.1% of reads map to the transcriptome against
+an exonic fraction of 63.8%.
+
+**`E4`'s `added` had to be corrected with it.** It said *"every read lands on an
+exon and none on an intron"*, which was true of the drawing when it was written
+and stopped being true the moment the crosses arrived. **A claim in the reader
+that the picture beside it contradicts is worse than either alone** — and this
+one survived a whole commit because the prose is not what you look at when you
+are looking at the belt. When a drawing's aggregate changes, grep the node.
 
 ### A cross is an exit, and the bin is on the far side
 
@@ -1374,24 +1383,60 @@ kept reads leave the model's `y`, drop to the deck and run out down one of five
 lanes. `rd.lane` is fixed at build — *a lane that reshuffles is a queue, and
 nothing here queues.*
 
-### And the blue leads, which is where the aerial has been going all along
+### The two halves swap jobs, and nothing else turns
 
-On the model the barcode end points off every axis that means position, because
-on a gene it is the part with **no** position. **In a lane there is no gene and
-nothing is being placed** — what travels is the read, and the thing that says
-which read it is is the barcode. So the molecule straightens out along the lane
-and the blue goes in front, with the aligned end trailing behind it. *The one
-part that could not say anything about position is the one part that says which
-cell, and the lane is where that matters.* It comes up in width and opacity at
-the same time, because it has stopped being the part with nothing to say.
+**The fragment keeps travelling the way it always did — forward, edge on.** What
+changes at the track is *which half is lying down*.
 
-**`PT(gy, s)` is the whole of the turn.** `gy` is a point's y in the *gene's*
-frame and `s` is how far along the molecule it is; `lane` slides between them. At
-lane 0 it is the y it always was; at lane 1 it is x, in molecule order, at one y.
-The tail's direction lerps to +x and is **re-normalised**, so it turns rather
-than shortening — the same rule the discard pose at `E3` lives by. The splice
-arch flattens with `(1 - lane)`, because in a lane there is no intron to arch
-over.
+On a gene the orange is the part with a position, so it lies on the model and
+the barcode end stands off every axis that means one. On a track there is no
+gene and nothing is being placed: what travels is the **read**, and the thing
+that says which read it is is the **barcode**. So the blue lies along the track
+with its **middle** on it — that is what a track holds — and the orange takes
+over the pose the blue has just given up, standing off it at exactly the angle
+the aerial had. *The part that could not say anything about position is the part
+that says which cell.*
+
+**`PT(gy, s)` is that turn.** `gy` is a point's y in the *gene's* frame, `s` is
+how far along the molecule it is, and `lane` slides between the two poses. `TD3`
+is the aerial's own direction, so the orange on a track and the blue on a belt
+are the same line at two moments. The splice arch flattens with `(1 - lane)`,
+because on a track there is no intron to arch over — and the tick fades out over
+the same turn: *a verdict is about a read's place on a model, and off the model
+there is no place for it to be about.*
+
+### Thirty tracks, and the spread is set by the type
+
+A track only has to be as far from its neighbour as the barcode written above it
+is tall — the fragments on it are a bar a few hundredths of a unit wide and
+could be packed ten times closer. So `LANEP` is read off the label size and the
+field is as wide as it has to be.
+
+**The names ride in the text's own rotated frame at a negative `y`, so the track
+is the underline.** One object doing two jobs; the alternative is a second rule
+beside a line that already exists.
+
+Three things went wrong there and each is a rule:
+
+- **`rotate(30)`, not `-30`.** A track runs along **+x**, and +x on this
+  projection goes *down* and to the right; it is +y that goes up-right, which is
+  why every gene name on the belt is set at −30. At −30 the thirty labels ran
+  *across* their own tracks and came out separated by almost nothing
+  perpendicular: thirty strings on one diagonal, unreadable.
+- **They are appended last.** A fragment on a track stands its aligned end up and
+  to the left, which is exactly where its own name is. Drawn with the tracks,
+  every label under a fragment vanished and a dozen of the thirty were simply
+  missing. *Crossing a read costs a small grey mark nothing; being hidden costs
+  it everything.*
+- **The type has to fit the gap.** Thirty names at any comfortable size overlap
+  at map zoom, so the size is chosen to clear `0.5 · S · LANEP` and no larger. It
+  is a grey texture above the field when the map is fitted and thirty legible
+  barcodes when a reader is on the station.
+
+**And the tracks are not equally busy.** A seeded weight per track, raised to a
+power so the tail is long: a few take most of the traffic, most take a little,
+some go whole passes without a fragment. *Thirty equally fed tracks draw a
+manifold, not a set of cells.*
 
 ### `E6` is the lane field, not a box after it
 
@@ -2360,5 +2405,9 @@ resized. Nobody had.
   the lanes run after the model has gone.
 - **Set the lane spread without the lane fade.** Push the spread past the fade
   and the reads that ran furthest ahead vanish before they are drawn.
-- **Widen `LANEX` without widening `E7`'s gap and `CB`'s footprint.** All three
-  describe the same field.
+- **Widen `LANEX` or `LANEP` without widening `E7`'s gap and `CB`'s footprint.**
+  All of them describe the same field.
+- **Set a label on the track field at −30.** Tracks run along +x, which is +30 on
+  screen; −30 is the gene's axis, not the track's.
+- **Draw the track names before the fragments.** A fragment stands its orange end
+  exactly where its own name is.

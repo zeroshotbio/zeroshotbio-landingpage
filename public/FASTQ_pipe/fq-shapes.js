@@ -1646,6 +1646,7 @@ function drawBelts(g,n){
      direction instead of along the model. TKNEE is where the dashes stop and
      the blue starts, and it is 32/90 for the same reason. */
   const TDIR=[-0.86,0.51];                    /* up and to the left, unit length */
+  const TD3=[TDIR[0],TDIR[1]];                /* the same direction in x and z */
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
   /* AND IT ARRIVES FLAT AND FLAPS UP ON THE WAY DOWN.
      A molecule in free air is a straight molecule: at the top of the fall the
@@ -1707,8 +1708,26 @@ function drawBelts(g,n){
      read was; a lane is a read on its own, which is what everything after this
      station counts. */
   const MKL=RL*GL*S*0.62;                     /* how far left of its read a mark sits */
-  const NLANE=5, LANEP=GL*0.215, LANEX=span*0.40;
+  /* THIRTY TRACKS, NOT FIVE, AND THE SPREAD IS SET BY THE LABELS. A track only
+     has to be as far from its neighbour as the barcode written above it is
+     tall: the fragments on it are a bar a few hundredths of a unit wide and
+     could be packed ten times closer. Two parallel strings at -30 on this
+     projection clear each other at about half their world separation times S,
+     so LANEP is read off the type and the field is as wide as it has to be. */
+  const NLANE=30, LANEP=GL*0.085, LANEX=span*0.40;
   const laneY=k=>cy+(k-(NLANE-1)/2)*LANEP;
+  /* AND THEY ARE NOT EQUALLY BUSY. A weight per track, raised to a power so the
+     tail is long: a few take most of the traffic, most take a little, and some
+     go whole passes without a fragment. That is what a cell barcode
+     distribution looks like, and it is the one thing thirty identical lanes
+     could not say — thirty equally fed tracks draw a manifold, not a set of
+     cells. The weights are seeded, so a quiet track is quiet in every browser. */
+  const laneW=[], laneCum=[];
+  { let tot=0;
+    for(let k=0;k<NLANE;k++){ const w=Math.pow(0.06+rnd(),2.4); laneW.push(w); tot+=w; }
+    let acc=0; for(let k=0;k<NLANE;k++){ acc+=laneW[k]/tot; laneCum.push(acc); } }
+  const pickLane=r=>{ for(let k=0;k<NLANE;k++) if(r<=laneCum[k]) return k;
+                      return NLANE-1; };
   /* the shower, the 3' bias and the stack — see the notes in the gene loop */
   const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
   const P3=0.55;                              /* share of reads primed at the tail */
@@ -1728,11 +1747,43 @@ function drawBelts(g,n){
     P(x1,cy+BW/2,0),P(x0,cy+BW/2,0)]),
     fill:"var(--t-right)","fill-opacity":"1",stroke:"var(--stroke)",
     "stroke-width":"0.9","stroke-opacity":".11"}));
+  /* THE TRACK IS THE LABEL'S UNDERLINE. The name sits in the text's own rotated
+     frame at a negative y, which on a -30 line is up and slightly left — so it
+     rides directly above its own track and the track closes it off underneath.
+     One object doing two jobs; the alternative is a second rule beside a line
+     that already exists. */
+  /* SMALL ENOUGH TO CLEAR ITS NEIGHBOUR AT MAP ZOOM, which is the only size
+     rule here. Thirty names on tracks 0.085 of a gene apart have about half of
+     S * LANEP of clear air between them perpendicular, and the type has to fit
+     inside that or every second one is swallowed. At this size it is a grey
+     texture above the field when the map is fitted and thirty legible barcodes
+     when a reader is on the station, which is what "small and subtle" buys. */
+  const LFS=Math.max(3.0,GFS*0.46);
+  /* THE NAMES ARE HELD BACK AND APPENDED LAST. A fragment on a track stands its
+     aligned end up and to the left, which is exactly where its own name is —
+     drawn with the tracks, every label under a fragment simply vanished, and
+     the field came out with a dozen of its thirty names missing for no reason a
+     reader could see. They go on top instead: the mark is small and grey and
+     crossing a read costs it nothing, where being hidden costs it everything. */
+  const laneLabs=[];
   for(let k=0;k<NLANE;k++){
     const a=P(x1,laneY(k),base), b=P(x1+LANEX,laneY(k),base);
     g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
       x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg3)",
-      "stroke-width":"2.0","stroke-opacity":".40","stroke-linecap":"round"}));
+      "stroke-width":"1.8","stroke-opacity":".34","stroke-linecap":"round"}));
+    /* ROTATE 30, NOT -30, AND THAT IS THE WHOLE OF IT. A track runs along +x,
+       and +x on this projection goes DOWN and to the right; it is +y that goes
+       up-right, which is why every gene name on the belt is set at -30. Written
+       at -30 these thirty ran across their own tracks instead of along them,
+       and adjacent labels came out separated by almost nothing perpendicular —
+       thirty strings on one diagonal, unreadable. At +30 the separation between
+       neighbours is 0.5 * S * LANEP of clear air, which is what LANEP was
+       chosen for. */
+    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+      x:(LFS*0.9).toFixed(1), y:(-LFS*0.55).toFixed(1),
+      "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
+      "font-size":LFS.toFixed(1),"font-weight":"500","fill-opacity":".55"});
+    t2.textContent="barcode "+(k+1); laneLabs.push(t2);
   }
   const NSL=34, slats=[];
   for(let k=0;k<NSL;k++)
@@ -1881,7 +1932,7 @@ function drawBelts(g,n){
            side by side and is wrong now that they stack: a column that wanders
            in x is not a column. What is left is enough to say these are
            separate objects. */
-        lane:Math.floor(rnd()*NLANE), qs:rnd(),
+        lane:pickLane(rnd()), qs:rnd(),
         dx:(rnd()-0.5)*(GWE-RW)*0.30,
         u0:SHOWER_AT+rnd()*SHOWER_W};
       if(sp){
@@ -2066,6 +2117,7 @@ function drawBelts(g,n){
       "letter-spacing":(GFS*0.10).toFixed(2),"fill-opacity":"1"});
     t2.textContent="NO GENE MATCH"; g.appendChild(t2);
   }
+  laneLabs.forEach(t2=>g.appendChild(t2));
   let shred4=-99;
 
   const archPath=(node,xc,fa,fb,z0,dy,h,op)=>{
@@ -2219,9 +2271,8 @@ function drawBelts(g,n){
            share of the lane's length, so each runs ahead by its own amount and
            the lanes read as a stream. */
         const rx=rxb+shunt*(BINX4-rxb)+lane*rd.qs*LANEX*0.42;
-        const dy=dyb+shunt*(BINY4-rmid-dyb)+lane*(laneY(rd.lane)-rmid-dyb);
-        const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz)
-                 +lane*(base+n.h*0.05-rz);
+        const dy=dyb+shunt*(BINY4-rmid-dyb);
+        const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz);
         /* A SHUNTED READ OUTLIVES ITS OWN GENE'S FADE. It is drawn in the
            gene's group, and the gene is already dimming by the time the last of
            them reaches the bin — so once it is off the model it carries its own
@@ -2235,26 +2286,32 @@ function drawBelts(g,n){
         const rvis=rd.bad?Math.max(vis,sstep(0.04,0.30,shunt))
                          :(lane>0?Math.max(vis,laneVis*sstep(0.02,0.25,lane)):vis);
         const op=rvis*sstep(0,0.10,kk)*(1-sstep(0.90,1,shunt));
-        /* ---- ON THE MODEL IT LIES ACROSS THE TRACK; IN THE LANE IT LIES
-           ALONG IT, AND THE BLUE GOES IN FRONT.
+        /* ---- THE TWO HALVES SWAP JOBS, AND NOTHING ELSE TURNS -------------
 
-           The barcode end has been an aerial for the whole of this station and
-           it has been drawing the right thing: on a gene it is the part with no
-           position, so it points off every axis that means one. In a lane there
-           is no gene left and nothing is being placed — what is travelling is
-           the READ, and the thing that says which read it is is the barcode.
-           So the molecule straightens out and the blue leads, with the aligned
-           end trailing behind it. The one part that could not say anything
-           about position is the one part that says which cell, and the lane is
-           where that matters.
+           The fragment keeps travelling the way it always did — forward, edge
+           on. What changes at the track is WHICH HALF IS LYING DOWN.
 
-           `PT(gy,s)` is the whole of the turn: gy is a point's y in the GENE's
-           frame and s is how far along the molecule it is, and `lane` slides
-           between them. At lane 0 it is the y it always was; at lane 1 it is x,
-           in molecule order, at one y. The tail's direction lerps to +x and is
-           re-normalised, so it turns rather than shortening. */
-        const anchorY=rmid+dy, Lo=RL*GL;
-        const PT=(gy,sm)=>[rx+lane*(sm-Lo), anchorY+(1-lane)*(gy-rmid), z0];
+           On a gene the orange is the part with a position, so it lies on the
+           model and the barcode end stands off every axis that means one. On a
+           track there is no gene and nothing is being placed: what is
+           travelling is the READ, and the thing that says which read it is is
+           the barcode. So the blue lies along the track with its MIDDLE on it —
+           that is what a track holds — and the orange takes over the pose the
+           blue has just given up, standing off it at exactly the angle the
+           aerial had. The two swap, and the swap is the whole content of the
+           step: the part that could not say anything about position is the part
+           that says which cell.
+
+           `PT(gy,s)` is that turn. gy is a point's y in the GENE's frame, s is
+           how far along the molecule it is, and `lane` slides between the two
+           poses. TD3 is the aerial's own direction, so the orange in a track
+           and the blue on a belt are the same line at two moments. */
+        const Lo=RL*GL, Ta=TAIL*TKNEE, Lb=TAIL-Ta;
+        const lz=base+n.h*0.05, lyy=laneY(rd.lane);
+        const KL=[rx-Lb/2,lyy,lz], TL=[rx+Lb/2,lyy,lz];
+        const L3=(a,b,t)=>[a[0]+(b[0]-a[0])*t,a[1]+(b[1]-a[1])*t,a[2]+(b[2]-a[2])*t];
+        const laneAt=sm=>[KL[0]+TD3[0]*(Ta+Lo-sm),lyy,lz+TD3[1]*(Ta+Lo-sm)];
+        const PT=(gy,sm)=>L3([rx,gy+dy,z0],laneAt(sm),lane);
         const B2=(node,a,b,w,fl,o)=>barTo(node,w,fl,a[0],a[1],a[2],b[0],b[1],b[2],o);
         if(rd.sp){
           const sA=rd.rlA*GL;
@@ -2270,17 +2327,21 @@ function drawBelts(g,n){
         const tail0=PT(yOf(rd.end),Lo);
         let ux=TDIR[0]*flap, uy=-(1-flap), uz=TDIR[1]*flap;
         const uL=Math.hypot(ux,uy,uz)||1; ux/=uL; uy/=uL; uz/=uL;
-        let tx=ux+(1-ux)*lane, ty=uy*(1-lane), tz=uz*(1-lane);
-        const tL=Math.hypot(tx,ty,tz)||1; tx/=tL; ty/=tL; tz/=tL;
-        const knee=[tail0[0]+tx*TAIL*TKNEE,tail0[1]+ty*TAIL*TKNEE,tail0[2]+tz*TAIL*TKNEE];
-        const tipp=[tail0[0]+tx*TAIL,tail0[1]+ty*TAIL,tail0[2]+tz*TAIL];
+        const kg=[rx+ux*Ta,yOf(rd.end)+dy+uy*Ta,z0+uz*Ta];
+        const tg=[rx+ux*TAIL,yOf(rd.end)+dy+uy*TAIL,z0+uz*TAIL];
+        const knee=L3(kg,KL,lane), tipp=L3(tg,TL,lane);
         seg(rd.ad,tail0[0],tail0[1],tail0[2],knee[0],knee[1],knee[2],op*0.42);
-        /* AND IT COMES UP IN THE LANE. Held back to a quarter of the read while
-           it is the part with nothing to say; in the lane it is the part doing
-           the saying, and it is drawn like it. */
-        B2(rd.bc,knee,tipp,RWB*(1+2.0*lane),0.26+0.36*lane,op*(0.34+0.52*lane));
+        /* AND IT COMES UP ON THE TRACK. Held back to a quarter of the read
+           while it is the part with nothing to say; on a track it is the part
+           doing the saying, and it is drawn like it. */
+        B2(rd.bc,knee,tipp,RWB*(1+2.4*lane),0.26+0.40*lane,op*(0.34+0.56*lane));
         /* the mark rides above the read it is about, and pops the way E3's do */
-        if(!said || op<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
+        /* AND THE MARK GOES WITH THE GENE. A tick is about a read's place on a
+           model; off the model there is no place for it to be about, and a
+           verdict that follows the read into the next station is a verdict
+           being restated. It fades out over the turn rather than blinking. */
+        const mkOp=op*(1-sstep(0.12,0.62,lane));
+        if(!said || mkOp<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
         else{
           const age=(gxp-fire)/(span*0.02);
           const a=P(rx,rmid+dy,z0+n.h*0.34);
@@ -2292,7 +2353,7 @@ function drawBelts(g,n){
           const pop=(age<1?0.55+0.72*age:1.30-0.18*Math.min(1,(age-1)*1.2))*1.06;
           rd.mk.setAttribute("transform",
             `translate(${(a[0]-MKL).toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
-          rd.mk.setAttribute("stroke-opacity",(op*0.92).toFixed(3));
+          rd.mk.setAttribute("stroke-opacity",(mkOp*0.92).toFixed(3));
         }
       }
     });
