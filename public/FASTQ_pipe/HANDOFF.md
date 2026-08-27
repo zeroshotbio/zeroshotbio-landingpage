@@ -761,6 +761,93 @@ diagram and a reader has to be told what it means; labelled, it says it. The
 gene's name moved out to `K*0.55` off the near rail at the same time, to keep
 clear of the `5′` mark now sitting between them.
 
+### The belt is a third longer, and the length is where the second question goes
+
+**`BELTU` exists so that a longer belt is not a bigger machine.** `K` used to be
+`span/9.2` with the 9.2 written into the divide, so widening the node scaled
+everything on it: longer belt, longer genes, bigger reads, and **no more room
+than before**. `BELTU` is the belt's length in its own units. It went 9.2 → 12.3
+and `n.w` went 6.4 → 8.56 to match. **Change one and change the other**, or the
+gene models resize under you.
+
+**Alignment answers *where on the assembly*; assignment answers *which gene*,**
+and they are different questions asked of the same read a moment apart. The
+extra belt is where the second one gets asked: a gene crosses `ASSIGN0` with a
+pile of reads on it and leaves with every one of them marked.
+
+**The sweep runs 5′ to 3′ rather than firing all at once.** A verdict per read
+is a verdict per read; one mark appearing on thirty of them simultaneously is a
+decision about the *gene*, which is not what this step does. Each read's mark
+fires when the model has carried it past `ASSIGN0 + f·ASSIGNL`, so the marks
+travel the transcript.
+
+**The gene's name is the answer, so it becomes the answer's colour.** Assignment
+does not produce a mark on a read and nothing else — what it produces is a
+*gene*, and the gene's name is already on the belt beside it. It grows and turns
+`--ok` across the stretch, so the step reads as the model claiming its reads.
+
+### Some reads land on introns now, and that is what changed
+
+**This is a real change to a claim this page used to make**, so it is written
+down rather than absorbed. The aggregate was *"every read on an exon, none on an
+intron"*, and it was the annotation's whole argument. It was also why the last
+third of the belt had nothing to decide: **a pile in which every read is exonic
+is a pile every read of which is assigned, and a station where nothing is ever
+declined is not a station.**
+
+Reads land where the *sequence* matches, and pre-mRNA is in the library. So a
+share of them land on introns — which is why the intron gaps had to widen to
+`0.055…0.14`, since a read is 0.0602 of a gene and could not fit in the old ones
+— and those are the reads that get the cross.
+
+**That is exactly the subject of the step being drawn.** Whether an intronic
+read counts is `--include-introns`: **a flag, not a fact**, and the node that
+owns this step is named for it. The share is **tuned for legibility and is not a
+measurement**, the same way `E3`'s reject rate is; there is no per-read
+assignment record on this instance and the real figures live in the prose.
+
+### A cross is an exit, and the bin is on the far side
+
+A declined read leaves the model it was sitting on, slides off the rail and
+drops into a bin — the same movement, and literally the same object, as a
+fragment with no barcode.
+
+**`shredBin()` is shared by both stations now.** What a caller gives it is the
+**slot**, because the slot is the only part with a constraint: whatever drops
+through it has to fit lying flat. Everything else is derived outward. *Sizing
+the box first and taking a fraction of it for the slot* is what produced a mouth
+shorter than the thing going into it at `E3`, and a whole pose of contortion to
+get around that.
+
+**`E3`'s bin is at +y and this one is at −y, and that is deliberate.** The near
+side of this belt is where the entire reference row lives — index, aligner and
+both annotations are all at +y — and a bin wedged between the rail and the STAR
+Aligner's footprint had 0.1 of a unit of clearance and a label that landed on
+somebody else's roof. **A discard has to be somewhere a reader can watch it
+land, and that beats matching the other bin's side.**
+
+Two constraints, both about height and reach: the lid must sit **below** the
+height reads ride at, or they climb into it rather than falling in; and the bin
+must be **inside the belt's own visible span**, because a shunted read is drawn
+in its gene's group. `0.86` leaves the last-declined read room to get there —
+and once it is off the model it carries **its own visibility**, because the gene
+is already dimming by the time it arrives.
+
+**`rd.start`, never `rd.f`.** A spliced read has `fA` and `fB` and no `f` at
+all, so reading `f` in the verdict block put `NaN` into every coordinate of
+every read on the belt — and it did it through `shunt * (BINY4 − NaN)`, which is
+`NaN` even when `shunt` is zero. *Multiplying by zero does not rescue an
+undefined.* The every-read fields are `start` and `end`.
+
+### The annotation feeds the assignment, four fifths along
+
+`PORTS.belts` answers `"bl"` with the middle of the near rail — where the index
+feeds the aligner — and `"assign"` with four fifths along it, where the gene
+model feeds the assignment. **Two consumers, two points on one machine, and the
+gap between the ports is the gap between the two questions.** Both divide by
+`BELTU` and not by 9.2: it is the same divide `drawBelts` makes and it has to
+make it the same way, or the port lands on a rail that is not where the rail is.
+
 ### Where a read lands is the whole claim, so the model has to be able to hold it
 
 **Every read on an exon, none on an intron** is the only thing this station
@@ -2155,5 +2242,12 @@ resized. Nobody had.
 - **Land a hand-drawn link on a corner.** Both ends go through `faceMid`.
 - **Key anything off a node's NAME.** Two nodes may share one; `data-id` is the
   identity. `check-text` shipped that bug for one build.
-- **Size `E3`'s bin before its slot.** The slot has the constraint — longer than
-  a fragment, wider than its bar — so the slot is the free parameter.
+- **Size a `shredBin` before its slot.** The slot has the constraint — longer
+  than what drops through it, wider than its bar — so the slot is the free
+  parameter and the box is derived outward.
+- **Change `BELTU` without changing `E4`'s `n.w`.** They are one number split in
+  two; move one and the gene models resize under you.
+- **Call `E4`'s intronic share a measurement.** It is tuned for legibility, like
+  `E3`'s reject rate, and the real figures are in the prose.
+- **Use `rd.f` anywhere a spliced read can reach.** It has `fA` and `fB`;
+  `start` and `end` are the fields every read has.

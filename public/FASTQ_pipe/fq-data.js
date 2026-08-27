@@ -157,7 +157,7 @@ const NODES = [
    is visible on the ground and hidden under the machine, which is the occlusion
    that was actually wanted. */
 {id:"E4", key:"E4", group:"The chain", shape:"belts", hatch:true, noclip:true,
- lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:6.4, d:6.6, h:0.62,
+ lane:"r3", gap:1.6, name:"Align R1", x:22.0, y:R3, w:8.56, d:6.6, h:0.62,
  sub:"the cDNA half hits the genome · produces coordinates",
  does:"Aligns the cDNA read to the genome and assigns it to a gene.",
  built:"GRCz11 is the assembly in every zebrafish dataset in the corpus — the variation is entirely in the annotation laid over it, and in what counts as being inside a gene. For the worked example: 46.1% of reads map to the transcriptome, exonic fraction 63.8%. For contrast, MIC-Drop-seq's 10x runs confidently map 92.4% to the genome and 72.7% to the transcriptome.",
@@ -517,6 +517,13 @@ const EDGES = [
      small machines is a line you have to trace. The ports are on the shapes
      (PORTS.whitelists / PORTS.sortingyard), so they are measured off the text
      itself and stay off it when a plate or a station is resized. */
+    /* THE SECOND ANNOTATION FEEDS THE ASSIGNMENT, four fifths down the belt.
+     The index is what the aligner reads and it lands on the middle of the near
+     rail; the gene model is what ASSIGNMENT reads, and it lands where that
+     happens. Two consumers, two points on one machine, and the gap between the
+     ports is the gap between the two questions. */
+  {a:"G2b", b:"E4", kind:"ref", straight:true, port:"tr", portB:"assign", tone:"var(--fg2)"},
+
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc1", portB:"bc1", tone:"var(--fg2)"},
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc2", portB:"bc2", tone:"var(--fg2)"},
   {a:"W1", b:"E3", kind:"ref", straight:true, port:"bc3", portB:"bc3", tone:"var(--fg2)"},

@@ -612,9 +612,17 @@ const PORTS={
     /* the belt's own near rail, not the footprint's: the rail is what a reader
        sees as the machine's bottom-left edge, and it is a good half unit inside
        the box the layout gave it */
-    if(which==="bl"){
-      const K=n.w/9.2, GL=n.d*0.70, BW=GL+K*1.0;
-      return P(n.x, n.y+BW/2, n.h*0.245);
+    if(which==="bl"||which==="assign"){
+      /* BELTU, not 9.2 — this is the same divide drawBelts makes and it has to
+         make it the same way, or the port lands on a rail that is not where the
+         rail is. */
+      const K=n.w/12.3, GL=n.d*0.70, BW=GL+K*1.0;
+      /* "bl" is the middle of the near rail, where the index feeds the machine.
+         "assign" is four fifths along it, where the annotation does — a
+         different consumer at a different point on the same belt, and the
+         distance between the two ports is the distance between the two
+         questions. */
+      return P(which==="assign"?n.x-n.w/2+n.w*0.80:n.x, n.y+BW/2, n.h*0.245);
     }
     return roofCorner(n,B);
   },
@@ -1564,7 +1572,15 @@ function drawBelts(g,n){
      molecule is the reason it can be counted and none of it aligns. */
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
-  const K=span/9.2, KZ=n.h/0.53;              /* the original's own units */
+  /* THE BELT IS LONGER AND EVERYTHING ON IT IS THE SAME SIZE, which is the
+     whole reason BELTU exists. K used to be span/9.2 with the 9.2 written into
+     the divide, so widening the node scaled the machine: longer belt, longer
+     genes, bigger reads, and no more room than before. BELTU is the belt's
+     length in its OWN units, so growing them together adds belt and leaves the
+     load alone. It went 9.2 -> 12.3 and n.w went 6.4 -> 8.56 to match; change
+     one and change the other, or the gene models resize under you. */
+  const BELTU=12.3;
+  const K=span/BELTU, KZ=n.h/0.53;            /* the original's own units */
   /* THE MODEL IS LOW. exonH was 0.565 of n.h against a line 0.12 world units
      wide, which is a wall rather than a block: opaque and narrowed, the exons
      came out as a row of train cars standing on a rail. An exon is a THICKER
@@ -1595,6 +1611,8 @@ function drawBelts(g,n){
      in world units. */
   const RW=GW*0.047, RWB=RW*0.25;
   const GWE=GW*0.58;                          /* the gene's line, body and exons alike */
+  const ATICK="M -3.4 0.3 L -1.1 2.7 L 3.7 -3.4";
+  const ACROSS="M -3.0 -3.0 L 3.0 3.0 M 3.0 -3.0 L -3.0 3.0";
   /* ONE POINT, NOT A LINE. Every read on a gene falls from the same place: up
      the belt by NOZX and above the exon tops by NOZZ, on the belt's centre
      line. The jitter that used to be in the source is gone — a spray whose
@@ -1647,6 +1665,37 @@ function drawBelts(g,n){
   /* smaller than every other name on this map, on purpose: it is an
      identification, not a heading, and there are ten of them moving */
   const GFS=Math.max(5,8.0*K);
+  /* ---- THE LAST THIRD IS THE ASSIGNMENT ----------------------------------
+     Alignment answers WHERE on the assembly; assignment answers WHICH GENE, and
+     they are different questions asked of the same read a moment apart. The
+     extra belt is where the second one gets asked: a gene crosses ASSIGN0 with
+     a pile of reads on it and leaves with every one of them marked.
+
+     The sweep runs 5' to 3' along the model rather than firing all at once,
+     because a verdict per read is a verdict per read — one mark appearing on
+     thirty of them simultaneously is a decision about the gene, which is not
+     what this step does. Each read's mark fires when the model has carried it
+     past ASSIGN0 + f*ASSIGNL, so the marks travel the transcript. */
+  const ASSIGN0=x0+span*0.585, ASSIGNL=span*0.185;
+  /* WHERE A DECLINED READ ENDS UP: off the FAR rail, at −y.
+
+     E3's bin is on the near side and this one is not, which is worth a line.
+     The near side of this belt is where the whole reference row lives — the
+     index, the aligner and the two annotations are all at +y — and a bin
+     wedged between the rail and the STAR Aligner's footprint had 0.1 of a unit
+     of clearance and a label that landed on somebody else's roof. The far side
+     is empty for the whole length of this station. A discard has to be
+     somewhere a reader can see it land, and that beats matching the other bin's
+     side.
+
+     TWO CONSTRAINTS AND THEY ARE BOTH ABOUT HEIGHT AND REACH. The lid must sit
+     BELOW the height reads ride at (exTop, and a row higher for each one above
+     it) or they climb into it; and the bin must be inside the belt's own
+     visible span, because a shunted read is drawn in its gene's group and goes
+     when the gene does. 0.86 leaves the last-declared read room to get there. */
+  const BINX4=x0+span*0.86, BINY4=cy-BW/2-GL*0.14;
+  const SLOTX4=RL*GL*1.9, SLOTY4=RL*GL*1.25;
+  const BUCKH4=n.h*0.23, HEADH4=n.h*0.07;
   /* the shower, the 3' bias and the stack — see the notes in the gene loop */
   const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
   const P3=0.55;                              /* share of reads primed at the tail */
@@ -1685,12 +1734,19 @@ function drawBelts(g,n){
        intron beside it. On a model this is the only claim the station makes:
        every read on an exon, none on an intron. A model with somewhere a read
        cannot land is a model that will eventually be seen to break it. */
-    const ex=[]; let f=0.015+rnd()*0.025;
+    const ex=[]; const intr=[]; let f=0.015+rnd()*0.025;
     while(f<0.95){
       const w=RL+0.012+rnd()*0.075;
       if(f+w>0.965) break;
-      ex.push([f,f+w]); f+=w+0.035+rnd()*0.055;
+      ex.push([f,f+w]);
+      /* THE INTRONS GOT WIDER, and that is not a drawing preference. A read
+         has to be able to land on one — see the note on where reads go — and
+         the old 0.035..0.09 gap could not hold 0.0602 of a gene. */
+      const gp=0.055+rnd()*0.085;
+      intr.push([f+w,f+w+gp]);
+      f+=w+gp;
     }
+    intr.length=Math.max(0,ex.length-1);       /* no intron past the last exon */
     const gn={grp:ggrp, pos:0, ex, hid:false,
       /* THREE STEPS OF ONE GREY, DARKEST AT THE BOTTOM: the deck is --t-right,
          the gene's line is --t-top, the exons are --k-top. On a translucent
@@ -1776,7 +1832,25 @@ function drawBelts(g,n){
          an arch, and no contact. Those are the reads the assembly alone cannot
          place, and the reason G2 is a node of its own. */
       const sp=ex.length>1 && rnd()<1/6;
-      const rd={sp,
+      /* ---- AND SOME LAND ON INTRONS, WHICH IS WHAT ASSIGNMENT IS ABOUT -----
+         The aggregate this belt used to assert was "every read on an exon,
+         none on an intron", and it was the annotation's whole argument. It is
+         also the reason the last third of the belt had nothing to decide: a
+         pile in which every read is exonic is a pile every read of which is
+         assigned, and a station where nothing is ever declined is not a
+         station.
+
+         Reads land where the SEQUENCE matches, and pre-mRNA is in the library.
+         So a share of them land on introns, and those are the ones that get the
+         cross — which is exactly the subject of the step this is drawing:
+         whether an intronic read counts is `--include-introns`, A FLAG AND NOT
+         A FACT, and the node that owns this step is named for it.
+
+         THE SHARE IS TUNED FOR LEGIBILITY AND IS NOT A MEASUREMENT, the same
+         way E3's reject rate is. There is no per-read assignment record on this
+         instance; the real figures live in the prose. */
+      const onIntron=!sp && intr.length>0 && rnd()<0.16;
+      const rd={sp,bad:onIntron,
         /* ON THE MODEL, AND NOW BARELY OFF ITS CENTRE LINE. A read used to take
            the whole width of the line as jitter, which was right while they lay
            side by side and is wrong now that they stack: a column that wanders
@@ -1790,6 +1864,11 @@ function drawBelts(g,n){
         rd.fA=Math.max(eA[0]+0.002, eA[1]-rd.rlA); rd.fB=eB[0]+0.002;
         rd.gap=[eA[1],eB[0]];
         rd.start=rd.fA; rd.end=rd.fB+rd.rlB;
+      }else if(onIntron){
+        const fits=intr.filter(e=>e[1]-e[0]>=RL+0.004);
+        const e=(fits.length?fits:intr)[Math.floor(rnd()*(fits.length||intr.length))];
+        const lo=e[0]+0.002, hi=Math.max(lo,e[1]-RL-0.002);
+        rd.f=lo+rnd()*(hi-lo); rd.start=rd.f; rd.end=rd.f+RL;
       }else{
         /* aim at a position on the transcript first, then take the exon whose
            middle is nearest it — so the bias is a property of the transcript
@@ -1884,6 +1963,12 @@ function drawBelts(g,n){
          thickness — which is the one thing this pair is not. */
       rd.bc=ggrp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",
         stroke:"none"}));
+      /* THE VERDICT, built after the read so it rides above it. Same two marks
+         and the same two tokens as the sorting yard, because it is the same
+         kind of event: a thing being checked against a list and kept or not. */
+      rd.mk=ggrp.appendChild(el("path",{d:rd.bad?ACROSS:ATICK,fill:"none",
+        stroke:rd.bad?"var(--rej)":"var(--ok)","stroke-width":"1.7",
+        "stroke-linecap":"round","stroke-linejoin":"round","stroke-opacity":"0"}));
     }
     genes.push(gn);
   }
@@ -1940,6 +2025,23 @@ function drawBelts(g,n){
   };
   /* the arch over an intron: sampled in the gene's own f, so it lands on the
      two exon ends it belongs to however the model is scaled */
+  /* ---- THE BIN, BUILT AFTER THE GENES so its lid does the disappearing ----
+     Same object as E3's and from the same function, because a read declined
+     here and a fragment declined there are the same kind of event one step
+     apart. The name is the difference: it says which question was asked. */
+  const BIN4=shredBin(g,BINX4,BINY4,SLOTX4,SLOTY4,BUCKH4,HEADH4,
+    {top:"var(--rej)",left:"var(--rej)",right:"var(--rej)"},
+    {top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"});
+  {
+    const a=P(BINX4-SLOTX4*0.7,BINY4-SLOTY4*1.45-GL*0.05,0);
+    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
+      "text-anchor":"start","font-family":MONO,fill:"var(--rej)",
+      "font-size":(GFS*1.05).toFixed(1),"font-weight":"600",
+      "letter-spacing":(GFS*0.10).toFixed(2),"fill-opacity":"1"});
+    t2.textContent="NO GENE MATCH"; g.appendChild(t2);
+  }
+  let shred4=-99;
+
   const archPath=(node,xc,fa,fb,z0,dy,h,op)=>{
     const p=[];
     for(let s=0;s<=10;s++){
@@ -1953,6 +2055,7 @@ function drawBelts(g,n){
   let t=0;
   const run=dt=>{
     t+=dt;
+    BIN4.run(t, 1-(t-shred4)/0.5, K*3.4);
     const scroll=((t*v)%(span/NSL*2)+span/NSL*2)%(span/NSL*2);
     slats.forEach((ln,k)=>{
       const sx=x0+((k*(span/NSL*2)+scroll)%span);
@@ -1997,11 +2100,19 @@ function drawBelts(g,n){
       /* the name rides with its gene, at the gene's own x, off the near rail;
          the two end marks ride the gene's own line, just past each end */
       {
-        const put=(t,wy,op)=>{ const a=P(gxp,wy,base);
+        /* THE NAME IS THE ANSWER, so it becomes the answer's colour. Assignment
+           does not produce a mark on a read and nothing else — what it produces
+           is a GENE, and the gene's name is already on the belt beside it. It
+           grows and turns --ok across the assign stretch, so the step reads as
+           the model claiming its reads rather than as thirty separate ticks. */
+        const g2=sstep(ASSIGN0-span*0.03,ASSIGN0+span*0.06,gxp);
+        const put=(t,wy,op,sc)=>{ const a=P(gxp,wy,base);
           t.setAttribute("transform",
-            `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`);
+            `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`
+            +(sc&&sc!==1?` scale(${sc.toFixed(3)})`:""));
           t.setAttribute("fill-opacity",(vis*op).toFixed(3)); };
-        put(gn.lab,cy+BW/2+K*0.55,0.55);
+        gn.lab.setAttribute("fill",g2>0.5?"var(--ok)":"var(--fg3)");
+        put(gn.lab,cy+BW/2+K*0.55,0.55+0.42*g2,1+0.55*g2);
         put(gn.p5 ,yOf(-0.055),0.45);
         put(gn.p3 ,yOf( 1.055),0.45);
       }
@@ -2025,9 +2136,39 @@ function drawBelts(g,n){
         /* z0 is the read's OWN row, not the exon roof: a stack sits on the
            thing under it, and the top of it is where the next read goes. */
         const rz=exTop+rd.row*RSTEP;
-        const rx=gxp+rd.dx*(1-air)-NOZX*air, z0=rz+NOZZ*air;
-        const dy=(cy-rd.ymid)*air;            /* the fan, closing as it lands */
-        const op=vis*sstep(0,0.10,kk);
+        /* ---- THE VERDICT, AND WHERE A DECLINED READ GOES ------------------
+           It fires when the model has carried this read past its own point in
+           the sweep, and it holds from there to the end of the belt: a mark
+           that fades is a decision being forgotten.
+
+           A CROSS IS ALSO AN EXIT. The read leaves the model it was sitting on,
+           slides off the near rail and drops into a bin — the same movement and
+           the same box as a fragment with no barcode, because it is the same
+           kind of event one step later. */
+        /* rd.start, never rd.f: a SPLICED read has fA and fB and no f at all,
+           so reading f here put NaN into every coordinate of every read on the
+           belt — and it did it through `shunt * (BINY4 - NaN)`, which is NaN
+           even when shunt is zero. Multiplying by zero does not rescue an
+           undefined; the every-read fields are start and end. */
+        const fire=ASSIGN0+rd.start*ASSIGNL;
+        const said=gxp>fire;
+        /* every declined read converges on the same box, so the shunt is
+           normalised between its OWN verdict and one shared arrival — the ones
+           declared late simply travel faster, which is what happens when a
+           machine has one chute */
+        const shunt=rd.bad?sstep(fire+span*0.02,BINX4-span*0.02,gxp):0;
+        if(rd.bad && shunt>0.55) shred4=t;
+        const rxb=gxp+rd.dx*(1-air)-NOZX*air;
+        const dyb=(cy-rd.ymid)*air;           /* the fan, closing as it lands */
+        const rx=rxb+shunt*(BINX4-rxb);
+        const dy=dyb+shunt*(BINY4-yOf((rd.start+rd.end)/2)-dyb);
+        const z0=rz+NOZZ*air+shunt*shunt*(BIN4.top-rz);
+        /* A SHUNTED READ OUTLIVES ITS OWN GENE'S FADE. It is drawn in the
+           gene's group, and the gene is already dimming by the time the last of
+           them reaches the bin — so once it is off the model it carries its own
+           visibility. */
+        const rvis=rd.bad?Math.max(vis,sstep(0.04,0.30,shunt)):vis;
+        const op=rvis*sstep(0,0.10,kk)*(1-sstep(0.90,1,shunt));
         /* the cDNA lies flat on the exon — the only part of this molecule the
            aligner has anything to say about, and the only part drawn at full
            strength */
@@ -2050,6 +2191,16 @@ function drawBelts(g,n){
         const kx=rx+ux*TAIL*TKNEE, ky=ye+uy*TAIL*TKNEE, kz=z0+uz*TAIL*TKNEE;
         seg(rd.ad,rx,ye,z0,kx,ky,kz,op*0.42);
         barTo(rd.bc,RWB,0.26,kx,ky,kz,rx+ux*TAIL,ye+uy*TAIL,z0+uz*TAIL,op*0.34);
+        /* the mark rides above the read it is about, and pops the way E3's do */
+        if(!said || op<=0.02){ rd.mk.setAttribute("stroke-opacity","0"); }
+        else{
+          const age=(gxp-fire)/(span*0.02);
+          const a=P(rx,yOf((rd.start+rd.end)/2)+dy,z0+n.h*0.30);
+          const pop=age<1?0.55+0.60*age:1.15-0.15*Math.min(1,(age-1)*1.2);
+          rd.mk.setAttribute("transform",
+            `translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) scale(${pop.toFixed(2)})`);
+          rd.mk.setAttribute("stroke-opacity",(op*0.92).toFixed(3));
+        }
       }
     });
   };
@@ -2108,6 +2259,53 @@ function slabAt(g,x,y,w,d,h,sk,z0,op){
     {points:f[k],fill:sk[k],"fill-opacity":o.toFixed(2),stroke:"var(--stroke)",
      "stroke-width":"0.9","stroke-opacity":(0.6*Math.min(1,o*2.2)).toFixed(3)})));
   return f;
+}
+
+/* ============================================================
+   A SHREDDER BIN — a pail with a machine head across it.
+
+   Two stations discard things now and both discard them the same way, so the
+   box is one object rather than two that look alike. What a caller gives it is
+   the SLOT, because the slot is the only part with a constraint: whatever drops
+   through it has to fit lying flat, so it must be longer than that thing and
+   wider than its bar. Everything else — the head, the pail — is derived
+   outward. Sizing the box first and taking a fraction of it for the slot is
+   what produced a mouth shorter than the thing going into it, and a whole pose
+   of contortion to get around it.
+
+   THE LID DOES THE DISAPPEARING. Build this AFTER whatever falls into it and a
+   thing at the slot goes behind the machine's own top face and is gone.
+
+   It returns the lid height and the cutters; the caller runs them, because each
+   station has its own clock and its own idea of when something is going in. */
+function shredBin(g,x,y,SLOTX,SLOTY,BUCKH,HEADH,PAIL,HEAD){
+  const HEADX=SLOTX*1.27, HEADY=SLOTY*2.9;
+  const BUCKX=HEADX*0.90, BUCKY=HEADY*0.84;
+  slabAt(g,x,y,BUCKX,BUCKY,BUCKH,PAIL,0);
+  slabAt(g,x,y,HEADX,HEADY,HEADH,HEAD,BUCKH);
+  const top=BUCKH+HEADH;
+  g.appendChild(el("polygon",{points:pts([
+      P(x-SLOTX/2,y-SLOTY/2,top),P(x+SLOTX/2,y-SLOTY/2,top),
+      P(x+SLOTX/2,y+SLOTY/2,top),P(x-SLOTX/2,y+SLOTY/2,top)]),
+    fill:"var(--bg)","fill-opacity":".72",stroke:"none"}));
+  const N=Math.max(6,Math.round(SLOTX/(SLOTY*0.34)));
+  const blades=[];
+  for(let b=0;b<N;b++)
+    blades.push(g.appendChild(el("line",{stroke:"var(--rej)","stroke-width":"1.3",
+      "stroke-linecap":"butt","stroke-opacity":"0"})));
+  return {top,x,y,SLOTX,SLOTY,blades,
+    /* `on` is 1 while something is going through and fades out after; the
+       blades scroll, so the machine is turning rather than merely lit */
+    run(t,on,speed){
+      const bp=SLOTX/blades.length, roll=((t*speed)%bp+bp)%bp;
+      blades.forEach((bl,k)=>{
+        const bx=x-SLOTX/2+((k*bp+roll)%SLOTX);
+        const a=P(bx,y-SLOTY*0.42,top+0.004), b=P(bx,y+SLOTY*0.42,top+0.004);
+        bl.setAttribute("x1",a[0].toFixed(1)); bl.setAttribute("y1",a[1].toFixed(1));
+        bl.setAttribute("x2",b[0].toFixed(1)); bl.setAttribute("y2",b[1].toFixed(1));
+        bl.setAttribute("stroke-opacity",(0.10+0.72*clamp01(on)).toFixed(3));
+      });
+    }};
 }
 
 const ROUNDS=[
@@ -2454,8 +2652,7 @@ function drawSortingYard(g,n){
      shorter than the thing going into it — which is why the first version had
      to stand the fragment on end to get it in at all. */
   const SLOTX=FL*1.12, SLOTY=THK*2.8;
-  const HEADX=SLOTX+FL*0.30, HEADY=SLOTY+FL*0.36, HEADH=0.13*KZ;
-  const BUCKX=HEADX*0.90, BUCKY=HEADY*0.84, BUCKH=0.46*KZ;
+  const BUCKH=0.46*KZ, HEADH=0.13*KZ;
   const BY=REJ+SC(3.4), binTop=BUCKH+HEADH;
   const HOVER=binTop+FL*0.42;                 /* where it comes to rest before dropping */
   /* TIPB IS WHERE THE FRAGMENT COMES TO REST OVER THE SLOT. It only has to be
@@ -2662,20 +2859,7 @@ function drawSortingYard(g,n){
      discarding. Beyond the edge and lower, the last thing a rejected fragment
      does is leave the machine's own floor. Its top has to sit BELOW the height
      the fragments ride at, or they would climb into it. */
-  slabAt(g,binX,BY,BUCKX,BUCKY,BUCKH,BIN,0);
-  slabAt(g,binX,BY,HEADX,HEADY,HEADH,GAN,BUCKH);
-  /* the slot the fragment goes into, inset in the top face */
-  g.appendChild(el("polygon",{points:pts([
-      P(binX-SLOTX/2,BY-SLOTY/2,binTop),P(binX+SLOTX/2,BY-SLOTY/2,binTop),
-      P(binX+SLOTX/2,BY+SLOTY/2,binTop),P(binX-SLOTX/2,BY+SLOTY/2,binTop)]),
-    fill:"var(--bg)","fill-opacity":".72",stroke:"none"}));
-  /* THE CUTTERS. Short blades across the slot, scrolling along it while the
-     machine runs. Built after the slot so they read as being inside it. */
-  const NBLADE=Math.max(6,Math.round(SLOTX/SC(0.13)));
-  const blades=[];
-  for(let b=0;b<NBLADE;b++)
-    blades.push(g.appendChild(el("line",{stroke:"var(--rej)","stroke-width":"1.3",
-      "stroke-linecap":"butt","stroke-opacity":"0"})));
+  const BIN2=shredBin(g,binX,BY,SLOTX,SLOTY,BUCKH,HEADH,BIN,GAN);
 
   /* ---- names ------------------------------------------------------------- */
   const lab=(wx,wy,wz,str,size,fill,op,rot,anchor,dy)=>{
@@ -2709,7 +2893,7 @@ function drawSortingYard(g,n){
     lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "middle",
         (FS*1.85).toFixed(1));
   });
-  lab(binX-SC(1.5), BY+HEADY/2+SC(0.85), 0, "NO MATCH",
+  lab(binX-SC(1.5), BY+SLOTY*2.9/2+SC(0.85), 0, "NO MATCH",
       (FS*1.25).toFixed(1), "var(--rej)", "1", 30);
   /* PAST THE MOUTH OF THE BELT, not alongside it. Between the near rail and the
      reject siding there are 1.4 authored units and the siding's own fragments
@@ -2961,18 +3145,7 @@ function drawSortingYard(g,n){
        thing reaches it is a machine doing something to that thing. The blades
        scroll along the slot and fade out over RUNOUT once the last fragment is
        through, so it spins down rather than stopping dead. */
-    {
-      const RUNOUT=0.55, on=Math.max(0,1-(t-shredT)/RUNOUT);
-      const bp2=SLOTX/NBLADE, roll=((t*SC(5.2))%bp2+bp2)%bp2;
-      blades.forEach((bl,k)=>{
-        const bxp=binX-SLOTX/2+((k*bp2+roll)%SLOTX);
-        const a=P(bxp,BY-SLOTY*0.42,binTop+0.004),
-              b=P(bxp,BY+SLOTY*0.42,binTop+0.004);
-        bl.setAttribute("x1",a[0].toFixed(1)); bl.setAttribute("y1",a[1].toFixed(1));
-        bl.setAttribute("x2",b[0].toFixed(1)); bl.setAttribute("y2",b[1].toFixed(1));
-        bl.setAttribute("stroke-opacity",(0.10+0.72*on).toFixed(3));
-      });
-    }
+    BIN2.run(t, 1-(t-shredT)/0.55, SC(5.2));
     const scroll=((t*v)%SLAT_P+SLAT_P)%SLAT_P;
     slats.forEach((ln,k)=>{
       const sx2=xIn+((k*SLAT_P+scroll)%SLAT_RUN);
