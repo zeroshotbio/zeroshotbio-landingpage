@@ -104,11 +104,11 @@ const EDITS=(()=>{
       /* the format before the stamp: a bare table of nudges. It is adopted
          with at:0, so the first shared copy that turns up supersedes it —
          which is right, because that copy is this browser's own last save. */
-      if(j && j.offsets) return {offsets:j.offsets||{}, at:j.at||0};
+      if(j && j.offsets) return {offsets:j.offsets||{}, links:j.links, at:j.at||0};
       return {offsets:j||{}, at:0};
     }
   }catch(err){}
-  return {offsets:BAKED, at:0};
+  return {offsets:BAKED, links:undefined, at:0};
 })();
 const LIVE=EDITS.offsets||{};
 /* DELETIONS come first, because everything downstream — the lane solve, the
@@ -121,6 +121,31 @@ if(GONE.size){
   for(let i=EDGES.length-1;i>=0;i--) if(GONE.has(EDGES[i].a)||GONE.has(EDGES[i].b)) EDGES.splice(i,1);
   Object.keys(byId).forEach(k=>{ if(GONE.has(k)) delete byId[k]; });
 }
+
+/* ============================================================
+   HAND-DRAWN CONNECTIONS
+
+   A track somebody put on the map with the Connect tool rather than one this
+   page asserts about the pipeline. They are kept in their OWN list and not in
+   the offsets table, because the two answer different questions — the table is
+   "where is this object", the list is "what did somebody join to what" — and a
+   list of pairs merged as if it were a table of keyed nudges would lose one of
+   any two links a person drew in the same sitting.
+
+   THEY ARE ORDINARY EDGES FROM HERE ON. Pushed into EDGES before anything reads
+   it, so they route, paint, carry dots, get clipped and get repainted on a drag
+   through exactly the same code as every authored edge. Nothing downstream
+   knows the difference except that `link:true` is on them, which is how they
+   are found again at save time.
+
+   A GREY TRACK WITH WHITE DOTS, and the split is deliberate: `tone` colours the
+   line, `dotTone` the dots. A white line would be the loudest thing on the map,
+   and a hand-drawn connection is not a claim that outranks the drawn ones. */
+const LIVELINKS=(EDITS.links||((typeof LINKS!=="undefined")?LINKS:[]))
+  .filter(l=>l && byId[l.a] && byId[l.b] && !GONE.has(l.a) && !GONE.has(l.b));
+const linkEdge=(a,b)=>({a,b,kind:"link",straight:true,port:"corner",portB:"corner",
+  tone:"var(--fg2)",dotTone:"var(--fg)",link:true});
+LIVELINKS.forEach(l=>EDGES.push(linkEdge(l.a,l.b)));
 
 /* WHERE THE LANE ENGINE PUT EVERYTHING, before any nudge. Every offset in
    the table is measured from here.
@@ -535,7 +560,9 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
   }
   g.addEventListener("focus",()=>{ if(!editing) show(n.id,false); });
   g.addEventListener("blur",()=>{ if(!editing) unhover(); });
-  g.addEventListener("click",ev=>{ev.stopPropagation(); if(!editing) show(n.id,true);});
+  g.addEventListener("click",ev=>{ev.stopPropagation();
+    if(linking){ if(window.linkPick) window.linkPick(n); return; }
+    if(!editing) show(n.id,true);});
   gNode.appendChild(g); nodeEls[n.id]=g;
 });
 
@@ -720,7 +747,10 @@ function applyOffsets(o){
    DOTS
    ============================================================ */
 const DOTS=[];
-edgeGeom.forEach(e=>{
+/* ONE FACTORY, because the Connect tool makes edges after this block has run
+   and a second copy of this drifts from the first the day one of them changes.
+   dotTone is separate from tone so a track can be quiet and its dots not. */
+function makeDots(e){
   /* nothing travels a reference edge — see paintEdge */
   if(e.still) return;
   const faint = e.kind==="drop"||e.kind==="soup";
@@ -729,14 +759,15 @@ edgeGeom.forEach(e=>{
     const g=el("g"); g.style.cursor="pointer";
     g.appendChild(el("circle",{r:"10",fill:"transparent"}));
     g.appendChild(el("circle",{r:faint?3:3.5,
-      fill:e.tone||(faint?"var(--drop)":"var(--signal)"),
+      fill:e.dotTone||e.tone||(faint?"var(--drop)":"var(--signal)"),
       stroke:"var(--stroke)","stroke-width":"1"}));
     gDot.appendChild(g);
     const rec={e,t:(i/count)+Math.random()*0.1,speed:(faint?26:52)/e.len,node:g};
     g.addEventListener("click",ev=>{ev.stopPropagation();inspect(rec);});
     DOTS.push(rec);
   }
-});
+}
+edgeGeom.forEach(makeDots);
 function placeDots(dt){
   DOTS.forEach(r=>{
     if(dt) r.t=(r.t+r.speed*dt)%1;
@@ -1292,6 +1323,44 @@ feature("walk the sequence",function(){
 let editing=false, dirty=false;
 const r2=v=>Math.round(v*100)/100;
 
+/* ---- CONNECT TWO ITEMS ---------------------------------------------------
+   The one edit on this page that ADDS something rather than moving it, which
+   is why it is a mode inside Edit positions rather than a click: a drag that
+   sometimes creates a track is a drag nobody can predict. Press the button,
+   click one object, click another.
+
+   A link is created the same way a loaded one is — linkEdge(), an entry in
+   edgeGeom, dots from the same factory — so from the first frame it is
+   indistinguishable from an authored edge, and every later drag repaints it
+   without knowing it was drawn by hand. */
+let linking=false, linkA=null;
+function linkExists(a,b){
+  return LIVELINKS.some(l=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a)) ||
+         EDGES.some(e=>(e.a===a&&e.b===b)||(e.a===b&&e.b===a));
+}
+function addLink(a,b){
+  if(a===b || !byId[a] || !byId[b] || linkExists(a,b)) return false;
+  const e=linkEdge(a,b);
+  LIVELINKS.push({a,b}); EDGES.push(e);
+  const rec={...e,host:gEdge.appendChild(el("g")),
+             fromName:byId[a].name,toName:byId[b].name};
+  paintEdge(rec); edgeGeom.push(rec); makeDots(rec);
+  return true;
+}
+function dropLink(a,b){
+  const hit=(l)=>(l.a===a&&l.b===b)||(l.a===b&&l.b===a);
+  for(let i=LIVELINKS.length-1;i>=0;i--) if(hit(LIVELINKS[i])) LIVELINKS.splice(i,1);
+  for(let i=EDGES.length-1;i>=0;i--) if(EDGES[i].link&&hit(EDGES[i])) EDGES.splice(i,1);
+  for(let i=edgeGeom.length-1;i>=0;i--){
+    const r=edgeGeom[i];
+    if(r.link&&hit(r)){ if(r.host&&r.host.parentNode) r.host.parentNode.removeChild(r.host);
+      for(let k=DOTS.length-1;k>=0;k--) if(DOTS[k].e===r||DOTS[k].e.link&&hit(DOTS[k].e)){
+        if(DOTS[k].node.parentNode) DOTS[k].node.parentNode.removeChild(DOTS[k].node);
+        DOTS.splice(k,1); }
+      edgeGeom.splice(i,1); }
+  }
+}
+
 /* the committed table plus this sitting */
 function totalOffset(n){
   const o={};
@@ -1387,7 +1456,7 @@ function seedUnpublished(doc){
 }
 
 function stash(){
-  remember(EDIT_KEY,JSON.stringify({offsets:collectOffsets(),at:Date.now()}));
+  remember(EDIT_KEY,JSON.stringify({offsets:collectOffsets(),links:LIVELINKS,at:Date.now()}));
 }
 /* Take the record's OWN timestamp after a successful write. Stamping it with
    this browser's clock instead means the next load compares two clocks, and a
@@ -1426,7 +1495,19 @@ function mergeOnto(doc){
     if(!ours(k)) return;
     if(mine[k]) out[k]=mine[k]; else delete out[k];
   });
-  return {body:{offsets:out}, kept};
+  /* LINKS ARE UNIONED, NOT MERGED KEY BY KEY. They have no key to own — a
+     pair is not a property of either end — so "whose is this" cannot be asked
+     of one. Taking the union means two people drawing in the same sitting both
+     keep their tracks, and the only thing it cannot express is a DELETION of
+     somebody else's link. That is the right trade for a mark this cheap to
+     redraw and this hard to lose accidentally. */
+  const seen=new Set(), links=[];
+  [...((doc&&doc.links)||[]), ...LIVELINKS].forEach(l=>{
+    if(!l||!l.a||!l.b) return;
+    const k=[l.a,l.b].sort().join("\u0000");
+    if(seen.has(k)) return; seen.add(k); links.push({a:l.a,b:l.b});
+  });
+  return {body:{offsets:out,links}, kept};
 }
 function put(body){
   return fetch("/api/fqpipe_edits",{method:"POST",
@@ -1439,13 +1520,13 @@ function pushRemote(){
     .then(r=>r.json()).catch(()=>null)
     .then(doc=>{
       if(!doc || doc.error) return {ok:false,error:"unreachable"};
-      if(!doc.at) return put({offsets:collectOffsets()});   // nothing shared yet
+      if(!doc.at) return put({offsets:collectOffsets(),links:LIVELINKS});   // nothing shared yet
       const m=mergeOnto(doc);
       return put(m.body).then(res=>{
         /* what went out is not what is on screen if the merge carried
            somebody else's work through, so keep the merged document */
         if(res && res.ok && m.kept)
-          remember(EDIT_KEY,JSON.stringify({offsets:m.body.offsets,at:res.at||Date.now()}));
+          remember(EDIT_KEY,JSON.stringify({offsets:m.body.offsets,links:m.body.links,at:res.at||Date.now()}));
         return {...res, kept:m.kept};
       });
     });
@@ -1646,6 +1727,13 @@ feature("edit positions", function(){
   let grab=null;
   function begin(ev,n,mode){
     if(!editing) return;
+    /* CONNECT MODE OWNS THE PRESS. preventDefault plus a pointer capture on the
+       way down means no `click` is ever delivered, so leaving the drag armed
+       while connecting swallows exactly the event the tool is listening for —
+       the mode looked on, the cursor changed, and nothing happened. Taking
+       pointer-events off the handles is not enough on its own: the press still
+       lands on the node's own group, which is where this handler is. */
+    if(linking) return;
     ev.stopPropagation(); ev.preventDefault();
     const el0=ev.currentTarget;
     if(el0.setPointerCapture) el0.setPointerCapture(ev.pointerId);
@@ -1838,8 +1926,51 @@ feature("edit positions", function(){
     ["pointerup","pointercancel"].forEach(t=>L.addEventListener(t,end));
   });
 
+  /* ---- THE CONNECT MODE ------------------------------------------------
+     It lives inside Edit positions and turns itself off when that does, for
+     the same reason the ✕ does: a tool that can add a track to the map should
+     not be reachable from the reading view.
+
+     WHILE IT IS ON, THE DRAG HANDLES ARE INERT — `svg.linking` takes
+     pointer-events off .ehandle and .ehit — so a press lands on the node's own
+     group and comes back as a click. Leaving them live and trying to tell a
+     click from a drag is the version that misfires every time somebody moves
+     the mouse two pixels. */
+  const btnLink=document.getElementById("btnLink");
+  const hintLink="Connect: click one object, then another. Press the button "+
+                 "again to stop. Save positions makes it the default.";
+  function paintLinkA(){
+    NODES.forEach(n=>{ const el2=nodeEls[n.id];
+      if(el2) el2.classList.toggle("linkfrom", !!linkA && n.id===linkA); });
+  }
+  function setLinking(on){
+    linking=on; linkA=null; paintLinkA();
+    svg.classList.toggle("linking",on);
+    document.body.classList.toggle("linking",on);
+    if(btnLink) btnLink.textContent=on?"Stop connecting":"Connect two items";
+    if(hint) hint.textContent = on ? hintLink : (editing?hint.textContent:hint0);
+  }
+  window.linkPick=n=>{
+    if(!linking) return;
+    if(!linkA){ linkA=n.id; paintLinkA();
+      note("Connect",`From <mark>${esc(n.key+" · "+n.name)}</mark> — now click the other one.`,4000);
+      return; }
+    if(n.id===linkA){ linkA=null; paintLinkA(); return; }   /* clicking it again cancels */
+    const from=linkA; linkA=null; paintLinkA();
+    if(addLink(from,n.id)){
+      dirty=true; touched.add("__links");
+      note("Connected",`<mark>${esc(byId[from].key)}</mark> to `+
+        `<mark>${esc(n.key)}</mark>. Press <mark>Save positions</mark> to make it `+
+        `the default for everyone.`,6000);
+    } else {
+      note("Already joined","Those two are connected already.",3500);
+    }
+  };
+  if(btnLink) btnLink.onclick=()=>setLinking(!linking);
+
   function setMode(on){
     editing=on;
+    if(!on && linking) setLinking(false);
     if(typeof ANNOTATIONS!=="undefined") ANNOTATIONS.forEach(a=>{ a.forceShow=on; a.reflow(); });
     svg.classList.toggle("editing",on);
     document.body.classList.toggle("editing",on);
@@ -1906,11 +2037,17 @@ feature("saving", function(){
       `<div class="sub">everything currently in force, not just this sitting</div>`+
       (n?`<div class="snip">${esc(asSource(o,"OFFSETS"))}</div>`
         :`<p>Nothing differs from what the lane engine computed.</p>`)+
+      (LIVELINKS.length?`<h4>Connections</h4><div class="snip">${
+        esc("const LINKS = [\n"+LIVELINKS.map(l=>`  {a:${JSON.stringify(l.a)}, b:${JSON.stringify(l.b)}},`).join("\n")+"\n];")
+      }</div>`:"")+
       `<h4>What this did</h4>`+
       `<p>Written to this browser and to the shared copy, so the page opens `+
       `this way for anyone. Paste the block into <mark>OFFSETS</mark> in `+
       `<mark>fq-data.js</mark> to put it in the repo, where it survives the `+
       `store being cleared.</p>`+
+      (LIVELINKS.length?`<p>Connections are their own list because a pair is not `+
+        `a property of either end. Paste it into <mark>LINKS</mark> in `+
+        `<mark>fq-data.js</mark>.</p>`:"")+
       `<p>These are <mark>nudges</mark> relative to what the lane engine computed, `+
       `never absolute coordinates, so they survive the lane being re-solved or a `+
       `step being inserted. <mark>dx/dy</mark> move a building and take its name `+
@@ -1956,7 +2093,7 @@ feature("shared copy", function(){
        indistinguishable from a layout that did not take. A reload is
        unambiguous, and this path is rare by construction: it only runs when
        somebody else has actually published something newer. */
-    remember(EDIT_KEY,JSON.stringify({offsets:doc.offsets||{},at:doc.at}));
+    remember(EDIT_KEY,JSON.stringify({offsets:doc.offsets||{},links:doc.links||[],at:doc.at}));
     /* AND ONLY RELOAD IF THE STORE ACTUALLY TOOK IT. A browser that cannot
        write local storage — private mode, storage disabled, quota — comes back
        holding at:0, reads the record as newer again, and reloads again, for

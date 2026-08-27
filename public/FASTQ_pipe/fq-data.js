@@ -277,6 +277,31 @@ const NODES = [
    that runs behind one, because gNode paints after gEdge. Punch the box out of
    the clip and the departures are visible where the ground is empty and hidden
    where something actually stands. */
+/* G4 · THE ALIGNER ITSELF, drawn as a figure rather than as a station.
+
+   E4 is the STEP — one belt, genes going past, reads landing on them, which is
+   what an aligner DOES to one read at a time. This is the same operation seen
+   from the other end: the assembly with reads on it, which is what alignment
+   produces. It is G1's own figure read the other way round, and it uses G1's
+   layout and G1's lengths on purpose — a second arrangement of chromosomes
+   would be a second genome.
+
+   AUTHORED HERE IN FULL. /pipeline has no node for the aligner as an object
+   (its row-3 node is the alignment step, lifted onto E4), so does/built/cond
+   below are this page's own writing and are lifted from nowhere.
+
+   NOTHING IN THE PICTURE IS MEASURED. There is no per-read alignment record on
+   this instance, so the stripes are the SHAPE of an alignment and not a
+   coverage track. See drawAligner. */
+{id:"G4", key:"G4", noclip:true, group:"G · genome, and W · whitelists", shape:"aligner",
+ follow:{a:"E4",dx:3.4}, name:"STAR Aligner", x:7.5, y:R3+5.9, w:4.0, d:4.4, h:0.5,
+ sub:"read 1 against the index · a position, or nothing",
+ does:"Takes read 1 and the index and answers one question per read: where on the assembly does this sequence sit, and does it sit anywhere uniquely. A read that lands in one place carries a coordinate from here on. A read that lands nowhere, or in several places, is set aside and never counted — the second deletion on this page, and the largest after the barcode parse.",
+ built:"STAR is the aligner behind three of the four counting stacks in this corpus, sometimes named and sometimes wrapped: split-pipe runs it for the Parse datasets, Cell Ranger wraps its own build for the 10x ones, and ZCL2's Microwell-seq pipeline runs STAR plus modified Drop-seq tools 1.12. The STAR version actually recorded anywhere in the corpus is DanioCell's — Cell Ranger 4.0.0 wrapping STAR 2.5.1b. The rest are known only by their wrapper.",
+ cond:"THE ALIGNMENT ITSELF IS NOT ON THIS INSTANCE. No BAM, no per-read record, no coverage — the raw reads stayed in the vendor's cloud workdir and what came back was a count matrix. So the one thing this station could be checked against is the one thing missing, and every figure about it on this map is a vendor report rather than a re-derivation. What IS recoverable is the reference: an index is a function of two files, and both of those are here.",
+ pipelineName:"Alignment",
+ added:"THE SAME TWENTY-FIVE CHROMOSOMES AS GRCz11, WITH READS ON THEM. G1's roof draws the assembly as an object — this is what there is; this one draws the same object as a result — this is where read 1 ended up on it. Same layout, same lengths, same ideograms, because they are the same object and a second arrangement of chromosomes would be a second genome. The stripes light one at a time and in no order: a field of them lit at once would be a map of coverage, which is a claim about how many and where; lit one at a time it is a machine PLACING them, which is a claim about what the step does. The order is shuffled rather than swept because reads arrive in the order the file has them, and that has nothing to do with position on the genome. NONE OF THE POSITIONS ARE REAL and none of them are counted."},
+
 {id:"W1", key:"W1", group:"G · genome, and W · whitelists", shape:"whitelists",
  noclip:true,
  follow:{a:"E3",dx:1.4}, name:"Barcode whitelists", x:14.0, y:R3-7.0, w:8.4, d:2.9, h:3.5,
@@ -558,7 +583,29 @@ const REAL_SUBLIBS = [
 
 const REAL_NOTE = "Read off the artefact on the instance, not generated. The file it came from is named in the header of pipeline-data.js.";
 
+/* ---------------------------------------------------------------------------
+   HAND-DRAWN CONNECTIONS, baked.
+
+   Pairs somebody joined with the Connect tool and then saved. They are a list
+   rather than a keyed table because a pair is not a property of either end, so
+   there is no key for one side to own — see the merge note in fq-view.js.
+
+   THEY ARE NOT CLAIMS THIS PAGE MAKES ABOUT THE PIPELINE. Every other edge in
+   EDGES is asserted here in prose alongside it; these are drawn on the map by
+   hand and carry no argument. Keep them apart from EDGES for exactly that
+   reason, and if one of them turns out to be a real claim, promote it into
+   EDGES with a comment saying why.
+   --------------------------------------------------------------------------- */
+const LINKS = [
+];
+
 const SNIPPETS = {
+  /* the one payload that is about the MAP rather than about the pipeline */
+  link: () => ({label:"a connection drawn by hand", flag:"not a claim this page makes",
+    note:"This track was drawn on the map with the Connect tool, not asserted in fq-data.js. Every other edge here has prose beside it saying what moves along it and why; this one has a person's judgement and nothing else. It carries dots because it is a track and tracks on this map carry dots — that is a drawing convention, not a measurement.", text:
+`source     drawn in Edit positions
+stored     LINKS in fq-data.js, and the shared record
+payload    none — nothing is asserted to travel this`}),
   read: () => { const s=pick(REAL_SUBLIBS); return {label:"one library's reads", flag:"the FASTQs are not on this instance",
     note:"No read-level record can be shown: the raw files stayed in the vendor's cloud workdir. That is the corpus norm, not a local lapse. Below is everything that survives of the reads — the sequencing statistics the vendor reported.", text:
 `sublibrary          ${s.n}

@@ -619,6 +619,7 @@ const PORTS={
     return roofCorner(n,B);
   },
   karyotype :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
+  aligner   :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
   locus     :(n,which,B)=>edgePort(n,which)||roofCorner(n,B),
   /* AND A WHITELIST LEAVES FROM UNDER ITS OWN NAME. One line from the corner of
      this node said "the lists feed the yard" and left a reader to work out
@@ -1031,6 +1032,98 @@ function drawKaryotype(g,n){
   });
 }
 DRAW.karyotype=drawKaryotype;
+
+
+/* ============================================================
+   THE ALIGNER — the same twenty-five chromosomes, with reads on them.
+
+   IT IS G1's FIGURE READ THE OTHER WAY ROUND. GRCz11's roof draws the assembly
+   as an object: this is what there is. This one draws the same object as a
+   RESULT: this is where read 1 ended up on it. Same layout, same lengths, same
+   ideograms — because the point is that they are the same object, and a second
+   arrangement of chromosomes would be a second genome.
+
+   THE STRIPES ARE NOT MEASURED AND MUST NOT BE LABELLED AS IF THEY WERE. There
+   is no per-read alignment record on this instance — see E4's own note — so
+   what is drawn is the SHAPE of an alignment: marks scattered along the
+   assembly, more of them than one, in the read colour, appearing one at a time
+   because that is what an aligner does with a file of reads. Nothing here says
+   how many, or where.
+   ============================================================ */
+function drawAligner(g,n){
+  refBuilding(g,n);
+  const F=roofPanel(g,n,n.h,176), {CW,CH,u}=F;
+  const rnd=mulberry32(0x5eedf15^0xA7);
+  const margin=5*u, slot=(CW-margin*2)/CHR_LAYOUT.length;
+  const bw=Math.min(4.6*u, slot*0.60);
+  const top=34*u, maxH=56*u, maxMb=Math.max(...CHR), waist=1.0*u;
+
+  /* 12u, not the karyotype's 17u. "STAR Aligner" is twelve characters against
+     GRCz11's seven, and at 17 it ran off the end of its own roof — a roof title
+     is set to the WORD, not to a house style. */
+  roofTitle(F,"STAR Aligner",margin,21*u,12*u);
+
+  const hits=[];
+  CHR_LAYOUT.forEach((ch,i)=>{
+    const cx=margin+slot*(i+0.5), h=(ch.mb/maxMb)*maxH;
+    const yc=top+h*ch.cen, x=cx-bw/2;
+    const r=bw/2, sq=bw*0.16;
+    const arms=[[top, yc-waist/2, r, sq],[yc+waist/2, top+h, sq, r]];
+
+    /* the body first, so the stripes lie ON the chromosome rather than beside
+       it, and the outline last, so an arm still reads as one shape */
+    arms.forEach(([y0,y1,rt,rb])=>
+      F.g.appendChild(el("path",{d:armPath(x,y0,bw,y1-y0,rt,rb),
+        fill:"var(--k-top)","fill-opacity":".95"})));
+
+    /* THE STRIPES. Two to five an arm at seeded positions, the read colour,
+       drawn ACROSS the chromosome because an alignment is a position on it and
+       nothing else — not a length, not a direction, not a depth. */
+    arms.forEach(([y0,y1])=>{
+      const nS=2+Math.floor(rnd()*4);
+      for(let k=0;k<nS;k++){
+        const f=0.08+rnd()*0.84, sy=y0+(y1-y0)*f, sh=Math.max(0.9*u,1.5*u*rnd()+0.9*u);
+        if(sy+sh>y1) continue;
+        hits.push(F.g.appendChild(el("rect",{x,y:sy.toFixed(1),
+          width:bw.toFixed(2),height:sh.toFixed(2),
+          fill:"var(--cull)","fill-opacity":"0.20"})));
+      }
+    });
+
+    arms.forEach(([y0,y1,rt,rb])=>
+      F.g.appendChild(el("path",{d:armPath(x,y0,bw,y1-y0,rt,rb),fill:"none",
+        stroke:"var(--stroke)","stroke-opacity":".7","stroke-width":(0.5*u).toFixed(2)})));
+
+    F.g.appendChild(el("path",{fill:"none",stroke:"var(--fg3)",
+      "stroke-width":(0.5*u).toFixed(2),
+      d:`M${x-0.6*u} ${yc}H${x+bw*0.22}M${x+bw*0.78} ${yc}H${x+bw+0.6*u}`}));
+  });
+
+  /* ---- ONE AT A TIME, AND IN NO ORDER ------------------------------------
+     A field of stripes all lit at once is a map of coverage, which is a claim
+     about how many and where. Lit one at a time it is a machine PLACING them,
+     which is a claim about what the step does — and the order is shuffled
+     rather than swept, because reads arrive in the order the file has them and
+     that has nothing to do with position on the genome. */
+  const seq=hits.map((_,i)=>i);
+  for(let i=seq.length-1;i>0;i--){
+    const j=Math.floor(rnd()*(i+1)); const q=seq[i]; seq[i]=seq[j]; seq[j]=q;
+  }
+  const lit=hits.map(()=>-99);
+  let t=0, ptr=0, last=-99;
+  const RATE=0.13;                          /* seconds between placements */
+  const run=dt=>{
+    t+=dt;
+    while(t-last>RATE){ last=(last<0?t:last+RATE); lit[seq[ptr%seq.length]]=t; ptr++; }
+    hits.forEach((h,i)=>{
+      const age=t-lit[i];
+      h.setAttribute("fill-opacity",(age<0?0.20:0.20+0.72*Math.exp(-age/1.15)).toFixed(3));
+    });
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.aligner=drawAligner;
 
 /* ---- Ensembl 99: one chromosome, one window, one locus -------------------
    Structure is real in kind; the coordinates are not.

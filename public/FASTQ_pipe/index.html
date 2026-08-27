@@ -175,6 +175,19 @@
      hundred square pixels of ink and mostly holes, so its glyphs are not
      something you can reliably pick up. */
   body.editing #btnEdit{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  /* ---- connect two items ----
+     The button appears with the editor and nowhere else. While the mode is on
+     the drag handles go inert, so a press on a building lands on the building's
+     own group and comes back as a click — trying to tell a click from a drag on
+     a live handle misfires every time the mouse moves two pixels. */
+  #btnLink{display:none}
+  body.editing #btnLink{display:inline-block}
+  body.linking #btnLink{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  svg.linking .ehandle,svg.linking .ehit{pointer-events:none!important}
+  svg.linking g[role=button]{cursor:crosshair}
+  svg.linking g[role=button]:hover>.ehandle{fill-opacity:.10;stroke-opacity:.6}
+  svg .linkfrom>.ehandle{display:block;fill-opacity:.26;stroke-opacity:1;
+    stroke:var(--fg);stroke-width:1.6;stroke-dasharray:none}
   body.haschanges #btnSave{border-color:var(--accent);color:var(--accent)}
   body.editing .hint{color:var(--signal);text-transform:none;font-size:10.5px;letter-spacing:.04em}
   .ehandle{display:none;pointer-events:none;fill:var(--signal);fill-opacity:.05;
@@ -360,6 +373,9 @@
            block in fq-view.js. -->
       <button class="ctl" id="btnTheme">Light</button>
       <button class="ctl" id="btnEdit">Edit positions</button>
+      <!-- only while the editor is open: a tool that adds a track to the map
+           should not be reachable from the reading view. See fq-view.js. -->
+      <button class="ctl" id="btnLink">Connect two items</button>
       <button class="ctl" id="btnSave">Save positions</button>
       <button class="ctl" id="btnDiscard">Discard</button>
     </div>

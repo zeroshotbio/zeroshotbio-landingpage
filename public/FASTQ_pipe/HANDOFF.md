@@ -1343,6 +1343,102 @@ actually flows is not.
 That is a claim change rather than a style change, and it is one line each to
 put back.
 
+## `drawAligner` — G1's figure read the other way round
+
+**`E4` is the step; this is the result.** One belt with genes going past and
+reads landing on them is what an aligner *does to one read at a time*. This is
+the same operation seen from the other end: the assembly with reads on it, which
+is what alignment *produces*.
+
+**It uses `CHR_LAYOUT` and `CHR` — G1's own layout and G1's own lengths —
+deliberately.** Same twenty-five ideograms, same order, same proportions,
+because they are the same object; a second arrangement of chromosomes would be a
+second genome, and a reader would have to work out whether it was one.
+
+What changes is what is drawn on them. GRCz11 punches its bands out in `--bg`,
+so a band is the roof showing through. This one leaves the bodies whole and lays
+**stripes in `--cull`** across them — the read colour, drawn *across* the
+chromosome because an alignment is a position on it and nothing else: not a
+length, not a direction, not a depth.
+
+**They light one at a time, and in no order.** A field of stripes all lit at
+once is a map of *coverage*, which is a claim about how many and where. Lit one
+at a time it is a machine **placing** them, which is a claim about what the step
+does — and the order is shuffled rather than swept, because reads arrive in the
+order the file has them and that has nothing to do with position on the genome.
+
+**Nothing in the picture is measured, and the node's own prose says so twice.**
+There is no per-read alignment record on this instance — no BAM, no coverage —
+so the stripes are the *shape* of an alignment. **Do not add a count, a scale or
+an axis to this roof** without the alignments to back it.
+
+**The roof title is 12u where the karyotype's is 17u.** "STAR Aligner" is twelve
+characters against GRCz11's seven, and at 17 it ran off the end of its own roof.
+*A roof title is set to the word, not to a house style.*
+
+## Connect two items — the one edit that adds something
+
+Everything else in the editor **moves** what the data file already put on the
+map. This puts a track on it that no file asserted, which is why it is a mode
+inside Edit positions rather than a click: *a drag that sometimes creates a
+track is a drag nobody can predict.* Press the button, click one object, click
+another. Clicking the first one again cancels.
+
+### They are ordinary edges from the first frame
+
+`LIVELINKS` is read at load and each pair is pushed into `EDGES` **before
+anything reads it**, so links route, paint, carry dots, get clipped and get
+repainted on a drag through exactly the same code as every authored edge.
+Nothing downstream knows the difference except `link:true`, which is how they
+are found again at save time. `addLink()` does the same three things at runtime
+— `linkEdge()`, an entry in `edgeGeom`, dots from `makeDots()` — so a link drawn
+by hand is indistinguishable from a loaded one on the frame it appears.
+
+**`makeDots()` exists because of this.** The dot loop used to be inline in the
+DOTS block; the Connect tool needs it after that block has run, and a second
+copy drifts from the first the day one of them changes.
+
+**A grey track with white dots**, and the split is deliberate: `tone` colours
+the line, `dotTone` the dots. A white line would be the loudest thing on the
+map, and *a hand-drawn connection is not a claim that outranks the drawn ones.*
+
+### The bug worth keeping: the drag swallows the click
+
+`begin()` calls `preventDefault()` and captures the pointer on the way down, so
+**no `click` is ever delivered while a drag is armed.** The mode lit, the cursor
+changed, and nothing happened. Taking `pointer-events` off `.ehandle` and
+`.ehit` is not enough on its own — the press still lands on the node's own
+group, which is where `begin` is attached. `begin` returns early while
+`linking`, and connect mode owns the press.
+
+This is also why `check-link.mjs` uses `page.mouse.click` and never
+`dispatchEvent`: a synthetic click sails straight past a pointer capture, and
+the check would have passed on a tool that did not work.
+
+### Links are a list, not a table, and the merge is a union
+
+They are kept **out of the offsets table**. The two answer different questions —
+the table is *where is this object*, the list is *what did somebody join to
+what* — and a list of pairs merged as if it were a table of keyed nudges would
+lose one of any two links drawn in the same sitting.
+
+**A pair is not a property of either end**, so "whose is this" cannot be asked
+of one, and the per-key ownership rule the offsets merge runs on has nothing to
+grip. The merge takes the **union** instead. Two people drawing in the same
+sitting both keep their tracks; the one thing it cannot express is *deleting*
+somebody else's link. That is the right trade for a mark this cheap to redraw
+and this easy to lose by accident.
+
+The record is `{offsets, links, at}`. Save prints a `LINKS` block for
+`fq-data.js` beside the `OFFSETS` one, and `LINKS` in the data file is the baked
+default — empty until somebody bakes one in.
+
+**`SNIPPETS.link` is the one payload on this page that is about the map rather
+than about the pipeline**, and it says so: *not a claim this page makes*. Every
+other edge has prose beside it in `fq-data.js` saying what moves along it; this
+one has a person's judgement and nothing else. It carries dots because tracks on
+this map carry dots — a drawing convention, not a measurement.
+
 ## `drawWhitelists` — where the lists come from
 
 Three plates in the sizes the chemistry uses — BC1 48 wells, BC2 and BC3 96 —
@@ -1820,7 +1916,7 @@ happened.
 re-runs only a subset of what a load does; using it to adopt a shared copy
 produces a picture no reload reproduces.
 
-## The checks — run all six
+## The checks — run all seven
 
 ```bash
 node check-text.mjs    <url>             # needs playwright
@@ -1829,9 +1925,10 @@ node check-edit.mjs    <url>             # needs playwright
 node check-delete.mjs  <url>             # needs playwright
 node check-persist.mjs <url>             # needs playwright
 node check-drawn.mjs   <url>             # needs playwright
+node check-link.mjs    <url>             # needs playwright
 ```
 
-All six pass as of this build, against `python3 -m http.server` over `public/`
+All seven pass as of this build, against `python3 -m http.server` over `public/`
 with the url `http://127.0.0.1:8731/FASTQ_pipe/index.html`.
 
 They all **stub `/api/fqpipe_edits`**. What is under test is the page's
@@ -1874,6 +1971,13 @@ the bug it exists for.
   **unsaved work survives a reload, both before a save and after one**, and a
   browser holding the pre-stamp record migrates. It compares **every object,
   not the one that was dragged**.
+
+- **`check-link.mjs`** drives Connect two items with a **real mouse** against a
+  **stateful stub**: the button is hidden outside the editor, two clicks join
+  two objects, the same pair cannot be joined twice, the track paints with white
+  dots, Save carries it into the record, and it comes back in a browser that has
+  never seen it. Three of those six were broken at some point while it was being
+  built and none of them shows up in a screenshot.
 
 `rendered.mjs` is not a check — it is the same drag-save-reload trial printing
 world coordinates, for when something looks wrong and you want the numbers.
@@ -1979,3 +2083,8 @@ resized. Nobody had.
 - **Reach for an opacity at `E4` before checking the width.** Under a pixel, a
   shape is drawn at partial coverage, which is indistinguishable from
   transparency.
+- **Put a count, a scale or an axis on the aligner's roof.** The stripes are the
+  shape of an alignment; the alignments are not on this instance.
+- **Merge `LINKS` key by key.** A pair is not a property of either end. Union.
+- **Arm a drag and a click on the same press.** `preventDefault` plus a pointer
+  capture means the click never arrives — see Connect two items.
