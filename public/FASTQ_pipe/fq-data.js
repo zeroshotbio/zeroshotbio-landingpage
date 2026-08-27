@@ -192,7 +192,7 @@ const NODES = [
  cond:"Three consequences, all worse than the version number. Reproducing that matrix requires Cell Ranger 5.0.0 specifically — a modern default produces a materially different object, silently. Cross-dataset depth comparisons are confounded in a known direction, because sci-RNA-seq3 runs on intron-rich nuclei while the 10x runs here used whole cells and threw the introns away. And low detection of a long or nuclear-retained transcript is weak biological evidence, because gene absence already has two non-biological explanations.",
  /* ---- authored on this page ------------------------------------------- */
  pipelineName:"Intron inclusion",
- added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei. ITS OWN MACHINE, NOT THE FAR END OF E4's. Genes arrive already covered in reads — they landed one station back and drawing them falling again would say the alignment happens twice — and appear fresh over the first fifth of this belt. Across the middle each model is CLAIMED: its name grows and turns green, and a mark lands on every read in turn from 5' to 3', because a verdict per read is a verdict per read and thirty marks appearing together would be a decision about the gene. READS THAT FELL ON INTRONS GET A CROSS and are shunted off to NO GENE MATCH, which is exactly what this step decides: whether an intronic read counts is --include-introns, a flag and not a fact, and this node is named for the flag. AT THE END THE MODEL ROLLS OFF THE EDGE AND WHAT IT WAS CARRYING DOES NOT: the kept reads peel into thirty tracks, one per cell barcode, which is E6. That is where the blue comes back. On a gene the barcode end is the part with no position and it stands off every axis that means one; on a track there is no gene, what travels is the read, and the thing that says which read it is is the barcode — so the blue lies along the track and the aligned end stands off it instead. The tracks are not equally busy, because cells are not."},
+ added:"On /pipeline this station is named for the switch rather than for the assignment, because the switch is the part of it nobody records — the assignment is assumed and the flag is the thing that goes missing. Whether intronic reads count moves totals substantially, and most for nuclei. ITS OWN MACHINE, NOT THE FAR END OF E4's. Genes arrive already covered in reads — they landed one station back and drawing them falling again would say the alignment happens twice — and appear fresh over the first fifth of this belt. Across the middle each model is CLAIMED: its name grows and turns green, and a mark lands on every read in turn from 5' to 3', because a verdict per read is a verdict per read and thirty marks appearing together would be a decision about the gene. READS THAT FELL ON INTRONS GET A CROSS and are shunted off to NO GENE MATCH, which is exactly what this step decides: whether an intronic read counts is --include-introns, a flag and not a fact, and this node is named for the flag. AT THE END THE MODEL ROLLS OFF THE EDGE and its reads go with it, gently. Nothing is handed across: E6's tracks are their own machine and its reads rain onto them fresh, the same not-quite-connected join this map uses everywhere it will not claim continuity. Assignment ends with a read that has a gene, bucketing begins with a read that has a barcode, and between those two facts there is no conveyor."},
 
 /* ---------------------------------------------------------------------------
    G AND W · THE REFERENCE. A different class of thing from everything above:
@@ -368,28 +368,27 @@ const NODES = [
    "Combine and stamp", which is the same operation seen from the other end:
    the cell id is assembled out of the barcode rounds and every read carrying it
    lands in the same bucket. */
-/* E6 IS THE LANES OFF THE END OF THE BELT, not a box after them.
+/* E6 IS ITS OWN MACHINE: thirty tracks and a rain of reads onto them.
 
-   Same move as E5 one station earlier and for the same reason. Bucketing by
-   cell is not somewhere a read is taken: it is what the reads ARE once they
-   stop being marks on a gene — five lanes, each one a cell, and a read joins
-   the lane its barcode already said it belonged to. The cube said the reads get
-   collected and carried; the lanes say they were already sorted.
+   It was the far end of the assign belt for a while, which drew the reads being
+   carried from one step to the next on one surface. They are not carried:
+   assignment ends with a read that has a gene, bucketing begins with a read
+   that has a barcode, and between those two facts there is no conveyor. So the
+   reads rain in, the way they rained onto the models at E4 — fade out there,
+   appear fresh here, which is the join this page uses everywhere it does not
+   want to claim continuity.
 
-   AND IT IS WHERE THE BLUE COMES BACK. The barcode end has pointed off every
-   axis for the whole of E4 because on a gene it is the part with no position.
-   In a lane there is no gene and nothing is being placed — what travels is the
-   read, and what says which read it is is the barcode. So the molecule
-   straightens and the blue leads, with the aligned end trailing.
+   AND THIS IS WHERE THE BLUE LEADS. On a gene the barcode end is the part with
+   no position and it stands off every axis that means one; on a track there is
+   no gene, what travels is the read, and the thing that says which read it is
+   is the barcode. So the blue lies along the track with its middle on it and
+   the aligned end takes over the pose the blue has just given up.
 
-   ITS FOOTPRINT IS THE LANE FIELD, AND THE FIELD IS E5's NOW. x1 to x1 + LANEX
-   in x, NLANE * LANEP across, measured off the ASSIGN belt — the tracks come
-   off the end of the step that decided which gene a read belongs to, not off
-   the one that decided where on the genome it sat. Those are numbers in
-   drawGeneBelt; move them and move this. */
-{id:"CB", key:"E6", group:"The chain", shape:"beltseg", noclip:true,
- follow:{a:"E5",dx:5.04},
- name:"Bucket by cell", x:30.0, y:R3, w:2.88, d:11.78, h:0.155,
+   SAME d AS THE TWO BELTS, on purpose: K comes off the depth, so a fragment
+   here is the same size as the one that was riding a gene next door. */
+{id:"CB", key:"E6", group:"The chain", shape:"tracks", noclip:true,
+ lane:"r3", gap:1.5,
+ name:"Bucket by cell", x:30.0, y:R3, w:5.4, d:6.6, h:0.62,
  sub:"one index · bc1_bc2_bc3__sublibrary",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",
  built:"For the worked example: split-pipe mode 'comb' over eight sublibraries. Cell ids come out as bc1_bc2_bc3__sublibrary — 01_01_05__s1 — so all four barcode rounds stay legible in the index itself.",

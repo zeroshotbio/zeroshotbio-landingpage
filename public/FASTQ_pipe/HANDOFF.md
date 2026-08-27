@@ -1383,101 +1383,56 @@ stop looking like the same conveyor.
 lands on a rail that is not where the rail is — that went wrong once already,
 when the port still divided by `BELTU`.
 
-## The end of the belt: the gene rolls off, the reads carry on
+## The end of the assign belt: the gene rolls off, and nothing is handed across
 
 **The model used to fade where the belt stops, which draws a thing being
-switched off.** It drops instead — `roll²`, so it accelerates — and the fade goes
-with it. `z` is the only axis this projection draws straight up, so a drop is the
-one movement that cannot be mistaken for anything else.
+switched off.** It drops instead — `roll²`, so it accelerates — and the fade
+goes with it. `z` is the only axis this projection draws straight up, so a drop
+is the one movement that cannot be mistaken for anything else. **Its reads go
+with it.**
 
-**What it was carrying does not go with it.** A gene is a place a read *was*; a
-lane is a read on its own, which is what everything after this station counts. The
-kept reads leave the model's `y`, drop to the deck and run out down one of five
-lanes. `rd.lane` is fixed at build — *a lane that reshuffles is a queue, and
-nothing here queues.*
+Nothing is carried to the next station. *Assignment ends with a read that has a
+gene, bucketing begins with a read that has a barcode, and between those two
+facts there is no conveyor* — so `E6` is its own machine and its reads rain onto
+it fresh. That is the same join `E4` → `E5` uses and the same one `E3` → `E4`
+has always used.
 
-### The two halves swap jobs, and nothing else turns
+## `drawTracks` — E6, thirty tracks and a rain onto them
 
-**The fragment keeps travelling the way it always did — forward, edge on.** What
-changes at the track is *which half is lying down*.
+**The tracks were the far end of the assign belt for a while**, which drew the
+reads being carried from one step to the next on one surface. They are not.
 
-On a gene the orange is the part with a position, so it lies on the model and
-the barcode end stands off every axis that means one. On a track there is no
-gene and nothing is being placed: what travels is the **read**, and the thing
+**They rain in the way they rained onto the models at `E4`**, and rain says
+something a fade alone does not: the reads arrive *from a population*, one at a
+time, in no order. One nozzle, up-track and above — *a spray whose own source is
+spread out is a shower*.
+
+**And this is where the blue leads.** On a gene the barcode end is the part with
+**no** position and it stands off every axis that means one. On a track there is
+no gene and nothing is being placed: what travels is the **read**, and the thing
 that says which read it is is the **barcode**. So the blue lies along the track
-with its **middle** on it — that is what a track holds — and the orange takes
-over the pose the blue has just given up, standing off it at exactly the angle
-the aerial had. *The part that could not say anything about position is the part
-that says which cell.*
+with its **middle** on it and the aligned end takes over the pose the blue has
+just given up. *The two swap, and the swap is the whole content of the step.*
 
-**`PT(gy, s)` is that turn.** `gy` is a point's y in the *gene's* frame, `s` is
-how far along the molecule it is, and `lane` slides between the two poses. `TD3`
-is the aerial's own direction, so the orange on a track and the blue on a belt
-are the same line at two moments. The splice arch flattens with `(1 - lane)`,
-because on a track there is no intron to arch over — and the tick fades out over
-the same turn: *a verdict is about a read's place on a model, and off the model
-there is no place for it to be about.*
+**Same `d` as the two belts**, so `K` — which comes off the depth — makes a
+fragment here the same size as the one that was riding a gene next door.
 
-### Thirty tracks, and the spread is set by the type
+### The tracks and their names
 
-A track only has to be as far from its neighbour as the barcode written above it
-is tall — the fragments on it are a bar a few hundredths of a unit wide and
-could be packed ten times closer. So `LANEP` is read off the label size and the
-field is as wide as it has to be.
+- **Spacing off the type.** A track only has to be as far from its neighbour as
+  the barcode written above it is tall; the fragments on it are a bar a few
+  hundredths of a unit wide and could be packed ten times closer.
+- **`rotate(30)`, not `−30`.** A track runs along **+x**, and +x goes *down* and
+  to the right on this projection; it is +y that goes up-right, which is why a
+  gene name is set at −30. At −30 the thirty labels ran across their own tracks.
+- **Appended last.** A fragment on a track stands its aligned end up and to the
+  left, which is exactly where its own name is — drawn first, a dozen of the
+  thirty were simply missing.
+- **Not equally busy.** A seeded weight per track raised to a power, so a few
+  take most of the traffic and some go whole passes empty. *Thirty equally fed
+  tracks draw a manifold, not a set of cells.*
 
-**The names ride in the text's own rotated frame at a negative `y`, so the track
-is the underline.** One object doing two jobs; the alternative is a second rule
-beside a line that already exists.
-
-Three things went wrong there and each is a rule:
-
-- **`rotate(30)`, not `-30`.** A track runs along **+x**, and +x on this
-  projection goes *down* and to the right; it is +y that goes up-right, which is
-  why every gene name on the belt is set at −30. At −30 the thirty labels ran
-  *across* their own tracks and came out separated by almost nothing
-  perpendicular: thirty strings on one diagonal, unreadable.
-- **They are appended last.** A fragment on a track stands its aligned end up and
-  to the left, which is exactly where its own name is. Drawn with the tracks,
-  every label under a fragment vanished and a dozen of the thirty were simply
-  missing. *Crossing a read costs a small grey mark nothing; being hidden costs
-  it everything.*
-- **The type has to fit the gap.** Thirty names at any comfortable size overlap
-  at map zoom, so the size is chosen to clear `0.5 · S · LANEP` and no larger. It
-  is a grey texture above the field when the map is fitted and thirty legible
-  barcodes when a reader is on the station.
-
-**And the tracks are not equally busy.** A seeded weight per track, raised to a
-power so the tail is long: a few take most of the traffic, most take a little,
-some go whole passes without a fragment. *Thirty equally fed tracks draw a
-manifold, not a set of cells.*
-
-### `E6` is the lane field, not a box after it
-
-Same move as `E5` one station earlier. **Bucketing by cell is not somewhere a
-read is taken**: it is what the reads *are* once they stop being marks on a
-gene — five lanes, each one a cell, and a read joins the lane its barcode
-already said it belonged to. The cube said the reads get collected and carried;
-the lanes say they were already sorted.
-
-Its footprint is the lane field — `x1` to `x1 + LANEX`, `NLANE · LANEP` across —
-and those are numbers in `drawBelts`. **`E7`'s gap went 0.8 → 2.6 and the lane
-and band grew to `47.0` / `49.5` to make room**: the next station on the row has
-to start *after* the field or it stands in the middle of the traffic, which is
-exactly where it stood on the first try.
-
-**Two visibilities, and they end in different places.** `vis` is the gene MODEL
-and fades at the belt's own end. `live` is the **group**, and has to outlast it,
-because the reads are drawn inside it and are still running when the model has
-gone. Keying `gn.hid` off `vis` put the lanes out with the gene that fed them.
-
-**`qs` spreads them along the lane, and it is one setting in two places.** Every
-read on a gene reaches the end at the same `x`; dropped straight in, five columns
-stack on one line and draw a queue. `qs` is a fixed share of the lane's length so
-each runs ahead by its own amount. **The spread and the fade threshold have to be
-set together** — at `0.86` of the lane against a fade starting at `0.70`, the
-reads that ran furthest ahead were gone before they were drawn.
-
-## The assignment reads louder
+## The assignment reads louder## The assignment reads louder
 
 - **The gene lights up**, and it is **one** box rather than one per exon: at ten
   genes and eight exons apiece the per-exon version is 240 more boxes to rewrite
