@@ -1540,7 +1540,7 @@ function drawBelts(g,n){
   /* the shower, the 3' bias and the stack — see the notes in the gene loop */
   const SHOWER_AT=0.402, SHOWER_W=0.040, FALL=0.052;
   const P3=0.55;                              /* share of reads primed at the tail */
-  const RSTEP=n.h*0.070;                      /* one row of the pile */
+  const RSTEP=n.h*0.105;                      /* one row of the pile */
 
   /* ---- the belt: scenery, and it should read as scenery -------------------
      OPAQUE, though. It was drawn through at 0.55 and 0.7, and a translucent
@@ -1709,11 +1709,35 @@ function drawBelts(g,n){
        is a fact about the chemistry drawn as a shape, and it is the one thing a
        flat pile could not say at all. */
     const STACK_GAP=RL*0.30;
-    { const rowEnd=[];
-      gn.reads.sort((a,b)=>a.start-b.start);
+    {
+      /* A PYRAMID, NOT A STAIRCASE. Packed in START order the pile climbs from
+         one end to the other: every row begins where the row below it left off,
+         which draws a flight of steps. A pile-up is not a flight of steps — it
+         is deep where the reads are and shallow where they are not, and the
+         shape of it IS the coverage.
+
+         So the order of insertion is by how contested a read's stretch is, not
+         by where it starts. Count each read's overlaps first; place the loneliest
+         ones first, so they take the ground floor and the ones in the thick of it
+         are forced upward over everything they cross. The densest stretch ends
+         up highest and the edges taper — which is the 3' peak drawn as a
+         silhouette rather than as a slope. */
+      gn.reads.forEach(rd=>{ rd.ov=0; });
+      for(let a=0;a<gn.reads.length;a++) for(let b=a+1;b<gn.reads.length;b++){
+        const A=gn.reads[a], B=gn.reads[b];
+        if(A.start<B.end+STACK_GAP && B.start<A.end+STACK_GAP){ A.ov++; B.ov++; }
+      }
+      gn.reads.sort((a,b)=>(a.ov-b.ov)||(a.start-b.start));
+      /* rows hold intervals rather than a high-water mark, because reads no
+         longer arrive in start order and a single end is not enough to test */
+      const rows=[];
       for(const rd of gn.reads){
-        let r=0; while(rowEnd[r]!==undefined && rowEnd[r]>rd.start) r++;
-        rowEnd[r]=rd.end+STACK_GAP; rd.row=r;
+        let r=0;
+        for(;;r++){
+          if(!rows[r]){ rows[r]=[]; break; }
+          if(!rows[r].some(iv=>rd.start<iv[1]+STACK_GAP && iv[0]<rd.end+STACK_GAP)) break;
+        }
+        rows[r].push([rd.start,rd.end]); rd.row=r;
       }
       /* BUILT IN ROW ORDER, because DOM order is paint order and a stack has
          to paint from the bottom up. Sorting the records after the elements
@@ -1729,8 +1753,13 @@ function drawBelts(g,n){
       if(rd.sp){
         rd.cd2=ggrp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",
           stroke:"none"}));
+        /* AS SOLID AS THE TWO HALVES IT JOINS. It was 1.0 wide at 0.55, which
+           is a sub-pixel stroke at map zoom held back on top of that — the arch
+           came out looking like a shadow of a read rather than part of one. It
+           is the same molecule as the blocks at its feet and it is drawn like
+           it. */
         rd.arc=ggrp.appendChild(el("path",{fill:"none",stroke:"var(--cull)",
-          "stroke-width":"1.0","stroke-opacity":"0","stroke-linecap":"round"}));
+          "stroke-width":"1.5","stroke-opacity":"0","stroke-linecap":"round"}));
       }
       /* THE DASH PATTERN IS SET PER FRAME, FROM THE SEGMENT'S OWN LENGTH. The
          unsequenced middle is a few pixels long at map zoom and a few more at
@@ -1776,6 +1805,12 @@ function drawBelts(g,n){
      a pixel of half-width is the difference between "deliberately slight" and
      "missing", and there is nothing to be gained by being right about the
      width of something nobody can see.
+
+     AND THE FLOOR HAS TO CLEAR A WHOLE PIXEL, not a fraction of one. At 0.42
+     of a half-width a read is 0.84px across, and a sub-pixel shape is drawn at
+     partial coverage — which looks exactly like a read with transparency on it,
+     because that is what partial coverage is. Nothing in this shape is
+     translucent; anything that looked it was being sampled rather than drawn.
 
      WHICH IS WHY THE READ GOES THROUGH HERE TOO, and why the floor is a
      parameter. The aligned half was a true quad and the aerial was floored, so
@@ -1887,12 +1922,12 @@ function drawBelts(g,n){
            aligner has anything to say about, and the only part drawn at full
            strength */
         if(rd.sp){
-          barTo(rd.cd ,RW,0.42,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
-          barTo(rd.cd2,RW,0.42,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
+          barTo(rd.cd ,RW,0.62,rx,yOf(rd.fA)+dy,z0,rx,yOf(rd.fA+rd.rlA)+dy,z0,op);
+          barTo(rd.cd2,RW,0.62,rx,yOf(rd.fB)+dy,z0,rx,yOf(rd.fB+rd.rlB)+dy,z0,op);
           /* and nothing at all over the intron between them */
-          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap,op*0.55);
+          archPath(rd.arc,rx,rd.gap[0],rd.gap[1],z0,dy,ARCH*flap,op*0.95);
         }else{
-          barTo(rd.cd,RW,0.42,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
+          barTo(rd.cd,RW,0.62,rx,yOf(rd.f)+dy,z0,rx,yOf(rd.f+RL)+dy,z0,op);
         }
         /* AND THE TAIL LEAVES THE GENE'S AXIS ALTOGETHER — up-belt and up, at
            the far end of whatever the orange did. Along the axis it read as
@@ -2296,25 +2331,28 @@ function drawSortingYard(g,n){
      Painter order wants the bin built last; the reject siding, which stops at
      the deck's edge, needs to know where that edge is before it is drawn. The
      two are separated rather than reordered. */
-  const BINX=FL+SC(0.9), BINY=SC(1.6);
-  const BY=REJ+SC(3.2), BINH=0.26*KZ, binTop=BINH;
-  const MOUTH=binX-BINX*0.34;                 /* where the blades bite */
-  /* the tip: y carries it over the edge, z drops it onto the mouth, and the
-     whole movement finishes just before the blades so the two stay legible as
-     two things */
-  /* TIPB IS WHERE THE LEADING END REACHES THE BLADES, not an arbitrary offset,
-     and that is the constraint the whole downstream half of this station is
-     laid out around. The fragment is FL long and travels along its own length,
-     so its nose is at cx + FL/2: the tip has to be finished by cx = MOUTH-FL/2
-     or the thing starts being eaten before it has left the deck. The first
-     version had TIPB at MOUTH-0.15 and every rejected fragment was consumed
-     entirely before the tip began, which drew nothing at all.
+  /* A PAIL WITH A SHREDDER HEAD ON IT, and the head is where the slot is. As
+     one slab it was a skip: a box you throw things into, which is a picture of
+     storage. The silhouette that says shredder is two boxes — a bin, and a
+     machine sitting across the top of it, wider than the bin so the join reads
+     as a lid rather than as a step. binTop IS that lid, and it has to stay
+     BELOW the height fragments ride at on the deck, or they climb into it. */
+  const BUCKX=FL*0.95, BUCKY=FL*0.55, BUCKH=0.46*KZ;
+  const HEADX=BUCKX*1.10, HEADY=BUCKY*1.14, HEADH=0.13*KZ;
+  const BY=REJ+SC(3.4), binTop=BUCKH+HEADH;
+  const SLOTX=HEADX*0.66, SLOTY=HEADY*0.26;
+  /* TIPB IS WHERE THE NOSE REACHES THE SLOT, and the whole downstream half of
+     this station is laid out backwards from it. It is not an offset from a
+     mouth any more — the nose is PLACED there by interpolation — so it only has
+     to be far enough back that the tip is not travelling backwards, and far
+     enough forward that the last gantry's divert is finished first.
 
-     Reading backwards from there: TIPA is a unit earlier, and the last gantry's
-     divert has to be complete before TIPA — which is what moved gx up-belt to
-     2.4/5.9/9.4 and MZ down to 2.6. Move any one of gx, MZ, binX or FLEN and
-     re-check TIPA > gx[2] + MZ. */
-  const TIPB=MOUTH-FL/2, TIPA=TIPB-SC(1.0);
+     An earlier version fed the fragment in sideways and put TIPB where its nose
+     met the blades; before that it put TIPB a hair before the blades, and every
+     rejected fragment was consumed entirely before its tip began — the fall was
+     in the code, ran every lap, and was never once visible. Move any one of gx,
+     MZ, binX or FLEN and RE-CHECK TIPA > gx[2] + MZ. */
+  const TIPB=binX-FL/2, TIPA=TIPB-SC(1.2), DIVEND=TIPB+SC(2.6);
 
   const DECK={top:"var(--t-top)",left:"var(--t-left)",right:"var(--t-right)"};
   const GAN ={top:"var(--k-top)",left:"var(--k-left)",right:"var(--k-right)"};
@@ -2463,7 +2501,7 @@ function drawSortingYard(g,n){
         x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
         "stroke-width":"1.7","stroke-opacity":"0.07"})),lit:-99});
     }
-    return {sx,i,slots,sw:-1,swY:cy,swX:sx};
+    return {sx,i,slots,sw:-1,swP:[sx,cy,0]};
   });
 
   /* ---- THE LASER, built after the scanners so it reads as light ----------
@@ -2507,9 +2545,9 @@ function drawSortingYard(g,n){
      discarding. Beyond the edge and lower, the last thing a rejected fragment
      does is leave the machine's own floor. Its top has to sit BELOW the height
      the fragments ride at, or they would climb into it. */
-  slabAt(g,binX,BY,BINX,BINY,BINH,BIN,0);
+  slabAt(g,binX,BY,BUCKX,BUCKY,BUCKH,BIN,0);
+  slabAt(g,binX,BY,HEADX,HEADY,HEADH,GAN,BUCKH);
   /* the slot the fragment goes into, inset in the top face */
-  const SLOTX=BINX*0.80, SLOTY=BINY*0.34;
   g.appendChild(el("polygon",{points:pts([
       P(binX-SLOTX/2,BY-SLOTY/2,binTop),P(binX+SLOTX/2,BY-SLOTY/2,binTop),
       P(binX+SLOTX/2,BY+SLOTY/2,binTop),P(binX-SLOTX/2,BY+SLOTY/2,binTop)]),
@@ -2554,7 +2592,7 @@ function drawSortingYard(g,n){
     lab(lx,ly,lz, "WHITELIST", FS.toFixed(1), "var(--fg2)", ".85", 30, "middle",
         (FS*1.85).toFixed(1));
   });
-  lab(binX-SC(1.5), BY+BINY/2+SC(0.85), 0, "NO MATCH",
+  lab(binX-SC(1.5), BY+HEADY/2+SC(0.85), 0, "NO MATCH",
       (FS*1.25).toFixed(1), "var(--rej)", "1", 30);
   /* PAST THE MOUTH OF THE BELT, not alongside it. Between the near rail and the
      reject siding there are 1.4 authored units and the siding's own fragments
@@ -2595,38 +2633,50 @@ function drawSortingYard(g,n){
      here and -x is up-left, so that is the way the near end swings. The
      fragment then travels along its own length, which is what lets the bin be
      a slot instead of a trough. */
+  /* ---- THE POSE: WHERE A BASE PAIR IS, THIS FRAME --------------------------
+     A fragment on this belt used to lie one way and one way only — broadside,
+     long in y — so a piece of it was a span of y at a fixed x. It now has three
+     poses and moves through all of them:
+
+       broadside   long in +/-y      the reading pose, under the scanners
+       end on      long in x         the discard pose, turned a quarter turn
+       standing    long in z         going down through the shredder's slot
+
+     So a piece is a segment between two base pairs along a direction, from an
+     anchor. PBP is which base pair the anchor IS, and that matters: through the
+     turn the fragment pivots about its MIDDLE, and going into the slot it
+     pivots about its NOSE, because a thing being fed into a machine turns about
+     the end that is already in it. */
   const HALFBP=YARD_MOL_BP/2;
-  const seg2=(bpA,bpB,cx,yc,rot)=>[
-    cx+rot*(bpA-HALFBP)*uBP, yc+(1-rot)*(FL/2-bpA*uBP),
-    cx+rot*(bpB-HALFBP)*uBP, yc+(1-rot)*(FL/2-bpB*uBP)];
+  let PA=[0,0,0], PD=[0,-1,0], PBP=HALFBP;
+  const ptOf=bp=>{ const k=(bp-PBP)*uBP;
+    return [PA[0]+k*PD[0], PA[1]+k*PD[1], PA[2]+k*PD[2]]; };
   /* CUTBP IS WHERE THE CUTTERS HAVE GOT TO, in the molecule's own base pairs.
      Anything past it has been through the blades and is not drawn. Fading the
      whole fragment out instead was the first attempt and it says the wrong
      thing: a discarded read does not get dimmer, it stops existing, and it
-     stops existing FROM THE END THAT WENT IN. Because the discard pose puts the
-     UMI end at +x and the slot is at +x, that end is the high-bp end, so the
-     clip is a single upper bound and needs no special case. */
+     stops existing FROM THE END THAT WENT IN — which is the high-bp end in
+     every pose, so the clip is a single upper bound and needs no special
+     case. */
   let CUTBP=Infinity;
-  const bar=(node,bpA,bpB,cx,yc,rot,zz,op,hw)=>{
-    const h=hw===undefined?THK/2:hw;
+  /* the width runs ACROSS the molecule in the ground plane, and falls back to y
+     when the molecule is standing on end and has no ground direction left */
+  const across=h=>{ const nh=Math.hypot(PD[0],PD[1]);
+    return nh>0.05?[-PD[1]/nh*h,PD[0]/nh*h]:[0,h]; };
+  const bar=(node,bpA,bpB,op,hw)=>{
     if(bpB>CUTBP) bpB=CUTBP;
     if(bpA>=bpB){ node.setAttribute("fill-opacity","0");
                   node.setAttribute("stroke-opacity","0"); return; }
-    const q=seg2(bpA,bpB,cx,yc,rot);
-    let dx=q[2]-q[0], dy=q[3]-q[1]; const L=Math.hypot(dx,dy)||1; dx/=L; dy/=L;
-    /* the perpendicular is taken in the GROUND PLANE, not on screen, so a bar
-       keeps its width in world units through the whole turn */
-    const nx=-dy*h, ny=dx*h;
-    node.setAttribute("points",pts([P(q[0]+nx,q[1]+ny,zz),P(q[2]+nx,q[3]+ny,zz),
-      P(q[2]-nx,q[3]-ny,zz),P(q[0]-nx,q[1]-ny,zz)]));
+    const a=ptOf(bpA), b=ptOf(bpB), n=across(hw===undefined?THK/2:hw);
+    node.setAttribute("points",pts([P(a[0]+n[0],a[1]+n[1],a[2]),P(b[0]+n[0],b[1]+n[1],b[2]),
+      P(b[0]-n[0],b[1]-n[1],b[2]),P(a[0]-n[0],a[1]-n[1],a[2])]));
     node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
     node.setAttribute("stroke-opacity",(clamp01(op)*0.5).toFixed(3));
   };
-  const rail=(node,bpA,bpB,cx,yc,rot,zz,op)=>{
+  const rail=(node,bpA,bpB,op)=>{
     if(bpB>CUTBP) bpB=CUTBP;
     if(bpA>=bpB){ node.setAttribute("stroke-opacity","0"); return; }
-    const q=seg2(bpA,bpB,cx,yc,rot);
-    const a=P(q[0],q[1],zz), b=P(q[2],q[3],zz);
+    const q=ptOf(bpA), r=ptOf(bpB), a=P(q[0],q[1],q[2]), b=P(r[0],r[1],r[2]);
     node.setAttribute("x1",a[0].toFixed(1)); node.setAttribute("y1",a[1].toFixed(1));
     node.setAttribute("x2",b[0].toFixed(1)); node.setAttribute("y2",b[1].toFixed(1));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
@@ -2657,43 +2707,63 @@ function drawSortingYard(g,n){
       /* the descent, exactly as before: it is the fragment that falls */
       const air=Math.pow(1-clamp01((fx-(x0-PAD))/(LANDX-(x0-PAD))),1.6);
       const zAir=FALLZ*air, xAir=-FALLX*air, cx=fx+xAir;
-      /* AND THE ONE AT THE END OF THE REJECT SIDING, which is the same thing in
-         the other direction: the fragment runs to the deck's near edge, tips
-         over it and drops onto the shredder standing on the floor. y carries it
-         over the edge and z takes it down, and the drop is squared because a
-         fall accelerates and a linear one reads as a lift lowering. */
-      const tip=fr.fail<0?0:sstep(TIPA,TIPB,fx);
-      const yc=(fr.fail<0?cy:rejY(fx,fr.fail))+(fr.fail<0?0:(BY-REJ)*tip);
-      const cz=zR-(zR-binTop)*tip*tip+zAir;
-      /* IT TURNS ON THE SAME CURVE IT PEELS OFF ON. The divert and the quarter
-         turn are one movement — a thing leaving a line swings round as it goes
-         — so rot rides rejY's own sstep rather than having a schedule of its
-         own, and the two can never come apart. */
-      const rot=fr.fail<0?0:sstep(gx[fr.fail]+SC(0.9),gx[fr.fail]+MZ,fx);
-
       let vis=Math.min(sstep(x0-PAD,x0-PAD+SC(0.4),fx),1-sstep(x1-SC(0.8),x1+SC(0.2),fx));
-      /* INTO THE CUTTERS AND GONE, END FIRST. The mouth is a fixed x; the
-         fragment arrives along its own length and everything past the mouth has
-         been through the blades. While any part of it is inside, the machine is
-         running. */
       CUTBP=Infinity;
-      if(fr.fail>=0){
-        CUTBP=(MOUTH-cx)/uBP+HALFBP;
-        if(CUTBP<YARD_MOL_BP && CUTBP>0) shredT=t;
+
+      if(fr.fail<0){
+        PBP=HALFBP; PD=[0,-1,0]; PA=[cx,cy,zR+zAir];
+      }else{
+        /* IT TURNS ON THE SAME CURVE IT PEELS OFF ON. The divert and the
+           quarter turn are one movement — a thing leaving a line swings round
+           as it goes — so rot rides rejY's own sstep rather than having a
+           schedule of its own, and the two can never come apart. */
+        const rot=sstep(gx[fr.fail]+SC(0.9),gx[fr.fail]+MZ,fx);
+        const tip=sstep(TIPA,TIPB,fx), yr=rejY(fx,fr.fail);
+        if(tip<=0){
+          /* still on the deck, mid-turn, pivoting about its middle. The axis is
+             NORMALISED — lerping the two components without it shortens the
+             fragment to 71% at the halfway point, which reads as the molecule
+             shrinking as it turns. */
+          const rx=rot, ry=-(1-rot), L=Math.hypot(rx,ry)||1;
+          PBP=HALFBP; PD=[rx/L,ry/L,0]; PA=[cx,yr,zR+zAir];
+        }else{
+          /* OVER THE EDGE AND DOWN THROUGH THE TOP, nose first and nose
+             anchored. The nose crosses to the slot over the tip, and then the
+             molecule stands up over it and feeds down: a shredder is loaded
+             through the hole in its lid, not through its side, and standing the
+             fragment on end is the only way in that reads as one.
+
+             The pivot is about the NOSE and not the middle, which is the whole
+             reason this looks like feeding rather than dropping: pivot about
+             the middle and the fragment has to RISE a full half-length to get
+             its nose to the slot, and that draws a fragment being lifted. */
+          const dv=sstep(TIPB,DIVEND,fx);
+          const th=Math.min(1,dv/0.5)*Math.PI/2, sn=Math.sin(th);
+          PBP=YARD_MOL_BP; PD=[Math.cos(th),0,-sn];
+          /* the descent overlaps the last of the stand-up, so the molecule is
+             already being eaten by the time it is upright and never stands as a
+             full-length needle over the machine */
+          const desc=clamp01((dv-0.28)/0.72), e=tip*tip;
+          PA=[cx+FL/2+(binX-(cx+FL/2))*tip,
+              yr+(BY-yr)*tip,
+              (zR+(binTop-zR)*e)-FL*desc];
+          if(sn>1e-3) CUTBP=YARD_MOL_BP+(PA[2]-binTop)/(uBP*sn);
+          if(CUTBP<YARD_MOL_BP && CUTBP>0) shredT=t;
+        }
       }
 
       /* the backbone runs the length of the barcode block; the middle is a
          dotted line because there is nothing in it to draw */
       const gapS=segAt("gap"), bcS=segAt("bc1"), umiS=segAt("umi");
-      rail(fr.bone,bcS[0],umiS[1],cx,yc,rot,cz,vis*0.30);
-      rail(fr.mid ,gapS[0],gapS[1],cx,yc,rot,cz,vis*0.45);
+      rail(fr.bone,bcS[0],umiS[1],vis*0.30);
+      rail(fr.mid ,gapS[0],gapS[1],vis*0.45);
 
       /* the cDNA is two fifths of the molecule and it is not what this station
          is about. Drawn at full strength it was the loudest thing on the belt
          and the barcodes read as trim on the end of an orange bar — so it is
          held back, present and in proportion but not the subject. */
       const cd=segAt("cdna");
-      bar(fr.cdna,cd[0],cd[1],cx,yc,rot,cz,vis*0.55);
+      bar(fr.cdna,cd[0],cd[1],vis*0.55);
 
       fr.bc.forEach((node,i)=>{
         const c=segAt(`bc${i+1}`);
@@ -2702,10 +2772,9 @@ function drawSortingYard(g,n){
         const bad=fr.fail===i&&scanned;
         const fl=Math.max(0,1-(t-fr.flash[i])/0.38);
         node.setAttribute("fill",bad?"var(--rej)":R2T);
-        bar(node,c[0],c[1],cx,yc,rot,cz,
-            vis*(bad?0.78:scanned?0.95:0.50)*(1+fl*0.30));
+        bar(node,c[0],c[1],vis*(bad?0.78:scanned?0.95:0.50)*(1+fl*0.30));
       });
-      bar(fr.umi,umiS[0],umiS[1],cx,yc,rot,cz,0);
+      bar(fr.umi,umiS[0],umiS[1],0);
       fr.umi.setAttribute("fill-opacity",(clamp01(vis*0.16)).toFixed(3));
       fr.umi.setAttribute("stroke-opacity",(clamp01(vis*0.8)).toFixed(3));
 
@@ -2731,8 +2800,8 @@ function drawSortingYard(g,n){
         const age=t-fr.flash[i];
         if(fr.flash[i]<0||age<0){ mk.setAttribute("stroke-opacity","0"); return; }
         if(BCBP[i]>CUTBP){ mk.setAttribute("stroke-opacity","0"); return; }
-        const q=seg2(BCBP[i],BCBP[i],cx,yc,rot);
-        const a=P(q[0],q[1],cz+0.5*KZ);
+        const q=ptOf(BCBP[i]);
+        const a=P(q[0],q[1],q[2]+0.5*KZ);
         const pop=age<0.11?0.55+1.0*(age/0.11):1.15-0.15*Math.min(1,(age-0.11)/0.14);
         const op=(age<0.08?age/0.08:1);
         mk.setAttribute("transform",
@@ -2741,7 +2810,7 @@ function drawSortingYard(g,n){
       });
       stations.forEach((st,i)=>{
         if(vis>0.5 && (fr.fail<0||i<=fr.fail) && Math.abs(fx-st.sx)<LASW){
-          st.sw=(fx-(st.sx-LASW))/(2*LASW); st.swY=yc; st.swX=cx;
+          st.sw=(fx-(st.sx-LASW))/(2*LASW); st.swP=ptOf(BCBP[i]);
         }
       });
       fr.px=fx;
@@ -2750,8 +2819,6 @@ function drawSortingYard(g,n){
     for(const st of stations){
       if(st.sw<0){ st.beam.setAttribute("stroke-opacity","0");
                    st.spot.setAttribute("fill-opacity","0"); continue; }
-      /* THE AIM IS FIXED: this station's own square, and the fragment's own
-         line — which is the reject siding once it has begun to leave. */
       /* IT DROPS ON THE BLOCK, NOT ON THE STATION.
          Standing at the arch's own x the beam was only ON its target for the
          instant the fragment was exactly under the arch; either side of that it
@@ -2759,9 +2826,13 @@ function drawSortingYard(g,n){
          read as a zap that missed. The face is PANW wide, so a beam leaving any
          point on its underside is the same machine — aiming it at the block
          keeps it locked on for the whole pass, which is what a reader does.
-         The mark still fires later, at FIREAT: scan, then answer. */
-      const yb=yBP(st.swY, BCBP[st.i]), xb=st.swX;
-      const a=P(xb,yb,base+panelZ), b=P(xb,yb,base);
+         The mark still fires later, at FIREAT: scan, then answer.
+
+         And it takes the block's POINT rather than a line and a lookup: the
+         fragment's pose is only knowable while its own turn of the loop is
+         running, so the aim is captured there. */
+      const q=st.swP;
+      const a=P(q[0],q[1],base+panelZ), b=P(q[0],q[1],base);
       st.beam.setAttribute("x1",a[0].toFixed(1)); st.beam.setAttribute("y1",a[1].toFixed(1));
       st.beam.setAttribute("x2",b[0].toFixed(1)); st.beam.setAttribute("y2",b[1].toFixed(1));
       /* BRIGHTEST WHEN THE SQUARE IS DIRECTLY BENEATH, which is what sin(pi*u)

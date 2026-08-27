@@ -718,6 +718,34 @@ deep where the oligo-dT reads pile up, a single layer along the body. That is a
 fact about the chemistry drawn as a shape, and it is the one thing a flat pile
 could not say at all.
 
+### A pyramid, not a staircase
+
+Packed in **start** order the pile climbs from one end to the other: every row
+begins where the row below it left off, which draws a flight of steps. A pile-up
+is not a flight of steps — it is deep where the reads are and shallow where they
+are not, and *the shape of it is the coverage*.
+
+So the order of insertion is **how contested a read's stretch is**, not where it
+starts. Count each read's overlaps first, place the loneliest ones first so they
+take the ground floor, and the ones in the thick of it are forced upward over
+everything they cross. The densest stretch ends up highest and the edges taper.
+
+Rows hold **intervals** rather than a high-water mark, because reads no longer
+arrive in start order and a single end is not enough to test against.
+
+### Nothing here is translucent, and anything that looked it was sub-pixel
+
+The splice arch was `1.0` wide at `0.55` opacity — a sub-pixel stroke held back
+on top of being sub-pixel — and it came out looking like a *shadow* of a read
+rather than part of one. It is the same molecule as the blocks at its feet and
+it is drawn like it: `1.5` at `0.95`.
+
+The reads themselves needed the pixel floor raised to `0.62` for the same
+reason. **At `0.42` of a half-width a read is 0.84px across, and a sub-pixel
+shape is drawn at partial coverage — which looks exactly like a read with
+transparency on it, because that is what partial coverage is.** Before reaching
+for an opacity, check whether the thing is under a pixel wide.
+
 **`P3` IS NOT A MEASURED PROFILE AND MUST NOT BE LABELLED AS ONE.** Nothing on
 this page is modelled; this is a drawing decision with a stated reason, in the
 same class as the exon layout it lands on. A real coverage profile needs the
