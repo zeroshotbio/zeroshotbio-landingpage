@@ -2864,9 +2864,9 @@ function drawDedup(g,n){
 
      The fractions are of one lap. Nothing is tuned to taste: the dwell has to
      be shorter than the gap between two reads on a lane, or two of them are
-     stopped under the beam at once and the queue reads as a pile-up. Five reads
-     a lane puts them 0.2 apart; the whole stop, from arrival to departure, is
-     0.17. */
+     stopped under the beam at once and the queue reads as a pile-up. Three or
+     four reads a lane puts them 0.25 apart at worst; the whole stop, from
+     arrival to departure, is 0.17. */
   const APP=0.40,      /* rolling in, decelerating into the stop */
         SCN=0.50,      /* stopped, the beam sweeping the barcode end */
         VER=0.57,      /* stopped, the answer showing */
@@ -2904,14 +2904,20 @@ function drawDedup(g,n){
   const lanes=[];
   { let c=Math.floor(rnd()*9000)+1200;
     for(let k=0;k<NL;k++){
-      /* SIX TO EIGHT, WHICH THE OLD CEILING OF THREE COULD NOT AFFORD. The cap
-         was set by the labels: every first sighting is drawn twice, and ten
-         gene names across two rails did not fit a lap. Without the writing the
-         limit is the fragment, which is now a third as long — and the traffic
-         is worth having, because the thing this field has to show is that ONE
-         ROAD CARRIES MORE THAN THE OTHER. Two fragments a lane cannot show a
-         difference in density; seven can. */
-      const m=6+Math.floor(rnd()*3);
+      /* THREE OR FOUR, AND THE STOP IS WHAT SETS IT.
+
+         Six to eight fitted the TRACK — the fragment is short and the lap is
+         long — but not the SCANNER. A read holds the beam for 0.17 of a lap
+         from arrival to departure, and reads on a lane sit 1/m apart: at seven
+         that is 0.14, so the next one arrived before the last had left and two
+         fragments stood in the same place looking like one confused object. At
+         four the gap is 0.25 and the beam is clear between every pair.
+
+         THE QUEUE IS THE CONSTRAINT, NOT THE RAIL. Anything that lengthens the
+         stop — a longer scan, a longer look at the answer — has to come out of
+         the traffic, and anything that adds traffic has to come out of the
+         stop. */
+      const m=3+Math.floor(rnd()*2);
       const g1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const g2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const pools={};

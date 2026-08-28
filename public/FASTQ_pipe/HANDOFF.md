@@ -1624,10 +1624,8 @@ third-length fragment is a short solid bar rather than a hairline.
 884,736; saying it a second time over the top of the fork is the same fact
 competing with the only new one.
 
-**Six to eight reads a lane, up from three.** The old cap was set by the labels.
-Without them the limit is the fragment, and the traffic is worth having — *the
-thing this field has to show is that one road carries more than the other*, and
-two fragments a lane cannot show a difference in density.
+**Three or four reads a lane.** The traffic is set by the scanner's dwell, not by
+how much fits on the rail — see *One cycle* below.
 
 **The fork doubles the field.** Ten lanes in, twenty out, at the same pitch, so
 `n.d` is exactly twice `E6`'s. Each lane's pair straddles **exactly twice** its
@@ -1673,9 +1671,18 @@ fragment nobody looked at.*
 | `SPL → END` (0.96) | out to the far end — **where the count ticks** |
 
 - **The dwell must be shorter than the gap between two reads on a lane**, or two
-  are stopped under the beam at once and the queue reads as a pile-up. Five
-  reads a lane puts them 0.2 apart; the whole stop is 0.17. **Phases are exactly
-  even, no jitter** — the spacing is load-bearing, not decoration.
+  are stopped under the beam at once and the queue reads as a pile-up. **Phases
+  are exactly even, no jitter** — the spacing is load-bearing, not decoration.
+- **Three or four reads a lane, and the stop is what sets it.** Six to eight fit
+  the *track* — the fragment is short and the lap is long — but not the
+  *scanner*: at seven, reads sit 0.14 apart against a 0.17 stop, so the next one
+  arrives before the last has left and two fragments stand in the same place
+  looking like one confused object. At four the gap is 0.25 and the beam is
+  clear between every pair.
+
+> **The queue is the constraint, not the rail.** Anything that lengthens the stop
+> — a longer scan, a longer look at the answer — has to come out of the traffic,
+> and anything that adds traffic has to come out of the stop.
 - **The braking is confined to the last fifth of the run.** A single ease-out
   over the whole approach covers nine tenths of the distance in half the time,
   so every read spent its run-in loitering by the beam and the first half of
