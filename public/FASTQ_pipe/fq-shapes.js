@@ -2418,7 +2418,12 @@ function drawTracks(g,n){
      TWENTY TRACKS AT THIS SPACING is what fits between the row above and the
      band; more tracks means a narrower gap and a name over somebody else's
      line. */
-  const NT=20, TP=n.d*0.94/NT;
+  /* TEN, HALVED FROM TWENTY. E7 forks every one of these into two at the same
+     pitch, so twenty here would be forty there — at half the spacing, with the
+     split as the one thing on the page you could not see. The point about
+     emptiness survives the halving: it is the RATIO of empty lanes that says
+     it, not the count. */
+  const NT=10, TP=n.d*0.94/NT;
   const trackY=k=>cy+(k-(NT-1)/2)*TP;
   /* THREE SIZES, AND EACH IS SET BY WHAT IT HAS TO SIT OVER.
        CAP  the field's one caption, biggest, because it is read once
@@ -2761,79 +2766,81 @@ DRAW.tracks=drawTracks;
 
 
 /* ============================================================
-   E7 · DEDUPLICATE UMIs — the fork
+   E7 · DEDUPLICATE UMIs — E6's field, forked
 
-   THE ONLY MERGE ON THE MAP, AND IT MUST NOT LOOK LIKE A REJECT.
-   Three stations have already thrown things away: E3 shreds reads whose
-   barcode is not on a whitelist, E5 shunts reads that landed on no gene. Those
-   are errors and they are drawn as errors — a cull colour, a bin, a chute.
+   IT IS E6's FIELD AND NOT A NEW ONE. Same lane pitch, same read at the same
+   size, same three type sizes, same cell names on the same rails. A reader who
+   has just understood E6 should not have to learn a second machine to read
+   this one — the only new thing here is what happens at the fork, and every
+   other difference would be noise competing with it.
 
-   A DUPLICATE IS NOT AN ERROR AND WAS NEVER WRONG. It is one molecule
-   photographed twice. So there is no bin here and nothing is discarded: the
-   lane FORKS, and the two roads keep two different true things.
+   THE FORK DOUBLES THE FIELD. Ten lanes come in; twenty go out, at the same
+   pitch, so the element is literally twice as wide downstream as upstream. Each
+   lane splays into its own pair and the pair keeps the parent's place: the
+   children of lane k straddle exactly twice k's offset from the centre line, so
+   the fan is a doubling and not a reshuffle. That is why E6 dropped to ten
+   lanes — twenty in would be forty out, at half the pitch, and the split would
+   be the one thing on the page you could not see.
 
-     UPPER ROAD, READS      every observation, always
-     LOWER ROAD, MOLECULES  every distinct thing observed
+   THE ONLY MERGE ON THE MAP, AND IT MUST NOT LOOK LIKE A REJECT. E3 shreds
+   reads whose barcode is on no whitelist and E5 shunts reads that landed on no
+   gene; both use the cull colour and a chute. A duplicate is neither. It is one
+   molecule photographed twice, so nothing here is binned and nothing is thrown
+   away — the lane forks and both roads carry something true.
 
-   The upper road is the straight-through continuation, because every read
-   takes it; the lower road is the one that has to be earned. A read that the
-   scanner has not seen before DUPLICATES at the fork and takes both. A read it
-   has seen takes the upper road alone. Two counters at the end of each lane
-   climb together and then visibly part, and THE GAP THAT OPENS IS PCR
-   DUPLICATION — nothing about it is a mistake.
+     READS      every observation, always
+     MOLECULES  every distinct thing observed
 
-   AND THE KEY IS ALL THREE FACTS. The same UMI on a different gene is a
-   different molecule, so the scanner keys on cell AND gene AND UMI. A couple of
-   lanes are seeded with exactly that case — one UMI, two genes, both first
-   sightings, both taking the lower road — because it is the only way to draw
-   the difference between keying on three things and keying on one.
+   TWO TOKENS AND NO NEW HUE. The reads lane is --fg2, plain, because an
+   observation carries no encoding: it is a count of things that happened. The
+   molecules lane is --accent, which is the UMI's own colour and has been since
+   E2 — and a molecule is distinct exactly when its UMI is. Neither is --ok or
+   --cull, because neither road is a verdict.
    ============================================================ */
 function drawDedup(g,n){
   hitBox(g,n);
   const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
   const rnd=mulberry32(0x5eedf15^0xD7);
   const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
-  /* the same split as E6: n.gd sizes the molecule, n.d spreads the field */
+  /* every one of these is E6's, unchanged */
   const K=(n.gd||n.d)*0.1053, KZ=n.h/0.53;
   const base=n.h*0.245, GL=(n.gd||n.d)*0.70;
   const RTOT=0.145, RL=RTOT*64/154, RG=RTOT*32/154, RB=RTOT*58/154;
   const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
   const TDIR=[-0.86,0.51];
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
-  /* HALF E6'S SIZE, AND THE ARITHMETIC IS FORCED. There are twice as many
-     bodies here — every first sighting is drawn twice — on two decks per lane,
-     and each body carries an aerial that stands up and a gene name above that.
-     Stack all of it at E6's scale and one lane's read puts its name through the
-     lane above it. What has to fit inside one lane's clear air is: the upper
-     read's aerial and label, the drop to the lower deck, and the lower read's
-     own body. At 1.45 that comes to about forty-four screen units and the lane
-     pitch is set to clear it. */
-  const RS=1.45;
+  const RS=2.9;
   const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
   const v=(n.v||1.62)*K;
-
   const GFS=Math.max(6,10.4*K);
-  const LFS=Math.max(3.4,GFS*0.48), GLS=LFS*1.35, CFS=LFS*1.5, NFS=LFS*1.85;
+  /* THE ONE TYPE SIZE THAT IS NOT E6's. The gene name is twice the UMI there,
+     which is right when a lane carries one read at a time. Here every lane's
+     neighbour carries that read's own copy, so the gene names arrive in pairs
+     one pitch apart and at double size they land on each other's rails. Read
+     size, lane pitch, cell name and UMI are all E6's; this one is the price of
+     the fork. */
+  const LFS=Math.max(4.4,GFS*0.70), GLS=LFS*2, CFS=LFS*1.8, NFS=CFS*0.92;
 
-  /* HALF E6'S LANES, because each one is now two roads and a pair of counters.
-     Twenty tracks of that would be a wall of type, and the fork is the subject
-     here — not the emptiness, which E6 already said and does not need saying
-     twice. */
-  const NL=11, LP=n.d*0.94/NL;
-  const laneY=k=>cy+(k-(NL-1)/2)*LP;
+  /* TEN IN, TWENTY OUT, AT ONE PITCH. n.d is the field AFTER the fork, so the
+     incoming half sits at twice the spacing and the children land exactly where
+     the pitch says they should. */
+  const NL=10, NO=NL*2, TP=n.d*0.94/NO;
+  const yOut=j=>cy+(j-(NO-1)/2)*TP;
+  const yIn =k=>cy+(2*k+1-NL)*TP;          /* = half-way between its children */
   const lz=base+n.h*0.05;
-  /* THE DECKS ARE SEPARATED IN z AND NOT IN y, so that one road is literally
-     above the other and neither is up-field of the other: they are two answers
-     to the same question, not two stages of one. */
-  const RH=0.80, uz=lz+RH;
-  const FORK=x0+span*0.30, RAMP=span*0.10, RAILEND=x1-2.5;
-  /* THE RAIL STARTS BEFORE THE READS DO, and that stretch is the cell's name.
-     A name and a read on the same line at the same moment is the one collision
-     a lane cannot spare, and the cheapest fix is a piece of rail no read is
-     ever on. */
-  const LANE0=x0-1.9;
-  const PIN=0.6, POUT=0.35, LOOP=(RAILEND-x0)+PIN+POUT;
+
+  const LANE0=x0-2.0;
+  /* A LONG SPLAY AND A LAGGING COPY. The children sit one pitch apart, which is
+     E6's pitch and holds exactly one read and its two labels — so a copy
+     travelling abreast of the read it came from puts its gene name through that
+     read's own rail. LAG drops it about a read-length behind, which reads as it
+     having taken the longer way round the fork and gives both of them their
+     own air. */
+  const FORK=x0+span*0.24, SPLAY=span*0.22, OUT=FORK+SPLAY, LAG=1.72;
+  const RAILEND=x1-2.9;
+  const PIN=0.5, POUT=0.4, LOOP=(RAILEND-x0)+PIN+POUT;
   const forkU=(FORK-(x0-PIN))/LOOP;
+  const COLR="var(--fg2)", COLM="var(--accent)";
 
   const line=(a,b,col,w,op,dash)=>{
     const p1=P(a[0],a[1],a[2]), p2=P(b[0],b[1],b[2]);
@@ -2843,20 +2850,27 @@ function drawDedup(g,n){
     if(dash) at["stroke-dasharray"]=dash;
     return g.appendChild(el("line",at));
   };
-
   const labs=[];
-  const fmt=v2=>String(v2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const fmt=q=>String(q).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+  const say=(x,y,txt,col,size,op,anchor,dy)=>{
+    const a=P(x,y,lz);
+    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+      y:(dy||0).toFixed(1),"text-anchor":anchor||"start","font-family":MONO,
+      fill:col,"font-size":size.toFixed(1),"font-weight":"600","fill-opacity":op});
+    t2.textContent=txt; labs.push(t2); return t2;
+  };
 
-  /* ---- the lanes, their roads, and what is in them ------------------------ */
+  /* ---- what is in each lane ---------------------------------------------- */
   const BASES="ACGT";
   const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
   const lanes=[];
   { let c=Math.floor(rnd()*9000)+1200;
     for(let k=0;k<NL;k++){
-      /* THREE TO FIVE READS A LAP. It is what fits with their labels, and it is
-         enough: what has to be legible is that some of them fork and some do
-         not, which needs a handful, not a crowd. */
-      const m=3+Math.floor(rnd()*3);
+      /* THREE OR FOUR, AND THAT IS THE CEILING. Every first sighting is drawn
+         twice, so a lane of six is ten bodies with ten gene names across two
+         rails — and at E6's read size, which is the whole point of this being
+         E6's field, ten of them do not fit a lap. */
+      const m=3+Math.floor(rnd()*2);
       const g1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const g2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const pools={};
@@ -2866,123 +2880,82 @@ function drawDedup(g,n){
         return q[Math.min(q.length-1,Math.floor(Math.pow(rnd(),1.7)*q.length))]; };
       const seq=[];
       for(let j=0;j<m;j++){ const gn=(rnd()<0.72?g1:g2); seq.push({gn,umi:umiFor(gn)}); }
-      /* THE SEEDED CASE, in about a third of the lanes: one UMI carried by two
-         different genes. Both are first sightings and both fork, which is the
-         whole difference between keying on three facts and keying on the UMI
-         alone — and it cannot be shown by accident, so it is placed. */
-      if(m>=4 && rnd()<0.34 && g1!==g2){ seq[m-1]={gn:g2, umi:seq[0].umi, twin:true}; }
+      /* ONE UMI ON TWO GENES, placed in about a third of the lanes. Both are
+         first sightings and both fork, and it is the only way to draw the
+         difference between keying on three facts and keying on the UMI alone —
+         it cannot happen by accident often enough to read. */
+      if(rnd()<0.34 && g1!==g2) seq[m-1]={gn:g2, umi:seq[0].umi};
       const seen=new Set();
       for(const r of seq){ const key=r.gn+"|"+r.umi;
         r.first=!seen.has(key); seen.add(key); }
-      /* AND EVERY LANE HAS AT LEAST ONE REPEAT. Drawn from a pool, a short lane
-         sometimes comes out all-distinct, and a lane whose two counters climb
-         together says the opposite of what this node is for — it draws a
-         library with no duplication at all, which is not a thing that happens.
-         One forced repeat is the floor, not a thumb on the scale. */
-      if(seq.every(r=>r.first) && seq.length>1){
-        seq[seq.length-1]={gn:seq[0].gn, umi:seq[0].umi, first:false}; }
+      /* AND EVERY LANE HAS AT LEAST ONE REPEAT. A lane whose two counters climb
+         together draws a library with no duplication at all, which is not a
+         thing that happens. A floor, not a thumb on the scale. */
+      if(seq.every(r=>r.first) && seq.length>1)
+        seq[seq.length-1]={gn:seq[0].gn, umi:seq[0].umi, first:false};
       lanes.push({cell:c, seq, m});
       c+=Math.floor(1+rnd()*90000);
     } }
 
+  /* ---- the rails, the fan, and what each lane is called -------------------- */
   for(let k=0;k<NL;k++){
-    const y=laneY(k), ln=lanes[k];
-    /* the run-in, then the two roads. The upper is the straight continuation of
-       the run-in because every read stays on it; the lower has to be reached. */
-    line([LANE0,y,uz],[FORK,y,uz],"var(--fg3)",1.8,".40");
-    line([FORK,y,uz],[RAILEND,y,uz],"var(--fg3)",1.8,".40");
-    line([FORK+RAMP,y,lz],[RAILEND,y,lz],"var(--fg3)",1.8,".34");
-    /* the ramp down off the fork: dotted, because it is a copy being made and
-       not a thing travelling */
-    line([FORK,y,uz],[FORK+RAMP,y,lz],"var(--fg3)",1.3,".28","2.5 2.5");
-    /* AND A TIE AT THE FAR END JOINING THE TWO DECKS. Without it a lower road
-       reads as the upper road of the next lane down — the drop is a screen
-       offset like any other, and nothing says the two rails are one lane's two
-       answers. The tie and the ramp bracket them. */
-    line([RAILEND,y,uz],[RAILEND,y,lz],"var(--fg3)",1.1,".26");
-    /* the cell, small — E6 named it properly and this is only which lane */
-    { const a=P(LANE0,y,uz);
-      const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-        x:(CFS*0.4).toFixed(1), y:(-CFS*0.42).toFixed(1),
-        "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
-        "font-size":CFS.toFixed(1),"font-weight":"500","fill-opacity":".52"});
-      t2.textContent="cell "+fmt(ln.cell); labs.push(t2); }
+    const yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
+    line([LANE0,yi,lz],[FORK,yi,lz],"var(--fg3)",1.8,".40");
+    line([FORK,yi,lz],[OUT,yr,lz],COLR,1.6,".34");
+    line([FORK,yi,lz],[OUT,ym,lz],COLM,1.6,".34");
+    line([OUT,yr,lz],[RAILEND,yr,lz],COLR,1.8,".46");
+    line([OUT,ym,lz],[RAILEND,ym,lz],COLM,1.8,".46");
+    /* the cell, on the stretch of rail no read is ever on */
+    say(LANE0,yi,"cell "+fmt(lanes[k].cell),"var(--fg3)",CFS,".58","start",-CFS*0.42);
+
   }
 
-  /* ---- the scanner over the fork ------------------------------------------
-     One question, asked once, of everything that passes: HAVE I SEEN THIS CELL
-     AND THIS GENE AND THIS UMI BEFORE. It is built like E3's — one post, a
-     cantilevered beam — because it is the same kind of machine: a lookup
-     against a memory, not a judgement. */
-  const yTop=laneY(0)-LP*0.9, yBot=laneY(NL-1)+LP*0.9;
-  const BZ=uz+0.95, POSTW=0.10;
-  { const bw=0.16;
-    /* the beam across every lane */
-    line([FORK,yTop,BZ],[FORK,yBot,BZ],"var(--fg2)",5.2,".70");
-    /* the one post, at the near end */
-    line([FORK,yTop,BZ],[FORK,yTop,base],"var(--fg3)",3.0,".45");
-    const a=P(FORK,yTop-LP*0.35,BZ);
+  /* ---- the scanner --------------------------------------------------------
+     One question, asked once, of everything that passes. Built like E3's: a
+     beam on a single post at the near end, cantilevered over the lanes.
+     ITS CAPTION IS SET OUTBOARD OF THE POST and up, clear of the beam, of the
+     lanes and of the fan — written over its own machine it was unreadable, and
+     a question nobody can read is a question the drawing is not asking. */
+  const yTop=yIn(0)-TP*1.5, yBot=yIn(NL-1)+TP*1.5;
+  const BZ=lz+1.15;
+  line([FORK,yTop,BZ],[FORK,yBot,BZ],"var(--fg2)",5.0,".62");
+  line([FORK,yTop,BZ],[FORK,yTop,base],"var(--fg3)",3.2,".42");
+  { const a=P(FORK,yTop-TP*2.2,BZ+1.5);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
       "text-anchor":"end","font-family":MONO,fill:"var(--fg2)",
-      "font-size":(LFS*1.15).toFixed(1),"font-weight":"700",
-      "letter-spacing":(LFS*0.05).toFixed(2),"fill-opacity":".70"});
-    t2.textContent="cell + gene + UMI · seen before?"; labs.push(t2); }
-  /* one light per lane, lit while something is under it */
+      "font-size":(CFS*0.86).toFixed(1),"font-weight":"700",
+      "letter-spacing":(LFS*0.06).toFixed(2),"fill-opacity":".80"});
+    t2.textContent="cell + gene + UMI · seen before?"; labs.push(t2);
+    /* a hairline from the words down to the beam, so the caption is attached
+       to the machine it belongs to rather than floating beside it */
+    line([FORK,yTop-TP*2.0,BZ+1.36],[FORK,yTop-TP*0.06,BZ],"var(--fg3)",1.0,".34"); }
   const lamps=[];
   for(let k=0;k<NL;k++)
-    lamps.push(line([FORK,laneY(k),BZ],[FORK,laneY(k),uz],"var(--fg)",1.6,"0"));
+    lamps.push(line([FORK,yIn(k),BZ],[FORK,yIn(k),lz],"var(--fg)",1.6,"0"));
 
-  /* ---- the two decks, named once each -------------------------------------
-     Once, and not per lane: eleven pairs of the same two words is a wall, and
-     the geometry says which road is which after the first reading. */
-  const deck=(z,txt,op)=>{
-    /* SET WELL DOWN-FIELD OF THE FORK. Named at the fork they sit on top of the
-       node's own name, which lives at the near corner — two headings in one
-       place, one of them the station's and one of them a road's. */
-    const a=P(FORK+RAMP+span*0.34, yTop-LP*0.10, z);
-    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-      "text-anchor":"start","font-family":MONO,fill:"var(--fg2)",
-      "font-size":(LFS*1.5).toFixed(1),"font-weight":"700",
-      "letter-spacing":(LFS*0.10).toFixed(2),"fill-opacity":op});
-    t2.textContent=txt; labs.push(t2); };
-  deck(uz,"READS · every observation",".78");
-  deck(lz,"MOLECULES · every distinct one",".78");
-
-  /* ---- the counters -------------------------------------------------------
-     The words on the near lane only and bare numbers under it, the way a table
-     puts its header in one row. Each number sits at the end of the road it
-     counts, so nothing has to say which is which. */
+  /* ---- the counters ------------------------------------------------------- */
+  /* THE WORD AND THE NUMBER TOGETHER, PAST THE END OF THE RAIL. Every output
+     lane says which it is, in its own colour — but at the far end, where no read
+     ever goes. Written along the rail instead it sat in the traffic, and twenty
+     more words in the one part of the field that is already carrying a gene name
+     and a UMI per read is the difference between busy and unreadable. */
   const cnt=[];
-  for(let k=0;k<NL;k++){
-    const mk=(z,lead)=>{
-      const a=P(RAILEND+0.62,laneY(k),z);
-      const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-        y:(NFS*0.34).toFixed(1),
-        "text-anchor":"start","font-family":MONO,fill:"var(--fg2)",
-        "font-size":NFS.toFixed(1),"font-weight":"700","fill-opacity":".82"});
-      labs.push(t2); return {node:t2,lead};
-    };
-    cnt.push({r:mk(uz,k===0?"READS ":""), m:mk(lz,k===0?"MOLECULES ":"")});
-  }
+  for(let k=0;k<NL;k++)
+    cnt.push({r:say(RAILEND+0.34,yOut(2*k),"READS",COLR,NFS,".85","start",NFS*0.36),
+              m:say(RAILEND+0.34,yOut(2*k+1),"MOLECULES",COLM,NFS,".85","start",NFS*0.36)});
 
-  /* ---- the reads ----------------------------------------------------------
-     Every read gets an upper body. A FIRST SIGHTING ALSO GETS A LOWER ONE, and
-     the lower one does not exist before the fork: it fades up as it comes down
-     the ramp, because that is the moment the copy is made. */
+  /* ---- the reads ---------------------------------------------------------- */
   const ANGB=(()=>{ const o=P(0,0,0), u=P(1,0,0);
     return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
   const ANGO=(()=>{ const o=P(0,0,0), u=P(-TDIR[0],0,-TDIR[1]);
     return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
-
-  const body=()=>{
-    const grp=g.appendChild(el("g"));
+  const body=()=>{ const grp=g.appendChild(el("g"));
     return {
       cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
       ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
         "stroke-opacity":"0","stroke-linecap":"butt"})),
       bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
-    };
-  };
+    }; };
   const mkLab=(sz,col,txt)=>{ const t2=el("text",{"text-anchor":"start",
     "font-family":MONO,"font-size":sz.toFixed(1),"font-weight":"700",fill:col,
     "fill-opacity":"0"}); t2.textContent=txt; labs.push(t2); return t2; };
@@ -2990,7 +2963,14 @@ function drawDedup(g,n){
   const reads=[];
   lanes.forEach((ln,k)=>{
     ln.seq.forEach((r,j)=>{
-      const rd={tk:k, ph:(j+0.5+(rnd()-0.5)*0.4)/ln.m, first:r.first,
+      /* AND EACH LANE'S STREAM IS OFFSET FROM ITS NEIGHBOUR'S. Left to
+         themselves the lanes fall into step — every lane the same handful of
+         reads spread evenly round the same lap — and reads on neighbouring
+         rails arrive abreast, which is exactly when one read's gene name lands
+         on the next rail's UMI. A per-lane turn of the phase interleaves them,
+         and 0.41 of a lap is far enough from a half and a third that ten lanes
+         never come back into step. */
+      const rd={tk:k, ph:((j+0.5+(rnd()-0.5)*0.4)/ln.m + k*0.41)%1, first:r.first,
         A:body(), B:r.first?body():null,
         tgA:mkLab(GLS,"var(--ok)",r.gn), tuA:mkLab(LFS,"var(--accent)",r.umi)};
       if(r.first){ rd.tgB=mkLab(GLS,"var(--ok)",r.gn);
@@ -3018,8 +2998,8 @@ function drawDedup(g,n){
     const d=Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/(2*DASHN-1);
     node.setAttribute("stroke-dasharray",d.toFixed(2)+" "+d.toFixed(2));
   };
-  const put=(bd,tg,tu,gx,y,z,op,lop)=>{
-    const bA=[gx-Lb/2,y,z], bB=[gx+Lb/2,y,z];
+  const put=(bd,tg,tu,gx,y,op,lop,gok)=>{
+    const bA=[gx-Lb/2,y,lz], bB=[gx+Lb/2,y,lz];
     const kx  =[bA[0]+TDIR[0]*Ta, y, bA[2]+TDIR[1]*Ta];
     const oEnd=[bA[0]+TDIR[0]*(Ta+Lo), y, bA[2]+TDIR[1]*(Ta+Lo)];
     barTo2(bd.bc,RWB,0.44,bA,bB,op*0.95);
@@ -3028,14 +3008,22 @@ function drawDedup(g,n){
     const qo=P(oEnd[0],y,oEnd[2]), qb=P(bA[0],y,bA[2]);
     tg.setAttribute("transform",
       `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
+    /* THE GENE NAME SITS ON THE INSIDE OF THE AERIAL HERE, not above it.
+       Above it is where the next lane's rail is: the aerial already reaches
+       most of a pitch that way, and the name on top of it lands on that lane's
+       UMI. Inside — in the wedge between the aerial and the read's own barcode
+       end — it is within the molecule's own outline and collides with nothing.
+       It is still lying along the orange, which is all the underline was ever
+       doing. E6 can afford the outside because E6's lanes are not carrying
+       their neighbours' copies. */
     tg.setAttribute("x",(GLS*0.20).toFixed(1));
-    tg.setAttribute("y",(-GLS*0.34).toFixed(1));
-    tg.setAttribute("fill-opacity",(lop*0.88).toFixed(3));
+    tg.setAttribute("y",(-GLS*0.22).toFixed(1));
+    tg.setAttribute("fill-opacity",(lop*0.86*gok).toFixed(3));
     tu.setAttribute("transform",
       `translate(${qb[0].toFixed(1)},${qb[1].toFixed(1)}) rotate(${ANGB})`);
     tu.setAttribute("x",(LFS*0.25).toFixed(1));
     tu.setAttribute("y",(-LFS*0.42).toFixed(1));
-    tu.setAttribute("fill-opacity",(lop*0.88).toFixed(3));
+    tu.setAttribute("fill-opacity",(lop*0.86).toFixed(3));
   };
 
   let t=0;
@@ -3043,39 +3031,79 @@ function drawDedup(g,n){
     t+=dt;
     const laps=t*v/LOOP;
     const R=new Array(NL).fill(0), M=new Array(NL).fill(0), lit=new Array(NL).fill(0);
+    /* ---- WHERE EVERYTHING IS, BEFORE ANY OF IT IS DRAWN --------------------
+       TYPE YIELDS TO TYPE, and it has to, because this field is dense BY
+       CONSTRUCTION. Every lane here is busy — that is what a fork is — and a
+       read's gene name rides at the tip of an aerial that reaches most of a
+       lane pitch toward the rail above it. Wherever a read on that rail happens
+       to be alongside, the two collide. E6 never had to solve this: half its
+       lanes are empty and its reads are independent, so it simply does not come
+       up often enough to matter.
+
+       There is no amount of spacing that fixes it and no seed that dodges it —
+       the pairs move, so a layout that clears them at one moment does not at
+       the next. The rule instead: WHEN A GENE NAME WOULD ARRIVE ON THE RAIL
+       ABOVE IT, THAT NAME FADES. The read keeps its body and its UMI; only the
+       one label that is out of its own lane gives way, and it comes back a
+       moment later. Deterministic, frame by frame, and it costs one pass. */
+    const pos=[];
+    for(const rd of reads){
+      const u=((laps+rd.ph)%1+1)%1, gx=x0-PIN+u*LOOP;
+      const sp=easeOut(clamp01((gx-FORK)/SPLAY));
+      pos.push({rd,gx,sp});
+      rd._gA=gx; rd._lA=2*rd.tk;
+      rd._gB=gx-LAG*sp; rd._lB=2*rd.tk+1;
+    }
+    /* the aerial's tip sits about ATIP up-belt of the read's own barcode end,
+       and that is where its name is; the rail above carries its UMIs at their
+       own barcode ends. Near means those two coincide. */
+    const ATIP=-TDIR[0]*(Ta+Lo), NEAR=1.05;
+    const clash=(lane,gx)=>{
+      for(const q of pos){
+        if(q.rd._lA===lane-1 && Math.abs(q.rd._gA-(gx-ATIP))<NEAR) return 1;
+        if(q.rd.B && q.sp>0.2 && q.rd._lB===lane-1
+           && Math.abs(q.rd._gB-(gx-ATIP))<NEAR) return 1;
+      }
+      return 0;
+    };
     for(const rd of reads){
       const u=((laps+rd.ph)%1+1)%1;
       const gx=x0-PIN+u*LOOP;
+      const k=rd.tk;
       const vis=Math.min(sstep(x0-PIN,x0-PIN+K*1.0,gx),
-                         1-sstep(RAILEND-K*1.6,RAILEND-K*0.4,gx));
+                         1-sstep(RAILEND-K*1.4,RAILEND-K*0.2,gx));
       /* THE WRITING STARTS AFTER THE CELL'S NAME AND STOPS BEFORE THE COUNTERS.
          A UMI over a lane's own name, or over the number that lane is counting
-         up to, is the one thing in this field that cannot be read around. */
-      const lvis=vis*sstep(LANE0+2.3,LANE0+3.1,gx);
-      put(rd.A,rd.tgA,rd.tuA,gx,laneY(rd.tk),uz,vis,lvis);
+         up to, is the one collision in this field nobody can read around. */
+      const lvis=vis*sstep(LANE0+2.4,LANE0+3.2,gx)
+                             *(1-sstep(RAILEND-2.0,RAILEND-1.1,gx));
+      /* the splay: the lane changes place, the read goes with it */
+      const sp=easeOut(clamp01((gx-FORK)/SPLAY));
+      const yi=yIn(k);
+      put(rd.A,rd.tgA,rd.tuA,gx,yi+(yOut(2*k)-yi)*sp,vis,lvis,
+          clash(2*k,gx)?0:1);
       if(rd.B){
-        /* THE COPY: nothing before the fork, then down the ramp and away. Its
-           fade starts a quarter of the way down and not at the top, because at
-           the top it is exactly on top of the read it came from — two labels in
-           one place, which reads as a rendering fault rather than as a copy. */
-        const dn=clamp01((gx-FORK)/RAMP);
-        const z=uz+(lz-uz)*easeOut(dn);
-        const cop=sstep(0.26,0.78,dn);
-        put(rd.B,rd.tgB,rd.tuB,gx,laneY(rd.tk),z,vis*cop,lvis*cop);
+        /* THE COPY IS MADE AT THE FORK and not before it. Its fade starts a
+           little way into the splay, because at the fork itself it is exactly
+           on top of the read it came from — two labels in one place reads as a
+           rendering fault, not as a copy. */
+        const cop=sstep(0.24,0.72,sp);
+        const bx=gx-LAG*sp;
+        put(rd.B,rd.tgB,rd.tuB,bx,yi+(yOut(2*k+1)-yi)*sp,vis*cop,lvis*cop,
+            clash(2*k+1,bx)?0:1);
       }
-      /* the lamp is lit by whatever is under the beam, first sighting or not */
-      lit[rd.tk]=Math.max(lit[rd.tk],1-clamp01(Math.abs(gx-FORK)/(K*1.6)));
+      lit[k]=Math.max(lit[k],1-clamp01(Math.abs(gx-FORK)/(K*1.6)));
       /* AND THE COUNTERS ARE DERIVED, NOT ACCUMULATED. How many times this read
          has crossed the fork is a function of the clock, so the numbers cannot
          drift, cannot double-count a frame, and come back identical after a
          tab has been asleep. */
       const cross=Math.floor(laps+rd.ph-forkU)+1;
-      if(cross>0){ R[rd.tk]+=cross; if(rd.first) M[rd.tk]+=cross; }
+      if(cross>0){ R[k]+=cross; if(rd.first) M[k]+=cross; }
     }
     for(let k=0;k<NL;k++){
       lamps[k].setAttribute("stroke-opacity",(lit[k]*0.55).toFixed(3));
-      cnt[k].r.node.textContent=cnt[k].r.lead+fmt(R[k]);
-      cnt[k].m.node.textContent=cnt[k].m.lead+fmt(M[k]);
+      cnt[k].r.textContent="READS "+fmt(R[k]);
+      cnt[k].m.textContent="MOLECULES "+fmt(M[k]);
     }
   };
   run(0);
