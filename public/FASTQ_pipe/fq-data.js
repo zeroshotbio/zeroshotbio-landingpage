@@ -261,7 +261,7 @@ const NODES = [
    box labelled with the release it actually is would be the arm, and would want
    a G1b beside it. Until then it is scaffolding, which is what the b says. */
 {id:"G2b", key:"G2b", noclip:true, group:"G · genome, and W · whitelists", shape:"locus",
- follow:{a:"E4",dx:11.5}, name:"Ensembl 99", x:9.1, y:R3+11.8, w:4.0, d:6.6, h:0.5,
+ follow:{a:"E4",dx:11.5}, name:"Ensembl 99", x:9.1, y:R3+13.6, w:4.0, d:6.6, h:0.5,
  sub:"the annotation · where genes start and stop",
  does:"Where genes start and stop, what survives splicing, what gets translated, which direction it is read. A separate file and a separate decision from the assembly.",
  built:"MIC-Drop-seq and the Parse runs use plain Ensembl GRCz11, 32,520 features. ZSCAPE and ChemFish use a BBI-prepared Ensembl 99 build with a 3′ extension and a pseudogene/IG/TR/TEC exclusion, 32,031. DanioCell uses Lawson v4.3.2, 36,250 released names. Zebrahub uses a custom reference, 32,057 plus three transgene features.",
@@ -392,7 +392,7 @@ const NODES = [
    four times what they were one station back. gd is the belts' own depth, so a
    read here is the read that was riding a gene next door. */
 {id:"CB", key:"E6", group:"The chain", shape:"tracks", noclip:true,
- lane:"r3", gap:3.0,
+ lane:"r3", gap:3.0, v:1.62,
  name:"Bucket by cell", x:30.0, y:R3, w:5.4, d:16.4, gd:6.6, h:0.62,
  sub:"one index · bc1_bc2_bc3__sublibrary",
  does:"Stitches the per-library matrices into one and stamps each barcode with where it came from.",

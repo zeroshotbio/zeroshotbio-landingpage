@@ -1481,6 +1481,20 @@ gene's name. Same hinge, same angle, opposite arms. **Landing is where the read
 stops being about a gene and starts being about a cell**, and this is that
 sentence drawn.
 
+**The reverse L, and how to check it.** The junction sits at the **right** end
+of the orange, so the adapter comes off that side and the barcode end follows
+it — the aligned end running *down-left* away from the hinge, which is how `E5`
+draws it. With the ground arm's sign the other way the same three pieces make
+the mirror image: a letter `L` instead of a reversed one, and the read stops
+looking like the one that left the belt.
+
+> **Do not compare the two stations by their raw polygon point lists.** `E5`
+> goes through `barTo` and `E6` through `barTo2`, and **the two emit their four
+> corners in different orders** — so a naive `points[0] → points[1]` reads one
+> as its long axis and the other as its width, and two mirrored poses measure
+> as identical. It cost a round trip. Take the direction from the **adapter's
+> junction to the far end of each strip**, which no corner order can confuse.
+
 **So it is not a rotation, it is an unfold.** Both arms swing about the one
 hinge and swap places — the orange comes off the ground up onto the aerial while
 the blue comes down off the aerial onto the rail — and **the adapter between
@@ -1521,6 +1535,32 @@ it.*
 **`E6`'s gap opened from 1.5 to 3.0 to make room for it**, and the band's `x1`
 from 52.5 to 54.5 to hold the shift. Without that the birth point sits a third
 of the way back along `E5`'s belt instead of at its tip.
+
+**And it touches down *before* the first track** (`UBASE` = `PADA/LOOP − 0.075`),
+not after it. The cell names live at the field's near end and run a unit and a
+half along their own lines; a read still turning as it crosses them puts a whole
+diagonal molecule through somebody's name. What passes through the names is now
+a fragment lying flat on a rail, *which is what a rail is for.*
+
+### The caption is three rows on the bottom-left edge
+
+**Three rows and not one.** As a single line it was **wider than the field it
+belonged to**, so it could not be both centred on the node and clear of the belt
+one station back — every placement that fixed one broke the other. Broken over
+three, the longest row is narrower than the edge it sits on and the problem
+stops existing.
+
+**The edge, not the centre.** The bottom-left edge of the footprint runs from
+the left vertex to the bottom one — the far-side edge, running in `x`, so on
+screen it lies at the tracks' own thirty degrees. The block is centred on its
+midpoint (first row lifted a row, so the *middle* line takes the anchor) and set
+just outside it.
+
+**`G2b` moved to `R3+13.6` to get out from in front of it.** Nodes paint in
+`(x+y)` order, which is depth — `G2b` at 47 is genuinely nearer the viewer than
+`CB` at 41.5, so it *should* cover that ground. The fix is to move the card, not
+to reorder the painter. Moving it upstream in `x` instead put its own labels
+into `E5`'s; down-left in `y` is the direction with room.
 
 ### The blue carries weight from `E4` onward
 

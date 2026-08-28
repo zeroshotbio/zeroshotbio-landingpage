@@ -2481,37 +2481,34 @@ function drawTracks(g,n){
       "fill-opacity":(lanes[k].m?".62":".34")});
     t2.textContent="cell "+fmt(lanes[k].cell); labs.push(t2);
   }
-  /* what the window is a window onto, said once and at the field's near edge */
-  {
-    /* CENTRED ON THE FIELD, not started at its corner. Anchored at the middle
-       of the tracks in x and set below the last of them, with text-anchor
-       middle so the line grows both ways from there — which is what makes it
-       read as this field's caption rather than as something that happens to
-       start near it. Started at the corner it also ran into the gene names on
-       the belt one station back, because the far side of this field lands a
-       long way to the SCREEN left: y and x pull the same way here. */
-    /* CENTRED UNDER THE NODE, AND THE ARITHMETIC IS THE WHOLE POINT.
+  /* WHAT THE WINDOW IS A WINDOW ONTO, said once, in three short lines on the
+     field's own bottom-left edge.
 
-       Screen x on this projection is (x - y), so a caption placed at the middle
-       of the tracks in x but at the field's FAR side in y is not under the node
-       at all — it is a third of the map to the left, because +y carries it
-       down AND left. What has to hold is x - y = n.x - n.y; then screen x is
-       the node's exactly, whatever y the line sits at. So y is chosen for how
-       far below to sit and x FOLLOWS IT, which also means DN moves the line
-       straight down rather than down-and-left into the belt it was clearing. */
-    /* AND AS CLOSE UNDER IT AS THE TRACK ENDS ALLOW. Centred and near pull
-       apart on this projection: holding x - y fixed means every unit closer in
-       y is a unit further downstream in x, and the line is wider than the
-       field, so past a point its left end runs back through the ends of the
-       tracks. This is that point plus a margin. */
-    const DN=0;
-    const ya=trackY(NT-1)+TP*1.2+DN, xa=n.x+(ya-n.y);
-    const a=P(xa,ya,base);
+     THREE ROWS AND NOT ONE. As a single line it was wider than the field it
+     belonged to, which meant it could not be both centred on the node and clear
+     of the belt one station back — every placement that fixed one broke the
+     other. Broken over three, the longest row is narrower than the edge it sits
+     on and the whole problem goes away.
+
+     THE EDGE, NOT THE CENTRE. The bottom-left edge of the footprint runs from
+     the left vertex to the bottom one — the y = far-side edge, running in x, so
+     on screen it lies at the tracks' own thirty degrees. The block is centred on
+     its midpoint and set just outside it, which is why it reads as this field's
+     caption and sits against the thing it is captioning instead of floating
+     below in open ground. */
+  {
+    const a=P(n.x, n.y+n.d/2+0.95, base);
     const t3=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
       "text-anchor":"middle","font-family":MONO,fill:"var(--fg3)",
       "font-size":CAP.toFixed(1),"font-weight":"600",
       "letter-spacing":(CAP*0.06).toFixed(2),"fill-opacity":".62"});
-    t3.textContent=NT+" of "+fmt(CELLSPACE)+" · 96 × 96 × 96 · most are empty";
+    [NT+" of "+fmt(CELLSPACE), "96 × 96 × 96", "most are empty"]
+      .forEach((line,i)=>{
+        /* the FIRST row is lifted a row, so the block's middle line sits on the
+           anchor and the block as a whole is centred on the edge rather than
+           hanging off it */
+        const sp=el("tspan",{x:"0",dy:(i?CAP*1.22:-CAP*1.22).toFixed(1)});
+        sp.textContent=line; t3.appendChild(sp); });
     labs.push(t3);
   }
 
@@ -2570,7 +2567,13 @@ function drawTracks(g,n){
      through it, which is what "it comes out of nowhere too close to the track"
      was. u0 is now measured from the runway's own end, so every read gets the
      whole of it. */
-  const FALL=0.30, UBASE=PADA/LOOP+0.03;
+  /* AND IT TOUCHES DOWN BEFORE THE FIRST TRACK, NOT AFTER IT. The cell names
+     live at the field's near end and run a unit and a half along their own
+     lines; a read still turning as it crosses them puts a whole diagonal
+     molecule through somebody's name. Landing a little upstream of x0 means the
+     thing that passes through the names is a fragment lying flat on a rail,
+     which is what a rail is for. */
+  const FALL=0.30, UBASE=PADA/LOOP-0.075;
   const BASES="ACGT";
   const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
   const reads=[];
@@ -2699,7 +2702,17 @@ function drawTracks(g,n){
         return [v[0]/L,v[1]/L,v[2]/L]; };
       const dU=[TDIR[0],0,TDIR[1]];                 /* the hinge's own arm */
       const dB=mix(dU,[1,0,0]);                     /* barcode end: aerial -> rail */
-      const dO=mix([0,-1,0],dU);                    /* aligned end: gene -> aerial */
+      /* +y AND NOT -y, AND THIS IS THE WHOLE OF THE REVERSE L. The junction has
+         to sit at the orange's RIGHT end so the adapter comes off that side and
+         the barcode end follows it — which is how E5 draws it, the aligned end
+         running down-left away from the hinge. With the sign the other way the
+         same three pieces make the mirror image: a letter L instead of a
+         reversed one, and the read stops looking like the one that left the
+         belt. (Measuring this against E5 needs care: the two stations build
+         their quads through different helpers with different corner orders, so
+         comparing raw point lists compares nothing. Take the direction from the
+         ADAPTER's junction to the far end of each strip.) */
+      const dO=mix([0,1,0],dU);                     /* aligned end: gene -> aerial */
       /* the blue's MIDDLE is the thing that ends up on the track, so it is the
          thing the whole molecule is hung from */
       const bA=[cx-dB[0]*Lb/2, yy-dB[1]*Lb/2, zz-dB[2]*Lb/2];
