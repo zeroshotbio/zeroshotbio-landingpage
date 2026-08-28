@@ -127,12 +127,36 @@ const found = await page.evaluate(gap => {
     .map(d => `${d.e.a || d.e.fromName}->${d.e.b || d.e.toName} restarts ` +
               `${d.speed.toFixed(1)} times a second on ${Math.round(d.e.len)}px of track`);
 
+  /* AND THAT EVERY ROW FITS ITS OWN MAT. The grid check below is about the
+     paper; this is about the dotted band under one row, and they fail
+     differently. layoutRows scales the gaps so a lane fills its span — but
+     when the objects' own widths already exceed that span the scale goes
+     negative and clamps at 0.25, and the row simply runs on past the end of
+     its band with nothing saying so. Row 3 shipped 7.6 units over: the fork
+     field and the unfiltered matrix stood off the end of the paper, the grid
+     still covered them, and every check passed. */
+  const spill = [];
+  LANES.forEach(L => {
+    const band = BANDS.find(b => Math.abs((b.y0 + b.y1) / 2 - L.y) < 3);
+    if (!band) return;
+    const on = NODES.filter(n => n.lane === L.id ||
+      (n.follow && byId[n.follow.a] && byId[n.follow.a].lane === L.id));
+    on.forEach(n => {
+      const l = n.x - (n.w || 0) / 2, r = n.x + (n.w || 0) / 2;
+      const t = n.y - (n.d || 0) / 2, bm = n.y + (n.d || 0) / 2;
+      if (l < band.x0 || r > band.x1 || t < band.y0 || bm > band.y1)
+        spill.push(`${n.id} is outside ${L.id}'s own band ` +
+          `(x ${l.toFixed(1)}..${r.toFixed(1)}, y ${t.toFixed(1)}..${bm.toFixed(1)} ` +
+          `against ${band.x0}..${band.x1} / ${band.y0.toFixed(1)}..${band.y1.toFixed(1)})`);
+    });
+  });
+
   const short = [];
   if (GRID.x0 > x0) short.push(`left by ${(GRID.x0 - x0).toFixed(1)}`);
   if (GRID.x1 < x1) short.push(`right by ${(x1 - GRID.x1).toFixed(1)}`);
   if (GRID.y0 > y0) short.push(`top by ${(GRID.y0 - y0).toFixed(1)}`);
   if (GRID.y1 < y1) short.push(`bottom by ${(y1 - GRID.y1).toFixed(1)}`);
-  return { cross, onCross, dirs, wrong, short, uneven, offcentre, strobing,
+  return { cross, onCross, dirs, wrong, short, uneven, offcentre, strobing, spill,
            evenN: LANES.filter(L => L.even).length };
 }, ROW_GAP);
 
@@ -140,6 +164,7 @@ if (found.cross.length)
   fail(`${found.cross.length} edge(s) span two rows: ${found.cross.join(', ')}`);
 if (found.onCross)
   fail(`${found.onCross} dot(s) are travelling on a row-to-row track`);
+found.spill.forEach(m => fail(m));
 if (found.wrong.length)
   fail(`these lanes do not read left to right: ${found.wrong.join(', ')} — ` +
        `all four rows read the same way, and a flipped one says so nowhere on screen`);
@@ -159,8 +184,8 @@ console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `rows: nothing is drawn between them, no dot is travelling between them, all ` +
     `${found.dirs.length} lanes read left to right, the ${found.evenN} even ones are even and centred in ` +
-    `their mats, no track is short enough for its dots to strobe, and the grid covers ` +
-    `everything drawn on it`);
+    `their mats, no track is short enough for its dots to strobe, every row fits inside ` +
+    `its own band, and the grid covers everything drawn on it`);
 if (errs.length) console.log('page errors:', errs);
 await browser.close();
 process.exit(bad || errs.length ? 1 : 0);

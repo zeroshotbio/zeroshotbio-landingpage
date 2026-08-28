@@ -827,7 +827,19 @@ const LANES = [
      are 4.2, 1.6, 1.5, 3.0, 9.2 and 1.6, and every one of those is a size
      rather than a preference. Forcing them even would put the fork on top of
      the field before it. r4 and r5 are still even. */
-  {id:"r3",       y:R3,       x0:0.7,  x1:21.3,  dir:+1},
+  /* AND IT IS LONGER THAN IT WAS, because what stands on it is bigger. The
+     eight machines are 25.25 units of width between them against the 20.6 this
+     lane used to span — so layoutRows' gap scale went NEGATIVE and clamped at
+     its 0.25 floor, and the row ran to 31.6: seven and a half units past the
+     end of its own dotted mat, with the fork field and the matrix standing off
+     the paper. Nothing said so. check-rows measures the GRID against the
+     drawing and the grid reaches 42, so it passed; the band is what the row
+     overran, and no check looks at that.
+     31.8 puts the gap scale at about 0.29 — off the clamp, so the engine is
+     solving the row rather than giving up on it — and BAND_X[2] below covers
+     it with a margin. IF ANY STATION ON THIS ROW GETS WIDER, re-check that
+     sum against this span. */
+  {id:"r3",       y:R3,       x0:0.7,  x1:31.8,  dir:+1},
   {id:"r4",       y:R4,       x0:0.7,  x1:30.3,  dir:+1, even:true},
   {id:"r5",       y:R5,       x0:0.7,  x1:23.3,  dir:+1, even:true},
 ];
@@ -953,7 +965,10 @@ const EDGES = [
    along one diagonal on the bottom-right edge. */
 /* A band is as long as its row, and row 3's row is longer. */
 const BAND_W=[-2,24], BAND_H=[-3.8,3.8];
-const BAND_X=[[-2,24],[-2,24],[-2,24],[-2,33],[-2,26]];
+/* ROW 3'S MAT IS THE WIDEST ON THE MAP NOW, and that is honest: it holds eight
+   machines where every other row holds tiles. It has to reach past where the
+   lane leaves the last object, or the matrix stands off the end of the paper. */
+const BAND_X=[[-2,24],[-2,24],[-2,34],[-2,33],[-2,26]];
 /* ROW 3 IS THE ONE BAND THAT IS NOT SYMMETRIC ABOUT ITS OWN LINE, and it has
    to be, because what stands on it is not symmetric either: the whitelists sit
    at -2.9 and the annotation at +4.9, so the drawing runs about -3.5 to +6.3.
