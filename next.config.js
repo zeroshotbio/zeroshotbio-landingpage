@@ -55,7 +55,9 @@ const nextConfig = {
   // has to be invented to be drawn. Its saved layout has its OWN record,
   // /api/fqpipe_edits, id "FASTQ_pipe::edits" — never the neighbouring map's,
   // or whichever saved last would erase the other silently.
-  // Contract + ownership split: public/FASTQ_pipe/HANDOFF.md
+  // The contract and the reasoning behind every shape live in the file headers
+  // of public/FASTQ_pipe/*.js — fq-data.js for what the map is about, and each
+  // draw* block for why it is drawn that way.
   async rewrites() {
     return [
       { source: '/zfa_mapping', destination: '/zfa_mapping.html' },

@@ -2782,6 +2782,16 @@ DRAW.tracks=drawTracks;
    lanes — twenty in would be forty out, at half the pitch, and the split would
    be the one thing on the page you could not see.
 
+   AND THE TWENTY THEN FAN, PROPORTIONALLY FROM THE MIDDLE. They used to run
+   parallel from the splay to the far end, which draws the fork as something
+   that happens once and is then over — but what leaves this station is twice
+   what arrived, and the field has to be seen making room for it. Each rail
+   opens by a share of its OWN offset from the centre line, so the middle pair
+   barely moves and the outermost pair moves most: one stream becoming many
+   sub-streams, each taking more ground than the stream did. Spreading them all
+   by the same distance instead translates the field outward in two halves with
+   a hole down the middle, which is not a fan.
+
    THE ONLY MERGE ON THE MAP, AND IT MUST NOT LOOK LIKE A REJECT. E3 shreds
    reads whose barcode is on no whitelist and E5 shunts reads that landed on no
    gene; both use the cull colour and a chute. A duplicate is neither. It is one
@@ -2806,7 +2816,18 @@ function drawDedup(g,n){
   const K=(n.gd||n.d)*0.1053, KZ=n.h/0.53;
   const base=n.h*0.245, GL=(n.gd||n.d)*0.70;
   const RTOT=0.145, RL=RTOT*64/154, RG=RTOT*32/154, RB=RTOT*58/154;
-  const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
+  /* THE READ IS HEAVIER HERE THAN ON EITHER BELT, AND THAT IS NOT AN
+     INCONSISTENCY. At E4 a read is one of a hundred lines piled on a gene and
+     the count is the argument, so it is drawn as a line: 0.047 of a gene's own
+     width, floored just over a pixel. This field carries two reads a lane, and
+     what has to read is not how many lines there are but what the ONE object
+     under the beam is made of — three parts, in the order they travel. At the
+     belt's weight it was a hairline lying on a rail of very nearly the same
+     weight, and the two came apart only when you went looking. Doubled, with
+     the rails held back (see the fan below), the fragment is the brightest
+     thing in its own lane, which is what this station is about. */
+  const GW=K*0.30, RW=GW*0.095, RWB=RW*0.70;
+  const FLOOR_O=1.05, FLOOR_B=0.85;   /* screen half-widths: orange, then blue */
   const TDIR=[-0.86,0.51];
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
   /* A THIRD OF E6'S READ, LAID FLAT ALONG THE RAIL, AND CARRYING NO WRITING.
@@ -2839,9 +2860,35 @@ function drawDedup(g,n){
   /* TEN IN, TWENTY OUT, AT ONE PITCH. n.d is the field AFTER the fork, so the
      incoming half sits at twice the spacing and the children land exactly where
      the pitch says they should. */
-  const NL=10, NO=NL*2, TP=n.d*0.94/NO;
+  const NL=10, NO=NL*2;
+
+  /* ---- AND THE WHOLE FIELD FANS, PROPORTIONALLY FROM THE MIDDLE ------------
+     The twenty rails used to run parallel from the splay to the far end, which
+     draws the fork as a thing that happens once and is then over. It is not
+     over: what leaves here is twice what arrived, and the field has to be seen
+     making room for it — one stream becoming many sub-streams, each of which
+     takes more ground than the stream did.
+
+     THE OPENING IS PROPORTIONAL TO HOW FAR OUT A LANE ALREADY IS. Spread every
+     rail by the same distance and the field is translated outward in two halves
+     with a hole down the middle; spread each one by a SHARE of its own offset
+     and the middle pair barely moves while the outermost pair moves most, which
+     is what a fan is. fanOf() puts a floor under the middle lanes so they open
+     a little rather than not at all — a rail that stays exactly straight while
+     its neighbour bends reads as the one that was forgotten.
+
+     THE PITCH AT THE FORK IS DIVIDED BY MOST OF THE FAN, so the far end lands a
+     shade outside n.d rather than half again outside it. That keeps the drawing
+     inside its own footprint to within about a tenth, and it buys the better
+     half of the effect for free: the lanes are TIGHT where they split and open
+     where they run, which is the reading. */
+  const FAN=0.62;                          /* extra offset at the far end, as a share */
+  const SQUEEZE=1/(1+FAN*0.72);
+  const TP=(n.d*0.94/NO)*SQUEEZE;
   const yOut=j=>cy+(j-(NO-1)/2)*TP;
   const yIn =k=>cy+(2*k+1-NL)*TP;          /* = half-way between its children */
+  const FMAX=((NO-1)/2)*TP||1;             /* the outermost lane's own offset */
+  const fanOf=y=>0.40+0.60*Math.min(1,Math.abs(y-cy)/FMAX);
   const lz=base+n.h*0.05;
 
   const LANE0=x0-0.8;
@@ -2854,6 +2901,15 @@ function drawDedup(g,n){
   const FORK=x0+span*0.24, SPLAY=span*0.22, OUT=FORK+SPLAY, LAG=1.72;
   const RAILEND=x1-2.9;
   const LOOP=(RAILEND-LANE0);
+  /* WHERE A LANE IS AT A GIVEN x, ONCE THE SPLAY IS DONE. It is linear in the
+     run from OUT to RAILEND, so a rail is still a straight line between two
+     points and nothing has to be sampled — but every consumer has to go through
+     this rather than reading yOut() directly, or the rails, the reads on them
+     and the counters at their ends stop agreeing about where a lane is. */
+  const yFan=(y,gx)=>{
+    const u=clamp01((gx-OUT)/((RAILEND-OUT)||1));
+    return cy+(y-cy)*(1+FAN*fanOf(y)*u);
+  };
 
   /* ---- ONE CYCLE, AND IT IS NOT A CONVEYOR ---------------------------------
      Everywhere else on this page a thing travels at one speed and something
@@ -2904,20 +2960,27 @@ function drawDedup(g,n){
   const lanes=[];
   { let c=Math.floor(rnd()*9000)+1200;
     for(let k=0;k<NL;k++){
-      /* THREE OR FOUR, AND THE STOP IS WHAT SETS IT.
+      /* TWO A LANE, AND THE STOP IS WHAT SETS IT.
 
          Six to eight fitted the TRACK — the fragment is short and the lap is
-         long — but not the SCANNER. A read holds the beam for 0.17 of a lap
-         from arrival to departure, and reads on a lane sit 1/m apart: at seven
-         that is 0.14, so the next one arrived before the last had left and two
-         fragments stood in the same place looking like one confused object. At
-         four the gap is 0.25 and the beam is clear between every pair.
+         long — but not the SCANNER, and three or four did not fit it either.
+         The arithmetic that matters is not the 0.17 the read is stationary at
+         FORK: it is how long it is anywhere NEAR the fork, which is the brake
+         plus the stop plus the first of the splay. The brake starts at 0.70 of
+         the approach (c = 0.28) and the read is still peeling away from the
+         station at c = 0.60 — call it 0.30 of a lap in the scanner's own
+         neighbourhood. At m = 4 the reads sit 0.25 apart and at m = 3 they sit
+         0.333 apart, so BOTH were inside that window, which is why one fragment
+         was arriving on top of the last one leaving however the phases were
+         turned. Two a lane puts them half a lap apart and the beam is clear
+         between every pair with room to spare.
 
          THE QUEUE IS THE CONSTRAINT, NOT THE RAIL. Anything that lengthens the
          stop — a longer scan, a longer look at the answer — has to come out of
          the traffic, and anything that adds traffic has to come out of the
-         stop. */
-      const m=3+Math.floor(rnd()*2);
+         stop. Two is also the floor: the lane needs a repeat in it to have
+         anything for the fork to be about, and a repeat needs a pair. */
+      const m=2;
       const g1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const g2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const pools={};
@@ -2927,31 +2990,44 @@ function drawDedup(g,n){
         return q[Math.min(q.length-1,Math.floor(Math.pow(rnd(),1.7)*q.length))]; };
       const seq=[];
       for(let j=0;j<m;j++){ const gn=(rnd()<0.72?g1:g2); seq.push({gn,umi:umiFor(gn)}); }
-      /* ONE UMI ON TWO GENES, placed in about a third of the lanes. Both are
-         first sightings and both fork, and it is the only way to draw the
-         difference between keying on three facts and keying on the UMI alone —
-         it cannot happen by accident often enough to read. */
-      if(rnd()<0.34 && g1!==g2) seq[m-1]={gn:g2, umi:seq[0].umi};
+      /* ONE UMI ON TWO GENES, and at two reads a lane it is now a FIFTH of them
+         rather than a third. Both are first sightings and both fork, so the lane
+         is one where the two counters climb together — which is the difference
+         between keying on three facts and keying on the UMI alone. At m = 3 or 4
+         that case cost a lane one of several repeats; at m = 2 it costs the lane
+         its ONLY repeat, so it has to be rarer or most of the field stops
+         deduplicating anything. */
+      let collide=false;
+      if(rnd()<0.20 && g1!==g2){ seq[m-1]={gn:g2, umi:seq[0].umi}; collide=true; }
       const seen=new Set();
       for(const r of seq){ const key=r.gn+"|"+r.umi;
         r.first=!seen.has(key); seen.add(key); }
-      /* AND EVERY LANE HAS AT LEAST ONE REPEAT. A lane whose two counters climb
-         together draws a library with no duplication at all, which is not a
-         thing that happens. A floor, not a thumb on the scale. */
-      if(seq.every(r=>r.first) && seq.length>1)
+      /* AND EVERY OTHER LANE HAS AT LEAST ONE REPEAT. A lane whose two counters
+         climb together draws a library with no duplication at all, which is not
+         a thing that happens. A floor, not a thumb on the scale — and it has to
+         SPARE the collision lanes, or it would quietly undo the case above
+         every time: at m = 2 a collide lane is two first sightings, which is
+         exactly the condition this floor fires on. */
+      if(!collide && seq.every(r=>r.first) && seq.length>1)
         seq[seq.length-1]={gn:seq[0].gn, umi:seq[0].umi, first:false};
       lanes.push({cell:c, seq, m});
       c+=Math.floor(1+rnd()*90000);
     } }
 
   /* ---- the rails, the fan, and what each lane is called -------------------- */
+  /* A RAIL IS THE GROUND A READ TRAVELS, NOT THE SUBJECT. It used to be drawn
+     at very nearly the fragment's own weight, so a lane read as two parallel
+     lines of equal standing and the eye had to be told which one was the read.
+     Held back to about two thirds of what it was, the rail is still plainly
+     there — it has to be, it is what says the fork went two ways — and the
+     thing moving along it is the brightest object in the lane. */
   for(let k=0;k<NL;k++){
     const yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
-    line([LANE0,yi,lz],[FORK,yi,lz],"var(--fg3)",1.8,".40");
-    line([FORK,yi,lz],[OUT,yr,lz],COLR,1.6,".34");
-    line([FORK,yi,lz],[OUT,ym,lz],COLM,1.6,".34");
-    line([OUT,yr,lz],[RAILEND,yr,lz],COLR,1.8,".46");
-    line([OUT,ym,lz],[RAILEND,ym,lz],COLM,1.8,".46");
+    line([LANE0,yi,lz],[FORK,yi,lz],"var(--fg3)",1.3,".26");
+    line([FORK,yi,lz],[OUT,yr,lz],COLR,1.2,".22");
+    line([FORK,yi,lz],[OUT,ym,lz],COLM,1.2,".22");
+    line([OUT,yr,lz],[RAILEND,yFan(yr,RAILEND),lz],COLR,1.3,".30");
+    line([OUT,ym,lz],[RAILEND,yFan(ym,RAILEND),lz],COLM,1.3,".30");
     /* NO CELL NAME HERE. E6 names every one of these lanes, at size, against
        884,736 — saying it again over the top of the fork is the same fact
        competing with the only new one. The lane is the same lane; it does not
@@ -2969,22 +3045,48 @@ function drawDedup(g,n){
   const BZ=lz+1.15;
   line([FORK,yTop,BZ],[FORK,yBot,BZ],"var(--fg2)",5.0,".62");
   line([FORK,yTop,BZ],[FORK,yTop,base],"var(--fg3)",3.2,".42");
-  { const a=P(FORK,yTop-TP*2.2,BZ+1.5);
+  /* THE QUESTION IS THE STATION, SO IT IS SET LIKE THE STATION.
+     It was a caption: small, grey, held back, anchored at its END so it ran
+     backwards from a point and the leader met it at the '?'. Everything about
+     that was the treatment a note gets, and this is not a note — every object
+     in the field is downstream of the answer to it, and a reader who takes one
+     thing away from E7 should take away the question.
+
+     So: three times the size, in --accent, at full strength. That token is the
+     UMI's and has been since E2, and it is already the molecules road's own
+     colour — which is the point rather than a collision. The thing being asked
+     IS whether the UMI is one nobody has seen on this cell and this gene, and
+     the road it opens is the one drawn in the same ink. No new hue: the rule
+     holds.
+
+     AND THE LEADER LANDS ON THE 'U', NOT ON THE TAIL OF THE STRING. The text is
+     anchored START at the point the hairline arrives at, so the line comes up
+     off the beam and meets the first letter of the first word — which is where
+     a reader's eye starts and the direction the sentence then runs. Anchored
+     end, the leader arrived at the question mark and the sentence read
+     backwards into the machine. The y offset drops the baseline by a third of
+     the cap height IN THE TEXT'S OWN ROTATED FRAME, so the leader meets the
+     glyph at its middle rather than at its foot. */
+  { const CFS_Q=CFS*2.58;
+    const capY=yTop-TP*3.4, capZ=BZ+2.4;
+    const a=P(FORK,capY,capZ);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
-      "text-anchor":"end","font-family":MONO,fill:"var(--fg2)",
-      "font-size":(CFS*0.86).toFixed(1),"font-weight":"700",
-      "letter-spacing":(LFS*0.06).toFixed(2),"fill-opacity":".80"});
-    t2.textContent="cell + gene + UMI · seen before?"; labs.push(t2);
-    /* a hairline from the words down to the beam, so the caption is attached
-       to the machine it belongs to rather than floating beside it */
-    line([FORK,yTop-TP*2.0,BZ+1.36],[FORK,yTop-TP*0.06,BZ],"var(--fg3)",1.0,".34"); }
+      y:(CFS_Q*0.34).toFixed(1),
+      "text-anchor":"start","font-family":MONO,fill:"var(--accent)",
+      "font-size":CFS_Q.toFixed(1),"font-weight":"700",
+      "letter-spacing":(CFS_Q*0.02).toFixed(2),"fill-opacity":".96"});
+    t2.textContent="Unique Cell + Gene + UMI?"; labs.push(t2);
+    /* the hairline from the beam up to that letter, so the question is attached
+       to the machine that asks it rather than floating beside it. Heavier than
+       it was: a 1.0 stroke under type this size reads as a stray mark. */
+    line([FORK,yTop-TP*0.10,BZ],[FORK,capY,capZ],"var(--fg3)",1.6,".46"); }
   const lamps=[], scans=[];
   for(let k=0;k<NL;k++){
     lamps.push(line([FORK,yIn(k),BZ],[FORK,yIn(k),lz],"var(--fg)",1.6,"0"));
     /* ONE SCAN LINE PER LANE AND NOT PER READ. Only one read is ever stopped
        under the beam on a given lane — the dwell is shorter than the gap — so
        the lane can own the light and the fifty reads do not each carry one. */
-    scans.push(g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"2.4",
+    scans.push(g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"3.6",
       "stroke-opacity":"0","stroke-linecap":"round"})));
   }
 
@@ -2999,11 +3101,21 @@ function drawDedup(g,n){
      light and faint — present, checkable, and clearly the lesser fact — and
      molecules is set large and solid. THE TYPOGRAPHY IS THE ARGUMENT: a reader
      who takes nothing else from this field should take away which of the two
-     numbers is the one that matters. */
+     numbers is the one that matters.
+
+     READS WAS SET TOO FAR BACK TO BE READ AT ALL. Lesser is not the same as
+     illegible: a number a reader has to lean in for cannot do the job of being
+     the fact the other number is measured against. It comes up to 0.92 of the
+     name size at 0.72 — plainly there, plainly checkable — and MOLECULES stays
+     a third bigger again, solid and at full strength. The hierarchy is intact
+     and both ends of it are now on the page.
+
+     BOTH SIT AT THE FANNED END OF THEIR OWN RAIL, which is the only thing they
+     can do: the rails no longer arrive where yOut() puts them. */
   const cnt=[];
   for(let k=0;k<NL;k++)
-    cnt.push({r:say(RAILEND+0.34,yOut(2*k),"READS",COLR,NFS*0.66,".46","start",NFS*0.26,400),
-              m:say(RAILEND+0.34,yOut(2*k+1),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
+    cnt.push({r:say(RAILEND+0.34,yFan(yOut(2*k),RAILEND),"READS",COLR,NFS*0.92,".72","start",NFS*0.30,600),
+              m:say(RAILEND+0.34,yFan(yOut(2*k+1),RAILEND),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
 
   /* ---- the reads ---------------------------------------------------------- */
   const body=mark=>{ const grp=g.appendChild(el("g"));
@@ -3076,9 +3188,9 @@ function drawDedup(g,n){
     const oA=[a,y,lz],        oB=[a+lo,y,lz];
     const kB=[a+lo+ta,y,lz];
     const bB=[a+L,y,lz];
-    barTo2(bd.cd,RW*(sc||1),0.62*(sc||1),oA,oB,op);
-    seg2(bd.ad,oB,kB,op*0.50);
-    barTo2(bd.bc,RWB*(sc||1),0.44*(sc||1),kB,bB,op*0.95);
+    barTo2(bd.cd,RW*(sc||1),FLOOR_O*(sc||1),oA,oB,op);
+    seg2(bd.ad,oB,kB,op*0.62);
+    barTo2(bd.bc,RWB*(sc||1),FLOOR_B*(sc||1),kB,bB,op*0.95);
     if(bd.mk){
       const q=P(gx,y,lz+0.34);
       bd.mk.setAttribute("transform",
@@ -3086,11 +3198,37 @@ function drawDedup(g,n){
       bd.mk.setAttribute("stroke-opacity",clamp01(mkOp||0).toFixed(3));
     }
   };
-  /* the beam's own line, laid along whatever barcode end is under it */
+  /* ---- THE BEAM RUNS THE WHOLE READ, AND IT RUNS IT SEVERAL TIMES -----------
+     It used to travel the barcode end alone, once, at the speed of the dwell.
+     Both halves of that were wrong here, and E3 is why they looked right: at E3
+     three scanners each check ONE square, and a beam that travelled a read
+     there would be a beam reading all of it. THIS scanner's question is "cell +
+     gene + UMI", which is the whole molecule — the gene came off the aligned
+     end and the cell and the UMI off the barcode end — so a beam that stops
+     short of the orange is a beam that cannot have asked it.
+
+     And one slow pass across a stationary object does not read as a scan. It
+     reads as a thing drifting. What says INSTRUMENT is a fast flash going back
+     and forth over the same object several times while it is held still, which
+     is what every bench scanner a reader has ever watched actually does. SWEEPS
+     round trips over the dwell, on a triangle so the turn at each end is sharp
+     rather than eased — an eased turn is a pendulum, and a pendulum is a thing
+     swinging rather than a thing reading.
+
+     AND IT IS AIMED, WHICH IS WHAT MAKES IT A BEAM. It used to be a stub
+     standing on the deck at the swept position — a short vertical mark sliding
+     along under the read, which is a cursor rather than a light. It hangs from
+     the gantry now and its FOOT does the sweeping, so the line leans left, comes
+     upright over the middle of the fragment and leans right, the way a head on a
+     rail actually tracks something held beneath it. Same idiom as E3's, one
+     station along: the beam belongs to the machine at one end and to the thing
+     being read at the other. */
+  const SWEEPS=3.5;
+  const sweepU=uu=>1-Math.abs(((uu*SWEEPS)%1)*2-1);
   const scanAt=(node,gx,y,sc,u,op)=>{
-    const L=FT*sc, a=gx-L/2, b0=a+(Lo+Ta)*sc, b1=a+L;
-    const px=b0+(b1-b0)*u;
-    const p1=P(px,y,lz), p2=P(px,y,lz+0.22);
+    const L=FT*sc, a=gx-L/2;
+    const px=a+L*u;
+    const p1=P(FORK,y,BZ), p2=P(px,y,lz+0.10);
     node.setAttribute("x1",p1[0].toFixed(1)); node.setAttribute("y1",p1[1].toFixed(1));
     node.setAttribute("x2",p2[0].toFixed(1)); node.setAttribute("y2",p2[1].toFixed(1));
     node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
@@ -3101,7 +3239,11 @@ function drawDedup(g,n){
     t+=dt;
     const laps=t*v/LOOP;
     const R=new Array(NL).fill(0), M=new Array(NL).fill(0);
-    const lit=new Array(NL).fill(0), pow=new Array(NL).fill(0);
+    /* TWO POPS AND NOT ONE. Every read lands on the reads road and only a first
+       sighting lands on the molecules road, so the two counters cannot share a
+       pulse: powM fires on firsts, powR on everything. */
+    const lit=new Array(NL).fill(0);
+    const powM=new Array(NL).fill(0), powR=new Array(NL).fill(0);
     for(const rd of reads){
       const c=((laps+rd.ph)%1+1)%1;
       const k=rd.tk, yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
@@ -3138,10 +3280,14 @@ function drawDedup(g,n){
          made the fragments look posted onto the rail rather than arriving on it. */
       const vis=live*Math.min(sstep(0,0.020,c),1-sstep(END-0.035,END,c));
 
-      const yA=yi+(yr-yi)*fy;
+      /* AND THE READ RIDES THE FANNED RAIL, not the straight one. The splay
+         from FORK to OUT is unfanned (yFan is the identity there), so this is
+         one expression for both stretches and the read cannot come off its own
+         line at the join. */
+      const yA=yFan(yi+(yr-yi)*fy,gx);
       if(rd.first){
         put(rd.A,gx,yA,vis,1.14,0);
-        put(rd.B,gx,yi+(ym-yi)*fy,vis,1.14,
+        put(rd.B,gx,yFan(yi+(ym-yi)*fy,gx),vis,1.14,
             vis*sstep(VER-0.03,VER+0.02,c));
       }else{
         /* SMALLER AND DIMMER FROM THE ANSWER ONWARD, not from the start: it
@@ -3151,38 +3297,66 @@ function drawDedup(g,n){
            EMPTIER than the molecules road, which is the exact opposite of the
            fact this station exists to show: every read goes down it, and the
            repeats are most of them. */
+        /* AND THE CROSS RIDES ALL THE WAY TO THE END. It used to fade out at
+           the fork, on the argument that the verdict was spent once the roads
+           had parted. They have not parted for the reader: a repeat and a first
+           sighting are travelling adjacent rails at the same size, and with the
+           mark gone the only thing separating them is a fifth of a step of
+           brightness — so most of the reads road arrived at its counter looking
+           exactly like the molecules road beside it, which is the one thing
+           this field must not say. Carried the length of the rail, the cross is
+           what makes the reads road legible as the road with the duplicates on
+           it, and it is still grey: "already counted", not "thrown away". */
         const dim=sstep(VER-0.02,VER+0.05,c);
         put(rd.A,gx,yA,vis*(1-0.28*dim),1.14-0.22*dim,
-            vis*sstep(VER-0.03,VER+0.02,c)*(1-sstep(SPL-0.04,SPL+0.02,c)));
+            vis*sstep(VER-0.03,VER+0.02,c));
       }
-      /* the beam, and the light it throws, while this one is under it */
+      /* THE BEAM, AND THE LIGHT IT THROWS, WHILE THIS ONE IS UNDER IT. The lamp
+         takes the SMOOTH progress through the dwell and the scan line takes the
+         triangle: a gantry lamp that flickers at the sweep's own rate is a fault
+         light, and what has to flash is the beam. */
       if(c>=APP && c<VER){
-        const u=clamp01((c-APP)/(SCN-APP));
-        lit[k]=Math.max(lit[k],1-Math.abs(u*2-1)*0.4);
-        scanAt(scans[k],FORK,yi,1.14,u,(c<SCN?0.85:0.85*(1-(c-SCN)/(VER-SCN))));
+        const uu=clamp01((c-APP)/(SCN-APP));
+        lit[k]=Math.max(lit[k],1-Math.abs(uu*2-1)*0.4);
+        scanAt(scans[k],FORK,yi,1.14,sweepU(uu),
+               (c<SCN?1:1-(c-SCN)/(VER-SCN)));
       }
       /* THE COUNT TICKS WHERE THE FRAGMENT LANDS, not where it was judged. The
          number going up and the thing arriving have to be the same event, or
          the counter is just a number that changes on its own. */
       const cross=Math.floor(laps+rd.ph-END)+1;
       if(cross>0){ R[k]+=cross; if(rd.first) M[k]+=cross; }
-      /* AND THE MOLECULES SIDE GETS THE POP. Brief, once, on arrival — the one
-         number on this page whose going up is the point of the station. */
-      if(rd.first) pow[k]=Math.max(pow[k], c>=END
+      /* AND BOTH SIDES GET A POP, ON THE SIDE THE FRAGMENT ACTUALLY LANDS ON.
+         Every read lands on the reads road, so READS pulses every time; only a
+         first sighting reaches the molecules road, so MOLECULES pulses less
+         often. That difference in RATE is the same fact the two numbers carry,
+         drawn in time instead of in digits — and it is why the reads pop had to
+         exist at all: a counter that climbs without moving reads as a number
+         changing on its own rather than as a thing arriving. */
+      const pop=c>=END
         ? Math.max(0,1-(c-END)/0.026)          /* struck, then decaying */
-        : Math.max(0,1-(END-c)/0.012));        /* the last instant of the run */
+        : Math.max(0,1-(END-c)/0.012);         /* the last instant of the run */
+      powR[k]=Math.max(powR[k],pop);
+      if(rd.first) powM[k]=Math.max(powM[k],pop);
     }
     for(let k=0;k<NL;k++){
-      lamps[k].setAttribute("stroke-opacity",(lit[k]*0.55).toFixed(3));
+      /* the lamp is held back now that the beam is aimed: it says which lane is
+         being served, and the beam says what is being looked at */
+      lamps[k].setAttribute("stroke-opacity",(lit[k]*0.34).toFixed(3));
       if(!lit[k]) scans[k].setAttribute("stroke-opacity","0");
       cnt[k].r.textContent="READS "+fmt(R[k]);
       cnt[k].m.textContent="MOLECULES "+fmt(M[k]);
       /* A FAST ATTACK AND A SHORT TAIL. Eased both ways it read as a slow
          breathing of every number at once; what it has to read as is a thing
-         landing. */
-      const e=Math.pow(pow[k],0.55), sc=1+0.26*e;
-      cnt[k].m.setAttribute("transform",cnt[k].m.dataset.base+" scale("+sc.toFixed(3)+")");
-      cnt[k].m.setAttribute("fill-opacity",(0.95+0.05*e).toFixed(3));
+         landing. THE READS POP IS THE SMALLER OF THE TWO — 0.20 against 0.26 —
+         because the typography is the argument and a pulse is typography: two
+         equal pops would say the two arrivals are of equal standing. */
+      const em=Math.pow(powM[k],0.55), sm=1+0.26*em;
+      cnt[k].m.setAttribute("transform",cnt[k].m.dataset.base+" scale("+sm.toFixed(3)+")");
+      cnt[k].m.setAttribute("fill-opacity",(0.95+0.05*em).toFixed(3));
+      const er=Math.pow(powR[k],0.55), sr=1+0.20*er;
+      cnt[k].r.setAttribute("transform",cnt[k].r.dataset.base+" scale("+sr.toFixed(3)+")");
+      cnt[k].r.setAttribute("fill-opacity",(0.72+0.24*er).toFixed(3));
     }
   };
   run(0);
@@ -3667,9 +3841,10 @@ DRAW.whitelists=drawWhitelists;
    trail, orange from the fragment's cDNA end all the way to the join. Spending
    it here would put R1's colour inside R2's station. So a reject is dim rather
    than differently coloured, and the CROSS carries the verdict: the same rule
-   the UMI outline and the splice arc already follow. (HANDOFF's palette note
-   warned this trade would come due the moment something on this map started
-   dropping things. This is that moment, and this is the answer.)
+   the UMI outline and the splice arc already follow. (The palette rule at the
+   top of index.html warned this trade would come due the moment something on
+   this map started dropping things. This is that moment, and this is the
+   answer.)
    ============================================================ */
 
 /* Three squares per fragment, one per barcode. R2 also carries a UMI, but the
