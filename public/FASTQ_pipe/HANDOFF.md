@@ -1604,6 +1604,59 @@ type between neighbouring lines**, and sizing the fragments off that would make
 them four times what they were one station back. `gd` is the belts' own depth,
 so a read here is the read that was riding a gene next door.
 
+## ② Unfiltered DGE — the matrix as relief
+
+**What was wrong with the cube.** It was a cube with some voxels lit: a picture
+of *"a matrix, sparsely filled"*. True, and it said nothing the words underneath
+it did not. **The thing worth drawing is not that it is sparse — it is *how* it
+is sparse**, which has a shape, and that shape is the most recognisable artefact
+in the field.
+
+**So the rows are sorted and their height is their count.** Every barcode gets a
+row, ordered by how many transcripts it carries, and the height of that row is
+that number. Sorted descending, **the surface *is* the barcode-rank curve** — the
+knee plot, stood up as physical relief instead of plotted on axes. A short tall
+ridge at the near edge, a cliff, and a plain that runs away almost flat.
+
+**The cliff is the whole point.** Near side: the barcodes that were cells. Beyond
+it: the ones that never were and never could have been — ambient RNA, sequencing
+error, combinations that simply never happened — and there are hundreds of
+thousands of them. **Nothing here is culled.** Keeping every one of those rows is
+what makes it the *unfiltered* matrix and what makes it almost never shipped.
+
+**The second axis is genes.** The lit cells on the tops of the rows are the genes
+actually detected in that barcode, and there are more of them on the tall rows —
+*not decoration, the same fact twice*: a barcode with more transcripts has more
+distinct genes. The exponent is under one because the relationship saturates.
+
+### The three things that had to be got right
+
+- **The rank curve is two factors and both are real.** A hard sigmoid at the knee
+  (`SS` = 7.5) *and* a slow decay across the plateau (`/(1+k·0.12)`). Without the
+  second the ridge came out as one solid wall — which draws a population where
+  every cell is the same size, the one thing no population of cells has ever
+  been.
+- **The floor is painted down to `fo` 0.34.** At the anchor skin's full strength
+  its top face showed straight through the rows standing a few hundredths above
+  it, and the plate read as a bright solid table with specks on. **Whatever is
+  brightest here has to be the data.**
+- **Far rows first.** Screen depth is `x + y`, so a nearer row is a row at larger
+  `y` — and the tall ones are at the near edge, which puts the ridge in front of
+  the plain it fell off.
+
+**The sweep** is one soft band travelling the gene axis, lifting whatever it
+passes. This object is written once and read by every QC stage after it, and a
+matrix that just sits there does not say so.
+
+**Two figures, both already asserted elsewhere on the page**: 884,736 barcodes
+(`E6`, 96³) and 32,520 features (Ensembl GRCz11, the `G` cards). Their product —
+28.8 billion entries — is arithmetic on those two, not a new claim. *No sparsity
+percentage is stated, because the page has no figure that supports one.*
+
+> `/bioinformatics_pipe` still draws this same matrix as the plain cube it used
+> to be here. **The two pages no longer share the drawing** — only the object —
+> and `UD`'s prose says so. Do not "restore" the cube to make them match.
+
 ## `E7` · Deduplicate UMIs — `E6`'s field, forked
 
 **It is `E6`'s field and not a new one.** Same lane pitch, same lanes, same

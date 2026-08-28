@@ -3191,6 +3191,163 @@ function drawDedup(g,n){
 DRAW.dedup=drawDedup;
 
 
+/* ============================================================
+   ② UNFILTERED DGE — the matrix as relief
+
+   WHAT WAS WRONG WITH THE CUBE. It was a cube with some voxels lit: a picture
+   of "a matrix, sparsely filled". True, and it says nothing that the words
+   underneath it do not. The thing worth drawing about this object is not that
+   it is sparse — it is HOW it is sparse, which has a shape, and the shape is
+   the most recognisable artefact in the whole field.
+
+   SO THE ROWS ARE SORTED AND THEIR HEIGHT IS THEIR COUNT. Every barcode gets a
+   row, ordered by how many transcripts it carries, and the height of that row
+   is that number. Sorted descending, the surface IS the barcode-rank curve —
+   the knee plot, stood up as a physical relief instead of plotted on axes. A
+   short tall ridge at the near edge, a cliff, and then a plain that runs away
+   almost flat for as far as the object goes.
+
+   THE CLIFF IS THE WHOLE POINT. To the near side of it are the barcodes that
+   were cells. Beyond it are the ones that were never cells and never could
+   have been — ambient RNA, sequencing error, combinations that simply never
+   happened — and there are hundreds of thousands of them. NOTHING HERE IS
+   CULLED: this object keeps every one of those rows on purpose, which is what
+   makes it the unfiltered matrix and what makes it almost never shipped.
+
+   AND THE SECOND AXIS IS GENES. The lit cells scattered on the tops of the
+   rows are the genes actually detected in that barcode, and there are more of
+   them on the tall rows than the short ones — which is not decoration, it is
+   the same fact twice: a barcode with more transcripts has more distinct genes.
+
+   Related: /bioinformatics_pipe's D lane starts from this same object, drawn
+   there as the plain cube it used to be here. The two are the same matrix; only
+   this page draws its shape.
+   ============================================================ */
+function drawDGE(g,n){
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const r=rng(5);
+  const x0=n.x-n.w/2, x1=n.x+n.w/2, y0=n.y-n.d/2, y1=n.y+n.d/2;
+  const BASE=n.h*0.055;
+  /* THE FLOOR, AND IT IS PAINTED DOWN. The object needs a silhouette to be
+     clipped and hit-tested against even where the rows are almost flat — but at
+     the anchor skin's full strength its top face shows straight through the
+     rows standing a few hundredths above it, and the whole plate came out
+     looking like a bright solid table with specks on. Whatever is brightest
+     here has to be the data. */
+  paint(g,n.x,n.y,n.w,n.d,BASE,{...SKIN.anchor,fo:0.34});
+
+  /* FORTY-FOUR ROWS FOR 884,736 BARCODES, which is the same window E6 and E7
+     take onto the same space. What has to survive the sampling is the SHAPE,
+     and the shape survives: the first few rows are the cells and everything
+     after them is not. */
+  const NR=44, LP=n.d/NR;
+  const rowY=k=>[y1-(k+1)*LP, y1-k*LP];
+  /* KNEE at about a seventh of the rows, and a hard one. rk is the classic
+     rank curve: a plateau, a cliff, and a floor that never quite reaches zero
+     because ambient RNA never quite does either. */
+  const KN=7.0, SS=7.5, AMB=0.022;
+  const jit=[]; for(let k=0;k<NR;k++) jit.push(0.74+r()*0.34);
+  /* TWO FACTORS, AND BOTH ARE REAL. The first is the cliff — a hard sigmoid at
+     the knee. The second is the SLOPE ACROSS THE PLATEAU: the biggest cell in a
+     run carries several times what the smallest cell does, so the tops of the
+     cell rows step down rather than sitting level. Without it the ridge came
+     out as one solid wall, which draws a population where every cell is the
+     same size — the one thing no population of cells has ever been. */
+  const rk=k=>Math.max(AMB, (1/(1+Math.pow(k/KN,SS)))/(1+k*0.12))*jit[k];
+  const hOf=k=>BASE+(n.h-BASE)*Math.min(1,rk(k));
+
+  const TOP=V("a-top"), LEFT=V("a-left"), RIGHT=V("a-right");
+  const poly=(p,fill,op,so)=>g.appendChild(el("polygon",{points:p,fill,
+    "fill-opacity":op.toFixed(2),stroke:"var(--stroke)","stroke-width":"0.5",
+    "stroke-opacity":so.toFixed(2)}));
+  /* THE PLATE IS MOSTLY ZERO AND HAS TO LOOK IT. Painted at the anchor skin's
+     full strength the empty rows came out as a solid bright table with a few
+     specks on it — a piece of furniture, not a matrix. They are held down to a
+     third, so the DATA is the bright thing and the object it sits in is the
+     dark thing, which is the right way round for something this empty. The
+     rows that are cells keep more of their strength: that difference is the
+     cliff, said a second way. */
+  const strength=k=>k<12?0.34+0.30*(1-k/12):0.26;
+
+  /* FAR ROWS FIRST. Screen depth on this projection is x + y, so a row nearer
+     the viewer is a row at larger y — and the tall ones are at the near edge,
+     which means the ridge is in front of the plain it fell off. */
+  const ticks=[];
+  for(let k=NR-1;k>=0;k--){
+    const [ya,yb]=rowY(k), h=hOf(k), cy=(ya+yb)/2;
+    const f=faces((x0+x1)/2, cy, n.w, LP, h);
+    const st=strength(k);
+    poly(f.left ,LEFT ,st*1.25,0.16);
+    poly(f.right,RIGHT,st*1.25,0.16);
+    poly(f.top  ,TOP  ,st     ,0.20);
+    /* THE GENES DETECTED IN THAT BARCODE. More of them on the tall rows, and
+       the exponent is under one because the relationship is saturating: a cell
+       with ten times the transcripts does not have ten times the genes. */
+    const nt=Math.max(1,Math.round(34*Math.pow(rk(k),0.50)));
+    for(let i=0;i<nt;i++){
+      const gx=x0+(0.02+r()*0.96)*n.w, gw=n.w*0.012;
+      const q=[P(gx,ya+LP*0.22,h),P(gx+gw,ya+LP*0.22,h),
+               P(gx+gw,yb-LP*0.22,h),P(gx,yb-LP*0.22,h)];
+      ticks.push({node:g.appendChild(el("polygon",{points:pts(q),fill:"var(--voxel)",
+        "fill-opacity":"0.6",stroke:"none"})), gx, base:k<12?0.86:0.62});
+    }
+  }
+
+  /* the gene axis, ruled faintly across the whole plate, so the long direction
+     reads as a second axis and not just as length */
+  for(let i=1;i<16;i++){
+    const gx=x0+n.w*i/16, a=P(gx,y0,BASE), b2=P(gx,y1,BASE);
+    g.appendChild(el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+      x2:b2[0].toFixed(1),y2:b2[1].toFixed(1),stroke:"var(--stroke)",
+      "stroke-width":"0.5","stroke-opacity":".14"}));
+  }
+
+  /* ---- what the two axes are ---------------------------------------------
+     Written on the edges they belong to and running along them, so neither
+     needs the word "axis" to be understood as one. */
+  const say=(x,y,z,txt,rot,anchor,size,op,wt,ls)=>{
+    const a=P(x,y,z);
+    const t=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(${rot})`,
+      "text-anchor":anchor,"font-family":MONO,fill:"var(--fg2)",
+      "font-size":size.toFixed(1),"font-weight":String(wt),
+      "letter-spacing":(ls||0).toFixed(2),"fill-opacity":op});
+    t.textContent=txt; g.appendChild(t); return t;
+  };
+  const FS=Math.max(7,n.w*1.15);
+  say(x0+n.w*0.04, y1+LP*1.5, 0, "32,520 genes", 30, "start", FS, ".72", 700, FS*0.06);
+  say(x1+n.w*0.045, y1-LP*0.4, 0, "884,736 barcodes", -30, "start", FS, ".72", 700, FS*0.06);
+  /* AND THE TWO SIDES OF THE CLIFF, NAMED. Everything this object is about is
+     the difference between them, and it is a difference of about three orders
+     of magnitude that the eye reads as "a ridge and a floor". */
+  say(x1+n.w*0.10, y1+LP*2.6, n.h*1.02, "the cells", -30, "start", FS*1.0, ".88", 700, FS*0.05)
+    .setAttribute("fill","var(--ok)");
+  say(x1+n.w*0.045, y0+n.d*0.40, BASE, "never a cell · kept anyway",
+      -30, "start", FS*0.92, ".62", 600, FS*0.05);
+  say(x0+n.w*0.04, y1+LP*4.4, 0, "884,736 × 32,520 = 28.8 billion entries, almost every one a zero",
+      30, "start", FS*0.86, ".60", 500, FS*0.04);
+
+  /* ---- READ, AND READ AGAIN ----------------------------------------------
+     This object is written once and read by every QC stage after it, and a
+     matrix that just sits there does not say so. A soft band travels the gene
+     axis and lifts whatever it passes over: the cheapest possible drawing of
+     something being scanned, over and over, by things that are not on this map. */
+  let t=0;
+  const SWEEP=n.w*0.16;
+  const run=dt=>{
+    t+=dt;
+    const px=x0-SWEEP+((t*0.55)%1)*(n.w+2*SWEEP);
+    for(const q of ticks){
+      const d=Math.abs(q.gx-px)/SWEEP;
+      q.node.setAttribute("fill-opacity",
+        (q.base+(1-Math.min(1,d))*0.34).toFixed(3));
+    }
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.dge=drawDGE;
+
+
 
 /* ============================================================
    W1 · BARCODE WHITELISTS — where the lists come from
