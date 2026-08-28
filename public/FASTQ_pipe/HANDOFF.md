@@ -1470,18 +1470,39 @@ Nothing is merged here. No counts, no collapsing: two reads that share cell,
 gene and UMI are still two reads. *Drawing it early would spend the one thing
 `E7` has to show.*
 
-### It arrives edgewise and turns onto the rail
+### It arrives in `E5`'s pose and unfolds into `E6`'s
 
-A read spent the last two stations lying **along a gene**, and a gene runs
-across the belt in `y`. **A track runs in `x`.** So the molecule that leaves the
-belt is ninety degrees off the one that rides a rail — and a read that simply
-appears already turned makes the spill and the field two separate drawings that
-happen to be next to each other. The whole pose, blue and the aligned end
-standing off it, rotates about its own vertical from the gene's axis in the air
-to the rail's on the ground.
+**The two poses are the same molecule held two ways.** On a belt the **aligned**
+end lies flat along the gene and the **barcode** end stands off it in `TDIR`:
+the gene is the subject and the barcode has nothing to say. On a rail it is the
+other way round — the **barcode** end lies flat along the track, *because the
+track IS the barcode*, and the aligned end stands off in `TDIR` carrying the
+gene's name. Same hinge, same angle, opposite arms. **Landing is where the read
+stops being about a gene and starts being about a cell**, and this is that
+sentence drawn.
 
-**The turn finishes before the landing does**, so the last of the descent is
-already on-rail: *a read still turning when it touches reads as a skid.*
+**So it is not a rotation, it is an unfold.** Both arms swing about the one
+hinge and swap places — the orange comes off the ground up onto the aerial while
+the blue comes down off the aerial onto the rail — and **the adapter between
+them (`J` → `J + TDIR·Ta`) is the same segment in both poses** and never moves
+relative to the hinge. That is what keeps the two ends readable as one molecule
+through the middle of the change.
+
+`q` is **1 in `E5`'s pose and 0 in `E6`'s**, and it **holds at 1 for the first
+two fifths of the fall** — the shape has to register before it changes, or the
+unfold is a flicker. It reaches 0 **as the read touches**, not before: what lands
+is the pose the rail is drawn for. The fall itself is `0.16` of a lap, up from
+`0.09`, for the same reason.
+
+### The blue carries weight from `E4` onward
+
+It was drawn as a hairline on the belts (`RWB = RW·0.25`, floor `0.26`, opacity
+`0.34`) on the argument that the gene is the subject there. True, but **it is
+also the piece that carries the cell barcode into `E6`** — and a reader who
+cannot see it on the belt cannot follow it onto the rail. `RW·0.42`, floor
+`0.36`, opacity `0.58`. **On the rail it is the heaviest thing on the read**
+(floor `0.44`): it is the sort key there, and the track it lies on *is* that
+segment.
 
 **And it comes off close and already spread.** `NOZX` / `NOZZ` put the start a
 little up-belt and a little above, not out of a nozzle halfway across the map,

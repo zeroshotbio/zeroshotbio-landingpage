@@ -1626,7 +1626,7 @@ function drawGeneBelt(g,n,MODE){
      aerial goes through `barTo`, which floors its own half-width in SCREEN
      pixels — a legibility floor, and the only length on this shape that is not
      in world units. */
-  const RW=GW*0.047, RWB=RW*0.25;
+  const RW=GW*0.047, RWB=RW*0.42;
   const GWE=GW*0.58;                          /* the gene's line, body and exons alike */
   const ATICK="M -3.4 0.3 L -1.1 2.7 L 3.7 -3.4";
   const ACROSS="M -3.0 -3.0 L 3.0 3.0 M 3.0 -3.0 L -3.0 3.0";
@@ -2265,10 +2265,12 @@ function drawGeneBelt(g,n,MODE){
         const tg=[rx+ux*TAIL,yOf(rd.end)+dy+uy*TAIL,z0+uz*TAIL];
         const knee=kg, tipp=tg;
         seg(rd.ad,tail0[0],tail0[1],tail0[2],knee[0],knee[1],knee[2],op*0.42);
-        /* AND IT COMES UP ON THE TRACK. Held back to a quarter of the read
-           while it is the part with nothing to say; on a track it is the part
-           doing the saying, and it is drawn like it. */
-        B2(rd.bc,knee,tipp,RWB,0.26,op*0.34);
+        /* AND IT COMES UP ON THE TRACK. Still held back — on a belt this end
+           has nothing to say and the gene is the subject — but not held back
+           to a hairline. It is the piece that carries the cell barcode into
+           E6 and the piece the read is about to land on, and a reader who
+           cannot see it here cannot follow it there. */
+        B2(rd.bc,knee,tipp,RWB,0.36,op*0.58);
         /* the mark rides above the read it is about, and pops the way E3's do */
         /* AND THE MARK GOES WITH THE GENE. A tick is about a read's place on a
            model; off the model there is no place for it to be about, and a
@@ -2551,7 +2553,7 @@ function drawTracks(g,n){
      the fan in the air is already two thirds of the fan on the ground, so what
      closes on landing is a nudge onto a rail instead of a swerve across the
      field. */
-  const NOZX=1.5*K, NOZZ=1.25*KZ, FAN=0.34;
+  const NOZX=1.5*K, NOZZ=1.75*KZ, FAN=0.34;
   const PAD=2.2*K, LOOP=span+PAD*2;
   const BASES="ACGT";
   const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
@@ -2630,7 +2632,10 @@ function drawTracks(g,n){
     for(const rd of reads){
       const u=((t*v/LOOP+rd.ph)%1+1)%1;
       const gx=x0-PAD+u*LOOP;
-      const kk=clamp01((u-(rd.u0-0.09))/0.09);
+      /* A LONGER FALL, because the pose has to be legible before it changes.
+         At 0.09 of the lap the whole descent was over in about a second and
+         the shape it arrives in never registered. */
+      const kk=clamp01((u-(rd.u0-0.16))/0.16);
       const air=Math.pow(1-kk,2.2);
       const ty=trackY(rd.tk);
       const cx=gx-NOZX*air;
@@ -2639,29 +2644,51 @@ function drawTracks(g,n){
       const yy=ty+(cy-ty)*air*FAN, zz=lz+NOZZ*air;
       const vis=Math.min(sstep(x0-PAD,x0-PAD+K*0.6,gx),1-sstep(x1-span*0.14,x1-K*0.1,gx))
                 *sstep(0,0.10,kk);
-      /* IT ARRIVES EDGEWISE AND TURNS ONTO THE RAIL.
+      /* IT ARRIVES IN E5'S POSE AND UNFOLDS INTO E6'S.
 
-         A read spent the last two stations lying ALONG a gene, and a gene runs
-         across the belt in y. A track runs in x. So the molecule that leaves
-         the belt is ninety degrees off the one that rides a rail, and if it
-         simply appears already turned then the spill and the field are two
-         separate drawings that happen to be next to each other.
+         THE TWO POSES ARE THE SAME MOLECULE HELD TWO WAYS. On a belt the
+         ALIGNED end lies flat along the gene and the BARCODE end stands off it
+         in TDIR: the gene is the subject and the barcode has nothing to say. On
+         a rail it is the other way round — the BARCODE end lies flat along the
+         track, because the track IS the barcode, and the aligned end stands off
+         in TDIR carrying the gene's name. Same hinge, same angle, opposite
+         arms. Landing is where the read stops being about a gene and starts
+         being about a cell, and this is that sentence drawn.
 
-         So the whole pose — blue and the aligned end standing off it — is
-         rotated about its own vertical, from the gene's axis in the air to the
-         rail's on the ground. THE TURN FINISHES BEFORE THE LANDING DOES, so the
-         last of the descent is already on-rail: a read that is still turning
-         when it touches reads as a skid. */
-      const turn=sstep(0.10,0.85,air), ang=Math.PI/2*turn;
-      const ca=Math.cos(ang), sa=Math.sin(ang);
-      const hx=ca*Lb/2, hy=sa*Lb/2;
-      const bA=[cx-hx,yy-hy,zz], bB=[cx+hx,yy+hy,zz];
-      const OD=[TDIR[0]*ca, TDIR[0]*sa, TDIR[1]];
-      const kx  =[bA[0]+OD[0]*Ta, bA[1]+OD[1]*Ta, bA[2]+OD[2]*Ta];
-      const oEnd=[bA[0]+OD[0]*(Ta+Lo), bA[1]+OD[1]*(Ta+Lo), bA[2]+OD[2]*(Ta+Lo)];
-      barTo2(rd.bc,RWB,0.32,bA,bB,vis*0.90);
-      seg2(rd.ad,bA,kx,vis*0.42);
-      barTo2(rd.cd,RW,0.62,kx,oEnd,vis);
+         SO IT IS NOT A ROTATION, IT IS AN UNFOLD. Both arms swing about the one
+         hinge and swap places: the orange comes off the ground and up onto the
+         aerial while the blue comes down off the aerial onto the rail, and the
+         adapter between them — J to J + TDIR * Ta — is the same segment in both
+         poses and never moves relative to the hinge. That is what makes the two
+         ends readable as the same molecule through the middle of the change.
+
+         q IS 1 IN E5'S POSE AND 0 IN E6'S, and it HOLDS AT 1 for the first
+         two fifths of the fall. The shape has to register before it changes, or
+         the unfold is just a flicker. It reaches 0 as the read touches, not
+         before: what lands is the pose the rail is drawn for. */
+      const q=sstep(0.03,0.62,air);
+      const mix=(a,b)=>{ const v=[a[0]+(b[0]-a[0])*(1-q),
+                                 a[1]+(b[1]-a[1])*(1-q),
+                                 a[2]+(b[2]-a[2])*(1-q)];
+        const L=Math.hypot(v[0],v[1],v[2])||1;
+        return [v[0]/L,v[1]/L,v[2]/L]; };
+      const dU=[TDIR[0],0,TDIR[1]];                 /* the hinge's own arm */
+      const dB=mix(dU,[1,0,0]);                     /* barcode end: aerial -> rail */
+      const dO=mix([0,-1,0],dU);                    /* aligned end: gene -> aerial */
+      /* the blue's MIDDLE is the thing that ends up on the track, so it is the
+         thing the whole molecule is hung from */
+      const bA=[cx-dB[0]*Lb/2, yy-dB[1]*Lb/2, zz-dB[2]*Lb/2];
+      const bB=[cx+dB[0]*Lb/2, yy+dB[1]*Lb/2, zz+dB[2]*Lb/2];
+      const J =[bA[0]-dU[0]*Ta*q, bA[1]-dU[1]*Ta*q, bA[2]-dU[2]*Ta*q];
+      const kx=[J[0]+dU[0]*Ta, J[1]+dU[1]*Ta, J[2]+dU[2]*Ta];
+      const oB=[J[0]+dU[0]*Ta*(1-q), J[1]+dU[1]*Ta*(1-q), J[2]+dU[2]*Ta*(1-q)];
+      const oEnd=[oB[0]+dO[0]*Lo, oB[1]+dO[1]*Lo, oB[2]+dO[2]*Lo];
+      /* AND ON THE RAIL THE BLUE IS THE HEAVIEST THING ON THE READ. It is the
+         sort key here — the track it is lying on IS this segment — so it is
+         floored wider than the aligned end that was the subject next door. */
+      barTo2(rd.bc,RWB,0.44,bA,bB,vis*0.95);
+      seg2(rd.ad,J,kx,vis*0.42);
+      barTo2(rd.cd,RW,0.62,oB,oEnd,vis);
       /* THE TWO FACTS THAT ARE NOT ALREADY DRAWN, each lying along the piece of
          the molecule it came off. The gene sits over the ORANGE at the orange's
          own angle, so the aligned end underlines it; the UMI sits over the BLUE
