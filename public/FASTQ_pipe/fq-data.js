@@ -332,7 +332,20 @@ const NODES = [
    this instance, so the stripes are the SHAPE of an alignment and not a
    coverage track. See drawAligner. */
 {id:"G4", key:"G4", noclip:true, group:"G · genome, and W · whitelists", shape:"aligner",
- follow:{a:"E4",dx:3.4}, name:"STAR Aligner", x:7.5, y:R3+5.9, w:4.0, d:4.4, h:0.5,
+ /* IT STANDS OFF G3'S OWN LINE, AND THAT IS WHAT MAKES ITS FEEDS VISIBLE.
+    G1 and G2 present their top-right edges at y +8.4 and +8.5, and G3's
+    bottom-left edge is at +8.1 — so every line into the index is three tenths
+    of a unit long, which is a stub with a dot on it rather than a track. Two
+    more consumers' worth of line in that same band would have been four stubs
+    on top of each other.
+    So this one is lifted clear: bl at +7.25 rather than +8.1, which gives both
+    feeds about 1.2 units of run and leaves G3's own two lines a whole unit
+    above them instead of alongside. The pair is what pins it — bl must stay
+    UNDER the sources' +8.4 or the track doubles back, and tr must stay OVER
+    E4's near rail at +2.66 or the track runs beneath the opaque deck and is
+    never seen. d came 4.4 -> 4.0 to fit both at once: at 4.4 there is no y that
+    satisfies them with any margin. RE-CHECK BOTH IF THIS MOVES. */
+ follow:{a:"E4",dx:3.4}, name:"STAR Aligner", x:7.5, y:R3+5.25, w:4.0, d:4.0, h:0.5,
  sub:"read 1 against the index · a position, or nothing",
  does:"Takes read 1 and the index and answers one question per read: where on the assembly does this sequence sit, and does it sit anywhere uniquely. A read that lands in one place carries a coordinate from here on. A read that lands nowhere, or in several places, is set aside and never counted — the second deletion on this page, and the largest after the barcode parse.",
  built:"STAR is the aligner behind three of the four counting stacks in this corpus, sometimes named and sometimes wrapped: split-pipe runs it for the Parse datasets, Cell Ranger wraps its own build for the 10x ones, and ZCL2's Microwell-seq pipeline runs STAR plus modified Drop-seq tools 1.12. The STAR version actually recorded anywhere in the corpus is DanioCell's — Cell Ranger 4.0.0 wrapping STAR 2.5.1b. The rest are known only by their wrapper.",
@@ -545,6 +558,41 @@ const EDGES = [
   {a:"G1", b:"G3", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
   {a:"G2", b:"G3", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
   {a:"G3", b:"E4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
+
+  /* ---- AND THE SAME TWO FILES RUN TO THE ALIGNER, WHICH RUNS TO THE STEP ---
+
+     G4 IS THE ALIGNER AND NOT A PICTURE OF ONE. Its own prose has always said
+     so — "takes read 1 and the index and answers one question per read" — and
+     until now it stood in the reference row with nothing arriving at it and
+     nothing leaving, which drew a machine that consumes nothing and feeds
+     nothing. Three lines is what the node was already claiming in words.
+
+     WHY BOTH FILES AGAIN, WHEN THEY ALREADY RUN TO G3. Because the index is
+     not the whole of what the reference decides. G3 is the structure the two
+     files compile into and it is what makes the lookup fast; what a read can
+     be found in AT ALL is the assembly, and what a coordinate can be called is
+     the annotation. Those are properties of G1 and G2 and they survive the
+     compilation — so the pair feeds both the thing built from it and the thing
+     that uses it, and that is the same claim G1 -> E4 and G2 -> E4 make one
+     station further along.
+
+     THE INEQUALITY HOLDS FOR ALL THREE, and it is the one thing to re-check if
+     any of these four nodes moves. A track reads as LEAVING rather than
+     doubling back only when the destination's bottom-left edge is at lower y
+     than the source's top-right edge:
+
+       G1 tr  y +8.4   ->  G4 bl  y +7.25
+       G2 tr  y +8.5   ->  G4 bl  y +7.25
+       G4 tr  y +3.25  ->  E4 bl  y +2.66     the belt's NEAR RAIL, not +3.3
+
+     That last one is the tight one and it is not about the footprint. E4's box
+     reaches +3.3 but its drawn belt stops at +2.66, and the belt is opaque and
+     paints after the edges — an aligner whose top-right edge sat inside +2.66
+     would send its track UNDER the deck, where none of it survives. G4 at +3.7
+     clears it by a unit, which is the same clearance G3 has at +4.3. */
+  {a:"G1", b:"G4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
+  {a:"G2", b:"G4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
+  {a:"G4", b:"E4", kind:"ref", straight:true, port:"tr", portB:"bl", tone:"var(--fg2)"},
 
   /* ---- G2 -> E5 IS OFF THE MAP, AND THIS IS WHERE IT WAS -----------------
 

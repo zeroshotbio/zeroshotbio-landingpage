@@ -68,7 +68,14 @@ const roof = id => page.evaluate(i => {
   return { x: m.a * q[0] + m.c * q[1] + m.e, y: m.b * q[0] + m.d * q[1] + m.f };
 }, id);
 
-const A = await roof('G4'), B = await roof('E4');
+/* THE FIXTURE PAIR HAS TO BE ONE THE DATA FILE HAS NOT ALREADY JOINED, and it
+   stopped being G4/E4 the day the aligner was wired into the row: the tool
+   refused the duplicate, correctly, and six of this check's seven assertions
+   failed downstream of the one that mattered. G2b is the spare annotation card
+   — placed unconnected, for exactly this — and nothing authored runs between it
+   and the index. If a future edge ever joins them, move this pair again rather
+   than teaching the tool to allow duplicates. */
+const A = await roof('G2b'), B = await roof('G3');
 await page.mouse.click(A.x, A.y); await page.waitForTimeout(150);
 await page.mouse.click(B.x, B.y); await page.waitForTimeout(250);
 if (await links() !== 1) fail(`two clicks made ${await links()} links, expected 1`);
