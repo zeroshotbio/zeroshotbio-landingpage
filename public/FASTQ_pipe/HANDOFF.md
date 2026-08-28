@@ -1425,6 +1425,12 @@ fragment here the same size as the one that was riding a gene next door.
 | gene | `--ok` text **along the orange**, at the orange's own angle | that verdict was struck one station back, on that end |
 | UMI | `--accent` text **along the blue**, at the track's angle | it is R2's and has been R2's since `E2` |
 
+**The gene is twice the UMI's size.** They are not two labels of equal
+standing: the gene is the answer this row has been working toward since `E4`,
+the UMI a serial number that means nothing until `E7` counts it. At that size
+the gene overhangs its orange, and that is the trade — *the orange still says
+which end it came off, which is all the underline was ever doing.*
+
 **Each label lies along the segment it came off, so the two pieces of the
 molecule *are* the two underlines** and no legend has to say which fact came
 from which end. Both angles are taken off the projection (`ANGB`, `ANGO`) rather
@@ -1463,6 +1469,26 @@ deduplication to do**, and the next station would read as an empty gesture.
 Nothing is merged here. No counts, no collapsing: two reads that share cell,
 gene and UMI are still two reads. *Drawing it early would spend the one thing
 `E7` has to show.*
+
+### It arrives edgewise and turns onto the rail
+
+A read spent the last two stations lying **along a gene**, and a gene runs
+across the belt in `y`. **A track runs in `x`.** So the molecule that leaves the
+belt is ninety degrees off the one that rides a rail — and a read that simply
+appears already turned makes the spill and the field two separate drawings that
+happen to be next to each other. The whole pose, blue and the aligned end
+standing off it, rotates about its own vertical from the gene's axis in the air
+to the rail's on the ground.
+
+**The turn finishes before the landing does**, so the last of the descent is
+already on-rail: *a read still turning when it touches reads as a skid.*
+
+**And it comes off close and already spread.** `NOZX` / `NOZZ` put the start a
+little up-belt and a little above, not out of a nozzle halfway across the map,
+so it reads as the spill off the belt next door. `FAN` = 0.34 means the fan in
+the air is already two thirds of the fan on the ground — at `FAN` = 1 every read
+in the air sits over the field's centre line and the twenty tracks do all the
+spreading at the last moment, which draws a jet rather than a fall.
 
 ### The empty tracks are the point, and the number is real
 
@@ -1513,10 +1539,16 @@ so a read here is the read that was riding a gene next door.
   track — times `RS`, plus the gene name sitting over it. `S · cos30 · TP` is the
   clear air there. Twenty tracks at that spacing is what fits between the
   reference row and the band.
-- **The field's caption starts 2.6 units downstream of the corner.** The far side
-  of this field lands a long way to the *screen* left — `y` and `x` pull the same
-  way here — so a caption started at the corner reads straight into `E5`'s gene
-  names.
+- **The field's caption holds `x - y` = `n.x - n.y`, and that is the whole of
+  centring it.** Screen x is `(x - y)`, so a line placed at the middle of the
+  tracks in `x` but at the field's far side in `y` is not under the node at all —
+  it is a third of the map to the left, because `+y` carries it down *and* left.
+  So the `y` is chosen for how far below to sit and the `x` **follows it**.
+- **Centred and near pull apart here.** Holding `x - y` fixed means every unit
+  closer in `y` is a unit further downstream in `x`, and the caption is wider
+  than the field — so past a point its left end runs back through the ends of
+  the tracks. The offset is that point plus a margin, and the gap that leaves
+  between the last track and the line is the projection, not a mistake.
 - **A tag stays off until its read is clear of the cell names.** Those sit at
   the field's near end and run about a unit along their own tracks; a read that
   lands under one puts its gene and UMI through the name of the cell in the next

@@ -2425,7 +2425,7 @@ function drawTracks(g,n){
             this size weight is the only thing that separates them from the
             grid they are drawn on. */
   const GFS=Math.max(6,10.4*K);
-  const LFS=Math.max(4.4,GFS*0.70), CFS=LFS*1.8, CAP=CFS*1.5;
+  const LFS=Math.max(4.4,GFS*0.70), GLS=LFS*2, CFS=LFS*1.8, CAP=CFS*1.5;
   const lz=base+n.h*0.05;
 
   /* ---- WHICH CELL EACH TRACK IS, AND HOW LITTLE IS IN MOST OF THEM -------
@@ -2481,14 +2481,32 @@ function drawTracks(g,n){
   }
   /* what the window is a window onto, said once and at the field's near edge */
   {
-    /* SET DOWNSTREAM OF THE FIELD'S CORNER, not at it. The far side of this
-       field lands a long way to the SCREEN left — y and x pull the same way on
-       this projection — so a caption started at the corner reads straight into
-       the gene names on the belt one station back. Two and a half units along
-       the track buys the whole line its own air. */
-    const a=P(x0+2.6,trackY(NT-1)+TP*1.5,base);
+    /* CENTRED ON THE FIELD, not started at its corner. Anchored at the middle
+       of the tracks in x and set below the last of them, with text-anchor
+       middle so the line grows both ways from there — which is what makes it
+       read as this field's caption rather than as something that happens to
+       start near it. Started at the corner it also ran into the gene names on
+       the belt one station back, because the far side of this field lands a
+       long way to the SCREEN left: y and x pull the same way here. */
+    /* CENTRED UNDER THE NODE, AND THE ARITHMETIC IS THE WHOLE POINT.
+
+       Screen x on this projection is (x - y), so a caption placed at the middle
+       of the tracks in x but at the field's FAR side in y is not under the node
+       at all — it is a third of the map to the left, because +y carries it
+       down AND left. What has to hold is x - y = n.x - n.y; then screen x is
+       the node's exactly, whatever y the line sits at. So y is chosen for how
+       far below to sit and x FOLLOWS IT, which also means DN moves the line
+       straight down rather than down-and-left into the belt it was clearing. */
+    /* AND AS CLOSE UNDER IT AS THE TRACK ENDS ALLOW. Centred and near pull
+       apart on this projection: holding x - y fixed means every unit closer in
+       y is a unit further downstream in x, and the line is wider than the
+       field, so past a point its left end runs back through the ends of the
+       tracks. This is that point plus a margin. */
+    const DN=0;
+    const ya=trackY(NT-1)+TP*1.2+DN, xa=n.x+(ya-n.y);
+    const a=P(xa,ya,base);
     const t3=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
-      "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
+      "text-anchor":"middle","font-family":MONO,fill:"var(--fg3)",
       "font-size":CAP.toFixed(1),"font-weight":"600",
       "letter-spacing":(CAP*0.06).toFixed(2),"fill-opacity":".62"});
     t3.textContent=NT+" of "+fmt(CELLSPACE)+" · 96 × 96 × 96 · most are empty";
@@ -2523,7 +2541,17 @@ function drawTracks(g,n){
   const ANGO=(()=>{ const o=P(0,0,0), u=P(-TDIR[0],0,-TDIR[1]);
     return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
 
-  const NOZX=3.4*K, NOZZ=2.6*KZ;
+  /* WHERE THEY COME FROM, AND HOW MUCH OF A FAN IT IS.
+
+     They are meant to look like the spill off the end of the belt next door, so
+     they start CLOSE — a little up-belt and a little above, not out of a nozzle
+     halfway across the map. And they start SPREAD: at FAN = 1 every read in the
+     air is over the field's centre line and the twenty tracks do all the
+     spreading at the last moment, which draws a jet rather than a fall. At 0.34
+     the fan in the air is already two thirds of the fan on the ground, so what
+     closes on landing is a nudge onto a rail instead of a swerve across the
+     field. */
+  const NOZX=1.5*K, NOZZ=1.25*KZ, FAN=0.34;
   const PAD=2.2*K, LOOP=span+PAD*2;
   const BASES="ACGT";
   const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
@@ -2554,11 +2582,17 @@ function drawTracks(g,n){
          molecule ARE the two underlines and no legend is needed to say which
          fact came from which end of the read. Bold, because at this size
          against this grid weight is what makes them text. */
-      const mk=(txt,col)=>el("text",{"text-anchor":"start","font-family":MONO,
-        "font-size":LFS.toFixed(1),"font-weight":"700",fill:col,
+      const mk=(sz,col)=>el("text",{"text-anchor":"start","font-family":MONO,
+        "font-size":sz.toFixed(1),"font-weight":"700",fill:col,
         "fill-opacity":"0"});
-      const tg=mk(gene,"var(--ok)"); tg.textContent=gene;
-      const tu=mk(umi,"var(--accent)"); tu.textContent=umi;
+      /* THE GENE IS TWICE THE UMI, because they are not two labels of equal
+         standing. The gene is the answer this row has been working toward since
+         E4; the UMI is a serial number that means nothing until E7 counts it.
+         The gene overhangs its orange at this size and that is the trade: the
+         orange still says which end it came off, which is all the underline was
+         ever doing. */
+      const tg=mk(GLS,"var(--ok)"); tg.textContent=gene;
+      const tu=mk(LFS,"var(--accent)"); tu.textContent=umi;
       reads.push({tk:k, ph:(j+0.5+(rnd()-0.5)*0.5)/ln.m, u0:0.10+rnd()*0.16,
         cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
         ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
@@ -2600,16 +2634,31 @@ function drawTracks(g,n){
       const air=Math.pow(1-kk,2.2);
       const ty=trackY(rd.tk);
       const cx=gx-NOZX*air;
-      /* the fan closes as it lands: in the air every read is over the field's
-         own centre line, and it is the thirty different tracks that spread them */
-      const yy=ty+(cy-ty)*air, zz=lz+NOZZ*air;
+      /* the fan closes as it lands, but only part of the way: they come off the
+         belt already spread, and the landing is the last third of it */
+      const yy=ty+(cy-ty)*air*FAN, zz=lz+NOZZ*air;
       const vis=Math.min(sstep(x0-PAD,x0-PAD+K*0.6,gx),1-sstep(x1-span*0.14,x1-K*0.1,gx))
                 *sstep(0,0.10,kk);
-      /* blue along the track with its middle on it; the aligned end standing
-         off it at the angle the aerial had */
-      const bA=[cx-Lb/2,yy,zz], bB=[cx+Lb/2,yy,zz];
-      const kx=[bA[0]+TDIR[0]*Ta, yy, bA[2]+TDIR[1]*Ta];
-      const oEnd=[bA[0]+TDIR[0]*(Ta+Lo), yy, bA[2]+TDIR[1]*(Ta+Lo)];
+      /* IT ARRIVES EDGEWISE AND TURNS ONTO THE RAIL.
+
+         A read spent the last two stations lying ALONG a gene, and a gene runs
+         across the belt in y. A track runs in x. So the molecule that leaves
+         the belt is ninety degrees off the one that rides a rail, and if it
+         simply appears already turned then the spill and the field are two
+         separate drawings that happen to be next to each other.
+
+         So the whole pose — blue and the aligned end standing off it — is
+         rotated about its own vertical, from the gene's axis in the air to the
+         rail's on the ground. THE TURN FINISHES BEFORE THE LANDING DOES, so the
+         last of the descent is already on-rail: a read that is still turning
+         when it touches reads as a skid. */
+      const turn=sstep(0.10,0.85,air), ang=Math.PI/2*turn;
+      const ca=Math.cos(ang), sa=Math.sin(ang);
+      const hx=ca*Lb/2, hy=sa*Lb/2;
+      const bA=[cx-hx,yy-hy,zz], bB=[cx+hx,yy+hy,zz];
+      const OD=[TDIR[0]*ca, TDIR[0]*sa, TDIR[1]];
+      const kx  =[bA[0]+OD[0]*Ta, bA[1]+OD[1]*Ta, bA[2]+OD[2]*Ta];
+      const oEnd=[bA[0]+OD[0]*(Ta+Lo), bA[1]+OD[1]*(Ta+Lo), bA[2]+OD[2]*(Ta+Lo)];
       barTo2(rd.bc,RWB,0.32,bA,bB,vis*0.90);
       seg2(rd.ad,bA,kx,vis*0.42);
       barTo2(rd.cd,RW,0.62,kx,oEnd,vis);
@@ -2620,7 +2669,7 @@ function drawTracks(g,n){
          from the segment's far end and read back down it, because Latin type
          has to advance to the right and only one of each segment's two
          directions does that on this projection. */
-      { const qo=P(oEnd[0],yy,oEnd[2]), qb=P(bA[0],yy,bA[2]);
+      { const qo=P(oEnd[0],oEnd[1],oEnd[2]), qb=P(bA[0],bA[1],bA[2]);
         /* AND THEY STAY OFF UNTIL THE READ IS CLEAR OF THE CELL NAMES. Those
            sit at the field's near end and run about two units along their own
            tracks; a read that lands under one puts its gene and UMI through the
@@ -2630,8 +2679,8 @@ function drawTracks(g,n){
         const op=(vis*0.86*sstep(x0+K*2.6,x0+K*4.0,gx)).toFixed(3);
         rd.tg.setAttribute("transform",
           `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
-        rd.tg.setAttribute("x",(LFS*0.35).toFixed(1));
-        rd.tg.setAttribute("y",(-LFS*0.42).toFixed(1));
+        rd.tg.setAttribute("x",(GLS*0.20).toFixed(1));
+        rd.tg.setAttribute("y",(-GLS*0.34).toFixed(1));
         rd.tg.setAttribute("fill-opacity",op);
         rd.tu.setAttribute("transform",
           `translate(${qb[0].toFixed(1)},${qb[1].toFixed(1)}) rotate(${ANGB})`);
