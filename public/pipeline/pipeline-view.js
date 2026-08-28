@@ -410,12 +410,44 @@ function trimEnds(raw, A, B){
 }
 function routeOf(e){
   const A=byId[e.a],B=byId[e.b], mx=(A.x+B.x)/2;
+
+  /* ---- A PORTED EDGE LEAVES FROM A NAMED POINT, NOT FROM A CENTRE ----------
+     Ported from /FASTQ_pipe with row 3's objects. The reference figures on that
+     row are the largest footprints on this map, and an edge drawn from the
+     centre of one spends its whole length inside the object's own occlusion
+     silhouette: the line is there, the dot is travelling it, and the node reads
+     as unconnected. PORTS is keyed by SHAPE — a port is a property of the
+     drawing, not of the node — and answers names like "tr" and "bl", the two
+     footprint edges anybody would point at under this projection.
+
+     portB does the same at the arrival end, for the same reason one object
+     further along.
+
+     TRIMENDS IS DELIBERATELY NOT APPLIED TO A PORTED EDGE. It pulls a route
+     back out of the boxes at either end, which is right for a centre-to-centre
+     line and wrong for this one: a port is already ON the object's edge, so
+     trimming it again lifts the line off the thing it is supposed to leave. */
+  const endAt = (e.portB && typeof PORTS!=="undefined" && PORTS[B.shape])
+    ? PORTS[B.shape](B,e.portB,A) : null;
+  if(e.port && typeof PORTS!=="undefined" && PORTS[A.shape]){
+    const p0=PORTS[A.shape](A,e.port,B);
+    /* A STRAIGHT PORTED EDGE IS TWO POINTS. The lane-entry route below is for a
+       track that has to join a lane; a reference line has no lane to join — it
+       has to leave from somewhere visible and arrive. */
+    if(e.straight) return [p0, endAt || P(B.x,B.y,0.02)];
+    if(endAt) return [p0, endAt];          /* the port IS the arrival */
+    const PORT_LEAD=2.0;
+    return [p0, P(B.x-PORT_LEAD,B.y,0.02), P(B.x,B.y,0.02)];
+  }
+
   /* straight:true forces a direct run even across lanes — for a fork or a
      merge, where the elbow reads as a detour rather than as routing */
   const raw = (e.straight || Math.abs(A.y-B.y)<0.05)
     ? [[A.x,A.y],[B.x,B.y]]
     : [[A.x,A.y],[mx,A.y],[mx,B.y],[B.x,B.y]];
-  return trimEnds(raw, A, B).map(p=>P(p[0],p[1],0.02));
+  const pp=trimEnds(raw, A, B).map(p=>P(p[0],p[1],0.02));
+  if(endAt) pp[pp.length-1]=endAt;
+  return pp;
 }
 function paintEdge(rec){
   const host=rec.host;
@@ -427,14 +459,21 @@ function paintEdge(rec){
      paid for forty-seven times. Thinner and greyer than the objects it joins,
      so the eye reads the buildings first and the wiring second; the dots on
      it carry the signal colour and are the thing meant to be noticed. */
-  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",stroke:"var(--fg3)",
-    "stroke-width":faint?".7":".9","stroke-opacity":faint?".3":".5"});
+  /* AND A TRACK MAY NAME ITS OWN INK. `tone` came across with row 3, where the
+     reference edges are drawn in a neutral grey that is neither read's colour —
+     the material owns the accents and nothing else on that row may borrow them.
+     A toned track is also drawn a shade heavier and brighter than the default:
+     it is naming itself, so it should be legible as the thing it names. */
+  const path=el("path",{d:"M "+pp.map(p=>p.join(" ")).join(" L "),fill:"none",
+    stroke:rec.tone||"var(--fg3)",
+    "stroke-width":faint?".7":(rec.tone?"1.1":".9"),
+    "stroke-opacity":faint?".3":(rec.tone?".62":".5")});
   if(rec.dash) path.setAttribute("stroke-dasharray","5 4");
   host.appendChild(path);
   /* the corner marks go with the track they belong to */
   pp.slice(1,-1).forEach(c=>host.appendChild(el("rect",
     {x:c[0]-1.7,y:c[1]-1.7,width:3.4,height:3.4,transform:`rotate(45 ${c[0]} ${c[1]})`,
-     fill:"var(--fg3)","fill-opacity":".45"})));
+     fill:rec.tone||"var(--fg3)","fill-opacity":".45"})));
   const g=makeGeom(pp); rec.segs=g.segs; rec.len=g.len;
 }
 EDGES.forEach(e=>{
@@ -547,8 +586,18 @@ function rebuildClip(){
   let d=`M ${-R} ${-R} H ${R} V ${R} H ${-R} Z`;
   /* SCENERY IS PAINTED ON THE GROUND, so punching it out of the clip would
      erase every track and dot that crosses it — which on the attrition band
-     is most of row 3. It is a floor, not a building. */
-  NODES.filter(n=>!n.scenery).forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
+     is most of row 4. It is a floor, not a building.
+
+     AND noclip IS FOR AN OBJECT THAT IS NOT A SOLID AT ALL — ported from
+     /FASTQ_pipe with row 3. The fragment glyph is a flat diagram floating in
+     the air; the reference figures are flat cards. A track passing under one
+     should be visible passing under it, and the tracks that leave a node's own
+     ends have to be visible from those ends. Punch the box out of the clip and
+     they disappear at the edge of a solid that is not there. Such a node is
+     still painted after gEdge, so a line genuinely behind the card is still
+     hidden by the card itself — which is the honest occluder. */
+  NODES.filter(n=>!n.scenery && !n.noclip)
+       .forEach(n=>{ d+=" M "+nodeSil(n).map(p=>p.join(" ")).join(" L ")+" Z"; });
   clipPathEl.setAttribute("d",d);
 }
 (function occlude(){
@@ -595,7 +644,11 @@ edgeGeom.forEach(e=>{
        circle round it is what makes a dot clickable at all, and it is sized
        for a finger rather than for the drawing. */
     g.appendChild(el("circle",{r:"10",fill:"transparent"}));
-    g.appendChild(el("circle",{r:faint?1.5:1.75,fill:faint?"var(--drop)":"var(--signal)",
+    /* dotTone is separate from tone so a track can be quiet and its dots not.
+       A reference edge on row 3 is grey because it is not carrying material,
+       but the thing moving along it still has to read as a thing moving. */
+    g.appendChild(el("circle",{r:faint?1.5:1.75,
+      fill:e.dotTone||e.tone||(faint?"var(--drop)":"var(--signal)"),
       stroke:"var(--stroke)","stroke-width":".5"}));
     gDot.appendChild(g);
     const rec={e,t:(i/count)+Math.random()*0.1,
