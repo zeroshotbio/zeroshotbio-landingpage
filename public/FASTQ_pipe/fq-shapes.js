@@ -2554,7 +2554,23 @@ function drawTracks(g,n){
      closes on landing is a nudge onto a rail instead of a swerve across the
      field. */
   const NOZX=1.5*K, NOZZ=1.75*KZ, FAN=0.34;
-  const PAD=2.2*K, LOOP=span+PAD*2;
+  /* THE RUNWAY IS NOT SYMMETRIC, AND THAT IS THE POINT.
+
+     A read has to be in the air, in E5's pose, travelling downstream, for long
+     enough that a reader takes the shape in BEFORE anything happens to it. That
+     is the whole of PADA: five gene-units of open sky upstream of the first
+     track, flown level. Downstream there is nothing to establish, so PADB is
+     almost nothing — a symmetric pad would spend the same distance again on an
+     empty field after the last read has already faded. */
+  const PADA=5.2*K, PADB=0.6*K, LOOP=span+PADA+PADB;
+  /* FALL is how much of a lap the descent takes and UBASE is where the earliest
+     of them may touch down. TOUCHING DOWN BEFORE THE TRACKS BEGIN IS THE BUG
+     THIS FIXES: with the fall able to start before the lap did, a read whose
+     u0 was smaller than the fall length appeared already a third of the way
+     through it, which is what "it comes out of nowhere too close to the track"
+     was. u0 is now measured from the runway's own end, so every read gets the
+     whole of it. */
+  const FALL=0.30, UBASE=PADA/LOOP+0.03;
   const BASES="ACGT";
   const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
   const reads=[];
@@ -2595,7 +2611,7 @@ function drawTracks(g,n){
          ever doing. */
       const tg=mk(GLS,"var(--ok)"); tg.textContent=gene;
       const tu=mk(LFS,"var(--accent)"); tu.textContent=umi;
-      reads.push({tk:k, ph:(j+0.5+(rnd()-0.5)*0.5)/ln.m, u0:0.10+rnd()*0.16,
+      reads.push({tk:k, ph:(j+0.5+(rnd()-0.5)*0.5)/ln.m, u0:UBASE+rnd()*0.10,
         cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
         ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
           "stroke-opacity":"0","stroke-linecap":"butt"})),
@@ -2631,19 +2647,21 @@ function drawTracks(g,n){
     t+=dt;
     for(const rd of reads){
       const u=((t*v/LOOP+rd.ph)%1+1)%1;
-      const gx=x0-PAD+u*LOOP;
+      const gx=x0-PADA+u*LOOP;
       /* A LONGER FALL, because the pose has to be legible before it changes.
-         At 0.09 of the lap the whole descent was over in about a second and
-         the shape it arrives in never registered. */
-      const kk=clamp01((u-(rd.u0-0.16))/0.16);
-      const air=Math.pow(1-kk,2.2);
+         At 0.09 of the lap the whole descent was over in about a second and the
+         shape it arrives in never registered. */
+      const kk=clamp01((u-(rd.u0-FALL))/FALL);
+      const air=Math.pow(1-kk,1.8);
       const ty=trackY(rd.tk);
       const cx=gx-NOZX*air;
       /* the fan closes as it lands, but only part of the way: they come off the
          belt already spread, and the landing is the last third of it */
       const yy=ty+(cy-ty)*air*FAN, zz=lz+NOZZ*air;
-      const vis=Math.min(sstep(x0-PAD,x0-PAD+K*0.6,gx),1-sstep(x1-span*0.14,x1-K*0.1,gx))
-                *sstep(0,0.10,kk);
+      /* AND IT FADES UP OVER THE FIRST OF THE RUNWAY, not over the first of the
+         fall: the whole point of the runway is to be seen flying along it. */
+      const vis=Math.min(sstep(x0-PADA,x0-PADA+K*1.1,gx),
+                         1-sstep(x1-span*0.14,x1-K*0.1,gx));
       /* IT ARRIVES IN E5'S POSE AND UNFOLDS INTO E6'S.
 
          THE TWO POSES ARE THE SAME MOLECULE HELD TWO WAYS. On a belt the
@@ -2666,7 +2684,14 @@ function drawTracks(g,n){
          two fifths of the fall. The shape has to register before it changes, or
          the unfold is just a flicker. It reaches 0 as the read touches, not
          before: what lands is the pose the rail is drawn for. */
-      const q=sstep(0.03,0.62,air);
+      /* q IS CLOCKED OFF kk AND NOT OFF air, and that is why the hold reads.
+         air is kk raised to a power — it is the HEIGHT, and it falls away fast
+         by design so the landing is soft. Clocking the unfold off it spent the
+         hold in the first sixth of the descent and then whipped through the
+         change. On kk the hold is what it says it is: E5's pose, flown level
+         and then carried down unchanged, for the first two fifths of the fall,
+         and the last of the turn arriving with the read on the rail. */
+      const q=1-sstep(0.50,0.97,kk);
       const mix=(a,b)=>{ const v=[a[0]+(b[0]-a[0])*(1-q),
                                  a[1]+(b[1]-a[1])*(1-q),
                                  a[2]+(b[2]-a[2])*(1-q)];

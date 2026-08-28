@@ -1488,11 +1488,39 @@ them (`J` → `J + TDIR·Ta`) is the same segment in both poses** and never move
 relative to the hinge. That is what keeps the two ends readable as one molecule
 through the middle of the change.
 
-`q` is **1 in `E5`'s pose and 0 in `E6`'s**, and it **holds at 1 for the first
-two fifths of the fall** — the shape has to register before it changes, or the
-unfold is a flicker. It reaches 0 **as the read touches**, not before: what lands
-is the pose the rail is drawn for. The fall itself is `0.16` of a lap, up from
-`0.09`, for the same reason.
+`q` is **1 in `E5`'s pose and 0 in `E6`'s**, and it **holds at 1 through the
+whole runway and the first half of the fall** — the shape has to register before
+it changes, or the unfold is a flicker. It reaches 0 **as the read touches**, not
+before: what lands is the pose the rail is drawn for.
+
+**`q` is clocked off `kk`, not off `air`, and that is why the hold reads.** `air`
+is `kk` raised to a power — it is the *height*, and it falls away fast by design
+so the landing is soft. Clocking the unfold off it spent the hold in the first
+sixth of the descent and then whipped through the change. *A curve shaped for
+one job is the wrong clock for another.*
+
+### The runway, and the bug it was hiding
+
+**`PADA` ≠ `PADB`.** A read has to be in the air, in `E5`'s pose, travelling
+downstream, long enough for a reader to take the shape in *before* anything
+happens to it: five gene-units of open sky upstream of the first track, flown
+level, over the tail of `E5`'s own belt. Downstream there is nothing to
+establish, so `PADB` is almost nothing — a symmetric pad spends the same
+distance again on an empty field after the last read has faded.
+
+**The bug this uncovered.** `u0` used to be `0.10 + rnd()·0.16` against a fall
+of `0.16`, so any read whose `u0` was smaller than the fall length **started
+falling before its lap began** and appeared already a third of the way through
+it. That is what *"it comes out of nowhere too close to the track"* was, and
+it is also why the arrival pose never registered — there wasn't one. `u0` is
+now measured from the runway's own end (`UBASE = PADA/LOOP + 0.03`), so every
+read gets the whole of it. **`vis` fades up over the first of the runway**, not
+over the first of the fall: *the point of a runway is to be seen flying along
+it.*
+
+**`E6`'s gap opened from 1.5 to 3.0 to make room for it**, and the band's `x1`
+from 52.5 to 54.5 to hold the shift. Without that the birth point sits a third
+of the way back along `E5`'s belt instead of at its tip.
 
 ### The blue carries weight from `E4` onward
 
