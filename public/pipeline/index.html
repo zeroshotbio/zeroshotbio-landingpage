@@ -908,6 +908,15 @@ const ECHO_NODE = {
      paint, TICKERS, DRAW and SKIN out of the two files above. -->
 <script src="/culls/culls-pop.js?v=ec0copy1"></script>
 <script src="/culls/culls-draw.js?v=ec0copy1"></script>
+<!-- Row 3's own vocabulary, ported from /FASTQ_pipe — the fourteen objects
+     between the reads and the unfiltered matrix, drawn here at this map's
+     scale and drawn there at reading scale. It must load AFTER the two files
+     above (it reads V, SKIN, topOf, DRAW, paint, faces, pts, rng, ellipseAt
+     from pipeline-shapes.js and roofFrame from culls-draw.js, and it takes
+     mulberry32 from culls-pop.js) and BEFORE pipeline-data.js, which is what
+     names the shapes. See the header of that file for what the port dropped
+     as duplicate and what it had to rename. -->
+<script src="/pipeline/pipeline-fqshapes.js?v=ec0copy1"></script>
 <script src="/pipeline/pipeline-data.js?v=ec0copy1"></script>
 <script src="/pipeline/pipeline-view.js?v=ec0copy1"></script>
 </body>

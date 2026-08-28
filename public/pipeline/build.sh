@@ -10,7 +10,15 @@ cd "$(dirname "$0")"
 
 OUT="${1:-pipeline-standalone.html}"
 SRC="index.html"
-FILES=(pipeline-iso.js pipeline-shapes.js pipeline-data.js pipeline-view.js)
+# EXACTLY THE PAGE'S OWN LOAD ORDER, culls included. The awk below cuts from
+# the first <script src="/pipeline/…> tag, which swallows the two /culls tags
+# sitting between pipeline-shapes and pipeline-data — so anything not listed
+# here is simply absent from the artefact. They were missing before, which cost
+# the standalone its four cull roofs silently; and pipeline-fqshapes.js calls
+# mulberry32 at LOAD time to build its read population, so without culls-pop.js
+# ahead of it the whole bundle now dies with a ReferenceError rather than just
+# drawing less.
+FILES=(pipeline-iso.js pipeline-shapes.js ../culls/culls-pop.js ../culls/culls-draw.js pipeline-fqshapes.js pipeline-data.js pipeline-view.js)
 
 for f in "$SRC" "${FILES[@]}"; do
   [ -f "$f" ] || { echo "missing: $f" >&2; exit 1; }
