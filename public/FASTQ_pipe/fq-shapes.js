@@ -2857,58 +2857,76 @@ function drawDedup(g,n){
      the fork. */
   const LFS=Math.max(4.4,GFS*0.70), CFS=LFS*1.8, NFS=CFS*0.92;
 
-  /* TEN IN, TWENTY OUT, AT ONE PITCH. n.d is the field AFTER the fork, so the
-     incoming half sits at twice the spacing and the children land exactly where
-     the pitch says they should. */
   const NL=10, NO=NL*2;
-
-  /* ---- AND THE WHOLE FIELD FANS, PROPORTIONALLY FROM THE MIDDLE ------------
-     The twenty rails used to run parallel from the splay to the far end, which
-     draws the fork as a thing that happens once and is then over. It is not
-     over: what leaves here is twice what arrived, and the field has to be seen
-     making room for it — one stream becoming many sub-streams, each of which
-     takes more ground than the stream did.
-
-     THE OPENING IS PROPORTIONAL TO HOW FAR OUT A LANE ALREADY IS. Spread every
-     rail by the same distance and the field is translated outward in two halves
-     with a hole down the middle; spread each one by a SHARE of its own offset
-     and the middle pair barely moves while the outermost pair moves most, which
-     is what a fan is. fanOf() puts a floor under the middle lanes so they open
-     a little rather than not at all — a rail that stays exactly straight while
-     its neighbour bends reads as the one that was forgotten.
-
-     THE PITCH AT THE FORK IS DIVIDED BY MOST OF THE FAN, so the far end lands a
-     shade outside n.d rather than half again outside it. That keeps the drawing
-     inside its own footprint to within about a tenth, and it buys the better
-     half of the effect for free: the lanes are TIGHT where they split and open
-     where they run, which is the reading. */
-  const FAN=0.62;                          /* extra offset at the far end, as a share */
-  const SQUEEZE=1/(1+FAN*0.72);
-  const TP=(n.d*0.94/NO)*SQUEEZE;
-  const yOut=j=>cy+(j-(NO-1)/2)*TP;
-  const yIn =k=>cy+(2*k+1-NL)*TP;          /* = half-way between its children */
-  const FMAX=((NO-1)/2)*TP||1;             /* the outermost lane's own offset */
-  const fanOf=y=>0.40+0.60*Math.min(1,Math.abs(y-cy)/FMAX);
   const lz=base+n.h*0.05;
 
   const LANE0=x0-0.8;
-  /* A LONG SPLAY AND A LAGGING COPY. The children sit one pitch apart, which is
-     E6's pitch and holds exactly one read and its two labels — so a copy
-     travelling abreast of the read it came from puts its gene name through that
-     read's own rail. LAG drops it about a read-length behind, which reads as it
-     having taken the longer way round the fork and gives both of them their
-     own air. */
-  const FORK=x0+span*0.24, SPLAY=span*0.22, OUT=FORK+SPLAY, LAG=1.72;
+  const FORK=x0+span*0.24;
   const RAILEND=x1-2.9;
   const LOOP=(RAILEND-LANE0);
-  /* WHERE A LANE IS AT A GIVEN x, ONCE THE SPLAY IS DONE. It is linear in the
-     run from OUT to RAILEND, so a rail is still a straight line between two
-     points and nothing has to be sampled — but every consumer has to go through
-     this rather than reading yOut() directly, or the rails, the reads on them
-     and the counters at their ends stop agreeing about where a lane is. */
-  const yFan=(y,gx)=>{
-    const u=clamp01((gx-OUT)/((RAILEND-OUT)||1));
-    return cy+(y-cy)*(1+FAN*fanOf(y)*u);
+
+  /* ---- THE FAN: ONE CURVE FROM THE FORK, AND NOTHING BEFORE IT -------------
+     THERE WAS AN ELBOW AND IT WAS THE WHOLE PROBLEM. The field used to be built
+     in two legs: a straight splay from the fork out to a point a fifth of the
+     way down the field, and then a second straight run from there to the end
+     which carried the fan. Two straights meeting at an angle is a corner, and a
+     corner a fifth of the way along said the lanes changed their minds — the
+     split happened at the scanner, then stopped, then something else started.
+     Nothing happens at that point. It was an artefact of building the splay and
+     the fan as separate ideas.
+
+     So there is one function now, from the fork to the far end, and every rail
+     is a sampled curve rather than two segments. A lane leaves the beam and
+     opens continuously for the whole rest of its run.
+
+     fanE IS MOSTLY LINEAR WITH SOME EASE OUT. Pure linear draws a straight
+     splay, which is honest but hard — twenty lines radiating from one point,
+     and at the fork the outer ones leave almost across the field. Pure ease-out
+     spends the whole opening in the first fifth and ends parallel, which is the
+     old elbow again with the corner rounded off. The blend leaves the fork
+     briskly (slope 1.35 of the average) and is still opening when it arrives
+     (0.65), so the field never stops widening and never looks hinged.
+
+     AND THE TWO CHILDREN OF A FORK STAY A PAIR. They leave the same point and
+     end 2·PAIR apart, against a pair-to-pair pitch of 2·HALF/9 — about one to
+     two, so the eye groups them without being told. That is what the station
+     is: not twenty lanes, but ten lanes that each became two. Spread evenly
+     across the same width they read as twenty unrelated rails and the fork
+     stops being visible at the far end, which is the only end a reader looks
+     at while the counters are climbing. */
+  /* HALF IS PINNED BY THE MATRIX AND NOT BY TASTE. The outermost rail lands at
+     HALF·(1+the pair's share), and the field's +y extreme projects DOWN-LEFT —
+     straight into E8's cube, which stands immediately downstream and is the
+     largest footprint on this half of the map. At 0.575 the bottom three pairs
+     ran under it and two of their counters were occluded by it. Half the node's
+     own depth is the ceiling, and the fan gets its width from the RATIO of the
+     far end to the fork (SPREAD, 2.30 against the 1.62 this had before) rather
+     than from reaching further out. If it ever has to be wider than this, the
+     thing that moves is E8. */
+  const HALF=n.d*0.500;                    /* the outermost PAIR CENTRE's offset */
+  const PAIR=HALF*0.0240;                  /* half the separation inside one pair */
+  const SPREAD=2.30;                       /* far offset ÷ fork offset */
+  const PIN=(HALF/SPREAD)/((NL-1)/2);      /* the incoming lane pitch */
+  const TP=PIN/2;                          /* the unit the scanner and its caption use */
+  const yIn=k=>cy+(k-(NL-1)/2)*PIN;
+  /* j is 0 for the reads road and 1 for the molecules road, which keeps the
+     reads side at the lower y it has always been on. */
+  const yEnd=(k,j)=>cy+(k-(NL-1)/2)*PIN*SPREAD+(j?PAIR:-PAIR);
+  /* THE PAIRING IS A RATIO AND THE RATIO IS WHAT DOES THE WORK. 2·PAIR against
+     a pair-to-pair pitch of 2·HALF/9 is about one to two and a half. At one to
+     one and a half — which is where it landed first — twenty rails at slightly
+     uneven spacing read as twenty rails at uneven spacing, not as ten pairs.
+     WIDENING THE FAN IS THE LEVER, NOT NARROWING THE PAIR: the gap inside a
+     pair has to stay wide enough to write READS above MOLECULES between the two
+     lines, so it is fixed by the type and the fan is what moves. */
+  const fanE=u=>0.20*(1-(1-u)*(1-u))+0.80*u;
+  /* WHERE LANE k's CHILD j IS AT ANY x, and the ONLY answer to that question.
+     It is the identity upstream of the fork, so one expression covers the
+     approach, the split and the run, and a read cannot come off its own rail at
+     a join because there is no join. */
+  const yRail=(k,j,gx)=>{
+    const u=clamp01((gx-FORK)/((RAILEND-FORK)||1));
+    return yIn(k)+(yEnd(k,j)-yIn(k))*fanE(u);
   };
 
   /* ---- ONE CYCLE, AND IT IS NOT A CONVEYOR ---------------------------------
@@ -2920,13 +2938,15 @@ function drawDedup(g,n){
 
      The fractions are of one lap. Nothing is tuned to taste: the dwell has to
      be shorter than the gap between two reads on a lane, or two of them are
-     stopped under the beam at once and the queue reads as a pile-up. Three or
-     four reads a lane puts them 0.25 apart at worst; the whole stop, from
-     arrival to departure, is 0.17. */
+     stopped under the beam at once and the queue reads as a pile-up. Two reads
+     a lane puts them half a lap apart against a scanner neighbourhood of about
+     0.30, which is the clearance the old three-or-four did not have. */
   const APP=0.40,      /* rolling in, decelerating into the stop */
-        SCN=0.50,      /* stopped, the beam sweeping the barcode end */
+        SCN=0.50,      /* stopped, the beam crossing the read once */
         VER=0.57,      /* stopped, the answer showing */
-        SPL=0.72,      /* away down the fork, accelerating from rest */
+        /* there is no fourth mark: the run from the fork to the far end is ONE
+           accelerating move, and the point that used to split it in two was the
+           elbow the rails have just lost */
         END=0.96;      /* at the far end — where the count ticks */
   const ATICK="M -3.4 0.3 L -1.1 2.7 L 3.7 -3.4";
   const ACROSS="M -3.0 -3.0 L 3.0 3.0 M 3.0 -3.0 L -3.0 3.0";
@@ -2939,6 +2959,23 @@ function drawDedup(g,n){
       "stroke-opacity":op,"stroke-linecap":"round"};
     if(dash) at["stroke-dasharray"]=dash;
     return g.appendChild(el("line",at));
+  };
+  /* A RAIL IS SAMPLED, BECAUSE THE PROJECTION CANNOT BEND IT FOR US. P() is
+     affine, so a straight world line is a straight screen line and a curve in
+     world y against x has to be walked. Sixteen steps over a rail this length is
+     under a pixel of chord error at reading zoom, and the whole run is one
+     <path> rather than sixteen elements. */
+  const RSTEPS=16;
+  const rail=(k,j,col,w,op)=>{
+    let d="";
+    for(let i=0;i<=RSTEPS;i++){
+      const gx=FORK+(RAILEND-FORK)*(i/RSTEPS);
+      const q=P(gx,yRail(k,j,gx),lz);
+      d+=(i?"L":"M")+q[0].toFixed(1)+" "+q[1].toFixed(1)+" ";
+    }
+    return g.appendChild(el("path",{d,fill:"none",stroke:col,
+      "stroke-width":w.toFixed(2),"stroke-opacity":op,
+      "stroke-linecap":"round","stroke-linejoin":"round"}));
   };
   const labs=[];
   const fmt=q=>String(q).replace(/\B(?=(\d{3})+(?!\d))/g,",");
@@ -3022,12 +3059,9 @@ function drawDedup(g,n){
      there — it has to be, it is what says the fork went two ways — and the
      thing moving along it is the brightest object in the lane. */
   for(let k=0;k<NL;k++){
-    const yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
-    line([LANE0,yi,lz],[FORK,yi,lz],"var(--fg3)",1.3,".26");
-    line([FORK,yi,lz],[OUT,yr,lz],COLR,1.2,".22");
-    line([FORK,yi,lz],[OUT,ym,lz],COLM,1.2,".22");
-    line([OUT,yr,lz],[RAILEND,yFan(yr,RAILEND),lz],COLR,1.3,".30");
-    line([OUT,ym,lz],[RAILEND,yFan(ym,RAILEND),lz],COLM,1.3,".30");
+    line([LANE0,yIn(k),lz],[FORK,yIn(k),lz],"var(--fg3)",1.3,".26");
+    rail(k,0,COLR,1.3,".30");
+    rail(k,1,COLM,1.3,".30");
     /* NO CELL NAME HERE. E6 names every one of these lanes, at size, against
        884,736 — saying it again over the top of the fork is the same fact
        competing with the only new one. The lane is the same lane; it does not
@@ -3052,12 +3086,20 @@ function drawDedup(g,n){
      in the field is downstream of the answer to it, and a reader who takes one
      thing away from E7 should take away the question.
 
-     So: three times the size, in --accent, at full strength. That token is the
-     UMI's and has been since E2, and it is already the molecules road's own
-     colour — which is the point rather than a collision. The thing being asked
-     IS whether the UMI is one nobody has seen on this cell and this gene, and
-     the road it opens is the one drawn in the same ink. No new hue: the rule
-     holds.
+     So: half again the size it was, in --fg, at full strength, and set close
+     enough to the beam that the leader is a short tie rather than a tether.
+
+     IT WAS BLUE FOR A BUILD AND IT IS WHITE NOW. --accent is the molecules
+     road's own colour, and a question set in it reads as belonging to that
+     road — as if the scanner were announcing the answer it is about to give,
+     on one of the two roads out. It is not: it is asked of everything that
+     passes, and both roads are answers to it. --fg is the page's brightest ink
+     and carries no verdict, which is what a question needs. Still no new hue.
+
+     AND IT IS SET ONCE, NOT TWICE. At three times the base it was the loudest
+     object on the map and the field it belonged to read as its subtitle. Half
+     that is still far larger than any other caption here, which is the standing
+     it should have.
 
      AND THE LEADER LANDS ON THE 'U', NOT ON THE TAIL OF THE STRING. The text is
      anchored START at the point the hairline arrives at, so the line comes up
@@ -3067,12 +3109,12 @@ function drawDedup(g,n){
      backwards into the machine. The y offset drops the baseline by a third of
      the cap height IN THE TEXT'S OWN ROTATED FRAME, so the leader meets the
      glyph at its middle rather than at its foot. */
-  { const CFS_Q=CFS*2.58;
-    const capY=yTop-TP*3.4, capZ=BZ+2.4;
+  { const CFS_Q=CFS*1.29;
+    const capY=yTop-TP*1.5, capZ=BZ+1.0;
     const a=P(FORK,capY,capZ);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
       y:(CFS_Q*0.34).toFixed(1),
-      "text-anchor":"start","font-family":MONO,fill:"var(--accent)",
+      "text-anchor":"start","font-family":MONO,fill:"var(--fg)",
       "font-size":CFS_Q.toFixed(1),"font-weight":"700",
       "letter-spacing":(CFS_Q*0.02).toFixed(2),"fill-opacity":".96"});
     t2.textContent="Unique Cell + Gene + UMI?"; labs.push(t2);
@@ -3111,11 +3153,11 @@ function drawDedup(g,n){
      and both ends of it are now on the page.
 
      BOTH SIT AT THE FANNED END OF THEIR OWN RAIL, which is the only thing they
-     can do: the rails no longer arrive where yOut() puts them. */
+     can do: yEnd() is where a rail actually arrives. */
   const cnt=[];
   for(let k=0;k<NL;k++)
-    cnt.push({r:say(RAILEND+0.34,yFan(yOut(2*k),RAILEND),"READS",COLR,NFS*0.92,".72","start",NFS*0.30,600),
-              m:say(RAILEND+0.34,yFan(yOut(2*k+1),RAILEND),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
+    cnt.push({r:say(RAILEND+0.34,yEnd(k,0),"READS",COLR,NFS*0.92,".72","start",NFS*0.30,600),
+              m:say(RAILEND+0.34,yEnd(k,1),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
 
   /* ---- the reads ---------------------------------------------------------- */
   const body=mark=>{ const grp=g.appendChild(el("g"));
@@ -3183,16 +3225,24 @@ function drawDedup(g,n){
      drawing says so. A repeat comes out smaller and dimmer, which on this
      background is what "greyer" means: it is still a real read, still counted,
      still travelling, just no longer news. */
-  const put=(bd,gx,y,op,sc,mkOp)=>{
+  /* AND EVERY POINT OF IT TAKES ITS y FROM THE RAIL AT ITS OWN x, which is what
+     keeps a fragment ALONG its rail rather than across it. Laid at one constant
+     y the molecule was a level bar sitting on a line that was not level, and on
+     the outer lanes — where the fan is steepest — it read as a read draped over
+     the rail rather than travelling it. The three parts now hinge with the
+     curve, which costs four evaluations of a function that is two multiplies. */
+  const put=(bd,gx,yf,op,sc,mkOp)=>{
+    const Y=typeof yf==="function"?yf:()=>yf;
     const L=FT*(sc||1), a=gx-L/2, lo=Lo*(sc||1), ta=Ta*(sc||1);
-    const oA=[a,y,lz],        oB=[a+lo,y,lz];
-    const kB=[a+lo+ta,y,lz];
-    const bB=[a+L,y,lz];
+    const xb=a+lo, xc=a+lo+ta, xd=a+L;
+    const oA=[a,Y(a),lz],   oB=[xb,Y(xb),lz];
+    const kB=[xc,Y(xc),lz];
+    const bB=[xd,Y(xd),lz];
     barTo2(bd.cd,RW*(sc||1),FLOOR_O*(sc||1),oA,oB,op);
     seg2(bd.ad,oB,kB,op*0.62);
     barTo2(bd.bc,RWB*(sc||1),FLOOR_B*(sc||1),kB,bB,op*0.95);
     if(bd.mk){
-      const q=P(gx,y,lz+0.34);
+      const q=P(gx,Y(gx),lz+0.34);
       bd.mk.setAttribute("transform",
         `translate(${q[0].toFixed(1)},${q[1].toFixed(1)}) scale(${(0.9*(sc||1)).toFixed(2)})`);
       bd.mk.setAttribute("stroke-opacity",clamp01(mkOp||0).toFixed(3));
@@ -3207,13 +3257,13 @@ function drawDedup(g,n){
      end and the cell and the UMI off the barcode end — so a beam that stops
      short of the orange is a beam that cannot have asked it.
 
-     And one slow pass across a stationary object does not read as a scan. It
-     reads as a thing drifting. What says INSTRUMENT is a fast flash going back
-     and forth over the same object several times while it is held still, which
-     is what every bench scanner a reader has ever watched actually does. SWEEPS
-     round trips over the dwell, on a triangle so the turn at each end is sharp
-     rather than eased — an eased turn is a pendulum, and a pendulum is a thing
-     swinging rather than a thing reading.
+     ONE PASS, END TO END, OVER THE WHOLE DWELL. It went back and forth several
+     times for a build, on the argument that a fast flicker is what says
+     instrument. It is not what says READING: a head that crosses a thing three
+     and a half times and then stops has been fidgeting, and the eye cannot tell
+     which of the passes was the one that took. One traverse at the speed of the
+     stop is a machine going over a thing once, carefully, which is what this
+     station does — the read is held still for exactly as long as it takes.
 
      AND IT IS AIMED, WHICH IS WHAT MAKES IT A BEAM. It used to be a stub
      standing on the deck at the swept position — a short vertical mark sliding
@@ -3223,8 +3273,6 @@ function drawDedup(g,n){
      rail actually tracks something held beneath it. Same idiom as E3's, one
      station along: the beam belongs to the machine at one end and to the thing
      being read at the other. */
-  const SWEEPS=3.5;
-  const sweepU=uu=>1-Math.abs(((uu*SWEEPS)%1)*2-1);
   const scanAt=(node,gx,y,sc,u,op)=>{
     const L=FT*sc, a=gx-L/2;
     const px=a+L*u;
@@ -3246,8 +3294,8 @@ function drawDedup(g,n){
     const powM=new Array(NL).fill(0), powR=new Array(NL).fill(0);
     for(const rd of reads){
       const c=((laps+rd.ph)%1+1)%1;
-      const k=rd.tk, yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
-      let gx, fy=0, live=1;
+      const k=rd.tk;
+      let gx, live=1;
       if(c<APP){
         /* ROLLING IN AT PACE, THEN BRAKING — and the braking is confined to the
            last fifth of the run.
@@ -3265,29 +3313,34 @@ function drawDedup(g,n){
         gx=LANE0+(FORK-LANE0)*f;
       }else if(c<VER){
         gx=FORK;                                   /* stopped, being asked */
-      }else if(c<SPL){
-        /* AWAY DOWN THE FORK, ACCELERATING FROM REST, and both bodies do this
-           from the same point at the same moment — which is the whole reason
-           the copy is not spawned somewhere off to the side. It is the same
-           fragment until the fork and two fragments after it. */
-        const u=(c-VER)/(SPL-VER); fy=u*u;
-        gx=FORK+(OUT-FORK)*fy;
       }else if(c<END){
-        const u=(c-SPL)/(END-SPL); fy=1;
-        gx=OUT+(RAILEND-OUT)*u;
-      }else{ gx=RAILEND; fy=1; live=0; }
+        /* AWAY FROM THE STOP IN ONE MOVE, ACCELERATING FROM REST. It used to be
+           two legs — a squared ramp out to the old splay point and then a
+           constant run to the end — and the speed jumped where they met, at the
+           same x the rails had their elbow. Now the pace ramps linearly over the
+           first KA of the run and holds, which is one continuous motion with no
+           step in it: distance is the integral, so it is quadratic through the
+           ramp and linear after, and V is chosen to make the whole run come out
+           at exactly 1.
+
+           Both bodies do this from the same point at the same moment, which is
+           the whole reason the copy is not spawned off to the side. It is the
+           same fragment until the fork and two fragments after it. */
+        const u=(c-VER)/(END-VER), KA=0.30, V=1/(1-KA/2);
+        gx=FORK+(RAILEND-FORK)*(u<KA ? V*u*u/(2*KA) : V*(KA/2+u-KA));
+      }else{ gx=RAILEND; live=0; }
       /* IN AT THE VERY START OF THE TRACK. It used to fade up a way along, which
          made the fragments look posted onto the rail rather than arriving on it. */
       const vis=live*Math.min(sstep(0,0.020,c),1-sstep(END-0.035,END,c));
 
-      /* AND THE READ RIDES THE FANNED RAIL, not the straight one. The splay
-         from FORK to OUT is unfanned (yFan is the identity there), so this is
-         one expression for both stretches and the read cannot come off its own
-         line at the join. */
-      const yA=yFan(yi+(yr-yi)*fy,gx);
+      /* THE READ'S y COMES OFF THE RAIL FUNCTION AND FROM NOWHERE ELSE, which is
+         what guarantees it is ON its rail at every x rather than on a second
+         reconstruction of one. yRail is the identity upstream of the fork, so
+         the approach, the split and the run are one expression. */
+      const yA=xx=>yRail(k,0,xx);
       if(rd.first){
         put(rd.A,gx,yA,vis,1.14,0);
-        put(rd.B,gx,yFan(yi+(ym-yi)*fy,gx),vis,1.14,
+        put(rd.B,gx,xx=>yRail(k,1,xx),vis,1.14,
             vis*sstep(VER-0.03,VER+0.02,c));
       }else{
         /* SMALLER AND DIMMER FROM THE ANSWER ONWARD, not from the start: it
@@ -3311,14 +3364,14 @@ function drawDedup(g,n){
         put(rd.A,gx,yA,vis*(1-0.28*dim),1.14-0.22*dim,
             vis*sstep(VER-0.03,VER+0.02,c));
       }
-      /* THE BEAM, AND THE LIGHT IT THROWS, WHILE THIS ONE IS UNDER IT. The lamp
-         takes the SMOOTH progress through the dwell and the scan line takes the
-         triangle: a gantry lamp that flickers at the sweep's own rate is a fault
-         light, and what has to flash is the beam. */
+      /* THE BEAM, AND THE LIGHT IT THROWS, WHILE THIS ONE IS UNDER IT. The read
+         is stopped at the fork, so it is on its own incoming lane and yIn(k) is
+         where the beam has to land. The lamp rises and falls over the dwell; the
+         beam's foot crosses the fragment once, at the dwell's own pace. */
       if(c>=APP && c<VER){
         const uu=clamp01((c-APP)/(SCN-APP));
         lit[k]=Math.max(lit[k],1-Math.abs(uu*2-1)*0.4);
-        scanAt(scans[k],FORK,yi,1.14,sweepU(uu),
+        scanAt(scans[k],FORK,yIn(k),1.14,uu,
                (c<SCN?1:1-(c-SCN)/(VER-SCN)));
       }
       /* THE COUNT TICKS WHERE THE FRAGMENT LANDS, not where it was judged. The
