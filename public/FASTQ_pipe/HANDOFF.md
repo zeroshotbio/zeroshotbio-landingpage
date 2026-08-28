@@ -1606,11 +1606,28 @@ so a read here is the read that was riding a gene next door.
 
 ## `E7` · Deduplicate UMIs — `E6`'s field, forked
 
-**It is `E6`'s field and not a new one.** Same lane pitch, same read at the same
-size, same three type sizes, same cell names on the same rails. *A reader who has
-just understood `E6` should not have to learn a second machine* — the only new
-thing here is the fork, and every other difference would be noise competing
-with it.
+**It is `E6`'s field and not a new one.** Same lane pitch, same lanes, same
+molecule. *A reader who has just understood `E6` should not have to learn a
+second machine* — the only new thing here is the fork.
+
+**But the read arrives stripped: `RS` = 0.97, flat on the rail, no writing.**
+`E6`'s read stands its aligned end in the air and writes its gene and UMI on
+itself, because `E6` is where a read *acquires* those facts. By the time it
+reaches here they have been read. **What `E7` is about is how many** — one number
+that keeps going up and one that stops — and forty labelled molecules arriving at
+the fork buried that under its own evidence. The molecule keeps its three parts
+and its proportions and loses everything else: aligned end, adapter, barcode end,
+in a line, in the order they travel. **The widths come off `K`, not `RS`**, so a
+third-length fragment is a short solid bar rather than a hairline.
+
+**The lanes are not named again.** `E6` names every one of them, at size, against
+884,736; saying it a second time over the top of the fork is the same fact
+competing with the only new one.
+
+**Six to eight reads a lane, up from three.** The old cap was set by the labels.
+Without them the limit is the fragment, and the traffic is worth having — *the
+thing this field has to show is that one road carries more than the other*, and
+two fragments a lane cannot show a difference in density.
 
 **The fork doubles the field.** Ten lanes in, twenty out, at the same pitch, so
 `n.d` is exactly twice `E6`'s. Each lane's pair straddles **exactly twice** its
@@ -1639,24 +1656,24 @@ colour, **past where any read goes** — written along the rail they sat in the
 traffic, and twenty more words in the part of the field already carrying a gene
 name and a UMI per read is the difference between busy and unreadable.
 
-### Type yields to type
+### The two counts are not set as equals
 
-**This field is dense by construction** — every lane is busy, which is what a
-fork means — and a gene name rides at the tip of an aerial that reaches most of
-a lane pitch toward the rail above it. Wherever a read on that rail is
-alongside, the two collide.
+**Reads is the number that keeps going up and means less the higher it gets** —
+it is how many times the sequencer looked, and past saturation another million
+buys almost nothing. **Molecules is the number that stops**, and where it stops
+is what the cell actually had. So reads is small, light and faint — present and
+checkable, and clearly the lesser fact — and molecules is large and solid.
+*The typography is the argument.*
 
-**No amount of spacing fixes it and no seed dodges it: the pairs move.** A
-layout that clears them at one moment does not at the next, and the failure
-count wanders run to run because the check samples different instants. The rule
-instead: **when a gene name would arrive on the rail above it, that name fades**
-and comes back a moment later. The read keeps its body and its UMI; only the one
-label that is out of its own lane gives way. One pass over the frame's
-positions, deterministic, no tuning.
-
-> `E6` never had to solve this — half its lanes are empty and its reads are
-> independent. **Density is the difference between the two fields**, and it is
-> the thing to reach for first when `E7` misbehaves.
+> **A note on a rule that was here and is gone.** When the reads still carried
+> gene names, this field could not be laid out at all: a gene name rides at the
+> tip of an aerial that reaches most of a lane pitch toward the rail above it,
+> every lane here is busy by construction, and the pairs *move* — so no spacing
+> cleared them at every instant and the check's failure count wandered run to
+> run. The fix was a per-frame yield: a gene name that would arrive on the rail
+> above it faded out. **Stripping the labels removed the problem instead of
+> managing it**, and the yield pass went with them. Worth remembering if writing
+> ever comes back to this field.
 
 ### The rest of the fork's arithmetic
 

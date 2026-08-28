@@ -2809,8 +2809,23 @@ function drawDedup(g,n){
   const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
   const TDIR=[-0.86,0.51];
   const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
-  const RS=2.9;
+  /* A THIRD OF E6'S READ, LAID FLAT ALONG THE RAIL, AND CARRYING NO WRITING.
+
+     E6's read stands its aligned end up in the air and writes a gene name and a
+     UMI on itself, and that is right there: E6 is where a read acquires the
+     three facts and they have to be legible. By the time it reaches this field
+     the facts have been read. What E7 is about is HOW MANY — one number that
+     stays and one that stops — and forty labelled molecules arriving at the
+     fork buried that under its own evidence.
+
+     So the molecule keeps its three parts and its proportions and loses
+     everything else: aligned end, adapter, barcode end, all in a line on the
+     track, in the order they travel. The WIDTHS are not scaled down with the
+     length — they come off K, not RS — so a third-length fragment is a short
+     solid bar rather than a hairline. */
+  const RS=0.97;
   const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
+  const FT=Lo+Ta+Lb;
   const v=(n.v||1.62)*K;
   const GFS=Math.max(6,10.4*K);
   /* THE ONE TYPE SIZE THAT IS NOT E6's. The gene name is twice the UMI there,
@@ -2819,7 +2834,7 @@ function drawDedup(g,n){
      one pitch apart and at double size they land on each other's rails. Read
      size, lane pitch, cell name and UMI are all E6's; this one is the price of
      the fork. */
-  const LFS=Math.max(4.4,GFS*0.70), GLS=LFS*2, CFS=LFS*1.8, NFS=CFS*0.92;
+  const LFS=Math.max(4.4,GFS*0.70), CFS=LFS*1.8, NFS=CFS*0.92;
 
   /* TEN IN, TWENTY OUT, AT ONE PITCH. n.d is the field AFTER the fork, so the
      incoming half sits at twice the spacing and the children land exactly where
@@ -2829,7 +2844,7 @@ function drawDedup(g,n){
   const yIn =k=>cy+(2*k+1-NL)*TP;          /* = half-way between its children */
   const lz=base+n.h*0.05;
 
-  const LANE0=x0-2.0;
+  const LANE0=x0-0.8;
   /* A LONG SPLAY AND A LAGGING COPY. The children sit one pitch apart, which is
      E6's pitch and holds exactly one read and its two labels — so a copy
      travelling abreast of the read it came from puts its gene name through that
@@ -2852,11 +2867,12 @@ function drawDedup(g,n){
   };
   const labs=[];
   const fmt=q=>String(q).replace(/\B(?=(\d{3})+(?!\d))/g,",");
-  const say=(x,y,txt,col,size,op,anchor,dy)=>{
+  const say=(x,y,txt,col,size,op,anchor,dy,wt)=>{
     const a=P(x,y,lz);
     const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
       y:(dy||0).toFixed(1),"text-anchor":anchor||"start","font-family":MONO,
-      fill:col,"font-size":size.toFixed(1),"font-weight":"600","fill-opacity":op});
+      fill:col,"font-size":size.toFixed(1),"font-weight":String(wt||600),
+      "fill-opacity":op});
     t2.textContent=txt; labs.push(t2); return t2;
   };
 
@@ -2866,11 +2882,14 @@ function drawDedup(g,n){
   const lanes=[];
   { let c=Math.floor(rnd()*9000)+1200;
     for(let k=0;k<NL;k++){
-      /* THREE OR FOUR, AND THAT IS THE CEILING. Every first sighting is drawn
-         twice, so a lane of six is ten bodies with ten gene names across two
-         rails — and at E6's read size, which is the whole point of this being
-         E6's field, ten of them do not fit a lap. */
-      const m=3+Math.floor(rnd()*2);
+      /* SIX TO EIGHT, WHICH THE OLD CEILING OF THREE COULD NOT AFFORD. The cap
+         was set by the labels: every first sighting is drawn twice, and ten
+         gene names across two rails did not fit a lap. Without the writing the
+         limit is the fragment, which is now a third as long — and the traffic
+         is worth having, because the thing this field has to show is that ONE
+         ROAD CARRIES MORE THAN THE OTHER. Two fragments a lane cannot show a
+         difference in density; seven can. */
+      const m=6+Math.floor(rnd()*3);
       const g1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const g2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
       const pools={};
@@ -2905,8 +2924,10 @@ function drawDedup(g,n){
     line([FORK,yi,lz],[OUT,ym,lz],COLM,1.6,".34");
     line([OUT,yr,lz],[RAILEND,yr,lz],COLR,1.8,".46");
     line([OUT,ym,lz],[RAILEND,ym,lz],COLM,1.8,".46");
-    /* the cell, on the stretch of rail no read is ever on */
-    say(LANE0,yi,"cell "+fmt(lanes[k].cell),"var(--fg3)",CFS,".58","start",-CFS*0.42);
+    /* NO CELL NAME HERE. E6 names every one of these lanes, at size, against
+       884,736 — saying it again over the top of the fork is the same fact
+       competing with the only new one. The lane is the same lane; it does not
+       need introducing twice. */
 
   }
 
@@ -2934,21 +2955,23 @@ function drawDedup(g,n){
     lamps.push(line([FORK,yIn(k),BZ],[FORK,yIn(k),lz],"var(--fg)",1.6,"0"));
 
   /* ---- the counters ------------------------------------------------------- */
-  /* THE WORD AND THE NUMBER TOGETHER, PAST THE END OF THE RAIL. Every output
-     lane says which it is, in its own colour — but at the far end, where no read
-     ever goes. Written along the rail instead it sat in the traffic, and twenty
-     more words in the one part of the field that is already carrying a gene name
-     and a UMI per read is the difference between busy and unreadable. */
+  /* THE WORD AND THE NUMBER TOGETHER, PAST THE END OF THE RAIL, AND THE TWO
+     ARE NOT OF EQUAL STANDING.
+
+     Reads is the number that keeps going up and means less the higher it gets:
+     it is how many times the sequencer looked, and past saturation another
+     million of them buys almost nothing. Molecules is the number that stops,
+     and where it stops is what this cell actually had. So reads is set small,
+     light and faint — present, checkable, and clearly the lesser fact — and
+     molecules is set large and solid. THE TYPOGRAPHY IS THE ARGUMENT: a reader
+     who takes nothing else from this field should take away which of the two
+     numbers is the one that matters. */
   const cnt=[];
   for(let k=0;k<NL;k++)
-    cnt.push({r:say(RAILEND+0.34,yOut(2*k),"READS",COLR,NFS,".85","start",NFS*0.36),
-              m:say(RAILEND+0.34,yOut(2*k+1),"MOLECULES",COLM,NFS,".85","start",NFS*0.36)});
+    cnt.push({r:say(RAILEND+0.34,yOut(2*k),"READS",COLR,NFS*0.66,".46","start",NFS*0.26,400),
+              m:say(RAILEND+0.34,yOut(2*k+1),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
 
   /* ---- the reads ---------------------------------------------------------- */
-  const ANGB=(()=>{ const o=P(0,0,0), u=P(1,0,0);
-    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
-  const ANGO=(()=>{ const o=P(0,0,0), u=P(-TDIR[0],0,-TDIR[1]);
-    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
   const body=()=>{ const grp=g.appendChild(el("g"));
     return {
       cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
@@ -2956,10 +2979,6 @@ function drawDedup(g,n){
         "stroke-opacity":"0","stroke-linecap":"butt"})),
       bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
     }; };
-  const mkLab=(sz,col,txt)=>{ const t2=el("text",{"text-anchor":"start",
-    "font-family":MONO,"font-size":sz.toFixed(1),"font-weight":"700",fill:col,
-    "fill-opacity":"0"}); t2.textContent=txt; labs.push(t2); return t2; };
-
   const reads=[];
   lanes.forEach((ln,k)=>{
     ln.seq.forEach((r,j)=>{
@@ -2970,12 +2989,8 @@ function drawDedup(g,n){
          on the next rail's UMI. A per-lane turn of the phase interleaves them,
          and 0.41 of a lap is far enough from a half and a third that ten lanes
          never come back into step. */
-      const rd={tk:k, ph:((j+0.5+(rnd()-0.5)*0.4)/ln.m + k*0.41)%1, first:r.first,
-        A:body(), B:r.first?body():null,
-        tgA:mkLab(GLS,"var(--ok)",r.gn), tuA:mkLab(LFS,"var(--accent)",r.umi)};
-      if(r.first){ rd.tgB=mkLab(GLS,"var(--ok)",r.gn);
-                   rd.tuB=mkLab(LFS,"var(--accent)",r.umi); }
-      reads.push(rd);
+      reads.push({tk:k, ph:((j+0.5+(rnd()-0.5)*0.4)/ln.m + k*0.41)%1,
+        first:r.first, A:body(), B:r.first?body():null});
     });
   });
   labs.forEach(t2=>g.appendChild(t2));
@@ -2998,32 +3013,17 @@ function drawDedup(g,n){
     const d=Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/(2*DASHN-1);
     node.setAttribute("stroke-dasharray",d.toFixed(2)+" "+d.toFixed(2));
   };
-  const put=(bd,tg,tu,gx,y,op,lop,gok)=>{
-    const bA=[gx-Lb/2,y,lz], bB=[gx+Lb/2,y,lz];
-    const kx  =[bA[0]+TDIR[0]*Ta, y, bA[2]+TDIR[1]*Ta];
-    const oEnd=[bA[0]+TDIR[0]*(Ta+Lo), y, bA[2]+TDIR[1]*(Ta+Lo)];
-    barTo2(bd.bc,RWB,0.44,bA,bB,op*0.95);
-    seg2(bd.ad,bA,kx,op*0.42);
-    barTo2(bd.cd,RW,0.62,kx,oEnd,op);
-    const qo=P(oEnd[0],y,oEnd[2]), qb=P(bA[0],y,bA[2]);
-    tg.setAttribute("transform",
-      `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
-    /* THE GENE NAME SITS ON THE INSIDE OF THE AERIAL HERE, not above it.
-       Above it is where the next lane's rail is: the aerial already reaches
-       most of a pitch that way, and the name on top of it lands on that lane's
-       UMI. Inside — in the wedge between the aerial and the read's own barcode
-       end — it is within the molecule's own outline and collides with nothing.
-       It is still lying along the orange, which is all the underline was ever
-       doing. E6 can afford the outside because E6's lanes are not carrying
-       their neighbours' copies. */
-    tg.setAttribute("x",(GLS*0.20).toFixed(1));
-    tg.setAttribute("y",(-GLS*0.22).toFixed(1));
-    tg.setAttribute("fill-opacity",(lop*0.86*gok).toFixed(3));
-    tu.setAttribute("transform",
-      `translate(${qb[0].toFixed(1)},${qb[1].toFixed(1)}) rotate(${ANGB})`);
-    tu.setAttribute("x",(LFS*0.25).toFixed(1));
-    tu.setAttribute("y",(-LFS*0.42).toFixed(1));
-    tu.setAttribute("fill-opacity",(lop*0.86).toFixed(3));
+  /* THE THREE PARTS IN THE ORDER THEY TRAVEL: aligned end first, then the
+     adapter, then the barcode end, all on the rail. Centred on gx so the
+     fragment's middle is the thing following the track. */
+  const put=(bd,gx,y,op)=>{
+    const a=gx-FT/2;
+    const oA=[a,y,lz],        oB=[a+Lo,y,lz];
+    const kB=[a+Lo+Ta,y,lz];
+    const bB=[a+FT,y,lz];
+    barTo2(bd.cd,RW,0.62,oA,oB,op);
+    seg2(bd.ad,oB,kB,op*0.50);
+    barTo2(bd.bc,RWB,0.44,kB,bB,op*0.95);
   };
 
   let t=0;
@@ -3031,57 +3031,22 @@ function drawDedup(g,n){
     t+=dt;
     const laps=t*v/LOOP;
     const R=new Array(NL).fill(0), M=new Array(NL).fill(0), lit=new Array(NL).fill(0);
-    /* ---- WHERE EVERYTHING IS, BEFORE ANY OF IT IS DRAWN --------------------
-       TYPE YIELDS TO TYPE, and it has to, because this field is dense BY
-       CONSTRUCTION. Every lane here is busy — that is what a fork is — and a
-       read's gene name rides at the tip of an aerial that reaches most of a
-       lane pitch toward the rail above it. Wherever a read on that rail happens
-       to be alongside, the two collide. E6 never had to solve this: half its
-       lanes are empty and its reads are independent, so it simply does not come
-       up often enough to matter.
-
-       There is no amount of spacing that fixes it and no seed that dodges it —
-       the pairs move, so a layout that clears them at one moment does not at
-       the next. The rule instead: WHEN A GENE NAME WOULD ARRIVE ON THE RAIL
-       ABOVE IT, THAT NAME FADES. The read keeps its body and its UMI; only the
-       one label that is out of its own lane gives way, and it comes back a
-       moment later. Deterministic, frame by frame, and it costs one pass. */
-    const pos=[];
-    for(const rd of reads){
-      const u=((laps+rd.ph)%1+1)%1, gx=x0-PIN+u*LOOP;
-      const sp=easeOut(clamp01((gx-FORK)/SPLAY));
-      pos.push({rd,gx,sp});
-      rd._gA=gx; rd._lA=2*rd.tk;
-      rd._gB=gx-LAG*sp; rd._lB=2*rd.tk+1;
-    }
-    /* the aerial's tip sits about ATIP up-belt of the read's own barcode end,
-       and that is where its name is; the rail above carries its UMIs at their
-       own barcode ends. Near means those two coincide. */
-    const ATIP=-TDIR[0]*(Ta+Lo), NEAR=1.05;
-    const clash=(lane,gx)=>{
-      for(const q of pos){
-        if(q.rd._lA===lane-1 && Math.abs(q.rd._gA-(gx-ATIP))<NEAR) return 1;
-        if(q.rd.B && q.sp>0.2 && q.rd._lB===lane-1
-           && Math.abs(q.rd._gB-(gx-ATIP))<NEAR) return 1;
-      }
-      return 0;
-    };
+    /* NO YIELD PASS ANY MORE, AND NOTHING TO YIELD. The whole apparatus that
+       faded a gene name when it would arrive on the rail above it went with the
+       gene names: the reads here carry no writing, so the only type in this
+       field is the ten lanes' worth of counters, and those sit past the end of
+       every rail. */
     for(const rd of reads){
       const u=((laps+rd.ph)%1+1)%1;
       const gx=x0-PIN+u*LOOP;
       const k=rd.tk;
       const vis=Math.min(sstep(x0-PIN,x0-PIN+K*1.0,gx),
                          1-sstep(RAILEND-K*1.4,RAILEND-K*0.2,gx));
-      /* THE WRITING STARTS AFTER THE CELL'S NAME AND STOPS BEFORE THE COUNTERS.
-         A UMI over a lane's own name, or over the number that lane is counting
-         up to, is the one collision in this field nobody can read around. */
-      const lvis=vis*sstep(LANE0+2.4,LANE0+3.2,gx)
-                             *(1-sstep(RAILEND-2.0,RAILEND-1.1,gx));
+
       /* the splay: the lane changes place, the read goes with it */
       const sp=easeOut(clamp01((gx-FORK)/SPLAY));
       const yi=yIn(k);
-      put(rd.A,rd.tgA,rd.tuA,gx,yi+(yOut(2*k)-yi)*sp,vis,lvis,
-          clash(2*k,gx)?0:1);
+      put(rd.A,gx,yi+(yOut(2*k)-yi)*sp,vis);
       if(rd.B){
         /* THE COPY IS MADE AT THE FORK and not before it. Its fade starts a
            little way into the splay, because at the fork itself it is exactly
@@ -3089,8 +3054,7 @@ function drawDedup(g,n){
            rendering fault, not as a copy. */
         const cop=sstep(0.24,0.72,sp);
         const bx=gx-LAG*sp;
-        put(rd.B,rd.tgB,rd.tuB,bx,yi+(yOut(2*k+1)-yi)*sp,vis*cop,lvis*cop,
-            clash(2*k+1,bx)?0:1);
+        put(rd.B,bx,yi+(yOut(2*k+1)-yi)*sp,vis*cop);
       }
       lit[k]=Math.max(lit[k],1-clamp01(Math.abs(gx-FORK)/(K*1.6)));
       /* AND THE COUNTERS ARE DERIVED, NOT ACCUMULATED. How many times this read
