@@ -1656,6 +1656,56 @@ colour, **past where any read goes** — written along the rail they sat in the
 traffic, and twenty more words in the part of the field already carrying a gene
 name and a UMI per read is the difference between busy and unreadable.
 
+### One cycle, and it is not a conveyor
+
+Everywhere else on this page a thing travels at one speed and something happens
+to it in passing. Here **the machine has to be seen asking**, so a read rolls in,
+brakes, **stops**, is scanned along its barcode end, gets an answer, and only
+then leaves. *A fragment that sails through a scanner at constant speed is a
+fragment nobody looked at.*
+
+| fraction of a lap | what happens |
+|---|---|
+| `0 → APP` (0.40) | rolling in at pace, braking over the last fifth |
+| `APP → SCN` (0.50) | stopped; the beam sweeps the barcode end |
+| `SCN → VER` (0.57) | stopped; the answer shows |
+| `VER → SPL` (0.72) | away down the fork, accelerating from rest |
+| `SPL → END` (0.96) | out to the far end — **where the count ticks** |
+
+- **The dwell must be shorter than the gap between two reads on a lane**, or two
+  are stopped under the beam at once and the queue reads as a pile-up. Five
+  reads a lane puts them 0.2 apart; the whole stop is 0.17. **Phases are exactly
+  even, no jitter** — the spacing is load-bearing, not decoration.
+- **The braking is confined to the last fifth of the run.** A single ease-out
+  over the whole approach covers nine tenths of the distance in half the time,
+  so every read spent its run-in loitering by the beam and the first half of
+  every rail was bare. Both have to be true: **even spacing down the open track**,
+  because that is what a lane of traffic looks like, and **a real stop at the
+  end**, because that is what being scanned looks like.
+- **Both bodies leave the fork from the same point at the same moment.** That is
+  the whole reason the copy is not spawned off to the side: it is *the same
+  fragment* until the fork and two fragments after it.
+- **A tick rides with the copy all the way down the molecules road.** A cross
+  fades once its read is through the fork.
+
+**The cross is grey, not `--rej`.** The two marks are `E3`'s and `E5`'s, because
+it is the same kind of event — a thing checked against a memory. The colours are
+not. On this page `--rej` means *thrown away*, and a read the scanner has seen
+before is neither wrong nor discarded: it goes down the reads road with
+everything else. **Grey says "already counted", which is what happened.**
+
+**Dimmed, not erased.** Held back too far, the reads road came out looking
+*emptier* than the molecules road — the exact opposite of the fact this station
+exists to show.
+
+### The count ticks where the fragment lands
+
+Not where it was judged. **The number going up and the thing arriving have to be
+the same event**, or the counter is a number that changes on its own. The
+molecules label takes a short pop as it happens: fast attack, short tail —
+*eased both ways it read as a slow breathing of every number at once; what it
+has to read as is a thing landing.*
+
 ### The two counts are not set as equals
 
 **Reads is the number that keeps going up and means less the higher it gets** —

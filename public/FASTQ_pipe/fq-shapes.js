@@ -2853,8 +2853,27 @@ function drawDedup(g,n){
      own air. */
   const FORK=x0+span*0.24, SPLAY=span*0.22, OUT=FORK+SPLAY, LAG=1.72;
   const RAILEND=x1-2.9;
-  const PIN=0.5, POUT=0.4, LOOP=(RAILEND-x0)+PIN+POUT;
-  const forkU=(FORK-(x0-PIN))/LOOP;
+  const LOOP=(RAILEND-LANE0);
+
+  /* ---- ONE CYCLE, AND IT IS NOT A CONVEYOR ---------------------------------
+     Everywhere else on this page a thing travels at one speed and something
+     happens to it in passing. Here the machine has to be seen ASKING, so the
+     read arrives, SLOWS, STOPS, is scanned along its barcode end, gets an
+     answer, and only then leaves. A fragment that sails through a scanner at
+     constant speed is a fragment nobody looked at.
+
+     The fractions are of one lap. Nothing is tuned to taste: the dwell has to
+     be shorter than the gap between two reads on a lane, or two of them are
+     stopped under the beam at once and the queue reads as a pile-up. Five reads
+     a lane puts them 0.2 apart; the whole stop, from arrival to departure, is
+     0.17. */
+  const APP=0.40,      /* rolling in, decelerating into the stop */
+        SCN=0.50,      /* stopped, the beam sweeping the barcode end */
+        VER=0.57,      /* stopped, the answer showing */
+        SPL=0.72,      /* away down the fork, accelerating from rest */
+        END=0.96;      /* at the far end — where the count ticks */
+  const ATICK="M -3.4 0.3 L -1.1 2.7 L 3.7 -3.4";
+  const ACROSS="M -3.0 -3.0 L 3.0 3.0 M 3.0 -3.0 L -3.0 3.0";
   const COLR="var(--fg2)", COLM="var(--accent)";
 
   const line=(a,b,col,w,op,dash)=>{
@@ -2873,6 +2892,9 @@ function drawDedup(g,n){
       y:(dy||0).toFixed(1),"text-anchor":anchor||"start","font-family":MONO,
       fill:col,"font-size":size.toFixed(1),"font-weight":String(wt||600),
       "fill-opacity":op});
+    /* the base transform is kept so a pulse can multiply it without having to
+       rebuild the string every frame */
+    t2.dataset.base=`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`;
     t2.textContent=txt; labs.push(t2); return t2;
   };
 
@@ -2950,9 +2972,15 @@ function drawDedup(g,n){
     /* a hairline from the words down to the beam, so the caption is attached
        to the machine it belongs to rather than floating beside it */
     line([FORK,yTop-TP*2.0,BZ+1.36],[FORK,yTop-TP*0.06,BZ],"var(--fg3)",1.0,".34"); }
-  const lamps=[];
-  for(let k=0;k<NL;k++)
+  const lamps=[], scans=[];
+  for(let k=0;k<NL;k++){
     lamps.push(line([FORK,yIn(k),BZ],[FORK,yIn(k),lz],"var(--fg)",1.6,"0"));
+    /* ONE SCAN LINE PER LANE AND NOT PER READ. Only one read is ever stopped
+       under the beam on a given lane — the dwell is shorter than the gap — so
+       the lane can own the light and the fifty reads do not each carry one. */
+    scans.push(g.appendChild(el("line",{stroke:"var(--fg)","stroke-width":"2.4",
+      "stroke-opacity":"0","stroke-linecap":"round"})));
+  }
 
   /* ---- the counters ------------------------------------------------------- */
   /* THE WORD AND THE NUMBER TOGETHER, PAST THE END OF THE RAIL, AND THE TWO
@@ -2972,13 +3000,24 @@ function drawDedup(g,n){
               m:say(RAILEND+0.34,yOut(2*k+1),"MOLECULES",COLM,NFS*1.22,".95","start",NFS*0.44,700)});
 
   /* ---- the reads ---------------------------------------------------------- */
-  const body=()=>{ const grp=g.appendChild(el("g"));
-    return {
+  const body=mark=>{ const grp=g.appendChild(el("g"));
+    const o={
       cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
       ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
         "stroke-opacity":"0","stroke-linecap":"butt"})),
       bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
-    }; };
+    };
+    /* THE TICK IS --ok AND THE CROSS IS GREY, NOT --rej.
+       The two marks are E3's and E5's, because it is the same kind of event: a
+       thing checked against a memory. The COLOURS are not. --rej on this page
+       means thrown away, and a read the scanner has seen before is neither
+       wrong nor discarded — it goes on down the reads road with everything
+       else. Grey says "already counted", which is what actually happened. */
+    if(mark) o.mk=grp.appendChild(el("path",{d:mark==="tick"?ATICK:ACROSS,
+      fill:"none",stroke:mark==="tick"?"var(--ok)":"var(--fg3)",
+      "stroke-width":"2.0","stroke-linecap":"round","stroke-linejoin":"round",
+      "stroke-opacity":"0"}));
+    return o; };
   const reads=[];
   lanes.forEach((ln,k)=>{
     ln.seq.forEach((r,j)=>{
@@ -2989,8 +3028,12 @@ function drawDedup(g,n){
          on the next rail's UMI. A per-lane turn of the phase interleaves them,
          and 0.41 of a lap is far enough from a half and a third that ten lanes
          never come back into step. */
-      reads.push({tk:k, ph:((j+0.5+(rnd()-0.5)*0.4)/ln.m + k*0.41)%1,
-        first:r.first, A:body(), B:r.first?body():null});
+      /* PHASES EXACTLY EVEN, no jitter: the spacing between two reads on a lane
+         is what keeps only one of them under the beam, so it is not a place for
+         randomness. The per-lane turn of 0.41 of a lap is what keeps the ten
+         lanes from stopping in unison. */
+      reads.push({tk:k, ph:(j/ln.m + k*0.41)%1, first:r.first,
+        A:body(r.first?null:"cross"), B:r.first?body("tick"):null});
     });
   });
   labs.forEach(t2=>g.appendChild(t2));
@@ -3016,58 +3059,124 @@ function drawDedup(g,n){
   /* THE THREE PARTS IN THE ORDER THEY TRAVEL: aligned end first, then the
      adapter, then the barcode end, all on the rail. Centred on gx so the
      fragment's middle is the thing following the track. */
-  const put=(bd,gx,y,op)=>{
-    const a=gx-FT/2;
-    const oA=[a,y,lz],        oB=[a+Lo,y,lz];
-    const kB=[a+Lo+Ta,y,lz];
-    const bB=[a+FT,y,lz];
-    barTo2(bd.cd,RW,0.62,oA,oB,op);
+  /* sc SCALES THE MOLECULE ABOUT ITS OWN MIDDLE, and it is how the two answers
+     read differently without a second palette. A first sighting comes out of
+     the fork slightly LARGER and at full strength — it is a new thing and the
+     drawing says so. A repeat comes out smaller and dimmer, which on this
+     background is what "greyer" means: it is still a real read, still counted,
+     still travelling, just no longer news. */
+  const put=(bd,gx,y,op,sc,mkOp)=>{
+    const L=FT*(sc||1), a=gx-L/2, lo=Lo*(sc||1), ta=Ta*(sc||1);
+    const oA=[a,y,lz],        oB=[a+lo,y,lz];
+    const kB=[a+lo+ta,y,lz];
+    const bB=[a+L,y,lz];
+    barTo2(bd.cd,RW*(sc||1),0.62*(sc||1),oA,oB,op);
     seg2(bd.ad,oB,kB,op*0.50);
-    barTo2(bd.bc,RWB,0.44,kB,bB,op*0.95);
+    barTo2(bd.bc,RWB*(sc||1),0.44*(sc||1),kB,bB,op*0.95);
+    if(bd.mk){
+      const q=P(gx,y,lz+0.34);
+      bd.mk.setAttribute("transform",
+        `translate(${q[0].toFixed(1)},${q[1].toFixed(1)}) scale(${(0.9*(sc||1)).toFixed(2)})`);
+      bd.mk.setAttribute("stroke-opacity",clamp01(mkOp||0).toFixed(3));
+    }
+  };
+  /* the beam's own line, laid along whatever barcode end is under it */
+  const scanAt=(node,gx,y,sc,u,op)=>{
+    const L=FT*sc, a=gx-L/2, b0=a+(Lo+Ta)*sc, b1=a+L;
+    const px=b0+(b1-b0)*u;
+    const p1=P(px,y,lz), p2=P(px,y,lz+0.22);
+    node.setAttribute("x1",p1[0].toFixed(1)); node.setAttribute("y1",p1[1].toFixed(1));
+    node.setAttribute("x2",p2[0].toFixed(1)); node.setAttribute("y2",p2[1].toFixed(1));
+    node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
   };
 
   let t=0;
   const run=dt=>{
     t+=dt;
     const laps=t*v/LOOP;
-    const R=new Array(NL).fill(0), M=new Array(NL).fill(0), lit=new Array(NL).fill(0);
-    /* NO YIELD PASS ANY MORE, AND NOTHING TO YIELD. The whole apparatus that
-       faded a gene name when it would arrive on the rail above it went with the
-       gene names: the reads here carry no writing, so the only type in this
-       field is the ten lanes' worth of counters, and those sit past the end of
-       every rail. */
+    const R=new Array(NL).fill(0), M=new Array(NL).fill(0);
+    const lit=new Array(NL).fill(0), pow=new Array(NL).fill(0);
     for(const rd of reads){
-      const u=((laps+rd.ph)%1+1)%1;
-      const gx=x0-PIN+u*LOOP;
-      const k=rd.tk;
-      const vis=Math.min(sstep(x0-PIN,x0-PIN+K*1.0,gx),
-                         1-sstep(RAILEND-K*1.4,RAILEND-K*0.2,gx));
+      const c=((laps+rd.ph)%1+1)%1;
+      const k=rd.tk, yi=yIn(k), yr=yOut(2*k), ym=yOut(2*k+1);
+      let gx, fy=0, live=1;
+      if(c<APP){
+        /* ROLLING IN AT PACE, THEN BRAKING — and the braking is confined to the
+           last fifth of the run.
 
-      /* the splay: the lane changes place, the read goes with it */
-      const sp=easeOut(clamp01((gx-FORK)/SPLAY));
-      const yi=yIn(k);
-      put(rd.A,gx,yi+(yOut(2*k)-yi)*sp,vis);
-      if(rd.B){
-        /* THE COPY IS MADE AT THE FORK and not before it. Its fade starts a
-           little way into the splay, because at the fork itself it is exactly
-           on top of the read it came from — two labels in one place reads as a
-           rendering fault, not as a copy. */
-        const cop=sstep(0.24,0.72,sp);
-        const bx=gx-LAG*sp;
-        put(rd.B,bx,yi+(yOut(2*k+1)-yi)*sp,vis*cop);
+           A single ease-out over the whole approach covers nine tenths of the
+           distance in half the time, so every read spent most of its run-in
+           already loitering by the beam and the first half of every rail was
+           bare. What has to be true is both: EVEN SPACING down the open track,
+           because that is what a lane of traffic looks like, and a real stop at
+           the end, because that is what being scanned looks like. So: constant
+           speed to four fifths of the way, then the brake. */
+        const u=c/APP, KN=0.70, KD=0.82;
+        const f=u<KN ? KD*u/KN
+                     : KD+(1-KD)*(1-Math.pow(1-(u-KN)/(1-KN),2));
+        gx=LANE0+(FORK-LANE0)*f;
+      }else if(c<VER){
+        gx=FORK;                                   /* stopped, being asked */
+      }else if(c<SPL){
+        /* AWAY DOWN THE FORK, ACCELERATING FROM REST, and both bodies do this
+           from the same point at the same moment — which is the whole reason
+           the copy is not spawned somewhere off to the side. It is the same
+           fragment until the fork and two fragments after it. */
+        const u=(c-VER)/(SPL-VER); fy=u*u;
+        gx=FORK+(OUT-FORK)*fy;
+      }else if(c<END){
+        const u=(c-SPL)/(END-SPL); fy=1;
+        gx=OUT+(RAILEND-OUT)*u;
+      }else{ gx=RAILEND; fy=1; live=0; }
+      /* IN AT THE VERY START OF THE TRACK. It used to fade up a way along, which
+         made the fragments look posted onto the rail rather than arriving on it. */
+      const vis=live*Math.min(sstep(0,0.020,c),1-sstep(END-0.035,END,c));
+
+      const yA=yi+(yr-yi)*fy;
+      if(rd.first){
+        put(rd.A,gx,yA,vis,1.14,0);
+        put(rd.B,gx,yi+(ym-yi)*fy,vis,1.14,
+            vis*sstep(VER-0.03,VER+0.02,c));
+      }else{
+        /* SMALLER AND DIMMER FROM THE ANSWER ONWARD, not from the start: it
+           arrives the same as everything else, and it is the scanner that
+           makes it old news. */
+        /* DIMMED, NOT ERASED. Held back too far the reads road came out looking
+           EMPTIER than the molecules road, which is the exact opposite of the
+           fact this station exists to show: every read goes down it, and the
+           repeats are most of them. */
+        const dim=sstep(VER-0.02,VER+0.05,c);
+        put(rd.A,gx,yA,vis*(1-0.28*dim),1.14-0.22*dim,
+            vis*sstep(VER-0.03,VER+0.02,c)*(1-sstep(SPL-0.04,SPL+0.02,c)));
       }
-      lit[k]=Math.max(lit[k],1-clamp01(Math.abs(gx-FORK)/(K*1.6)));
-      /* AND THE COUNTERS ARE DERIVED, NOT ACCUMULATED. How many times this read
-         has crossed the fork is a function of the clock, so the numbers cannot
-         drift, cannot double-count a frame, and come back identical after a
-         tab has been asleep. */
-      const cross=Math.floor(laps+rd.ph-forkU)+1;
+      /* the beam, and the light it throws, while this one is under it */
+      if(c>=APP && c<VER){
+        const u=clamp01((c-APP)/(SCN-APP));
+        lit[k]=Math.max(lit[k],1-Math.abs(u*2-1)*0.4);
+        scanAt(scans[k],FORK,yi,1.14,u,(c<SCN?0.85:0.85*(1-(c-SCN)/(VER-SCN))));
+      }
+      /* THE COUNT TICKS WHERE THE FRAGMENT LANDS, not where it was judged. The
+         number going up and the thing arriving have to be the same event, or
+         the counter is just a number that changes on its own. */
+      const cross=Math.floor(laps+rd.ph-END)+1;
       if(cross>0){ R[k]+=cross; if(rd.first) M[k]+=cross; }
+      /* AND THE MOLECULES SIDE GETS THE POP. Brief, once, on arrival — the one
+         number on this page whose going up is the point of the station. */
+      if(rd.first) pow[k]=Math.max(pow[k], c>=END
+        ? Math.max(0,1-(c-END)/0.026)          /* struck, then decaying */
+        : Math.max(0,1-(END-c)/0.012));        /* the last instant of the run */
     }
     for(let k=0;k<NL;k++){
       lamps[k].setAttribute("stroke-opacity",(lit[k]*0.55).toFixed(3));
+      if(!lit[k]) scans[k].setAttribute("stroke-opacity","0");
       cnt[k].r.textContent="READS "+fmt(R[k]);
       cnt[k].m.textContent="MOLECULES "+fmt(M[k]);
+      /* A FAST ATTACK AND A SHORT TAIL. Eased both ways it read as a slow
+         breathing of every number at once; what it has to read as is a thing
+         landing. */
+      const e=Math.pow(pow[k],0.55), sc=1+0.26*e;
+      cnt[k].m.setAttribute("transform",cnt[k].m.dataset.base+" scale("+sc.toFixed(3)+")");
+      cnt[k].m.setAttribute("fill-opacity",(0.95+0.05*e).toFixed(3));
     }
   };
   run(0);
