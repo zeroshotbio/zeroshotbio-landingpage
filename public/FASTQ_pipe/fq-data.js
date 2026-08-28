@@ -406,11 +406,21 @@ const NODES = [
    out down five lanes for 0.40 of the belt's length past its end, and CB's
    footprint is that field — so the next station on the row has to start after
    it or it stands in the middle of the traffic. Widen LANEX and widen this. */
-{id:"E6", key:"E7", group:"The chain", shape:"tile", hatch:true,
- lane:"r3", gap:5.2,
- name:"Deduplicate UMIs", x:33.0, y:R3, w:1.9, d:1.9, h:1.35,
+/* E7 IS THE ONLY MERGE ON THE MAP AND IT IS DRAWN AS A FORK, NOT A BIN.
+   Three stations upstream throw things away and are drawn that way — a cull
+   colour, a chute, a shredder. A duplicate is none of those: it is one molecule
+   photographed twice, and both roads out of here carry a true thing. So the
+   node gets the field treatment rather than the tile: eleven lanes, two decks,
+   nothing discarded.
+   d IS THE FIELD AND gd IS THE FRAGMENT, the same split E6 uses and for the
+   same reason — the depth here is how far eleven lanes spread, and gd is the
+   belts' depth, so a read is the read that arrived. */
+{id:"E6", key:"E7", group:"The chain", shape:"dedup", noclip:true,
+ lane:"r3", gap:9.2, v:1.62,
+ name:"Deduplicate UMIs", x:33.0, y:R3, w:9.0, d:14.4, gd:6.6, h:0.62,
  sub:"barcode + gene + UMI collapse to one count · reads become molecules",
  does:"Collapses duplicate reads sharing a UMI so a count means one molecule, not one read.",
+ added:"THIS IS THE ONLY MERGE ON THE MAP AND IT IS DRAWN AS A FORK, NOT A BIN. Three stations upstream throw things away and are drawn that way — E3 shreds reads whose barcode is on no whitelist, E5 shunts reads that landed on no gene, and both use the cull colour and a chute. A DUPLICATE IS NOT AN ERROR AND WAS NEVER WRONG: it is one molecule photographed twice. So nothing here is binned and nothing is discarded. EACH CELL LANE HITS A FORK, and a scanner asks one question of everything that arrives — have I seen this cell AND this gene AND this UMI before. A read it has not seen DUPLICATES and takes both roads; a read it has seen takes the upper road alone. THE UPPER ROAD IS READS: every observation, always. THE LOWER ROAD IS MOLECULES: every distinct thing observed. The upper is the straight-through continuation because every read stays on it; the lower has to be reached, down a dotted ramp, and the dots are there because what goes down it is a copy being made rather than a thing travelling. TWO COUNTERS AT THE END OF EACH LANE climb together at first and then visibly part. THE GAP THAT OPENS IS PCR DUPLICATION. Every lane is given at least one repeat, because a lane whose counters climb together draws a library with no duplication at all, which is not a thing that happens. AND THE KEY IS ALL THREE FACTS. The same UMI on a different gene is a different molecule, so a few lanes are seeded with exactly that case — one UMI, two genes, both first sightings, both forking — since it is the only way to draw the difference between keying on three things and keying on the UMI alone. THE COUNTERS ARE DERIVED FROM THE CLOCK, not accumulated frame by frame: how many times a read has crossed the fork is a function of elapsed time, so the numbers cannot drift, cannot double-count, and come back the same after a sleeping tab. ELEVEN LANES AND NOT E6's TWENTY, because each one is now two roads and a pair of counters; and the read is drawn at half E6's size, because every first sighting is drawn twice and each body carries an aerial and a gene name above it. E6's note about 884,736 stays where it is and is not repeated here.",
  built:"For the worked example, 3.66 billion reads collapse to 735,624,135 transcripts — sequencing saturation 0.424. MIC-Drop-seq's four measured 10x runs sit at 51.5–53.4%.",
  cond:"Saturation around 0.4–0.5 is the corpus norm and it means depth is not saturated: read depth alone accounts for about a quarter of the worked example's cluster resolution. Any cross-dataset comparison of genes-per-cell has to control for it. ZCL2 cannot even be checked — its UMI length is not stated and is not recoverable from a count matrix.",
  /* ---- authored on this page ------------------------------------------- */
@@ -581,7 +591,7 @@ const EDGES = [
    every station back on y = R3 those offsets were 3-odd units of empty ground
    each, and the band had to be 29 deep to hold nothing. */
 const BANDS = [
-  {name:"Bioinformatics pipeline", x0:-2.0, x1:54.5, y0:R3-9.6, y1:R3+16.8},
+  {name:"Bioinformatics pipeline", x0:-2.0, x1:58.6, y0:R3-9.6, y1:R3+16.8},
 ];
 
 /* ONE CARRY, AT THE FAR END ONLY. The matrix leaves for the culls, which are

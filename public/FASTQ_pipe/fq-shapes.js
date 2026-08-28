@@ -2760,6 +2760,330 @@ function drawTracks(g,n){
 DRAW.tracks=drawTracks;
 
 
+/* ============================================================
+   E7 · DEDUPLICATE UMIs — the fork
+
+   THE ONLY MERGE ON THE MAP, AND IT MUST NOT LOOK LIKE A REJECT.
+   Three stations have already thrown things away: E3 shreds reads whose
+   barcode is not on a whitelist, E5 shunts reads that landed on no gene. Those
+   are errors and they are drawn as errors — a cull colour, a bin, a chute.
+
+   A DUPLICATE IS NOT AN ERROR AND WAS NEVER WRONG. It is one molecule
+   photographed twice. So there is no bin here and nothing is discarded: the
+   lane FORKS, and the two roads keep two different true things.
+
+     UPPER ROAD, READS      every observation, always
+     LOWER ROAD, MOLECULES  every distinct thing observed
+
+   The upper road is the straight-through continuation, because every read
+   takes it; the lower road is the one that has to be earned. A read that the
+   scanner has not seen before DUPLICATES at the fork and takes both. A read it
+   has seen takes the upper road alone. Two counters at the end of each lane
+   climb together and then visibly part, and THE GAP THAT OPENS IS PCR
+   DUPLICATION — nothing about it is a mistake.
+
+   AND THE KEY IS ALL THREE FACTS. The same UMI on a different gene is a
+   different molecule, so the scanner keys on cell AND gene AND UMI. A couple of
+   lanes are seeded with exactly that case — one UMI, two genes, both first
+   sightings, both taking the lower road — because it is the only way to draw
+   the difference between keying on three things and keying on one.
+   ============================================================ */
+function drawDedup(g,n){
+  hitBox(g,n);
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const rnd=mulberry32(0x5eedf15^0xD7);
+  const x0=n.x-n.w/2, x1=n.x+n.w/2, span=x1-x0, cy=n.y;
+  /* the same split as E6: n.gd sizes the molecule, n.d spreads the field */
+  const K=(n.gd||n.d)*0.1053, KZ=n.h/0.53;
+  const base=n.h*0.245, GL=(n.gd||n.d)*0.70;
+  const RTOT=0.145, RL=RTOT*64/154, RG=RTOT*32/154, RB=RTOT*58/154;
+  const GW=K*0.30, RW=GW*0.047, RWB=RW*0.62;
+  const TDIR=[-0.86,0.51];
+  const TAIL=(RG+RB)*GL, TKNEE=RG/(RG+RB);
+  /* HALF E6'S SIZE, AND THE ARITHMETIC IS FORCED. There are twice as many
+     bodies here — every first sighting is drawn twice — on two decks per lane,
+     and each body carries an aerial that stands up and a gene name above that.
+     Stack all of it at E6's scale and one lane's read puts its name through the
+     lane above it. What has to fit inside one lane's clear air is: the upper
+     read's aerial and label, the drop to the lower deck, and the lower read's
+     own body. At 1.45 that comes to about forty-four screen units and the lane
+     pitch is set to clear it. */
+  const RS=1.45;
+  const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
+  const v=(n.v||1.62)*K;
+
+  const GFS=Math.max(6,10.4*K);
+  const LFS=Math.max(3.4,GFS*0.48), GLS=LFS*1.35, CFS=LFS*1.5, NFS=LFS*1.85;
+
+  /* HALF E6'S LANES, because each one is now two roads and a pair of counters.
+     Twenty tracks of that would be a wall of type, and the fork is the subject
+     here — not the emptiness, which E6 already said and does not need saying
+     twice. */
+  const NL=11, LP=n.d*0.94/NL;
+  const laneY=k=>cy+(k-(NL-1)/2)*LP;
+  const lz=base+n.h*0.05;
+  /* THE DECKS ARE SEPARATED IN z AND NOT IN y, so that one road is literally
+     above the other and neither is up-field of the other: they are two answers
+     to the same question, not two stages of one. */
+  const RH=0.80, uz=lz+RH;
+  const FORK=x0+span*0.30, RAMP=span*0.10, RAILEND=x1-2.5;
+  /* THE RAIL STARTS BEFORE THE READS DO, and that stretch is the cell's name.
+     A name and a read on the same line at the same moment is the one collision
+     a lane cannot spare, and the cheapest fix is a piece of rail no read is
+     ever on. */
+  const LANE0=x0-1.9;
+  const PIN=0.6, POUT=0.35, LOOP=(RAILEND-x0)+PIN+POUT;
+  const forkU=(FORK-(x0-PIN))/LOOP;
+
+  const line=(a,b,col,w,op,dash)=>{
+    const p1=P(a[0],a[1],a[2]), p2=P(b[0],b[1],b[2]);
+    const at={x1:p1[0].toFixed(1),y1:p1[1].toFixed(1),x2:p2[0].toFixed(1),
+      y2:p2[1].toFixed(1),stroke:col,"stroke-width":w.toFixed(2),
+      "stroke-opacity":op,"stroke-linecap":"round"};
+    if(dash) at["stroke-dasharray"]=dash;
+    return g.appendChild(el("line",at));
+  };
+
+  const labs=[];
+  const fmt=v2=>String(v2).replace(/\B(?=(\d{3})+(?!\d))/g,",");
+
+  /* ---- the lanes, their roads, and what is in them ------------------------ */
+  const BASES="ACGT";
+  const umiOf=()=>{ let q=""; for(let i=0;i<10;i++) q+=BASES[Math.floor(rnd()*4)]; return q; };
+  const lanes=[];
+  { let c=Math.floor(rnd()*9000)+1200;
+    for(let k=0;k<NL;k++){
+      /* THREE TO FIVE READS A LAP. It is what fits with their labels, and it is
+         enough: what has to be legible is that some of them fork and some do
+         not, which needs a handful, not a crowd. */
+      const m=3+Math.floor(rnd()*3);
+      const g1=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
+      const g2=GENE_NAMES[Math.floor(rnd()*GENE_NAMES.length)];
+      const pools={};
+      const umiFor=gn=>{ let q=pools[gn];
+        if(!q){ q=pools[gn]=[]; const np=Math.max(1,Math.ceil(m*0.5));
+          for(let i=0;i<np;i++) q.push(umiOf()); }
+        return q[Math.min(q.length-1,Math.floor(Math.pow(rnd(),1.7)*q.length))]; };
+      const seq=[];
+      for(let j=0;j<m;j++){ const gn=(rnd()<0.72?g1:g2); seq.push({gn,umi:umiFor(gn)}); }
+      /* THE SEEDED CASE, in about a third of the lanes: one UMI carried by two
+         different genes. Both are first sightings and both fork, which is the
+         whole difference between keying on three facts and keying on the UMI
+         alone — and it cannot be shown by accident, so it is placed. */
+      if(m>=4 && rnd()<0.34 && g1!==g2){ seq[m-1]={gn:g2, umi:seq[0].umi, twin:true}; }
+      const seen=new Set();
+      for(const r of seq){ const key=r.gn+"|"+r.umi;
+        r.first=!seen.has(key); seen.add(key); }
+      /* AND EVERY LANE HAS AT LEAST ONE REPEAT. Drawn from a pool, a short lane
+         sometimes comes out all-distinct, and a lane whose two counters climb
+         together says the opposite of what this node is for — it draws a
+         library with no duplication at all, which is not a thing that happens.
+         One forced repeat is the floor, not a thumb on the scale. */
+      if(seq.every(r=>r.first) && seq.length>1){
+        seq[seq.length-1]={gn:seq[0].gn, umi:seq[0].umi, first:false}; }
+      lanes.push({cell:c, seq, m});
+      c+=Math.floor(1+rnd()*90000);
+    } }
+
+  for(let k=0;k<NL;k++){
+    const y=laneY(k), ln=lanes[k];
+    /* the run-in, then the two roads. The upper is the straight continuation of
+       the run-in because every read stays on it; the lower has to be reached. */
+    line([LANE0,y,uz],[FORK,y,uz],"var(--fg3)",1.8,".40");
+    line([FORK,y,uz],[RAILEND,y,uz],"var(--fg3)",1.8,".40");
+    line([FORK+RAMP,y,lz],[RAILEND,y,lz],"var(--fg3)",1.8,".34");
+    /* the ramp down off the fork: dotted, because it is a copy being made and
+       not a thing travelling */
+    line([FORK,y,uz],[FORK+RAMP,y,lz],"var(--fg3)",1.3,".28","2.5 2.5");
+    /* AND A TIE AT THE FAR END JOINING THE TWO DECKS. Without it a lower road
+       reads as the upper road of the next lane down — the drop is a screen
+       offset like any other, and nothing says the two rails are one lane's two
+       answers. The tie and the ramp bracket them. */
+    line([RAILEND,y,uz],[RAILEND,y,lz],"var(--fg3)",1.1,".26");
+    /* the cell, small — E6 named it properly and this is only which lane */
+    { const a=P(LANE0,y,uz);
+      const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+        x:(CFS*0.4).toFixed(1), y:(-CFS*0.42).toFixed(1),
+        "text-anchor":"start","font-family":MONO,fill:"var(--fg3)",
+        "font-size":CFS.toFixed(1),"font-weight":"500","fill-opacity":".52"});
+      t2.textContent="cell "+fmt(ln.cell); labs.push(t2); }
+  }
+
+  /* ---- the scanner over the fork ------------------------------------------
+     One question, asked once, of everything that passes: HAVE I SEEN THIS CELL
+     AND THIS GENE AND THIS UMI BEFORE. It is built like E3's — one post, a
+     cantilevered beam — because it is the same kind of machine: a lookup
+     against a memory, not a judgement. */
+  const yTop=laneY(0)-LP*0.9, yBot=laneY(NL-1)+LP*0.9;
+  const BZ=uz+0.95, POSTW=0.10;
+  { const bw=0.16;
+    /* the beam across every lane */
+    line([FORK,yTop,BZ],[FORK,yBot,BZ],"var(--fg2)",5.2,".70");
+    /* the one post, at the near end */
+    line([FORK,yTop,BZ],[FORK,yTop,base],"var(--fg3)",3.0,".45");
+    const a=P(FORK,yTop-LP*0.35,BZ);
+    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(-30)`,
+      "text-anchor":"end","font-family":MONO,fill:"var(--fg2)",
+      "font-size":(LFS*1.15).toFixed(1),"font-weight":"700",
+      "letter-spacing":(LFS*0.05).toFixed(2),"fill-opacity":".70"});
+    t2.textContent="cell + gene + UMI · seen before?"; labs.push(t2); }
+  /* one light per lane, lit while something is under it */
+  const lamps=[];
+  for(let k=0;k<NL;k++)
+    lamps.push(line([FORK,laneY(k),BZ],[FORK,laneY(k),uz],"var(--fg)",1.6,"0"));
+
+  /* ---- the two decks, named once each -------------------------------------
+     Once, and not per lane: eleven pairs of the same two words is a wall, and
+     the geometry says which road is which after the first reading. */
+  const deck=(z,txt,op)=>{
+    /* SET WELL DOWN-FIELD OF THE FORK. Named at the fork they sit on top of the
+       node's own name, which lives at the near corner — two headings in one
+       place, one of them the station's and one of them a road's. */
+    const a=P(FORK+RAMP+span*0.34, yTop-LP*0.10, z);
+    const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+      "text-anchor":"start","font-family":MONO,fill:"var(--fg2)",
+      "font-size":(LFS*1.5).toFixed(1),"font-weight":"700",
+      "letter-spacing":(LFS*0.10).toFixed(2),"fill-opacity":op});
+    t2.textContent=txt; labs.push(t2); };
+  deck(uz,"READS · every observation",".78");
+  deck(lz,"MOLECULES · every distinct one",".78");
+
+  /* ---- the counters -------------------------------------------------------
+     The words on the near lane only and bare numbers under it, the way a table
+     puts its header in one row. Each number sits at the end of the road it
+     counts, so nothing has to say which is which. */
+  const cnt=[];
+  for(let k=0;k<NL;k++){
+    const mk=(z,lead)=>{
+      const a=P(RAILEND+0.62,laneY(k),z);
+      const t2=el("text",{transform:`translate(${a[0].toFixed(1)},${a[1].toFixed(1)}) rotate(30)`,
+        y:(NFS*0.34).toFixed(1),
+        "text-anchor":"start","font-family":MONO,fill:"var(--fg2)",
+        "font-size":NFS.toFixed(1),"font-weight":"700","fill-opacity":".82"});
+      labs.push(t2); return {node:t2,lead};
+    };
+    cnt.push({r:mk(uz,k===0?"READS ":""), m:mk(lz,k===0?"MOLECULES ":"")});
+  }
+
+  /* ---- the reads ----------------------------------------------------------
+     Every read gets an upper body. A FIRST SIGHTING ALSO GETS A LOWER ONE, and
+     the lower one does not exist before the fork: it fades up as it comes down
+     the ramp, because that is the moment the copy is made. */
+  const ANGB=(()=>{ const o=P(0,0,0), u=P(1,0,0);
+    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
+  const ANGO=(()=>{ const o=P(0,0,0), u=P(-TDIR[0],0,-TDIR[1]);
+    return (Math.atan2(u[1]-o[1],u[0]-o[0])*180/Math.PI).toFixed(2); })();
+
+  const body=()=>{
+    const grp=g.appendChild(el("g"));
+    return {
+      cd:grp.appendChild(el("polygon",{fill:"var(--cull)","fill-opacity":"0",stroke:"none"})),
+      ad:grp.appendChild(el("line",{stroke:"var(--fg3)","stroke-width":"1.1",
+        "stroke-opacity":"0","stroke-linecap":"butt"})),
+      bc:grp.appendChild(el("polygon",{fill:"var(--accent)","fill-opacity":"0",stroke:"none"})),
+    };
+  };
+  const mkLab=(sz,col,txt)=>{ const t2=el("text",{"text-anchor":"start",
+    "font-family":MONO,"font-size":sz.toFixed(1),"font-weight":"700",fill:col,
+    "fill-opacity":"0"}); t2.textContent=txt; labs.push(t2); return t2; };
+
+  const reads=[];
+  lanes.forEach((ln,k)=>{
+    ln.seq.forEach((r,j)=>{
+      const rd={tk:k, ph:(j+0.5+(rnd()-0.5)*0.4)/ln.m, first:r.first,
+        A:body(), B:r.first?body():null,
+        tgA:mkLab(GLS,"var(--ok)",r.gn), tuA:mkLab(LFS,"var(--accent)",r.umi)};
+      if(r.first){ rd.tgB=mkLab(GLS,"var(--ok)",r.gn);
+                   rd.tuB=mkLab(LFS,"var(--accent)",r.umi); }
+      reads.push(rd);
+    });
+  });
+  labs.forEach(t2=>g.appendChild(t2));
+
+  const DASHN=7;
+  const barTo2=(node,w,minHW,a,b,op)=>{
+    const p1=P(a[0],a[1],a[2]), p2=P(b[0],b[1],b[2]);
+    const dx=p2[0]-p1[0], dy=p2[1]-p1[1], L=Math.hypot(dx,dy)||1;
+    const hw=Math.max(minHW,w*S/2), hx=-dy/L*hw, hy=dx/L*hw;
+    node.setAttribute("points",[[p1[0]+hx,p1[1]+hy],[p2[0]+hx,p2[1]+hy],
+      [p2[0]-hx,p2[1]-hy],[p1[0]-hx,p1[1]-hy]]
+      .map(q=>q[0].toFixed(1)+","+q[1].toFixed(1)).join(" "));
+    node.setAttribute("fill-opacity",clamp01(op).toFixed(3));
+  };
+  const seg2=(node,a,b,op)=>{
+    const p1=P(a[0],a[1],a[2]), p2=P(b[0],b[1],b[2]);
+    node.setAttribute("x1",p1[0].toFixed(1)); node.setAttribute("y1",p1[1].toFixed(1));
+    node.setAttribute("x2",p2[0].toFixed(1)); node.setAttribute("y2",p2[1].toFixed(1));
+    node.setAttribute("stroke-opacity",clamp01(op).toFixed(3));
+    const d=Math.hypot(p2[0]-p1[0],p2[1]-p1[1])/(2*DASHN-1);
+    node.setAttribute("stroke-dasharray",d.toFixed(2)+" "+d.toFixed(2));
+  };
+  const put=(bd,tg,tu,gx,y,z,op,lop)=>{
+    const bA=[gx-Lb/2,y,z], bB=[gx+Lb/2,y,z];
+    const kx  =[bA[0]+TDIR[0]*Ta, y, bA[2]+TDIR[1]*Ta];
+    const oEnd=[bA[0]+TDIR[0]*(Ta+Lo), y, bA[2]+TDIR[1]*(Ta+Lo)];
+    barTo2(bd.bc,RWB,0.44,bA,bB,op*0.95);
+    seg2(bd.ad,bA,kx,op*0.42);
+    barTo2(bd.cd,RW,0.62,kx,oEnd,op);
+    const qo=P(oEnd[0],y,oEnd[2]), qb=P(bA[0],y,bA[2]);
+    tg.setAttribute("transform",
+      `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
+    tg.setAttribute("x",(GLS*0.20).toFixed(1));
+    tg.setAttribute("y",(-GLS*0.34).toFixed(1));
+    tg.setAttribute("fill-opacity",(lop*0.88).toFixed(3));
+    tu.setAttribute("transform",
+      `translate(${qb[0].toFixed(1)},${qb[1].toFixed(1)}) rotate(${ANGB})`);
+    tu.setAttribute("x",(LFS*0.25).toFixed(1));
+    tu.setAttribute("y",(-LFS*0.42).toFixed(1));
+    tu.setAttribute("fill-opacity",(lop*0.88).toFixed(3));
+  };
+
+  let t=0;
+  const run=dt=>{
+    t+=dt;
+    const laps=t*v/LOOP;
+    const R=new Array(NL).fill(0), M=new Array(NL).fill(0), lit=new Array(NL).fill(0);
+    for(const rd of reads){
+      const u=((laps+rd.ph)%1+1)%1;
+      const gx=x0-PIN+u*LOOP;
+      const vis=Math.min(sstep(x0-PIN,x0-PIN+K*1.0,gx),
+                         1-sstep(RAILEND-K*1.6,RAILEND-K*0.4,gx));
+      /* THE WRITING STARTS AFTER THE CELL'S NAME AND STOPS BEFORE THE COUNTERS.
+         A UMI over a lane's own name, or over the number that lane is counting
+         up to, is the one thing in this field that cannot be read around. */
+      const lvis=vis*sstep(LANE0+2.3,LANE0+3.1,gx);
+      put(rd.A,rd.tgA,rd.tuA,gx,laneY(rd.tk),uz,vis,lvis);
+      if(rd.B){
+        /* THE COPY: nothing before the fork, then down the ramp and away. Its
+           fade starts a quarter of the way down and not at the top, because at
+           the top it is exactly on top of the read it came from — two labels in
+           one place, which reads as a rendering fault rather than as a copy. */
+        const dn=clamp01((gx-FORK)/RAMP);
+        const z=uz+(lz-uz)*easeOut(dn);
+        const cop=sstep(0.26,0.78,dn);
+        put(rd.B,rd.tgB,rd.tuB,gx,laneY(rd.tk),z,vis*cop,lvis*cop);
+      }
+      /* the lamp is lit by whatever is under the beam, first sighting or not */
+      lit[rd.tk]=Math.max(lit[rd.tk],1-clamp01(Math.abs(gx-FORK)/(K*1.6)));
+      /* AND THE COUNTERS ARE DERIVED, NOT ACCUMULATED. How many times this read
+         has crossed the fork is a function of the clock, so the numbers cannot
+         drift, cannot double-count a frame, and come back identical after a
+         tab has been asleep. */
+      const cross=Math.floor(laps+rd.ph-forkU)+1;
+      if(cross>0){ R[rd.tk]+=cross; if(rd.first) M[rd.tk]+=cross; }
+    }
+    for(let k=0;k<NL;k++){
+      lamps[k].setAttribute("stroke-opacity",(lit[k]*0.55).toFixed(3));
+      cnt[k].r.node.textContent=cnt[k].r.lead+fmt(R[k]);
+      cnt[k].m.node.textContent=cnt[k].m.lead+fmt(M[k]);
+    }
+  };
+  run(0);
+  TICKERS.push(dt=>run(dt));
+}
+DRAW.dedup=drawDedup;
+
+
 
 /* ============================================================
    W1 · BARCODE WHITELISTS — where the lists come from

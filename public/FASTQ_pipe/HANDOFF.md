@@ -1604,6 +1604,64 @@ type between neighbouring lines**, and sizing the fragments off that would make
 them four times what they were one station back. `gd` is the belts' own depth,
 so a read here is the read that was riding a gene next door.
 
+## `E7` · Deduplicate UMIs — the fork
+
+**The only merge on the map, and it must not look like a reject.** Three
+stations upstream throw things away and are drawn that way: `E3` shreds reads
+whose barcode is on no whitelist, `E5` shunts reads that landed on no gene —
+cull colour, chute, bin. **A duplicate is none of those. It is one molecule
+photographed twice.** So there is no bin here and nothing is discarded.
+
+| road | who takes it | why |
+|---|---|---|
+| **upper — READS** | every read, always | it is the straight-through continuation, because nothing leaves it |
+| **lower — MOLECULES** | first sightings only | it has to be *reached*, down a dotted ramp |
+
+**The ramp is dotted because what goes down it is a copy being made, not a
+thing travelling.** A first sighting duplicates at the fork and takes both
+roads; a read the scanner has seen takes the upper road alone.
+
+**Two counters at the end of each lane** climb together and then visibly part.
+**The gap that opens is PCR duplication** — and every lane is *given* at least
+one repeat, because a lane whose counters climb together draws a library with
+no duplication at all, which is not a thing that happens. That is a floor, not
+a thumb on the scale.
+
+**The counters are derived from the clock, not accumulated.** How many times a
+read has crossed the fork is a function of elapsed time — so the numbers cannot
+drift, cannot double-count a frame, and come back identical after a sleeping
+tab.
+
+**The key is all three facts.** The same UMI on a different gene is a different
+molecule, so a third of the lanes are *seeded* with exactly that case: one UMI,
+two genes, both first sightings, both forking. It cannot happen by accident
+often enough to read, and it is the only way to draw the difference between
+keying on three things and keying on the UMI alone.
+
+### What `E7` had to give up to fit
+
+- **Eleven lanes, not `E6`'s twenty.** Each one is now two roads and a pair of
+  counters. `E6` already said the thing about emptiness and `884,736`; `E7` does
+  not repeat it.
+- **The read is drawn at `RS` = 1.45, half `E6`'s.** Every first sighting is
+  drawn *twice*, on two decks, and each body carries an aerial that stands up
+  with a gene name above it. What must fit in one lane's clear air is the upper
+  read's aerial and label, the drop to the lower deck, and the lower read's own
+  body — about forty-four screen units, and `LP` is set to clear it.
+- **The decks separate in `z`, not `y`**, so one road is literally above the
+  other and neither is up-field of the other: *two answers to the same question,
+  not two stages of one.*
+- **A tie at the far end joins each lane's two rails.** Without it a lower road
+  reads as the upper road of the next lane down — the drop is just a screen
+  offset like any other, and nothing says the two rails are one lane's two
+  answers. The ramp and the tie bracket them.
+- **The rail starts before the reads do**, and that stretch is the cell's name.
+  *A name and a read on the same line at the same moment is the one collision a
+  lane cannot spare*, and the cheapest fix is a piece of rail no read is ever on.
+- **The copy's fade starts a quarter of the way down the ramp**, not at the top:
+  at the top it is exactly on top of the read it came from, and two labels in
+  one place reads as a rendering fault rather than as a copy.
+
 ### The tracks and their names
 
 - **Spacing off the type.** A track only has to be as far from its neighbour as

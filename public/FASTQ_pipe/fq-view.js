@@ -336,7 +336,12 @@ NODES.filter(n=>n.anchor).forEach(n=>{
   const t=el("text",{x:14,y:-3,"text-anchor":"start","font-size":"20","letter-spacing":"2.5",
     fill:"var(--fg)"});
   t.textContent=n.name.toUpperCase(); g.appendChild(t);
-  const t2=el("text",{x:14,y:12,"text-anchor":"start","font-size":"11","letter-spacing":".8",
+  /* SEVENTEEN AND NOT TWELVE. A twenty-pixel name and an eleven-pixel stat
+     fifteen apart share about three pixels of air, which is nothing once the
+     name's own em box is counted — the pair read as touching at every zoom and
+     the text check called it. The gap is the one number here that has to be
+     larger than both fonts' descent, not just larger than the visible glyphs. */
+  const t2=el("text",{x:14,y:17,"text-anchor":"start","font-size":"11","letter-spacing":".8",
     fill:"var(--fg2)"});
   t2.textContent=n.stat||""; g.appendChild(t2);
   /* A LANDMARK GETS ITS TAG TOO. It was only drawn on the plain nodes, so the
