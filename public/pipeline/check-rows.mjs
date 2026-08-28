@@ -132,7 +132,8 @@ const found = await page.evaluate(gap => {
   if (GRID.x1 < x1) short.push(`right by ${(x1 - GRID.x1).toFixed(1)}`);
   if (GRID.y0 > y0) short.push(`top by ${(GRID.y0 - y0).toFixed(1)}`);
   if (GRID.y1 < y1) short.push(`bottom by ${(y1 - GRID.y1).toFixed(1)}`);
-  return { cross, onCross, dirs, wrong, short, uneven, offcentre, strobing };
+  return { cross, onCross, dirs, wrong, short, uneven, offcentre, strobing,
+           evenN: LANES.filter(L => L.even).length };
 }, ROW_GAP);
 
 if (found.cross.length)
@@ -157,7 +158,7 @@ if (found.short.length)
 console.log(bad
   ? `\n${bad} FAILURE(S)`
   : `rows: nothing is drawn between them, no dot is travelling between them, all ` +
-    `${found.dirs.length} lanes read left to right, the three even ones are even and centred in ` +
+    `${found.dirs.length} lanes read left to right, the ${found.evenN} even ones are even and centred in ` +
     `their mats, no track is short enough for its dots to strobe, and the grid covers ` +
     `everything drawn on it`);
 if (errs.length) console.log('page errors:', errs);

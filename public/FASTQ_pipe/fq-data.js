@@ -13,11 +13,24 @@
    how one gets BUILT. They are drawn at /bioinformatics_pipe, which is this
    page's other half.
 
-   EVERY NODE BELOW IS LIFTED VERBATIM FROM pipeline-data.js. Not re-typed —
-   extracted as source text, so every character of every does/built/cond field
-   matches the map it came from and a diff between the two stays meaningful.
-   If a claim on that map changes, change it there and lift it again; do not
-   let the two drift into two different accounts of the same stage.
+   THE LIFT RUNS BOTH WAYS NOW, AND WHICH WAY DEPENDS ON THE NODE.
+
+   Most of what is below was lifted verbatim FROM pipeline-data.js — not
+   re-typed, extracted as source text, so every character of every
+   does/built/cond field matches the map it came from and a diff between the
+   two stays meaningful. That is still true of FQ, E3, E4, E5, E7 and UD: those
+   stages are /pipeline's writing, and if a claim in one of them changes it
+   changes there and gets lifted again.
+
+   But /pipeline's row 3 is now THIS page at 1/2.4, and the stations this page
+   invented went the other way. E2 (the fragment), E6 (bucket by cell) and all
+   five reference figures — G1, G2, G3, G4, W1 — were authored here and are
+   lifted THERE. Their prose is owned by this file.
+
+   EITHER WAY, DO NOT EDIT A LIFTED FIELD IN PLACE. Change it on the map that
+   owns it and lift it again, or the two drift into two different accounts of
+   one pipeline — which is the entire failure both files exist to prevent.
+   New writing that belongs to only one map goes in `added:`.
 
    IT IS ONE CHAIN. IT WAS DRAWN AS A FORK AND THAT WAS WRONG.
 

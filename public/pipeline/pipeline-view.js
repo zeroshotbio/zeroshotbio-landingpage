@@ -316,6 +316,12 @@ NODES.filter(LANDMARK).forEach(n=>{
   const t2=el("text",{x:lx,y:isA?12:10,"text-anchor":la,
     "font-size":isA?"11":"9",  "letter-spacing":".8",fill:"var(--fg2)"});
   t2.textContent=n.stat; g.appendChild(t2); textEls[n.id+":stat"]=t2;
+  /* THE LABEL GROUP CARRIES ITS NODE'S ID. It lives in its own layer rather
+     than inside the building's group, so nothing in the DOM said which object
+     a name belonged to — which meant check-text could not attribute a single
+     name label and quietly tested none of them against anything. data-id is
+     what it keys off; nothing else reads it. */
+  g.setAttribute("data-id", n.id);
   gLabel.appendChild(g); labelEls[n.id]=g;
 });
 
@@ -330,7 +336,9 @@ NODES.filter(n=>!LANDMARK(n)).forEach(n=>{
   const g=el("g",{transform:labelBase(n)});
   const t=el("text",{x:below?-9:9,y:-1,"text-anchor":below?"end":"start","font-size":"8.6",
     "letter-spacing":".35",fill:"var(--fg2)"});
-  t.textContent=n.key+" · "+n.name; g.appendChild(t); gLabel.appendChild(g);
+  t.textContent=n.key+" · "+n.name; g.appendChild(t);
+  g.setAttribute("data-id", n.id);          /* see above */
+  gLabel.appendChild(g);
   labelEls[n.id]=g; textEls[n.id+":name"]=t;
 });
 
