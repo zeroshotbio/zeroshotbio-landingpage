@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Molecular biology — the bench</title>
+<meta name="description" content="Row 2 of the zeroshot.bio pipeline map on its own: the thaw, three rounds of in-situ barcoding, cDNA capture, library prep and the sequencer. A bench for developing that row out.">
+<style>
+  :root{
+    /* ---- dark (default) ---- */
+    --bg:#131816; --panel:#181f1c; --panel2:#1c2421;
+    --fg:#dfe6df; --fg2:#a3b0a6; --fg3:#7d8a81; --rule:#39443e;
+    --grid:#dfe6df; --grid-op:.055;
+    --edge:#cdd6cd; --stroke:#cdd6cd; --voxel:#dfe6df;
+    --signal:#74b0f0; --drop:#e0765c;
+
+    /* ---- THE THREE MARKS THE ROOFED CULLS USE ----
+       Aliases, not new colours. Each is a token this page already carries,
+       already meaning close to what it has to mean on a chart:
+
+         --keep    = --fg2     the population still under consideration. It is
+                               most of every cloud, so it takes the neutral the
+                               rest of the map is drawn in rather than a hue.
+         --cull    = --drop    this page already means "being dropped" with
+                               this, on its drop edges and its condition rule.
+         --accent  = --signal  this page already means "look here" with this,
+                               and a threshold is the thing to look at.
+
+       Every mark on a roof is one of three things — it stays, it goes, or it
+       is the line deciding which. DO NOT ADD A FOURTH: the moment one roof
+       gets its own hue the four culls stop being comparable at a glance. */
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+    --keep:#a3b0a6; --cull:#e0765c; --accent:#74b0f0;
+
+    --t-top:#333d37; --t-left:#252d29; --t-right:#1c231f;
+    --a-top:#6f7d73; --a-left:#4e5a52; --a-right:#3b453e;
+    --k-top:#5a675f; --k-left:#404b45; --k-right:#303934;
+    --m-top:#dbe2d9; --m-left:#aeb8ad; --m-right:#8f9b91;
+    --g-top:#33403a; --g-left:#242e29; --g-right:#1b2320;
+    --c-top:#7fa3c0; --c-left:#52708c; --c-right:#3d566c;
+
+    --sa-top:#dbe2d9; --sa-left:#aeb8ad; --sa-right:#8f9b91;
+    --sb-top:#b9c2b8; --sb-left:#909a90; --sb-right:#767f76;
+    --sc-top:#7fa9dd; --sc-left:#5480b4; --sc-right:#3f6693;
+
+    --strip-h:clamp(66px,15dvh,118px);   /* footer height, shared with the sheet */
+    --strip-mini:28px;                   /* what it collapses to while reading */
+    --txt-mono:#131816;  /* text over the pale monolith / strata */
+    --txt-box:#dfe6df;   /* text over everything else */
+
+    /* the aquarium — water, fish, gravel, planting */
+    --water:#4f8fd6; --fish:#f2f6f0; --gravel:#5b6a60; --plant:#6f9a72;
+    --ok:#5aa46b;        /* the check on a compound that got picked */
+  }
+  body.light{
+    --bg:#ccd4cb; --panel:#d5dcd3; --panel2:#c3ccc2;
+    --fg:#161e19; --fg2:#4c5a52; --fg3:#75827a; --rule:#98a498;
+    --grid:#161e19; --grid-op:.06;
+    --edge:#161e19; --stroke:#161e19; --voxel:#161e19;
+    --signal:#1e4c8a; --drop:#8a3324;
+    --keep:#4c5a52; --cull:#8a3324; --accent:#1e4c8a;
+
+    --t-top:#d9e0d7; --t-left:#c4cec3; --t-right:#b5c0b5;
+    --a-top:#b3bfb2; --a-left:#8f9d8e; --a-right:#79887a;
+    --k-top:#9aa79a; --k-left:#75847a; --k-right:#5e6d64;
+    --m-top:#75837a; --m-left:#4a574f; --m-right:#37433b;
+    --g-top:#e4eae1; --g-left:#cfd8ce; --g-right:#c0cabf;
+    --c-top:#8fa3ae; --c-left:#63798a; --c-right:#4c6172;
+
+    --sa-top:#7d8b81; --sa-left:#4f5c54; --sa-right:#3b473f;
+    --sb-top:#6d7b72; --sb-left:#44514a; --sb-right:#323e37;
+    --sc-top:#3f5b7e; --sc-left:#2a4260; --sc-right:#1e3350;
+
+    --txt-mono:#d5dcd3; --txt-box:#161e19;
+
+    --water:#3a6ea8; --fish:#2a332c; --gravel:#8f9a8e; --plant:#6d8a6b;
+    --ok:#3f7d4d;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--fg);
+       font-family:ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,Consolas,monospace;
+       font-size:12px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;
+         -webkit-user-select:none;user-select:none}
+  ::-webkit-scrollbar{width:7px;height:7px}
+  ::-webkit-scrollbar-thumb{background:var(--rule)}
+  ::-webkit-scrollbar-track{background:transparent}
+
+  .app{display:flex;flex-direction:column;height:100dvh;overflow:hidden}
+  header{display:flex;align-items:stretch;border-bottom:1px solid var(--fg);overflow-x:auto;flex:none}
+  /* the header is a toolbar now — the run's numbers used to sit along it and
+     were the first thing removed once the map itself carried them */
+  .controls{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:6px 10px;flex:none}
+  .ctl{border:1px solid var(--fg);padding:4px 9px;font-size:9px;letter-spacing:.12em;
+       text-transform:uppercase;white-space:nowrap}
+  .ctl:hover,.ctl:focus-visible{background:var(--fg);color:var(--bg)}
+
+  .body{display:flex;flex:1;min-height:0}
+  aside{width:var(--aside-w,238px);flex:none;border-right:1px solid var(--fg);overflow-y:auto;
+        padding-bottom:24px;background:var(--bg);-webkit-user-select:none;user-select:none}
+  /* Either column can be dragged shut. What is left behind is the grip itself,
+     a full-height sliver carrying an arrow that points the way back — so it is
+     obvious the panel is still there rather than gone. */
+  .grip{flex:none;width:9px;position:relative;cursor:col-resize;background:var(--panel2);
+        border-right:1px solid var(--fg);-webkit-user-select:none;user-select:none}
+  .grip:hover,.grip:focus-visible{background:var(--signal)}
+  .grip span{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+             width:3px;height:34px;border-radius:2px;background:var(--fg3)}
+  .grip:hover span{background:var(--bg)}
+  /* collapsed: the sliver widens a touch and the pill becomes a chevron */
+  .grip.shut{cursor:pointer;background:var(--bg);width:16px}
+  .grip.shut:hover{background:var(--signal)}
+  .grip.shut span{width:auto;height:auto;background:none;font-size:13px;line-height:1;color:var(--fg2)}
+  .grip.shut:hover span{color:var(--bg)}
+  .grip.shut::after{content:"";position:absolute;inset:0;
+                    background:repeating-linear-gradient(var(--rule) 0 1px,transparent 1px 5px);
+                    opacity:.35;pointer-events:none}
+  .grp{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);padding:14px 10px 5px}
+  .grp.mark{color:var(--fg)}
+  .row{display:flex;align-items:center;gap:8px;width:100%;text-align:left;padding:6px 10px;
+       border:1px solid var(--rule);border-left:none;border-right:none;margin-top:-1px}
+  .row .key{width:22px;height:17px;flex:none;border:1px solid var(--fg);display:grid;place-items:center;font-size:9px}
+  .row.anchor .key{background:var(--fg);color:var(--bg)}
+  .row .nm{flex:1;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;line-height:1.35}
+  .row.anchor .nm{font-size:11.5px}
+  .row .n{font-size:9px;color:var(--fg3)}
+  .row:hover,.row:focus-visible{background:var(--panel2)}
+  .row.on{background:var(--fg);color:var(--bg)}
+  .row.on .key{border-color:var(--bg)}
+  .row.on.anchor .key{background:var(--bg);color:var(--fg)}
+  .row.on .n{color:var(--bg)}
+
+  .stage{flex:1;position:relative;min-width:0;overflow:hidden}
+  /* Panning is a drag across a canvas covered in <text>, and a drag across text
+     is a text selection as far as the browser is concerned — so the map picked
+     up a blue smear on every pan. Nothing on the map is meant to be selected
+     with the cursor; the prose in the reader still is, because that is a
+     different element and is left alone. */
+  svg{display:block;width:100%;height:100%;touch-action:none;cursor:grab;
+      -webkit-user-select:none;user-select:none;
+      -webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+  svg.drag{cursor:grabbing}
+  /* walk the sequence: keyboard on a desktop, these on anything. Round, so
+     they read as buttons rather than as part of the drawing. */
+  .stepnav{position:absolute;top:10px;right:10px;display:flex;gap:8px;z-index:5}
+  .stepnav button{width:34px;height:34px;border-radius:50%;border:1px solid var(--fg);
+                  background:var(--bg);color:var(--fg);display:grid;place-items:center;
+                  font-size:18px;line-height:1;padding-bottom:2px;
+                  box-shadow:0 2px 8px rgba(0,0,0,.22)}
+  .stepnav button:hover,.stepnav button:focus-visible{background:var(--fg);color:var(--bg)}
+  .stepnav button:active{transform:scale(.92)}
+  .hint{position:absolute;left:0;right:0;bottom:0;padding:6px 12px;font-size:8.5px;
+        letter-spacing:.1em;text-transform:uppercase;color:var(--fg3);pointer-events:none;
+        -webkit-user-select:none;user-select:none}
+
+  /* ---- edit positions ---- */
+  .edonly{display:none}
+  body.haschanges .edonly{display:block}
+  body.editing #btnEdit{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  body.editing .hint{color:var(--signal);text-transform:none;font-size:10px;letter-spacing:.04em}
+  /* the handles are inert until the mode is on: hit-testing stays exactly as
+     it was, so nothing about hover, click or the halo changes when it is off */
+  .ehandle{display:none;pointer-events:none;fill:var(--signal);fill-opacity:.05;
+           stroke:var(--signal);stroke-width:1.1;stroke-opacity:.5;stroke-dasharray:4 3}
+  .ehandle.lab{fill-opacity:.03;stroke-opacity:.35;stroke-dasharray:2 3}
+  .ehit{fill:transparent;pointer-events:none}
+  /* the resize handles on a picked object: four on the roof for width and
+     depth, one in the middle for height */
+  .sizer{cursor:nwse-resize}
+  .sizer.tall{cursor:ns-resize}
+  /* the footprint becomes the grab target in edit mode, so a shape that is
+     mostly outline or mostly transparent is still pickable */
+  svg.editing .ehandle{display:block;pointer-events:all;cursor:move}
+  svg.editing .ehit{pointer-events:all;cursor:move}
+  svg.editing{cursor:default}
+  svg.editing g[role=button]{cursor:move}
+  svg.editing g:hover>.ehandle{fill-opacity:.16;stroke-opacity:1;stroke-dasharray:none}
+
+  /* ---- edit text ---- */
+  body.texting #btnText{background:var(--signal);color:var(--bg);border-color:var(--signal)}
+  /* every editable string gets a dotted underline so the mode shows you its
+     own reach — on the map and in the reader alike */
+  svg.texting text{cursor:text}
+  svg.texting text:hover{fill:var(--signal)!important}
+  body.texting .read [data-tf]{cursor:text;outline:1px dashed var(--rule);outline-offset:3px}
+  body.texting .read [data-tf]:hover{outline-color:var(--signal);background:rgba(116,176,240,.07)}
+  /* a box round every string on the map, so the mode shows its own reach and
+     an 8.6px label is a target rather than a dare */
+  .thandle{display:none;pointer-events:none;fill:transparent;stroke:var(--signal);
+           stroke-width:1;stroke-opacity:.45;stroke-dasharray:3 3}
+  svg.texting .thandle{display:block;pointer-events:all;cursor:text}
+  svg.texting .thandle:hover{fill:var(--signal);fill-opacity:.14;stroke-opacity:1;stroke-dasharray:none}
+  .tefoot .go{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+  .tefoot .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  /* The text editor is a window, not a tooltip: the head drags it, the corner
+     grip resizes it, and the textarea takes whatever room is left. Width and
+     height are set inline by the view from a remembered box, so the flex
+     column below is what makes the middle stretch instead of the box growing. */
+  .tedit{display:none;position:fixed;z-index:60;width:min(430px,calc(100vw - 24px));
+         background:var(--panel);border:1px solid var(--signal);
+         box-shadow:0 12px 34px rgba(0,0,0,.42)}
+  .tedit.on{display:flex;flex-direction:column}
+  .tehead{display:flex;align-items:center;gap:8px;padding:5px 6px 5px 10px;
+          border-bottom:1px solid var(--rule);font-size:8.5px;letter-spacing:.14em;
+          text-transform:uppercase;color:var(--fg3);flex:0 0 auto;
+          cursor:move;touch-action:none;user-select:none;-webkit-user-select:none}
+  .tehead:hover{color:var(--fg2)}
+  .tehead span{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .tehead button{width:22px;height:20px;font-size:16px;line-height:1;color:var(--fg2);
+                 cursor:pointer}
+  .tedit textarea{display:block;width:100%;flex:1 1 auto;min-height:0;max-height:none;
+                  resize:none;
+                  background:var(--bg);color:var(--fg);border:none;outline:none;
+                  padding:9px 10px;font:inherit;font-size:11.5px;line-height:1.55}
+  .tefoot{display:flex;align-items:center;gap:10px;padding:6px 22px 6px 8px;flex:0 0 auto;
+          border-top:1px solid var(--rule);position:relative}
+  #teHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  /* the corner grip: diagonal rules, the usual signal for "pull me" */
+  .tegrip{position:absolute;right:0;bottom:0;width:18px;height:18px;z-index:1;
+          cursor:nwse-resize;touch-action:none;opacity:.55;
+          background:repeating-linear-gradient(135deg,transparent 0 3px,var(--fg3) 3px 4px)}
+  .tegrip:hover{opacity:1;background:repeating-linear-gradient(135deg,transparent 0 3px,var(--signal) 3px 4px)}
+
+  /* ---- edit visual ---- */
+  .ask{display:none;position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.42);
+       align-items:center;justify-content:center;padding:18px}
+  .ask.on{display:flex}
+  .askbox{width:min(600px,100%);background:var(--panel);border:1px solid var(--signal);
+          box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .askbox textarea{display:block;width:100%;resize:vertical;min-height:150px;max-height:52dvh;
+                   background:var(--bg);color:var(--fg);border:none;outline:none;
+                   padding:12px 13px;font:inherit;font-size:12px;line-height:1.6}
+  .askfoot{display:flex;align-items:center;gap:12px;padding:8px 10px;border-top:1px solid var(--rule)}
+  #askHint{flex:1;font-size:8.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--fg3)}
+  .askwait{display:none;align-items:center;gap:10px;padding:9px 12px;border-top:1px solid var(--rule);
+           font-size:11px;color:var(--fg2)}
+  .askwait.on{display:flex}
+  .askwait #askState{flex:1}
+  .spin{width:13px;height:13px;flex:none;border:2px solid var(--rule);border-top-color:var(--signal);
+        border-radius:50%;animation:spin .8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  @media (prefers-reduced-motion:reduce){.spin{animation-duration:3s}}
+
+  /* ---- a request being worked on ----
+     Deliberately not a modal. The request takes minutes, and the whole point is
+     that you carry on reading the map while it happens — so this is a pill in
+     the corner with an indeterminate bar, and closing the dialogue that started
+     it does not stop it. It survives a reload, because the wait does. */
+  /* Requests STACK. A drawing takes minutes, so the sane thing to do is fire off
+     several and carry on — they queue on the instance and are drawn one at a
+     time, and each one gets its own row here with its place in the queue. */
+  .works{position:absolute;left:14px;bottom:30px;z-index:40;display:flex;
+         flex-direction:column;gap:6px;max-width:min(430px,82%)}
+  .work{display:flex;align-items:center;gap:9px;
+        background:var(--panel);border:1px solid var(--signal);padding:7px 6px 7px 10px;
+        box-shadow:0 10px 26px rgba(0,0,0,.4);font-size:11px}
+  .work.queued{border-color:var(--rule)}
+  .work.ready{border-color:var(--fg)}
+  .worknum{flex:none;min-width:17px;height:17px;display:grid;place-items:center;
+           font-size:9px;letter-spacing:0;color:var(--bg);background:var(--signal)}
+  .work.queued .worknum{background:var(--fg3)}
+  .workbar{position:relative;flex:none;width:52px;height:3px;background:var(--rule);overflow:hidden}
+  .workbar span{position:absolute;top:0;bottom:0;left:0;width:40%;background:var(--signal);
+                animation:workslide 1.5s ease-in-out infinite}
+  .work.queued .workbar span{animation:none;width:100%;background:var(--rule)}
+  @keyframes workslide{0%{left:-40%}100%{left:100%}}
+  .worktext{flex:1;min-width:0;color:var(--fg2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .worktext b{font-weight:400;color:var(--fg)}
+  .workage{flex:none;color:var(--fg3);font-size:9.5px;letter-spacing:.06em;white-space:nowrap}
+  .work button{flex:none;width:20px;height:18px;font-size:15px;line-height:1;color:var(--fg3);cursor:pointer}
+  .work button:hover{color:var(--fg)}
+  @media (prefers-reduced-motion:reduce){
+    .workbar span{animation:none;width:100%;opacity:.45}
+  }
+  @media (max-width:900px){ .works{left:8px;bottom:8px;font-size:10px;max-width:calc(100% - 16px)} }
+
+  /* ---- the four pads ----
+     A pad is the biggest object on the map, so its handle is its EDGE rather
+     than its area: a fill would mean pressing anywhere on a row picks up the
+     floor instead of whatever is standing on it. The stroke is fat and
+     invisible, so the outline picks up where it is drawn and nowhere else.
+     The grip on the far corner resizes. Both are inert until the mode is on. */
+  .padedge{fill:none;stroke:var(--signal);stroke-opacity:0;stroke-width:14}
+  svg.editing .padedge{pointer-events:stroke;cursor:move;stroke-opacity:.18;stroke-width:9}
+  svg.editing .padedge:hover{stroke-opacity:.5}
+  .padgrip{display:none;fill:var(--bg);stroke:var(--signal);stroke-width:1.6}
+  .padgriphit{fill:transparent;pointer-events:none}
+  svg.editing .padgrip{display:block}
+  svg.editing .padgriphit{pointer-events:all;cursor:nwse-resize}
+  svg.editing .picked.padedge{stroke-opacity:.8}
+
+  /* ---- deleting an object from the map ----
+     The ✕ is an HTML button in the stage, not an SVG one, for two reasons: it
+     must not shear with the projection, and it must not live inside the group
+     it is offering to delete — a control that vanishes with its own target
+     cannot be pressed a second time.
+
+     Deleting is the one action in this mode that does not undo itself by
+     dragging back, and the saved state is shared, so it asks first. The
+     confirm box is its own element rather than Edit visual's prompt: that one
+     collects a sentence, this one collects a yes. */
+  .delx{display:none;position:absolute;z-index:20;width:26px;height:26px;
+        border:1px solid var(--drop);border-radius:50%;background:var(--bg);
+        color:var(--drop);place-items:center;font-size:17px;line-height:1;
+        box-shadow:0 2px 10px rgba(0,0,0,.4);padding:0}
+  .delx:hover,.delx:focus-visible{background:var(--drop);color:var(--bg)}
+  .delask{display:none;position:absolute;inset:0;z-index:24;background:rgba(0,0,0,.45);
+          align-items:center;justify-content:center;padding:18px}
+  .delask.on{display:flex}
+  .delaskbox{width:min(420px,100%);background:var(--panel);border:1px solid var(--drop);
+             padding:16px 18px 14px;box-shadow:0 18px 50px rgba(0,0,0,.5)}
+  .delasktitle{font-size:16px;margin-bottom:6px}
+  .delaskbox p{color:var(--fg2);font-size:11.5px;margin:0 0 14px}
+  .delaskbar{display:flex;gap:8px}
+  .delaskbar .go{background:var(--drop);border-color:var(--drop);color:var(--bg)}
+  .delaskbar .go:hover{background:var(--drop);opacity:.85;color:var(--bg)}
+
+  /* ---- confirmation ---- */
+  .toast{position:absolute;left:50%;bottom:26px;transform:translate(-50%,14px);
+         z-index:30;pointer-events:none;opacity:0;transition:opacity .18s ease,transform .18s ease;
+         background:var(--fg);color:var(--bg);padding:9px 16px;font-size:11px;
+         letter-spacing:.04em;max-width:min(520px,86%);text-align:center;
+         box-shadow:0 10px 28px rgba(0,0,0,.4)}
+  .toast.on{opacity:1;transform:translate(-50%,0)}
+  .toast.warn{background:var(--drop);color:#fff}
+  /* A change shipped while this page was open. Not a toast — it does not go
+     away on a timer, because the page is now out of date until it is reloaded. */
+  .newver{display:none;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);
+          z-index:40;align-items:center;gap:12px;max-width:min(560px,90%);
+          background:var(--panel);border:1px solid var(--signal);padding:9px 10px 9px 15px;
+          box-shadow:0 12px 32px rgba(0,0,0,.45);font-size:11px}
+  .newver.on{display:flex}
+  .newver span{flex:1}
+  .newver .ctl{border:1px solid var(--fg);padding:5px 11px;font-size:9px;letter-spacing:.12em;
+               text-transform:uppercase;white-space:nowrap}
+  .newver .go{background:var(--fg);color:var(--bg)}
+  .newver .go:hover{background:var(--signal);border-color:var(--signal)}
+  .savebar{display:flex;gap:8px;align-items:center;margin:14px 0 4px}
+  .savebar .ctl{border:1px solid var(--fg);padding:6px 12px;font-size:9.5px;letter-spacing:.12em;
+                text-transform:uppercase}
+  .savebar .go{background:var(--fg);color:var(--bg)}
+  .savebar .go:hover{background:var(--signal);border-color:var(--signal);color:var(--bg)}
+  .savedone{border-left:2px solid var(--ok);padding-left:9px;color:var(--fg2)}
+  svg.editing .picked>.ehandle{fill-opacity:.24;stroke-opacity:1;stroke-width:1.6;stroke-dasharray:none}
+  /* THE RESIZE GRIPS, AND THEY HAVE TO SIT AFTER THE HOVER RULE ABOVE.
+
+     A grip has to be FOUND before it can be used, which makes it a different
+     kind of mark from the footprint it inherits from. `.ehandle` is a hint — a
+     dashed outline at 5% fill saying "this whole thing can be picked up" — and
+     it is right for that job precisely because it stays out of the way. A
+     corner grip is the opposite: a small target somebody has to spot and aim
+     at, and at 5% it was invisible until the cursor happened to cross it.
+
+     The order is not cosmetic. `svg.editing g:hover>.ehandle` is (0,3,2) and
+     beats a plain `svg.editing .sizer` at (0,2,1) — so the grips came out at
+     the hover rule's 16% whatever they asked for, because a picked object is
+     usually under the pointer. Matching the specificity and coming later is
+     what makes these win. Measure the computed fill-opacity if you move them.
+
+     They exist only while an object is picked, so there is no cost to the
+     resting map: five loud squares appearing the moment you pick something is
+     the affordance, not noise. */
+  svg.editing g>.ehandle.sizer{pointer-events:all;fill-opacity:.85;
+       stroke:var(--bg);stroke-width:1.4;stroke-opacity:.9;stroke-dasharray:none}
+  svg.editing g>.ehandle.sizer:hover,svg.editing g>.ehandle.sizer.picked{
+       fill-opacity:1;stroke:var(--fg);stroke-opacity:1;stroke-dasharray:none}
+  /* A MEMBER OF A MULTI-SELECTION reads differently from a picked object,
+     because it means something different: picked is "this one, and the ✕
+     applies to it", chosen is "this one AND the others, and they move
+     together". Solid where picked is dashed, and the whole set carries it at
+     once so the group reads as a group. */
+  svg.editing .chosen>.ehandle{fill-opacity:.3;stroke-opacity:1;stroke-width:2;
+                               stroke-dasharray:none;stroke:var(--signal)}
+  body.multi #btnMulti{border-color:var(--signal);color:var(--signal)}
+
+  .reader{width:var(--reader-w,352px);flex:none;border-left:1px solid var(--fg);display:flex;
+          flex-direction:column;background:var(--panel);min-height:0}
+  /* the one place selection is wanted: the prose, and the blocks Save prints
+     for pasting back into the data file */
+  .read{padding:14px 16px 40px;overflow-y:auto;flex:1;-webkit-user-select:text;user-select:text}
+  .eyebrow{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3)}
+  .title{font-size:20px;margin:3px 0 2px;line-height:1.2}
+  .title.big{font-size:24px}
+  .sub{color:var(--fg2);font-size:11px;margin-bottom:16px}
+  .read h4{font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--fg3);
+           font-weight:400;margin:18px 0 6px;padding-bottom:4px;border-bottom:1px solid var(--rule)}
+  .read p{margin:0 0 10px}
+  mark{background:var(--fg);color:var(--bg);padding:0 3px}
+  .kv{display:flex;gap:10px;padding:3px 0;border-bottom:1px dotted var(--rule);margin:0}
+  .kv dt{width:104px;flex:none;color:var(--fg3);font-size:10px;letter-spacing:.06em;text-transform:uppercase}
+  .kv dd{margin:0;flex:1;font-size:11px;word-break:break-word}
+  .cond{border-left:2px solid var(--drop);padding-left:9px}
+  .snip{background:var(--bg);border:1px solid var(--rule);padding:9px 10px;font-size:10.5px;
+        white-space:pre;overflow-x:auto;line-height:1.6}
+  /* the headline figure of a roofed cull's threshold */
+  .figure{font-size:17px;color:var(--accent);letter-spacing:.02em;margin:2px 0 8px}
+  .unver{display:inline-block;border:1px solid var(--drop);color:var(--drop);font-size:8.5px;
+         letter-spacing:.12em;text-transform:uppercase;padding:1px 5px;margin-bottom:8px}
+
+  /* ---- the copy button ----
+     A node can carry a verbatim payload — the source of its own shape, say —
+     for handing to somebody or something else. The payload lives in a
+     <script type="text/plain"> block at the foot of this file rather than in
+     a JS string, because the code it holds contains backticks and ${...} and
+     escaping several hundred lines of that into a template literal is a bug
+     waiting to happen. textContent gives it back byte for byte. */
+  .copybtn{display:flex;align-items:center;gap:8px;width:100%;margin:2px 0 14px;
+           border:1px solid var(--fg);background:none;color:var(--fg);
+           padding:7px 10px;font:inherit;font-size:9.5px;letter-spacing:.12em;
+           text-transform:uppercase;cursor:pointer;text-align:left;
+           -webkit-user-select:none;user-select:none}
+  .copybtn:hover,.copybtn:focus-visible{background:var(--fg);color:var(--bg)}
+  .copybtn .ic{flex:none;width:11px;height:11px;border:1.5px solid currentColor;
+               border-radius:1px;position:relative}
+  .copybtn .ic:after{content:"";position:absolute;left:2.5px;top:2.5px;
+                     width:11px;height:11px;border:1.5px solid currentColor;
+                     border-radius:1px;background:var(--bg)}
+  .copybtn:hover .ic:after{background:var(--fg)}
+  .copybtn.done{background:var(--ok,#5aa46b);border-color:var(--ok,#5aa46b);color:var(--bg)}
+  .copybtn .sz{margin-left:auto;letter-spacing:.06em;opacity:.65;text-transform:none}
+
+  /* the step strip — the mobile stand-in for the left index. Horizontal,
+     scrollable, one chip per step, group names as vertical dividers. */
+  .strip{display:none;flex:none;height:var(--strip-h);transition:height .22s ease;
+         overflow-x:auto;overflow-y:hidden;white-space:nowrap;background:var(--bg);
+         border-top:1px solid var(--fg);-webkit-overflow-scrolling:touch;
+         -webkit-user-select:none;user-select:none}
+  /* while the reader is up the strip collapses to a rule of keys — enough to
+     keep a sense of where you are in the sequence, and to jump, without
+     spending the height the text needs */
+  .strip.mini{height:var(--strip-mini)}
+  .strip.mini .sgrp{display:none}
+  .strip.mini .chip{min-width:0;max-width:none;padding:0 9px;justify-content:center;gap:0}
+  .strip.mini .chip .n{display:none}
+  .strip.mini .chip .k{font-size:9.5px;letter-spacing:.14em;color:var(--fg2)}
+  .strip.mini .chip.on .k{color:var(--bg)}
+  .sgrp{display:inline-block;vertical-align:top;height:100%;padding:0 3px;
+        font-size:7.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--fg3);
+        writing-mode:vertical-rl;text-orientation:mixed}
+  .chip{display:inline-flex;flex-direction:column;justify-content:center;gap:3px;
+        vertical-align:top;height:100%;min-width:88px;max-width:132px;
+        padding:6px 9px;border-right:1px solid var(--rule);text-align:left;
+        white-space:normal;-webkit-tap-highlight-color:transparent}
+  .chip .k{font-size:8px;letter-spacing:.12em;color:var(--fg3)}
+  .chip .n{font-size:9.5px;line-height:1.25;text-transform:uppercase;letter-spacing:.02em}
+  .chip.mark .n{font-weight:600}
+  .chip.on{background:var(--fg);color:var(--bg)}
+  .chip.on .k{color:var(--bg)}
+  .sheetclose{display:none}
+
+  .mobtoggle{display:none}
+  @media (max-width:900px){
+    /* no header at all: every pixel goes to the map */
+    header{display:none}
+    .body{flex-direction:column;position:relative}
+    /* the left index is replaced by the strip; the map gets the rest */
+    aside{display:none}
+    .grip{display:none}
+    .stage{flex:1;min-height:0;border-bottom:none}
+    .strip{display:block;height:var(--strip-h)}
+    .hint{display:none}
+    /* the reader does not cover the map: it grows the footer instead, sitting
+       directly on top of the strip and adding at most another fifth of the
+       screen, so the strip stays reachable while you read */
+    .reader{position:absolute;left:0;right:0;bottom:var(--strip-mini);top:auto;width:auto;z-index:6;
+            max-height:34dvh;border-left:none;border-top:1px solid var(--fg);
+            transform:translateY(calc(101% + var(--strip-mini)));transition:transform .22s ease;
+            box-shadow:0 -10px 26px rgba(0,0,0,.28)}
+    .reader.open{transform:none}
+    .sheetclose{display:grid;place-items:center;position:absolute;top:0;right:0;
+                z-index:3;width:46px;height:30px;font-size:22px;line-height:1;
+                border:none;border-left:1px solid var(--fg);
+                background:var(--fg);color:var(--bg)}
+    .read{padding:36px 14px 16px}      /* clear of the close button */
+    .mobtoggle{display:none}
+    .stepnav{top:8px;right:8px;gap:10px}
+    .stepnav button{width:44px;height:44px;font-size:23px}
+  }
+  @media (max-width:900px) and (orientation:landscape){
+    :root,body.light{--strip-h:clamp(52px,22dvh,84px)}
+    .reader{max-height:48dvh}
+  }
+  @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="controls">
+      <button class="ctl mobtoggle" id="btnStages">Stages</button>
+      <button class="ctl" id="btnHome">Fit the map</button>
+      <button class="ctl" id="btnTheme">Light</button>
+      <button class="ctl" id="btnEdit">Edit positions</button>
+      <button class="ctl edonly" id="btnMulti" aria-pressed="false">Select many</button>
+      <button class="ctl" id="btnText">Edit text</button>
+      <button class="ctl" id="btnVisual">Edit visual</button>
+      <button class="ctl edonly" id="btnSave">Save all changes</button>
+      <button class="ctl edonly" id="btnDiscard">Discard</button>
+    </div>
+  </header>
+  <div class="body">
+    <aside id="aside"></aside>
+    <div class="grip" id="gripL" role="button" tabindex="0" aria-label="Collapse the index"><span></span></div>
+    <div class="stage">
+      <svg id="svg" aria-label="Isometric map of the zebrafish single-cell pipeline, aquarium to labelled atlas"></svg>
+      <div class="stepnav">
+        <button id="stPrev" aria-label="Previous step">‹</button>
+        <button id="stNext" aria-label="Next step">›</button>
+      </div>
+      <div class="hint">Arrow keys walk the sequence · Hover to preview · Click to keep · Esc to clear · Home to fit the map · Drag to pan · Scroll or pinch to zoom</div>
+      <!-- the text editor: one popover, anchored to whatever was clicked -->
+      <div class="tedit" id="tedit">
+        <div class="tehead" title="Drag to move · double-click to let it follow what you click again"><span id="teWhat"></span><button id="teX" aria-label="Cancel">×</button></div>
+        <textarea id="teIn" spellcheck="true" rows="1"></textarea>
+        <div class="tefoot"><span id="teHint">Enter to keep · Esc to cancel</span>
+             <button class="ctl go" id="teOk">Save as default</button>
+             <div class="tegrip" id="teGrip" role="button" tabindex="-1" aria-label="Resize the editor"></div></div>
+      </div>
+      <!-- Edit visual: describe a new drawing, send it to the instance, wait -->
+      <div class="ask" id="ask" role="dialog" aria-label="Describe a new visual">
+        <div class="askbox">
+          <div class="tehead"><span id="askWhat"></span><button id="askX" aria-label="Close">×</button></div>
+          <textarea id="askIn" spellcheck="true" rows="7"
+            placeholder="Describe the drawing you want.&#10;&#10;e.g. the aquarium should have a heater on the back wall with a little&#10;stream of bubbles rising off it, and one fish should hang near it"></textarea>
+          <div class="askfoot">
+            <span id="askHint">Sent to whoever is working on the map · the page reloads itself when it lands</span>
+            <button class="ctl go" id="askGo">Send</button>
+          </div>
+          <div class="askwait" id="askWait">
+            <span class="spin"></span><span id="askState">Waiting…</span>
+            <button class="ctl" id="askHide">Hide</button>
+          </div>
+        </div>
+      </div>
+      <button class="delx" id="delX" aria-label="Delete this object">&#215;</button>
+      <div class="delask" id="delAsk" role="dialog" aria-modal="true">
+        <div class="delaskbox">
+          <div class="delasktitle" id="delAskTitle"></div>
+          <p id="delAskBody"></p>
+          <div class="delaskbar">
+            <button class="ctl go" id="delAskGo">Delete</button>
+            <button class="ctl" id="delAskNo">Cancel</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+      <!-- drawings being made, while you carry on with the map. One row each,
+           numbered by their place in the queue. -->
+      <div class="works" id="works" role="status" aria-live="polite"></div>
+      <!-- somebody else's change landed while this page was open -->
+      <div class="newver" id="newver" role="status" aria-live="polite">
+        <span id="newverWhat">The map has been updated.</span>
+        <button class="ctl go" id="newverGo">Refresh</button>
+        <button class="ctl" id="newverNo" aria-label="Dismiss">Later</button>
+      </div>
+    </div>
+    <div class="strip" id="strip"></div>
+    <div class="grip" id="gripR" role="button" tabindex="0" aria-label="Collapse the reader"><span></span></div>
+    <div class="reader" id="reader">
+      <button class="sheetclose" id="sheetClose" aria-label="Close">×</button>
+      <div class="read" id="read"></div>
+    </div>
+  </div>
+</div>
+
+<!-- The Echo copy payload lives on /pipeline: its node is on row 1 and is not
+     drawn here. Nothing on this page references it. -->
+
+<!-- ONE ENGINE, TWO MAPS. iso, shapes and view are /pipeline's own files loaded
+     unchanged — there is no second copy of the drawing code and there must not
+     be one. Only three things differ, and MAP_CONFIG carries all three:
+
+       ns    the localStorage namespace. Sharing one with /pipeline would mean
+             each browser's copy of one map silently overwriting the other's.
+       api   the shared record. Same rule, worse consequence: that one is
+             shared between people rather than between tabs.
+       grid  the paper. This map is one row, so it gets one row's sheet
+             rather than the big map's.
+
+     The culls files are not loaded: nothing on row 2 carries a roof chart, and
+     pipeline-view.js guards every reference to MODEL, ANNOTATIONS and FIGURES
+     with a typeof. pipeline-fqshapes.js is not loaded either — those shapes
+     belong to row 3. -->
+<script>
+  window.MAP_CONFIG = {
+    ns     : "molpipe",
+    api    : "/api/molecular_edits",
+    prompts: "/api/molecular_prompts",
+    grid   : {x0:-4, x1:26, y0:-6, y1:6},
+  };
+</script>
+<script src="/pipeline/pipeline-iso.js?v=mol1"></script>
+<script src="/pipeline/pipeline-shapes.js?v=mol1"></script>
+<script src="/molecular_pipe/mol-data.js?v=mol1"></script>
+<script src="/pipeline/pipeline-view.js?v=mol1"></script>
+</body>
+</html>

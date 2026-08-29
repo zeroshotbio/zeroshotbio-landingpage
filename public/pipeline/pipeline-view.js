@@ -40,10 +40,42 @@ const svg=document.getElementById("svg");
    edges, the index, the occlusion clip — has to be computed over what is
    actually on the map rather than over what once was. A node removed here
    never existed as far as the rest of this file is concerned. */
+/* ============================================================
+   WHICH MAP THIS IS. One engine, more than one map.
+
+   This file draws /pipeline and it also draws /molecular_pipe, which is row 2
+   on its own for someone to develop that section out. The two differ only in
+   their data file, their saved record and their paper — so those three are the
+   only things parameterised, and every one of them defaults to /pipeline's, so
+   the big map keeps working with nothing set at all.
+
+   A PAGE SETS window.MAP_CONFIG BEFORE LOADING THIS FILE. What it carries:
+
+     ns    the localStorage namespace. NEVER share one: two maps under one
+           namespace means each browser's copy of one silently overwrites the
+           other's, with no way to tell which happened.
+     api   the shared-record endpoint. The same rule one level up and worse,
+           because that record is shared between people rather than between
+           tabs. /FASTQ_pipe carries a whole paragraph about this, because
+           getting it wrong is silent and costs somebody else's afternoon.
+     grid  the paper. It is drawn, and it is what check-rows measures the
+           drawing against, so a map a fifth the size wants a fifth the sheet.
+   ============================================================ */
+const MAP = (typeof MAP_CONFIG!=="undefined" && MAP_CONFIG) ? MAP_CONFIG : {};
+const MAP_NS   = MAP.ns  || "pipeline";
+const EDIT_API = MAP.api || "/api/pipeline_edits";
+/* AND THE PROMPT QUEUE SPLITS THE SAME WAY. Edit visual posts "draw me a shape
+   for this station" to a queue somebody works through on the instance. Two maps
+   sharing one queue would not erase each other the way two maps sharing one
+   offsets record would — it is a list, not a document — but the person working
+   it could not tell which map a request came from, which is the same failure
+   wearing a milder face. */
+const PROMPT_API = MAP.prompts || "/api/pipeline_prompts";
+
 const GONE=new Set();
 (function readDeletions(){
   try{
-    const raw=localStorage.getItem("pipeline.edits");
+    const raw=localStorage.getItem(MAP_NS+".edits");
     const o=raw ? (JSON.parse(raw).offsets||{}) : ((typeof OFFSETS!=="undefined")?OFFSETS:{});
     Object.keys(o).forEach(k=>{ if(o[k] && o[k].del) GONE.add(k); });
   }catch(err){}
@@ -86,7 +118,7 @@ layoutRows(NODES, LANES, MIRROR);
    session has been baked back into the file the local copy is identical to it
    and clearing it changes nothing.
    ============================================================ */
-const EDIT_KEY="pipeline.edits";
+const EDIT_KEY=MAP_NS+".edits";
 const BAKED = (typeof OFFSETS!=="undefined") ? OFFSETS : {};
 const BAKED_TEXT = (typeof TEXT!=="undefined") ? TEXT : {};
 const EDITS = (()=>{
@@ -95,7 +127,7 @@ const EDITS = (()=>{
     const s=localStorage.getItem(EDIT_KEY);
     if(s){ const j=JSON.parse(s); return {offsets:j.offsets||{}, text:j.text||{}, at:j.at}; }
     /* the first cut of this tool stored positions alone under its own key */
-    const old=localStorage.getItem("pipeline.offsets");
+    const old=localStorage.getItem(MAP_NS+".offsets");
     if(old) return {offsets:JSON.parse(old), text:BAKED_TEXT};
   }catch(err){}
   return base;
@@ -184,7 +216,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gD
    deal bigger than it was. A map that has outgrown its grid reads as having
    fallen off the edge of the page, and the fit camera hides it by framing the
    CONTENT: check-rows asserts these bounds against the drawing for that reason. */
-const GRID={x0:-8,x1:78,y0:-8,y1:102};
+const GRID = MAP.grid || {x0:-8,x1:78,y0:-8,y1:102};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -696,7 +728,7 @@ function placeDots(dt){
    is remembered. Motion off is a state the page admits to rather than a state
    it sits in silently.
    ============================================================ */
-const MOTION_KEY="pipeline.motion";
+const MOTION_KEY=MAP_NS+".motion";
 const mqReduce = (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)"))
               || {matches:false};
 let motionChoice=null; try{ motionChoice=localStorage.getItem(MOTION_KEY); }catch(err){}
@@ -915,7 +947,12 @@ function renderOverview(){
     `<div class="title big" ${TF(O,"title")}>${o.title}</div>`+
     `<div class="sub" ${TF(O,"sub")}>${o.sub}</div>`+
     `<h4>The story</h4><div ${TF(O,"does")}>${o.does}</div>`+
-    `<h4>How to read it</h4><p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`;
+    `<h4>How to read it</h4>`+
+    /* A MAP MAY SAY ITS OWN. This paragraph counts landmarks and names the
+       one fading line, and both are facts about /pipeline rather than about
+       the engine — /molecular_pipe has one landmark and no fade. Absent, the
+       big map's own wording stands, so nothing changes for it. */
+    (o.howto || `<p>Eight landmarks sit on dashed plinths and carry their names on the ground. Hatching means the stage destroys data. The one line that fades to nothing is at the very end, past the handoff, where this map stops being the right way to look at it.</p>`);
 }
 /* ------------------------------------------------------------------
    THE COPY PAYLOAD
@@ -1192,7 +1229,7 @@ function feature(name, fn){
    folded away rather than as missing. Widths persist.
    ============================================================ */
 feature("side columns", function(){
-  const PANEL_KEY="pipeline.panels";
+  const PANEL_KEY=MAP_NS+".panels";
   const root=document.body;
   const P_=[{grip:"gripL", el:aside,  varn:"--aside-w",  def:238, min:150, max:460, side:1, open:"‹", shut:"›"},
             {grip:"gripR", el:reader, varn:"--reader-w", def:352, min:220, max:620, side:-1, open:"›", shut:"‹"}];
@@ -1513,7 +1550,7 @@ function adoptMerged(body,at){
     {offsets:body.offsets||{}, text:body.text||{}, at:at||Date.now()})); }catch(err){}
 }
 function put(body){
-  return fetch("/api/pipeline_edits",{method:"POST",
+  return fetch(EDIT_API,{method:"POST",
       headers:{"content-type":"application/json"},
       body:JSON.stringify(body)})
     .then(r=>r.json().then(j=>({...j,status:r.status})))
@@ -1521,7 +1558,7 @@ function put(body){
 }
 function pushRemote(){
   if(typeof fetch!=="function") return Promise.resolve({ok:false,error:"unreachable"});
-  return fetch("/api/pipeline_edits",{cache:"no-store"})
+  return fetch(EDIT_API,{cache:"no-store"})
     .then(r=>r.json()).catch(()=>null)
     .then(doc=>{
       if(!doc || doc.error) return {ok:false,error:"unreachable"};
@@ -2216,7 +2253,7 @@ feature("edit text", function(){
      key and is not part of the edits payload — resizing the editor must not
      look like an unsaved change or reach the shared copy.
      ============================================================ */
-  const BOX_KEY="pipeline.tedit.box", MINW=280, MINH=140;
+  const BOX_KEY=MAP_NS+".tedit.box", MINW=280, MINH=140;
   let box=null;
   try{ box=JSON.parse(localStorage.getItem(BOX_KEY)||"null"); }catch(err){}
   if(box && !(box.w>0 && box.h>0)) box=null;
@@ -2466,7 +2503,7 @@ feature("saving", function(){
   btnSave.onclick=()=>panel("pending");
   btnDrop.onclick=()=>{
     if(!confirm("Throw away every change since the last confirmed save?")) return;
-    try{ localStorage.removeItem(EDIT_KEY); localStorage.removeItem("pipeline.offsets"); }catch(err){}
+    try{ localStorage.removeItem(EDIT_KEY); localStorage.removeItem(MAP_NS+".offsets"); }catch(err){}
     location.reload();
   };
 });
@@ -2477,7 +2514,7 @@ feature("saving", function(){
 feature("shared copy", function(){
   if(typeof fetch!=="function") return;
   const mine=EDITS.at||0;
-  fetch("/api/pipeline_edits",{cache:"no-store"}).then(r=>r.json()).then(doc=>{
+  fetch(EDIT_API,{cache:"no-store"}).then(r=>r.json()).then(doc=>{
     if(!doc || doc.error || !doc.at) return;
     /* keeping ours: mark whatever the shared copy has never seen, so the merge
        on the way out carries it rather than deferring to the store */
@@ -2516,7 +2553,7 @@ feature("edit visual", function(){
      owns it; a row's × stops WATCHING it, which is a different thing, and says
      so rather than implying the work stopped.
      ============================================================ */
-  const WATCH_KEY="pipeline.pending";
+  const WATCH_KEY=MAP_NS+".pending";
   const works=document.getElementById("works");
   let watching=[];                 // [{id, since, label}]
   let rows={};                     // id -> the queue row last seen
@@ -2650,7 +2687,7 @@ feature("edit visual", function(){
   function ensurePoll(){
     if(poll || typeof fetch!=="function") return;
     const beat=()=>{
-      fetch("/api/pipeline_prompts",{cache:"no-store"}).then(r=>r.json()).then(j=>{
+      fetch(PROMPT_API,{cache:"no-store"}).then(r=>r.json()).then(j=>{
         const list=j.prompts||[];
         learnEta(list);
         rows={}; list.forEach(p=>rows[p.id]=p);
@@ -2702,7 +2739,7 @@ feature("edit visual", function(){
     if(typeof fetch!=="function"){ toast("No connection — nothing was sent.",true,5000); return; }
     const t=targetOf();
     go.disabled=true; go.textContent="Sending…";
-    fetch("/api/pipeline_prompts",{method:"POST",
+    fetch(PROMPT_API,{method:"POST",
         headers:{"content-type":"application/json"},
         body:JSON.stringify({text,target:t})})
       .then(r=>r.json())
@@ -2737,7 +2774,7 @@ feature("edit visual", function(){
     document.getElementById("newverNo").onclick=()=>bar.classList.remove("on");
     setInterval(()=>{
       if(told) return;
-      fetch("/api/pipeline_prompts",{cache:"no-store"}).then(r=>r.json()).then(j=>{
+      fetch(PROMPT_API,{cache:"no-store"}).then(r=>r.json()).then(j=>{
         let fresh=(j.prompts||[]).filter(p=>p.status==="done" && p.updated>since);
         if(!fresh.length) return;
         /* the pages that asked handle their own, above — including the deploy

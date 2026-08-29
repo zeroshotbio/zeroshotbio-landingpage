@@ -65,6 +65,11 @@ const nextConfig = {
       { source: '/data_structures', destination: '/data_structures/index.html' },
       { source: '/bioinformatics_pipe', destination: '/bioinformatics_pipe/index.html' },
       { source: '/FASTQ_pipe', destination: '/FASTQ_pipe/index.html' },
+      // Row 2 on its own, for developing that section out. It is NOT a second
+      // copy of the map code: it loads /pipeline's iso, shapes and view
+      // unchanged and differs only in its data file, its saved record
+      // (/api/molecular_edits) and its grid, all three set in MAP_CONFIG.
+      { source: '/molecular_pipe', destination: '/molecular_pipe/index.html' },
       { source: '/grcz12', destination: '/grcz12.html' },
     ]
   },
@@ -115,6 +120,15 @@ const nextConfig = {
       },
       {
         source: '/FASTQ_pipe',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      // and the same for the molecular bench
+      {
+        source: '/molecular_pipe/:path*',
+        headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
+      },
+      {
+        source: '/molecular_pipe',
         headers: [{ key: 'Cache-Control', value: 'no-cache, must-revalidate' }],
       },
     ]
