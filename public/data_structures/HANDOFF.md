@@ -247,7 +247,7 @@ tile actually holds — described in that tile's own notes rather than drawn as 
 second lane. Both were stations in the first version and both cost more than
 they explained.
 
-**Three things are marked unknown rather than guessed**, and should stay that
+**Two things are marked unknown rather than guessed**, and should stay that
 way until somebody widens the role:
 
 1. The gold bucket's contents. `ListBucket` is AccessDenied and `HeadBucket`
@@ -256,9 +256,24 @@ way until somebody widens the role:
 2. Bucket-level configuration on all four buckets. Every `GetBucket*` call is
    AccessDenied, so `zsb-medallion`'s README claim that bronze is versioned and
    cross-region replicated is repeated as a claim and is not confirmed.
-3. Which of `minifin/raw/fastq/` and `minifin/raw-fastq/` is the orphan. They
-   are the same 17 objects twice, 209 GiB duplicated; the archived provenance
-   record points at the former, which is suggestive and not decisive.
+
+**A third was resolved on 2026-08-29** — which of `minifin/raw/fastq/` and
+`minifin/raw-fastq/` was the orphan. It was not resolved by widening the role or
+by finding a decisive fact in the bucket, and the evidence available on this
+instance pointed the wrong way: `raw/fastq/` was the original upload (2026-07-20,
+against 08-07 for the other) and the prefix that `minifin_rebuild`'s `paths.yaml`
+and ten stage manifests named, which reads as a live dependency. It is not one.
+That tree has been retired — its working copy is marked stale, `STATUS.md`
+records the MiniFin rebuild as CLOSED, and `pipelines/minifin_rebuild/` is not on
+`zsb-bronze` main. Current `zsb-bronze` references neither FASTQ prefix. So the
+manifests record what a past run used, `raw/fastq/` was purged, and
+`minifin/raw-fastq/` is canonical.
+
+**The rule that generalises**: a path reference is only a dependency if something
+still runs. A map drawn from a bucket plus a source tree cannot tell a live pin
+from a historical record — both are just a string in a file. Deciding which one
+you are looking at means asking whether the tree is alive, which is a question
+about the repo rather than about the object.
 
 **The finding the map was built around, for its first two reads**: `zsb-bronze`'s
 committed changelog described a `v1` silver release dated 2026-08-22, and the
