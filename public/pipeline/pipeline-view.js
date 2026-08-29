@@ -2676,6 +2676,12 @@ feature("edit visual", function(){
     if(done.length>=2) etaMin=Math.max(2,Math.round(done.reduce((a,b)=>a+b,0)/done.length));
   }
   const DEPLOY_MIN=2;              // Vercel, after the push
+  /* NOTHING ANNOUNCES A CHANGE BEFORE THIS. The queue flips a request to done
+     the instant git push returns; Vercel needs about a minute and a half more
+     before the new file is what the site serves. Measured on this project, over
+     and over. A floor, not a mechanism — the checks below still have to see the
+     deploy, this only stops them saying so too early. */
+  const DEPLOY_FLOOR=90*1000;
 
   (function load(){
     try{
@@ -2781,7 +2787,10 @@ feature("edit visual", function(){
     deployT=setInterval(()=>{
       fetch(SHAPES,{method:"HEAD",cache:"no-store"}).then(r=>{
         const tag=r.headers.get("etag")||r.headers.get("last-modified")||"none";
-        if(baseTag && tag===baseTag){
+        /* NO BASELINE IS NOT A CHANGE. This read `baseTag && tag===baseTag`,
+           so a page whose opening HEAD had failed took the very first poll as
+           proof the deploy had landed and said so ten seconds after the push. */
+        if(!baseTag || tag===baseTag){
           if(Date.now()>gaveUp){ clearInterval(deployT); deployT=null;
             bar("Your new drawing should be live — refresh to see it."); }
           return;
@@ -2877,24 +2886,52 @@ feature("edit visual", function(){
     const bar=document.getElementById("newver");
     if(!bar) return;
     const since=Date.now();
-    let told=false;
+    let told=false, pending=null, pendAt=0, loadTag=null;
     document.getElementById("newverGo").onclick=()=>location.reload();
     document.getElementById("newverNo").onclick=()=>bar.classList.remove("on");
+
+    /* ---- A PUSH IS NOT A DEPLOY ----
+       This bar used to go up the moment a request went done, which is the
+       moment the commit was pushed and roughly ninety seconds before the site
+       serves it. So the Refresh it offered reloaded onto the OLD map, every
+       time, and a notice that is reliably wrong is worse than no notice: people
+       stop believing the one that is right.
+       The message is now written when the request finishes and HELD. It goes up
+       when the deploy is actually visible — the asset's ETag has moved off what
+       it was when this page loaded — and never before DEPLOY_FLOOR whatever the
+       ETag says. The five-minute backstop is there because a commit that only
+       touched a data file never moves this particular ETag, and a bar that
+       stays silent forever is a worse failure than one that is late. */
+    fetch(SHAPES,{method:"HEAD",cache:"no-store"})
+      .then(r=>{ loadTag=r.headers.get("etag")||r.headers.get("last-modified")||null; })
+      .catch(()=>{});
+    const reveal=()=>{ told=true;
+      document.getElementById("newverWhat").textContent=pending;
+      bar.classList.add("on"); };
     setInterval(()=>{
-      if(told) return;
+      if(told||!pending) return;
+      const waited=Date.now()-pendAt;
+      if(waited<DEPLOY_FLOOR) return;
+      if(waited>5*60*1000 || !loadTag){ reveal(); return; }
+      fetch(SHAPES,{method:"HEAD",cache:"no-store"}).then(r=>{
+        const tag=r.headers.get("etag")||r.headers.get("last-modified")||null;
+        if(tag && tag!==loadTag) reveal();
+      }).catch(()=>{});
+    }, 10000);
+
+    setInterval(()=>{
+      if(told||pending) return;
       fetch(PROMPT_API,{cache:"no-store"}).then(r=>r.json()).then(j=>{
         let fresh=(j.prompts||[]).filter(p=>p.status==="done" && p.updated>since);
         if(!fresh.length) return;
         /* the pages that asked handle their own, above — including the deploy
-           wait, which this bar knows nothing about */
+           wait, which that path has always done and this one never did */
         if(fresh.every(p=>watching.some(w=>w.id===p.id))) return;
         fresh=fresh.filter(p=>!watching.some(w=>w.id===p.id));
-        told=true;
-        document.getElementById("newverWhat").textContent =
-          fresh.length===1 && fresh[0].note
+        pending = fresh.length===1 && fresh[0].note
             ? "The map has been updated — "+fresh[0].note
             : "The map has been updated"+(fresh.length>1?` (${fresh.length} changes)`:"")+".";
-        bar.classList.add("on");
+        pendAt=Date.now();
       }).catch(()=>{});
     }, 45000);
   })();
