@@ -135,6 +135,40 @@ const collect = () => page.evaluate(() => {
     if (parseFloat(getComputedStyle(t).fillOpacity) < 0.08) return;
     const bb = t.getBBox(); if (!bb.width || !bb.height) return;
     const m = t.getScreenCTM(); if (!m) return;
+    /* AND TEXT TOO SMALL TO RENDER IS TEXT THIS FILE CANNOT MEASURE.
+
+       getBBox() is a LAYOUT box, and layout stops being proportional when the
+       thing being laid out is a fraction of a device pixel: the browser falls
+       back on coarser metrics and the advance widths grow. The same string at
+       the same font-size measured 12.27 units wide on /FASTQ_pipe, where it
+       renders at 1.4px, and 15.21 on this map at fit, where six rows share the
+       viewport and it renders at 0.42px. A 24% wider box on both sides of a
+       pair is enough to turn a clear gap into a reported collision — and that
+       is what happened the moment this map grew a sixth row: dozens of new
+       failures on drawings nobody had touched, including the cull roofs' own
+       axis labels.
+
+       THE THRESHOLD IS MEASURED, NOT GUESSED. One string, one font-size, laid
+       out inside groups scaled to render it at a range of device sizes, asking
+       how wide layout says it is per em:
+
+            2px  5.948      8px  5.573       24px  5.5202
+            4px  5.698     12px  5.531       80px  5.5201
+            6px  5.615     16px  5.5205
+
+       True is 5.520. Layout is within 1% of it from 8px, within 2% from 6px,
+       3% out at 4px and nearly 8% out at 2px — and inflation applies to BOTH
+       boxes of a pair, so it compounds. Six is where it stops mattering, and it
+       is also about the smallest type a reader could read: a label nobody can
+       read is a label this file has no business measuring. Everything skipped
+       at the fitted view is measured again in the walk, where the camera is on
+       the building and the type is at reading size.
+
+       WITHOUT THIS the check silently becomes a measurement of the map's
+       EXTENT rather than of its typography — it started failing on the cull
+       roofs' axis labels, which nobody had touched, the moment the map grew. */
+    const px = Math.hypot(m.a, m.b) * parseFloat(getComputedStyle(t).fontSize);
+    if (px < 6) return;
     const pt = (x, y) => ({ x: m.a * x + m.c * y + m.e, y: m.b * x + m.d * y + m.f });
     const quad = [pt(bb.x, bb.y), pt(bb.x + bb.width, bb.y),
                   pt(bb.x + bb.width, bb.y + bb.height), pt(bb.x, bb.y + bb.height)];

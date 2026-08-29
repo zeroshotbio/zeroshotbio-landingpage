@@ -40,36 +40,41 @@
 
 
 /* ============================================================
-   DRAWN SMALLER HERE THAN ON /FASTQ_pipe, AND TYPE DOES NOT FOLLOW.
+   THE SAME SHAPES AT TWO SCALES, AND THE ORIGINAL IS THE DEFAULT.
 
-   Row 3 of this map is that page at 1/2.4 — the number is set by the row
-   pitch, and pipeline-data.js's row-3 banner explains where it comes from.
-   Scale the drawing by 2.4 and every figure inside it scales too, which is
-   correct for a belt, a gene model, a plate and a read. It is wrong for TYPE.
-   A gene name at 2.4 times smaller is not a smaller gene name, it is a
-   smudge, and half of what these shapes are for is the writing on them.
+   /FASTQ_pipe's proportions are hard-won and they are the reference. A node
+   that says nothing is drawn EXACTLY as that page draws it — every helper
+   below is the identity when a node carries no scale fields, and that is the
+   property to preserve if any of this is edited.
 
-   So type shrinks by the SQUARE ROOT of the scale — 1.55 rather than 2.4 —
-   and the density comes down to pay for it. Every string on this row is about
-   55% larger than a proportional shrink would make it, and there are fewer
-   things for it to sit between.
+   A node may then ask to be drawn smaller, and say by how much:
 
-   TYPE(floor,size) is how every one of those sizes is now written. It takes
-   the absolute pixel floor and the K-derived size EXACTLY AS /FASTQ_pipe
-   writes them, works out what that page would have drawn, and brings it down
-   by the scale but not all the way. An absolute floor left alone was the whole
-   problem: at this K the K-derived term falls under it, the floor wins, and
-   the type comes out twice the size the drawing was laid out for — which is
-   how the first render of this row put four labels on top of each other on
-   every plate.
+     n.fqs     its geometric size against /FASTQ_pipe. 1/2.4 means this node's
+               w, d, h and gd were divided by 2.4 in the data file.
+     n.tb      the TYPE BOOST. Scale a belt by 2.4 and the belt is right; scale
+               a gene name by 2.4 and it is a smudge, and half of what these
+               shapes are for is the writing on them. sqrt(2.4) makes type
+               shrink by 1.55 where the drawing shrinks by 2.4.
+     n.tracks  how many rails the E6 field carries (default 10, as /FASTQ_pipe)
+     n.lanes   how many lanes go into the E7 fork  (default 10, as /FASTQ_pipe)
 
-   AT FQ_SCALE = 1 AND TB = 1 THIS IS THE IDENTITY, so the same file can draw
-   the row at reading scale if it is ever wanted, and /FASTQ_pipe could take it
-   back unchanged.
+   The last two are density rather than size, and they are node properties
+   rather than arithmetic on tb because that is what they are: a statement that
+   THIS drawing carries fewer of them, at a size where thirty would be a smear.
+
+   TYPEof IS THE ONE THAT MATTERS. It takes the absolute pixel floor and the
+   K-derived size exactly as /FASTQ_pipe writes them, works out what that page
+   would have drawn, and brings it down by the geometry but not all the way.
+   Leaving an absolute floor alone is what made the first attempt at this
+   unreadable: below a certain K the K-derived term falls under the floor, the
+   floor wins, and the type comes out twice the size the layout was drawn for.
    ============================================================ */
-const FQ_SCALE = 1/2.4;                 /* this row's size against that page's */
-const TB       = Math.sqrt(2.4);        /* the type boost — 1.549 */
-const TYPE     = (floor,size)=>Math.max(floor, size/FQ_SCALE)*FQ_SCALE*TB;
+const FQSof  = n => (n && n.fqs) || 1;      /* geometry, against /FASTQ_pipe */
+const TBof   = n => (n && n.tb)  || 1;      /* type, against the same */
+const TYPEof = (n,floor,size) => {
+  const S = FQSof(n), B = TBof(n);
+  return Math.max(floor, size/S) * S * B;
+};
 
 /* ---- THE ONE PROJECTION HELPER THIS MAP DID NOT ALREADY HAVE ------------
    roofFrame lives in culls-draw.js and ellipseAt in pipeline-shapes.js, and
@@ -1667,7 +1672,7 @@ function drawGeneBelt(g,n,MODE){
      are 1.55x larger relative to the belt than they were. 2.32 -> 3.5 takes
      ten models down to six or seven, which is still more than two on the
      belt at once — the thing the count exists to guarantee. */
-  const NG=Math.max(4,Math.round(LOOP/(3.5*K)));
+  const NG=Math.max(4,Math.round(LOOP/(2.32*K*TBof(n))));
   const yOf=f=>cy+GL/2-f*GL;                  /* f=0 at +y, the gene's near end */
 
   /* the read, in the same base pairs as everywhere else, as a fraction of the
@@ -1711,7 +1716,7 @@ function drawGeneBelt(g,n,MODE){
   const ARCH=n.h*0.26;
   /* smaller than every other name on this map, on purpose: it is an
      identification, not a heading, and there are ten of them moving */
-  const GFS=TYPE(6,10.4*K);
+  const GFS=TYPEof(n,6,10.4*K);
   /* ---- THE LAST THIRD IS THE ASSIGNMENT ----------------------------------
      Alignment answers WHERE on the assembly; assignment answers WHICH GENE, and
      they are different questions asked of the same read a moment apart. The
@@ -2433,7 +2438,7 @@ function drawTracks(g,n){
      and into their neighbours. Carrying the same boost keeps a label the same
      fraction of its own segment as it is on /FASTQ_pipe. It costs reads per
      track, which is why the track count came down with it. */
-  const RS=2.9*TB;
+  const RS=2.9*TBof(n);
   const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
   const v=(n.v||1.05)*K;
 
@@ -2460,7 +2465,12 @@ function drawTracks(g,n){
      read with a gene and a UMI written on its two halves; at this type size
      thirty of them is one blue smear. Ten still shows what the field is for
      — most of them empty, a few busy — which is the whole claim. */
-  const NT=10, TP=n.d*0.94/NT;
+  /* TEN, WHICH IS WHAT /FASTQ_pipe DRAWS. This defaulted to 30 for a build,
+     taken from prose describing an earlier version of that page rather than
+     from its code — so the copy of this field on row 6 drew three times the
+     traffic the original does and its cell names collided all the way down.
+     Read the shape, not the write-up. */
+  const NT=n.tracks||10, TP=n.d*0.94/NT;
   const trackY=k=>cy+(k-(NT-1)/2)*TP;
   /* THREE SIZES, AND EACH IS SET BY WHAT IT HAS TO SIT OVER.
        CAP  the field's one caption, biggest, because it is read once
@@ -2468,8 +2478,8 @@ function drawTracks(g,n){
        LFS  a read's gene and UMI, over their own segments — bold, because at
             this size weight is the only thing that separates them from the
             grid they are drawn on. */
-  const GFS=TYPE(6,10.4*K);
-  const LFS=Math.max(4.4*FQ_SCALE*TB,GFS*0.70), GLS=LFS*2, CFS=LFS*1.8, CAP=CFS*1.5;
+  const GFS=TYPEof(n,6,10.4*K);
+  const LFS=Math.max(4.4*FQSof(n)*TBof(n),GFS*0.70), GLS=LFS*2, CFS=LFS*1.8, CAP=CFS*1.5;
   const lz=base+n.h*0.05;
 
   /* ---- WHICH CELL EACH TRACK IS, AND HOW LITTLE IS IN MOST OF THEM -------
@@ -2791,7 +2801,7 @@ function drawTracks(g,n){
            map a name is 1.55x longer relative to the field than at reading
            scale. Left alone the gate opened under the names and the text check
            reported four of them at once. */
-        const op=(vis*0.86*sstep(x0+K*4.6*TB,x0+K*6.4*TB,gx)).toFixed(3);
+        const op=(vis*0.86*sstep(x0+K*2.6*TBof(n)*TBof(n),x0+K*4.0*TBof(n)*TBof(n),gx)).toFixed(3);
         rd.tg.setAttribute("transform",
           `translate(${qo[0].toFixed(1)},${qo[1].toFixed(1)}) rotate(${ANGO})`);
         rd.tg.setAttribute("x",(GLS*0.20).toFixed(1));
@@ -2893,19 +2903,19 @@ function drawDedup(g,n){
   const Lo=RL*GL*RS, Ta=TAIL*TKNEE*RS, Lb=(TAIL-TAIL*TKNEE)*RS;
   const FT=Lo+Ta+Lb;
   const v=(n.v||1.62)*K;
-  const GFS=TYPE(6,10.4*K);
+  const GFS=TYPEof(n,6,10.4*K);
   /* THE ONE TYPE SIZE THAT IS NOT E6's. The gene name is twice the UMI there,
      which is right when a lane carries one read at a time. Here every lane's
      neighbour carries that read's own copy, so the gene names arrive in pairs
      one pitch apart and at double size they land on each other's rails. Read
      size, lane pitch, cell name and UMI are all E6's; this one is the price of
      the fork. */
-  const LFS=Math.max(4.4*FQ_SCALE*TB,GFS*0.70), CFS=LFS*1.8, NFS=CFS*0.92;
+  const LFS=Math.max(4.4*FQSof(n)*TBof(n),GFS*0.70), CFS=LFS*1.8, NFS=CFS*0.92;
 
   /* SIX LANES IN, TWELVE OUT. Ten in was twenty out, and twenty pairs of
      READS/MOLECULES counters at this type size ran into each other down the
      whole fanned end. Six still doubles visibly, which is what the fork is. */
-  const NL=6, NO=NL*2;
+  const NL=n.lanes||10, NO=NL*2;
   const lz=base+n.h*0.05;
 
   const LANE0=x0-0.8;
@@ -2959,7 +2969,7 @@ function drawDedup(g,n){
      counters of every pair overlapped by about 30%, which is what the text
      check reported first. The pairing ratio drops from about 1:3.6 to 1:2.2 and
      still reads as ten pairs rather than twenty rails. */
-  const PAIR=HALF*0.0240*TB;               /* half the separation inside one pair */
+  const PAIR=HALF*0.0240*TBof(n);               /* half the separation inside one pair */
   const SPREAD=2.30;                       /* far offset ÷ fork offset */
   const PIN=(HALF/SPREAD)/((NL-1)/2);      /* the incoming lane pitch */
   const TP=PIN/2;                          /* the unit the scanner and its caption use */
@@ -3595,7 +3605,7 @@ function drawDGE(g,n){
       "letter-spacing":(ls||0).toFixed(2),"fill-opacity":op});
     t.textContent=txt; g.appendChild(t); return t;
   };
-  const FS=TYPE(7,n.w*1.15);
+  const FS=TYPEof(n,7,n.w*1.15);
   say(x0+n.w*0.04, y1+LP*1.5, 0, "32,520 genes", 30, "start", FS, ".72", 700, FS*0.06);
   say(x1+n.w*0.045, y1-LP*0.4, 0, "884,736 barcodes", -30, "start", FS, ".72", 700, FS*0.06);
   /* AND THE TWO SIDES OF THE CLIFF, NAMED. Everything this object is about is
@@ -3757,7 +3767,7 @@ function wlLayout(n){
      small one, and three sibling labels at three different sizes would read as
      a mistake rather than as a fit. */
   const CH=0.68, mainText=pl=>pl.R.key+" — 96 BARCODES";
-  const FIT=TYPE(6.5,Math.min(...plates.map(pl=>
+  const FIT=TYPEof(n,6.5,Math.min(...plates.map(pl=>
     ((pl.d+0.30*K)*S)/(mainText(pl).length*CH))));
   return {K,KZ,PITCH,gap,h,ZR,REGH0,PH0,ZR0,plates,FIT,CH,mainText,y:n.y};
 }
@@ -4040,7 +4050,7 @@ function yardMetrics(n){
   return {A,K,KZ, x0, x1:n.x+n.w/2, cy, base, FL, uBP, cuts, segAt, R2A, R2B,
           BCBP:["bc1","bc2","bc3"].map(k=>{const c=segAt(k); return (c[0]+c[1])/2;}),
           gz, panelZ, SCN_F, SCN_N, SCN_MID:(SCN_F+SCN_N)/2, SCN_LEN:SCN_N-SCN_F,
-          gx:A.gx.map(q=>x0+(q-A.x0)*K), FS:TYPE(6,13.5*K),
+          gx:A.gx.map(q=>x0+(q-A.x0)*K), FS:TYPEof(n,6,13.5*K),
           labZ:base+panelZ+0.07*KZ, labY:SCN_F-SC(0.95)};
 }
 

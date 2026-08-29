@@ -179,7 +179,12 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gD
    the edge of the sheet. These bounds are deliberately generous: the fit
    camera measures the CONTENT, not the grid (see contentBox), so extending the
    paper costs nothing but the lines. */
-const GRID={x0:-8,x1:42,y0:-8,y1:64};
+/* THE PAPER, AND IT HAS TO REACH PAST EVERY BAND. Row 6 carries /FASTQ_pipe at
+   its own size — 72 units long and reaching to y 104 — so the sheet is a good
+   deal bigger than it was. A map that has outgrown its grid reads as having
+   fallen off the edge of the page, and the fit camera hides it by framing the
+   CONTENT: check-rows asserts these bounds against the drawing for that reason. */
+const GRID={x0:-8,x1:78,y0:-8,y1:112};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);
@@ -1060,7 +1065,15 @@ const aside=document.getElementById("aside");
   NODES.filter(n=>!n.skipIndex).forEach(n=>{
     if(n.group!==g){g=n.group;html+=`<div class="grp${n.groupMark?" mark":""}">${esc(g)}</div>`;}
     html+=`<button class="row${n.anchor?" anchor":""}" data-id="${n.id}"><span class="key">${n.key}</span>`+
-          `<span class="nm">${esc(n.name)}</span><span class="n">${n.hatch?"cull":""}</span></button>`;
+          `<span class="nm">${esc(n.name)}</span>` +
+          /* HATCHING MEANS THE STAGE DESTROYS DATA. Whether what it destroys is
+             a CELL is what separates a cull from a drop, and the index has to
+             say which: row 4 removes cells, and rows 3 and 6 remove READS —
+             a quarter of them carry no valid barcode, and unmapped and
+             multimapping reads go after the alignment — but no cell is removed
+             on those rows at all, and their own prose says so twice. Printing
+             "cull" against them was this map asserting the opposite. */
+          `<span class="n">${n.hatch ? (n.drops ? "drops" : "cull") : ""}</span></button>`;
   });
   aside.innerHTML=html;
   aside.addEventListener("mouseleave",unhover);

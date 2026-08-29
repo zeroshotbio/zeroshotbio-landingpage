@@ -80,12 +80,23 @@ const fail = m => { bad++; console.log('  FAIL  ' + m); };
 
 const found = await page.evaluate(gap => {
   const byId = {}; NODES.forEach(n => byId[n.id] = n);
+  /* WHICH ROW A NODE IS ON, BY NEAREST ROW LINE — not by how far apart two of
+     them are. A fixed distance worked while every row was 7.6 deep and 13.6
+     apart, so "more than 6 apart" could only mean "different rows". It stops
+     working the moment a row is deeper than the threshold: row 6 is 26.4 deep,
+     and two reference figures on it that both plainly belong to it sit 6.15
+     apart, which the old test would have called a row-to-row edge. Rows are no
+     longer a constant pitch either. Nearest-line is the question that was
+     always meant. */
+  const rowOf = n => { let k = 0;
+    ROWS.forEach((r, i) => { if (Math.abs(n.y - r) < Math.abs(n.y - ROWS[k])) k = i; });
+    return k; };
   const cross = EDGES.filter(e => {
     const A = byId[e.a], B = byId[e.b];
-    return A && B && Math.abs(A.y - B.y) > gap;
+    return A && B && rowOf(A) !== rowOf(B);
   }).map(e => `${e.a} -> ${e.b}`);
   const onCross = DOTS.filter(d => d.e && byId[d.e.a] && byId[d.e.b] &&
-    Math.abs(byId[d.e.a].y - byId[d.e.b].y) > gap).length;
+    rowOf(byId[d.e.a]) !== rowOf(byId[d.e.b])).length;
   const dirs = LANES.map(L => `${L.id}:${L.dir}`);
   const wrong = LANES.filter(L => L.dir !== 1).map(L => L.id);
   /* the paper, against everything drawn on it */
@@ -109,7 +120,7 @@ const found = await page.evaluate(gap => {
       gaps.push((on[i].x - on[i].w / 2) - (on[i - 1].x + on[i - 1].w / 2));
     const spread = Math.max(...gaps) - Math.min(...gaps);
     if (spread > 0.02) uneven.push(`${L.id} gaps vary by ${spread.toFixed(2)}`);
-    const band = BANDS.find(b => Math.abs((b.y0 + b.y1) / 2 - L.y) < 1);
+    const band = BANDS.find(b => L.y >= b.y0 && L.y <= b.y1);
     if (band) {
       const l = (on[0].x - on[0].w / 2) - band.x0;
       const r = band.x1 - (on[on.length - 1].x + on[on.length - 1].w / 2);
@@ -137,7 +148,7 @@ const found = await page.evaluate(gap => {
      still covered them, and every check passed. */
   const spill = [];
   LANES.forEach(L => {
-    const band = BANDS.find(b => Math.abs((b.y0 + b.y1) / 2 - L.y) < 3);
+    const band = BANDS.find(b => L.y >= b.y0 && L.y <= b.y1);
     if (!band) return;
     const on = NODES.filter(n => n.lane === L.id ||
       (n.follow && byId[n.follow.a] && byId[n.follow.a].lane === L.id));
