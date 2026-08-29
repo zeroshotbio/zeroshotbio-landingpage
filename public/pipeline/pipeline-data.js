@@ -319,6 +319,7 @@ const NODES = [
    Change a claim on whichever map owns it and lift it again; do not edit a
    lifted field in place. */
 {id:"FQ", key:"3", group:"③ FASTQ", groupMark:true, anchor:true, shape:"pool",
+ noedge:true,   /* deliberate — see the row banner: nothing leaves the pool or the fragment */
  lane:"r3", plinth:false, aims:"E2", ballZ:5.0,
  name:"FASTQ", x:1.0, y:R3, w:5.1, d:5.1, h:9.0,
  sub:"every read from the run, both mates, before anything has been interpreted", stat:"off-instance",
@@ -329,6 +330,7 @@ const NODES = [
  added:"A PILL, not a rectangle, and a real one: the reads are placed uniformly through a sphere in world coordinates and the sphere is stretched along y AFTER the turn — so the swarm churns as it always did inside a shape that holds still, lying on the same line the name reads on. They are placed turned by a real rotation and projected like everything else on this map, with depth driving size and opacity. The one being magnified is geometrically identical to every other read — same length, same weight, same wander. Only its colour and its ring say it is the one. Two leaders run from the ring's shoulders to the two ends of the opened fragment at E2, because a magnification is a frustum rather than a pointer, and they are recomputed every frame so they follow whichever of the two is dragged."},
 
 {id:"E2", key:"C4", group:"Getting to a matrix", shape:"fragment",
+ noedge:true,   /* deliberate — see the row banner: nothing leaves the pool or the fragment */
  lane:"r3", noclip:true,
  name:"One fragment", x:6.0, y:R3, w:4.1, d:4.1, h:5.6,
  sub:"one molecule, sequenced from both ends, with an unsequenced middle",

@@ -121,3 +121,46 @@ function layoutRows(NODES, LANES, MIRROR){
     if(L && L.dir===-1) n.x = (L.mirror===undefined?MIRROR:L.mirror) - n.x;
   });
 }
+
+/* ---- NOTHING IS BORN AT THE ORIGIN ---------------------------------------
+
+   An SVG element created with style attributes and no geometry sits at 0,0 —
+   a long way from any node. It is invisible if its opacity is zero, so nothing
+   looks wrong; but the selection halo is a CSS filter whose region is the
+   group's bounding box, so one loose element stretches that halo from the node
+   across the whole map. validate.js has failed on this rule for a long time.
+
+   IT IS NOT A MISTAKE IN THE SHAPES THAT DO IT. Row 3's belts and fields
+   create every read's polygons up front and give them coordinates when that
+   read comes round — which is the right way to animate a hundred of anything,
+   and it means an element legitimately exists for a moment before it has a
+   position. Fifteen hundred of them across three shapes.
+
+   So the invariant is enforced ONCE, here, rather than at fifteen hundred
+   creation sites where the next new shape would forget it anyway: after a node
+   is drawn, anything still lacking geometry is given a zero-extent one at that
+   node's own centre. It is where the element belongs until it is told
+   otherwise, it costs nothing to draw, and the halo never leaves the building.
+   A shape that sets its own geometry, or places itself with a transform, is
+   untouched. */
+const GEOM_NEEDS={circle:["cx","cy"],ellipse:["cx","cy"],rect:["x","y"],
+  line:["x1","y1","x2","y2"],path:["d"],polygon:["points"],polyline:["points"],
+  text:["x","y"],image:["x","y"]};
+function groundLoose(g,n){
+  const c=P(n.x,n.y,topOf(n)||0), cx=c[0].toFixed(1), cy=c[1].toFixed(1);
+  (function walk(e){
+    for(const k of e.children||[]){
+      const need=GEOM_NEEDS[k.tagName];
+      if(need && !k.getAttribute("transform") &&
+         !need.every(a=>{const v=k.getAttribute(a); return v!==null && v!=="";})){
+        if(k.tagName==="path")                       k.setAttribute("d",`M ${cx} ${cy}`);
+        else if(/^poly/.test(k.tagName))             k.setAttribute("points",`${cx},${cy}`);
+        else if(k.tagName==="line"){ k.setAttribute("x1",cx); k.setAttribute("y1",cy);
+                                     k.setAttribute("x2",cx); k.setAttribute("y2",cy); }
+        else if(/^(circle|ellipse)$/.test(k.tagName)){ k.setAttribute("cx",cx); k.setAttribute("cy",cy); }
+        else { k.setAttribute("x",cx); k.setAttribute("y",cy); }
+      }
+      walk(k);
+    }
+  })(g);
+}

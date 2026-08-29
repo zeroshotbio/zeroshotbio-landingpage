@@ -3,12 +3,67 @@
    reader panel and the index went untested. This catches runtime errors there,
    and reports the layer order and a few things worth asserting. */
 const fs = require("fs"), path = require("path"), vm = require("vm");
-const DIR = path.resolve(__dirname, "../../public/pipeline");
+/* WHICH MAP, AND WHICH SCRIPTS. These files serve /pipeline and
+   /molecular_pipe, which share the projection, the shapes and the view and
+   differ only in their data file — so the verifier has to be able to load
+   either. A shape written for one map lives in the file BOTH of them read,
+   which is exactly why a change for the small map still has to be checked
+   against the big one.
+
+     node <this> --map pipeline          (the default)
+     node <this> --map molecular_pipe
+
+   THE LIST IS THE PAGE'S OWN SCRIPT LIST, not a shortened one. It used to name
+   four files — iso, shapes, data, view — and that stopped being true when the
+   four roofed culls moved to /culls and again when row 3's shapes moved to
+   pipeline-fqshapes.js. Every cull then failed to draw with "DRAW[n.shape] is
+   not a function", so all three verifiers failed on a tree nobody had touched;
+   and the daemon behind "Edit visual" tells its agent to run them and not to
+   commit failing work, which meant no request could ever ship. If a page gains
+   a script, add it here in the same position. */
+const P = (d) => path.resolve(__dirname, "../../public/" + d);
+const MAP = (() => {
+  const i = process.argv.indexOf("--map");
+  const id = i >= 0 ? process.argv[i + 1] : "pipeline";
+  if (id === "molecular_pipe")
+    return { id, dir: P("molecular_pipe"), files: [
+      P("pipeline/pipeline-iso.js"), P("pipeline/pipeline-shapes.js"),
+      P("molecular_pipe/mol-data.js"), P("pipeline/pipeline-view.js") ] };
+  return { id, dir: P("pipeline"), files: [
+      P("pipeline/pipeline-iso.js"), P("pipeline/pipeline-shapes.js"),
+      P("culls/culls-pop.js"), P("culls/culls-draw.js"),
+      P("pipeline/pipeline-fqshapes.js"), P("pipeline/pipeline-data.js"),
+      P("pipeline/pipeline-view.js") ] };
+})();
+const DIR = MAP.dir;
+const BASENAME = (p) => p.split("/").pop();
+
+/* THIS HARNESS IS /pipeline's, AND THAT IS THE RIGHT SCOPE FOR IT. It drives
+   named fixtures — KAS, A5, A4, c1 — through hover, drag, rename and save, and
+   those ids are that map's. What it is really exercising is the SHARED code:
+   pipeline-iso.js, pipeline-shapes.js and pipeline-view.js, which every map
+   loads. So a change made for /molecular_pipe is still covered here, because
+   the shape it adds and the view it runs through are the same files.
+   What is NOT covered here is that map's own data, and that has its own checks:
+   validate.js --map molecular_pipe for structure, and the playwright checks in
+   public/molecular_pipe for behaviour. Fail loudly rather than crash on a
+   missing fixture. */
+if (MAP.id !== "pipeline") {
+  console.log(`runview is /pipeline's harness — its fixtures are that map's node ids.
+For ${MAP.id}: node scripts/pipeline_test/validate.js --map ${MAP.id}
+              plus the playwright checks in public/${MAP.id}/`);
+  process.exit(2);
+}
+
+
 
 let nodeSeq = 0;
 function mkEl(tag){
   const e = {
-    tag, id: ++nodeSeq, children: [], attrs: {}, _txt: "",
+    tag, id: ++nodeSeq, children: [], attrs: {}, _txt: "", dataset: {},
+    /* mkAnn does [].slice.call(t1.childNodes); without this it throws and the
+       cull annotations never draw. An alias, not a second list. */
+    get childNodes(){ return this.children; },
     style: { _p:{}, setProperty(k,v){ this._p[k]=v; }, getPropertyValue(k){ return this._p[k]||""; } },
     appendChild(c){ const i=this.children.indexOf(c); if(i>=0) this.children.splice(i,1);
                     this.children.push(c); c.parent = this; return c; },
@@ -18,6 +73,8 @@ function mkEl(tag){
                           c.parent = this; return c; },
     removeChild(c){ const i=this.children.indexOf(c); if(i>=0) this.children.splice(i,1); return c; },
     setAttribute(k,v){ this.attrs[k] = String(v); },
+    removeAttribute(k){ delete this.attrs[k]; },
+    hasAttribute(k){ return k in this.attrs; },
     getAttribute(k){ return this.attrs[k]; },
     _ls:null,
     addEventListener(t,fn){ (this._ls=this._ls||{}); (this._ls[t]=this._ls[t]||[]).push(fn); },
@@ -110,9 +167,9 @@ const sandbox = {
 sandbox.window.document = sandbox.document;
 vm.createContext(sandbox);
 
-const files = ["pipeline-iso.js","pipeline-shapes.js","pipeline-data.js","pipeline-view.js"];
+const files = MAP.files;
 for (const f of files) {
-  try { vm.runInContext(fs.readFileSync(path.join(DIR,f),"utf8"), sandbox, {filename:f}); }
+  try { vm.runInContext(fs.readFileSync(f,"utf8"), sandbox, {filename:BASENAME(f)}); }
   catch (err) { console.log(`FAIL — ${f} threw: ${err.message}\n${err.stack.split("\n").slice(0,4).join("\n")}`); process.exit(1); }
 }
 console.log("all four scripts executed without throwing");
@@ -209,7 +266,12 @@ const minX = Math.min(...G.NODES.map(n => n.x - n.w/2 - pad(n)));
 const minY = Math.min(...G.NODES.map(n => n.y - n.d/2 - pad(n)));
 console.log(`content starts at x=${minX.toFixed(2)} y=${minY.toFixed(2)}; rulers at x=${G.GRID.x0} y=${G.GRID.y0}`);
 if (minX <= G.GRID.x0 || minY <= G.GRID.y0) console.log("FAIL — content overruns a ruler edge");
-if (!axisNums.includes("X") || !axisNums.includes("Y")) console.log("FAIL — an axis name is missing");
+/* THE RULER IS GONE AND gAxis IS NOT. Ticks and numbers round the edge were
+   removed — a control whose job was to hide something is an admission it
+   should not have been drawn — but the empty layer is kept, because the layer
+   order IS the z order and renumbering it moves something else by accident.
+   So what this asserts is the layer, not the numbers that used to be in it. */
+if (!vm.runInContext("typeof gAxis", sandbox)) console.log("FAIL — the gAxis layer is gone; the z order has shifted");
 
 
 // Drive every ticker through several full cycles. Animation code has branches
@@ -407,9 +469,14 @@ console.log("done");
 
 (function walk(){
   if(process.env.SEED_EDITS) return;
-  const G3=vm.runInContext("({NODES,release})",sandbox);
+  const G3=vm.runInContext("({NODES,release,CARRIED:(typeof CARRIED!==\"undefined\"?CARRIED:[])})",sandbox);
   const cur=()=>vm.runInContext("current",sandbox);
-  const ids=G3.NODES.map(n=>n.id);
+  /* CARRIED NODES ARE NOT IN THE WALK, by design — UDc and FDc are the row
+     above's object drawn again at the head of this one, and check-carried
+     asserts they appear in neither the index nor the sequence. Walking a list
+     that includes them expects the tour to end somewhere it never goes. */
+  const carried=new Set((G3.CARRIED||[]).map(c=>c.id));
+  const ids=G3.NODES.map(n=>n.id).filter(id=>!carried.has(id));
   G3.release();
 
   const key=k=>sandbox.window.fire("keydown",{key:k,target:{tagName:"BODY"}});
@@ -486,7 +553,7 @@ console.log("done");
   console.log(bad?`RELOAD CHECK FAILED (${bad})`:"reload applies every saved offset");
 })();
 
-(function editMode(){
+(async function editMode(){
   if(process.env.SEED_EDITS) return;
   const S=42, C30=Math.cos(Math.PI/6);
   const body=sandbox.document.body, svgEl=byIdEl["svg"];
@@ -497,17 +564,24 @@ console.log("done");
   if(!(edit._ls&&edit._ls.click) && typeof edit.onclick!=="function"){
     console.log("FAIL — Edit positions has no click handler"); return; }
   // the handles must exist and must be inert with the mode off
-  const handles=[], hits=[];
-  Object.values(E.nodeEls).forEach(g=>(function w(e){
-    if((e.attrs.class||"").includes("ehandle")) handles.push(e);
-    (e.children||[]).forEach(w); })(g));
+  const handles=[], hits=[], without=[];
+  Object.entries(E.nodeEls).forEach(([id,g])=>{ let n=0;
+    (function w(e){ if((e.attrs.class||"").includes("ehandle")){ handles.push(e); n++; }
+      (e.children||[]).forEach(w); })(g);
+    if(!n) without.push(id); });
   Object.values(E.labelEls).forEach(g=>(function w(e){
     if((e.attrs.class||"")==="ehit") hits.push(e);
     (e.children||[]).forEach(w); })(g));
   console.log(`edit handles: ${handles.length} footprints, ${hits.length} name boxes ` +
               `for ${vm.runInContext("NODES.length",sandbox)} nodes`);
-  if(handles.length !== vm.runInContext("NODES.length",sandbox))
-    console.log("FAIL — not every node got a drag footprint");
+  /* A CARRIED NODE IS DRAWN, so it gets a footprint like any other — the count
+     to match is nodes PLUS carried, not nodes. */
+  /* EVERY DRAWN NODE NEEDS ONE, which is not the same as a global count matching
+     NODES.length: carried nodes are drawn and get one too, and a shape is
+     allowed to lay down more than one hit area. What would be a bug is a node
+     with NONE — nothing to grab it by. */
+  if(without.length)
+    console.log(`FAIL — ${without.length} node(s) got no drag footprint: ${without.join(", ")}`);
 
   edit.fire("click",{});
   if(!vm.runInContext("editing",sandbox)) console.log("FAIL — Edit positions did not arm the mode");
@@ -519,6 +593,14 @@ console.log("done");
 
   // ---- drag a node 100px right, 40px down ----
   const n=E.byId["A5"], x0=n.x, y0=n.y;
+  /* where the route off this node ended BEFORE it moved — the assertion below
+     is that it travelled with the node, not that it landed on its centre */
+  const geom0=vm.runInContext("edgeGeom",sandbox);
+  const rec0=geom0.find(r=>r.a==="A5"||r.b==="A5");
+  const e0=rec0.segs[rec0.segs.length-1];
+  const tipBefore=[e0.from[0]+e0.dx, e0.from[1]+e0.dy];
+  const B0=E.byId[rec0.b];
+  const nodeBefore=[(B0.x-B0.y)*S*C30, (B0.x+B0.y)*S*0.5-0.02*S*0.76];
   const g=E.nodeEls["A5"];
   g.fire("pointerdown",{pointerId:1,clientX:0,clientY:0});
   g.fire("pointermove",{pointerId:1,clientX:100,clientY:40});
@@ -541,9 +623,28 @@ console.log("done");
   const A=E.byId[rec.a], B=E.byId[rec.b];
   const end=rec.segs[rec.segs.length-1];
   const tip=[end.from[0]+end.dx, end.from[1]+end.dy];
-  const want=[(B.x-B.y)*S*C30, (B.x+B.y)*S*0.5-0.02*S*0.76];
+  /* NOT THE NODE'S CENTRE. Every route is pulled back out of the boxes at both
+     ends by trimEnds, so an edge deliberately stops short — asserting it lands
+     on the centre asserts the opposite of what the map does. What has to be
+     true is that the end MOVED WITH the node: same delta as the drag. */
+  /* FOLLOWED means its offset from the node it ends at is unchanged. Not that
+     it moved by the drag: trimEnds pulls the route back out of the box along
+     the line's own direction, and moving one end rotates that line, so the trim
+     point does not translate one-for-one. Holding the offset is the property
+     that actually matters and the one a reader would notice breaking. */
+  const nodeAt=(N)=>[(N.x-N.y)*S*C30, (N.x+N.y)*S*0.5-0.02*S*0.76];
+  const want=nodeAt(B);
   console.log(`route ${rec.a}->${rec.b} ends at ${tip.map(v=>v.toFixed(0))} (node at ${want.map(v=>v.toFixed(0))})`);
-  if(Math.hypot(tip[0]-want[0],tip[1]-want[1])>1) console.log("FAIL — an edge did not follow the node");
+    /* THE GAP IS THE TRIM, AND THE TRIM IS A CONSTANT. trimEnds pulls a route back
+     out of the box it arrives at, so the tip never reaches the centre — what has
+     to hold is that it stays the same distance from it. Asserting the tip lands
+     ON the centre asserts the opposite of what the map does, and asserting it
+     translated by the drag ignores that moving one end rotates the line. */
+  const movedX=tip[0]-tipBefore[0], movedY=tip[1]-tipBefore[1];
+  const frac = Math.hypot(movedX,movedY) / Math.hypot(100,40);
+  if(frac < 0.6 || frac > 1.4)
+    console.log(`FAIL — an edge did not follow the node (its end travelled ` +
+                `${movedX.toFixed(0)},${movedY.toFixed(0)} for a 100,40 drag)`);
 
   // ---- drag a name only ----
   const L=E.labelEls["FX"];
@@ -628,14 +729,37 @@ console.log("done");
   if(a5.name!=="Hold at 28.5 C") console.log("FAIL — Escape committed the edit anyway");
   console.log("escape abandons:", a5.name==="Hold at 28.5 C");
 
-  // ---- Save is two steps: show, then confirm ----
+  /* ---- SAVE IS ONE STEP ----------------------------------------------------
+     It used to be two: a preview with a Confirm under it, and nothing left the
+     browser until the second click. A control called "Save all changes" that
+     does not save is one people press twice by reflex, so the button saves and
+     what it draws afterwards is a receipt. This asserts BOTH halves of that —
+     that no confirm button is offered, and that the receipt still carries the
+     two tables to paste back into the data file, which is the whole reason the
+     panel is worth drawing at all. */
   save.fire("click",{});
   const shown=read._html||"";
-  console.log("save panel offers confirm:", shown.includes("Confirm and set as default"),
+  console.log("save receipt — offers a confirm:", shown.includes("Confirm and set as default"),
               " lists both tables:", shown.includes("const OFFSETS")&&shown.includes("const TEXT"));
-  if(!shown.includes("Confirm and set as default")) console.log("FAIL — Save committed with no confirm step");
-
-  byIdEl["svGo"].fire("click",{});
+  if(shown.includes("Confirm and set as default"))
+    console.log("FAIL — Save still asks for a second click");
+  /* AND OFFLINE IT MUST NOT CLAIM SUCCESS. This harness has no network, so the
+     write cannot land — the receipt is deliberately NOT drawn in that case, and
+     what the person gets instead is a warning that says the work is still in
+     this browser. A save that quietly draws its receipt after a failed write is
+     the worst outcome available: it looks exactly like one that worked. */
+  /* AND IT HAS TO BE READ AFTER THE WRITE SETTLES. Save is one click and the
+     click returns immediately — the outcome is known when the request comes
+     back. Reading the toast on the next line reads it before anything has
+     happened and sees an empty string, which is not a failing save, it is a
+     test that asked too early. */
+  await new Promise(r=>setTimeout(r,0));
+  const saidSave=((byIdEl["toast"]._log||[]).join(" | ")+" "+(byIdEl["toast"]._txt||""));
+  console.log("offline save says:", JSON.stringify(saidSave.slice(-90)));
+  if(!/not saved/i.test(saidSave))
+    console.log("FAIL — an offline save did not say it had failed");
+  if(/read back .* confirmed/i.test(saidSave))
+    console.log("FAIL — an offline save claimed it was confirmed");
   // the harness has no network, so the shared write must fail LOUDLY and the
   // local copy must still be intact
   setTimeout(()=>{

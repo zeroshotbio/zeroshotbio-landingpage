@@ -203,6 +203,13 @@ const CARRIED = [];
 const OFFSETS = {};
 const TEXT = {};
 
+/* The two helpers SNIPPETS itself calls. Lifted with it — a payload that
+   cannot format its own record is a payload that throws when a dot is clicked,
+   and nothing on the page says so until somebody clicks one. */
+const pad = (s,n) => String(s).padEnd(n);
+
+const pick = a => a[Math.floor(Math.random()*a.length)];
+
 /* ---- THE PAYLOADS THE DOT SNIPPETS CARRY ---------------------------------
    Lifted with SNIPPETS, because SNIPPETS reads them: clicking a dot on a track
    opens a record, and these are the records. Same rule as everything else here
@@ -427,5 +434,11 @@ const OVERVIEW = {
 <p><mark>The barcode is built in the cell, not read off it.</mark> That is what makes this the row the rest of the map depends on: a cell never leaves its well with an identity attached — it acquires one by surviving three rounds of ligation in a known order, and the combination is the address. Round 4 is different in kind: it is a PCR index on the tube, not on the cell.</p>
 <p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. Every station is drawn as the tile it is on the big map; a station that earns a real drawing gets one here first, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again.</p>
 `,
+  /* `built` and `cond` are the same two fields every node carries, and the
+     reader renders them under their own headings. The overview is a node as far
+     as the reader and the text editor are concerned, so leaving them out is a
+     missing field rather than a shorter page. */
+  built:`<p>Thirteen stations, lifted from row 2 of <a href="/pipeline">/pipeline</a>. The figures on them are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
+  cond:`<p>This is a bench, so what it draws is deliberately unfinished: eleven of the thirteen stations are still the plain tile a stage gets before anybody has drawn it. That is the work, not an oversight. <mark>What must not drift is the prose</mark> — it is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
   howto:`<p>One landmark — the Thaw — sits on a dashed plinth and carries its name on the ground. Every other station is a tile, which is what a stage looks like before anybody has drawn it. Hatching would mean the stage destroys data; nothing on this row does. The row reads left to right and nothing feeds it from off the page: on the big map the row above supplies the fixed material, and that is said by where the rows sit rather than by a track.</p>`,
 };

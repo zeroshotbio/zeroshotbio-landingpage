@@ -19,14 +19,66 @@
  */
 const fs=require("fs"), path=require("path");
 const {JSDOM, VirtualConsole}=require("jsdom");
-const DIR=path.resolve(__dirname,"../../public/pipeline");
+/* WHICH MAP, AND WHICH SCRIPTS. These files serve /pipeline and
+   /molecular_pipe, which share the projection, the shapes and the view and
+   differ only in their data file — so the verifier has to be able to load
+   either. A shape written for one map lives in the file BOTH of them read,
+   which is exactly why a change for the small map still has to be checked
+   against the big one.
+
+     node <this> --map pipeline          (the default)
+     node <this> --map molecular_pipe
+
+   THE LIST IS THE PAGE'S OWN SCRIPT LIST, not a shortened one. It used to name
+   four files — iso, shapes, data, view — and that stopped being true when the
+   four roofed culls moved to /culls and again when row 3's shapes moved to
+   pipeline-fqshapes.js. Every cull then failed to draw with "DRAW[n.shape] is
+   not a function", so all three verifiers failed on a tree nobody had touched;
+   and the daemon behind "Edit visual" tells its agent to run them and not to
+   commit failing work, which meant no request could ever ship. If a page gains
+   a script, add it here in the same position. */
+const P = (d) => path.resolve(__dirname, "../../public/" + d);
+const MAP = (() => {
+  const i = process.argv.indexOf("--map");
+  const id = i >= 0 ? process.argv[i + 1] : "pipeline";
+  if (id === "molecular_pipe")
+    return { id, dir: P("molecular_pipe"), files: [
+      P("pipeline/pipeline-iso.js"), P("pipeline/pipeline-shapes.js"),
+      P("molecular_pipe/mol-data.js"), P("pipeline/pipeline-view.js") ] };
+  return { id, dir: P("pipeline"), files: [
+      P("pipeline/pipeline-iso.js"), P("pipeline/pipeline-shapes.js"),
+      P("culls/culls-pop.js"), P("culls/culls-draw.js"),
+      P("pipeline/pipeline-fqshapes.js"), P("pipeline/pipeline-data.js"),
+      P("pipeline/pipeline-view.js") ] };
+})();
+const DIR = MAP.dir;
+const BASENAME = (p) => p.split("/").pop();
+
+/* THIS HARNESS IS /pipeline's, AND THAT IS THE RIGHT SCOPE FOR IT. It drives
+   named fixtures — KAS, A5, A4, c1 — through hover, drag, rename and save, and
+   those ids are that map's. What it is really exercising is the SHARED code:
+   pipeline-iso.js, pipeline-shapes.js and pipeline-view.js, which every map
+   loads. So a change made for /molecular_pipe is still covered here, because
+   the shape it adds and the view it runs through are the same files.
+   What is NOT covered here is that map's own data, and that has its own checks:
+   validate.js --map molecular_pipe for structure, and the playwright checks in
+   public/molecular_pipe for behaviour. Fail loudly rather than crash on a
+   missing fixture. */
+if (MAP.id !== "pipeline") {
+  console.log(`realdom is /pipeline's harness — its fixtures are that map's node ids.
+For ${MAP.id}: node scripts/pipeline_test/validate.js --map ${MAP.id}
+              plus the playwright checks in public/${MAP.id}/`);
+  process.exit(2);
+}
+
+
 
 const errs=[];
 const vc=new VirtualConsole();
 vc.on("jsdomError",e=>errs.push("jsdomError: "+(e.detail?e.detail.stack||e.detail.message:e.message)));
 vc.on("error",(...a)=>errs.push("console.error: "+a.join(" ")));
 
-let html=fs.readFileSync(process.env.INDEX||path.join(DIR,"index.html"),"utf8");
+let html=fs.readFileSync(process.env.INDEX||path.join(MAP.dir,"index.html"),"utf8");
 /* jsdom gaps that a browser does not have — polyfill them so what is left is
    the page's own errors, not jsdom's */
 const SHIM=`<script>
@@ -66,8 +118,10 @@ window.fetch = (url, opt) => {
 html=html.replace("</head>", SHIM+"</head>");
 
 // inline the four scripts so jsdom does not need to fetch them
-html=html.replace(/<script src="\/pipeline\/([a-z-]+\.js)(\?[^"]*)?"><\/script>/g,
-  (_,f)=>`<script>\n${fs.readFileSync(path.join(DIR,f),"utf8")}\n</script>`);
+/* inline every script the page names, from wherever it actually lives —
+   /pipeline/, /culls/ and /molecular_pipe/ are all in play now */
+html=html.replace(/<script src="\/([a-z_]+)\/([a-z-]+\.js)(\?[^"]*)?"><\/script>/g,
+  (_,d,f)=>`<script>\n${fs.readFileSync(P(d+"/"+f),"utf8")}\n</script>`);
 
 const dom=new JSDOM(html,{runScripts:"dangerously",pretendToBeVisual:true,virtualConsole:vc,
                          url:"https://www.zeroshot.bio/pipeline"});

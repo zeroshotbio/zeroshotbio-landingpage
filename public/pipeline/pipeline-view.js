@@ -565,6 +565,7 @@ NODES.slice().sort((a,b)=>(a.x+a.y)-(b.x+b.y)).forEach(n=>{
      running over elements that have been thrown away. */
   const t0=TICKERS.length;
   DRAW[n.shape](g,n);
+  groundLoose(g,n);
   n._ticks=TICKERS.slice(t0);
   if(!TOUCH){
     g.addEventListener("mouseenter",()=>{ if(!editing) show(n.id,false); });
@@ -1706,6 +1707,7 @@ feature("edit positions", function(){
     const before=TICKERS.length;
     while(g.firstChild) g.removeChild(g.firstChild);
     DRAW[n.shape](g,n);
+    groundLoose(g,n);
     n._ticks=TICKERS.slice(before);
     if(editing) g.appendChild(el("polygon",{points:pts(nodeSil(n)),class:"ehandle"}));
     const pl=plinthEls[n.id];

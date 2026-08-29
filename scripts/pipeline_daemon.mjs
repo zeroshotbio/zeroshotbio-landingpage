@@ -26,14 +26,12 @@
  * to anything real.
  */
 import { spawn, execSync } from "node:child_process";
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const BASE = process.env.BASE || "https://www.zeroshot.bio";
-const API = BASE.replace(/\/$/, "") + "/api/pipeline_prompts";
-const PIPE = path.join(REPO, "public", "pipeline");
+const qurl = (m) => BASE.replace(/\/$/, "") + m.queue;
 
 const argv = process.argv.slice(2);
 const flag = (n) => argv.includes(n);
@@ -42,6 +40,46 @@ const val = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] :
 const ONCE = flag("--once");
 const DRY = flag("--dry");
 const EVERY = Math.max(5, Number(val("--every", 10))) * 1000;
+
+const BASE = process.env.BASE || "https://www.zeroshot.bio";
+
+/* ---- THE MAPS THIS SERVES -------------------------------------------------
+   There is more than one now, and each has its OWN queue: /pipeline and
+   /molecular_pipe, which is row 2 on its own bench. Polling one queue and
+   editing one directory was fine while there was one map; with two it means a
+   request made from the second page sits at "queued" for ever and nobody is
+   told why.
+
+   `dirs` is what the agent may touch and what "did anything ship" is measured
+   over. It is more than one directory on purpose: every map draws through the
+   SHARED public/pipeline/pipeline-shapes.js, so a new drawing for the bench
+   lands there while the node that names it lives in the bench's own data file.
+   Scope the agent to one of those and it can write a shape it cannot wire up. */
+const MAPS_DEF = [
+  { id: "pipeline", queue: "/api/pipeline_prompts",
+    dir: path.join(REPO, "public", "pipeline"),
+    data: "public/pipeline/pipeline-data.js",
+    dirs: ["public/pipeline"],
+    verify: ["node scripts/pipeline_test/validate.js",
+             "node scripts/pipeline_test/runview.js",
+             "REDUCE=1 node scripts/pipeline_test/runview.js",
+             "node scripts/pipeline_test/realdom.js",
+             "cd public/pipeline && ./build.sh"] },
+  { id: "molecular_pipe", queue: "/api/molecular_prompts",
+    dir: path.join(REPO, "public", "molecular_pipe"),
+    data: "public/molecular_pipe/mol-data.js",
+    dirs: ["public/pipeline", "public/molecular_pipe"],
+    /* the bench runs the big map's engine, so the big map's suite is what
+       proves a new shape works; validate --map checks the bench's own data */
+    verify: ["node scripts/pipeline_test/validate.js",
+             "node scripts/pipeline_test/validate.js --map molecular_pipe",
+             "node scripts/pipeline_test/runview.js",
+             "node scripts/pipeline_test/realdom.js"] },
+]; 
+/* every map, for looking a shape up; MAPS is what this run polls */
+const MAPS_ALL = MAPS_DEF;
+const MAPS = MAPS_DEF.filter((m) => { const only = val("--map", ""); return !only || m.id === only; });
+
 /* 15 minutes was not enough: the first rich request — a sequencer with moving
    parts — was still verifying when the kill landed, with the drawing finished
    and uncommitted. A drawing is allowed to take as long as a drawing takes. */
@@ -62,35 +100,76 @@ function log(...a) {
 
 const sh = (cmd) => execSync(cmd, { cwd: REPO, encoding: "utf8" }).trim();
 const head = () => sh("git rev-parse HEAD");
+/* what this request is allowed to have touched — its own directories plus the
+   test harness, which an agent may legitimately have had to extend */
+const SCOPE = (map) => map.dirs.concat(["scripts/pipeline_test"]).join(" ");
 
-async function api(opt) {
-  const r = await fetch(opt ? API : API + "?open=1", opt || { cache: "no-store" });
+async function api(map, opt) {
+  const u = qurl(map);
+  const r = await fetch(opt ? u : u + "?open=1", opt || { cache: "no-store" });
   const body = await r.text();
   try { return JSON.parse(body); }
-  catch { throw new Error(`queue answered HTTP ${r.status}, not JSON`); }
+  catch { throw new Error(`${map.id} queue answered HTTP ${r.status}, not JSON`); }
 }
-const move = (id, status, note) =>
-  api({ method: "POST", headers: { "content-type": "application/json" },
+const move = (map, id, status, note) =>
+  api(map, { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ id, status, note: note ? String(note).slice(0, 900) : undefined }) });
 
 /* What the agent is told. The rules are the ones this map has accumulated;
    every one of them is here because breaking it broke something. */
-function task(p) {
+/* HOW MANY NODES WEAR THIS SHAPE. A drawing is registered as DRAW.<shape> and
+   every node naming that shape gets it — `tile` is worn by ten of them and
+   `miniplate` by three on each map. Telling an agent to "edit DRAW.miniplate"
+   when the person selected one round of barcoding would rewrite all three
+   rounds, and rounds two and three are ligation rather than reverse
+   transcription. So the count is worked out first and the instruction changes
+   with it. This was invisible while the only request that ever succeeded
+   targeted the sequencer, whose shape is worn once. */
+function sharers(shape) {
+  const out = [];
+  for (const m of MAPS_ALL) {
+    let src = ""; try { src = readFileSync(path.join(REPO, m.data), "utf8"); } catch { continue; }
+    const re = new RegExp('\\{id:"([^"]+)"[^\\n]*[\\s\\S]{0,400}?shape:"' + shape + '"', "g");
+    let mm; while ((mm = re.exec(src))) out.push(m.id + ":" + mm[1]);
+  }
+  return out;
+}
+
+function task(p, map) {
   const t = p.target;
-  return `A request has come in from the /pipeline map's own "Edit visual" button. Carry it out.
+  const also = t ? sharers(t.shape).filter((x) => !x.endsWith(":" + t.id)) : [];
+  return `A request has come in from the ${"/" + map.id} map's own "Edit visual" button. Carry it out.
 
 THE REQUEST
 ${p.text}
 
 ${t ? `THE TARGET
-The person had "${t.key} · ${t.name}" selected. Its drawing is the function registered as DRAW.${t.shape} in public/pipeline/pipeline-shapes.js — find it by searching for "DRAW.${t.shape}" and work backwards to the function. Its data lives in the NODES entry with id "${t.id}" in public/pipeline/pipeline-data.js.`
+The person had "${t.key} · ${t.name}" selected — node id ${t.id}, currently drawn by
+DRAW.${t.shape}.
+${also.length ? `
+DO NOT EDIT DRAW.${t.shape}. ${also.length + 1} nodes wear that shape — ${[t.id].concat(
+  also.map((x) => x.split(":")[1])).join(", ")} — so rewriting it changes all of them,
+and the request is about one. Write a NEW shape function instead and point this one
+node at it:
+  1. add drawSomething(g, n) to public/pipeline/pipeline-shapes.js and register it
+     as DRAW.something = drawSomething
+  2. change ONLY node ${t.id}'s shape: field, in ${map.data}, to "something"
+The other nodes keep the shape they have and must look exactly as they do now.`
+: `That shape is worn by this node alone, so editing DRAW.${t.shape} in
+public/pipeline/pipeline-shapes.js changes this node and nothing else. Either edit it
+in place or replace it with a new registered shape — whichever is cleaner.`}`
      : `THE TARGET
-Nothing was selected, so work out from the request which step is meant. If it is genuinely ambiguous, do not guess — stop and explain, and do not commit.`}
+Nothing was selected, so work out from the request which step is meant. If it is
+genuinely ambiguous, do not guess — stop and explain, and do not commit.`}
 
-WHERE THINGS ARE — all under ${PIPE}
+WHERE THINGS ARE — you may touch ${map.dirs.join(" and ")} and nothing else
   pipeline-iso.js     the isometric projection and shared primitives. Do not change.
   pipeline-shapes.js  every drawing. This is almost certainly the file to edit.
-  pipeline-data.js    the nodes, edges, lanes, prose, OFFSETS and TEXT tables.
+  ${map.data.split("/").pop()}${" ".repeat(Math.max(1,18-map.data.split("/").pop().length))}this map's nodes, edges, lanes, prose, OFFSETS and TEXT.
+                      EVERY MAP SHARES pipeline-shapes.js and pipeline-view.js, so a
+                      drawing added for one is loaded by all of them. That is the point,
+                      and it is why the verify list below runs the big map's suite even
+                      for a change made on a bench.
   pipeline-view.js    assembly and interaction.
   index.html          the page shell and all CSS.
 Load order is iso -> shapes -> data -> view, as plain classic scripts sharing one
@@ -119,25 +198,17 @@ showing a progress pill until you finish, so keep the change tight and shippable
 rather than opening it out into a redesign. Do the thing that was asked.
 
 VERIFY, in this order, and do not skip any of it
-  node scripts/pipeline_test/validate.js     structure, every shape renders, no orphans
-  node scripts/pipeline_test/runview.js      runs all four files and drives every
-                                             ticker for 2400 frames; must print no FAIL
-  REDUCE=1 node scripts/pipeline_test/runview.js   the same, with the browser asking
-                                             for reduced motion; must print no FAIL
-  node scripts/pipeline_test/realdom.js      loads the real page in jsdom and checks it
-                                             animates and the camera moves; must exit 0.
-                                             If jsdom is missing: npm install --no-save jsdom
-  cd public/pipeline && ./build.sh           regenerates the standalone artifact
-Only if you changed something OUTSIDE public/pipeline, also run npx next build.
-Nothing under public/pipeline is compiled by Next, so that build cannot tell you
-anything about a shape and costs minutes the person is watching tick by.
-If any of those fail, fix the cause. Do not commit failing work.
+${map.verify.map((c) => "  " + c).join("\n")}
+Every one of those passes on a clean tree right now, so a failure is yours. If any
+fails, fix the cause; do not commit failing work and do not "fix" a check by
+loosening it. Nothing under public/ is compiled by Next, so npx next build cannot
+tell you anything about a shape and costs minutes the person is watching tick by —
+only run it if you changed something outside public/.
 You have a shell for exactly these — node, npx, git, cd, ls, cat, grep, sed and
 build.sh. Nothing else is available, so do not plan around anything else.
 
 THEN SHIP IT
-Commit only files under public/pipeline (plus scripts/pipeline_test if you genuinely
-had to touch it) and push to main. Vercel deploys from main. Do not touch anything
+Commit only files under ${map.dirs.join(" and ")} and push to main. Vercel deploys from main. Do not touch anything
 else in the repo. Do not revert or amend other people's commits.
 
 Write the commit message in the style of the recent history: a short subject in the
@@ -181,20 +252,20 @@ function overRate() {
   return recent.length >= MAX_PER_HOUR;
 }
 
-async function handle(p) {
-  log(`--- ${p.id}  ${p.target ? p.target.key + " · " + p.target.name : "no target"}`);
+async function handle(map, p) {
+  log(`--- [${map.id}] ${p.id}  ${p.target ? p.target.key + " · " + p.target.name : "no target"}`);
   log(`    "${p.text.replace(/\s+/g, " ").slice(0, 140)}"`);
 
   if (overRate()) {
     log(`    over ${MAX_PER_HOUR}/hour — dropping`);
-    await move(p.id, "dropped", `More than ${MAX_PER_HOUR} requests in an hour; this one was not run.`);
+    await move(map, p.id, "dropped", `More than ${MAX_PER_HOUR} requests in an hour; this one was not run.`);
     return;
   }
   recent.push(Date.now());
 
   // start clean, so "did anything ship" is an honest question
   let dirty = "";
-  try { dirty = sh("git status --porcelain -- public/pipeline scripts"); } catch {}
+  try { dirty = sh(`git status --porcelain -- ${SCOPE(map)}`); } catch {}
   if (dirty) {
     /* Somebody is working in the repo. That is not this request's fault and it
        is usually over in minutes, so hold it in the queue rather than throwing
@@ -203,22 +274,22 @@ async function handle(p) {
     const held = Date.now() - p.at;
     log(`    working tree is dirty — holding ${p.id} in the queue (${Math.round(held / 60000)}m)`);
     if (held > 20 * 60_000) {
-      await move(p.id, "queued");   // clear "working" if we ever set it
-      await move(p.id, "dropped", "Somebody was working in the repo for twenty minutes; send it again.");
+      await move(map, p.id, "queued");   // clear "working" if we ever set it
+      await move(map, p.id, "dropped", "Somebody was working in the repo for twenty minutes; send it again.");
     }
     return;
   }
   const before = head();
-  await move(p.id, "working");
+  await move(map, p.id, "working");
 
   if (DRY) {
     log("    --dry, not running claude");
-    await move(p.id, "dropped", "Daemon is in dry mode.");
+    await move(map, p.id, "dropped", "Daemon is in dry mode.");
     return;
   }
 
   const t0 = Date.now();
-  const { code, out, err } = await runClaude(task(p));
+  const { code, out, err } = await runClaude(task(p, map));
   const secs = Math.round((Date.now() - t0) / 1000);
   const tail = (out || err || "").trim().split("\n").slice(-6).join(" ").slice(0, 700);
   log(`    claude exited ${code} after ${secs}s`);
@@ -236,12 +307,12 @@ async function handle(p) {
        (the first timeout killed a finished drawing, which was worth having) and
        put the tree back. */
     let left = "";
-    try { left = sh("git status --porcelain -- public/pipeline scripts"); } catch {}
+    try { left = sh(`git status --porcelain -- ${SCOPE(map)}`); } catch {}
     if (left) {
       const patch = path.join(LOGDIR, `${p.id}.patch`);
       try {
-        appendFileSync(patch, sh("git diff -- public/pipeline scripts"));
-        sh("git checkout -- public/pipeline scripts");
+        appendFileSync(patch, sh(`git diff -- ${SCOPE(map)}`));
+        sh(`git checkout -- ${SCOPE(map)}`);
         log(`    left the tree dirty — kept it at ${patch} and reset`);
       } catch (e) { log("    could not clear the tree: " + e.message); }
     }
@@ -250,7 +321,7 @@ async function handle(p) {
         (left ? ", with unfinished work kept on the instance" : "") + "."
       : (tail || "Nothing was changed. See the daemon log.");
     log("    nothing committed");
-    await move(p.id, "dropped", why);
+    await move(map, p.id, "dropped", why);
     return;
   }
   if (!pushed) {
@@ -259,30 +330,31 @@ async function handle(p) {
     catch (e) { log("    push failed: " + e.message); }
   }
   if (!pushed) {
-    await move(p.id, "dropped", "The change was committed here but could not be pushed.");
+    await move(map, p.id, "dropped", "The change was committed here but could not be pushed.");
     return;
   }
 
   const subject = sh("git log -1 --pretty=%s");
   log(`    shipped: ${subject}`);
-  await move(p.id, "done", subject);
+  await move(map, p.id, "done", subject);
 }
 
-async function tick() {
+async function tick() { for (const map of MAPS) await tickOne(map); }
+async function tickOne(map) {
   let rows;
-  try { rows = (await api()).prompts || []; }
-  catch (e) { log("queue unreachable: " + e.message); return; }
+  try { rows = (await api(map)).prompts || []; }
+  catch (e) { log(`${map.id} queue unreachable: ` + e.message); return; }
   const queued = rows.filter((r) => r.status === "queued").sort((a, b) => a.at - b.at);
   for (const p of queued) {
-    try { await handle(p); }
+    try { await handle(map, p); }
     catch (e) {
       log("handler blew up: " + e.message);
-      try { await move(p.id, "dropped", "The daemon errored: " + e.message); } catch {}
+      try { await move(map, p.id, "dropped", "The daemon errored: " + e.message); } catch {}
     }
   }
 }
 
-log(`watching ${API} every ${EVERY / 1000}s  ·  model ${MODEL}  ·  repo ${REPO}` +
+log(`watching ${MAPS.map((m) => m.queue).join(" + ")} every ${EVERY / 1000}s  ·  model ${MODEL}  ·  repo ${REPO}` +
     (DRY ? "  ·  DRY" : "") + (ONCE ? "  ·  once" : ""));
 await tick();
 if (!ONCE) for (;;) {
