@@ -2064,3 +2064,169 @@ function drawFixation(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
 }
 DRAW.fixation = drawFixation;
+
+
+/* ------------------------------------------------------------------
+   ROUND ONE · REVERSE TRANSCRIPTION
+   The step seen from inside one cell rather than from over the plate.
+
+   Five single-stranded transcripts lie in the compartment, each with the
+   round-one barcoded primer already annealed at its foot — the short bright
+   stub every copy starts from. A reverse transcriptase lands on that stub and
+   walks the template, and what it lays down behind it is double stranded: two
+   rails and the rungs between them.
+
+   THE STUB IS THE CONTENT OF THE STEP. Sample identity is written into the
+   cDNA here, in that primer, and nowhere else on the map; everything
+   downstream only reads back what it already says. So the copy is drawn in
+   the colour this page uses for "look here" and the primer is the brightest
+   part of it.
+
+   Ahead of the enzyme the RNA wanders, behind it the duplex is nearly
+   straight — ssRNA is floppy and a duplex is a rod — and the seam between the
+   two sits under the enzyme's body, which is both where it belongs and the
+   only place it can be hidden. At the end the duplex unzips back to the
+   primer and the template is bare again: a loop, not a claim that the
+   chemistry runs backwards. Each strand keeps its own clock, so the
+   compartment is never all in one state.
+
+   The envelope is the nucleus, which is what was asked to be looked inside;
+   in the protocol the primer works throughout the fixed cell.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawReverseTranscription(g,n){
+  const r=rng(823);
+  const th=n.h, R=Math.min(n.w,n.d)/2*0.98;
+  const floor=ellipseAt(n.x,n.y,0,R*0.93),
+        rim  =ellipseAt(n.x,n.y,th,R),
+        inner=ellipseAt(n.x,n.y,th,R*0.9);
+
+  /* floor, the near wall swept up to the rim, then the envelope as the two
+     membranes it actually is — the doubled line is what says "nucleus" at a
+     size where nothing else in the drawing can */
+  g.appendChild(el("ellipse",{cx:floor.x,cy:floor.y,rx:floor.rx,ry:floor.ry,
+    fill:"var(--g-right)","fill-opacity":".65",stroke:"none"}));
+  g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,26),
+                                          ...arcPts(floor,Math.PI,0,26)]),
+    fill:"var(--g-top)","fill-opacity":".5",stroke:"none"}));
+  g.appendChild(el("ellipse",{cx:inner.x,cy:inner.y,rx:inner.rx,ry:inner.ry,
+    fill:"var(--fg)","fill-opacity":".05",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".4"}));
+  g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+
+  const PRIMER=0.17;    // how much of the template the barcoded primer covers
+  const FIT=R*0.72;     // no strand, and no wobble on one, leaves the envelope
+  const OFF=0.025;      // half the width of the duplex, in world units
+  const LOOSE=1, TIGHT=0.35;
+  const N=5;
+
+  /* LANES, NOT SCATTER. Placed at random, five transcripts of this length in a
+     compartment this small cross each other more often than not, and a crossing
+     reads as one strand rather than two. Stacked across the compartment with
+     only the angle jittered, they stay five. Each lane's length is the chord it
+     actually has, so the outer ones are shorter instead of hanging out. */
+  const strands=[];
+  for(let i=0;i<N;i++){
+    const v=(i-(N-1)/2)*(FIT*2*0.92/N);
+    const half=Math.sqrt(Math.max(0.02,FIT*FIT-v*v))*0.86;
+    const ang=(r()-0.5)*0.42;
+    strands.push({cx:n.x+(r()-0.5)*half*0.2, cy:n.y+v,
+      ca:Math.cos(ang), sa:Math.sin(ang), L:half*2*(0.82+r()*0.18),
+      amp:0.022+r()*0.012, k:1.4+r()*0.9, ph:r()*6.283,
+      rest:0.5+r()*2.4, t:r()*6});
+  }
+
+  /* a point on one strand: s runs 0..1 foot to head, off steps sideways onto
+     the other rail, tight damps the wobble where the duplex has stiffened */
+  const at=(st,s,off,tight)=>{
+    const t=(s-0.5)*st.L,
+          w=Math.sin(s*st.k*6.283+st.ph)*st.amp*tight+off;
+    return P(st.cx+t*st.ca-w*st.sa, st.cy+t*st.sa+w*st.ca, th);
+  };
+  const pathOf=(st,s0,s1,off,tight,steps)=>{
+    const p0=at(st,s0,off,tight);
+    if(s1-s0<0.006) return `M ${p0[0].toFixed(2)} ${p0[1].toFixed(2)}`;
+    let d="";
+    for(let i=0;i<=steps;i++){
+      const p=at(st,s0+(s1-s0)*i/steps,off,tight);
+      d+=(i?" L ":"M ")+p[0].toFixed(2)+" "+p[1].toFixed(2);
+    }
+    return d;
+  };
+
+  /* Built in the resting state — primer annealed, nothing copied yet — so
+     every element is born where it belongs and the ticker only moves it. */
+  strands.sort((a,b)=>(a.cx+a.cy)-(b.cx+b.cy)).forEach(st=>{
+    const stroke=(d,col,w,op)=>{
+      const e=el("path",{d,fill:"none",stroke:col,"stroke-width":w,
+        "stroke-opacity":op,"stroke-linecap":"round"});
+      g.appendChild(e); return e;
+    };
+    st.ss  =stroke(pathOf(st,PRIMER,1,0,LOOSE,16),"var(--fg)","1",".5");
+    st.tmpl=stroke(pathOf(st,0,PRIMER,-OFF,TIGHT,4),"var(--fg)","1",".75");
+    st.rungs=[];
+    for(let i=0;i<10;i++){
+      const s=0.03+i*(0.94/9);
+      const a=at(st,s,-OFF,TIGHT), b=at(st,s,OFF,TIGHT);
+      const e=el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--signal)","stroke-width":".6",
+        "stroke-opacity":s<=PRIMER?".5":"0"});
+      g.appendChild(e); st.rungs.push({node:e,s});
+    }
+    st.cdna  =stroke(pathOf(st,PRIMER,PRIMER,OFF,TIGHT,2),"var(--signal)","1.1",".9");
+    st.primer=stroke(pathOf(st,0,PRIMER,OFF,TIGHT,4),"var(--signal)","1.7","1");
+
+    /* the enzyme is placed by a transform, so it is drawn once in its own
+       coordinates and turned to lie along its strand */
+    const a=at(st,0.4,0,LOOSE), b=at(st,0.6,0,LOOSE);
+    st.deg=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+    const enz=el("g",{});
+    enz.appendChild(el("ellipse",{cx:"0",cy:"0",rx:"2.6",ry:"1.9",
+      fill:"var(--a-top)","fill-opacity":".95",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".8"}));
+    enz.appendChild(el("ellipse",{cx:"-.9",cy:"-1",rx:"1.4",ry:"1.1",
+      fill:"var(--a-left)","fill-opacity":".9"}));
+    g.appendChild(enz); st.enz=enz;
+  });
+
+  const LAND=0.5, SCAN=4.6, HOLD=1.0, REL=1.1;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const run=(dt,now)=>{
+    const T=now/1000;
+    strands.forEach(st=>{
+      st.t=(st.t+dt)%(LAND+SCAN+HOLD+REL+st.rest);
+      const t=st.t;
+      let u=PRIMER, s=PRIMER, op=0;
+      if(t<LAND)                      op=t/LAND;
+      else if(t<LAND+SCAN){ u=PRIMER+(1-PRIMER)*((t-LAND)/SCAN); s=u; op=1; }
+      else if(t<LAND+SCAN+HOLD){ u=1; s=1; op=Math.max(0,1-(t-LAND-SCAN)/(HOLD*0.45)); }
+      else if(t<LAND+SCAN+HOLD+REL)
+        u=PRIMER+(1-PRIMER)*(1-ease((t-LAND-SCAN-HOLD)/REL));
+
+      st.ss  .setAttribute("d",pathOf(st,u,1,0,LOOSE,16));
+      st.tmpl.setAttribute("d",pathOf(st,0,u,-OFF,TIGHT,12));
+      st.cdna.setAttribute("d",pathOf(st,PRIMER,u,OFF,TIGHT,12));
+      st.rungs.forEach(g2=>{
+        const on=g2.s<=u;
+        g2.node.setAttribute("stroke-opacity",on?".5":"0");
+        if(!on) return;
+        const a=at(st,g2.s,-OFF,TIGHT), b=at(st,g2.s,OFF,TIGHT);
+        g2.node.setAttribute("x1",a[0].toFixed(2)); g2.node.setAttribute("y1",a[1].toFixed(2));
+        g2.node.setAttribute("x2",b[0].toFixed(2)); g2.node.setAttribute("y2",b[1].toFixed(2));
+      });
+
+      /* it comes down onto the primer and lifts off the head, and while it is
+         working it never quite holds still */
+      const p=at(st,s,0,LOOSE), jig=Math.sin(T*9+st.ph)*0.45;
+      st.enz.setAttribute("transform",
+        `translate(${p[0].toFixed(2)},${(p[1]+jig-(1-op)*7).toFixed(2)}) rotate(${st.deg.toFixed(1)})`);
+      st.enz.setAttribute("opacity",op.toFixed(2));
+    });
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.reversetranscription = drawReverseTranscription;
