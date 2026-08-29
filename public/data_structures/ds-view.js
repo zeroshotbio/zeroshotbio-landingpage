@@ -450,7 +450,7 @@ function inspect(n) {
     if (sn.note) H.push(`<p class="note">${esc(sn.note)}</p>`);
   }
   if (n.kv && n.kv.length) {
-    H.push(`<h4>Read on 2026-08-24</h4>`);
+    H.push(`<h4>Read on 2026-08-29</h4>`);
     n.kv.forEach(([k, v]) => H.push(`<dl class="kv"><dt>${esc(k)}</dt><dd>${esc(v)}</dd></dl>`));
   }
   readEl.innerHTML = H.join("");
@@ -467,7 +467,7 @@ function overview() {
     `<p>${OVERVIEW.brief}</p>` +
     `<h4>How to read it</h4><p>${OVERVIEW.how}</p>` +
     `<h4>Where it stands</h4><p>${OVERVIEW.state}</p>` +
-    `<p class="note">Click any box for its own entry. Everything here was read from the live buckets and fresh clones on 2026-08-24, not from the READMEs.</p>`;
+    `<p class="note">Click any box for its own entry. Everything here was read from the live buckets and fresh clones on 2026-08-29, not from the READMEs.</p>`;
   readEl.scrollTop = 0;
 }
 

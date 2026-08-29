@@ -125,8 +125,16 @@ cost money. It is not a sample of the map; it *is* the map's example:
 - every transform repo has exactly **one** dataset module, `minifin/`
 - every command on the page (`fetch`, `process convert`, `process build`,
   `process all`, `publish`) is a MiniFin command
-- the release that does not exist is `minifin/v1/`
+- the releases that exist are `minifin/v1/`, `v2/` and `v3/` — the same
+  barcodes called three ways, published side by side, none superseding another
 - the notebook that has not landed is `notebooks/minifin/01_eda.ipynb`
+
+That third bullet read *"the release that does not exist is `minifin/v1/`"* until
+the fifth pass. It was written for the first pass, when that was the map's whole
+argument, and it survived the release landing on 2026-08-23 and two full re-reads
+afterwards — in this file, three lines above a heading that says to state the
+thread in two places. Prose in the handoff goes stale the same way prose in a
+panel does, and nothing checks it.
 
 The MegaFin deliveries in bronze are drawn at true area because 92.2% of a
 7 TiB bill is worth seeing. **They are not the thread**, and no repo on this
@@ -416,6 +424,95 @@ the two errors it did turn up were only findable by re-reading panels nobody had
 a reason to open. The pins are now a `pins` command in two repos — ask the
 machine — but the prose has no such check, and `check-fit.mjs` cannot read.
 
+
+## The state of the data — fifth pass, 2026-08-29. Both columns moved, and a gate had been closed for three days.
+
+```
+repos      re-pulled at
+             zsb-medallion 00b71e8 (unchanged)   zsb-bronze d595a82
+             zsb-silver    560d34a               zsb-gold   513ca22 (unchanged)
+buckets    aws s3 ls --recursive --summarize   on bronze and silver
+           aws s3api head-object               on all 8 bronze pins + all 3 silver releases
+```
+
+**The first read where both sides moved at once.** Three of the four previous
+passes found movement on one side only; the fourth found none. This one found
+two new releases on the left, 1,900 new lines on the right — and one claim that
+had been wrong since before the fourth pass.
+
+| Was on the map | Now |
+| --- | --- |
+| silver `82 obj · 16.91 GiB`, 1 versioned release | `86 · 19.82 GiB`, **three** — v1, v2, v3 |
+| `minifin/` tile 9 objects · 1.55 GiB | 13 objects · 4.45 GiB, **22.5% of the bucket** |
+| bronze `153 commits · 4,996 LOC` | `156 · 5,205` (2,792 in `minifin/`) |
+| silver `34 commits · 870 LOC`, "fetch is written, two gates left" | `38 · 2,552` — **771 lines of ported QC in `process/`** |
+| barcode-ranks `94,338 · jaccard 0.9827` | `94,087 · 0.9824` — the curve is now fit per slice, not per sample |
+| "two gates remain: the QC sign-off and the gold key convention" | **one.** The key convention was settled 2026-08-23 |
+| "every open pull request in the set is in zsb-silver" | all four repos have them — bronze 3, silver 5, gold 1, medallion 1 |
+| "thresholds come from Parse's recorded `settings.txt`" | **reversed.** Re-derived per sample; the recorded values are noise |
+| — | **New:** `build --policy` chooses the cell-calling policy; `.uns["called_overlap"]` measures the ones it cannot assert |
+
+**The finding that matters most is about this document, not the repos.** The
+gold object-key convention — `<dataset>/<recipe>/<version>/` — was written down
+on 2026-08-23 in zsb-gold's README, its AGENTS.md, and the docstring of the very
+stub this map drew as blocked. All of it at `513ca22`, **the commit the fourth
+pass read and cited**. The map carried that gate as open for two passes.
+
+The fourth pass's lesson was *when a finding is retired, grep the panel for its
+other half*. This is the sharper version of it: **a gate is a claim about a repo
+other than the one the panel is about, and re-reading the panel will never catch
+it.** `SPUB` and `GFETCH` both named that gate; both live in panels about
+zsb-silver and zsb-gold's *stubs*, and the answer was in zsb-gold's *prose*. When
+a panel says "blocked on X", go and read the repo X belongs to, not the panel.
+
+**The second finding is the founding one, inverted.** zsb-bronze's dataset README
+says `barcode-ranks` is "deliberately unpublished" and stops its version table at
+v2 — while `minifin/v3/` has been in the warehouse since 2026-08-28 21:09:52,
+published under exactly that policy, and recorded in the CHANGELOG committed in
+the same tree. Two documents in one commit disagreeing about a bucket. This map
+was built on a ledger that indexed a release nobody had uploaded; it now carries
+a README that denies one that exists. Open PR **#49** names the distinction the
+README was reaching for: *publication is not promotion*.
+
+**No shape changes this pass, and one was deliberately declined.** zsb-silver's
+`process` is 771 lines of real ported filters whose orchestrator still raises —
+which looks like it wants a fourth cell state. It does not get one. The existing
+scheme already says it exactly: **plate dashed means it raises; lamp filled means
+it has moved bytes.** `build_gold` raises, so the plate stays dashed, and the 771
+lines are a fact for the panel rather than for the mark. A state per situation is
+how a visual vocabulary stops being one. `DRAW.bay` also needed nothing — it
+takes an arbitrary `lines` array, so three releases render in the same three rows
+v1's three objects used to.
+
+**Two pieces of stale scaffolding found while working, both now fixed:**
+
+- **The read date was hardcoded in `ds-view.js`**, twice — the reader's `Read on`
+  heading and the overview footer. That is a fact living in a rendering-side file,
+  against the ownership table above. It has been updated, but the right fix is to
+  move it into `ds-data.js` next time somebody touches the reader; it will go
+  stale again exactly the same way.
+- **The "Please do not" note about treemap minimum area** describes `minifin/` as
+  "0.59% of its bucket and a two-pixel hairline at true area". That was true when
+  it was written and the tile is 22.5% now. **The rule still stands** — do not
+  floor tile area — but the example in it has outlived itself. Left as written,
+  flagged here, because the rule is right and the number was only ever the
+  illustration.
+
+**On running the checks.** The eleven pins (8 bronze + 3 silver) all matched, and
+none of it was run the intended way: there is no `uv` and no virtualenv on this
+instance, so `zsb-bronze minifin pins` and `zsb-silver minifin pins` do not start.
+The pins were read out of `fetch/manifest.py` and `minifin/release.py` and put to
+`head-object` directly. Same comparison, done by hand. **If the next reader has a
+working toolchain, run the commands and say so here** — the third pass recorded
+"the most perishable claims are now something CI can be asked", and that is true
+on a machine that can ask.
+
+`check-overlaps.mjs`, `check-fit.mjs` and `check-clicks.mjs` all pass. `check-fit`
+caught one real regression during this pass: `SPROC`'s note read "parts ported ·
+nothing orchestrates them" at 85% of the box against an 80% cap. It is "parts
+ported · nothing runs them" now. **The 80% cap earns its keep on exactly this
+kind of edit** — a note that grew by four words while nobody was looking at the
+box it lives in.
 
 ## The shape contract
 
