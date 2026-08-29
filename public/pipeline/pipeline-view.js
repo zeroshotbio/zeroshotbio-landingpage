@@ -767,7 +767,12 @@ function runTickers(dt,now){
     try{ TICKERS[i](dt,now,1); }
     catch(err){
       console.error(`pipeline: a shape's animation threw and was dropped — the map keeps running.`,err);
-      DROPPED.push({i,err:String((err&&err.message)||err)});
+      /* WHAT IT DIED ON, not just that it died. A ticker's inputs are dt, now
+         and the motion factor, and a shape that throws on frame 1 with a NaN dt
+         is a different bug from one that throws on frame 900 with good inputs.
+         Without these three the only evidence was a message and a line number,
+         and the first diagnosis off that evidence was wrong. */
+      DROPPED.push({i,err:String((err&&err.message)||err),dt,now,frames});
       TICKERS.splice(i,1); i--;
     }
   }
@@ -775,7 +780,25 @@ function runTickers(dt,now){
 /* started at the end of the file, once the camera exists */
 let frames=0, lastErr=null;
 function frame(now){
-  const dt=Math.min((now-last)/1000,.05); last=now; frames++;
+  /* dt IS CLAMPED AT ZERO, AND THAT IS NOT BELT AND BRACES.
+
+     requestAnimationFrame hands the callback the timestamp of the START OF THE
+     FRAME, and that instant can PRECEDE the performance.now() captured when the
+     loop was armed a moment earlier. So on the first frame `now - last` is
+     sometimes negative — about -5ms, on maybe one load in three.
+
+     A negative dt is not a small error, it is a sign error, and JS's % keeps
+     the sign of its dividend: a shape that advances `t=(t+dt)%LOOP` from zero
+     lands on t = -0.005, and Math.floor(-0.0005) is -1, so an index derived
+     from it is -1 rather than 0. bay[-1] is undefined, the ticker throws on
+     frame 1, and runTickers drops it — which is why the sequencer and the thaw
+     would simply never start on roughly every fourth refresh while everything
+     else on the map animated normally.
+
+     Clamping here fixes every shape at once and is the honest place for it:
+     time does not run backwards, so a negative dt means the clock reference is
+     wrong, not that the animation should rewind. */
+  const dt=Math.max(0,Math.min((now-last)/1000,.05)); last=now; frames++;
   /* NOTHING in here may stop the loop being scheduled again. A throw used to
      end the animation for the rest of the session, which is indistinguishable
      from a frozen map and impossible to get back without a refresh. */
