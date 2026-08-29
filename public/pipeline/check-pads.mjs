@@ -106,7 +106,11 @@ console.log('name   ', `ldx ${A.lx}->${B.lx}  ldy ${A.ly}->${B.ly}`);
 
 /* --- 4. and it saves --- */
 await p.locator('#btnSave').click(); await p.waitForTimeout(500);
-await p.locator('#svGo').click(); await p.waitForTimeout(1400);
+/* SAVE IS ONE CLICK NOW. It used to render a preview with a Confirm button in
+   it and nothing left the browser until that second click; the button saves
+   directly, and what it draws afterwards is a receipt. Clicking #svGo here is
+   clicking a button that no longer exists. */
+await p.waitForTimeout(1400);
 const off=(rec&&rec.offsets)||{};
 const o=off['band:1'];
 if(!o) fail('the pad was not saved: '+JSON.stringify(Object.keys(off)));

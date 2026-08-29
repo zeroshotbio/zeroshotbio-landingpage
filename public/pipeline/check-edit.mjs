@@ -127,7 +127,11 @@ if(!await p.evaluate(()=>!!NODES.find(n=>n.id==='c3').gone)) fail('Delete did no
 
 /* --- and it all saves --- */
 await p.locator('#btnSave').click(); await p.waitForTimeout(500);
-await p.locator('#svGo').click(); await p.waitForTimeout(1400);
+/* SAVE IS ONE CLICK NOW. It used to render a preview with a Confirm button in
+   it and nothing left the browser until that second click; the button saves
+   directly, and what it draws afterwards is a receipt. Clicking #svGo here is
+   clicking a button that no longer exists. */
+await p.waitForTimeout(1400);
 const off=(rec&&rec.offsets)||{};
 if(!off['c3'] || !off['c3'].del) fail('the deletion was not saved: '+JSON.stringify(Object.keys(off)));
 if(!off[RSZ] || !off[RSZ].dw || !off[RSZ].dh) fail('the resize was not saved: '+JSON.stringify(off[RSZ]));

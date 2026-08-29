@@ -2453,9 +2453,22 @@ feature("edit text", function(){
 
 /* ============================================================
    SAVE ALL CHANGES
-   Two steps on purpose. The first shows exactly what is about to become the
-   default and what it will look like in the file; the second commits it and
-   says so. Nothing reaches the shared copy without the second click.
+   ONE STEP. The button saves.
+
+   It used to be two: the first click rendered a preview into the reader with a
+   Confirm button under it, and nothing left the browser until that second
+   click. The preview is worth keeping and it is still shown — what it is NOT
+   worth is standing between somebody and the thing the button is named after.
+   A control called "Save all changes" that does not save is a control people
+   press twice by reflex and then wonder about.
+
+   WHAT REPLACES THE SECOND CLICK IS A CONFIRMATION THAT IS ACTUALLY CHECKED.
+   The old one appeared as soon as the POST resolved ok, which says the write
+   was accepted, not that it is what a reload will find. This one writes, then
+   READS THE RECORD BACK and compares the stamp before it says anything — so
+   "this is the default now, after a reload" is a statement about the store
+   rather than a hope about it. A write that lands and a read-back that
+   disagrees says so instead.
    ============================================================ */
 feature("saving", function(){
   const btnSave=document.getElementById("btnSave"), btnDrop=document.getElementById("btnDiscard");
@@ -2469,7 +2482,10 @@ feature("saving", function(){
   const countText=t=>Object.keys(t.nodes||{}).reduce((a,id)=>a+Object.keys(t.nodes[id]).length,0)
                     +Object.keys(t.bands||{}).length+Object.keys(t.overview||{}).length;
 
-  function panel(state){
+  /* THE RECEIPT. Only ever drawn after a save has landed, so it has one state
+     and no longer takes one — a `state` parameter with a single possible value
+     is an invitation to wonder what the other one did. */
+  function receipt(){
     const p=payload(), nMove=Object.keys(p.offsets).length, nWord=countText(p.text);
     pinned=null; current=null; paintIndex();
     /* SAVE RENDERS INTO THE READER, so the reader has to be up. With it folded
@@ -2483,47 +2499,67 @@ feature("saving", function(){
       `<div class="eyebrow">Save all changes</div>`+
       `<div class="title">${nMove} object${nMove===1?"":"s"} moved · `+
       `${nWord} string${nWord===1?"":"s"} rewritten</div>`+
-      `<div class="sub">${state==="done"
-        ? "confirmed — this is the default now, for every browser"
-        : "everything currently in force, not just this sitting · "+
-          "kept in this browser until you confirm"}</div>`+
-      (state==="done"
-        ? `<p class="savedone">Written to the shared copy. It survives a refresh, and anyone `+
-          `opening the page gets it. Steven bakes it into the data file from here so it lives `+
-          `in the repo rather than only in the store.</p>`
-        : `<div class="savebar"><button class="ctl go" id="svGo">Confirm and set as default</button>`+
-          `<button class="ctl" id="svNo">Not yet</button></div>`)+
+      `<div class="sub">saved — this is the default now, for every browser</div>`+
+      `<p class="savedone">Written to the shared copy and read back. It survives a refresh, `+
+      `and anyone opening the page gets it. Steven bakes it into the data file from here so `+
+      `it lives in the repo rather than only in the store.</p>`+
       (nMove?`<h4>Positions</h4><div class="snip">${esc(asSource(p.offsets,"OFFSETS"))}</div>`:"")+
       (nWord?`<h4>Wording</h4><div class="snip">${esc(asSource(p.text,"TEXT"))}</div>`:"")+
-      (!nMove&&!nWord?`<h4>Nothing to save</h4><p>No position and no wording differs from the file.</p>`:"")+
+
       `<h4>Note</h4><p>Positions are nudges relative to what the lane engine computed, never `+
       `absolute coordinates, so they survive a row being re-solved or a step being inserted.</p>`;
-    const go=document.getElementById("svGo"), no=document.getElementById("svNo");
-    if(go) go.onclick=confirmSave;
-    if(no) no.onclick=()=>{ renderOverview(); };
+    /* No Confirm button any more: by the time this panel is drawn the save has
+       already happened. It is a receipt — what was written, and the two blocks
+       to paste back into the data file so the layout lives in the repo rather
+       than only in the store. */
   }
 
+  /* Did the store actually take it? Read back and compare the stamp the write
+     returned. A POST that resolves ok has been ACCEPTED; only a read proves it
+     is what the next person to open the page will get. */
+  function verify(at){
+    if(typeof fetch!=="function") return Promise.resolve(false);
+    return fetch(EDIT_API,{cache:"no-store"}).then(r=>r.json())
+      .then(doc=>!!doc && doc.at===at).catch(()=>false);
+  }
+
+  let saving=false;
   function confirmSave(){
+    if(saving) return;
+    const p=payload();
+    if(!Object.keys(p.offsets).length && !countText(p.text)){
+      toast("Nothing to save — no position and no wording differs from the file.", false, 3400);
+      return;
+    }
+    saving=true;
+    const label=btnSave.textContent;
+    btnSave.textContent="Saving…"; btnSave.disabled=true;
     stash();                                   // this browser, immediately
-    const go=document.getElementById("svGo");
-    if(go){ go.textContent="Saving…"; go.disabled=true; }
     pushRemote().then(res=>{
-      if(res && res.ok){
-        adoptStamp(res.at);
-        dirty=false; syncSaveBar(); panel("done");
-        toast(mergeNote("Confirmed — saved as the new default. It will still be here after a refresh.",res),
-              false, res.kept?9000:6000);
-      }else{
-        panel("pending");
-        const why = res && res.error==="too_large" ? "too big for one record"
+      if(!(res && res.ok)){
+        const why = res && res.error==="too_large" ? "it is too big for one record"
           : res && res.error==="write_failed" ? "the shared store rejected the write"
           : "the shared store could not be reached";
-        toast("Kept in this browser only — "+why+".", true, 6000);
+        toast("NOT saved to the shared copy — "+why+". Your changes are still here in "+
+              "this browser, so nothing is lost; try again.", true, 8000);
+        return;
       }
+      adoptStamp(res.at);
+      dirty=false; syncSaveBar(); receipt();
+      return verify(res.at).then(ok=>{
+        toast(mergeNote(ok
+          ? "Saved. Read back from the shared copy and confirmed — this is the default now, "+
+            "for every browser, and it will still be here after a reload."
+          : "Saved, but the read-back did not match yet. It is very likely fine — the store is "+
+            "eventually consistent — but reload before trusting it.", res),
+          !ok, res.kept?9000:6500);
+      });
+    }).then(()=>{
+      saving=false; btnSave.textContent=label; btnSave.disabled=false;
     });
   }
 
-  btnSave.onclick=()=>panel("pending");
+  btnSave.onclick=confirmSave;
   btnDrop.onclick=()=>{
     if(!confirm("Throw away every change since the last confirmed save?")) return;
     try{ localStorage.removeItem(EDIT_KEY); localStorage.removeItem(MAP_NS+".offsets"); }catch(err){}

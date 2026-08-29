@@ -82,7 +82,11 @@ if(n!==0) fail(`Escape left ${n} chosen`);
 
 /* all three moves are saved, one offset each */
 await p.locator('#btnSave').click(); await p.waitForTimeout(500);
-await p.locator('#svGo').click(); await p.waitForTimeout(1500);
+/* SAVE IS ONE CLICK NOW. It used to render a preview with a Confirm button in
+   it and nothing left the browser until that second click; the button saves
+   directly, and what it draws afterwards is a receipt. Clicking #svGo here is
+   clicking a button that no longer exists. */
+await p.waitForTimeout(1500);
 const off=(rec&&rec.offsets)||{};
 IDS.forEach(i=>{ if(!off[i]) fail(`${i}'s move was not saved: ${JSON.stringify(Object.keys(off))}`); });
 console.log('saved:', JSON.stringify(Object.fromEntries(IDS.filter(i=>off[i]).map(i=>[i,off[i]]))));

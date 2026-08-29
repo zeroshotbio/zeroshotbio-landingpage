@@ -74,26 +74,34 @@ else {
   else console.log('text    ', `${NODE}: "${before}" -> "${after}"`);
 }
 
-/* ---- 3. it saves, and to THIS map's record -------------------------------
-   SAVE IS CLICKED WHILE THE MODE IS STILL ON. btnSave carries `edonly`, so it
-   is hidden the moment you leave an editor — leaving text mode first and then
-   reaching for it is a thirty-second timeout on an invisible button, which is
-   how this check failed the first time it ran. */
+/* ---- 3. one click saves, and it reaches THIS map's record ----------------
+   SAVE IS ONE STEP. It used to render a preview into the reader with a Confirm
+   button under it, and nothing left the browser until that second click — a
+   control called "Save all changes" that does not save is one people press
+   twice by reflex. Clicking #btnSave IS the save now, and what appears after
+   it is a receipt rather than a question. */
 hits.length = 0;
-/* SAVE IS TWO STEPS, and the second one is the one that writes. btnSave only
-   renders a confirmation into the READER — how many objects moved, how many
-   strings changed — and nothing leaves the browser until #svGo is pressed.
-   Clicking btnSave alone and asserting a POST is asserting the wrong half. */
-await p.locator('#btnSave').click(); await p.waitForTimeout(700);
-if (!(await p.locator('#svGo').count())) fail('Save did not offer a confirm button');
-else { await p.locator('#svGo').click(); await p.waitForTimeout(1500); }
+await p.locator('#btnSave').click();
+await p.waitForTimeout(2500);
+if (await p.locator('#svGo').count()) fail('the second-click Confirm button is still there');
 const posted = hits.filter(h => h.startsWith('POST'));
-if (!posted.length) fail('Save posted nothing');
+if (!posted.length) fail('one click on Save posted nothing');
 if (posted.some(h => h.includes('/api/pipeline_')))
   fail(`Save reached /pipeline's record: ${posted.join(', ')}`);
 if (!posted.some(h => h.includes('/api/molecular_edits')))
   fail(`Save did not reach this map's record: ${posted.join(', ')}`);
 else console.log('save    ', posted.join(', '));
+/* and the confirmation must be a real one: the page reads the record back
+   before it claims anything, so a GET has to follow the POST */
+if (!hits.some((h,i) => h.startsWith('GET') && h.includes('molecular_edits')
+                        && hits.slice(0,i).some(x => x.startsWith('POST'))))
+  fail('nothing was read back — the confirmation is a hope, not a check');
+const said = await p.evaluate(() => {
+  const t = document.querySelector('.toast'); return t ? t.textContent.trim() : '';
+});
+if (!/saved/i.test(said)) fail(`no confirmation appeared (toast said "${said}")`);
+else console.log('confirm ', '"' + said.slice(0, 76) + '…"');
+
 if (!record.text || !JSON.stringify(record.text).includes('REWORDED'))
   fail('the rename did not make it into the record');
 await p.locator('#btnText').click(); await p.waitForTimeout(300);
