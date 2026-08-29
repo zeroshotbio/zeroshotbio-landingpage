@@ -250,11 +250,31 @@
   /* Requests STACK. A drawing takes minutes, so the sane thing to do is fire off
      several and carry on — they queue on the instance and are drawn one at a
      time, and each one gets its own row here with its place in the queue. */
+  /* WIDE ENOUGH FOR ITS OWN SENTENCE. At 430px "drawing now — about four
+     minutes, plus two to go live" ran out of room and the end was clipped, and
+     the one thing a progress row exists to say is how long. */
+  /* A DEFINITE WIDTH, NOT A MAXIMUM. An absolutely positioned box sizes itself
+     shrink-to-fit, which measured the sentence on ONE line and then handed the
+     row a box a little narrower than the parts inside it — so the sentence
+     never wrapped and the button was pushed out of the right-hand edge. Given a
+     real width the text wraps and everything fits, which is what a max-width
+     was supposed to be doing and never was. */
   .works{position:absolute;left:14px;bottom:30px;z-index:40;display:flex;
-         flex-direction:column;gap:6px;max-width:min(430px,82%)}
+         flex-direction:column;gap:6px;width:min(660px,86%)}
   .work{display:flex;align-items:center;gap:9px;
         background:var(--panel);border:1px solid var(--signal);padding:7px 6px 7px 10px;
-        box-shadow:0 10px 26px rgba(0,0,0,.4);font-size:11px}
+        box-shadow:0 10px 26px rgba(0,0,0,.4);font-size:11px;line-height:1.45}
+  /* THE TEXT IS THE ONLY PART THAT MAY GROW OR WRAP, and it has to be named:
+     the number, the progress bar and the age are spans too, so a rule on
+     `.work > span` gives all four flex:1 and the row comes out as four equal
+     columns with the sentence squeezed into a quarter of it. A flex child also
+     will not shrink below its own content unless told it may, which is what
+     pushed the end of the sentence out of the box rather than wrapping it. */
+  .worktext{flex:1;min-width:0;overflow-wrap:anywhere}
+  /* and the fixed parts must not be squeezed to make room. A flex child shrinks
+     by default, so the button was compressed to a third of its own label and the
+     row reported itself as overflowing even though the sentence fitted. */
+  .work > .worknum,.work > .workbar,.work > .workage,.work > button{flex:none}
   .work.queued{border-color:var(--rule)}
   .work.ready{border-color:var(--fg)}
   .worknum{flex:none;min-width:17px;height:17px;display:grid;place-items:center;
@@ -323,6 +343,15 @@
          letter-spacing:.04em;max-width:min(520px,86%);text-align:center;
          box-shadow:0 10px 28px rgba(0,0,0,.4)}
   .toast.on{opacity:1;transform:translate(-50%,0)}
+  /* AND IT STANDS CLEAR OF WHATEVER IS ALREADY DOWN THERE. The toast, the queue
+     rows and the new-version bar are three siblings all pinned to the bottom of
+     the same box, so by default they land on top of each other — "Queued.
+     Drawing takes…" appeared directly over the row that was about to report the
+     drawing. The toast is the transient one, so it is the one that moves, and
+     it moves by a MEASURED amount rather than a guessed one: the stack grows a
+     row per request and wraps to two or three lines, so no fixed offset clears
+     it. --toast-lift is set from the real height in toast(). */
+  .toast{bottom:calc(26px + var(--toast-lift,0px))}
   .toast.warn{background:var(--drop);color:#fff}
   /* A change shipped while this page was open. Not a toast — it does not go
      away on a timer, because the page is now out of date until it is reloaded. */

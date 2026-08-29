@@ -1498,6 +1498,21 @@ const toastEl=document.getElementById("toast");
 let toastT=null;
 function toast(msg,warn,ms){
   if(!toastEl) return;
+  /* LIFT IT OVER WHATEVER IS ALREADY AT THE BOTTOM. The queue rows and the
+     new-version bar sit in the same corner of the same box, and both change
+     height — a row per request, wrapping to two or three lines each. A fixed
+     offset clears one of those situations and not the others, so the offset is
+     measured off the things themselves, every time the toast is raised. */
+  try{
+    let lift=0;
+    for(const sel of ["#works",".newver.on"]){
+      const e=document.querySelector(sel);
+      if(!e) continue;
+      const r=e.getBoundingClientRect();
+      if(r.height>0) lift=Math.max(lift, r.height+10);
+    }
+    toastEl.style.setProperty("--toast-lift", lift+"px");
+  }catch(err){}
   toastEl.textContent=msg;
   toastEl.classList.toggle("warn",!!warn);
   toastEl.classList.add("on");
@@ -2487,33 +2502,32 @@ feature("saving", function(){
   /* THE RECEIPT. Only ever drawn after a save has landed, so it has one state
      and no longer takes one — a `state` parameter with a single possible value
      is an invitation to wonder what the other one did. */
+  /* THE SAVE DOES NOT TAKE OVER THE READER ANY MORE.
+
+     It used to render a receipt into the right-hand panel: the counts, a
+     sentence about what had happened, and the two blocks to paste back into
+     the data file. That made sense while saving was two steps and the panel
+     was where the Confirm button lived — the panel WAS the interaction. With
+     one click and a confirmation that is checked against a read, the toast
+     already says the only thing a person needs at that moment, and throwing
+     away whatever they were reading to tell them again is the tool taking the
+     page away from them.
+
+     THE BLOCKS ARE NOT LOST, because they are the one thing here that is not
+     transient: they are how a layout stops living only in the store and starts
+     living in the repo. They go to the console, which is where somebody baking
+     them into the data file is working anyway. */
   function receipt(){
     const p=payload(), nMove=Object.keys(p.offsets).length, nWord=countText(p.text);
-    pinned=null; current=null; paintIndex();
-    /* SAVE RENDERS INTO THE READER, so the reader has to be up. With it folded
-       away, pressing Save all changes did nothing anybody could see: the
-       confirmation, the count, the block to paste and the Confirm button were
-       all drawn into a closed drawer. Whoever pressed it had no way to know
-       whether it had taken. It stays up afterwards — this is not a preview
-       that should fold itself back. */
-    revealReader(); keepReader();
-    read.innerHTML=
-      `<div class="eyebrow">Save all changes</div>`+
-      `<div class="title">${nMove} object${nMove===1?"":"s"} moved · `+
-      `${nWord} string${nWord===1?"":"s"} rewritten</div>`+
-      `<div class="sub">saved — this is the default now, for every browser</div>`+
-      `<p class="savedone">Written to the shared copy and read back. It survives a refresh, `+
-      `and anyone opening the page gets it. Steven bakes it into the data file from here so `+
-      `it lives in the repo rather than only in the store.</p>`+
-      (nMove?`<h4>Positions</h4><div class="snip">${esc(asSource(p.offsets,"OFFSETS"))}</div>`:"")+
-      (nWord?`<h4>Wording</h4><div class="snip">${esc(asSource(p.text,"TEXT"))}</div>`:"")+
-
-      `<h4>Note</h4><p>Positions are nudges relative to what the lane engine computed, never `+
-      `absolute coordinates, so they survive a row being re-solved or a step being inserted.</p>`;
-    /* No Confirm button any more: by the time this panel is drawn the save has
-       already happened. It is a receipt — what was written, and the two blocks
-       to paste back into the data file so the layout lives in the repo rather
-       than only in the store. */
+    if(typeof console==="undefined" || !console.log) return;
+    console.log(`%cSaved — ${nMove} object${nMove===1?"":"s"} moved, `+
+      `${nWord} string${nWord===1?"":"s"} rewritten. Paste these into `+
+      `${MAP_NS==="pipeline"?"pipeline-data.js":"this map's data file"} to bake them in.`,
+      "font-weight:bold");
+    if(nMove) console.log(asSource(p.offsets,"OFFSETS"));
+    if(nWord) console.log(asSource(p.text,"TEXT"));
+    console.log("Positions are nudges relative to what the lane engine computed, never "+
+      "absolute coordinates, so they survive a row being re-solved or a step being inserted.");
   }
 
   /* Did the store actually take it? Read back and compare the stamp the write

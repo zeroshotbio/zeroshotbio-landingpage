@@ -216,6 +216,8 @@ rather than opening it out into a redesign. Do the thing that was asked.
 
 VERIFY, in this order, and do not skip any of it
 ${map.verify.map((c) => "  " + c).join("\n")}
+If a harness cannot start because a module is missing: npm install --no-save playwright jsdom
+(install BOTH in one command — with --no-save, a second install replaces the first).
 Every one of those passes on a clean tree right now, so a failure is yours. If any
 fails, fix the cause; do not commit failing work and do not "fix" a check by
 loosening it. Nothing under public/ is compiled by Next, so npx next build cannot

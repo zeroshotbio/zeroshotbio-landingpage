@@ -733,16 +733,21 @@ console.log("done");
      It used to be two: a preview with a Confirm under it, and nothing left the
      browser until the second click. A control called "Save all changes" that
      does not save is one people press twice by reflex, so the button saves and
-     what it draws afterwards is a receipt. This asserts BOTH halves of that —
-     that no confirm button is offered, and that the receipt still carries the
-     two tables to paste back into the data file, which is the whole reason the
-     panel is worth drawing at all. */
+     what it says afterwards is a toast. This asserts both halves of that: no
+     confirm button, and NO TAKING OVER THE READER. Saving used to render its
+     receipt into the right-hand panel, which threw away whatever somebody was
+     reading in order to tell them something the toast already said. The blocks
+     to paste back into the data file go to the console now, where the person
+     baking them in is working anyway. */
+  const readBefore=read._html||"";
   save.fire("click",{});
   const shown=read._html||"";
-  console.log("save receipt — offers a confirm:", shown.includes("Confirm and set as default"),
-              " lists both tables:", shown.includes("const OFFSETS")&&shown.includes("const TEXT"));
+  console.log("save — offers a confirm:", shown.includes("Confirm and set as default"),
+              " took over the reader:", shown!==readBefore);
   if(shown.includes("Confirm and set as default"))
     console.log("FAIL — Save still asks for a second click");
+  if(shown!==readBefore)
+    console.log("FAIL — Save took over the reader panel");
   /* AND OFFLINE IT MUST NOT CLAIM SUCCESS. This harness has no network, so the
      write cannot land — the receipt is deliberately NOT drawn in that case, and
      what the person gets instead is a warning that says the work is still in
