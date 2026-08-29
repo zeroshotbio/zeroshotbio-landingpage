@@ -39,6 +39,11 @@ const val = (n, d) => { const i = argv.indexOf(n); return i >= 0 ? argv[i + 1] :
 
 const ONCE = flag("--once");
 const DRY = flag("--dry");
+/* PRINT IS NOT DRY. --dry runs the whole handler and marks the prompt dropped,
+   which is a destructive way to ask "what would you send?" — it cost somebody's
+   request once. --print reads the queue, prints the task for the first thing
+   waiting, and touches nothing. */
+const PRINT = flag("--print");
 const EVERY = Math.max(5, Number(val("--every", 10))) * 1000;
 
 const BASE = process.env.BASE || "https://www.zeroshot.bio";
@@ -129,15 +134,27 @@ function sharers(shape) {
   const out = [];
   for (const m of MAPS_ALL) {
     let src = ""; try { src = readFileSync(path.join(REPO, m.data), "utf8"); } catch { continue; }
-    const re = new RegExp('\\{id:"([^"]+)"[^\\n]*[\\s\\S]{0,400}?shape:"' + shape + '"', "g");
-    let mm; while ((mm = re.exec(src))) out.push(m.id + ":" + mm[1]);
+    /* ONE RECORD AT A TIME. A single regex over the whole file walks straight
+       past the end of a record and pairs one node's id with the next node's
+       shape — it reported the three rounds of barcoding as "R1p, B1, B2", which
+       are the pool-and-splits between them. Records start at column 0 with
+       {id:", so split on that and ask each one what shape it wears. */
+    for (const rec of src.split(/\n(?=\{id:")/)) {
+      const id = /^\{id:"([^"]+)"/.exec(rec);
+      if (id && new RegExp('shape:"' + shape + '"').test(rec.split(/\n\}/)[0]))
+        out.push(m.id + ":" + id[1]);
+    }
   }
   return out;
 }
 
 function task(p, map) {
   const t = p.target;
-  const also = t ? sharers(t.shape).filter((x) => !x.endsWith(":" + t.id)) : [];
+  /* qualified by map, because the same id exists on both — /pipeline's R1p and
+     the bench's R1p are two different nodes wearing one shape, and an agent told
+     to leave "R1p" alone would not know which. */
+  const me = map.id + ":" + (t ? t.id : "");
+  const also = t ? sharers(t.shape).filter((x) => x !== me) : [];
   return `A request has come in from the ${"/" + map.id} map's own "Edit visual" button. Carry it out.
 
 THE REQUEST
@@ -147,8 +164,8 @@ ${t ? `THE TARGET
 The person had "${t.key} · ${t.name}" selected — node id ${t.id}, currently drawn by
 DRAW.${t.shape}.
 ${also.length ? `
-DO NOT EDIT DRAW.${t.shape}. ${also.length + 1} nodes wear that shape — ${[t.id].concat(
-  also.map((x) => x.split(":")[1])).join(", ")} — so rewriting it changes all of them,
+DO NOT EDIT DRAW.${t.shape}. ${also.length + 1} nodes wear that shape — ${[map.id + ":" + t.id].concat(also).join(", ")}
+— so rewriting it changes every one of them,
 and the request is about one. Write a NEW shape function instead and point this one
 node at it:
   1. add drawSomething(g, n) to public/pipeline/pipeline-shapes.js and register it
@@ -339,7 +356,19 @@ async function handle(map, p) {
   await move(map, p.id, "done", subject);
 }
 
-async function tick() { for (const map of MAPS) await tickOne(map); }
+async function tick() {
+  if (PRINT) {
+    for (const map of MAPS) {
+      let rows = []; try { rows = (await api(map)).prompts || []; } catch { continue; }
+      const p = rows.filter((r) => r.status === "queued").sort((a, b) => a.at - b.at)[0];
+      if (!p) { console.log(`\n=== ${map.id}: nothing queued ===`); continue; }
+      console.log(`\n=== ${map.id} · ${p.id} · ${p.target ? p.target.key + " " + p.target.name : "no target"} ===\n`);
+      console.log(task(p, map));
+    }
+    return;
+  }
+  for (const map of MAPS) await tickOne(map);
+}
 async function tickOne(map) {
   let rows;
   try { rows = (await api(map)).prompts || []; }
