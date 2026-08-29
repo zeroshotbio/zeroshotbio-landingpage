@@ -207,6 +207,18 @@ RULES, all of them load-bearing
   with no cx/cy (or points, or x/y) sits at the SVG origin, and the selection
   halo is a CSS filter whose region is the group's bounding box — so one loose
   circle stretches the halo across the map. validate.js fails on this.
+- EVERY DIMENSION A SHAPE DRAWS MUST BE READ OFF n.w, n.d AND n.h. Not a world
+  constant that happens to look right beside them: write n.x + n.w*0.5, never
+  n.x + 0.30. A resize is the one edit that redraws a shape, so a hardcoded
+  number draws correctly at exactly the size the node is authored and comes
+  apart the moment somebody drags a corner — the body grows and the part on
+  constants stays put, at its old size, in its old place. That shipped once and
+  was reported as "the vial didn't move and the pipette didn't grow". If part of
+  the shape is authored in screen pixels (a glyph, a tip, a needle), it cannot
+  scale by reading w, so scale it by being scaled: put it in a group carrying
+  scale(n.w / <the width it was drawn for>). validate.js draws every node at its
+  own size and again at double and fails any shape whose points come out at
+  identical coordinates both times.
 - Positions are world units. P(x, y, z) projects them. S = 42 px per unit.
 - Keep the existing comment voice: explain why, not what.
 

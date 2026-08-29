@@ -30,16 +30,16 @@ const b=await chromium.launch({args:['--no-sandbox']});
 const p=await b.newPage({viewport:{width:1700,height:1000}});
 const errs=[]; p.on('pageerror',e=>errs.push(e.message));
 let rec=null, at=0;
-await p.route('**/api/pipeline_edits',r=>{
+await p.route('**/api/molecular_edits',r=>{
   if(r.request().method()==='POST'){ rec=JSON.parse(r.request().postData()||'{}'); at+=1000;
     return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({ok:true,at})}); }
   return r.fulfill({status:200,contentType:'application/json',body:JSON.stringify({offsets:null,text:null,at:null})});});
-await p.route('**/api/pipeline_prompts*',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
+await p.route('**/api/molecular_prompts*',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
 /* THE URL IS AN ARGUMENT, like every other check beside this one. It was
    hardcoded to production, which means it tested the deployed page and quietly
    ignored whatever was on disk — a check that cannot see your change is a
    check that passes for the wrong reason. Production stays the default. */
-const url = process.argv[2] || 'https://www.zeroshot.bio/pipeline';
+const url = process.argv[2] || 'https://www.zeroshot.bio/molecular_pipe';
 await p.goto(url,{waitUntil:'networkidle'}); await p.waitForTimeout(3200);
 let bad=0; const fail=m=>{bad++;console.log('  FAIL '+m);};
 await p.locator('#btnEdit').click(); await p.waitForTimeout(600);
@@ -95,6 +95,49 @@ if((await rszSize(RSZ))[2]<=rs1[2]) fail('dragging the height handle up did not 
 if(await p.evaluate(()=>TICKERS.length)!==tick0)
   fail("a resize leaked a ticker — the redraw did not remove the shape's old one");
 console.log(`resize     ${RSZ} ${rs0.join(' ')} -> ${(await rszSize(RSZ)).join(' ')}`);
+
+/* --- and the WHOLE drawing follows the resize, not just the box -----------
+
+   The resize above proves w, d and h change and that the object does not drift.
+   It does not prove the drawing kept up, and that is the failure that was
+   actually reported: the plate grew, the tube stayed exactly where it was at
+   exactly its old size, and the pipette working it never changed. The node
+   resized perfectly the entire time.
+
+   So B1 is widened hard and the SHAPE GROUP's box is measured — nodeEls, not
+   the label, which is a text box that never changes size whatever the node
+   does. What is asserted is the box's HEIGHT, because on this shape the height
+   is made of the parts that were pinned: the tube standing beside the plate and
+   the tip above it. Measured on the shipped bug the height grew 1.42x while the
+   node's width grew 4.2x; with the geometry read off n.w/n.d/n.h it grows 2.9x.
+   The bar sits at 2x, well clear of both. */
+const GRW='B1';
+const grwBox=()=>p.evaluate(i=>{const r=nodeEls[i].getBBox();
+  return {w:+r.width.toFixed(1), h:+r.height.toFixed(1)};},GRW);
+const grwCorner=(k)=>p.evaluate(([i,kk])=>{
+  const n=NODES.find(m=>m.id===i), hw=n.w/2, hd=n.d/2, h=topOf(n);
+  const t=kk===4?P(n.x,n.y,h)
+    :P(n.x+((kk===1||kk===2)?hw:-hw), n.y+((kk===2||kk===3)?hd:-hd), h);
+  const m=document.querySelector('#svg > g').getScreenCTM();
+  return {x:m.a*t[0]+m.c*t[1]+m.e, y:m.b*t[0]+m.d*t[1]+m.f};},[GRW,k]);
+const grwW=()=>p.evaluate(i=>NODES.find(m=>m.id===i).w,GRW);
+
+let gp=await grwCorner(4);
+await p.mouse.click(gp.x,gp.y); await p.waitForTimeout(120);
+await p.mouse.click(gp.x,gp.y); await p.waitForTimeout(400);
+const gw0=await grwW(), gb0=await grwBox();
+gp=await grwCorner(2);
+await p.mouse.move(gp.x,gp.y); await p.mouse.down();
+await p.mouse.move(gp.x+60,gp.y+34,{steps:16}); await p.mouse.up();
+await p.waitForTimeout(600);
+const gw1=await grwW(), gb1=await grwBox();
+const nodeGrew=gw1/gw0, drawGrew=gb1.h/gb0.h;
+if(nodeGrew<2) fail(`the drag did not widen ${GRW} enough to tell (${nodeGrew.toFixed(2)}x)`);
+else if(drawGrew<2)
+  fail(`${GRW} resized but its DRAWING did not: the node widened ${nodeGrew.toFixed(2)}x and `+
+       `the drawn box grew ${drawGrew.toFixed(2)}x in height — part of the shape is on world `+
+       `constants instead of n.w/n.d/n.h and stayed at its old size in its old place`);
+console.log(`scaling    ${GRW} widened ${nodeGrew.toFixed(2)}x, drawing grew ${drawGrew.toFixed(2)}x`);
 
 /* ---- THE FLOATING ANNOTATIONS ARE NOT ON THIS PAGE ----------------------
    /pipeline's copy of this check drags the four cull annotations and asserts

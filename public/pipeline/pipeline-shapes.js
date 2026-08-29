@@ -2257,7 +2257,7 @@ DRAW.reversetranscription = drawReverseTranscription;
    ------------------------------------------------------------------ */
 function drawPoolSplit(g,n){
   const th=n.h;
-  const plate={x:n.x-0.05, y:n.y-0.15, w:n.w*1.6, d:n.d*1.1};
+  const plate={x:n.x-n.w*0.0833, y:n.y-n.d*0.25, w:n.w*1.6, d:n.d*1.1};
   plateSlab(g,plate,th,SKIN.tile,1);
 
   /* plateWells runs row-major, so the sweep order below is the order a hand
@@ -2274,8 +2274,19 @@ function drawPoolSplit(g,n){
   /* THE TUBE, front-left of the plate. Front, because that is floor nothing
      else on the lane is standing on: the stations either side sit at the same
      y, so anything moved forward moves down the screen and clear of both. */
-  const tx=n.x+0.30, ty=n.y+0.86, TR=0.155, IR=TR*0.88, BR=TR*0.34,
-        ZC=0.30, ZT=0.80;
+  /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
+     These were absolute: the tube stood at n.x+0.30, n.y+0.86 with a radius of
+     0.155 and a rim at z 0.80. That draws correctly at the size the node
+     happens to be authored, and it is wrong the moment anybody resizes it —
+     the plate grows, the tube stays exactly where it was and exactly as big,
+     and the two come apart. A shape has to read w, d and h at draw time,
+     because those are what a resize changes and a redraw is the only reason
+     the shape is being run again.
+     The ratios below are the numbers that were here, divided by the size this
+     was drawn at (w 0.6, d 0.6, h 0.3), so nothing moves at that size. */
+  const tx=n.x+n.w*0.50, ty=n.y+n.d*1.4333,
+        TR=n.w*0.2583, IR=TR*0.88, BR=TR*0.34,
+        ZC=n.h*1.0, ZT=n.h*2.6667;
   const rim  =ellipseAt(tx,ty,ZT,TR),
         sh   =ellipseAt(tx,ty,ZC,TR),
         shIn =ellipseAt(tx,ty,ZC,IR),
@@ -2297,7 +2308,7 @@ function drawPoolSplit(g,n){
     fill:"var(--fg)","fill-opacity":"0"});
   g.appendChild(men);
 
-  const ZMAX=ZT-0.13;                       // it never fills to the rim
+  const ZMAX=ZT-n.h*0.4333;                 // it never fills to the rim
   let surfY=base.y;
   const setLevel=(f,band,fresh)=>{
     const z=Math.max(0.0005,f*ZMAX);
@@ -2334,7 +2345,13 @@ function drawPoolSplit(g,n){
   /* the tip, same plastic as the one that arrays embryos on the row above */
   const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
               "stroke-width":".8","stroke-opacity":".85"};
-  const pip=el("g",{}), tilt=el("g",{transform:"rotate(-15)"});
+  /* THE TIP IS DRAWN IN SCREEN PIXELS, so it cannot scale by reading w — it
+     scales by being scaled. SC is the node's size against the size this glyph
+     was drawn for, which is 1 at the authored width and grows with the object
+     like everything else. Without it the plate doubles and the tip working it
+     stays the same size, which is what "the pipette didn't grow" was. */
+  const SC=n.w/0.6;
+  const pip=el("g",{}), tilt=el("g",{transform:`rotate(-15) scale(${SC.toFixed(3)})`});
   tilt.appendChild(el("path",{d:"M -.8 -1.5 L .8 -1.5 L 2.2 -10 L -2.2 -10 Z", ...skin}));
   tilt.appendChild(el("path",{d:"M -2.2 -10 L 2.2 -10 L 1.7 -30 L -1.7 -30 Z", ...skin}));
   tilt.appendChild(el("path",{d:"M -3.4 -30 L 3.4 -30 L 2.8 -42 L -2.8 -42 Z", ...skin}));
@@ -2346,9 +2363,9 @@ function drawPoolSplit(g,n){
   /* 0.52 s a well is 25 s a plate, which is fast for a bench and slow enough
      to watch one transfer happen. Any quicker and the tip blurs into a hedge. */
   const TRIP=0.52, GO=0.19, ASP=0.07, BACK=0.19, DIS=TRIP-GO-ASP-BACK;
-  const SWEEP=wells.length*TRIP, HOLD=2.4, LIFT=15;
+  const SWEEP=wells.length*TRIP, HOLD=2.4, LIFT=15*SC;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const mouth=[rim.x, rim.y-3];
+  const mouth=[rim.x, rim.y-3*SC];
   let t=0, resting=0, shown=0;
   const place=(x,y)=>pip.setAttribute("transform",
     `translate(${x.toFixed(1)},${y.toFixed(1)})`);

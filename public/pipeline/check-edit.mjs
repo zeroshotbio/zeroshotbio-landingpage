@@ -90,10 +90,22 @@ const sizersOn = async () => p.evaluate(([id]) => {
   if (s.n !== 5) fail(`picking a node did not put five resize handles on it (${s.n})`);
   else if (s.on < 5) fail(`the resize handles did not move onto the picked node (${s.on} of 5 are near it)`);
   else console.log('resize  ', `double-click put all five handles on ${RSZ}`); }
+
+/* AND THEY MUST STILL BE ON IT AFTER A DRAG. A redraw renders the shape from
+   n.x, while the group already carries a translate for however far the node has
+   been dragged — so a resize used to apply the move twice and the object slid
+   out from under its own handles. The handles do not follow: they live in the
+   world layer and are placed from the node's true position. Assert they stay
+   together THROUGH the drag, not just when it is picked. */
+const stillOn = async (label) => {
+  const s = await sizersOn();
+  if (s.on < 5) fail(`${label}: the object and its handles came apart (${s.on} of 5 still on it)`);
+};
 const rs0=await rszSize(RSZ), rfar0=await rszCorner(RSZ,0);
 rp=await rszCorner(RSZ,2);
 await p.mouse.move(rp.x,rp.y); await p.mouse.down();
 await p.mouse.move(rp.x+70,rp.y+40,{steps:14}); await p.mouse.up(); await p.waitForTimeout(350);
+await stillOn('after a corner drag');
 const rs1=await rszSize(RSZ);
 if(rs1[0]<=rs0[0]) fail(`dragging a corner out did not widen it (${rs0[0]} -> ${rs1[0]})`);
 const rfar1=await rszCorner(RSZ,0);

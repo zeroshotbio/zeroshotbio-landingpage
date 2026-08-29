@@ -260,6 +260,117 @@ const placed = (e) => {
   if (p !== undefined && (!p.trim() || /^0[ ,]0$/.test(p.trim()))) return false;
   return true;
 };
+/* ---- A SHAPE MUST SCALE WITH ITS NODE -------------------------------------
+   w, d and h are read at DRAW time and a resize is the one edit that redraws,
+   so a shape that hardcodes a world constant draws correctly at the size it was
+   authored and comes apart the moment anybody drags a corner: the plate grows
+   and the tube beside it stays exactly where it was and exactly as big. That is
+   not hypothetical — it shipped, and it was reported as "the vial didn't move
+   and the pipette didn't grow".
+
+   So each shape is drawn twice, once at its authored size and once at double,
+   and what is measured is the spread of the coordinates it emits. A shape that
+   scales grows its spread; one built on constants barely moves. The threshold
+   is deliberately loose — 1.4x for a 2x node — because plenty of shapes have
+   parts that legitimately do not scale (a stroke width, a fixed label) and the
+   failure being caught here is a shape that scarcely moves at all. */
+/* TRANSFORMS HAVE TO BE COMPOSED, not ignored. Half this map's detail is drawn
+   in unit space inside a transform — the roof charts are a single matrix(), the
+   pipette tip is a rotate() and a scale() — so reading the raw attributes says
+   those parts never move at any size, and every one of them reads as a failure.
+   Measuring raw attributes flagged 21 shapes here, nearly all of them fine.
+   So each node is walked with its parent transform carried down. */
+const MUL = (m, t) => [m[0]*t[0]+m[2]*t[1], m[1]*t[0]+m[3]*t[1],
+                       m[0]*t[2]+m[2]*t[3], m[1]*t[2]+m[3]*t[3],
+                       m[0]*t[4]+m[2]*t[5]+m[4], m[1]*t[4]+m[3]*t[5]+m[5]];
+const parseT = (str) => {
+  let m = [1,0,0,1,0,0];
+  for (const [, fn, argstr] of String(str).matchAll(/(\w+)\s*\(([^)]*)\)/g)) {
+    const v = (argstr.match(/-?\d+(?:\.\d+)?(?:e-?\d+)?/g) || []).map(Number);
+    if (fn === "matrix" && v.length >= 6) m = MUL(m, v);
+    else if (fn === "translate") m = MUL(m, [1,0,0,1, v[0]||0, v[1]||0]);
+    else if (fn === "scale") m = MUL(m, [v[0]||1, 0, 0, v.length>1?v[1]:(v[0]||1), 0, 0]);
+    else if (fn === "rotate") { const r = (v[0]||0)*Math.PI/180, c = Math.cos(r), s2 = Math.sin(r);
+      if (v.length >= 3) m = MUL(m, [1,0,0,1, v[1], v[2]]);
+      m = MUL(m, [c, s2, -s2, c, 0, 0]);
+      if (v.length >= 3) m = MUL(m, [1,0,0,1, -v[1], -v[2]]); }
+  }
+  return m;
+};
+const pointsOf = (root) => {
+  const pts = [];
+  const num = (v) => (String(v).match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+  const put = (m, x, y) => pts.push([m[0]*x + m[2]*y + m[4], m[1]*x + m[3]*y + m[5]]);
+  (function walk(e, m){
+    for (const k of e.kids || []) {
+      const a = k.attrs, km = a.transform ? MUL(m, parseT(a.transform)) : m;
+      if (a.points || a.d) { const v = num(a.points || a.d);
+        for (let i = 0; i + 1 < v.length; i += 2) put(km, v[i], v[i+1]); }
+      for (const [ax, ay] of [["cx","cy"],["x","y"],["x1","y1"],["x2","y2"]])
+        if (a[ax] !== undefined && a[ay] !== undefined) put(km, +a[ax], +a[ay]);
+      walk(k, km);
+    }
+  })(root, [1,0,0,1,0,0]);
+  return pts;
+};
+const spreadOf = (root) => {
+  const xs = [], ys = [];
+  const num = (v) => (String(v).match(/-?\d+(?:\.\d+)?/g) || []).map(Number);
+  const put = (m, x, y) => { xs.push(m[0]*x + m[2]*y + m[4]); ys.push(m[1]*x + m[3]*y + m[5]); };
+  (function walk(e, m){
+    for (const k of e.kids || []) {
+      const a = k.attrs, km = a.transform ? MUL(m, parseT(a.transform)) : m;
+      if (a.points || a.d) { const v = num(a.points || a.d);
+        for (let i = 0; i + 1 < v.length; i += 2) put(km, v[i], v[i+1]); }
+      for (const [ax, ay] of [["cx","cy"],["x","y"],["x1","y1"],["x2","y2"]])
+        if (a[ax] !== undefined && a[ay] !== undefined) put(km, +a[ax], +a[ay]);
+      walk(k, km);
+    }
+  })(root, [1,0,0,1,0,0]);
+  if (xs.length < 2) return 0;
+  return Math.max(...xs) - Math.min(...xs) + Math.max(...ys) - Math.min(...ys);
+};
+/* THESE ELEVEN ALREADY DID NOT SCALE when this check was written. They are a
+   BASELINE, not an exemption: recorded so a new offender fails loudly instead
+   of disappearing into a list that is red anyway, which is how a gate stops
+   being read. Every one of them will misbehave if it is resized in Edit
+   positions — the drawing keeps part of itself where it was. Delete a name from
+   this list the moment its shape is fixed; the check will then hold it. The
+   roofs (c1..c5) live in the shared culls-draw.js, so fixing those touches
+   /bioinformatics_pipe too and wants its own pass. */
+const KNOWN_UNSCALING = new Set(["A7","THW","E2","E3","E4","E5","c1","c3","c4","c5","KAS"]);
+NODES.filter(n => DRAW[n.shape] && n.w && n.d && !KNOWN_UNSCALING.has(n.id)).forEach(n => {
+  const draw = (mul) => {
+    const k = { ...n, w: n.w*mul, d: n.d*mul, h: (n.h||0.1)*mul };
+    const root = fakeEl("g");
+    try { DRAW[n.shape](root, k); if (typeof G.groundLoose === "function") G.groundLoose(root, k); }
+    catch { return null; }
+    return { spread: spreadOf(root), pts: pointsOf(root) };
+  };
+  const one = draw(1), two = draw(2);
+  if (!one || !two) return;
+  const grew = two.spread / one.spread;
+  /* THE SPREAD RATIO ALONE IS TOO COARSE and it let the reported bug through.
+     poolsplit's plate scaled and its tube did not; the plate is the big part,
+     so the overall drawing still nearly doubled and the check passed while the
+     tube sat visibly detached. What identifies a pinned part is not that the
+     shape grew too little — it is that some points came out at LITERALLY the
+     same coordinates at both sizes. Nothing that reads w, d or h can do that. */
+  const A = one.pts, B = two.pts;
+  let pinned = 0;
+  if (A.length === B.length) for (let i = 0; i < A.length; i++)
+    if (Math.abs(A[i][0]-B[i][0]) < 1e-6 && Math.abs(A[i][1]-B[i][1]) < 1e-6) pinned++;
+  const pinFrac = A.length === B.length && A.length ? pinned / A.length : 0;
+  if (pinFrac > 0.04)
+    fail.push(`${n.id} (${n.shape}): ${(pinFrac*100).toFixed(0)}% of its points drew at ` +
+      `IDENTICAL coordinates at both sizes (${pinned} of ${A.length}) — that part is on ` +
+      `world constants, not on n.w/n.d/n.h, and a resize leaves it behind.`);
+  else if (grew < 1.4)
+    fail.push(`${n.id} (${n.shape}): does not scale — doubling w, d and h grew the ` +
+      `drawing ${grew.toFixed(2)}x. Its geometry is hardcoded rather than read off ` +
+      `n.w/n.d/n.h, so a resize moves the box and leaves the drawing behind.`);
+});
+
 CHECK_PLACEMENT.forEach(([n, root]) => {
   const loose = [];
   (function walk(e){ (e.kids || []).forEach(c => { if (!placed(c)) loose.push(c.tag); walk(c); }); })(root);

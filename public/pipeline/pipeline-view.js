@@ -1722,6 +1722,26 @@ feature("edit positions", function(){
   function redrawNode(n){
     const g=nodeEls[n.id];
     if(!g || !DRAW[n.shape]) return;
+    /* ---- DRAW AT THE BASE, NOT AT THE CURRENT POSITION ---------------------
+       Every drag on this map is a TRANSLATE on a group that was drawn once, and
+       `_px`/`_py` is where that drawing sits. reposition() then shifts it by
+       `n.x - n._px`, which is also exactly how the save collects the offset.
+
+       So a redraw that renders the shape at n.x gets the move applied TWICE:
+       once by the drawing, once by the translate that is still on the group.
+       The object slides away from itself by however far it has been dragged —
+       and the resize handles do not follow, because they live in `world` and
+       are placed from the node's true position. That is the "the handles jump
+       somewhere else the moment I use them" report, and it happens on the very
+       first resize of an untouched node too, because a corner drag moves the
+       centre by half the growth.
+
+       Fixed by drawing where the group thinks it is. x and y are put back
+       before reposition(), which needs the real ones, and in a finally so a
+       shape that throws cannot leave the node's coordinates lying. */
+    const lx=n.x, ly=n.y;
+    n.x=n._px; n.y=n._py;
+    try{
     if(n._ticks) n._ticks.forEach(fn=>{ const i=TICKERS.indexOf(fn); if(i>=0) TICKERS.splice(i,1); });
     const before=TICKERS.length;
     while(g.firstChild) g.removeChild(g.firstChild);
@@ -1737,6 +1757,7 @@ feature("edit positions", function(){
     }
     const L=labelEls[n.id];
     if(L) L.dataset.base=labelBase(n);
+    } finally { n.x=lx; n.y=ly; }
     reposition(n);
   }
 
