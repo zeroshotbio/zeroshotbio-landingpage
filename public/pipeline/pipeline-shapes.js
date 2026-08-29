@@ -2446,12 +2446,22 @@ DRAW.ligation = drawLigation;
    sweeping it: a tip working A1, A2, A3 down a fresh plate would draw
    the opposite of a randomisation.
 
-   THE PACING IS DELIBERATELY UNEVEN. Half a second a well is twenty-five
-   seconds a plate, which is the honest bench number and far too long to
-   watch — and it is only the pooling half. So the first eight wells run
-   at bench speed, long enough to see one transfer happen, and the rest
-   accelerate into a run that clears the plate in about two seconds. That
-   is what buys the time for the split.
+   THE PACING IS DELIBERATELY UNEVEN, BUT IT HAS A FLOOR. Half a second a
+   well is twenty-five seconds a plate, which is the honest bench number
+   and far too long to watch — and it is only the pooling half. So the
+   first row runs at bench speed, long enough to see one transfer happen,
+   and the rest accelerate. What they no longer do is accelerate without
+   limit: the run-up used to bottom out around thirty trips a second,
+   which is one frame each, and a tip that moves a plate's width in a
+   frame is not a tip any more, it is a flicker. The floor under the
+   run-up holds the tail at roughly ten wells a second on both halves —
+   still a rush, still short, but a rush you can follow.
+
+   BETWEEN THE HALVES THE TUBE IS SWIRLED. Forty-eight wells go in as
+   four colours and come out as one grey, and mixing is the step that
+   makes that true; a tube that just stands there full asserts the pooling
+   rather than shows it. It leans about its own foot the way a hand rocks
+   a conical, and the surface rides the wall a beat behind the lean.
 
    The plates are drawn wider than the node's own 0.6 footprint: forty-
    eight wells at that size would be a smear of plastic with no wells in
@@ -2494,10 +2504,18 @@ function drawPoolSplit(g,n){
      length, a short cone under it, a threaded collar at the top and a small
      flat foot instead of a point — a tube that tapers to nothing has to be
      drawn either balancing on its tip or half-buried in a rack, and a rack
-     would hide the first ten transfers, which are the ones worth seeing. */
+     would hide the first ten transfers, which are the ones worth seeing.
+     IT STANDS TWICE AS TALL AS IT DID, at the same width. A 15 ml conical is
+     a long thin thing and the old one read as a stubby vial; the height is
+     also what the rising column needs, because forty-eight transfers into a
+     short tube is a level that barely moves per trip. Everything below is a
+     multiple of n.h, so the whole tube doubles together with a resize. */
   const tx=n.x-n.w*0.40, ty=n.y+n.d*0.50,
         TR=n.w*0.20, IR=TR*0.88, BR=TR*0.30, CR=TR*1.16,
-        ZC=n.h*1.0, ZN=n.h*3.95, ZT=n.h*4.2;
+        ZC=n.h*2.0, ZN=n.h*7.9, ZT=n.h*8.4;
+  /* the whole tube is one group so the swirl can lean it about its foot;
+     nothing outside it — the plates, the tip — moves with it */
+  const tube=el("g",{}); g.appendChild(tube);
   const rim  =ellipseAt(tx,ty,ZT,CR),
         col  =ellipseAt(tx,ty,ZN,CR),
         neck =ellipseAt(tx,ty,ZN,TR),
@@ -2509,17 +2527,17 @@ function drawPoolSplit(g,n){
     [sh.x+sh.rx,sh.y],...arcPts(base,0,Math.PI,10),[sh.x-sh.rx,sh.y],
     [neck.x-neck.rx,neck.y],[col.x-col.rx,col.y],[rim.x-rim.rx,rim.y],
     ...arcPts(rim,Math.PI,2*Math.PI,18)]);
-  g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+  tube.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
 
   const liquid=el("polygon",{points:pts(arcPts(baseIn,Math.PI,0,10)),
     fill:"var(--fg)","fill-opacity":".24"});
-  g.appendChild(liquid);
+  tube.appendChild(liquid);
   const men=el("ellipse",{cx:rim.x,cy:rim.y,rx:"0",ry:"0",
     fill:"var(--fg)","fill-opacity":"0"});
-  g.appendChild(men);
+  tube.appendChild(men);
 
   const ZMAX=ZT-n.h*0.85;                   // it fills to the last graduation, not the collar
-  let surfY=base.y;
+  let surfY=base.y, surf0=null;             // surf0: where the meniscus sits before any slosh
   const setLevel=(f,band,fresh)=>{
     const z=Math.max(0.0005,Math.min(1,f)*ZMAX);
     const rAt=z>=ZC ? IR : BR*0.85+(IR-BR*0.85)*(z/ZC);
@@ -2538,7 +2556,7 @@ function drawPoolSplit(g,n){
        into the mixture within half a second — the pool is not four things */
     if(band) men.setAttribute("fill",band.fill);
     men.setAttribute("fill-opacity",(band?0.1+0.45*fresh:0).toFixed(2));
-    surfY=surf.y;
+    surfY=surf.y; surf0=surf;
   };
   setLevel(0,null,0);
 
@@ -2546,20 +2564,21 @@ function drawPoolSplit(g,n){
      cylinder reads as a colour change; the same column against a scale reads
      as a volume, which is the thing forty-eight transfers are adding up to.
      They are drawn over the liquid, because they are marks on the wall you are
-     looking through. */
-  for(let i=1;i<=6;i++){
-    const z=ZC+(ZMAX-ZC)*(i/6), maj=i%2===0;
-    g.appendChild(el("polyline",{
+     looking through. Twelve of them rather than six, because the wall they are
+     marking is twice as long and six would leave them a finger apart. */
+  for(let i=1;i<=12;i++){
+    const z=ZC+(ZMAX-ZC)*(i/12), maj=i%2===0;
+    tube.appendChild(el("polyline",{
       points:pts(arcPts(ellipseAt(tx,ty,z,TR),0.04*Math.PI,(maj?0.42:0.20)*Math.PI,5)),
       fill:"none",stroke:"var(--stroke)","stroke-width":maj?".9":".7",
       "stroke-opacity":maj?".6":".4"}));
   }
 
-  g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+  tube.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
     "stroke-width":"1","stroke-opacity":".8"}));
-  g.appendChild(el("polyline",{points:pts(arcPts(col,0,Math.PI,12)),fill:"none",
+  tube.appendChild(el("polyline",{points:pts(arcPts(col,0,Math.PI,12)),fill:"none",
     stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
-  g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
+  tube.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
     stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
 
   /* THE SECOND PLATE, forward of the tube so the split runs towards the
@@ -2606,19 +2625,27 @@ function drawPoolSplit(g,n){
   /* ---- TIMING -------------------------------------------------------------
      pace() returns the length of every trip in a half: nSlow of them at bench
      speed, then a geometric run-up that spends `rush` seconds on all the rest.
-     The floor under the run-up stops the last dozen wells from happening inside
-     one frame — past a point, faster is just missing. */
+     THE FLOOR IS THE WHOLE POINT OF THE SHAPE OF IT. The weights normalise, so
+     `rush` fixes how long the tail takes and the floor fixes how it is spent:
+     at 0.12 the run-up kept halving past the point of sense and the last three
+     dozen trips landed a frame apart each, which is the "comically fast" this
+     was. At 0.45 the acceleration is over in four trips and what follows is a
+     steady brisk cadence — around a tenth of a second a well — rather than a
+     smear. Both halves get the same floor, because both were doing it. */
   const N=from.length;
-  const pace=(slow,nSlow,rush)=>{
+  const pace=(slow,nSlow,rush,floor)=>{
     const wt=[];
-    for(let i=0;i<N;i++) wt.push(i<nSlow?0:Math.max(0.12,Math.pow(0.8,i-nSlow)));
+    for(let i=0;i<N;i++) wt.push(i<nSlow?0:Math.max(floor,Math.pow(0.8,i-nSlow)));
     const sum=wt.reduce((a,b)=>a+b,0)||1;
     const dur=wt.map((v,i)=>i<nSlow?slow:v*rush/sum);
     const start=[0]; dur.forEach(d=>start.push(start[start.length-1]+d));
     return {dur,start,total:start[N]};
   };
-  const POOL=pace(0.52,8,2.0), SPLIT=pace(0.40,6,2.2);
-  const MID=0.9, END=1.8;                   // stand and look at it, twice
+  const POOL=pace(0.52,8,4.2,0.45), SPLIT=pace(0.40,6,4.0,0.45);
+  /* MID is no longer a pause: it is how long the swirl lasts, and three turns
+     of it want the best part of two seconds to read as a hand rather than a
+     twitch. END still just stands and looks at the dealt plate. */
+  const MID=1.8, END=1.8, SW_TURNS=3, SW_LEAN=5;
   const T1=POOL.total, T2=T1+MID, T3=T2+SPLIT.total, T4=T3+END;
   /* which trip a half is on, and how far through it — named tripAt rather than
      at(), which is the strand helper further up this file */
@@ -2649,6 +2676,25 @@ function drawPoolSplit(g,n){
     drop.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
     drop.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
   };
+  /* THE SWIRL. `a` is an envelope that starts and ends at zero so nothing snaps
+     when the mixing begins or stops, and `ph` is the turn. The tube leans about
+     its foot: a real hand swirls the top round a small circle, and in this
+     projection the sideways half of that circle is all you would see anyway, so
+     a lean is an honest reading of it and keeps the tube standing on the floor.
+     The surface then trails the wall by a fifth of a turn, which is the part
+     that reads as liquid — but as an offset of the meniscus disc only, a
+     fraction of its own radius. Leaning the liquid separately from the tube
+     would swing its edge straight through the wall it is meant to be inside. */
+  const swirl=(a,ph)=>{
+    tube.setAttribute("transform",`rotate(${(a*SW_LEAN*Math.cos(ph)).toFixed(2)},`+
+      `${base.x.toFixed(1)},${base.y.toFixed(1)})`);
+    if(!a || !surf0) return;                // at rest the meniscus is wherever setLevel put it
+    /* sideways it may travel about a fifth of its own radius and no more: the
+       bore is only a tenth wider than the surface, so a bigger offset shows the
+       disc through the glass rather than under it */
+    men.setAttribute("cx",(surf0.x-a*0.22*surf0.rx*Math.cos(ph-0.9)).toFixed(1));
+    men.setAttribute("cy",(surf0.y-a*0.30*surf0.ry*Math.sin(ph-0.9)).toFixed(1));
+  };
 
   /* a long frame must not leave a well behind full, or a fresh one behind
      empty — the sweep is the claim, so both halves catch up rather than skip */
@@ -2664,12 +2710,13 @@ function drawPoolSplit(g,n){
     from.forEach(w=>{ w.fill.setAttribute("fill-opacity",String(w.band.op));
       w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); });
     into.forEach(w=>w.fill.setAttribute("fill-opacity","0"));
-    setLevel(0,null,0); park();
+    setLevel(0,null,0); park(); swirl(0,0);
   };
 
   const run=(dt)=>{
     t+=dt;
     if(t>=T4){ reset(); return; }
+    if(t<T1||t>=T2) swirl(0,0);         // upright everywhere except between the halves
 
     if(t<T1){                                       // POOL: forty-eight into one
       const [k,u]=tripAt(POOL,t), w=from[k];
@@ -2702,8 +2749,14 @@ function drawPoolSplit(g,n){
       return;
     }
 
-    if(t<T2){                                       // pooled: one grey tube, full
-      emptyTo(N); setLevel(1,null,0); park();
+    if(t<T2){                                       // pooled: one grey tube, swirled
+      const m=(t-T1)/MID, env=Math.sin(Math.PI*m);
+      emptyTo(N); setLevel(1,GREY,0);               // a surface to slosh, tinted with the mixture
+      swirl(env, m*SW_TURNS*2*Math.PI);
+      /* the tip stands off while the tube is being mixed, because a pipette
+         hanging in the mouth of a tube somebody is swirling is a broken one */
+      drop.setAttribute("fill-opacity","0"); load.setAttribute("fill-opacity","0");
+      place(mouth[0]+env*13*SC, mouth[1]-env*3*SC);
       return;
     }
 
