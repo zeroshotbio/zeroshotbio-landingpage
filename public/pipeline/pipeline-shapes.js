@@ -2233,23 +2233,34 @@ DRAW.reversetranscription = drawReverseTranscription;
 
 
 /* ------------------------------------------------------------------
-   POOL AND SPLIT · THE POOLING HALF, ONE WELL AT A TIME
-   Forty-eight wells emptied into one tube by a single-channel tip: down
-   into a well, up, across to the tube, back for the next. Forty-eight
-   round trips, which is why this unlabelled little step between two
-   rounds takes longer at the bench than either round does.
+   POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
+   Forty-eight wells emptied into one tube by a single-channel tip, and
+   then that tube dealt back out across forty-eight fresh ones. Both
+   halves are drawn, because the second one is where the claim lives.
 
-   THE FOUR BAND COLOURS ARE THE WHOLE POINT. The wells wear PLATE_BANDS,
-   so what goes into the tube is visibly four different treatments and
-   what stands in the tube afterwards is one grey suspension. That is the
+   THE FOUR BAND COLOURS ARE THE WHOLE POINT. The first plate's wells
+   wear PLATE_BANDS, so what goes into the tube is visibly four different
+   treatments, what stands in the tube afterwards is one grey suspension,
+   and every well of the second plate gets that same grey. That is the
    claim the node makes — after this, well position carries no
    information — drawn rather than asserted. Only the barcode written in
-   the round before still knows which well a cell came from.
+   the round before still knows which well a cell came from, which is
+   also why the tip DEALS the second plate in a shuffled order instead of
+   sweeping it: a tip working A1, A2, A3 down a fresh plate would draw
+   the opposite of a randomisation.
 
-   The plate is drawn wider than the node's own 0.6 footprint: forty-eight
-   wells at that size would be a smear of plastic with no wells in it. It
-   stays inside the lane gap either side, and sits back so the tube in
-   front of it has floor of its own.
+   THE PACING IS DELIBERATELY UNEVEN. Half a second a well is twenty-five
+   seconds a plate, which is the honest bench number and far too long to
+   watch — and it is only the pooling half. So the first eight wells run
+   at bench speed, long enough to see one transfer happen, and the rest
+   accelerate into a run that clears the plate in about two seconds. That
+   is what buys the time for the split.
+
+   The plates are drawn wider than the node's own 0.6 footprint: forty-
+   eight wells at that size would be a smear of plastic with no wells in
+   it. They stand diagonally apart — one back, one forward — so neither
+   overlaps the stations either side, with the tube on the floor between
+   them.
 
    Reuses PLATE_BANDS / plateWells / plateSlab / drawWell from the plate
    set and ellipseAt / arcPts from the clutch block, so the plastic and
@@ -2257,13 +2268,23 @@ DRAW.reversetranscription = drawReverseTranscription;
    ------------------------------------------------------------------ */
 function drawPoolSplit(g,n){
   const th=n.h;
-  const plate={x:n.x-n.w*0.0833, y:n.y-n.d*0.25, w:n.w*1.6, d:n.d*1.1};
-  plateSlab(g,plate,th,SKIN.tile,1);
+  /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
+     A shape has to read w, d and h at draw time, because those are what a
+     resize changes and a redraw is the only reason the shape is being run
+     again. Absolute coordinates draw correctly at the size the node happens to
+     be authored and come apart the moment anybody drags a corner — the plate
+     grows and the tube beside it stays exactly where it was. Every ratio below
+     is against the size this was composed at: w 0.6, d 0.6, h 0.3. */
+  const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.9167, w:n.w*1.45, d:n.d*1.0};
+  const dst={x:n.x+n.w*0.25,   y:n.y+n.d*1.25,   w:n.w*1.45, d:n.d*1.0};
+  /* the pooled suspension: one colour, and not one of the four */
+  const GREY={fill:"var(--fg)", op:0.34};
 
+  plateSlab(g,src,th,SKIN.tile,1);
   /* plateWells runs row-major, so the sweep order below is the order a hand
      works a plate: A1 across to A8, then B1. Each well keeps a handle on its
      own liquid, because that is the thing the tip takes away. */
-  const wells=plateWells(plate,th).map(w=>{
+  const from=plateWells(src,th).map(w=>{
     drawWell(g,w,false);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
       ry:(w.e.ry*0.86).toFixed(2),fill:w.band.fill,"fill-opacity":w.band.op});
@@ -2271,33 +2292,25 @@ function drawPoolSplit(g,n){
     return {e:w.e, band:w.band, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
-  /* THE TUBE, front-left of the plate. Front, because that is floor nothing
-     else on the lane is standing on: the stations either side sit at the same
-     y, so anything moved forward moves down the screen and clear of both. */
-  /* ---- EVERYTHING HERE IS A FRACTION OF THE NODE, NOT A WORLD CONSTANT -----
-     These were absolute: the tube stood at n.x+0.30, n.y+0.86 with a radius of
-     0.155 and a rim at z 0.80. That draws correctly at the size the node
-     happens to be authored, and it is wrong the moment anybody resizes it —
-     the plate grows, the tube stays exactly where it was and exactly as big,
-     and the two come apart. A shape has to read w, d and h at draw time,
-     because those are what a resize changes and a redraw is the only reason
-     the shape is being run again.
-     The ratios below are the numbers that were here, divided by the size this
-     was drawn at (w 0.6, d 0.6, h 0.3), so nothing moves at that size. */
-  const tx=n.x+n.w*0.50, ty=n.y+n.d*1.4333,
-        TR=n.w*0.2583, IR=TR*0.88, BR=TR*0.34,
-        ZC=n.h*1.0, ZT=n.h*2.6667;
-  const rim  =ellipseAt(tx,ty,ZT,TR),
+  /* THE TUBE, on the floor between the two plates: a 15 ml conical, which is
+     what the protocol actually pools into. Straight wall for most of its
+     length, a short cone under it, a threaded collar at the top and a small
+     flat foot instead of a point — a tube that tapers to nothing has to be
+     drawn either balancing on its tip or half-buried in a rack, and a rack
+     would hide the first ten transfers, which are the ones worth seeing. */
+  const tx=n.x-n.w*0.40, ty=n.y+n.d*0.50,
+        TR=n.w*0.20, IR=TR*0.88, BR=TR*0.30, CR=TR*1.16,
+        ZC=n.h*1.0, ZN=n.h*3.95, ZT=n.h*4.2;
+  const rim  =ellipseAt(tx,ty,ZT,CR),
+        col  =ellipseAt(tx,ty,ZN,CR),
+        neck =ellipseAt(tx,ty,ZN,TR),
         sh   =ellipseAt(tx,ty,ZC,TR),
         shIn =ellipseAt(tx,ty,ZC,IR),
         base =ellipseAt(tx,ty,0,BR),
         baseIn=ellipseAt(tx,ty,0,BR*0.85);
-  /* Cylinder to the shoulder, cone below it, and then a small flat foot
-     instead of a point. A tube that tapers to nothing has to be drawn either
-     balancing on its tip or half-buried in a rack, and a rack would hide the
-     first ten transfers — which are the ones worth seeing. */
-  const silh=pts([[rim.x+rim.rx,rim.y],[sh.x+sh.rx,sh.y],
-    ...arcPts(base,0,Math.PI,10),[sh.x-sh.rx,sh.y],[rim.x-rim.rx,rim.y],
+  const silh=pts([[rim.x+rim.rx,rim.y],[col.x+col.rx,col.y],[neck.x+neck.rx,neck.y],
+    [sh.x+sh.rx,sh.y],...arcPts(base,0,Math.PI,10),[sh.x-sh.rx,sh.y],
+    [neck.x-neck.rx,neck.y],[col.x-col.rx,col.y],[rim.x-rim.rx,rim.y],
     ...arcPts(rim,Math.PI,2*Math.PI,18)]);
   g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
 
@@ -2308,10 +2321,10 @@ function drawPoolSplit(g,n){
     fill:"var(--fg)","fill-opacity":"0"});
   g.appendChild(men);
 
-  const ZMAX=ZT-n.h*0.4333;                 // it never fills to the rim
+  const ZMAX=ZT-n.h*0.85;                   // it fills to the last graduation, not the collar
   let surfY=base.y;
   const setLevel=(f,band,fresh)=>{
-    const z=Math.max(0.0005,f*ZMAX);
+    const z=Math.max(0.0005,Math.min(1,f)*ZMAX);
     const rAt=z>=ZC ? IR : BR*0.85+(IR-BR*0.85)*(z/ZC);
     const surf=ellipseAt(tx,ty,z,rAt);
     /* the top edge is the FAR side of the surface ellipse, so the body of the
@@ -2332,106 +2345,197 @@ function drawPoolSplit(g,n){
   };
   setLevel(0,null,0);
 
-  /* the drop leaving the tip, born over the mouth it will fall into */
-  const drop=el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),rx:"1.7",ry:"2.2",
-    fill:"var(--fg)","fill-opacity":"0"});
-  g.appendChild(drop);
+  /* GRADUATIONS, up the near side. A column of liquid rising inside a plain
+     cylinder reads as a colour change; the same column against a scale reads
+     as a volume, which is the thing forty-eight transfers are adding up to.
+     They are drawn over the liquid, because they are marks on the wall you are
+     looking through. */
+  for(let i=1;i<=6;i++){
+    const z=ZC+(ZMAX-ZC)*(i/6), maj=i%2===0;
+    g.appendChild(el("polyline",{
+      points:pts(arcPts(ellipseAt(tx,ty,z,TR),0.04*Math.PI,(maj?0.42:0.20)*Math.PI,5)),
+      fill:"none",stroke:"var(--stroke)","stroke-width":maj?".9":".7",
+      "stroke-opacity":maj?".6":".4"}));
+  }
 
   g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
     "stroke-width":"1","stroke-opacity":".8"}));
+  g.appendChild(el("polyline",{points:pts(arcPts(col,0,Math.PI,12)),fill:"none",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
   g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
     stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
 
-  /* the tip, same plastic as the one that arrays embryos on the row above */
-  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
-              "stroke-width":".8","stroke-opacity":".85"};
+  /* THE SECOND PLATE, forward of the tube so the split runs towards the
+     viewer. Its wells are born at full size and invisible: the ticker only has
+     to open them, and an element with no coordinates would drag the selection
+     halo across the map. */
+  plateSlab(g,dst,th,SKIN.tile,1);
+  const into=plateWells(dst,th).map(w=>{
+    drawWell(g,w,false);
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,"fill-opacity":"0"});
+    g.appendChild(fill);
+    return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+  });
+
   /* THE TIP IS DRAWN IN SCREEN PIXELS, so it cannot scale by reading w — it
      scales by being scaled. SC is the node's size against the size this glyph
      was drawn for, which is 1 at the authored width and grows with the object
      like everything else. Without it the plate doubles and the tip working it
-     stays the same size, which is what "the pipette didn't grow" was. */
+     stays the same size, which is what "the pipette didn't grow" was.
+     THE GLYPH ITSELF IS SMALLER THAN IT WAS — 27 px against 42, and slimmer
+     with it. A well on these plates is four pixels across; a hand tool taller
+     than a third of the plate it is working reads as a prop rather than as a
+     pipette, and the transfer stops being the thing you are looking at. */
   const SC=n.w/0.6;
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".8","stroke-opacity":".85"};
   const pip=el("g",{}), tilt=el("g",{transform:`rotate(-15) scale(${SC.toFixed(3)})`});
-  tilt.appendChild(el("path",{d:"M -.8 -1.5 L .8 -1.5 L 2.2 -10 L -2.2 -10 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -2.2 -10 L 2.2 -10 L 1.7 -30 L -1.7 -30 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -3.4 -30 L 3.4 -30 L 2.8 -42 L -2.8 -42 Z", ...skin}));
-  const load=el("path",{d:"M -1.1 -3.6 L 1.1 -3.6 L 1.9 -10.6 L -1.9 -10.6 Z",
+  /* leading zeros on every coordinate, because the checkers read a `d` with a
+     regex and "-.55" parses as 55 — a phantom point a long way from the tip */
+  tilt.appendChild(el("path",{d:"M -0.55 -1 L 0.55 -1 L 1.5 -7 L -1.5 -7 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -1.5 -7 L 1.5 -7 L 2.1 -17.5 L -2.1 -17.5 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.7 -17.5 L 2.7 -17.5 L 2.2 -27 L -2.2 -27 Z", ...skin}));
+  const load=el("path",{d:"M -0.85 -2.6 L 0.85 -2.6 L 1.6 -7.6 L -1.6 -7.6 Z",
     fill:"var(--fg)","fill-opacity":"0"});
   tilt.appendChild(load);
   pip.appendChild(tilt); g.appendChild(pip);
 
-  /* 0.52 s a well is 25 s a plate, which is fast for a bench and slow enough
-     to watch one transfer happen. Any quicker and the tip blurs into a hedge. */
-  const TRIP=0.52, GO=0.19, ASP=0.07, BACK=0.19, DIS=TRIP-GO-ASP-BACK;
-  const SWEEP=wells.length*TRIP, HOLD=2.4, LIFT=15*SC;
+  /* the drop, born over the mouth it will fall into */
+  const drop=el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+    rx:(1.3*SC).toFixed(2),ry:(1.7*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"});
+  g.appendChild(drop);
+
+  /* ---- TIMING -------------------------------------------------------------
+     pace() returns the length of every trip in a half: nSlow of them at bench
+     speed, then a geometric run-up that spends `rush` seconds on all the rest.
+     The floor under the run-up stops the last dozen wells from happening inside
+     one frame — past a point, faster is just missing. */
+  const N=from.length;
+  const pace=(slow,nSlow,rush)=>{
+    const wt=[];
+    for(let i=0;i<N;i++) wt.push(i<nSlow?0:Math.max(0.12,Math.pow(0.8,i-nSlow)));
+    const sum=wt.reduce((a,b)=>a+b,0)||1;
+    const dur=wt.map((v,i)=>i<nSlow?slow:v*rush/sum);
+    const start=[0]; dur.forEach(d=>start.push(start[start.length-1]+d));
+    return {dur,start,total:start[N]};
+  };
+  const POOL=pace(0.52,8,2.0), SPLIT=pace(0.40,6,2.2);
+  const MID=0.9, END=1.8;                   // stand and look at it, twice
+  const T1=POOL.total, T2=T1+MID, T3=T2+SPLIT.total, T4=T3+END;
+  /* which trip a half is on, and how far through it — named tripAt rather than
+     at(), which is the strand helper further up this file */
+  const tripAt=(half,t)=>{ let k=0; while(k<N-1 && t>=half.start[k+1]) k++;
+    return [k, Math.max(0,Math.min(1,(t-half.start[k])/half.dur[k]))]; };
+
+  /* where each trip is, as a fraction of its own length. Pooling goes out,
+     draws up, comes back and lets go into the tube; the split draws up first,
+     carries it out and lets go over the well — which is why the tip dips into
+     the first plate and hovers over the second. */
+  const GO=0.36, SIT=0.50, RET=0.86;
+  const SUP=0.14, SGO=0.50, SDIS=0.64;
+
+  /* the deal order: shuffled, because that is the claim */
+  const order=(()=>{ const a=[...Array(N).keys()], r=rng(23);
+    for(let i=N-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
+    return a; })();
+
+  const LIFT=10*SC, mouth=[rim.x, rim.y-2*SC];
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const mouth=[rim.x, rim.y-3*SC];
-  let t=0, resting=0, shown=0;
   const place=(x,y)=>pip.setAttribute("transform",
     `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+  const hop=(a,b,f0)=>{ const f=ease(Math.max(0,Math.min(1,f0)));
+    place(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f-Math.sin(f*Math.PI)*LIFT); };
+  const fall=(colour,a,b,f,vis)=>{
+    drop.setAttribute("fill",colour);
+    drop.setAttribute("cx",(a[0]+(b[0]-a[0])*f).toFixed(1));
+    drop.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
+    drop.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
+  };
+
+  /* a long frame must not leave a well behind full, or a fresh one behind
+     empty — the sweep is the claim, so both halves catch up rather than skip */
+  let t=0, poured=0, dealt=0;
+  const emptyTo=k=>{ while(poured<k) from[poured++].fill.setAttribute("fill-opacity","0"); };
+  const fillTo=k=>{ while(dealt<k){ const w=into[order[dealt++]];
+    w.fill.setAttribute("fill-opacity",String(GREY.op));
+    w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); } };
+  const park=()=>{ drop.setAttribute("fill-opacity","0");
+                   load.setAttribute("fill-opacity","0"); place(mouth[0],mouth[1]); };
+  const reset=()=>{
+    t=0; poured=0; dealt=0;
+    from.forEach(w=>{ w.fill.setAttribute("fill-opacity",String(w.band.op));
+      w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); });
+    into.forEach(w=>w.fill.setAttribute("fill-opacity","0"));
+    setLevel(0,null,0); park();
+  };
 
   const run=(dt)=>{
-    if(resting>0){
-      resting-=dt;
-      if(resting<=0){
-        t=0; shown=0;
-        wells.forEach(w=>{ w.fill.setAttribute("fill-opacity",w.band.op);
-          w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); });
-        setLevel(0,null,0);
-      }
-      return;
-    }
     t+=dt;
-    if(t>=SWEEP){                       // pooled: stand still with a full tube
-      resting=HOLD;
-      while(shown<wells.length) wells[shown++].fill.setAttribute("fill-opacity","0");
-      setLevel(1,wells[wells.length-1].band,0);
-      drop.setAttribute("fill-opacity","0");
-      load.setAttribute("fill-opacity","0");
-      place(mouth[0],mouth[1]);
+    if(t>=T4){ reset(); return; }
+
+    if(t<T1){                                       // POOL: forty-eight into one
+      const [k,u]=tripAt(POOL,t), w=from[k];
+      emptyTo(k);
+      const e=u<GO?0:Math.min(1,(u-GO)/(SIT-GO));   // the well empties as the tip sits in it
+      w.fill.setAttribute("fill-opacity",(w.band.op*(1-e)).toFixed(2));
+      w.fill.setAttribute("rx",(w.rx*(1-0.3*e)).toFixed(2));
+      w.fill.setAttribute("ry",(w.ry*(1-0.3*e)).toFixed(2));
+
+      const dis=u>RET ? (u-RET)/(1-RET) : 0;         // the tube takes it, one 48th at a time
+      const fresh=dis>0 ? 1 : Math.max(0,1-u*2);
+      setLevel((k+dis)/N, (k||dis)?from[dis>0?k:Math.max(0,k-1)].band:null, fresh);
+
+      const wp=[w.e.x, w.e.y-1*SC];
+      if(u<GO)       hop(mouth,wp,u/GO);
+      else if(u<SIT) place(wp[0],wp[1]);
+      else if(u<RET) hop(wp,mouth,(u-SIT)/(RET-SIT));
+      else           place(mouth[0],mouth[1]);
+
+      /* what the tip is carrying, and what it lets go of. Held at a floor of
+         0.45: the vehicle band is drawn at 0.16 in a well the size of this
+         text, and a column of it inside a plastic tip at that opacity is not
+         there. */
+      const vis=Math.max(0.45,w.band.op);
+      load.setAttribute("fill",w.band.fill);
+      load.setAttribute("fill-opacity",
+        (u<GO ? 0 : u<SIT ? vis*e : dis>0 ? vis*(1-dis) : vis).toFixed(2));
+      if(dis>0) fall(w.band.fill, mouth, [mouth[0],surfY], dis, vis);
+      else drop.setAttribute("fill-opacity","0");
       return;
     }
-    const k=Math.floor(t/TRIP), u=t-k*TRIP, w=wells[k];
-    /* a long frame must not leave a well behind full — the sweep is the claim */
-    while(shown<k) wells[shown++].fill.setAttribute("fill-opacity","0");
 
-    /* the well empties as the tip sits in it */
-    const e=u<GO?0:Math.min(1,(u-GO)/ASP);
-    w.fill.setAttribute("fill-opacity",(w.band.op*(1-e)).toFixed(2));
-    w.fill.setAttribute("rx",(w.rx*(1-0.3*e)).toFixed(2));
-    w.fill.setAttribute("ry",(w.ry*(1-0.3*e)).toFixed(2));
-
-    /* the tube takes it, one forty-eighth at a time */
-    const dis=u>GO+ASP+BACK ? (u-(GO+ASP+BACK))/DIS : 0;
-    const fresh=dis>0 ? 1 : Math.max(0,1-u/0.35);
-    setLevel((k+dis)/wells.length, k||dis ? wells[dis>0?k:Math.max(0,k-1)].band : null, fresh);
-
-    const wp=[w.e.x, w.e.y-1];
-    if(u<GO){
-      const f=ease(u/GO);
-      place(mouth[0]+(wp[0]-mouth[0])*f, mouth[1]+(wp[1]-mouth[1])*f-Math.sin(f*Math.PI)*LIFT);
-    } else if(u<GO+ASP){
-      place(wp[0],wp[1]);
-    } else if(u<GO+ASP+BACK){
-      const f=ease((u-GO-ASP)/BACK);
-      place(wp[0]+(mouth[0]-wp[0])*f, wp[1]+(mouth[1]-wp[1])*f-Math.sin(f*Math.PI)*LIFT);
-    } else {
-      place(mouth[0],mouth[1]);
+    if(t<T2){                                       // pooled: one grey tube, full
+      emptyTo(N); setLevel(1,null,0); park();
+      return;
     }
 
-    /* what the tip is carrying, and what it lets go of. Held at a floor of
-       0.45: the vehicle band is drawn at 0.16 in a well the size of this text,
-       and a column of it inside a plastic tip at that opacity is not there. */
-    const vis=Math.max(0.45,w.band.op);
-    load.setAttribute("fill",w.band.fill);
-    load.setAttribute("fill-opacity",
-      (u<GO ? 0 : u<GO+ASP ? vis*e : dis>0 ? vis*(1-dis) : vis).toFixed(2));
-    if(dis>0){
-      drop.setAttribute("fill",w.band.fill);
-      drop.setAttribute("cx",mouth[0].toFixed(1));
-      drop.setAttribute("cy",(mouth[1]+(surfY-mouth[1])*dis).toFixed(1));
-      drop.setAttribute("fill-opacity",(vis*(1-dis*0.6)).toFixed(2));
-    } else drop.setAttribute("fill-opacity","0");
+    if(t<T3){                                       // SPLIT: one back out into forty-eight
+      const [k,u]=tripAt(SPLIT,t-T2), w=into[order[k]];
+      emptyTo(N); fillTo(k);
+      const up=Math.min(1,u/SUP);
+      setLevel(1-(k+up)/N,null,0);
+
+      const dis=u<SGO ? 0 : u<SDIS ? (u-SGO)/(SDIS-SGO) : 1;
+      w.fill.setAttribute("fill-opacity",(GREY.op*dis).toFixed(2));
+      w.fill.setAttribute("rx",(w.rx*(0.55+0.45*dis)).toFixed(2));
+      w.fill.setAttribute("ry",(w.ry*(0.55+0.45*dis)).toFixed(2));
+
+      const wp=[w.e.x, w.e.y-6*SC];                 // it hovers to deal, it does not dip
+      if(u<SUP)       place(mouth[0],mouth[1]);
+      else if(u<SGO)  hop(mouth,wp,(u-SUP)/(SGO-SUP));
+      else if(u<SDIS) place(wp[0],wp[1]);
+      else            hop(wp,mouth,(u-SDIS)/(1-SDIS));
+
+      load.setAttribute("fill",GREY.fill);
+      load.setAttribute("fill-opacity",
+        (u<SUP ? 0.55*up : u<SGO ? 0.55 : u<SDIS ? 0.55*(1-dis) : 0).toFixed(2));
+      if(u>=SGO && u<SDIS) fall(GREY.fill, wp, [w.e.x,w.e.y], dis, 0.5);
+      else drop.setAttribute("fill-opacity","0");
+      return;
+    }
+
+    fillTo(N); setLevel(0,null,0); park();          // dealt: an empty tube and a full plate
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
