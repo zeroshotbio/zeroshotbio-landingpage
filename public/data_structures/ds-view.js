@@ -591,6 +591,17 @@ const MOVED = 4;   /* px of travel that separates a drag from a click */
       setW(wOpen < 56 ? def : wOpen); refresh();
     };
 
+    /* Both columns start shut. The map is what the page is for, and a first
+       view that is all map reads as a plan rather than as a file browser; the
+       grips are still there, arrow out, to pull either column back at the
+       width it would have had.
+
+       The phone layout is exempt. There the grips are display:none and the
+       reader is a bottom sheet driven by .open, so the inline display:none
+       that shut() sets would survive into a station tap and leave nothing to
+       read. */
+    if (!window.matchMedia("(max-width:900px)").matches) shut();
+
     grip.addEventListener("pointerdown", e => {
       drag = true; moved = false; x0 = e.clientX; w0 = w;
       grip.setPointerCapture(e.pointerId); e.preventDefault();
