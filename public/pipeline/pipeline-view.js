@@ -1199,9 +1199,13 @@ renderOverview();
    through the sequence re-centres. Home is the way back to the whole map. */
 const resetView=()=>{pinned=null;current=null;renderOverview();paintIndex();glideTo(fitTarget(),1100);};
 document.getElementById("btnStages").onclick=()=>aside.classList.toggle("open");
-/* Fit the map. Home and 0 have always done this; the button is here because a
-   keyboard shortcut nobody is told about is not a control. It also clears the
-   selection, so it is the one move that puts the page back to how it opened. */
+/* FIT THE MAP IS A KEY, NOT A BUTTON. Home and 0 have always done it, and the
+   hint line says so — which is what makes a shortcut a control rather than a
+   secret. The button was one more thing in a toolbar for a move that is a way
+   BACK rather than a thing to do, and the toolbar is where the tools live.
+   resetView also clears the selection, so it is still the one move that puts
+   the page back to how it opened. The wiring stays: an id that is not on the
+   page is simply not found, so a shell that keeps the button keeps working. */
 { const b=document.getElementById("btnHome"); if(b) b.onclick=resetView; }
 document.getElementById("btnTheme").onclick=e=>{
   document.body.classList.toggle("light");
@@ -2119,7 +2123,15 @@ feature("edit positions", function(){
       ? `${n.key} · ${n.name} — x ${n.x.toFixed(2)}  y ${n.y.toFixed(2)}`+
         `   ·   offset dx ${(o.dx||0).toFixed(2)} dy ${(o.dy||0).toFixed(2)}`+
         (o.ldx||o.ldy?`   ·   name ldx ${(o.ldx||0).toFixed(2)} ldy ${(o.ldy||0).toFixed(2)}`:"")
-      : "Drag any object, any name or any floating label · double-click one to offer a ✕ · Save all changes when done";
+      /* IT RESIZES TOO, AND NOTHING SAID SO. A double-click has always placed
+         the five resize handles as well as the ✕ — four corners for width and
+         depth, one in the middle for height — and the hint named only the ✕, so
+         the resize was a feature nobody could find. A control that works and is
+         undiscoverable is, from where the person is sitting, a control that
+         does not exist. */
+      : "Drag any object, any name or any floating label · double-click one to resize it "+
+        "from a corner, or by the middle handle for height · double-click also offers a ✕ · "+
+        "Save all changes when done";
   }
 
   NODES.forEach(n=>{

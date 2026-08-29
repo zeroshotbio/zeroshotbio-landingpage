@@ -73,8 +73,23 @@ const tick0=await p.evaluate(()=>TICKERS.length);
 let rp=await rszCorner(RSZ,4);   /* the top-face CENTRE: a corner may be off the drawn shape, and a press that misses is a drag on whatever is under it */
 await p.mouse.click(rp.x,rp.y); await p.waitForTimeout(120);
 await p.mouse.click(rp.x,rp.y); await p.waitForTimeout(400);
-if(await p.evaluate(()=>document.querySelectorAll('svg.editing .sizer').length)!==5)
-  fail('picking a node did not put five resize handles on it');
+/* WHERE THEY ARE, NOT HOW MANY THERE ARE. The five handles are created once and
+   parked off the node until something is picked, so counting them passes whether
+   the pick worked or not — this assertion would have survived resizing breaking
+   completely. What has to be true is that they moved ONTO the node. */
+const sizersOn = async () => p.evaluate(([id]) => {
+  const sz = [...document.querySelectorAll('.sizer')];
+  if (sz.length !== 5) return { n: sz.length, on: 0 };
+  const g = nodeEls[id].getBoundingClientRect();
+  const pad = 40;
+  const on = sz.filter(e => { const r = e.getBoundingClientRect();
+    return r.x > g.x - pad && r.x < g.right + pad && r.y > g.y - pad && r.y < g.bottom + pad; }).length;
+  return { n: sz.length, on };
+}, [RSZ]);
+{ const s = await sizersOn();
+  if (s.n !== 5) fail(`picking a node did not put five resize handles on it (${s.n})`);
+  else if (s.on < 5) fail(`the resize handles did not move onto the picked node (${s.on} of 5 are near it)`);
+  else console.log('resize  ', `double-click put all five handles on ${RSZ}`); }
 const rs0=await rszSize(RSZ), rfar0=await rszCorner(RSZ,0);
 rp=await rszCorner(RSZ,2);
 await p.mouse.move(rp.x,rp.y); await p.mouse.down();
