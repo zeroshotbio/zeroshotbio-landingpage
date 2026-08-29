@@ -2233,6 +2233,203 @@ DRAW.reversetranscription = drawReverseTranscription;
 
 
 /* ------------------------------------------------------------------
+   ROUND TWO · LIGATION
+   The same compartment as B2, one round later, so it is deliberately the
+   same drawing: same nucleus, same five transcripts stacked in lanes. What
+   has changed is the state of the molecule and what is being done to it.
+
+   ROUND ONE IS OVER, so every strand is already a finished duplex — two
+   rails and the rungs between them, end to end — and the round-one barcode
+   is the dim stub still sitting at its foot. It is dim on purpose: it is no
+   longer the news, and the map has to be able to show a molecule
+   accumulating barcodes without every one of them shouting.
+
+   WHAT THIS STEP WRITES IS THE SECOND BARCODE, so that is the bright part.
+   A short double-stranded barcode drifts down onto the head of the cDNA,
+   settles into line with it, and stops with a visible nick between the two.
+   A ligase lands on that nick, and when it lifts off the gap is gone and
+   the barcode is simply the end of the strand. The nick closing IS the
+   step — ligation is the making of one bond — so it is the only thing in
+   the drawing that moves toward anything.
+
+   NOTHING ELSE MOVES, and that is the other half of the claim: this is
+   in-situ chemistry in a fixed cell, the transcripts are held where they
+   are, and only the reagent arrives. B2's compartment churns because a
+   polymerase is walking; this one is still because nothing is.
+
+   The join then fades and another approach begins. Same licence B2 takes
+   with its unzip: a lane showing the reaction again, not a claim that a
+   ligated barcode falls back off.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawLigation(g,n){
+  const r=rng(1487);
+  const th=n.h, R=Math.min(n.w,n.d)/2*0.98;
+  const floor=ellipseAt(n.x,n.y,0,R*0.93),
+        rim  =ellipseAt(n.x,n.y,th,R),
+        inner=ellipseAt(n.x,n.y,th,R*0.9);
+
+  /* the envelope, built exactly as B2 builds it — the two nodes are the
+     same cell at two moments and any difference here would read as a
+     different compartment */
+  g.appendChild(el("ellipse",{cx:floor.x,cy:floor.y,rx:floor.rx,ry:floor.ry,
+    fill:"var(--g-right)","fill-opacity":".65",stroke:"none"}));
+  g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,26),
+                                          ...arcPts(floor,Math.PI,0,26)]),
+    fill:"var(--g-top)","fill-opacity":".5",stroke:"none"}));
+  g.appendChild(el("ellipse",{cx:inner.x,cy:inner.y,rx:inner.rx,ry:inner.ry,
+    fill:"var(--fg)","fill-opacity":".05",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".4"}));
+  g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+
+  const PRIMER=0.17;      // the round-one barcode still sitting at the foot
+  const BC=0.24;          // the round-two barcode, as a fraction of the cDNA
+  const FIT=R*0.72;       // no strand, and no barcode above one, leaves the envelope
+  const OFF=R*0.064;      // half the width of a duplex
+  const TIGHT=0.35;       // a duplex is a rod: the wobble is nearly damped out
+  /* s=0 is the foot and s=1 the head, but the barcode lands BEYOND the head,
+     so the strand is hung off-centre — its midpoint is at SMID, not a half —
+     and the room that buys goes to the approach. */
+  const SMID=0.68, GAP0=0.30, GAPD=0.10;
+  const DROP=-R*S*0.55;   // how far above the strand a barcode starts, in px
+  const N=5;
+
+  /* LANES, NOT SCATTER, for the reason B2 gives: five strands this long in a
+     compartment this small cross each other if they are placed at random, and
+     a crossing reads as one strand. Shorter than B2's, because here the head
+     end has to have somewhere for a barcode to come down. */
+  const strands=[];
+  for(let i=0;i<N;i++){
+    const v=(i-(N-1)/2)*(FIT*2*0.92/N);
+    const half=Math.sqrt(Math.max(0.02,FIT*FIT-v*v))*0.86;
+    const ang=(r()-0.5)*0.42;
+    strands.push({cx:n.x+(r()-0.5)*half*0.2, cy:n.y+v,
+      ca:Math.cos(ang), sa:Math.sin(ang), L:half*2*0.55,
+      amp:R*(0.056+r()*0.031), k:1.4+r()*0.9, ph:r()*6.283,
+      rest:0.4+r()*2.6, t:r()*6});
+  }
+
+  /* a point on one strand: s runs 0..1 foot to head and past 1 for whatever
+     is docking on the head, off steps sideways onto the other rail, dy lifts
+     it off the strand in screen space while it is still in the air */
+  const at=(st,s,off,dy)=>{
+    const t=(s-SMID)*st.L,
+          w=Math.sin(s*st.k*6.283+st.ph)*st.amp*TIGHT+off;
+    const p=P(st.cx+t*st.ca-w*st.sa, st.cy+t*st.sa+w*st.ca, th);
+    return [p[0], p[1]+(dy||0)];
+  };
+  const pathOf=(st,s0,s1,off,steps,dy)=>{
+    let d="";
+    for(let i=0;i<=steps;i++){
+      const p=at(st,s0+(s1-s0)*i/steps,off,dy);
+      d+=(i?" L ":"M ")+p[0].toFixed(2)+" "+p[1].toFixed(2);
+    }
+    return d;
+  };
+
+  /* Built in the state the cycle starts from — barcode still in the air, well
+     clear of the head — so every element is born where it belongs and the
+     ticker only has to move it. */
+  strands.sort((a,b)=>(a.cx+a.cy)-(b.cx+b.cy)).forEach(st=>{
+    const stroke=(d,col,w,op)=>{
+      const e=el("path",{d,fill:"none",stroke:col,"stroke-width":w,
+        "stroke-opacity":op,"stroke-linecap":"round"});
+      g.appendChild(e); return e;
+    };
+    /* the finished round-one duplex: rails first, then rungs, then the stub */
+    stroke(pathOf(st,0,1,-OFF,16),"var(--fg)","1",".7");
+    stroke(pathOf(st,0,1, OFF,16),"var(--fg)","1",".7");
+    for(let i=0;i<10;i++){
+      const s=0.04+i*(0.92/9);
+      const a=at(st,s,-OFF), b=at(st,s,OFF);
+      g.appendChild(el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--fg)","stroke-width":".6","stroke-opacity":".35"}));
+    }
+    stroke(pathOf(st,0,PRIMER,OFF,4),"var(--signal)","1.6",".45");
+
+    /* the arriving barcode, drawn as the duplex it is so that it reads as a
+       block joining the strand rather than a stray line across it */
+    const bc=el("g",{"stroke-opacity":"0"});
+    const bstroke=(d,w)=>{
+      const e=el("path",{d,fill:"none",stroke:"var(--signal)","stroke-width":w,
+        "stroke-linecap":"round"});
+      bc.appendChild(e); return e;
+    };
+    st.bcA=bstroke(pathOf(st,1+GAP0,1+GAP0+BC,-OFF,6,DROP),"1.2");
+    st.bcB=bstroke(pathOf(st,1+GAP0,1+GAP0+BC, OFF,6,DROP),"1.7");
+    st.bcR=[];
+    for(let i=0;i<3;i++){
+      const s=1+GAP0+BC*(0.2+i*0.3);
+      const a=at(st,s,-OFF,DROP), b=at(st,s,OFF,DROP);
+      const e=el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--signal)","stroke-width":".7","stroke-opacity":".7"});
+      bc.appendChild(e); st.bcR.push({node:e,s:BC*(0.2+i*0.3)});
+    }
+    g.appendChild(bc); st.bc=bc;
+
+    /* the ligase is placed by a transform, so it is drawn once in its own
+       coordinates and turned to lie across the nick it is closing */
+    const a=at(st,0.4,0), b=at(st,0.6,0);
+    st.deg=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+    const lig=el("g",{});
+    lig.appendChild(el("ellipse",{cx:"0",cy:"0",
+      rx:(R*S*0.16).toFixed(2),ry:(R*S*0.115).toFixed(2),
+      fill:"var(--a-top)","fill-opacity":".95",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".8"}));
+    lig.appendChild(el("ellipse",{cx:(R*S*-0.055).toFixed(2),cy:(R*S*-0.06).toFixed(2),
+      rx:(R*S*0.085).toFixed(2),ry:(R*S*0.067).toFixed(2),
+      fill:"var(--a-left)","fill-opacity":".9"}));
+    g.appendChild(lig); st.lig=lig;
+  });
+
+  const FLOAT=2.2, SEAL=1.3, HOLD=1.4, FADE=0.8;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const run=(dt,now)=>{
+    const T=now/1000;
+    strands.forEach(st=>{
+      st.t=(st.t+dt)%(FLOAT+SEAL+HOLD+FADE+st.rest);
+      const t=st.t;
+      let gap=GAP0, dy=DROP, op=0, lig=0;
+      if(t<FLOAT){ const u=ease(t/FLOAT);
+        gap=GAP0+(GAPD-GAP0)*u; dy=DROP*(1-u); op=Math.min(1,t/(FLOAT*0.35)); }
+      else if(t<FLOAT+SEAL){ const v=(t-FLOAT)/SEAL;
+        /* the bond, and the only easing that is the subject rather than the
+           staging: the last of the gap goes slowly and then all at once */
+        gap=GAPD*(1-ease(v)); dy=0; op=1; lig=Math.min(1,v/0.22); }
+      else if(t<FLOAT+SEAL+HOLD){ gap=0; dy=0; op=1;
+        lig=Math.max(0,1-(t-FLOAT-SEAL)/(HOLD*0.4)); }
+      else if(t<FLOAT+SEAL+HOLD+FADE){ gap=0; dy=0;
+        op=1-(t-FLOAT-SEAL-HOLD)/FADE; }
+
+      const s0=1+gap;
+      st.bcA.setAttribute("d",pathOf(st,s0,s0+BC,-OFF,6,dy));
+      st.bcB.setAttribute("d",pathOf(st,s0,s0+BC, OFF,6,dy));
+      st.bcR.forEach(g2=>{
+        const a=at(st,s0+g2.s,-OFF,dy), b=at(st,s0+g2.s,OFF,dy);
+        g2.node.setAttribute("x1",a[0].toFixed(2)); g2.node.setAttribute("y1",a[1].toFixed(2));
+        g2.node.setAttribute("x2",b[0].toFixed(2)); g2.node.setAttribute("y2",b[1].toFixed(2));
+      });
+      st.bc.setAttribute("stroke-opacity",op.toFixed(2));
+
+      /* it comes down onto the nick and lifts straight off it, and while it is
+         working it never quite holds still */
+      const p=at(st,1+gap*0.5,0), jig=Math.sin(T*9+st.ph)*0.45;
+      st.lig.setAttribute("transform",
+        `translate(${p[0].toFixed(2)},${(p[1]+jig-(1-lig)*7).toFixed(2)}) rotate(${st.deg.toFixed(1)})`);
+      st.lig.setAttribute("opacity",lig.toFixed(2));
+    });
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.ligation = drawLigation;
+
+
+/* ------------------------------------------------------------------
    POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
    Forty-eight wells emptied into one tube by a single-channel tip, and
    then that tube dealt back out across forty-eight fresh ones. Both

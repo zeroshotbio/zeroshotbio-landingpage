@@ -55,7 +55,7 @@ const NODES = [
  does:"Every well is pooled into one tube and redistributed at random across the next plate. The randomisation is the whole trick: after this, well position carries no information.",
  built:"Section 1.2, closing steps — pool, centrifuge, resuspend, load the round two plate.", cond:"Clean."},
 
-{id:"R2p", key:"B4", group:"In situ barcoding", shape:"miniplate", name:"Round 2 — ligation", x:5.8, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
+{id:"R2p", key:"B4", group:"In situ barcoding", shape:"ligation", name:"Round 2 — ligation", x:5.8, y:R2, lane:"r2", w:1.0, d:0.8, h:0.3, cols:12, rows:8,
  sub:"96 wells · barcode set v1",
  does:"A second barcode is ligated onto the cDNA inside the cell.",
  built:"Section 1.3. Ligation in a 96-well plate (rows A to H, columns 1 to 12), barcode set v1, 96 barcodes across 96 wells — one per well, unlike round one.",
