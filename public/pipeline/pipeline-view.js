@@ -184,7 +184,7 @@ const gGrid=el("g"),gAxis=el("g"),gBand=el("g"),gPlinth=el("g"),gEdge=el("g"),gD
    deal bigger than it was. A map that has outgrown its grid reads as having
    fallen off the edge of the page, and the fit camera hides it by framing the
    CONTENT: check-rows asserts these bounds against the drawing for that reason. */
-const GRID={x0:-8,x1:78,y0:-8,y1:112};
+const GRID={x0:-8,x1:78,y0:-8,y1:102};
 
 (()=>{const {x0,x1,y0,y1}=GRID;
   for(let x=Math.ceil(x0);x<=x1;x++){const a=P(x,y0,0),b=P(x,y1,0);

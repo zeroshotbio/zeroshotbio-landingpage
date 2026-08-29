@@ -69,6 +69,12 @@
    unreadable: below a certain K the K-derived term falls under the floor, the
    floor wins, and the type comes out twice the size the layout was drawn for.
    ============================================================ */
+/* NOTHING SETS ANY OF THESE TODAY, and that is worth a sentence rather than a
+   deletion. Row 3 was drawn at 1/2.4 for a while; it is drawn at /FASTQ_pipe's
+   own size now, so every node falls through to the identity and this block is
+   inert. It stays because it is one field on a node if the row ever has to be
+   squeezed again, and because the identity property is the thing that makes it
+   safe to leave lying around. */
 const FQSof  = n => (n && n.fqs) || 1;      /* geometry, against /FASTQ_pipe */
 const TBof   = n => (n && n.tb)  || 1;      /* type, against the same */
 const TYPEof = (n,floor,size) => {
