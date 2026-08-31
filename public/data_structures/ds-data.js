@@ -44,9 +44,11 @@
    filter Trailmaker itself applied, v3 is a call that reads no Parse
    threshold at all. Where a figure below says "94,616 cells", it is v1's.
 
-   The MegaFin deliveries in bronze are drawn at true area because 90.4% of
-   a 3.6 TiB bill is a fact worth seeing. They are NOT the thread, and no repo
-   on this page reads them. If you add a station, say which of the two it is.
+   The MegaFin deliveries in bronze are drawn at true area because 88.1% of
+   a 5.81 TiB bill is a fact worth seeing. They are NOT the thread, and no repo
+   on this page reads them — though as of the seventh read MegaFin-1 has been
+   restructured into the same six stages as the thread. If you add a station,
+   say which of the two it is.
 
    Nodes on the thread carry `thread:true`, which flags them in the reader.
 
@@ -174,6 +176,51 @@
    - EVERY REPO NOW HAS OPEN PULL REQUESTS — bronze 3, silver 5, gold 1,
      medallion 1. "Every open pull request is in zsb-silver" is retired.
 
+   SEVENTH READ — 2026-08-31. THE TIER WAS RESTRUCTURED, AND THE PINS PASSED
+   ANYWAY.
+   Six reads recorded the bronze manifest verifying clean. It verified clean
+   again. That is now the most misleading true sentence on this page, and the
+   seventh read is mostly about why.
+
+   - PARSE REGENERATED THE MINIFIN DELIVERY, and the manifest cannot see it.
+     The delivery this map has described since it was drawn is UUID
+     `a354c053`. The one now in the canonical stages is `a24cce10`: same 44
+     samples, same 1,819 archive entries, same extension histogram — and
+     different bytes throughout. The combined unfiltered matrix is
+     959,585,881 B against the pinned 959,601,177; `all_summaries.zip` grew
+     17 MB; every CRC checked differed. The eight pins still match because
+     the objects they name were never touched. A DRIFT CHECK THAT PASSES IS
+     A CLAIM ABOUT THE BUCKET, NOT ABOUT THE VENDOR. This one has been
+     answering a question nobody was asking for two deliveries.
+   - THE TIER NEARLY DOUBLED, BY COPY, ON PURPOSE. 75,673 objects and
+     5.81 TiB, up from 710 and 3.59 TiB. Both MiniFin and MegaFin-1 now carry
+     a six-stage layout — 1_FASTQ, 2_BAM, 3_DGE-unfiltered, 4_DGE-filtered,
+     5_RDS, 6_PARSE-support — built alongside the originals rather than
+     replacing them, because AGENTS.md forbids deleting from this bucket and
+     nobody has amended it. 14,669 files for MiniFin and 60,116 for MegaFin-1,
+     each verified present and byte-exact against the source archives.
+   - A SECOND BUCKET EXISTS. `zsb-bronze-archive`, 27 objects, 1.29 TiB, the
+     raw vendor ZIPs. The rule that put them there is the one that removed
+     `original-archives/` from every stage: FORT KNOX HOLDS EXTRACTED,
+     DIRECTLY READABLE ARTIFACTS; THE ARCHIVE HOLDS THE VENDOR DELIVERIES
+     THEY CAME OUT OF.
+   - A FOURTH TOP-LEVEL PREFIX. `reference/` — 15 objects, 1.46 GiB, the
+     genome, GTFs and barcode whitelists that were byte-identical in all
+     three datasets, deduplicated into one copy. Darien's framing settles the
+     naming: reference is a dataset of materials only ever used alongside
+     other datasets, so `<dataset>/…` still holds.
+   - settings.txt IS NOT IN THE ALL FILES DELIVERY. Zero occurrences across
+     all 26 archives, both datasets. It ships with the RDS deliverable:
+     `megafin-1/parse-output/original-run/` holds exactly processed-matrix.rds
+     and settings.txt and nothing else. MegaFin-1 has two, 47,859 B and
+     47,922 B, different etags, neither yet canonical. THE FIFTH READ RECORDED
+     THAT SILVER STOPPED TRUSTING THIS FILE; THE SEVENTH RECORDS THAT WE DID
+     NOT KNOW WHERE IT CAME FROM.
+   - MEGAFIN IS NO LONGER THE UNTOUCHED 90%. MegaFin-1 is 61.5% of the tier
+     and now has a canonical structure, 55 BAMs split 16 canonical and 39
+     intermediate. No repo reads it yet, so the "not the thread" note stands —
+     but it is no longer true that nothing has been done to it.
+
    WHAT IS NOT KNOWN, AND IS MARKED AS NOT KNOWN
    - The gold bucket's contents. The role this was read with has no
      s3:ListBucket on zsb-gold-library, and HeadBucket returns 403. The map
@@ -246,19 +293,23 @@ const NODES = [
 /* ================= BRONZE ================= */
 {id:"BRONZE", key:"1", group:"① Bronze", groupMark:true, anchor:true,
  shape:"vault", tier:"bronze", doors:["r"],
- name:"Bronze", bucket:"BRONZE", right:"710 obj · 3.59 TiB",
+ name:"Bronze", bucket:"BRONZE", right:"75,673 obj · 5.81 TiB",
  x:COL_BUCKET, y:9, w:24, h:16,
  sub:"s3://zsb-bronze-fortknox · human-write, automation-read",
  tiles:[
-   {key:"megafin-1/", value:1868397757280, objs:344},
+   {key:"megafin-1/", value:3923351190894, objs:60559},
    {key:"megafin-2/", value:1698635254871, objs:281},
-   {key:"minifin/",   value:378619764302,  objs:83},
+   {key:"minifin/",   value:760827464583,  objs:14816},
+   {key:"reference/", value:1563032418,    objs:15},
  ],
- brief:"The sealed raw tier, and the only one a person may write to. Everything below it is derivable; this is not. <mark>The tier lost 3.45 TiB between the fifth read and this one</mark> — 710 objects and 3.59 TiB now, down from 1,258 and 7.03 TiB, because the duplication this map had recorded for five reads was finally acted on by a person. Every remaining object is STANDARD storage — no Glacier, no tiering, for an archive that is written once. The tiles are drawn by true area: MegaFin's two deliveries are 90.4% of the tier, and <mark>MiniFin — the steel thread, the dataset the whole pipeline was proven against — is the 9.6% sliver</mark> called out below the wall.",
- does:"The sealed raw tier, and the only one on this map a person is allowed to write to. Everything below it is derivable: if silver and gold both burned down they could be rebuilt from this bucket plus the repos. This bucket could not be rebuilt from anything. That is the rule that decides what belongs here — <mark>anything we cannot regenerate from code plus a lower tier</mark> — and it is why 3.6 TiB of vendor deliverables sit in one place with the write path closed.",
- built:"Three dataset prefixes, 710 objects, 3,945,652,776,463 bytes read on 2026-08-29 — the first read at which this bucket has moved. It held 1,258 objects and 7,730,616,859,647 bytes across the previous five, unchanged to the byte; two purges on the 29th removed 3,790,331,998,275 of them. Every remaining object is in the STANDARD storage class — there is no Glacier or Intelligent-Tiering anywhere in the bucket, which for 3.6 TiB of write-once archive is a standing monthly cost and a decision nobody has recorded making. The tiles are drawn by area: MegaFin's two deliveries are 90.4% of the tier between them, and MiniFin — the dataset the entire pipeline has been built and proven against — is the 9.6% tile.",
- cond:"Three things. First, <mark>the duplication is gone, and the finding this map carried for five reads is closed by deletion rather than by re-reading.</mark> Both duplicated prefixes were purged on 2026-08-29 by a person, at the version level: the legacy combined <mark>megafin/</mark> (594 objects, 3.24 TiB, superseded by megafin-1/ and megafin-2/) and <mark>minifin/raw/fastq/</mark> (17 objects, 209 GiB). 3.45 TiB reclaimed, 45% of the tier. The orphan question this map recorded as unsettled was settled the way such questions usually are — not by finding a decisive fact in the bucket, but by establishing that the code referencing the older prefix had itself been retired. Before deletion every one of the 594 megafin/ objects was matched by etag and byte size against a counterpart outside the delete path; 61 were not duplicates and were carried to <mark>megafin-1/archive/2026-08-mega1-characterization/</mark> first. Second, eight per-sublibrary QC summaries sit in <mark>minifin/parse-output/qc/</mark> and are excluded from the ingestion manifest <em>by name</em>: their sublibN labels do not match the barcode __sN suffix, so pairing them by name selects the wrong cells from every sublibrary and still totals exactly 94,616. No count-based check catches that. Third, the medallion README says this tier is versioned and cross-region replicated. <mark>Half of that is now confirmed, by a route around the closed door</mark>: every bucket-level Get call is still AccessDenied, but a <mark>head-object</mark> on any key comes back carrying a <mark>VersionId</mark> and <mark>ServerSideEncryption: AES256</mark> — so this bucket is versioned and encrypted at rest, and both were previously written down here as unknown. Replication is still unconfirmed. No object returns a <mark>ReplicationStatus</mark> header, which is suggestive and not decisive: that header only appears where a replication rule actually covers the object.",
- kv:[["Bucket","zsb-bronze-fortknox"],["Objects","710"],["Size","3.59 TiB (3,945,652,776,463 B)"],["Storage class","STANDARD, all 710"],["Versioned","yes — every object carries a VersionId"],["Encrypted","AES256 at rest"],["Written by","humans only"],["Read on","2026-08-29 — sixth read, and the first that moved: −3.45 TiB"]]},
+ brief:"The sealed raw tier, and the only one a person may write to. Everything below it is derivable; this is not. <mark>The tier gained 2.22 TiB and 74,963 objects between the sixth read and this one</mark> — 75,673 objects and 5.81 TiB now, up from 710 and 3.59 TiB — because two Parse deliveries were unpacked into a canonical six-stage layout <em>beside</em> the originals rather than in place of them. Nothing was deleted, because <mark>AGENTS.md forbids deleting from this bucket</mark> and that has not been amended; the duplication is deliberate and temporary. A fourth top-level prefix appeared, <mark>reference/</mark>, holding the genome and barcode files that were byte-identical in all three datasets. Every object is still STANDARD storage.",
+
+ does:"The sealed raw tier, and the only one on this map a person is allowed to write to. Everything below it is derivable: if silver and gold both burned down they could be rebuilt from this bucket plus the repos. This bucket could not be rebuilt from anything. That is the rule that decides what belongs here — <mark>anything we cannot regenerate from code plus a lower tier</mark> — and it is why 5.81 TiB of vendor deliverables sit in one place with the write path closed.",
+ built:"Four top-level prefixes, 75,673 objects, 6,384,376,942,776 bytes read on 2026-08-31. The sixth read found 710 objects and 3,945,652,776,463 bytes after a purge; this one finds the tier nearly doubled again, and for the opposite reason — not vendor duplication left lying around, but a restructure carried out by copy because the invariant forbids the delete half of a move. <mark>minifin/</mark> holds 14,816 objects against 83 at the last read, <mark>megafin-1/</mark> 60,559 against 344. Both now carry the same six stages — <mark>1_FASTQ</mark>, <mark>2_BAM</mark>, <mark>3_DGE-unfiltered</mark>, <mark>4_DGE-filtered</mark>, <mark>5_RDS</mark>, <mark>6_PARSE-support</mark> — each split <mark>combined/</mark> and <mark>per-sublibrary/</mark>. The object count is dominated by support material: 6_PARSE-support is 12,285 of MiniFin's objects and 50,167 of MegaFin-1's, for 9% and 5% of their bytes respectively. Every object remains STANDARD; there is still no Glacier or Intelligent-Tiering anywhere in a write-once archive, and still no record of anyone deciding that.",
+
+ cond:"<mark>The eight pins still match, and that is now the finding.</mark> For six reads this map has recorded the bronze manifest verifying clean against the live bucket. It still does — every size, every multipart etag, checked again on 2026-08-31. But Parse regenerated the MiniFin delivery, and the manifest is pinned to objects the vendor has superseded. The old delivery is UUID <mark>a354c053</mark>; the one now in the canonical stages is <mark>a24cce10</mark>, same 44 samples and 1,819 archive entries, different bytes throughout — the combined unfiltered matrix is 959,585,881 bytes against the pinned 959,601,177, and every CRC checked differed. The pins pass because the objects they name were never touched. A green check that means the bucket has not drifted, on a delivery that has. Second, <mark>a second bucket now exists</mark>: zsb-bronze-archive, 27 objects, 1.29 TiB, holding the raw vendor ZIPs for both deliveries — 9 for MiniFin, 17 for MegaFin-1 with one nested. The rule that put them there is worth writing down, because it is what removed <mark>original-archives/</mark> from every stage: Fort Knox holds extracted, directly readable artifacts; the archive holds the vendor deliveries they came out of. Third, <mark>settings.txt is not in the All Files delivery at all</mark> — zero occurrences across all 26 archives across both datasets. It ships with the RDS deliverable instead: megafin-1/parse-output/original-run/ holds exactly processed-matrix.rds and settings.txt and nothing else, and the pair travels together in every dataset. MegaFin-1 has two of them, 47,859 B and 47,922 B, different etags, neither yet in a canonical stage. The eight per-sublibrary QC summaries carrying the sublibN-vs-__sN trap are unchanged and now sit in two places each, which doubles the surface for the mistake they invite.",
+
+ kv:[["Bucket","zsb-bronze-fortknox"],["Objects","75,673"],["Size","5.81 TiB (6,384,376,942,776 B)"],["Storage class","STANDARD, all 75,673"],["Versioned","yes — every object carries a VersionId"],["Encrypted","AES256 at rest"],["Written by","humans only"],["Companion","zsb-bronze-archive — 27 obj, 1.29 TiB, vendor ZIPs"],["Read on","2026-08-31 — seventh read: +2.22 TiB, restructured by copy"]]},
 
 /* ================= THE BRONZE → SILVER TRANSFORM ================= */
 {id:"BREPO", key:"2", group:"② Bronze → Silver", groupMark:true, anchor:true,
@@ -274,15 +325,15 @@ const NODES = [
  kv:[["Repo","zeroshotbio/zsb-bronze"],["HEAD","d595a82 (main)"],["Commits","156, since 2026-07-22"],["Source","5,205 LOC · 2,792 in minifin/"],["Tests","11 files · CI runs make verify"],["Entry point","zsb-bronze minifin <command>"],["Depends on","zsb-medallion @ v0.8.0"],["Open PRs","3 — #49 record v3, #50 dedup, #52 chore"],["Published","minifin/v1, v2, v3"]]},
 
 {id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
- name:"fetch", cellName:"fetch", note:"8 of 710 objects · 944 MiB",
+ name:"fetch", cellName:"fetch", note:"8 of 75,673 objects · 944 MiB",
  x:COL_REPO, y:16.05, w:19, h:3.4,
  sub:"fetch/ · manifest.py + fetch.py · 244 LOC",
  thread:true,
- brief:"Mirrors eight named objects out of bronze, checking each one's size and etag against a pin before it lands on disk. <mark>Eight names — not a prefix, not a sync.</mark> That choice is why this hop is cheap: a prefix sync of minifin/ pulls 562 GiB, this pulls 944 MiB, and it is everything conversion and cell-calling actually read. All eight pins re-verified against the live bucket on 2026-08-29, multipart etags included — <mark>the fifth read running</mark> — and the repo carries a <mark>pins</mark> command that runs exactly that check. This was the one step in the architecture demonstrably moving bytes; as of 2026-08-23 it is no longer the only one.",
+ brief:"Mirrors eight named objects out of bronze, checking each one's size and etag against a pin before it lands on disk. <mark>Eight names — not a prefix, not a sync.</mark> That choice is why this hop is cheap: a prefix sync of minifin/ pulls 562 GiB, this pulls 944 MiB, and it is everything conversion and cell-calling actually read. All eight pins re-verified against the live bucket on 2026-08-31, multipart etags included — <mark>the seventh read running</mark> — and the repo carries a <mark>pins</mark> command that runs exactly that check. <mark>They now verify a superseded delivery</mark>: Parse regenerated MiniFin, the canonical matrix moved to 3_DGE-unfiltered/combined/all-sample/ at 959,585,881 B, and this manifest still names the 959,601,177 B object beside it. This was the one step in the architecture demonstrably moving bytes; as of 2026-08-23 it is no longer the only one.",
  does:"Mirrors eight named objects out of bronze, validating each one's size and etag against a pin before it is written to disk. This is the one step in the entire architecture that has demonstrably moved bytes between a real bucket and a real machine.",
  built:"The manifest is the most consequential twelve lines of configuration in the architecture, and the reason this hop is cheap. It is a list of eight object keys, each pinned to an exact size and an exact etag. <em>Not a prefix. Not a sync. Eight names.</em> The same Parse delivery holds ~225 GB of raw FASTQ and ~135 GB of split-pipe intermediates in adjacent prefixes; a prefix sync of minifin/ pulls 562 GiB and a very large egress bill. This pulls 944 MiB — about 0.16% of the dataset's own prefix — and it is everything conversion and cell-calling actually read. Downloads through <mark>zsb_medallion.io.S3IO</mark>, so the repo carries no boto3 of its own, and now reports through <mark>zsb_medallion.console.download_with_progress</mark> as it goes.",
- cond:"All eight pins were re-confirmed against the live bucket on 2026-08-29 — every size and every etag matched, multipart etags included, for the fifth read running. That is a real check and it passed. Note how it was run: there is no <mark>uv</mark> on this instance, so the <mark>pins</mark> command could not start and the eight pins were read out of manifest.py and put to head-object by hand. Same comparison, worse ergonomics — and a reminder that a check only counts as automated where the toolchain exists. What none of it tells you is whether the pins would survive a re-upload: an S3 multipart etag depends on the part size the uploader chose, so re-uploading byte-identical content with a different chunk size changes the etag and this manifest would reject a file identical to the one it wants.",
- kv:[["Command","uv run zsb-bronze minifin fetch"],["Drift check","zsb-bronze minifin pins"],["Keys pinned","8"],["Bytes pinned","989,650,630 (944 MiB)"],["Share of minifin/","0.16%"],["Verified","2026-08-29 — 8/8 size + etag"],["Streak","five reads, no drift"],["State","implemented and exercised"]]},
+ cond:"All eight pins were re-confirmed against the live bucket on 2026-08-31 — every size and every etag matched, multipart etags included, for the seventh read running. <mark>The check is sound and the objects are stale.</mark> Parse regenerated the MiniFin delivery; the canonical unfiltered matrix now sits at 3_DGE-unfiltered/combined/all-sample/ at 959,585,881 B, while these pins name the 959,601,177 B object from the superseded a354c053 delivery. Repointing them is a code change nobody has made yet, and until it is made this hop reads old data cleanly. That is a real check and it passed. Note how it was run: there is no <mark>uv</mark> on this instance, so the <mark>pins</mark> command could not start and the eight pins were read out of manifest.py and put to head-object by hand. Same comparison, worse ergonomics — and a reminder that a check only counts as automated where the toolchain exists. What none of it tells you is whether the pins would survive a re-upload: an S3 multipart etag depends on the part size the uploader chose, so re-uploading byte-identical content with a different chunk size changes the etag and this manifest would reject a file identical to the one it wants.",
+ kv:[["Command","uv run zsb-bronze minifin fetch"],["Drift check","zsb-bronze minifin pins"],["Keys pinned","8"],["Bytes pinned","989,650,630 (944 MiB)"],["Share of minifin/","0.16%"],["Verified","2026-08-31 — 8/8 size + etag"],["Streak","seven reads, no drift in the bucket"],["Pins","name the superseded a354c053 delivery"],["State","implemented, exercised, aimed at old objects"]]},
 
 {id:"BCONV", key:"2b", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
  name:"convert", cellName:"process convert", note:"279M entries · ~150 MB peak",
@@ -517,13 +568,14 @@ const SNIPPETS = {
       "                           PRE megafin-1/",
       "                           PRE megafin-2/",
       "                           PRE minifin/",
+      "                           PRE reference/",
       "2026-08-29 18:33:16          5 _east1test.txt",
       "2026-08-06 20:37:17          5 _writetest.txt",
       "",
-      "Total Objects: 710",
-      "   Total Size: 3945652776463"
+      "Total Objects: 75673",
+      "   Total Size: 6384376942776"
     ].join("\n"),
-    note: "Read from the live bucket on 2026-08-29, after the purge. The five earlier reads all returned 1258 objects / 7730616859647 bytes, identical to the byte; megafin/ and minifin/raw/fastq/ were deleted between that fifth read and this one."
+    note: "Read from the live bucket on 2026-08-31. The sixth read returned 710 objects / 3945652776463 bytes after a purge; this one is 75,673 / 6,384,376,942,776 — the tier nearly doubled by copy, not by neglect. Two Parse deliveries were unpacked into a six-stage layout beside the originals, because AGENTS.md forbids the delete half of a move. The fourth prefix, reference/, is new: 15 objects that were byte-identical in all three datasets, deduplicated into one."
   }),
   BFETCH: () => ({
     title: "head-object against the eight manifest pins",
@@ -544,7 +596,7 @@ const SNIPPETS = {
       "8/8 matched size AND etag, multipart included:",
       "count_matrix is 2952be…fb652-115 — 115 parts."
     ].join("\n"),
-    note: "Each pin re-checked against the live bucket on 2026-08-29 — the fifth read running. The repo has a pins command that runs exactly this; there is no uv on this instance, so it was run by hand."
+    note: "Each pin re-checked against the live bucket on 2026-08-31 — the seventh read running, 8/8 on size and etag. The check is sound; what it checks is not what the pipeline should now be reading. Parse regenerated MiniFin as delivery a24cce10 and the canonical unfiltered matrix is 959,585,881 B, sixteen kilobytes lighter than the pinned object sitting untouched beside it. A pin proves the bucket has not drifted. It cannot prove the vendor has not."
   }),
   BPUB: () => ({
     title: "aws s3api head-object --bucket zsb-silver-warehouse \\\n    --key minifin/v3/minifin.h5ad",
@@ -650,11 +702,12 @@ const OVERVIEW = {
 <p>This is a companion to <a href="/pipeline">/pipeline</a> and its opposite in two ways. That map is drawn on an isometric axonometric and is about <em>the platonic process</em> — how a zebrafish becomes an atlas, in general. This one is orthographic top-down and is about <em>the state of one system on one day</em>: what is in the buckets, what is in the repos, and where the two disagree.</p>
 <p><mark>The reason it is worth drawing top down.</mark> Each bucket's contents are a squarified treemap by bytes, and area is the only honest encoding for a 466:1 ratio between bronze and silver. An isometric projection foreshortens one axis, so two tiles of equal area read as unequal depending on where they sit. Straight down, a square is a square everywhere on the canvas.</p>
 <p><mark>How to read the conduits.</mark> A solid line with dots moving along it has carried bytes and can be shown to have. A dashed line is code that exists and has never run. Two of the four are solid, and the pair of them is one dataset going down and coming back out again.</p>`,
-  built: `<p>Everything here was read on <mark>2026-08-29</mark> from the live AWS account and from the four repositories at their current main commits — zsb-medallion 00b71e8, zsb-bronze d595a82, zsb-silver 560d34a, zsb-gold 513ca22. This is the fifth read of this map, and <mark>the first where both columns moved at once</mark>. The left column gained two releases; the repo column gained 1,900 lines in one repo and lost a gate in another. It is also the first read to correct the read before it: the fourth found nothing moved on either side, and was wrong about one thing it could have checked — see below.</p>
+  built: `<p>Bronze and its new companion bucket were read on <mark>2026-08-31</mark>; the repository figures and the silver and gold panels are from <mark>2026-08-29</mark> and have not been re-read since. Everything comes from the live AWS account and from the four repositories at their current main commits — zsb-medallion 00b71e8, zsb-bronze d595a82, zsb-silver 560d34a, zsb-gold 513ca22. This is the fifth read of this map, and <mark>the first where both columns moved at once</mark>. The left column gained two releases; the repo column gained 1,900 lines in one repo and lost a gate in another. It is also the first read to correct the read before it: the fourth found nothing moved on either side, and was wrong about one thing it could have checked — see below.</p>
 <p>Bucket totals are <mark>aws s3 ls --recursive --summarize</mark>. Tiles aggregate those objects two path segments deep. The eight bronze manifest pins were each re-checked with <mark>head-object</mark> and all eight matched size and etag, multipart etags included — <mark>five reads running</mark>. So did all three silver release objects that zsb-silver now pins. Both repos have a <mark>pins</mark> command that runs exactly these checks and neither could be used: this instance has no <mark>uv</mark> and no virtualenv, so the eleven pins were read out of the source and put to head-object by hand. Same comparison, and worth flagging rather than hiding — a check is only automated where the toolchain exists.</p>
 <p>Repository figures are commit counts, author tallies and line counts taken from fresh clones, not from the READMEs. Lines are every <mark>.py</mark> under <mark>src/</mark> and <mark>tests/</mark>; the per-module figure is <mark>src/</mark> only.</p>
 <p>Two things are on this map's edges and deliberately off it. The <mark>zsb-sandbox</mark> bucket — 706 objects, 64.6 GiB, mostly three STARsolo alignment arms — has no conduits in either direction by definition, so it is not a station here. And the pipeline that preceded these repos, whose output is the six unversioned objects still sitting beside the new release in silver's minifin/ tile, is described in that tile's own notes rather than drawn as a second lane.</p>`,
-  cond: `<p class="cond">The governing fact is unchanged — <mark>two of the four hops have run</mark> — but the second of them has stopped being an event. It ran once on 2026-08-23 and twice more on the 28th, and <mark>silver now holds three releases side by side</mark>: the same 2,743,021 barcodes called three different ways, published under v1, v2 and v3, with a ledger that names all three and ranks none. That is a real architectural statement. A version here is not a defect fixed, it is a question answered differently, and the tier is built to hold several answers at once rather than to converge on one.</p>
+  cond: `<p class="cond"><mark>Bronze was restructured between the sixth read and this one, and the drift check did not notice.</mark> The tier nearly doubled — 75,673 objects and 5.81 TiB, up from 710 and 3.59 TiB — as two Parse deliveries were unpacked into a six-stage layout beside the originals, by copy, because <mark>AGENTS.md forbids deleting from this bucket</mark>. In the same window Parse regenerated the MiniFin delivery, and the eight manifest pins passed for the seventh read running because the objects they name were never touched. <mark>A pin proves the bucket has not drifted; it cannot prove the vendor has not.</mark> Repointing the manifest at <mark>3_DGE-unfiltered/combined/all-sample/</mark> is the outstanding code change.</p>
+<p class="cond">The governing fact is unchanged — <mark>two of the four hops have run</mark> — but the second of them has stopped being an event. It ran once on 2026-08-23 and twice more on the 28th, and <mark>silver now holds three releases side by side</mark>: the same 2,743,021 barcodes called three different ways, published under v1, v2 and v3, with a ledger that names all three and ranks none. That is a real architectural statement. A version here is not a defect fixed, it is a question answered differently, and the tier is built to hold several answers at once rather than to converge on one.</p>
 <p class="cond"><mark>The changelog problem is closed, and its mirror image has opened.</mark> For two reads this map's sharpest finding was a ledger indexing a release nobody had uploaded; it closed by the release being published rather than the note retracted. Now zsb-bronze's dataset README says the <mark>barcode-ranks</mark> policy is 'deliberately unpublished' and stops its version table at v2 — while <mark>minifin/v3/</mark> has been in the warehouse since the 28th, published under exactly that policy, recorded in the CHANGELOG committed in the same tree. A document denying an object that exists, where before an object was missing from a document that described it. Open PR #49 is the fix, and it names the distinction the README was reaching for: <em>publication is not promotion</em>. v3 exists and is not recommended; those are two sentences, and the README collapsed them into one.</p>
 <p class="cond"><mark>The gate count is one, and the gate that closed had been closed for three days before this map noticed.</mark> Gold keys are <mark>&lt;dataset&gt;/&lt;recipe&gt;/&lt;version&gt;/</mark> — a recipe is a named hyperparameter set, a version one immutable build of it. That was written down on 2026-08-23 in zsb-gold's README, its AGENTS.md, and the docstring of the stub this map drew as blocked. The fourth read looked at that commit and recorded the gate as open. The lesson is a sharper version of the fourth read's own: <mark>a gate is a claim about a repo other than the one the panel is about</mark>, and re-reading the panel will never catch it. Go and read the repo the gate names.</p>
 <p class="cond">What is left is the <mark>gold v1 QC sign-off</mark>, and it is still a question for a person — which QC thresholds this company is prepared to defend. But it has stopped being a thing that is merely waited on. zsb-silver tripled in six days and the new lines are aimed straight at it: Trailmaker's QC steps 3 and 4 ported and asserted against R, a doublet scorer calling real scDblFinder behind a swappable seam, and a recipe naming every dial. <mark>The step that would run them still raises</mark>, so it is still drawn dashed — the parts exist and the orchestrator does not.</p>
