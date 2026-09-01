@@ -79,7 +79,9 @@ function leader(g, ax, ay, tx, ty, text, ink) {
    down. Bronze's 7.03 TiB against silver's 15.45 GiB is a 466x ratio, and
    area is the only encoding that shows it without a log scale.
 
-   n.tiles: [{key, value, objs, stale}]  value in bytes
+   n.tiles: [{key, value, objs, stale, legacy}]  value and legacy in bytes
+   `legacy` is the share of `value` still in the pre-restructure folders;
+   it is drawn as a grey band inside the tile.
    ============================================================ */
 DRAW.vault = (g, n) => {
   const ink = inkOf(n);
@@ -118,6 +120,26 @@ DRAW.vault = (g, n) => {
          16 GB zip and the other is 256 FASTQs */
       const heat = 0.10 + 0.30 * Math.sqrt(it.value / max);
       plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: 0.9, so: 0.6 });
+
+      /* A tile may be split: the part of a prefix that belongs to the
+         aspirational six-stage layout, and the part still sitting in legacy
+         folders waiting on the archive move. The legacy share is drawn as a
+         grey band along the tile's longer axis, so the duplication reads as
+         area inside the very box it belongs to rather than as a separate
+         tile somewhere else on the map. */
+      if (it.legacy > 0 && it.legacy < it.value) {
+        const frac = it.legacy / it.value;
+        const w = L.w - 0.07, h = L.h - 0.07;
+        if (w >= h) {
+          const lw = w * frac;
+          plate(g, L.x + w / 2 - lw / 2, L.y, lw, h,
+            { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 0.7, so: 0.45 });
+        } else {
+          const lh = h * frac;
+          plate(g, L.x, L.y + h / 2 - lh / 2, w, lh,
+            { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 0.7, so: 0.45 });
+        }
+      }
 
       /* A stale tile — content that does not belong to the current
          architecture — is restroked in the drop colour so it reads even at a
