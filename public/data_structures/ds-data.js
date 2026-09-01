@@ -44,8 +44,8 @@
    filter Trailmaker itself applied, v3 is a call that reads no Parse
    threshold at all. Where a figure below says "94,616 cells", it is v1's.
 
-   The MegaFin deliveries in bronze are drawn at true area because 88.1% of
-   a 5.81 TiB bill is a fact worth seeing. They are NOT the thread, and no repo
+   The MegaFin deliveries in bronze are drawn at true area because 89% of
+   a 7.20 TiB bill is a fact worth seeing. They are NOT the thread, and no repo
    on this page reads them — though as of the seventh read MegaFin-1 has been
    restructured into the same six stages as the thread. If you add a station,
    say which of the two it is.
@@ -221,6 +221,35 @@
      intermediate. No repo reads it yet, so the "not the thread" note stands —
      but it is no longer true that nothing has been done to it.
 
+   EIGHTH READ — 2026-09-01. ALL THREE DATASETS NOW SHARE ONE SHAPE, AND THE
+   TREEMAP CHANGED WHAT IT ASKS.
+   The seventh read caught the restructure mid-flight on one dataset. This one
+   finds it done on two and running on the third, and takes the chance to redraw
+   the bronze tiles one level down.
+
+   - THE TILES ARE NOW THE FIVE ANCHOR STAGES, not the three datasets. FASTQ,
+     BAM, unfiltered DGE, filtered DGE, RDS — per dataset, at true area. The
+     dataset-level view had done its job: it said MegaFin is most of the bill.
+     This one says something the pipeline column has been implying for eight
+     reads without ever showing it — THE BYTES ARE IN THE THINGS NOTHING READS.
+     FASTQ and BAM are 96% of the tier. Every DGE matrix across all three
+     datasets, the only bronze objects any transform actually opens, fits in
+     75 GB. The eight pinned keys are 944 MiB of a 7.2 TiB bucket.
+   - Note what the tiles no longer sum to. 6_PARSE-support and every legacy
+     prefix are excluded, so the treemap is a view of the anchors and not of
+     the tier. That is a deliberate loss of one property this map has held
+     since it was drawn; it is called out in the panel because a treemap that
+     silently stops totalling is worse than one that says so.
+   - 100,545 OBJECTS, 7.20 TiB, up from 75,673 and 5.81. Read mid-extraction:
+     MegaFin-2 is seven archives of seventeen through its unpack.
+   - THE ARCHIVE BUCKET HOLDS ALL THREE DELIVERIES — 43 objects, 2.31 TiB,
+     UUIDs a24cce10, ca21e8e1 and f3cad9ab, one per dataset.
+   - THE NO-DELETE RULE IS INFRASTRUCTURE, NOT CONVENTION. An attempt to remove
+     thirty redundant copies from this instance returned AccessDenied with an
+     EXPLICIT DENY on s3:DeleteObject for the whole bucket. AGENTS.md and IAM
+     agree, and the IAM half is the one that cannot be forgotten. The cleanup
+     was done from a separate admin identity and the guardrail left intact.
+
    WHAT IS NOT KNOWN, AND IS MARKED AS NOT KNOWN
    - The gold bucket's contents. The role this was read with has no
      s3:ListBucket on zsb-gold-library, and HeadBucket returns 403. The map
@@ -293,23 +322,33 @@ const NODES = [
 /* ================= BRONZE ================= */
 {id:"BRONZE", key:"1", group:"① Bronze", groupMark:true, anchor:true,
  shape:"vault", tier:"bronze", doors:["r"],
- name:"Bronze", bucket:"BRONZE", right:"75,673 obj · 5.81 TiB",
- x:COL_BUCKET, y:9, w:24, h:16,
- sub:"s3://zsb-bronze-fortknox · human-write, automation-read",
+ name:"Bronze", bucket:"BRONZE", right:"100,545 obj · 7.20 TiB",
+ x:COL_BUCKET, y:11, w:24, h:22,
+ sub:"s3://zsb-bronze-fortknox · human-write, automation-read · three datasets, six stages each",
  tiles:[
-   {key:"megafin-1/", value:3923351190894, objs:60559},
-   {key:"megafin-2/", value:1698635254871, objs:281},
-   {key:"minifin/",   value:760827464583,  objs:14816},
+   {key:"megafin-1/", value:5058148910735, objs:60717},
+   {key:"megafin-2/", value:2096950262476, objs:25025},
+   {key:"minifin/",   value:759208795497,  objs:14786},
    {key:"reference/", value:1563032418,    objs:15},
  ],
- brief:"The sealed raw tier, and the only one a person may write to. Everything below it is derivable; this is not. <mark>The tier gained 2.22 TiB and 74,963 objects between the sixth read and this one</mark> — 75,673 objects and 5.81 TiB now, up from 710 and 3.59 TiB — because two Parse deliveries were unpacked into a canonical six-stage layout <em>beside</em> the originals rather than in place of them. Nothing was deleted, because <mark>AGENTS.md forbids deleting from this bucket</mark> and that has not been amended; the duplication is deliberate and temporary. A fourth top-level prefix appeared, <mark>reference/</mark>, holding the genome and barcode files that were byte-identical in all three datasets. Every object is still STANDARD storage.",
+ brief:"The sealed raw tier, and the only one a person may write to. Everything below it is derivable; this is not. <mark>All three datasets now carry the same six-stage layout</mark> — 1_FASTQ, 2_BAM, 3_DGE-unfiltered, 4_DGE-filtered, 5_RDS, 6_PARSE-support — and the tier has grown to 100,545 objects and 7.20 TiB. The tiles stay at dataset level because that is the level at which area is honest: the five anchor stages span a 900:1 byte range, and a treemap of them is six slivers and two rectangles. <mark>The anchor figures are in the panel below instead</mark>, where they can be read rather than squinted at.",
 
- does:"The sealed raw tier, and the only one on this map a person is allowed to write to. Everything below it is derivable: if silver and gold both burned down they could be rebuilt from this bucket plus the repos. This bucket could not be rebuilt from anything. That is the rule that decides what belongs here — <mark>anything we cannot regenerate from code plus a lower tier</mark> — and it is why 5.81 TiB of vendor deliverables sit in one place with the write path closed.",
- built:"Four top-level prefixes, 75,673 objects, 6,384,376,942,776 bytes read on 2026-08-31. The sixth read found 710 objects and 3,945,652,776,463 bytes after a purge; this one finds the tier nearly doubled again, and for the opposite reason — not vendor duplication left lying around, but a restructure carried out by copy because the invariant forbids the delete half of a move. <mark>minifin/</mark> holds 14,816 objects against 83 at the last read, <mark>megafin-1/</mark> 60,559 against 344. Both now carry the same six stages — <mark>1_FASTQ</mark>, <mark>2_BAM</mark>, <mark>3_DGE-unfiltered</mark>, <mark>4_DGE-filtered</mark>, <mark>5_RDS</mark>, <mark>6_PARSE-support</mark> — each split <mark>combined/</mark> and <mark>per-sublibrary/</mark>. The object count is dominated by support material: 6_PARSE-support is 12,285 of MiniFin's objects and 50,167 of MegaFin-1's, for 9% and 5% of their bytes respectively. Every object remains STANDARD; there is still no Glacier or Intelligent-Tiering anywhere in a write-once archive, and still no record of anyone deciding that.",
-
- cond:"<mark>The eight pins still match, and that is now the finding.</mark> For six reads this map has recorded the bronze manifest verifying clean against the live bucket. It still does — every size, every multipart etag, checked again on 2026-08-31. But Parse regenerated the MiniFin delivery, and the manifest is pinned to objects the vendor has superseded. The old delivery is UUID <mark>a354c053</mark>; the one now in the canonical stages is <mark>a24cce10</mark>, same 44 samples and 1,819 archive entries, different bytes throughout — the combined unfiltered matrix is 959,585,881 bytes against the pinned 959,601,177, and every CRC checked differed. The pins pass because the objects they name were never touched. A green check that means the bucket has not drifted, on a delivery that has. Second, <mark>a second bucket now exists</mark>: zsb-bronze-archive, 27 objects, 1.29 TiB, holding the raw vendor ZIPs for both deliveries — 9 for MiniFin, 17 for MegaFin-1 with one nested. The rule that put them there is worth writing down, because it is what removed <mark>original-archives/</mark> from every stage: Fort Knox holds extracted, directly readable artifacts; the archive holds the vendor deliveries they came out of. Third, <mark>settings.txt is not in the All Files delivery at all</mark> — zero occurrences across all 26 archives across both datasets. It ships with the RDS deliverable instead: megafin-1/parse-output/original-run/ holds exactly processed-matrix.rds and settings.txt and nothing else, and the pair travels together in every dataset. MegaFin-1 has two of them, 47,859 B and 47,922 B, different etags, neither yet in a canonical stage. The eight per-sublibrary QC summaries carrying the sublibN-vs-__sN trap are unchanged and now sit in two places each, which doubles the surface for the mistake they invite.",
-
- kv:[["Bucket","zsb-bronze-fortknox"],["Objects","75,673"],["Size","5.81 TiB (6,384,376,942,776 B)"],["Storage class","STANDARD, all 75,673"],["Versioned","yes — every object carries a VersionId"],["Encrypted","AES256 at rest"],["Written by","humans only"],["Companion","zsb-bronze-archive — 27 obj, 1.29 TiB, vendor ZIPs"],["Read on","2026-08-31 — seventh read: +2.22 TiB, restructured by copy"]]},
+ does:"The sealed raw tier, and the only one on this map a person is allowed to write to. Everything below it is derivable: if silver and gold both burned down they could be rebuilt from this bucket plus the repos. This bucket could not be rebuilt from anything. That is the rule that decides what belongs here — <mark>anything we cannot regenerate from code plus a lower tier</mark> — and it is why 7.2 TiB of vendor deliverables sit in one place with the write path closed.",
+ built:"100,545 objects, 7,915,871,001,136 bytes read on 2026-09-01, <mark>mid-extraction</mark>: MegaFin-2 is seven archives of seventeen into its unpack, so its stages are partial and still growing. All three datasets now carry the same six-stage layout — 1_FASTQ, 2_BAM, 3_DGE-unfiltered, 4_DGE-filtered, 5_RDS, 6_PARSE-support — each split combined/ and per-sublibrary/. The anchor figures in the table below show where the mass actually is: MegaFin-1 holds 1.67 TiB of FASTQ and 1.01 TiB of BAM, MiniFin 209 GiB and 122 GiB, and every DGE stage across all three datasets fits inside 71 GiB. <mark>A MegaFin delivery's sixteen canonical BAMs outweigh its entire DGE output roughly forty to one.</mark> Every object is STANDARD storage; there is still no Glacier or Intelligent-Tiering anywhere in a write-once archive.",
+ cond:"<mark>The eight pins still match, and that is still the finding.</mark> Parse regenerated the MiniFin delivery — the old one is UUID <mark>a354c053</mark>, the one now in the canonical stages is <mark>a24cce10</mark>, same 44 samples and 1,819 entries, different bytes throughout. The manifest passes because the objects it names were never touched. A drift check that passes is a claim about the bucket, not about the vendor. Second, <mark>a companion bucket now holds the vendor ZIPs</mark>: zsb-bronze-archive, 43 objects, 2.31 TiB, all three deliveries. The rule that put them there is what removed original-archives/ from every stage — Fort Knox holds extracted, directly readable artifacts; the archive holds the deliveries they came out of. Third, <mark>the duplication is now the dominant cost</mark>. Each dataset holds its FASTQs twice, once under the legacy raw-fastq/ and once under 1_FASTQ/, and nothing can be removed: AGENTS.md forbids deleting from this bucket and the rule is enforced as an <mark>explicit IAM deny</mark>, not merely written down. Fourth, settings.txt is absent from every All Files delivery — it ships with the RDS deliverable instead, which is why 5_RDS is the one stage still empty for two of the three datasets.",
+ kv:[["Bucket","zsb-bronze-fortknox"],["Objects","100,545"],["Size","7.20 TiB"],
+   ["— anchor stages —","minifin · megafin-1 · megafin-2"],
+   ["1_FASTQ","209 GiB · 1.67 TiB · pending"],
+   ["2_BAM","122 GiB · 1.01 TiB · 319 GiB (partial)"],
+   ["3_DGE-unfiltered","3.76 GiB · 23.2 GiB · 14.1 GiB"],
+   ["4_DGE-filtered","2.42 GiB · 15.4 GiB · 10.5 GiB"],
+   ["5_RDS","1.87 GiB · pending · pending"],
+   ["6_PARSE-support","12.1 GiB · 193 GiB · 27.2 GiB"],
+   ["— tier —",""],
+   ["Storage class","STANDARD"],["Versioned","yes — every object carries a VersionId"],
+   ["Encrypted","AES256 at rest"],["Written by","humans only"],
+   ["Companion","zsb-bronze-archive — 43 obj, 2.31 TiB"],
+   ["Read on","2026-09-01 — eighth read, mid-extraction"]]},
 
 /* ================= THE BRONZE → SILVER TRANSFORM ================= */
 {id:"BREPO", key:"2", group:"② Bronze → Silver", groupMark:true, anchor:true,
@@ -325,7 +364,7 @@ const NODES = [
  kv:[["Repo","zeroshotbio/zsb-bronze"],["HEAD","d595a82 (main)"],["Commits","156, since 2026-07-22"],["Source","5,205 LOC · 2,792 in minifin/"],["Tests","11 files · CI runs make verify"],["Entry point","zsb-bronze minifin <command>"],["Depends on","zsb-medallion @ v0.8.0"],["Open PRs","3 — #49 record v3, #50 dedup, #52 chore"],["Published","minifin/v1, v2, v3"]]},
 
 {id:"BFETCH", key:"2a", group:"② Bronze → Silver", shape:"cell", tier:"bronze", state:"live",
- name:"fetch", cellName:"fetch", note:"8 of 75,673 objects · 944 MiB",
+ name:"fetch", cellName:"fetch", note:"8 of 100,545 objects · 944 MiB",
  x:COL_REPO, y:16.05, w:19, h:3.4,
  sub:"fetch/ · manifest.py + fetch.py · 244 LOC",
  thread:true,
@@ -414,7 +453,7 @@ const NODES = [
 
 {id:"SFETCH", key:"5a", group:"⑤ Silver → Gold", shape:"cell", tier:"silver", state:"ready",
  name:"fetch (silver)", cellName:"fetch", note:"written · pinned · not yet run",
- x:COL_REPO, y:42.0, w:19, h:3.4,
+ x:COL_REPO, y:42, w:19, h:3.4,
  sub:"fetch/ · release.py + config.py + fetch.py · 188 LOC",
  thread:true,
  brief:"Downloads the MiniFin silver release the bronze repo published. Written, and pinned to objects that exist. <mark>It now has to choose which release to read, and it chooses v2</mark> — the population Trailmaker itself filtered, because the recipe above it reproduces Trailmaker's QC and should start from what Trailmaker saw. v1 and v3 are pinned too but not fetched, so <mark>pins</mark> checks all three. All three matched the live warehouse on 2026-08-29. Still drawn cold: nothing on this map can show it has been run, because a fetch lands on a machine, not in a bucket.",
@@ -572,8 +611,8 @@ const SNIPPETS = {
       "2026-08-29 18:33:16          5 _east1test.txt",
       "2026-08-06 20:37:17          5 _writetest.txt",
       "",
-      "Total Objects: 75673",
-      "   Total Size: 6384376942776"
+      "Total Objects: 100545",
+      "   Total Size: 7915871001136"
     ].join("\n"),
     note: "Read from the live bucket on 2026-08-31. The sixth read returned 710 objects / 3945652776463 bytes after a purge; this one is 75,673 / 6,384,376,942,776 — the tier nearly doubled by copy, not by neglect. Two Parse deliveries were unpacked into a six-stage layout beside the originals, because AGENTS.md forbids the delete half of a move. The fourth prefix, reference/, is new: 15 objects that were byte-identical in all three datasets, deduplicated into one."
   }),
