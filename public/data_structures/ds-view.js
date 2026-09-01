@@ -442,6 +442,15 @@ function inspect(n) {
   if (n.sub) H.push(`<div class="sub">${esc(n.sub)}</div>`);
   if (n.thread) H.push(`<div class="thr">on the steel thread</div>`);
   if (UNVERIFIED.has(n.id)) H.push(`<div class="unver">not confirmable from here</div>`);
+  if (n.panel) {
+    /* A station whose evidence is a structure rather than a paragraph supplies
+       its own body. Bronze does: a bucket with a hundred thousand objects is
+       read as a tree, not as a hundred words about a tree. */
+    H.push(n.panel);
+    readEl.innerHTML = H.join("");
+    readEl.scrollTop = 0;
+    return;
+  }
   if (n.brief) H.push(`<p>${n.brief}</p>`);
 
   const sn = SNIPPETS[n.id] && SNIPPETS[n.id]();
@@ -479,6 +488,10 @@ function select(n) {
   if (window.matchMedia("(max-width:900px)").matches) {
     reader.classList.toggle("open", !!n);
     strip.classList.toggle("mini", !!n);
+  } else if (n) {
+    window.__readerOpen && window.__readerOpen();
+  } else {
+    window.__readerShut && window.__readerShut();
   }
 }
 
@@ -601,6 +614,10 @@ const MOVED = 4;   /* px of travel that separates a drag from a click */
        that shut() sets would survive into a station tap and leave nothing to
        read. */
     if (!window.matchMedia("(max-width:900px)").matches) shut();
+    /* selecting a station should raise its panel; deselecting should put it
+       away again. The grip still works by hand, and a column the reader has
+       opened by hand is not shut from under them. */
+    if (varName === "--reader-w") { window.__readerOpen = open; window.__readerShut = shut; }
 
     grip.addEventListener("pointerdown", e => {
       drag = true; moved = false; x0 = e.clientX; w0 = w;
