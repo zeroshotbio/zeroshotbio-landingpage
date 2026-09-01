@@ -79,7 +79,8 @@ function leader(g, ax, ay, tx, ty, text, ink) {
    down. Bronze's 7.03 TiB against silver's 15.45 GiB is a 466x ratio, and
    area is the only encoding that shows it without a log scale.
 
-   n.tiles: [{key, value, objs, stale, legacy}]  value and legacy in bytes
+   n.tiles: [{key, value, objs, stale, legacy, accent}]  bytes; `accent` outlines
+   a split tile so one dataset reads as one object
    `legacy` is the share of `value` still in the pre-restructure folders;
    it is drawn as a grey band inside the tile.
    ============================================================ */
@@ -122,23 +123,57 @@ DRAW.vault = (g, n) => {
       plate(g, L.x, L.y, L.w - 0.07, L.h - 0.07, { fill: ink, fo: heat, stroke: ink, sw: 0.9, so: 0.6 });
 
       /* A tile may be split: the part of a prefix that belongs to the
-         aspirational six-stage layout, and the part still sitting in legacy
-         folders waiting on the archive move. The legacy share is drawn as a
-         grey band along the tile's longer axis, so the duplication reads as
-         area inside the very box it belongs to rather than as a separate
-         tile somewhere else on the map. */
+         aspirational six-stage layout, and the part still in the legacy
+         folders. Each half is captioned in place and the whole tile is
+         outlined in its own accent, so a dataset reads as one object with a
+         visible internal boundary rather than as two tiles that happen to
+         sit together. */
       if (it.legacy > 0 && it.legacy < it.value) {
         const frac = it.legacy / it.value;
         const w = L.w - 0.07, h = L.h - 0.07;
-        if (w >= h) {
-          const lw = w * frac;
-          plate(g, L.x + w / 2 - lw / 2, L.y, lw, h,
-            { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 0.7, so: 0.45 });
-        } else {
-          const lh = h * frac;
-          plate(g, L.x, L.y + h / 2 - lh / 2, w, lh,
-            { fill: "var(--fg3)", fo: 0.20, stroke: "var(--fg3)", sw: 0.7, so: 0.45 });
-        }
+        const horiz = w >= h;
+        const lw = horiz ? w * frac : w;
+        const lh = horiz ? h : h * frac;
+        const lx = horiz ? L.x + w / 2 - lw / 2 : L.x;
+        const ly = horiz ? L.y : L.y + h / 2 - lh / 2;
+        plate(g, lx, ly, lw, lh,
+          { fill: "var(--fg3)", fo: 0.22, stroke: "var(--fg3)", sw: 0.7, so: 0.5 });
+
+        /* the aspirational half is whatever the band does not cover */
+        const aw = horiz ? w - lw : w;
+        const ah = horiz ? h : h - lh;
+        const ax = horiz ? L.x - w / 2 + aw / 2 : L.x;
+        const ay = horiz ? L.y : L.y - h / 2 + ah / 2;
+
+        const cap = (cx, cy, cw, ch, kind, short, bytes, col) => {
+          const avail = (cw - 0.4) * S;
+          /* Size on the LONGEST row, not on the key: "aspirational structure"
+             is far wider than "minifin/", and sizing on the key spills it
+             across the split. Then degrade rather than vanish — the full
+             phrase, the short one, the key alone. A half with no label at all
+             is the one outcome worth avoiding. */
+          const tries = [[it.key, kind], [it.key, short], [it.key, null]];
+          for (const [k, sub] of tries) {
+            const longest = Math.max(k.length, sub ? sub.length : 0);
+            const z = Math.min(9.5, avail / (longest * TYPE * 0.62));
+            const rows = [{ t: k, z, c: col }];
+            if (sub) rows.push({ t: sub, z: z * 0.82, c: col });
+            rows.push({ t: fmtBytes(bytes), z: z * 0.84, c: "var(--fg3)" });
+            const tot = rows.reduce((a, b) => a + lineH(b.z), 0);
+            if (z < 5.6 || ch < tot + 0.12) continue;
+            let y = cy - tot / 2;
+            rows.forEach(r => { y += lineH(r.z) / 2;
+              label(g, cx, y, r.t, { size: r.z, fill: r.c, ls: 0.03 }); y += lineH(r.z) / 2; });
+            return;
+          }
+        };
+        cap(ax, ay, aw, ah, "aspirational structure", "aspirational", it.value - it.legacy, "var(--fg)");
+        cap(lx, ly, lw, lh, "legacy", "legacy", it.legacy, "var(--fg3)");
+
+        /* the dataset's own outline, drawn last so it sits over both halves */
+        plate(g, L.x, L.y, w, h,
+          { fill: "none", stroke: it.accent || ink, sw: 2.6, so: 0.95 });
+        return;   /* both halves captioned; skip the single-caption path */
       }
 
       /* A stale tile — content that does not belong to the current
