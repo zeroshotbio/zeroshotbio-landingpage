@@ -130,7 +130,7 @@ DRAW.vault = (g, n) => {
          sit together. */
       if (it.legacy > 0 && it.legacy < it.value) {
         const frac = it.legacy / it.value;
-        const w = L.w - 0.07, h = L.h - 0.07;
+        const w = L.w - 0.30, h = L.h - 0.30;   /* gap between datasets */
         const horiz = w >= h;
         const lw = horiz ? w * frac : w;
         const lh = horiz ? h : h * frac;
@@ -159,7 +159,10 @@ DRAW.vault = (g, n) => {
             const rows = [{ t: k, z, c: col }];
             if (sub) rows.push({ t: sub, z: z * 0.82, c: col });
             rows.push({ t: fmtBytes(bytes), z: z * 0.84, c: "var(--fg3)" });
-            const tot = rows.reduce((a, b) => a + lineH(b.z), 0);
+            let tot = rows.reduce((a, b) => a + lineH(b.z), 0);
+            /* the byte figure goes before the kind word does: "legacy" is what
+               the half IS, the size is available in the panel */
+            if (ch < tot + 0.12 && rows.length === 3) { rows.pop(); tot = rows.reduce((a, b) => a + lineH(b.z), 0); }
             if (z < 5.6 || ch < tot + 0.12) continue;
             let y = cy - tot / 2;
             rows.forEach(r => { y += lineH(r.z) / 2;
@@ -172,7 +175,7 @@ DRAW.vault = (g, n) => {
 
         /* the dataset's own outline, drawn last so it sits over both halves */
         plate(g, L.x, L.y, w, h,
-          { fill: "none", stroke: it.accent || ink, sw: 2.6, so: 0.95 });
+          { fill: "none", stroke: it.accent || ink, sw: 4.2, so: 1 });
         return;   /* both halves captioned; skip the single-caption path */
       }
 
