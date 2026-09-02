@@ -3594,3 +3594,382 @@ function drawCountSplitLyse(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.countsplitlyse = drawCountSplitLyse;
+
+
+/* ==================================================================
+   B8 · CAPTURE, TEMPLATE SWITCH, AMPLIFY
+   The biotin ligated in round three is finally used as a handle:
+   streptavidin beads take the barcoded cDNA, a magnet holds the beads
+   while the debris of eight lysates is washed off, an adapter is put on
+   the far end, and the whole thing is amplified.
+
+   TWO COMPONENTS ARRIVE HERE AND NEITHER OF THEM IS B8'S ALONE. A
+   magnetic rack and a thermal cycler are the two objects the rest of
+   this row is built out of — C2 is a cycler, and every bead cleanup
+   between here and the sequencer is a rack — so they are written as
+   components that take their own geometry and hand back handles, rather
+   than as parts of one station's drawing. That is the rule conicalTube
+   and flowFan are already here under, applied one station earlier,
+   because this time the second caller is visible from where it is
+   written and a copy would start drifting the moment it was made.
+
+   THE BEATS RUN ALONG y, the way B7's do and for the same reason: the
+   stations either side sit about 1.3 apart in x and there is no room
+   there, while y is empty. Capture is at the front and the cycler
+   stands behind it, so the sequence reads front-left to back-right,
+   which is the direction B7 next door already established for a bench
+   with more than one beat on it.
+
+   THE MIDDLE WORD IS NOT DRAWN AS A MOLECULE, and that is a decision
+   about this neighbourhood rather than about the chemistry. A template
+   switch is an adapter arriving on the 3-prime end; at tube scale it is
+   a tube that does not change, so it wants the magnification idiom —
+   and the airspace a magnification needs here is already spoken for.
+   B7's haemocytometer sits directly over this tube, B7's own lysing
+   cell stands over the ground behind it, and the diagonal above and to
+   the right is where this station's name runs. A magnification put
+   anywhere that is left would land on one of the three. So the beat is
+   drawn as the two things that are true of it at the bench: the debris
+   has gone, and what the beads are released into is a fresh reaction
+   rather than the lysate they were captured out of. That is also the
+   honest limit of the record — nothing was archived from this step.
+
+   Reuses ellipseAt / arcPts from the clutch block and flowLine /
+   setFanLine from the fan. Spends --pool and --ch6, which are declared
+   on /molecular_pipe, the only page carrying a node that wears this
+   shape.
+   ================================================================== */
+
+/* THE MAGNETIC RACK. A block with a row of sockets, a magnet bar down its far
+   flank, and one tube standing in the middle socket.
+
+   THE MAGNET IS ON THE FAR SIDE, and that placement is the only reason the
+   pellet can be seen at all: beads collect against the wall nearest the magnet,
+   and the far wall is the one you are looking THROUGH rather than the one you
+   are looking at. On the near side the pellet would sit behind the glass edge
+   and read as a smudge on the outside of the tube.
+
+   NOTHING HERE SWITCHES ON. A rack's magnet is a lump of neodymium; what
+   changes at the bench is that the tube is set down on it. But a tube hopping
+   in and out of a socket every few seconds reads as a glitch rather than as a
+   step, so the tube stays put and the field over the bar is what says which of
+   the two states it is in.
+
+   `r` is {x,y,w,d,h} for the block plus bore, rise, beads and seed for the tube
+   it carries. Returns the mouth a flow can be aimed at and the three things
+   only a magnet does to a tube: a level that can be drawn off, a bead cloud
+   that can be pulled to a wall, and the field that says which. */
+function magnetRack(g, r){
+  const SOCK=3, B=r.bore, ZT=r.h+r.rise, ZL=ZT-r.rise*0.20;
+
+  /* the magnet first, because it stands behind everything it acts on and the
+     order things are appended in is the order they occlude in */
+  const mw=r.w*0.86, md=r.d*0.28, mh=r.h*1.35, my=r.y-r.d*0.5-md*0.55;
+  paint(g, r.x, my, mw, md, mh, SKIN.monolith);
+  const field=el("polygon",{points:faces(r.x,my,mw,md,mh).top,
+    fill:"var(--signal)","fill-opacity":"0"});
+  g.appendChild(field);
+
+  paint(g, r.x, r.y, r.w, r.d, r.h, SKIN.works);
+
+  /* the sockets, so the block reads as a rack rather than as a plinth. Three,
+     and only the middle one is worked: the empty two are what say the object
+     is a stand and not a plug the tube grew out of. */
+  const socks=[];
+  for(let i=0;i<SOCK;i++){
+    const sx=r.x-r.w/2+(i+0.5)*r.w/SOCK, e=ellipseAt(sx,r.y,r.h,B*1.16);
+    socks.push(sx);
+    g.appendChild(el("ellipse",{cx:e.x.toFixed(1),cy:e.y.toFixed(1),
+      rx:e.rx.toFixed(2),ry:e.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".45",
+      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
+  }
+
+  /* the tube. A screw-cap 2 ml: straight wall, a flared collar, and the cone
+     below the rack top where it is inside the block and cannot be seen. */
+  const tx=socks[(SOCK-1)/2], ty=r.y;
+  const collar=ellipseAt(tx,ty,ZT,B*1.10), neck=ellipseAt(tx,ty,ZT-r.rise*0.07,B),
+        foot=ellipseAt(tx,ty,r.h,B*0.94), inner=ellipseAt(tx,ty,r.h,B*0.88);
+  const silh=pts([[collar.x+collar.rx,collar.y],[neck.x+neck.rx,neck.y],
+    ...arcPts(foot,0,Math.PI,10),[neck.x-neck.rx,neck.y],[collar.x-collar.rx,collar.y],
+    ...arcPts(collar,Math.PI,2*Math.PI,14)]);
+  g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+
+  /* born with a real floor rather than empty, so the ticker only ever restates
+     a surface — an element with no points sits at the origin and drags the
+     selection halo out across the map */
+  const liq=el("polygon",{points:pts(arcPts(inner,Math.PI,0,10)),
+    fill:"var(--pool)","fill-opacity":"0"});
+  g.appendChild(liq);
+
+  const rb=rng(r.seed||29), beads=[];
+  for(let i=0;i<(r.beads||16);i++){
+    const a=rb()*2*Math.PI, u=Math.sqrt(rb())*0.66;
+    const free=P(tx+Math.cos(a)*u*B, ty+Math.sin(a)*u*B, r.h+(0.10+rb()*0.72)*(ZL-r.h));
+    /* held: against the far wall, in a band rather than a dot — a pellet on a
+       rack is a streak up the side of the tube, not a bead at the bottom */
+    const held=P(tx+(rb()-0.5)*B*0.70, ty-B*0.62, r.h+(0.16+rb()*0.30)*(ZL-r.h));
+    const c=el("circle",{cx:free[0].toFixed(1),cy:free[1].toFixed(1),
+      r:(B*S*0.16).toFixed(2),fill:"var(--fg)","fill-opacity":".8"});
+    g.appendChild(c);
+    beads.push({c,free,held,ph:rb()*6.28});
+  }
+
+  g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+    "stroke-width":"1","stroke-opacity":".8"}));
+  g.appendChild(el("ellipse",{cx:collar.x.toFixed(1),cy:collar.y.toFixed(1),
+    rx:collar.rx.toFixed(2),ry:collar.ry.toFixed(2),fill:"none",stroke:"var(--stroke)",
+    "stroke-width":"1.2","stroke-opacity":".85"}));
+
+  const T={mouth:P(tx,ty,ZT+r.rise*0.45)};
+  T.setLevel=(f,col,op)=>{
+    const k=Math.max(0.0006,Math.min(1,f));
+    const surf=ellipseAt(tx,ty,r.h+k*(ZL-r.h),B*0.88);
+    liq.setAttribute("points",pts([...arcPts(surf,2*Math.PI,Math.PI,12),
+                                   ...arcPts(inner,Math.PI,0,10)]));
+    if(col) liq.setAttribute("fill",col);
+    liq.setAttribute("fill-opacity",(f>0.004?(op||0.34):0).toFixed(2));
+  };
+  T.setLevel(0,null,0);
+  /* `ph` is a turn the caller keeps, so the wobble of a suspension is the
+     caller's clock and not a second one running in here */
+  T.pull=(f,ph,vis)=>{
+    const k=Math.max(0,Math.min(1,f)), wob=(1-k)*B*S*0.20;
+    beads.forEach(b=>{
+      b.c.setAttribute("cx",(b.free[0]+(b.held[0]-b.free[0])*k+Math.cos(ph+b.ph)*wob).toFixed(1));
+      b.c.setAttribute("cy",(b.free[1]+(b.held[1]-b.free[1])*k+Math.sin(ph*0.7+b.ph)*wob*0.6).toFixed(1));
+      b.c.setAttribute("fill-opacity",(0.8*(vis===undefined?1:vis)).toFixed(2));
+    });
+  };
+  T.setField=f=>field.setAttribute("fill-opacity",(0.5*Math.max(0,Math.min(1,f))).toFixed(2));
+  return T;
+}
+
+/* THE THERMAL CYCLER. A chassis, a heated block with a well for every tube in
+   the run, a lid that comes down on it, and a row of pips on the front.
+
+   THE LID COMES DOWN RATHER THAN SWINGING. A hinge in this projection is a
+   rotation about the block's back edge, which needs a lid drawn as faces that
+   all shear as it turns and reads as a lid tearing rather than opening. A
+   heated lid also genuinely clamps — the whole point of it is the pressure it
+   puts on the caps — so a prism travelling down its own axis is both one
+   transform and the honest reading of the machine.
+
+   THE PIP ROW COUNTS EIGHT AND ONLY EVER FILLS SIX. The cycle count comes off
+   a table keyed on cells per sublibrary and RNA content — six cycles for
+   high-RNA material, eight for low, seven for nuclei — and no run-specific
+   record of which was used survives on this instance. So the two pips past the
+   floor of that band are drawn hollow and stay hollow: the row says the band
+   and refuses to say the number, which is the state of the record.
+
+   `c` is {x,y,w,d,h} plus cols/rows for the block. Returns the port a flow can
+   be aimed at and the four things the machine does. */
+function thermalCycler(g, c){
+  const COLS=c.cols||4, ROWS=c.rows||2, PIPS=8, LIT=6;
+  /* a box that does not stand on the floor. faces() draws from z 0 and the
+     projection is a pure translation in z, so lifting one is a transform on a
+     group rather than a second set of face maths beside the first. */
+  const lifted=(gg,x,y,w,d,z0,z1,s)=>{
+    const gr=el("g",{transform:`translate(0,${(-z0*S*CZ).toFixed(2)})`});
+    gg.appendChild(gr); paint(gr,x,y,w,d,z1-z0,s); return gr;
+  };
+  paint(g, c.x, c.y, c.w, c.d, c.h, SKIN.works);
+
+  /* the readout, a hair proud of the front face so the face can never swallow
+     it, with the pips laid along it */
+  const fy=c.y+c.d/2+0.002;
+  const quad=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
+  const rx0=c.x-c.w*0.36, rx1=c.x+c.w*0.36, rz0=c.h*0.30, rz1=c.h*0.68;
+  g.appendChild(el("polygon",{points:quad(rx0,rx1,rz0,rz1),fill:"var(--bg)",
+    "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  const pips=[];
+  for(let i=0;i<PIPS;i++){
+    const px0=rx0+(rx1-rx0)*(0.05+i*0.1175), px1=px0+(rx1-rx0)*0.075;
+    const known=i<LIT;
+    g.appendChild(el("polygon",{points:quad(px0,px1,rz0+(rz1-rz0)*0.22,rz1-(rz1-rz0)*0.22),
+      fill:"none",stroke:"var(--fg2)","stroke-width":".7",
+      "stroke-opacity":known?".55":".35","stroke-dasharray":known?"none":"2 2"}));
+    if(known) pips.push(el("polygon",{points:quad(px0,px1,rz0+(rz1-rz0)*0.22,rz1-(rz1-rz0)*0.22),
+      fill:"var(--signal)","fill-opacity":"0"}));
+  }
+  pips.forEach(p=>g.appendChild(p));
+
+  /* the block, and the two tints on its top face. Two polygons rather than one
+     with a colour that gets rewritten: a block on the way from 98C to 65C is
+     both for a moment, and one fill can only ever be at one end of that. */
+  const bx=c.x-c.w*0.02, by=c.y-c.d*0.10, bw=c.w*0.74, bd=c.d*0.62,
+        bz=c.h, bt=c.h+c.h*0.55;
+  lifted(g,bx,by,bw,bd,bz,bt,SKIN.monolith);
+  const face=faces(bx,by,bw*0.92,bd*0.88,bt).top;
+  const cold=el("polygon",{points:face,fill:"var(--signal)","fill-opacity":"0"});
+  const hot =el("polygon",{points:face,fill:"var(--drop)","fill-opacity":"0"});
+  g.appendChild(cold); g.appendChild(hot);
+
+  const wells=[];
+  const wr=Math.min(bw/COLS,bd/ROWS)*0.30;
+  for(let j=0;j<ROWS;j++)for(let i=0;i<COLS;i++){
+    const e=ellipseAt(bx-bw*0.44+(i+0.5)*bw*0.88/COLS,
+                      by-bd*0.40+(j+0.5)*bd*0.80/ROWS, bt, wr);
+    g.appendChild(el("ellipse",{cx:e.x.toFixed(1),cy:e.y.toFixed(1),
+      rx:e.rx.toFixed(2),ry:e.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".55",
+      stroke:"var(--stroke)","stroke-width":".6","stroke-opacity":".5"}));
+    const f=el("ellipse",{cx:e.x.toFixed(1),cy:e.y.toFixed(1),
+      rx:(e.rx*0.82).toFixed(2),ry:(e.ry*0.82).toFixed(2),
+      fill:"var(--ch6)","fill-opacity":"0"});
+    g.appendChild(f); wells.push(f);
+  }
+
+  /* the lid is BUILT CLOSED and lifted by its group, so the geometry in it is
+     the geometry of the machine at rest and the animation owns nothing but one
+     attribute */
+  const LIFT=c.h*1.15;
+  const lid=el("g",{}); g.appendChild(lid);
+  lifted(lid,bx,by,bw*1.10,bd*1.16,bt,bt+c.h*0.42,SKIN.sB);
+  const handle=faces(bx,by+bd*0.30,bw*0.42,bd*0.12,bt+c.h*0.42).top;
+  lid.appendChild(el("polygon",{points:handle,fill:"var(--fg)","fill-opacity":".18",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".6"}));
+
+  const M={port:P(bx,by,bt+c.h*0.9)};
+  M.setLid=f=>lid.setAttribute("transform",
+    `translate(0,${(-LIFT*S*CZ*(1-Math.max(0,Math.min(1,f)))).toFixed(1)})`);
+  M.setLid(0);
+  /* `t` is where the block is between anneal and denature and `amt` is whether
+     it is running at all: a cycler at rest is a cold lump of aluminium and
+     should not be sitting there tinted blue */
+  M.setTemp=(t,amt)=>{
+    const k=Math.max(0,Math.min(1,t)), a=Math.max(0,Math.min(1,amt));
+    hot .setAttribute("fill-opacity",(0.55*a*k).toFixed(2));
+    cold.setAttribute("fill-opacity",(0.40*a*(1-k)).toFixed(2));
+  };
+  M.setWells=f=>{ const k=Math.max(0,Math.min(1,f));
+    wells.forEach(w=>w.setAttribute("fill-opacity",(0.75*k).toFixed(2))); };
+  M.setPips=k=>pips.forEach((p,i)=>
+    p.setAttribute("fill-opacity",(i<k?0.85:0).toFixed(2)));
+  return M;
+}
+
+function drawCapture(g,n){
+  const SC=n.w/0.72;
+  /* what arrives is the hue B7's rack held, so the material is recognisably
+     the thing the station before it made; what the beads are released into
+     after the wash is a fresh reaction rather than a lysate, so it changes
+     colour once — there — and never again on this bench */
+  const LYSATE="var(--pool)", MIX="var(--ch6)";
+
+  /* ---- EVERY OFFSET IS A FRACTION OF THE NODE -----------------------------
+     w, d and h are read at draw time because those are what a resize changes
+     and a redraw is the only reason this function is running again. Composed
+     at w .72, d .72, h .44.
+
+     NEITHER INSTRUMENT IS THROWN AS FAR AS B7 THROWS ITS FURNITURE, and that
+     is the constraint the whole layout is under. This box has 1.3 of clear x
+     either side and a very full screen: B7's source plate comes forward to
+     y +2.1 on the left, its own eight-tube rack stands behind at y -2.7, and
+     B9 is the next tile along. Going out as far as B7 does in y would put this
+     station's rack on that one's plate and this cycler under that one's tubes.
+     So the rack goes forward barely one node-depth and well to the right of
+     the tube it has to clear, and the cycler goes back under two — which puts
+     the whole of it in the wedge of empty screen between B7's rack above and
+     B9's tile below, with about ten pixels at each edge and no more. */
+  const rack={x:n.x+n.w*0.55, y:n.y+n.d*1.15, w:n.w*1.30, d:n.d*0.62, h:n.h*0.46,
+              bore:n.w*0.26, rise:n.h*2.35, beads:16, seed:29};
+  const cyc ={x:n.x+n.w*0.34, y:n.y-n.d*1.70, w:n.w*1.42, d:n.d*0.82, h:n.h*0.42,
+              cols:4, rows:2};
+
+  /* back to front, because on an isometric grid the order things are appended
+     in is the order they occlude in */
+  const M=thermalCycler(g, cyc);
+  const T=magnetRack(g, rack);
+
+  /* ---- THE TWO FLOWS, drawn last so no vessel can bury one ----------------
+     THE WASTE LINE ENDS IN NOTHING, and it is the only flow on this map that
+     does. What leaves is the debris of ninety-five thousand lysed cells and it
+     goes down the sink; giving it a vessel would put the sink on the bench and
+     invite the reader to ask what is in it. It leaves to the front-left rather
+     than straight down because the tube is in the way of straight down — this
+     curve bows, and a bowed line between two points either side of a tube
+     passes through the tube. */
+  const WASTE=flowLine(g, T.mouth,
+    P(n.x+n.w*0.77, n.y+n.d*3.35, 0), LYSATE, SC);
+  const TOPCR=flowLine(g, T.mouth, M.port, MIX, SC);
+
+  /* ---- TIMING -------------------------------------------------------------
+     Capture is the long beat. It is twenty minutes of binding at the bench and
+     it is the step the station is named for; the wash after it is the quick
+     one, because that is also what it is. */
+  const CAPT=2.8, WASH=1.6, SWITCH=2.2, AMP=3.4, REST=1.2;
+  const t1=CAPT, t2=t1+WASH, t3=t2+SWITCH, t4=t3+AMP, t5=t4+REST;
+  const clamp=x=>Math.max(0,Math.min(1,x));
+  const CYCLES=6;
+
+  let t=0, mode=-1, ph=0;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before, so a frame long enough to skip one — a tab coming
+     back, a step in trace mode — cannot leave the lid half open */
+  const enter=m=>{
+    mode=m;
+    T.setLevel(m===0?1:m===1?0.06:m<4?0.82:0, m>=2?MIX:LYSATE, 0.34);
+    T.pull(m===0?0:m>=2?0.15:1, ph, m===4?0.35:1);
+    T.setField(m===1?1:0);
+    M.setLid(m>=3?1:0);
+    M.setTemp(0,0);
+    M.setWells(m>=4?1:0);
+    M.setPips(m>=4?CYCLES:0);
+    setFanLine(WASTE, m===1?0.20:0.05, 0);
+    setFanLine(TOPCR, m===3?0.20:0.06, 0);
+  };
+  const run=dt=>{
+    t=(t+dt)%t5; ph+=dt*2.2;
+    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
+    if(m!==mode) enter(m);
+
+    if(m===0){                                  // CAPTURE — the beads go to the wall
+      const u=t/CAPT;
+      T.setField(clamp((u-0.14)/0.18));
+      T.pull(clamp((u-0.22)/0.62), ph, 1);
+      return;
+    }
+
+    if(m===1){                                  // WASH — the debris leaves, the pellet holds
+      const u=(t-t1)/WASH;
+      setFanLine(WASTE,0.20,clamp(u/0.75));
+      T.setLevel(1-0.94*clamp((u-0.06)/0.62), LYSATE, 0.34);
+      T.pull(1, ph, 1);
+      return;
+    }
+
+    if(m===2){                                  // TEMPLATE SWITCH — released into a fresh reaction
+      const u=(t-t2)/SWITCH;
+      /* the mix goes in first and the magnet lets go after it: the beads have
+         to be back in suspension for anything to reach what is on them, and
+         letting go into an empty tube would drop the pellet onto the cone */
+      T.setLevel(0.06+0.76*clamp(u/0.34), MIX, 0.34);
+      T.setField(1-clamp((u-0.24)/0.26));
+      T.pull(1-0.85*clamp((u-0.28)/0.34), ph, 1);
+      return;
+    }
+
+    if(m===3){                                  // AMPLIFY — into the block, lid down, cycles
+      const u=(t-t3)/AMP, move=clamp(u/0.26);
+      setFanLine(TOPCR,0.20,move);
+      T.setLevel(0.82*(1-move), MIX, 0.34);
+      /* the beads dim with the level rather than staying behind on the wall.
+         Whether they ride into the reaction is a detail of the kit that the
+         record on this instance does not settle, and a pellet left standing in
+         an emptied tube would settle it. */
+      T.pull(0.15, ph, 1-0.65*move);
+      M.setWells(move);
+      M.setLid(clamp((u-0.20)/0.16));
+      const done=clamp((u-0.34)/0.60)*CYCLES;
+      M.setTemp(0.5+0.5*Math.sin(2*Math.PI*done-Math.PI/2), clamp((u-0.30)/0.10));
+      M.setPips(Math.min(CYCLES,Math.floor(done)));
+      return;
+    }
+
+    /* held: a loaded block under a closed lid, and six pips of a band that
+       goes to eight */
+    M.setTemp(0,0);
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.capture = drawCapture;
