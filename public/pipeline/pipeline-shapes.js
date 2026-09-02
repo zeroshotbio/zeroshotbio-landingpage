@@ -2575,6 +2575,67 @@ function pipetteGlyph(g, sc){
   return {pip, load};
 }
 
+/* ---- THE FLOW FAN --------------------------------------------------------
+   A bundle of curved lines running between a bank of vessels and the mouth of
+   one tube: the figure that says "all of this goes into that", or "that goes
+   back out into all of this". B5 invented it for its own three beats and B7
+   wants the same figure with different endpoints, so it is lifted out here
+   the moment the second station needed it rather than copied — the same rule
+   conicalTube above is here for, and for the same reason.
+
+   THE ENDPOINTS ARE HANDED IN, not a plate. B5's are the wells of a row and
+   B7's are the mouths of eight tubes, and the fan has no business knowing
+   which; all it owns is the curve, the chevron and the bead.
+
+   The curve bows upward, which is what makes an inward fan read as collection
+   into a mouth rather than as a dozen wires crossing. The chevron sits at the
+   middle of its own line rather than at the end: a dozen arrowheads meeting at
+   one mouth are a blot, and a mark halfway along says which way the line runs
+   without crowding either end of it. `hue` is per line, because the two halves
+   of a pool and split say different things about their own colour — many
+   channels arriving and one pool leaving, or the exact reverse. */
+const fanBez=(A,C,B,t)=>{ const u=1-t;
+  return [u*u*A[0]+2*u*t*C[0]+t*t*B[0], u*u*A[1]+2*u*t*C[1]+t*t*B[1]]; };
+
+function flowLine(g, A, B, col, SC){
+  const C=[(A[0]+B[0])/2, (A[1]+B[1])/2-10*SC];
+  const line=el("path",{d:`M ${A[0].toFixed(1)} ${A[1].toFixed(1)} `+
+    `Q ${C[0].toFixed(1)} ${C[1].toFixed(1)} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`,
+    fill:"none",stroke:col,"stroke-width":"1",
+    "stroke-opacity":"0","stroke-linecap":"round"});
+  g.appendChild(line);
+  const m=fanBez(A,C,B,0.55), m2=fanBez(A,C,B,0.63);
+  const chev=el("path",{d:"M -3.4 -2.7 L 0 0 L -3.4 2.7",fill:"none",
+    stroke:col,"stroke-width":"1.1","stroke-opacity":"0",
+    "stroke-linecap":"round","stroke-linejoin":"round",
+    transform:`translate(${m[0].toFixed(1)},${m[1].toFixed(1)}) `+
+      `rotate(${(Math.atan2(m2[1]-m[1],m2[0]-m[0])*180/Math.PI).toFixed(1)}) `+
+      `scale(${SC.toFixed(3)})`});
+  g.appendChild(chev);
+  const bead=el("ellipse",{cx:A[0].toFixed(1),cy:A[1].toFixed(1),
+    rx:(1.6*SC).toFixed(2),ry:(1.6*SC).toFixed(2),
+    fill:col,"fill-opacity":"0"});
+  g.appendChild(bead);
+  return {A,C,B,line,chev,bead,f:-1};
+}
+function flowFan(g, ends, mouth, inward, hue, SC){
+  return ends.map((end,i)=>{
+    const A=inward?end:mouth, B=inward?mouth:end;
+    const L=flowLine(g,A,B,hue(i),SC); L.end=end; return L;
+  });
+}
+/* `dim` is what the line is worth when nothing is travelling on it: a fan
+   stays faintly drawn all the way round the cycle, because the funnel is a
+   fact about the station and not only about the moment it is being used. */
+function setFanLine(L,dim,f){
+  const c=Math.max(0,Math.min(1,f)), lit=Math.sin(Math.PI*c);
+  L.line.setAttribute("stroke-opacity",(dim+0.62*lit).toFixed(2));
+  L.chev.setAttribute("stroke-opacity",(dim*1.7+0.35*lit).toFixed(2));
+  const p=fanBez(L.A,L.C,L.B,c);
+  L.bead.setAttribute("cx",p[0].toFixed(1)); L.bead.setAttribute("cy",p[1].toFixed(1));
+  L.bead.setAttribute("fill-opacity",(f>0.002&&f<0.998?0.95:0).toFixed(2));
+}
+
 /* ------------------------------------------------------------------
    POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
    Forty-eight wells emptied into one tube by a single-channel tip, and
@@ -2883,8 +2944,8 @@ DRAW.poolsplit = drawPoolSplit;
    channels of a head working twelve separately barcoded columns.
 
    Reuses plateSlab / plateGrid / drawWell from the plate set and
-   conicalTube / pipetteGlyph from the bench kit above. The only drawing
-   invented for this node is the fan.
+   conicalTube / pipetteGlyph / flowFan from the bench kit above. The fan
+   was invented here and now belongs to the kit, because B7 needed it.
    ------------------------------------------------------------------ */
 function drawPoolSplit96(g,n){
   const th=n.h, SC=n.w/0.6;
@@ -2975,52 +3036,22 @@ function drawPoolSplit96(g,n){
   plateSlab(g,src,th,SKIN.tile,1);
   const from=wellsOf(src,true);
 
-  /* ---- THE FAN, and it is the only new drawing here -----------------------
+  /* ---- THE FAN ------------------------------------------------------------
      One line per column rather than one per well: ninety-six lines into a
      point is a solid wedge, and a wedge is not a flow. Twelve is also the
      honest count — the head that works these plates has twelve channels, so a
      line is a channel and the pipette gliding along the row is the thing
-     drawing them. The curve bows upward, which is what makes the inward fan
-     read as collection into a mouth rather than as twelve wires crossing.
-     `hue` is handed in per line rather than fixed here, because the two fans
-     say different things about their own colour: twelve channels arriving,
-     one pool leaving. */
+     drawing them.
+
+     THE FAN ITSELF NOW LIVES IN THE BENCH KIT ABOVE, because B7 needed the
+     same figure between a tube and a rack of eight. What is still this
+     station's own is which endpoints it hangs off: the row of the plate
+     nearest the tube, so no line has to cross the plate it comes from. */
   const mouth=[T.rim.x, T.rim.y-2.5*SC];
-  const bez=(A,C,B,t)=>{ const u=1-t;
-    return [u*u*A[0]+2*u*t*C[0]+t*t*B[0], u*u*A[1]+2*u*t*C[1]+t*t*B[1]]; };
-  const fan=(plate,row,inward,hue)=>{
-    const out=[];
-    for(let i=0;i<COLS;i++){
-      const w=plate[row*COLS+i], end=[w.e.x, w.e.y-1.5*SC], col=hue(i);
-      const A=inward?end:mouth, B=inward?mouth:end;
-      const C=[(A[0]+B[0])/2, (A[1]+B[1])/2-10*SC];
-      const line=el("path",{d:`M ${A[0].toFixed(1)} ${A[1].toFixed(1)} `+
-        `Q ${C[0].toFixed(1)} ${C[1].toFixed(1)} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`,
-        fill:"none",stroke:col,"stroke-width":"1",
-        "stroke-opacity":"0","stroke-linecap":"round"});
-      g.appendChild(line);
-      /* the chevron sits at the middle of its own line rather than at the end
-         of it: twelve arrowheads meeting at one mouth are a blot, and a mark
-         halfway along says which way the line runs without crowding either
-         end of it */
-      const m=bez(A,C,B,0.55), m2=bez(A,C,B,0.63);
-      const chev=el("path",{d:"M -3.4 -2.7 L 0 0 L -3.4 2.7",fill:"none",
-        stroke:col,"stroke-width":"1.1","stroke-opacity":"0",
-        "stroke-linecap":"round","stroke-linejoin":"round",
-        transform:`translate(${m[0].toFixed(1)},${m[1].toFixed(1)}) `+
-          `rotate(${(Math.atan2(m2[1]-m[1],m2[0]-m[0])*180/Math.PI).toFixed(1)}) `+
-          `scale(${SC.toFixed(3)})`});
-      g.appendChild(chev);
-      const bead=el("ellipse",{cx:A[0].toFixed(1),cy:A[1].toFixed(1),
-        rx:(1.6*SC).toFixed(2),ry:(1.6*SC).toFixed(2),
-        fill:col,"fill-opacity":"0"});
-      g.appendChild(bead);
-      out.push({A,C,B,end,line,chev,bead,f:-1});
-    }
-    return out;
-  };
-  /* each fan hangs off the row of its plate nearest the tube, so no line has
-     to cross the plate it comes from */
+  const fan=(plate,row,inward,hue)=>flowFan(g,
+    Array.from({length:COLS},(_,i)=>{ const w=plate[row*COLS+i];
+      return [w.e.x, w.e.y-1.5*SC]; }),
+    mouth, inward, hue, SC);
   const IN =fan(from,0,true,CH);
   const OUT=fan(into,ROWS-1,false,()=>POOLED.fill);
 
@@ -3056,17 +3087,7 @@ function drawPoolSplit96(g,n){
     w.fill.setAttribute("rx",(w.rx*(0.55+0.45*f)).toFixed(2));
     w.fill.setAttribute("ry",(w.ry*(0.55+0.45*f)).toFixed(2)); } };
   const allCols=(plate,f)=>{ for(let c=0;c<COLS;c++) setCol(plate,c,f); };
-  /* dim is what the line is worth when nothing is travelling on it: the fan
-     stays faintly drawn all the way round, because the funnel is a fact about
-     the station and not only about the moment it is being used */
-  const setLine=(L,dim,f)=>{
-    const lit=Math.sin(Math.PI*clamp(f));
-    L.line.setAttribute("stroke-opacity",(dim+0.62*lit).toFixed(2));
-    L.chev.setAttribute("stroke-opacity",(dim*1.7+0.35*lit).toFixed(2));
-    const p=bez(L.A,L.C,L.B,clamp(f));
-    L.bead.setAttribute("cx",p[0].toFixed(1)); L.bead.setAttribute("cy",p[1].toFixed(1));
-    L.bead.setAttribute("fill-opacity",(f>0.002&&f<0.998?0.95:0).toFixed(2));
-  };
+  const setLine=setFanLine;
   /* a column is only rewritten when it has actually moved: ninety-six wells
      times three attributes, twice, is a lot of DOM to touch on a frame where
      nothing changed */
@@ -3168,3 +3189,408 @@ function drawPoolSplit96(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.poolsplit96 = drawPoolSplit96;
+
+
+/* ==================================================================
+   B7 · COUNT AGAIN, SPLIT, LYSE
+   The pool is counted a second time, divided into eight sublibraries,
+   and only then are the cells opened.
+
+   THREE THINGS HAPPEN HERE AND ONLY TWO OF THEM ARE NEW. The middle one
+   is a pool and split, which this row has already drawn twice, so it is
+   deliberately the same figure and not a variation on it: the conical
+   out of conicalTube with a fan converging into its mouth and a fan
+   leaving it again. Nothing about the split mechanic is re-invented. The
+   one thing swapped is what it deals INTO — a rack of eight tubes rather
+   than a plate, because eight sublibraries are what leave this station
+   and a ninth well would be a claim about the chemistry that is false.
+
+   THE COLOUR RUNS THE OTHER WAY ROUND FROM B5'S. There twelve hues
+   arrive and one pool leaves, because twelve barcoded columns become one
+   suspension. That has already happened by the time material reaches
+   here, so one pool arrives — and EIGHT hues leave, because from this
+   step on the sublibrary is a real identity: it becomes a first-class
+   obs field and it survives all the way to the matrix. The eight are
+   spread across the same twelve-stop ramp rather than taking the first
+   eight of it, so they read as eight of a kind rather than as a
+   truncated copy of the station two boxes back.
+
+   THE COUNT IS ITS OWN BEAT AND IT IS THE FIRST ONE ON THE MAP. Two
+   stations count on a haemocytometer — the thaw and this one — and
+   neither has ever drawn the instrument. A drop goes from the pool onto
+   the ruled chamber and the squares are then worked one at a time, which
+   is what counting actually is: not a number appearing, but somebody
+   going square by square. It sits BETWEEN the two halves of the split
+   rather than beside them because that is where it belongs causally —
+   the number it produces is the one the sublibrary table divides by.
+
+   AND LYSIS IS ITS OWN BEAT BECAUSE NOTHING UPSTREAM SHOWS IT. Every
+   step before this one happens inside a cell that stays shut; this is
+   the one where it opens and three rounds of accumulated barcoded
+   material go into solution. So it is drawn as a magnification standing
+   over the rack, at a size nothing else on this map is drawn at, and it
+   breaks: the membrane parts into arcs, the contents leave and drift
+   apart. Folding that into the reused split icon would have said the
+   last moment anything here is a cell silently.
+
+   Reuses plateSlab / plateGrid / drawWell from the plate set,
+   conicalTube and flowFan / setFanLine from the bench kit, and
+   ellipseAt / arcPts from the clutch block. The haemocytometer, the rack
+   and the bursting cell are the only new drawings.
+
+   Like B5 this shape spends --ch1..12 and --pool, which are declared on
+   /molecular_pipe. It is the only page that carries a node wearing it.
+   ================================================================== */
+function drawCountSplitLyse(g,n){
+  const SC=n.w/0.6;
+  /* the plate this station empties is round three's, and round three is 96
+     wells. It is not read off the node the way B5 reads it, because the plate
+     is not this station's own object — it is the one it inherits, and B6 next
+     door is the record of what it was. */
+  const COLS=12, ROWS=8, NSUB=8;
+  const GREY={fill:"var(--fg)", op:0.34};
+  const POOLED={fill:"var(--pool)", op:GREY.op};
+  const CH=i=>`var(--ch${i%12+1})`;
+  /* eight hues off the twelve-stop ramp, spread rather than taken in order */
+  const SUB=k=>CH(Math.round(k*11/(NSUB-1)));
+
+  /* ---- EVERY OFFSET IS A FRACTION OF THE NODE -----------------------------
+     w, d and h are read at draw time because those are what a resize changes,
+     and a redraw is the only reason this function is running again. Absolute
+     coordinates draw correctly at the size the node happens to be authored and
+     come apart the moment anybody drags a corner. Composed at w .85, d .85,
+     h .55 — this station is the widest tile on the row and the composition is
+     laid out against that, not against B5's smaller box.
+
+     THE BEATS RUN ALONG y. The stations either side are a plate and a tile and
+     both are close; y is the only axis on this row with room in it, and
+     back-to-front puts the source low and left on screen and the rack high and
+     right, so the sequence still reads the way the row does.
+
+     THE HAEMOCYTOMETER SITS BEHIND THE TUBE RATHER THAN IN FRONT OF IT, which
+     is the one placement here that is not about the order of the beats. In
+     front it has to share the near ground with a 96-well plate, and the two
+     of them at a size where the ruling is still legible leave four pixels
+     between the slide and the station on the right. Behind, it stands in the
+     empty screen wedge between the tube, the rack and B8, with room on every
+     side of it. The line from the mouth is what says when the drop was taken;
+     which side of the tube it landed on says nothing at all.
+
+     AND THE SOURCE PLATE IS THROWN NO FURTHER THAN IT HAS TO BE. A fan wants a
+     long run — climbing to the mouth from close in, twelve lines arrive near
+     vertical and read as a bundle standing up rather than as a flow — but past
+     about two node-depths the chevrons at the middle of those lines come down
+     on top of B6's plate, and a marker belonging to this station sitting on
+     that one's plastic is worse than a steep fan. Two depths is where both are
+     true: the chevrons clear B6 and only the tail of each curve crosses the
+     corner of it, which is thin lines over plastic and is the same cost B5
+     pays and writes down. */
+  const PW=n.w*1.30, PD=n.d*0.90, th=n.h*0.60;
+  const src  ={x:n.x+n.w*0.55, y:n.y+n.d*2.00, w:PW, d:PD};
+  const rack ={x:n.x-n.w*0.15, y:n.y-n.d*2.75, w:n.w*1.55, d:n.d*0.62, h:n.h*0.50};
+  const slide={x:n.x+n.w*0.10, y:n.y-n.d*1.50, w:n.w*1.15, d:n.d*0.58, h:n.h*0.16};
+  const TX=n.x+n.w*0.05, TY=n.y-n.d*0.10;
+
+  /* ---- BEAT 3, BUILT FIRST ------------------------------------------------
+     It stands furthest back, and on an isometric grid the order things are
+     appended in is the order they occlude in.
+
+     THE RACK IS EIGHT TUBES AND THAT NUMBER IS THE KIT'S. Evercode WT splits
+     into eight sublibraries; the Mega kit would be sixteen, and the rack would
+     then be the same drawing with another row in it — which is the whole
+     reason the tubes are laid out from a count rather than placed one by one. */
+  paint(g, rack.x, rack.y, rack.w, rack.d, rack.h, SKIN.works);
+  const RC=4, RR=2, RT=n.w*0.13, RH=n.h*2.05;
+  const tubes=[];
+  for(let j=0;j<RR;j++)for(let i=0;i<RC;i++){
+    const cx=rack.x-rack.w/2+(i+0.5)*rack.w/RC,
+          cy=rack.y-rack.d/2+(j+0.5)*rack.d/RR;
+    const rim  =ellipseAt(cx,cy,rack.h+RH,RT),
+          foot =ellipseAt(cx,cy,rack.h,RT*0.50),
+          inner=ellipseAt(cx,cy,rack.h,RT*0.42);
+    const silh=pts([[rim.x+rim.rx,rim.y],...arcPts(foot,0,Math.PI,8),
+                    [rim.x-rim.rx,rim.y],...arcPts(rim,Math.PI,2*Math.PI,12)]);
+    g.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+    /* the liquid is born empty but with real geometry: the ticker only ever
+       has to restate its surface, and an element with no points sits at the
+       origin and drags the selection halo out across the map */
+    const liq=el("polygon",{points:pts(arcPts(inner,Math.PI,0,8)),
+      fill:SUB(j*RC+i),"fill-opacity":"0"});
+    g.appendChild(liq);
+    g.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".9","stroke-opacity":".7"}));
+    g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
+      stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".8"}));
+    tubes.push({liq, cx, cy, inner, mouth:[rim.x, rim.y-1.2*SC]});
+  }
+  const LIQ=0.55;
+  const setTube=(t,f,op)=>{
+    /* it fills to a shoulder, not to the rim, and the bore widens on the way
+       up, so the surface has to walk the taper or it draws outside the wall */
+    const fr=Math.max(0.0008,Math.min(1,f))*0.86;
+    const surf=ellipseAt(t.cx,t.cy,rack.h+fr*RH,RT*(0.42+0.52*fr));
+    t.liq.setAttribute("points",pts([...arcPts(surf,2*Math.PI,Math.PI,10),
+                                     ...arcPts(t.inner,Math.PI,0,8)]));
+    t.liq.setAttribute("fill-opacity",(f>0.004?op:0).toFixed(2));
+  };
+  const tf=new Array(NSUB).fill(-1);
+  const setAllTubes=(f)=>{ for(let k=0;k<NSUB;k++){ tf[k]=f; setTube(tubes[k],f,LIQ); } };
+  const fillTube=(k,f)=>{ if(Math.abs(f-tf[k])<0.004) return; tf[k]=f; setTube(tubes[k],f,LIQ); };
+
+  /* ---- THE MAGNIFIED CELL, standing over the rack -------------------------
+     It is not an object on the floor, so it is not drawn on one: it hangs in
+     the air above the tubes with two leaders running down to the one it is a
+     magnification of, which is the idiom /FASTQ_pipe already uses for a read
+     drawn larger than life. Everything inside it is in the group's own frame,
+     and the group is placed by transform — so the burst can push seven arcs
+     and ten strands outward by writing one attribute each. */
+  const [KX,KY]=P(rack.x-rack.w*0.06, rack.y+rack.d*0.10, rack.h+RH*2.35);
+  const R=n.w*S*0.42;
+  const cell=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
+  g.appendChild(cell);
+  const anchor=tubes[RC+1];
+  const leaders=[[-R*0.86, R*0.62],[R*0.72, R*0.78]].map(p=>{
+    const l=el("line",{x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
+      x2:anchor.mouth[0].toFixed(1),y2:anchor.mouth[1].toFixed(1),
+      stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".25",
+      "stroke-dasharray":"3 3"});
+    g.appendChild(l); return l;
+  });
+  const body=el("circle",{cx:"0",cy:"0",r:(R*0.97).toFixed(1),
+    fill:"var(--fg)","fill-opacity":".10"});
+  cell.appendChild(body);
+  const nuc=el("circle",{cx:(-R*0.20).toFixed(1),cy:(R*0.10).toFixed(1),
+    r:(R*0.30).toFixed(1),fill:"var(--fg)","fill-opacity":".22"});
+  cell.appendChild(nuc);
+  /* the membrane is seven arcs from the start rather than a circle that turns
+     into arcs when it breaks: a shape that swaps one element for another at
+     the moment of the event has to be right about the swap, and this one only
+     has to be right about where seven pieces go */
+  const ringPts=(rad,a0,a1)=>{ const o=[];
+    for(let i=0;i<=7;i++){ const a=a0+(a1-a0)*i/7;
+      o.push([rad*Math.cos(a), rad*Math.sin(a)]); } return o; };
+  const SEG=7, seg=[];
+  for(let i=0;i<SEG;i++){
+    const a0=(i/SEG)*2*Math.PI+0.09, a1=((i+1)/SEG)*2*Math.PI-0.09, am=(a0+a1)/2;
+    const p=el("polyline",{points:pts(ringPts(R,a0,a1)),fill:"none",
+      stroke:"var(--fg)","stroke-width":"1.5","stroke-opacity":".85",
+      "stroke-linecap":"round"});
+    cell.appendChild(p);
+    seg.push({p, a:am, mid:[R*Math.cos(am), R*Math.sin(am)], spin:(i%2?1:-1)*(24+i*7)});
+  }
+  /* the contents: short strands, each carrying three coloured ticks, because
+     three rounds of in-cell barcoding are what this material has on it and
+     that is the only reason any of it is worth releasing */
+  const rc=rng(71), strands=[];
+  for(let i=0;i<10;i++){
+    const L=R*0.44, s=el("g",{});
+    s.appendChild(el("path",{d:`M ${(-L*0.5).toFixed(1)} 0 `+
+      `q ${(L*0.3).toFixed(1)} ${(-L*0.34).toFixed(1)} ${(L*0.5).toFixed(1)} 0 `+
+      `q ${(L*0.2).toFixed(1)} ${(L*0.30).toFixed(1)} ${(L*0.5).toFixed(1)} 0`,
+      fill:"none",stroke:"var(--fg2)","stroke-width":"1.1","stroke-opacity":".9",
+      "stroke-linecap":"round"}));
+    [0,1,2].forEach(k=>s.appendChild(el("circle",{
+      cx:(-L*0.30+k*L*0.30).toFixed(1), cy:(-L*0.10+k*L*0.10).toFixed(1),
+      r:(R*0.10).toFixed(2), fill:CH(i*3+k), "fill-opacity":".95"})));
+    cell.appendChild(s);
+    strands.push({s, a:rc()*2*Math.PI, rad:Math.sqrt(rc())*R*0.58,
+                  ang:(rc()-0.5)*90, out:0.95+rc()*1.05});
+  }
+  const burst=(f)=>{
+    seg.forEach(s=>{
+      /* each arc leaves along its own radius and turns about its own middle:
+         turning about the centre of the cell would only slide it round the
+         ring it is still part of */
+      s.p.setAttribute("transform",
+        `translate(${(Math.cos(s.a)*R*0.55*f).toFixed(1)},`+
+        `${(Math.sin(s.a)*R*0.55*f).toFixed(1)}) `+
+        `rotate(${(s.spin*f).toFixed(1)},${s.mid[0].toFixed(1)},${s.mid[1].toFixed(1)})`);
+      s.p.setAttribute("stroke-opacity",(0.85-0.62*f).toFixed(2));
+    });
+    body.setAttribute("fill-opacity",(0.10*(1-f)).toFixed(2));
+    nuc.setAttribute("fill-opacity",(0.22*(1-0.75*f)).toFixed(2));
+    strands.forEach(st=>{
+      const rad=st.rad+(R*st.out*1.85-st.rad)*f;
+      st.s.setAttribute("transform",
+        `translate(${(Math.cos(st.a)*rad).toFixed(1)},${(Math.sin(st.a)*rad).toFixed(1)}) `+
+        `rotate(${(st.ang*(1+2*f)).toFixed(1)})`);
+      st.s.setAttribute("opacity",(0.92-0.5*f).toFixed(2));
+    });
+    leaders.forEach(l=>l.setAttribute("stroke-opacity",(0.18+0.32*f).toFixed(2)));
+  };
+
+  /* ---- THE HAEMOCYTOMETER, and it is behind the tube ----------------------
+     A ruled glass chamber on the bench. Sixteen squares rather than the
+     Neubauer's full ruling: at this size the real grid is a grey smear, and
+     what has to be legible is that somebody works them ONE AT A TIME. The
+     cells sit where the seeded scatter put them, dim until the sweep reaches
+     their square and bright after it — so the count is a thing being done
+     rather than a number appearing. */
+  paint(g, slide.x, slide.y, slide.w, slide.d, slide.h, SKIN.glass);
+  const GC=4, chW=slide.w*0.54, chD=slide.d*0.64, grid=[];
+  for(let j=0;j<GC;j++)for(let i=0;i<GC;i++){
+    const x0=slide.x-chW/2+i*chW/GC, x1=x0+chW/GC,
+          y0=slide.y-chD/2+j*chD/GC, y1=y0+chD/GC;
+    const q=pts([P(x0,y0,slide.h),P(x1,y0,slide.h),P(x1,y1,slide.h),P(x0,y1,slide.h)]);
+    g.appendChild(el("polygon",{points:q,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".6","stroke-opacity":".45"}));
+    grid.push(q);
+  }
+  const sweep=el("polygon",{points:grid[0],fill:"var(--signal)","fill-opacity":"0",
+    stroke:"var(--signal)","stroke-width":"1.2","stroke-opacity":"0"});
+  g.appendChild(sweep);
+  /* twenty-two of them, in a chamber forty pixels across. The real square
+     holds far more and a real count is far longer; what has to survive here is
+     one dot being distinguishable from the next, because a count of a smear is
+     not a count of anything. */
+  const rs=rng(37), spots=[];
+  for(let i=0;i<22;i++){
+    const u=rs(), v=rs();
+    const p=P(slide.x-chW/2+u*chW, slide.y-chD/2+v*chD, slide.h);
+    const c=el("circle",{cx:p[0].toFixed(1),cy:p[1].toFixed(1),
+      r:(n.w*S*0.040).toFixed(2),fill:"var(--fg)","fill-opacity":"0"});
+    g.appendChild(c);
+    spots.push({c, k:Math.min(GC-1,Math.floor(v*GC))*GC+Math.min(GC-1,Math.floor(u*GC))});
+  }
+
+  /* ---- BEAT 2 — the vessel, and it belongs to beats 1 and 3 both ----------
+     One conical, with a fan converging into its mouth and a fan leaving it
+     again. Drawing a second tube for the split would say the pool had been
+     decanted into something else, which is not what happens.
+
+     ITS HEIGHT IS NOT n.h. A 15 ml conical is a fixed shape — a long thin
+     thing — so the height that goes into it has to keep its own proportion
+     against its bore. This node stands nearly twice as tall as B5's, and
+     handing conicalTube n.h raw gives a tube half a screen high. */
+  const T=conicalTube(g, TX, TY, n.w*0.75, n.h*0.62);
+  const mouth=[T.rim.x, T.rim.y-2.5*SC];
+
+  /* ---- BEAT 1's plate, in front of the tube and therefore over it --------- */
+  plateSlab(g,src,th,SKIN.tile,1);
+  const from=plateGrid(src,th,COLS,ROWS).map(w=>{
+    drawWell(g,w,false);
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,"fill-opacity":String(GREY.op)});
+    g.appendChild(fill);
+    return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+  });
+
+  /* the three flows, drawn last so no plate can bury one. The inward fan hangs
+     off the row of the plate nearest the tube, so no line has to cross the
+     plate it comes from. The sample line is a single line with the same
+     chevron and bead as the fans: it is the same kind of event — material
+     leaving the pool — and one drop is one line. */
+  const IN  =flowFan(g, Array.from({length:COLS},(_,i)=>
+    [from[i].e.x, from[i].e.y-1.5*SC]), mouth, true, ()=>POOLED.fill, SC);
+  const OUT =flowFan(g, tubes.map(t=>t.mouth), mouth, false, SUB, SC);
+  const SAMP=flowLine(g, mouth,
+    [P(slide.x,slide.y,slide.h)[0], P(slide.x,slide.y,slide.h)[1]-3*SC],
+    POOLED.fill, SC);
+
+  /* ---- TIMING -------------------------------------------------------------
+     Five beats, and the count is not the short one. It is a slow bench step
+     that gates everything after it, and a sweep quick enough to read as a
+     flash would say the opposite. WIN is how much of a beat one column's or
+     one tube's transfer occupies — a third, so several are in flight at once
+     and a fan reads as a fan rather than as twelve things taking turns. */
+  const POOL=2.6, COUNT=2.4, SPLIT=2.4, LYSE=2.8, REST=1.2;
+  const t1=POOL, t2=t1+COUNT, t3=t2+SPLIT, t4=t3+LYSE, t5=t4+REST;
+  const WIN=0.34, clamp=x=>Math.max(0,Math.min(1,x));
+  const phase=(i,k)=>i*(1-WIN)/(k-1);
+
+  const cf=new Array(COLS).fill(-1);
+  const setCol=(c,f)=>{ for(let j=0;j<ROWS;j++){ const w=from[j*COLS+c];
+    w.fill.setAttribute("fill-opacity",(GREY.op*f).toFixed(2));
+    w.fill.setAttribute("rx",(w.rx*(0.55+0.45*f)).toFixed(2));
+    w.fill.setAttribute("ry",(w.ry*(0.55+0.45*f)).toFixed(2)); } };
+  /* ninety-six wells times three attributes is a lot of DOM to touch on a
+     frame where the column has not actually moved */
+  const advanceCol=(c,f)=>{ if(Math.abs(f-cf[c])>0.003){ setCol(c,1-f); cf[c]=f; } };
+  const allCols=(v)=>{ for(let c=0;c<COLS;c++){ setCol(c,v); cf[c]=-1; } };
+
+  /* the deal order: shuffled, so the rack does not fill left to right — the
+     sublibraries are volumes off one pool and nothing distinguishes their
+     order */
+  const deal=(()=>{ const a=[...Array(NSUB).keys()], r=rng(19);
+    for(let i=NSUB-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
+    return a; })();
+
+  const count=(u)=>{
+    const vis=clamp((u-0.22)/0.16), walk=clamp((u-0.34)/0.60)*GC*GC;
+    const k=Math.min(GC*GC-1,Math.floor(walk));
+    sweep.setAttribute("points",grid[k]);
+    sweep.setAttribute("fill-opacity",(vis*(0.10+0.12*Math.sin(Math.PI*(walk-k)))).toFixed(2));
+    sweep.setAttribute("stroke-opacity",(vis*0.7).toFixed(2));
+    spots.forEach(s=>s.c.setAttribute("fill-opacity",
+      (vis*(s.k<=k?0.85:0.28)).toFixed(2)));
+  };
+
+  let t=0, mode=-1;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before. A frame long enough to skip a beat — a tab coming
+     back, a step in trace mode — must not leave the plate it skipped standing
+     half full, and stating it outright is cheaper than reasoning about which
+     transitions are possible. */
+  const enter=(m)=>{
+    mode=m;
+    allCols(m===0?1:0);
+    setAllTubes(m>=3?1:0);
+    cell.setAttribute("opacity", m===0?"0":"1");
+    burst(m>=3?1:0);
+    sweep.setAttribute("fill-opacity","0"); sweep.setAttribute("stroke-opacity","0");
+    spots.forEach(s=>s.c.setAttribute("fill-opacity", m>=2?".85":"0"));
+    IN  .forEach(L=>setFanLine(L, m===0?0.20:0.08, 0));
+    OUT .forEach(L=>setFanLine(L, m===2?0.20:0.08, 0));
+    setFanLine(SAMP, m===1?0.22:0.05, 0);
+  };
+  const run=(dt)=>{
+    t=(t+dt)%t5;
+    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
+    if(m!==mode) enter(m);
+
+    if(m===0){                                  // POOL — ninety-six into one
+      const u=t/POOL; let lvl=0;
+      IN.forEach((L,i)=>{ const f=clamp((u-phase(i,COLS))/WIN);
+        advanceCol(i,f); setFanLine(L,0.20,f); lvl+=f; });
+      T.setLevel(lvl/COLS, POOLED, 1);
+      /* the magnification arrives with the material it magnifies */
+      cell.setAttribute("opacity",clamp(u/0.16).toFixed(2));
+      return;
+    }
+
+    if(m===1){                                  // COUNT — a drop, then square by square
+      const u=(t-t1)/COUNT;
+      setFanLine(SAMP,0.22,clamp(u/0.30));
+      /* the pool is a little shorter afterwards, because a count costs a drop */
+      T.setLevel(1-0.05*clamp((u-0.10)/0.20), POOLED, 1);
+      count(u);
+      return;
+    }
+
+    if(m===2){                                  // SPLIT — one out into eight
+      const u=(t-t2)/SPLIT; let done=0;
+      deal.forEach((k,i)=>{ const f=clamp((u-phase(i,NSUB))/WIN);
+        setFanLine(OUT[k],0.20,f); fillTube(k,f); done+=f; });
+      T.setLevel(0.95*(1-done/NSUB), POOLED, 1);
+      return;
+    }
+
+    if(m===3){                                  // LYSE — the one cell that opens
+      const u=(t-t3)/LYSE;
+      burst(clamp((u-0.18)/0.62));
+      /* fifteen minutes at 65C, and it happens in all eight at once — the
+         eight keep their own colour through it, because the sublibrary is an
+         identity from here on and lysis does not take it away */
+      const warm=(LIQ+0.10*Math.sin(Math.PI*clamp((u-0.15)/0.7))).toFixed(2);
+      tubes.forEach(tb=>tb.liq.setAttribute("fill-opacity",warm));
+      return;
+    }
+
+    /* held: eight loaded tubes, an opened cell, and both fans left standing so
+       the station still says what it does when nothing is moving */
+    T.setLevel(0,null,0);
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.countsplitlyse = drawCountSplitLyse;
