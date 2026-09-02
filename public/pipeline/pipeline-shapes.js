@@ -1147,15 +1147,21 @@ const PLATE_BANDS = [
 ];
 const PLATE_COLS=8, PLATE_ROWS=6;
 
-/* the well grid of any plate on this map */
-function plateWells(n, th){
-  const hw=n.w/2, hd=n.d/2, sx=n.w/PLATE_COLS, sy=n.d/PLATE_ROWS;
+/* the well grid of any plate on this map. THE GRID IS A PARAMETER because the
+   compound plate and the in-situ barcoding plates are the same plastic with a
+   different number of wells punched in it — 8 x 6 down in row 1, 12 x 8 in the
+   barcoding rounds — and a second grid builder would be a second answer to
+   where a well is. The four treatment bands stay four however many columns
+   there are, so a band is a quarter of the plate rather than two columns. */
+function plateGrid(n, th, cols, rows){
+  const hw=n.w/2, hd=n.d/2, sx=n.w/cols, sy=n.d/rows;
   const R=Math.min(sx,sy)*0.38, out=[];
-  for(let j=0;j<PLATE_ROWS;j++)for(let i=0;i<PLATE_COLS;i++)
-    out.push({i,j,band:PLATE_BANDS[Math.floor(i/2)],
+  for(let j=0;j<rows;j++)for(let i=0;i<cols;i++)
+    out.push({i,j,band:PLATE_BANDS[Math.floor(i*PLATE_BANDS.length/cols)],
               e:ellipseAt(n.x-hw+(i+0.5)*sx, n.y-hd+(j+0.5)*sy, th, R)});
   return out;
 }
+function plateWells(n, th){ return plateGrid(n, th, PLATE_COLS, PLATE_ROWS); }
 function plateSlab(g,n,th,skin,sw){
   const f=faces(n.x,n.y,n.w,n.d,th);
   ["left","right","top"].forEach(k=>g.appendChild(el("polygon",
@@ -2429,6 +2435,146 @@ function drawLigation(g,n){
 DRAW.ligation = drawLigation;
 
 
+/* ==================================================================
+   THE POOL-AND-SPLIT BENCH KIT — a conical and a pipette, shared.
+
+   Two stations on this row are the same operation at two moments, so
+   they have to be the same glassware: a difference in the tube between
+   B3 and B5 would read as a different vessel rather than the same one
+   used twice. Both were drawn inside B3 first; they are lifted out here
+   the moment a second station needed them, rather than copied, because
+   a copy is where the two would start to drift.
+
+   Requires ellipseAt / arcPts from the clutch block.
+   ================================================================== */
+
+/* A 15 ml conical, which is what the protocol actually pools into. Straight
+   wall for most of its length, a short cone under it, a threaded collar at the
+   top and a small flat foot instead of a point — a tube that tapers to nothing
+   has to be drawn either balancing on its tip or half-buried in a rack, and a
+   rack would hide the first transfers, which are the ones worth seeing.
+   Every radius is a multiple of `w` and every height a multiple of `h`, so the
+   whole tube grows with the node that owns it. Returns the group, the rim and
+   foot the caller has to aim at, and the two things only the inside of a tube
+   can do: carry a level, and be swirled. */
+function conicalTube(g, tx, ty, w, h){
+  const TR=w*0.20, IR=TR*0.88, BR=TR*0.30, CR=TR*1.16,
+        ZC=h*2.0, ZN=h*7.9, ZT=h*8.4;
+  /* the whole tube is one group so the swirl can lean it about its foot;
+     nothing outside it — the plates, the tip — moves with it */
+  const tube=el("g",{}); g.appendChild(tube);
+  const rim  =ellipseAt(tx,ty,ZT,CR),
+        col  =ellipseAt(tx,ty,ZN,CR),
+        neck =ellipseAt(tx,ty,ZN,TR),
+        sh   =ellipseAt(tx,ty,ZC,TR),
+        shIn =ellipseAt(tx,ty,ZC,IR),
+        base =ellipseAt(tx,ty,0,BR),
+        baseIn=ellipseAt(tx,ty,0,BR*0.85);
+  const silh=pts([[rim.x+rim.rx,rim.y],[col.x+col.rx,col.y],[neck.x+neck.rx,neck.y],
+    [sh.x+sh.rx,sh.y],...arcPts(base,0,Math.PI,10),[sh.x-sh.rx,sh.y],
+    [neck.x-neck.rx,neck.y],[col.x-col.rx,col.y],[rim.x-rim.rx,rim.y],
+    ...arcPts(rim,Math.PI,2*Math.PI,18)]);
+  tube.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
+
+  const liquid=el("polygon",{points:pts(arcPts(baseIn,Math.PI,0,10)),
+    fill:"var(--fg)","fill-opacity":".24"});
+  tube.appendChild(liquid);
+  const men=el("ellipse",{cx:rim.x,cy:rim.y,rx:"0",ry:"0",
+    fill:"var(--fg)","fill-opacity":"0"});
+  tube.appendChild(men);
+
+  const ZMAX=ZT-h*0.85;                     // it fills to the last graduation, not the collar
+  const T={tube, rim, base, ZT, surfY:base.y};
+  let surf0=null;                           // where the meniscus sits before any slosh
+  T.setLevel=(f,band,fresh)=>{
+    const z=Math.max(0.0005,Math.min(1,f)*ZMAX);
+    const rAt=z>=ZC ? IR : BR*0.85+(IR-BR*0.85)*(z/ZC);
+    const surf=ellipseAt(tx,ty,z,rAt);
+    /* the top edge is the FAR side of the surface ellipse, so the body of the
+       liquid contains the whole disc you are looking down onto; the meniscus
+       below only tints it */
+    const top=arcPts(surf,2*Math.PI,Math.PI,14), bot=arcPts(baseIn,Math.PI,0,10);
+    liquid.setAttribute("points",pts(z<=ZC
+      ? [...top,...bot]
+      : [...top,[shIn.x-shIn.rx,shIn.y],...bot,[shIn.x+shIn.rx,shIn.y]]));
+    liquid.setAttribute("fill-opacity",f>0.004?".24":"0");
+    men.setAttribute("cx",surf.x.toFixed(1)); men.setAttribute("cy",surf.y.toFixed(1));
+    men.setAttribute("rx",surf.rx.toFixed(2)); men.setAttribute("ry",surf.ry.toFixed(2));
+    /* the surface carries the colour of whatever went in last, and loses it
+       into the mixture within half a second — the pool is not four things */
+    if(band) men.setAttribute("fill",band.fill);
+    men.setAttribute("fill-opacity",(band?0.1+0.45*fresh:0).toFixed(2));
+    T.surfY=surf.y; surf0=surf;
+  };
+  T.setLevel(0,null,0);
+
+  /* GRADUATIONS, up the near side. A column of liquid rising inside a plain
+     cylinder reads as a colour change; the same column against a scale reads
+     as a volume, which is the thing every transfer is adding up to. They are
+     drawn over the liquid, because they are marks on the wall you are looking
+     through. Twelve of them rather than six, because the wall they are marking
+     is twice as long and six would leave them a finger apart. */
+  for(let i=1;i<=12;i++){
+    const z=ZC+(ZMAX-ZC)*(i/12), maj=i%2===0;
+    tube.appendChild(el("polyline",{
+      points:pts(arcPts(ellipseAt(tx,ty,z,TR),0.04*Math.PI,(maj?0.42:0.20)*Math.PI,5)),
+      fill:"none",stroke:"var(--stroke)","stroke-width":maj?".9":".7",
+      "stroke-opacity":maj?".6":".4"}));
+  }
+
+  tube.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
+    "stroke-width":"1","stroke-opacity":".8"}));
+  tube.appendChild(el("polyline",{points:pts(arcPts(col,0,Math.PI,12)),fill:"none",
+    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
+  tube.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
+    stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+
+  /* THE SWIRL. `a` is an envelope the caller starts and ends at zero so nothing
+     snaps when the mixing begins or stops, and `ph` is the turn. The tube leans
+     about its foot: a real hand swirls the top round a small circle, and in this
+     projection the sideways half of that circle is all you would see anyway, so
+     a lean is an honest reading of it and keeps the tube standing on the floor.
+     The surface then trails the wall by a fifth of a turn, which is the part
+     that reads as liquid — but as an offset of the meniscus disc only, a
+     fraction of its own radius. Leaning the liquid separately from the tube
+     would swing its edge straight through the wall it is meant to be inside. */
+  const SW_LEAN=5;
+  T.swirl=(a,ph)=>{
+    tube.setAttribute("transform",`rotate(${(a*SW_LEAN*Math.cos(ph)).toFixed(2)},`+
+      `${base.x.toFixed(1)},${base.y.toFixed(1)})`);
+    if(!a || !surf0) return;                // at rest the meniscus is wherever setLevel put it
+    /* sideways it may travel about a fifth of its own radius and no more: the
+       bore is only a tenth wider than the surface, so a bigger offset shows the
+       disc through the glass rather than under it */
+    men.setAttribute("cx",(surf0.x-a*0.22*surf0.rx*Math.cos(ph-0.9)).toFixed(1));
+    men.setAttribute("cy",(surf0.y-a*0.30*surf0.ry*Math.sin(ph-0.9)).toFixed(1));
+  };
+  return T;
+}
+
+/* THE TIP IS DRAWN IN SCREEN PIXELS, so it cannot scale by reading w — it
+   scales by being scaled. `sc` is the owning node's size against the size this
+   glyph was drawn for, which is 1 at the authored width and grows with the
+   object like everything else. Without it the plate doubles and the tip working
+   it stays the same size, which is what "the pipette didn't grow" was.
+   Returns the group the caller places by transform, and the column of liquid
+   inside it, which is the only part of a pipette that has anything to say. */
+function pipetteGlyph(g, sc){
+  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+              "stroke-width":".8","stroke-opacity":".85"};
+  const pip=el("g",{}), tilt=el("g",{transform:`rotate(-15) scale(${sc.toFixed(3)})`});
+  /* leading zeros on every coordinate, because the checkers read a `d` with a
+     regex and "-.55" parses as 55 — a phantom point a long way from the tip */
+  tilt.appendChild(el("path",{d:"M -0.55 -1 L 0.55 -1 L 1.5 -7 L -1.5 -7 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -1.5 -7 L 1.5 -7 L 2.1 -17.5 L -2.1 -17.5 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -2.7 -17.5 L 2.7 -17.5 L 2.2 -27 L -2.2 -27 Z", ...skin}));
+  const load=el("path",{d:"M -0.85 -2.6 L 0.85 -2.6 L 1.6 -7.6 L -1.6 -7.6 Z",
+    fill:"var(--fg)","fill-opacity":"0"});
+  tilt.appendChild(load);
+  pip.appendChild(tilt); g.appendChild(pip);
+  return {pip, load};
+}
+
 /* ------------------------------------------------------------------
    POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
    Forty-eight wells emptied into one tube by a single-channel tip, and
@@ -2499,87 +2645,12 @@ function drawPoolSplit(g,n){
     return {e:w.e, band:w.band, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
-  /* THE TUBE, on the floor between the two plates: a 15 ml conical, which is
-     what the protocol actually pools into. Straight wall for most of its
-     length, a short cone under it, a threaded collar at the top and a small
-     flat foot instead of a point — a tube that tapers to nothing has to be
-     drawn either balancing on its tip or half-buried in a rack, and a rack
-     would hide the first ten transfers, which are the ones worth seeing.
-     IT STANDS TWICE AS TALL AS IT DID, at the same width. A 15 ml conical is
-     a long thin thing and the old one read as a stubby vial; the height is
-     also what the rising column needs, because forty-eight transfers into a
-     short tube is a level that barely moves per trip. Everything below is a
-     multiple of n.h, so the whole tube doubles together with a resize. */
-  const tx=n.x-n.w*0.40, ty=n.y+n.d*0.50,
-        TR=n.w*0.20, IR=TR*0.88, BR=TR*0.30, CR=TR*1.16,
-        ZC=n.h*2.0, ZN=n.h*7.9, ZT=n.h*8.4;
-  /* the whole tube is one group so the swirl can lean it about its foot;
-     nothing outside it — the plates, the tip — moves with it */
-  const tube=el("g",{}); g.appendChild(tube);
-  const rim  =ellipseAt(tx,ty,ZT,CR),
-        col  =ellipseAt(tx,ty,ZN,CR),
-        neck =ellipseAt(tx,ty,ZN,TR),
-        sh   =ellipseAt(tx,ty,ZC,TR),
-        shIn =ellipseAt(tx,ty,ZC,IR),
-        base =ellipseAt(tx,ty,0,BR),
-        baseIn=ellipseAt(tx,ty,0,BR*0.85);
-  const silh=pts([[rim.x+rim.rx,rim.y],[col.x+col.rx,col.y],[neck.x+neck.rx,neck.y],
-    [sh.x+sh.rx,sh.y],...arcPts(base,0,Math.PI,10),[sh.x-sh.rx,sh.y],
-    [neck.x-neck.rx,neck.y],[col.x-col.rx,col.y],[rim.x-rim.rx,rim.y],
-    ...arcPts(rim,Math.PI,2*Math.PI,18)]);
-  tube.appendChild(el("polygon",{points:silh,fill:"var(--g-top)","fill-opacity":".38"}));
-
-  const liquid=el("polygon",{points:pts(arcPts(baseIn,Math.PI,0,10)),
-    fill:"var(--fg)","fill-opacity":".24"});
-  tube.appendChild(liquid);
-  const men=el("ellipse",{cx:rim.x,cy:rim.y,rx:"0",ry:"0",
-    fill:"var(--fg)","fill-opacity":"0"});
-  tube.appendChild(men);
-
-  const ZMAX=ZT-n.h*0.85;                   // it fills to the last graduation, not the collar
-  let surfY=base.y, surf0=null;             // surf0: where the meniscus sits before any slosh
-  const setLevel=(f,band,fresh)=>{
-    const z=Math.max(0.0005,Math.min(1,f)*ZMAX);
-    const rAt=z>=ZC ? IR : BR*0.85+(IR-BR*0.85)*(z/ZC);
-    const surf=ellipseAt(tx,ty,z,rAt);
-    /* the top edge is the FAR side of the surface ellipse, so the body of the
-       liquid contains the whole disc you are looking down onto; the meniscus
-       below only tints it */
-    const top=arcPts(surf,2*Math.PI,Math.PI,14), bot=arcPts(baseIn,Math.PI,0,10);
-    liquid.setAttribute("points",pts(z<=ZC
-      ? [...top,...bot]
-      : [...top,[shIn.x-shIn.rx,shIn.y],...bot,[shIn.x+shIn.rx,shIn.y]]));
-    liquid.setAttribute("fill-opacity",f>0.004?".24":"0");
-    men.setAttribute("cx",surf.x.toFixed(1)); men.setAttribute("cy",surf.y.toFixed(1));
-    men.setAttribute("rx",surf.rx.toFixed(2)); men.setAttribute("ry",surf.ry.toFixed(2));
-    /* the surface carries the colour of whatever went in last, and loses it
-       into the mixture within half a second — the pool is not four things */
-    if(band) men.setAttribute("fill",band.fill);
-    men.setAttribute("fill-opacity",(band?0.1+0.45*fresh:0).toFixed(2));
-    surfY=surf.y; surf0=surf;
-  };
-  setLevel(0,null,0);
-
-  /* GRADUATIONS, up the near side. A column of liquid rising inside a plain
-     cylinder reads as a colour change; the same column against a scale reads
-     as a volume, which is the thing forty-eight transfers are adding up to.
-     They are drawn over the liquid, because they are marks on the wall you are
-     looking through. Twelve of them rather than six, because the wall they are
-     marking is twice as long and six would leave them a finger apart. */
-  for(let i=1;i<=12;i++){
-    const z=ZC+(ZMAX-ZC)*(i/12), maj=i%2===0;
-    tube.appendChild(el("polyline",{
-      points:pts(arcPts(ellipseAt(tx,ty,z,TR),0.04*Math.PI,(maj?0.42:0.20)*Math.PI,5)),
-      fill:"none",stroke:"var(--stroke)","stroke-width":maj?".9":".7",
-      "stroke-opacity":maj?".6":".4"}));
-  }
-
-  tube.appendChild(el("polygon",{points:silh,fill:"none",stroke:"var(--stroke)",
-    "stroke-width":"1","stroke-opacity":".8"}));
-  tube.appendChild(el("polyline",{points:pts(arcPts(col,0,Math.PI,12)),fill:"none",
-    stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".55"}));
-  tube.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,fill:"none",
-    stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+  /* THE TUBE, on the floor between the two plates. It is conicalTube's, and it
+     stands twice as tall as this shape's own first attempt at one: a 15 ml
+     conical is a long thin thing and the old one read as a stubby vial. The
+     height is also what the rising column needs, because forty-eight transfers
+     into a short tube is a level that barely moves per trip. */
+  const T=conicalTube(g, n.x-n.w*0.40, n.y+n.d*0.50, n.w, n.h);
 
   /* THE SECOND PLATE, forward of the tube so the split runs towards the
      viewer. Its wells are born at full size and invisible: the ticker only has
@@ -2594,31 +2665,15 @@ function drawPoolSplit(g,n){
     return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
-  /* THE TIP IS DRAWN IN SCREEN PIXELS, so it cannot scale by reading w — it
-     scales by being scaled. SC is the node's size against the size this glyph
-     was drawn for, which is 1 at the authored width and grows with the object
-     like everything else. Without it the plate doubles and the tip working it
-     stays the same size, which is what "the pipette didn't grow" was.
-     THE GLYPH ITSELF IS SMALLER THAN IT WAS — 27 px against 42, and slimmer
-     with it. A well on these plates is four pixels across; a hand tool taller
-     than a third of the plate it is working reads as a prop rather than as a
-     pipette, and the transfer stops being the thing you are looking at. */
+  /* THE GLYPH IS SMALLER THAN IT WAS — 27 px against 42, and slimmer with it.
+     A well on these plates is four pixels across; a hand tool taller than a
+     third of the plate it is working reads as a prop rather than as a pipette,
+     and the transfer stops being the thing you are looking at. */
   const SC=n.w/0.6;
-  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
-              "stroke-width":".8","stroke-opacity":".85"};
-  const pip=el("g",{}), tilt=el("g",{transform:`rotate(-15) scale(${SC.toFixed(3)})`});
-  /* leading zeros on every coordinate, because the checkers read a `d` with a
-     regex and "-.55" parses as 55 — a phantom point a long way from the tip */
-  tilt.appendChild(el("path",{d:"M -0.55 -1 L 0.55 -1 L 1.5 -7 L -1.5 -7 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -1.5 -7 L 1.5 -7 L 2.1 -17.5 L -2.1 -17.5 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -2.7 -17.5 L 2.7 -17.5 L 2.2 -27 L -2.2 -27 Z", ...skin}));
-  const load=el("path",{d:"M -0.85 -2.6 L 0.85 -2.6 L 1.6 -7.6 L -1.6 -7.6 Z",
-    fill:"var(--fg)","fill-opacity":"0"});
-  tilt.appendChild(load);
-  pip.appendChild(tilt); g.appendChild(pip);
+  const {pip,load}=pipetteGlyph(g,SC);
 
   /* the drop, born over the mouth it will fall into */
-  const drop=el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+  const drop=el("ellipse",{cx:T.rim.x.toFixed(1),cy:T.rim.y.toFixed(1),
     rx:(1.3*SC).toFixed(2),ry:(1.7*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"});
   g.appendChild(drop);
 
@@ -2645,7 +2700,7 @@ function drawPoolSplit(g,n){
   /* MID is no longer a pause: it is how long the swirl lasts, and three turns
      of it want the best part of two seconds to read as a hand rather than a
      twitch. END still just stands and looks at the dealt plate. */
-  const MID=1.8, END=1.8, SW_TURNS=3, SW_LEAN=5;
+  const MID=1.8, END=1.8, SW_TURNS=3;
   const T1=POOL.total, T2=T1+MID, T3=T2+SPLIT.total, T4=T3+END;
   /* which trip a half is on, and how far through it — named tripAt rather than
      at(), which is the strand helper further up this file */
@@ -2664,7 +2719,7 @@ function drawPoolSplit(g,n){
     for(let i=N-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
     return a; })();
 
-  const LIFT=10*SC, mouth=[rim.x, rim.y-2*SC];
+  const LIFT=10*SC, mouth=[T.rim.x, T.rim.y-2*SC];
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   const place=(x,y)=>pip.setAttribute("transform",
     `translate(${x.toFixed(1)},${y.toFixed(1)})`);
@@ -2676,25 +2731,7 @@ function drawPoolSplit(g,n){
     drop.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
     drop.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
   };
-  /* THE SWIRL. `a` is an envelope that starts and ends at zero so nothing snaps
-     when the mixing begins or stops, and `ph` is the turn. The tube leans about
-     its foot: a real hand swirls the top round a small circle, and in this
-     projection the sideways half of that circle is all you would see anyway, so
-     a lean is an honest reading of it and keeps the tube standing on the floor.
-     The surface then trails the wall by a fifth of a turn, which is the part
-     that reads as liquid — but as an offset of the meniscus disc only, a
-     fraction of its own radius. Leaning the liquid separately from the tube
-     would swing its edge straight through the wall it is meant to be inside. */
-  const swirl=(a,ph)=>{
-    tube.setAttribute("transform",`rotate(${(a*SW_LEAN*Math.cos(ph)).toFixed(2)},`+
-      `${base.x.toFixed(1)},${base.y.toFixed(1)})`);
-    if(!a || !surf0) return;                // at rest the meniscus is wherever setLevel put it
-    /* sideways it may travel about a fifth of its own radius and no more: the
-       bore is only a tenth wider than the surface, so a bigger offset shows the
-       disc through the glass rather than under it */
-    men.setAttribute("cx",(surf0.x-a*0.22*surf0.rx*Math.cos(ph-0.9)).toFixed(1));
-    men.setAttribute("cy",(surf0.y-a*0.30*surf0.ry*Math.sin(ph-0.9)).toFixed(1));
-  };
+  const setLevel=T.setLevel, swirl=T.swirl;
 
   /* a long frame must not leave a well behind full, or a fresh one behind
      empty — the sweep is the claim, so both halves catch up rather than skip */
@@ -2744,7 +2781,7 @@ function drawPoolSplit(g,n){
       load.setAttribute("fill",w.band.fill);
       load.setAttribute("fill-opacity",
         (u<GO ? 0 : u<SIT ? vis*e : dis>0 ? vis*(1-dis) : vis).toFixed(2));
-      if(dis>0) fall(w.band.fill, mouth, [mouth[0],surfY], dis, vis);
+      if(dis>0) fall(w.band.fill, mouth, [mouth[0],T.surfY], dis, vis);
       else drop.setAttribute("fill-opacity","0");
       return;
     }
@@ -2791,3 +2828,279 @@ function drawPoolSplit(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.poolsplit = drawPoolSplit;
+
+
+/* ------------------------------------------------------------------
+   POOL AND SPLIT, THE SECOND TIME · ONE OPERATION IN THREE BEATS
+
+   B3 draws this same chemistry as one continuous sweep, and it is right
+   to: there the claim is the randomisation, and a tip working well by
+   well is what makes it. B5 is the same operation with a different
+   claim. By the time material reaches it the suspension is already one
+   population, so what is left to say is the SHAPE of the move —
+   ninety-six wells converge into one tube, the tube is mixed, and the
+   one tube diverges back into ninety-six. It is therefore drawn as
+   three beats standing in a row along the grid rather than as one long
+   sweep, and the beats are joined by flow lines rather than by sitting
+   near each other: adjacency on an isometric map says "these are close
+   together", and what has to be said here is "this goes into that".
+
+   THE TUBE BELONGS TO BEATS ONE AND THREE BOTH. There is one vessel,
+   standing on the centreline, with a fan converging into its mouth and
+   a fan leaving it again — the same conical B3 pools into, out of
+   conicalTube. Drawing a second tube for the split would say the pool
+   had been decanted into something else, which is not what happens.
+
+   THE FRESH PLATE IS OUTLINE ONLY UNTIL IT IS LOADED. Same component as
+   the source and the same wells, but no plastic under it: the faces
+   fade up as the deal fills it, so the difference between the plate the
+   material came out of and the plate it goes into needs no label. The
+   columns are dealt in a shuffled order, which is still true here even
+   though the randomisation is B3's claim to make.
+
+   BOTH PLATES ARE GREY AND THAT IS THE POINT. B3 is where four
+   treatments became one suspension, this station inherits that, and it
+   is not entitled to re-tint a well. The amber is spent entirely on the
+   flow — the lines, their chevrons and the beads running along them —
+   because the flow is the only thing here that is new information.
+
+   Reuses plateSlab / plateGrid / drawWell from the plate set and
+   conicalTube / pipetteGlyph from the bench kit above. The only drawing
+   invented for this node is the fan.
+   ------------------------------------------------------------------ */
+function drawPoolSplit96(g,n){
+  const th=n.h, SC=n.w/0.6;
+  /* the grid comes off the node, because it is a fact about the round rather
+     than about the drawing: rounds two and three are 96-well and round one is
+     not, and the plate either side of this station says so in its own data. */
+  const COLS=n.cols||12, ROWS=n.rows||8;
+  const GREY={fill:"var(--fg)", op:0.34};
+
+  /* EVERY OFFSET IS A FRACTION OF THE NODE. A shape reads w, d and h at draw
+     time because those are what a resize changes; absolute coordinates draw
+     correctly at the authored size and come apart the moment somebody drags a
+     corner. Composed at w 0.6, d 0.6, h 0.3.
+     THE BEATS RUN ALONG y, not along x. The stations either side are a plate
+     and a cell and they are close; y is the only axis with room in it, and
+     back-to-front happens to put the source low and left on screen and the
+     fresh plate high and right, so the sequence still reads the way the row
+     does. */
+  const TY=n.y-n.d*0.15;                      // the tube, just back of the centreline
+  const PW=n.w*1.55, PD=n.d*1.10;
+  /* THE SOURCE PLATE IS PUSHED FORWARD AND OUT, not centred under the tube.
+     The station to the left is a round cell forty pixels wide sitting at head
+     height, and a pipette standing over a plate reaches twenty-five pixels
+     above it whatever the plate is doing — so a plate placed for the
+     composition alone puts the tip through the neighbour. Half a plate width
+     of clearance down and out costs nothing here and buys all of it back. */
+  const src={x:n.x+n.w*0.35, y:TY+n.d*1.85, w:PW, d:PD};
+  const dst={x:n.x-n.w*0.10, y:TY-n.d*1.35, w:PW, d:PD};
+
+  /* wells are born at full size with the fill they start the cycle in, so the
+     ticker only ever has to change a number — an element with no coordinates
+     drags the selection halo off across the map */
+  const wellsOf=(p,lit)=>plateGrid(p,th,COLS,ROWS).map(w=>{
+    drawWell(g,w,false);
+    const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,
+      "fill-opacity":lit?String(GREY.op):"0"});
+    g.appendChild(fill);
+    return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+  });
+
+  /* BEAT 3 IS BUILT FIRST because it stands furthest back, and on an isometric
+     grid the order things are appended in is the order they occlude in. */
+  plateSlab(g,dst,th,{top:"none",left:"none",right:"none"},0.8);
+  const loaded=el("g",{opacity:"0"}); g.appendChild(loaded);
+  plateSlab(loaded,dst,th,SKIN.tile,1);
+  const into=wellsOf(dst,false);
+
+  /* BEAT 2 — the vessel, shared with beat 1 */
+  const T=conicalTube(g, n.x, TY, n.w, n.h);
+
+  /* BEAT 1's plate, in front of the tube and therefore over it */
+  plateSlab(g,src,th,SKIN.tile,1);
+  const from=wellsOf(src,true);
+
+  /* ---- THE FAN, and it is the only new drawing here -----------------------
+     One line per column rather than one per well: ninety-six lines into a
+     point is a solid wedge, and a wedge is not a flow. Twelve is also the
+     honest count — the head that works these plates has twelve channels, so a
+     line is a channel and the pipette gliding along the row is the thing
+     drawing them. The curve bows upward, which is what makes the inward fan
+     read as collection into a mouth rather than as twelve wires crossing. */
+  const mouth=[T.rim.x, T.rim.y-2.5*SC];
+  const bez=(A,C,B,t)=>{ const u=1-t;
+    return [u*u*A[0]+2*u*t*C[0]+t*t*B[0], u*u*A[1]+2*u*t*C[1]+t*t*B[1]]; };
+  const fan=(plate,row,inward)=>{
+    const out=[];
+    for(let i=0;i<COLS;i++){
+      const w=plate[row*COLS+i], end=[w.e.x, w.e.y-1.5*SC];
+      const A=inward?end:mouth, B=inward?mouth:end;
+      const C=[(A[0]+B[0])/2, (A[1]+B[1])/2-10*SC];
+      const line=el("path",{d:`M ${A[0].toFixed(1)} ${A[1].toFixed(1)} `+
+        `Q ${C[0].toFixed(1)} ${C[1].toFixed(1)} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`,
+        fill:"none",stroke:"var(--signal)","stroke-width":"1",
+        "stroke-opacity":"0","stroke-linecap":"round"});
+      g.appendChild(line);
+      /* the chevron sits at the middle of its own line rather than at the end
+         of it: twelve arrowheads meeting at one mouth are a blot, and a mark
+         halfway along says which way the line runs without crowding either
+         end of it */
+      const m=bez(A,C,B,0.55), m2=bez(A,C,B,0.63);
+      const chev=el("path",{d:"M -3.4 -2.7 L 0 0 L -3.4 2.7",fill:"none",
+        stroke:"var(--signal)","stroke-width":"1.1","stroke-opacity":"0",
+        "stroke-linecap":"round","stroke-linejoin":"round",
+        transform:`translate(${m[0].toFixed(1)},${m[1].toFixed(1)}) `+
+          `rotate(${(Math.atan2(m2[1]-m[1],m2[0]-m[0])*180/Math.PI).toFixed(1)}) `+
+          `scale(${SC.toFixed(3)})`});
+      g.appendChild(chev);
+      const bead=el("ellipse",{cx:A[0].toFixed(1),cy:A[1].toFixed(1),
+        rx:(1.6*SC).toFixed(2),ry:(1.6*SC).toFixed(2),
+        fill:"var(--signal)","fill-opacity":"0"});
+      g.appendChild(bead);
+      out.push({A,C,B,end,line,chev,bead,f:-1});
+    }
+    return out;
+  };
+  /* each fan hangs off the row of its plate nearest the tube, so no line has
+     to cross the plate it comes from */
+  const IN =fan(from,0,true);
+  const OUT=fan(into,ROWS-1,false);
+
+  /* the swirl marks: two arcs standing off the collar, which is the shorthand
+     everybody already reads as "this is being rocked". They are outside the
+     tube's group on purpose — a motion mark that leans with the thing it is
+     describing is just more tube. */
+  const marks=[0,1].map(k=>{
+    const e=ellipseAt(n.x,TY,T.ZT-n.h*(0.5+k*1.4), n.w*(0.30+0.05*k));
+    const p=el("polyline",{points:pts(arcPts(e, k?0.78*Math.PI:-0.22*Math.PI,
+                                                k?1.22*Math.PI: 0.22*Math.PI, 8)),
+      fill:"none",stroke:"var(--signal)","stroke-width":"1.2","stroke-opacity":"0",
+      "stroke-linecap":"round"});
+    g.appendChild(p); return p;
+  });
+
+  const {pip,load}=pipetteGlyph(g,SC);
+
+  /* ---- TIMING -------------------------------------------------------------
+     Three beats and a rest, and the middle one is deliberately the short one:
+     mixing is a real step and it has to be seen happening, but it is not what
+     the station is about. WIN is how much of a beat one column's transfer
+     occupies — a third, so four channels are in flight at once and the fan
+     reads as a fan rather than as twelve things taking turns. */
+  const POOL=2.6, MIX=1.7, SPLIT=2.6, REST=1.3;
+  const t1=POOL, t2=t1+MIX, t3=t2+SPLIT, t4=t3+REST;
+  const WIN=0.34, TURNS=3;
+  const phase=i=>i*(1-WIN)/(COLS-1);
+  const clamp=x=>Math.max(0,Math.min(1,x));
+
+  const setCol=(plate,c,f)=>{ for(let j=0;j<ROWS;j++){ const w=plate[j*COLS+c];
+    w.fill.setAttribute("fill-opacity",(GREY.op*f).toFixed(2));
+    w.fill.setAttribute("rx",(w.rx*(0.55+0.45*f)).toFixed(2));
+    w.fill.setAttribute("ry",(w.ry*(0.55+0.45*f)).toFixed(2)); } };
+  const allCols=(plate,f)=>{ for(let c=0;c<COLS;c++) setCol(plate,c,f); };
+  /* dim is what the line is worth when nothing is travelling on it: the fan
+     stays faintly drawn all the way round, because the funnel is a fact about
+     the station and not only about the moment it is being used */
+  const setLine=(L,dim,f)=>{
+    const lit=Math.sin(Math.PI*clamp(f));
+    L.line.setAttribute("stroke-opacity",(dim+0.62*lit).toFixed(2));
+    L.chev.setAttribute("stroke-opacity",(dim*1.7+0.35*lit).toFixed(2));
+    const p=bez(L.A,L.C,L.B,clamp(f));
+    L.bead.setAttribute("cx",p[0].toFixed(1)); L.bead.setAttribute("cy",p[1].toFixed(1));
+    L.bead.setAttribute("fill-opacity",(f>0.002&&f<0.998?0.95:0).toFixed(2));
+  };
+  /* a column is only rewritten when it has actually moved: ninety-six wells
+     times three attributes, twice, is a lot of DOM to touch on a frame where
+     nothing changed */
+  const advance=(L,plate,c,f,fill)=>{
+    if(Math.abs(f-L.f)>0.003){ setCol(plate,c,fill); L.f=f; }
+  };
+
+  const place=(x,y)=>pip.setAttribute("transform",
+    `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+  /* the head glides along the row it is working and lifts a little between
+     columns, which is the whole of what a twelve-channel does */
+  const glide=(path,u)=>{
+    const c=Math.max(0,Math.min(COLS-1,u*(COLS-1)));
+    const c0=Math.floor(c), c1=Math.min(COLS-1,c0+1), f=c-c0;
+    const a=path[c0], b=path[c1];
+    place(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f-2*SC-Math.sin(f*Math.PI)*3*SC);
+  };
+  /* the deal order: shuffled, so the fresh plate does not fill left to right */
+  const deal=(()=>{ const a=[...Array(COLS).keys()], r=rng(85);
+    for(let i=COLS-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
+    return a; })();
+  const inPath=IN.map(L=>L.end), outPath=deal.map(c=>OUT[c].end);
+
+  let t=0, mode=-1;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before. A frame long enough to skip a beat — a tab coming
+     back, a step in trace mode — must not leave the plate it skipped standing
+     half full, and stating it outright is cheaper than reasoning about which
+     transitions are possible. */
+  const enter=(m)=>{
+    mode=m;
+    allCols(from, m===0?1:0);
+    allCols(into, m===3?1:0);
+    loaded.setAttribute("opacity", m===3?"1":"0");
+    IN .forEach(L=>L.f = m===0?0:1);
+    OUT.forEach(L=>L.f = m===3?1:0);
+  };
+  const run=(dt)=>{
+    t=(t+dt)%t4;
+    const m = t<t1 ? 0 : t<t2 ? 1 : t<t3 ? 2 : 3;
+    if(m!==mode) enter(m);
+
+    if(m!==1){ T.swirl(0,0); marks.forEach(p=>p.setAttribute("stroke-opacity","0")); }
+
+    if(m===0){                                  // POOL — ninety-six into one
+      const u=t/POOL; let lvl=0;
+      IN.forEach((L,i)=>{ const f=clamp((u-phase(i))/WIN);
+        advance(L,from,i,f,1-f); setLine(L,0.20,f); lvl+=f; });
+      OUT.forEach(L=>setLine(L,0.06,0));
+      T.setLevel(lvl/COLS,GREY,0);
+      glide(inPath,u);
+      load.setAttribute("fill",GREY.fill); load.setAttribute("fill-opacity","0.5");
+      return;
+    }
+
+    if(m===1){                                  // MIX — one tube, homogenised
+      const u=(t-t1)/MIX, env=Math.sin(Math.PI*u);
+      T.setLevel(1,GREY,0);
+      T.swirl(env, u*TURNS*2*Math.PI);
+      marks.forEach(p=>p.setAttribute("stroke-opacity",(0.15+0.5*env).toFixed(2)));
+      IN.forEach(L=>setLine(L,0.20*(1-u),0));
+      OUT.forEach(L=>setLine(L,0.06+0.14*u,0));
+      /* the head stands off while the tube is being rocked, because a pipette
+         hanging in the mouth of one somebody is swirling is a broken one */
+      load.setAttribute("fill-opacity","0");
+      place(mouth[0]-env*15*SC, mouth[1]-env*4*SC);
+      return;
+    }
+
+    if(m===2){                                  // SPLIT — one back out into ninety-six
+      const u=(t-t2)/SPLIT; let done=0;
+      IN.forEach(L=>setLine(L,0.06,0));
+      deal.forEach((c,k)=>{ const f=clamp((u-phase(k))/WIN);
+        advance(OUT[c],into,c,f,f); setLine(OUT[c],0.20,f); done+=f; });
+      T.setLevel(1-done/COLS,null,0);
+      loaded.setAttribute("opacity",(done/COLS).toFixed(2));
+      glide(outPath,u);
+      load.setAttribute("fill",GREY.fill); load.setAttribute("fill-opacity","0.5");
+      return;
+    }
+
+    /* dealt: an empty tube, a loaded plate, and the fan left standing so the
+       station still says what it does when nothing is moving */
+    IN.forEach(L=>setLine(L,0.10,0));
+    OUT.forEach(L=>setLine(L,0.10,0));
+    T.setLevel(0,null,0);
+    load.setAttribute("fill-opacity","0");
+    place(mouth[0]-14*SC, mouth[1]-4*SC);
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.poolsplit96 = drawPoolSplit96;

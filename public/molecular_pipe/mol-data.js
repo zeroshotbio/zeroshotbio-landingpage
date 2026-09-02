@@ -61,7 +61,10 @@ const NODES = [
  built:"Section 1.3. Ligation in a 96-well plate (rows A to H, columns 1 to 12), barcode set v1, 96 barcodes across 96 wells — one per well, unlike round one.",
  cond:"Clean."},
 
-{id:"B2", key:"B5", group:"In situ barcoding", shape:"tile", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3,
+/* cols/rows are the round's own fact, not the drawing's: this pool and split
+   sits between two 96-well ligations, where B1's sits between the 48-well
+   round one and the first 96, so the plates it draws have to be told which. */
+{id:"B2", key:"B5", group:"In situ barcoding", shape:"poolsplit96", name:"Pool and split", x:7.4, y:R2, lane:"r2", w:0.6, d:0.6, h:0.3, cols:12, rows:8,
  sub:"shuffle again",
  does:"Pooled and redistributed a second time.",
  built:"Section 1.4, opening steps.", cond:"Clean."},
