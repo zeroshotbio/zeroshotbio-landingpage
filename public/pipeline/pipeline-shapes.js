@@ -4140,3 +4140,183 @@ function drawQuantify(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.quantify = drawQuantify;
+
+/* ------------------------------------------------------------------
+   C1 · FRAGMENT, END-PREP, LIGATE ADAPTERS — two beats, and they stay two.
+
+   THE STATION IS A TUBE, so it is not drawn as an instrument. Everything C1
+   does happens in one tube in a block: nothing is loaded, nothing leaves, and
+   there is no vessel to move. The body therefore stays the plain tile the rest
+   of the C row stands on, with the reaction recessed into it, and the chemistry
+   hangs in front at a size where it can be read — on the two grey leaders the
+   map already uses for a thing drawn larger than life. Grey because a
+   magnification is not a track: nothing travels down those lines.
+
+   WHERE IT HANGS IS FORCED. B9 throws its display back of this tile and C2 is
+   the next tile along at row level, so the near ground in front is the only
+   empty screen this bench has. It is also the one place a drawing cannot land
+   on the name, which is pinned to the back edge.
+
+   THE MATERIAL IS IN B8's COLOUR because it IS B8's material — the amplified
+   cDNA B9 measured and did not touch. What this step adds is the adapter and
+   nothing else, so the adapter is the only --signal on the bench: the same rule
+   B4 uses for the barcode it ligates.
+
+   WHY TWO BEATS AND NOT ONE ICON. A strand wearing adapters is the product, and
+   a product says nothing about how it was made. The cut is what MAKES the ends,
+   and the ends are what the adapters need — draw them together and the box is a
+   picture of a library rather than of a step. So: the strand breaks, and only
+   then does anything dock on it.
+
+   THE STAGGERED ENDS ARE THE END-PREP. An enzymatic cut leaves the two rails
+   stopping at different places, and end repair and A-tailing make them flush.
+   It is two pixels of overhang retracting and it is the only thing in the
+   drawing that shows the middle third of this node's name doing any work.
+
+   ONE ADAPTER PER FRAGMENT, ON ONE END. This kit ligates the TruSeq Read 1
+   adapter to the 5-prime end; the far end already carries what the template
+   switch put there back in B8. Forks on both ends would be the generic
+   library-prep cartoon and not this protocol.
+
+   AND THE CYCLE RESETS BY FADING. Adapters do not fall off. Same licence B4
+   takes with its barcode and for the same reason: what repeats is the lane
+   showing the reaction, not the molecule undoing it.
+
+   Requires ellipseAt() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawFragmentLigate(g,n){
+  /* EVERY OFFSET IS A FRACTION OF THE NODE. w, d and h are read at draw time
+     because a resize is the only reason this function runs again. Composed at
+     w .72, d .72, h .4 — the same tile B9 and C2 stand on. */
+  const PX=n.w*S, SC=n.w/0.72;
+  const CDNA="var(--ch6)", ADPT="var(--signal)";
+  const clamp=x=>Math.max(0,Math.min(1,x));
+  const ease =x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+
+  /* ---- the bench, and the one tube the whole step happens in -------------- */
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.tile);
+  const wr=Math.min(n.w,n.d)*0.13, wx=n.x-n.w*0.06, wy=n.y+n.d*0.12;
+  const bore=ellipseAt(wx,wy,n.h,wr*1.55), lvl=ellipseAt(wx,wy,n.h,wr);
+  g.appendChild(el("ellipse",{cx:bore.x.toFixed(1),cy:bore.y.toFixed(1),
+    rx:bore.rx.toFixed(2),ry:bore.ry.toFixed(2),fill:"var(--fg)","fill-opacity":".16",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
+  g.appendChild(el("ellipse",{cx:lvl.x.toFixed(1),cy:lvl.y.toFixed(1),
+    rx:lvl.rx.toFixed(2),ry:lvl.ry.toFixed(2),fill:CDNA,"fill-opacity":".5"}));
+
+  /* ---- the magnification, and the frustum that ties it to the tube -------- */
+  const [SX,SY]=P(n.x-n.w*0.18, n.y+n.d*2.00, n.h*1.55);
+  const HL=PX*1.20, OFF=PX*0.085, RUNG=PX*0.14;
+  const mouth=[bore.x, bore.y-PX*0.06];
+  [-HL,HL].forEach(e=>g.appendChild(el("line",{
+    x1:(SX+e).toFixed(1),y1:SY.toFixed(1),
+    x2:mouth[0].toFixed(1),y2:mouth[1].toFixed(1),
+    stroke:"var(--fg2)","stroke-width":".8","stroke-opacity":".22",
+    "stroke-dasharray":"3 3"})));
+
+  /* the strand runs flat across the screen, which on this grid is the world
+     diagonal — the one direction with no neighbour in it */
+  const stage=el("g",{transform:`translate(${SX.toFixed(1)},${SY.toFixed(1)})`});
+  g.appendChild(stage);
+
+  /* the cuts are not four even quarters. A nuclease cuts where it lands, and
+     four equal pieces read as a ruler rather than as chemistry. */
+  const r=rng(613), NF=4, edge=[-HL];
+  for(let i=1;i<NF;i++) edge.push(-HL+2*HL*(i/NF+(r()-0.5)*0.14));
+  edge.push(HL);
+
+  /* BUILT WHOLE, because that is the state the cycle starts from: the rails
+     meet end to end, the stagger is zero and the forks are already in the wings
+     with real coordinates. The ticker then owns nothing but four transforms and
+     two rail ends per fragment. */
+  const GAP=PX*0.11, ST=PX*0.17, AX=PX*0.24, AY=PX*0.17;
+  const frags=edge.slice(0,NF).map((x0,k)=>{
+    const x1=edge[k+1];
+    const grp=el("g",{transform:"translate(0,0)"});
+    stage.appendChild(grp);
+    const rail=y=>{
+      const e=el("line",{x1:x0.toFixed(1),y1:y.toFixed(1),
+        x2:x1.toFixed(1),y2:y.toFixed(1),stroke:CDNA,
+        "stroke-width":(1.2*SC).toFixed(2),"stroke-opacity":".9",
+        "stroke-linecap":"round"});
+      grp.appendChild(e); return e;
+    };
+    const top=rail(-OFF), bot=rail(OFF);
+    for(let x=x0+RUNG*0.5;x<x1-RUNG*0.25;x+=RUNG)
+      grp.appendChild(el("line",{x1:x.toFixed(1),y1:(-OFF).toFixed(1),
+        x2:x.toFixed(1),y2:OFF.toFixed(1),stroke:CDNA,
+        "stroke-width":(0.7*SC).toFixed(2),"stroke-opacity":".45"}));
+
+    /* the adapter is a Y: a short duplex stem that ligates, and the two arms
+       that never pair and are what the flow cell reads off */
+    const ad=el("g",{transform:`translate(${(x0-GAP-PX*0.42).toFixed(1)},${(PX*0.62).toFixed(1)})`,
+      opacity:"0"});
+    const arm=(ax,ay,bx,by,w)=>ad.appendChild(el("line",{
+      x1:ax.toFixed(1),y1:ay.toFixed(1),x2:bx.toFixed(1),y2:by.toFixed(1),
+      stroke:ADPT,"stroke-width":(w*SC).toFixed(2),"stroke-opacity":".95",
+      "stroke-linecap":"round"}));
+    arm(0,-OFF,-ST,-OFF,1.2); arm(0,OFF,-ST,OFF,1.2);
+    arm(-ST,-OFF,-ST-AX,-OFF-AY,1.2); arm(-ST,OFF,-ST-AX,OFF+AY,1.2);
+    arm(-ST*0.5,-OFF,-ST*0.5,OFF,0.7);
+    grp.appendChild(ad);
+
+    /* the pieces drift apart along the strand rather than scattering: they came
+       off one molecule and the break is the news, so the gap has to be wide
+       enough to be a gap at this size and no wider */
+    return {grp, top, bot, ad, x0, x1,
+            spread:(k-(NF-1)/2)*PX*0.14, rise:(r()-0.5)*PX*0.14,
+            ov:PX*(0.07+r()*0.05)};
+  });
+
+  /* the cut marks stay where the cut was, not where the pieces went: they are
+     the map pointing at a break, so they are grey like the leaders */
+  const ticks=edge.slice(1,NF).map(x=>{
+    const e=el("line",{x1:x.toFixed(1),y1:(-OFF*3).toFixed(1),
+      x2:x.toFixed(1),y2:(OFF*3).toFixed(1),stroke:"var(--fg2)",
+      "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":"0",
+      "stroke-linecap":"round"});
+    stage.appendChild(e); return e;
+  });
+
+  /* ---- TIMING -------------------------------------------------------------
+     Fragmentation and end-prep are one reaction on the bench and ligation is
+     another, so the middle beat is short: it is not a station of its own, it is
+     the thing that has to have happened before a fork will stick. */
+  const WHOLE=1.6, CUT=1.3, PREP=0.9, DOCK=2.0, HOLD=1.5, FADE=0.8;
+  const t1=WHOLE, t2=t1+CUT, t3=t2+PREP, t4=t3+DOCK, t5=t4+HOLD, t6=t5+FADE;
+  /* THE CLOCK DOES NOT START AT ZERO, because zero is inside the fade the wrap
+     needs and a browser asking for reduced motion never advances it: the shape
+     would then stand there as a bare tile with an invisible magnification over
+     it. Starting mid-way through the first beat makes the resting state a whole
+     strand, which is the right thing to be looking at when nothing is running. */
+  let t=WHOLE*0.5;
+  const run=dt=>{
+    t=(t+dt)%t6;
+    const cut = t<t1?0 : t<t2?ease((t-t1)/CUT) : 1;
+    const prep= t<t2?0 : t<t3?ease((t-t2)/PREP): 1;
+    const dock= t<t3?0 : t<t4?ease((t-t3)/DOCK): 1;
+    stage.setAttribute("opacity",
+      Math.min(clamp(t/0.45), t<t5?1:clamp(1-(t-t5)/FADE)).toFixed(2));
+    frags.forEach(f=>{
+      f.grp.setAttribute("transform",
+        `translate(${(f.spread*cut).toFixed(1)},${(f.rise*cut).toFixed(1)})`);
+      /* one rail runs long at each end and the neighbour's runs long the other
+         way, which is what a staggered cut leaves; end-prep pulls both back */
+      const ov=f.ov*cut*(1-prep);
+      f.top.setAttribute("x2",(f.x1+ov).toFixed(1));
+      f.bot.setAttribute("x1",(f.x0-ov).toFixed(1));
+      /* the fork arrives first and the last of the gap closes after it has
+         stopped moving, so the nick is visible for a beat before it is not —
+         ligation is the making of one bond and it should be legible as one */
+      const away=1-dock, gap=GAP*(1-clamp((dock-0.72)/0.28));
+      f.ad.setAttribute("transform",
+        `translate(${(f.x0-ov-gap-PX*0.42*away).toFixed(1)},${(PX*0.62*away).toFixed(1)})`);
+      f.ad.setAttribute("opacity",clamp(dock/0.35).toFixed(2));
+    });
+    const u=(t-t1)/CUT;
+    ticks.forEach(e=>e.setAttribute("stroke-opacity",
+      (t>=t1&&t<t2 ? 0.7*Math.sin(Math.PI*u) : 0).toFixed(2)));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.fragmentligate = drawFragmentLigate;
