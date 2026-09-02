@@ -3973,3 +3973,170 @@ function drawCapture(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.capture = drawCapture;
+
+/* ------------------------------------------------------------------
+   B9 · QUANTIFY THE cDNA — an instrument, and the trace it draws.
+
+   NOTHING MOVES AT THIS STATION and that is the whole composition. B7 splits,
+   B8 captures and cycles, C1 fragments; this box only looks at what B8 handed
+   over. So there is no plate here and no flow line: one aliquot standing in the
+   read port, and the trace that comes off it. A vessel going anywhere would be
+   claiming work the step does not do.
+
+   THE SAMPLE IS DRAWN IN B8's COLOUR. What is in the port is the same amplified
+   cDNA the station before it released into a fresh reaction, and the trace on
+   the screen is a measurement OF that material rather than a graphic about it —
+   so both wear --ch6 and the bench reads as one tube travelling, not two.
+
+   WHERE THE DISPLAY STANDS IS FORCED. B8 throws its cycler back of this tile
+   and its magnet rack forward of it, and C1 is the next tile along at row
+   level; the wedge past the cycler's far corner and above C1 is the only clear
+   screen a display this size fits into. Hence the odd-looking offsets below —
+   they are not composition, they are the gap.
+
+   THE READOUT NEVER RESOLVES. The concentration measured here is what sets the
+   cycle count in the indexing PCR two boxes along, and it was not archived, so
+   the cells stay dashes however long the instrument runs. Same refusal as B8's
+   hollow pips and for the same reason: the row can show that a measurement
+   happened and still decline to invent what it said.
+   ------------------------------------------------------------------ */
+function drawQuantify(g,n){
+  const SC=n.w/0.72;                      // composed at w .72, d .72, h .4
+  const CDNA="var(--ch6)";
+  const clamp=x=>Math.max(0,Math.min(1,x));
+
+  /* ---- the instrument ---------------------------------------------------- */
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+
+  /* the read port, and the one tube in it. Drawn as a recess rather than a
+     socket on the surface: the tube has to sit IN the machine for the box to
+     read as measuring it instead of carrying it. */
+  const tr=Math.min(n.w,n.d)*0.105, tx=n.x-n.w*0.22, ty=n.y+n.d*0.06;
+  const port=ellipseAt(tx,ty,n.h,tr*1.9);
+  g.appendChild(el("ellipse",{cx:port.x.toFixed(1),cy:port.y.toFixed(1),
+    rx:port.rx.toFixed(2),ry:port.ry.toFixed(2),fill:"var(--fg)","fill-opacity":".14",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
+  const foot=ellipseAt(tx,ty,n.h,tr),
+        lvl =ellipseAt(tx,ty,n.h+n.h*0.44,tr),
+        rim =ellipseAt(tx,ty,n.h+n.h*0.82,tr);
+  g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,12),
+    ...arcPts(foot,Math.PI,0,12)]),fill:"var(--g-top)","fill-opacity":".4",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".45"}));
+  g.appendChild(el("polygon",{points:pts([...arcPts(lvl,0,Math.PI,12),
+    ...arcPts(foot,Math.PI,0,12)]),fill:CDNA,"fill-opacity":".5"}));
+  g.appendChild(el("ellipse",{cx:rim.x.toFixed(1),cy:rim.y.toFixed(1),
+    rx:rim.rx.toFixed(2),ry:rim.ry.toFixed(2),fill:"var(--bg)","fill-opacity":".35",
+    stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".55"}));
+
+  /* the readout, a hair proud of the front face so the face cannot swallow it */
+  const fy=n.y+n.d/2+0.002;
+  const fq=(x0,x1,z0,z1)=>pts([P(x0,fy,z1),P(x1,fy,z1),P(x1,fy,z0),P(x0,fy,z0)]);
+  const rx0=n.x-n.w*0.32, rx1=n.x+n.w*0.32, rz0=n.h*0.24, rz1=n.h*0.60, rw=rx1-rx0;
+  g.appendChild(el("polygon",{points:fq(rx0,rx1,rz0,rz1),fill:"var(--bg)",
+    "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":".8","stroke-opacity":".7"}));
+  const lamp=el("polygon",{points:fq(rx0+rw*0.07,rx0+rw*0.17,
+    rz0+(rz1-rz0)*0.28,rz1-(rz1-rz0)*0.28),fill:CDNA,"fill-opacity":".15"});
+  g.appendChild(lamp);
+  const cells=[];
+  for(let i=0;i<3;i++){
+    const cx0=rx0+rw*(0.34+i*0.20), cx1=cx0+rw*0.14, cz=(rz0+rz1)/2;
+    const a=P(cx0,fy,cz), b=P(cx1,fy,cz);
+    const d=el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg2)",
+      "stroke-width":(1.1*SC).toFixed(2),"stroke-opacity":".3","stroke-linecap":"round"});
+    g.appendChild(d); cells.push(d);
+  }
+
+  /* ---- the display ------------------------------------------------------- */
+  const pl={x:n.x+n.w*0.80, y:n.y-n.d*1.62, w:n.w*1.46, d:n.d*0.34, h:n.h*0.20};
+  paint(g,pl.x,pl.y,pl.w,pl.d,pl.h,SKIN.tile);
+
+  /* the screen is one plane at constant y, which in this projection is the same
+     rhombus a machine's front panel is — so it reads as a face of the apparatus
+     rather than a chart floating over the bench */
+  const sy=pl.y-pl.d*0.10;
+  const sq=(x0,x1,z0,z1)=>pts([P(x0,sy,z1),P(x1,sy,z1),P(x1,sy,z0),P(x0,sy,z0)]);
+  const px0=pl.x-pl.w*0.46, px1=pl.x+pl.w*0.46, pw=px1-px0;
+  const pz0=pl.h+n.h*0.10, pz1=pl.h+n.h*1.50, ph=pz1-pz0;
+  const bx=pl.w*0.035, bz=n.h*0.09;
+  g.appendChild(el("polygon",{points:sq(px0-bx,px1+bx,pz0-bz,pz1+bz),
+    fill:"var(--fg)","fill-opacity":".1",stroke:"var(--stroke)",
+    "stroke-width":"1","stroke-opacity":".7"}));
+  g.appendChild(el("polygon",{points:sq(px0,px1,pz0,pz1),fill:"var(--bg)",
+    "fill-opacity":".85",stroke:"none"}));
+
+  /* THE TRACE IS THE ONE A cDNA TAPE ACTUALLY GIVES: two sharp marker peaks
+     from the ladder at either end of the run, and the broad smear between them
+     that is the library. Three gaussians rather than a drawn squiggle, because
+     the shape of the middle peak — wide, not sharp — is the whole reading. */
+  const PEAKS=[[0.10,0.024,0.78],[0.55,0.110,0.95],[0.92,0.026,0.68]];
+  const sig=u=>{ let v=0.04;
+    PEAKS.forEach(([m,s,a])=>{ v+=a*Math.exp(-((u-m)*(u-m))/(2*s*s)); });
+    return v; };
+  const N=120;
+  let peak=0; for(let i=0;i<=N;i++) peak=Math.max(peak,sig(i/N));
+  const PT=(u,v)=>P(px0+u*pw, sy, pz0+(v/peak)*ph*0.92);
+
+  const base0=PT(0,0), base1=PT(1,0);
+  g.appendChild(el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
+    x2:base1[0].toFixed(1),y2:base1[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":".8","stroke-opacity":".35"}));
+
+  const tp=[]; for(let i=0;i<=N;i++){ const u=i/N; tp.push(PT(u,sig(u))); }
+  const fill=el("polygon",{points:pts([...tp,base1,base0]),
+    fill:CDNA,"fill-opacity":"0"});
+  g.appendChild(fill);
+  /* the sweep is a dash offset rather than a rewritten point list: the curve is
+     born whole and complete, and the only thing the ticker owns is how much of
+     it has been drawn yet */
+  let len=0;
+  for(let i=1;i<tp.length;i++)
+    len+=Math.hypot(tp[i][0]-tp[i-1][0], tp[i][1]-tp[i-1][1]);
+  const trace=el("polyline",{points:pts(tp),fill:"none",stroke:CDNA,
+    "stroke-width":(1.5*SC).toFixed(2),"stroke-linecap":"round",
+    "stroke-linejoin":"round","stroke-dasharray":`${len.toFixed(1)} ${len.toFixed(1)}`,
+    "stroke-dashoffset":len.toFixed(1)});
+  g.appendChild(trace);
+
+  const sTop=PT(0,peak);
+  const scan=el("line",{x1:base0[0].toFixed(1),y1:base0[1].toFixed(1),
+    x2:sTop[0].toFixed(1),y2:sTop[1].toFixed(1),stroke:"var(--signal)",
+    "stroke-width":".9","stroke-opacity":"0"});
+  g.appendChild(scan);
+  const pen=el("circle",{cx:tp[0][0].toFixed(1),cy:tp[0][1].toFixed(1),
+    r:(2*SC).toFixed(2),fill:CDNA,"fill-opacity":"0"});
+  g.appendChild(pen);
+
+  /* ---- timing ------------------------------------------------------------
+     A tape run is minutes and the hold afterwards is as long as somebody looks
+     at it, so neither number here is the bench's. What the beats have to keep
+     is the order: the trace cannot be complete before the run is, and the
+     readout cannot be blank until the instrument has finished and had nothing
+     to write. */
+  const RUN=3.4, HOLD=2.6, CLEAR=0.8, T=RUN+HOLD+CLEAR;
+  let t=0;
+  const run=dt=>{
+    t=(t+dt)%T;
+    const running=t<RUN, u=clamp(t/RUN);
+    trace.setAttribute("stroke-dashoffset",(len*(1-u)).toFixed(1));
+    trace.setAttribute("stroke-opacity",
+      (t<RUN+HOLD ? 1 : 1-clamp((t-RUN-HOLD)/CLEAR)).toFixed(2));
+    const i=Math.min(N,Math.round(u*N));
+    const b=PT(i/N,0), c=PT(i/N,peak);
+    scan.setAttribute("x1",b[0].toFixed(1)); scan.setAttribute("y1",b[1].toFixed(1));
+    scan.setAttribute("x2",c[0].toFixed(1)); scan.setAttribute("y2",c[1].toFixed(1));
+    scan.setAttribute("stroke-opacity",running?".5":"0");
+    pen.setAttribute("cx",tp[i][0].toFixed(1)); pen.setAttribute("cy",tp[i][1].toFixed(1));
+    pen.setAttribute("fill-opacity",running?".9":"0");
+    fill.setAttribute("fill-opacity",
+      (t<RUN ? 0 : 0.16*(t<RUN+HOLD ? clamp((t-RUN)/0.5) : 1-clamp((t-RUN-HOLD)/CLEAR))).toFixed(2));
+    lamp.setAttribute("fill-opacity",
+      (running ? 0.35+0.55*Math.abs(Math.sin(t*3.2)) : 0.15).toFixed(2));
+    /* the dashes come UP when the run ends. Nothing lands in them — that is the
+       point — but they have to be legible at the moment a number would be. */
+    cells.forEach(d=>d.setAttribute("stroke-opacity",(running?0.3:0.75).toFixed(2)));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.quantify = drawQuantify;
