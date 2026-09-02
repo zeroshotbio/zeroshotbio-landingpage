@@ -2860,9 +2860,27 @@ DRAW.poolsplit = drawPoolSplit;
 
    BOTH PLATES ARE GREY AND THAT IS THE POINT. B3 is where four
    treatments became one suspension, this station inherits that, and it
-   is not entitled to re-tint a well. The amber is spent entirely on the
-   flow — the lines, their chevrons and the beads running along them —
-   because the flow is the only thing here that is new information.
+   is not entitled to re-tint a well. The colour is spent entirely on
+   the flow — the lines, their chevrons and the beads running along them
+   — because the flow is the only thing here that is new information.
+
+   AND THE FLOW IS TWELVE COLOURS IN, ONE COLOUR OUT. Every arriving
+   line carries its own hue because every well it comes from is its own
+   well: the plate this station empties is where round two wrote
+   ninety-six different barcodes, so what converges on the tube really
+   is twelve distinct things, and drawing them in one colour said the
+   opposite. What leaves is a single colour, `--pool`, deliberately
+   paler than any of the twelve on a dark ground and deeper than all of
+   them on a light one, so it reads as the sum of them rather than as a
+   thirteenth. The tube's own surface wears whichever channel landed
+   last while it fills, and `--pool` from the moment it is mixed: the
+   rainbow going in, the pool coming out.
+
+   THAT IS A CLAIM ABOUT WELLS, NOT ABOUT TREATMENTS, and the two are
+   easy to confuse on a station whose neighbour two boxes back does tint
+   by treatment. The grey plastic is what says the suspension is one
+   population; the twelve hues say only that it arrived from twelve
+   channels of a head working twelve separately barcoded columns.
 
    Reuses plateSlab / plateGrid / drawWell from the plate set and
    conicalTube / pipetteGlyph from the bench kit above. The only drawing
@@ -2875,6 +2893,12 @@ function drawPoolSplit96(g,n){
      not, and the plate either side of this station says so in its own data. */
   const COLS=n.cols||12, ROWS=n.rows||8;
   const GREY={fill:"var(--fg)", op:0.34};
+  /* the twelve channels and what they add up to, both off the stylesheet like
+     every other colour here. The ramp is twelve long and the head is twelve
+     wide; a plate with more columns than that wraps, because a thirteenth hue
+     nobody has authored renders black and reads as a deliberate choice. */
+  const CH=i=>`var(--ch${i%12+1})`;
+  const POOLED={fill:"var(--pool)", op:GREY.op};
 
   /* EVERY OFFSET IS A FRACTION OF THE NODE. A shape reads w, d and h at draw
      time because those are what a resize changes; absolute coordinates draw
@@ -2885,16 +2909,45 @@ function drawPoolSplit96(g,n){
      back-to-front happens to put the source low and left on screen and the
      fresh plate high and right, so the sequence still reads the way the row
      does. */
-  const TY=n.y-n.d*0.15;                      // the tube, just back of the centreline
+  /* THE WHOLE STATION IS TURNED THIRTY DEGREES, IN THE GROUND PLANE. It is
+     turned there rather than on the screen for one reason: a rotate() on the
+     group would tip both plates off the isometric floor and stand the tube on
+     its corner, which is not a turned figure, it is a fallen one. Turning the
+     ARRANGEMENT keeps every box square to the grid — the only thing a box can
+     be in this projection — and swings the three beats round toward x, so the
+     flow crosses the picture instead of running back to front. That is what
+     the turn is worth, and it is measurable: the inward fan used to arrive
+     between 66 and 86 degrees off the horizontal, which is a bundle standing
+     more or less straight up, and now arrives between 47 and 65, which is
+     twelve lines on an angle. */
+  const TURN=Math.PI/6, CT=Math.cos(TURN), ST=Math.sin(TURN);
+  const turn=(dx,dy)=>[n.x+dx*CT-dy*ST, n.y+dx*ST+dy*CT];
+  /* THE TURN SPENDS CLEARANCE AND THROW BUYS IT BACK. Swung round, the source
+     plate rises up-screen into the station on this one's left and the fresh
+     plate drops down-screen into the one on its right — the row is the one
+     direction with neighbours in it, and turning toward x is turning toward
+     them. So each plate takes one node depth further out along y, into the
+     empty ground the band gives this row front and back. Measured against the
+     twelve-channel head, which stands twenty-five pixels over whatever plate
+     it is working and is the tallest thing at that end of the drawing: turned
+     and not thrown, the tip crosses twenty-four pixels into the plate on the
+     left, and thrown it does not reach it at all — which is better than the
+     unturned composition managed, where it went twelve pixels in.
+
+     WHAT THE TURN DOES COST IS THE INWARD FAN'S RUN. The source plate now
+     stands out in front of the station to the left rather than behind it, so
+     the twelve lines climbing from it to the mouth pass over that station's
+     plate. That is the depth order telling the truth — the plate they leave
+     really is a unit and a half nearer the reader — and it is thin lines over
+     plastic rather than one solid thing inside another. It is the one place
+     this turn is visible as a cost, so it is written down here. */
+  const THROW=n.d;
+  const [TX,TY]=turn(0,-n.d*0.15);            // the tube, just back of the centreline
   const PW=n.w*1.55, PD=n.d*1.10;
-  /* THE SOURCE PLATE IS PUSHED FORWARD AND OUT, not centred under the tube.
-     The station to the left is a round cell forty pixels wide sitting at head
-     height, and a pipette standing over a plate reaches twenty-five pixels
-     above it whatever the plate is doing — so a plate placed for the
-     composition alone puts the tip through the neighbour. Half a plate width
-     of clearance down and out costs nothing here and buys all of it back. */
-  const src={x:n.x+n.w*0.35, y:TY+n.d*1.85, w:PW, d:PD};
-  const dst={x:n.x-n.w*0.10, y:TY-n.d*1.35, w:PW, d:PD};
+  const [SX,SY]=turn( n.w*0.35, n.d*1.70);
+  const [DX,DY]=turn(-n.w*0.10,-n.d*1.50);
+  const src={x:SX, y:SY+THROW, w:PW, d:PD};
+  const dst={x:DX, y:DY-THROW, w:PW, d:PD};
 
   /* wells are born at full size with the fill they start the cycle in, so the
      ticker only ever has to change a number — an element with no coordinates
@@ -2916,7 +2969,7 @@ function drawPoolSplit96(g,n){
   const into=wellsOf(dst,false);
 
   /* BEAT 2 — the vessel, shared with beat 1 */
-  const T=conicalTube(g, n.x, TY, n.w, n.h);
+  const T=conicalTube(g, TX, TY, n.w, n.h);
 
   /* BEAT 1's plate, in front of the tube and therefore over it */
   plateSlab(g,src,th,SKIN.tile,1);
@@ -2928,19 +2981,22 @@ function drawPoolSplit96(g,n){
      honest count — the head that works these plates has twelve channels, so a
      line is a channel and the pipette gliding along the row is the thing
      drawing them. The curve bows upward, which is what makes the inward fan
-     read as collection into a mouth rather than as twelve wires crossing. */
+     read as collection into a mouth rather than as twelve wires crossing.
+     `hue` is handed in per line rather than fixed here, because the two fans
+     say different things about their own colour: twelve channels arriving,
+     one pool leaving. */
   const mouth=[T.rim.x, T.rim.y-2.5*SC];
   const bez=(A,C,B,t)=>{ const u=1-t;
     return [u*u*A[0]+2*u*t*C[0]+t*t*B[0], u*u*A[1]+2*u*t*C[1]+t*t*B[1]]; };
-  const fan=(plate,row,inward)=>{
+  const fan=(plate,row,inward,hue)=>{
     const out=[];
     for(let i=0;i<COLS;i++){
-      const w=plate[row*COLS+i], end=[w.e.x, w.e.y-1.5*SC];
+      const w=plate[row*COLS+i], end=[w.e.x, w.e.y-1.5*SC], col=hue(i);
       const A=inward?end:mouth, B=inward?mouth:end;
       const C=[(A[0]+B[0])/2, (A[1]+B[1])/2-10*SC];
       const line=el("path",{d:`M ${A[0].toFixed(1)} ${A[1].toFixed(1)} `+
         `Q ${C[0].toFixed(1)} ${C[1].toFixed(1)} ${B[0].toFixed(1)} ${B[1].toFixed(1)}`,
-        fill:"none",stroke:"var(--signal)","stroke-width":"1",
+        fill:"none",stroke:col,"stroke-width":"1",
         "stroke-opacity":"0","stroke-linecap":"round"});
       g.appendChild(line);
       /* the chevron sits at the middle of its own line rather than at the end
@@ -2949,7 +3005,7 @@ function drawPoolSplit96(g,n){
          end of it */
       const m=bez(A,C,B,0.55), m2=bez(A,C,B,0.63);
       const chev=el("path",{d:"M -3.4 -2.7 L 0 0 L -3.4 2.7",fill:"none",
-        stroke:"var(--signal)","stroke-width":"1.1","stroke-opacity":"0",
+        stroke:col,"stroke-width":"1.1","stroke-opacity":"0",
         "stroke-linecap":"round","stroke-linejoin":"round",
         transform:`translate(${m[0].toFixed(1)},${m[1].toFixed(1)}) `+
           `rotate(${(Math.atan2(m2[1]-m[1],m2[0]-m[0])*180/Math.PI).toFixed(1)}) `+
@@ -2957,7 +3013,7 @@ function drawPoolSplit96(g,n){
       g.appendChild(chev);
       const bead=el("ellipse",{cx:A[0].toFixed(1),cy:A[1].toFixed(1),
         rx:(1.6*SC).toFixed(2),ry:(1.6*SC).toFixed(2),
-        fill:"var(--signal)","fill-opacity":"0"});
+        fill:col,"fill-opacity":"0"});
       g.appendChild(bead);
       out.push({A,C,B,end,line,chev,bead,f:-1});
     }
@@ -2965,18 +3021,18 @@ function drawPoolSplit96(g,n){
   };
   /* each fan hangs off the row of its plate nearest the tube, so no line has
      to cross the plate it comes from */
-  const IN =fan(from,0,true);
-  const OUT=fan(into,ROWS-1,false);
+  const IN =fan(from,0,true,CH);
+  const OUT=fan(into,ROWS-1,false,()=>POOLED.fill);
 
   /* the swirl marks: two arcs standing off the collar, which is the shorthand
      everybody already reads as "this is being rocked". They are outside the
      tube's group on purpose — a motion mark that leans with the thing it is
      describing is just more tube. */
   const marks=[0,1].map(k=>{
-    const e=ellipseAt(n.x,TY,T.ZT-n.h*(0.5+k*1.4), n.w*(0.30+0.05*k));
+    const e=ellipseAt(TX,TY,T.ZT-n.h*(0.5+k*1.4), n.w*(0.30+0.05*k));
     const p=el("polyline",{points:pts(arcPts(e, k?0.78*Math.PI:-0.22*Math.PI,
                                                 k?1.22*Math.PI: 0.22*Math.PI, 8)),
-      fill:"none",stroke:"var(--signal)","stroke-width":"1.2","stroke-opacity":"0",
+      fill:"none",stroke:POOLED.fill,"stroke-width":"1.2","stroke-opacity":"0",
       "stroke-linecap":"round"});
     g.appendChild(p); return p;
   });
@@ -3056,19 +3112,27 @@ function drawPoolSplit96(g,n){
     if(m!==1){ T.swirl(0,0); marks.forEach(p=>p.setAttribute("stroke-opacity","0")); }
 
     if(m===0){                                  // POOL — ninety-six into one
-      const u=t/POOL; let lvl=0;
+      const u=t/POOL; let lvl=0, last=-1, fresh=0;
       IN.forEach((L,i)=>{ const f=clamp((u-phase(i))/WIN);
-        advance(L,from,i,f,1-f); setLine(L,0.20,f); lvl+=f; });
+        advance(L,from,i,f,1-f); setLine(L,0.20,f); lvl+=f;
+        /* the surface takes the colour of whatever landed last and loses it
+           again over the next quarter of that channel's transfer, which is
+           what makes the pool flicker through the twelve as it fills rather
+           than arrive at one colour it was never mixed from */
+        if(f>0.5){ last=i; fresh=Math.max(0,1-(f-0.5)*4); } });
       OUT.forEach(L=>setLine(L,0.06,0));
-      T.setLevel(lvl/COLS,GREY,0);
+      T.setLevel(lvl/COLS, last<0?GREY:{fill:CH(last),op:GREY.op}, fresh);
       glide(inPath,u);
-      load.setAttribute("fill",GREY.fill); load.setAttribute("fill-opacity","0.5");
+      load.setAttribute("fill",CH(Math.round(clamp(u)*(COLS-1))));
+      load.setAttribute("fill-opacity","0.5");
       return;
     }
 
     if(m===1){                                  // MIX — one tube, homogenised
       const u=(t-t1)/MIX, env=Math.sin(Math.PI*u);
-      T.setLevel(1,GREY,0);
+      /* mixed, the surface holds the pool colour and holds it steady: this is
+         the beat where the twelve stop being twelve */
+      T.setLevel(1,POOLED,1);
       T.swirl(env, u*TURNS*2*Math.PI);
       marks.forEach(p=>p.setAttribute("stroke-opacity",(0.15+0.5*env).toFixed(2)));
       IN.forEach(L=>setLine(L,0.20*(1-u),0));
@@ -3085,10 +3149,10 @@ function drawPoolSplit96(g,n){
       IN.forEach(L=>setLine(L,0.06,0));
       deal.forEach((c,k)=>{ const f=clamp((u-phase(k))/WIN);
         advance(OUT[c],into,c,f,f); setLine(OUT[c],0.20,f); done+=f; });
-      T.setLevel(1-done/COLS,null,0);
+      T.setLevel(1-done/COLS,POOLED,1);
       loaded.setAttribute("opacity",(done/COLS).toFixed(2));
       glide(outPath,u);
-      load.setAttribute("fill",GREY.fill); load.setAttribute("fill-opacity","0.5");
+      load.setAttribute("fill",POOLED.fill); load.setAttribute("fill-opacity","0.5");
       return;
     }
 
