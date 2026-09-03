@@ -291,6 +291,54 @@ function drawVials(g,n){
   groups.sort((a,b)=>a.order-b.order);
   if(!groups.length) return;
 
+  /* ---- THE RIME, and it is the thaw's only moving part -----------------
+     Only `thaw:true` grows it. What comes out of the freezer is fixed,
+     cross-linked, cryopreserved material: nothing biological happens in this
+     step, so nothing biological may be seen to move in it. The one thing on
+     the object that is allowed to change is the ice, and it changes by
+     LEAVING — the crystals clear from the rim inward as the plastic warms,
+     which is the picture of preserved material coming back to temperature
+     rather than of a process starting.
+
+     The crystals are scattered rather than laid one per well because rime
+     forms on the plate, not in the chemistry, and a crystal per well would
+     read as something happening in the wells. Their arms are built in world
+     space and projected, so they lie flat on the top face and foreshorten
+     with it instead of being a screen-space star pasted on the plate. */
+  const frost=el("g",{}), rime=[];
+  let sheet=null;
+  if(n.thaw){
+    const hw=plate.w/2, hd=plate.d/2;
+    const cw=Math.min(plate.w/PLATE_COLS, plate.d/PLATE_ROWS);
+    sheet=el("polygon",{points:faces(plate.x,plate.y,plate.w-0.06,plate.d-0.06,th).top,
+      fill:"var(--c-top)","fill-opacity":".3",stroke:"none"});
+    frost.appendChild(sheet);
+    for(let i=0;i<groups.length;i++){
+      const u=(r()*1.84-0.92)*hw, v=(r()*1.84-0.92)*hd, R=cw*(0.2+r()*0.24);
+      let d="";
+      for(let a=0;a<3;a++){
+        const ang=a*Math.PI/3+r()*0.35;
+        const p0=P(plate.x+u-Math.cos(ang)*R, plate.y+v-Math.sin(ang)*R, th);
+        const p1=P(plate.x+u+Math.cos(ang)*R, plate.y+v+Math.sin(ang)*R, th);
+        d+=`M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} L ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} `;
+      }
+      const node=el("path",{d:d,fill:"none",stroke:"var(--c-top)","stroke-width":"1.1",
+        "stroke-opacity":".85","stroke-linecap":"round"});
+      frost.appendChild(node);
+      rime.push({node, far:Math.hypot(u/hw, v/hd)});
+    }
+    rime.sort((a,b)=>b.far-a.far);   // outermost first: an edge warms first
+    cart.appendChild(frost);
+    /* the sample is inert for the whole step, so it is styled frozen once
+       here and the ticker never touches it again */
+    groups.forEach(grp=>grp.cells.forEach(c=>{
+      c.node.setAttribute("fill-opacity",".28");
+      c.node.setAttribute("stroke","var(--fg)");
+      c.node.setAttribute("stroke-width",".55");
+      c.node.setAttribute("stroke-opacity",".9");
+    }));
+  }
+
   const shellG=el("g",{});
   const ff=faces(frz.x,frz.y,frz.w,frz.d,frz.h);
   ["right","top"].forEach(k=>shellG.appendChild(el("polygon",
@@ -345,12 +393,14 @@ function drawVials(g,n){
      and NOT the same animation run backwards, which is the tempting version
      and the wrong one: a reversed tip is un-pipetting, and nothing is being
      added to a thaw. The door opens, the plate comes out and grows, and the
-     cells come back to life well by well as the cold leaves them. */
+     frost on it recedes. The material inside does not move at all, which is
+     the honest reading of the step: it is cross-linked and it is coming back
+     to a working temperature, not coming back to life. */
   const STEP=0.5;                 // same pace as the tip on the arraying step
   const FILL=groups.length*STEP;
   const SETTLE=0.6, SHRINK=1.8, CLOSE=0.9, HOLD=1.6, OPEN=0.7;
-  const THAW_STEP=0.34, THAW=groups.length*THAW_STEP;
-  const CYCLE = n.thaw ? (HOLD+OPEN+SHRINK+THAW+SETTLE+CLOSE)
+  const RIME_STEP=0.34, RIME=groups.length*RIME_STEP;
+  const CYCLE = n.thaw ? (HOLD+OPEN+SHRINK+RIME+SETTLE+CLOSE)
                        : (FILL+SETTLE+SHRINK+CLOSE+HOLD+OPEN);
 
   let t=0, stowed=null;
@@ -418,11 +468,11 @@ function drawVials(g,n){
   };
 
   /* THE THAW. Phases, in order: the plate sits in the shut freezer; the door
-     opens; the plate slides out and grows; the cells warm well by well as the
-     cold leaves them; a beat; and the door shuts again on an empty freezer,
-     which is the loop closing rather than anything happening. */
+     opens; the plate slides out and grows; the frost on it recedes crystal by
+     crystal from the rim inward; a beat; and the door shuts again on an empty
+     freezer, which is the loop closing rather than anything happening. */
   function runThaw(){
-    const tOpen=HOLD, tOut=tOpen+OPEN, tWarm=tOut+SHRINK, tRest=tWarm+THAW;
+    const tOpen=HOLD, tOut=tOpen+OPEN, tWarm=tOut+SHRINK, tRest=tWarm+RIME;
     let dq;
     if(t<tOpen) dq=1;
     else if(t<tOut) dq=1-ease((t-tOpen)/OPEN);
@@ -438,26 +488,15 @@ function drawVials(g,n){
       stowed=inFreezer;
       if(inFreezer) g.insertBefore(cart, shellG); else g.appendChild(cart);
     }
-    const warmed = t<tWarm ? 0 : Math.floor((t-tWarm)/THAW_STEP);
-    groups.forEach((grp,i)=>{
-      const moving = t>=tRest ? true : i<warmed;
-      grp.cells.forEach(c=>{
-        if(!moving){
-          c.node.setAttribute("cx",c.cx); c.node.setAttribute("cy",c.cy);
-          c.node.setAttribute("fill-opacity",".28");
-          c.node.setAttribute("stroke","var(--fg)");
-          c.node.setAttribute("stroke-width",".55");
-          c.node.setAttribute("stroke-opacity",".9");
-        }else{
-          const jx=Math.sin(t*c.rate+c.ph)+0.6*Math.sin(t*c.rate2+c.ph2);
-          const jy=Math.cos(t*c.rate*0.83+c.ph2)+0.6*Math.cos(t*c.rate2*1.17+c.ph);
-          c.node.setAttribute("cx",(c.cx+jx*c.amp).toFixed(2));
-          c.node.setAttribute("cy",(c.cy+jy*c.amp*0.62).toFixed(2));
-          c.node.setAttribute("fill-opacity",".8");
-          c.node.setAttribute("stroke-opacity","0");
-        }
-      });
-    });
+    /* the ice, and nothing else. It holds while the plate is still cold and
+       still inside, then clears crystal by crystal once the plate is out; the
+       glaze thins across the whole window so the plastic looks wet before it
+       looks dry. The cells were styled frozen at build and stay that way. */
+    const gone = t<tWarm ? 0 : (t-tWarm)/RIME_STEP;
+    rime.forEach((c,i)=>
+      c.node.setAttribute("stroke-opacity",(0.85*(1-Math.max(0,Math.min(1,gone-i)))).toFixed(2)));
+    if(sheet) sheet.setAttribute("fill-opacity",
+      (0.3*(t<tWarm?1:Math.max(0,1-(t-tWarm)/RIME))).toFixed(2));
     pip.setAttribute("opacity","0");        /* nothing is being added */
 
     const SC_END=Math.max(0.12,((dx1-dx0)*0.5)/plate.w);
