@@ -2,13 +2,15 @@
    mol-data.js — /molecular_pipe. ROW 2 OF /pipeline, ON ITS OWN.
 
    A bench for developing the molecular biology row out, the way /FASTQ_pipe is
-   one for row 3. Fifteen stations: the thaw, three rounds of in-situ
+   one for row 3. Sixteen stations: the thaw, three rounds of in-situ
    barcoding with a pool-and-split between each, the lysis, cDNA capture and
    quantification, library prep, the indexing PCR, the size check, the
-   sequencer, the conversion that turns its run folder into reads, and the
-   handoff where those reads change hands.
+   sequencer, the conversion that turns its run folder into reads, the
+   handoff where those reads change hands, and a pyramid, which is the one
+   station on the row that was asked for from the page rather than read off a
+   protocol and says so on its own record.
 
-   THIRTEEN OF THE FIFTEEN ARE LIFTED VERBATIM FROM pipeline-data.js.
+   THIRTEEN OF THE SIXTEEN ARE LIFTED VERBATIM FROM pipeline-data.js.
    Extracted as source text, not re-typed, so every character of every
    does/built/cond field matches the map it came from and a diff between the
    two stays meaningful. /pipeline OWNS THAT PROSE. If a claim changes it
@@ -17,11 +19,11 @@
    both files exist to prevent. New writing that belongs only to this page goes
    in `added:`.
 
-   THE LAST TWO — C4 AND C5 — ARE OWNED HERE. They are the only stations on
-   the page with no counterpart on the big map, so there is nothing for them to
-   drift from and the lift arrow points the other way — see the comments on the
-   records themselves. They are the only places in this file where a station's
-   does/built/cond may be edited in place.
+   THE LAST THREE — C4, C5 AND C6 — ARE OWNED HERE. They are the only stations
+   on the page with no counterpart on the big map, so there is nothing for them
+   to drift from and the lift arrow points the other way — see the comments on
+   the records themselves. They are the only places in this file where a
+   station's does/built/cond may be edited in place.
 
    WHAT IS NOT HERE, AND WHY. FX — ② Fixed material — is the object this row
    opens by undoing, and it is NOT on this page: it sits on lane r1-tail, which
@@ -163,7 +165,7 @@ const NODES = [
    FASTQ pool as an object that is already somewhere; the moment it becomes
    somebody's — or, here, does not — was the second half of the gap between
    them. The lift arrow points OUT of this file for C5 as well, and it is the
-   second and last station whose does/built/cond may be edited in place.
+   second station whose does/built/cond may be edited in place.
 
    IT IS DELIBERATELY NARROW. What the missing reads cost every claim
    downstream is /FASTQ_pipe's opening object's to say and it says it there; if
@@ -180,6 +182,25 @@ const NODES = [
  does:"Eight pairs of files exist, and this is the step that settles who can reach them. Nothing is made here — the run's output changes hands, and what changed hands for the worked example was a path and a report rather than the reads themselves. It is the reason the next row can open on a pool of reads without ever drawing them arriving.",
  built:"No protocol governs a transfer, and every dataset in the corpus makes it differently. Here the files stayed where the conversion wrote them: the run definition still points at the vendor's own cloud workdir by S3 path, and the counting ran there rather than on this box. What did come across is everything derived from the reads instead of the reads — that run definition, the vendor's QC report and its analysis_summary.csv, and the count matrix; the delivery's own all-sample/ folder holds report/ and figures/ and nothing else.",
  cond:"The transfer left no record of itself. No manifest, no checksum, no delivery note and no date, so nothing on this instance says what was handed over or when, and the only evidence the eight pairs were ever written is second-hand — the S3 path in the run definition and the per-sublibrary read counts in the vendor summary. A step nobody recorded is a step nobody can repeat, and this is the one on the row where that costs the most, because it is the last point at which the raw material was still within reach."},
+
+/* NOT LIFTED, AND NOT READ OFF AN ARTEFACT EITHER — WHICH MAKES IT THE FIRST
+   OF ITS KIND ON THE PAGE. C4 and C5 are this file's own writing about steps
+   that really happened and were simply drawn nowhere. This one is a station
+   somebody ASKED FOR, from the map's own "Add a module" button, in five words:
+   draw a block, a pyramid. That is the whole of what is known about it, so it
+   is the whole of what the record below claims. Writing a plausible does/built
+   for it would mean inventing a section of a manual nobody wrote, which is the
+   one thing this file exists to make impossible.
+
+   It is in UNVERIFIED for a stronger reason than its neighbours: they carry
+   claims nobody has checked with Patrick yet, and this one carries no claim at
+   all. The badge is the map saying so out loud rather than letting a drawing
+   pass as a protocol step. */
+{id:"PYR", key:"C6", group:"The sequencer", shape:"pyramid", name:"Pyramid", x:24.5, y:R2, lane:"r2", w:0.95, d:0.95, h:0.4,
+ sub:"a block · square base · four faces",
+ does:"A pyramid, standing at the end of the row. It was asked for from this map's own Add a module button in five words — draw a block, a pyramid — and those five words are everything anybody has said about it, so they are everything this record claims. What it stands for on a molecular biology row is not yet anybody's to say.",
+ built:"Nothing to cite. The request named no protocol, no manual section, no instrument and no material, and every other built line on this row points at a page of the Evercode manual — so this one points at the request, because that is the only source there is.",
+ cond:"The one station on the page with no claim to check. A shape was asked for and a shape was drawn, at C5's own size and on C5's own tile; until somebody says what the step is, this is a solid on the row rather than a step in the protocol, and nothing downstream depends on it."},
 
 /* ================= ROW 3 — THE MATRIX ================= */
 /* THE WHOLE OF THIS ROW IS /FASTQ_pipe, AT /FASTQ_pipe's OWN SIZE.
@@ -242,10 +263,13 @@ const EDGES = [
   {a:"FRG",b:"R4p",kind:"lib"},
   {a:"R4p",b:"LIB",kind:"lib"},
   {a:"LIB",b:"SEQ",kind:"lib"},
-  /* the only two tracks on this row carrying `read`: everything before the
+  /* the only tracks on this row carrying `read`: everything before the
      sequencer is material, and what leaves it is not */
   {a:"SEQ",b:"DMX",kind:"read"},
-  {a:"DMX",b:"HND",kind:"read"}
+  {a:"DMX",b:"HND",kind:"read"},
+  /* the chain has to stay whole — a station on the row with nothing running
+     into it is an orphan, and the row would read as ending twice */
+  {a:"HND",b:"PYR",kind:"read"}
 ];
 
 /* ONE LANE, AND IT IS /pipeline's OWN — plus exactly the room C4 and C5 cost.
@@ -257,9 +281,13 @@ const EDGES = [
    re-layout of everything to add one thing. So the lane grows by the new
    station's own width plus the gap in front of it, scaled — 1.46 for C5, a
    minor gap because two data stations at the end of the row belong together —
-   and the thirteen gaps that were already there come out where they were. */
+   and the thirteen gaps that were already there come out where they were.
+   C6, the pyramid, cost another 1.464 on the same terms: 0.95 of station and
+   0.6 of minor gap at k 0.8568, x1 25.71 -> 27.174, priced by
+   scripts/pipeline_lane.mjs, which reports k unmoved and every one of the
+   fourteen existing gaps landing where it already was. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:25.71, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:27.174, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
@@ -268,7 +296,7 @@ const ROWS = [R2], MIRROR = 22.7;
    out at the far end with the lane — a band is as long as its row, so a mat
    left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:27.71, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:29.174, y0:R2-3.8, y1:R2+3.8},
 ];
 
 /* No carries: this page is one row and it runs out at the handoff, which is
@@ -363,10 +391,11 @@ const REAL_SUBLIBS = [
 
 /* ROW 2'S SHARE OF /pipeline's UNVERIFIED SET, and it is not optional: the
    reader reads it WITHOUT guarding, so an absent one is a ReferenceError the
-   moment anybody picks a station. Five of this row's stations have not been
+   moment anybody picks a station. Six of this row's stations have not been
    checked with Patrick — C4 and C5 because they are new here and have never
-   been on the big map to be checked against. */
-const UNVERIFIED = new Set(["B9","C1","C2","C4","C5"]);
+   been on the big map to be checked against, and C6 because it was asked for
+   from the page rather than read off an artefact at all. */
+const UNVERIFIED = new Set(["B9","C1","C2","C4","C5","C6"]);
 
 const SNIPPETS = {
   fish: () => { const c=pick(REAL_CELLS); return {label:"one well of embryos", flag:null,
@@ -506,12 +535,12 @@ purity           ${s.purity.toFixed(3)}`};},
 const OVERVIEW = {
   eyebrow:"ZEBRAFISH SINGLE-CELL · ROW 2 OF THE PLATONIC PIPELINE",
   title:"Molecular biology",
-  sub:"fifteen stations · fixed cells in, eight pairs of read files out",
+  sub:"sixteen stations · fixed cells in, eight pairs of read files out",
   /* `does` is the field the reader renders as "The story" — the same name a
      node uses, because the overview IS a node as far as the text editor is
      concerned. Calling it anything else renders the word undefined. */
   does:`
-<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer. The row now runs two boxes further than the big map's does: the conversion that turns the sequencer's run folder into eight pairs of read files, and the handoff where those files change hands — or, on this instance, do not.</p>
+<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer. The row now runs three boxes further than the big map's does: the conversion that turns the sequencer's run folder into eight pairs of read files, the handoff where those files change hands — or, on this instance, do not — and a pyramid, which is a shape somebody asked this page for and not a step of anything.</p>
 <p><mark>The barcode is built in the cell, not read off it.</mark> That is what makes this the row the rest of the map depends on: a cell never leaves its well with an identity attached — it acquires one by surviving three rounds of ligation in a known order, and the combination is the address. Round 4 is different in kind: it is a PCR index on the tube, not on the cell.</p>
 <p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. A station that earns a real drawing gets one here first, on the tile it is on the big map, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again. The exceptions are the last two boxes, which are this page's own.</p>
 `,
@@ -519,7 +548,7 @@ const OVERVIEW = {
      reader renders them under their own headings. The overview is a node as far
      as the reader and the text editor are concerned, so leaving them out is a
      missing field rather than a shorter page. */
-  built:`<p>Thirteen stations lifted from row 2 of <a href="/pipeline">/pipeline</a>, and two more — the basecall and demultiplex, and the handoff after it — authored here, because the steps between the sequencer and the reads were drawn on no map. The figures are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
-  cond:`<p>This is a bench, so what it draws is deliberately unfinished — but the unfinished part is no longer the drawings: fourteen of the fifteen stations now carry one of their own, and the sequencer is the last still standing on the big map's generic apparatus. What is unfinished is the checking, and the badges say which. <mark>What must not drift is the prose</mark> — all of it but the last two stations' is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
+  built:`<p>Thirteen stations lifted from row 2 of <a href="/pipeline">/pipeline</a>, and two more — the basecall and demultiplex, and the handoff after it — authored here, because the steps between the sequencer and the reads were drawn on no map. The sixteenth, the pyramid, cites nothing, because the request that asked for it cited nothing. The figures are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
+  cond:`<p>This is a bench, so what it draws is deliberately unfinished — but the unfinished part is no longer the drawings: fifteen of the sixteen stations now carry one of their own, and the sequencer is the last still standing on the big map's generic apparatus. What is unfinished is the checking, and the badges say which. <mark>What must not drift is the prose</mark> — all of it but the last two stations' is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
   howto:`<p>One landmark — the Thaw — sits on a dashed plinth and carries its name on the ground. Every other station stands on the tile it has on the big map and draws what happens on it. Hatching would mean the stage destroys data; nothing on this row does. The row reads left to right and nothing feeds it from off the page: on the big map the row above supplies the fixed material, and that is said by where the rows sit rather than by a track.</p>`,
 };

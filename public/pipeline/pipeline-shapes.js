@@ -23,10 +23,18 @@ const SKIN={
 };
 
 
+/* How far a pyramid rises above its own tile, as a fraction of its width. It
+   lives up here rather than inside the shape because topOf() has to agree with
+   the drawing: the silhouette punched out for the occlusion clip is also the
+   click target, so a solid that stands taller than its silhouette is a solid
+   you cannot pick up by its own body. */
+const PYRAMID_RISE=0.58;
+
 /* the height a structure actually reaches, for anything drawn on top of it */
 const topOf = n => n.shape==="works"   ? n.h*0.96
                  : n.shape==="tankrack"? 1.4
                  : n.shape==="machine" ? 1.42
+                 : n.shape==="pyramid" ? n.h+n.w*PYRAMID_RISE
                  : n.shape==="vials"   ? n.h  : n.h;
 
 
@@ -5862,3 +5870,48 @@ function drawHandoff(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.handoff = drawHandoff;
+
+/* ------------------------------------------------------------------
+   C6 · PYRAMID — a block, and nothing claimed past the block.
+
+   THE REQUEST WAS FIVE WORDS: draw a block, a pyramid. Every other figure in
+   this file draws a step somebody can describe, and the drawing is an argument
+   about that step — the plate is dealt because the split is the point, the run
+   folder fans into eight because the split is the point. There is no step here
+   to argue about yet, so this is the solid and only the solid: a square base
+   standing on the station's own tile, four faces meeting over its centre.
+
+   IT DOES NOT MOVE, AND THAT IS THE HONEST VERSION. Motion on this map says
+   what a station DOES, so inventing a beat for a shape nobody has explained
+   would be inventing the explanation with it. If the station is ever given a
+   job, the figure can earn one then.
+
+   TWO FACES ARE DRAWN, NOT FOUR, because two is what an isometric viewer can
+   see; they take the tile's own left and right skin so the solid is lit the
+   same way as the box it stands on. The apex is a fraction of the WIDTH rather
+   than of n.h: h on this row is the thickness of the tile, and a pyramid that
+   took its height from it would flatten to a lid the moment the box was
+   dragged thinner. topOf() reads the same PYRAMID_RISE — see the note there.
+   ------------------------------------------------------------------ */
+function drawPyramid(g,n){
+  /* EVERY OFFSET IS A FRACTION OF THE NODE — w, d and h are read at draw time,
+     because a resize is the only reason this function runs again. Composed at
+     w .95, d .95, h .40, which is C4's and C5's tile: the end of the row keeps
+     one size across the three stations that were added to it. */
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+
+  const hw=n.w*0.34, hd=n.d*0.34, z0=n.h, zT=n.h+n.w*PYRAMID_RISE;
+  const A=P(n.x-hw,n.y-hd,z0), B=P(n.x+hw,n.y-hd,z0),
+        C=P(n.x+hw,n.y+hd,z0), D=P(n.x-hw,n.y+hd,z0), T=P(n.x,n.y,zT);
+
+  /* the base goes down first so the two faces overlap it rather than the other
+     way round: all that shows of it is the two back edges, which is exactly
+     what says the solid is sitting on the tile and not hovering over it */
+  g.appendChild(el("polygon",{points:pts([A,B,C,D]),fill:"none",
+    stroke:"var(--stroke)","stroke-width":"1","stroke-opacity":".45"}));
+  [[B,C,SKIN.works.right],[C,D,SKIN.works.left]].forEach(([p,q,fill])=>{
+    g.appendChild(el("polygon",{points:pts([p,q,T]),fill,stroke:"var(--stroke)",
+      "stroke-width":SKIN.works.sw,"stroke-opacity":SKIN.works.so}));
+  });
+}
+DRAW.pyramid = drawPyramid;
