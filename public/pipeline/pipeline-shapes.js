@@ -2112,6 +2112,201 @@ DRAW.fixation = drawFixation;
 
 
 /* ------------------------------------------------------------------
+   B1 · THE THAW — the ice is the thing that leaves.
+
+   The freezer drawing said "cold storage" first and "thaw" second: the plate
+   spent most of the loop shut inside a box, and the one part that read as
+   warming was a scatter of crystals small enough to miss. So this is the same
+   step with the object and the obstruction swapped round. The plate is there
+   from the first frame; what changes is that the slab of ice over it goes.
+
+   THE ICE IS A SOLID, NOT A TINT. It is a box on the node's own footprint,
+   floor to n.h, opaque enough that the plastic under it cannot be read — the
+   whole thing covered in blue, with a snowflake lying on its top face — and it
+   both SINKS and fades as it melts, because opacity alone at this size reads
+   as a colour change rather than as something going away. When it reaches the
+   plate's top it is gone and the 96 wells are simply there, samples and all.
+
+   The material does not move. It is fixed, cross-linked and cryopreserved:
+   the honest reading of this step is preserved matter coming back to a working
+   temperature, so the specks in the wells are drawn once and never touched.
+   The one place the warming is shown happening is the outset, and there it is
+   a coat of ice on a single cell fading off it — the last ice to go, which is
+   what the protocol actually waits for.
+
+   Requires ellipseAt() from the A2 clutch block and PLATE_BANDS / plateGrid /
+   plateSlab / drawWell from the plate set, so this is the same plastic the
+   compound plate and the barcoding rounds are drawn on.
+   ------------------------------------------------------------------ */
+function drawThawPlate(g,n){
+  const r=rng(59), SC=n.w/2.52;             // composed at w 2.52, d 1.82, h 0.665
+  const ICE="var(--water, var(--signal))";
+  const COLS=12, ROWS=8;                    // 96 wells, and they are countable
+  /* the plate is deep-well plastic rather than a wafer: the name hangs at
+     topOf(n) = n.h, and a slab a tenth of that leaves it floating in air */
+  const th=n.h*0.55;
+  const plate={x:n.x, y:n.y, w:n.w*0.9, d:n.d*0.9};
+
+  plateSlab(g,plate,th,SKIN.anchor,1.6);
+  const wells=plateGrid(plate,th,COLS,ROWS);
+  wells.forEach(w=>drawWell(g,w,true));
+  /* the sample in each well. Three specks, not a full field: a well here is
+     four pixels across, and anything denser turns the plate grey. */
+  wells.forEach(w=>{
+    for(let k=0;k<3;k++){
+      const a=r()*6.283, rad=Math.sqrt(r())*w.e.rx*0.44;
+      g.appendChild(el("circle",{cx:(w.e.x+Math.cos(a)*rad).toFixed(2),
+        cy:(w.e.y+Math.sin(a)*rad*0.6).toFixed(2),r:(0.8*SC).toFixed(2),
+        fill:"var(--fg)","fill-opacity":".55"}));
+    }
+  });
+
+  /* the well the outset is a magnification of, ringed on the plate so the two
+     can be matched by eye. Near-left, which is the corner the outset hangs off */
+  const src=wells[(ROWS-2)*COLS+1];
+  g.appendChild(el("ellipse",{cx:src.e.x.toFixed(2),cy:src.e.y.toFixed(2),
+    rx:(src.e.rx*1.6).toFixed(2),ry:(src.e.ry*1.6).toFixed(2),fill:"none",
+    stroke:"var(--fg)","stroke-width":(0.9*SC).toFixed(2),"stroke-opacity":".85"}));
+
+  /* ---- THE ICE ----------------------------------------------------------
+     Three faces of a box, rebuilt each frame at the height the ice has left.
+     Everything lying ON the top face — the snowflake and the rime around it —
+     is in one group that is translated down by the same amount, so the surface
+     stays welded to the slab instead of hanging over it. */
+  const iceG=el("g",{}); g.appendChild(iceG);
+  const KEYS=["left","right","top"], OP=[".78",".84",".82"];
+  const f0=faces(n.x,n.y,n.w,n.d,n.h);
+  const iceF=KEYS.map((k,i)=>{
+    const e=el("polygon",{points:f0[k],fill:ICE,"fill-opacity":OP[i],
+      stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2),"stroke-opacity":".55"});
+    iceG.appendChild(e); return e;
+  });
+
+  const surf=el("g",{transform:"translate(0,0)"}); iceG.appendChild(surf);
+  /* the snowflake is built in world x/y and projected onto the top face, so it
+     lies on the ice and foreshortens with it rather than being a screen-space
+     star pasted over the plate */
+  const FR=Math.min(n.w,n.d)*0.30;
+  const at2=(cx,cy,a,rad)=>P(cx+Math.cos(a)*rad, cy+Math.sin(a)*rad, n.h);
+  const arm=(p,q,wid,op)=>surf.appendChild(el("line",{x1:p[0].toFixed(1),y1:p[1].toFixed(1),
+    x2:q[0].toFixed(1),y2:q[1].toFixed(1),stroke:"var(--fg)","stroke-width":wid,
+    "stroke-opacity":op,"stroke-linecap":"round"}));
+  for(let i=0;i<6;i++){
+    const a=i*Math.PI/3;
+    arm(P(n.x,n.y,n.h), at2(n.x,n.y,a,FR), (2.1*SC).toFixed(2), ".85");
+    [[0.44,0.30],[0.72,0.21]].forEach(([f,len])=>{
+      const bx=n.x+Math.cos(a)*FR*f, by=n.y+Math.sin(a)*FR*f;
+      [0.62,-0.62].forEach(sw=>arm(P(bx,by,n.h), at2(bx,by,a+sw,FR*len),
+        (1.4*SC).toFixed(2), ".72"));
+    });
+  }
+  const hex=[];
+  for(let i=0;i<6;i++) hex.push(at2(n.x,n.y,i*Math.PI/3,FR*0.15));
+  surf.appendChild(el("polygon",{points:pts(hex),fill:"var(--fg)","fill-opacity":".7"}));
+
+  /* rime around the flake, kept clear of it so the two never overlap. It goes
+     outermost first: an edge warms before the middle of a slab does. */
+  const rime=[];
+  for(let i=0;i<12;i++){
+    let u=0, v=0, tries=0;
+    do{ u=(r()*1.76-0.88)*n.w/2; v=(r()*1.76-0.88)*n.d/2; }
+    while(Math.hypot(u,v)<FR*1.2 && ++tries<8);
+    const R=Math.min(n.w,n.d)*(0.035+r()*0.03);
+    let d="";
+    for(let a=0;a<3;a++){
+      const ang=a*Math.PI/3+r()*0.4;
+      const p0=P(n.x+u-Math.cos(ang)*R, n.y+v-Math.sin(ang)*R, n.h);
+      const p1=P(n.x+u+Math.cos(ang)*R, n.y+v+Math.sin(ang)*R, n.h);
+      d+=`M ${p0[0].toFixed(1)} ${p0[1].toFixed(1)} L ${p1[0].toFixed(1)} ${p1[1].toFixed(1)} `;
+    }
+    const node=el("path",{d,fill:"none",stroke:"var(--fg)","stroke-width":(1.1*SC).toFixed(2),
+      "stroke-opacity":".55","stroke-linecap":"round"});
+    surf.appendChild(node);
+    rime.push({node, far:Math.hypot(u/(n.w/2), v/(n.d/2))});
+  }
+  rime.sort((a,b)=>b.far-a.far);
+
+  /* ---- THE OUTSET, and it is drawn over the ice ------------------------
+     One well, magnified, hanging off the near-left ground where nothing else
+     on this row goes — the idiom the rest of the map uses for a thing drawn
+     larger than life, two dashed leaders and no track. It sits on top of the
+     ice rather than under it because it is not on the plate: it is a view of
+     what is happening inside one well while the slab above is still there. */
+  /* far enough out that the circle clears the landmark's own plinth, which
+     runs 0.55 past the footprint on every side */
+  const KR=n.w*S*0.30, [KX,KY]=P(n.x-n.w*0.62, n.y+n.d*1.45, n.h*0.75);
+  [[KR*0.78,-KR*0.62],[KR*0.78,KR*0.62]].forEach(p=>g.appendChild(el("line",{
+    x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
+    x2:src.e.x.toFixed(1),y2:src.e.y.toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".22","stroke-dasharray":"3 3"})));
+
+  const out=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
+  g.appendChild(out);
+  out.appendChild(el("circle",{cx:"0",cy:"0",r:KR.toFixed(1),fill:"var(--bg)",
+    "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":(1.1*SC).toFixed(2),
+    "stroke-opacity":".6"}));
+  /* the medium wears the source well's own band, so the outset cannot drift
+     into being a picture of some other well */
+  out.appendChild(el("circle",{cx:"0",cy:"0",r:(KR*0.93).toFixed(1),
+    fill:src.band.fill,"fill-opacity":src.band.op}));
+  out.appendChild(el("circle",{cx:"0",cy:"0",r:(KR*0.46).toFixed(1),fill:"var(--fg)",
+    "fill-opacity":".12",stroke:"var(--fg)","stroke-width":(1.5*SC).toFixed(2),
+    "stroke-opacity":".8"}));
+  out.appendChild(el("circle",{cx:(-KR*0.11).toFixed(1),cy:(KR*0.07).toFixed(1),
+    r:(KR*0.17).toFixed(1),fill:"var(--fg)","fill-opacity":".3"}));
+  for(let i=0;i<7;i++){
+    const a=r()*6.283, rad=Math.sqrt(r())*KR*0.34;
+    out.appendChild(el("circle",{cx:(Math.cos(a)*rad).toFixed(1),cy:(Math.sin(a)*rad).toFixed(1),
+      r:(KR*0.035).toFixed(1),fill:"var(--fg)","fill-opacity":".45"}));
+  }
+  const coat=el("circle",{cx:"0",cy:"0",r:(KR*0.59).toFixed(1),fill:ICE,
+    "fill-opacity":".95",stroke:"var(--fg)","stroke-width":(0.8*SC).toFixed(2),
+    "stroke-opacity":".35"});
+  out.appendChild(coat);
+
+  /* ---- THE SCHEDULE ----------------------------------------------------
+     Frozen, then the slab goes, then the plate stands clear, then the ice
+     comes back — the last phase is the loop closing and nothing else, which is
+     why it is the shortest and the only one that runs the other way. The coat
+     on the magnified cell starts later and finishes last: one cell in the
+     middle of a well is the last thing in the plate to reach temperature. */
+  const FROZEN=1.8, MELT=2.8, CLEAR=2.4, GLAZE=1.1;
+  const CYCLE=FROZEN+MELT+CLEAR+GLAZE;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const c01=x=>Math.max(0,Math.min(1,x));
+  let t=0;
+  const run=(dt)=>{
+    t=(t+dt)%CYCLE;
+    let ice=1, cv=1;
+    if(t<FROZEN){ /* held frozen */ }
+    else if(t<FROZEN+MELT){
+      const u=(t-FROZEN)/MELT;
+      ice=1-ease(c01(u/0.72));
+      cv =1-ease(c01((u-0.34)/0.66));
+    }else if(t<FROZEN+MELT+CLEAR){ ice=0; cv=0; }
+    else { ice=cv=ease((t-FROZEN-MELT-CLEAR)/GLAZE); }
+
+    const z=th+(n.h-th)*ice, f=faces(n.x,n.y,n.w,n.d,z);
+    iceF.forEach((e,i)=>e.setAttribute("points",f[KEYS[i]]));
+    surf.setAttribute("transform",`translate(0,${((n.h-z)*S*CZ).toFixed(2)})`);
+    iceG.setAttribute("opacity",c01(ice*1.3).toFixed(2));
+    /* the flake is on the surface, so it clears with the surface rather than
+       after it — the last frame of the melt has no white left in it */
+    surf.setAttribute("opacity",c01(ice*1.5).toFixed(2));
+    const gone=(1-ice)*rime.length;
+    rime.forEach((c,i)=>c.node.setAttribute("stroke-opacity",(0.55*c01(1-(gone-i))).toFixed(2)));
+
+    coat.setAttribute("r",(KR*(0.50+0.09*cv)).toFixed(1));
+    coat.setAttribute("fill-opacity",(0.95*cv).toFixed(2));
+    coat.setAttribute("stroke-opacity",(0.35*cv).toFixed(2));
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.thawplate = drawThawPlate;
+
+
+/* ------------------------------------------------------------------
    ROUND ONE · REVERSE TRANSCRIPTION
    The step seen from inside one cell rather than from over the plate.
 

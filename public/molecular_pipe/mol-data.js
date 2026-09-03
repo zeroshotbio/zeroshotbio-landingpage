@@ -37,7 +37,7 @@ const R2 = 0;
 const NODES = [
 
 {id:"THW", key:"B1", group:"In situ barcoding", groupMark:true, anchor:true,
- shape:"vials", thaw:true, lane:"r2",
+ shape:"thawplate", thaw:true, lane:"r2",
  name:"Thaw", x:0.7, y:R2, w:2.52, d:1.82, h:0.665,
  sub:"37°C thaw · haemocytometer · loading table", stat:"the biology restarts",
  does:"Fixed material comes back out of the freezer, is thawed until the last ice crystal goes, counted, and diluted to the concentration the loading table demands. The count taken here decides how many cells enter each round-one well, and therefore how crowded the whole run will be.",
