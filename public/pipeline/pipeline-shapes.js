@@ -3378,20 +3378,19 @@ function setFanLine(L,dim,f){
 
 /* ------------------------------------------------------------------
    POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
-   Forty-eight wells emptied into one tube by a twelve-channel head, and
-   then that tube dealt back out across forty-eight fresh ones. Both
+   Ninety-six wells emptied into one tube by a twelve-channel head, and
+   then that tube dealt back out across ninety-six fresh ones. Both
    halves are drawn, because the second one is where the claim lives.
 
-   THE TOOL IS A TWELVE-CHANNEL AND THE PLATE IS LAID OUT FOR IT. Round
-   one is forty-eight wells as rows A to D against columns 1 to 12 —
-   R1p next door says exactly that in its own record — so a row is twelve
-   wells wide and one head spans it. This shape used to draw the same
-   forty-eight as eight across and six back, which is the compound
-   plate's grid from row 1, and a twelve-channel over that is a tool that
-   does not fit the plastic: either four tips hang off the edge or the
-   comb is pitched to something that is not a well. Same forty-eight
-   wells either way. This way the tool and the plate agree, and one dip
-   is one row.
+   THE TOOL IS A TWELVE-CHANNEL AND THE PLATE IS LAID OUT FOR IT. The
+   grid is read off the node — cols x rows, the way B5 reads its own —
+   so a row is twelve wells wide and one head spans it, and the number
+   of rows is a fact about the round rather than about the drawing. This
+   shape used to draw its wells as eight across and six back, which is
+   the compound plate's grid from row 1, and a twelve-channel over that
+   is a tool that does not fit the plastic: either four tips hang off
+   the edge or the comb is pitched to something that is not a well. This
+   way the tool and the plate agree, and one dip is one row.
 
    THE FOUR BAND COLOURS ARE THE WHOLE POINT. The first plate's wells
    wear PLATE_BANDS, so what goes into the tube is visibly four different
@@ -3408,30 +3407,38 @@ function setFanLine(L,dim,f){
    doing. A twelve-channel lifts a whole row at once, so a row has to be
    one treatment: a dip that took all four together would have no colour
    to pour, and the column rising in the glass through four colours
-   before it goes grey is the thing this shape exists to show. Four rows,
-   four treatments, one per trip.
+   before it goes grey is the thing this shape exists to show. A band is
+   therefore a QUARTER OF THE PLATE rather than a row — the same rule
+   plateGrid uses across its columns — so eight rows are two trips a
+   treatment and four rows are one, and the tube still fills through
+   four colours in order however deep the plastic is.
 
-   FOUR TRIPS A PLATE IS THE PACING, AND IT MADE THE OLD ONE REDUNDANT.
-   A single tip needed a whole scheme here — bench speed for the first
-   row, then a geometric run-up with a floor under it — because
-   forty-eight honest transfers is twenty-five seconds nobody watches and
-   an unlimited acceleration turns the tail into a flicker. A head that
-   empties a row a trip has four transfers to make, so they all run at
-   the pace a hand actually works at and the plate still goes in under
-   five seconds. The scheme is gone rather than retuned: twelve channels
-   removed the problem it was solving.
+   A TRIP IS A ROW AND THE PLATE HAS A BUDGET. A single tip needed a
+   whole scheme here — bench speed for the first row, then a geometric
+   run-up with a floor under it — because ninety-six honest transfers is
+   the best part of a minute nobody watches and an unlimited
+   acceleration turns the tail into a flicker. A head that empties a row
+   a trip has as many transfers as there are rows, so the trip length is
+   a plate-sweep budget divided by them, with a floor under it so a
+   deeper plate quickens the hand rather than blurring it. Eight rows
+   land on that floor and the whole cycle still comes in around twelve
+   seconds.
 
-   BETWEEN THE HALVES THE TUBE IS SWIRLED. Forty-eight wells go in as
+   BETWEEN THE HALVES THE TUBE IS SWIRLED. Ninety-six wells go in as
    four colours and come out as one grey, and mixing is the step that
    makes that true; a tube that just stands there full asserts the pooling
    rather than shows it. It leans about its own foot the way a hand rocks
    a conical, and the surface rides the wall a beat behind the lean.
 
-   The plates are drawn wider than the node's own 0.6 footprint: forty-
-   eight wells at that size would be a smear of plastic with no wells in
+   The plates are drawn wider than the node's own 0.6 footprint: ninety-
+   six wells at that size would be a smear of plastic with no wells in
    it. They stand diagonally apart — one back, one forward — so neither
    overlaps the stations either side, with the tube on the floor between
-   them.
+   them. Going from four rows to eight doubles their depth, and the
+   extra is spent OUTWARD, away from the tube: the edge each plate turns
+   toward the vessel stays exactly where it was composed, so the
+   clearance around the tube and the diagonal read of the pair survive a
+   change of grid.
 
    Reuses PLATE_BANDS / plateGrid / plateSlab / drawWell from the plate
    set, ellipseAt / arcPts from the clutch block, and conicalTube /
@@ -3446,34 +3453,48 @@ function drawPoolSplit(g,n){
      again. Absolute coordinates draw correctly at the size the node happens to
      be authored and come apart the moment anybody drags a corner — the plate
      grows and the tube beside it stays exactly where it was. Every ratio below
-     is against the size this was composed at: w 0.6, d 0.6, h 0.3.
-     THE FOOTPRINT IS THE GRID'S SHAPE. Twelve columns against four rows is a
-     plate three times as wide as it is deep, so the plastic is drawn that way:
-     wider than the 1.45 an eight-column grid wanted, and much shallower than
-     its 1.0. That is what keeps the pitch square — twelve wells crammed across
-     a footprint drawn for eight is a row of slots, and four rows spread over
-     the old depth is three empty bands of plastic — and it also puts more
-     ground between the two plates than the deep version had. */
-  const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.9167, w:n.w*1.72, d:n.d*0.60};
-  const dst={x:n.x+n.w*0.25,   y:n.y+n.d*1.25,   w:n.w*1.72, d:n.d*0.60};
+     is against the size this was composed at: w 0.6, d 0.6, h 0.3. */
   /* the pooled suspension: one colour, and not one of the four */
   const GREY={fill:"var(--fg)", op:0.34};
   /* THE GRID IS THE ROUND'S OWN FACT and it is read off the node, the way B5
-     reads its 12 x 8: round one is twelve columns by four rows, so the default
-     is that and not plateWells' 8 x 6, which belongs to the compound plate a
-     row up. It matters to the drawing rather than only to the record, because
-     the head working it has twelve channels and a row is what one dip is. */
-  const COLS=n.cols||12, ROWS=n.rows||4;
+     reads its own: twelve columns by eight rows is the 96-well plastic these
+     rounds are run on, and not plateWells' 8 x 6, which belongs to the compound
+     plate a row up. It matters to the drawing rather than only to the record,
+     because the head working it has twelve channels and a row is what one dip
+     is. */
+  const COLS=n.cols||12, ROWS=n.rows||8;
+
+  /* THE FOOTPRINT IS THE GRID'S SHAPE, so the depth is COMPUTED from it rather
+     than authored. Square pitch is the whole requirement — twelve wells crammed
+     across a footprint drawn for eight is a row of slots, and four rows spread
+     over a deep one is three empty bands of plastic — and square pitch is just
+     depth = width x rows / cols. Twelve by eight lands on the 3:2 a real
+     96-well plate has; twelve by four gives the long shallow strip this was
+     first composed at. Either way the head's comb, which is pitched off the
+     first two wells, fits the plastic.
+     THE EXTRA DEPTH IS SPENT OUTWARD. Each plate is placed by the edge it turns
+     toward the tube — the far edge of the near plate, the near edge of the far
+     one — so a deeper grid grows back and front into the empty ground this row
+     has, and leaves the clearance around the vessel exactly as composed. */
+  const PW=n.w*1.72, PD=PW*ROWS/COLS;
+  const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.6167-PD/2, w:PW, d:PD};
+  const dst={x:n.x+n.w*0.25,   y:n.y+n.d*0.95  +PD/2, w:PW, d:PD};
 
   plateSlab(g,src,th,SKIN.tile,1);
   /* plateGrid runs row-major, so a slice of this list is a row of the plate and
      one trip of the head. The band comes off the ROW rather than out of
-     plateGrid's column bands — see the header — and there are as many rows as
-     there are treatments. Each well keeps a handle on its own liquid, because
+     plateGrid's column bands — see the header — because a twelve-channel takes
+     a whole row at once. Each well keeps a handle on its own liquid, because
      that is the thing the head takes away. */
   const from=plateGrid(src,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
-    const band=PLATE_BANDS[w.j%PLATE_BANDS.length];
+    /* a treatment is a QUARTER of the plate, not a row: four bands stay four
+       however many rows there are, so eight rows are two trips a treatment and
+       the tube still rises through the four in order. Taking j modulo four
+       instead would deal the colours A B C D A B C D and say the plate was
+       loaded in stripes it never was. */
+    const band=PLATE_BANDS[Math.min(PLATE_BANDS.length-1,
+                 Math.floor(w.j*PLATE_BANDS.length/ROWS))];
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
       ry:(w.e.ry*0.86).toFixed(2),fill:band.fill,"fill-opacity":band.op});
     g.appendChild(fill);
@@ -3483,7 +3504,7 @@ function drawPoolSplit(g,n){
   /* THE TUBE, on the floor between the two plates. It is conicalTube's, and it
      stands twice as tall as this shape's own first attempt at one: a 15 ml
      conical is a long thin thing and the old one read as a stubby vial. The
-     height is also what the rising column needs, because forty-eight transfers
+     height is also what the rising column needs, because ninety-six wells going
      into a short tube is a level that barely moves per trip. */
   const T=conicalTube(g, n.x-n.w*0.40, n.y+n.d*0.50, n.w, n.h);
 
@@ -3522,14 +3543,19 @@ function drawPoolSplit(g,n){
   });
 
   /* ---- TIMING -------------------------------------------------------------
-     A TRIP IS A ROW, so there are four of them a plate and they can all run at
-     the same speed — see the header for what that replaced. A second and a bit
-     is long enough to watch a comb go out, sit in twelve wells, come back and
-     empty; the dealing trip is shorter because a hover is quicker than a dip.
-     MID is not a pause but how long the swirl lasts, and three turns of it want
-     the best part of two seconds to read as a hand rather than a twitch. END
-     stands and looks at the dealt plate. One cycle is about twelve seconds. */
-  const TRIP=1.15, DEAL=1.00, MID=1.8, END=1.6, SW_TURNS=3;
+     A TRIP IS A ROW, so there are as many a plate as the grid has rows and they
+     can all run at the same speed — see the header for what that replaced. What
+     is fixed is the SWEEP, not the trip: a plate gets about five seconds and the
+     rows divide it, which is why eight rows do not take twice as long to watch
+     as four did. The floor is what stops that dividing into a flicker — it is
+     the shortest out-sit-return a hand reads as a movement — and at eight rows
+     the sweep is already down on it. The dealing trip is shorter throughout
+     because a hover is quicker than a dip. MID is not a pause but how long the
+     swirl lasts, and three turns of it want the best part of two seconds to
+     read as a hand rather than a twitch. END stands and looks at the dealt
+     plate. One cycle is about twelve seconds at either grid. */
+  const TRIP=Math.max(0.62, 4.6/ROWS), DEAL=Math.max(0.55, 4.0/ROWS);
+  const MID=1.8, END=1.6, SW_TURNS=3;
   const T1=ROWS*TRIP, T2=T1+MID, T3=T2+ROWS*DEAL, T4=T3+END;
   /* which trip a half is on, and how far through it — named tripAt rather than
      at(), which is the strand helper further up this file */
