@@ -2944,3 +2944,123 @@ feature("edit visual", function(){
   })();
 });
 
+
+/* ============================================================
+   VIEW PROMPT HISTORY
+   The queue is not only a queue. Every request ever sent against a map is still
+   in it, and until this panel existed the only way to see any of it was the
+   corner rows — which show the handful you are personally waiting on, in this
+   browser, and vanish the moment the work lands. So the person actually using
+   the map had no way to answer "what have I already asked for?", which is the
+   question you ask before writing the next request.
+
+   READ-ONLY, ON PURPOSE. Nothing here re-sends, re-queues, edits or deletes.
+   Its whole value is being a truthful account of what was asked, and a record
+   you can change from the same window you read it in is not one.
+
+   This block is shared with /pipeline, like the rest of this file, and stands
+   down where the markup is absent — /molecular_pipe carries the button and the
+   panel, the big map does not (yet). PROMPT_API is already per-map, so a map
+   that adds the markup gets its own history and nobody else's.
+   ============================================================ */
+feature("prompt history", function(){
+  const btn=document.getElementById("btnHistory"), box=document.getElementById("hist");
+  if(!btn||!box) return;
+  const list=document.getElementById("histList"),
+        hint=document.getElementById("histHint"),
+        head=document.getElementById("histWhat");
+  if(!list) return;
+
+  const STATUS={queued:"queued", working:"drawing", done:"done", dropped:"dropped"};
+  const MONTHS=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+  function when(t){
+    const d=new Date(t);
+    if(isNaN(d)) return "";
+    const hh=String(d.getHours()).padStart(2,"0"), mm=String(d.getMinutes()).padStart(2,"0");
+    return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()} · ${hh}:${mm}`;
+  }
+
+  function paint(rows){
+    list.innerHTML="";
+    if(!rows.length){
+      list.innerHTML=`<div class="histempty">Nothing has been asked of this map yet.</div>`;
+      if(hint) hint.textContent="";
+      return;
+    }
+    rows.forEach(p=>{
+      const row=document.createElement("div");
+      row.className="hrow";
+      const st=STATUS[p.status]||p.status||"";
+      /* the target is what was selected when the request went out, and it is the
+         thing people scan by — so it leads the line, and a request sent with
+         nothing selected says that rather than showing a gap */
+      const tgt = p.target
+          ? `<b>${esc(p.target.key||"")}${p.target.name?" · "+esc(p.target.name):""}</b>`
+          : `<b>no step selected</b>`;
+      row.innerHTML =
+        `<span class="hstat ${esc(p.status||"")}">${esc(st)}</span>`+
+        `<div class="hmain">`+
+          `<div class="hmeta">${tgt} · ${esc(when(p.at))}</div>`+
+          `<div class="htext">${esc((p.text||"").trim())}</div>`+
+          (p.note?`<div class="hnote">${esc(p.note)}</div>`:"")+
+        `</div>`;
+      row.onclick=()=>row.classList.toggle("open");
+      list.appendChild(row);
+    });
+    const done=rows.filter(p=>p.status==="done").length,
+          live=rows.filter(p=>p.status==="queued"||p.status==="working").length;
+    if(hint) hint.textContent =
+      `${rows.length} request${rows.length===1?"":"s"} · ${done} drawn`+
+      (live?` · ${live} still to do`:"")+
+      ` · newest first · click one to read it in full`;
+  }
+
+  function open(){
+    box.classList.add("on");
+    list.innerHTML=`<div class="histempty">Reading the record…</div>`;
+    if(hint) hint.textContent="";
+    if(typeof fetch!=="function"){
+      list.innerHTML=`<div class="histempty">No connection — the record could not be read.</div>`;
+      return;
+    }
+    /* ?all=1 is the whole record rather than the recent window the map polls
+       for. It is the one call on the page that reads the archive pages, which
+       is why it is made on open rather than kept fresh in the background. */
+    fetch(PROMPT_API+"?all=1",{cache:"no-store"})
+      .then(r=>r.json())
+      .then(j=>{
+        if(!box.classList.contains("on")) return;
+        const rows=(j&&j.prompts)||[];
+        if(j&&j.error){
+          list.innerHTML=`<div class="histempty">The record could not be read just now.</div>`;
+          return;
+        }
+        rows.sort((a,b)=>(b.at||0)-(a.at||0));
+        paint(rows);
+      })
+      .catch(()=>{
+        if(!box.classList.contains("on")) return;
+        list.innerHTML=`<div class="histempty">Could not reach the record.</div>`;
+      });
+  }
+  function close(){ box.classList.remove("on"); }
+
+  if(head) head.textContent="Prompt history · everything ever asked of this map";
+  btn.onclick=open;
+  const x=document.getElementById("histX"); if(x) x.onclick=close;
+  const c=document.getElementById("histClose"); if(c) c.onclick=close;
+  box.addEventListener("pointerdown",ev=>{ if(ev.target===box) close(); });
+
+  /* The panel has nothing to type into, so its Escape cannot ride on a field's
+     keydown the way the request dialogue's does — and the map's own handler is
+     on window, where Escape clears the reader and the arrows walk the sequence.
+     Left alone, reading the history would be scrolling one list while the map
+     silently stepped through stations behind it. So while the panel is open its
+     keys are taken in the capture phase, before the map ever sees them. */
+  window.addEventListener("keydown",ev=>{
+    if(!box.classList.contains("on")) return;
+    if(ev.key==="Escape"){ ev.preventDefault(); ev.stopPropagation(); close(); }
+    else if(ev.key.slice(0,5)==="Arrow"||ev.key==="Home"||ev.key==="m"||ev.key==="M")
+      ev.stopPropagation();
+  }, true);
+});

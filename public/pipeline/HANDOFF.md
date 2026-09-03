@@ -645,6 +645,54 @@ unconditionally reaches every node on every load, and at least one is authored
 which is a difference, which put it in the saved table as an object somebody had
 resized. Nobody had.
 
+## The prompt record, and the panel that reads it
+
+`pipeline-view.js` carries a **"View prompt history"** feature. It is shared
+like everything else in that file and it **stands down where the markup is
+absent**, which is why `/pipeline` does not show it: `/molecular_pipe` has the
+button and the panel in its own `index.html`, this map does not. `PROMPT_API`
+is already per-map, so a map that adds the markup gets its own record and
+nobody else's. Opting in is two things and no JavaScript:
+
+```html
+<button class="ctl" id="btnHistory">View prompt history</button>   <!-- in .controls -->
+<div class="hist" id="hist" role="dialog" aria-label="Prompt history"> … </div>
+```
+
+Copy the panel markup and its CSS block from `public/molecular_pipe/index.html`.
+
+**The panel is read-only and must stay that way.** It is the only part of these
+pages that claims to be a record of what was asked, and a record you can edit
+from the window you read it in is not one. `check-history.mjs` asserts that no
+`POST` ever leaves it.
+
+**The queue behind it keeps everything, and that took more than deleting a cap.**
+`/api/molecular_prompts` used to hold the newest forty rows in one DynamoDB
+item. Simply removing the slice does not give you "keep everything" — it gives
+you "keep everything until the item passes 400KB", and then the write fails,
+which takes down the NEW prompt rather than an old one. So the record is paged:
+a head item holds the recent rows and is the only thing rewritten in normal
+use, and older rows spill into numbered page items in batches. Two rules are
+load-bearing and both are easy to undo:
+
+- **The spill has a high mark and a low one.** Cut back to a single threshold
+  and the head parks on it, so every subsequent prompt writes one more page
+  holding one row — correct, and it turns reading the history into a thousand
+  reads.
+- **An unfinished row never goes into the archive.** `?open=1` is what the
+  daemon polls every ten seconds and it is answered from the head alone. A
+  queued row that aged past the cut would sit in the record, still reading
+  "queued" on the page, invisible to the only thing that could draw it. The cut
+  is pushed back past anything still open; in the one case where it cannot be,
+  the head is stamped so `?open=1` knows to go looking.
+
+Both, and the ceiling, are asserted — with no dependencies to install:
+
+```bash
+node scripts/pipeline_test/check-prompt-record.mjs
+node public/molecular_pipe/check-history.mjs <url>   # needs playwright
+```
+
 ## Please do not
 
 - **Inline these back into one file.** That is the entire point of the split.
