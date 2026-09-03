@@ -5541,3 +5541,159 @@ function drawSizeCheck(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.sizecheck = drawSizeCheck;
+
+/* ------------------------------------------------------------------
+   C4 · BASECALL AND DEMULTIPLEX — one run folder, eight pairs of files.
+
+   THIS IS THE ONE STATION ON THE ROW WITH NOTHING IN A TUBE, and the drawing
+   has to say so before it says anything else. Every box to the left of it is
+   material being moved, cut or copied; this one is a directory of per-cycle
+   base calls being read and written back out under eight names. So it stands
+   on --works rather than on the C row's bench tile, and nothing on it is a
+   vessel: the only round thing in the whole figure would be a lie about where
+   the reads are.
+
+   THE SHEETS ARE THE RUN FOLDER AND THEY ARE DELIBERATELY UNCOLOURED. What the
+   instrument leaves behind is one undifferentiated pile — every sublibrary's
+   reads interleaved, cycle by cycle, with the index read sitting in it unread.
+   Colouring the stack would put the eight apart before the step that tells them
+   apart, which is the whole content of this station. They are fanned rather
+   than squared up because a squared stack at this size is one thick sheet.
+
+   THE FAN RUNS OUTWARD, AND IT IS B5's FAN. Everywhere else on this row that
+   figure collects many into one; here it is the exact reverse, one into eight,
+   which is what the same curve drawn the other way is for. Each line carries
+   B7's hue for its sublibrary — the same colour C2 indexed it into three boxes
+   back — because the i5/i7 pair C2 attached is precisely what this step reads
+   to decide which file a read goes in. A ninth line for the reads whose index
+   matched nothing is NOT drawn: no conversion report survives, so how big that
+   pile was is not something this map can show, and drawing it at any size at
+   all would be picking a number.
+
+   EIGHT SLOTS ARE DRAWN EMPTY FROM THE FIRST FRAME. Eight files is the shape of
+   the output rather than an event in the loop, so the outlines are there before
+   anything lands in them — the same reason C2 draws ninety-six wells and fills
+   eight.
+
+   Reuses flowLine / setFanLine from the bench fan and SUBHUE from B7. Spends
+   --ch1..12, which are declared on /molecular_pipe — the only page carrying a
+   node wearing this.
+   ------------------------------------------------------------------ */
+function drawDemux(g,n){
+  /* EVERY OFFSET IS A FRACTION OF THE NODE. w, d and h are read at draw time
+     because a resize is the only reason this function runs again. Composed at
+     w .95, d .95, h .40 — C3's tile, so the two ends of the handoff match. */
+  const NSUB=8, SHEETS=6, COLS=4, SC=n.w/0.95;
+  const clamp=x=>Math.max(0,Math.min(1,x));
+  const topAt=(x,y,w,d,z)=>pts([[x-w/2,y-d/2],[x+w/2,y-d/2],[x+w/2,y+d/2],[x-w/2,y+d/2]]
+    .map(p=>P(p[0],p[1],z)));
+
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+
+  /* ---- THE RUN FOLDER ----------------------------------------------------
+     Each sheet gets a base in the neutral the map draws data in and a second
+     copy in --signal held at zero, so the read-through beat animates one
+     opacity per sheet and never has to decide what colour a sheet is.
+
+     IT FANS FORWARD AND LEFT, which is not a taste decision. A step emits its
+     name from the middle of its back edge at the height it reaches, and a
+     stack fanned the other way puts its topmost sheet exactly under the first
+     letter of "C4 · Basecall and demultiplex". Leaning it into the open ground
+     the other way clears the name by the width of a sheet. */
+  const x0=n.x-n.w*0.06, y0=n.y+n.d*0.06;
+  const dx=-n.w*0.045, dy=n.d*0.045, dz=n.h*0.14, Z0=n.h*1.05;
+  const lit=[];
+  for(let k=0;k<SHEETS;k++){
+    const pt=topAt(x0+k*dx, y0+k*dy, n.w*0.50, n.d*0.50, Z0+k*dz);
+    g.appendChild(el("polygon",{points:pt,fill:"var(--fg2)","fill-opacity":".14",
+      stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":".5"}));
+    const L=el("polygon",{points:pt,fill:"var(--signal)","fill-opacity":"0"});
+    g.appendChild(L); lit.push(L);
+  }
+  const mouth=P(x0+(SHEETS-1)*dx, y0+(SHEETS-1)*dy, Z0+(SHEETS-1)*dz+n.h*0.30);
+
+  /* ---- EIGHT FILES, IN FRONT ---------------------------------------------
+     Two rows of four on the near ground, which is the only clear screen this
+     station has: the row ends here, so there is nothing to the right, and the
+     name runs off the back edge the way every station's does. */
+  const file=[];
+  for(let k=0;k<NSUB;k++){
+    const i=k%COLS, j=(k/COLS)|0;
+    const c={x:n.x+(i-(COLS-1)/2)*n.w*0.44, y:n.y+n.d*(1.20+j*0.44),
+             w:n.w*0.30, d:n.d*0.24, h:n.h*0.22};
+    const f=faces(c.x,c.y,c.w,c.d,c.h);
+    g.appendChild(el("polygon",{points:f.top,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".45"}));
+    /* born with the slot's own geometry and no colour: the ticker owns one
+       opacity per file and never has to work out where a file was */
+    const parts=["left","right","top"].map(kk=>{
+      const p=el("polygon",{points:f[kk],fill:SUBHUE(k,NSUB),"fill-opacity":"0",
+        stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":"0"});
+      g.appendChild(p); return p;
+    });
+    file.push({parts, top:P(c.x,c.y,c.h)});
+  }
+  const FAN=file.map((f,k)=>flowLine(g,mouth,f.top,SUBHUE(k,NSUB),SC));
+
+  /* ---- TIMING -------------------------------------------------------------
+     Reading the folder is one long beat and writing the eight is a longer one;
+     WIN is how much of the write beat one file occupies, a little under half,
+     so several are in the air at once and eight writes read as one pass rather
+     than as eight things taking turns. */
+  const CONV=1.7, SPLIT=2.6, HOLD=1.9, CLEAR=0.9, WIN=0.40;
+  const t1=CONV, t2=t1+SPLIT, t3=t2+HOLD, t4=t3+CLEAR;
+  const DIM=0.05, LIVE=0.16;
+  const setFile=(k,v)=>file[k].parts.forEach(p=>{
+    p.setAttribute("fill-opacity",(0.92*v).toFixed(2));
+    p.setAttribute("stroke-opacity",(0.50*v).toFixed(2)); });
+
+  /* THE CLOCK DOES NOT START AT ZERO. A browser asking for reduced motion never
+     advances it, so whatever t begins at is the whole station for that reader —
+     and zero is a stack nobody has opened yet. Half way through the write beat
+     is the frame worth holding: four files down, four in the air, and one pile
+     visibly becoming eight in a single look. */
+  let t=CONV+SPLIT*0.55, mode=-1;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before, so a frame long enough to skip one — a tab coming
+     back, a step in trace mode — cannot leave the stack lit over empty slots. */
+  const enter=m=>{
+    mode=m;
+    lit.forEach(L=>L.setAttribute("fill-opacity",m===0?"0":".42"));
+    for(let k=0;k<NSUB;k++){ setFile(k, m===2?1:0); setFanLine(FAN[k], m===1?LIVE:DIM, 0); }
+  };
+  const run=dt=>{
+    t=(t+dt)%t4;
+    const m = t<t1?0 : t<t2?1 : t<t3?2 : 3;
+    if(m!==mode) enter(m);
+
+    if(m===0){                          // READ — bottom sheet to top, in order
+      const u=t/CONV;
+      for(let k=0;k<SHEETS;k++)
+        lit[k].setAttribute("fill-opacity",
+          (0.42*clamp((u-k*0.90/(SHEETS-1))/0.34)).toFixed(2));
+      return;
+    }
+    if(m===1){                          // WRITE — one line per index, staggered
+      const u=(t-t1)/SPLIT;
+      for(let k=0;k<NSUB;k++){
+        const f=clamp((u-k*(1-WIN)/(NSUB-1))/WIN);
+        setFanLine(FAN[k],LIVE,f);
+        /* the file appears as its line lands, not as it leaves: a slot filling
+           before anything has reached it says the split was decided elsewhere */
+        setFile(k, clamp((f-0.72)/0.28));
+      }
+      return;
+    }
+    if(m===3){                          // CLEAR
+      const u=clamp((t-t3)/CLEAR);
+      for(let k=0;k<NSUB;k++) setFile(k,1-u);
+      lit.forEach(L=>L.setAttribute("fill-opacity",(0.42*(1-u)).toFixed(2)));
+      return;
+    }
+    /* held: one folder read, eight files written, and not one figure anywhere
+       on this instance saying how the reads divided between them */
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.demux = drawDemux;

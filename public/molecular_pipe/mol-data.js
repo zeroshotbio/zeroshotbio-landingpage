@@ -2,18 +2,25 @@
    mol-data.js — /molecular_pipe. ROW 2 OF /pipeline, ON ITS OWN.
 
    A bench for developing the molecular biology row out, the way /FASTQ_pipe is
-   one for row 3. Thirteen stations: the thaw, three rounds of in-situ
+   one for row 3. Fourteen stations: the thaw, three rounds of in-situ
    barcoding with a pool-and-split between each, the lysis, cDNA capture and
-   quantification, library prep, the indexing PCR, the size check, and the
-   sequencer.
+   quantification, library prep, the indexing PCR, the size check, the
+   sequencer, and the conversion that turns its run folder into reads.
 
-   EVERY RECORD BELOW IS LIFTED VERBATIM FROM pipeline-data.js. Extracted as
-   source text, not re-typed, so every character of every does/built/cond field
-   matches the map it came from and a diff between the two stays meaningful.
-   /pipeline OWNS THIS PROSE. If a claim changes it changes there and gets
-   lifted again — do not edit a lifted field in place, or the two drift into
-   two accounts of one row, which is the whole failure both files exist to
-   prevent. New writing that belongs only to this page goes in `added:`.
+   THIRTEEN OF THE FOURTEEN ARE LIFTED VERBATIM FROM pipeline-data.js.
+   Extracted as source text, not re-typed, so every character of every
+   does/built/cond field matches the map it came from and a diff between the
+   two stays meaningful. /pipeline OWNS THAT PROSE. If a claim changes it
+   changes there and gets lifted again — do not edit a lifted field in place,
+   or the two drift into two accounts of one row, which is the whole failure
+   both files exist to prevent. New writing that belongs only to this page goes
+   in `added:`.
+
+   THE FOURTEENTH IS C4, AND IT IS OWNED HERE. It is the only station on the
+   page with no counterpart on the big map, so there is nothing for it to drift
+   from and the lift arrow points the other way — see the comment on the record
+   itself. It is the one place in this file where a station's does/built/cond
+   may be edited in place.
 
    WHAT IS NOT HERE, AND WHY. FX — ② Fixed material — is the object this row
    opens by undoing, and it is NOT on this page: it sits on lane r1-tail, which
@@ -131,6 +138,25 @@ const NODES = [
  built:"Paired-end, to the read structure in Appendix B: read 1 is 64 bases of cDNA insert, read 2 is 58 bases carrying barcodes 1 to 3 plus the UMI, and the i7 and i5 indexes are 8 bases each and carry the fourth barcode. Longer read 2 lengths are allowed and simply trimmed by the analysis pipeline. Per-sublibrary read counts run 420.9 M to 491.9 M. Across the corpus: NextSeq 500/2000 and NovaSeq 6000 (ZSCAPE), NovaSeq 6000 (Zebrahub), NextSeq 550 (CellOracle), HiSeq or MGI DNBSEQ-T7 at 150+150 bp (ZCL2).",
  cond:"Run metrics are only partly recoverable. Q30 and valid-barcode fraction survive in the vendor report (0.757 valid barcodes overall), but cluster density, per-lane yield, the lane count and whether the recommended 5 percent PhiX was spiked in are not held anywhere on this instance. That is the norm, not the exception — no dataset in the corpus archives its run metrics alongside its counts."},
 
+/* NOT LIFTED. THIS STATION IS THIS PAGE'S OWN and it exists on no other map —
+   /pipeline's row 2 stops at the sequencer, and row 3 opens on the FASTQ pool
+   as an object that has already arrived. The step that makes it was drawn
+   nowhere, which is why it could be added here without contradicting anything:
+   there is no record on the big map for this one to drift from. The lift arrow
+   therefore points OUT of this file for C4 — if the step earns a place on
+   /pipeline it gets lifted THERE, and this stays the copy that owns it.
+
+   It is in UNVERIFIED for the ordinary reason: nobody has checked it with
+   Patrick yet. Everything it asserts is either universal Illumina behaviour or
+   already said by a neighbour — S carries the 8-base i5/i7 indexes and the
+   per-sublibrary read counts, C2 carries the UDI plate, and /FASTQ_pipe's own
+   FASTQ node carries the vendor cloud workdir and the bcl2fastq version. */
+{id:"DMX", key:"C4", group:"The sequencer", shape:"demux", name:"Basecall and demultiplex", x:22.5, y:R2, lane:"r2", w:0.95, d:0.95, h:0.4,
+ sub:"one run folder · eight index pairs · off-instance",
+ does:"The instrument writes base calls, not reads. Converting them and splitting on the i5 and i7 index read is what turns one run into eight pairs of FASTQ files, one per sublibrary — the last thing the fourth barcode ever does, and the point at which this row stops being chemistry.",
+ built:"Standard Illumina conversion, against a sample sheet listing the eight unique dual indexes Appendix B assigns. Barcodes one to three are not touched here: they sit inside read 2 and are only read once a pipeline goes looking for them. Across the corpus the step is sometimes named and versioned — Zebrahub records bcl2fastq v2.20.0.422 — and sometimes invisible, folded into whatever the sequencing provider hands back. For the worked example it ran in the vendor's own cloud workdir, whose S3 path the run definition still points at.",
+ cond:"Nothing from this step is on this instance: no sample sheet, no conversion report, no per-index yield, no undetermined fraction, and the FASTQs themselves never came off the vendor's cloud. So the one figure that would say whether the eight indexes were balanced does not exist locally, and the per-sublibrary read counts in the vendor summary — 420.9 M to 491.9 M — are the only surviving evidence that the split happened at all."},
+
 /* ================= ROW 3 — THE MATRIX ================= */
 /* THE WHOLE OF THIS ROW IS /FASTQ_pipe, AT /FASTQ_pipe's OWN SIZE.
 
@@ -191,25 +217,36 @@ const EDGES = [
   {a:"QCD",b:"FRG",kind:"lib"},
   {a:"FRG",b:"R4p",kind:"lib"},
   {a:"R4p",b:"LIB",kind:"lib"},
-  {a:"LIB",b:"SEQ",kind:"lib"}
+  {a:"LIB",b:"SEQ",kind:"lib"},
+  /* the only track on this row carrying `read`: everything before the
+     sequencer is material, and what leaves it is not */
+  {a:"SEQ",b:"DMX",kind:"read"}
 ];
 
-/* ONE LANE, AND IT IS /pipeline's OWN. Same span, so the stations land at the
-   same spacing they have on the big map and this page is a magnification
-   rather than a re-layout. */
+/* ONE LANE, AND IT IS /pipeline's OWN — plus exactly the room C4 costs. The
+   span was that map's 0.7..22.0 so the thirteen lifted stations landed at the
+   spacing they have there and this page read as a magnification rather than a
+   re-layout. A fourteenth station on the same span would have kept the end
+   points and squeezed every gap on the row by a quarter to pay for it, which
+   is a re-layout of thirteen boxes to add one. So the lane grew instead, by
+   the new station's own width plus the major gap in front of it, scaled: the
+   twelve gaps that were already there come out where they were. */
 const LANES = [
-  {id:"r2", y:R2, x0:0.7, x1:22.0, dir:+1},
+  {id:"r2", y:R2, x0:0.7, x1:24.25, dir:+1},
 ];
 
 const ROWS = [R2], MIRROR = 22.7;
 
-/* The mat under the row, taken from /pipeline's own band for row 2. */
+/* The mat under the row, taken from /pipeline's own band for row 2 and moved
+   out at the far end with the lane — a band is as long as its row, so a mat
+   left at 24 would have the last station standing off the edge of its floor. */
 const BANDS = [
-  {name:"Molecular biology", x0:-2, x1:24, y0:R2-3.8, y1:R2+3.8},
+  {name:"Molecular biology", x0:-2, x1:26.25, y0:R2-3.8, y1:R2+3.8},
 ];
 
-/* No carries: this page is one row and it runs out at the sequencer, which is
-   where the reads begin and /FASTQ_pipe picks up. */
+/* No carries: this page is one row and it runs out at the conversion, which is
+   where the reads begin and /FASTQ_pipe picks up — that page's own opening
+   object is the FASTQ pool C4 writes. */
 const CARRIES = [];
 const CARRIED = [];
 
@@ -298,9 +335,10 @@ const REAL_SUBLIBS = [
 
 /* ROW 2'S SHARE OF /pipeline's UNVERIFIED SET, and it is not optional: the
    reader reads it WITHOUT guarding, so an absent one is a ReferenceError the
-   moment anybody picks a station. Three of this row's stations have not been
-   checked with Patrick. */
-const UNVERIFIED = new Set(["B9","C1","C2"]);
+   moment anybody picks a station. Four of this row's stations have not been
+   checked with Patrick — C4 because it is new here and has never been on the
+   big map to be checked against. */
+const UNVERIFIED = new Set(["B9","C1","C2","C4"]);
 
 const SNIPPETS = {
   fish: () => { const c=pick(REAL_CELLS); return {label:"one well of embryos", flag:null,
@@ -440,20 +478,20 @@ purity           ${s.purity.toFixed(3)}`};},
 const OVERVIEW = {
   eyebrow:"ZEBRAFISH SINGLE-CELL · ROW 2 OF THE PLATONIC PIPELINE",
   title:"Molecular biology",
-  sub:"thirteen stations · fixed cells in, a sequencing library out",
+  sub:"fourteen stations · fixed cells in, eight pairs of read files out",
   /* `does` is the field the reader renders as "The story" — the same name a
      node uses, because the overview IS a node as far as the text editor is
      concerned. Calling it anything else renders the word undefined. */
   does:`
-<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer.</p>
+<p><mark>Row 2 of <a href="/pipeline">/pipeline</a>, on its own.</mark> Fixed material comes out of the freezer and thaws, and everything after it is chemistry: three rounds of in-situ barcoding, each followed by a pool and split, then lysis, cDNA capture and amplification, library prep, the indexing PCR, a size check, and the sequencer. The row now runs one box further than the big map's does, to the conversion that turns the sequencer's run folder into eight pairs of read files.</p>
 <p><mark>The barcode is built in the cell, not read off it.</mark> That is what makes this the row the rest of the map depends on: a cell never leaves its well with an identity attached — it acquires one by surviving three rounds of ligation in a known order, and the combination is the address. Round 4 is different in kind: it is a PCR index on the tube, not on the cell.</p>
-<p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. Every station is drawn as the tile it is on the big map; a station that earns a real drawing gets one here first, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again.</p>
+<p>This page is a <mark>bench for developing the row out</mark>, the way <a href="/FASTQ_pipe">/FASTQ_pipe</a> is one for row 3. A station that earns a real drawing gets one here first, on the tile it is on the big map, and comes back to /pipeline once it works. <mark>The prose is lifted and /pipeline owns it</mark> — change a claim there and lift it again. The one exception is the last box, which is this page's own.</p>
 `,
   /* `built` and `cond` are the same two fields every node carries, and the
      reader renders them under their own headings. The overview is a node as far
      as the reader and the text editor are concerned, so leaving them out is a
      missing field rather than a shorter page. */
-  built:`<p>Thirteen stations, lifted from row 2 of <a href="/pipeline">/pipeline</a>. The figures on them are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
-  cond:`<p>This is a bench, so what it draws is deliberately unfinished: eleven of the thirteen stations are still the plain tile a stage gets before anybody has drawn it. That is the work, not an oversight. <mark>What must not drift is the prose</mark> — it is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
-  howto:`<p>One landmark — the Thaw — sits on a dashed plinth and carries its name on the ground. Every other station is a tile, which is what a stage looks like before anybody has drawn it. Hatching would mean the stage destroys data; nothing on this row does. The row reads left to right and nothing feeds it from off the page: on the big map the row above supplies the fixed material, and that is said by where the rows sit rather than by a track.</p>`,
+  built:`<p>Thirteen stations lifted from row 2 of <a href="/pipeline">/pipeline</a>, and a fourteenth — the basecall and demultiplex — authored here, because the step that makes the reads was drawn on no map. The figures are that map's: 48 wells in round one against 96 in rounds two and three, and 3,655,719,111 reads off the sequencer at the end. Nothing here is modelled — every number is read off an artefact and lives in the prose of the station that owns it.</p>`,
+  cond:`<p>This is a bench, so what it draws is deliberately unfinished — but the unfinished part is no longer the drawings: thirteen of the fourteen stations now carry one of their own, and the sequencer is the last still standing on the big map's generic apparatus. What is unfinished is the checking, and the badges say which. <mark>What must not drift is the prose</mark> — all of it but the fourteenth station's is lifted from /pipeline and that map owns it, so a claim that changes has to change there and be lifted again, or the site ends up with two accounts of one row.</p>`,
+  howto:`<p>One landmark — the Thaw — sits on a dashed plinth and carries its name on the ground. Every other station stands on the tile it has on the big map and draws what happens on it. Hatching would mean the stage destroys data; nothing on this row does. The row reads left to right and nothing feeds it from off the page: on the big map the row above supplies the fixed material, and that is said by where the rows sit rather than by a track.</p>`,
 };
