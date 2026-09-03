@@ -2131,8 +2131,9 @@ DRAW.fixation = drawFixation;
    the honest reading of this step is preserved matter coming back to a working
    temperature, so the specks in the wells are drawn once and never touched.
    The one place the warming is shown happening is the outset, and there it is
-   a coat of ice on a single cell fading off it — the last ice to go, which is
-   what the protocol actually waits for.
+   a coat of ice on a single cell fading off it. It goes on the same clock as
+   the slab: both are the same ice at the same temperature, and letting the
+   coat lag behind read as two separate thaws rather than one plate warming.
 
    AND IT COMES OUT OF A FREEZER FIRST. The melt was the whole picture, and the
    step starts one move before it: this material is stored cold and somebody
@@ -2322,7 +2323,9 @@ function drawThawPlate(g,n){
   [[KR*0.78,-KR*0.62],[KR*0.78,KR*0.62]].forEach(p=>outG.appendChild(el("line",{
     x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
     x2:src.e.x.toFixed(1),y2:src.e.y.toFixed(1),stroke:"var(--fg2)",
-    "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".22","stroke-dasharray":"3 3"})));
+    /* the dashes carry the whole "this circle is that well" claim, and at the
+       old hairline width they dropped out of the plate's own grid of strokes */
+    "stroke-width":(1.3*SC).toFixed(2),"stroke-opacity":".22","stroke-dasharray":"3 3"})));
 
   const out=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
   outG.appendChild(out);
@@ -2351,9 +2354,9 @@ function drawThawPlate(g,n){
   /* ---- THE SCHEDULE ----------------------------------------------------
      Shut, out of the freezer, the door shuts behind it, the slab goes, the
      plate stands clear — and that is the end of it. Nothing travels back. The
-     coat on the magnified cell starts later than the slab and finishes last:
-     one cell in the middle of a well is the last thing in the plate to reach
-     temperature.
+     coat on the magnified cell rides the same melt value as the slab, so the
+     two blues empty together: the outset is a magnification of this plate, not
+     a second object with a thaw of its own.
 
      The ice is at full height for everything before the melt. A plate that
      came out of a freezer already half thawed would be saying the thaw
@@ -2390,7 +2393,7 @@ function drawThawPlate(g,n){
     if(t>=T_MELT && t<T_CLR){
       const u=(t-T_MELT)/MELT;
       ice=1-ease(c01(u/0.72));
-      cv =1-ease(c01((u-0.34)/0.66));
+      cv =ice;                          // one thaw, so one number drives both
     }else if(t>=T_CLR){ ice=0; cv=0; }
 
     const z=th+(n.h-th)*ice, f=faces(n.x,n.y,n.w,n.d,z);
