@@ -5697,3 +5697,168 @@ function drawDemux(g,n){
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
 }
 DRAW.demux = drawDemux;
+
+/* ------------------------------------------------------------------
+   C5 · HAND OFF THE READS — eight files on one side of a line, a path on
+   the other.
+
+   THIS STATION IS A BOUNDARY, NOT AN APPARATUS. Nothing is made here and
+   nothing is consumed: eight pairs of files already exist when the step
+   begins, and all the step does is decide who can reach them. So the figure
+   is a line drawn across the ground and two sides of it, and the only motion
+   that matters is which of the things on the far side gets over it.
+
+   THE EIGHT DO NOT CROSS, AND THAT IS THE WHOLE CLAIM. Each pile sends a
+   thread at the line and each thread stops dead on it — the reads stayed in
+   the vendor's bucket, and drawing even one of them arriving here would say
+   the opposite of what this instance holds. What does cross is one thin card:
+   a path to the files, plus the report written about them. It is drawn in the
+   neutral the map uses for a record rather than in a sublibrary hue, because
+   it is a description of the eight and not one of them.
+
+   THE LINE IS DASHED because the edge of an instance is not a wall. Nobody
+   refused the transfer; it simply never happened, and a solid barrier would
+   make an absence look like a decision.
+
+   THE PILES KEEP B7's HUES, the ones C2 indexed and C4 split them into, so a
+   reader following one colour off the sequencer can see exactly where it got
+   to. Reuses flowLine / setFanLine from the bench fan and SUBHUE from B7.
+   ------------------------------------------------------------------ */
+function drawHandoff(g,n){
+  /* EVERY OFFSET IS A FRACTION OF THE NODE — w, d and h are read at draw time,
+     because a resize is the only reason this function runs again. Composed at
+     w .95, d .95, h .40, which is C4's tile: the two ends of the handoff are
+     the same size because one is the other's output. */
+  const NSUB=8, COLS=2, SC=n.w/0.95;
+  const clamp=x=>Math.max(0,Math.min(1,x));
+
+  paint(g,n.x,n.y,n.w,n.d,n.h,SKIN.works);
+
+  /* The transfer is drawn on the near ground rather than on the tile, the way
+     C4 draws its files: the row ends here, so the front is the only clear
+     screen this station has, and the name still runs off the back edge. The
+     pile is kept narrow — two files across rather than four — because C4's own
+     figure reaches this far and two stacks of eight files should not touch. */
+  const yc=n.y+n.d*1.30, bx=n.x+n.w*0.06;
+
+  /* ---- THE EIGHT, ON THE FAR SIDE OF THE LINE ----------------------------
+     Drawn back row first so the near ones overlap them, and born with their
+     own geometry and no colour: the ticker owns one opacity per pile and never
+     has to work out where a pile was. */
+  const file=[];
+  for(let k=0;k<NSUB;k++){
+    const i=k%COLS, j=(k/COLS)|0;
+    const c={x:n.x-n.w*0.45+i*n.w*0.21, y:yc+(j-1.5)*n.d*0.30,
+             w:n.w*0.15, d:n.d*0.20, h:n.h*0.24};
+    const f=faces(c.x,c.y,c.w,c.d,c.h);
+    g.appendChild(el("polygon",{points:f.top,fill:"none",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".45"}));
+    const parts=["left","right","top"].map(kk=>{
+      const p=el("polygon",{points:f[kk],fill:SUBHUE(k,NSUB),"fill-opacity":"0",
+        stroke:"var(--stroke)","stroke-width":".7","stroke-opacity":"0"});
+      g.appendChild(p); return p;
+    });
+    file.push({parts, top:P(c.x,c.y,c.h), stop:P(bx,c.y,0)});
+  }
+
+  /* ---- THE LINE ----------------------------------------------------------
+     One dash pattern, scaled with the node, so the line reads as the same kind
+     of edge whatever size the station is dragged to. */
+  const bA=P(bx,yc-n.d*0.62,0), bB=P(bx,yc+n.d*0.62,0);
+  g.appendChild(el("line",{x1:bA[0].toFixed(1),y1:bA[1].toFixed(1),
+    x2:bB[0].toFixed(1),y2:bB[1].toFixed(1),stroke:"var(--fg2)",
+    "stroke-width":"1.1","stroke-opacity":".55",
+    "stroke-dasharray":`${(4.5*SC).toFixed(1)} ${(3.5*SC).toFixed(1)}`}));
+
+  /* ---- WHAT ACTUALLY CROSSES --------------------------------------------
+     A card, not a file: flat where the piles are solid, and ruled, because
+     what came over was a path and a report about the reads rather than the
+     reads. It is outlined from the first frame — the record exists whether or
+     not anybody has looked at it — and only its fill is animated. */
+  const card={x:n.x+n.w*0.54, y:yc, w:n.w*0.26, d:n.d*0.34, h:n.h*0.06};
+  const cf=faces(card.x,card.y,card.w,card.d,card.h);
+  const cardFill=el("polygon",{points:cf.top,fill:"var(--fg2)","fill-opacity":"0"});
+  g.appendChild(cardFill);
+  g.appendChild(el("polygon",{points:cf.top,fill:"none",stroke:"var(--stroke)",
+    "stroke-width":".8","stroke-opacity":".55"}));
+  const rule=[0.30,0.62].map(u=>{
+    const a=P(card.x-card.w*0.30, card.y+card.d*(u-0.5), card.h),
+          b=P(card.x+card.w*0.30, card.y+card.d*(u-0.5), card.h);
+    const L=el("line",{x1:a[0].toFixed(1),y1:a[1].toFixed(1),
+      x2:b[0].toFixed(1),y2:b[1].toFixed(1),stroke:"var(--fg)",
+      "stroke-width":".9","stroke-opacity":"0"});
+    g.appendChild(L); return L;
+  });
+
+  /* eight threads that stop on the line, and one that goes over it */
+  const STOP=file.map((f,k)=>flowLine(g,f.top,f.stop,SUBHUE(k,NSUB),SC));
+  const CROSS=flowLine(g,P(bx,yc,0),P(card.x,card.y,card.h),"var(--fg2)",SC);
+
+  /* ---- TIMING -------------------------------------------------------------
+     Four beats: the files are there, the eight push at the line, one record
+     crosses, and then the two sides sit and face each other. The hold is the
+     longest of them because the held frame IS the station. */
+  const FILL=1.4, PUSH=1.7, OVER=1.2, HOLD=2.1, CLEAR=0.9, WIN=0.45;
+  const t1=FILL, t2=t1+PUSH, t3=t2+OVER, t4=t3+HOLD, t5=t4+CLEAR;
+  const DIM=0.05, LIVE=0.16;
+  const setFile=(k,v)=>file[k].parts.forEach(p=>{
+    p.setAttribute("fill-opacity",(0.92*v).toFixed(2));
+    p.setAttribute("stroke-opacity",(0.50*v).toFixed(2)); });
+  const setCard=v=>{
+    cardFill.setAttribute("fill-opacity",(0.55*v).toFixed(2));
+    rule.forEach(L=>L.setAttribute("stroke-opacity",(0.45*v).toFixed(2))); };
+
+  /* THE CLOCK DOES NOT START AT ZERO. A reader who asks for reduced motion
+     never advances it, so whatever t begins at is the whole station for them —
+     and that has to be the frame that carries the claim: eight piles standing
+     on the far side of the line, and one card on this one. */
+  let t=t3+HOLD*0.5, mode=-1;
+  /* every entry states the whole world it is entering rather than the delta
+     from the beat before, so a frame long enough to skip one — a tab coming
+     back, a step in trace mode — cannot leave a card lit over an empty bench. */
+  const enter=m=>{
+    mode=m;
+    for(let k=0;k<NSUB;k++){
+      setFile(k, m===0?0:1);
+      setFanLine(STOP[k], m===1?LIVE:DIM, 0);
+    }
+    setFanLine(CROSS, m===2?LIVE:DIM, 0);
+    setCard(m>=3?1:0);
+  };
+  const run=dt=>{
+    t=(t+dt)%t5;
+    const m = t<t1?0 : t<t2?1 : t<t3?2 : t<t4?3 : 4;
+    if(m!==mode) enter(m);
+
+    if(m===0){                          // the conversion's output, arriving
+      const u=t/FILL;
+      for(let k=0;k<NSUB;k++) setFile(k, clamp((u-k*0.72/(NSUB-1))/0.28));
+      return;
+    }
+    if(m===1){                          // eight threads at the line, staggered
+      const u=(t-t1)/PUSH;
+      for(let k=0;k<NSUB;k++)
+        setFanLine(STOP[k], LIVE, clamp((u-k*(1-WIN)/(NSUB-1))/WIN));
+      return;
+    }
+    if(m===2){                          // the one thing that gets over
+      const u=clamp((t-t2)/OVER);
+      setFanLine(CROSS, LIVE, u);
+      /* the card fills as the bead lands on it, not as it sets off: a record
+         that exists before the crossing says the crossing was not the point */
+      setCard(clamp((u-0.70)/0.30));
+      return;
+    }
+    if(m===4){                          // CLEAR
+      const u=clamp((t-t4)/CLEAR);
+      for(let k=0;k<NSUB;k++) setFile(k,1-u);
+      setCard(1-u);
+      return;
+    }
+    /* held: the reads on one side, a path to them on the other, and no figure
+       anywhere on this instance saying what the transfer weighed */
+  };
+  run(0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
+}
+DRAW.handoff = drawHandoff;
