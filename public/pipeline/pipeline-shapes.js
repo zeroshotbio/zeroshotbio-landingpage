@@ -3013,8 +3013,8 @@ function setFanLine(L,dim,f){
    limit: the run-up used to bottom out around thirty trips a second,
    which is one frame each, and a tip that moves a plate's width in a
    frame is not a tip any more, it is a flicker. The floor under the
-   run-up holds the tail at roughly ten wells a second on both halves —
-   still a rush, still short, but a rush you can follow.
+   run-up holds the tail at roughly five wells a second on both halves —
+   still a rush, still short, but slow enough that each trip is a trip.
 
    BETWEEN THE HALVES THE TUBE IS SWIRLED. Forty-eight wells go in as
    four colours and come out as one grey, and mixing is the step that
@@ -3098,8 +3098,20 @@ function drawPoolSplit(g,n){
      at 0.12 the run-up kept halving past the point of sense and the last three
      dozen trips landed a frame apart each, which is the "comically fast" this
      was. At 0.45 the acceleration is over in four trips and what follows is a
-     steady brisk cadence — around a tenth of a second a well — rather than a
-     smear. Both halves get the same floor, because both were doing it. */
+     steady cadence rather than a smear. Both halves get the same floor,
+     because both were doing it.
+
+     THE TAIL WAS THEN HALVED AGAIN, BY RUSH AND NOT BY THE FLOOR. A tenth of
+     a second a well cleared the flicker but still read as a glitch: the eye
+     caught the plate emptying without ever catching a transfer, so the tip
+     looked like it was stuttering rather than working. Doubling `rush` on both
+     halves spends the same run-up over twice the seconds — about a fifth of a
+     second a well at the floor, five a second instead of ten — which is the
+     slowest the sweep can go and still fit in a loop somebody will watch to
+     the end. The floor stayed at 0.45 because the SHAPE of the acceleration
+     was right; it was only ever too brief. The opening bench trips lengthened
+     with it, a touch, so the run-up still starts from something slower than
+     where it ends. One cycle is now about twenty-seven seconds. */
   const N=from.length;
   const pace=(slow,nSlow,rush,floor)=>{
     const wt=[];
@@ -3109,7 +3121,7 @@ function drawPoolSplit(g,n){
     const start=[0]; dur.forEach(d=>start.push(start[start.length-1]+d));
     return {dur,start,total:start[N]};
   };
-  const POOL=pace(0.52,8,4.2,0.45), SPLIT=pace(0.40,6,4.0,0.45);
+  const POOL=pace(0.60,8,8.0,0.45), SPLIT=pace(0.46,6,7.4,0.45);
   /* MID is no longer a pause: it is how long the swirl lasts, and three turns
      of it want the best part of two seconds to read as a hand rather than a
      twitch. END still just stands and looks at the dealt plate. */
