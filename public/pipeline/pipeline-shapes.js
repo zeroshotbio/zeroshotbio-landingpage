@@ -2435,6 +2435,206 @@ function drawLigation(g,n){
 DRAW.ligation = drawLigation;
 
 
+/* ------------------------------------------------------------------
+   ROUND THREE · LIGATION — B4's drawing, one round later.
+
+   Deliberately the same drawing as B4, for the reason B4 is the same
+   drawing as B2: same compartment, same five transcripts held in lanes,
+   same reagent coming down onto the head, same ligase closing the same
+   nick. Rounds two and three are one operation done twice, and any
+   difference in the glassware would read as a different operation.
+
+   WHAT HAS CHANGED IS WHAT IS ALREADY ON THE STRAND. B4 shows one dim
+   stub at the foot; this shows that stub AND round two's barcode welded
+   onto the head, both in the same dim ink, with the bright block landing
+   beyond them. Once the nick closes the chain carries THREE linked
+   segments, which is the whole claim of split-pool barcoding — the
+   address is never written anywhere, it is accumulated one round at a
+   time, and only the newest round is news.
+
+   AND THE MULTIPLICATION IS WRITTEN DOWN, under the compartment. It is
+   the one fact on this row that is arithmetic rather than chemistry, and
+   no upstream box can carry it: each plate on its own is just another
+   plate, and only here are there three of them to multiply. The figure
+   is the node's own — 48 wells in round one, 96 in each ligation — not
+   96 cubed, so the callout and the built text cannot drift apart.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   ------------------------------------------------------------------ */
+function drawLigation3(g,n){
+  const r=rng(2311);
+  const th=n.h, R=Math.min(n.w,n.d)/2*0.98;
+  const floor=ellipseAt(n.x,n.y,0,R*0.93),
+        rim  =ellipseAt(n.x,n.y,th,R),
+        inner=ellipseAt(n.x,n.y,th,R*0.9);
+
+  /* the envelope, built exactly as B2 and B4 build it */
+  g.appendChild(el("ellipse",{cx:floor.x,cy:floor.y,rx:floor.rx,ry:floor.ry,
+    fill:"var(--g-right)","fill-opacity":".65",stroke:"none"}));
+  g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,26),
+                                          ...arcPts(floor,Math.PI,0,26)]),
+    fill:"var(--g-top)","fill-opacity":".5",stroke:"none"}));
+  g.appendChild(el("ellipse",{cx:inner.x,cy:inner.y,rx:inner.rx,ry:inner.ry,
+    fill:"var(--fg)","fill-opacity":".05",stroke:"var(--stroke)",
+    "stroke-width":".7","stroke-opacity":".4"}));
+  g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,
+    fill:"none",stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+
+  const PRIMER=0.17;      // the round-one barcode, still at the foot
+  const BC=0.24;          // one barcode, as a fraction of the cDNA
+  const FIT=R*0.72;       // no strand, and no barcode above one, leaves the envelope
+  const OFF=R*0.064;      // half the width of a duplex
+  const TIGHT=0.35;       // a duplex is a rod: the wobble is nearly damped out
+  const SMID=0.68, GAP0=0.30, GAPD=0.10;
+  const DROP=-R*S*0.55;   // how far above the strand a barcode starts, in px
+  const N=5;
+
+  const strands=[];
+  for(let i=0;i<N;i++){
+    const v=(i-(N-1)/2)*(FIT*2*0.92/N);
+    const half=Math.sqrt(Math.max(0.02,FIT*FIT-v*v))*0.86;
+    const ang=(r()-0.5)*0.42;
+    strands.push({cx:n.x+(r()-0.5)*half*0.2, cy:n.y+v,
+      ca:Math.cos(ang), sa:Math.sin(ang), L:half*2*0.55,
+      amp:R*(0.056+r()*0.031), k:1.4+r()*0.9, ph:r()*6.283,
+      rest:0.4+r()*2.6, t:r()*6});
+  }
+
+  const at=(st,s,off,dy)=>{
+    const t=(s-SMID)*st.L,
+          w=Math.sin(s*st.k*6.283+st.ph)*st.amp*TIGHT+off;
+    const p=P(st.cx+t*st.ca-w*st.sa, st.cy+t*st.sa+w*st.ca, th);
+    return [p[0], p[1]+(dy||0)];
+  };
+  const pathOf=(st,s0,s1,off,steps,dy)=>{
+    let d="";
+    for(let i=0;i<=steps;i++){
+      const p=at(st,s0+(s1-s0)*i/steps,off,dy);
+      d+=(i?" L ":"M ")+p[0].toFixed(2)+" "+p[1].toFixed(2);
+    }
+    return d;
+  };
+
+  strands.sort((a,b)=>(a.cx+a.cy)-(b.cx+b.cy)).forEach(st=>{
+    const stroke=(d,col,w,op)=>{
+      const e=el("path",{d,fill:"none",stroke:col,"stroke-width":w,
+        "stroke-opacity":op,"stroke-linecap":"round"});
+      g.appendChild(e); return e;
+    };
+    stroke(pathOf(st,0,1,-OFF,16),"var(--fg)","1",".7");
+    stroke(pathOf(st,0,1, OFF,16),"var(--fg)","1",".7");
+    for(let i=0;i<10;i++){
+      const s=0.04+i*(0.92/9);
+      const a=at(st,s,-OFF), b=at(st,s,OFF);
+      g.appendChild(el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--fg)","stroke-width":".6","stroke-opacity":".35"}));
+    }
+    /* SEGMENT ONE — the barcoded primer, where B4 leaves it */
+    stroke(pathOf(st,0,PRIMER,OFF,4),"var(--signal)","1.6",".45");
+    /* SEGMENT TWO — last round's block, now simply the end of the strand.
+       Same ink and the same dimness as segment one: a barcode stops being
+       the news the moment the next one lands on it, and if every round
+       stayed bright the strand would end up shouting in three places. The
+       two rail widths are B4's, so the near rail still reads as near. */
+    stroke(pathOf(st,1-BC,1,-OFF,5),"var(--signal)","1.2",".45");
+    stroke(pathOf(st,1-BC,1, OFF,5),"var(--signal)","1.6",".45");
+    for(let i=0;i<3;i++){
+      const s=1-BC+BC*(0.2+i*0.3);
+      const a=at(st,s,-OFF), b=at(st,s,OFF);
+      g.appendChild(el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--signal)","stroke-width":".7","stroke-opacity":".32"}));
+    }
+
+    /* SEGMENT THREE — the one this box writes, and the only bright thing */
+    const bc=el("g",{"stroke-opacity":"0"});
+    const bstroke=(d,w)=>{
+      const e=el("path",{d,fill:"none",stroke:"var(--signal)","stroke-width":w,
+        "stroke-linecap":"round"});
+      bc.appendChild(e); return e;
+    };
+    st.bcA=bstroke(pathOf(st,1+GAP0,1+GAP0+BC,-OFF,6,DROP),"1.2");
+    st.bcB=bstroke(pathOf(st,1+GAP0,1+GAP0+BC, OFF,6,DROP),"1.7");
+    st.bcR=[];
+    for(let i=0;i<3;i++){
+      const s=1+GAP0+BC*(0.2+i*0.3);
+      const a=at(st,s,-OFF,DROP), b=at(st,s,OFF,DROP);
+      const e=el("line",{x1:a[0].toFixed(2),y1:a[1].toFixed(2),
+        x2:b[0].toFixed(2),y2:b[1].toFixed(2),
+        stroke:"var(--signal)","stroke-width":".7","stroke-opacity":".7"});
+      bc.appendChild(e); st.bcR.push({node:e,s:BC*(0.2+i*0.3)});
+    }
+    g.appendChild(bc); st.bc=bc;
+
+    const a=at(st,0.4,0), b=at(st,0.6,0);
+    st.deg=Math.atan2(b[1]-a[1],b[0]-a[0])*180/Math.PI;
+    const lig=el("g",{});
+    lig.appendChild(el("ellipse",{cx:"0",cy:"0",
+      rx:(R*S*0.16).toFixed(2),ry:(R*S*0.115).toFixed(2),
+      fill:"var(--a-top)","fill-opacity":".95",stroke:"var(--stroke)",
+      "stroke-width":".7","stroke-opacity":".8"}));
+    lig.appendChild(el("ellipse",{cx:(R*S*-0.055).toFixed(2),cy:(R*S*-0.06).toFixed(2),
+      rx:(R*S*0.085).toFixed(2),ry:(R*S*0.067).toFixed(2),
+      fill:"var(--a-left)","fill-opacity":".9"}));
+    g.appendChild(lig); st.lig=lig;
+  });
+
+  /* The callout sits off the FRONT face rather than under the compartment,
+     because the lane's own track runs down-right through the node centre and
+     anything hung straight below it lands on the track at the right-hand end.
+     Everything here is measured off R and n.d, so it moves and resizes with
+     the node the way the rest of the drawing does. */
+  const base=P(n.x, n.y+n.d/2+R*1.3, 0), FS=R*S*0.44;
+  const MONO='ui-monospace,"SF Mono","JetBrains Mono","IBM Plex Mono",Menlo,monospace';
+  const say=(dy,txt,col,weight)=>{
+    const t=el("text",{x:base[0].toFixed(1),y:(base[1]+dy).toFixed(1),
+      "text-anchor":"middle","font-family":MONO,"font-size":FS.toFixed(2),
+      "letter-spacing":(FS*0.04).toFixed(2),fill:col,"font-weight":weight});
+    t.textContent=txt; g.appendChild(t);
+  };
+  say(0,           "48 × 96 × 96","var(--fg3)","500");
+  say(FS*1.35,"= 442,368 paths","var(--fg2)","600");
+
+  const FLOAT=2.2, SEAL=1.3, HOLD=1.4, FADE=0.8;
+  const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+  const run=(dt,now)=>{
+    const T=now/1000;
+    strands.forEach(st=>{
+      st.t=(st.t+dt)%(FLOAT+SEAL+HOLD+FADE+st.rest);
+      const t=st.t;
+      let gap=GAP0, dy=DROP, op=0, lig=0;
+      if(t<FLOAT){ const u=ease(t/FLOAT);
+        gap=GAP0+(GAPD-GAP0)*u; dy=DROP*(1-u); op=Math.min(1,t/(FLOAT*0.35)); }
+      else if(t<FLOAT+SEAL){ const v=(t-FLOAT)/SEAL;
+        gap=GAPD*(1-ease(v)); dy=0; op=1; lig=Math.min(1,v/0.22); }
+      else if(t<FLOAT+SEAL+HOLD){ gap=0; dy=0; op=1;
+        lig=Math.max(0,1-(t-FLOAT-SEAL)/(HOLD*0.4)); }
+      else if(t<FLOAT+SEAL+HOLD+FADE){ gap=0; dy=0;
+        op=1-(t-FLOAT-SEAL-HOLD)/FADE; }
+
+      const s0=1+gap;
+      st.bcA.setAttribute("d",pathOf(st,s0,s0+BC,-OFF,6,dy));
+      st.bcB.setAttribute("d",pathOf(st,s0,s0+BC, OFF,6,dy));
+      st.bcR.forEach(g2=>{
+        const a=at(st,s0+g2.s,-OFF,dy), b=at(st,s0+g2.s,OFF,dy);
+        g2.node.setAttribute("x1",a[0].toFixed(2)); g2.node.setAttribute("y1",a[1].toFixed(2));
+        g2.node.setAttribute("x2",b[0].toFixed(2)); g2.node.setAttribute("y2",b[1].toFixed(2));
+      });
+      st.bc.setAttribute("stroke-opacity",op.toFixed(2));
+
+      const p=at(st,1+gap*0.5,0), jig=Math.sin(T*9+st.ph)*0.45;
+      st.lig.setAttribute("transform",
+        `translate(${p[0].toFixed(2)},${(p[1]+jig-(1-lig)*7).toFixed(2)}) rotate(${st.deg.toFixed(1)})`);
+      st.lig.setAttribute("opacity",lig.toFixed(2));
+    });
+  };
+  run(0,0);
+  TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
+}
+DRAW.ligation3 = drawLigation3;
+
+
 /* ==================================================================
    THE POOL-AND-SPLIT BENCH KIT — a conical and a pipette, shared.
 
