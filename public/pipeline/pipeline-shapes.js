@@ -3220,6 +3220,11 @@ function conicalTube(g, tx, ty, w, h){
   return T;
 }
 
+/* the plastic, hoisted out of the single-channel the moment the twelve-channel
+   below wanted the same skin: two tools off one bench have to be one colour */
+const TIP_SKIN={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
+                "stroke-width":".8","stroke-opacity":".85"};
+
 /* THE TIP IS DRAWN IN SCREEN PIXELS, so it cannot scale by reading w — it
    scales by being scaled. `sc` is the owning node's size against the size this
    glyph was drawn for, which is 1 at the authored width and grows with the
@@ -3228,19 +3233,78 @@ function conicalTube(g, tx, ty, w, h){
    Returns the group the caller places by transform, and the column of liquid
    inside it, which is the only part of a pipette that has anything to say. */
 function pipetteGlyph(g, sc){
-  const skin={fill:"var(--t-top)","fill-opacity":".95",stroke:"var(--stroke)",
-              "stroke-width":".8","stroke-opacity":".85"};
   const pip=el("g",{}), tilt=el("g",{transform:`rotate(-15) scale(${sc.toFixed(3)})`});
   /* leading zeros on every coordinate, because the checkers read a `d` with a
      regex and "-.55" parses as 55 — a phantom point a long way from the tip */
-  tilt.appendChild(el("path",{d:"M -0.55 -1 L 0.55 -1 L 1.5 -7 L -1.5 -7 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -1.5 -7 L 1.5 -7 L 2.1 -17.5 L -2.1 -17.5 Z", ...skin}));
-  tilt.appendChild(el("path",{d:"M -2.7 -17.5 L 2.7 -17.5 L 2.2 -27 L -2.2 -27 Z", ...skin}));
+  tilt.appendChild(el("path",{d:"M -0.55 -1 L 0.55 -1 L 1.5 -7 L -1.5 -7 Z", ...TIP_SKIN}));
+  tilt.appendChild(el("path",{d:"M -1.5 -7 L 1.5 -7 L 2.1 -17.5 L -2.1 -17.5 Z", ...TIP_SKIN}));
+  tilt.appendChild(el("path",{d:"M -2.7 -17.5 L 2.7 -17.5 L 2.2 -27 L -2.2 -27 Z", ...TIP_SKIN}));
   const load=el("path",{d:"M -0.85 -2.6 L 0.85 -2.6 L 1.6 -7.6 L -1.6 -7.6 Z",
     fill:"var(--fg)","fill-opacity":"0"});
   tilt.appendChild(load);
   pip.appendChild(tilt); g.appendChild(pip);
   return {pip, load};
+}
+
+/* THE TWELVE-CHANNEL — the tool a pool and split is actually done with. Same
+   plastic and the same screen pixels as the single-channel above, so the two
+   read as one bench; what it adds is the comb and the manifold across the top
+   of it.
+
+   `step` IS THE PLATE'S OWN WELL PITCH, handed in as the screen vector from one
+   well of a row to the next. It has to be handed in rather than authored: a
+   comb built on a constant lands in twelve wells at the size it was drawn for
+   and between them at every other size, which is the same failure as a tip that
+   does not grow. It also carries the direction — on this projection a row runs
+   down-screen to the right rather than across, so the head has to lean along
+   it. The comb is centred on the group's origin, so placing the head over the
+   middle of a row puts every tip in its own well and the caller never has to
+   aim a channel.
+
+   EVERYTHING ABOVE THE TIPS IS DRAWN IN THE TIPS' OWN TILTED FRAME — the same
+   rotation applied to body coordinates as to tip ones — because a manifold that
+   does not lean with the plastic hanging off it reads as two tools.
+   Returns the group the caller places, and one liquid column per channel. */
+function multiGlyph(g, sc, nch, step){
+  const pip=el("g",{}), half=(nch-1)/2, loads=[];
+  for(let i=0;i<nch;i++){
+    const o=i-half;
+    const ch=el("g",{transform:
+      `translate(${(o*step[0]).toFixed(2)},${(o*step[1]).toFixed(2)})`});
+    const tilt=el("g",{transform:`rotate(-15) scale(${sc.toFixed(3)})`});
+    /* one disposable tip: the cone and the shank that grips the nose. Slimmer
+       and shorter than the single-channel's, and it has to be — at a plate's
+       pitch a dozen tips of that width is one wedge of plastic rather than
+       twelve tips. Leading zeros for the same reason as above. */
+    tilt.appendChild(el("path",{d:"M -0.40 -1 L 0.40 -1 L 0.95 -6 L -0.95 -6 Z",
+      ...TIP_SKIN}));
+    tilt.appendChild(el("path",{d:"M -0.95 -6 L 0.95 -6 L 1.30 -15 L -1.30 -15 Z",
+      ...TIP_SKIN}));
+    const load=el("path",{d:"M -0.60 -2.4 L 0.60 -2.4 L 1.05 -6.8 L -1.05 -6.8 Z",
+      fill:"var(--fg)","fill-opacity":"0"});
+    tilt.appendChild(load);
+    ch.appendChild(tilt); pip.appendChild(ch); loads.push(load);
+  }
+  /* `k` is in channel units along the comb, dx and dy in tilted-frame pixels
+     across and up it, so the body is stated in the units each part is really
+     measured in: the nose plate spans channels, the barrel spans plastic. */
+  const A=-15*Math.PI/180, CA=Math.cos(A), SA=Math.sin(A);
+  const at=(k,dx,dy)=>{ const X=dx*sc, Y=dy*sc;
+    return [(k*step[0]+X*CA-Y*SA).toFixed(2), (k*step[1]+X*SA+Y*CA).toFixed(2)]; };
+  const quad=(...p)=>pip.appendChild(el("polygon",{points:pts(p),...TIP_SKIN}));
+  /* the nose plate, overhanging the end tips the way a real one does */
+  quad(at(-half-0.7,0,-14.6), at(half+0.7,0,-14.6),
+       at( half+0.7,0,-18.6), at(-half-0.7,0,-18.6));
+  /* the barrel and the plunger over it, which is what makes the silhouette a
+     multichannel rather than a rake. A real one stands half again as tall as
+     its comb is wide; this one is nowhere near that, on purpose — the comb here
+     is already two thirds of the plate it works, and an honestly proportioned
+     body would be the tallest thing on the row and read as a prop rather than
+     as the tool doing the work. */
+  quad(at(0,-3.8,-18.2), at(0,3.8,-18.2), at(0,3.3,-30.0), at(0,-3.3,-30.0));
+  quad(at(0,-1.5,-30.0), at(0,1.5,-30.0), at(0,1.5,-35.5), at(0,-1.5,-35.5));
+  g.appendChild(pip);
+  return {pip, loads};
 }
 
 /* ---- THE FLOW FAN --------------------------------------------------------
@@ -3306,9 +3370,20 @@ function setFanLine(L,dim,f){
 
 /* ------------------------------------------------------------------
    POOL AND SPLIT · POOL THE PLATE, THEN DEAL IT BACK OUT
-   Forty-eight wells emptied into one tube by a single-channel tip, and
+   Forty-eight wells emptied into one tube by a twelve-channel head, and
    then that tube dealt back out across forty-eight fresh ones. Both
    halves are drawn, because the second one is where the claim lives.
+
+   THE TOOL IS A TWELVE-CHANNEL AND THE PLATE IS LAID OUT FOR IT. Round
+   one is forty-eight wells as rows A to D against columns 1 to 12 —
+   R1p next door says exactly that in its own record — so a row is twelve
+   wells wide and one head spans it. This shape used to draw the same
+   forty-eight as eight across and six back, which is the compound
+   plate's grid from row 1, and a twelve-channel over that is a tool that
+   does not fit the plastic: either four tips hang off the edge or the
+   comb is pitched to something that is not a well. Same forty-eight
+   wells either way. This way the tool and the plate agree, and one dip
+   is one row.
 
    THE FOUR BAND COLOURS ARE THE WHOLE POINT. The first plate's wells
    wear PLATE_BANDS, so what goes into the tube is visibly four different
@@ -3317,20 +3392,26 @@ function setFanLine(L,dim,f){
    claim the node makes — after this, well position carries no
    information — drawn rather than asserted. Only the barcode written in
    the round before still knows which well a cell came from, which is
-   also why the tip DEALS the second plate in a shuffled order instead of
-   sweeping it: a tip working A1, A2, A3 down a fresh plate would draw
-   the opposite of a randomisation.
+   also why the head DEALS the second plate in a shuffled order instead
+   of sweeping it front to back: a tool working A, B, C, D down a fresh
+   plate would draw the opposite of a randomisation.
 
-   THE PACING IS DELIBERATELY UNEVEN, BUT IT HAS A FLOOR. Half a second a
-   well is twenty-five seconds a plate, which is the honest bench number
-   and far too long to watch — and it is only the pooling half. So the
-   first row runs at bench speed, long enough to see one transfer happen,
-   and the rest accelerate. What they no longer do is accelerate without
-   limit: the run-up used to bottom out around thirty trips a second,
-   which is one frame each, and a tip that moves a plate's width in a
-   frame is not a tip any more, it is a flicker. The floor under the
-   run-up holds the tail at roughly five wells a second on both halves —
-   still a rush, still short, but slow enough that each trip is a trip.
+   THE BANDS RUN BY ROW HERE, not by column, and that is the head's
+   doing. A twelve-channel lifts a whole row at once, so a row has to be
+   one treatment: a dip that took all four together would have no colour
+   to pour, and the column rising in the glass through four colours
+   before it goes grey is the thing this shape exists to show. Four rows,
+   four treatments, one per trip.
+
+   FOUR TRIPS A PLATE IS THE PACING, AND IT MADE THE OLD ONE REDUNDANT.
+   A single tip needed a whole scheme here — bench speed for the first
+   row, then a geometric run-up with a floor under it — because
+   forty-eight honest transfers is twenty-five seconds nobody watches and
+   an unlimited acceleration turns the tail into a flicker. A head that
+   empties a row a trip has four transfers to make, so they all run at
+   the pace a hand actually works at and the plate still goes in under
+   five seconds. The scheme is gone rather than retuned: twelve channels
+   removed the problem it was solving.
 
    BETWEEN THE HALVES THE TUBE IS SWIRLED. Forty-eight wells go in as
    four colours and come out as one grey, and mixing is the step that
@@ -3344,9 +3425,10 @@ function setFanLine(L,dim,f){
    overlaps the stations either side, with the tube on the floor between
    them.
 
-   Reuses PLATE_BANDS / plateWells / plateSlab / drawWell from the plate
-   set and ellipseAt / arcPts from the clutch block, so the plastic and
-   the round glassware match everything else on the map.
+   Reuses PLATE_BANDS / plateGrid / plateSlab / drawWell from the plate
+   set, ellipseAt / arcPts from the clutch block, and conicalTube /
+   multiGlyph from the bench kit above, so the plastic and the round
+   glassware match everything else on the map.
    ------------------------------------------------------------------ */
 function drawPoolSplit(g,n){
   const th=n.h;
@@ -3356,22 +3438,38 @@ function drawPoolSplit(g,n){
      again. Absolute coordinates draw correctly at the size the node happens to
      be authored and come apart the moment anybody drags a corner — the plate
      grows and the tube beside it stays exactly where it was. Every ratio below
-     is against the size this was composed at: w 0.6, d 0.6, h 0.3. */
-  const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.9167, w:n.w*1.45, d:n.d*1.0};
-  const dst={x:n.x+n.w*0.25,   y:n.y+n.d*1.25,   w:n.w*1.45, d:n.d*1.0};
+     is against the size this was composed at: w 0.6, d 0.6, h 0.3.
+     THE FOOTPRINT IS THE GRID'S SHAPE. Twelve columns against four rows is a
+     plate three times as wide as it is deep, so the plastic is drawn that way:
+     wider than the 1.45 an eight-column grid wanted, and much shallower than
+     its 1.0. That is what keeps the pitch square — twelve wells crammed across
+     a footprint drawn for eight is a row of slots, and four rows spread over
+     the old depth is three empty bands of plastic — and it also puts more
+     ground between the two plates than the deep version had. */
+  const src={x:n.x-n.w*0.4167, y:n.y-n.d*0.9167, w:n.w*1.72, d:n.d*0.60};
+  const dst={x:n.x+n.w*0.25,   y:n.y+n.d*1.25,   w:n.w*1.72, d:n.d*0.60};
   /* the pooled suspension: one colour, and not one of the four */
   const GREY={fill:"var(--fg)", op:0.34};
+  /* THE GRID IS THE ROUND'S OWN FACT and it is read off the node, the way B5
+     reads its 12 x 8: round one is twelve columns by four rows, so the default
+     is that and not plateWells' 8 x 6, which belongs to the compound plate a
+     row up. It matters to the drawing rather than only to the record, because
+     the head working it has twelve channels and a row is what one dip is. */
+  const COLS=n.cols||12, ROWS=n.rows||4;
 
   plateSlab(g,src,th,SKIN.tile,1);
-  /* plateWells runs row-major, so the sweep order below is the order a hand
-     works a plate: A1 across to A8, then B1. Each well keeps a handle on its
-     own liquid, because that is the thing the tip takes away. */
-  const from=plateWells(src,th).map(w=>{
+  /* plateGrid runs row-major, so a slice of this list is a row of the plate and
+     one trip of the head. The band comes off the ROW rather than out of
+     plateGrid's column bands — see the header — and there are as many rows as
+     there are treatments. Each well keeps a handle on its own liquid, because
+     that is the thing the head takes away. */
+  const from=plateGrid(src,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
+    const band=PLATE_BANDS[w.j%PLATE_BANDS.length];
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
-      ry:(w.e.ry*0.86).toFixed(2),fill:w.band.fill,"fill-opacity":w.band.op});
+      ry:(w.e.ry*0.86).toFixed(2),fill:band.fill,"fill-opacity":band.op});
     g.appendChild(fill);
-    return {e:w.e, band:w.band, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
+    return {e:w.e, band, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
   /* THE TUBE, on the floor between the two plates. It is conicalTube's, and it
@@ -3386,7 +3484,7 @@ function drawPoolSplit(g,n){
      to open them, and an element with no coordinates would drag the selection
      halo across the map. */
   plateSlab(g,dst,th,SKIN.tile,1);
-  const into=plateWells(dst,th).map(w=>{
+  const into=plateGrid(dst,th,COLS,ROWS).map(w=>{
     drawWell(g,w,false);
     const fill=el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
       ry:(w.e.ry*0.86).toFixed(2),fill:GREY.fill,"fill-opacity":"0"});
@@ -3394,99 +3492,104 @@ function drawPoolSplit(g,n){
     return {e:w.e, fill, rx:w.e.rx*0.86, ry:w.e.ry*0.86};
   });
 
-  /* THE GLYPH IS SMALLER THAN IT WAS — 27 px against 42, and slimmer with it.
-     A well on these plates is four pixels across; a hand tool taller than a
-     third of the plate it is working reads as a prop rather than as a pipette,
-     and the transfer stops being the thing you are looking at. */
+  /* THE HEAD IS AS MANY CHANNELS AS THE PLATE HAS COLUMNS, at the plate's own
+     pitch, measured off the first two wells rather than authored — the comb has
+     to be the plastic's spacing at every node size, not just at this one. It
+     stands about thirty-five pixels over the plate against the single-channel's
+     twenty-seven, because a twelve-channel is the bigger tool and a comb forty
+     pixels wide under a stub of a body reads as a rake. */
   const SC=n.w/0.6;
-  const {pip,load}=pipetteGlyph(g,SC);
+  const STEP=[from[1].e.x-from[0].e.x, from[1].e.y-from[0].e.y];
+  const {pip,loads}=multiGlyph(g,SC,COLS,STEP);
 
-  /* the drop, born over the mouth it will fall into */
-  const drop=el("ellipse",{cx:T.rim.x.toFixed(1),cy:T.rim.y.toFixed(1),
-    rx:(1.3*SC).toFixed(2),ry:(1.7*SC).toFixed(2),fill:"var(--fg)","fill-opacity":"0"});
-  g.appendChild(drop);
+  /* one drop per channel, born over the mouth they all first fall into. Twelve
+     rather than one, because pooling is twelve streams converging on a tube and
+     the split is twelve landing in twelve wells; a single drop could only ever
+     be one of them, and the eye reads it as a tool with one tip. */
+  const drops=loads.map(()=>{
+    const d=el("ellipse",{cx:T.rim.x.toFixed(1),cy:T.rim.y.toFixed(1),
+      rx:(1.0*SC).toFixed(2),ry:(1.3*SC).toFixed(2),
+      fill:"var(--fg)","fill-opacity":"0"});
+    g.appendChild(d); return d;
+  });
 
   /* ---- TIMING -------------------------------------------------------------
-     pace() returns the length of every trip in a half: nSlow of them at bench
-     speed, then a geometric run-up that spends `rush` seconds on all the rest.
-     THE FLOOR IS THE WHOLE POINT OF THE SHAPE OF IT. The weights normalise, so
-     `rush` fixes how long the tail takes and the floor fixes how it is spent:
-     at 0.12 the run-up kept halving past the point of sense and the last three
-     dozen trips landed a frame apart each, which is the "comically fast" this
-     was. At 0.45 the acceleration is over in four trips and what follows is a
-     steady cadence rather than a smear. Both halves get the same floor,
-     because both were doing it.
-
-     THE TAIL WAS THEN HALVED AGAIN, BY RUSH AND NOT BY THE FLOOR. A tenth of
-     a second a well cleared the flicker but still read as a glitch: the eye
-     caught the plate emptying without ever catching a transfer, so the tip
-     looked like it was stuttering rather than working. Doubling `rush` on both
-     halves spends the same run-up over twice the seconds — about a fifth of a
-     second a well at the floor, five a second instead of ten — which is the
-     slowest the sweep can go and still fit in a loop somebody will watch to
-     the end. The floor stayed at 0.45 because the SHAPE of the acceleration
-     was right; it was only ever too brief. The opening bench trips lengthened
-     with it, a touch, so the run-up still starts from something slower than
-     where it ends. One cycle is now about twenty-seven seconds. */
-  const N=from.length;
-  const pace=(slow,nSlow,rush,floor)=>{
-    const wt=[];
-    for(let i=0;i<N;i++) wt.push(i<nSlow?0:Math.max(floor,Math.pow(0.8,i-nSlow)));
-    const sum=wt.reduce((a,b)=>a+b,0)||1;
-    const dur=wt.map((v,i)=>i<nSlow?slow:v*rush/sum);
-    const start=[0]; dur.forEach(d=>start.push(start[start.length-1]+d));
-    return {dur,start,total:start[N]};
-  };
-  const POOL=pace(0.60,8,8.0,0.45), SPLIT=pace(0.46,6,7.4,0.45);
-  /* MID is no longer a pause: it is how long the swirl lasts, and three turns
-     of it want the best part of two seconds to read as a hand rather than a
-     twitch. END still just stands and looks at the dealt plate. */
-  const MID=1.8, END=1.8, SW_TURNS=3;
-  const T1=POOL.total, T2=T1+MID, T3=T2+SPLIT.total, T4=T3+END;
+     A TRIP IS A ROW, so there are four of them a plate and they can all run at
+     the same speed — see the header for what that replaced. A second and a bit
+     is long enough to watch a comb go out, sit in twelve wells, come back and
+     empty; the dealing trip is shorter because a hover is quicker than a dip.
+     MID is not a pause but how long the swirl lasts, and three turns of it want
+     the best part of two seconds to read as a hand rather than a twitch. END
+     stands and looks at the dealt plate. One cycle is about twelve seconds. */
+  const TRIP=1.15, DEAL=1.00, MID=1.8, END=1.6, SW_TURNS=3;
+  const T1=ROWS*TRIP, T2=T1+MID, T3=T2+ROWS*DEAL, T4=T3+END;
   /* which trip a half is on, and how far through it — named tripAt rather than
      at(), which is the strand helper further up this file */
-  const tripAt=(half,t)=>{ let k=0; while(k<N-1 && t>=half.start[k+1]) k++;
-    return [k, Math.max(0,Math.min(1,(t-half.start[k])/half.dur[k]))]; };
+  const tripAt=(t0,len)=>{ const k=Math.min(ROWS-1,Math.floor(t0/len));
+    return [k, Math.max(0,Math.min(1,(t0-k*len)/len))]; };
 
   /* where each trip is, as a fraction of its own length. Pooling goes out,
-     draws up, comes back and lets go into the tube; the split draws up first,
-     carries it out and lets go over the well — which is why the tip dips into
-     the first plate and hovers over the second. */
-  const GO=0.36, SIT=0.50, RET=0.86;
-  const SUP=0.14, SGO=0.50, SDIS=0.64;
+     draws twelve wells up, comes back and lets go into the tube; the split
+     draws up first, carries it out and lets go over the row — which is why the
+     comb dips into the first plate and hovers over the second. */
+  const GO=0.28, SIT=0.52, RET=0.80;
+  const SUP=0.20, SGO=0.48, SDIS=0.72;
 
-  /* the deal order: shuffled, because that is the claim */
-  const order=(()=>{ const a=[...Array(N).keys()], r=rng(23);
-    for(let i=N-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
+  /* the deal order: shuffled, because that is the claim. It is the rows that
+     are shuffled — a head has no order inside its own row, it lets go of twelve
+     wells at once — and a plate filled D, B, A, C still says the fresh plate is
+     not being written in the order the old one was read. */
+  const order=(()=>{ const a=[...Array(ROWS).keys()], r=rng(23);
+    for(let i=ROWS-1;i>0;i--){ const j=Math.floor(r()*(i+1)); const s=a[i]; a[i]=a[j]; a[j]=s; }
     return a; })();
+
+  const rowOf=(plate,j)=>plate.slice(j*COLS,(j+1)*COLS);
+  /* the head is aimed by the middle of the row it is working, and that is all
+     the aiming there is: the comb is centred on its own group and pitched to
+     the plate, so a middle on a middle puts every channel in its own well */
+  const midOf=row=>[(row[0].e.x+row[COLS-1].e.x)/2,
+                    (row[0].e.y+row[COLS-1].e.y)/2];
 
   const LIFT=10*SC, mouth=[T.rim.x, T.rim.y-2*SC];
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
-  const place=(x,y)=>pip.setAttribute("transform",
-    `translate(${x.toFixed(1)},${y.toFixed(1)})`);
+  /* the head anchor is kept, not just written to the transform: anything
+     leaving a channel starts at that channel's tip, and a tip is the anchor
+     plus its own offset along the comb */
+  let hx=mouth[0], hy=mouth[1];
+  const place=(x,y)=>{ hx=x; hy=y;
+    pip.setAttribute("transform",`translate(${x.toFixed(1)},${y.toFixed(1)})`); };
   const hop=(a,b,f0)=>{ const f=ease(Math.max(0,Math.min(1,f0)));
     place(a[0]+(b[0]-a[0])*f, a[1]+(b[1]-a[1])*f-Math.sin(f*Math.PI)*LIFT); };
-  const fall=(colour,a,b,f,vis)=>{
-    drop.setAttribute("fill",colour);
-    drop.setAttribute("cx",(a[0]+(b[0]-a[0])*f).toFixed(1));
-    drop.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
-    drop.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
-  };
+  const tipAt=i=>{ const o=i-(COLS-1)/2;
+    return [hx+o*STEP[0], hy+o*STEP[1]]; };
+  /* `to` is per channel, because the two halves let go at different targets:
+     twelve streams into one mouth, or twelve into twelve wells */
+  const fall=(colour,to,f,vis)=>drops.forEach((d,i)=>{
+    const a=tipAt(i), b=to(i);
+    d.setAttribute("fill",colour);
+    d.setAttribute("cx",(a[0]+(b[0]-a[0])*f).toFixed(1));
+    d.setAttribute("cy",(a[1]+(b[1]-a[1])*f).toFixed(1));
+    d.setAttribute("fill-opacity",(vis*(1-f*0.6)).toFixed(2));
+  });
+  const dry=()=>drops.forEach(d=>d.setAttribute("fill-opacity","0"));
+  const carry=(colour,op)=>loads.forEach(l=>{ l.setAttribute("fill",colour);
+    l.setAttribute("fill-opacity",op.toFixed(2)); });
   const setLevel=T.setLevel, swirl=T.swirl;
 
-  /* a long frame must not leave a well behind full, or a fresh one behind
+  /* a long frame must not leave a row behind full, or a fresh one behind
      empty — the sweep is the claim, so both halves catch up rather than skip */
+  const wet=(w,op,k)=>{ w.fill.setAttribute("fill-opacity",op.toFixed(2));
+    w.fill.setAttribute("rx",(w.rx*k).toFixed(2));
+    w.fill.setAttribute("ry",(w.ry*k).toFixed(2)); };
   let t=0, poured=0, dealt=0;
-  const emptyTo=k=>{ while(poured<k) from[poured++].fill.setAttribute("fill-opacity","0"); };
-  const fillTo=k=>{ while(dealt<k){ const w=into[order[dealt++]];
-    w.fill.setAttribute("fill-opacity",String(GREY.op));
-    w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); } };
-  const park=()=>{ drop.setAttribute("fill-opacity","0");
-                   load.setAttribute("fill-opacity","0"); place(mouth[0],mouth[1]); };
+  const emptyTo=k=>{ while(poured<k) rowOf(from,poured++)
+    .forEach(w=>w.fill.setAttribute("fill-opacity","0")); };
+  const fillTo=k=>{ while(dealt<k) rowOf(into,order[dealt++])
+    .forEach(w=>wet(w,GREY.op,1)); };
+  const park=()=>{ dry(); carry(GREY.fill,0); place(mouth[0],mouth[1]); };
   const reset=()=>{
     t=0; poured=0; dealt=0;
-    from.forEach(w=>{ w.fill.setAttribute("fill-opacity",String(w.band.op));
-      w.fill.setAttribute("rx",w.rx.toFixed(2)); w.fill.setAttribute("ry",w.ry.toFixed(2)); });
+    from.forEach(w=>wet(w,w.band.op,1));
     into.forEach(w=>w.fill.setAttribute("fill-opacity","0"));
     setLevel(0,null,0); park(); swirl(0,0);
   };
@@ -3496,74 +3599,72 @@ function drawPoolSplit(g,n){
     if(t>=T4){ reset(); return; }
     if(t<T1||t>=T2) swirl(0,0);         // upright everywhere except between the halves
 
-    if(t<T1){                                       // POOL: forty-eight into one
-      const [k,u]=tripAt(POOL,t), w=from[k];
+    if(t<T1){                                       // POOL: four rows into one
+      const [k,u]=tripAt(t,TRIP), row=rowOf(from,k), band=row[0].band;
       emptyTo(k);
-      const e=u<GO?0:Math.min(1,(u-GO)/(SIT-GO));   // the well empties as the tip sits in it
-      w.fill.setAttribute("fill-opacity",(w.band.op*(1-e)).toFixed(2));
-      w.fill.setAttribute("rx",(w.rx*(1-0.3*e)).toFixed(2));
-      w.fill.setAttribute("ry",(w.ry*(1-0.3*e)).toFixed(2));
+      const e=u<GO?0:Math.min(1,(u-GO)/(SIT-GO));   // the row empties as the comb sits in it
+      row.forEach(w=>wet(w,band.op*(1-e),1-0.3*e));
 
-      const dis=u>RET ? (u-RET)/(1-RET) : 0;         // the tube takes it, one 48th at a time
+      const dis=u>RET ? (u-RET)/(1-RET) : 0;         // the tube takes it, one row at a time
       const fresh=dis>0 ? 1 : Math.max(0,1-u*2);
-      setLevel((k+dis)/N, (k||dis)?from[dis>0?k:Math.max(0,k-1)].band:null, fresh);
+      setLevel((k+dis)/ROWS,
+        (k||dis)?from[(dis>0?k:Math.max(0,k-1))*COLS].band:null, fresh);
 
-      const wp=[w.e.x, w.e.y-1*SC];
+      const m=midOf(row), wp=[m[0], m[1]-1*SC];
       if(u<GO)       hop(mouth,wp,u/GO);
       else if(u<SIT) place(wp[0],wp[1]);
       else if(u<RET) hop(wp,mouth,(u-SIT)/(RET-SIT));
       else           place(mouth[0],mouth[1]);
 
-      /* what the tip is carrying, and what it lets go of. Held at a floor of
-         0.45: the vehicle band is drawn at 0.16 in a well the size of this
-         text, and a column of it inside a plastic tip at that opacity is not
-         there. */
-      const vis=Math.max(0.45,w.band.op);
-      load.setAttribute("fill",w.band.fill);
-      load.setAttribute("fill-opacity",
-        (u<GO ? 0 : u<SIT ? vis*e : dis>0 ? vis*(1-dis) : vis).toFixed(2));
-      if(dis>0) fall(w.band.fill, mouth, [mouth[0],T.surfY], dis, vis);
-      else drop.setAttribute("fill-opacity","0");
+      /* what the channels are carrying, and what they let go of. Held at a
+         floor of 0.45: the vehicle band is drawn at 0.16 in a well the size of
+         this text, and a column of it inside a plastic tip two pixels across
+         at that opacity is not there. */
+      const vis=Math.max(0.45,band.op);
+      carry(band.fill,
+        u<GO ? 0 : u<SIT ? vis*e : dis>0 ? vis*(1-dis) : vis);
+      /* twelve channels empty into one mouth, so the streams converge rather
+         than run parallel — which is the one moment this shape says out loud
+         that the head is what does the pooling */
+      if(dis>0) fall(band.fill, ()=>[T.rim.x,T.surfY], dis, vis);
+      else dry();
       return;
     }
 
     if(t<T2){                                       // pooled: one grey tube, swirled
       const m=(t-T1)/MID, env=Math.sin(Math.PI*m);
-      emptyTo(N); setLevel(1,GREY,0);               // a surface to slosh, tinted with the mixture
+      emptyTo(ROWS); setLevel(1,GREY,0);            // a surface to slosh, tinted with the mixture
       swirl(env, m*SW_TURNS*2*Math.PI);
-      /* the tip stands off while the tube is being mixed, because a pipette
+      /* the head stands off while the tube is being mixed, because a pipette
          hanging in the mouth of a tube somebody is swirling is a broken one */
-      drop.setAttribute("fill-opacity","0"); load.setAttribute("fill-opacity","0");
+      dry(); carry(GREY.fill,0);
       place(mouth[0]+env*13*SC, mouth[1]-env*3*SC);
       return;
     }
 
-    if(t<T3){                                       // SPLIT: one back out into forty-eight
-      const [k,u]=tripAt(SPLIT,t-T2), w=into[order[k]];
-      emptyTo(N); fillTo(k);
+    if(t<T3){                                       // SPLIT: one back out into four rows
+      const [k,u]=tripAt(t-T2,DEAL), row=rowOf(into,order[k]);
+      emptyTo(ROWS); fillTo(k);
       const up=Math.min(1,u/SUP);
-      setLevel(1-(k+up)/N,null,0);
+      setLevel(1-(k+up)/ROWS,null,0);
 
       const dis=u<SGO ? 0 : u<SDIS ? (u-SGO)/(SDIS-SGO) : 1;
-      w.fill.setAttribute("fill-opacity",(GREY.op*dis).toFixed(2));
-      w.fill.setAttribute("rx",(w.rx*(0.55+0.45*dis)).toFixed(2));
-      w.fill.setAttribute("ry",(w.ry*(0.55+0.45*dis)).toFixed(2));
+      row.forEach(w=>wet(w,GREY.op*dis,0.55+0.45*dis));
 
-      const wp=[w.e.x, w.e.y-6*SC];                 // it hovers to deal, it does not dip
+      const m=midOf(row), wp=[m[0], m[1]-6*SC];     // it hovers to deal, it does not dip
       if(u<SUP)       place(mouth[0],mouth[1]);
       else if(u<SGO)  hop(mouth,wp,(u-SUP)/(SGO-SUP));
       else if(u<SDIS) place(wp[0],wp[1]);
       else            hop(wp,mouth,(u-SDIS)/(1-SDIS));
 
-      load.setAttribute("fill",GREY.fill);
-      load.setAttribute("fill-opacity",
-        (u<SUP ? 0.55*up : u<SGO ? 0.55 : u<SDIS ? 0.55*(1-dis) : 0).toFixed(2));
-      if(u>=SGO && u<SDIS) fall(GREY.fill, wp, [w.e.x,w.e.y], dis, 0.5);
-      else drop.setAttribute("fill-opacity","0");
+      carry(GREY.fill,
+        u<SUP ? 0.55*up : u<SGO ? 0.55 : u<SDIS ? 0.55*(1-dis) : 0);
+      if(u>=SGO && u<SDIS) fall(GREY.fill, i=>[row[i].e.x,row[i].e.y], dis, 0.5);
+      else dry();
       return;
     }
 
-    fillTo(N); setLevel(0,null,0); park();          // dealt: an empty tube and a full plate
+    fillTo(ROWS); setLevel(0,null,0); park();       // dealt: an empty tube and a full plate
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
@@ -3575,8 +3676,10 @@ DRAW.poolsplit = drawPoolSplit;
    POOL AND SPLIT, THE SECOND TIME · ONE OPERATION IN THREE BEATS
 
    B3 draws this same chemistry as one continuous sweep, and it is right
-   to: there the claim is the randomisation, and a tip working well by
-   well is what makes it. B5 is the same operation with a different
+   to: there the claim is the randomisation, and a head working the plate
+   row by row, into the tube and back out, is what makes it — four
+   treatments in and one grey suspension out, watched the whole way. B5
+   is the same operation with a different
    claim. By the time material reaches it the suspension is already one
    population, so what is left to say is the SHAPE of the move —
    ninety-six wells converge into one tube, the tube is mixed, and the
