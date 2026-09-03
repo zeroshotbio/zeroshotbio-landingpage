@@ -2134,6 +2134,21 @@ DRAW.fixation = drawFixation;
    a coat of ice on a single cell fading off it — the last ice to go, which is
    what the protocol actually waits for.
 
+   AND IT COMES OUT OF A FREEZER FIRST. The melt was the whole picture, and the
+   step starts one move before it: this material is stored cold and somebody
+   has to fetch it. So a small freezer stands off the back-left corner, clear
+   of the landmark's plinth, and the loop now opens with the door sliding back
+   and the plate travelling out onto the bench under its full slab of ice.
+   Nothing about the melt changed — it simply no longer starts the loop. At the
+   end the plate goes back in and the door shuts, because a loop has to close
+   somewhere and the freezer is where this plate came from.
+
+   THE PLATE AND ITS ICE ARE ONE GROUP, and they have to be: the travel is a
+   transform on the whole object. It shrinks into the doorway rather than
+   sliding through it at full size — the same trick the fixation freezer uses,
+   and it is why the plate is reparented BEHIND the freezer shell the moment it
+   starts moving: the wall is what hides the part that is still inside.
+
    Requires ellipseAt() from the A2 clutch block and PLATE_BANDS / plateGrid /
    plateSlab / drawWell from the plate set, so this is the same plastic the
    compound plate and the barcoding rounds are drawn on.
@@ -2146,16 +2161,37 @@ function drawThawPlate(g,n){
      topOf(n) = n.h, and a slab a tenth of that leaves it floating in air */
   const th=n.h*0.55;
   const plate={x:n.x, y:n.y, w:n.w*0.9, d:n.d*0.9};
+  /* WHERE THE FREEZER FITS, and it is a tight two units of floor. PAD is the
+     view's own plinth pad for an anchor — a world constant there rather than a
+     fraction of the node, so it is written the same way here — and the box has
+     to stand off that apron on one side and stay inside the band's dashed edge
+     on the other. Hence a narrow cabinet: the door is on the +x face, so what
+     the doorway is worth is set by its depth, not by its width. */
+  const PAD=0.55, FW=n.w*0.33, FD=n.d*0.62;
+  const frz={x:n.x-n.w/2-PAD-n.w*0.02-FW/2, y:n.y-n.d*0.12,
+             w:FW, d:FD, h:n.h*1.5};
+  const doorX=frz.x+frz.w/2, D=(yv,zv)=>P(doorX,yv,zv);
+  const ay0=frz.y-frz.d*0.44, ay1=frz.y+frz.d*0.44;
+  const az0=frz.h*0.10, az1=frz.h*0.88;
 
-  plateSlab(g,plate,th,SKIN.anchor,1.6);
+  /* the doorway is drawn before anything else, because what shows through an
+     open door is the dark inside of the box — the plate goes between the two */
+  g.appendChild(el("polygon",{points:pts([D(ay0,az1),D(ay1,az1),D(ay1,az0),D(ay0,az0)]),
+    fill:"var(--bg)","fill-opacity":".95"}));
+
+  /* the plate, its samples and its ice: one group, because they travel */
+  const cart=el("g",{transform:"translate(0,0)"});
+  g.appendChild(cart);
+
+  plateSlab(cart,plate,th,SKIN.anchor,1.6);
   const wells=plateGrid(plate,th,COLS,ROWS);
-  wells.forEach(w=>drawWell(g,w,true));
+  wells.forEach(w=>drawWell(cart,w,true));
   /* the sample in each well. Three specks, not a full field: a well here is
      four pixels across, and anything denser turns the plate grey. */
   wells.forEach(w=>{
     for(let k=0;k<3;k++){
       const a=r()*6.283, rad=Math.sqrt(r())*w.e.rx*0.44;
-      g.appendChild(el("circle",{cx:(w.e.x+Math.cos(a)*rad).toFixed(2),
+      cart.appendChild(el("circle",{cx:(w.e.x+Math.cos(a)*rad).toFixed(2),
         cy:(w.e.y+Math.sin(a)*rad*0.6).toFixed(2),r:(0.8*SC).toFixed(2),
         fill:"var(--fg)","fill-opacity":".55"}));
     }
@@ -2164,7 +2200,7 @@ function drawThawPlate(g,n){
   /* the well the outset is a magnification of, ringed on the plate so the two
      can be matched by eye. Near-left, which is the corner the outset hangs off */
   const src=wells[(ROWS-2)*COLS+1];
-  g.appendChild(el("ellipse",{cx:src.e.x.toFixed(2),cy:src.e.y.toFixed(2),
+  cart.appendChild(el("ellipse",{cx:src.e.x.toFixed(2),cy:src.e.y.toFixed(2),
     rx:(src.e.rx*1.6).toFixed(2),ry:(src.e.ry*1.6).toFixed(2),fill:"none",
     stroke:"var(--fg)","stroke-width":(0.9*SC).toFixed(2),"stroke-opacity":".85"}));
 
@@ -2173,7 +2209,7 @@ function drawThawPlate(g,n){
      Everything lying ON the top face — the snowflake and the rime around it —
      is in one group that is translated down by the same amount, so the surface
      stays welded to the slab instead of hanging over it. */
-  const iceG=el("g",{}); g.appendChild(iceG);
+  const iceG=el("g",{}); cart.appendChild(iceG);
   const KEYS=["left","right","top"], OP=[".78",".84",".82"];
   const f0=faces(n.x,n.y,n.w,n.d,n.h);
   const iceF=KEYS.map((k,i)=>{
@@ -2226,6 +2262,46 @@ function drawThawPlate(g,n){
   }
   rime.sort((a,b)=>b.far-a.far);
 
+  /* ---- THE FREEZER ------------------------------------------------------
+     Two faces, and the third is a doorway with a frame round it. It is drawn
+     AFTER the plate so that the wall occludes whatever is inside: the plate
+     spends its whole journey behind this group and is only brought forward
+     once it is parked on the bench. */
+  const shellG=el("g",{}); g.appendChild(shellG);
+  const ff=faces(frz.x,frz.y,frz.w,frz.d,frz.h);
+  ["left","top"].forEach(k=>shellG.appendChild(el("polygon",{points:ff[k],
+    fill:SKIN.cold[k],stroke:"var(--stroke)","stroke-width":(1.3*SC).toFixed(2)})));
+  const F=(a,b,c,d)=>shellG.appendChild(el("polygon",
+    {points:pts([D(a,d),D(b,d),D(b,c),D(a,c)]),fill:SKIN.cold.right,
+     stroke:"var(--stroke)","stroke-width":(1*SC).toFixed(2),"stroke-opacity":".8"}));
+  F(frz.y-frz.d/2, frz.y+frz.d/2, 0,   az0);
+  F(frz.y-frz.d/2, frz.y+frz.d/2, az1, frz.h);
+  F(frz.y-frz.d/2, ay0,           az0, az1);
+  F(ay1,           frz.y+frz.d/2, az0, az1);
+  /* a flake on the lid rather than on the door, so the box still reads cold
+     over the two thirds of the loop where the door is standing open */
+  const LR=Math.min(frz.w,frz.d)*0.30, ctr=P(frz.x,frz.y,frz.h);
+  for(let i=0;i<6;i++){
+    const a=i*Math.PI/3, tip=P(frz.x+Math.cos(a)*LR, frz.y+Math.sin(a)*LR, frz.h);
+    shellG.appendChild(el("line",{x1:ctr[0].toFixed(1),y1:ctr[1].toFixed(1),
+      x2:tip[0].toFixed(1),y2:tip[1].toFixed(1),stroke:"var(--fg)",
+      "stroke-width":(1.3*SC).toFixed(2),"stroke-opacity":".5","stroke-linecap":"round"}));
+  }
+
+  /* the door slides back into the frame rather than swinging: a swing wants a
+     hinge and a thickness, and at this size both read as a smear */
+  const doorG=el("g",{}); g.appendChild(doorG);
+  const door=el("polygon",{points:pts([D(ay0,az1),D(ay1,az1),D(ay1,az0),D(ay0,az0)]),
+    fill:SKIN.cold.right,stroke:"var(--stroke)","stroke-width":(1.2*SC).toFixed(2),
+    "stroke-opacity":".9"});
+  doorG.appendChild(door);
+  const hy=ay1-frz.d*0.07;
+  const h0=D(hy,frz.h*0.34), h1=D(hy,frz.h*0.62);
+  const handle=el("line",{x1:h0[0].toFixed(1),y1:h0[1].toFixed(1),
+    x2:h1[0].toFixed(1),y2:h1[1].toFixed(1),stroke:"var(--stroke)",
+    "stroke-width":(2.4*SC).toFixed(2),"stroke-opacity":"0","stroke-linecap":"round"});
+  doorG.appendChild(handle);
+
   /* ---- THE OUTSET, and it is drawn over the ice ------------------------
      One well, magnified, hanging off the near-left ground where nothing else
      on this row goes — the idiom the rest of the map uses for a thing drawn
@@ -2234,14 +2310,19 @@ function drawThawPlate(g,n){
      what is happening inside one well while the slab above is still there. */
   /* far enough out that the circle clears the landmark's own plinth, which
      runs 0.55 past the footprint on every side */
+  /* AND IT IS A VIEW OF THE PLATE ON THE BENCH. Its leaders point at a well
+     that is only at those coordinates while the plate is parked there, so the
+     circle and both leaders live in one group that is faded out for as long as
+     the plate is in the freezer or on its way. */
+  const outG=el("g",{opacity:"0"}); g.appendChild(outG);
   const KR=n.w*S*0.30, [KX,KY]=P(n.x-n.w*0.62, n.y+n.d*1.45, n.h*0.75);
-  [[KR*0.78,-KR*0.62],[KR*0.78,KR*0.62]].forEach(p=>g.appendChild(el("line",{
+  [[KR*0.78,-KR*0.62],[KR*0.78,KR*0.62]].forEach(p=>outG.appendChild(el("line",{
     x1:(KX+p[0]).toFixed(1),y1:(KY+p[1]).toFixed(1),
     x2:src.e.x.toFixed(1),y2:src.e.y.toFixed(1),stroke:"var(--fg2)",
     "stroke-width":(0.8*SC).toFixed(2),"stroke-opacity":".22","stroke-dasharray":"3 3"})));
 
   const out=el("g",{transform:`translate(${KX.toFixed(1)},${KY.toFixed(1)})`});
-  g.appendChild(out);
+  outG.appendChild(out);
   out.appendChild(el("circle",{cx:"0",cy:"0",r:KR.toFixed(1),fill:"var(--bg)",
     "fill-opacity":".8",stroke:"var(--stroke)","stroke-width":(1.1*SC).toFixed(2),
     "stroke-opacity":".6"}));
@@ -2265,26 +2346,46 @@ function drawThawPlate(g,n){
   out.appendChild(coat);
 
   /* ---- THE SCHEDULE ----------------------------------------------------
-     Frozen, then the slab goes, then the plate stands clear, then the ice
-     comes back — the last phase is the loop closing and nothing else, which is
-     why it is the shortest and the only one that runs the other way. The coat
-     on the magnified cell starts later and finishes last: one cell in the
-     middle of a well is the last thing in the plate to reach temperature. */
-  const FROZEN=1.8, MELT=2.8, CLEAR=2.4, GLAZE=1.1;
-  const CYCLE=FROZEN+MELT+CLEAR+GLAZE;
+     Shut, out of the freezer, then the slab goes, then the plate stands clear,
+     then the ice comes back and it goes home — the last three phases are the
+     loop closing and nothing else, which is why they are the short ones. The
+     coat on the magnified cell starts later than the slab and finishes last:
+     one cell in the middle of a well is the last thing in the plate to reach
+     temperature.
+
+     The ice is at full height for everything before the melt. A plate that
+     came out of a freezer already half thawed would be saying the thaw
+     happened in the box, and it does not — it happens on the bench. */
+  const SHUT=0.9, OPEN=0.6, OUT=1.6, FROZEN=0.6, MELT=2.8, CLEAR=1.8,
+        GLAZE=1.0, BACK=1.4, CLOSE=0.6;
+  const T_OPEN=SHUT, T_OUT=T_OPEN+OPEN, T_FRZ=T_OUT+OUT, T_MELT=T_FRZ+FROZEN,
+        T_CLR=T_MELT+MELT, T_GLZ=T_CLR+CLEAR, T_BACK=T_GLZ+GLAZE,
+        T_CLOSE=T_BACK+BACK, CYCLE=T_CLOSE+CLOSE;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   const c01=x=>Math.max(0,Math.min(1,x));
-  let t=0;
+  /* the plate is small enough at the far end to sit in the doorway; the wall
+     takes whatever overhangs it, which is what a wall is for here */
+  const pc=P(plate.x,plate.y,th*0.5), inside=P(frz.x,frz.y,frz.h*0.45);
+  const SC_END=(ay1-ay0)*0.5/n.d;
+  let t=0, stowed=true;                 // built inside the box, behind the shell
   const run=(dt)=>{
     t=(t+dt)%CYCLE;
-    let ice=1, cv=1;
-    if(t<FROZEN){ /* held frozen */ }
-    else if(t<FROZEN+MELT){
-      const u=(t-FROZEN)/MELT;
+    /* each part reads the clock for itself: the door, the travel, the ice and
+       the outset overlap at the edges, and one if-chain hid that */
+    const span=(a,b)=>c01((t-a)/(b-a));
+    let ice=1, cv=1, stow=1, dq=1;      // stow: 0 on the bench, 1 in the freezer
+    if(t<T_OPEN){ /* shut, and the plate is in there */ }
+    else if(t<T_OUT)  { dq=1-ease(span(T_OPEN,T_OUT)); }
+    else if(t<T_BACK) { dq=0; stow=t<T_FRZ ? 1-ease(span(T_OUT,T_FRZ)) : 0; }
+    else if(t<T_CLOSE){ dq=0; stow=ease(span(T_BACK,T_CLOSE)); }
+    else              { dq=ease(span(T_CLOSE,CYCLE)); }
+
+    if(t>=T_MELT && t<T_CLR){
+      const u=(t-T_MELT)/MELT;
       ice=1-ease(c01(u/0.72));
       cv =1-ease(c01((u-0.34)/0.66));
-    }else if(t<FROZEN+MELT+CLEAR){ ice=0; cv=0; }
-    else { ice=cv=ease((t-FROZEN-MELT-CLEAR)/GLAZE); }
+    }else if(t>=T_CLR && t<T_GLZ){ ice=0; cv=0; }
+    else if(t>=T_GLZ && t<T_BACK){ ice=cv=ease(span(T_GLZ,T_BACK)); }
 
     const z=th+(n.h-th)*ice, f=faces(n.x,n.y,n.w,n.d,z);
     iceF.forEach((e,i)=>e.setAttribute("points",f[KEYS[i]]));
@@ -2299,6 +2400,26 @@ function drawThawPlate(g,n){
     coat.setAttribute("r",(KR*(0.50+0.09*cv)).toFixed(1));
     coat.setAttribute("fill-opacity",(0.95*cv).toFixed(2));
     coat.setAttribute("stroke-opacity",(0.35*cv).toFixed(2));
+
+    /* the travel. pc maps to the doorway and the whole cart scales about the
+       origin with it, so the ice, the plastic and the samples stay one object */
+    const sc=1-(1-SC_END)*stow;
+    cart.setAttribute("transform",
+      `translate(${(pc[0]+(inside[0]-pc[0])*stow-pc[0]*sc).toFixed(2)},`+
+      `${(pc[1]+(inside[1]-pc[1])*stow-pc[1]*sc).toFixed(2)}) scale(${sc.toFixed(3)})`);
+    /* behind the shell for the whole journey and in front of it only when
+       parked: reparenting is the only depth sort this renderer has */
+    const away=stow>0.001;
+    if(away!==stowed){ stowed=away; g.insertBefore(cart, away?shellG:outG); }
+
+    const edge=ay0+(ay1-ay0)*dq;
+    door.setAttribute("points",pts([D(ay0,az1),D(edge,az1),D(edge,az0),D(ay0,az0)]));
+    door.setAttribute("fill-opacity",(0.95*Math.min(1,dq*4)).toFixed(2));
+    door.setAttribute("stroke-opacity",(0.9*Math.min(1,dq*4)).toFixed(2));
+    handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
+    /* the outset arrives with the plate and leaves before it does */
+    outG.setAttribute("opacity",
+      c01(Math.min(span(T_OUT+OUT*0.55,T_FRZ), 1-span(T_BACK,T_BACK+BACK*0.35))).toFixed(2));
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
