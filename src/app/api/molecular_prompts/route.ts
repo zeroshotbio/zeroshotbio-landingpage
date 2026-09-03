@@ -140,10 +140,16 @@ async function loadHead(): Promise<{
   rows: PromptRow[];
   pages: number;
   strandedOpen: boolean;
+  rev: number;
 }> {
   const item = await getItem(HEAD_ID);
   const pages = Number(item?.pages) || 0;
-  return { rows: rowsOf(item), pages, strandedOpen: !!item?.stranded_open };
+  return {
+    rows: rowsOf(item),
+    pages,
+    strandedOpen: !!item?.stranded_open,
+    rev: Number(item?.rev) || 0,
+  };
 }
 
 /* Every row ever kept, newest first, plus which item each page came from so a
@@ -153,12 +159,13 @@ async function loadAll(): Promise<{
   pages: PromptRow[][];
   pageCount: number;
   strandedOpen: boolean;
+  rev: number;
 }> {
-  const { rows, pages, strandedOpen } = await loadHead();
+  const { rows, pages, strandedOpen, rev } = await loadHead();
   const older = await Promise.all(
     Array.from({ length: pages }, (_, n) => getItem(PAGE_ID(n)).then(rowsOf))
   );
-  return { head: rows, pages: older, pageCount: pages, strandedOpen };
+  return { head: rows, pages: older, pageCount: pages, strandedOpen, rev };
 }
 
 const flatten = (s: { head: PromptRow[]; pages: PromptRow[][] }) =>
@@ -180,6 +187,89 @@ async function putRows(id: string, rows: PromptRow[], extra: Record<string, unkn
       ),
     })
   );
+}
+
+/* ============================================================
+   TWO WORKERS, ONE QUEUE
+
+   A worker claims a prompt by moving it queued -> working, and then runs an
+   agent that edits the repo and pushes to main. So a claim two workers can both
+   win is not a stale-status problem: it is two agents doing one job, in one
+   working tree, both pushing. That has to be impossible rather than unlikely.
+
+   Read-modify-write over a single item is not enough on its own — both read
+   "queued", both write "working", both believe they won. So the head carries a
+   revision, every write to it is conditional on the revision it read, and a
+   writer that lost re-reads and decides again. A claim that finds the row
+   already working on the second look does not retry: it lost, and says so.
+
+   The archive pages need none of this. They are written once and then only
+   touched by a late correction to something long finished, which is not a race
+   anybody is running.
+   ============================================================ */
+class Contended extends Error {}
+
+async function putHead(
+  rows: PromptRow[],
+  extra: Record<string, unknown>,
+  expectedRev: number
+) {
+  try {
+    await ddbClient.send(
+      new PutItemCommand({
+        TableName: TABLE_NAME,
+        Item: marshall(
+          {
+            id: HEAD_ID,
+            state_json: JSON.stringify(rows),
+            updated_at: Date.now(),
+            kind: "molecular_map_prompts",
+            rev: expectedRev + 1,
+            ...extra,
+          },
+          { removeUndefinedValues: true }
+        ),
+        /* rev 0 is the item as it was before any of this existed — it has no
+           rev at all, so that is what the condition has to ask about */
+        ConditionExpression: expectedRev === 0 ? "attribute_not_exists(rev)" : "rev = :r",
+        ExpressionAttributeValues:
+          expectedRev === 0 ? undefined : marshall({ ":r": expectedRev }),
+      })
+    );
+  } catch (err) {
+    if ((err as { name?: string }).name === "ConditionalCheckFailedException")
+      throw new Contended();
+    throw err;
+  }
+}
+
+/* Read the head, decide, write it back — and if somebody else wrote in between,
+   throw the decision away and make it again on what they left. Returning null
+   from `decide` means "nothing to write", which is how a lost claim and a
+   miss both get out without touching the record. */
+async function withHead<T>(
+  decide: (head: Awaited<ReturnType<typeof loadHead>>) =>
+    Promise<{ rows: PromptRow[]; extra: Record<string, unknown>; result: T } | null>,
+  tries = 12
+): Promise<T | null> {
+  for (let i = 0; i < tries; i++) {
+    const head = await loadHead();
+    const plan = await decide(head);
+    if (!plan) return null;
+    try {
+      await putHead(plan.rows, plan.extra, head.rev);
+      return plan.result;
+    } catch (err) {
+      if (!(err instanceof Contended)) throw err;
+      /* N writers arriving together need N rounds, because each round lets
+         exactly one through — so the budget is generous, and the wait is
+         randomised so the losers do not all come back in step and collide
+         again on the retry. Five was not enough for eight at once, and the
+         failure landed on a prompt somebody had just written. */
+      await new Promise((r) => setTimeout(r, 8 * i + Math.random() * 25));
+    }
+  }
+  throw new Error("head contended");
 }
 
 const LIVE = (r: PromptRow) => r.status === "queued" || r.status === "working";
@@ -327,6 +417,14 @@ export async function POST(request: NextRequest) {
     if (!["queued", "working", "done", "dropped"].includes(status))
       return NextResponse.json({ ok: false, error: "bad_status" }, { status: 400 });
 
+    /* `from` is what makes a claim a claim. Without it two workers polling the
+       same queue both read "queued", both write "working", and both go and do
+       the job. With it, the move only applies if the row is still what the
+       caller thought it was, and the loser is told so rather than being left
+       believing it won. Optional, because marking something done or dropped is
+       not a race and never needed it. */
+    const from = typeof body.from === "string" ? (body.from as PromptStatus) : null;
+
     const apply = (row: PromptRow) => {
       row.status = status;
       row.updated = now;
@@ -338,25 +436,36 @@ export async function POST(request: NextRequest) {
        drawing — so with nothing stranded it is one read and one write, whatever
        the record weighs. Reading every page here would make the archive cost
        something on the hot path, for a case that is meant never to happen. */
-    let head;
+    let lost = false, missed = false;
+    let moved: PromptRow | null = null;
     try {
-      head = await loadHead();
+      moved = await withHead(async (head) => {
+        lost = false; missed = false;
+        if (head.strandedOpen) { missed = true; return null; }   // the slow path deals with it
+        const row = head.rows.find((r) => r.id === body.id);
+        if (!row) { missed = true; return null; }
+        if (from && row.status !== from) { lost = true; return null; }
+        apply(row);
+        return {
+          rows: head.rows,
+          extra: { pages: head.pages, stranded_open: false },
+          result: row,
+        };
+      });
     } catch (err) {
-      console.error("molecular_prompts load failed", err);
-      return NextResponse.json({ ok: false, error: "read_failed" }, { status: 500 });
+      console.error("molecular_prompts claim failed", err);
+      return NextResponse.json({ ok: false, error: "write_failed" }, { status: 500 });
     }
-    const quick = head.strandedOpen ? null : head.rows.find((r) => r.id === body.id);
-    if (quick) {
-      apply(quick);
-      try {
-        await putRows(HEAD_ID, head.rows, { pages: head.pages, stranded_open: false });
-      } catch (err) {
-        console.error("molecular_prompts save failed", err);
-        return NextResponse.json({ ok: false, error: "write_failed" }, { status: 500 });
-      }
-      return NextResponse.json({ ok: true, prompt: quick });
-    }
+    if (lost)
+      return NextResponse.json(
+        { ok: false, error: "already_claimed" },
+        { status: 409 }
+      );
+    if (moved) return NextResponse.json({ ok: true, prompt: moved });
 
+    /* Not in the head — either the record has a stranded open row and the head
+       alone cannot be trusted, or this is a late correction to something long
+       archived. Both are rare and both want every page. */
     let store;
     try {
       store = await loadAll();
@@ -373,18 +482,35 @@ export async function POST(request: NextRequest) {
     const restamp = async (force: boolean) => {
       const stillStranded = store.pages.some((pg) => pg.some(LIVE));
       if (force || stillStranded !== store.strandedOpen)
-        await putRows(HEAD_ID, store.head, {
-          pages: store.pageCount,
-          stranded_open: stillStranded,
-        });
+        await putHead(
+          store.head,
+          { pages: store.pageCount, stranded_open: stillStranded },
+          store.rev
+        );
+    };
+
+    /* A LOST WRITE HERE IS USUALLY A LOST CLAIM, and the caller has to be able
+       to tell those apart. Whoever beat us to the head very likely beat us to
+       this row — so look at what they left before answering: if the row is no
+       longer what this call required, the honest answer is already_claimed, the
+       same one the fast path gives. "contended" is reserved for genuinely
+       losing to an unrelated write, which the caller may retry. */
+    const lostTo = async () => {
+      const fresh = await loadHead();
+      const r = fresh.rows.find((x) => x.id === body.id);
+      return from && r && r.status !== from ? "already_claimed" : "contended";
     };
 
     const inHead = store.head.find((r) => r.id === body.id);
     if (inHead) {
+      if (from && inHead.status !== from)
+        return NextResponse.json({ ok: false, error: "already_claimed" }, { status: 409 });
       apply(inHead);
       try {
         await restamp(true);
       } catch (err) {
+        if (err instanceof Contended)
+          return NextResponse.json({ ok: false, error: await lostTo() }, { status: 409 });
         console.error("molecular_prompts save failed", err);
         return NextResponse.json({ ok: false, error: "write_failed" }, { status: 500 });
       }
@@ -394,11 +520,15 @@ export async function POST(request: NextRequest) {
     for (let n = 0; n < store.pages.length; n++) {
       const row = store.pages[n].find((r) => r.id === body.id);
       if (!row) continue;
+      if (from && row.status !== from)
+        return NextResponse.json({ ok: false, error: "already_claimed" }, { status: 409 });
       apply(row);
       try {
         await putRows(PAGE_ID(n), store.pages[n]);
         await restamp(false);
       } catch (err) {
+        if (err instanceof Contended)
+          return NextResponse.json({ ok: false, error: await lostTo() }, { status: 409 });
         console.error("molecular_prompts save failed", err);
         return NextResponse.json({ ok: false, error: "write_failed" }, { status: 500 });
       }
@@ -411,14 +541,6 @@ export async function POST(request: NextRequest) {
   // ---- a new prompt, from the page ----
   const text = typeof body.text === "string" ? body.text.trim() : "";
   if (!text) return NextResponse.json({ ok: false, error: "empty" }, { status: 400 });
-
-  let head: PromptRow[], pages: number, stranded: boolean;
-  try {
-    ({ rows: head, pages, strandedOpen: stranded } = await loadHead());
-  } catch (err) {
-    console.error("molecular_prompts load failed", err);
-    return NextResponse.json({ ok: false, error: "read_failed" }, { status: 500 });
-  }
 
   /* An insertion is only an insertion if it says where. A row claiming the kind
      with no usable slot would reach the worker as "add a station somewhere",
@@ -446,29 +568,56 @@ export async function POST(request: NextRequest) {
     at: now,
     updated: now,
   };
-  head.unshift(row);
 
-  /* Spill BEFORE the head is written, and only count the page once it is safely
-     stored: if the page write fails the head keeps its rows and the next prompt
-     tries the spill again. Nothing is dropped on the way. */
-  const { keep, spill, strandedOpen } = splitHead(head);
+  /* PUT IT ON THE QUEUE FIRST, AND SPILL SEPARATELY.
+     Doing both in one read-modify-write means a contended retry re-runs the
+     spill too — and the page it already wrote would then be written again from
+     a different head, which is how one prompt ends up in the record twice. So
+     this write only ever prepends, and the spill below is its own guarded
+     write that can fail harmlessly. */
+  let queuedCount = 0, spillDue = false;
   try {
-    if (spill.length) {
-      const n = await writeNewPage(pages, spill);
-      pages = n + 1;
-    }
-    await putRows(HEAD_ID, keep, {
-      pages,
-      stranded_open: stranded || strandedOpen,
+    await withHead(async (head) => {
+      const rows = [row].concat(head.rows);
+      queuedCount = rows.filter((r) => r.status === "queued").length;
+      /* decided here, off the rows this write is about to store, so the common
+         case never pays for the second read: a spill comes due roughly once
+         every couple of hundred prompts and the other few hundred queue in one
+         read and one write, which is what the map's poll budget assumes */
+      spillDue = splitHead(rows).spill.length > 0;
+      return {
+        rows,
+        extra: { pages: head.pages, stranded_open: head.strandedOpen },
+        result: row,
+      };
     });
   } catch (err) {
     console.error("molecular_prompts save failed", err);
     return NextResponse.json({ ok: false, error: "write_failed" }, { status: 500 });
   }
 
-  return NextResponse.json({
-    ok: true,
-    prompt: row,
-    queued: keep.filter((r) => r.status === "queued").length,
-  });
+  /* The head is over its high mark now and then — once every couple of hundred
+     prompts — and moving its tail into a page is maintenance, not part of
+     queueing. It is done after the prompt is safely on the queue and its
+     failure is not the caller's problem: an orphaned page is INERT, because a
+     reader only walks the page indices the head's own count admits to, so a
+     spill that writes a page and then loses the head write leaves a wasted item
+     and a whole record rather than a duplicated one. The next prompt tries
+     again on the next index. */
+  try {
+    if (spillDue) await withHead(async (head) => {
+      const { keep, spill, strandedOpen } = splitHead(head.rows);
+      if (!spill.length) return null;
+      const n = await writeNewPage(head.pages, spill);
+      return {
+        rows: keep,
+        extra: { pages: n + 1, stranded_open: head.strandedOpen || strandedOpen },
+        result: true,
+      };
+    }, 2);
+  } catch (err) {
+    console.error("molecular_prompts spill deferred", err);
+  }
+
+  return NextResponse.json({ ok: true, prompt: row, queued: queuedCount });
 }

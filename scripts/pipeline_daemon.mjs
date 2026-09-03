@@ -120,6 +120,24 @@ const move = (map, id, status, note) =>
   api(map, { method: "POST", headers: { "content-type": "application/json" },
         body: JSON.stringify({ id, status, note: note ? String(note).slice(0, 900) : undefined }) });
 
+/* CLAIMING IS NOT THE SAME AS MOVING, and the difference is the whole reason
+   more than one of these can be running. A claim says "queued -> working, and
+   only if it is still queued". Two daemons polling the same queue both see the
+   row; the queue lets exactly one of them through and answers the other
+   already_claimed, and the loser leaves it alone instead of running a second
+   agent over the same repo and pushing on top of the first.
+
+   An older queue that does not know about `from` simply moves the row and
+   answers ok — which is the behaviour there has always been, so a daemon
+   deployed ahead of the route still works, it just is not protected. */
+async function claim(map, id) {
+  const r = await api(map, {
+    method: "POST", headers: { "content-type": "application/json" },
+    body: JSON.stringify({ id, status: "working", from: "queued" }),
+  });
+  return !!(r && r.ok);
+}
+
 /* What the agent is told. The rules are the ones this map has accumulated;
    every one of them is here because breaking it broke something. */
 /* HOW MANY NODES WEAR THIS SHAPE. A drawing is registered as DRAW.<shape> and
@@ -423,7 +441,10 @@ async function handle(map, p) {
     return;
   }
   const before = head();
-  await move(map, p.id, "working");
+  if (!(await claim(map, p.id))) {
+    log(`    ${p.id} was claimed by somebody else — leaving it to them`);
+    return;
+  }
 
   if (DRY) {
     log("    --dry, not running claude");

@@ -59,6 +59,18 @@ class DynamoDBClient {
     }
     const n = JSON.stringify(c.i.Item).length;
     if (n > 400 * 1024) throw new Error("ItemSizeLimitExceeded: " + n);
+    /* the condition is the whole point of the claim, so the fake honours it —
+       a stub that accepts every write would pass the race test by not being
+       able to fail it */
+    const ce = c.i.ConditionExpression;
+    if (ce) {
+      const cur = store.get(c.i.Item.id);
+      const has = cur && cur.rev !== undefined;
+      const okc = ce === "attribute_not_exists(rev)"
+        ? !has
+        : has && cur.rev === c.i.ExpressionAttributeValues[":r"];
+      if (!okc) { const e = new Error("conditional"); e.name = "ConditionalCheckFailedException"; throw e; }
+    }
     store.set(c.i.Item.id, { ...c.i.Item });
     return {};
   }
@@ -201,5 +213,41 @@ const window_ = await GET("");
 ok(window_.prompts.length >= 40,
    `the head still covers the default window at max size (${window_.prompts.length})`);
 
-console.log(bad ? `\n${bad} FAILED` : "\nprompt record: nothing is ever dropped, and the hot paths stay one read");
+// ---- TWO WORKERS, ONE QUEUE ----
+/* The claim is what lets more than one daemon poll this queue. If both can win
+   it, both run an agent over the same repo and both push to main. */
+console.log("\ntwo workers racing for one prompt");
+const race = await POST({ text: "something to fight over", target: null });
+const both = await Promise.all([
+  POST({ id: race.prompt.id, status: "working", from: "queued" }),
+  POST({ id: race.prompt.id, status: "working", from: "queued" }),
+]);
+const won = both.filter((r) => r.ok).length;
+ok(won === 1, `exactly one worker wins the claim (${won} of 2)`);
+ok(both.some((r) => !r.ok && r.error === "already_claimed" && r._status === 409),
+   "and the loser is told already_claimed, not handed a false win");
+ok((await GET("?all=1")).prompts.find((r) => r.id === race.prompt.id).status === "working",
+   "the row ends up working exactly once");
+
+/* five at once, which is what a restart storm looks like */
+const race2 = await POST({ text: "and again", target: null });
+const five = await Promise.all(Array.from({ length: 5 }, () =>
+  POST({ id: race2.prompt.id, status: "working", from: "queued" })));
+ok(five.filter((r) => r.ok).length === 1,
+   `still exactly one winner out of five (${five.filter((r) => r.ok).length})`);
+
+/* a move with no `from` is not a claim and must keep working — that is every
+   "done" and "dropped" the worker has ever sent */
+const plainMove = await POST({ id: race2.prompt.id, status: "done", note: "finished" });
+ok(plainMove.ok, "an unguarded move still works, as it always did");
+
+/* and concurrent QUEUEING must not lose a prompt to the same contention */
+const many = await Promise.all(Array.from({ length: 8 }, (_, i) =>
+  POST({ text: "concurrent " + i, target: null })));
+ok(many.every((r) => r.ok), "eight prompts sent at once are all accepted");
+const after = (await GET("?all=1")).prompts;
+ok(many.every((r) => after.some((x) => x.id === r.prompt.id)),
+   "and every one of them is in the record — none lost to a contended write");
+
+console.log(bad ? `\n${bad} FAILED` : "\nprompt record: nothing is ever dropped, one claim wins, and the hot paths stay one read");
 process.exit(bad ? 1 : 0);
