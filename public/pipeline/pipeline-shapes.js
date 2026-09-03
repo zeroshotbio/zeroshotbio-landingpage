@@ -2096,10 +2096,37 @@ DRAW.fixation = drawFixation;
    chemistry runs backwards. Each strand keeps its own clock, so the
    compartment is never all in one state.
 
-   The envelope is the nucleus, which is what was asked to be looked inside;
-   in the protocol the primer works throughout the fixed cell.
+   THE COMPARTMENT IS THE FIXED CELL, and it is drawn as one now rather than
+   left to be inferred. In situ is the whole method — the reaction happens
+   inside a cell that is still standing, which is what lets the well's barcode
+   stay attached to that cell's mRNA when every well is tipped into one tube
+   two boxes along — and a bare envelope with strands in it said nothing about
+   where the boundary was or how anything got across it. So the rim carries
+   pores: the boundary is intact, permeabilised, and things pass through it.
 
-   Requires ellipseAt() and arcPts() from the A2 clutch block.
+   THE PLATE IN FRONT IS WHERE THE BARCODE COMES FROM. Forty-eight wells here,
+   off the node's own cols/rows, because round one is the one round that is not
+   96 wells. Each well takes its own hue: a well is primed twice, with an oligo
+   dT and with a random hexamer, but both of them mark the same sample, so what
+   a hue stands for is the well and not the primer. Hue steps by one along a row
+   and by five down a column so no well touches its own colour — two neighbours
+   sharing one reads as a band, which would be a claim about treatments, and
+   this plate makes none. One well is ringed and the primers that fly out of it
+   are the only ones that reach this cell: a cell sees one well, and that is
+   why the barcode identifies the sample. That well is deliberately the --ch8
+   one, because --ch8 and --signal are the same colour in both themes, so the
+   primer arrives already wearing the colour its annealed stub wears inside.
+
+   The plate sits in front rather than behind: behind is where the view hangs
+   the name label, and the flight then runs up-screen and to the right, with
+   the row. Each flier fades out as it reaches a strand's foot, where a stub is
+   already annealed — the hand-off is a claim about direction, not a promise
+   that this particular primer is that particular stub.
+
+   Requires ellipseAt() and arcPts() from the A2 clutch block, plateSlab /
+   plateGrid / drawWell from the plate set, and CH() from the B7 block. Like B5
+   and B7 it spends --ch1..12, which are declared on /molecular_pipe and
+   nowhere else; this shape is worn by that page alone.
    ------------------------------------------------------------------ */
 function drawReverseTranscription(g,n){
   const r=rng(823);
@@ -2108,9 +2135,11 @@ function drawReverseTranscription(g,n){
         rim  =ellipseAt(n.x,n.y,th,R),
         inner=ellipseAt(n.x,n.y,th,R*0.9);
 
-  /* floor, the near wall swept up to the rim, then the envelope as the two
-     membranes it actually is — the doubled line is what says "nucleus" at a
-     size where nothing else in the drawing can */
+  /* floor, the near wall swept up to the rim, then the envelope as a doubled
+     line — at this size that is the only thing that reads as a membrane rather
+     than as the lip of a vessel. Built exactly as B4 builds it: the two nodes
+     are the same cell at two moments, and any difference in these four
+     elements would read as a different compartment. */
   g.appendChild(el("ellipse",{cx:floor.x,cy:floor.y,rx:floor.rx,ry:floor.ry,
     fill:"var(--g-right)","fill-opacity":".65",stroke:"none"}));
   g.appendChild(el("polygon",{points:pts([...arcPts(rim,0,Math.PI,26),
@@ -2121,6 +2150,19 @@ function drawReverseTranscription(g,n){
     "stroke-width":".7","stroke-opacity":".4"}));
   g.appendChild(el("ellipse",{cx:rim.x,cy:rim.y,rx:rim.rx,ry:rim.ry,
     fill:"none",stroke:"var(--stroke)","stroke-width":"1.2","stroke-opacity":".85"}));
+
+  /* PORES, not a dashed boundary. A broken line says the wall is not there;
+     a solid wall with ticks through it says the wall is there and has holes in
+     it, which is what permeabilisation is and is the reason a primer can get
+     to an mRNA that never left the cell. */
+  const PORES=11;
+  for(let i=0;i<PORES;i++){
+    const a=(i+0.5)*2*Math.PI/PORES, ca=Math.cos(a), sa=Math.sin(a);
+    g.appendChild(el("line",{
+      x1:(rim.x+ca*rim.rx*0.92).toFixed(2), y1:(rim.y+sa*rim.ry*0.92).toFixed(2),
+      x2:(rim.x+ca*rim.rx*1.08).toFixed(2), y2:(rim.y+sa*rim.ry*1.08).toFixed(2),
+      stroke:"var(--stroke)","stroke-width":".9","stroke-opacity":".5"}));
+  }
 
   const PRIMER=0.17;    // how much of the template the barcoded primer covers
   const FIT=R*0.72;     // no strand, and no wobble on one, leaves the envelope
@@ -2198,6 +2240,55 @@ function drawReverseTranscription(g,n){
     g.appendChild(enz); st.enz=enz;
   });
 
+  /* ---- THE PLATE THE BARCODE COMES FROM ---------------------------------
+     Appended after the cell because it stands a node depth nearer the reader,
+     and on an isometric grid append order is occlusion order. Every offset is
+     a fraction of the node: absolute numbers draw correctly at the authored
+     size and come apart the moment somebody drags a corner. The grid comes off
+     the node for the same reason B5's does — 12 x 4 is a fact about round one,
+     which is the only round that is not 96 wells. */
+  const SC=n.w;                              // composed at w 1.0, d 0.8, h 0.3
+  /* thrown a node depth clear and kept narrower than it wants to be: at the
+     size where the plate stops being smaller than the cell it stops reading as
+     the source and starts reading as the subject, and the subject here is the
+     cell. Measured, the two are about twelve pixels apart at the near corner. */
+  const plate={x:n.x-n.w*0.10, y:n.y+n.d*1.24, w:n.w*1.30, d:n.d*0.72};
+  const pth=n.h*0.42;
+  const COLS=n.cols||12, ROWS=n.rows||4;
+  plateSlab(g,plate,pth,SKIN.tile,1);
+  const wells=plateGrid(plate,pth,COLS,ROWS);
+  /* column 2 of row 1 on a twelve-wide plate: (2 + 5*1) % 12 === 7, so the
+     ringed well wears --ch8. Clamped rather than trusted, because a plate with
+     fewer wells than that would leave the flight with no well to leave from. */
+  const src=wells[Math.min(wells.length-1, COLS+2)].e;
+  wells.forEach(w=>{
+    drawWell(g,w,false);
+    g.appendChild(el("ellipse",{cx:w.e.x,cy:w.e.y,rx:(w.e.rx*0.86).toFixed(2),
+      ry:(w.e.ry*0.86).toFixed(2),fill:CH(w.i+w.j*5),"fill-opacity":".9"}));
+  });
+  g.appendChild(el("ellipse",{cx:src.x,cy:src.y,rx:(src.rx*1.6).toFixed(2),
+    ry:(src.ry*1.6).toFixed(2),fill:"none",stroke:"var(--fg)",
+    "stroke-width":".9","stroke-opacity":".85"}));
+
+  /* ---- WHAT CROSSES ------------------------------------------------------
+     Three primers on their own clocks, all out of the one ringed well, each
+     aimed at the foot of a strand. Born at the well with real coordinates and
+     no opacity: a line with nowhere to be sits at the SVG origin and drags the
+     selection halo across the map with it. */
+  const FLY=3, TRAVEL=2.4, LIFT=13*SC, HALF=3.2*SC;
+  const fliers=strands.filter((_,i)=>i%2===0).slice(0,FLY).map((st,i)=>{
+    const foot=at(st,0.02,OFF,TIGHT);
+    const e=el("line",{x1:src.x.toFixed(2),y1:src.y.toFixed(2),
+      x2:src.x.toFixed(2),y2:src.y.toFixed(2),stroke:"var(--signal)",
+      "stroke-width":"1.7","stroke-opacity":"0","stroke-linecap":"round"});
+    g.appendChild(e);
+    return {e, tx:foot[0], ty:foot[1], rest:0.7+r()*1.1, t:i*(TRAVEL*0.62)};
+  });
+  /* the arc is lifted in screen space rather than in z, because what it has to
+     clear is the gap between two things already flattened onto the same page */
+  const flyAt=(f,u)=>[src.x+(f.tx-src.x)*u,
+                      src.y+(f.ty-src.y)*u-Math.sin(Math.PI*u)*LIFT];
+
   const LAND=0.5, SCAN=4.6, HOLD=1.0, REL=1.1;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   const run=(dt,now)=>{
@@ -2231,6 +2322,24 @@ function drawReverseTranscription(g,n){
         `translate(${p[0].toFixed(2)},${(p[1]+jig-(1-op)*7).toFixed(2)}) rotate(${st.deg.toFixed(1)})`);
       st.enz.setAttribute("opacity",op.toFixed(2));
     });
+
+    /* A flier is a short bar lying along its own direction of travel, so it is
+       drawn from two points on the arc rather than rotated: the arc already
+       knows which way it is going. It fades up out of the well and back down
+       as it reaches the foot — arriving and then sitting there would be a
+       second stub on a strand that already has one. */
+    fliers.forEach(f=>{
+      f.t=(f.t+dt)%(TRAVEL+f.rest);
+      if(f.t>TRAVEL){ f.e.setAttribute("stroke-opacity","0"); return; }
+      const u=f.t/TRAVEL;
+      const a=flyAt(f,Math.max(0,u-0.03)), b=flyAt(f,Math.min(1,u+0.03));
+      const dx=b[0]-a[0], dy=b[1]-a[1], L=Math.hypot(dx,dy)||1;
+      const p=flyAt(f,u), hx=dx/L*HALF, hy=dy/L*HALF;
+      f.e.setAttribute("x1",(p[0]-hx).toFixed(2)); f.e.setAttribute("y1",(p[1]-hy).toFixed(2));
+      f.e.setAttribute("x2",(p[0]+hx).toFixed(2)); f.e.setAttribute("y2",(p[1]+hy).toFixed(2));
+      f.e.setAttribute("stroke-opacity",
+        Math.min(1,u/0.14,Math.max(0,(1-u)/0.16)).toFixed(2));
+    });
   };
   run(0,0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt,now); });
@@ -2241,8 +2350,12 @@ DRAW.reversetranscription = drawReverseTranscription;
 /* ------------------------------------------------------------------
    ROUND TWO · LIGATION
    The same compartment as B2, one round later, so it is deliberately the
-   same drawing: same nucleus, same five transcripts stacked in lanes. What
+   same drawing: same envelope, same five transcripts stacked in lanes. What
    has changed is the state of the molecule and what is being done to it.
+   B2 carries the plate its barcode came out of and the pores that let it in,
+   because round one is where the boundary has to be argued for; by here the
+   reader has been told the reaction is in-cell and the second telling would
+   only crowd the one bond this node is about.
 
    ROUND ONE IS OVER, so every strand is already a finished duplex — two
    rails and the rungs between them, end to end — and the round-one barcode
