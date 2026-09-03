@@ -2139,9 +2139,12 @@ DRAW.fixation = drawFixation;
    has to fetch it. So a small freezer stands off the back-left corner, clear
    of the landmark's plinth, and the loop now opens with the door sliding back
    and the plate travelling out onto the bench under its full slab of ice.
-   Nothing about the melt changed — it simply no longer starts the loop. At the
-   end the plate goes back in and the door shuts, because a loop has to close
-   somewhere and the freezer is where this plate came from.
+   Nothing about the melt changed — it simply no longer starts the loop. The
+   door slides shut behind the plate while it still stands frozen, and that is
+   the last thing the freezer does: THE PLATE IS NEVER PUT BACK. A thawed plate
+   goes straight to round one — the manual gives no stopping point here — so
+   returning it to cold storage was drawing a step that does not happen. The
+   sequence ends with the plate standing clear on the bench.
 
    THE PLATE AND ITS ICE ARE ONE GROUP, and they have to be: the travel is a
    transform on the whole object. It shrinks into the doorway rather than
@@ -2346,21 +2349,24 @@ function drawThawPlate(g,n){
   out.appendChild(coat);
 
   /* ---- THE SCHEDULE ----------------------------------------------------
-     Shut, out of the freezer, then the slab goes, then the plate stands clear,
-     then the ice comes back and it goes home — the last three phases are the
-     loop closing and nothing else, which is why they are the short ones. The
+     Shut, out of the freezer, the door shuts behind it, the slab goes, the
+     plate stands clear — and that is the end of it. Nothing travels back. The
      coat on the magnified cell starts later than the slab and finishes last:
      one cell in the middle of a well is the last thing in the plate to reach
      temperature.
 
      The ice is at full height for everything before the melt. A plate that
      came out of a freezer already half thawed would be saying the thaw
-     happened in the box, and it does not — it happens on the bench. */
-  const SHUT=0.9, OPEN=0.6, OUT=1.6, FROZEN=0.6, MELT=2.8, CLEAR=1.8,
-        GLAZE=1.0, BACK=1.4, CLOSE=0.6;
-  const T_OPEN=SHUT, T_OUT=T_OPEN+OPEN, T_FRZ=T_OUT+OUT, T_MELT=T_FRZ+FROZEN,
-        T_CLR=T_MELT+MELT, T_GLZ=T_CLR+CLEAR, T_BACK=T_GLZ+GLAZE,
-        T_CLOSE=T_BACK+BACK, CYCLE=T_CLOSE+CLOSE;
+     happened in the box, and it does not — it happens on the bench.
+
+     CLEAR is the dwell on the finished plate, and it ends in a short fade
+     because the loop still has to get back to a plate that is inside a shut
+     freezer. Fading is the only way over that seam that does not either snap
+     the plate across the bench in one frame or re-stage the return trip; the
+     door is already shut by then, so the freezer never moves at the join. */
+  const SHUT=0.9, OPEN=0.6, OUT=1.6, DOOR=0.7, MELT=2.8, CLEAR=2.6, FADE=0.7;
+  const T_OPEN=SHUT, T_OUT=T_OPEN+OPEN, T_BENCH=T_OUT+OUT, T_MELT=T_BENCH+DOOR,
+        T_CLR=T_MELT+MELT, CYCLE=T_CLR+CLEAR, T_FADE=CYCLE-FADE;
   const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
   const c01=x=>Math.max(0,Math.min(1,x));
   /* the plate is small enough at the far end to sit in the doorway; the wall
@@ -2375,17 +2381,17 @@ function drawThawPlate(g,n){
     const span=(a,b)=>c01((t-a)/(b-a));
     let ice=1, cv=1, stow=1, dq=1;      // stow: 0 on the bench, 1 in the freezer
     if(t<T_OPEN){ /* shut, and the plate is in there */ }
-    else if(t<T_OUT)  { dq=1-ease(span(T_OPEN,T_OUT)); }
-    else if(t<T_BACK) { dq=0; stow=t<T_FRZ ? 1-ease(span(T_OUT,T_FRZ)) : 0; }
-    else if(t<T_CLOSE){ dq=0; stow=ease(span(T_BACK,T_CLOSE)); }
-    else              { dq=ease(span(T_CLOSE,CYCLE)); }
+    else if(t<T_OUT)   { dq=1-ease(span(T_OPEN,T_OUT)); }
+    else if(t<T_BENCH) { dq=0; stow=1-ease(span(T_OUT,T_BENCH)); }
+    /* the door closes on an empty freezer while the plate is still frozen, so
+       by the melt the box is shut and nothing is waiting to be given back */
+    else { stow=0; dq=t<T_MELT ? ease(span(T_BENCH,T_MELT)) : 1; }
 
     if(t>=T_MELT && t<T_CLR){
       const u=(t-T_MELT)/MELT;
       ice=1-ease(c01(u/0.72));
       cv =1-ease(c01((u-0.34)/0.66));
-    }else if(t>=T_CLR && t<T_GLZ){ ice=0; cv=0; }
-    else if(t>=T_GLZ && t<T_BACK){ ice=cv=ease(span(T_GLZ,T_BACK)); }
+    }else if(t>=T_CLR){ ice=0; cv=0; }
 
     const z=th+(n.h-th)*ice, f=faces(n.x,n.y,n.w,n.d,z);
     iceF.forEach((e,i)=>e.setAttribute("points",f[KEYS[i]]));
@@ -2403,7 +2409,8 @@ function drawThawPlate(g,n){
 
     /* the travel. pc maps to the doorway and the whole cart scales about the
        origin with it, so the ice, the plastic and the samples stay one object */
-    const sc=1-(1-SC_END)*stow;
+    const sc=1-(1-SC_END)*stow, vis=1-span(T_FADE,CYCLE);
+    cart.setAttribute("opacity",vis.toFixed(2));
     cart.setAttribute("transform",
       `translate(${(pc[0]+(inside[0]-pc[0])*stow-pc[0]*sc).toFixed(2)},`+
       `${(pc[1]+(inside[1]-pc[1])*stow-pc[1]*sc).toFixed(2)}) scale(${sc.toFixed(3)})`);
@@ -2417,9 +2424,10 @@ function drawThawPlate(g,n){
     door.setAttribute("fill-opacity",(0.95*Math.min(1,dq*4)).toFixed(2));
     door.setAttribute("stroke-opacity",(0.9*Math.min(1,dq*4)).toFixed(2));
     handle.setAttribute("stroke-opacity",(dq>0.85?0.9:0).toFixed(2));
-    /* the outset arrives with the plate and leaves before it does */
+    /* the outset arrives with the plate and goes out with it: its leaders point
+       at a well that is only there while the plate is parked on the bench */
     outG.setAttribute("opacity",
-      c01(Math.min(span(T_OUT+OUT*0.55,T_FRZ), 1-span(T_BACK,T_BACK+BACK*0.35))).toFixed(2));
+      c01(Math.min(span(T_OUT+OUT*0.55,T_BENCH), vis)).toFixed(2));
   };
   run(0);
   TICKERS.push((dt,now,k)=>{ if(k<0.7) return; run(dt); });
